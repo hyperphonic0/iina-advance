@@ -2746,7 +2746,7 @@ class PlayerCore: NSObject {
     if !silent {
       sendOSD(.track(info.currentTrack(.secondSub) ?? .noneSecondSubTrack))
     }
-    postNotification(.iinaSIDChanged)
+    postNotification(.iinaSSIDChanged)
     saveState()
     reloadQuickSettingsView()
   }
