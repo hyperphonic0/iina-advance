@@ -195,10 +195,14 @@ class BarFactory {
                          _ chapters: [MPVChapter], cachedRanges: [(Double, Double)]) -> CGImage {
     // - Set up calculations
 
+    // When streaming if the audio stream is changed mpv will momentarily reset the video duration to zero.
+    // Just try to avoid dividing by zero here, and validate any calculations made with it
+    let maxValueSec = maxValueSec.isZero ? 0.1 : maxValueSec
+
     let imgConf = (useFocusEffect ? playBar_Focused : playBar_Normal).forImg(scale: scaleFactor, barWidth: barWidth)
 
     func xForSec(_ sec: CGFloat) -> CGFloat {
-      (imgConf.imgPadding + (sec / maxValueSec * imgConf.barWidth)).rounded()
+      (imgConf.imgPadding + ((sec / maxValueSec).clamped(to: 0...1) * imgConf.barWidth)).rounded()
     }
     let currentValuePointX = xForSec(currentValueSec)
 
