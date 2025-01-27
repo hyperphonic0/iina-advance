@@ -2674,7 +2674,11 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.debug("Playback restarted")
 
+    reloadSavedIINAfilters()
+
     DispatchQueue.main.async { [self] in
+      // Important to synchronize the time as mpv may slightly alter the playback position during a
+      // restart even while paused. See issue #5337.
       updatePlaybackTimeInfo()  // prepare for updateUI()
       windowController.updateUI()
 
