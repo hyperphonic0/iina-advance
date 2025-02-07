@@ -1539,6 +1539,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       } else if player.info.isNetworkResource {
         // Streaming media: title can change unpredictably
         DispatchQueue.main.async { [self] in
+          window?.representedURL = nil
           setWindowTitle(mediaTitle, isFilename: false)
         }
       } else {
