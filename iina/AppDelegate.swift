@@ -829,6 +829,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     historyWindow.openWindow(self)
   }
 
+  @objc func toggleInspectorWindow(_ sender: AnyObject) {
+    if inspector.window?.isOpen ?? false {
+      inspector.close()
+    } else {
+      showInspectorWindow()
+    }
+  }
+
   @IBAction func showLogWindow(_ sender: AnyObject) {
     Logger.log("Opening Log window", level: .verbose)
     logWindow.openWindow(self)

@@ -10,14 +10,6 @@ import Cocoa
 
 extension PlayerWindowController {
 
-  @objc func menuShowInspector(_ sender: AnyObject) {
-    if AppDelegate.shared.inspector.window?.isOpen ?? false {
-      AppDelegate.shared.inspector.close()
-    } else {
-      AppDelegate.shared.showInspectorWindow()
-    }
-  }
-
   @objc func menuSavePlaylist(_ sender: AnyObject) {
     Utility.quickSavePanel(title: "Save to playlist", allowedFileExtensions: ["m3u8"],
                            sheetWindow: player.window) { [self] (url) in

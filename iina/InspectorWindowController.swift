@@ -251,17 +251,17 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
   // MARK: - Data updates
 
-  func updateInfo(dynamic: Bool = false) {
-    guard let player = PlayerCore.lastActive else { return }
+  func updateInfo(includeStatic: Bool = true) {
+    guard let player = PlayerCore.lastActive, player.isActive else { return }
 
     DispatchQueue.main.async { [self] in
-      _updateInfo(dynamic: dynamic, player)
+      _updateInfo(includeStatic: includeStatic, player)
     }
   }
 
-  private func _updateInfo(dynamic: Bool, _ player: PlayerCore) {
+  private func _updateInfo(includeStatic: Bool, _ player: PlayerCore) {
     let controller = player.mpv!
-    if !dynamic || self.pathField.stringValue.isEmpty {
+    if includeStatic || self.pathField.stringValue.isEmpty {
       updateStaticInfo(player)
     }
 
@@ -297,7 +297,8 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
       : "N/A";
     self.setLabelColor(self.vprimariesField, by: sigPeak > 0)
 
-    if player.info.isFileLoaded {
+    let isFileLoaded = player.info.isFileLoaded
+    if isFileLoaded {
       if let colorspace = player.windowController.videoView.videoLayer.colorspace {
         let screenColorSpace = player.windowController.window?.screen?.colorSpace
         let sdrColorSpace = screenColorSpace?.cgColorSpace ?? VideoView.SRGB
@@ -315,21 +316,18 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
       } else {
         self.vcolorspaceField.stringValue = "Unspecified (SDR)"
       }
-    } else {
-      self.vcolorspaceField.stringValue = "N/A"
-    }
-    self.setLabelColor(self.vcolorspaceField, by: player.info.isFileLoaded)
 
-    if player.windowController.loaded && player.info.isFileLoaded {
       if let hwPf = controller.getString(MPVProperty.videoParamsHwPixelformat) {
         self.vPixelFormat.stringValue = "\(hwPf) (HW)"
       } else if let swPf = controller.getString(MPVProperty.videoParamsPixelformat) {
         self.vPixelFormat.stringValue = "\(swPf) (SW)"
-      } else {
-        self.vPixelFormat.stringValue = "N/A"
       }
+    } else {
+      self.vcolorspaceField.stringValue = "N/A"
+      self.vPixelFormat.stringValue = "N/A"
     }
-    self.setLabelColor(self.vPixelFormat, by: player.info.isFileLoaded)
+    self.setLabelColor(self.vcolorspaceField, by: isFileLoaded)
+    self.setLabelColor(self.vPixelFormat, by: isFileLoaded)
   }
 
   private func updateStaticInfo(_ player: PlayerCore) {
@@ -376,6 +374,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
       sizeDisplayString += "  (\(dwidth)\u{d7}\(dheight))"
     }
     self.vsizeField.stringValue = sizeDisplayString
+    self.setLabelColor(self.vsizeField, by: vwidth > 0 && vheight > 0)
 
     let fileSize = controller.getInt(MPVProperty.fileSize)
     self.fileSizeField.stringValue = "\(FloatingPointByteCountFormatter.string(fromByteCount: fileSize))B"
@@ -414,7 +413,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
   @objc func dynamicUpdate() {
     guard !watchTableView.isEditInProgress else { return }
-    updateInfo(dynamic: true)
+    updateInfo(includeStatic: false)
     guard !watchTableView.isEditInProgress else { return }
 
     /// Do not call `reloadData()` (no arg version) because it will clear the selection. Also, because we know the number of rows will not change,
@@ -470,7 +469,8 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
       return cell
     case .value:
       if let textField = cell.textField {
-        guard let player = PlayerManager.shared.lastActivePlayer else {
+        guard let player = PlayerManager.shared.lastActivePlayer, player.isActive else {
+          // If no active player, just show blank values
           textField.stringValue = ""
           return cell
         }
@@ -491,7 +491,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
       }
       return cell
     default:
-      Logger.log("Unrecognized column: '\(identifier.rawValue)'", level: .error)
+      Logger.log.error{"Unrecognized column: '\(identifier.rawValue)'"}
       return nil
     }
   }

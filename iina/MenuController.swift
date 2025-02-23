@@ -412,7 +412,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
     customTouchBar.action = #selector(NSApplication.toggleTouchBarCustomizationPalette(_:))
 
-    inspector.action = #selector(PlayerWindowController.menuShowInspector(_:))
+    inspector.action = #selector(AppDelegate.shared.toggleInspectorWindow(_:))
     miniPlayer.action = #selector(PlayerWindowController.menuSwitchToMiniPlayer(_:))
   }
 
