@@ -2361,6 +2361,7 @@ class PlayerCore: NSObject {
 
       /// Launches background task which scans video files and collects video size metadata using ffmpeg
       PlayerCore.backgroundQueue.async { [self] in
+        guard state.isNotYet(.stopping) else { return }
         MediaMetaCache.shared.fillInVideoSizes(info.currentVideosInfo, onBehalfOf: self)
       }
     }
@@ -2563,6 +2564,8 @@ class PlayerCore: NSObject {
     }
 
     self.autoSearchOnlineSub()
+
+    guard currentTicket == self.backgroundQueueTicket, self.mpv.mpv != nil else { return }
 
     // Set SID & S2ID now that all subs are available
     if let priorState = priorStateIfRestoring {

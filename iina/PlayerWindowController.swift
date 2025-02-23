@@ -1405,7 +1405,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       let isKey = window.isKeyWindow
       lastKeyWindowStatus = isKey
-      log.verbose{"Window isKey=\(isKey.yesno)"}
+      log.trace{"Window isKey=\(isKey.yesno)"}
       updateColorsForKeyWindowStatus(isKey: isKey)
 
       if isKey {

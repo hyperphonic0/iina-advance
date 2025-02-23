@@ -120,8 +120,6 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
   }
 
   private func addThumbnails(_ ffThumbnails: [FFThumbnail]) {
-    let sw = Utility.Stopwatch()
-
     // FFmpegController can send duplicates. Weed them out by timestamp
     var existingTimestamps = Set(self.thumbnails.compactMap{ $0.timestamp })
 

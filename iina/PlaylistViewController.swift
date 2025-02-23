@@ -722,6 +722,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       let mpvTitle = player.isStopping ? nil : player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
       PlayerCore.playlistQueue.async { [self] in
+        guard player.isActive else { return }
         if isPlaying || enablePrefetching {
           let cachedMeta = MediaMetaCache.shared.updateCache(for: url, mpvTitle: mpvTitle)
 

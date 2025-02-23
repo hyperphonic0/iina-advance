@@ -129,6 +129,7 @@ class HistoryController {
     log.verbose("ReloadAll starting from \(plistURL.path.pii.quoted)")
     let sw = Utility.Stopwatch()
     readHistoryFromFile()
+    log.verbose("ReloadAll: done reading hisory file. Loading recentDocumentURLs")
     cachedRecentDocumentURLs = NSDocumentController.shared.recentDocumentURLs
     log.verbose("ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
     if !silent {
