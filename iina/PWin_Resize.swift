@@ -60,7 +60,6 @@ extension PlayerWindowController {
     videoView.videoLayer.enterAsynchronousMode()
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    CATransaction.setAnimationDuration(0)
     defer {
       CATransaction.commit()
     }
@@ -159,7 +158,6 @@ extension PlayerWindowController {
 
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    CATransaction.setAnimationDuration(0)
     defer {
       CATransaction.commit()
     }
@@ -202,7 +200,6 @@ extension PlayerWindowController {
       // Not sure if this helps fix the aspect constraint transition
       CATransaction.begin()
       CATransaction.setDisableActions(true)
-      CATransaction.setAnimationDuration(0)
       videoView.apply(newGeometry)
       CATransaction.commit()
     }
