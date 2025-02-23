@@ -58,6 +58,13 @@ extension PlayerWindowController {
     log.verbose{"[WinWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)"}
 
     videoView.videoLayer.enterAsynchronousMode()
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    CATransaction.setAnimationDuration(0)
+    defer {
+      CATransaction.commit()
+    }
+
     if lockViewportToVideoSize && inLiveResize {
       /// Notes on the trickiness of live window resize:
       /// 1. We need to decide whether to (A) keep the width fixed, and resize the height, or (B) keep the height fixed, and resize the width.
@@ -80,7 +87,6 @@ extension PlayerWindowController {
     }
 
     let newWindowSize: NSSize
-    let resizeSubviewsTask: IINAAnimation.Task
     let isLiveResizingWidth = isLiveResizingWidth ?? true
     switch currentLayout.mode {
     case .windowedNormal, .windowedInteractive:
@@ -102,12 +108,10 @@ extension PlayerWindowController {
         player.info.intendedViewportSize = newGeometry.viewportSize
       }
 
-      resizeSubviewsTask = .instantTask { [self] in
-        /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
-        /// within the same animation transaction as the code below. But this solution seems to get us 99% there; the video
-        /// only exhibits a small noticeable wobble for some limited cases ...
-        resizeWindowSubviews(using: newGeometry)
-      }
+      /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
+      /// within the same animation transaction as the code below. But this solution seems to get us 99% there; the video
+      /// only exhibits a small noticeable wobble for some limited cases ...
+      resizeWindowSubviews(using: newGeometry)
       // fall through
 
     case .fullScreenNormal, .fullScreenInteractive:
@@ -118,9 +122,7 @@ extension PlayerWindowController {
 
       let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
       newWindowSize = newGeometry.windowFrame.size
-      resizeSubviewsTask = .instantTask { [self] in
-        videoView.apply(newGeometry)
-      }
+      videoView.apply(newGeometry)
       // fall through
 
     case .musicMode:
@@ -133,13 +135,10 @@ extension PlayerWindowController {
       let newGeometry = currentGeo.resizingWindow(to: requestedSize, inLiveResize: window.inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
       newWindowSize = newGeometry.windowFrame.size
 
-      resizeSubviewsTask = .instantTask { [self] in
-        /// This call is needed to update any necessary constraints & resize internal views
-        _ = applyMusicModeGeo(newGeometry, setFrame: false, updateCache: false)
-      }
+      /// This call is needed to update any necessary constraints & resize internal views
+      _ = applyMusicModeGeo(newGeometry, setFrame: false, updateCache: false)
     }
 
-    IINAAnimation.runAsync(resizeSubviewsTask)
     log.verbose{"[WinWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)"}
     return newWindowSize
   }
@@ -159,6 +158,8 @@ extension PlayerWindowController {
     videoView.videoLayer.enterAsynchronousMode()
 
     CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    CATransaction.setAnimationDuration(0)
     defer {
       CATransaction.commit()
     }
@@ -200,6 +201,8 @@ extension PlayerWindowController {
     if updateVideoView {
       // Not sure if this helps fix the aspect constraint transition
       CATransaction.begin()
+      CATransaction.setDisableActions(true)
+      CATransaction.setAnimationDuration(0)
       videoView.apply(newGeometry)
       CATransaction.commit()
     }
