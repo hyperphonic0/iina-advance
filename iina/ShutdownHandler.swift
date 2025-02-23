@@ -34,6 +34,12 @@ class ShutdownHandler {
 
     isTerminating = true
 
+    /// When player windows close, some supporting windows may be closed automatically & will not trigger `windowWillClose`.
+    /// Plug holes by explicitly updating all windows here.
+    for window in NSApp.windows {
+      (window.windowController as? WindowController)?.refreshWindowOpenCloseAnimation()
+    }
+
     HistoryController.shared.stop()
 
     // Normally termination happens fast enough that the user does not have time to initiate
