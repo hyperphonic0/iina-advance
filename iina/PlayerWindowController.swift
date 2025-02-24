@@ -9,6 +9,7 @@
 import Cocoa
 
 // TODO: gpu-next
+// FIXME: multiple issues with crop rendering
 // TODO: persist mpv properties in saved player state
 // TODO: support parent playlist
 // TODO: stick window to individual side of screen

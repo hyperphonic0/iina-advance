@@ -77,7 +77,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" identifier="PlayerWindow-ContentView" autoresizesSubviews="NO" wantsLayer="YES" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -504,7 +504,7 @@
                     </box>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="leading" identifier="viewportTrailingOffsetFromTrailingSidebarLeadingConstraint" id="0m3-Bq-3N0"/>
+                    <constraint firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="leading" identifier="viewportTrailingOffsetFromTrailingSidebarLeadingConstraint" id="0m3-Bq-3N0"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="g0O-v5-RQj" secondAttribute="bottom" constant="8" identifier="viewportBtm_GE_osdBtm_Constraint" id="0pt-vB-Ycm"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="bottom" constant="-28" identifier="TopOfViewport-BottomOfTopBar-Constraint" id="1Ut-pz-GFg"/>
                     <constraint firstAttribute="bottom" secondItem="3nL-Ky-Hfa" secondAttribute="bottom" identifier="viewportlViewBottom-ContentViewBottom-Constraint" id="4gm-o8-h98"/>
@@ -519,7 +519,7 @@
                     <constraint firstItem="epo-S6-QVB" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Qbi-jx-9pO" secondAttribute="trailing" constant="8" id="Ja8-8A-W6L"/>
                     <constraint firstItem="XBs-34-TIm" firstAttribute="trailing" secondItem="g0O-v5-RQj" secondAttribute="leading" priority="750" constant="-8" identifier="leadingSidebarToOSDSpaceConstraint" id="LBY-By-mfi"/>
                     <constraint firstItem="IeW-QK-xIO" firstAttribute="bottom" secondItem="xqX-4W-gdw" secondAttribute="top" constant="0.5" id="Maw-7s-mGT"/>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="trailing" constant="-360" identifier="viewportTrailingOffsetFromTrailingSidebarTrailingConstraint" id="PAj-s6-32e"/>
+                    <constraint firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="trailing" constant="-360" identifier="viewportTrailingOffsetFromTrailingSidebarTrailingConstraint" id="PAj-s6-32e"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="leading" constant="360" identifier="viewportLeadingOffsetFromLeadingSidebarLeadingConstraint" id="PMP-ks-GY2"/>
                     <constraint firstItem="Qbi-jx-9pO" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="8" id="RUl-l8-s3i"/>
                     <constraint firstItem="IeW-QK-xIO" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" id="SKO-g6-ryJ"/>
