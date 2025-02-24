@@ -99,7 +99,28 @@ struct GeometryTransform {
       }
 
       // videoDecParams == video params without applied filters / overrides
-      let videoDecParamsJson = player.mpv.getString(MPVProperty.videoDecParams)
+      var videoDecParamsJson = player.mpv.getString(MPVProperty.videoDecParams)
+      if videoDecParamsJson == nil {
+        // OK, looks like when this happens, mpv is backed up & will actually give us stale data for videoOutParams!
+        // Seems like the best option is to wait for it. But adding some guardrails...
+        // Fortunately we are already in the mpv queue. So we shouldn't block the UI, but we will be blocking mpv from processing more user requests
+        // which would only add to the burden.
+        var triesRemaining = 3
+        let pauseDuration = Constants.TimeInterval.videoDecParamsPauseInterval
+        while videoDecParamsJson == nil && triesRemaining > 0 {
+          log.debug{"[GeoTF:\(name)] Could not get videoDecParams; will try again in \(pauseDuration)s (tries remaining: \(triesRemaining))"}
+          triesRemaining -= 1
+          Thread.sleep(forTimeInterval: pauseDuration)
+          videoDecParamsJson = player.mpv.getString(MPVProperty.videoDecParams)
+          // This check seems to do a good job of determining when mpv is backed up.
+          let path = player.mpv.getString(MPVProperty.path)
+          guard path == currentPlayback.path else {
+            log.warn{"[GeoTF:\(name)] Path mismatch! Will abort transform; mpv is likely backed up. Expected=\(currentPlayback.path.pii.quoted); Actual: \(path?.pii.quoted ?? "<nil>")"}
+            return nil
+          }
+        }
+      }
+
       let videoDecParams = VideoParams.fromJSON(videoDecParamsJson, "videoDecParams", log)
       // videoOutParams == final video params for display
       let videoOutParamsJson = player.mpv.getString(MPVProperty.videoOutParams)

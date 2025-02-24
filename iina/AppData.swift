@@ -170,6 +170,9 @@ struct Constants {
     /// restored when the media is played again. Using the following value as the minimum for loop points avoids this issue.
     static let minLoopPointTime = 0.000001
 
+    /// See notes in GeometryTransform.swift
+    static let videoDecParamsPauseInterval: TimeInt = 0.2
+
     /// Speed of scrolling labels in music mode. Increase to scroll faster
     static let scrollingLabelOffsetPerSec: TimeInt = 15
     static let scrollingLabelInitialWaitSec: TimeInt = 1.0
