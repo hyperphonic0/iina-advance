@@ -39,7 +39,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       }
     case .windowSize:
       IINAAnimation.disableAnimation{ [self] in
-        scaleWindow(recognizer: recognizer)
+        scalingWindow(recognizer: recognizer)
       }
     case .windowSizeOrFullScreen:
       guard !pwc.isAnimatingLayoutTransition else { return }
@@ -87,12 +87,12 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
       // If full screen wasn't toggled, try window size:
       IINAAnimation.disableAnimation{ [self] in
-        scaleWindow(recognizer: recognizer)
+        scalingWindow(recognizer: recognizer)
       }
     }  // end switch
   }
 
-  private func scaleWindow(recognizer: NSMagnificationGestureRecognizer) {
+  private func scalingWindow(recognizer: NSMagnificationGestureRecognizer) {
     guard !pwc.isFullScreen else { return }
 
     var finalGeo: PWinGeometry? = nil

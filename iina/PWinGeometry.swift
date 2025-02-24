@@ -708,7 +708,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       /// If `!inLiveResize`: resize request is not coming from the user. Could be BetterTouchTool, Retangle, or some window manager, or the OS.
       /// These tools seem to expect that both dimensions of the returned size are less than the requested dimensions, so check for this.
       /// If `lockViewportToVideoSize && !inLiveResize`: scale window to requested size; `refitted()` below will constrain as needed.
-      chosenGeo = self.scaleWindow(to: requestedSize)
+      chosenGeo = self.scalingWindow(to: requestedSize)
     }
 
     return chosenGeo
@@ -717,11 +717,11 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   func refitted(using newFit: ScreenFit? = nil, lockViewportToVideoSize: Bool? = nil) -> PWinGeometry {
     return scalingViewport(screenFit: newFit, lockViewportToVideoSize: lockViewportToVideoSize)
   }
-
+  
   /// Computes a new `PWinGeometry`, attempting to attain the given window size.
-  func scaleWindow(to desiredWindowSize: NSSize? = nil,
-                   screenID: String? = nil,
-                   screenFit: ScreenFit? = nil) -> PWinGeometry {
+  func scalingWindow(to desiredWindowSize: NSSize? = nil,
+                     screenID: String? = nil,
+                     screenFit: ScreenFit? = nil) -> PWinGeometry {
     let requestedViewportSize: NSSize?
     if let desiredWindowSize {
       let outsideBarsTotalSize = outsideBars.totalSize

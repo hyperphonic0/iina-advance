@@ -27,82 +27,6 @@ extension VideoView {
     return videoViewConstraints?.aspectRatio.multiplier
   }
 
-  private func addOrUpdate(_ existingConstraint: NSLayoutConstraint?,
-                           _ attr: NSLayoutConstraint.Attribute, _ relation: NSLayoutConstraint.Relation, _ constant: CGFloat,
-                           _ priority: NSLayoutConstraint.Priority) -> NSLayoutConstraint {
-    let constraint: NSLayoutConstraint
-    if let existingConstraint {
-      constraint = existingConstraint
-      constraint.animateToConstant(constant)
-    } else {
-      constraint = NSLayoutConstraint(item: self, attribute: attr, relatedBy: relation, toItem: superview!,
-                                      attribute: attr, multiplier: 1, constant: constant)
-    }
-    constraint.priority = priority
-    return constraint
-  }
-
-  private func rebuildConstraints(top: CGFloat = 0, trailing: CGFloat = 0, bottom: CGFloat = 0, leading: CGFloat = 0,
-                                  aspectMultiplier: CGFloat,
-                                  eqIsActive: Bool = true, eqPriority: NSLayoutConstraint.Priority,
-                                  hCenterActive: Bool, vCenterActive: Bool, centerPriority: NSLayoutConstraint.Priority,
-                                  aspectIsActive: Bool = true, aspectPriority: NSLayoutConstraint.Priority) {
-    guard let superview else {
-      // Should not get here
-      log.error("Cannot rebuild constraints for videoView: it has no superview!")
-      return
-    }
-    var existing = self.videoViewConstraints
-    self.videoViewConstraints = nil
-
-    var newCenterX: NSLayoutConstraint
-    var newCenterY: NSLayoutConstraint
-    let newAspect: NSLayoutConstraint
-    if let existing {
-      newCenterX = existing.centerX
-      newCenterY = existing.centerY
-      if existing.aspectRatio.isActive != aspectIsActive || aspectMultiplier != existing.aspectRatio.multiplier {
-        existing.aspectRatio.isActive = false
-        newAspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
-      } else {
-        newAspect = existing.aspectRatio
-      }
-    } else {
-      newCenterX = centerXAnchor.constraint(equalTo: superview.centerXAnchor)
-      newCenterY = centerYAnchor.constraint(equalTo: superview.centerYAnchor)
-      newAspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
-    }
-    newCenterX.priority = centerPriority
-    newCenterY.priority = centerPriority
-    newAspect.priority = aspectPriority
-
-    let vPriority = eqPriority
-    let hPriority = eqPriority
-    //    let vPriority: NSLayoutConstraint.Priority = (top == 0 && bottom == 0) ? .required : eqPriority
-    //    let hPriority: NSLayoutConstraint.Priority = (vPriority.rawValue != 1000 && leading == 0 && trailing == 0) ? .required : eqPriority
-
-    let newConstraints = VideoViewConstraints(
-      eqOffsetTop: addOrUpdate(existing?.eqOffsetTop, .top, .equal, top, vPriority),
-      eqOffsetTrailing: addOrUpdate(existing?.eqOffsetTrailing, .trailing, .equal, trailing, hPriority),
-      eqOffsetBottom: addOrUpdate(existing?.eqOffsetBottom, .bottom, .equal, bottom, vPriority),
-      eqOffsetLeading: addOrUpdate(existing?.eqOffsetLeading, .leading, .equal, leading, hPriority),
-
-      centerX: newCenterX,
-      centerY: newCenterY,
-      aspectRatio: newAspect
-    )
-    existing = nil
-    videoViewConstraints = newConstraints
-
-    newConstraints.eqOffsetTop.isActive = eqIsActive
-    newConstraints.eqOffsetTrailing.isActive = eqIsActive
-    newConstraints.eqOffsetBottom.isActive = eqIsActive
-    newConstraints.eqOffsetLeading.isActive = eqIsActive
-    newConstraints.centerX.isActive = hCenterActive
-    newConstraints.centerY.isActive = vCenterActive
-    newConstraints.aspectRatio.isActive = aspectIsActive
-  }
-
   func apply(_ geometry: PWinGeometry?) {
     assert(DispatchQueue.isExecutingIn(.main))
 
@@ -112,13 +36,7 @@ extension VideoView {
     }
 
     let margins: MarginQuad
-    let eqPriority: NSLayoutConstraint.Priority = .init(499)
-
     let videoAspect: Double
-    let aspectPriority: NSLayoutConstraint.Priority = .required
-
-    let centerPriority: NSLayoutConstraint.Priority = .minimum
-
     if let geometry, geometry.isVideoVisible {
       margins = geometry.viewportMargins
       videoAspect = geometry.videoViewAspect
@@ -129,14 +47,71 @@ extension VideoView {
       log.verbose("VideoView: zeroing out constraints")
     }
 
-    rebuildConstraints(top: margins.top,
-                       trailing: -margins.trailing,
-                       bottom: -margins.bottom,
-                       leading: margins.leading,
-                       aspectMultiplier: videoAspect,
-                       eqIsActive: true, eqPriority: eqPriority,
-                       hCenterActive: true, vCenterActive: true, centerPriority: centerPriority,
-                       aspectIsActive: videoAspect > 0.0, aspectPriority: aspectPriority)
+    guard let superview else {
+      // Should not get here
+      log.error("Cannot rebuild constraints for videoView: it has no superview!")
+      return
+    }
+
+    let existing = videoViewConstraints
+
+    let aspect: NSLayoutConstraint
+    let aspectIsActive = videoAspect > 0.0
+    if let existing {
+      existing.eqOffsetTop.isActive = false
+      existing.eqOffsetTrailing.isActive = false
+      existing.eqOffsetBottom.isActive = false
+      existing.eqOffsetLeading.isActive = false
+      existing.centerX.isActive = false
+      existing.centerY.isActive = false
+      existing.aspectRatio.isActive = false
+
+      if existing.aspectRatio.isActive != aspectIsActive || aspectMultiplier != existing.aspectRatio.multiplier {
+        existing.aspectRatio.isActive = false
+        aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: videoAspect, constant: 0)
+      } else {
+        aspect = existing.aspectRatio
+      }
+    } else {
+      aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: videoAspect, constant: 0)
+    }
+    aspect.priority = .required
+
+    let newConstraints = VideoViewConstraints(
+      eqOffsetTop: existing?.eqOffsetTop ?? topAnchor.constraint(equalTo: superview.topAnchor, constant: margins.top),
+      eqOffsetTrailing: existing?.eqOffsetTrailing ?? superview.trailingAnchor.constraint(equalTo: trailingAnchor, constant: margins.trailing),
+      eqOffsetBottom: existing?.eqOffsetBottom ?? superview.bottomAnchor.constraint(equalTo: bottomAnchor, constant: margins.bottom),
+      eqOffsetLeading: existing?.eqOffsetLeading ?? leadingAnchor.constraint(equalTo: superview.leadingAnchor, constant: margins.leading),
+
+      centerX: existing?.centerX ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor),
+      centerY: existing?.centerY ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor),
+      aspectRatio: aspect
+    )
+    newConstraints.eqOffsetTop.animateToConstant(margins.top)
+    newConstraints.eqOffsetTrailing.animateToConstant(margins.trailing)
+    newConstraints.eqOffsetBottom.animateToConstant(margins.bottom)
+    newConstraints.eqOffsetLeading.animateToConstant(margins.leading)
+
+    let eqPriority: NSLayoutConstraint.Priority = .init(499)
+    newConstraints.eqOffsetTop.priority = eqPriority
+    newConstraints.eqOffsetTrailing.priority = eqPriority
+    newConstraints.eqOffsetBottom.priority = eqPriority
+    newConstraints.eqOffsetLeading.priority = eqPriority
+    newConstraints.centerX.priority = .minimum
+    newConstraints.centerY.priority = .minimum
+    newConstraints.aspectRatio.priority = .required
+
+    let eqIsActive = true
+    newConstraints.eqOffsetTop.isActive = eqIsActive
+    newConstraints.eqOffsetTrailing.isActive = eqIsActive
+    newConstraints.eqOffsetBottom.isActive = eqIsActive
+    newConstraints.eqOffsetLeading.isActive = eqIsActive
+    newConstraints.centerX.isActive = true
+    newConstraints.centerY.isActive = true
+    newConstraints.aspectRatio.isActive = aspectIsActive
+
+    videoViewConstraints = newConstraints
+
     // FIXME: when watching vertical video with letterbox & leading sidebar shown & resizing from side,
     // VideoView can stretch horizontally, even though it violates its aspect constraint (priority 1000),
     // and even though the View Debugger shows it is not distorted...

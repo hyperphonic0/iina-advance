@@ -54,15 +54,16 @@ extension PlayerWindowController {
       }
     }
 
-    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
-    log.verbose{"[WinWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)"}
-
-    videoView.videoLayer.enterAsynchronousMode()
     CATransaction.begin()
     CATransaction.setDisableActions(true)
     defer {
       CATransaction.commit()
     }
+
+    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
+    log.verbose{"[WinWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)"}
+
+    videoView.videoLayer.enterAsynchronousMode()
 
     if lockViewportToVideoSize && inLiveResize {
       /// Notes on the trickiness of live window resize:
@@ -198,10 +199,7 @@ extension PlayerWindowController {
     videoView.videoLayer.enterAsynchronousMode()
     if updateVideoView {
       // Not sure if this helps fix the aspect constraint transition
-      CATransaction.begin()
-      CATransaction.setDisableActions(true)
       videoView.apply(newGeometry)
-      CATransaction.commit()
     }
     
     // Update floating control bar position if applicable
@@ -677,7 +675,7 @@ extension PlayerWindowController {
   }
 
   
-  // FIXME: interpolate this
+  // TODO: interpolate this
   func scaleVideoByIncrement(_ widthStep: CGFloat) {
     assert(DispatchQueue.isExecutingIn(.main))
 
