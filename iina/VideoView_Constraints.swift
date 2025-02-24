@@ -27,8 +27,25 @@ extension VideoView {
     translatesAutoresizingMaskIntoConstraints = false
     setContentCompressionResistancePriority(.required, for: .horizontal)
     setContentCompressionResistancePriority(.required, for: .vertical)
-    setContentHuggingPriority(.required, for: .horizontal)
-    setContentHuggingPriority(.required, for: .vertical)
+    setContentHuggingPriority(.defaultLow, for: .horizontal)
+    setContentHuggingPriority(.defaultLow, for: .vertical)
+  }
+
+  func removeVideoConstraints() {
+    guard let existing = videoViewConstraints else {
+      log.verbose("VideoView: all video constraints already removed")
+      return
+    }
+
+    log.verbose("VideoView: removing all video constraints")
+    existing.eqOffsetTop.isActive = false
+    existing.eqOffsetTrailing.isActive = false
+    existing.eqOffsetBottom.isActive = false
+    existing.eqOffsetLeading.isActive = false
+    existing.centerX.isActive = false
+    existing.centerY.isActive = false
+    existing.aspectRatio.isActive = false
+    videoViewConstraints = nil
   }
 
   var aspectMultiplier: CGFloat? {
@@ -38,50 +55,39 @@ extension VideoView {
   func apply(_ geometry: PWinGeometry?) {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    guard player.windowController.pip.status == .notInPIP else {
-      log.verbose("VideoView: currently in PiP; ignoring request to set viewportMargin constraints")
+    guard let geometry, geometry.isVideoVisible else {
+      log.verbose("VideoView: no geometry or video not visible; will remove constraints")
+      removeVideoConstraints()
       return
     }
+    var existing = videoViewConstraints
+    let margins = geometry.viewportMargins
+    let aspectMultiplier = geometry.videoViewAspect
+    log.verbose{"VideoView: updating constraints to margins=\(margins), aspect=\(aspectMultiplier)"}
 
-    let margins: MarginQuad
-    let videoAspect: Double
-    if let geometry, geometry.isVideoVisible {
-      margins = geometry.viewportMargins
-      videoAspect = geometry.videoViewAspect
-      log.verbose{"VideoView: updating constraints to margins=\(margins), aspect\(videoAspect)"}
-    } else {
-      margins = .zero
-      videoAspect = -1
-      log.verbose("VideoView: zeroing out constraints")
+    guard player.windowController.pip.status == .notInPIP else {
+      log.verbose("VideoView: currently in PiP; skipping constraints")
+      return
     }
 
     guard let superview else {
-      // Should not get here
-      log.error("Cannot rebuild constraints for videoView: it has no superview!")
+      // Can happen when in music mode with video disabled
+      log.verbose("VideoView: not adding constraints: no superview")
       return
     }
 
-    let existing = videoViewConstraints
-
     let aspect: NSLayoutConstraint
-    let aspectIsActive = videoAspect > 0.0
+    let aspectIsActive = aspectMultiplier > 0.0
     if let existing {
-      existing.eqOffsetTop.isActive = false
-      existing.eqOffsetTrailing.isActive = false
-      existing.eqOffsetBottom.isActive = false
-      existing.eqOffsetLeading.isActive = false
-      existing.centerX.isActive = false
-      existing.centerY.isActive = false
-      existing.aspectRatio.isActive = false
-
-      if existing.aspectRatio.isActive != aspectIsActive || aspectMultiplier != existing.aspectRatio.multiplier {
+      if aspectMultiplier != existing.aspectRatio.multiplier {
+        // cannot reuse aspect constraint
         existing.aspectRatio.isActive = false
-        aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: videoAspect, constant: 0)
+        aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
       } else {
         aspect = existing.aspectRatio
       }
     } else {
-      aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: videoAspect, constant: 0)
+      aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
     }
     aspect.priority = .required
 
@@ -95,6 +101,7 @@ extension VideoView {
       centerY: existing?.centerY ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor),
       aspectRatio: aspect
     )
+
     newConstraints.eqOffsetTop.animateToConstant(margins.top)
     newConstraints.eqOffsetTrailing.animateToConstant(margins.trailing)
     newConstraints.eqOffsetBottom.animateToConstant(margins.bottom)
@@ -126,6 +133,7 @@ extension VideoView {
     superview.invalidateIntrinsicContentSize()
     self.invalidateIntrinsicContentSize()
     needsLayout = true
+    needsUpdateConstraints = true
   }
 
 }

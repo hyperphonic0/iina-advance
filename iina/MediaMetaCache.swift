@@ -13,7 +13,7 @@ struct FFVideoMeta {
   let streamRotation: Int
 }
 
-struct MediaMeta {
+struct MediaMeta: CustomStringConvertible {
   static let empty: MediaMeta = .init(duration: nil, progress: nil, title: nil, album: nil, artist: nil)
 
   let duration: Double?
@@ -35,6 +35,10 @@ struct MediaMeta {
              title: String? = nil, album: String? = nil, artist: String? = nil) -> MediaMeta {
     return MediaMeta(duration: duration ?? self.duration, progress: progress ?? self.progress,
                      title: title ?? self.title, album: album ?? self.album, artist: artist ?? self.artist)
+  }
+
+  var description: String {
+    "Media{dur=\(duration?.description ?? "nil") progress=\(progress?.description ?? "nil") title=\(title?.description ?? "nil") album=\(album?.description ?? "nil") artist=\(artist?.description ?? "nil")}"
   }
 }
 

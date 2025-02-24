@@ -58,8 +58,33 @@ struct GeometryTransform {
       }
     }  // end of transform block
 
+    struct VideoParams: Decodable {
+      let aspect: Double
+      let w: Int
+      let h: Int
+      let dw: Int
+      let dh: Int
+
+      static func fromJSON(_ json: String?, _ objName: String, _ log: Logger.Subsystem) -> VideoParams? {
+        do {
+          guard let json else {
+            log.error{"Failed to parse \(objName): obj is nil"}
+            return nil
+          }
+          guard let jsonData = json.data(using: .utf8) else {
+            log.error{"Failed create JSON data for \(objName)"}
+            return nil
+          }
+          return try JSONDecoder().decode(VideoParams.self, from: jsonData)
+        } catch {
+          log.error{"Failed to get or parse \(objName) from mpv: \(error)"}
+          return nil
+        }
+      }
+    }
+
     func syncVideoParamsFromMpv() -> VideoGeometry? {
-      log.verbose{"[GeoTF:\(name)] Starting transform, vid=\(String(vidTrackID))|\(currentMediaAudioStatus), sessionState=\(sessionState)"}
+      log.verbose{"[GeoTF:\(name)] Starting transform of \(currentPlayback.url.lastPathComponent.pii.quoted), vid=\(String(vidTrackID))|\(currentMediaAudioStatus), sessionState=\(sessionState)"}
       let vid = Int(player.mpv.getInt(MPVOption.TrackSelection.vid))
       guard vidTrackID == vid else {
         log.debug{"[GeoTF:\(name)] Aborting transform, vid=\(String(vidTrackID)) != actual vid \(vidTrackID)"}
@@ -72,49 +97,46 @@ struct GeometryTransform {
         return VideoGeometry.albumArtGeometry(log)
       }
 
+      let videoDecParamsJson = player.mpv.getString(MPVProperty.videoDecParams)
+      let videoOutParamsJson = player.mpv.getString(MPVProperty.videoOutParams)
       if Logger.isVerboseEnabled {
         let videoParams = player.mpv.getString(MPVProperty.videoParams)
-        let videoOutParams = player.mpv.getString(MPVProperty.videoOutParams)
-        log.verbose{"[GeoTF:\(name)] Vid \(vidTrackID) has mpv videoParams=\(videoParams ?? "nil"), videoOutParams=\(videoOutParams ?? "nil")"}
+        log.verbose{"[GeoTF:\(name)] Vid \(vidTrackID) has mpv videoDecParams=\(videoDecParamsJson ?? "nil"), videoParams=\(videoParams ?? "nil"), videoOutParams=\(videoOutParamsJson ?? "nil")"}
       }
 
       // Sync video's raw dimensions from mpv.
       // This is especially important for streaming videos, which won't have cached ffMeta
-      let vidWidth = player.mpv.getInt(MPVProperty.width)
-      let vidHeight = player.mpv.getInt(MPVProperty.height)
       let rawWidth: Int?
       let rawHeight: Int?
-      if vidWidth > 0 && vidHeight > 0 {
-        rawWidth = vidWidth
-        rawHeight = vidHeight
+      let codecAspect: String?
+      let videoDecParams = VideoParams.fromJSON(videoDecParamsJson, "videoDecParams", log)
+      let videoOutParams = VideoParams.fromJSON(videoOutParamsJson, "videoOutParams", log)
+
+
+      let dw = videoDecParams?.dw
+      let dh = videoDecParams?.dh
+      if let videoDecParams {
+        codecAspect = String(videoDecParams.aspect)
+      } else {
+        log.errorDebugAlert{"[GeoTF:\(name)] Failed to get aspect from videoDecParams"}
+        codecAspect = nil
+      }
+
+      if let videoOutParams, videoOutParams.w > 0, videoOutParams.h > 0 {
+        rawWidth = videoOutParams.w
+        rawHeight = videoOutParams.h
+      } else if let videoDecParams, videoDecParams.w > 0, videoDecParams.h > 0 {
+        rawWidth = videoDecParams.w
+        rawHeight = videoDecParams.h
       } else {
         if vidTrackID != 0 {
-          log.warn{"[GeoTF:\(name)]: mpv returned 0 for video dimensions, using cached video info instead"}
+          log.warn{"[GeoTF:\(name)]: mpv returned 0 for w or h. Using cached size instead"}
         }
         rawWidth = nil 
         rawHeight = nil
       }
 
       // TODO: sync video-crop (actually, add support for video-crop...)
-
-      struct VideoParams: Decodable {
-        let aspect: Double
-      }
-
-      let codecAspect: String?
-      do {
-        if let decParamsJson = player.mpv.getString(MPVProperty.videoDecParams),
-           let jsonData = decParamsJson.data(using: .utf8) {
-          let vidParams = try JSONDecoder().decode(VideoParams.self, from: jsonData)
-          codecAspect = String(vidParams.aspect)
-        } else {
-          log.error{"Failed to get or parse videoDecParams from mpv"}
-          codecAspect = nil
-        }
-      } catch {
-        log.error{"Failed to get aspect from mpv videoDecParams: \(error)"}
-        codecAspect = nil
-      }
 
       // Sync video-aspect-override. This does get synced from an mpv notification, but there is a noticeable delay
       var userAspectLabelDerived = ""
@@ -140,9 +162,8 @@ struct GeometryTransform {
 
       // FIXME: audioStatus==notAudio for playlist which auto-plays audio
       if !currentMediaAudioStatus.isAudio, vidTrackID != 0 {
-        let dwidth = player.mpv.getInt(MPVProperty.videoParamsDw)
-        let dheight = player.mpv.getInt(MPVProperty.videoParamsDh)
-
+        let dwidth = dw ?? 0
+        let dheight = dh ?? 0
         let ours = videoGeo.videoSizeCA
         // Apparently mpv can sometimes add a pixel. Not our fault...
         if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {

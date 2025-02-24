@@ -814,6 +814,7 @@ extension PlayerWindowController {
       if !isWindowHidden {
         player.window.setFrameImmediately(newGeometry)
       } else {
+        CATransaction.setDisableActions(true)
         videoView.apply(newGeometry)
       }
       windowedModeGeo = newGeometry
