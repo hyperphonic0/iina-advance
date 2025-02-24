@@ -98,8 +98,10 @@ struct GeometryTransform {
         return VideoGeometry.albumArtGeometry(log)
       }
 
+      // videoDecParams == video params without applied filters / overrides
       let videoDecParamsJson = player.mpv.getString(MPVProperty.videoDecParams)
       let videoDecParams = VideoParams.fromJSON(videoDecParamsJson, "videoDecParams", log)
+      // videoOutParams == final video params for display
       let videoOutParamsJson = player.mpv.getString(MPVProperty.videoOutParams)
       let videoOutParams = VideoParams.fromJSON(videoOutParamsJson, "videoOutParams", log)
       if Logger.isVerboseEnabled {
@@ -117,23 +119,19 @@ struct GeometryTransform {
         }
       }
 
-      // Sync video's raw dimensions from mpv.
-      // This is especially important for streaming videos, which won't have cached ffMeta
-      let rawWidth: Int?
-      let rawHeight: Int?
+      /// Find `codecAspect`:
       let codecAspect: String?
-
-      let dw = videoOutParams?.dw
-      let dh = videoOutParams?.dh
       if let videoDecParams {
+        /// `codecAspect` should match the product `par * sar`
         codecAspect = String(videoDecParams.aspect)
       } else if let videoOutParams {
-        // It looks like libmpv is not always reliable at delivering videoDecParams...
+        // It looks like libmpv is not always reliable at delivering videoDecParams, even at fileLoaded... Seems more likely under heavy load?
         // Try to derive codecAspect from other variables.
-        // The aspect in videoOutParams contains what we want, unless there is an aspect override applied.
+        // The aspect in videoOutParams should contain the number we want, unless there is an aspect override applied.
         let aspectDisplayed = videoOutParams.aspect
         let aspectDerived: Double
         if let aspectOverride = Aspect(string: userAspectLabelDerived)?.mpvAspect {
+          // Looks like mpv modifies the video's par to get to the desired aspect. Should be able to work in reverse.
           assert(Double(aspectOverride).roundedTo6() == aspectDisplayed.roundedTo6(),
                  "aspectOverride \(aspectOverride) != displayedAspect \(aspectDisplayed)")
           let par = videoOutParams.par
@@ -149,6 +147,10 @@ struct GeometryTransform {
         codecAspect = nil
       }
 
+      // Sync video's raw dimensions from mpv. This is especially important for streaming videos, which won't have cached ffMeta.
+      // Fortunately the number don't seem to change between videoDecParams & videoOutParams.
+      let rawWidth: Int?
+      let rawHeight: Int?
       if let videoOutParams, videoOutParams.w > 0, videoOutParams.h > 0 {
         rawWidth = videoOutParams.w
         rawHeight = videoOutParams.h
@@ -179,8 +181,8 @@ struct GeometryTransform {
 
       // FIXME: audioStatus==notAudio for playlist which auto-plays audio
       if !currentMediaAudioStatus.isAudio, vidTrackID != 0 {
-        let dwidth = dw ?? 0
-        let dheight = dh ?? 0
+        let dwidth = videoOutParams?.dw ?? 0
+        let dheight = videoOutParams?.dh ?? 0
         let ours = videoGeo.videoSizeCA
         // Apparently mpv can sometimes add a pixel. Not our fault...
         if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
