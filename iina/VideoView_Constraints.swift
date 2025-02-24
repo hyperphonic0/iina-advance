@@ -23,6 +23,14 @@ extension VideoView {
     let aspectRatio: NSLayoutConstraint
   }
 
+  func initConstraints() {
+    translatesAutoresizingMaskIntoConstraints = false
+    setContentCompressionResistancePriority(.required, for: .horizontal)
+    setContentCompressionResistancePriority(.required, for: .vertical)
+    setContentHuggingPriority(.required, for: .horizontal)
+    setContentHuggingPriority(.required, for: .vertical)
+  }
+
   var aspectMultiplier: CGFloat? {
     return videoViewConstraints?.aspectRatio.multiplier
   }
@@ -115,7 +123,8 @@ extension VideoView {
     // FIXME: when watching vertical video with letterbox & leading sidebar shown & resizing from side,
     // VideoView can stretch horizontally, even though it violates its aspect constraint (priority 1000),
     // and even though the View Debugger shows it is not distorted...
-    needsUpdateConstraints = true
+    superview.invalidateIntrinsicContentSize()
+    self.invalidateIntrinsicContentSize()
     needsLayout = true
   }
 

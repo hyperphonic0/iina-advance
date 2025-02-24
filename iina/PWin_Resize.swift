@@ -55,6 +55,11 @@ extension PlayerWindowController {
     }
 
     CATransaction.begin()
+    if currentLayout.mode == .musicMode {
+      CATransaction.setAnimationDuration(0)
+    } else {
+      CATransaction.setAnimationDuration(CATransaction.animationDuration() * 0.5)
+    }
     CATransaction.setDisableActions(true)
     defer {
       CATransaction.commit()
@@ -159,6 +164,7 @@ extension PlayerWindowController {
 
     CATransaction.begin()
     CATransaction.setDisableActions(true)
+    CATransaction.setAnimationDuration(0)  // need immediate effect. No lag!
     defer {
       CATransaction.commit()
     }
