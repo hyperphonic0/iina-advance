@@ -241,7 +241,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
       recentDocuments = recentsUnfiltered
     }
 
-    Logger.log.verbose{"[ReloadWelcomeWindow] finished resolving \(self.recentDocuments.count) recentDocuments in \(sw) ms"}
+    Logger.log.verbose{"[ReloadWelcomeWindow] Finished resolving \(self.recentDocuments.count) recentDocuments in \(sw) ms"}
 
     // Refresh UI:
 

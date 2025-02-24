@@ -575,6 +575,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   func reloadPlaylistRow(_ rowIndex: Int) {
+    assert(DispatchQueue.isExecutingIn(.main))
     reloadPlaylistRows(IndexSet(integer: rowIndex))
   }
 
@@ -719,7 +720,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     // Kick this off, but return the existing (possibly stale) data below for efficiency
     player.mpv.queue.async { [self] in
-      let mpvTitle = player.isStopping ? nil : player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
+      guard player.isActive else { return }
+      let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
       PlayerCore.playlistQueue.async { [self] in
         guard player.isActive else { return }

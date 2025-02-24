@@ -60,6 +60,7 @@ struct GeometryTransform {
 
     struct VideoParams: Decodable {
       let aspect: Double
+      let par: Double
       let w: Int
       let h: Int
       let dw: Int
@@ -98,10 +99,22 @@ struct GeometryTransform {
       }
 
       let videoDecParamsJson = player.mpv.getString(MPVProperty.videoDecParams)
+      let videoDecParams = VideoParams.fromJSON(videoDecParamsJson, "videoDecParams", log)
       let videoOutParamsJson = player.mpv.getString(MPVProperty.videoOutParams)
+      let videoOutParams = VideoParams.fromJSON(videoOutParamsJson, "videoOutParams", log)
       if Logger.isVerboseEnabled {
         let videoParams = player.mpv.getString(MPVProperty.videoParams)
         log.verbose{"[GeoTF:\(name)] Vid \(vidTrackID) has mpv videoDecParams=\(videoDecParamsJson ?? "nil"), videoParams=\(videoParams ?? "nil"), videoOutParams=\(videoOutParamsJson ?? "nil")"}
+      }
+
+      // Sync video-aspect-override. This does get synced from an mpv notification, but there is a noticeable delay
+      var userAspectLabelDerived = ""
+      if let mpvVideoAspectOverride = player.mpv.getString(MPVOption.Video.videoAspectOverride) {
+        userAspectLabelDerived = Aspect.bestLabelFor(mpvVideoAspectOverride)
+        if userAspectLabelDerived != oldGeo.video.userAspectLabel {
+          // Not necessarily an error? Need to improve aspect name matching logic
+          log.debug{"[GeoTF:\(name)] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(oldGeo.video.userAspectLabel.quoted))"}
+        }
       }
 
       // Sync video's raw dimensions from mpv.
@@ -109,16 +122,30 @@ struct GeometryTransform {
       let rawWidth: Int?
       let rawHeight: Int?
       let codecAspect: String?
-      let videoDecParams = VideoParams.fromJSON(videoDecParamsJson, "videoDecParams", log)
-      let videoOutParams = VideoParams.fromJSON(videoOutParamsJson, "videoOutParams", log)
 
-
-      let dw = videoDecParams?.dw
-      let dh = videoDecParams?.dh
+      let dw = videoOutParams?.dw
+      let dh = videoOutParams?.dh
       if let videoDecParams {
         codecAspect = String(videoDecParams.aspect)
+      } else if let videoOutParams {
+        // It looks like libmpv is not always reliable at delivering videoDecParams...
+        // Try to derive codecAspect from other variables.
+        // The aspect in videoOutParams contains what we want, unless there is an aspect override applied.
+        let aspectDisplayed = videoOutParams.aspect
+        let aspectDerived: Double
+        if let aspectOverride = Aspect(string: userAspectLabelDerived)?.mpvAspect {
+          assert(Double(aspectOverride).roundedTo6() == aspectDisplayed.roundedTo6(),
+                 "aspectOverride \(aspectOverride) != displayedAspect \(aspectDisplayed)")
+          let par = videoOutParams.par
+          aspectDerived = aspectDisplayed / par
+          log.debug{"[GeoTF:\(name)] Could not get videoDecParams; aspectOverride=\(aspectOverride); derived codecAspect from displayedAspect=\(aspectDisplayed) / par=\(par) → \(aspectDerived)"}
+        } else {
+          aspectDerived = aspectDisplayed
+          log.debug{"[GeoTF:\(name)] Could not get videoDecParams; assuming codecAspect ≍ displayedAspect=\(aspectDisplayed), ∵ ∄ aspectOverride"}
+        }
+        codecAspect = String(aspectDerived.roundedTo6())
       } else {
-        log.errorDebugAlert{"[GeoTF:\(name)] Failed to get aspect from videoDecParams"}
+        log.errorDebugAlert{"[GeoTF:\(name)] Failed to get codecAspect from either videoDecParams or videoOutParams"}
         codecAspect = nil
       }
 
@@ -137,16 +164,6 @@ struct GeometryTransform {
       }
 
       // TODO: sync video-crop (actually, add support for video-crop...)
-
-      // Sync video-aspect-override. This does get synced from an mpv notification, but there is a noticeable delay
-      var userAspectLabelDerived = ""
-      if let mpvVideoAspectOverride = player.mpv.getString(MPVOption.Video.videoAspectOverride) {
-        userAspectLabelDerived = Aspect.bestLabelFor(mpvVideoAspectOverride)
-        if userAspectLabelDerived != oldGeo.video.userAspectLabel {
-          // Not necessarily an error? Need to improve aspect name matching logic
-          log.debug{"[GeoTF:\(name)] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(oldGeo.video.userAspectLabel.quoted))"}
-        }
-      }
 
       let decodedRotation = player.mpv.getInt(MPVProperty.videoParamsRotate)
       // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
