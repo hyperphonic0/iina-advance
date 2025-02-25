@@ -27,10 +27,8 @@ extension VideoView {
     let gtOffsetLeading: NSLayoutConstraint
 
     // For trying to keep out of "inside" bars:
-    let gtInsideBarOffsetTop: NSLayoutConstraint
-    let gtInsideBarOffsetTrailing: NSLayoutConstraint
-    let gtInsideBarOffsetBottom: NSLayoutConstraint
-    let gtInsideBarOffsetLeading: NSLayoutConstraint
+    let centerInsideBarsX: NSLayoutConstraint
+    let centerInsideBarsY: NSLayoutConstraint
 
     // Use aspect ratio constraint + weak center constraints to improve the video resize animation when
     // tiling the window while lockViewportToVideoSize is enabled.
@@ -71,10 +69,8 @@ extension VideoView {
     cons.gtOffsetBottom.isActive = false
     cons.gtOffsetLeading.isActive = false
 
-    cons.gtInsideBarOffsetTop.isActive = false
-    cons.gtInsideBarOffsetTrailing.isActive = false
-    cons.gtInsideBarOffsetBottom.isActive = false
-    cons.gtInsideBarOffsetLeading.isActive = false
+    cons.centerInsideBarsX.isActive = false
+    cons.centerInsideBarsY.isActive = false
 
     cons.centerX.isActive = false
     cons.centerY.isActive = false
@@ -146,10 +142,8 @@ extension VideoView {
       gtOffsetBottom: existing?.gtOffsetBottom ?? bottomSpacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
       gtOffsetLeading: existing?.gtOffsetLeading ?? leadingSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
 
-      gtInsideBarOffsetTop: existing?.gtOffsetTop ?? topSpacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
-      gtInsideBarOffsetTrailing: existing?.gtOffsetTrailing ?? trailingSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
-      gtInsideBarOffsetBottom: existing?.gtOffsetBottom ?? bottomSpacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
-      gtInsideBarOffsetLeading: existing?.gtOffsetLeading ?? leadingSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
+      centerInsideBarsX: existing?.centerInsideBarsX ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor, constant: 0),
+      centerInsideBarsY: existing?.centerInsideBarsY ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor, constant: 0),
 
       centerX: existing?.centerX ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor, constant: 0),
       centerY: existing?.centerY ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor, constant: 0),
@@ -160,10 +154,8 @@ extension VideoView {
     // Update constants
 
     let inside = geometry.insideBars
-    cons.gtInsideBarOffsetTop.animateToConstant(inside.top)
-    cons.gtInsideBarOffsetTrailing.animateToConstant(inside.trailing)
-    cons.gtInsideBarOffsetBottom.animateToConstant(inside.bottom)
-    cons.gtInsideBarOffsetLeading.animateToConstant(inside.leading)
+    cons.centerInsideBarsX.animateToConstant((inside.leading - inside.trailing) * 0.5)
+    cons.centerInsideBarsY.animateToConstant((inside.top - inside.bottom) * 0.5)
 
     // Priorities
 
@@ -186,11 +178,9 @@ extension VideoView {
     cons.gtOffsetLeading.priority = gtPriority
 
     // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-    let gtInsideBarPriority: NSLayoutConstraint.Priority = .init(10)
-    cons.gtInsideBarOffsetTop.priority = gtInsideBarPriority
-    cons.gtInsideBarOffsetTrailing.priority = gtInsideBarPriority
-    cons.gtInsideBarOffsetBottom.priority = gtInsideBarPriority
-    cons.gtInsideBarOffsetLeading.priority = gtInsideBarPriority
+    let centerInsideBarsPriority: NSLayoutConstraint.Priority = .init(10)
+    cons.centerInsideBarsX.priority = centerInsideBarsPriority
+    cons.centerInsideBarsY.priority = centerInsideBarsPriority
 
     // Finally, the default should be to center the video within whatever space remains.
     cons.centerX.priority = .init(5)
@@ -209,11 +199,9 @@ extension VideoView {
     cons.eqOffsetBottom.isActive = eqIsActive
     cons.eqOffsetLeading.isActive = eqIsActive
 
-    let gtInsideBarActive = true
-    cons.gtInsideBarOffsetTop.isActive = gtInsideBarActive
-    cons.gtInsideBarOffsetTrailing.isActive = gtInsideBarActive
-    cons.gtInsideBarOffsetBottom.isActive = gtInsideBarActive
-    cons.gtInsideBarOffsetLeading.isActive = gtInsideBarActive
+    let centerInsideBarsActive = true
+    cons.centerInsideBarsX.isActive = centerInsideBarsActive
+    cons.centerInsideBarsY.isActive = centerInsideBarsActive
 
     let gtIsActive = true
     cons.gtOffsetTop.isActive = gtIsActive
@@ -230,9 +218,5 @@ extension VideoView {
 
     needsUpdateConstraints = true
     superview.layout()
-
-    // FIXME: when watching vertical video with letterbox & leading sidebar shown & resizing from side,
-    // VideoView can stretch horizontally, even though it violates its aspect constraint (priority 1000),
-    // and even though the View Debugger shows it is not distorted...
   }
 }
