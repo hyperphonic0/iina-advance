@@ -471,6 +471,8 @@ extension PlayerWindowController {
     }
   }
 
+  // MARK: - Leading Sidebar open/close
+
   /// Executed prior to opening `leadingSidebar` to the given tab.
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
   func prepareLayoutForOpening(leadingSidebar: Sidebar, parentLayout: LayoutState, ΔWindowWidth: CGFloat) {
@@ -518,7 +520,7 @@ extension PlayerWindowController {
       viewportLeadingToLeadingSidebarClipTrailingConstraint.isActive = true
     }
 
-    let coefficients = getLeadingSidebarWidthCoefficients(visible: false, placement: leadingSidebar.placement, ΔWindowWidth: ΔWindowWidth)
+    let coefficients = getLeadingSidebarWidthCoefficients(visible: false, leadingSidebar.placement, ΔWindowWidth: ΔWindowWidth)
 
     viewportLeadingOffsetFromLeadingSidebarLeadingConstraint = viewportView.leadingAnchor.constraint(
       equalTo: tabContainerView.leadingAnchor, constant: coefficients.0 * sidebarWidth)
@@ -530,6 +532,47 @@ extension PlayerWindowController {
 
     prepareRemainingLayoutForOpening(sidebar: leadingSidebar, sidebarView: leadingSidebarView, tabContainerView: tabContainerView, tab: tabToShow)
   }
+
+  /**
+   For opening/closing `leadingSidebar` via constraints, multiply each times the sidebar width
+   Correesponding to:
+   (`viewportLeadingOffsetFromLeadingSidebarLeadingConstraint`,
+   `viewportLeadingOffsetFromLeadingSidebarTrailingConstraint`,
+   `viewportLeadingOffsetFromContentViewLeadingConstraint`)
+   */
+  private func getLeadingSidebarWidthCoefficients(visible: Bool, _ placement: Preference.PanelPlacement,
+                                                  ΔWindowWidth: CGFloat) -> (CGFloat, CGFloat, CGFloat) {
+    switch placement {
+    case .insideViewport:
+      if visible {
+        return (0, 1, 0)
+      } else {
+        return (1, 0, 0)
+      }
+    case .outsideViewport:
+      if visible {
+        return (1, 0, 1)
+      } else {
+        if ΔWindowWidth == 0 {
+          return (1, 0, 0)
+        } else {
+          return (0, 1, 0)
+        }
+      }
+    }
+  }
+
+  private func updateLeadingSidebarWidthConstraints(to newWidth: CGFloat, visible: Bool, placement: Preference.PanelPlacement,
+                                         ΔWindowWidth: CGFloat) {
+    log.verbose("\(visible ? "Showing" : "Hiding") leadingSidebar, width=\(newWidth) placement=\(placement), ΔWindowWidth=\(ΔWindowWidth)")
+
+    let coefficients = getLeadingSidebarWidthCoefficients(visible: visible, placement, ΔWindowWidth: ΔWindowWidth)
+    viewportLeadingOffsetFromLeadingSidebarLeadingConstraint.animateToConstant(coefficients.0 * newWidth)
+    viewportLeadingOffsetFromLeadingSidebarTrailingConstraint.animateToConstant(coefficients.1 * newWidth)
+    viewportLeadingOffsetFromContentViewLeadingConstraint.animateToConstant(coefficients.2 * newWidth)
+  }
+
+  // MARK: - Trailing Sidebar open/close
 
   /// Executed prior to opening `trailingSidebar` to the given tab.
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
@@ -577,7 +620,7 @@ extension PlayerWindowController {
       viewportTrailingToTrailingSidebarClipLeadingConstraint.isActive = true
     }
 
-    let coefficients = getTrailingSidebarWidthCoefficients(visible: false, placement: trailingSidebar.placement, ΔWindowWidth: ΔWindowWidth)
+    let coefficients = getTrailingSidebarWidthCoefficients(visible: false, trailingSidebar.placement, ΔWindowWidth: ΔWindowWidth)
 
     viewportTrailingOffsetFromTrailingSidebarLeadingConstraint = viewportView.trailingAnchor.constraint(
       equalTo: tabContainerView.leadingAnchor, constant: coefficients.0 * sidebarWidth)
@@ -589,6 +632,47 @@ extension PlayerWindowController {
 
     prepareRemainingLayoutForOpening(sidebar: trailingSidebar, sidebarView: trailingSidebarView, tabContainerView: tabContainerView, tab: tabToShow)
   }
+
+  /**
+   For opening/closing `trailingSidebar` via constraints, multiply each times the sidebar width
+   Correesponding to:
+   (`viewportTrailingOffsetFromTrailingSidebarLeadingConstraint`,
+   `viewportTrailingOffsetFromTrailingSidebarTrailingConstraint`,
+   `viewportTrailingOffsetFromContentViewTrailingConstraint`)
+   */
+  private func getTrailingSidebarWidthCoefficients(visible: Bool, _ placement: Preference.PanelPlacement,
+                                                   ΔWindowWidth: CGFloat) -> (CGFloat, CGFloat, CGFloat) {
+    switch placement {
+    case .insideViewport:
+      if visible {
+        return (1, 0, 0)
+      } else {
+        return (0, 1, 0)
+      }
+    case .outsideViewport:
+      if visible {
+        return (0, 1, 1)
+      } else {
+        if ΔWindowWidth == 0 {
+          return (0, 1, 0)
+        } else {
+          return (1, 0, 0)
+        }
+      }
+    }
+  }
+
+  private func updateTrailingSidebarWidthConstraints(to newWidth: CGFloat, visible: Bool,
+                                                     placement: Preference.PanelPlacement,
+                                                     ΔWindowWidth: CGFloat) {
+    log.verbose("\(visible ? "Showing" : "Hiding") trailingSidebar, width=\(newWidth) placement=\(placement), ΔWindowWidth=\(ΔWindowWidth)")
+    let coefficients = getTrailingSidebarWidthCoefficients(visible: visible, placement, ΔWindowWidth: ΔWindowWidth)
+    viewportTrailingOffsetFromTrailingSidebarLeadingConstraint.animateToConstant(coefficients.0 * newWidth)
+    viewportTrailingOffsetFromTrailingSidebarTrailingConstraint.animateToConstant(coefficients.1 * newWidth)
+    viewportTrailingOffsetFromContentViewTrailingConstraint.animateToConstant(coefficients.2 * newWidth)
+  }
+
+  // MARK: Either Sidebar - Open
 
   /// Prepares those layout components which are generic for either `Sidebar`.
   /// Executed prior to opening the given `Sidebar` with corresponding `sidebarView`
@@ -617,84 +701,6 @@ extension PlayerWindowController {
     switchToTabInTabGroup(tab: tab)
 
     sidebarView.needsUpdateConstraints = true
-  }
-
-  /**
-   For opening/closing `leadingSidebar` via constraints, multiply each times the sidebar width
-   Correesponding to:
-   (`viewportLeadingOffsetFromLeadingSidebarLeadingConstraint`,
-   `viewportLeadingOffsetFromLeadingSidebarTrailingConstraint`,
-   `viewportLeadingOffsetFromContentViewLeadingConstraint`)
-   */
-  private func getLeadingSidebarWidthCoefficients(visible: Bool, placement: Preference.PanelPlacement,
-                                                  ΔWindowWidth: CGFloat) -> (CGFloat, CGFloat, CGFloat) {
-    switch placement {
-    case .insideViewport:
-      if visible {
-        return (0, 1, 0)
-      } else {
-        return (1, 0, 0)
-      }
-    case .outsideViewport:
-      if visible {
-        return (1, 0, 1)
-      } else {
-        if ΔWindowWidth == 0 {
-          return (1, 0, 0)
-        } else {
-          return (0, 1, 0)
-        }
-      }
-    }
-  }
-
-  private func updateLeadingSidebarWidthConstraints(to newWidth: CGFloat, visible: Bool, placement: Preference.PanelPlacement,
-                                         ΔWindowWidth: CGFloat) {
-    log.verbose("\(visible ? "Showing" : "Hiding") leadingSidebar, width=\(newWidth) placement=\(placement), ΔWindowWidth=\(ΔWindowWidth)")
-
-    let coefficients = getLeadingSidebarWidthCoefficients(visible: visible, placement: placement, ΔWindowWidth: ΔWindowWidth)
-    viewportLeadingOffsetFromLeadingSidebarLeadingConstraint.animateToConstant(coefficients.0 * newWidth)
-    viewportLeadingOffsetFromLeadingSidebarTrailingConstraint.animateToConstant(coefficients.1 * newWidth)
-    viewportLeadingOffsetFromContentViewLeadingConstraint.animateToConstant(coefficients.2 * newWidth)
-  }
-
-  /**
-   For opening/closing `trailingSidebar` via constraints, multiply each times the sidebar width
-   Correesponding to:
-   (`viewportTrailingOffsetFromTrailingSidebarLeadingConstraint`,
-   `viewportTrailingOffsetFromTrailingSidebarTrailingConstraint`,
-   `viewportTrailingOffsetFromContentViewTrailingConstraint`)
-   */
-  private func getTrailingSidebarWidthCoefficients(visible: Bool, placement: Preference.PanelPlacement,
-                                                   ΔWindowWidth: CGFloat) -> (CGFloat, CGFloat, CGFloat) {
-    switch placement {
-    case .insideViewport:
-      if visible {
-        return (1, 0, 0)
-      } else {
-        return (0, 1, 0)
-      }
-    case .outsideViewport:
-      if visible {
-        return (0, 1, 1)
-      } else {
-        if ΔWindowWidth == 0 {
-          return (0, 1, 0)
-        } else {
-          return (1, 0, 0)
-        }
-      }
-    }
-  }
-
-  private func updateTrailingSidebarWidthConstraints(to newWidth: CGFloat, visible: Bool,
-                                                     placement: Preference.PanelPlacement,
-                                                     ΔWindowWidth: CGFloat) {
-    log.verbose("\(visible ? "Showing" : "Hiding") trailingSidebar, width=\(newWidth) placement=\(placement), ΔWindowWidth=\(ΔWindowWidth)")
-    let coefficients = getTrailingSidebarWidthCoefficients(visible: visible, placement: placement, ΔWindowWidth: ΔWindowWidth)
-    viewportTrailingOffsetFromTrailingSidebarLeadingConstraint.animateToConstant(coefficients.0 * newWidth)
-    viewportTrailingOffsetFromTrailingSidebarTrailingConstraint.animateToConstant(coefficients.1 * newWidth)
-    viewportTrailingOffsetFromContentViewTrailingConstraint.animateToConstant(coefficients.2 * newWidth)
   }
 
   // MARK: - Changing tabs
