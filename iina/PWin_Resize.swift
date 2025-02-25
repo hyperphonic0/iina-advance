@@ -23,14 +23,17 @@ extension PlayerWindowController {
     log.trace{"WindowDidEndLiveResize"}
   }
 
-  func windowWillUseStandardFrame(_ window: NSWindow, defaultFrame: NSRect) -> NSRect {
+  func windowShouldZoom(_ window: NSWindow, toFrame newFrame: NSRect) -> NSRect {
     // Need to explicitly bypass the denial mechanism
     denyWindowResizeIntervalStartTime = Date(timeIntervalSince1970: 0)
-    // FIXME: aspect ratio change animation needs improvement
-    let newSize = windowWillResize(window, to: defaultFrame.size)
-    let newFrame = NSRect(origin: defaultFrame.origin, size: newSize)
-    log.verbose{"WindowWillZoom: \(window.frame) → \(defaultFrame) → \(newFrame)"}
-    return newFrame
+    let newSize = windowWillResize(window, to: newFrame.size)
+    let newNewFrame = NSRect(origin: newFrame.origin, size: newSize)
+    log.verbose{"WindowWillZoom: \(window.frame) → \(newFrame) → \(newNewFrame)"}
+    return newNewFrame
+  }
+
+  func windowWillUseStandardFrame(_ window: NSWindow, defaultFrame: NSRect) -> NSRect {
+    return windowShouldZoom(window, toFrame: defaultFrame)
   }
 
   /// NSWindowDelegate: windowWillResize
@@ -58,7 +61,7 @@ extension PlayerWindowController {
     if currentLayout.mode == .musicMode {
       CATransaction.setAnimationDuration(0)
     } else {
-      CATransaction.setAnimationDuration(CATransaction.animationDuration() * 0.5)
+      CATransaction.setAnimationDuration(CATransaction.animationDuration() * 0.25)
     }
     CATransaction.setDisableActions(true)
     defer {

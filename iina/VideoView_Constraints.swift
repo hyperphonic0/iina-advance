@@ -60,7 +60,7 @@ extension VideoView {
       removeVideoConstraints()
       return
     }
-    var existing = videoViewConstraints
+    let existing = videoViewConstraints
     let margins = geometry.viewportMargins
     let aspectMultiplier = geometry.videoViewAspect
     log.verbose{"VideoView: updating constraints to margins=\(margins), aspect=\(aspectMultiplier)"}
@@ -130,10 +130,6 @@ extension VideoView {
     // FIXME: when watching vertical video with letterbox & leading sidebar shown & resizing from side,
     // VideoView can stretch horizontally, even though it violates its aspect constraint (priority 1000),
     // and even though the View Debugger shows it is not distorted...
-    superview.invalidateIntrinsicContentSize()
-    self.invalidateIntrinsicContentSize()
-    needsLayout = true
-    needsUpdateConstraints = true
   }
 
 }
