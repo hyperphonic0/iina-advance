@@ -555,6 +555,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   @IBOutlet weak var pipOverlayView: NSVisualEffectView!
   @IBOutlet weak var viewportView: ViewportView!
+  let viewportLeadingSpacer = SpacerView.buildNew(id: "ViewportLeadingSpacer")
+  let viewportTrailingSpacer = SpacerView.buildNew(id: "ViewportTrailingSpacer")
 
   let defaultAlbumArtView = ClickThroughView()
 

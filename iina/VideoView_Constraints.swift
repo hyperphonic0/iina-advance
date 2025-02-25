@@ -9,6 +9,9 @@
 extension VideoView {
   
   struct VideoViewConstraints {
+    let leadingSpacerConnection: NSLayoutConstraint
+    let trailingSpacerConnection: NSLayoutConstraint
+
     let eqOffsetTop: NSLayoutConstraint
     let eqOffsetTrailing: NSLayoutConstraint
     let eqOffsetBottom: NSLayoutConstraint
@@ -38,6 +41,9 @@ extension VideoView {
     }
 
     log.verbose("VideoView: removing all video constraints")
+    existing.leadingSpacerConnection.isActive = false
+    existing.trailingSpacerConnection.isActive = false
+    
     existing.eqOffsetTop.isActive = false
     existing.eqOffsetTrailing.isActive = false
     existing.eqOffsetBottom.isActive = false
@@ -91,21 +97,28 @@ extension VideoView {
     }
     aspect.priority = .required
 
-    let newConstraints = VideoViewConstraints(
-      eqOffsetTop: existing?.eqOffsetTop ?? topAnchor.constraint(equalTo: superview.topAnchor, constant: margins.top),
-      eqOffsetTrailing: existing?.eqOffsetTrailing ?? superview.trailingAnchor.constraint(equalTo: trailingAnchor, constant: margins.trailing),
-      eqOffsetBottom: existing?.eqOffsetBottom ?? superview.bottomAnchor.constraint(equalTo: bottomAnchor, constant: margins.bottom),
-      eqOffsetLeading: existing?.eqOffsetLeading ?? leadingAnchor.constraint(equalTo: superview.leadingAnchor, constant: margins.leading),
+    let leadingSpacer = player.windowController.viewportLeadingSpacer
+    let trailingSpacer = player.windowController.viewportTrailingSpacer
 
-      centerX: existing?.centerX ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor),
+    let newConstraints = VideoViewConstraints(
+      leadingSpacerConnection: existing?.leadingSpacerConnection ?? leadingAnchor.constraint(equalTo: leadingSpacer.trailingAnchor),
+      trailingSpacerConnection: existing?.trailingSpacerConnection ?? trailingAnchor.constraint(equalTo: trailingSpacer.leadingAnchor),
+
+      eqOffsetTop: existing?.eqOffsetTop ?? topAnchor.constraint(equalTo: superview.topAnchor, constant: margins.top),
+      eqOffsetTrailing: existing?.eqOffsetTrailing ?? trailingSpacer.widthAnchor.constraint(equalToConstant: margins.trailing),
+      eqOffsetBottom: existing?.eqOffsetBottom ?? superview.bottomAnchor.constraint(equalTo: bottomAnchor, constant: margins.bottom),
+      eqOffsetLeading: existing?.eqOffsetLeading ?? leadingSpacer.widthAnchor.constraint(equalToConstant: margins.leading),
+
+      centerX: existing?.centerX ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor, constant: (margins.leading - margins.trailing) * 0.5),
       centerY: existing?.centerY ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor),
       aspectRatio: aspect
     )
 
+    newConstraints.centerX.animateToConstant((margins.leading - margins.trailing) * 0.5)
     newConstraints.eqOffsetTop.animateToConstant(margins.top)
-    newConstraints.eqOffsetTrailing.animateToConstant(margins.trailing)
+    newConstraints.eqOffsetTrailing.animateToConstant(0)//margins.trailing)
     newConstraints.eqOffsetBottom.animateToConstant(margins.bottom)
-    newConstraints.eqOffsetLeading.animateToConstant(margins.leading)
+    newConstraints.eqOffsetLeading.animateToConstant(0)//margins.leading)
 
     let eqPriority: NSLayoutConstraint.Priority = .init(499)
     newConstraints.eqOffsetTop.priority = eqPriority
@@ -116,11 +129,13 @@ extension VideoView {
     newConstraints.centerY.priority = .minimum
     newConstraints.aspectRatio.priority = .required
 
+    newConstraints.leadingSpacerConnection.isActive = true
+    newConstraints.trailingSpacerConnection.isActive = true
     let eqIsActive = true
     newConstraints.eqOffsetTop.isActive = eqIsActive
-    newConstraints.eqOffsetTrailing.isActive = eqIsActive
+    newConstraints.eqOffsetTrailing.isActive = false
     newConstraints.eqOffsetBottom.isActive = eqIsActive
-    newConstraints.eqOffsetLeading.isActive = eqIsActive
+    newConstraints.eqOffsetLeading.isActive = false
     newConstraints.centerX.isActive = true
     newConstraints.centerY.isActive = true
     newConstraints.aspectRatio.isActive = aspectIsActive
@@ -131,5 +146,4 @@ extension VideoView {
     // VideoView can stretch horizontally, even though it violates its aspect constraint (priority 1000),
     // and even though the View Debugger shows it is not distorted...
   }
-
 }

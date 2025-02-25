@@ -68,10 +68,8 @@ extension PlayerWindowController {
     player.start()
 
     /// Use an animation task to init views, to hopefully prevent partial/redundant draws.
-    /// NOTE: this will likely execute *after* `_showWindow()`
+    /// NOTE: this will likely execute *after* `_openWindow()`
     animationPipeline.submitInstantTask{ [self] in
-
-      viewportView.clipsToBounds = true
 
       /// Set `window.contentView`'s background to black so that the windows behind this one don't bleed through
       /// when `lockViewportToVideoSize` is disabled, or when in legacy full screen on a Macbook screen  with a
@@ -96,6 +94,8 @@ extension PlayerWindowController {
         contentView.addSubview(view)
       }
 
+      initViewportView()
+      initAlbumArtView()
       initSeekPreview(in: contentView)
       initTitleBar()
       initOSCToolbar()
@@ -107,7 +107,6 @@ extension PlayerWindowController {
       initPlaySliderAndTimeLabelsView()
       addSubviewsToPlaySliderAndTimeLabelsView(currentLayout.controlBarGeo)
       initVolumeView()
-      initAlbumArtView()
       playSlider.customCell.pwc = self
       volumeSliderCell.pwc = self
       playSlider.target = self
@@ -153,6 +152,49 @@ extension PlayerWindowController {
   }
 
   // MARK: - Building Components
+
+  private func initViewportView() {
+    viewportView.clipsToBounds = true
+
+    viewportView.addSubview(viewportLeadingSpacer, positioned: .below, relativeTo: defaultAlbumArtView)
+    viewportView.addSubview(viewportTrailingSpacer, positioned: .below, relativeTo: defaultAlbumArtView)
+    viewportLeadingSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
+    viewportTrailingSpacer.addConstraintsToFillSuperview(top: 0, trailing: 0)
+
+    viewportLeadingSpacer.heightAnchor.constraint(equalToConstant: 1).isActive = true
+    viewportTrailingSpacer.heightAnchor.constraint(equalToConstant: 1).isActive = true
+  }
+
+  private func initAlbumArtView() {
+    defaultAlbumArtView.idString = "DefaultAlbumArtView"
+    defaultAlbumArtView.wantsLayer = true
+    defaultAlbumArtView.layer?.contents = #imageLiteral(resourceName: "default-album-art")
+    defaultAlbumArtView.isHidden = true
+    viewportView.addSubview(defaultAlbumArtView)
+
+    defaultAlbumArtView.translatesAutoresizingMaskIntoConstraints = false
+
+    // Add 1:1 aspect ratio constraint
+    let aspectConstraint = defaultAlbumArtView.widthAnchor.constraint(equalTo: defaultAlbumArtView.heightAnchor, multiplier: 1)
+    aspectConstraint.priority = .defaultHigh
+    aspectConstraint.isActive = true
+    // Always fill superview
+    let widthGE = defaultAlbumArtView.widthAnchor.constraint(greaterThanOrEqualTo: viewportView.widthAnchor)
+    widthGE.priority = .defaultHigh
+    widthGE.isActive = true
+    let heightGE = defaultAlbumArtView.heightAnchor.constraint(greaterThanOrEqualTo: viewportView.heightAnchor)
+    heightGE.priority = .defaultHigh
+    heightGE.isActive = true
+    let widthEq = defaultAlbumArtView.widthAnchor.constraint(equalTo: viewportView.widthAnchor)
+    widthEq.priority = .defaultLow
+    widthEq.isActive = true
+    let heightEq = defaultAlbumArtView.heightAnchor.constraint(equalTo: viewportView.heightAnchor)
+    heightEq.priority = .defaultLow
+    heightEq.isActive = true
+    // Center in superview
+    defaultAlbumArtView.centerXAnchor.constraint(equalTo: viewportView.centerXAnchor).isActive = true
+    defaultAlbumArtView.centerYAnchor.constraint(equalTo: viewportView.centerYAnchor).isActive = true
+  }
 
   private func initSeekPreview(in contentView: NSView) {
     seekPreview.player = player
@@ -607,37 +649,6 @@ extension PlayerWindowController {
     volumeSlider.superview!.trailingAnchor.constraint(equalTo: volumeSlider.trailingAnchor).isActive = true
     volumeSlider.target = self
     volumeSlider.action = #selector(volumeSliderAction(_:))
-  }
-
-  private func initAlbumArtView() {
-    defaultAlbumArtView.idString = "DefaultAlbumArtView"
-    defaultAlbumArtView.wantsLayer = true
-    defaultAlbumArtView.layer?.contents = #imageLiteral(resourceName: "default-album-art")
-    defaultAlbumArtView.isHidden = true
-    viewportView.addSubview(defaultAlbumArtView)
-
-    defaultAlbumArtView.translatesAutoresizingMaskIntoConstraints = false
-
-    // Add 1:1 aspect ratio constraint
-    let aspectConstraint = defaultAlbumArtView.widthAnchor.constraint(equalTo: defaultAlbumArtView.heightAnchor, multiplier: 1)
-    aspectConstraint.priority = .defaultHigh
-    aspectConstraint.isActive = true
-    // Always fill superview
-    let widthGE = defaultAlbumArtView.widthAnchor.constraint(greaterThanOrEqualTo: viewportView.widthAnchor)
-    widthGE.priority = .defaultHigh
-    widthGE.isActive = true
-    let heightGE = defaultAlbumArtView.heightAnchor.constraint(greaterThanOrEqualTo: viewportView.heightAnchor)
-    heightGE.priority = .defaultHigh
-    heightGE.isActive = true
-    let widthEq = defaultAlbumArtView.widthAnchor.constraint(equalTo: viewportView.widthAnchor)
-    widthEq.priority = .defaultLow
-    widthEq.isActive = true
-    let heightEq = defaultAlbumArtView.heightAnchor.constraint(equalTo: viewportView.heightAnchor)
-    heightEq.priority = .defaultLow
-    heightEq.isActive = true
-    // Center in superview
-    defaultAlbumArtView.centerXAnchor.constraint(equalTo: viewportView.centerXAnchor).isActive = true
-    defaultAlbumArtView.centerYAnchor.constraint(equalTo: viewportView.centerYAnchor).isActive = true
   }
 
   func initAdditionalInfoView() {

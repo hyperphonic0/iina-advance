@@ -61,11 +61,13 @@ extension PlayerWindowController {
     if currentLayout.mode == .musicMode {
       CATransaction.setAnimationDuration(0)
     } else {
+//      CATransaction.setAnimationDuration(0)
       CATransaction.setAnimationDuration(CATransaction.animationDuration() * 0.25)
     }
     CATransaction.setDisableActions(true)
     defer {
       CATransaction.commit()
+      forceDraw()  // needed if scaling to get a clearer image
     }
 
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
