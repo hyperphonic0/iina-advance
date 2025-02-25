@@ -57,16 +57,7 @@ extension PlayerWindowController {
       }
     }
 
-    CATransaction.begin()
-    if currentLayout.mode == .musicMode {
-      CATransaction.setAnimationDuration(0)
-    } else {
-//      CATransaction.setAnimationDuration(0)
-      CATransaction.setAnimationDuration(CATransaction.animationDuration() * 0.25)
-    }
-    CATransaction.setDisableActions(true)
     defer {
-      CATransaction.commit()
       forceDraw()  // needed if scaling to get a clearer image
     }
 
@@ -121,7 +112,7 @@ extension PlayerWindowController {
       /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
       /// within the same animation transaction as the code below. But this solution seems to get us 99% there; the video
       /// only exhibits a small noticeable wobble for some limited cases ...
-      resizeWindowSubviews(using: newGeometry)
+      resizeWindowSubviews(using: newGeometry, updateVideoView: false)
       // fall through
 
     case .fullScreenNormal, .fullScreenInteractive:

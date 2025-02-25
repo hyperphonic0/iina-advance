@@ -155,12 +155,20 @@ extension PlayerWindowController {
 
   private func initViewportView() {
     viewportView.clipsToBounds = true
+    viewportView.translatesAutoresizingMaskIntoConstraints = false
+    viewportView.autoresizesSubviews = false
 
+    viewportView.addSubview(viewportTopSpacer, positioned: .below, relativeTo: defaultAlbumArtView)
+    viewportView.addSubview(viewportBottomSpacer, positioned: .below, relativeTo: defaultAlbumArtView)
     viewportView.addSubview(viewportLeadingSpacer, positioned: .below, relativeTo: defaultAlbumArtView)
     viewportView.addSubview(viewportTrailingSpacer, positioned: .below, relativeTo: defaultAlbumArtView)
+    viewportTopSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
+    viewportBottomSpacer.addConstraintsToFillSuperview(bottom: 0, trailing: 0)
     viewportLeadingSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
     viewportTrailingSpacer.addConstraintsToFillSuperview(top: 0, trailing: 0)
-
+    // Reduce the unused dimension of each spacer to 1pt to keep it well-definedt
+    viewportTopSpacer.widthAnchor.constraint(equalToConstant: 1).isActive = true
+    viewportBottomSpacer.widthAnchor.constraint(equalToConstant: 1).isActive = true
     viewportLeadingSpacer.heightAnchor.constraint(equalToConstant: 1).isActive = true
     viewportTrailingSpacer.heightAnchor.constraint(equalToConstant: 1).isActive = true
   }

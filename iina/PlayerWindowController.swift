@@ -555,6 +555,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   @IBOutlet weak var pipOverlayView: NSVisualEffectView!
   @IBOutlet weak var viewportView: ViewportView!
+  let viewportTopSpacer = SpacerView.buildNew(id: "ViewportTopSpacer")
+  let viewportBottomSpacer = SpacerView.buildNew(id: "ViewportBottomSpacer")
   let viewportLeadingSpacer = SpacerView.buildNew(id: "ViewportLeadingSpacer")
   let viewportTrailingSpacer = SpacerView.buildNew(id: "ViewportTrailingSpacer")
 
