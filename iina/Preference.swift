@@ -242,6 +242,9 @@ struct Preference {
     static let resizeWindowScheme = Key("resizeWindowScheme")
     static let resizeWindowTiming = Key("resizeWindowTiming")
     static let resizeWindowOption = Key("resizeWindowOption")
+    /// If `true` & `lockViewportToVideoSize==false` & there is extra space in viewport,
+    /// adjust center of VideoView as much as possible to avoid overlapping inside bars.
+    static let keepBarsAwayFromVideo = Key("keepBarsAwayFromVideo")
 
     // - Sidebars
 
@@ -1336,6 +1339,7 @@ struct Preference {
     .resizeWindowScheme: ResizeWindowScheme.simpleVideoSizeMultiple.rawValue,
     .resizeWindowTiming: ResizeWindowTiming.onlyWhenOpen.rawValue,
     .resizeWindowOption: ResizeWindowOption.videoSize10.rawValue,
+    .keepBarsAwayFromVideo: true,
     .showRemainingTime: false,
     .timeDisplayPrecision: 0,
     .touchbarShowRemainingTime: true,
