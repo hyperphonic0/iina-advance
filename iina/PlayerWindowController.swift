@@ -388,14 +388,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var viewportLeadingOffsetFromLeadingSidebarLeadingConstraint: NSLayoutConstraint!
   @IBOutlet weak var viewportLeadingOffsetFromLeadingSidebarTrailingConstraint: NSLayoutConstraint!
 
-  var viewportLeadingToLeadingSidebarCropTrailingConstraint: NSLayoutConstraint!
+  var viewportLeadingToLeadingSidebarClipTrailingConstraint: NSLayoutConstraint!
 
   // - Trailing sidebar constraints
   @IBOutlet weak var viewportTrailingOffsetFromContentViewTrailingConstraint: NSLayoutConstraint!
   @IBOutlet weak var viewportTrailingOffsetFromTrailingSidebarLeadingConstraint: NSLayoutConstraint!
   @IBOutlet weak var viewportTrailingOffsetFromTrailingSidebarTrailingConstraint: NSLayoutConstraint!
 
-  var viewportTrailingToTrailingSidebarCropLeadingConstraint: NSLayoutConstraint!
+  var viewportTrailingToTrailingSidebarClipLeadingConstraint: NSLayoutConstraint!
 
   /**
    OSD: shown here in "upper-left" configuration.

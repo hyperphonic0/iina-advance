@@ -480,14 +480,14 @@ extension PlayerWindowController {
     // - Remove old:
     for constraint in [viewportLeadingOffsetFromLeadingSidebarTrailingConstraint,
                        viewportLeadingOffsetFromLeadingSidebarLeadingConstraint,
-                       viewportLeadingToLeadingSidebarCropTrailingConstraint] {
+                       viewportLeadingToLeadingSidebarClipTrailingConstraint] {
       if let constraint = constraint {
         window.contentView?.removeConstraint(constraint)
       }
     }
 
     for subview in leadingSidebarView.subviews {
-      // remove cropView without keeping a reference to it
+      // remove clipView without keeping a reference to it
       if subview != leadingSidebarTrailingBorder {
         subview.removeFromSuperview()
       }
@@ -501,20 +501,21 @@ extension PlayerWindowController {
       tabContainerView = leadingSidebarView
     } else {
       assert(leadingSidebar.placement == .outsideViewport)
-      let cropView = NSView()
-      cropView.identifier = .init("leadingSidebarCropView")
-      leadingSidebarView.addSubview(cropView, positioned: .below, relativeTo: leadingSidebarTrailingBorder)
-      cropView.translatesAutoresizingMaskIntoConstraints = false
-      // Cling to superview for all sides but trailing:
-      cropView.leadingAnchor.constraint(equalTo: leadingSidebarView.leadingAnchor).isActive = true
-      cropView.topAnchor.constraint(equalTo: leadingSidebarView.topAnchor).isActive = true
-      cropView.bottomAnchor.constraint(equalTo: leadingSidebarView.bottomAnchor).isActive = true
-      tabContainerView = cropView
+      // To provide a smooth "slide" animation for the panel which moves into the viewport but doesn't spill out the other side
+      // (or end up forcing the window to enlarge!) it is easiest to use its superview as a clip view. We don't know which tab
+      // group view will be stored in the sidebar at this point and would rather not add complexity there, so just use a dedicated
+      // view for this purpose:
+      let clipView = NSView()
+      clipView.idString = "LeadingSidebarClipView"
+      leadingSidebarView.addSubview(clipView, positioned: .below, relativeTo: leadingSidebarTrailingBorder)
+      clipView.translatesAutoresizingMaskIntoConstraints = false
+      clipView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+      tabContainerView = clipView
 
-      // extra constraint for cropView:
-      viewportLeadingToLeadingSidebarCropTrailingConstraint = viewportView.leadingAnchor.constraint(
+      // extra constraint for clipView:
+      viewportLeadingToLeadingSidebarClipTrailingConstraint = viewportView.leadingAnchor.constraint(
         equalTo: leadingSidebarView.trailingAnchor, constant: 0)
-      viewportLeadingToLeadingSidebarCropTrailingConstraint.isActive = true
+      viewportLeadingToLeadingSidebarClipTrailingConstraint.isActive = true
     }
 
     let coefficients = getLeadingSidebarWidthCoefficients(visible: false, placement: leadingSidebar.placement, ΔWindowWidth: ΔWindowWidth)
@@ -539,14 +540,14 @@ extension PlayerWindowController {
     // - Remove old:
     for constraint in [viewportTrailingOffsetFromTrailingSidebarLeadingConstraint,
                        viewportTrailingOffsetFromTrailingSidebarTrailingConstraint,
-                       viewportTrailingToTrailingSidebarCropLeadingConstraint] {
+                       viewportTrailingToTrailingSidebarClipLeadingConstraint] {
       if let constraint = constraint {
         window.contentView?.removeConstraint(constraint)
       }
     }
 
     for subview in trailingSidebarView.subviews {
-      // remove cropView without keeping a reference to it
+      // remove clipView without keeping a reference to it
       if subview != trailingSidebarLeadingBorder {
         subview.removeFromSuperview()
       }
@@ -560,20 +561,20 @@ extension PlayerWindowController {
       tabContainerView = trailingSidebarView
     } else {
       assert(trailingSidebar.placement == .outsideViewport)
-      let cropView = NSView()
-      cropView.identifier = .init("trailingSidebarCropView")
-      trailingSidebarView.addSubview(cropView, positioned: .below, relativeTo: trailingSidebarLeadingBorder)
-      cropView.translatesAutoresizingMaskIntoConstraints = false
+      let clipView = NSView()
+      clipView.identifier = .init("trailingSidebarClipView")
+      trailingSidebarView.addSubview(clipView, positioned: .below, relativeTo: trailingSidebarLeadingBorder)
+      clipView.translatesAutoresizingMaskIntoConstraints = false
       // Cling to superview for all sides but leading:
-      cropView.trailingAnchor.constraint(equalTo: trailingSidebarView.trailingAnchor).isActive = true
-      cropView.topAnchor.constraint(equalTo: trailingSidebarView.topAnchor).isActive = true
-      cropView.bottomAnchor.constraint(equalTo: trailingSidebarView.bottomAnchor).isActive = true
-      tabContainerView = cropView
+      clipView.trailingAnchor.constraint(equalTo: trailingSidebarView.trailingAnchor).isActive = true
+      clipView.topAnchor.constraint(equalTo: trailingSidebarView.topAnchor).isActive = true
+      clipView.bottomAnchor.constraint(equalTo: trailingSidebarView.bottomAnchor).isActive = true
+      tabContainerView = clipView
 
-      // extra constraint for cropView:
-      viewportTrailingToTrailingSidebarCropLeadingConstraint = viewportView.trailingAnchor.constraint(
+      // extra constraint for clipView:
+      viewportTrailingToTrailingSidebarClipLeadingConstraint = viewportView.trailingAnchor.constraint(
         equalTo: trailingSidebarView.leadingAnchor, constant: 0)
-      viewportTrailingToTrailingSidebarCropLeadingConstraint.isActive = true
+      viewportTrailingToTrailingSidebarClipLeadingConstraint.isActive = true
     }
 
     let coefficients = getTrailingSidebarWidthCoefficients(visible: false, placement: trailingSidebar.placement, ΔWindowWidth: ΔWindowWidth)
