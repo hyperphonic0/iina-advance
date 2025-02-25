@@ -175,33 +175,25 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     let minPlaylistHeight = isPlaylistVisible ? Constants.Distance.MusicMode.minPlaylistHeight : 0
     let videoAspect = video.videoAspectCAR
 
-    var maxWidth: CGFloat
+    var maxWinWidth: CGFloat
+    var maxVideoHeight: CGFloat
     if isVideoVisible {
-      var maxVideoHeight = containerFrame.height - Constants.Distance.MusicMode.oscHeight - minPlaylistHeight
+      maxVideoHeight = containerFrame.height - Constants.Distance.MusicMode.oscHeight - minPlaylistHeight
       /// `maxVideoHeight` can be negative if very short screen! Fall back to height based on `MiniPlayerMinWidth` if needed
-      maxVideoHeight = max(maxVideoHeight, round(Constants.Distance.MusicMode.minWindowWidth / videoAspect))
-      maxWidth = round(maxVideoHeight * videoAspect)
+      maxVideoHeight = max(maxVideoHeight, (Constants.Distance.MusicMode.minWindowWidth / videoAspect).rounded())
+      maxWinWidth = round(maxVideoHeight * videoAspect)
     } else {
-      maxWidth = MiniPlayerViewController.maxWindowWidth
+      maxVideoHeight = 0
+      maxWinWidth = MiniPlayerViewController.maxWindowWidth
     }
-    maxWidth = min(maxWidth, containerFrame.width)
+    maxWinWidth = min(maxWinWidth, containerFrame.width)
 
     // Determine width first
-    let newWidth: CGFloat
     let requestedSize = windowFrame.size
-    if requestedSize.width < Constants.Distance.MusicMode.minWindowWidth {
-      // Clamp to min width
-      newWidth = Constants.Distance.MusicMode.minWindowWidth
-    } else if requestedSize.width > maxWidth {
-      // Clamp to max width
-      newWidth = maxWidth
-    } else {
-      // Requested size is valid
-      newWidth = requestedSize.width
-    }
+    let newWidth: CGFloat = requestedSize.width.clamped(to: Constants.Distance.MusicMode.minWindowWidth...maxWinWidth)
 
-    // Now determine height
-    let videoHeight = isVideoVisible ? round(newWidth / videoAspect) : 0
+    // Now determine height. Clamp again in case rounding goes outside of bounds
+    let videoHeight = (newWidth / videoAspect).rounded().clamped(to: 0...maxVideoHeight)
     let minWindowHeight = videoHeight + Constants.Distance.MusicMode.oscHeight + minPlaylistHeight
     // Make sure height is within acceptable values
     var newHeight = max(requestedSize.height, minWindowHeight)
