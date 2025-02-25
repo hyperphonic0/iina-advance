@@ -968,7 +968,7 @@ extension PlayerWindowController {
     let convertedGeo = geometry.toPWinGeometry()
 
     if setFrame {
-      player.window.setFrameImmediately(convertedGeo, notify: true)
+      player.window.setFrameImmediately(convertedGeo)
     } else {
       videoView.apply(convertedGeo)
     }

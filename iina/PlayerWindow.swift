@@ -59,7 +59,7 @@ class PlayerWindow: NSWindow {
 
     log.verbose{"[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)"}
     useZeroDurationForNextResize = true
-    setFrame(geometry.windowFrame, display: false, animate: notify)
+    setFrame(geometry.windowFrame, display: true, animate: notify)
     contentView?.needsDisplay = true  // set this or sometimes VideoView is not redrawn while paused
   }
 

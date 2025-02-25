@@ -1316,7 +1316,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
             return
           }
           log.verbose{"WndDidChangeScreenParams: calling setFrame with wf=\(newGeo.windowFrame) vidSize=\(newGeo.videoSize)"}
-          player.window.setFrameImmediately(newGeo, notify: false)
+          player.window.setFrameImmediately(newGeo)
         }
       })
     }

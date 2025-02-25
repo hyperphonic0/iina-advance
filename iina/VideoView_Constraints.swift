@@ -27,8 +27,8 @@ extension VideoView {
     translatesAutoresizingMaskIntoConstraints = false
     setContentCompressionResistancePriority(.required, for: .horizontal)
     setContentCompressionResistancePriority(.required, for: .vertical)
-    setContentHuggingPriority(.defaultLow, for: .horizontal)
-    setContentHuggingPriority(.defaultLow, for: .vertical)
+    setContentHuggingPriority(.required, for: .horizontal)
+    setContentHuggingPriority(.required, for: .vertical)
   }
 
   func removeVideoConstraints() {
