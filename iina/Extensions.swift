@@ -1967,8 +1967,10 @@ extension NSView {
     addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0, trailing: 0)
   }
 
-  func addConstraintsToFillSuperview(top: CGFloat? = nil, bottom: CGFloat? = nil,
-                                     leading: CGFloat? = nil, trailing: CGFloat? = nil) {
+  func addConstraintsToFillSuperview(top: CGFloat? = nil, _ topPriority: NSLayoutConstraint.Priority? = nil,
+                                     bottom: CGFloat? = nil, _ btmPriority: NSLayoutConstraint.Priority? = nil,
+                                     leading: CGFloat? = nil, _ leadPriority: NSLayoutConstraint.Priority? = nil,
+                                     trailing: CGFloat? = nil, _ trailPriority: NSLayoutConstraint.Priority? = nil) {
     guard let superview else { return }
     assert(!(top == nil && bottom == nil && leading == nil && trailing == nil),
            "addConstraintsToFillSuperview should never be called with no args! Try addAllConstraintsToFillSuperview instead")
@@ -1986,12 +1988,18 @@ extension NSView {
       if let idPrefix {
         topConstraint.identifier = "\(idPrefix)_Top-Offset"
       }
+      if let topPriority {
+        topConstraint.priority = topPriority
+      }
       topConstraint.isActive = true
     }
     if let leading = leading {
       let leadingConstraint = leadingAnchor.constraint(equalTo: superview.leadingAnchor, constant: leading)
       if let idPrefix {
         leadingConstraint.identifier = "\(idPrefix)_Lead-Offset"
+      }
+      if let leadPriority {
+        leadingConstraint.priority = leadPriority
       }
       leadingConstraint.isActive = true
     }
@@ -2000,12 +2008,18 @@ extension NSView {
       if let idPrefix {
         trailingConstraint.identifier = "\(idPrefix)_Trail-Offset"
       }
+      if let trailPriority {
+        trailingConstraint.priority = trailPriority
+      }
       trailingConstraint.isActive = true
     }
     if let bottom = bottom {
       let bottomConstraint = superview.bottomAnchor.constraint(equalTo: bottomAnchor, constant: bottom)
       if let idPrefix {
         bottomConstraint.identifier = "\(idPrefix)_Btm-Offset"
+      }
+      if let btmPriority {
+        bottomConstraint.priority = btmPriority
       }
       bottomConstraint.isActive = true
     }

@@ -115,6 +115,7 @@ extension PlayerWindowController {
 
       bufferIndicatorView.roundCorners()
       initAdditionalInfoView()
+      initCustomWindowBorder(in: contentView)
       osdVisualEffectView.roundCorners()
 
       log.verbose{"Configuring for CoreAnimation: window"}
@@ -658,6 +659,35 @@ extension PlayerWindowController {
     additionalInfoTitle.idString = "AdditionalInfo-TitleLabel"
     additionalInfoTitle.font = .systemFont(ofSize: 18)
     additionalInfoTitle.textColor = .labelColor
+  }
 
+  func initCustomWindowBorder(in contentView: NSView) {
+    customWindowBorderBox.idString = "CustomWindowBorderBox"
+    customWindowBorderBox.boxType = .custom
+    customWindowBorderBox.titlePosition = .noTitle
+    customWindowBorderBox.borderWidth = 1
+    customWindowBorderBox.cornerRadius = 0
+    customWindowBorderBox.borderColor = .customWindowBorder
+    contentView.addSubview(customWindowBorderBox, positioned: .below, relativeTo: topBarView)
+    customWindowBorderBox.translatesAutoresizingMaskIntoConstraints = false
+    // Deviate from the native look slightly by reducing trailing & bottom by 0.5pt. Just looks too distracting otherwise
+    customWindowBorderBox.addConstraintsToFillSuperview(top: 0, .init(900), bottom: -0.5, .init(900),
+                                                        leading: 0, .required, trailing: -0.5, .required)
+
+    customWindowBorderTopHighlightBox.idString = "CustomWindowBorderTopHighlightBox"
+    customWindowBorderTopHighlightBox.boxType = .custom
+    customWindowBorderTopHighlightBox.titlePosition = .noTitle
+    customWindowBorderTopHighlightBox.borderWidth = 0.5
+    customWindowBorderTopHighlightBox.cornerRadius = 0
+    customWindowBorderTopHighlightBox.borderColor = .customWindowBorderHighlight
+    contentView.addSubview(customWindowBorderTopHighlightBox, positioned: .above, relativeTo: customWindowBorderBox)
+    customWindowBorderTopHighlightBox.translatesAutoresizingMaskIntoConstraints = false
+    // No highlight at all on the bottom & trailing: hide those sides outside superview bounds
+    customWindowBorderTopHighlightBox.addConstraintsToFillSuperview(bottom: -1.0, trailing: -1.0)
+    let hlBoxTop = customWindowBorderTopHighlightBox.topAnchor.constraint(equalTo: customWindowBorderBox.topAnchor, constant: 0)
+    hlBoxTop.priority = .init(900)
+    hlBoxTop.isActive = true
+    let hlBoxLeading = customWindowBorderTopHighlightBox.leadingAnchor.constraint(equalTo: customWindowBorderBox.leadingAnchor, constant: 0)
+    hlBoxLeading.isActive = true
   }
 }

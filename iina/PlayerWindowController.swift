@@ -440,8 +440,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // - Outlets: Views
 
-  @IBOutlet weak var customWindowBorderBox: NSBox!
-  @IBOutlet weak var customWindowBorderTopHighlightBox: NSBox!
+  let customWindowBorderBox = CustomWindowBorderBox()
+  let customWindowBorderTopHighlightBox = CustomWindowBorderBox()
 
   // MiniPlayer buttons:
   @IBOutlet weak var closeButtonView: NSView!
