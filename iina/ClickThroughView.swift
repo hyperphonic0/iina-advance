@@ -9,19 +9,14 @@
 import Foundation
  
 class ClickThroughView: NSView {
-  override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-    return Preference.bool(for: .videoViewAcceptsFirstMouse)
-  }
+  // Just return true always. May have a SymButton underneath.
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
 class ClickThroughStackView: NSStackView {
-  override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-    return Preference.bool(for: .videoViewAcceptsFirstMouse)
-  }
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
 class ClickThroughTextField: NSTextField {
-  override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-    return Preference.bool(for: .videoViewAcceptsFirstMouse)
-  }
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
