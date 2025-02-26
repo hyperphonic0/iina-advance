@@ -713,14 +713,10 @@ extension PlayerWindowController {
     if outputLayout.hasControlBar {
       // Has OSC, or music mode
       let oscGeo = outputLayout.controlBarGeo
-      playSliderHeightConstraint.animateToConstant(oscGeo.playSliderHeight)
 
       // Update arrow buttons layout (but not width: that will be animated in the next step)
-      leftArrowButton.replaceSymbolImage(with: oscGeo.leftArrowImage, effect: .offUp)
-      rightArrowButton.replaceSymbolImage(with: oscGeo.rightArrowImage, effect: .offUp)
-      fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
-      leftArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.leftArrowCenterXOffset)
-      rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
+      leftArrowButton.replaceSymbolImage(with: oscGeo.leftArrowImage)
+      rightArrowButton.replaceSymbolImage(with: oscGeo.rightArrowImage)
 
       rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 
@@ -902,6 +898,8 @@ extension PlayerWindowController {
     if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
       let oscGeo = outputLayout.controlBarGeo
+
+      playSliderHeightConstraint.animateToConstant(oscGeo.playSliderHeight)
 
       volumeIconHeightConstraint.animateToConstant(oscGeo.volumeIconHeight)
       volumeSliderWidthConstraint.animateToConstant(oscGeo.volumeSliderWidth)

@@ -401,19 +401,18 @@ extension PlayerWindowController {
     playButton.target = self
     playButton.action = #selector(playButtonAction(_:))
     playButton.refusesFirstResponder = true
-    playButton.identifier = .init("PlayBtn")  // helps with debug logging
+    playButton.idString = "PlayBtn"  // helps with debug logging
     playButton.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
     playButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
     let playIconSize = oscGeo.playIconSize
     playBtnWidthConstraint = playButton.widthAnchor.constraint(equalToConstant: playIconSize)
-    playBtnWidthConstraint.identifier = .init("PlayBtnWidthConstraint")
-    playBtnWidthConstraint.priority = .init(850)  // allow to shrink for animations or speedLabel
+    playBtnWidthConstraint.identifier = "PlayBtn-WidthConstraint"
     playBtnWidthConstraint.isActive = true
     let playAspectConstraint = playButton.widthAnchor.constraint(equalTo: playButton.heightAnchor)
     playAspectConstraint.isActive = true
 
     let playBtnSpeedVStackView = ClickThroughStackView()
-    playBtnSpeedVStackView.identifier = .init("PlayBtnSpeedVStackView")
+    playBtnSpeedVStackView.idString = "PlayBtn-Speed-VStackView"
     playBtnSpeedVStackView.detachesHiddenViews = true
     playBtnSpeedVStackView.orientation = .vertical
     playBtnSpeedVStackView.alignment = .centerX
@@ -458,11 +457,9 @@ extension PlayerWindowController {
     // (their images will be limited by the width constraint & will stop scaling before this)
     let leftArrowHeightConstraint = leftArrowButton.heightAnchor.constraint(equalTo: fragPlaybackBtnsView.heightAnchor)
     leftArrowHeightConstraint.identifier = .init("leftArrow-HeightConstraint")
-    leftArrowHeightConstraint.priority = .defaultHigh
     leftArrowHeightConstraint.isActive = true
     let rightArrowHeightConstraint = rightArrowButton.heightAnchor.constraint(equalTo: fragPlaybackBtnsView.heightAnchor)
     rightArrowHeightConstraint.identifier = .init("rightArrow-HeightConstraint")
-    rightArrowHeightConstraint.priority = .defaultHigh
     rightArrowHeightConstraint.isActive = true
 
     // Video controllers and timeline indicators should not flip in a right-to-left language.
@@ -623,7 +620,6 @@ extension PlayerWindowController {
     muteButton.addConstraintsToFillSuperview(leading: 0)
     muteButton.centerYAnchor.constraint(equalTo: fragVolumeView.centerYAnchor).isActive = true
     volumeIconHeightConstraint = muteButton.heightAnchor.constraint(equalToConstant: oscGeo.volumeIconHeight)
-    volumeIconHeightConstraint.priority = .init(900)
     volumeIconHeightConstraint.isActive = true
     volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volImage.aspect)
     volumeIconAspectConstraint.isActive = true
