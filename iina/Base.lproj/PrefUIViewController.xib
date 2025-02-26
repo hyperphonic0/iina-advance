@@ -14,6 +14,7 @@
                 <outlet property="cropPresetsTokenField" destination="hg9-M3-Cff" id="6pU-e7-Aco"/>
                 <outlet property="currentThumbCacheSizeTextField" destination="a7V-Fh-RgC" id="QhQ-K6-m2C"/>
                 <outlet property="hideFadeableViewsOutsideWindowCheckBox" destination="kw0-f3-qrz" id="gFU-Zd-LEb"/>
+                <outlet property="keepVideoAwayFromBarsCheckBox" destination="Tue-oY-6da" id="62h-h9-O8h"/>
                 <outlet property="leftSidebarClickToCloseButton" destination="ogu-q9-cqE" id="GzV-MN-iTl"/>
                 <outlet property="leftSidebarLabel" destination="eh8-tf-wHU" id="125-il-GtB"/>
                 <outlet property="leftSidebarPlacement" destination="KIu-aG-mHw" id="hOM-59-8dV"/>
@@ -1281,10 +1282,10 @@ For smoothest results, also enable custom full screen.</string>
             <point key="canvasLocation" x="5" y="-1380"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="all">
-            <rect key="frame" x="0.0" y="0.0" width="692" height="1058"/>
+            <rect key="frame" x="0.0" y="0.0" width="692" height="1075"/>
             <subviews>
                 <textField identifier="SectionTitleOSC" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4XH-GU-VhV">
-                    <rect key="frame" x="-2" y="1018" width="124" height="32"/>
+                    <rect key="frame" x="-2" y="1035" width="124" height="32"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Title Bar &amp; Controller:" id="g06-Ja-Ot8">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1292,10 +1293,10 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <stackView clipsToBounds="YES" distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4SE-r9-OnD" userLabel="Bars-&amp;-OSC Vertical Stack View">
-                    <rect key="frame" x="120" y="108" width="564" height="942"/>
+                    <rect key="frame" x="120" y="132" width="564" height="935"/>
                     <subviews>
                         <customView clipsToBounds="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HbB-K7-G5g" userLabel="Player-Window-Preview-Container View">
-                            <rect key="frame" x="0.0" y="711" width="564" height="231"/>
+                            <rect key="frame" x="0.0" y="704" width="564" height="231"/>
                             <subviews>
                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="2IQ-cb-xFe" userLabel="Player-Window-Preview-Border View">
                                     <rect key="frame" x="0.0" y="6" width="564" height="225"/>
@@ -1325,10 +1326,10 @@ For smoothest results, also enable custom full screen.</string>
                             </constraints>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="499" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="SbE-ox-wl1" userLabel="Top-Bar-Placement HStack View">
-                            <rect key="frame" x="0.0" y="681" width="453" height="22"/>
+                            <rect key="frame" x="0.0" y="676" width="453" height="20"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="BTX-tO-uhL">
-                                    <rect key="frame" x="-2" y="3" width="287" height="16"/>
+                                    <rect key="frame" x="-2" y="1" width="287" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Top bar placement vs. video:" id="EvR-Ml-f7d">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1363,10 +1364,10 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                         </stackView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="499" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EaM-oZ-jJO" userLabel="Show-Top-Bar-Trigger HStack View">
-                            <rect key="frame" x="0.0" y="650" width="450" height="23"/>
+                            <rect key="frame" x="0.0" y="648" width="450" height="20"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="KXy-D0-Irg">
-                                    <rect key="frame" x="-2" y="3" width="238" height="17"/>
+                                    <rect key="frame" x="-2" y="1" width="238" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Show top bar when:" id="RVj-MO-iHC">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1404,7 +1405,7 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                         </stackView>
                         <customView horizontalHuggingPriority="251" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="mJq-OS-xid" userLabel="OSC-Enablement-Container View">
-                            <rect key="frame" x="0.0" y="607" width="129" height="35"/>
+                            <rect key="frame" x="0.0" y="605" width="129" height="35"/>
                             <subviews>
                                 <button horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bVg-yv-fOx">
                                     <rect key="frame" x="-2" y="2" width="131" height="18"/>
@@ -1423,7 +1424,7 @@ For smoothest results, also enable custom full screen.</string>
                             </constraints>
                         </customView>
                         <customView horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="zoh-W5-eqa" userLabel="Snap-to-center-Container View">
-                            <rect key="frame" x="0.0" y="579" width="450" height="20"/>
+                            <rect key="frame" x="0.0" y="577" width="450" height="20"/>
                             <subviews>
                                 <button horizontalHuggingPriority="251" verticalHuggingPriority="252" translatesAutoresizingMaskIntoConstraints="NO" id="nDu-Yq-tPI">
                                     <rect key="frame" x="241" y="1" width="209" height="18"/>
@@ -1447,10 +1448,10 @@ For smoothest results, also enable custom full screen.</string>
                             </constraints>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="499" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="PrI-KL-aZn" userLabel="Bottom-OSC-Placement HStack View">
-                            <rect key="frame" x="20" y="549" width="433" height="22"/>
+                            <rect key="frame" x="20" y="549" width="433" height="20"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Xua-UF-KwL">
-                                    <rect key="frame" x="-2" y="3" width="267" height="16"/>
+                                    <rect key="frame" x="-2" y="2" width="267" height="16"/>
                                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="right" title="Bottom bar placement vs. video:" id="FAb-aX-CEz">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1458,7 +1459,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <segmentedControl horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="oZp-7o-wcg" userLabel="Bottom-Bar-Placement Segmented Control">
-                                    <rect key="frame" x="269" y="0.0" width="163" height="22"/>
+                                    <rect key="frame" x="269" y="-1" width="163" height="22"/>
                                     <constraints>
                                         <constraint firstAttribute="height" constant="20" id="MhS-sF-CxK"/>
                                     </constraints>
@@ -2224,7 +2225,7 @@ For smoothest results, also enable custom full screen.</string>
                     </customSpacing>
                 </stackView>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jbc-22-59W">
-                    <rect key="frame" x="426" y="718" width="57" height="16"/>
+                    <rect key="frame" x="426" y="740" width="57" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Position:" id="l54-63-V6n">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2239,7 +2240,7 @@ For smoothest results, also enable custom full screen.</string>
                     </connections>
                 </textField>
                 <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="GbG-nw-ict" userLabel="Controller-Position Popup">
-                    <rect key="frame" x="486" y="711" width="88" height="25"/>
+                    <rect key="frame" x="486" y="733" width="88" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="Top" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="se2-DE-pJk" id="XRT-QK-HPy" userLabel="Controller-Position Popup Button Cell">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="message"/>
@@ -2266,7 +2267,7 @@ For smoothest results, also enable custom full screen.</string>
                     </connections>
                 </popUpButton>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6ml-Xj-nVX">
-                    <rect key="frame" x="118" y="76" width="100" height="16"/>
+                    <rect key="frame" x="118" y="100" width="100" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="&quot;Inside&quot; panels:" id="SBZ-A7-Btg">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2274,22 +2275,25 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <box title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="0eU-xI-byi" userLabel="Hide-Inside-Video-Controls Box">
-                    <rect key="frame" x="117" y="4" width="456" height="70"/>
+                    <rect key="frame" x="117" y="4" width="456" height="94"/>
                     <view key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="s79-ch-C1D" userLabel="Hide-Inside-Video-Controls Box View">
-                        <rect key="frame" x="4" y="5" width="254" height="62"/>
+                        <rect key="frame" x="4" y="5" width="336" height="86"/>
                         <subviews>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IvI-R5-Sdu">
-                                <rect key="frame" x="14" y="34" width="120" height="18"/>
+                                <rect key="frame" x="14" y="58" width="120" height="18"/>
                                 <buttonCell key="cell" type="check" title="Auto hide after:" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="XOh-46-9Jf">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="16" id="qmX-w1-x8H"/>
+                                </constraints>
                                 <connections>
                                     <binding destination="lH7-Vv-0M1" name="value" keyPath="values.enableControlBarAutoHide" id="2eJ-Jp-ybW"/>
                                 </connections>
                             </button>
                             <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Abq-vA-BcZ" userLabel="Overlay-Auto-Hide-Timeout Text Field">
-                                <rect key="frame" x="142" y="32" width="58" height="21"/>
+                                <rect key="frame" x="142" y="56" width="58" height="21"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="58" id="asW-La-UC2"/>
                                 </constraints>
@@ -2310,7 +2314,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </connections>
                             </textField>
                             <textField identifier="AccessoryLabelOSCAutoHide" focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hkU-0W-pJb">
-                                <rect key="frame" x="202" y="35" width="11" height="16"/>
+                                <rect key="frame" x="202" y="59" width="11" height="16"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="s" id="S8H-Xr-uVa">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2318,7 +2322,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </textFieldCell>
                             </textField>
                             <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="kw0-f3-qrz">
-                                <rect key="frame" x="14" y="10" width="224" height="18"/>
+                                <rect key="frame" x="14" y="34" width="306" height="18"/>
                                 <buttonCell key="cell" type="check" title="Hide when cursor leaves window" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ZJL-Jz-cNh">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -2327,14 +2331,28 @@ For smoothest results, also enable custom full screen.</string>
                                     <binding destination="lH7-Vv-0M1" name="value" keyPath="values.hideFadeableViewsWhenOutsideWindow" id="OJW-sz-ckL"/>
                                 </connections>
                             </button>
+                            <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="Tue-oY-6da">
+                                <rect key="frame" x="14" y="10" width="322" height="18"/>
+                                <buttonCell key="cell" type="check" title="Move video into empty space (as available) to reduce overlap" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="nLH-m0-W5I">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <connections>
+                                    <binding destination="lH7-Vv-0M1" name="value" keyPath="values.keepVideoAwayFromBars" id="65y-Jw-wrp"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <constraints>
                             <constraint firstItem="Abq-vA-BcZ" firstAttribute="leading" secondItem="IvI-R5-Sdu" secondAttribute="trailing" constant="8" id="3ea-pt-pfw"/>
+                            <constraint firstItem="kw0-f3-qrz" firstAttribute="leading" secondItem="Tue-oY-6da" secondAttribute="leading" id="9Dv-6E-JWM"/>
                             <constraint firstItem="kw0-f3-qrz" firstAttribute="height" secondItem="IvI-R5-Sdu" secondAttribute="height" id="9Eq-V1-Rqz"/>
                             <constraint firstItem="hkU-0W-pJb" firstAttribute="leading" secondItem="Abq-vA-BcZ" secondAttribute="trailing" constant="4" id="9a6-YX-T9W"/>
                             <constraint firstAttribute="trailing" secondItem="kw0-f3-qrz" secondAttribute="trailing" constant="16" id="Bgc-hx-O3t"/>
-                            <constraint firstAttribute="bottom" secondItem="kw0-f3-qrz" secondAttribute="bottom" constant="11" id="CP9-jT-pKn"/>
+                            <constraint firstItem="Tue-oY-6da" firstAttribute="top" secondItem="kw0-f3-qrz" secondAttribute="bottom" constant="8" id="CP9-jT-pKn"/>
+                            <constraint firstItem="Tue-oY-6da" firstAttribute="height" secondItem="kw0-f3-qrz" secondAttribute="height" id="IZN-MJ-spz"/>
+                            <constraint firstAttribute="bottom" secondItem="Tue-oY-6da" secondAttribute="bottom" constant="11" id="Tc4-Ue-0pH"/>
                             <constraint firstItem="kw0-f3-qrz" firstAttribute="top" secondItem="IvI-R5-Sdu" secondAttribute="bottom" constant="8" id="UGn-Sw-1Fb"/>
+                            <constraint firstAttribute="trailing" secondItem="Tue-oY-6da" secondAttribute="trailing" id="Ukd-Yx-LYl"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="hkU-0W-pJb" secondAttribute="trailing" constant="16" id="VcD-tU-gvU"/>
                             <constraint firstItem="Abq-vA-BcZ" firstAttribute="firstBaseline" secondItem="IvI-R5-Sdu" secondAttribute="firstBaseline" id="bJQ-Iy-TuK"/>
                             <constraint firstItem="hkU-0W-pJb" firstAttribute="firstBaseline" secondItem="IvI-R5-Sdu" secondAttribute="firstBaseline" id="fRJ-I6-0c2"/>
@@ -2344,9 +2362,9 @@ For smoothest results, also enable custom full screen.</string>
                         </constraints>
                     </view>
                     <constraints>
-                        <constraint firstAttribute="bottom" secondItem="kw0-f3-qrz" secondAttribute="bottom" constant="12" id="IpC-wb-rzy"/>
                         <constraint firstItem="IvI-R5-Sdu" firstAttribute="leading" secondItem="0eU-xI-byi" secondAttribute="leading" constant="17" id="NTV-pY-ILC"/>
                         <constraint firstItem="IvI-R5-Sdu" firstAttribute="top" secondItem="0eU-xI-byi" secondAttribute="top" constant="12" id="X8R-Tc-1Cg"/>
+                        <constraint firstAttribute="bottom" secondItem="Tue-oY-6da" secondAttribute="bottom" constant="12" id="pq7-Wg-NZv"/>
                     </constraints>
                 </box>
             </subviews>

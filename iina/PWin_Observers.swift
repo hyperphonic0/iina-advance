@@ -72,6 +72,7 @@ extension PlayerWindowController {
       .displayTimeAndBatteryInFullScreen,
       .alwaysShowOnTopIcon,
       .alwaysFloatOnTop,
+      .keepVideoAwayFromBars,
       .leadingSidebarPlacement,
       .trailingSidebarPlacement,
       .settingsTabGroupLocation,
@@ -241,6 +242,7 @@ extension PlayerWindowController {
         .arrowButtonAction,
         .showRemainingTime,
         .oscTimeLabelsAlwaysWrapSlider,
+        .keepVideoAwayFromBars,
       // These need calls to regenerate BarFactory:
         .roundSliderBarRects,
         .sliderBarDoneColor:

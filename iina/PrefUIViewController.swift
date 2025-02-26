@@ -91,9 +91,12 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var toolbarIconDimensionsHStackView: NSStackView!
   @IBOutlet weak var oscToolbarStackView: NSStackView!
   @IBOutlet weak var oscToolbarPreviewBox: NSBox!
+
   @IBOutlet weak var autoHideAfterCheckBox: NSButton!
   @IBOutlet weak var oscAutoHideTimeoutTextField: NSTextField!
   @IBOutlet weak var hideFadeableViewsOutsideWindowCheckBox: NSButton!
+  @IBOutlet weak var keepVideoAwayFromBarsCheckBox: NSButton!
+
   @IBOutlet weak var oscColorSchemeHStackView: NSStackView!
   @IBOutlet weak var oscForceSingleRowContainerView: NSStackView!
 
@@ -216,6 +219,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       .playlistTabGroupLocation,
       .pluginsTabGroupLocation,
       .controlBarToolbarButtons,
+      .lockViewportToVideoSize,
       .oscBarHeight,
       .oscBarPlayIconSizeTicks,
       .oscBarPlayIconSpacingTicks,
@@ -258,6 +262,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       PK.controlBarToolbarButtons,
       PK.oscForceSingleRow,
       PK.oscColorScheme,
+      PK.lockViewportToVideoSize,
       PK.oscBarPlayIconSizeTicks,
       PK.oscBarPlayIconSpacingTicks,
       PK.oscBarToolIconSizeTicks,
@@ -429,6 +434,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     autoHideAfterCheckBox.isEnabled = hasOverlay
     oscAutoHideTimeoutTextField.isEnabled = hasOverlay
     hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
+    keepVideoAwayFromBarsCheckBox.isEnabled = hasOverlay && !Preference.bool(for: .lockViewportToVideoSize)
     windowPreviewImageView.image = ib.buildPWinPreviewImage()
     // Update if invalid value was entered in text field:
     oscBarHeightTextField.integerValue = Int(newGeo.barHeight)
