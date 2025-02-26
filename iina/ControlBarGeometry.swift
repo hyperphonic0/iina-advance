@@ -138,9 +138,8 @@ struct ControlBarGeometry {
       // First establish bar height
       let desiredBarHeight = desiredBarHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
       barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
-
-      if !forceSingleRowStyle && ControlBarGeometry.qualifiesForMultiLineOSC(barHeight: barHeight, oscPosition, mode) {
-        // Is 2-row OSC
+      let isTwoRowOSC = !forceSingleRowStyle && ControlBarGeometry.qualifiesForMultiLineOSC(barHeight: barHeight, oscPosition, mode)
+      if isTwoRowOSC {
         let playSliderHeight: CGFloat
         if Constants.twoRowOSC_LimitPlaySliderHeight {
           // Cap PlaySlider height at 2x its minimum
@@ -169,10 +168,14 @@ struct ControlBarGeometry {
 
       } else {
         // Two-row configuration (qualifying for 2-row! May actually be single-row)
-        let iconSize = ControlBarGeometry.iconSize(fromTicks: iconSizeTicksMax - 1, fullHeight: fullIconHeight)
+        let iconSizeTicks = isTwoRowOSC ? iconSizeTicksMax - 1 : iconSizeTicksMax - 2
+        let toolIconSpacingTicks = spacingTicksMax + 1
+        let playIconSpacingTicks = isTwoRowOSC ? spacingTicksMax : spacingTicksMax - 1
+
+        let iconSize = ControlBarGeometry.iconSize(fromTicks: iconSizeTicks, fullHeight: fullIconHeight)
         self.playIconSize = iconSize
         self.toolIconSize = iconSize
-        self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: spacingTicksMax + 1, fullHeight: fullIconHeight)
+        self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks, fullHeight: fullIconHeight)
         self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: spacingTicksMax, fullHeight: fullIconHeight)
       }
     }

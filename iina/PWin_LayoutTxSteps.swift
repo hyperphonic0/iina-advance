@@ -714,7 +714,14 @@ extension PlayerWindowController {
       // Has OSC, or music mode
       let oscGeo = outputLayout.controlBarGeo
       playSliderHeightConstraint.animateToConstant(oscGeo.playSliderHeight)
-      updateArrowButtons(oscGeo: oscGeo)
+
+      // Update arrow buttons layout (but not width: that will be animated in the next step)
+      leftArrowButton.replaceSymbolImage(with: oscGeo.leftArrowImage, effect: .offUp)
+      rightArrowButton.replaceSymbolImage(with: oscGeo.rightArrowImage, effect: .offUp)
+      fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
+      leftArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.leftArrowCenterXOffset)
+      rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
+
       rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 
       let hideArrowBtns = oscGeo.arrowIconWidth == 0
@@ -1473,15 +1480,6 @@ extension PlayerWindowController {
   }
 
   // MARK: - Controller content layout
-
-  private func updateArrowButtons(oscGeo: ControlBarGeometry) {
-    leftArrowButton.replaceSymbolImage(with: oscGeo.leftArrowImage, effect: .offUp)
-    rightArrowButton.replaceSymbolImage(with: oscGeo.rightArrowImage, effect: .offUp)
-    arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
-    fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
-    leftArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.leftArrowCenterXOffset)
-    rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
-  }
 
   func updateSpeedLabelFont(for transition: LayoutTransition) {
     let oscGeo = transition.outputLayout.controlBarGeo
