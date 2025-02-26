@@ -119,7 +119,11 @@ class TwoRowBarOSCView: ClickThroughView {
 
     viewsForHStack.append(centralSpacerView)
     viewsForHStack.append(pwc.fragVolumeView)
-    viewsForHStack.append(pwc.fragToolbarView)
+    // Exclude toolbar if it has no items. Otherwise it will still be padded on both sides & will look bad
+    let hasToolbar = !pwc.fragToolbarView.subviews.isEmpty
+    if hasToolbar {
+      viewsForHStack.append(pwc.fragToolbarView)
+    }
 
     // - [Re-]add views to hStack
 
@@ -131,7 +135,9 @@ class TwoRowBarOSCView: ClickThroughView {
 
     // - Set visibility priorities
 
-    hStackView.setVisibilityPriority(.detachEarlier, for: pwc.fragToolbarView)
+    if hasToolbar {
+      hStackView.setVisibilityPriority(.detachEarlier, for: pwc.fragToolbarView)
+    }
 
     hStackView.setVisibilityPriority(.detachEarly, for: pwc.fragVolumeView)
 

@@ -41,7 +41,13 @@ class SingleRowBarOSCView: ClickThroughStackView {
 
     pwc.addSubviewsToPlaySliderAndTimeLabelsView(oscGeo)
     
-    let newViews: [NSView] = [pwc.fragPlaybackBtnsView, pwc.playSliderAndTimeLabelsView, pwc.fragVolumeView, pwc.fragToolbarView]
+    var newViews: [NSView] = [pwc.fragPlaybackBtnsView, pwc.playSliderAndTimeLabelsView, pwc.fragVolumeView]
+
+    // Exclude toolbar if it has no items. Otherwise it will still be padded on both sides & will look bad
+    let hasToolbar = !pwc.fragToolbarView.subviews.isEmpty
+    if hasToolbar {
+      newViews.append(pwc.fragToolbarView)
+    }
     setViews(newViews, in: .leading)
     // Seems to help restore views which have been detached from other stack views before being added here
     for view in newViews {
@@ -51,7 +57,10 @@ class SingleRowBarOSCView: ClickThroughStackView {
     setVisibilityPriority(.mustHold, for: pwc.fragPlaybackBtnsView)
     setVisibilityPriority(.detachLessEarly, for: pwc.playSliderAndTimeLabelsView)
     setVisibilityPriority(.detachEarly, for: pwc.fragVolumeView)
-    setVisibilityPriority(.detachEarlier, for: pwc.fragToolbarView)
+    if hasToolbar {
+      setVisibilityPriority(.detachEarlier, for: pwc.fragToolbarView)
+    }
+    edgeInsets = .init(top: 0, left: 0, bottom: 0, right: hasToolbar ? 0 : oscGeo.trailingSpace_Row1)
   }
 
 }

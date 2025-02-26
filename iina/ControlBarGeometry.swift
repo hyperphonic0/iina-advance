@@ -360,7 +360,7 @@ struct ControlBarGeometry {
 
   /// Row 1: Play slider + maybe time labels
   var leadingSpace_Row1: CGFloat {
-    let space = (sliderScale * 8 - 4).rounded()
+    let space = (sliderScale * 8 - 6).rounded()
     return space
   }
 
@@ -370,7 +370,7 @@ struct ControlBarGeometry {
 
   /// Row 2: Playback controls, volume, toolbar
   var leadingSpace_Row2: CGFloat {
-    return (sliderScale * 8 - 4).rounded()
+    return (sliderScale * 8 - 6).rounded()
   }
 
   var trailingSpace_Row2: CGFloat {
