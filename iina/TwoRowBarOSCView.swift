@@ -9,7 +9,7 @@
 class TwoRowBarOSCView: ClickThroughView {
   static let id = "OSC_2RowView"
   let hStackView = ClickThroughStackView()
-  let centralSpacerView = SpacerView.buildNew(id: "\(TwoRowBarOSCView.id)-CentralSpacer")
+  let centralSpacerView = SpacerView(id: "\(TwoRowBarOSCView.id)-CentralSpacer")
   var hStackView_HeightConstraint: NSLayoutConstraint!
   /// This subtracts from the height of the icons, but is needed to balance out the space above
   var hStackView_BottomMarginConstraint: NSLayoutConstraint!

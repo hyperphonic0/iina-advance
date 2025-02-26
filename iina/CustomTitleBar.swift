@@ -226,16 +226,6 @@ class CustomTitleBarViewController: NSViewController {
     trailTitleConEQ.isActive = true
   }
 
-  private func makeSpacerView() -> NSView {
-    let spacer = NSView()
-    spacer.translatesAutoresizingMaskIntoConstraints = false
-    spacer.setContentHuggingPriority(.minimum, for: .horizontal)
-    spacer.setContentHuggingPriority(.minimum, for: .vertical)
-    spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-    spacer.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
-    return spacer
-  }
-
   // Add to [different] superview
   func addViewTo(superview: NSView) {
     superview.addSubview(view)
