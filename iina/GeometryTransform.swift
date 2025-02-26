@@ -84,6 +84,30 @@ struct GeometryTransform {
       }
     }
 
+    // Returns (propertyValue, isError)
+    private func getWithRetries(_ mpvPropertyName: String) -> (String?, Bool) {
+      let retriesMax = 3
+      var retryNum = 1
+      while true {
+        // This check seems to do a good job of determining when mpv is backed up.
+        let path = player.mpv.getString(MPVProperty.path)
+        guard path == currentPlayback.path else {
+          log.warn{"[GeoTF:\(name)] Path mismatch! Will abort transform; mpv is likely backed up. Expected=\(currentPlayback.path.pii.quoted); Actual: \(path?.pii.quoted ?? "<nil>")"}
+          return (nil, true)
+        }
+
+        if let propertyValue = player.mpv.getString(mpvPropertyName) {
+          return (propertyValue, false)
+        }
+        retryNum += 1
+        if retryNum > retriesMax { break }
+        let pauseDuration = Constants.TimeInterval.videoDecParamsPauseInterval
+        log.debug{"[GeoTF:\(name)] Could not get \(mpvPropertyName); will try again in \(pauseDuration)s (tries remaining: \(retriesMax - retryNum + 1))"}
+        Thread.sleep(forTimeInterval: pauseDuration)
+      }
+      return (nil, false)
+    }
+
     func syncVideoParamsFromMpv() -> VideoGeometry? {
       log.verbose{"[GeoTF:\(name)] Starting transform of \(currentPlayback.url.lastPathComponent.pii.quoted), vid=\(String(vidTrackID))|\(currentMediaAudioStatus), sessionState=\(sessionState)"}
       let vid = Int(player.mpv.getInt(MPVOption.TrackSelection.vid))
@@ -98,33 +122,22 @@ struct GeometryTransform {
         return VideoGeometry.albumArtGeometry(log)
       }
 
-      // videoDecParams == video params without applied filters / overrides
-      var videoDecParamsJson = player.mpv.getString(MPVProperty.videoDecParams)
-      if videoDecParamsJson == nil {
-        // OK, looks like when this happens, mpv is backed up & will actually give us stale data for videoOutParams!
-        // Seems like the best option is to wait for it. But adding some guardrails...
-        // Fortunately we are already in the mpv queue. So we shouldn't block the UI, but we will be blocking mpv from processing more user requests
-        // which would only add to the burden.
-        var triesRemaining = 3
-        let pauseDuration = Constants.TimeInterval.videoDecParamsPauseInterval
-        while videoDecParamsJson == nil && triesRemaining > 0 {
-          log.debug{"[GeoTF:\(name)] Could not get videoDecParams; will try again in \(pauseDuration)s (tries remaining: \(triesRemaining))"}
-          triesRemaining -= 1
-          Thread.sleep(forTimeInterval: pauseDuration)
-          videoDecParamsJson = player.mpv.getString(MPVProperty.videoDecParams)
-          // This check seems to do a good job of determining when mpv is backed up.
-          let path = player.mpv.getString(MPVProperty.path)
-          guard path == currentPlayback.path else {
-            log.warn{"[GeoTF:\(name)] Path mismatch! Will abort transform; mpv is likely backed up. Expected=\(currentPlayback.path.pii.quoted); Actual: \(path?.pii.quoted ?? "<nil>")"}
-            return nil
-          }
-        }
-      }
-
+      /// `video-dec-params` == video params without applied filters / overrides
+      // When mpv return nil for video-dec-params, it's backed up. When this happens it  will actually then give us stale
+      // data for videoOutParams! Seems like the best option is to wait for it. But adding some guardrails...
+      // Fortunately we are already in the mpv queue. So we shouldn't block the UI, but we will be blocking mpv from processing
+      // more user requests which would only add to the burden.
+      let (videoDecParamsJson, errorOccurred1) = getWithRetries(MPVProperty.videoDecParams)
+      guard !errorOccurred1 else { return nil }
       let videoDecParams = VideoParams.fromJSON(videoDecParamsJson, "videoDecParams", log)
-      // videoOutParams == final video params for display
-      let videoOutParamsJson = player.mpv.getString(MPVProperty.videoOutParams)
+
+      /// `video-out-params` == final video params for display
+      /// This is known to return `nil` during startup, when loading a media file on a remote volume.
+      /// Just wait for it as well.
+      let (videoOutParamsJson, errorOccurred2) = getWithRetries(MPVProperty.videoOutParams)
+      guard !errorOccurred2 else { return nil }
       let videoOutParams = VideoParams.fromJSON(videoOutParamsJson, "videoOutParams", log)
+
       if Logger.isVerboseEnabled {
         let videoParams = player.mpv.getString(MPVProperty.videoParams)
         log.verbose{"[GeoTF:\(name)] Vid \(vidTrackID) has mpv videoDecParams=\(videoDecParamsJson ?? "nil"), videoParams=\(videoParams ?? "nil"), videoOutParams=\(videoOutParamsJson ?? "nil")"}

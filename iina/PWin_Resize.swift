@@ -10,23 +10,10 @@ import Foundation
 
 /// `PlayerWindowController` geometry functions
 extension PlayerWindowController {
-  // MARK: - Window delegate: Resize
-
-  /// NSWindowDelegate: start live resize
-  func windowWillStartLiveResize(_ notification: Notification) {
-    guard !isAnimatingLayoutTransition else { return }
-    log.trace{"WindowWillStartLiveResize"}
-    isLiveResizingWidth = nil  // reset this
-  }
-
-  func windowDidEndLiveResize(_ notification: Notification) {
-    log.trace{"WindowDidEndLiveResize"}
-  }
+  // MARK: - Window Delegate: Zoom
 
   func windowShouldZoom(_ window: NSWindow, toFrame newFrame: NSRect) -> NSRect {
-    // Need to explicitly bypass the denial mechanism
-    denyWindowResizeIntervalStartTime = Date(timeIntervalSince1970: 0)
-    let newSize = windowWillResize(window, to: newFrame.size)
+    let newSize = resizeWindowSubviews(window, to: newFrame.size)
     let newNewFrame = NSRect(origin: newFrame.origin, size: newSize)
     log.verbose{"WindowWillZoom: \(window.frame) → \(newFrame) → \(newNewFrame)"}
     return newNewFrame
@@ -35,6 +22,8 @@ extension PlayerWindowController {
   func windowWillUseStandardFrame(_ window: NSWindow, defaultFrame: NSRect) -> NSRect {
     return windowShouldZoom(window, toFrame: defaultFrame)
   }
+
+  // MARK: - Window Delegate: Resize
 
   /// NSWindowDelegate: windowWillResize
   ///
@@ -46,20 +35,37 @@ extension PlayerWindowController {
     guard !isAnimatingLayoutTransition else {
       return requestedSize
     }
-    let currentLayout = currentLayout
-    let inLiveResize = window.inLiveResize
-    let denyWindowResize = Date() < denyWindowResizeIntervalStartTime + Constants.TimeInterval.denyWindowResizeTimeout
 
-    if !currentLayout.isFullScreen && !inLiveResize {
+    let denyWindowResize = Date() < denyWindowResizeIntervalStartTime + Constants.TimeInterval.denyWindowResizeTimeout
+    if !currentLayout.isFullScreen && !window.inLiveResize {
       guard !denyWindowResize else {
         log.verbose{"[WinWillResize] Denying request=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)"}
         return window.frame.size
       }
     }
 
+    // FIXME: this still doesn't look great. Fix VideoView constraints in music mode
+    if currentLayout.mode == .musicMode {
+      CATransaction.begin()
+      CATransaction.setAnimationDuration(0)
+      CATransaction.setDisableActions(true)
+    }
+    defer {
+      if currentLayout.mode == .musicMode {
+        CATransaction.commit()
+      }
+    }
+
+    return resizeWindowSubviews(window, to: requestedSize)
+  }
+
+  func resizeWindowSubviews(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     defer {
       forceDraw()  // needed if scaling to get a clearer image
     }
+
+    let currentLayout = currentLayout
+    let inLiveResize = window.inLiveResize
 
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
     log.verbose{"[WinWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)"}
@@ -142,6 +148,17 @@ extension PlayerWindowController {
 
     log.verbose{"[WinWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)"}
     return newWindowSize
+  }
+
+  /// NSWindowDelegate: start live resize
+  func windowWillStartLiveResize(_ notification: Notification) {
+    guard !isAnimatingLayoutTransition else { return }
+    log.trace{"WindowWillStartLiveResize"}
+    isLiveResizingWidth = nil  // reset this
+  }
+
+  func windowDidEndLiveResize(_ notification: Notification) {
+    log.trace{"WindowDidEndLiveResize"}
   }
 
   /// Explicitly changes the window frame & window subviews according to `newGeometry` (or generating a geometry if `nil`),
