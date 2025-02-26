@@ -418,8 +418,6 @@ extension PlayerWindowController {
     playBtnSpeedVStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
     playBtnSpeedVStackView.addView(speedLabel, in: .center)
     playBtnSpeedVStackView.addView(playButton, in: .center)
-    playBtnSpeedVStackView.setHuggingPriority(.init(250), for: .vertical)
-    playBtnSpeedVStackView.setHuggingPriority(.init(250), for: .horizontal)
     playBtnSpeedVStackView.translatesAutoresizingMaskIntoConstraints = false
 
     let enableAcceleration = Preference.bool(for: .useForceTouchForSpeedArrows)
@@ -450,7 +448,6 @@ extension PlayerWindowController {
     playBtnSpeedVStackView.heightAnchor.constraint(lessThanOrEqualTo: fragPlaybackBtnsView.heightAnchor).isActive = true
 
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
-    fragPlaybackBtnsView.setContentHuggingPriority(.init(rawValue: 249), for: .vertical)  // hug superview more than default
 
     // Try to make sure the buttons' bounding boxes reach the full height, for activation
     // (their images will be limited by the width constraint & will stop scaling before this)
