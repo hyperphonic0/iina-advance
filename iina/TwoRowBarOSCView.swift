@@ -10,7 +10,7 @@ class TwoRowBarOSCView: ClickThroughView {
   static let id = "OSC_2RowView"
   let hStackView = ClickThroughStackView()
   let centralSpacerView = SpacerView.buildNew(id: "\(TwoRowBarOSCView.id)-CentralSpacer")
-  var intraRowSpacingConstraint: NSLayoutConstraint!
+  var hStackView_HeightConstraint: NSLayoutConstraint!
   /// This subtracts from the height of the icons, but is needed to balance out the space above
   var hStackView_BottomMarginConstraint: NSLayoutConstraint!
   var hStackViewLeadingConstraint: NSLayoutConstraint!
@@ -34,6 +34,10 @@ class TwoRowBarOSCView: ClickThroughView {
 
     addSubview(hStackView)
 
+    hStackView_HeightConstraint = hStackView.topAnchor.constraint(equalTo: self.bottomAnchor, constant: 0)
+    hStackView_HeightConstraint.identifier = "\(hStackView.idString)_HeightConstraint"
+    hStackView_HeightConstraint.isActive = true
+
     hStackViewLeadingConstraint = hStackView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 0)
     hStackViewLeadingConstraint.identifier = "\(hStackView.idString)_Lead-Offset"
     hStackViewLeadingConstraint.isActive = true
@@ -44,8 +48,8 @@ class TwoRowBarOSCView: ClickThroughView {
 
     hStackView_BottomMarginConstraint = bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: 0)
     hStackView_BottomMarginConstraint.identifier = "\(TwoRowBarOSCView.id)-HStackView-BtmOffset"
-    relaxConstraints()
     hStackView_BottomMarginConstraint.isActive = true
+    relaxConstraints()
 
     timeSlashLabel.idString = "PlayPos-TimeSlashLabel"
     timeSlashLabel.isBordered = false
@@ -77,8 +81,6 @@ class TwoRowBarOSCView: ClickThroughView {
     // Avoid constraint violations while we change things below
     relaxConstraints()
 
-    let bottomMargin = ControlBarGeometry.twoRowOSC_BottomMargin(playSliderHeight: oscGeo.playSliderHeight)
-
     hStackView.spacing = oscGeo.hStackSpacing
 
     // Start building replacement views list
@@ -102,17 +104,15 @@ class TwoRowBarOSCView: ClickThroughView {
     }
 
     playSliderTypeView.removeFromSuperview()
-    // just to be sure
-    intraRowSpacingConstraint?.isActive = false
     // Make sure to put PlaySlider below other controls. Older MacOS versions may clip overlapping views
     addSubview(playSliderTypeView, positioned: .below, relativeTo: hStackView)
     playSliderTypeView.addConstraintsToFillSuperview(top: 0, leading: oscGeo.leadingSpace_Row1,
                                                      trailing: oscGeo.trailingSpace_Row1)
-    // Negative number here means overlapping:
-    intraRowSpacingConstraint = hStackView.topAnchor.constraint(equalTo: playSliderTypeView.bottomAnchor, constant: -bottomMargin)
-    intraRowSpacingConstraint.identifier = "\(TwoRowBarOSCView.id)-IntraRowSpacingConstraint"
-    intraRowSpacingConstraint.priority = .defaultLow  // for now
-    intraRowSpacingConstraint.isActive = true
+    hStackView_HeightConstraint.priority = .defaultLow  // for now
+
+    let bottomMargin = ControlBarGeometry.twoRowOSC_BottomMargin(playSliderHeight: oscGeo.playSliderHeight)
+    let hStackViewHeight = oscGeo.fullIconHeight + bottomMargin
+    hStackView_HeightConstraint.animateToConstant(hStackViewHeight)
 
     hStackViewLeadingConstraint.animateToConstant(oscGeo.leadingSpace_Row2)  // TODO: fix play icon spacing
     hStackViewTrailingConstraint.animateToConstant(oscGeo.trailingSpace_Row2)
@@ -146,15 +146,15 @@ class TwoRowBarOSCView: ClickThroughView {
       hStackView.setVisibilityPriority(.detachLessEarly, for: timeSlashLabel)
     }
 
-    pwc.log.verbose{"TwoRowOSC barH=\(oscGeo.barHeight) sliderH=\(oscGeo.playSliderHeight) btmMargin=\(bottomMargin) toolIconH=\(oscGeo.toolIconSize)"}
+    pwc.log.verbose{"TwoRowOSC barH=\(oscGeo.barHeight) sliderH=\(oscGeo.playSliderHeight) btmMargin=\(bottomMargin) hStackH=\(hStackViewHeight) toolIconH=\(oscGeo.toolIconSize)"}
     // Although space is stolen from the icons to give to the bottom margin, it is given right back by adding to the top
     // (and overlapping with the btm of the play slider, but that is just empty space not being used anyway).
-    hStackView_BottomMarginConstraint.animateToConstant(bottomMargin)
+    hStackView_BottomMarginConstraint.animateToConstant(bottomMargin * 2)
 
     // Restore enforcement of consraints now that we're done. Do not use .required: the superiew may not be updated at
     // exactly the same time and can result in constraint conflict errors.
-    hStackView_BottomMarginConstraint.priority = .init(901)
-    intraRowSpacingConstraint.priority = .init(901)
+    hStackView_BottomMarginConstraint.priority = .required
+    hStackView_HeightConstraint.priority = .init(900)
 
     pwc.fragToolbarView.updateConstraints()
     pwc.osdHStackView.updateConstraints()
@@ -163,6 +163,6 @@ class TwoRowBarOSCView: ClickThroughView {
 
   func relaxConstraints() {
     hStackView_BottomMarginConstraint.priority = .defaultLow
-    intraRowSpacingConstraint?.priority = .defaultLow
+    hStackView_HeightConstraint?.priority = .defaultLow
   }
 }

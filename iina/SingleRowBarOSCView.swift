@@ -23,8 +23,6 @@ class SingleRowBarOSCView: ClickThroughStackView {
     wantsLayer = true
     layer?.backgroundColor = .clear
     setClippingResistancePriority(.defaultLow, for: .horizontal)
-    setHuggingPriority(.init(500), for: .horizontal)
-    setHuggingPriority(.init(500), for: .vertical)
   }
 
   required init?(coder: NSCoder) {

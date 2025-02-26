@@ -274,15 +274,16 @@ extension PlayerWindowController {
   /// Expected to be animated.
   func closeOldPanels(_ transition: LayoutTransition) {
     let outputLayout = transition.outputLayout
-    log.verbose{"[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight), topOSC_H=\(outputLayout.topOSCHeight)"}
+    let isClosingBarOSC = transition.isClosingBarOSC
+    let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
+    log.verbose{"[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn)"}
 
     // TODO: incorporate this into middleGeometry for cleaner code
-    if transition.isClosingThenReopeningOSC {
+    if isOpeningBarOSC || isClosingBarOSC {
       // Shrink all the buttons to create cool animated effect
       for toolbarItem in fragToolbarView.views {
         (toolbarItem as! OSCToolbarButton).setStyle(iconSize: 0, iconSpacing: 0)
       }
-      updateToolbarHStack(iconSpacing: 0)
 
       // Volume icon
       volumeIconHeightConstraint.animateToConstant(0)
@@ -291,41 +292,41 @@ extension PlayerWindowController {
       arrowBtnWidthConstraint.animateToConstant(0)
     } else if outputLayout.hasControlBar {
       // Reduce size of icons if they are smaller. This is needed to look pleasant when panels are also shrinking.
-      let oscGeo = outputLayout.controlBarGeo
+      let oldGeo = transition.inputLayout.controlBarGeo
+      let newGeo = outputLayout.controlBarGeo
 
-      if volumeIconHeightConstraint.constant > oscGeo.volumeIconHeight {
-        volumeIconHeightConstraint.animateToConstant(oscGeo.volumeIconHeight)
+      if oldGeo.volumeIconHeight > newGeo.volumeIconHeight {
+        volumeIconHeightConstraint.animateToConstant(newGeo.volumeIconHeight)
       }
-      if volumeSliderWidthConstraint.constant > oscGeo.volumeSliderWidth {
-        volumeSliderWidthConstraint.animateToConstant(oscGeo.volumeSliderWidth)
+      if oldGeo.volumeSliderWidth > newGeo.volumeSliderWidth {
+        volumeSliderWidthConstraint.animateToConstant(newGeo.volumeSliderWidth)
       }
       if let img = muteButton.image {
         volumeIconAspectConstraint.isActive = false
         volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
         volumeIconAspectConstraint.isActive = true
       }
-      if arrowBtnWidthConstraint.constant > oscGeo.arrowIconHeight {
-        arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
+      if oldGeo.arrowIconHeight > newGeo.arrowIconHeight {
+        arrowBtnWidthConstraint.animateToConstant(newGeo.arrowIconWidth)
       }
-      if playBtnWidthConstraint.constant > oscGeo.playIconSize {
-        playBtnWidthConstraint.animateToConstant(oscGeo.playIconSize)
-      }
-
-      if fragPlaybackBtnsWidthConstraint.constant > oscGeo.totalPlayControlsWidth {
-        fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
+      if oldGeo.playIconSize > newGeo.playIconSize {
+        playBtnWidthConstraint.animateToConstant(newGeo.playIconSize)
       }
 
-      if leftArrowBtn_CenterXOffsetConstraint.constant > oscGeo.leftArrowCenterXOffset {
-        leftArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.leftArrowCenterXOffset)
+      if oldGeo.totalPlayControlsWidth > newGeo.totalPlayControlsWidth {
+        fragPlaybackBtnsWidthConstraint.animateToConstant(newGeo.totalPlayControlsWidth)
       }
 
-      if rightArrowBtn_CenterXOffsetConstraint.constant > oscGeo.rightArrowCenterXOffset {
-        rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
+      if oldGeo.leftArrowCenterXOffset > newGeo.leftArrowCenterXOffset {
+        leftArrowBtn_CenterXOffsetConstraint.animateToConstant(newGeo.leftArrowCenterXOffset)
       }
 
-      let oldGeo = transition.inputLayout.controlBarGeo
-      let toolSize = min(oscGeo.toolIconSize, oldGeo.toolIconSize)
-      let toolSpacing = min(oscGeo.toolIconSpacing, oldGeo.toolIconSpacing)
+      if oldGeo.rightArrowCenterXOffset > newGeo.rightArrowCenterXOffset {
+        rightArrowBtn_CenterXOffsetConstraint.animateToConstant(newGeo.rightArrowCenterXOffset)
+      }
+
+      let toolSize = min(newGeo.toolIconSize, oldGeo.toolIconSize)
+      let toolSpacing = min(newGeo.toolIconSpacing, oldGeo.toolIconSpacing)
       for toolbarItem in fragToolbarView.views {
         (toolbarItem as! OSCToolbarButton).setStyle(iconSize: toolSize, iconSpacing: toolSpacing)
       }
@@ -650,8 +651,8 @@ extension PlayerWindowController {
 
     // [Re-]add OSC:
     if outputLayout.enableOSC {
-      let oscGeo = outputLayout.controlBarGeo
-      log.verbose{"[\(transition.name)] Setting up OSC: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(oscGeo.playIconSize) playIconSpacing=\(oscGeo.playIconSpacing)"}
+      let newGeo = outputLayout.controlBarGeo
+      log.verbose{"[\(transition.name)] Setting up OSC: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(newGeo.playIconSize) playIconSpacing=\(newGeo.playIconSpacing)"}
 
       rebuildOSCToolbar(transition)
 
@@ -661,14 +662,14 @@ extension PlayerWindowController {
 
 
         let oscContentView: NSView
-        if oscGeo.isTwoRowBarOSC {
+        if newGeo.isTwoRowBarOSC {
           oscContentView = oscTwoRowView
           log.verbose{"[\(transition.name)] Adding subviews to oscTwoRowView for top bar, topBarHeight=\(outputLayout.topBarHeight)"}
-          oscTwoRowView.updateSubviews(from: self, oscGeo)
+          oscTwoRowView.updateSubviews(from: self, newGeo)
         } else {
           oscContentView = oscOneRowView
           log.verbose{"[\(transition.name)] Adding subviews to oscOneRowView for top bar"}
-          oscOneRowView.updateSubviews(from: self, oscGeo)
+          oscOneRowView.updateSubviews(from: self, newGeo)
         }
 
         if !controlBarTop.subviews.contains(oscContentView) {
@@ -682,14 +683,14 @@ extension PlayerWindowController {
         currentControlBar = bottomBarView
 
         let oscContentView: NSView
-        if oscGeo.isTwoRowBarOSC {
+        if newGeo.isTwoRowBarOSC {
           oscContentView = oscTwoRowView
           log.verbose{"[\(transition.name)] Adding subviews to oscTwoRowView for bottom bar, bottomBarHeight=\(outputLayout.bottomBarHeight)"}
-          oscTwoRowView.updateSubviews(from: self, oscGeo)
+          oscTwoRowView.updateSubviews(from: self, newGeo)
         } else {
           oscContentView = oscOneRowView
           log.verbose{"[\(transition.name)] Adding subviews to oscOneRowView for bottom bar"}
-          oscOneRowView.updateSubviews(from: self, oscGeo)
+          oscOneRowView.updateSubviews(from: self, newGeo)
         }
 
         if !bottomBarView.subviews.contains(oscContentView) {
@@ -708,7 +709,7 @@ extension PlayerWindowController {
         }
       }
 
-      seekPreview.updateTimeLabelFontSize(to: oscGeo.seekPreviewTimeLabelFontSize)
+      seekPreview.updateTimeLabelFontSize(to: newGeo.seekPreviewTimeLabelFontSize)
 
     } else if outputLayout.isMusicMode {
 
@@ -721,19 +722,19 @@ extension PlayerWindowController {
 
     if outputLayout.hasControlBar {
       // Has OSC, or music mode
-      let oscGeo = outputLayout.controlBarGeo
+      let newGeo = outputLayout.controlBarGeo
 
       // Update arrow buttons layout (but not width: that will be animated in the next step)
-      leftArrowButton.replaceSymbolImage(with: oscGeo.leftArrowImage)
-      rightArrowButton.replaceSymbolImage(with: oscGeo.rightArrowImage)
+      leftArrowButton.replaceSymbolImage(with: newGeo.leftArrowImage)
+      rightArrowButton.replaceSymbolImage(with: newGeo.rightArrowImage)
 
       rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 
-      let hideArrowBtns = oscGeo.arrowIconWidth == 0
+      let hideArrowBtns = newGeo.arrowIconWidth == 0
       leftArrowButton.isHidden = hideArrowBtns
       rightArrowButton.isHidden = hideArrowBtns
 
-      let timeLabelFont: NSFont = oscGeo.timeLabelFont
+      let timeLabelFont: NSFont = newGeo.timeLabelFont
       leftTimeLabel.font = timeLabelFont
       rightTimeLabel.font = timeLabelFont
       oscTwoRowView.timeSlashLabel.font = timeLabelFont
@@ -743,8 +744,8 @@ extension PlayerWindowController {
         updateSpeedLabelFont(for: transition)
       }
 
-      let sliderKnobWidth = oscGeo.sliderKnobWidth
-      let sliderKnobHeight = oscGeo.sliderKnobHeight
+      let sliderKnobWidth = newGeo.sliderKnobWidth
+      let sliderKnobHeight = newGeo.sliderKnobHeight
       playSlider.customCell.knobWidth = sliderKnobWidth
       playSlider.customCell.knobHeight = sliderKnobHeight
       playSlider.abLoopA.updateKnobImage(to: .loopKnob)
@@ -906,29 +907,30 @@ extension PlayerWindowController {
 
     if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
-      let oscGeo = outputLayout.controlBarGeo
+      let newGeo = outputLayout.controlBarGeo
 
-      playSliderHeightConstraint.animateToConstant(oscGeo.playSliderHeight)
+      playSliderHeightConstraint.animateToConstant(newGeo.playSliderHeight)
 
-      volumeIconHeightConstraint.animateToConstant(oscGeo.volumeIconHeight)
-      volumeSliderWidthConstraint.animateToConstant(oscGeo.volumeSliderWidth)
+      volumeIconHeightConstraint.animateToConstant(newGeo.volumeIconHeight)
+      volumeSliderWidthConstraint.animateToConstant(newGeo.volumeSliderWidth)
       if let img = muteButton.image {
         volumeIconAspectConstraint.isActive = false
         volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
         volumeIconAspectConstraint.isActive = true
       }
 
-      arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
-      playBtnWidthConstraint.animateToConstant(oscGeo.playIconSize)
-      fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
-      leftArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.leftArrowCenterXOffset)
-      rightArrowBtn_CenterXOffsetConstraint.animateToConstant(oscGeo.rightArrowCenterXOffset)
+      arrowBtnWidthConstraint.animateToConstant(newGeo.arrowIconWidth)
+      playBtnWidthConstraint.animateToConstant(newGeo.playIconSize)
+      fragPlaybackBtnsWidthConstraint.animateToConstant(newGeo.totalPlayControlsWidth)
+      leftArrowBtn_CenterXOffsetConstraint.animateToConstant(newGeo.leftArrowCenterXOffset)
+      rightArrowBtn_CenterXOffsetConstraint.animateToConstant(newGeo.rightArrowCenterXOffset)
 
-      updateToolbarHStack(iconSpacing: oscGeo.toolIconSpacing)
       // Animate toolbar icons to full size now
       for toolbarItem in fragToolbarView.views {
         (toolbarItem as! OSCToolbarButton).setStyle(using: transition.outputLayout)
       }
+      // FIXME: add toolbar height constraint
+      updateToolbarHStack(iconSpacing: newGeo.toolIconSpacing)
     }
 
 
@@ -1506,11 +1508,11 @@ extension PlayerWindowController {
     let hasColorChange = transition.inputLayout.oscHasClearBG != transition.outputLayout.oscHasClearBG
     var needsButtonsUpdate = hasSizeChange || hasColorChange
 
-    let isOpeningOSC = transition.isOpeningOSC
-    let zeroOut = isOpeningOSC && !transition.isWindowInitialLayout
+    let isOpeningBarOSCFromZero = transition.isOpeningBarOSCFromZero
+    let zeroOut = isOpeningBarOSCFromZero && !transition.isWindowInitialLayout
     let iconSize: CGFloat = zeroOut ? 0 : newGeo.toolIconSize
     let iconSpacing: CGFloat = zeroOut ? 0 : newGeo.toolIconSpacing
-    if isOpeningOSC || !oldGeo.toolbarItemsAreSame(as: newGeo) {
+    if isOpeningBarOSCFromZero || !oldGeo.toolbarItemsAreSame(as: newGeo) {
       fragToolbarView.views.forEach { fragToolbarView.removeView($0) }
 
       if newButtonTypes.count > 0 {
@@ -1535,14 +1537,15 @@ extension PlayerWindowController {
       }
     }
 
-    // Spacing here may be zeroed out for the sake of animation. Will need to call this again when opening panels:
-    updateToolbarHStack(iconSpacing: iconSpacing)
+    // Do not zero this out:
+    updateToolbarHStack(iconSpacing: newGeo.toolIconSpacing)
     log.verbose{"[\(transition.name)] Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)"}
   }
 
   // It's not possible to control the icon padding from inside the buttons in all cases.
   // Instead we can get the same effect with a little more work, by using the stack view's features.
   func updateToolbarHStack(iconSpacing: CGFloat) {
+    log.verbose{"Updating toolbar hstack using spacing=\(iconSpacing)"}
     fragToolbarView.spacing = 2 * iconSpacing
     let sideInset = (iconSpacing * 0.5).rounded()
     fragToolbarView.edgeInsets = .init(top: iconSpacing, left: sideInset,

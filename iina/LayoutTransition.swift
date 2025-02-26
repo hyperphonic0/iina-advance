@@ -178,6 +178,7 @@ extension PlayerWindowController {
       return isTopBarPlacementChanging // || (outputLayout.hasTopOSC && isOSCStyleChanging)
     }
 
+    /// Note: this may not include OSC
     var isBottomBarPlacementChanging: Bool {
       return inputLayout.bottomBarPlacement != outputLayout.bottomBarPlacement
     }
@@ -267,14 +268,21 @@ extension PlayerWindowController {
       return outputGeometry.windowFrame.width - inputGeometry.windowFrame.width
     }
 
-    var isOpeningOSC: Bool {
-      isWindowInitialLayout || !inputLayout.hasControlBar || isClosingThenReopeningOSC
+    var isOpeningBarOSCFromZero: Bool {
+      isWindowInitialLayout || outputLayout.hasTopOrBottomOSC &&
+      (!inputLayout.hasTopOrBottomOSC || (inputLayout.oscPosition != outputLayout.oscPosition) ||
+       (outputLayout.hasTopOSC && isTopBarPlacementOrStyleChanging)
+       || (outputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging))
     }
 
     /// For animation purposes only
-    var isClosingThenReopeningOSC: Bool {
-      (inputLayout.mode == outputLayout.mode && outputLayout.mode != .musicMode) &&
-      (inputLayout.enableOSC != outputLayout.enableOSC || (inputLayout.hasBottomOSC && outputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging) || (inputLayout.hasTopOSC && outputLayout.hasTopOSC && isTopBarPlacementChanging))
+    var isClosingBarOSC: Bool {
+      guard inputLayout.hasTopOrBottomOSC else { return false }
+
+      return !outputLayout.hasTopOrBottomOSC
+      || (inputLayout.oscPosition != outputLayout.oscPosition)
+      || (inputLayout.hasTopOSC && isTopBarPlacementOrStyleChanging)
+      || (inputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging)
     }
   }
 

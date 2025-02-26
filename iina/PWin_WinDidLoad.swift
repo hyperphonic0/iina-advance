@@ -273,10 +273,9 @@ extension PlayerWindowController {
     fragToolbarView.idString = "OSC-ToolbarView"
     fragToolbarView.translatesAutoresizingMaskIntoConstraints = false
     fragToolbarView.orientation = .horizontal
-    fragToolbarView.alignment = .centerY
+//    fragToolbarView.alignment = .centerY
     fragToolbarView.distribution = .fill
-    fragToolbarView.setHuggingPriority(.init(500), for: .horizontal)
-    fragToolbarView.setHuggingPriority(.init(901), for: .vertical)  // needs to be > 750
+//    fragToolbarView.setHuggingPriority(.init(901), for: .vertical)  // needs to be > 750
   }
 
   func initTopBarView(in contentView: NSView) {
@@ -292,7 +291,7 @@ extension PlayerWindowController {
 
     topOSCHeightConstraint = topBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
     topOSCHeightConstraint.identifier = .init("TopOSC-HeightConstraint")
-    topOSCHeightConstraint.priority = .init(900)
+    topOSCHeightConstraint.priority = .init(900) // TODO
     topOSCHeightConstraint.isActive = true
 
     /// `titleBarView`
@@ -305,7 +304,7 @@ extension PlayerWindowController {
 
     titleBarView.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
 
-    titleBarHeightConstraint = titleBarView.bottomAnchor.constraint(equalTo: topBarView.topAnchor, constant: 20)
+    titleBarHeightConstraint = titleBarView.bottomAnchor.constraint(equalTo: topBarView.topAnchor, constant: Constants.Distance.standardTitleBarHeight)
     titleBarHeightConstraint.identifier = .init("TitleBarView-HeightConstraint")
     titleBarHeightConstraint.priority = .init(900)
     titleBarHeightConstraint.isActive = true
@@ -403,8 +402,6 @@ extension PlayerWindowController {
     playButton.action = #selector(playButtonAction(_:))
     playButton.refusesFirstResponder = true
     playButton.idString = "PlayBtn"  // helps with debug logging
-    playButton.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
-    playButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
     // Set to 0 at load time to be safe:
     playBtnWidthConstraint = playButton.widthAnchor.constraint(equalToConstant: 0)
     playBtnWidthConstraint.identifier = "PlayBtn-WidthConstraint"
@@ -449,6 +446,7 @@ extension PlayerWindowController {
     fragPlaybackBtnsView.addSubview(playBtnSpeedVStackView)
     fragPlaybackBtnsView.addSubview(rightArrowButton)
 
+    // TODO: can this cause a conflict?
     playBtnSpeedVStackView.heightAnchor.constraint(lessThanOrEqualTo: fragPlaybackBtnsView.heightAnchor).isActive = true
 
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
@@ -621,6 +619,7 @@ extension PlayerWindowController {
     muteButton.addConstraintsToFillSuperview(leading: 0)
     muteButton.centerYAnchor.constraint(equalTo: fragVolumeView.centerYAnchor).isActive = true
     volumeIconHeightConstraint = muteButton.heightAnchor.constraint(equalToConstant: oscGeo.volumeIconHeight)
+    volumeIconHeightConstraint.priority = .init(900)
     volumeIconHeightConstraint.isActive = true
     volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volImage.aspect)
     volumeIconAspectConstraint.isActive = true
