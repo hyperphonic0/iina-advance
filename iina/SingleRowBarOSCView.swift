@@ -9,7 +9,6 @@
 /// For "bar"-type OSCs: `bottom` and `top` only - not `floating` or music mode.
 class SingleRowBarOSCView: ClickThroughStackView {
   static let id = "OSC_1RowView"
-  let hStackView = ClickThroughStackView()
 
   init() {
     super.init(frame: .zero)
@@ -24,6 +23,8 @@ class SingleRowBarOSCView: ClickThroughStackView {
     wantsLayer = true
     layer?.backgroundColor = .clear
     setClippingResistancePriority(.defaultLow, for: .horizontal)
+    setHuggingPriority(.init(500), for: .horizontal)
+    setHuggingPriority(.init(500), for: .vertical)
   }
 
   required init?(coder: NSCoder) {

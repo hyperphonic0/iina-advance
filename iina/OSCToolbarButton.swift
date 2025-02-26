@@ -35,10 +35,7 @@ class OSCToolbarButton: OSCSymButton {
     setStyle(buttonType: buttonType, iconSize: layout.controlBarGeo.toolIconSize, iconSpacing: layout.controlBarGeo.toolIconSpacing)
   }
 
-  func setStyle(buttonType: Preference.ToolBarButton? = nil, iconSize: CGFloat? = nil, iconSpacing: CGFloat? = nil) {
-    let currentGeo = ControlBarGeometry(mode: .windowedNormal)
-    let iconSize = iconSize ?? currentGeo.toolIconSize
-    let iconSpacing = iconSpacing ?? currentGeo.toolIconSpacing
+  func setStyle(buttonType: Preference.ToolBarButton? = nil, iconSize: CGFloat, iconSpacing: CGFloat) {
     self.iconSize = iconSize
     self.iconSpacing = iconSpacing
 
@@ -52,7 +49,6 @@ class OSCToolbarButton: OSCSymButton {
       widthConstraint.animateToConstant(iconSize)
     } else {
       let constraint = widthAnchor.constraint(equalToConstant: iconSize)
-      constraint.priority = .required
       constraint.isActive = true
       self.widthConstraint = constraint
     }
@@ -61,7 +57,8 @@ class OSCToolbarButton: OSCSymButton {
       heightConstraint.animateToConstant(iconSize)
     } else {
       let constraint = heightAnchor.constraint(equalToConstant: iconSize)
-      constraint.priority = .defaultHigh
+      // FIXME: icons have variable height which is not properly accounted for
+      constraint.priority = .init(900)
       constraint.isActive = true
       self.heightConstraint = constraint
     }

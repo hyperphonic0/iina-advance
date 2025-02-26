@@ -121,7 +121,7 @@ class PrefOSCToolbarCurrentItem: OSCToolbarButton, NSPasteboardWriting {
   var currentItemsView: PrefOSCToolbarCurrentItemsView
   var buttonType: Preference.ToolBarButton
 
-  init(buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil, iconSpacing: CGFloat? = nil,
+  init(buttonType: Preference.ToolBarButton, iconSize: CGFloat, iconSpacing: CGFloat,
        superView: PrefOSCToolbarCurrentItemsView) {
     self.buttonType = buttonType
     self.currentItemsView = superView
@@ -338,7 +338,10 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
           items.count < 5,
           dragDestIndex >= 0,
           dragDestIndex <= views.count {
-        let item = PrefOSCToolbarCurrentItem(buttonType: buttonType, superView: self)
+        
+        let item = PrefOSCToolbarCurrentItem(buttonType: buttonType,
+                                             iconSize: currentItemsViewDelegate.previewIconSize,
+                                             iconSpacing: currentItemsViewDelegate.previewIconSpacing, superView: self)
         insertView(item, at: dragDestIndex, in: .trailing)
         updateItems()
         return true

@@ -168,15 +168,15 @@ struct ControlBarGeometry {
 
       } else {
         // Two-row configuration (qualifying for 2-row! May actually be single-row)
-        let iconSizeTicks = isTwoRowOSC ? iconSizeTicksMax - 1 : iconSizeTicksMax - 2
+        let playIconSizeTicks = isTwoRowOSC ? iconSizeTicksMax - 1 : iconSizeTicksMax - 2
+        let toolIconSizeTicks = iconSizeTicksMax - 1
         let toolIconSpacingTicks = spacingTicksMax + 1
         let playIconSpacingTicks = isTwoRowOSC ? spacingTicksMax : spacingTicksMax - 1
 
-        let iconSize = ControlBarGeometry.iconSize(fromTicks: iconSizeTicks, fullHeight: fullIconHeight)
-        self.playIconSize = iconSize
-        self.toolIconSize = iconSize
+        self.playIconSize = ControlBarGeometry.iconSize(fromTicks: playIconSizeTicks, fullHeight: fullIconHeight)
+        self.toolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks, fullHeight: fullIconHeight)
         self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks, fullHeight: fullIconHeight)
-        self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: spacingTicksMax, fullHeight: fullIconHeight)
+        self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks, fullHeight: fullIconHeight)
       }
     }
 

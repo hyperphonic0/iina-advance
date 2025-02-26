@@ -273,9 +273,10 @@ extension PlayerWindowController {
     fragToolbarView.idString = "OSC-ToolbarView"
     fragToolbarView.translatesAutoresizingMaskIntoConstraints = false
     fragToolbarView.orientation = .horizontal
+    fragToolbarView.alignment = .centerY
     fragToolbarView.distribution = .fill
-    fragToolbarView.setHuggingPriority(.init(499), for: .horizontal)
-    fragToolbarView.setHuggingPriority(.init(499), for: .vertical)
+    fragToolbarView.setHuggingPriority(.init(500), for: .horizontal)
+    fragToolbarView.setHuggingPriority(.init(901), for: .vertical)  // needs to be > 750
   }
 
   func initTopBarView(in contentView: NSView) {
@@ -404,8 +405,8 @@ extension PlayerWindowController {
     playButton.idString = "PlayBtn"  // helps with debug logging
     playButton.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
     playButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-    let playIconSize = oscGeo.playIconSize
-    playBtnWidthConstraint = playButton.widthAnchor.constraint(equalToConstant: playIconSize)
+    // Set to 0 at load time to be safe:
+    playBtnWidthConstraint = playButton.widthAnchor.constraint(equalToConstant: 0)
     playBtnWidthConstraint.identifier = "PlayBtn-WidthConstraint"
     playBtnWidthConstraint.isActive = true
     let playAspectConstraint = playButton.widthAnchor.constraint(equalTo: playButton.heightAnchor)
@@ -482,7 +483,7 @@ extension PlayerWindowController {
     leftArrowBtn_CenterXOffsetConstraint.identifier = .init("leftArrowBtn-HorizOffsetConstraint")
     leftArrowBtn_CenterXOffsetConstraint.isActive = true
 
-    arrowBtnWidthConstraint = leftArrowButton.widthAnchor.constraint(equalToConstant: oscGeo.arrowIconWidth)
+    arrowBtnWidthConstraint = leftArrowButton.widthAnchor.constraint(equalToConstant: 0)
     arrowBtnWidthConstraint.identifier = .init("arrowBtn-WidthConstraint")
     arrowBtnWidthConstraint.isActive = true
 
