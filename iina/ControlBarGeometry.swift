@@ -234,8 +234,12 @@ struct ControlBarGeometry {
   /// Height of the entire `PlaySlider` view, including unused space.
   /// 
   /// It is useful to expand slider height so that hovers are more likely to register.
+  /// But its height is also a useful metric for configuring spacing elsewhere.
+  /// See also: `sliderScale`
   var playSliderHeight: CGFloat
 
+  /// Ratio of the current slider's height vs the standard height.
+  /// Useful for growing/shrinking related views & offsets.
   var sliderScale: CGFloat {
     if mode == .musicMode {
       return 1.0
@@ -261,27 +265,6 @@ struct ControlBarGeometry {
     return max(Constants.Distance.Slider.unscaledBarNormalHeight, height)
   }
 
-  var volumeIconHeight: CGFloat {
-    if mode == .musicMode {
-      return 18.0
-    }
-    if position == .floating {
-      return floatingVolumeIconSize
-    }
-    let isConfiguredForTwoRow = !forceSingleRowStyle && position == .bottom
-    if isConfiguredForTwoRow {
-      return playIconSize * volumeIconTwoRowScaleFactor
-    }
-    return playIconSize
-  }
-
-  var volumeSliderWidth: CGFloat {
-    if mode == .musicMode {
-      return 100.0
-    }
-    return (Constants.Distance.Slider.unscaledVolumeSliderWidth * sliderScale).rounded()
-  }
-
   var sliderKnobWidth: CGFloat {
     return (Constants.Distance.Slider.defaultKnobWidth * sliderScale).rounded()
   }
@@ -296,20 +279,26 @@ struct ControlBarGeometry {
     return NSSize(width: width, height: height)
   }
 
-  /// Elapsed & current time labels are placed to left & right of slider, respectively?
-  var timeLabelsWrapSlider: Bool {
-    return !isTwoRowBarOSC || oscTimeLabelsAlwaysWrapSlider
+  var volumeIconHeight: CGFloat {
+    if mode == .musicMode {
+      return 18.0
+    }
+    if position == .floating {
+      return floatingVolumeIconSize
+    }
+    let isConfiguredForTwoRow = !forceSingleRowStyle && position == .bottom
+    if isConfiguredForTwoRow {
+      return playIconSize * volumeIconTwoRowScaleFactor
+    }
+    return playIconSize
   }
 
-  // MARK: Computed props: Playback Controls
 
-  /// Horizontal spacing between each of the set of controls in the bar (e.g., `playSliderAndTimeLabelsView`, `fragToolbarView`, etc.
-  var hStackSpacing: CGFloat {
-    if isTwoRowBarOSC {
-      return (Constants.Distance.oscSectionHSpacing_TwoRow * (barHeight / Constants.Distance.Slider.minPlaySliderHeight)).rounded()
-    } else {
-      return (Constants.Distance.oscSectionHSpacing_SingleRow + barHeight / 5).rounded()
+  var volumeSliderWidth: CGFloat {
+    if mode == .musicMode {
+      return 100.0
     }
+    return (Constants.Distance.Slider.unscaledVolumeSliderWidth * sliderScale).rounded()
   }
 
   /// Horizontal spacing between PlaySlider & time labels (if `timeLabelsWrapSlider==YES`). Also: horizontal spacing between VolumeSlider & volume icon.
@@ -320,16 +309,11 @@ struct ControlBarGeometry {
     return (max(6.0, hStackSpacing * 0.667)).rounded()
   }
 
-  /// Font for each of `leftTimeLabel`, `rightTimeLabel`, to the left & right of the play slider, respectively.
-  var timeLabelFont: NSFont {
-    let timeLabelFontSize = timeLabelFontSize
-    let weight: NSFont.Weight
-    if mode == .musicMode || position == .floating {
-      weight = .light
-    } else {
-      weight = .regular
-    }
-    return NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: weight)
+  // MARK: Time Labels
+
+  /// Elapsed & current time labels are placed to left & right of slider, respectively?
+  var timeLabelsWrapSlider: Bool {
+    return !isTwoRowBarOSC || oscTimeLabelsAlwaysWrapSlider
   }
 
   var timeLabelFontSize: CGFloat {
@@ -351,6 +335,48 @@ struct ControlBarGeometry {
     }
   }
 
+  /// Font for each of `leftTimeLabel`, `rightTimeLabel`, to the left & right of the play slider, respectively.
+  var timeLabelFont: NSFont {
+    let timeLabelFontSize = timeLabelFontSize
+    let weight: NSFont.Weight
+    if mode == .musicMode || position == .floating {
+      weight = .light
+    } else {
+      weight = .regular
+    }
+    return NSFont.monospacedDigitSystemFont(ofSize: timeLabelFontSize, weight: weight)
+  }
+
+  // MARK: - Other Layout
+
+  /// Horizontal spacing between each of the set of controls in the bar (e.g., `playSliderAndTimeLabelsView`, `fragToolbarView`, etc.
+  var hStackSpacing: CGFloat {
+    if isTwoRowBarOSC {
+      return (Constants.Distance.TwoRowOSC.oscSectionHSpacing * (barHeight / Constants.Distance.Slider.minPlaySliderHeight)).rounded()
+    } else {
+      return (Constants.Distance.oscSectionHSpacing_SingleRow + barHeight / 5).rounded()
+    }
+  }
+
+  /// Row 1: Play slider + maybe time labels
+  var leadingSpace_Row1: CGFloat {
+    let space = (sliderScale * 8 - 4).rounded()
+    return space
+  }
+
+  var trailingSpace_Row1: CGFloat {
+    return leadingSpace_Row1
+  }
+
+  /// Row 2: Playback controls, volume, toolbar
+  var leadingSpace_Row2: CGFloat {
+    return (sliderScale * 8 - 4).rounded()
+  }
+
+  var trailingSpace_Row2: CGFloat {
+    return leadingSpace_Row1
+  }
+
   /// Font size for Seek Preview time label (shown while hovering over PlaySlider and/or seeking).
   var seekPreviewTimeLabelFontSize: CGFloat {
     if mode == .musicMode {
@@ -368,6 +394,8 @@ struct ControlBarGeometry {
     return compromise.clamped(to: 8...32)
   }
 
+  // MARK: - Playback Controls
+
   /// Width of left, right, play btns + their spacing.
   /// Items will have `playIconSpacing` between each item, and `playIconSpacing * 0.5` for each of left margin & right margin.
   var totalPlayControlsWidth: CGFloat {
@@ -384,14 +412,14 @@ struct ControlBarGeometry {
   var rightArrowCenterXOffset: CGFloat {
      (playIconSize + arrowIconWidth) * 0.5 + playIconSpacing
   }
-  
+
+  // MARK: - Toolbar
+
   var totalToolbarWidth: CGFloat {
     let totalIconSpacing: CGFloat = 2 * toolIconSpacing * CGFloat(toolbarItems.count + 1)
     let totalIconWidth = toolIconSize * CGFloat(toolbarItems.count)
     return totalIconWidth + totalIconSpacing
   }
-
-  // MARK: Other functions
 
   func toolbarItemsAreSame(as otherGeo: ControlBarGeometry) -> Bool {
     let ours = toolbarItems.compactMap({ $0.rawValue })

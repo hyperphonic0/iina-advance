@@ -171,7 +171,7 @@ struct Constants {
     static let minLoopPointTime = 0.000001
 
     /// See notes in GeometryTransform.swift
-    static let videoDecParamsPauseInterval: TimeInt = 0.2
+    static let videoParamsRetryInterval: TimeInt = 0.2
 
     /// Speed of scrolling labels in music mode. Increase to scroll faster
     static let scrollingLabelOffsetPerSec: TimeInt = 15
@@ -353,22 +353,22 @@ struct Constants {
     /// If OSC is shorter than this, never show the speed label.
     static let minOSCBarHeightForSpeedLabel: CGFloat = 30
 
+    static let oscSectionHSpacing_SingleRow: CGFloat = 4
+
+    /// See `TwoRowBarOSCView.swift`, `ControlBarGeometry.swift`
     struct TwoRowOSC {
       /// Cannot use multiLineOSC when OSC bar height below this value; will be forced to use singleLineOSC
       static let minQualifyingBarHeight: CGFloat = minOSCBarHeight + Slider.minPlaySliderHeight
 
       /// Negative == overlap
       static let spacingBetweenRows: CGFloat = -4
-      static let leadingStackViewMargin: CGFloat = 4
-      static let trailingStackViewMargin: CGFloat = 4
+
+      static let oscSectionHSpacing: CGFloat = 3
     }
 
     /// Distance between traffic light buttons (their alignment rects, which does not include some extra padding around
     /// their images)
     static let titleBarIconHSpacing: CGFloat = 6
-
-    static let oscSectionHSpacing_SingleRow: CGFloat = 4
-    static let oscSectionHSpacing_TwoRow: CGFloat = 3
 
     // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
     // (with no bar gradient or shading).

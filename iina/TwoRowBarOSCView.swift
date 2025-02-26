@@ -34,15 +34,15 @@ class TwoRowBarOSCView: ClickThroughView {
 
     addSubview(hStackView)
 
-    hStackViewLeadingConstraint = hStackView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: Constants.Distance.TwoRowOSC.leadingStackViewMargin)
+    hStackViewLeadingConstraint = hStackView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 0)
     hStackViewLeadingConstraint.identifier = "\(hStackView.idString)_Lead-Offset"
     hStackViewLeadingConstraint.isActive = true
 
-    hStackViewTrailingConstraint = self.trailingAnchor.constraint(equalTo: hStackView.trailingAnchor, constant: Constants.Distance.TwoRowOSC.trailingStackViewMargin)
+    hStackViewTrailingConstraint = self.trailingAnchor.constraint(equalTo: hStackView.trailingAnchor, constant: 0)
     hStackViewTrailingConstraint.identifier = "\(hStackView.idString)_Trail-Offset"
     hStackViewTrailingConstraint.isActive = true
 
-    hStackView_BottomMarginConstraint = bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: 0.0)
+    hStackView_BottomMarginConstraint = bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: 0)
     hStackView_BottomMarginConstraint.identifier = "\(TwoRowBarOSCView.id)-HStackView-BtmOffset"
     relaxConstraints()
     hStackView_BottomMarginConstraint.isActive = true
@@ -106,16 +106,16 @@ class TwoRowBarOSCView: ClickThroughView {
     intraRowSpacingConstraint?.isActive = false
     // Make sure to put PlaySlider below other controls. Older MacOS versions may clip overlapping views
     addSubview(playSliderTypeView, positioned: .below, relativeTo: hStackView)
-    playSliderTypeView.addConstraintsToFillSuperview(top: 0, leading: Constants.Distance.TwoRowOSC.leadingStackViewMargin,
-                                                     trailing: Constants.Distance.TwoRowOSC.trailingStackViewMargin)
+    playSliderTypeView.addConstraintsToFillSuperview(top: 0, leading: oscGeo.leadingSpace_Row1,
+                                                     trailing: oscGeo.trailingSpace_Row1)
     // Negative number here means overlapping:
     intraRowSpacingConstraint = hStackView.topAnchor.constraint(equalTo: playSliderTypeView.bottomAnchor, constant: -bottomMargin)
     intraRowSpacingConstraint.identifier = "\(TwoRowBarOSCView.id)-IntraRowSpacingConstraint"
     intraRowSpacingConstraint.priority = .defaultLow  // for now
     intraRowSpacingConstraint.isActive = true
 
-    hStackViewLeadingConstraint.animateToConstant(oscGeo.hStackSpacing * 0.5)  // TODO: fix play icon spacing
-    hStackViewTrailingConstraint.animateToConstant(oscGeo.hStackSpacing * 0.5)
+    hStackViewLeadingConstraint.animateToConstant(oscGeo.leadingSpace_Row2)  // TODO: fix play icon spacing
+    hStackViewTrailingConstraint.animateToConstant(oscGeo.trailingSpace_Row2)
 
     viewsForHStack.append(centralSpacerView)
     viewsForHStack.append(pwc.fragVolumeView)

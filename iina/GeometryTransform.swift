@@ -101,7 +101,7 @@ struct GeometryTransform {
         }
         retryNum += 1
         if retryNum > retriesMax { break }
-        let pauseDuration = Constants.TimeInterval.videoDecParamsPauseInterval
+        let pauseDuration = Constants.TimeInterval.videoParamsRetryInterval
         log.debug{"[GeoTF:\(name)] Could not get \(mpvPropertyName); will try again in \(pauseDuration)s (tries remaining: \(retriesMax - retryNum + 1))"}
         Thread.sleep(forTimeInterval: pauseDuration)
       }
