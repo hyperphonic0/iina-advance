@@ -82,18 +82,6 @@ extension PlayerWindowController {
       // Update this here to reduce animation jitter on older versions of MacOS:
       viewportTopOffsetFromTopBarTopConstraint.constant = Constants.Distance.standardTitleBarHeight
 
-      // Work around a bug in macOS Ventura where HDR content becomes dimmed when playing in full
-      // screen mode once overlaying views are fully hidden (issue #3844). After applying this
-      // workaround another bug in Ventura where an external monitor goes black could not be
-      // reproduced (issue #4015). The workaround adds a tiny subview with such a low alpha level it
-      // is invisible to the human eye. This workaround may not be effective in all cases.
-      if #available(macOS 13, *) {
-        let view = NSView(frame: NSRect(origin: .zero, size: NSSize(width: 0.1, height: 0.1)))
-        view.layer?.backgroundColor = Constants.Color.defaultWindowBackgroundColor
-        view.layer?.opacity = 0.01
-        contentView.addSubview(view)
-      }
-
       initViewportView()
       initAlbumArtView()
       initSeekPreview(in: contentView)
@@ -413,7 +401,7 @@ extension PlayerWindowController {
     playButton.target = self
     playButton.action = #selector(playButtonAction(_:))
     playButton.refusesFirstResponder = true
-    playButton.identifier = .init("PlayButton")  // helps with debug logging
+    playButton.identifier = .init("PlayBtn")  // helps with debug logging
     playButton.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
     playButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
     let playIconSize = oscGeo.playIconSize
@@ -442,7 +430,7 @@ extension PlayerWindowController {
     leftArrowButton.image = oscGeo.leftArrowImage
     leftArrowButton.target = self
     leftArrowButton.action = #selector(leftArrowButtonAction(_:))
-    leftArrowButton.identifier = .init("LeftArrowButton")
+    leftArrowButton.identifier = .init("LeftArrowBtn")
     leftArrowButton.refusesFirstResponder = true
     leftArrowButton.enableAcceleration = enableAcceleration
     leftArrowButton.bounceOnClick = true
@@ -451,7 +439,7 @@ extension PlayerWindowController {
     rightArrowButton.image = oscGeo.rightArrowImage
     rightArrowButton.target = self
     rightArrowButton.action = #selector(rightArrowButtonAction(_:))
-    rightArrowButton.identifier = .init("RightArrowButton")
+    rightArrowButton.identifier = .init("RightArrowBtn")
     rightArrowButton.refusesFirstResponder = true
     rightArrowButton.enableAcceleration = enableAcceleration
     rightArrowButton.bounceOnClick = true
@@ -619,12 +607,12 @@ extension PlayerWindowController {
     let hSpacing: CGFloat = 2
 
     // Volume view
-    fragVolumeView.identifier = .init("fragVolumeView")
+    fragVolumeView.idString = "fragVolumeView"
     fragVolumeView.translatesAutoresizingMaskIntoConstraints = false
     fragVolumeView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
 
     // Mute button
-    muteButton.idString = "MuteButton"
+    muteButton.idString = "MuteBtn"
     let volImage = Images.volume3
     muteButton.image = Images.volume3
     muteButton.target = self
@@ -646,11 +634,11 @@ extension PlayerWindowController {
     // For some reason this needs to be set here, instead of in volumeSliderCell init.
     // Otherwise action will continue to be nil...
     volumeSliderCell.hoverTimer.action = volumeSliderCell.refreshVolumeSliderHoverEffect
-    volumeSlider.idString = "VolumeSlider"
+    volumeSlider.idString = "VolSlider"
     volumeSlider.controlSize = .regular
     volumeSlider.translatesAutoresizingMaskIntoConstraints = false
     volumeSliderWidthConstraint = volumeSlider.widthAnchor.constraint(equalToConstant: oscGeo.volumeSliderWidth)
-    volumeSliderWidthConstraint.identifier = .init("VolumeSlider-WidthConstraint")
+    volumeSliderWidthConstraint.identifier = .init("VolSlider-WidthConstraint")
     volumeSliderWidthConstraint.isActive = true
     volumeSlider.addConstraintsToFillSuperview(top: 0, bottom: 0)
     volumeSlider.leadingAnchor.constraint(equalTo: muteButton.trailingAnchor, constant: hSpacing).isActive = true
@@ -675,13 +663,13 @@ extension PlayerWindowController {
     trailingConstraint.isActive = true
     let leadingConstraint = additionalInfoTitle.leadingAnchor.constraint(equalTo: additionalInfoView.leadingAnchor, constant: 16)
     leadingConstraint.isActive = true
-    additionalInfoTitle.idString = "AdditionalInfo-TitleLabel"
+    additionalInfoTitle.idString = "AddlInfo-TitleLabel"
     additionalInfoTitle.font = .systemFont(ofSize: 18)
     additionalInfoTitle.textColor = .labelColor
   }
 
   func initCustomWindowBorder(in contentView: NSView) {
-    customWindowBorderBox.idString = "CustomWindowBorderBox"
+    customWindowBorderBox.idString = "CustomWndBorderBox"
     customWindowBorderBox.boxType = .custom
     customWindowBorderBox.titlePosition = .noTitle
     customWindowBorderBox.borderWidth = 1
@@ -693,7 +681,7 @@ extension PlayerWindowController {
     customWindowBorderBox.addConstraintsToFillSuperview(top: 0, .init(900), bottom: -0.5, .init(900),
                                                         leading: 0, .required, trailing: -0.5, .required)
 
-    customWindowBorderTopHighlightBox.idString = "CustomWindowBorderTopHighlightBox"
+    customWindowBorderTopHighlightBox.idString = "CustomWndBorderTopHighlightBox"
     customWindowBorderTopHighlightBox.boxType = .custom
     customWindowBorderTopHighlightBox.titlePosition = .noTitle
     customWindowBorderTopHighlightBox.borderWidth = 0.5
