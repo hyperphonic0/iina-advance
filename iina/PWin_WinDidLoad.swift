@@ -160,6 +160,15 @@ extension PlayerWindowController {
     viewportBottomSpacer.widthAnchor.constraint(equalToConstant: 1).isActive = true
     viewportLeadingSpacer.heightAnchor.constraint(equalToConstant: 1).isActive = true
     viewportTrailingSpacer.heightAnchor.constraint(equalToConstant: 1).isActive = true
+    // Make these different than the other spacers just to be safe
+    viewportTrailingSpacer.setContentHuggingPriority(.init(2), for: .horizontal)
+    viewportTrailingSpacer.setContentHuggingPriority(.init(2), for: .vertical)
+    viewportTrailingSpacer.setContentCompressionResistancePriority(.init(2), for: .horizontal)
+    viewportTrailingSpacer.setContentCompressionResistancePriority(.init(2), for: .vertical)
+    viewportTopSpacer.setContentHuggingPriority(.init(2), for: .horizontal)
+    viewportTopSpacer.setContentHuggingPriority(.init(2), for: .vertical)
+    viewportTopSpacer.setContentCompressionResistancePriority(.init(2), for: .horizontal)
+    viewportTopSpacer.setContentCompressionResistancePriority(.init(2), for: .vertical)
   }
 
   private func initAlbumArtView() {
