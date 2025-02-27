@@ -167,8 +167,8 @@ extension VideoView {
       ltOffsetBottom: existing?.ltOffsetBottom ?? bottomSpacer.topAnchor.constraint(lessThanOrEqualTo: bottomSpacer.bottomAnchor, constant: 0),
       ltOffsetLeading: existing?.ltOffsetLeading ?? leadingSpacer.trailingAnchor.constraint(lessThanOrEqualTo: leadingSpacer.leadingAnchor, constant: 0),
 
-      width: existing?.width ?? widthAnchor.constraint(equalToConstant: 0),
-      height: existing?.height ?? heightAnchor.constraint(equalToConstant: 0),
+      width: existing?.width ?? widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
+      height: existing?.height ?? heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
 
       centerX: existing?.centerX ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor, constant: 0),
       centerY: existing?.centerY ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor, constant: 0),
@@ -197,28 +197,31 @@ extension VideoView {
 
     let connectSpacers = true
 
+    // The desired aspect must always be honored. All constraints are secondary to this.
+    let aspectPriority: NSLayoutConstraint.Priority = .required
+    let aspectActive = aspectMultiplier > 0.0
+
     // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
-    let eqPriority: NSLayoutConstraint.Priority = .init(280)
+    let eqPriority: NSLayoutConstraint.Priority = .init(8)
     let eqIsActive = false
 
-    let gtPriority: NSLayoutConstraint.Priority = .init(289)
+    let ltPriority: NSLayoutConstraint.Priority = .init(10)
+    let ltIsActive = true
+
+    let gtPriority: NSLayoutConstraint.Priority = .init(9)
     let gtIsActive = true
 
-    let ltPriority: NSLayoutConstraint.Priority = .init(290)
-    let ltIsActive = false
-
-    let widthAndHeightActive = true
-    let widthAndHeightPriority: NSLayoutConstraint.Priority = .init(280)
+    let widthHeightPriority: NSLayoutConstraint.Priority = .init(7)
+    let widthHeightActive = true
 
     // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-    let centerPriority: NSLayoutConstraint.Priority = .init(290)
+    let centerPriority: NSLayoutConstraint.Priority = .init(80)
     let centerActive = true
 
-    let center2Priority: NSLayoutConstraint.Priority = .init(289)
+    let center2Priority: NSLayoutConstraint.Priority = .init(70)
     let center2Active = true
 
-    // The desired aspect must always be honored. All constraints are secondary to this.
-    cons.aspectRatio.priority = .required
+    cons.aspectRatio.priority = aspectPriority
 
     cons.eqOffsetTop.priority = eqPriority
     cons.eqOffsetTrailing.priority = eqPriority
@@ -235,8 +238,8 @@ extension VideoView {
     cons.ltOffsetBottom.priority = ltPriority
     cons.ltOffsetLeading.priority = ltPriority
 
-    cons.width.priority = widthAndHeightPriority
-    cons.height.priority = widthAndHeightPriority
+    cons.width.priority = widthHeightPriority
+    cons.height.priority = widthHeightPriority
 
     cons.centerX.priority = centerPriority
     cons.centerY.priority = centerPriority
@@ -266,8 +269,8 @@ extension VideoView {
     cons.ltOffsetBottom.isActive = ltIsActive
     cons.ltOffsetLeading.isActive = ltIsActive
 
-    cons.width.isActive = widthAndHeightActive
-    cons.height.isActive = widthAndHeightActive
+    cons.width.isActive = widthHeightActive
+    cons.height.isActive = widthHeightActive
 
     cons.centerX.isActive = centerActive
     cons.centerY.isActive = centerActive
@@ -275,7 +278,7 @@ extension VideoView {
     cons.centerX2.isActive = center2Active
     cons.centerY2.isActive = center2Active
 
-    cons.aspectRatio.isActive = aspectMultiplier > 0.0
+    cons.aspectRatio.isActive = aspectActive
 
     videoViewConstraints = cons
 
