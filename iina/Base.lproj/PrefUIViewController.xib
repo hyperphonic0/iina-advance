@@ -2277,7 +2277,7 @@ For smoothest results, also enable custom full screen.</string>
                 <box title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="0eU-xI-byi" userLabel="Hide-Inside-Video-Controls Box">
                     <rect key="frame" x="117" y="4" width="456" height="94"/>
                     <view key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="s79-ch-C1D" userLabel="Hide-Inside-Video-Controls Box View">
-                        <rect key="frame" x="4" y="5" width="336" height="86"/>
+                        <rect key="frame" x="4" y="5" width="410" height="86"/>
                         <subviews>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IvI-R5-Sdu">
                                 <rect key="frame" x="14" y="58" width="120" height="18"/>
@@ -2322,7 +2322,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </textFieldCell>
                             </textField>
                             <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="kw0-f3-qrz">
-                                <rect key="frame" x="14" y="34" width="306" height="18"/>
+                                <rect key="frame" x="14" y="34" width="380" height="18"/>
                                 <buttonCell key="cell" type="check" title="Hide when cursor leaves window" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ZJL-Jz-cNh">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -2332,7 +2332,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </connections>
                             </button>
                             <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="Tue-oY-6da">
-                                <rect key="frame" x="14" y="10" width="322" height="18"/>
+                                <rect key="frame" x="14" y="10" width="396" height="18"/>
                                 <buttonCell key="cell" type="check" title="Move video into empty space (as available) to reduce overlap" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="nLH-m0-W5I">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -3175,13 +3175,6 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
-                            <connections>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="jxU-gh-ByY">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                            </connections>
                         </stackView>
                         <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="ZwL-8x-3OV" userLabel="12pt Spacer">
                             <rect key="frame" x="0.0" y="136" width="455" height="12"/>

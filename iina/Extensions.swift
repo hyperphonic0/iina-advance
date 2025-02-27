@@ -1928,6 +1928,16 @@ extension NSView {
     return true
   }
 
+  func setContentHugging(h: Float, v: Float) {
+    setContentHuggingPriority(.init(h), for: .horizontal)
+    setContentHuggingPriority(.init(v), for: .vertical)
+  }
+
+  func setCCResistance(h: Float, v: Float) {
+    setContentCompressionResistancePriority(.init(h), for: .horizontal)
+    setContentCompressionResistancePriority(.init(v), for: .vertical)
+  }
+
   /// Recursive func which configures all views in the given subtree for smoother animation.
   ///
   /// By configuring each view to use a layer with the correct redraw policy, AppKit will use Core Animation to draw

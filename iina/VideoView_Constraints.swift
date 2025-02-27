@@ -221,14 +221,15 @@ extension VideoView {
     let aspectPriority: NSLayoutConstraint.Priority = .required
     let aspectActive = aspectMultiplier > 0.0
 
-    let whMaxPriority: NSLayoutConstraint.Priority = .init(322)
+    // Need to keep priorities under 500 or the window will not resize!
+    let whMaxPriority: NSLayoutConstraint.Priority = .init(499)
     let whMaxActive = true
 
-    let marginGT_Priority: NSLayoutConstraint.Priority = .init(312)
+    let marginGT_Priority: NSLayoutConstraint.Priority = .init(490)
     let marginGT_Active = true
 
     // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-    let centerPriority: NSLayoutConstraint.Priority = .init(301)
+    let centerPriority: NSLayoutConstraint.Priority = .init(480)
     let centerActive = true
 
 #if TEST_VIDEO_CONSTRAINTS
