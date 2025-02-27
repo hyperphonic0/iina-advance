@@ -65,6 +65,44 @@ extension VideoView {
     let centerX2: NSLayoutConstraint
     let centerY2: NSLayoutConstraint
 #endif
+
+    func disableAll() {
+      topSpacerConnection.isActive = false
+      bottomSpacerConnection.isActive = false
+      leadingSpacerConnection.isActive = false
+      trailingSpacerConnection.isActive = false
+
+      gtOffsetTop.isActive = false
+      gtOffsetTrailing.isActive = false
+      gtOffsetBottom.isActive = false
+      gtOffsetLeading.isActive = false
+
+      widthMax.isActive = false
+      heightMax.isActive = false
+
+      centerX.isActive = false
+      centerY.isActive = false
+
+      aspectRatio.isActive = false
+
+#if TEST_VIDEO_CONSTRAINTS
+      eqOffsetTop.isActive = false
+      eqOffsetTrailing.isActive = false
+      eqOffsetBottom.isActive = false
+      eqOffsetLeading.isActive = false
+
+      ltOffsetTop.isActive = false
+      ltOffsetTrailing.isActive = false
+      ltOffsetBottom.isActive = false
+      ltOffsetLeading.isActive = false
+
+      widthMin.isActive = false
+      heightMin.isActive = false
+
+      centerX2.isActive = false
+      centerY2.isActive = false
+#endif
+    }
   }
 
   func removeVideoConstraints() {
@@ -74,42 +112,8 @@ extension VideoView {
     }
 
     log.verbose("VideoView: removing all video constraints")
-    cons.topSpacerConnection.isActive = false
-    cons.bottomSpacerConnection.isActive = false
-    cons.leadingSpacerConnection.isActive = false
-    cons.trailingSpacerConnection.isActive = false
-
-    cons.gtOffsetTop.isActive = false
-    cons.gtOffsetTrailing.isActive = false
-    cons.gtOffsetBottom.isActive = false
-    cons.gtOffsetLeading.isActive = false
-
-    cons.widthMax.isActive = false
-    cons.heightMax.isActive = false
-
-    cons.centerX.isActive = false
-    cons.centerY.isActive = false
-
-    cons.aspectRatio.isActive = false
+    cons.disableAll()
     videoViewConstraints = nil
-
-#if TEST_VIDEO_CONSTRAINTS
-    cons.eqOffsetTop.isActive = false
-    cons.eqOffsetTrailing.isActive = false
-    cons.eqOffsetBottom.isActive = false
-    cons.eqOffsetLeading.isActive = false
-
-    cons.ltOffsetTop.isActive = false
-    cons.ltOffsetTrailing.isActive = false
-    cons.ltOffsetBottom.isActive = false
-    cons.ltOffsetLeading.isActive = false
-
-    cons.widthMin.isActive = false
-    cons.heightMin.isActive = false
-
-    cons.centerX2.isActive = false
-    cons.centerY2.isActive = false
-#endif
   }
 
   /// Add, update, or remove all constraints, based on the given geometry (or lack thereof).
