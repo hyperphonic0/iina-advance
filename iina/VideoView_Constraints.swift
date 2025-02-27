@@ -152,20 +152,20 @@ extension VideoView {
       trailingSpacerConnection: existing?.trailingSpacerConnection ?? trailingAnchor.constraint(equalTo: trailingSpacer.leadingAnchor),
 
       // If need to create new, just use 0 for all constants now; may update below
-      eqOffsetTop: existing?.eqOffsetTop ?? topSpacer.topAnchor.constraint(equalTo: topAnchor, constant: 0),
-      eqOffsetTrailing: existing?.eqOffsetTrailing ?? trailingSpacer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 0),
-      eqOffsetBottom: existing?.eqOffsetBottom ?? bottomAnchor.constraint(equalTo: bottomSpacer.bottomAnchor, constant: 0),
-      eqOffsetLeading: existing?.eqOffsetLeading ?? leadingAnchor.constraint(equalTo: leadingSpacer.leadingAnchor, constant: 0),
+      eqOffsetTop: existing?.eqOffsetTop ?? topSpacer.topAnchor.constraint(equalTo: topSpacer.bottomAnchor, constant: 0),
+      eqOffsetTrailing: existing?.eqOffsetTrailing ?? trailingSpacer.trailingAnchor.constraint(equalTo: trailingSpacer.leadingAnchor, constant: 0),
+      eqOffsetBottom: existing?.eqOffsetBottom ?? bottomSpacer.topAnchor.constraint(equalTo: bottomSpacer.bottomAnchor, constant: 0),
+      eqOffsetLeading: existing?.eqOffsetLeading ?? leadingSpacer.trailingAnchor.constraint(equalTo: leadingSpacer.leadingAnchor, constant: 0),
 
-      gtOffsetTop: existing?.gtOffsetTop ?? topSpacer.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: 0),
-      gtOffsetTrailing: existing?.gtOffsetTrailing ?? trailingSpacer.trailingAnchor.constraint(greaterThanOrEqualTo: trailingAnchor, constant: 0),
-      gtOffsetBottom: existing?.gtOffsetBottom ?? bottomAnchor.constraint(greaterThanOrEqualTo: bottomSpacer.bottomAnchor, constant: 0),
-      gtOffsetLeading: existing?.gtOffsetLeading ?? leadingAnchor.constraint(greaterThanOrEqualTo: leadingSpacer.leadingAnchor, constant: 0),
+      gtOffsetTop: existing?.gtOffsetTop ?? topSpacer.topAnchor.constraint(greaterThanOrEqualTo: topSpacer.bottomAnchor, constant: 0),
+      gtOffsetTrailing: existing?.gtOffsetTrailing ?? trailingSpacer.trailingAnchor.constraint(greaterThanOrEqualTo: trailingSpacer.leadingAnchor, constant: 0),
+      gtOffsetBottom: existing?.gtOffsetBottom ?? bottomSpacer.topAnchor.constraint(greaterThanOrEqualTo: bottomSpacer.bottomAnchor, constant: 0),
+      gtOffsetLeading: existing?.gtOffsetLeading ?? leadingSpacer.trailingAnchor.constraint(greaterThanOrEqualTo: leadingSpacer.leadingAnchor, constant: 0),
 
-      ltOffsetTop: existing?.ltOffsetTop ?? topSpacer.topAnchor.constraint(lessThanOrEqualTo: topAnchor, constant: 0),
-      ltOffsetTrailing: existing?.ltOffsetTrailing ?? trailingSpacer.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: 0),
-      ltOffsetBottom: existing?.ltOffsetBottom ?? bottomAnchor.constraint(lessThanOrEqualTo: bottomSpacer.bottomAnchor, constant: 0),
-      ltOffsetLeading: existing?.ltOffsetLeading ?? leadingAnchor.constraint(lessThanOrEqualTo: leadingSpacer.leadingAnchor, constant: 0),
+      ltOffsetTop: existing?.ltOffsetTop ?? topSpacer.topAnchor.constraint(lessThanOrEqualTo: topSpacer.bottomAnchor, constant: 0),
+      ltOffsetTrailing: existing?.ltOffsetTrailing ?? trailingSpacer.trailingAnchor.constraint(lessThanOrEqualTo: trailingSpacer.leadingAnchor, constant: 0),
+      ltOffsetBottom: existing?.ltOffsetBottom ?? bottomSpacer.topAnchor.constraint(lessThanOrEqualTo: bottomSpacer.bottomAnchor, constant: 0),
+      ltOffsetLeading: existing?.ltOffsetLeading ?? leadingSpacer.trailingAnchor.constraint(lessThanOrEqualTo: leadingSpacer.leadingAnchor, constant: 0),
 
       width: existing?.width ?? widthAnchor.constraint(equalToConstant: 0),
       height: existing?.height ?? heightAnchor.constraint(equalToConstant: 0),
@@ -198,20 +198,17 @@ extension VideoView {
     let connectSpacers = true
 
     // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
-    let eqPriority: NSLayoutConstraint.Priority = .init(300)
-    let eqIsActive = true
+    let eqPriority: NSLayoutConstraint.Priority = .init(280)
+    let eqIsActive = false
 
-    // GT constraints exist to prevent overlap with the inner bars, if possible. But this is a lower priority.
-    let gtPriority: NSLayoutConstraint.Priority = .init(298)
-    let gtIsActive = false
+    let gtPriority: NSLayoutConstraint.Priority = .init(289)
+    let gtIsActive = true
 
-    let ltPriority: NSLayoutConstraint.Priority = .init(297)
+    let ltPriority: NSLayoutConstraint.Priority = .init(290)
     let ltIsActive = false
 
-    let widthActive = true
-    let widthPriority: NSLayoutConstraint.Priority = .init(295)
-    let heightActive = true
-    let heightPriority: NSLayoutConstraint.Priority = .init(295)
+    let widthAndHeightActive = true
+    let widthAndHeightPriority: NSLayoutConstraint.Priority = .init(280)
 
     // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
     let centerPriority: NSLayoutConstraint.Priority = .init(290)
@@ -238,8 +235,8 @@ extension VideoView {
     cons.ltOffsetBottom.priority = ltPriority
     cons.ltOffsetLeading.priority = ltPriority
 
-    cons.width.priority = widthPriority
-    cons.height.priority = heightPriority
+    cons.width.priority = widthAndHeightPriority
+    cons.height.priority = widthAndHeightPriority
 
     cons.centerX.priority = centerPriority
     cons.centerY.priority = centerPriority
@@ -269,8 +266,8 @@ extension VideoView {
     cons.ltOffsetBottom.isActive = ltIsActive
     cons.ltOffsetLeading.isActive = ltIsActive
 
-    cons.width.isActive = widthActive
-    cons.height.isActive = heightActive
+    cons.width.isActive = widthAndHeightActive
+    cons.height.isActive = widthAndHeightActive
 
     cons.centerX.isActive = centerActive
     cons.centerY.isActive = centerActive
