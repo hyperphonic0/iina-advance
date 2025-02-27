@@ -7,7 +7,22 @@
 //
 
 extension VideoView {
-  
+
+  /// Only called once, at VideoView init
+  func initConstraints() {
+    translatesAutoresizingMaskIntoConstraints = false
+    setContentCompressionResistancePriority(.required, for: .horizontal)
+    setContentCompressionResistancePriority(.required, for: .vertical)
+    setContentHuggingPriority(.required, for: .horizontal)
+    setContentHuggingPriority(.required, for: .vertical)
+  }
+
+  /// Convenience property
+  var aspectMultiplier: CGFloat? {  videoViewConstraints?.aspectRatio.multiplier }
+
+
+  // MARK: - VideoViewConstraints
+
   struct VideoViewConstraints {
     let topSpacerConnection: NSLayoutConstraint
     let bottomSpacerConnection: NSLayoutConstraint
@@ -20,11 +35,18 @@ extension VideoView {
     let eqOffsetBottom: NSLayoutConstraint
     let eqOffsetLeading: NSLayoutConstraint
 
-    // Margins should be willing to expand if they can't equal 0:
     let gtOffsetTop: NSLayoutConstraint
     let gtOffsetTrailing: NSLayoutConstraint
     let gtOffsetBottom: NSLayoutConstraint
     let gtOffsetLeading: NSLayoutConstraint
+
+    let ltOffsetTop: NSLayoutConstraint
+    let ltOffsetTrailing: NSLayoutConstraint
+    let ltOffsetBottom: NSLayoutConstraint
+    let ltOffsetLeading: NSLayoutConstraint
+
+    let width: NSLayoutConstraint
+    let height: NSLayoutConstraint
 
     // Use aspect ratio constraint + weak center constraints to improve the video resize animation when
     // tiling the window while lockViewportToVideoSize is enabled.
@@ -33,15 +55,11 @@ extension VideoView {
     // These can be adjusted to keep VideoView away from "inside" bars.
     let centerX: NSLayoutConstraint
     let centerY: NSLayoutConstraint
-    let aspectRatio: NSLayoutConstraint
-  }
 
-  func initConstraints() {
-    translatesAutoresizingMaskIntoConstraints = false
-    setContentCompressionResistancePriority(.required, for: .horizontal)
-    setContentCompressionResistancePriority(.required, for: .vertical)
-    setContentHuggingPriority(.required, for: .horizontal)
-    setContentHuggingPriority(.required, for: .vertical)
+    let centerX2: NSLayoutConstraint
+    let centerY2: NSLayoutConstraint
+
+    let aspectRatio: NSLayoutConstraint
   }
 
   func removeVideoConstraints() {
@@ -66,14 +84,22 @@ extension VideoView {
     cons.gtOffsetBottom.isActive = false
     cons.gtOffsetLeading.isActive = false
 
+    cons.ltOffsetTop.isActive = false
+    cons.ltOffsetTrailing.isActive = false
+    cons.ltOffsetBottom.isActive = false
+    cons.ltOffsetLeading.isActive = false
+
+    cons.width.isActive = false
+    cons.height.isActive = false
+
     cons.centerX.isActive = false
     cons.centerY.isActive = false
+
+    cons.centerX2.isActive = false
+    cons.centerY2.isActive = false
+
     cons.aspectRatio.isActive = false
     videoViewConstraints = nil
-  }
-
-  var aspectMultiplier: CGFloat? {
-    return videoViewConstraints?.aspectRatio.multiplier
   }
 
   /// Add, update, or remove all constraints, based on the given geometry (or lack thereof).
@@ -126,18 +152,29 @@ extension VideoView {
       trailingSpacerConnection: existing?.trailingSpacerConnection ?? trailingAnchor.constraint(equalTo: trailingSpacer.leadingAnchor),
 
       // If need to create new, just use 0 for all constants now; may update below
-      eqOffsetTop: existing?.eqOffsetTop ?? topSpacer.heightAnchor.constraint(equalToConstant: 0),
-      eqOffsetTrailing: existing?.eqOffsetTrailing ?? trailingSpacer.widthAnchor.constraint(equalToConstant: 0),
-      eqOffsetBottom: existing?.eqOffsetBottom ?? bottomSpacer.heightAnchor.constraint(equalToConstant: 0),
-      eqOffsetLeading: existing?.eqOffsetLeading ?? leadingSpacer.widthAnchor.constraint(equalToConstant: 0),
+      eqOffsetTop: existing?.eqOffsetTop ?? topSpacer.topAnchor.constraint(equalTo: topAnchor, constant: 0),
+      eqOffsetTrailing: existing?.eqOffsetTrailing ?? trailingSpacer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 0),
+      eqOffsetBottom: existing?.eqOffsetBottom ?? bottomAnchor.constraint(equalTo: bottomSpacer.bottomAnchor, constant: 0),
+      eqOffsetLeading: existing?.eqOffsetLeading ?? leadingAnchor.constraint(equalTo: leadingSpacer.leadingAnchor, constant: 0),
 
-      gtOffsetTop: existing?.gtOffsetTop ?? topSpacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
-      gtOffsetTrailing: existing?.gtOffsetTrailing ?? trailingSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
-      gtOffsetBottom: existing?.gtOffsetBottom ?? bottomSpacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
-      gtOffsetLeading: existing?.gtOffsetLeading ?? leadingSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
+      gtOffsetTop: existing?.gtOffsetTop ?? topSpacer.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: 0),
+      gtOffsetTrailing: existing?.gtOffsetTrailing ?? trailingSpacer.trailingAnchor.constraint(greaterThanOrEqualTo: trailingAnchor, constant: 0),
+      gtOffsetBottom: existing?.gtOffsetBottom ?? bottomAnchor.constraint(greaterThanOrEqualTo: bottomSpacer.bottomAnchor, constant: 0),
+      gtOffsetLeading: existing?.gtOffsetLeading ?? leadingAnchor.constraint(greaterThanOrEqualTo: leadingSpacer.leadingAnchor, constant: 0),
+
+      ltOffsetTop: existing?.ltOffsetTop ?? topSpacer.topAnchor.constraint(lessThanOrEqualTo: topAnchor, constant: 0),
+      ltOffsetTrailing: existing?.ltOffsetTrailing ?? trailingSpacer.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: 0),
+      ltOffsetBottom: existing?.ltOffsetBottom ?? bottomAnchor.constraint(lessThanOrEqualTo: bottomSpacer.bottomAnchor, constant: 0),
+      ltOffsetLeading: existing?.ltOffsetLeading ?? leadingAnchor.constraint(lessThanOrEqualTo: leadingSpacer.leadingAnchor, constant: 0),
+
+      width: existing?.width ?? widthAnchor.constraint(equalToConstant: 0),
+      height: existing?.height ?? heightAnchor.constraint(equalToConstant: 0),
 
       centerX: existing?.centerX ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor, constant: 0),
       centerY: existing?.centerY ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor, constant: 0),
+
+      centerX2: existing?.centerX2 ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor, constant: 0),
+      centerY2: existing?.centerY2 ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor, constant: 0),
 
       aspectRatio: aspect
     )
@@ -158,50 +195,88 @@ extension VideoView {
 
     // Priorities
 
+    let connectSpacers = true
+
+    // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
+    let eqPriority: NSLayoutConstraint.Priority = .init(300)
+    let eqIsActive = true
+
+    // GT constraints exist to prevent overlap with the inner bars, if possible. But this is a lower priority.
+    let gtPriority: NSLayoutConstraint.Priority = .init(298)
+    let gtIsActive = false
+
+    let ltPriority: NSLayoutConstraint.Priority = .init(297)
+    let ltIsActive = false
+
+    let widthActive = true
+    let widthPriority: NSLayoutConstraint.Priority = .init(295)
+    let heightActive = true
+    let heightPriority: NSLayoutConstraint.Priority = .init(295)
+
+    // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
+    let centerPriority: NSLayoutConstraint.Priority = .init(290)
+    let centerActive = true
+
+    let center2Priority: NSLayoutConstraint.Priority = .init(289)
+    let center2Active = true
+
     // The desired aspect must always be honored. All constraints are secondary to this.
     cons.aspectRatio.priority = .required
 
-    // Margin should ideally be 0, causing the video to expand to fill the window as much as possible,
-    // while keeping aspect.
-    let eqPriority: NSLayoutConstraint.Priority = .init(300)
     cons.eqOffsetTop.priority = eqPriority
     cons.eqOffsetTrailing.priority = eqPriority
     cons.eqOffsetBottom.priority = eqPriority
     cons.eqOffsetLeading.priority = eqPriority
 
-    // GT constraints exist to prevent overlap with the inner bars, if possible. But this is a lower priority.
-    let gtPriority: NSLayoutConstraint.Priority = .init(299)
     cons.gtOffsetTop.priority = gtPriority
     cons.gtOffsetTrailing.priority = gtPriority
     cons.gtOffsetBottom.priority = gtPriority
     cons.gtOffsetLeading.priority = gtPriority
 
-    // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-    let centerPriority: NSLayoutConstraint.Priority = .init(10)
+    cons.ltOffsetTop.priority = ltPriority
+    cons.ltOffsetTrailing.priority = ltPriority
+    cons.ltOffsetBottom.priority = ltPriority
+    cons.ltOffsetLeading.priority = ltPriority
+
+    cons.width.priority = widthPriority
+    cons.height.priority = heightPriority
+
     cons.centerX.priority = centerPriority
     cons.centerY.priority = centerPriority
 
+    cons.centerX2.priority = center2Priority
+    cons.centerY2.priority = center2Priority
+
     // Enablement
 
-    cons.topSpacerConnection.isActive = true
-    cons.bottomSpacerConnection.isActive = true
-    cons.leadingSpacerConnection.isActive = true
-    cons.trailingSpacerConnection.isActive = true
+    cons.topSpacerConnection.isActive = connectSpacers
+    cons.bottomSpacerConnection.isActive = connectSpacers
+    cons.leadingSpacerConnection.isActive = connectSpacers
+    cons.trailingSpacerConnection.isActive = connectSpacers
 
-    let eqIsActive = true
     cons.eqOffsetTop.isActive = eqIsActive
     cons.eqOffsetTrailing.isActive = eqIsActive
     cons.eqOffsetBottom.isActive = eqIsActive
     cons.eqOffsetLeading.isActive = eqIsActive
 
-    let gtIsActive = true
     cons.gtOffsetTop.isActive = gtIsActive
     cons.gtOffsetTrailing.isActive = gtIsActive
     cons.gtOffsetBottom.isActive = gtIsActive
     cons.gtOffsetLeading.isActive = gtIsActive
 
-    cons.centerX.isActive = true
-    cons.centerY.isActive = true
+    cons.ltOffsetTop.isActive = ltIsActive
+    cons.ltOffsetTrailing.isActive = ltIsActive
+    cons.ltOffsetBottom.isActive = ltIsActive
+    cons.ltOffsetLeading.isActive = ltIsActive
+
+    cons.width.isActive = widthActive
+    cons.height.isActive = heightActive
+
+    cons.centerX.isActive = centerActive
+    cons.centerY.isActive = centerActive
+
+    cons.centerX2.isActive = center2Active
+    cons.centerY2.isActive = center2Active
 
     cons.aspectRatio.isActive = aspectMultiplier > 0.0
 
