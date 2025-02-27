@@ -204,8 +204,8 @@ extension VideoView {
     let inside = geometry.insideBars
     let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars)
     if keepVideoAwayFromBars {
-      let centerOffsetX = (inside.leading - inside.trailing) * 0.5
-      let centerOffsetY = (inside.top - inside.bottom) * 0.5
+      let centerOffsetX = ((inside.leading - inside.trailing) * 0.5).rounded(.down)
+      let centerOffsetY = ((inside.top - inside.bottom) * 0.5).rounded(.down)
       cons.centerX.animateToConstant(centerOffsetX)
       cons.centerY.animateToConstant(centerOffsetY)
     } else {

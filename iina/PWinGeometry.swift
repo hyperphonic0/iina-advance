@@ -274,7 +274,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// Final aspect ratio of `videoView`. Very close to `video.videoAspectCAR`, except it is calculated from the actual pixels
   /// of the final `videoSize`. Very limited utility. In most cases `video.videoAspectCAR` should be used, as it is the target.
   var videoViewAspect: CGFloat {
-    return videoSize.mpvAspect
+    // Just use videoAspectCAR for now because it's a consistent value
+    return video.videoAspectCAR
   }
 
   let videoSize: NSSize
@@ -717,7 +718,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   func refitted(using newFit: ScreenFit? = nil, lockViewportToVideoSize: Bool? = nil) -> PWinGeometry {
     return scalingViewport(screenFit: newFit, lockViewportToVideoSize: lockViewportToVideoSize)
   }
-  
+
   /// Computes a new `PWinGeometry`, attempting to attain the given window size.
   func scalingWindow(to desiredWindowSize: NSSize? = nil,
                      screenID: String? = nil,
