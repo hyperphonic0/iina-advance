@@ -1860,6 +1860,17 @@ extension NSViewController {
   }
 }
 
+extension NSLayoutConstraint {
+  var intPriority: Int {
+    get {
+      return Int(priority.rawValue)
+    }
+    set {
+      priority = .init(rawValue: Float(newValue))
+    }
+  }
+}
+
 extension NSLayoutConstraint.Priority {
   static let minimum: NSLayoutConstraint.Priority = NSLayoutConstraint.Priority(rawValue: 1)
 }

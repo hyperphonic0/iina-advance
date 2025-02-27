@@ -146,7 +146,8 @@ extension PlayerWindowController {
     viewportView.clipsToBounds = true
     viewportView.translatesAutoresizingMaskIntoConstraints = false
     viewportView.autoresizesSubviews = false
-    viewportView.setCCResistance(h: 250, v: 250)
+    viewportView.setContentHugging(h: 1000, v: 1000)
+    viewportView.setCCResistance(h: 1000, v: 1000)
 
     viewportView.addSubview(viewportTopSpacer, positioned: .below, relativeTo: defaultAlbumArtView)
     viewportView.addSubview(viewportBottomSpacer, positioned: .below, relativeTo: defaultAlbumArtView)
@@ -156,11 +157,11 @@ extension PlayerWindowController {
     viewportBottomSpacer.addConstraintsToFillSuperview(bottom: 0, trailing: 0)
     viewportLeadingSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
     viewportTrailingSpacer.addConstraintsToFillSuperview(top: 0, trailing: 0)
-    // Reduce the unused dimension of each spacer to 1pt to keep it well-definedt
-    viewportTopSpacer.widthAnchor.constraint(equalToConstant: 1).isActive = true
-    viewportBottomSpacer.widthAnchor.constraint(equalToConstant: 1).isActive = true
-    viewportLeadingSpacer.heightAnchor.constraint(equalToConstant: 1).isActive = true
-    viewportTrailingSpacer.heightAnchor.constraint(equalToConstant: 1).isActive = true
+    // Reduce the unused dimension of each spacer to keep it well-defined
+    viewportTopSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
+    viewportBottomSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
+    viewportLeadingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
+    viewportTrailingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
     viewportTrailingSpacer.setContentHugging(h: 2, v: 2)
     viewportLeadingSpacer.setContentHugging(h: 2, v: 2)
     viewportTopSpacer.setContentHugging(h: 2, v: 2)

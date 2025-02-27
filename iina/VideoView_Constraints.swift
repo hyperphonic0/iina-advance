@@ -302,7 +302,7 @@ extension VideoView {
     cons.gtOffsetBottom.isActive = marginGT_Active
     cons.gtOffsetLeading.isActive = marginGT_Active
 
-    cons.widthMax.isActive = whMaxActive
+    cons.widthMax.isActive = false  // not needed due to aspect...
     cons.heightMax.isActive = whMaxActive
 
     cons.centerX.isActive = centerActive

@@ -655,6 +655,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// to this window. Will do nothing if it's already there.
   func addVideoViewToWindow(using geo: MusicModeGeometry? = nil) {
     guard let window else { return }
+    let isViewportDoneWithInit = loaded
     do {
       let hasOpenGL = player.mpv.lockAndSetOpenGLContext()
       defer {
@@ -673,7 +674,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     videoView.refreshAllVideoDisplayState()
     /// Add constraints. These get removed each time `videoView` changes superviews.
     videoView.translatesAutoresizingMaskIntoConstraints = false
-    if !sessionState.isRestoring {  // this can mess up music mode restore
+    // this can mess up music mode restore. Also will crash if viewport does not have spacers yet
+    if !sessionState.isRestoring && isViewportDoneWithInit {
       let geo = currentLayout.mode == .musicMode ? (geo ?? musicModeGeo).toPWinGeometry() : windowedModeGeo
       videoView.apply(geo)
     }
