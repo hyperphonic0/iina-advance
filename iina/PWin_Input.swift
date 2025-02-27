@@ -265,6 +265,8 @@ extension PlayerWindowController {
     } else if startResizingSidebar(with: event) {
       // Start resize if applicable
       return
+    } else {
+      dragWindowIfQualifying(from: event)
     }
 
     hideCursorTimer.restart()
@@ -275,6 +277,24 @@ extension PlayerWindowController {
     )
     // we don't call super here because before adding the plugin system,
     // PlayerWindowController didn't call super at all
+  }
+
+  private func dragWindowIfQualifying(from event: NSEvent) {
+    if !isFullScreen, let mouseDownLocationInWindow {
+      if !isDragging {
+        /// Require that the user must drag the cursor at least a small distance for it to start a "drag" (`isDragging==true`)
+        /// The user's action will only be counted as a click if `isDragging==false` when `mouseUp` is called.
+        /// (Apple's trackpad in particular is very sensitive and tends to call `mouseDragged()` if there is even the slightest
+        /// roll of the finger during a click, and the distance of the "drag" may be less than `minimumInitialDragDistance`)
+        let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
+        guard dragDistance > Constants.WindowedMode.minInitialDragThreshold else { return }
+
+        log.verbose{"PWin MouseDrag: minimum dragging distance was met (\(dragDistance))"}
+        isDragging = true
+      }
+    }
+    window?.performDrag(with: event)
+    informPluginMouseDragged(with: event)
   }
 
   override func mouseDragged(with event: NSEvent) {
@@ -292,20 +312,7 @@ extension PlayerWindowController {
       return
     }
 
-    if !isFullScreen, let mouseDownLocationInWindow {
-      if !isDragging {
-        /// Require that the user must drag the cursor at least a small distance for it to start a "drag" (`isDragging==true`)
-        /// The user's action will only be counted as a click if `isDragging==false` when `mouseUp` is called.
-        /// (Apple's trackpad in particular is very sensitive and tends to call `mouseDragged()` if there is even the slightest
-        /// roll of the finger during a click, and the distance of the "drag" may be less than `minimumInitialDragDistance`)
-        let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
-        guard dragDistance > Constants.WindowedMode.minInitialDragThreshold else { return }
-        log.verbose{"PWin MouseDrag: minimum dragging distance was met (\(dragDistance))"}
-        isDragging = true
-      }
-      window?.performDrag(with: event)
-      informPluginMouseDragged(with: event)
-    }
+    dragWindowIfQualifying(from: event)
   }
 
   override func mouseUp(with event: NSEvent) {
