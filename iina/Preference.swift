@@ -670,7 +670,7 @@ struct Preference {
     case outlinePlusShadowSharpCorners
     case outlinePlusShadowRoundedCorners
 
-    static var defaultValue = ThumnailBorderStyle.outlinePlusShadowRoundedCorners
+    static var defaultValue = ThumnailBorderStyle.shadowRoundedCorners
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -841,7 +841,7 @@ struct Preference {
     case none
     case windowSizeOrFullScreen
 
-    static var defaultValue = PinchAction.windowSizeOrFullScreen
+    static var defaultValue = PinchAction.windowSize
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1348,8 +1348,8 @@ struct Preference {
     .enableThumbnailForRemoteFiles: true,
     .enableThumbnailForMusicMode: false,
     .showThumbnailDuringSliderSeek: true,
-    .thumbnailBorderStyle: ThumnailBorderStyle.shadowRoundedCorners.rawValue,
-    .thumbnailSizeOption: ThumbnailSizeOption.scaleWithViewport.rawValue,
+    .thumbnailBorderStyle: ThumnailBorderStyle.defaultValue.rawValue,
+    .thumbnailSizeOption: ThumbnailSizeOption.defaultValue.rawValue,
     .thumbnailFixedLength: 240,
     .thumbnailRawSizePercentage: 100,
     .thumbnailDisplayedSizePercentage: 25,
@@ -1366,7 +1366,7 @@ struct Preference {
     .musicModeMaxWidth: 2500,
     .displayTimeAndBatteryInFullScreen: false,
 
-      .windowBehaviorWhenPip: WindowBehaviorWhenPip.doNothing.rawValue,
+      .windowBehaviorWhenPip: WindowBehaviorWhenPip.defaultValue.rawValue,
     .pauseWhenPip: false,
     .togglePipByMinimizingWindow: false,
     .togglePipWhenSwitchingSpaces: false,
@@ -1502,7 +1502,7 @@ struct Preference {
     .doubleClickAction: MouseClickAction.fullscreen.rawValue,
     .rightClickAction: MouseClickAction.pause.rawValue,
     .middleClickAction: MouseClickAction.none.rawValue,
-    .pinchAction: PinchAction.windowSizeOrFullScreen.rawValue,
+    .pinchAction: PinchAction.defaultValue.rawValue,
     .rotateAction: RotateAction.defaultValue.rawValue,
     .forceTouchAction: MouseClickAction.none.rawValue,
 

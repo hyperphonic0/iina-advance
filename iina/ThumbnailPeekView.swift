@@ -43,7 +43,7 @@ class ThumbnailPeekView: NSImageView {
     guard let layer = self.layer else { return 0.0 }
 
     let cornerRadius: CGFloat
-    let style: Preference.ThumnailBorderStyle = Preference.isAdvancedEnabled ? Preference.enum(for: .thumbnailBorderStyle) : Preference.ThumnailBorderStyle.defaultValue
+    let style: Preference.ThumnailBorderStyle = Preference.enum(for: .thumbnailBorderStyle)
     switch style {
     case .plain:
       layer.borderWidth = 0
