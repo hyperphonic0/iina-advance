@@ -214,6 +214,10 @@ struct Constants {
     static let denyWindowResizeTimeout = 0.3
     static let musicModePopoverMinTimeout = 2.0
 
+    // This should match what is in Settings > UI
+    static let osdTimeoutMin = 0.1
+    static let fadeableViewsTimeoutMin = 0.1
+
     /// Longest time to wait for asynchronous shutdown tasks to finish before giving up on waiting and proceeding with termination.
     ///
     /// Ten seconds was chosen to provide plenty of time for termination and yet not be long enough that users start thinking they will

@@ -26,7 +26,7 @@ extension PlayerWindowController {
 
     /// For auto hiding UI after a timeout.
     /// Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
-    let hideTimer = TimeoutTimer(timeout: max(IINAAnimation.DefaultDuration, Double(Preference.float(for: .controlBarAutoHideTimeout))))
+    let hideTimer = TimeoutTimer(timeout: max(Constants.TimeInterval.fadeableViewsTimeoutMin, Double(Preference.float(for: .controlBarAutoHideTimeout))))
 
     func applyVisibility(_ visibility: VisibilityMode, to view: NSView) {
       switch visibility {

@@ -62,7 +62,7 @@ class OSDState {
 
   static func osdTimeoutFromPrefs() -> Double {
     // Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
-    return max(IINAAnimation.OSDAnimationDuration, Double(Preference.float(for: .osdAutoHideTimeout)))
+    return max(Constants.TimeInterval.osdTimeoutMin, Double(Preference.float(for: .osdAutoHideTimeout)))
   }
 
 }
