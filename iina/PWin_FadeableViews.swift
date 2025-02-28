@@ -28,6 +28,10 @@ extension PlayerWindowController {
     /// Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
     let hideTimer = TimeoutTimer(timeout: max(Constants.TimeInterval.fadeableViewsTimeoutMin, Double(Preference.float(for: .controlBarAutoHideTimeout))))
 
+    @Atomic fileprivate(set) var showHideTicketCount: Int = 0
+    /// Need to carry an extra bit of info for this
+    fileprivate var pendingShowTopPanel: Bool = false
+
     func applyVisibility(_ visibility: VisibilityMode, to view: NSView) {
       switch visibility {
       case .hidden:
@@ -85,33 +89,37 @@ extension PlayerWindowController {
     animationPipeline.submit(tasks)
   }
 
+  /// note that `restartFadeTimer` will have no effect if this is not the most recent request. Should be fine.
   func buildAnimationToShowFadeableViews(restartFadeTimer: Bool = true,
                                          duration: CGFloat = IINAAnimation.DefaultDuration,
                                          forceShow: Bool = false,
                                          forceShowTopBar: Bool = false) -> [IINAAnimation.Task] {
-    var tasks: [IINAAnimation.Task] = []
 
-    /// Default `showTopBarTrigger` setting to `.windowHover` if advanced settings not enabled
-    let wantsTopBarVisible = forceShowTopBar || (!Preference.isAdvancedEnabled || Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.windowHover)
+    var tasks: [IINAAnimation.Task] = []
 
     guard !player.disableUI && !isInInteractiveMode else {
       return tasks
     }
 
-    guard wantsTopBarVisible || fadeableViews.animationState == .hidden else {
-      if restartFadeTimer {
-        fadeableViews.hideTimer.restart()
-      } else {
-        fadeableViews.hideTimer.cancel()
-      }
-      return tasks
-    }
+    /// Default `showTopBarTrigger` setting to `.windowHover` if advanced settings not enabled
+    let wantsTopBarVisible = forceShowTopBar || (!Preference.isAdvancedEnabled || Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.windowHover)
 
     let currentLayout = self.currentLayout
+
+    let currentTicket = fadeableViews.$showHideTicketCount.withLock {
+      $0 += 1
+      return $0
+    }
 
     tasks.append(IINAAnimation.Task(duration: duration, { [self] in
       // Note to Future Self: stop messing with this logic! It works fine and is fast enough!
       if !forceShow {
+        guard currentTicket == fadeableViews.showHideTicketCount else {
+          if wantsTopBarVisible {
+            fadeableViews.pendingShowTopPanel = true
+          }
+          return
+        }
         guard fadeableViews.animationState == .hidden || fadeableViews.animationState == .shown else { return }
 
         guard !isAnimatingLayoutTransition else {
@@ -123,6 +131,8 @@ extension PlayerWindowController {
       fadeableViews.animationState = .willShow
       player.refreshSyncUITimer(logMsg: "Showing fadeable views ")
       fadeableViews.hideTimer.cancel()
+      let wantsTopBarVisible = wantsTopBarVisible || fadeableViews.pendingShowTopPanel
+      fadeableViews.pendingShowTopPanel = false
 
       for v in fadeableViews.fadeableViews {
         v.animator().alphaValue = 1
@@ -186,6 +196,7 @@ extension PlayerWindowController {
 
   @discardableResult
   func hideFadeableViews() -> Bool {
+    // Don't hide overlays when in PIP or when they are not actually shown
     guard pip.status == .notInPIP, (!(window?.isMiniaturized ?? false)) else {
       return false
     }
@@ -195,18 +206,26 @@ extension PlayerWindowController {
 
     var tasks: [IINAAnimation.Task] = []
 
+    let currentTicket = fadeableViews.$showHideTicketCount.withLock {
+      $0 += 1
+      return $0
+    }
+
     // Seek time & thumbnail can only be shown if the OSC is visible.
     // Need to hide them because the OSC is being hidden:
     let mustHideSeekPreview = !currentLayout.hasPermanentControlBar
 
-    if mustHideSeekPreview {
-      // Cancel timer now. Hide thumbnail with other views (below)
-      seekPreview.hideTimer.cancel()
-    }
+    // Do not allow more tasks to be enqueued between now & the first task execution:
+    fadeableViews.hideTimer.cancel()
 
     tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
+      // Ensure we are the most current ticket
+      guard currentTicket == fadeableViews.showHideTicketCount else { return }
       guard fadeableViews.animationState == .shown else { return }
-      // Don't hide overlays when in PIP or when they are not actually shown
+
+      // reset state
+      fadeableViews.pendingShowTopPanel = false
+
       fadeableViews.hideTimer.cancel()
       fadeableViews.animationState = .willHide
       fadeableViews.topBarAnimationState = .willHide
@@ -232,6 +251,8 @@ extension PlayerWindowController {
       }
 
       if mustHideSeekPreview {
+        // Hide seek preview & thumbnail
+        seekPreview.hideTimer.cancel()
         seekPreview.animationState = .willHide
         seekPreview.thumbnailPeekView.animator().alphaValue = 0
         seekPreview.timeLabel.animator().alphaValue = 0
@@ -261,9 +282,7 @@ extension PlayerWindowController {
 
       if mustHideSeekPreview, seekPreview.animationState == .willHide {
         log.trace("Hiding SeekPreview from fadeable views timeout")
-        seekPreview.animationState = .hidden
-        seekPreview.thumbnailPeekView.isHidden = true
-        seekPreview.timeLabel.isHidden = true
+        hideSeekPreviewImmediately()
       }
     })
 
