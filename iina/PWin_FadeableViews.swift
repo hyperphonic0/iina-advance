@@ -135,7 +135,10 @@ extension PlayerWindowController {
 
     tasks.append(IINAAnimation.Task(duration: duration, { [self] in
       // Note to Future Self: stop messing with this logic! It works fine and is fast enough!
-      if !forceShow {
+      if forceShow {
+        // This is only used as part of a transition. Invalidate any pending tasksf
+        fadeableViews.$showHideTicketCount.withLock { $0 += 1 }
+      } else {
         guard fadeableViews.animationState == .hidden || fadeableViews.animationState == .shown else { return }
 
         guard !isAnimatingLayoutTransition else {
