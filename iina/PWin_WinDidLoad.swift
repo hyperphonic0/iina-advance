@@ -60,9 +60,6 @@ extension PlayerWindowController {
     pluginView.windowController = self
     quickSettingView.windowController = self
 
-    // other initialization
-    osdAccessoryProgress.usesThreadedAnimation = false
-
     /// Note that this will add `videoView`, but at first run it will not yet have a video layer.
     /// Need to wait until after mpv is initialized before creating `videoView.layer`
     addVideoViewToWindow()
@@ -101,10 +98,10 @@ extension PlayerWindowController {
       playSlider.target = self
       playSlider.action = #selector(playSliderAction(_:))
 
+      initOSDView()
       bufferIndicatorView.roundCorners()
       initAdditionalInfoView()
       initCustomWindowBorder(in: contentView)
-      osdVisualEffectView.roundCorners()
 
       log.verbose{"Configuring for CoreAnimation: window"}
       contentView.configureSubtreeForCoreAnimation()
@@ -149,10 +146,10 @@ extension PlayerWindowController {
     viewportView.setContentHugging(h: 1000, v: 1000)
     viewportView.setCCResistance(h: 1000, v: 1000)
 
-    viewportView.addSubview(viewportTopSpacer, positioned: .below, relativeTo: defaultAlbumArtView)
-    viewportView.addSubview(viewportBottomSpacer, positioned: .below, relativeTo: defaultAlbumArtView)
-    viewportView.addSubview(viewportLeadingSpacer, positioned: .below, relativeTo: defaultAlbumArtView)
-    viewportView.addSubview(viewportTrailingSpacer, positioned: .below, relativeTo: defaultAlbumArtView)
+    viewportView.addSubview(viewportTopSpacer)
+    viewportView.addSubview(viewportBottomSpacer)
+    viewportView.addSubview(viewportLeadingSpacer)
+    viewportView.addSubview(viewportTrailingSpacer)
     viewportTopSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
     viewportBottomSpacer.addConstraintsToFillSuperview(bottom: 0, trailing: 0)
     viewportLeadingSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
@@ -162,10 +159,11 @@ extension PlayerWindowController {
     viewportBottomSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
     viewportLeadingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
     viewportTrailingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
-    viewportTrailingSpacer.setContentHugging(h: 2, v: 2)
-    viewportLeadingSpacer.setContentHugging(h: 2, v: 2)
-    viewportTopSpacer.setContentHugging(h: 2, v: 2)
-    viewportBottomSpacer.setContentHugging(h: 2, v: 2)
+    let ch: Float = 100
+    viewportTrailingSpacer.setContentHugging(h: ch, v: ch)
+    viewportLeadingSpacer.setContentHugging(h: ch, v: ch)
+    viewportTopSpacer.setContentHugging(h: ch, v: ch)
+    viewportBottomSpacer.setContentHugging(h: ch, v: ch)
   }
 
   private func initAlbumArtView() {
@@ -207,7 +205,7 @@ extension PlayerWindowController {
     seekPreview.timeLabel.nextResponder = playSlider
 
     // Yes, left, not leading!
-    seekPreview.timeLabelHorizontalCenterConstraint = seekPreview.timeLabel.centerXAnchor.constraint(equalTo: contentView.leftAnchor, constant: 200) // dummy value for now
+    seekPreview.timeLabelHorizontalCenterConstraint = seekPreview.timeLabel.centerXAnchor.constraint(equalTo: contentView.leftAnchor, constant: 0) // dummy value for now
     seekPreview.timeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
     seekPreview.timeLabelHorizontalCenterConstraint.isActive = true
 
@@ -282,7 +280,6 @@ extension PlayerWindowController {
     fragToolbarView.orientation = .horizontal
 //    fragToolbarView.alignment = .centerY
     fragToolbarView.distribution = .fill
-//    fragToolbarView.setHuggingPriority(.init(901), for: .vertical)  // needs to be > 750
   }
 
   func initTopBarView(in contentView: NSView) {
@@ -645,6 +642,12 @@ extension PlayerWindowController {
     volumeSlider.superview!.trailingAnchor.constraint(equalTo: volumeSlider.trailingAnchor).isActive = true
     volumeSlider.target = self
     volumeSlider.action = #selector(volumeSliderAction(_:))
+  }
+
+  func initOSDView() {
+    // other initialization
+    osdAccessoryProgress.usesThreadedAnimation = false
+    osdVisualEffectView.roundCorners()
   }
 
   func initAdditionalInfoView() {
