@@ -44,16 +44,12 @@ extension PlayerWindowController {
       }
     }
 
-    // FIXME: this still doesn't look great. Fix VideoView constraints in music mode
-    if currentLayout.mode == .musicMode {
-      CATransaction.begin()
-      CATransaction.setAnimationDuration(0)
-      CATransaction.setDisableActions(true)
-    }
+    // FIXME: this still doesn't look great in music mode; maybe adjust VideoView constraints
+    CATransaction.begin()
+    CATransaction.setAnimationDuration(0)
+    CATransaction.setDisableActions(true)
     defer {
-      if currentLayout.mode == .musicMode {
-        CATransaction.commit()
-      }
+      CATransaction.commit()
     }
 
     return resizeWindowSubviews(window, to: requestedSize)
