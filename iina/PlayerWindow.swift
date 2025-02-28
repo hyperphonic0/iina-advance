@@ -255,7 +255,7 @@ class PlayerWindow: NSWindow {
     self.miniaturize(self)
   }
 
-  /// See `windowWillUseStandardFrame` in `PlayerWindowController` for resize handling.
+  /// See `windowShouldZoom`, `windowWillUseStandardFrame` in `PlayerWindowController` for zoom handling.
   override func zoom(_ sender: Any?) {
     // Explicitly enable animation. Otherwise the window may jump
     useZeroDurationForNextResize = false

@@ -324,8 +324,10 @@ extension PlayerWindowController {
     hideCursorTimer.restart()
     mouseDownLocationInWindow = nil
     // In case WindowDidChangeScreen already timed out, or another event put the window in a "metastable" state.
-    // Need to figure out how to
-    denyWindowResizeIntervalStartTime = Date()
+    if pendingResizeForScreenChange {
+      denyWindowResizeIntervalStartTime = Date()
+      pendingResizeForScreenChange = false
+    }
 
 
     if let currentDragObject {

@@ -153,6 +153,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // Make sure the event loop is emptied before setting to false again. Otherwise a simple click can result in a resize.
   // Very kludgey, but nothing better discovered yet.
   var denyWindowResizeIntervalStartTime = Date()
+  var pendingResizeForScreenChange = false
 
   var isClosing: Bool {
     return player.state.isAtLeast(.stopping)
@@ -1230,6 +1231,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func windowDidChangeScreen(_ notification: Notification) {
     // Do not allow MacOS to change the window size
     denyWindowResizeIntervalStartTime = Date()
+    pendingResizeForScreenChange = true
 
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by debouncing
     screenChangedDebouncer.run { [self] in
