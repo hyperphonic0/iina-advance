@@ -2068,7 +2068,7 @@ For smoothest results, also enable custom full screen.</string>
                                                     </button>
                                                     <button horizontalHuggingPriority="252" translatesAutoresizingMaskIntoConstraints="NO" id="Zp8-sr-Dui">
                                                         <rect key="frame" x="-2" y="95" width="232" height="18"/>
-                                                        <buttonCell key="cell" type="check" title="Magnify bar height when hovering" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="tp9-Pj-8BQ">
+                                                        <buttonCell key="cell" type="check" title="Bar magnifies when hovered over" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="tp9-Pj-8BQ">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
                                                         </buttonCell>
@@ -2078,7 +2078,7 @@ For smoothest results, also enable custom full screen.</string>
                                                     </button>
                                                     <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="3CT-UI-QMi">
                                                         <rect key="frame" x="-2" y="71" width="418" height="18"/>
-                                                        <buttonCell key="cell" type="check" title="Highlight loaded segments (applies only to remote files)" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="TMa-kW-zoR">
+                                                        <buttonCell key="cell" type="check" title="Highlight loaded segments of remote files" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="TMa-kW-zoR">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
                                                         </buttonCell>
@@ -3390,7 +3390,7 @@ For smoothest results, also enable custom full screen.</string>
                                 <binding destination="lH7-Vv-0M1" name="value" keyPath="values.enableThumbnailPreview" id="hw8-mb-tD1"/>
                             </connections>
                         </button>
-                        <button translatesAutoresizingMaskIntoConstraints="NO" id="5Om-Um-kQ4" userLabel="Enable for remote files also Checkbox">
+                        <button translatesAutoresizingMaskIntoConstraints="NO" id="5Om-Um-kQ4" userLabel="Enable for remote files Checkbox">
                             <rect key="frame" x="18" y="239" width="163" height="20"/>
                             <buttonCell key="cell" type="check" title="Enable for remote files" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="1NF-4u-sGn">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -3408,7 +3408,7 @@ For smoothest results, also enable custom full screen.</string>
                         </button>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="4GJ-sd-vQm" userLabel="Enable in music mode Checkbox">
                             <rect key="frame" x="18" y="213" width="199" height="20"/>
-                            <buttonCell key="cell" type="check" title="Enable in &quot;music mode&quot; also" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="1bZ-wY-ysJ">
+                            <buttonCell key="cell" type="check" title="Enable in &quot;music mode&quot;" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="1bZ-wY-ysJ">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>

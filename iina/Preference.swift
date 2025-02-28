@@ -703,7 +703,7 @@ struct Preference {
     case topLeading = 1
     case topTrailing
 
-    static var defaultValue = OSDPosition.topTrailing
+    static var defaultValue = OSDPosition.topLeading
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -745,7 +745,7 @@ struct Preference {
     /// Use clear background with slight alpha gradient
     case clearGradient
 
-    static var defaultValue = OSCColorScheme.visualEffectView
+    static var defaultValue = OSCColorScheme.clearGradient
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -775,7 +775,7 @@ struct Preference {
     case top
     case bottom
 
-    static var defaultValue = OSCPosition.floating
+    static var defaultValue = OSCPosition.bottom
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1256,27 +1256,27 @@ struct Preference {
     .showCachedRangesInSlider: true,
     .roundSliderBarRects: true,
     .sliderBarDoneColor: SliderBarLeftColor.defaultValue.rawValue,
-    .useSliderFocusMagnifyEffect: false,
+    .useSliderFocusMagnifyEffect: true,
     .alwaysShowSliderKnob: false,
-    .showChapterPos: false,
+    .showChapterPos: true,
     .enableControlBarAutoHide: true,
     .controlBarToolbarButtons: [ToolBarButton.pip.rawValue, ToolBarButton.playlist.rawValue, ToolBarButton.settings.rawValue],
     .oscBarToolIconSize: 18,
     .oscBarToolIconSpacing: 5,  // spacing between icons is x2 this number
     .enableOSC: true,
     .titleBarBtnsGlow: false,
-    .showTopBarTrigger: ShowTopBarTrigger.windowHover.rawValue,
+    .showTopBarTrigger: ShowTopBarTrigger.defaultValue.rawValue,
     .topBarPlacement: PanelPlacement.insideViewport.rawValue,
     .bottomBarPlacement: PanelPlacement.insideViewport.rawValue,
-    .oscBarHeight: 44,
+    .oscBarHeight: 60,
     .oscBarPlayIconSize: 24,
     .oscBarPlayIconSpacing: 16,
     .oscBarPlayIconSizeTicks: 1,
     .oscBarPlayIconSpacingTicks: 1,
     .oscBarToolIconSizeTicks: 1,
     .oscBarToolIconSpacingTicks: 1,
-    .oscPosition: OSCPosition.floating.rawValue,
-    .oscColorScheme: OSCColorScheme.clearGradient.rawValue,
+    .oscPosition: OSCPosition.defaultValue.rawValue,
+    .oscColorScheme: OSCColorScheme.defaultValue.rawValue,
     .oscForceSingleRow: false,
     .oscTimeLabelsAlwaysWrapSlider: false,
     .hideFadeableViewsWhenOutsideWindow: true,
@@ -1295,7 +1295,7 @@ struct Preference {
     .playerWindowOpacity: 1.0,
     .enableOSD: true,
     .enableOSDInMusicMode: false,
-    .osdPosition: OSDPosition.topLeading.rawValue,
+    .osdPosition: OSDPosition.defaultValue.rawValue,
     .disableOSDFileStartMsg: false,
     .disableOSDPauseResumeMsgs: false,
     .disableOSDSeekMsg: false,
@@ -1303,7 +1303,7 @@ struct Preference {
     .osdAutoHideTimeout: Float(1),
     .osdTextSize: Float(28),
     .softVolume: 100,
-    .arrowButtonAction: ArrowButtonAction.speed.rawValue,
+    .arrowButtonAction: ArrowButtonAction.defaultValue.rawValue,
     .resetSpeedWhenPaused: false,
     .useForceTouchForSpeedArrows: true,
     .lockViewportToVideoSize: true,
@@ -1316,7 +1316,7 @@ struct Preference {
     .useLegacyFullScreen: true,
     .resumeLastPosition: false,
     .preventScreenSaver: true,
-    .allowScreenSaverForAudio: false,
+    .allowScreenSaverForAudio: true,
     .useMediaKeys: true,
     .useAppleRemote: false,
     .alwaysFloatOnTop: false,
@@ -1336,16 +1336,16 @@ struct Preference {
     .autoRepeat: false,
     .defaultRepeatMode: DefaultRepeatMode.playlist.rawValue,
     .initialWindowSizePosition: "",
-    .resizeWindowScheme: ResizeWindowScheme.simpleVideoSizeMultiple.rawValue,
-    .resizeWindowTiming: ResizeWindowTiming.onlyWhenOpen.rawValue,
-    .resizeWindowOption: ResizeWindowOption.videoSize10.rawValue,
+    .resizeWindowScheme: ResizeWindowScheme.defaultValue.rawValue,
+    .resizeWindowTiming: ResizeWindowTiming.defaultValue.rawValue,
+    .resizeWindowOption: ResizeWindowOption.defaultValue.rawValue,
     .keepVideoAwayFromBars: true,
     .showRemainingTime: false,
     .timeDisplayPrecision: 0,
     .touchbarShowRemainingTime: true,
 
     .enableThumbnailPreview: true,
-    .enableThumbnailForRemoteFiles: false,
+    .enableThumbnailForRemoteFiles: true,
     .enableThumbnailForMusicMode: false,
     .showThumbnailDuringSliderSeek: true,
     .thumbnailBorderStyle: ThumnailBorderStyle.shadowRoundedCorners.rawValue,
