@@ -99,13 +99,11 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       videoView.player.mpv.lockAndSetOpenGLContext()
       defer { videoView.player.mpv.unlockOpenGLContext() }
 
-      // Remove these. They screw up PIP drag
-      videoView.apply(nil)
-
       pip.videoController = NSViewController()
       pip.videoController.view = videoView
       // Remove remaining constraints. The PiP superview will manage videoView's layout.
       videoView.removeVideoConstraints()
+      videoView.videoLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
       pip.controller.playing = player.info.isPlaying
       pip.controller.title = window.title
 

@@ -222,7 +222,7 @@ extension VideoView {
     let aspectActive = aspectMultiplier > 0.0
 
     // Need to keep priorities under 500 or the window will not resize!
-    let whMaxPriority: NSLayoutConstraint.Priority = .init(499)
+    let whMaxPriority: NSLayoutConstraint.Priority = .init(495)
     let whMaxActive = true
 
     let marginGT_Priority: NSLayoutConstraint.Priority = .init(490)

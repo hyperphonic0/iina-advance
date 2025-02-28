@@ -679,6 +679,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let geo = currentLayout.mode == .musicMode ? (geo ?? musicModeGeo).toPWinGeometry() : windowedModeGeo
       videoView.apply(geo)
     }
+    // Reset this in case it was changed for PiP. (Need to use optional to support initial load)
+    videoView.layer?.autoresizingMask = []
   }
 
   /// Set material & theme (light or dark mode) for OSC and title bar.

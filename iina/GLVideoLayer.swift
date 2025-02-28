@@ -73,7 +73,9 @@ class GLVideoLayer: CAOpenGLLayer {
     asychronousModeLock = Lock()
     super.init()
     isOpaque = true
-    autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+    /// Do not set to `[.layerWidthSizable, .layerHeightSizable]` resizable! It messes up during window resize if the trailing inside sidebar is open.
+    /// HOWEVER: the above mask *is* needed when in PiP so that it resizes with the PiP panel
+    autoresizingMask = []
     if bufferDepth > 8 {
       contentsFormat = .RGBA16Float
     }
