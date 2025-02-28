@@ -114,8 +114,8 @@ extension PlayerWindowController {
     }
 
     let moreTasks = buildAnimationToShowFadeableViews(restartFadeTimer: restartFadeTimer,
-                                          duration: duration,
-                                          forceShowTopBar: wantsTopBarVisible)
+                                                      duration: duration,
+                                                      forceShowTopBar: wantsTopBarVisible)
 
 
     animationPipeline.submit([firstTask] + moreTasks)
@@ -128,17 +128,14 @@ extension PlayerWindowController {
                                          forceShowTopBar: Bool = false) -> [IINAAnimation.Task] {
 
     let currentLayout = self.currentLayout
-    let pendingShowTopPanel = fadeableViews.pendingShowTopPanel
-    let wantsTopBarVisible = forceShowTopBar || pendingShowTopPanel
-    if pendingShowTopPanel {
-      fadeableViews.pendingShowTopPanel = false
-    }
 
     return [
       IINAAnimation.Task(duration: duration, { [self] in
         // Note to Future Self: stop messing with this logic! It works fine and is fast enough!
         if !forceShow {
-          guard fadeableViews.animationState == .hidden || fadeableViews.animationState == .shown else { return }
+          guard fadeableViews.animationState == .hidden || fadeableViews.animationState == .shown else {
+            throw IINAError.cancelAnimationTransaction
+          }
         }
 
         fadeableViews.animationState = .willShow
@@ -149,7 +146,10 @@ extension PlayerWindowController {
           v.animator().alphaValue = 1
         }
 
+        let pendingShowTopPanel = fadeableViews.pendingShowTopPanel
+        let wantsTopBarVisible = forceShowTopBar || pendingShowTopPanel
         if wantsTopBarVisible {  // start top bar
+          fadeableViews.pendingShowTopPanel = false
           fadeableViews.topBarAnimationState = .willShow
           for v in fadeableViews.fadeableViewsInTopBar {
             v.animator().alphaValue = 1
@@ -171,19 +171,16 @@ extension PlayerWindowController {
 
       // Not animated, but needs to wait until after fade is done
       .instantTask { [self] in
-        // if no interrupt then hide animation
-        if fadeableViews.animationState == .willShow {
-          fadeableViews.animationState = .shown
-          for v in fadeableViews.fadeableViews {
-            v.isHidden = false
-          }
-
-          if restartFadeTimer {
-            fadeableViews.hideTimer.restart()
-          }
+        fadeableViews.animationState = .shown
+        for v in fadeableViews.fadeableViews {
+          v.isHidden = false
         }
 
-        if wantsTopBarVisible && fadeableViews.topBarAnimationState == .willShow {
+        if restartFadeTimer {
+          fadeableViews.hideTimer.restart()
+        }
+
+        if fadeableViews.topBarAnimationState == .willShow {
           fadeableViews.topBarAnimationState = .shown
           for v in fadeableViews.fadeableViewsInTopBar {
             v.isHidden = false
