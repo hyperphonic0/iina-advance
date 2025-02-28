@@ -139,11 +139,6 @@ extension PlayerWindowController {
         // Note to Future Self: stop messing with this logic! It works fine and is fast enough!
         if !forceShow {
           guard fadeableViews.animationState == .hidden || fadeableViews.animationState == .shown else { return }
-
-          guard !isAnimatingLayoutTransition else {
-            log.verbose("Skipping showing fadeable views: isAnimatingLayoutTransition=YES")
-            return
-          }
         }
 
         fadeableViews.animationState = .willShow
@@ -230,16 +225,16 @@ extension PlayerWindowController {
     // Need to hide them because the OSC is being hidden:
     let mustHideSeekPreview = !currentLayout.hasPermanentControlBar
 
-    var tasks: [IINAAnimation.Task] = [
+    let tasks: [IINAAnimation.Task] = [
       .instantTask { [self] in
         if log.isTraceEnabled {
           log.trace("HIDE fadeables: currentTicket=\(currentTicket), latest=\(fadeableViews.showHideTicketCount)")
         }
 
+        // Ensure we are the most current ticket
         guard currentTicket == fadeableViews.showHideTicketCount else {
           throw IINAError.cancelAnimationTransaction
         }
-        // Ensure we are the most current ticket
         guard fadeableViews.animationState == .shown else { return }
 
         // Do not allow more tasks to be enqueued between now & the first task execution:
@@ -284,7 +279,10 @@ extension PlayerWindowController {
 
       IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
         // if no interrupt then hide animation
-        guard fadeableViews.animationState == .willHide else { return }
+        guard fadeableViews.animationState == .willHide else {
+          assert(false, "Expected fadeableViews.animationState to be .willHide; but found \(fadeableViews.animationState)")
+          return
+        }
 
         fadeableViews.animationState = .hidden
         fadeableViews.topBarAnimationState = .hidden
