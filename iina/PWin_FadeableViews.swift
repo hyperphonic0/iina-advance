@@ -87,6 +87,7 @@ extension PlayerWindowController {
 
   func buildAnimationToShowFadeableViews(restartFadeTimer: Bool = true,
                                          duration: CGFloat = IINAAnimation.DefaultDuration,
+                                         forceShow: Bool = false,
                                          forceShowTopBar: Bool = false) -> [IINAAnimation.Task] {
     var tasks: [IINAAnimation.Task] = []
 
@@ -109,7 +110,16 @@ extension PlayerWindowController {
     let currentLayout = self.currentLayout
 
     tasks.append(IINAAnimation.Task(duration: duration, { [self] in
-      guard fadeableViews.animationState == .hidden || fadeableViews.animationState == .shown else { return }
+      // Note to Future Self: stop messing with this logic! It works fine and is fast enough!
+      if !forceShow {
+        guard fadeableViews.animationState == .hidden || fadeableViews.animationState == .shown else { return }
+
+        guard !isAnimatingLayoutTransition else {
+          log.verbose("Skipping showing fadeable views: isAnimatingLayoutTransition=YES")
+          return
+        }
+      }
+
       fadeableViews.animationState = .willShow
       player.refreshSyncUITimer(logMsg: "Showing fadeable views ")
       fadeableViews.hideTimer.cancel()
