@@ -250,7 +250,9 @@ extension IINAAnimation {
         do {
           try nextTask.runFunc()
         } catch IINAError.cancelAnimationTransaction {
-          Logger.log.debug("Animation pipeline: task was cancelled")
+          if Logger.isTraceEnabled {
+            Logger.log.trace("Animation pipeline: task was cancelled")
+          }
         } catch {
           Logger.log.error("Animation pipeline: unexpected error thrown by task: \(error)")
         }

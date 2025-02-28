@@ -79,7 +79,7 @@ class Logger: NSObject {
 
   // Try to prevent false positives duing search & replace by not allowing matches which are too short to
   // be meaningful
-  static let minMatchLength = 3
+  static let minMatchLength = 4
 
   fileprivate static let piiFormat: String = "{pii%@}"
   fileprivate static let piiFileVersion: Int = 0
