@@ -143,6 +143,7 @@ extension PlayerWindowController {
     viewportView.clipsToBounds = true
     viewportView.translatesAutoresizingMaskIntoConstraints = false
     viewportView.autoresizesSubviews = false
+    viewportView.setCCResistance(h: 250, v: 250)
 
     viewportView.addSubview(viewportTopSpacer)
     viewportView.addSubview(viewportBottomSpacer)

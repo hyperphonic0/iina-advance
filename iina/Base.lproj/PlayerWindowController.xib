@@ -73,23 +73,23 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" autoresizesSubviews="NO" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PWin-Content View">
-                <rect key="frame" x="0.0" y="0.0" width="600" height="400"/>
+                <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                 <subviews>
                     <customView identifier="Viewport-View" autoresizesSubviews="NO" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3nL-Ky-Hfa" userLabel="Viewport View" customClass="ViewportView" customModule="IINA" customModuleProvider="target">
-                        <rect key="frame" x="0.0" y="0.0" width="600" height="400"/>
+                        <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                         <subviews>
                             <visualEffectView identifier="PiP-Overlay-View" hidden="YES" wantsLayer="YES" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Nrz-jZ-Luf" userLabel="PIP-Overlay View">
-                                <rect key="frame" x="0.0" y="0.0" width="600" height="400"/>
+                                <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                                 <subviews>
                                     <imageView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="YkI-ii-zaW" userLabel="PiP Image View">
-                                        <rect key="frame" x="257" y="166" width="87" height="68"/>
+                                        <rect key="frame" x="277" y="166" width="87" height="68"/>
                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="playing-in-pip" id="0QW-Vy-zmW"/>
                                     </imageView>
                                     <textField wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pxV-jX-kfL">
-                                        <rect key="frame" x="174" y="142" width="253" height="16"/>
+                                        <rect key="frame" x="194" y="142" width="253" height="16"/>
                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="This video is playing in Picture-in-Picture" id="gdE-b5-kod">
                                             <font key="font" metaFont="system"/>
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -113,7 +113,7 @@
                         </constraints>
                     </customView>
                     <visualEffectView identifier="Additional-Info-View" hidden="YES" wantsLayer="YES" horizontalCompressionResistancePriority="250" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Qbi-jx-9pO" userLabel="Additional-Info View" customClass="MouseIgnoringVisualEffectView" customModule="IINA" customModuleProvider="target">
-                        <rect key="frame" x="432" y="297" width="160" height="67"/>
+                        <rect key="frame" x="472" y="297" width="160" height="67"/>
                         <subviews>
                             <stackView identifier="Additional-Info-Horizontal-Stack-View" wantsLayer="YES" distribution="fill" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HJv-RK-JT8" userLabel="Additional-Info Horizontal Stack View">
                                 <rect key="frame" x="16" y="4" width="128" height="30"/>
@@ -195,7 +195,7 @@
                         </constraints>
                     </visualEffectView>
                     <visualEffectView identifier="Buffer-Indicator-View" hidden="YES" wantsLayer="YES" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="oX4-0N-but" userLabel="Buffer-Indicator View" customClass="MouseIgnoringVisualEffectView" customModule="IINA" customModuleProvider="target">
-                        <rect key="frame" x="220" y="147" width="160" height="107"/>
+                        <rect key="frame" x="240" y="147" width="160" height="107"/>
                         <subviews>
                             <progressIndicator wantsLayer="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" maxValue="100" bezeled="NO" indeterminate="YES" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="uZe-PA-1Id">
                                 <rect key="frame" x="56" y="39" width="48" height="48"/>
@@ -293,7 +293,7 @@
                         </shadow>
                     </visualEffectView>
                     <visualEffectView identifier="Trailing-Sidebar-View" autoresizesSubviews="NO" wantsLayer="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="epo-S6-QVB" userLabel="Trailing-Sidebar View">
-                        <rect key="frame" x="600" y="0.0" width="360" height="400"/>
+                        <rect key="frame" x="640" y="0.0" width="360" height="400"/>
                         <subviews>
                             <box identifier="TrailingSidebarLeadingBorder" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" boxType="custom" borderType="line" borderWidth="0.0" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="exJ-CB-MoS" userLabel="Trailing-Sidebar-Leading-Border Box">
                                 <rect key="frame" x="0.0" y="0.0" width="1" height="400"/>
@@ -379,7 +379,7 @@
                         </constraints>
                     </visualEffectView>
                     <visualEffectView identifier="TopBarView" wantsLayer="YES" blendingMode="withinWindow" material="titlebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="TRx-2V-Gr3" userLabel="TopBar View">
-                        <rect key="frame" x="0.0" y="372" width="600" height="28"/>
+                        <rect key="frame" x="0.0" y="372" width="640" height="28"/>
                     </visualEffectView>
                     <customView hidden="YES" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="88M-Ln-4mc" userLabel="MiniPlayerButtons View">
                         <rect key="frame" x="4" y="362" width="19" height="34"/>
@@ -488,19 +488,17 @@
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="bottom" constant="-28" identifier="TopOfViewport-BottomOfTopBar-Constraint" id="1Ut-pz-GFg"/>
                     <constraint firstAttribute="bottom" secondItem="3nL-Ky-Hfa" secondAttribute="bottom" identifier="viewportlViewBottom-ContentViewBottom-Constraint" id="4gm-o8-h98"/>
                     <constraint firstItem="OiF-pA-8Sd" firstAttribute="centerX" secondItem="3nL-Ky-Hfa" secondAttribute="leading" priority="400" constant="330" identifier="floatingOSC-CenterX-Constraint" id="9z2-rX-b7C"/>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="width" secondItem="se5-gp-TjO" secondAttribute="width" id="AVh-Tt-A8Q"/>
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="8" id="Agb-na-g88"/>
                     <constraint firstItem="88M-Ln-4mc" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="4" id="C4g-bz-uwS"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="top" identifier="TopOfViewport-TopOfTopBar-Constraint" id="Drc-3Y-nhs"/>
-                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="160" placeholder="YES" identifier="MinWndHeight" id="Ijm-ug-EA9"/>
                     <constraint firstItem="epo-S6-QVB" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Qbi-jx-9pO" secondAttribute="trailing" constant="8" id="Ja8-8A-W6L"/>
                     <constraint firstItem="XBs-34-TIm" firstAttribute="trailing" secondItem="g0O-v5-RQj" secondAttribute="leading" priority="750" constant="-8" identifier="leadingSidebarToOSDSpaceConstraint" id="LBY-By-mfi"/>
                     <constraint firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="trailing" constant="-360" identifier="viewportTrailingOffsetFromTrailingSidebarTrailingConstraint" id="PAj-s6-32e"/>
                     <constraint firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="leading" constant="360" identifier="viewportLeadingOffsetFromLeadingSidebarLeadingConstraint" id="PMP-ks-GY2"/>
-                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="285" placeholder="YES" identifier="MinWndWidth" id="RJY-My-NMJ"/>
                     <constraint firstItem="Qbi-jx-9pO" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="8" id="RUl-l8-s3i"/>
                     <constraint firstItem="XBs-34-TIm" firstAttribute="trailing" secondItem="se5-gp-TjO" secondAttribute="leading" identifier="viewportLeadingOffsetFromLeadingSidebarTrailingConstraint_" id="Uue-Qa-4ao"/>
                     <constraint firstItem="oX4-0N-but" firstAttribute="centerY" secondItem="3nL-Ky-Hfa" secondAttribute="centerY" id="XlV-7n-jPb"/>
+                    <constraint firstAttribute="width" constant="640" placeholder="YES" id="YCx-Hk-4OW"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" identifier="viewportlViewTop-ContentViewTop-Constraint" id="Zqm-9J-g9b"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" secondItem="OiF-pA-8Sd" secondAttribute="bottom" priority="750" constant="60" identifier="ControlBarFloating_Y-Constraint" id="cRP-R4-zYY"/>
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="88M-Ln-4mc" secondAttribute="trailing" priority="250" constant="4" identifier="osdLeadingToMiniPlayerButtonsTrailingConstraint" id="eTB-OD-mwZ"/>
@@ -514,10 +512,9 @@
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="epo-S6-QVB" secondAttribute="leading" constant="-8" id="rQT-Vg-6uB"/>
                     <constraint firstItem="epo-S6-QVB" firstAttribute="top" secondItem="XBs-34-TIm" secondAttribute="top" id="tWp-dA-I4y"/>
                     <constraint firstItem="TRx-2V-Gr3" firstAttribute="trailing" secondItem="se5-gp-TjO" secondAttribute="trailing" identifier="topBarTrailingSpaceConstraint" id="te1-wi-BbH"/>
-                    <constraint firstAttribute="height" constant="400" placeholder="YES" id="ub4-CC-j3j"/>
-                    <constraint firstAttribute="width" constant="600" placeholder="YES" id="uog-RF-bgD"/>
-                    <constraint firstAttribute="trailing" secondItem="3nL-Ky-Hfa" secondAttribute="trailing" priority="400" identifier="viewportlViewTrailing-ContentViewTrailing-Constraint" id="v5S-lZ-agU"/>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" priority="400" identifier="viewportlViewLeading-ContentViewLeading-Constraint" id="vZs-ut-z4j"/>
+                    <constraint firstAttribute="trailing" secondItem="3nL-Ky-Hfa" secondAttribute="trailing" identifier="viewportlViewTrailing-ContentViewTrailing-Constraint" id="v5S-lZ-agU"/>
+                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" identifier="viewportlViewLeading-ContentViewLeading-Constraint" id="vZs-ut-z4j"/>
+                    <constraint firstAttribute="height" constant="400" placeholder="YES" id="y8z-8P-VRp"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" secondItem="epo-S6-QVB" secondAttribute="bottom" identifier="viewportBtmToTrailingSidebarBtmConstraint" id="zBx-AY-VlK"/>
                     <constraint firstItem="epo-S6-QVB" firstAttribute="leading" secondItem="Qbi-jx-9pO" secondAttribute="trailing" constant="8" identifier="trailingSidebarToOSDSpaceConstraint" id="zbm-D9-epN"/>
                 </constraints>
