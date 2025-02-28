@@ -83,43 +83,59 @@ extension PlayerWindowController {
                          duration: CGFloat = IINAAnimation.DefaultDuration,
                          forceShowTopBar: Bool = false) {
     guard !player.disableUI && !isInInteractiveMode else { return }
-    let tasks: [IINAAnimation.Task] = buildAnimationToShowFadeableViews(restartFadeTimer: restartFadeTimer,
-                                                                        duration: duration,
-                                                                        forceShowTopBar: forceShowTopBar)
-    animationPipeline.submit(tasks)
-  }
-
-  /// note that `restartFadeTimer` will have no effect if this is not the most recent request. Should be fine.
-  func buildAnimationToShowFadeableViews(restartFadeTimer: Bool = true,
-                                         duration: CGFloat = IINAAnimation.DefaultDuration,
-                                         forceShow: Bool = false,
-                                         forceShowTopBar: Bool = false) -> [IINAAnimation.Task] {
-
-    var tasks: [IINAAnimation.Task] = []
-
-    guard !player.disableUI && !isInInteractiveMode else {
-      return tasks
-    }
 
     /// Default `showTopBarTrigger` setting to `.windowHover` if advanced settings not enabled
     let wantsTopBarVisible = forceShowTopBar || (!Preference.isAdvancedEnabled || Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.windowHover)
 
-    let currentLayout = self.currentLayout
+    guard wantsTopBarVisible || fadeableViews.animationState == .hidden else {
+      if restartFadeTimer {
+        fadeableViews.hideTimer.restart()
+      } else {
+        fadeableViews.hideTimer.cancel()
+      }
+      return
+    }
 
     let currentTicket = fadeableViews.$showHideTicketCount.withLock {
       $0 += 1
       return $0
     }
 
+    animationPipeline.submitInstantTask { [self] in
+      if log.isTraceEnabled {
+        log.trace("SHOW fadeables: currentTicket=\(currentTicket), latest=\(fadeableViews.showHideTicketCount)")
+      }
+      guard currentTicket == fadeableViews.showHideTicketCount else {
+        if wantsTopBarVisible {
+          fadeableViews.pendingShowTopPanel = true
+        }
+        return
+      }
+      let tasks: [IINAAnimation.Task] = buildAnimationToShowFadeableViews(restartFadeTimer: restartFadeTimer,
+                                                                          duration: duration,
+                                                                          forceShowTopBar: wantsTopBarVisible)
+      animationPipeline.submit(tasks)
+    }
+  }
+
+  /// This is only expected to be called by `showFadeableViews()` and by the animation transition builder. Do not call directly from elsewhere.
+  func buildAnimationToShowFadeableViews(restartFadeTimer: Bool = true,
+                                         duration: CGFloat = IINAAnimation.DefaultDuration,
+                                         forceShow: Bool = false,
+                                         forceShowTopBar: Bool = false) -> [IINAAnimation.Task] {
+
+    let currentLayout = self.currentLayout
+    let pendingShowTopPanel = fadeableViews.pendingShowTopPanel
+    let wantsTopBarVisible = forceShowTopBar || pendingShowTopPanel
+    if pendingShowTopPanel {
+      fadeableViews.pendingShowTopPanel = false
+    }
+
+    var tasks: [IINAAnimation.Task] = []
+
     tasks.append(IINAAnimation.Task(duration: duration, { [self] in
       // Note to Future Self: stop messing with this logic! It works fine and is fast enough!
       if !forceShow {
-        guard currentTicket == fadeableViews.showHideTicketCount else {
-          if wantsTopBarVisible {
-            fadeableViews.pendingShowTopPanel = true
-          }
-          return
-        }
         guard fadeableViews.animationState == .hidden || fadeableViews.animationState == .shown else { return }
 
         guard !isAnimatingLayoutTransition else {
@@ -131,8 +147,6 @@ extension PlayerWindowController {
       fadeableViews.animationState = .willShow
       player.refreshSyncUITimer(logMsg: "Showing fadeable views ")
       fadeableViews.hideTimer.cancel()
-      let wantsTopBarVisible = wantsTopBarVisible || fadeableViews.pendingShowTopPanel
-      fadeableViews.pendingShowTopPanel = false
 
       for v in fadeableViews.fadeableViews {
         v.animator().alphaValue = 1
@@ -204,89 +218,93 @@ extension PlayerWindowController {
     // Don't hide UI when auto hide control bar is disabled
     guard Preference.bool(for: .enableControlBarAutoHide) || Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) else { return false }
 
-    var tasks: [IINAAnimation.Task] = []
 
     let currentTicket = fadeableViews.$showHideTicketCount.withLock {
       $0 += 1
       return $0
     }
 
-    // Seek time & thumbnail can only be shown if the OSC is visible.
-    // Need to hide them because the OSC is being hidden:
-    let mustHideSeekPreview = !currentLayout.hasPermanentControlBar
+    animationPipeline.submitInstantTask { [self] in
+      if log.isTraceEnabled {
+        log.trace("HIDE fadeables: currentTicket=\(currentTicket), latest=\(fadeableViews.showHideTicketCount)")
+      }
 
-    // Do not allow more tasks to be enqueued between now & the first task execution:
-    fadeableViews.hideTimer.cancel()
-
-    tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
-      // Ensure we are the most current ticket
       guard currentTicket == fadeableViews.showHideTicketCount else { return }
+      // Ensure we are the most current ticket
       guard fadeableViews.animationState == .shown else { return }
+      // Seek time & thumbnail can only be shown if the OSC is visible.
+      // Need to hide them because the OSC is being hidden:
+      let mustHideSeekPreview = !currentLayout.hasPermanentControlBar
 
-      // reset state
-      fadeableViews.pendingShowTopPanel = false
-
+      // Do not allow more tasks to be enqueued between now & the first task execution:
       fadeableViews.hideTimer.cancel()
-      fadeableViews.animationState = .willHide
-      fadeableViews.topBarAnimationState = .willHide
-      player.refreshSyncUITimer(logMsg: "Hiding fadeable views ")
 
-      for v in fadeableViews.fadeableViews {
-        v.animator().alphaValue = 0
-      }
-      for v in fadeableViews.fadeableViewsInTopBar {
-        v.animator().alphaValue = 0
-      }
-      /// Quirk 1: special handling for `trafficLightButtons`
-      if currentLayout.titleBar == .showFadeableTopBar {
-        if currentLayout.spec.isLegacyStyle {
-          customTitleBar?.view.alphaValue = 0
-        } else {
-          documentIconButton?.alphaValue = 0
-          titleTextField?.alphaValue = 0
-          for button in trafficLightButtons {
-            button.alphaValue = 0
+      var tasks: [IINAAnimation.Task] = []
+
+      tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
+        fadeableViews.hideTimer.cancel()
+        fadeableViews.animationState = .willHide
+        fadeableViews.topBarAnimationState = .willHide
+        player.refreshSyncUITimer(logMsg: "Hiding fadeable views ")
+
+        for v in fadeableViews.fadeableViews {
+          v.animator().alphaValue = 0
+        }
+        for v in fadeableViews.fadeableViewsInTopBar {
+          v.animator().alphaValue = 0
+        }
+        /// Quirk 1: special handling for `trafficLightButtons`
+        if currentLayout.titleBar == .showFadeableTopBar {
+          if currentLayout.spec.isLegacyStyle {
+            customTitleBar?.view.alphaValue = 0
+          } else {
+            documentIconButton?.alphaValue = 0
+            titleTextField?.alphaValue = 0
+            for button in trafficLightButtons {
+              button.alphaValue = 0
+            }
           }
         }
-      }
 
-      if mustHideSeekPreview {
-        // Hide seek preview & thumbnail
-        seekPreview.hideTimer.cancel()
-        seekPreview.animationState = .willHide
-        seekPreview.thumbnailPeekView.animator().alphaValue = 0
-        seekPreview.timeLabel.animator().alphaValue = 0
-      }
-    })
-
-    tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
-      // if no interrupt then hide animation
-      guard fadeableViews.animationState == .willHide else { return }
-
-      fadeableViews.animationState = .hidden
-      fadeableViews.topBarAnimationState = .hidden
-      for v in fadeableViews.fadeableViews {
-        v.isHidden = true
-      }
-      for v in fadeableViews.fadeableViewsInTopBar {
-        v.isHidden = true
-      }
-      /// Quirk 1: need to set `alphaValue` back to `1` so that each button's corresponding menu items still work
-      if currentLayout.titleBar == .showFadeableTopBar {
-        if currentLayout.spec.isLegacyStyle {
-          customTitleBar?.view.isHidden = true
-        } else {
-          hideBuiltInTitleBarViews(setAlpha: false)
+        if mustHideSeekPreview {
+          // Hide seek preview & thumbnail
+          seekPreview.hideTimer.cancel()
+          seekPreview.animationState = .willHide
+          seekPreview.thumbnailPeekView.animator().alphaValue = 0
+          seekPreview.timeLabel.animator().alphaValue = 0
         }
-      }
+      })
 
-      if mustHideSeekPreview, seekPreview.animationState == .willHide {
-        log.trace("Hiding SeekPreview from fadeable views timeout")
-        hideSeekPreviewImmediately()
-      }
-    })
+      tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
+        // if no interrupt then hide animation
+        guard fadeableViews.animationState == .willHide else { return }
 
-    animationPipeline.submit(tasks)
+        fadeableViews.animationState = .hidden
+        fadeableViews.topBarAnimationState = .hidden
+        for v in fadeableViews.fadeableViews {
+          v.isHidden = true
+        }
+        for v in fadeableViews.fadeableViewsInTopBar {
+          v.isHidden = true
+        }
+        /// Quirk 1: need to set `alphaValue` back to `1` so that each button's corresponding menu items still work
+        if currentLayout.titleBar == .showFadeableTopBar {
+          if currentLayout.spec.isLegacyStyle {
+            customTitleBar?.view.isHidden = true
+          } else {
+            hideBuiltInTitleBarViews(setAlpha: false)
+          }
+        }
+
+        if mustHideSeekPreview, seekPreview.animationState == .willHide {
+          log.trace("Hiding SeekPreview from fadeable views timeout")
+          hideSeekPreviewImmediately()
+        }
+      })
+
+      animationPipeline.submit(tasks)
+    }
+
     return true
   }
 

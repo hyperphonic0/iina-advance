@@ -723,10 +723,16 @@ extension PlayerWindowController {
       log.verbose("Switching to tab \(tab.name.quoted) in quickSettingView")
       quickSettingView.pleaseSwitchToTab(tab)
     case .plugins:
+      guard tab != .anyPlugin else {
+        log.verbose("Tab requested was 'anyPlugin`; nothing to do")
+        return
+      }
+
       guard case .plugin(let pluginID) = tab else {
         log.error("Cannot switch to tab \(tab.name.quoted): bad plugin tab object!")
         return
       }
+      
       log.verbose("Switching to tab \(pluginID.quoted) in pluginView")
       pluginView.pleaseSwitchToTab(pluginID)
     }

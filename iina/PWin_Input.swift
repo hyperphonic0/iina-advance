@@ -580,6 +580,9 @@ extension PlayerWindowController {
     let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(pointInWindow) && fadeableViews.topBarAnimationState == .hidden
     // Check whether mouse is in OSC
     let shouldRestartFadeTimer = !isPoint(pointInWindow, inAnyOf: [currentControlBar, titleBarView])
+    if log.isTraceEnabled {
+      log.trace("ShouldRestartFadeTimer=\(shouldRestartFadeTimer.yesno) forceShowTopBar=\(forceShowTopBar.yesno)")
+    }
     showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
 
     // Always hide after timeout even if OSD fade time is longer
@@ -645,7 +648,11 @@ extension PlayerWindowController {
     }
     guard let window = window, let contentView = window.contentView else { return false }
     let heightThreshold = contentView.frame.height - currentLayout.topBarHeight
-    return mouseLocInWindow.y >= heightThreshold
+    let isAboveThreshold = mouseLocInWindow.y >= heightThreshold
+    if log.isTraceEnabled {
+      log.trace{"Is mouse in top bar? mouseHeight=\(mouseLocInWindow.y) heightThreshold=\(heightThreshold) → \(isAboveThreshold.yn)"}
+    }
+    return isAboveThreshold
   }
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {

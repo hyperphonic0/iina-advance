@@ -183,6 +183,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Logger.log("Note: UI state saving is disabled")
     }
 
+    // Wait until after logging is done to run this (need PII):
+    UIState.shared.updateCachedScreens()
+
     /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
     /// before `applicationDidFinishLaunching`.
     co = CocoaObserver(Logger.log,

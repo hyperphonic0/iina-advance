@@ -1295,7 +1295,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
     screenParamsChangedDebouncer.run { [self] in
       guard !isClosing else { return }
-      UIState.shared.updateCachedScreens()
+      if UIState.shared.isSaveEnabled {
+        UIState.shared.updateCachedScreens()
+      }
       log.verbose{"WndDidChangeScreenParams: Rebuilt cached screen meta: \(UIState.shared.cachedScreens.values)"}
       videoView.refreshAllVideoDisplayState()
 

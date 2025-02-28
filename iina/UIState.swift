@@ -129,7 +129,7 @@ class UIState {
     Preference.set(nextID, for: .launchCount)
     currentLaunchID = nextID
     currentLaunchName = UIState.launchName(forID: nextID)
-    updateCachedScreens()
+    // Do not call updateCachedScreens() here - it can cause a recursive lock call
   }
 
   func updateCachedScreens() {
@@ -139,6 +139,10 @@ class UIState {
       _ = Logger.getOrCreatePII(for: screenMeta.name)
       return dict
     })
+
+    for screenMeta in newScreenMap.values {
+      _ = Logger.getOrCreatePII(for: screenMeta.name)
+    }
 
     // Update the cached value
     cachedScreens = newScreenMap

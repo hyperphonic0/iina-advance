@@ -74,7 +74,6 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   }
 
   func pleaseSwitchToTab(_ id: String) {
-    // Convert
     if isViewLoaded {
       switchToTab(id)
     } else {
