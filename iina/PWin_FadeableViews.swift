@@ -128,13 +128,14 @@ extension PlayerWindowController {
                                          forceShowTopBar: Bool = false) -> [IINAAnimation.Task] {
 
     let currentLayout = self.currentLayout
-    let fadeables = fadeableViews.fadeables
-    let fadeablesInTopBar = fadeableViews.fadeablesInTopBar
 
     return [
       IINAAnimation.Task(duration: duration, { [self] in
         // Note to Future Self: stop messing with this logic! It works fine and is fast enough!
-        if !forceShow {
+        if forceShow {
+          // Invalidate any pending hides
+          fadeableViews.$showHideTicketCount.withLock { $0 += 1 }
+        } else {
           guard fadeableViews.animationState == .hidden || fadeableViews.animationState == .shown else {
             throw IINAError.cancelAnimationTransaction
           }
@@ -144,7 +145,7 @@ extension PlayerWindowController {
         player.refreshSyncUITimer(logMsg: "Showing fadeable views ")
         fadeableViews.hideTimer.cancel()
 
-        for v in fadeables {
+        for v in fadeableViews.fadeables {
           v.animator().alphaValue = 1
         }
 
@@ -153,7 +154,7 @@ extension PlayerWindowController {
         if wantsTopBarVisible {  // start top bar
           fadeableViews.pendingShowTopPanel = false
           fadeableViews.topBarAnimationState = .willShow
-          for v in fadeablesInTopBar {
+          for v in fadeableViews.fadeablesInTopBar {
             v.animator().alphaValue = 1
           }
 
@@ -174,7 +175,8 @@ extension PlayerWindowController {
       // Not animated, but needs to wait until after fade is done
       .instantTask { [self] in
         fadeableViews.animationState = .shown
-        for v in fadeables {
+        // Do not cache fadeables for show. But cache them for hide (ensures additionalInfoView is shown/hidden correctly).
+        for v in fadeableViews.fadeables {
           v.isHidden = false
         }
 
@@ -184,7 +186,7 @@ extension PlayerWindowController {
 
         if fadeableViews.topBarAnimationState == .willShow {
           fadeableViews.topBarAnimationState = .shown
-          for v in fadeablesInTopBar {
+          for v in fadeableViews.fadeablesInTopBar {
             v.isHidden = false
           }
 
