@@ -401,7 +401,10 @@ class StartupHandler {
 
     var prevWindowNumber: Int? = nil
     for wc in wcsToRestore {
-      let windowIsMinimized = (wc.window?.isMiniaturized ?? false)
+      let wndName = wc.window!.savedStateName
+      // Do not trust window.isMiniaturized: it is unreliable. Use our state instead
+      let windowIsMinimized = UIState.shared.windowsMinimized.contains(wndName)
+      log.verbose{"Showing restored window: \(wndName)\(windowIsMinimized ? " (minimized)" : "")"}
       guard !windowIsMinimized else { continue }
 
       if let prevWindowNumber {
@@ -415,8 +418,8 @@ class StartupHandler {
     // Don't wait for these to be ready. But at least ensure that their ordering is correct.
     if let wcsForOpenFiles {
       for wc in wcsForOpenFiles {
-        let windowIsMinimized = (wc.window?.isMiniaturized ?? false)
-        guard !windowIsMinimized else { continue }
+        let wndName = wc.window!.savedStateName
+        log.verbose{"Showing new window: \(wndName)"}
 
         // Make this topmost
         if let prevWindowNumber {

@@ -836,13 +836,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         restoreFromMiscWindowBools(priorState)
       } else {
         AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
-      }
-
-      /// Do this *after* `restoreFromMiscWindowBools` call
-      if window.isMiniaturized {
-        UIState.shared.windowsMinimized.insert(window.savedStateName)
-      } else {
-        UIState.shared.windowsOpen.insert(window.savedStateName)
+        if !window.isMiniaturized {
+          UIState.shared.windowsOpen.insert(window.savedStateName)
+        }
       }
     }
 

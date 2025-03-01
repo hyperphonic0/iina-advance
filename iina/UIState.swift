@@ -115,6 +115,7 @@ class UIState {
     .inspector : .documentWindow,
     .videoFilter : .documentWindow,
     .audioFilter : .documentWindow,
+    .about : .default,
     .openURL : .default,
     .openFile : .default,
     .playbackHistory : .utilityWindow,
