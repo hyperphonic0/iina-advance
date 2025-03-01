@@ -402,7 +402,6 @@ class StartupHandler {
     var prevWindowNumber: Int? = nil
     for wc in wcsToRestore {
       let wndName = wc.window!.savedStateName
-      // Do not trust window.isMiniaturized: it is unreliable. Use our state instead
       let windowIsMinimized = UIState.shared.windowsMinimized.contains(wndName)
       log.verbose{"Showing restored window: \(wndName)\(windowIsMinimized ? " (minimized)" : "")"}
       guard !windowIsMinimized else { continue }
