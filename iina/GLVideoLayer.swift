@@ -90,7 +90,7 @@ class GLVideoLayer: CAOpenGLLayer {
     asychronousModeLock = previousLayer.asychronousModeLock
     super.init()
     isOpaque = true
-    autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+    autoresizingMask = previousLayer.autoresizingMask
     contentsFormat = previousLayer.contentsFormat
   }
 

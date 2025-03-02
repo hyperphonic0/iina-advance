@@ -188,16 +188,14 @@ extension PlayerWindowController {
     // These may no longer be aligned correctly. Just hide them
     hideSeekPreviewImmediately()
 
-    if !layout.isNativeFullScreen {
-      let geo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: geo.video)
+    let geo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: geo.video)
 
-      if isFullScreen {
-        // custom FS
-        resizeWindowSubviews(using: geo)
-      } else {
-        /// This will also update `videoView`
-        player.window.setFrameImmediately(geo, notify: false)
-      }
+    if isFullScreen {
+      // custom FS
+      resizeWindowSubviews(using: geo)
+    } else {
+      /// This will also update `videoView`
+      player.window.setFrameImmediately(geo, notify: false)
     }
 
     if !isFullScreen && !isTransientResize {

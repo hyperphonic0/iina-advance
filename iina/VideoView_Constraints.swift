@@ -221,7 +221,7 @@ extension VideoView {
   func apply(_ geometry: PWinGeometry?, updateAspect: Bool = true) {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    // FIXME: find a better solution than this! (workaround for broken animation in FS)
+    // TODO: implement a custom animation for change to aspect constraint
     if IINAAnimation.disableActionsWorkaround {
       CATransaction.setDisableActions(true)
     }
