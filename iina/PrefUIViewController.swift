@@ -434,7 +434,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     autoHideAfterCheckBox.isEnabled = hasOverlay
     oscAutoHideTimeoutTextField.isEnabled = hasOverlay
     hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
-    keepVideoAwayFromBarsCheckBox.isEnabled = hasOverlay && !Preference.bool(for: .lockViewportToVideoSize)
     windowPreviewImageView.image = ib.buildPWinPreviewImage()
     // Update if invalid value was entered in text field:
     oscBarHeightTextField.integerValue = Int(newGeo.barHeight)
