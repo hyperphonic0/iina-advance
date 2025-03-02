@@ -422,10 +422,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Sets the size of the spacer view in the top overlay which reserves space for a title bar.
   var titleBarHeightConstraint: NSLayoutConstraint!
 
+  var fragPlaybackBtnsHeightConstraint: NSLayoutConstraint!
   var fragPlaybackBtnsWidthConstraint: NSLayoutConstraint!
+  var speedLabelZeroHeightConstraint: NSLayoutConstraint!
 
   /// Size of each side of the (square) `playButton`
-  var playBtnWidthConstraint: NSLayoutConstraint!
+  var playBtnHeightConstraint: NSLayoutConstraint!
   /// Size of each side of square buttons `leftArrowButton` & `rightArrowButton`
   var arrowBtnWidthConstraint: NSLayoutConstraint!
 
@@ -2088,6 +2090,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
       playButton.replaceSymbolImage(with: playPauseImage, effect: effect)
 
+      speedLabelZeroHeightConstraint.isActive = !showSpeedLabel
       speedLabel.isHidden = !showSpeedLabel
 
       if showSpeedLabel {

@@ -88,7 +88,6 @@ extension PlayerWindowController {
       initTopBarView(in: contentView)
       initBottomBarTopBorder()
       rebuildBottomBarView(in: contentView, style: .visualEffectView)
-      initSpeedLabel()
       initPlaybackBtnsView()
       initPlaySliderAndTimeLabelsView()
       addSubviewsToPlaySliderAndTimeLabelsView(currentLayout.controlBarGeo)
@@ -424,22 +423,13 @@ extension PlayerWindowController {
     playButton.refusesFirstResponder = true
     playButton.idString = "PlayBtn"  // helps with debug logging
     // Set to 0 at load time to be safe:
-    playBtnWidthConstraint = playButton.widthAnchor.constraint(equalToConstant: 0)
-    playBtnWidthConstraint.identifier = "PlayBtn-WidthConstraint"
-    playBtnWidthConstraint.isActive = true
     let playAspectConstraint = playButton.widthAnchor.constraint(equalTo: playButton.heightAnchor)
     playAspectConstraint.isActive = true
 
-    let playBtnSpeedVStackView = ClickThroughStackView()
-    playBtnSpeedVStackView.idString = "PlayBtn-Speed-VStackView"
-    playBtnSpeedVStackView.detachesHiddenViews = true
-    playBtnSpeedVStackView.orientation = .vertical
-    playBtnSpeedVStackView.alignment = .centerX
-    playBtnSpeedVStackView.spacing = 0
-    playBtnSpeedVStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-    playBtnSpeedVStackView.addView(speedLabel, in: .center)
-    playBtnSpeedVStackView.addView(playButton, in: .center)
-    playBtnSpeedVStackView.translatesAutoresizingMaskIntoConstraints = false
+    playBtnHeightConstraint = playButton.heightAnchor.constraint(equalToConstant: 0)
+    playBtnHeightConstraint.identifier = "PlayBtnVStack-HeightConstraint"
+    playBtnHeightConstraint.priority = .init(900)
+    playBtnHeightConstraint.isActive = true
 
     let enableAcceleration = Preference.bool(for: .useForceTouchForSpeedArrows)
     // Left Arrow button
@@ -460,35 +450,42 @@ extension PlayerWindowController {
     rightArrowButton.enableAcceleration = enableAcceleration
     rightArrowButton.bounceOnClick = true
 
+    initSpeedLabel()
+
     fragPlaybackBtnsView.identifier = .init("fragPlaybackBtnsView")
     fragPlaybackBtnsView.addSubview(leftArrowButton)
-    fragPlaybackBtnsView.addSubview(playBtnSpeedVStackView)
+    fragPlaybackBtnsView.addSubview(playButton)
+    fragPlaybackBtnsView.addSubview(speedLabel)
     fragPlaybackBtnsView.addSubview(rightArrowButton)
 
-    // TODO: can this cause a conflict?
-    playBtnSpeedVStackView.heightAnchor.constraint(lessThanOrEqualTo: fragPlaybackBtnsView.heightAnchor).isActive = true
+    let playBtnHorizOffsetConstraint = playButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor)
+    playBtnHorizOffsetConstraint.isActive = true
+
+    speedLabel.topAnchor.constraint(equalTo: fragPlaybackBtnsView.topAnchor, constant: 0).isActive = true
+    speedLabel.centerXAnchor.constraint(equalTo: playButton.centerXAnchor).isActive = true
+    speedLabel.bottomAnchor.constraint(equalTo: playButton.topAnchor, constant: 0).isActive = true
+    speedLabelZeroHeightConstraint = speedLabel.heightAnchor.constraint(equalToConstant: 0)
+    speedLabelZeroHeightConstraint.isActive = true
 
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
 
+    fragPlaybackBtnsHeightConstraint = fragPlaybackBtnsView.heightAnchor.constraint(equalToConstant: 0)
+    fragPlaybackBtnsHeightConstraint.isActive = true
+
     // Try to make sure the buttons' bounding boxes reach the full height, for activation
     // (their images will be limited by the width constraint & will stop scaling before this)
-    let leftArrowHeightConstraint = leftArrowButton.heightAnchor.constraint(equalTo: fragPlaybackBtnsView.heightAnchor)
-    leftArrowHeightConstraint.identifier = .init("leftArrow-HeightConstraint")
-    leftArrowHeightConstraint.isActive = true
-    let rightArrowHeightConstraint = rightArrowButton.heightAnchor.constraint(equalTo: fragPlaybackBtnsView.heightAnchor)
-    rightArrowHeightConstraint.identifier = .init("rightArrow-HeightConstraint")
-    rightArrowHeightConstraint.isActive = true
+    let leftArrowAspectConstraint = leftArrowButton.heightAnchor.constraint(equalTo: leftArrowButton.widthAnchor)
+    leftArrowAspectConstraint.identifier = .init("leftArrowBtn-AspectConstraint")
+    leftArrowAspectConstraint.isActive = true
+    let rightArrowAspectConstraint = rightArrowButton.heightAnchor.constraint(equalTo: rightArrowButton.widthAnchor)
+    rightArrowAspectConstraint.identifier = .init("rightArrowBtn-AspectConstraint")
+    rightArrowAspectConstraint.isActive = true
 
     // Video controllers and timeline indicators should not flip in a right-to-left language.
     fragPlaybackBtnsView.userInterfaceLayoutDirection = .leftToRight
 
     let playBtnVertOffsetConstraint = playButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
     playBtnVertOffsetConstraint.isActive = true
-
-    let playBtnHorizOffsetConstraint = playBtnSpeedVStackView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor)
-    playBtnHorizOffsetConstraint.isActive = true
-
-    speedLabel.topAnchor.constraint(equalTo: fragPlaybackBtnsView.topAnchor).isActive = true
 
     fragPlaybackBtnsWidthConstraint = fragPlaybackBtnsView.widthAnchor.constraint(equalToConstant: oscGeo.totalPlayControlsWidth)
     fragPlaybackBtnsWidthConstraint.identifier = .init("fragPlaybackBtns-WidthConstraint")
@@ -538,8 +535,6 @@ extension PlayerWindowController {
     speedLabel.isEnabled = true
     speedLabel.refusesFirstResponder = true
     speedLabel.alignment = .center
-
-    speedLabel.nextResponder = playButton
   }
 
   private func initPlaySliderAndTimeLabelsView() {

@@ -256,7 +256,10 @@ extension PlayerWindowController {
     denyWindowResizeIntervalStartTime = Date()
     mouseDownLocationInWindow = event.locationInWindow
 
-    if !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
+    if !speedLabel.isHidden, isMouseEvent(event, inAnyOf: [speedLabel]) {
+      log.verbose("PWin MouseDown: user clicked on speedLabel; treating as playButton")
+      playButtonAction(self)
+    } else if !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
       log.error("PWin MouseDown: ignoring; should be handled by controlBarFloating")
       return
     } else if let cbView = cropSettingsView?.cropBoxView, !cbView.isHidden && isMouseEvent(event, inAnyOf: [cbView]) {

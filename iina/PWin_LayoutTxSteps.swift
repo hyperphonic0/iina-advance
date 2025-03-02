@@ -288,8 +288,9 @@ extension PlayerWindowController {
       // Volume icon
       volumeIconHeightConstraint.animateToConstant(0)
       // Play & arrow buttons
-      playBtnWidthConstraint.animateToConstant(0)
+      playBtnHeightConstraint.animateToConstant(0)
       arrowBtnWidthConstraint.animateToConstant(0)
+      fragPlaybackBtnsHeightConstraint.animateToConstant(0)
     } else if outputLayout.hasControlBar {
       // Reduce size of icons if they are smaller. This is needed to look pleasant when panels are also shrinking.
       let oldGeo = transition.inputLayout.controlBarGeo
@@ -310,11 +311,15 @@ extension PlayerWindowController {
         arrowBtnWidthConstraint.animateToConstant(newGeo.arrowIconWidth)
       }
       if oldGeo.playIconSize > newGeo.playIconSize {
-        playBtnWidthConstraint.animateToConstant(newGeo.playIconSize)
+        playBtnHeightConstraint.animateToConstant(newGeo.playIconSize)
       }
 
       if oldGeo.totalPlayControlsWidth > newGeo.totalPlayControlsWidth {
         fragPlaybackBtnsWidthConstraint.animateToConstant(newGeo.totalPlayControlsWidth)
+      }
+
+      if oldGeo.fullIconHeight > newGeo.fullIconHeight {
+        fragPlaybackBtnsHeightConstraint.animateToConstant(newGeo.fullIconHeight)
       }
 
       if oldGeo.leftArrowCenterXOffset > newGeo.leftArrowCenterXOffset {
@@ -922,8 +927,9 @@ extension PlayerWindowController {
       }
 
       arrowBtnWidthConstraint.animateToConstant(newGeo.arrowIconWidth)
-      playBtnWidthConstraint.animateToConstant(newGeo.playIconSize)
+      playBtnHeightConstraint.animateToConstant(newGeo.playIconSize)
       fragPlaybackBtnsWidthConstraint.animateToConstant(newGeo.totalPlayControlsWidth)
+      fragPlaybackBtnsHeightConstraint.animateToConstant(newGeo.fullIconHeight)
       leftArrowBtn_CenterXOffsetConstraint.animateToConstant(newGeo.leftArrowCenterXOffset)
       rightArrowBtn_CenterXOffsetConstraint.animateToConstant(newGeo.rightArrowCenterXOffset)
 
