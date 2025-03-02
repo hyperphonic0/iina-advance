@@ -489,6 +489,7 @@ class StartupHandler {
 
   /// Window is done loading and is ready to show.
   /// If the application has already finished launching, this simply calls `showWindow` for the calling window.
+  /// If restoring, this should not be fired at all if the window being restored is minimized or hidden due to PiP.
   func windowIsReadyToShow(_ notification: Notification) {
     assert(DispatchQueue.isExecutingIn(.main))
     let log = Logger.Subsystem.restore
@@ -525,14 +526,14 @@ class StartupHandler {
     }
   }
 
-  /// Window failed to load. Stop waiting for it
+  /// Window failed to load or is hidden. Stop waiting for it
   func windowMustCancelShow(_ notification: Notification) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let window = notification.object as? NSWindow else { return }
     let log = Logger.Subsystem.restore
 
     guard Preference.bool(for: .isRestoreInProgress) else { return }
-    log.verbose{"Restored window cancelled: \(window.savedStateName.quoted). Progress: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")"}
+    log.verbose{"Will stop waiting for restored window: \(window.savedStateName.quoted). Progress: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")"}
 
     // No longer waiting for this window
     wcsToRestore.removeAll(where: { wc in

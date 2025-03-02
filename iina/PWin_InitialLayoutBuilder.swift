@@ -111,6 +111,9 @@ extension PlayerWindowController {
       defer {
         if newSessionState.isRestoring, window.isMiniaturized {
           log.verbose("Restoring minimized window; skipping windowIsReadyToShow")
+        } else if newSessionState.isRestoring, isWindowHidden {
+          log.verbose("Restoring window which was hidden; posting windowMustCancelShow")
+          postWindowMustCancelShow()
         } else {
           /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready. Post this always.
           log.verbose("Posting windowIsReadyToShow")
