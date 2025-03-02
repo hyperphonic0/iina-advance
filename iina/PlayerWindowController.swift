@@ -376,9 +376,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var topBarTrailingSpaceConstraint: NSLayoutConstraint!
 
   // - Bottom OSC constraints
-  @IBOutlet weak var viewportBtmOffsetFromContentViewBtmConstraint: NSLayoutConstraint!
+  var viewportBtmOffsetFromContentViewBtmConstraint: NSLayoutConstraint!
   var viewportBtmOffsetFromTopOfBottomBarConstraint: NSLayoutConstraint!
   var viewportBtmOffsetFromBtmOfBottomBarConstraint: NSLayoutConstraint!
+  var bottomBarBtmOffsetFromContentViewBtmConstraint: NSLayoutConstraint!
   // Needs to be changed to align with either sidepanel or leading edge of window:
   var bottomBarLeadingSpaceConstraint: NSLayoutConstraint!
   // Needs to be changed to align with either sidepanel or trailing edge of window:

@@ -9,6 +9,7 @@
 import Foundation
 
 class IINAAnimation {
+  static let disableActionsWorkaround = true
   typealias TaskFunc = (() throws -> Void)
 
   // MARK: Durations

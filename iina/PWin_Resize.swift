@@ -47,7 +47,9 @@ extension PlayerWindowController {
     // FIXME: this still doesn't look great in music mode; maybe adjust VideoView constraints
     CATransaction.begin()
     CATransaction.setAnimationDuration(0)
-    CATransaction.setDisableActions(true)
+    if IINAAnimation.disableActionsWorkaround {
+      CATransaction.setDisableActions(true)
+    }
     defer {
       CATransaction.commit()
     }
@@ -823,7 +825,6 @@ extension PlayerWindowController {
       if !isWindowHidden {
         player.window.setFrameImmediately(newGeometry)
       } else {
-        CATransaction.setDisableActions(true)
         videoView.apply(newGeometry)
       }
       windowedModeGeo = newGeometry
@@ -970,7 +971,7 @@ extension PlayerWindowController {
 
     miniPlayer.resetScrollingLabels()
 
-    updateBottomBarHeight(to: geometry.bottomBarHeight, bottomBarPlacement: .outsideViewport)
+    updateBottomBarHeight(to: geometry.bottomBarHeight, bottomBarPlacement: .outsideViewport, mode: .musicMode)
     let convertedGeo = geometry.toPWinGeometry()
 
     if setFrame {

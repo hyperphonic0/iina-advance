@@ -378,7 +378,7 @@ extension PlayerWindowController {
       }
 
       let bottomBarHeight = transition.inputLayout.bottomBarPlacement == .insideViewport ? middleGeo.insideBars.bottom : middleGeo.outsideBars.bottom
-      updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement)
+      updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement, mode: middleGeo.mode)
 
       if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
         controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH, originRatioV: floatingOSCOriginRatioV,
@@ -904,7 +904,8 @@ extension PlayerWindowController {
     updateTopBarHeight(to: outputLayout.topBarHeight, topBarPlacement: transition.outputLayout.topBarPlacement, cameraHousingOffset: transition.outputGeometry.topMarginHeight)
 
     let bottomBarHeight = transition.outputLayout.bottomBarPlacement == .insideViewport ? transition.outputGeometry.insideBars.bottom : transition.outputGeometry.outsideBars.bottom
-    updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.outputLayout.bottomBarPlacement)
+    updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.outputLayout.bottomBarPlacement,
+                          mode: transition.outputLayout.mode)
 
     if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
@@ -1361,7 +1362,8 @@ extension PlayerWindowController {
     bottomBarTrailingSpaceConstraint.isActive = true
   }
 
-  func updateBottomBarHeight(to bottomBarHeight: CGFloat, bottomBarPlacement: Preference.PanelPlacement) {
+  func updateBottomBarHeight(to bottomBarHeight: CGFloat, bottomBarPlacement: Preference.PanelPlacement,
+                             mode: PlayerWindowMode) {
     log.trace{"Updating bottomBar height to \(bottomBarHeight) for placement=\(bottomBarPlacement)"}
 
     switch bottomBarPlacement {
@@ -1374,6 +1376,20 @@ extension PlayerWindowController {
       viewportBtmOffsetFromBtmOfBottomBarConstraint.animateToConstant(bottomBarHeight)
       viewportBtmOffsetFromContentViewBtmConstraint.animateToConstant(bottomBarHeight)
     }
+
+    /* TODO: improvements for music mode
+    if mode == .musicMode {
+      viewportBtmOffsetFromTopOfBottomBarConstraint.priority = .defaultLow
+      viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = false
+      viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
+      bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = true
+    } else {
+      bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = false
+      viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
+      viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
+      viewportBtmOffsetFromTopOfBottomBarConstraint.priority = .required
+    }
+     */
   }
 
   // MARK: - Title bar items

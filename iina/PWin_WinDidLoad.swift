@@ -80,7 +80,7 @@ extension PlayerWindowController {
       // Update this here to reduce animation jitter on older versions of MacOS:
       viewportTopOffsetFromTopBarTopConstraint.constant = Constants.Distance.standardTitleBarHeight
 
-      initViewportView()
+      initViewportView(in: contentView)
       initAlbumArtView()
       initSeekPreview(in: contentView)
       initTitleBar()
@@ -139,7 +139,7 @@ extension PlayerWindowController {
 
   // MARK: - Building Components
 
-  private func initViewportView() {
+  private func initViewportView(in contentView: NSView) {
     viewportView.clipsToBounds = true
     viewportView.translatesAutoresizingMaskIntoConstraints = false
 //    window?.contentView?.autoresizesSubviews = true
@@ -172,6 +172,11 @@ extension PlayerWindowController {
     viewportLeadingSpacer.setCCResistance(h: ccr, v: ccr)
     viewportTopSpacer.setCCResistance(h: ccr, v: ccr)
     viewportBottomSpacer.setCCResistance(h: ccr, v: ccr)
+
+    viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
+    viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("Viewport-Btm_OffsetFrom-CV-Btm-Constraint")
+    viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
+
   }
 
   private func initAlbumArtView() {
@@ -382,12 +387,16 @@ extension PlayerWindowController {
     contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
 
     viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0)
+    viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = .init("Viewport-Btm_OffsetFrom-BottomBar-Top_Constraint")
     viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
-    viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = .init("viewportBtmOffsetFromTopOfBottomBarConstraint")
 
     viewportBtmOffsetFromBtmOfBottomBarConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
     viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
-    viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = .init("viewportBtmOffsetFromBtmOfBottomBarConstraint")
+    viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = .init("Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint")
+
+    bottomBarBtmOffsetFromContentViewBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
+    bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = false
+    bottomBarBtmOffsetFromContentViewBtmConstraint.identifier = .init("bottomBar-Btm_OffsetFrom-ContentView-Btm_Constraint")
 
     bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: 0)
     bottomBarLeadingSpaceConstraint.isActive = true

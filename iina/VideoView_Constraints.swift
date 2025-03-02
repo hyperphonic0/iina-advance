@@ -187,7 +187,8 @@ extension VideoView {
       bottomSpacerMax.isActive = marginGT_Active
       leadingSpacerMax.isActive = marginGT_Active
 
-      widthMax.isActive = false  // not needed due to aspect...
+      // TODO: improvements for music mode
+      widthMax.isActive = false// whMax_Active  // not needed due to aspect...
       heightMax.isActive = whMax_Active
 
       centerX.isActive = center_Active
@@ -221,7 +222,9 @@ extension VideoView {
     assert(DispatchQueue.isExecutingIn(.main))
 
     // FIXME: find a better solution than this! (workaround for broken animation in FS)
-    CATransaction.setDisableActions(true)
+    if IINAAnimation.disableActionsWorkaround {
+      CATransaction.setDisableActions(true)
+    }
 
     guard let geometry, geometry.isVideoVisible else {
       log.verbose("VideoView: no geometry or video not visible; will remove constraints")
@@ -318,6 +321,8 @@ extension VideoView {
 
     // - Configuration
 
+    let musicMode = false // TODO: improvements for music mode (search for this)
+
     // The desired aspect must always be honored. All constraints are secondary to this.
     let aspect_Priority: NSLayoutConstraint.Priority = .required
 
@@ -329,10 +334,10 @@ extension VideoView {
     let center_Priority: NSLayoutConstraint.Priority = .init(480)
 
     cons.update(connectSpacers_Active: true, connectSpacers_Priority: .required,
-                aspect_Active: aspectMultiplier > 0.0, aspect_Priority: aspect_Priority,
-                whMax_Active: true, whMax_Priority: whMax_Priority,
-                marginGT_Active: true, marginGT_Priority: marginGT_Priority,
-                center_Active: true, center_Priority: center_Priority)
+                aspect_Active: aspectMultiplier > 0.0, aspect_Priority: musicMode ? .init(499) : .required,
+                whMax_Active: true, whMax_Priority: musicMode ? .required : whMax_Priority,
+                marginGT_Active: !musicMode, marginGT_Priority: marginGT_Priority,
+                center_Active: !musicMode, center_Priority: center_Priority)
     videoViewConstraints = cons
 
     needsUpdateConstraints = true

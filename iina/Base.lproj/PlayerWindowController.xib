@@ -53,7 +53,6 @@
                 <outlet property="trailingSidebarLeadingBorder" destination="exJ-CB-MoS" id="jY1-pX-sXL"/>
                 <outlet property="trailingSidebarToOSDSpaceConstraint" destination="zbm-D9-epN" id="TdE-wQ-5Me"/>
                 <outlet property="trailingSidebarView" destination="epo-S6-QVB" id="efz-TR-rAa"/>
-                <outlet property="viewportBtmOffsetFromContentViewBtmConstraint" destination="4gm-o8-h98" id="GyQ-e0-oLf"/>
                 <outlet property="viewportLeadingOffsetFromContentViewLeadingConstraint" destination="vZs-ut-z4j" id="E4F-6L-B6v"/>
                 <outlet property="viewportLeadingOffsetFromLeadingSidebarLeadingConstraint" destination="PMP-ks-GY2" id="SCL-aE-ECP"/>
                 <outlet property="viewportLeadingOffsetFromLeadingSidebarTrailingConstraint" destination="Uue-Qa-4ao" id="aE6-Zn-qlY"/>
@@ -73,7 +72,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" autoresizesSubviews="NO" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -486,7 +485,7 @@
                     <constraint firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="leading" identifier="viewportTrailingOffsetFromTrailingSidebarLeadingConstraint" id="0m3-Bq-3N0"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="g0O-v5-RQj" secondAttribute="bottom" constant="8" identifier="viewportBtm_GE_osdBtm_Constraint" id="0pt-vB-Ycm"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="bottom" constant="-28" identifier="TopOfViewport-BottomOfTopBar-Constraint" id="1Ut-pz-GFg"/>
-                    <constraint firstAttribute="bottom" secondItem="3nL-Ky-Hfa" secondAttribute="bottom" identifier="viewportlViewBottom-ContentViewBottom-Constraint" id="4gm-o8-h98"/>
+                    <constraint firstAttribute="bottom" secondItem="3nL-Ky-Hfa" secondAttribute="bottom" placeholder="YES" identifier="replacedWithCode-1" id="4gm-o8-h98"/>
                     <constraint firstItem="OiF-pA-8Sd" firstAttribute="centerX" secondItem="3nL-Ky-Hfa" secondAttribute="leading" priority="400" constant="330" identifier="floatingOSC-CenterX-Constraint" id="9z2-rX-b7C"/>
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="8" id="Agb-na-g88"/>
                     <constraint firstItem="88M-Ln-4mc" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="4" id="C4g-bz-uwS"/>
