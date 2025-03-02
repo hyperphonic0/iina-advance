@@ -34,6 +34,11 @@ extension VideoView {
     let bottomSpacerMax: NSLayoutConstraint
     let leadingSpacerMax: NSLayoutConstraint
 
+    let topSpacerGT: NSLayoutConstraint
+    let trailingSpacerGT: NSLayoutConstraint
+    let bottomSpacerGT: NSLayoutConstraint
+    let leadingSpacerGT: NSLayoutConstraint
+
     let widthMax: NSLayoutConstraint
     let heightMax: NSLayoutConstraint
 
@@ -44,6 +49,9 @@ extension VideoView {
     // These can be adjusted to keep VideoView away from "inside" bars.
     let centerX: NSLayoutConstraint
     let centerY: NSLayoutConstraint
+
+    let centerX2: NSLayoutConstraint
+    let centerY2: NSLayoutConstraint
 
     let aspectRatio: NSLayoutConstraint
 
@@ -61,9 +69,6 @@ extension VideoView {
 
     let widthMin: NSLayoutConstraint
     let heightMin: NSLayoutConstraint
-
-    let centerX2: NSLayoutConstraint
-    let centerY2: NSLayoutConstraint
 #endif
 
     func disableAll() {
@@ -83,6 +88,9 @@ extension VideoView {
       centerX.isActive = false
       centerY.isActive = false
 
+      centerX2.isActive = false
+      centerY2.isActive = false
+
       aspectRatio.isActive = false
 
 #if TEST_VIDEO_CONSTRAINTS
@@ -98,9 +106,6 @@ extension VideoView {
 
       widthMin.isActive = false
       heightMin.isActive = false
-
-      centerX2.isActive = false
-      centerY2.isActive = false
 #endif
     }
 
@@ -110,6 +115,9 @@ extension VideoView {
                 marginGT_Active: Bool, marginGT_Priority: NSLayoutConstraint.Priority,
                 center_Active: Bool, center_Priority: NSLayoutConstraint.Priority) {
 
+//      let center2Priority: NSLayoutConstraint.Priority = .init(481)
+//      let center2Active = true
+
 #if TEST_VIDEO_CONSTRAINTS
       // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
       let eqPriority: NSLayoutConstraint.Priority = .init(8)
@@ -118,9 +126,6 @@ extension VideoView {
       let marginLT_Priority: NSLayoutConstraint.Priority = .init(311)
       let marginLT_Active = false
 
-      let center2Priority: NSLayoutConstraint.Priority = .init(300)
-      let center2Active = false
-
       let whMin_Priority: NSLayoutConstraint.Priority = .init(499)
       let whMinActive = false
 
@@ -128,11 +133,6 @@ extension VideoView {
       heightMin.priority = whMin_Priority
       widthMin.isActive = whMinActive
       heightMin.isActive = whMinActive
-
-      centerX2.priority = center2Priority
-      centerY2.priority = center2Priority
-      centerX2.isActive = center2Active
-      centerY2.isActive = center2Active
 
       eqOffsetTop.priority = eqPriority
       eqOffsetTrailing.priority = eqPriority
@@ -173,6 +173,9 @@ extension VideoView {
       centerX.priority = center_Priority
       centerY.priority = center_Priority
 
+//      centerX2.priority = center2Priority
+//      centerY2.priority = center2Priority
+
       // - Enablement
 
       topSpacerConnection.isActive = connectSpacers_Active
@@ -193,6 +196,9 @@ extension VideoView {
 
       centerX.isActive = center_Active
       centerY.isActive = center_Active
+
+//      centerX2.isActive = center2Active
+//      centerY2.isActive = center2Active
     }
   }
 
@@ -276,11 +282,19 @@ extension VideoView {
       bottomSpacerMax: existing?.bottomSpacerMax ?? bottomSpacer.heightAnchor.constraint(equalTo: superview.heightAnchor),
       leadingSpacerMax: existing?.leadingSpacerMax ?? leadingSpacer.widthAnchor.constraint(equalTo: superview.widthAnchor),
 
+      topSpacerGT: existing?.topSpacerGT ?? topSpacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
+      trailingSpacerGT: existing?.trailingSpacerGT ?? trailingSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
+      bottomSpacerGT: existing?.bottomSpacerGT ?? bottomSpacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
+      leadingSpacerGT: existing?.leadingSpacerGT ?? leadingSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
+
       widthMax: existing?.widthMax ?? widthAnchor.constraint(equalTo: superview.widthAnchor),
       heightMax: existing?.heightMax ?? heightAnchor.constraint(equalTo: superview.heightAnchor),
 
       centerX: existing?.centerX ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor, constant: 0),
       centerY: existing?.centerY ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor, constant: 0),
+
+      centerX2: existing?.centerX2 ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor, constant: 0),
+      centerY2: existing?.centerY2 ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor, constant: 0),
 
       aspectRatio: aspect
 /*
@@ -298,26 +312,39 @@ extension VideoView {
 
       widthMin: existing?.widthMin ?? widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
       heightMin: existing?.heightMin ?? heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
-
-      centerX2: existing?.centerX2 ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor, constant: 0),
-      centerY2: existing?.centerY2 ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor, constant: 0),
       #endif
  */
     )
 
+    cons.topSpacerGT.animateToConstant(geometry.insideBars.top)
+    cons.trailingSpacerGT.animateToConstant(geometry.insideBars.trailing)
+    cons.bottomSpacerGT.animateToConstant(geometry.insideBars.bottom)
+    cons.leadingSpacerGT.animateToConstant(geometry.insideBars.leading)
+
     // Update constants
 
-    let inside = geometry.insideBars
-    let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars)
-    if keepVideoAwayFromBars {
-      let centerOffsetX = ((inside.leading - inside.trailing) * 0.5).rounded(.down)
-      let centerOffsetY = ((inside.top - inside.bottom) * 0.5).rounded(.down)
-      cons.centerX.animateToConstant(centerOffsetX)
-      cons.centerY.animateToConstant(centerOffsetY)
-    } else {
+//    let inside = geometry.insideBars
+//    let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars)
+//    if keepVideoAwayFromBars {
+//      let centerOffsetX = ((inside.leading - inside.trailing) * 0.5).rounded(.down)
+//      let centerOffsetY = ((inside.top - inside.bottom) * 0.5).rounded(.down)
+//      cons.centerX.animateToConstant(centerOffsetX)
+//      cons.centerY.animateToConstant(centerOffsetY)
+//    } else {
       cons.centerX.animateToConstant(0)
       cons.centerY.animateToConstant(0)
-    }
+//    }
+
+    let pri = NSLayoutConstraint.Priority.init(481)
+    cons.topSpacerGT.priority = pri
+    cons.trailingSpacerGT.priority = pri
+    cons.bottomSpacerGT.priority = pri
+    cons.leadingSpacerGT.priority = pri
+
+    cons.topSpacerGT.isActive = true
+    cons.trailingSpacerGT.isActive = true
+    cons.bottomSpacerGT.isActive = true
+    cons.leadingSpacerGT.isActive = true
 
     // - Configuration
 

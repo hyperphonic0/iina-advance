@@ -916,47 +916,47 @@ extension PlayerWindowController {
       Logger.fatal("ResizeSidebar: current mode unexpected: \(currentLayout.mode)")
     }
 
-    return IINAAnimation.disableAnimation { [self] in
-      videoView.videoLayer.enterAsynchronousMode()
-      
-      let (result, newGeo): (CursorType, PWinGeometry?)
+    videoView.videoLayer.enterAsynchronousMode()
 
-      if leadingSidebarIsResizing {
-        let newWidth = (videoView.userInterfaceLayoutDirection == .rightToLeft ?
-        window!.frame.width - dragEvent.locationInWindow.x : dragEvent.locationInWindow.x) - 2
-        (result, newGeo) = resizeLeadingSidebar(from: oldGeo, desiredWidth: newWidth)
-      } else if trailingSidebarIsResizing {
-        let newWidth = (videoView.userInterfaceLayoutDirection == .rightToLeft ?
-        dragEvent.locationInWindow.x : window!.frame.width - dragEvent.locationInWindow.x) - 2
-        (result, newGeo) = resizeTrailingSidebar(from: oldGeo, desiredWidth: newWidth)
-      } else {
-        // should be already handled above
-        return .normalCursor
-      }
+    let (result, newGeo): (CursorType, PWinGeometry?)
 
-      if let newGeo {
-        resizeWindowImmediately(using: newGeo)
-
-        switch currentLayout.mode {
-        case .windowedNormal:
-          // Need to update this for future operations
-          windowedModeGeo = newGeo
-        case .fullScreenNormal:
-          break
-        case .musicMode, .windowedInteractive, .fullScreenInteractive:
-          Logger.fatal("ResizeSidebar: current mode unexpected: \(currentLayout.mode)")
-        }
-
-        // Update currentLayout with new playlist width
-        let oldSidebarState = currentLayout.spec.moreSidebarState
-        let newSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: Preference.integer(for: .playlistWidth),
-                                                       selectedSubSegment: oldSidebarState.selectedSubSegment,
-                                                       selectedPluginTabID: oldSidebarState.selectedPluginTabID)
-        let newSpec = currentLayout.spec.clone(moreSidebarState: newSidebarState)
-        currentLayout = LayoutState.buildFrom(newSpec)
-      }
-      return result
+    if leadingSidebarIsResizing {
+      let newWidth = (videoView.userInterfaceLayoutDirection == .rightToLeft ?
+      window!.frame.width - dragEvent.locationInWindow.x : dragEvent.locationInWindow.x) - 2
+      (result, newGeo) = resizeLeadingSidebar(from: oldGeo, desiredWidth: newWidth)
+    } else if trailingSidebarIsResizing {
+      let newWidth = (videoView.userInterfaceLayoutDirection == .rightToLeft ?
+      dragEvent.locationInWindow.x : window!.frame.width - dragEvent.locationInWindow.x) - 2
+      (result, newGeo) = resizeTrailingSidebar(from: oldGeo, desiredWidth: newWidth)
+    } else {
+      // should be already handled above
+      return .normalCursor
     }
+
+    if let newGeo {
+      resizeWindowImmediately(using: newGeo)
+      viewportView.layout()
+      viewportView.updateConstraints()
+
+      switch currentLayout.mode {
+      case .windowedNormal:
+        // Need to update this for future operations
+        windowedModeGeo = newGeo
+      case .fullScreenNormal:
+        break
+      case .musicMode, .windowedInteractive, .fullScreenInteractive:
+        Logger.fatal("ResizeSidebar: current mode unexpected: \(currentLayout.mode)")
+      }
+
+      // Update currentLayout with new playlist width
+      let oldSidebarState = currentLayout.spec.moreSidebarState
+      let newSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: Preference.integer(for: .playlistWidth),
+                                                     selectedSubSegment: oldSidebarState.selectedSubSegment,
+                                                     selectedPluginTabID: oldSidebarState.selectedPluginTabID)
+      let newSpec = currentLayout.spec.clone(moreSidebarState: newSidebarState)
+      currentLayout = LayoutState.buildFrom(newSpec)
+    }
+    return result
   }
 
   private func resizeLeadingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> (CursorType, PWinGeometry?) {
@@ -1010,9 +1010,9 @@ extension PlayerWindowController {
                                          ΔWindowWidth: newGeo.windowFrame.width - oldGeo.windowFrame.width)
 
     if (newPlaylistWidth < desiredPlaylistWidth) || (newPlaylistWidth == Constants.Sidebar.maxPlaylistWidth) {
-      return (.resized_AtRightMax, nil)
+      return (.resized_AtRightMax, newGeo)
     } else if (desiredPlaylistWidth > newPlaylistWidth) || (newPlaylistWidth == Constants.Sidebar.minPlaylistWidth) {
-      return (.resized_AtLeftMin, nil)
+      return (.resized_AtLeftMin, newGeo)
     }
     return (.resizing_BothDirections, newGeo)
   }
@@ -1068,9 +1068,9 @@ extension PlayerWindowController {
                                           ΔWindowWidth: newGeo.windowFrame.width - oldGeo.windowFrame.width)
 
     if (newPlaylistWidth < desiredPlaylistWidth) || (newPlaylistWidth == Constants.Sidebar.maxPlaylistWidth) {
-      return (.resized_AtLeftMin, nil)
+      return (.resized_AtLeftMin, newGeo)
     } else if (desiredPlaylistWidth > newPlaylistWidth) || (newPlaylistWidth == Constants.Sidebar.minPlaylistWidth) {
-      return (.resized_AtRightMax, nil)
+      return (.resized_AtRightMax, newGeo)
     }
     return (.resizing_BothDirections, newGeo)
   }
