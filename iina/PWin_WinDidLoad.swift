@@ -461,10 +461,10 @@ extension PlayerWindowController {
     let playBtnHorizOffsetConstraint = playButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor)
     playBtnHorizOffsetConstraint.isActive = true
 
-    speedLabel.topAnchor.constraint(equalTo: fragPlaybackBtnsView.topAnchor, constant: 0).isActive = true
+    speedLabel.topAnchor.constraint(equalTo: fragPlaybackBtnsView.topAnchor, constant: -2).isActive = true
     speedLabel.centerXAnchor.constraint(equalTo: playButton.centerXAnchor).isActive = true
-    speedLabel.bottomAnchor.constraint(equalTo: playButton.topAnchor, constant: 0).isActive = true
-    speedLabelZeroHeightConstraint = speedLabel.heightAnchor.constraint(equalToConstant: 0)
+    speedLabel.bottomAnchor.constraint(equalTo: playButton.topAnchor, constant: 2).isActive = true
+    speedLabelZeroHeightConstraint = speedLabel.heightAnchor.constraint(equalToConstant: 4)  // sum of the 2 numbers above
     speedLabelZeroHeightConstraint.isActive = true
 
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false

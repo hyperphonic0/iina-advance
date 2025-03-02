@@ -393,8 +393,8 @@ struct ControlBarGeometry {
     let idealSize = playIconSize * 0.25
     let freeHeight = fullIconHeight - playIconSize
     let deficit: CGFloat = max(0.0, idealSize - freeHeight)
-    let compromise = idealSize - (0.5 * deficit)
-    return compromise.clamped(to: 8...32)
+    let compromise = idealSize - (0.7 * deficit)
+    return compromise.rounded().clamped(to: 8...36)
   }
 
   // MARK: - Playback Controls
@@ -500,6 +500,6 @@ struct ControlBarGeometry {
 
   /// Derives desired bottom margin from playSliderHeight (TwoRowOSC style only)
   static func twoRowOSC_BottomMargin(playSliderHeight: CGFloat) -> CGFloat {
-    return(playSliderHeight * 0.2).rounded()
+    return(playSliderHeight * 0.15).rounded()
   }
 }
