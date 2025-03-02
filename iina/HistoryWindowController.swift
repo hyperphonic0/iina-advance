@@ -182,13 +182,16 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
   func windowWillClose(_ notification: Notification) {
     log.verbose("History window will close")
-    // Invalidate ticket
-    $reloadTicketCounter.withLock { $0 += 1 }
+    invalidateTicket()
     co.removeAllObservers()
   }
 
   private func isTicketStillValid(_ ticket: Int) -> Bool {
     ticket == reloadTicketCounter
+  }
+
+  func invalidateTicket() {
+    $reloadTicketCounter.withLock { $0 += 1 }
   }
 
   /// Can be called from any DispatchQueue
@@ -294,13 +297,18 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       // Fill in fileExists
       if fileExistsMap[entry.url] == nil {
         fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
-        let wasWatchLaterFound = entry.loadProgressFromWatchLater()
+        let progressDidChange = entry.loadProgressFromWatchLater()
+        if progressDidChange {
+          
+        }
+        let wasWatchLaterFound = entry.mpvProgress != nil
         count += 1
         if wasWatchLaterFound {
           watchLaterCount += 1
         }
         if (count %% 100) == 0 {
-          guard isInitialLoad || isTicketStillValid(ticket) else { return }  // check ticket
+          guard isInitialLoad || isTicketStillValid(ticket) else { return }
+          guard !HistoryController.shared.isAppTerminating else { return }
         }
       }
     }

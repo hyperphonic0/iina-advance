@@ -16,8 +16,10 @@ class HistoryController {
   var history: [PlaybackHistory]
   var log = Logger.Subsystem(rawValue: "history")
   var folderMonitor = FolderMonitor(url: Utility.watchLaterURL)
-  /// Whether graceful stop of history queue has commenced (via `stop` func)
-  private var isAppTerminating = false
+  /// Whether graceful stop of history queue has commenced (via `stop` func).
+  /// Use this to check for app termination in queues other than main, as that is a prerequisite for
+  /// `AppDelegate.shared.isTerminating`.
+  private(set) var isAppTerminating = false
 
   /// Number of tasks currently in the queue.
   @Atomic var tasksOutstanding = 0

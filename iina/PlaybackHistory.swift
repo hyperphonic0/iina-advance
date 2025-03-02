@@ -69,8 +69,9 @@ class PlaybackHistory: NSObject, NSSecureCoding {
   @discardableResult
   func loadProgressFromWatchLater() -> Bool {
     let progress = Utility.playbackProgressFromWatchLater(mpvMd5)
+    let didChange = progress != self.mpvProgress
     self.mpvProgress = progress
-    return progress != nil
+    return didChange
   }
 
   func encode(with aCoder: NSCoder) {
