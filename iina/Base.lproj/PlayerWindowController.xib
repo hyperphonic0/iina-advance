@@ -73,7 +73,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" autoresizesSubviews="NO" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -483,7 +483,7 @@
                     </customView>
                 </subviews>
                 <constraints>
-                    <constraint firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="leading" priority="400" identifier="viewportTrailingOffsetFromTrailingSidebarLeadingConstraint" id="0m3-Bq-3N0"/>
+                    <constraint firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="leading" identifier="viewportTrailingOffsetFromTrailingSidebarLeadingConstraint" id="0m3-Bq-3N0"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="g0O-v5-RQj" secondAttribute="bottom" constant="8" identifier="viewportBtm_GE_osdBtm_Constraint" id="0pt-vB-Ycm"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="bottom" constant="-28" identifier="TopOfViewport-BottomOfTopBar-Constraint" id="1Ut-pz-GFg"/>
                     <constraint firstAttribute="bottom" secondItem="3nL-Ky-Hfa" secondAttribute="bottom" identifier="viewportlViewBottom-ContentViewBottom-Constraint" id="4gm-o8-h98"/>

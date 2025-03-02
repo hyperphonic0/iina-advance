@@ -220,6 +220,9 @@ extension VideoView {
   func apply(_ geometry: PWinGeometry?, updateAspect: Bool = true) {
     assert(DispatchQueue.isExecutingIn(.main))
 
+    // FIXME: find a better solution than this! (workaround for broken animation in FS)
+    CATransaction.setDisableActions(true)
+
     guard let geometry, geometry.isVideoVisible else {
       log.verbose("VideoView: no geometry or video not visible; will remove constraints")
       removeVideoConstraints()
