@@ -168,6 +168,8 @@ extension PlayerWindowController {
     switch key {
     case .enableAdvancedSettings:
       animationPipeline.submitTask({ [self] in
+        // May change enablement of 2-row OSC; refresh:
+        updateTitleBarAndOSC()
         updateWindowBorderAndOpacity()
         // may need to hide cropbox label and other advanced stuff
         quickSettingView.reload()

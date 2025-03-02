@@ -269,10 +269,10 @@ extension PlayerWindowController {
     }
 
     var isOpeningBarOSCFromZero: Bool {
-      isWindowInitialLayout || outputLayout.hasTopOrBottomOSC &&
+      isWindowInitialLayout || (outputLayout.hasTopOrBottomOSC &&
       (!inputLayout.hasTopOrBottomOSC || (inputLayout.oscPosition != outputLayout.oscPosition) ||
        (outputLayout.hasTopOSC && isTopBarPlacementOrStyleChanging)
-       || (outputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging))
+       || (outputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging)))
     }
 
     /// For animation purposes only

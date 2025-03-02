@@ -13,7 +13,7 @@ fileprivate let opaqueControlAlpha: CGFloat = 1.0
 
 fileprivate let scaleFactor: Int = 2
 fileprivate let outputImgWidth: Int = 450 * scaleFactor
-fileprivate let outputImgHeight: Int = outputImgWidth * 3 / 6  // Output image expected to be 2:1
+fileprivate let outputImgHeight: Int = outputImgWidth * 3 / 5  // Output image expected to be 5:3
 
 fileprivate let titleBarHeight: Int = 28 * scaleFactor
 fileprivate let menuBarHeight: Int = titleBarHeight

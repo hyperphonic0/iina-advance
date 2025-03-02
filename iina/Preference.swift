@@ -173,17 +173,19 @@ struct Preference {
     /// Total height of the OSC container.
     static let oscBarHeight = Key("oscBarHeight")
 
+    static let oscBarPlayIconSizeTicks = Key("oscBarPlayIconSizeTicks")
+    static let oscBarPlayIconSpacingTicks = Key("oscBarPlayIconSpacingTicks")
+    static let oscBarToolIconSizeTicks = Key("oscBarToolIconSizeTicks")
+    static let oscBarToolIconSpacingTicks = Key("oscBarToolIconSpacingTicks")
+    // These get calculated based on the number of ticks. Ideally they would be derived, but that would be tricky
+    // because it could introduce race conditions when window preference observers try to detect & respond to multiple
+    // simultaneous changes...
     static let oscBarPlayIconSize = Key("oscBarPlayIconSize")
     static let oscBarPlayIconSpacing = Key("oscBarPlayIconSpacing")
     /// Size of one side of a (square) OSC toolbar button
     static let oscBarToolIconSize = Key("oscBarToolIconSize")
     /// The space added around all the sides of each button
     static let oscBarToolIconSpacing = Key("oscBarToolIconSpacing")
-
-    static let oscBarPlayIconSizeTicks = Key("oscBarPlayIconSizeTicks")
-    static let oscBarPlayIconSpacingTicks = Key("oscBarPlayIconSpacingTicks")
-    static let oscBarToolIconSizeTicks = Key("oscBarToolIconSizeTicks")
-    static let oscBarToolIconSpacingTicks = Key("oscBarToolIconSpacingTicks")
 
     // - Floating OSC
 
@@ -1261,20 +1263,20 @@ struct Preference {
     .showChapterPos: true,
     .enableControlBarAutoHide: true,
     .controlBarToolbarButtons: [ToolBarButton.pip.rawValue, ToolBarButton.playlist.rawValue, ToolBarButton.settings.rawValue],
-    .oscBarToolIconSize: 18,
-    .oscBarToolIconSpacing: 5,  // spacing between icons is x2 this number
     .enableOSC: true,
     .titleBarBtnsGlow: false,
     .showTopBarTrigger: ShowTopBarTrigger.defaultValue.rawValue,
     .topBarPlacement: PanelPlacement.insideViewport.rawValue,
     .bottomBarPlacement: PanelPlacement.insideViewport.rawValue,
     .oscBarHeight: 60,
-    .oscBarPlayIconSize: 24,
-    .oscBarPlayIconSpacing: 16,
     .oscBarPlayIconSizeTicks: 1,
-    .oscBarPlayIconSpacingTicks: 1,
+    .oscBarPlayIconSpacingTicks: 2,
     .oscBarToolIconSizeTicks: 1,
-    .oscBarToolIconSpacingTicks: 1,
+    .oscBarToolIconSpacingTicks: 2,
+    .oscBarPlayIconSize: 33,
+    .oscBarPlayIconSpacing: 16,
+    .oscBarToolIconSize: 33,
+    .oscBarToolIconSpacing: 7,
     .oscPosition: OSCPosition.defaultValue.rawValue,
     .oscColorScheme: OSCColorScheme.defaultValue.rawValue,
     .oscForceSingleRow: false,
