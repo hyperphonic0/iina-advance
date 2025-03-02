@@ -164,8 +164,7 @@ extension PlayerWindowController {
   /// Do not call in response to WindowWillResize, because this can call `setFrameImmediately`.
   /// Do not call if layout needs to change. For that, use a LayoutTransition.
   ///
-  /// Use with non-nil `newGeometry` for: (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or
-  /// moved
+  /// Use with non-nil `newGeometry` for: (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or moved.
   /// Not animated.
   /// Can be used in windowed or full screen modes.
   /// Can be used in music mode only if playlist is hidden.
