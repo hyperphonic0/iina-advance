@@ -613,8 +613,9 @@ extension PlayerWindowController {
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
         /// (See note in `applyMusicModeGeo`)
         if shouldDisableConstraint {
-          log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = 1"}
-          viewportBtmOffsetFromContentViewBtmConstraint.priority = .minimum
+          // Don't set this too low, or it may compete with VideoView's constraints and cause video to squeeze or stretch
+          log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = 499"}
+          viewportBtmOffsetFromContentViewBtmConstraint.intPriority = 499
         }
 
         if !miniPlayer.volumeSliderView.subviews.contains(fragVolumeView) {

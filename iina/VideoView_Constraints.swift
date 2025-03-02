@@ -11,10 +11,10 @@ extension VideoView {
   /// Only called once, at VideoView init
   func initConstraints() {
     translatesAutoresizingMaskIntoConstraints = false
-    setContentCompressionResistancePriority(.required, for: .horizontal)
-    setContentCompressionResistancePriority(.required, for: .vertical)
-    setContentHuggingPriority(.required, for: .horizontal)
-    setContentHuggingPriority(.required, for: .vertical)
+    setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+    setContentHuggingPriority(.defaultLow, for: .horizontal)
+    setContentHuggingPriority(.defaultLow, for: .vertical)
   }
 
   /// Convenience property
@@ -29,10 +29,10 @@ extension VideoView {
     let leadingSpacerConnection: NSLayoutConstraint
     let trailingSpacerConnection: NSLayoutConstraint
 
-    let gtOffsetTop: NSLayoutConstraint
-    let gtOffsetTrailing: NSLayoutConstraint
-    let gtOffsetBottom: NSLayoutConstraint
-    let gtOffsetLeading: NSLayoutConstraint
+    let topSpacerMax: NSLayoutConstraint
+    let trailingSpacerMax: NSLayoutConstraint
+    let bottomSpacerMax: NSLayoutConstraint
+    let leadingSpacerMax: NSLayoutConstraint
 
     let widthMax: NSLayoutConstraint
     let heightMax: NSLayoutConstraint
@@ -72,10 +72,10 @@ extension VideoView {
       leadingSpacerConnection.isActive = false
       trailingSpacerConnection.isActive = false
 
-      gtOffsetTop.isActive = false
-      gtOffsetTrailing.isActive = false
-      gtOffsetBottom.isActive = false
-      gtOffsetLeading.isActive = false
+      topSpacerMax.isActive = false
+      trailingSpacerMax.isActive = false
+      bottomSpacerMax.isActive = false
+      leadingSpacerMax.isActive = false
 
       widthMax.isActive = false
       heightMax.isActive = false
@@ -103,6 +103,96 @@ extension VideoView {
       centerY2.isActive = false
 #endif
     }
+
+    func update(connectSpacers_Active: Bool, connectSpacers_Priority: NSLayoutConstraint.Priority,
+                aspect_Active: Bool, aspect_Priority: NSLayoutConstraint.Priority,
+                whMax_Active: Bool, whMax_Priority: NSLayoutConstraint.Priority,
+                marginGT_Active: Bool, marginGT_Priority: NSLayoutConstraint.Priority,
+                center_Active: Bool, center_Priority: NSLayoutConstraint.Priority) {
+
+#if TEST_VIDEO_CONSTRAINTS
+      // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
+      let eqPriority: NSLayoutConstraint.Priority = .init(8)
+      let eqIsActive = false
+
+      let marginLT_Priority: NSLayoutConstraint.Priority = .init(311)
+      let marginLT_Active = false
+
+      let center2Priority: NSLayoutConstraint.Priority = .init(300)
+      let center2Active = false
+
+      let whMin_Priority: NSLayoutConstraint.Priority = .init(499)
+      let whMinActive = false
+
+      widthMin.priority = whMin_Priority
+      heightMin.priority = whMin_Priority
+      widthMin.isActive = whMinActive
+      heightMin.isActive = whMinActive
+
+      centerX2.priority = center2Priority
+      centerY2.priority = center2Priority
+      centerX2.isActive = center2Active
+      centerY2.isActive = center2Active
+
+      eqOffsetTop.priority = eqPriority
+      eqOffsetTrailing.priority = eqPriority
+      eqOffsetBottom.priority = eqPriority
+      eqOffsetLeading.priority = eqPriority
+      eqOffsetTop.isActive = eqIsActive
+      eqOffsetTrailing.isActive = eqIsActive
+      eqOffsetBottom.isActive = eqIsActive
+      eqOffsetLeading.isActive = eqIsActive
+
+      ltOffsetTop.priority = marginLT_Priority
+      ltOffsetTrailing.priority = marginLT_Priority
+      ltOffsetBottom.priority = marginLT_Priority
+      ltOffsetLeading.priority = marginLT_Priority
+      ltOffsetTop.isActive = marginLT_Active
+      ltOffsetTrailing.isActive = marginLT_Active
+      ltOffsetBottom.isActive = marginLT_Active
+      ltOffsetLeading.isActive = marginLT_Active
+
+#endif
+      // - Priorities
+
+      topSpacerConnection.priority = connectSpacers_Priority
+      bottomSpacerConnection.priority = connectSpacers_Priority
+      leadingSpacerConnection.priority = connectSpacers_Priority
+      trailingSpacerConnection.priority = connectSpacers_Priority
+
+      aspectRatio.priority = aspect_Priority
+
+      topSpacerMax.priority = marginGT_Priority
+      trailingSpacerMax.priority = marginGT_Priority
+      bottomSpacerMax.priority = marginGT_Priority
+      leadingSpacerMax.priority = marginGT_Priority
+
+      widthMax.priority = whMax_Priority
+      heightMax.priority = whMax_Priority
+
+      centerX.priority = center_Priority
+      centerY.priority = center_Priority
+
+      // - Enablement
+
+      topSpacerConnection.isActive = connectSpacers_Active
+      bottomSpacerConnection.isActive = connectSpacers_Active
+      leadingSpacerConnection.isActive = connectSpacers_Active
+      trailingSpacerConnection.isActive = connectSpacers_Active
+
+      aspectRatio.isActive = aspect_Active
+
+      topSpacerMax.isActive = marginGT_Active
+      trailingSpacerMax.isActive = marginGT_Active
+      bottomSpacerMax.isActive = marginGT_Active
+      leadingSpacerMax.isActive = marginGT_Active
+
+      widthMax.isActive = false  // not needed due to aspect...
+      heightMax.isActive = whMax_Active
+
+      centerX.isActive = center_Active
+      centerY.isActive = center_Active
+    }
   }
 
   func removeVideoConstraints() {
@@ -116,8 +206,18 @@ extension VideoView {
     videoViewConstraints = nil
   }
 
+  func loosenConstraints() {
+    guard let cons = videoViewConstraints else { return }
+
+    cons.update(connectSpacers_Active: true, connectSpacers_Priority: .init(100),
+                aspect_Active: true, aspect_Priority: .init(50),
+                whMax_Active: true, whMax_Priority: .init(99),
+                marginGT_Active: true, marginGT_Priority: .init(98),
+                center_Active: true, center_Priority: .init(97))
+  }
+
   /// Add, update, or remove all constraints, based on the given geometry (or lack thereof).
-  func apply(_ geometry: PWinGeometry?) {
+  func apply(_ geometry: PWinGeometry?, updateAspect: Bool = true) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard let geometry, geometry.isVideoVisible else {
@@ -143,7 +243,7 @@ extension VideoView {
 
     let aspect: NSLayoutConstraint
     if let existing {
-      if aspectMultiplier != existing.aspectRatio.multiplier {
+      if aspectMultiplier != existing.aspectRatio.multiplier, updateAspect {
         // cannot reuse aspect constraint
         existing.aspectRatio.isActive = false
         aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
@@ -165,10 +265,10 @@ extension VideoView {
       leadingSpacerConnection: existing?.leadingSpacerConnection ?? leadingAnchor.constraint(equalTo: leadingSpacer.trailingAnchor),
       trailingSpacerConnection: existing?.trailingSpacerConnection ?? trailingAnchor.constraint(equalTo: trailingSpacer.leadingAnchor),
 
-      gtOffsetTop: existing?.gtOffsetTop ?? topSpacer.heightAnchor.constraint(equalTo: superview.heightAnchor),
-      gtOffsetTrailing: existing?.gtOffsetTrailing ?? trailingSpacer.widthAnchor.constraint(equalTo: superview.widthAnchor),
-      gtOffsetBottom: existing?.gtOffsetBottom ?? bottomSpacer.heightAnchor.constraint(equalTo: superview.heightAnchor),
-      gtOffsetLeading: existing?.gtOffsetLeading ?? leadingSpacer.widthAnchor.constraint(equalTo: superview.widthAnchor),
+      topSpacerMax: existing?.topSpacerMax ?? topSpacer.heightAnchor.constraint(equalTo: superview.heightAnchor),
+      trailingSpacerMax: existing?.trailingSpacerMax ?? trailingSpacer.widthAnchor.constraint(equalTo: superview.widthAnchor),
+      bottomSpacerMax: existing?.bottomSpacerMax ?? bottomSpacer.heightAnchor.constraint(equalTo: superview.heightAnchor),
+      leadingSpacerMax: existing?.leadingSpacerMax ?? leadingSpacer.widthAnchor.constraint(equalTo: superview.widthAnchor),
 
       widthMax: existing?.widthMax ?? widthAnchor.constraint(equalTo: superview.widthAnchor),
       heightMax: existing?.heightMax ?? heightAnchor.constraint(equalTo: superview.heightAnchor),
@@ -215,101 +315,21 @@ extension VideoView {
 
     // - Configuration
 
-    let connectSpacers = true
-
     // The desired aspect must always be honored. All constraints are secondary to this.
-    let aspectPriority: NSLayoutConstraint.Priority = .required
-    let aspectActive = aspectMultiplier > 0.0
+    let aspect_Priority: NSLayoutConstraint.Priority = .required
 
     // Need to keep priorities under 500 or the window will not resize!
-    let whMaxPriority: NSLayoutConstraint.Priority = .init(495)
-    let whMaxActive = true
-
+    let whMax_Priority: NSLayoutConstraint.Priority = .init(495)
     let marginGT_Priority: NSLayoutConstraint.Priority = .init(490)
-    let marginGT_Active = true
 
     // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-    let centerPriority: NSLayoutConstraint.Priority = .init(480)
-    let centerActive = true
+    let center_Priority: NSLayoutConstraint.Priority = .init(480)
 
-#if TEST_VIDEO_CONSTRAINTS
-    // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
-    let eqPriority: NSLayoutConstraint.Priority = .init(8)
-    let eqIsActive = false
-
-    let marginLT_Priority: NSLayoutConstraint.Priority = .init(311)
-    let marginLT_Active = false
-
-    let center2Priority: NSLayoutConstraint.Priority = .init(300)
-    let center2Active = false
-
-    let whMin_Priority: NSLayoutConstraint.Priority = .init(499)
-    let whMinActive = false
-
-    cons.widthMin.priority = whMin_Priority
-    cons.heightMin.priority = whMin_Priority
-    cons.widthMin.isActive = whMinActive
-    cons.heightMin.isActive = whMinActive
-
-    cons.centerX2.priority = center2Priority
-    cons.centerY2.priority = center2Priority
-    cons.centerX2.isActive = center2Active
-    cons.centerY2.isActive = center2Active
-
-    cons.eqOffsetTop.priority = eqPriority
-    cons.eqOffsetTrailing.priority = eqPriority
-    cons.eqOffsetBottom.priority = eqPriority
-    cons.eqOffsetLeading.priority = eqPriority
-    cons.eqOffsetTop.isActive = eqIsActive
-    cons.eqOffsetTrailing.isActive = eqIsActive
-    cons.eqOffsetBottom.isActive = eqIsActive
-    cons.eqOffsetLeading.isActive = eqIsActive
-
-    cons.ltOffsetTop.priority = marginLT_Priority
-    cons.ltOffsetTrailing.priority = marginLT_Priority
-    cons.ltOffsetBottom.priority = marginLT_Priority
-    cons.ltOffsetLeading.priority = marginLT_Priority
-    cons.ltOffsetTop.isActive = marginLT_Active
-    cons.ltOffsetTrailing.isActive = marginLT_Active
-    cons.ltOffsetBottom.isActive = marginLT_Active
-    cons.ltOffsetLeading.isActive = marginLT_Active
-
-#endif
-    // - Priorities
-
-    cons.aspectRatio.priority = aspectPriority
-
-    cons.gtOffsetTop.priority = marginGT_Priority
-    cons.gtOffsetTrailing.priority = marginGT_Priority
-    cons.gtOffsetBottom.priority = marginGT_Priority
-    cons.gtOffsetLeading.priority = marginGT_Priority
-
-    cons.widthMax.priority = whMaxPriority
-    cons.heightMax.priority = whMaxPriority
-
-    cons.centerX.priority = centerPriority
-    cons.centerY.priority = centerPriority
-
-    // - Enablement
-
-    cons.topSpacerConnection.isActive = connectSpacers
-    cons.bottomSpacerConnection.isActive = connectSpacers
-    cons.leadingSpacerConnection.isActive = connectSpacers
-    cons.trailingSpacerConnection.isActive = connectSpacers
-
-    cons.gtOffsetTop.isActive = marginGT_Active
-    cons.gtOffsetTrailing.isActive = marginGT_Active
-    cons.gtOffsetBottom.isActive = marginGT_Active
-    cons.gtOffsetLeading.isActive = marginGT_Active
-
-    cons.widthMax.isActive = false  // not needed due to aspect...
-    cons.heightMax.isActive = whMaxActive
-
-    cons.centerX.isActive = centerActive
-    cons.centerY.isActive = centerActive
-
-    cons.aspectRatio.isActive = aspectActive
-
+    cons.update(connectSpacers_Active: true, connectSpacers_Priority: .required,
+                aspect_Active: aspectMultiplier > 0.0, aspect_Priority: aspect_Priority,
+                whMax_Active: true, whMax_Priority: whMax_Priority,
+                marginGT_Active: true, marginGT_Priority: marginGT_Priority,
+                center_Active: true, center_Priority: center_Priority)
     videoViewConstraints = cons
 
     needsUpdateConstraints = true

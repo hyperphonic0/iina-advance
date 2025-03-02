@@ -142,7 +142,10 @@ extension PlayerWindowController {
   private func initViewportView() {
     viewportView.clipsToBounds = true
     viewportView.translatesAutoresizingMaskIntoConstraints = false
-    viewportView.autoresizesSubviews = false
+//    window?.contentView?.autoresizesSubviews = true
+//    viewportView.autoresizesSubviews = true
+    // These don't seem to matter. But set to reasonable values:
+    viewportView.setContentHugging(h: 250, v: 250)
     viewportView.setCCResistance(h: 250, v: 250)
 
     viewportView.addSubview(viewportTopSpacer)
@@ -158,11 +161,17 @@ extension PlayerWindowController {
     viewportBottomSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
     viewportLeadingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
     viewportTrailingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
-    let ch: Float = 100
+    // These don't seem to matter. But set to reasonable values:
+    let ch: Float = 250
     viewportTrailingSpacer.setContentHugging(h: ch, v: ch)
     viewportLeadingSpacer.setContentHugging(h: ch, v: ch)
     viewportTopSpacer.setContentHugging(h: ch, v: ch)
     viewportBottomSpacer.setContentHugging(h: ch, v: ch)
+    let ccr: Float = 250
+    viewportTrailingSpacer.setCCResistance(h: ccr, v: ccr)
+    viewportLeadingSpacer.setCCResistance(h: ccr, v: ccr)
+    viewportTopSpacer.setCCResistance(h: ccr, v: ccr)
+    viewportBottomSpacer.setCCResistance(h: ccr, v: ccr)
   }
 
   private func initAlbumArtView() {

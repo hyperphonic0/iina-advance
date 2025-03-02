@@ -799,7 +799,7 @@ extension PlayerWindowController {
                                 showDefaultArt: Bool? = nil,
                                 thenRun: Bool = false) -> [IINAAnimation.Task] {
 
-    log.verbose{"ApplyWindowGeo: showDefaultArt=\(showDefaultArt?.yn ?? "nil"), run=\(thenRun.yn) newGeo=\(newGeometry)"}
+    log.verbose{"ApplyWindowGeo: dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) newGeo=\(newGeometry)"}
 
     var tasks: [IINAAnimation.Task] = []
 
@@ -922,8 +922,8 @@ extension PlayerWindowController {
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
         /// (See note in `applyMusicModeGeo`)
         if shouldDisableConstraint {
-          log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = 1"}
-          viewportBtmOffsetFromContentViewBtmConstraint.priority = .minimum
+          log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = 499"}
+          viewportBtmOffsetFromContentViewBtmConstraint.intPriority = 499
         }
       }
 
