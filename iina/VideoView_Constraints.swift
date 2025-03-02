@@ -324,33 +324,23 @@ extension VideoView {
     let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
     if keepVideoAwayFromBars {
       let inside = geometry.insideBars
-      let hasVertical = inside.top > 0 || inside.bottom > 0
-      if hasVertical {
-        cons.topSpacerGT.animateToConstant(inside.top)
-        cons.bottomSpacerGT.animateToConstant(inside.bottom)
-        let vPriority = NSLayoutConstraint.Priority.init(481)
-        cons.topSpacerGT.priority = vPriority
-        cons.bottomSpacerGT.priority = vPriority
-      }
-      cons.topSpacerGT.isActive = hasVertical
-      cons.bottomSpacerGT.isActive = hasVertical
 
-      let hasHorizontal = inside.leading > 0 || inside.trailing > 0
-      if hasHorizontal {
-        cons.trailingSpacerGT.animateToConstant(inside.trailing)
-        cons.leadingSpacerGT.animateToConstant(inside.leading)
-        let hPriority = NSLayoutConstraint.Priority.init(482)
-        cons.trailingSpacerGT.priority = hPriority
-        cons.leadingSpacerGT.priority = hPriority
-      }
-      cons.trailingSpacerGT.isActive = hasHorizontal
-      cons.leadingSpacerGT.isActive = hasHorizontal
-    } else {
-      cons.topSpacerGT.isActive = false
-      cons.trailingSpacerGT.isActive = false
-      cons.bottomSpacerGT.isActive = false
-      cons.leadingSpacerGT.isActive = false
+      cons.topSpacerGT.animateToConstant(inside.top)
+      cons.bottomSpacerGT.animateToConstant(inside.bottom)
+      let vPriority = NSLayoutConstraint.Priority.init(481)
+      cons.topSpacerGT.priority = vPriority
+      cons.bottomSpacerGT.priority = vPriority
+
+      cons.leadingSpacerGT.animateToConstant(inside.leading)
+      cons.trailingSpacerGT.animateToConstant(inside.trailing)
+      let hPriority = NSLayoutConstraint.Priority.init(482)
+      cons.trailingSpacerGT.priority = hPriority
+      cons.leadingSpacerGT.priority = hPriority
     }
+    cons.topSpacerGT.isActive = keepVideoAwayFromBars
+    cons.trailingSpacerGT.isActive = keepVideoAwayFromBars
+    cons.bottomSpacerGT.isActive = keepVideoAwayFromBars
+    cons.leadingSpacerGT.isActive = keepVideoAwayFromBars
 
     // - Configuration
 

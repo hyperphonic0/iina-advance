@@ -169,7 +169,6 @@ extension PlayerWindowController {
   /// Can be used in windowed or full screen modes.
   /// Can be used in music mode only if playlist is hidden.
   func resizeWindowImmediately(using newGeometry: PWinGeometry? = nil) {
-    guard let window else { return }
     videoView.videoLayer.enterAsynchronousMode()
 
     CATransaction.begin()
@@ -178,6 +177,12 @@ extension PlayerWindowController {
     defer {
       CATransaction.commit()
     }
+
+    resizeWindowImmediatelyWithoutTransaction(using: newGeometry)
+  }
+
+  func resizeWindowImmediatelyWithoutTransaction(using newGeometry: PWinGeometry? = nil) {
+    guard let window else { return }
 
     let layout = currentLayout
     let isTransientResize = newGeometry != nil

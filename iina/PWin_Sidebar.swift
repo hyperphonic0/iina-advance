@@ -917,6 +917,12 @@ extension PlayerWindowController {
     }
 
     videoView.videoLayer.enterAsynchronousMode()
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    CATransaction.setAnimationDuration(0)  // need immediate effect. No lag!
+    defer {
+      CATransaction.commit()
+    }
 
     let (result, newGeo): (CursorType, PWinGeometry?)
 
@@ -934,7 +940,7 @@ extension PlayerWindowController {
     }
 
     if let newGeo {
-      resizeWindowImmediately(using: newGeo)
+      resizeWindowImmediatelyWithoutTransaction(using: newGeo)
       viewportView.layout()
       viewportView.updateConstraints()
 
