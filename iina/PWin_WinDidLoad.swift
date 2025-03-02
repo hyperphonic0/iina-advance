@@ -461,16 +461,24 @@ extension PlayerWindowController {
     let playBtnHorizOffsetConstraint = playButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor)
     playBtnHorizOffsetConstraint.isActive = true
 
-    speedLabel.topAnchor.constraint(equalTo: fragPlaybackBtnsView.topAnchor, constant: -2).isActive = true
     speedLabel.centerXAnchor.constraint(equalTo: playButton.centerXAnchor).isActive = true
-    speedLabel.bottomAnchor.constraint(equalTo: playButton.topAnchor, constant: 2).isActive = true
-    speedLabelZeroHeightConstraint = speedLabel.heightAnchor.constraint(equalToConstant: 4)  // sum of the 2 numbers above
-    speedLabelZeroHeightConstraint.isActive = true
+    // Snip off 2 pts from top & btm to reduce margin:
+    let speedLabelTopConstraint = fragPlaybackBtnsView.topAnchor.constraint(equalTo: speedLabel.topAnchor, constant: 2)
+    speedLabelTopConstraint.identifier = "SpeedLabel-TopConstraint"
+    speedLabelTopConstraint.isActive = true
+    speedLabelBtmConstraint = speedLabel.bottomAnchor.constraint(equalTo: playButton.topAnchor, constant: 2)
+    speedLabelBtmConstraint.identifier = "SpeedLabel-BtmConstraint"
+    speedLabelBtmConstraint.isActive = false
 
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
 
     fragPlaybackBtnsHeightConstraint = fragPlaybackBtnsView.heightAnchor.constraint(equalToConstant: 0)
+    fragPlaybackBtnsHeightConstraint.identifier = "fragPlaybackBtns-HeightConstraint"
     fragPlaybackBtnsHeightConstraint.isActive = true
+
+    fragPlaybackBtnsWidthConstraint = fragPlaybackBtnsView.widthAnchor.constraint(equalToConstant: oscGeo.totalPlayControlsWidth)
+    fragPlaybackBtnsWidthConstraint.identifier = "fragPlaybackBtns-WidthConstraint"
+    fragPlaybackBtnsWidthConstraint.isActive = true
 
     // Try to make sure the buttons' bounding boxes reach the full height, for activation
     // (their images will be limited by the width constraint & will stop scaling before this)
@@ -486,10 +494,6 @@ extension PlayerWindowController {
 
     let playBtnVertOffsetConstraint = playButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
     playBtnVertOffsetConstraint.isActive = true
-
-    fragPlaybackBtnsWidthConstraint = fragPlaybackBtnsView.widthAnchor.constraint(equalToConstant: oscGeo.totalPlayControlsWidth)
-    fragPlaybackBtnsWidthConstraint.identifier = .init("fragPlaybackBtns-WidthConstraint")
-    fragPlaybackBtnsWidthConstraint.isActive = true
 
     leftArrowBtn_CenterXOffsetConstraint = leftArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
                                                                                     constant: oscGeo.leftArrowCenterXOffset)
@@ -522,7 +526,7 @@ extension PlayerWindowController {
     speedLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 26).isActive = true
     speedLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
     speedLabel.setContentCompressionResistancePriority(.required, for: .vertical)
-    speedLabel.setContentHuggingPriority(.required, for: .horizontal)
+    speedLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
     speedLabel.setContentHuggingPriority(.required, for: .vertical)
     speedLabel.font = NSFont.messageFont(ofSize: 10)
     speedLabel.textColor = .textColor

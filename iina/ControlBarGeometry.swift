@@ -7,10 +7,10 @@
 
 import Foundation
 
-fileprivate let spacingTicksMin: Int = 1
-fileprivate let spacingTicksMax: Int = 5
-fileprivate let iconSizeTicksMin: Int = 1
-fileprivate let iconSizeTicksMax: Int = 4
+fileprivate let spacingTicksMin: Int = 0
+fileprivate let spacingTicksMax: Int = 4
+fileprivate let iconSizeTicksMin: Int = 0
+fileprivate let iconSizeTicksMax: Int = 3
 
 /// Icons can never shrink smaller than this fraction of the available height.
 fileprivate let iconSizeMinScaleMultiplier: CGFloat = 0.5

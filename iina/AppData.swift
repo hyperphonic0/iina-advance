@@ -355,7 +355,8 @@ struct Constants {
     static let multiWindowOpenOffsetIncrement = 20.0
 
     /// If OSC is shorter than this, never show the speed label.
-    static let minOSCBarHeightForSpeedLabel: CGFloat = 30
+    static let minSingleRowOSCBarHeightForSpeedLabel: CGFloat = 30
+    static let minTwoRowOSCBarHeightForSpeedLabel: CGFloat = 56
 
     static let oscSectionHSpacing_SingleRow: CGFloat = 4
 

@@ -424,7 +424,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   var fragPlaybackBtnsHeightConstraint: NSLayoutConstraint!
   var fragPlaybackBtnsWidthConstraint: NSLayoutConstraint!
-  var speedLabelZeroHeightConstraint: NSLayoutConstraint!
+  var speedLabelBtmConstraint: NSLayoutConstraint!
 
   /// Size of each side of the (square) `playButton`
   var playBtnHeightConstraint: NSLayoutConstraint!
@@ -2071,7 +2071,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let oscGeo = currentLayout.controlBarGeo
     let playSpeed = player.info.playSpeed
-    let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= Constants.Distance.minOSCBarHeightForSpeedLabel
+    let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= (oscGeo.isTwoRowBarOSC ? Constants.Distance.minTwoRowOSCBarHeightForSpeedLabel : Constants.Distance.minSingleRowOSCBarHeightForSpeedLabel)
 
     let hasPlayButtonChange = playButton.image != playPauseImage
     let hasSpeedLayoutChange = speedLabel.isHidden == !showSpeedLabel
@@ -2090,7 +2090,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
       playButton.replaceSymbolImage(with: playPauseImage, effect: effect)
 
-      speedLabelZeroHeightConstraint.isActive = !showSpeedLabel
+      speedLabelBtmConstraint.isActive = showSpeedLabel
       speedLabel.isHidden = !showSpeedLabel
 
       if showSpeedLabel {
