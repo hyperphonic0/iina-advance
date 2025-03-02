@@ -214,8 +214,9 @@ extension PlayerWindowController {
     }
 
     // Don't hide UI when auto hide control bar is disabled
-    guard Preference.bool(for: .enableControlBarAutoHide) || Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) else { return }
-
+    assert(Preference.bool(for: .enableControlBarAutoHide)
+           || Preference.bool(for: .hideFadeableViewsWhenOutsideWindow)
+           || Preference.enum(for: .singleClickAction) == Preference.MouseClickAction.hideOSC)
 
     let currentTicket = fadeableViews.$showHideTicketCount.withLock {
       $0 += 1
