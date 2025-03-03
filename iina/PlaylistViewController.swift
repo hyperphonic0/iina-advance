@@ -156,9 +156,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       }
       guard url.isFileURL else { return }
       let playlist = player.info.playlist
-      for (index, item) in playlist.enumerated() {
+      for (rowIndex, item) in playlist.enumerated() {
         if item.url == url {
-          reloadCache(forRowIndex: index)
+          reloadPlaylistRow(rowIndex)
         }
       }
     }

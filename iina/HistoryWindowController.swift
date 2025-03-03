@@ -122,11 +122,15 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       return
     }
 
-    log.trace{"History window got iinaFileHistoryDidUpdate; will reload table"}
-
-    backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
-      reloadHistoryData(useLoadingMsg: false)
+    let historyList = HistoryController.shared.history
+    if let entry = historyList.first(where: { $0.url == url }) {
+      let rowKey = getKey(entry)
+      // This will reload the parent of the target row. Not ideal, but still much faster than full table reload
+      outlineView.reloadItem(rowKey)
     }
+
+    log.trace{"History window got iinaFileHistoryDidUpdate but could not find row for updated file; reloading all rows"}
+    outlineView.reloadExistingRows(reselectRowsAfter: true)
   }
 
   private func onFileExistsInfoDidUpdate(_ note: Notification) {
@@ -291,11 +295,6 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
         isInitialLoadDone = true
       }
     }
-
-    guard isInitialLoad || isTicketStillValid(ticket) else { return }  // check ticket
-
-    // We may have gotten here from a ticket check above. Return without updating, but save work first
-    guard isInitialLoad || isTicketStillValid(ticket) else { return }
   }
 
   /// Resets table to loading msg.

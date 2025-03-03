@@ -84,7 +84,7 @@ class HistoryController {
       folderMonitor.folderDidChange = self.watchLaterDirDidChange
       folderMonitor.startMonitoring()
 
-      reloadAll(silent: false)
+      reloadAll()
 
       // Workaround for macOS Sonoma clearing the recent documents list when the IINA code is not signed
       // with IINA's certificate as is the case for developer and nightly builds.
@@ -131,27 +131,23 @@ class HistoryController {
     }
   }
 
-  func reloadAll(silent: Bool = false) {
+  func reloadAll() {
     assert(DispatchQueue.isExecutingIn(queue))
     let sw = Utility.Stopwatch()
 
     log.verbose("ReloadAll starting from \(plistURL.path.pii.quoted)")
     readHistoryFromFile()
-    historyListDidUpdate()
-    // Force a timeout to trigger full status reload:
+    // Force a timeout to trigger full status reload prior to calling historyListDidUpdate()
     lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
+    historyListDidUpdate()
 
     log.verbose("ReloadAll: done reading hisory file. Loading recentDocumentURLs")
     cachedRecentDocumentURLs = NSDocumentController.shared.recentDocumentURLs
 
-    log.verbose("ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
-    if !silent {
-      log.verbose("ReloadAll: posting iinaHistoryListUpdated")
-      postNotification(Notification(name: .iinaHistoryListUpdated))
+    log.verbose("ReloadAll: posting recentDocumentsDidChange")
+    postNotification(Notification(name: .recentDocumentsDidChange))
 
-      log.verbose("ReloadAll: posting recentDocumentsDidChange")
-      postNotification(Notification(name: .recentDocumentsDidChange))
-    }
+    log.verbose("ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
   }
 
   @discardableResult
@@ -169,22 +165,13 @@ class HistoryController {
     return newEntry
   }
 
-  func historyListDidUpdate() {
-    historyListVersion += 1
-    let historyList = history
-    let historyListVersion = historyListVersion
-    bgFileQueue.async { [self] in
-      reloadFileMeta(for: historyList, startingAt: 0, withVersion: historyListVersion)
-    }
-  }
-
   func remove(_ entries: [PlaybackHistory]) {
     assert(DispatchQueue.isExecutingIn(queue))
 
     Logger.log("Clearing all history")
     history = history.filter { !entries.contains($0) }
-    saveHistoryToFile()
     historyListDidUpdate()
+    saveHistoryToFile()
   }
 
   func removeAll() {
@@ -196,6 +183,18 @@ class HistoryController {
 
       reloadAll()
     }
+  }
+
+  func historyListDidUpdate() {
+    historyListVersion += 1
+    let historyList = history
+    let historyListVersion = historyListVersion
+    bgFileQueue.async { [self] in
+      reloadFileMeta(for: historyList, startingAt: 0, withVersion: historyListVersion)
+    }
+
+    log.verbose("Posting iinaHistoryListUpdated")
+    postNotification(Notification(name: .iinaHistoryListUpdated))
   }
 
   // MARK: - Recent Documents
@@ -444,9 +443,7 @@ class HistoryController {
       let wasWatchLaterFound = entry.mpvProgress != nil
       if wasWatchLaterFound {
         watchLaterCount += 1
-        // Notify playlists in various windows
-        // FIXME: this will also notify ourselves & cause duplicate work!
-        // FIXME: Also, watch-later will not load unless this window is open! Refactor to put data load in HistoryController.
+        // Notify History window + playlist UI in various windows
         HistoryController.shared.postFileHistoryUpdateNotification(forURL: entry.url)
       }
 
@@ -463,7 +460,7 @@ class HistoryController {
     }
 
     self.fileExistsMap = fileExistsMap
-    log.verbose{"Filled in fileExists for \(processedCount) / \(examinedCount) histories (\(historyList.count - examinedCount - startIndex) remaining) in \(sw.secElapsedString), fullReload=\(forceFullStatusReload.yn) watchLater=\(watchLaterCount)"}
+    log.trace{"Filled in fileExists for \(processedCount) / \(examinedCount) histories (\(historyList.count - examinedCount - startIndex) remaining) in \(sw.secElapsedString), fullReload=\(forceFullStatusReload.yn) watchLater=\(watchLaterCount)"}
     if forceFullStatusReload {
       lastCompleteStatusReloadTime = Date()
     }
@@ -474,6 +471,7 @@ class HistoryController {
     let newStartIndex = examinedCount + startIndex
     let completed = newStartIndex == historyList.count
     if completed {
+      log.verbose{"Done filling in fileExists map, \(fileExistsMap.count) entries. Notifying UI"}
       postNotification(Notification(name: .iinaFileExistsInfoDidUpdate))
     } else {
       // Don't hog the queue; allow other tasks to finish & enqueue behind them:
