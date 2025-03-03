@@ -60,7 +60,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   private var isInitialLoadDone = false
 
   /// Calls `self.showLoadingUI` on timeout.
-  private let loadingMsgDelayTimer = TimeoutTimer(timeout: Constants.TimeInterval.historyTableDelayBeforeLoadingMsgDisplay)
+  private let showLoadingMsgTimer = TimeoutTimer(timeout: Constants.TimeInterval.historyTableDelayBeforeLoadingMsgDisplay)
 
   private var backgroundQueue = DispatchQueue.newDQ(label: "HistoryWindow-BG", qos: .background)
   private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
@@ -82,7 +82,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     super.init(window: nil)
     windowFrameAutosaveName = WindowAutosaveName.playbackHistory.string
 
-    loadingMsgDelayTimer.action = showLoadingUI
+    showLoadingMsgTimer.action = showLoadingUI
 
     co = CocoaObserver(log, prefDidChange: prefDidChange, [
       .uiHistoryTableGroupBy,
@@ -91,15 +91,17 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     ], [
       .default: [
 
+        // History changed in a big or ambiguous way, requiring a full table reload
         .init(.iinaHistoryListUpdated) { [self] _ in
           log.verbose("History window received iinaHistoryListUpdated; will reload data")
-          // Force full status reload:
           backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
+            // Force a timeout to trigger full status reload:
             lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
-            reloadData(silent: true)
+            reloadHistoryData(useLoadingMsg: false)
           }
         },
 
+        // Individual history added or updated:
         .init(.iinaFileHistoryDidUpdate) { [self] note in
           assert(DispatchQueue.isExecutingIn(.main))
           guard !AppDelegate.shared.isTerminating else { return }
@@ -115,7 +117,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
           guard needsReload else { return }
 
           backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
-            reloadData(silent: true)
+            reloadHistoryData(useLoadingMsg: false)
           }
         }
       ]
@@ -144,7 +146,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       break
     }
     guard isWindowLoaded else { return }
-    reloadData()
+    reloadHistoryData()
   }
 
   override func windowDidLoad() {
@@ -173,7 +175,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
           Thread.sleep(forTimeInterval: 5)
         }
 #endif
-        self.reloadData()
+        reloadHistoryData()
       }
     }
 
@@ -192,7 +194,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   }
 
   private func isTicketStillValid(_ ticket: Int) -> Bool {
-    ticket == reloadTicketCounter
+    return ticket == reloadTicketCounter && !HistoryController.shared.isAppTerminating
   }
 
   func invalidateTicket() {
@@ -200,7 +202,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   }
 
   /// Can be called from any DispatchQueue
-  private func reloadData(silent: Bool = false) {
+  private func reloadHistoryData(useLoadingMsg: Bool = true) {
     // Reloads are expensive and many things can trigger them.
     // Use a counter + a delay to reduce duplicated work (except for initial load)
     let ticket: Int = $reloadTicketCounter.withLock {
@@ -208,35 +210,26 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       return $0
     }
 
-    if isInitialLoadDone {
+    if useLoadingMsg {
       DispatchQueue.main.async { [self] in
-        if !silent {
-          // Schedule timer to show loading msg if loading takes too long
-          loadingMsgDelayTimer.restart()
-        }
+        guard isTicketStillValid(ticket) else { return }
+        // Schedule timer to show loading msg if loading takes too long
+        showLoadingMsgTimer.restart()
 
         backgroundQueue.async { [self] in
           guard isTicketStillValid(ticket) else { return }
-          _reloadData(ticket: ticket)
+          _reloadHistoryData(ticket: ticket)
         }
       }
     } else {
       backgroundQueue.async { [self] in
-        _reloadData(ticket: ticket)
+        guard !isInitialLoadDone || isTicketStillValid(ticket) else { return }
+        _reloadHistoryData(ticket: ticket)
       }
     }
   }
 
-  /// Resets table to loading msg.
-  private func showLoadingUI() {
-    historyData = HistoryWindowController.loadingData
-    historyDataKeys = [loadingKey]
-    outlineView.reloadData()
-    // Expand to show loading placeholder
-    outlineView.expandItem(nil, expandChildren: true)
-  }
-
-  private func _reloadData(ticket: Int) {
+  private func _reloadHistoryData(ticket: Int) {
     assert(DispatchQueue.isExecutingIn(backgroundQueue))
 
     let isInitialLoad = !isInitialLoadDone
@@ -269,7 +262,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     DispatchQueue.main.async { [self] in
       guard isInitialLoad || isTicketStillValid(ticket) else { return }  // check ticket
 
-      loadingMsgDelayTimer.cancel()
+      showLoadingMsgTimer.cancel()
 
       // Update data and reload UI
       historyData = historyDataUpdated
@@ -317,7 +310,6 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
             // Fall through and save progress before returning
             break
           }
-          guard !HistoryController.shared.isAppTerminating else { return }
         }
       }
     }
@@ -338,6 +330,15 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
         log.verbose("Reloaded History table with updated fileExists data")
       }
     }
+  }
+
+  /// Resets table to loading msg.
+  private func showLoadingUI() {
+    historyData = HistoryWindowController.loadingData
+    historyDataKeys = [loadingKey]
+    outlineView.reloadData()
+    // Expand to show loading placeholder
+    outlineView.expandItem(nil, expandChildren: true)
   }
 
   private func removeAfterConfirmation(_ entries: [PlaybackHistory]) {
@@ -557,7 +558,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     guard searchType != newValue else { return }
     searchType = newValue
     UIState.shared.set(newValue.rawValue, for: .uiHistoryTableSearchType)
-    reloadData()
+    reloadHistoryData()
   }
 
   @IBAction func searchFieldAction(_ sender: NSSearchField) {
@@ -565,7 +566,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     guard searchString != sender.stringValue else { return }
     self.searchString = sender.stringValue
     UIState.shared.set(sender.stringValue, for: .uiHistoryTableSearchString)
-    reloadData()
+    reloadHistoryData()
   }
 
   // MARK: Misc support functions

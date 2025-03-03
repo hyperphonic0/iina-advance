@@ -102,8 +102,7 @@ class HistoryController {
       return
     }
 
-    log.verbose("Saved history; posting iinaHistoryListUpdated")
-    postNotification(Notification(name: .iinaHistoryListUpdated))
+    log.verbose("Saving history: done")
   }
 
   private func readHistoryFromFile() {
