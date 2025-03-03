@@ -14,6 +14,8 @@ class HistoryController {
 
   var plistURL: URL
   var history: [PlaybackHistory]
+  /// Starts at 0 at each launch. Used by UI to sync to this database more efficiently
+  var historyListVersion: Int = 0
   var log = Logger.Subsystem(rawValue: "history")
   var folderMonitor = FolderMonitor(url: Utility.watchLaterURL)
   /// Whether graceful stop of history queue has commenced (via `stop` func).
@@ -78,7 +80,7 @@ class HistoryController {
       folderMonitor.folderDidChange = self.watchLaterDirDidChange
       folderMonitor.startMonitoring()
 
-      reloadAll(silent: true)
+      reloadAll(silent: false)
 
       // Workaround for macOS Sonoma clearing the recent documents list when the IINA code is not signed
       // with IINA's certificate as is the case for developer and nightly builds.
@@ -106,6 +108,7 @@ class HistoryController {
   }
 
   private func readHistoryFromFile() {
+    assert(DispatchQueue.isExecutingIn(queue))
     // Avoid logging a scary error if the file does not exist.
     guard FileManager.default.fileExists(atPath: plistURL.path) else { return }
 
@@ -119,6 +122,7 @@ class HistoryController {
         return
       }
       history = historyItemList
+      historyListVersion += 1
     } catch {
       log.error("Failed to load playback history file \(plistURL.path.pii.quoted): \(error)")
     }
@@ -151,6 +155,7 @@ class HistoryController {
     }
     history.insert(PlaybackHistory(url: url, duration: duration), at: 0)
     saveHistoryToFile()
+    historyListVersion += 1
   }
 
   func remove(_ entries: [PlaybackHistory]) {
@@ -158,6 +163,7 @@ class HistoryController {
 
     history = history.filter { !entries.contains($0) }
     saveHistoryToFile()
+    historyListVersion += 1
   }
 
   func removeAll() {

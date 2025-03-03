@@ -65,9 +65,10 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   private var backgroundQueue = DispatchQueue.newDQ(label: "HistoryWindow-BG", qos: .background)
   private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
 
-  var groupBy: Preference.HistoryGroupBy = HistoryWindowController.getGroupByFromPrefs() ?? Preference.HistoryGroupBy.defaultValue
-  var searchType: Preference.HistorySearchType = HistoryWindowController.getHistorySearchTypeFromPrefs() ?? Preference.HistorySearchType.defaultValue
-  var searchString: String = HistoryWindowController.getSearchStringFromPrefs() ?? ""
+  // How the data is sorted
+  var groupBy: Preference.HistoryGroupBy
+  var searchType: Preference.HistorySearchType
+  var searchString: String
 
   private static let loadingData = [loadingKey: [LoadingPlaceholder()]]
   private var historyData: [String: [PlaybackHistory]] = HistoryWindowController.loadingData
@@ -78,6 +79,10 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
   init() {
     log = HistoryController.shared.log
+
+    groupBy = HistoryWindowController.getGroupByFromPrefs() ?? Preference.HistoryGroupBy.defaultValue
+    searchType = HistoryWindowController.getHistorySearchTypeFromPrefs() ?? Preference.HistorySearchType.defaultValue
+    searchString = HistoryWindowController.getSearchStringFromPrefs() ?? ""
 
     super.init(window: nil)
     windowFrameAutosaveName = WindowAutosaveName.playbackHistory.string
@@ -90,42 +95,44 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       .uiHistoryTableSearchString
     ], [
       .default: [
-
-        // History changed in a big or ambiguous way, requiring a full table reload
-        .init(.iinaHistoryListUpdated) { [self] _ in
-          log.verbose("History window received iinaHistoryListUpdated; will reload data")
-          backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
-            // Force a timeout to trigger full status reload:
-            lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
-            reloadHistoryData(useLoadingMsg: false)
-          }
-        },
-
-        // Individual history added or updated:
-        .init(.iinaFileHistoryDidUpdate) { [self] note in
-          assert(DispatchQueue.isExecutingIn(.main))
-          guard !AppDelegate.shared.isTerminating else { return }
-
-          guard let url = note.userInfo?["url"] as? URL else {
-            log.error("Cannot update file history: no url found in userInfo!")
-            return
-          }
-
-          // Can only access fileExistsMap on main thread
-          let needsReload = fileExistsMap.removeValue(forKey: url) != nil
-          log.trace{"History window got iinaFileHistoryDidUpdate; will reload table: \(needsReload.yesno)"}
-          guard needsReload else { return }
-
-          backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
-            reloadHistoryData(useLoadingMsg: false)
-          }
-        }
+        .init(.iinaHistoryListUpdated, self.onHistoryListUpdated),
+        .init(.iinaFileHistoryDidUpdate, self.onFileHistoryDidUpdate)
       ]
     ])
   }
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  // History changed in a big or ambiguous way, requiring a full table reload
+  private func onHistoryListUpdated(_ note: Notification) {
+    log.verbose("History window received iinaHistoryListUpdated; will reload data")
+    backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
+      // Force a timeout to trigger full status reload:
+      lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
+      reloadHistoryData(useLoadingMsg: false)
+    }
+  }
+
+  // Individual history added or updated:
+  private func onFileHistoryDidUpdate(_ note: Notification) {
+    assert(DispatchQueue.isExecutingIn(.main))
+    guard !AppDelegate.shared.isTerminating else { return }
+
+    guard let url = note.userInfo?["url"] as? URL else {
+      log.error("Cannot update file history: no url found in userInfo!")
+      return
+    }
+
+    // Can only access fileExistsMap on main thread
+    let needsReload = fileExistsMap.removeValue(forKey: url) != nil
+    log.trace{"History window got iinaFileHistoryDidUpdate; will reload table: \(needsReload.yesno)"}
+    guard needsReload else { return }
+
+    backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
+      reloadHistoryData(useLoadingMsg: false)
+    }
   }
 
   /// Called each time a pref `key`'s value is set
@@ -236,6 +243,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     // reconstruct data
     let sw = Utility.Stopwatch()
     let unfilteredHistory = HistoryController.shared.history
+
     let historyList: [PlaybackHistory]
     if searchString.isEmpty {
       historyList = unfilteredHistory
@@ -253,10 +261,11 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       let key = getKey(entry)
 
       if historyDataUpdated[key] == nil {
-        historyDataUpdated[key] = []
+        historyDataUpdated[key] = [entry]
         historyDataKeysUpdated.append(key)
+      } else {
+        historyDataUpdated[key]!.append(entry)
       }
-      historyDataUpdated[key]!.append(entry)
     }
 
     DispatchQueue.main.async { [self] in
