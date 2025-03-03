@@ -601,7 +601,7 @@ struct DebugConfig {
 
   static let addHistoryWindowLoadingDelay = false
   static let logAllScreenChangeEvents = false
-  static let disableLookaheadCaches = true
+  static let disableLookaheadCaches = false
 #endif
 }
 

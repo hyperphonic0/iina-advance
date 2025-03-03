@@ -38,7 +38,7 @@ struct MediaMeta: CustomStringConvertible {
   }
 
   var description: String {
-    "Media{dur=\(duration?.description ?? "nil") progress=\(progress?.description ?? "nil") title=\(title?.description ?? "nil") album=\(album?.description ?? "nil") artist=\(artist?.description ?? "nil")}"
+    "Media{dur=\(duration?.description ?? "␀") prog=\(progress?.description ?? "␀") title=\(title?.description ?? "␀") album=\(album?.description ?? "␀") artist=\(artist?.description ?? "␀")}"
   }
 }
 
@@ -157,10 +157,10 @@ class MediaMetaCache {
 
     return metaLock.withLock {
       let oldMeta = cachedMeta[url] ?? MediaMeta.empty
-      let newMeta = oldMeta.clone(duration: duration, progress: progress,
+      let newMeta = oldMeta.clone(duration: duration, progress: progress, nilProgress: progress == nil,
                                   title: title, album: album, artist: artist)
       cachedMeta[url] = newMeta
-      log.verbose{"Updated cache entry \(Playback.path(from: url).pii.quoted) ≔ \(newMeta)"}
+      log.trace{"Updated cache entry \(Playback.path(from: url).pii.quoted) ≔ \(newMeta)"}
       return newMeta
     }
   }
@@ -236,7 +236,7 @@ class MediaMetaCache {
       log.error{"Unable to find ffMeta from either cache or ffmpeg for \(path.pii.quoted)"}
       return nil
     }
-    log.debug{"Found ffMeta via \(missed ? "ffmpeg" : "cache"): \(ffMeta), for \(path.pii.quoted)"}
+    log.verbose{"Found ffMeta via \(missed ? "ffmpeg" : "cache"): \(ffMeta), for \(path.pii.quoted)"}
     return ffMeta
   }
 

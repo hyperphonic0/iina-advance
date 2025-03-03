@@ -135,19 +135,19 @@ class HistoryController {
     assert(DispatchQueue.isExecutingIn(queue))
     let sw = Utility.Stopwatch()
 
-    log.verbose("ReloadAll starting from \(plistURL.path.pii.quoted)")
+    log.verbose{"ReloadAll starting, from \(plistURL.path.pii.quoted)"}
     readHistoryFromFile()
     // Force a timeout to trigger full status reload prior to calling historyListDidUpdate()
     lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
     historyListDidUpdate()
 
-    log.verbose("ReloadAll: done reading hisory file. Loading recentDocumentURLs")
+    log.verbose{"ReloadAll: done reading hisory file. Loading recentDocumentURLs"}
     cachedRecentDocumentURLs = NSDocumentController.shared.recentDocumentURLs
 
-    log.verbose("ReloadAll: posting recentDocumentsDidChange")
+    log.verbose{"ReloadAll: posting recentDocumentsDidChange"}
     postNotification(Notification(name: .recentDocumentsDidChange))
 
-    log.verbose("ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
+    log.verbose{"ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)"}
   }
 
   @discardableResult
@@ -168,7 +168,7 @@ class HistoryController {
   func remove(_ entries: [PlaybackHistory]) {
     assert(DispatchQueue.isExecutingIn(queue))
 
-    Logger.log("Clearing all history")
+    log.debug{"Clearing \(entries.count) history entries"}
     history = history.filter { !entries.contains($0) }
     historyListDidUpdate()
     saveHistoryToFile()
@@ -176,7 +176,7 @@ class HistoryController {
 
   func removeAll() {
     self.async { [self] in
-      Logger.log("Clearing all history")
+      log.debug{"Clearing all history"}
       try? FileManager.default.removeItem(atPath: Utility.playbackHistoryURL.path)
       clearRecentDocuments(nil)
       Preference.set(nil, for: .iinaLastPlayedFilePath)
@@ -202,7 +202,7 @@ class HistoryController {
   /// Empties the recent documents list for the application.
   func clearRecentDocuments(_ sender: Any?) {
     self.async { [self] in
-      Logger.log("Clearing recent documents")
+      log.debug("Clearing recent documents")
       NSDocumentController.shared.clearRecentDocuments(sender)
       saveRecentDocuments()
     }
@@ -289,7 +289,7 @@ class HistoryController {
       saveRecentDocuments()
     }
 
-    log.debug("Done restoring list of recent documents (\(newRecentDocuments.count)). Posting recentDocumentsDidChange")
+    log.debug{"Done restoring list of recent documents (\(newRecentDocuments.count)). Posting recentDocumentsDidChange"}
     postNotification(Notification(name: .recentDocumentsDidChange))
   }
 
@@ -386,7 +386,7 @@ class HistoryController {
     Preference.set(url, for: .iinaLastPlayedFilePath)
 
     if let position {
-      log.verbose("Saving iinaLastPlayedFilePosition: \(position) sec")
+      log.verbose{"Saving iinaLastPlayedFilePosition: \(position)s"}
       Preference.set(position, for: .iinaLastPlayedFilePosition)
     } else {
       log.warn("No position found for file; writing 0 to iinaLastPlayedFilePosition")

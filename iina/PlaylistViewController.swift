@@ -297,7 +297,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   /** Switch tab (for internal call) */
   private func switchToTab(_ tab: Sidebar.Tab) {
     guard tab.group == .playlist else {
-      player.log.error("PlaylistViewController: cannot switch to tab: \(tab)")
+      player.log.error{"PlaylistViewController: cannot switch to tab: \(tab)"}
       return
     }
     assert(player.windowController.isInMiniPlayer || player.windowController.isShowing(sidebarTabGroup: .playlist),
@@ -715,33 +715,34 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard rowIndex < playlistItems.count else { return nil }
     let playlistItem = playlistItems[rowIndex]
     let url = playlistItem.url
-    let isPlaying = false
 
     let existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: url)
-
     // Kick this off, but return the existing (possibly stale) data below for efficiency
     player.mpv.queue.async { [self] in
       guard player.isActive else { return }
+      // Get updated title from mpv
       let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
-      PlayerCore.playlistQueue.async { [self] in
-        guard player.isActive else { return }
-        if isPlaying || enablePrefetching {
+      // FIXME: reload row only if data changed
+      let reloadRowIndex = {
+        DispatchQueue.main.async { [self] in
+          /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row
+          reloadPlaylistRow(rowIndex)
+        }
+      }
+      
+      if isPlaying || enablePrefetching {
+        PlayerCore.playlistQueue.async { [self] in
+          // Get watch-later form file system; get other meta from ffmpeg:
           let cachedMeta = MediaMetaCache.shared.updateCache(for: url, mpvTitle: mpvTitle)
-
           if cachedMeta?.duration ?? 0 > 0 {
             // if FFmpeg got the duration successfully
             refreshTotalLength()
           }
+          reloadRowIndex()
         }
-
-        // FIXME: better change detection
-        if existingCachedMeta == nil {
-          DispatchQueue.main.async { [self] in
-            /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row
-            reloadPlaylistRow(rowIndex)
-          }
-        }
+      } else {
+        reloadRowIndex()
       }
     }
 
