@@ -551,6 +551,8 @@ extension PlayerWindowController {
     // Do not use `event.locationInWindow`: it can be stale
     let pointInWindow = mouseLocationInWindow
 
+    log.verbose{"MouseDidMoveInWindow @ \(pointInWindow)"}
+
     // Kludge to prevent window drag if trying to drag sidebar or other widget. Do not drag the window!
     var disableWindowDrag = true
 

@@ -2400,7 +2400,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     player.info.playbackPositionSec = absoluteSecond
     updatePlaybackTimeUI()
 
-    refreshSeekPreviewAsync(forWindowCoordX: playSlider.centerOfKnobInWindowCoordX())
+    let knobWndCoordX = playSlider.centerOfKnobInWindowCoordX()
+    log.trace{"Seek from PlaySlider: knobWndCoordX=\(knobWndCoordX)"}
+    refreshSeekPreviewAsync(forWindowCoordX: knobWndCoordX)
 
     player.sliderSeekDebouncer.run { [self] in
       guard player.info.isFileLoaded else { return }

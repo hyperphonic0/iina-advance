@@ -403,6 +403,12 @@ extension PlayerWindowController {
   func seekPreviewTimeout() {
     let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
     log.trace{"SeekPreview timed out: current mouseLoc=\(pointInWindow)"}
+    guard !isScrollingOrDraggingPlaySlider else {
+      // Do not step on the toes of the scroll wheel / play slider during seek.
+      // Just push the timeout further out in case it's needed after seek ends
+      seekPreview.hideTimer.restart()
+      return
+    }
     refreshSeekPreviewAsync(forPointInWindow: pointInWindow, animateHide: true)
   }
 
@@ -451,6 +457,7 @@ extension PlayerWindowController {
   /// Display time label & thumbnail when mouse over slider
   func refreshSeekPreviewAsync(forPointInWindow pointInWindow: NSPoint, animateHide: Bool = false) {
     thumbDisplayDebouncer.run { [self] in
+      log.trace{"RefreshSeekPreviewAsync @ \(pointInWindow)"}
       if shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow), let duration = player.info.playbackDurationSec {
         if showSeekPreview(forPointInWindow: pointInWindow, mediaDuration: duration) {
           return
