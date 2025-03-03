@@ -73,7 +73,7 @@
                 <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="glW-5x-LJr">
                     <rect key="frame" x="0.0" y="271" width="241" height="5"/>
                 </box>
-                <tabView drawsBackground="NO" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="Yym-Zw-Hd8" userLabel="PlaylistChapters Tab View">
+                <tabView autoresizesSubviews="NO" drawsBackground="NO" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="Yym-Zw-Hd8" userLabel="PlaylistChapters Tab View">
                     <rect key="frame" x="0.0" y="0.0" width="241" height="273"/>
                     <font key="font" metaFont="system"/>
                     <tabViewItems>
@@ -107,7 +107,7 @@
                                                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                             </textFieldCell>
                                                             <prototypeCellViews>
-                                                                <tableCellView translatesAutoresizingMaskIntoConstraints="NO" id="o4q-SO-fgb" userLabel="IsChosen Table Cell View">
+                                                                <tableCellView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="o4q-SO-fgb" userLabel="IsChosen Table Cell View">
                                                                     <rect key="frame" x="1" y="0.0" width="21" height="17"/>
                                                                     <subviews>
                                                                         <textField autoresizesSubviews="NO" focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="eZG-xB-blk" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
