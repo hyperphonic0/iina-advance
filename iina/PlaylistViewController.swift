@@ -100,7 +100,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private func updateVerticalConstraints() {
     // may not be available until after load
     guard isViewLoaded else { return }
-    player.log.verbose("Playlist: updating downshift=\(downshift), tabHeight=\(tabHeight)")
+    player.log.verbose{"Playlist: updating downshift=\(downshift), tabHeight=\(tabHeight)"}
     self.buttonTopConstraint?.animateToConstant(downshift)
     self.tabHeightConstraint?.animateToConstant(tabHeight)
     view.layoutSubtreeIfNeeded()
@@ -411,7 +411,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           player.playlistMove(oldIndex, to: row + newIndexOffset)
           newIndexOffset += 1
         }
-        player.log.debug("Playlist Drag & Drop from \(oldIndex) to \(row)")
+        player.log.debug{"Playlist Drag & Drop from \(oldIndex) to \(row)"}
       }
       player.postNotification(.iinaPlaylistChanged)
       return true
@@ -564,7 +564,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let oldNowPlayingIndex = self.lastNowPlayingIndex
     let newNowPlayingIndex = newNowPlayingIndex ?? player.info.currentPlayback?.playlistPos ?? oldNowPlayingIndex
     if newNowPlayingIndex != oldNowPlayingIndex {
-      player.log.verbose("Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)")
+      player.log.verbose{"Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)"}
       self.lastNowPlayingIndex = newNowPlayingIndex
 
       // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
@@ -651,7 +651,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private func updateCellForTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
     // FIXME: refactor to streamline flow of loading. Do not do it here
     guard let (playlistItem, cachedMeta) = reloadCache(forRowIndex: rowIndex, isPlaying: isPlaying) else {
-      player.log.error("No playlist item found for rowIndex \(rowIndex). Skipping cell update")
+      player.log.error{"No playlist item found for rowIndex \(rowIndex). Skipping cell update"}
       return
     }
 
@@ -784,12 +784,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @IBAction func contextMenuRemove(_ sender: ContextMenuItem) {
-    Logger.log("User chose to remove rows \(sender.targetRows.map{$0}) from playlist")
+    player.log.verbose{"User chose to remove rows \(sender.targetRows.map{$0}) from playlist"}
     player.playlistRemove(sender.targetRows)
   }
 
   @IBAction func contextMenuDeleteFile(_ sender: ContextMenuItem) {
-    player.log.debug("User chose to delete files from playlist at indexes: \(sender.targetRows.map{$0})")
+    player.log.debug{"User chose to delete files from playlist at indexes: \(sender.targetRows.map{$0})"}
 
     let playlistItems = player.info.playlist
     var successes = IndexSet()
@@ -798,7 +798,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       guard !playlistItems[index].isNetworkResource else { continue }
       let url = playlistItems[index].url
       do {
-        Logger.log("Trashing row \(index): \(url.standardizedFileURL)", subsystem: player.subsystem)
+        player.log.debug{"Trashing row \(index): \(url.standardizedFileURL)"}
         try FileManager.default.trashItem(at: url, resultingItemURL: nil)
         successes.insert(index)
       } catch let error {
@@ -830,7 +830,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   @IBAction func contextMenuShowInFinder(_ sender: ContextMenuItem) {
     let urls: [URL] = getFiles(fromPlaylistRows: sender.targetRows)
     guard !urls.isEmpty else {
-      player.log.error("Show in Finder failed: found no files in \(sender.targetRows.count) provided rows!")
+      player.log.error{"Show in Finder failed: found no files in \(sender.targetRows.count) provided rows!"}
       return
     }
     playlistTableView.deselectAll(nil)
@@ -888,7 +888,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private func buildContextMenu(_ menu: NSMenu) {
     let playlistItems = player.info.playlist
     let rows = getTargetRowsForContextMenu()
-    Logger.log("Building context menu for rows: \(rows.map{ $0 })", level: .verbose)
+    player.log.verbose{"Building context menu for rows: \(rows.map{ $0 })"}
 
     menu.removeAllItems()
 

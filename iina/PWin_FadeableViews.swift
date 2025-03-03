@@ -232,7 +232,7 @@ extension PlayerWindowController {
     let tasks: [IINAAnimation.Task] = [
       .instantTask { [self] in
         if log.isTraceEnabled {
-          log.trace("HIDE fadeables: currentTicket=\(currentTicket), latest=\(fadeableViews.showHideTicketCount)")
+          log.trace{"HIDE fadeables: currentTicket=\(currentTicket), latest=\(fadeableViews.showHideTicketCount)"}
         }
 
         // Ensure we are the most current ticket
@@ -329,7 +329,7 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let showDefaultArt else { return }
 
-    log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt, state=\(player.info.currentPlayback?.state.description ?? "nil")")
+    log.verbose{"\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt, state=\(player.info.currentPlayback?.state.description ?? "nil")"}
     // Update default album art visibility:
     defaultAlbumArtView.isHidden = !showDefaultArt
   }

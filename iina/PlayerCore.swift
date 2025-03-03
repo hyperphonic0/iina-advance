@@ -2273,17 +2273,17 @@ class PlayerCore: NSObject {
     let playback: Playback
     if let existingPlayback = info.currentPlayback, existingPlayback.url == playbackFromPath.url {
       guard existingPlayback.state.isNotYet(.started) else {
-        log.warn("FileStarted: found existing playback for \(existingPlayback.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'started', found: \(existingPlayback.state.rawValue))")
+        log.warn{"FileStarted: found existing playback for \(existingPlayback.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'started', found: \(existingPlayback.state.rawValue))"}
         return
       }
       playback = existingPlayback
       // update existing entry
       existingPlayback.playlistPos = playbackFromPath.playlistPos
       existingPlayback.state = playbackFromPath.state
-      log.verbose("FileStarted: existing playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
+      log.verbose{"FileStarted: existing playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))"}
     } else {
       // New media, perhaps initiated by mpv
-      log.verbose("FileStarted: new playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
+      log.verbose{"FileStarted: new playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))"}
       info.currentPlayback = playbackFromPath
       playback = playbackFromPath
     }
@@ -2325,7 +2325,7 @@ class PlayerCore: NSObject {
     // Cannot restore playlist until after fileStarted event & mpv has a position for current item
     if let priorState = windowController.priorStateIfRestoring,
        let playlistPathList = priorState.properties[PlayerSaveState.PropName.playlistPaths.rawValue] as? [String] {
-      log.debug("Restoring \(playlistPathList.count) items into playlist")
+      log.debug{"Restoring \(playlistPathList.count) items into playlist"}
       _addToPlaylist(pathListIncludingCurrent: playlistPathList)
 
       /// Launches background task which scans video files and collects video size metadata using ffmpeg
@@ -2346,7 +2346,7 @@ class PlayerCore: NSObject {
     guard shufflePending else { return }
     shufflePending = false
 
-    Logger.log("Shuffling playlist", subsystem: subsystem)
+    log.debug("Shuffling playlist")
     mpv.command(.playlistShuffle)
     /// will cancel this file load sequence (so `fileLoaded` will not be called), then will start loading item at index 0
     mpv.command(.playlistPlayIndex, args: ["0"])
@@ -2368,7 +2368,7 @@ class PlayerCore: NSObject {
       let pause = Preference.bool(for: .pauseWhenOpen)
       mpv.setFlag(MPVOption.PlaybackControl.pause, pause)
     }
-    log.verbose("FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")")
+    log.verbose{"FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")"}
 
     let duration = mpv.getDouble(MPVProperty.duration)
     info.playbackDurationSec = duration
