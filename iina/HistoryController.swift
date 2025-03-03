@@ -23,6 +23,10 @@ class HistoryController {
   /// `AppDelegate.shared.isTerminating`.
   private(set) var isAppTerminating = false
 
+  private var bgFileQueue = DispatchQueue.newDQ(label: "History-File-BG", qos: .background)
+  var fileExistsMap: [URL: Bool] = [:]
+  private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
+
   /// Number of tasks currently in the queue.
   @Atomic var tasksOutstanding = 0
   /// Do not use this directly for tasks. Use `HistoryController.shared.async`.
@@ -74,7 +78,7 @@ class HistoryController {
   func start() {
     // Launch this as a background task! Resolution can take a long time if waiting for remote servers to time out
     // and we don't want to tie up the main thread.
-    queue.async { [self] in
+    self.async { [self] in
       // Make sure to start listening before reload, to avoid creating race condition
       log.debug("Starting to watch for watch-later dir")
       folderMonitor.folderDidChange = self.watchLaterDirDidChange
@@ -122,7 +126,6 @@ class HistoryController {
         return
       }
       history = historyItemList
-      historyListVersion += 1
     } catch {
       log.error("Failed to load playback history file \(plistURL.path.pii.quoted): \(error)")
     }
@@ -130,12 +133,17 @@ class HistoryController {
 
   func reloadAll(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(queue))
+    let sw = Utility.Stopwatch()
 
     log.verbose("ReloadAll starting from \(plistURL.path.pii.quoted)")
-    let sw = Utility.Stopwatch()
     readHistoryFromFile()
+    historyListDidUpdate()
+    // Force a timeout to trigger full status reload:
+    lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
+
     log.verbose("ReloadAll: done reading hisory file. Loading recentDocumentURLs")
     cachedRecentDocumentURLs = NSDocumentController.shared.recentDocumentURLs
+
     log.verbose("ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
     if !silent {
       log.verbose("ReloadAll: posting iinaHistoryListUpdated")
@@ -146,28 +154,41 @@ class HistoryController {
     }
   }
 
-  func add(_ url: URL, duration: Double) {
+  @discardableResult
+  func add(_ url: URL, duration: Double) -> PlaybackHistory? {
     assert(DispatchQueue.isExecutingIn(queue))
-    guard Preference.bool(for: .recordPlaybackHistory) else { return }
-    
+    guard Preference.bool(for: .recordPlaybackHistory) else { return nil }
+
     if let existingItem = history.first(where: { $0.mpvMd5 == url.path.md5 }), let index = history.firstIndex(of: existingItem) {
       history.remove(at: index)
     }
-    history.insert(PlaybackHistory(url: url, duration: duration), at: 0)
+    let newEntry = PlaybackHistory(url: url, duration: duration)
+    history.insert(newEntry, at: 0)
+    historyListDidUpdate()
     saveHistoryToFile()
+    return newEntry
+  }
+
+  func historyListDidUpdate() {
     historyListVersion += 1
+    let historyList = history
+    let historyListVersion = historyListVersion
+    bgFileQueue.async { [self] in
+      reloadFileMeta(for: historyList, startingAt: 0, withVersion: historyListVersion)
+    }
   }
 
   func remove(_ entries: [PlaybackHistory]) {
     assert(DispatchQueue.isExecutingIn(queue))
 
+    Logger.log("Clearing all history")
     history = history.filter { !entries.contains($0) }
     saveHistoryToFile()
-    historyListVersion += 1
+    historyListDidUpdate()
   }
 
   func removeAll() {
-    queue.async { [self] in
+    self.async { [self] in
       Logger.log("Clearing all history")
       try? FileManager.default.removeItem(atPath: Utility.playbackHistoryURL.path)
       clearRecentDocuments(nil)
@@ -181,7 +202,7 @@ class HistoryController {
 
   /// Empties the recent documents list for the application.
   func clearRecentDocuments(_ sender: Any?) {
-    queue.async { [self] in
+    self.async { [self] in
       Logger.log("Clearing recent documents")
       NSDocumentController.shared.clearRecentDocuments(sender)
       saveRecentDocuments()
@@ -312,7 +333,7 @@ class HistoryController {
   func savePlaybackMetaAfterFileDidLoad(for url: URL, durationSec: Double, positionSec: Double?) {
     HistoryController.shared.async { [self] in
       // 1. Update main history list
-      add(url, duration: durationSec)
+      let historyEntry = add(url, duration: durationSec)
 
       // 2. IINA's [ancient] "resume last playback" feature
       // Add this now, or else welcome window will fall out of sync with history list
@@ -328,7 +349,9 @@ class HistoryController {
           HistoryController.shared.postNotification(Notification(name: .recentDocumentsDidChange))
         }
       }
-      postFileHistoryUpdateNotification(forURL: url)
+      if let historyEntry {
+        reloadFileMeta(forEntry: historyEntry)
+      }
     }
   }
 
@@ -341,15 +364,16 @@ class HistoryController {
       // The rest of the stuff below relates to UI updates and should be cancelled if shutting down.
       guard !isAppTerminating else { return }
 
+      guard let historyEntry = history.first(where: {$0.url == url}) else { return }
+
       // Ensure Playback History window is updated in real time
       if Preference.bool(for: .recordPlaybackHistory) {
         /// this will reload the `mpvProgress` field from the `watch-later` config files
-        guard let historyItem = history.first(where: {$0.url == url}) else { return }
-        historyItem.loadProgressFromWatchLater()
+        historyEntry.loadProgressFromWatchLater()
       }
 
       // Ensure playlist is updated relatively quickly
-      postFileHistoryUpdateNotification(forURL: url)
+      reloadFileMeta(forEntry: historyEntry)
     }
   }
 
@@ -374,6 +398,92 @@ class HistoryController {
     // If user only closed the window but didn't quit the app, this can make sure playlist displays the correct progress.
     MediaMetaCache.shared.setCachedMediaDurationAndProgress(url, duration: duration, progress: position)
   }
+
+  // MARK: - FileExists & watch-later
+
+  private func reloadFileMeta(forEntry entry: PlaybackHistory) {
+    guard !isAppTerminating else { return }
+
+    let url = entry.url
+
+    bgFileQueue.async { [self] in
+      fileExistsMap[url] = !url.isFileURL || FileManager.default.fileExists(atPath: url.path)
+      entry.loadProgressFromWatchLater()
+      postFileHistoryUpdateNotification(forURL: url)
+    }
+  }
+
+  /// Fills in watch-later meta & the fileExists map
+  private func reloadFileMeta(for historyList: [PlaybackHistory], startingAt startIndex: Int, withVersion historyVersion: Int) {
+    // Put all FileManager stuff in background queue. It can hang for a long time if there are network problems.
+    // Network or file system can change over time and cause our info to become out of date.
+    assert(DispatchQueue.isExecutingIn(bgFileQueue))
+
+    guard historyVersion == self.historyListVersion else {
+      // Assume work will be enqueued for the new version. Don't process stale data
+      return
+    }
+
+    // Do a full reload if too much time has gone by since the last full reload
+    let forceFullStatusReload = Date().timeIntervalSince(lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
+    let sw = Utility.Stopwatch()
+
+    var fileExistsMap: [URL: Bool] = forceFullStatusReload ? [:] : self.fileExistsMap
+
+    var examinedCount: Int = 0
+    var processedCount: Int = 0
+    var watchLaterCount: Int = 0
+    for entry in historyList[startIndex...] {
+      examinedCount += 1
+      guard fileExistsMap[entry.url] == nil else { continue }
+
+      fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
+      processedCount += 1
+
+      entry.loadProgressFromWatchLater()
+      let wasWatchLaterFound = entry.mpvProgress != nil
+      if wasWatchLaterFound {
+        watchLaterCount += 1
+        // Notify playlists in various windows
+        // FIXME: this will also notify ourselves & cause duplicate work!
+        // FIXME: Also, watch-later will not load unless this window is open! Refactor to put data load in HistoryController.
+        HistoryController.shared.postFileHistoryUpdateNotification(forURL: entry.url)
+      }
+
+      // Do not batch for more than 1sec at a time
+      guard sw.secElapsed < 1.0 else { break }
+
+      if (processedCount %% 50) == 0 {
+        guard !isAppTerminating else { return }
+        guard historyVersion == self.historyListVersion else {
+          // Fall through and save progress before returning
+          break
+        }
+      }
+    }
+
+    self.fileExistsMap = fileExistsMap
+    log.verbose{"Filled in fileExists for \(processedCount) / \(examinedCount) histories (\(historyList.count - examinedCount - startIndex) remaining) in \(sw.secElapsedString), fullReload=\(forceFullStatusReload.yn) watchLater=\(watchLaterCount)"}
+    if forceFullStatusReload {
+      lastCompleteStatusReloadTime = Date()
+    }
+
+    guard processedCount > 0 else { return }
+    guard !isAppTerminating else { return }
+
+    let newStartIndex = examinedCount + startIndex
+    let completed = newStartIndex == historyList.count
+    if completed {
+      postNotification(Notification(name: .iinaFileExistsInfoDidUpdate))
+    } else {
+      // Don't hog the queue; allow other tasks to finish & enqueue behind them:
+      bgFileQueue.async { [self] in
+        reloadFileMeta(for: historyList, startingAt: newStartIndex, withVersion: historyVersion)
+      }
+    }
+  }
+
+  // MARK: - Notifications
 
   /// Notifies the UI (playlist panel(s) & History window that the given URL has been updated, so they can pull it & update.
   func postFileHistoryUpdateNotification(forURL url: URL) {

@@ -63,7 +63,6 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   private let showLoadingMsgTimer = TimeoutTimer(timeout: Constants.TimeInterval.historyTableDelayBeforeLoadingMsgDisplay)
 
   private var backgroundQueue = DispatchQueue.newDQ(label: "HistoryWindow-BG", qos: .background)
-  private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
 
   // How the data is sorted
   var groupBy: Preference.HistoryGroupBy
@@ -73,7 +72,6 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   private static let loadingData = [loadingKey: [LoadingPlaceholder()]]
   private var historyData: [String: [PlaybackHistory]] = HistoryWindowController.loadingData
   private var historyDataKeys: [String] = [loadingKey]
-  private var fileExistsMap: [URL: Bool] = [:]
 
   private var selectedEntries: [PlaybackHistory] = []
 
@@ -96,7 +94,8 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     ], [
       .default: [
         .init(.iinaHistoryListUpdated, self.onHistoryListUpdated),
-        .init(.iinaFileHistoryDidUpdate, self.onFileHistoryDidUpdate)
+        .init(.iinaFileHistoryDidUpdate, self.onFileHistoryDidUpdate),
+        .init(.iinaFileExistsInfoDidUpdate, self.onFileExistsInfoDidUpdate)
       ]
     ])
   }
@@ -109,8 +108,6 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   private func onHistoryListUpdated(_ note: Notification) {
     log.verbose("History window received iinaHistoryListUpdated; will reload data")
     backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
-      // Force a timeout to trigger full status reload:
-      lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
       reloadHistoryData(useLoadingMsg: false)
     }
   }
@@ -125,14 +122,21 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       return
     }
 
-    // Can only access fileExistsMap on main thread
-    let needsReload = fileExistsMap.removeValue(forKey: url) != nil
-    log.trace{"History window got iinaFileHistoryDidUpdate; will reload table: \(needsReload.yesno)"}
-    guard needsReload else { return }
+    log.trace{"History window got iinaFileHistoryDidUpdate; will reload table"}
 
     backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
       reloadHistoryData(useLoadingMsg: false)
     }
+  }
+
+  private func onFileExistsInfoDidUpdate(_ note: Notification) {
+    assert(DispatchQueue.isExecutingIn(.main))
+    guard !AppDelegate.shared.isTerminating else { return }
+
+    // Reload table again to refresh statuses
+    log.verbose("Reloading History table with updated fileExists data")
+    outlineView.reloadExistingRows(reselectRowsAfter: true)
+    log.verbose("Reloaded History table with fileExists data: done")
   }
 
   /// Called each time a pref `key`'s value is set
@@ -290,55 +294,8 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
     guard isInitialLoad || isTicketStillValid(ticket) else { return }  // check ticket
 
-    // Put all FileManager stuff in background queue. It can hang for a long time if there are network problems.
-    // Network or file system can change over time and cause our info to become out of date.
-    // Do a full reload if too much time has gone by since the last full reload
-    let forceFullStatusReload = Date().timeIntervalSince(lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
-    let sw2 = Utility.Stopwatch()
-
-    var fileExistsMap: [URL: Bool] = forceFullStatusReload ? [:] : self.fileExistsMap
-
-    var count: Int = 0
-    var watchLaterCount: Int = 0
-    for entry in historyList {
-      // Fill in fileExists
-      if fileExistsMap[entry.url] == nil {
-        fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
-        entry.loadProgressFromWatchLater()
-        let wasWatchLaterFound = entry.mpvProgress != nil
-        count += 1
-        if wasWatchLaterFound {
-          watchLaterCount += 1
-          // Notify playlists in various windows
-          // FIXME: this will also notify ourselves & cause duplicate work!
-          // FIXME: Also, watch-later will not load unless this window is open! Refactor to put data load in HistoryController.
-          HistoryController.shared.postFileHistoryUpdateNotification(forURL: entry.url)
-        }
-        if (count %% 50) == 0 {
-          guard isInitialLoad || isTicketStillValid(ticket) else {
-            // Fall through and save progress before returning
-            break
-          }
-        }
-      }
-    }
-
-    self.fileExistsMap = fileExistsMap
-    log.debug("Filled in fileExists for \(count) of \(historyList.count) histories in \(sw2.secElapsedString), wasFullReload=\(forceFullStatusReload.yn) watchLaterFilesLoaded=\(watchLaterCount) fileExistsMapSize=\(fileExistsMap.count)")
-    if forceFullStatusReload {
-      lastCompleteStatusReloadTime = Date()
-    }
-
     // We may have gotten here from a ticket check above. Return without updating, but save work first
     guard isInitialLoad || isTicketStillValid(ticket) else { return }
-
-    if count > 0 {
-      DispatchQueue.main.async { [self] in
-        // Reload table again to refresh statuses
-        outlineView.reloadExistingRows(reselectRowsAfter: true)
-        log.verbose("Reloaded History table with updated fileExists data")
-      }
-    }
   }
 
   /// Resets table to loading msg.
@@ -460,6 +417,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
         } else {
           filenameView.textField?.stringValue = entry.url.isFileURL ? entry.name : entry.url.absoluteString
+          let fileExistsMap = HistoryController.shared.fileExistsMap
           let fileExists = fileExistsMap[entry.url] ?? true
           filenameView.textField?.textColor = fileExists ? .controlTextColor : .disabledControlTextColor
           filenameView.docImage.image = Utility.icon(for: entry.url)
@@ -516,12 +474,14 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     switch menuItem.tag {
     case MenuItemTagShowInFinder:
       if selectedEntries.isEmpty { return false }
+      let fileExistsMap = HistoryController.shared.fileExistsMap
       return selectedEntries.contains { $0.url.isFileURL && (fileExistsMap[$0.url] ?? false) }
     case MenuItemTagDelete:
       // "Delete" in this case only removes from history
       return !selectedEntries.isEmpty
     case MenuItemTagPlay, MenuItemTagPlayInNewWindow:
       if selectedEntries.isEmpty { return false }
+      let fileExistsMap = HistoryController.shared.fileExistsMap
       return selectedEntries.contains { !$0.url.isFileURL || (fileExistsMap[$0.url] ?? false) }
     case MenuItemTagSearchFilename:
       menuItem.state = searchType == .filename ? .on : .off
