@@ -31,9 +31,9 @@ struct MediaMeta: CustomStringConvertible {
     self.artist = artist
   }
 
-  func clone(duration: Double? = nil, progress: Double? = nil,
+  func clone(duration: Double? = nil, progress: Double? = nil, nilProgress: Bool = false,
              title: String? = nil, album: String? = nil, artist: String? = nil) -> MediaMeta {
-    return MediaMeta(duration: duration ?? self.duration, progress: progress ?? self.progress,
+    return MediaMeta(duration: duration ?? self.duration, progress: nilProgress ? nil : (progress ?? self.progress),
                      title: title ?? self.title, album: album ?? self.album, artist: artist ?? self.artist)
   }
 
@@ -96,7 +96,8 @@ class MediaMetaCache {
   func setCachedMediaDurationAndProgress(_ url: URL, duration: Double?, progress: Double?) {
     metaLock.withLock {
       let oldMeta = cachedMeta[url] ?? MediaMeta.empty
-      cachedMeta[url] = oldMeta.clone(duration: duration, progress: progress)
+      // nilProgress == kludge to force nil
+      cachedMeta[url] = oldMeta.clone(duration: duration, progress: progress, nilProgress: progress == nil)
     }
   }
 

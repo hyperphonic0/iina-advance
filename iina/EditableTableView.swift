@@ -24,7 +24,7 @@ class EditableTableView: NSTableView {
 
   override var isEnabled: Bool {
     didSet {
-      Logger.log.verbose("Table isEnabled changed to \(isEnabled); reloading data")
+      Logger.log.verbose{"Table isEnabled changed to \(isEnabled.yesno); reloading data"}
       // Need to reload rows in order to redraw them as grayed out
       reloadData()
     }
@@ -74,7 +74,7 @@ class EditableTableView: NSTableView {
   override func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
     let actionDescription = item.action == nil ? "nil" : "\(item.action!)"
     guard let delegate = self.editableDelegate else {
-      Logger.log("EditableTableView.validateUserInterfaceItem(): no delegate! Disabling \"\(actionDescription)\"", level: .warning)
+      Logger.log.warn{"EditableTableView.validateUserInterfaceItem(): no delegate! Disabling \"\(actionDescription)\""}
       return false
     }
 
@@ -91,10 +91,10 @@ class EditableTableView: NSTableView {
     case #selector(selectAll(_:)):
       isAllowed = delegate.isSelectAllEnabled()
     default:
-      Logger.log("EditableTableView.validateUserInterfaceItem(): defaulting isAllowed=false for \"\(actionDescription)\"", level: .verbose)
+      Logger.log.verbose{"EditableTableView.validateUserInterfaceItem(): defaulting isAllowed=false for \"\(actionDescription)\""}
       return false
     }
-    Logger.log("EditableTableView.validateUserInterfaceItem(): isAllowed=\(isAllowed) for \"\(actionDescription)\"", level: .verbose)
+    Logger.log.verbose{"EditableTableView.validateUserInterfaceItem(): isAllowed=\(isAllowed) for \"\(actionDescription)\""}
     return isAllowed
   }
 
@@ -173,13 +173,13 @@ class EditableTableView: NSTableView {
       return
     }
 
-    Logger.log("EditableTableView: Opening inline editor for row \(rowIndex), col \(columnIndex)", level: .verbose)
+    Logger.log.verbose{"EditableTableView: Opening inline editor for row \(rowIndex), col \(columnIndex)"}
 
     self.scrollRowToVisible(rowIndex)
     cellEditTracker.changeCurrentCell(to: editableTextField, row: rowIndex, column: columnIndex)
 
     if selectedRow != rowIndex {
-      Logger.log("EditableTableView: selectedRow (\(selectedRow)) does not match target row; selecting row: \(rowIndex)", level: .verbose)
+      Logger.log.verbose{"EditableTableView: selectedRow (\(selectedRow)) does not match target row; selecting row: \(rowIndex)"}
       self.selectApprovedRowIndexes(IndexSet(integer: rowIndex), byExtendingSelection: false)
     }
 
@@ -285,9 +285,9 @@ class EditableTableView: NSTableView {
         let draggingFrameSize = CGSize(width: self.frame.width,
                                        height: self.rowHeight * CGFloat(rowIndexArray.count))
         draggingItem.draggingFrame = NSRect(origin: draggingFrameOrigin, size: draggingFrameSize)
-        Logger.log("DraggingFrame: \(draggingItem.draggingFrame)", level: .verbose)
+        Logger.log.trace{"DraggingFrame: \(draggingItem.draggingFrame)"}
 
-        Logger.log("Returning \(componentArray.count) draggingImageComponents", level: .verbose)
+        Logger.log.trace{"Returning \(componentArray.count) draggingImageComponents"}
         return componentArray
       }
     }
@@ -301,7 +301,7 @@ class EditableTableView: NSTableView {
   // This will preserve the selection indexes (whereas reloadData() will not)
   func reloadExistingRows(reselectRowsAfter: Bool, usingNewSelection newRowIndexes: IndexSet? = nil) {
     let selectedRows = newRowIndexes ?? self.selectedRowIndexes
-    Logger.log("Reloading existing rows\(reselectRowsAfter ? " (will re-select \(selectedRows) after)" : "")", level: .verbose)
+    Logger.log.verbose{"Reloading existing rows\(reselectRowsAfter ? " (will re-select \(selectedRows) after)" : "")"}
     reloadData(forRowIndexes: IndexSet(0..<numberOfRows), columnIndexes: IndexSet(0..<numberOfColumns))
     if reselectRowsAfter {
       // Fires change listener...
@@ -313,10 +313,10 @@ class EditableTableView: NSTableView {
     // It seems that `selectionIndexesForProposedSelection` needs to be called explicitly
     // in order to keep enforcing selection rules.
     if let approvedRows = self.delegate?.tableView?(self, selectionIndexesForProposedSelection: newSelectedRowIndexes) {
-      Logger.log("Updating table selection to approved indexes: \(approvedRows.map{$0})", level: .verbose)
+      Logger.log.trace{"Updating table selection to approved indexes: \(approvedRows.map{$0})"}
       self.selectRowIndexes(approvedRows, byExtendingSelection: byExtendingSelection)
     } else {
-      Logger.log("Updating table selection (no approval) to indexes: \(newSelectedRowIndexes.map{$0})", level: .verbose)
+      Logger.log.trace{"Updating table selection (no approval) to indexes: \(newSelectedRowIndexes.map{$0})"}
       self.selectRowIndexes(newSelectedRowIndexes, byExtendingSelection: byExtendingSelection)
     }
   }
@@ -330,7 +330,7 @@ class EditableTableView: NSTableView {
 
   func post(_ tableUIChange:  TableUIChange) {
     let not = Notification(name: tableChangeNotificationName, object: tableUIChange)
-    Logger.log.verbose("Posting \(not.name.rawValue.quoted) notification with changeType \(tableUIChange.changeType)")
+    Logger.log.trace{"Posting \(not.name.rawValue.quoted) notification with changeType \(tableUIChange.changeType)"}
     NotificationCenter.default.post(not)
   }
 
@@ -342,7 +342,7 @@ class EditableTableView: NSTableView {
       return
     }
 
-    Logger.log.trace("Received \"\(notification.name.rawValue)\" notification with changeType \(tableUIChange.changeType)")
+    Logger.log.trace{"Received \"\(notification.name.rawValue)\" notification with changeType \(tableUIChange.changeType)"}
     tableUIChange.execute(on: self)
   }
 }

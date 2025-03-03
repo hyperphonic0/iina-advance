@@ -304,7 +304,7 @@ class HistoryController {
 
   // MARK: - Playback Lifecycle Events
 
-  func savePlaybackMetaAfterFileDidLoad(for url: URL, durationSec: Double, positionSec: Double) {
+  func savePlaybackMetaAfterFileDidLoad(for url: URL, durationSec: Double, positionSec: Double?) {
     HistoryController.shared.async { [self] in
       // 1. Update main history list
       add(url, duration: durationSec)
