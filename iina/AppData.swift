@@ -497,8 +497,8 @@ extension Notification.Name {
   // The AppInputConfig was rebuilt
   static let iinaAppInputConfigDidChange = Notification.Name("IINAAppInputConfigDidChange")
   static let iinaFileLoaded = Notification.Name("IINAFileLoaded")
-  static let iinaHistoryUpdated = Notification.Name("IINAHistoryUpdated")
-  /// Similar to `iinaHistoryUpdated` but for a single file
+  static let iinaHistoryListUpdated = Notification.Name("iinaHistoryListUpdated")
+  /// Similar to `iinaHistoryListUpdated` but for a single file
   static let iinaFileHistoryDidUpdate = Notification.Name("IINAFileHistoryDidUpdate")
   static let iinaThumbnailCacheDidUpdate = Notification.Name("IINAThumbnailCacheDidUpdate")
   static let iinaLegacyFullScreen = Notification.Name("IINALegacyFullScreen")

@@ -61,7 +61,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     observers.append(NotificationCenter.default.addObserver(forName: .savedWindowStateDidChange, object: nil,
                                                             queue: .main, using: self.refreshSavedLaunchSummary(_:)))
 
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaHistoryUpdated, object: nil,
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaHistoryListUpdated, object: nil,
                                                             queue: .main, using: self.reloadHistoryCount(_:)))
 
     observers.append(NotificationCenter.default.addObserver(forName: .watchLaterOptionsDidChange, object: nil,

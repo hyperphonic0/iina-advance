@@ -102,8 +102,8 @@ class HistoryController {
       return
     }
 
-    log.verbose("Saved history; posting iinaHistoryUpdated")
-    postNotification(Notification(name: .iinaHistoryUpdated))
+    log.verbose("Saved history; posting iinaHistoryListUpdated")
+    postNotification(Notification(name: .iinaHistoryListUpdated))
   }
 
   private func readHistoryFromFile() {
@@ -135,8 +135,8 @@ class HistoryController {
     cachedRecentDocumentURLs = NSDocumentController.shared.recentDocumentURLs
     log.verbose("ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
     if !silent {
-      log.verbose("ReloadAll: posting iinaHistoryUpdated")
-      postNotification(Notification(name: .iinaHistoryUpdated))
+      log.verbose("ReloadAll: posting iinaHistoryListUpdated")
+      postNotification(Notification(name: .iinaHistoryListUpdated))
 
       log.verbose("ReloadAll: posting recentDocumentsDidChange")
       postNotification(Notification(name: .recentDocumentsDidChange))
@@ -300,6 +300,79 @@ class HistoryController {
     } else {
       log.debug("Saved list of recent documents")
     }
+  }
+
+  // MARK: - Playback Lifecycle Events
+
+  func savePlaybackMetaAfterFileDidLoad(for url: URL, durationSec: Double, positionSec: Double) {
+    HistoryController.shared.async { [self] in
+      // 1. Update main history list
+      add(url, duration: durationSec)
+
+      // 2. IINA's [ancient] "resume last playback" feature
+      // Add this now, or else welcome window will fall out of sync with history list
+      saveToLastPlayedFile(url, duration: durationSec, position: positionSec)
+
+      if Preference.bool(for: .recordRecentFiles) {
+        // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
+        if Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
+          HistoryController.shared.noteNewRecentDocumentURL(url)
+        } else {
+          /// This will get called by `noteNewRecentDocumentURL`. But if it's not called, need to call it
+          /// so that welcome window is notified when `iinaLastPlayedFilePosition`, etc. are changed
+          HistoryController.shared.postNotification(Notification(name: .recentDocumentsDidChange))
+        }
+      }
+      postFileHistoryUpdateNotification(forURL: url)
+    }
+  }
+
+  /// Actually this is called when player is stopping, so needs to account for watch-later, which (if enabled)
+  /// should have been written to prior to calling this function.
+  func savePlaybackMetaBeforeFileWillClose(_ url: URL, duration: Double?, position: Double?) {
+    HistoryController.shared.async { [self] in
+      saveToLastPlayedFile(url, duration: duration, position: position)
+
+      // The rest of the stuff below relates to UI updates and should be cancelled if shutting down.
+      guard !isAppTerminating else { return }
+
+      // Ensure Playback History window is updated in real time
+      if Preference.bool(for: .recordPlaybackHistory) {
+        /// this will reload the `mpvProgress` field from the `watch-later` config files
+        guard let historyItem = history.first(where: {$0.url == url}) else { return }
+        historyItem.loadProgressFromWatchLater()
+      }
+
+      // Ensure playlist is updated relatively quickly
+      postFileHistoryUpdateNotification(forURL: url)
+    }
+  }
+
+  private func saveToLastPlayedFile(_ url: URL?, duration: Double?, position: Double?) {
+    guard Preference.bool(for: .resumeLastPosition) else { return }
+    guard let url else {
+      log.warn("Cannot save iinaLastPlayedFilePath or iinaLastPlayedFilePosition: url is nil!")
+      return
+    }
+    // FIXME: remove `iinaLastPlayedFilePath` and `iinaLastPlayedFilePosition` - they are not compatible with welcome window list
+    Preference.set(url, for: .iinaLastPlayedFilePath)
+
+    if let position {
+      log.verbose("Saving iinaLastPlayedFilePosition: \(position) sec")
+      Preference.set(position, for: .iinaLastPlayedFilePosition)
+    } else {
+      log.warn("No position found for file; writing 0 to iinaLastPlayedFilePosition")
+      Preference.set(0.0, for: .iinaLastPlayedFilePosition)
+    }
+
+    // Write to cache directly (rather than calling `refreshCachedVideoProgress`).
+    // If user only closed the window but didn't quit the app, this can make sure playlist displays the correct progress.
+    MediaMetaCache.shared.setCachedMediaDurationAndProgress(url, duration: duration, progress: position)
+  }
+
+  /// Notifies the UI (playlist panel(s) & History window that the given URL has been updated, so they can pull it & update.
+  func postFileHistoryUpdateNotification(forURL url: URL) {
+    postNotification(Notification(name: .iinaFileHistoryDidUpdate, object: nil, userInfo: ["url": url]))
   }
 
   func postNotification(_ notification: Notification) {

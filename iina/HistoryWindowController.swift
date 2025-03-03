@@ -91,8 +91,8 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     ], [
       .default: [
 
-        .init(.iinaHistoryUpdated) { [self] _ in
-          log.verbose("History window received iinaHistoryUpdated; will reload data")
+        .init(.iinaHistoryListUpdated) { [self] _ in
+          log.verbose("History window received iinaHistoryListUpdated; will reload data")
           // Force full status reload:
           backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
             lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
@@ -101,15 +101,20 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
         },
 
         .init(.iinaFileHistoryDidUpdate) { [self] note in
+          assert(DispatchQueue.isExecutingIn(.main))
           guard !AppDelegate.shared.isTerminating else { return }
+
           guard let url = note.userInfo?["url"] as? URL else {
             log.error("Cannot update file history: no url found in userInfo!")
             return
           }
-          log.verbose("History window got iinaFileHistoryDidUpdate; will reload watch-later for URL & possibly reload table")
+
+          // Can only access fileExistsMap on main thread
+          let needsReload = fileExistsMap.removeValue(forKey: url) != nil
+          log.trace{"History window got iinaFileHistoryDidUpdate; will reload table: \(needsReload.yesno)"}
+          guard needsReload else { return }
 
           backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
-            guard fileExistsMap.removeValue(forKey: url) != nil else { return }
             reloadData(silent: true)
           }
         }
@@ -297,28 +302,34 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       // Fill in fileExists
       if fileExistsMap[entry.url] == nil {
         fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
-        let progressDidChange = entry.loadProgressFromWatchLater()
-        if progressDidChange {
-          
-        }
+        entry.loadProgressFromWatchLater()
         let wasWatchLaterFound = entry.mpvProgress != nil
         count += 1
         if wasWatchLaterFound {
           watchLaterCount += 1
+          // Notify playlists in various windows
+          // FIXME: this will also notify ourselves & cause duplicate work!
+          // FIXME: Also, watch-later will not load unless this window is open! Refactor to put data load in HistoryController.
+          HistoryController.shared.postFileHistoryUpdateNotification(forURL: entry.url)
         }
-        if (count %% 100) == 0 {
-          guard isInitialLoad || isTicketStillValid(ticket) else { return }
+        if (count %% 50) == 0 {
+          guard isInitialLoad || isTicketStillValid(ticket) else {
+            // Fall through and save progress before returning
+            break
+          }
           guard !HistoryController.shared.isAppTerminating else { return }
         }
       }
     }
-    guard isInitialLoad || isTicketStillValid(ticket) else {return }  // check ticket
 
     self.fileExistsMap = fileExistsMap
     log.debug("Filled in fileExists for \(count) of \(historyList.count) histories in \(sw2.secElapsedString), wasFullReload=\(forceFullStatusReload.yn) watchLaterFilesLoaded=\(watchLaterCount) fileExistsMapSize=\(fileExistsMap.count)")
     if forceFullStatusReload {
       lastCompleteStatusReloadTime = Date()
     }
+
+    // We may have gotten here from a ticket check above. Return without updating, but save work first
+    guard isInitialLoad || isTicketStillValid(ticket) else { return }
 
     if count > 0 {
       DispatchQueue.main.async { [self] in
