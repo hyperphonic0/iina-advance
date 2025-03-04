@@ -22,19 +22,23 @@ struct MediaMeta: CustomStringConvertible {
   let album: String?
   let artist: String?
 
-  init(duration: Double?, progress: Double?, title: String?, album: String?, artist: String?) {
+  /// Sometimes ffmpeg fails to read the file's meta. But we need to know it tried, so we don't keep retrying forever.
+  let triedFFmpeg: Bool
+
+  init(duration: Double?, progress: Double?, title: String?, album: String?, artist: String?, triedFFmpeg: Bool = false) {
     self.duration = duration
     self.progress = progress
     // Sometimes newlines end up in the metadata (and on Windows these also include "\r" as well). Strip them for better visibility:
     self.title = title?.replacingOccurrences(of: "\r", with: "").replacingOccurrences(of: "\n", with: " ")
     self.album = album
     self.artist = artist
+    self.triedFFmpeg = triedFFmpeg
   }
 
   func clone(duration: Double? = nil, progress: Double? = nil, nilProgress: Bool = false,
-             title: String? = nil, album: String? = nil, artist: String? = nil) -> MediaMeta {
+             title: String? = nil, album: String? = nil, artist: String? = nil, triedFFmpeg: Bool = false) -> MediaMeta {
     return MediaMeta(duration: duration ?? self.duration, progress: nilProgress ? nil : (progress ?? self.progress),
-                     title: title ?? self.title, album: album ?? self.album, artist: artist ?? self.artist)
+                     title: title ?? self.title, album: album ?? self.album, artist: artist ?? self.artist, triedFFmpeg: triedFFmpeg || self.triedFFmpeg)
   }
 
   var description: String {
@@ -119,26 +123,31 @@ class MediaMetaCache {
     var album: String? = nil
     var artist: String? = nil
 
+    var triedFFmpeg = false
+
     if url.isFileURL {
       if reloadFromWatchLater {
         progress = Utility.playbackProgressFromWatchLater(url.path.md5)
       }
 
-      if reloadFromFFmpeg, let dict = FFmpegController.probeVideoInfo(forFile: url.path) {
+      if reloadFromFFmpeg {
+        triedFFmpeg = true
+        if let dict = FFmpegController.probeVideoInfo(forFile: url.path) {
 
-        duration = dict["@iina_duration"] as? Double
+          duration = dict["@iina_duration"] as? Double
 
-        dict.forEach { (k, v) in
-          guard let key = k as? String else { return }
-          switch key.lowercased() {
-          case "title":
-            title = v as? String
-          case "album":
-            album = v as? String
-          case "artist":
-            artist = v as? String
-          default:
-            break
+          dict.forEach { (k, v) in
+            guard let key = k as? String else { return }
+            switch key.lowercased() {
+            case "title":
+              title = v as? String
+            case "album":
+              album = v as? String
+            case "artist":
+              artist = v as? String
+            default:
+              break
+            }
           }
         }
       }
@@ -158,7 +167,7 @@ class MediaMetaCache {
     return metaLock.withLock {
       let oldMeta = cachedMeta[url] ?? MediaMeta.empty
       let newMeta = oldMeta.clone(duration: duration, progress: progress, nilProgress: progress == nil,
-                                  title: title, album: album, artist: artist)
+                                  title: title, album: album, artist: artist, triedFFmpeg: triedFFmpeg)
       cachedMeta[url] = newMeta
       log.trace{"Updated cache entry \(Playback.path(from: url).pii.quoted) ≔ \(newMeta)"}
       return newMeta

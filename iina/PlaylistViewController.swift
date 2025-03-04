@@ -716,7 +716,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let playlistItem = playlistItems[rowIndex]
     let url = playlistItem.url
 
-    let existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: url)
+    var existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: url)
     // Kick this off, but return the existing (possibly stale) data below for efficiency
     player.mpv.queue.async { [self] in
       guard player.isActive else { return }
@@ -730,8 +730,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           reloadPlaylistRow(rowIndex)
         }
       }
-      
-      if isPlaying || enablePrefetching {
+
+      // Check cache again; we don't know how much time has passed since last access & want to avoid redundant file access
+      existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: url)
+      let needsCacheUpdate = existingCachedMeta == nil || (url.isFileURL && !existingCachedMeta!.triedFFmpeg)
+      if isPlaying || needsCacheUpdate {
         PlayerCore.playlistQueue.async { [self] in
           // Get watch-later form file system; get other meta from ffmpeg:
           let cachedMeta = MediaMetaCache.shared.updateCache(for: url, mpvTitle: mpvTitle)
