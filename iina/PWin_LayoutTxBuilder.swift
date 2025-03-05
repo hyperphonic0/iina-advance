@@ -361,8 +361,7 @@ extension PlayerWindowController {
       let outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight >= transition.outputLayout.topBarHeight ? transition.outputLayout.outsideTopBarHeight : 0
 
       if transition.isEnteringInteractiveMode {
-        return transition.outputGeometry.withResizedBars(mode: .windowedNormal,
-                                                         outsideTop: 0, outsideTrailing: 0,
+        return transition.outputGeometry.withResizedBars(outsideTop: 0, outsideTrailing: 0,
                                                          outsideBottom: 0, outsideLeading: 0,
                                                          insideTop: 0, insideTrailing: 0,
                                                          insideBottom: 0, insideLeading: 0,
