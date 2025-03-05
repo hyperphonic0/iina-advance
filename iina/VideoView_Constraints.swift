@@ -119,7 +119,10 @@ extension VideoView {
                 whMax: CGSize? = nil, whMax_Priority: NSLayoutConstraint.Priority,
                 spacerMax_Active: Bool, spacerMax_Priority: NSLayoutConstraint.Priority,
                 spacerGT: MarginQuad?, spacerGT_V_Priority: NSLayoutConstraint.Priority, spacerGT_H_Priority: NSLayoutConstraint.Priority,
-                center_Active: Bool, center_Priority: NSLayoutConstraint.Priority) {
+                center_Active: Bool, center_Priority: NSLayoutConstraint.Priority,
+                _ log: Logger.Subsystem) {
+
+      log.verbose{"VideoView: updating constraints to whMax=\(whMax?.description ?? "nil")|\(whMax_Priority.rawValue), spacerMax=\(spacerMax_Active.yn)|\(spacerMax_Priority.rawValue) spacerGT=\(spacerGT?.description ?? "nil")|\(spacerGT_V_Priority.rawValue)|\(spacerGT_H_Priority.rawValue) aspect=\(aspectRatio.multiplier)|\(aspect_Active.yn)|\(aspect_Priority.rawValue)"}
 
 #if TEST_VIDEO_CONSTRAINTS
       // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
@@ -249,7 +252,7 @@ extension VideoView {
                 whMax: .zero, whMax_Priority: .init(99),
                 spacerMax_Active: true, spacerMax_Priority: .init(98),
                 spacerGT: nil, spacerGT_V_Priority: .init(97), spacerGT_H_Priority: .init(97),
-                center_Active: true, center_Priority: .init(96))
+                center_Active: true, center_Priority: .init(96), log)
   }
 
   /// Add, update, or remove all constraints, based on the given geometry (or lack thereof).
@@ -266,10 +269,6 @@ extension VideoView {
       removeVideoConstraints()
       return
     }
-    let existing = videoViewConstraints
-    let margins = geometry.viewportMargins
-    let aspectMultiplier = geometry.videoViewAspect
-    log.verbose{"VideoView: updating constraints to margins=\(margins), aspect=\(aspectMultiplier)"}
 
     guard player.windowController.pip.status == .notInPIP else {
       log.verbose("VideoView: currently in PiP; skipping constraints")
@@ -281,6 +280,10 @@ extension VideoView {
       log.verbose("VideoView: not adding constraints: no superview")
       return
     }
+
+    let existing = videoViewConstraints
+    let margins = geometry.viewportMargins
+    let aspectMultiplier = geometry.videoViewAspect
 
     let aspect: NSLayoutConstraint
     if let existing {
@@ -301,21 +304,25 @@ extension VideoView {
     let trailingSpacer = player.windowController.viewportTrailingSpacer
 
     let cons = VideoViewConstraints(
+      // Structural, don't need to revisit:
       topSpacerConnection: existing?.topSpacerConnection ?? topAnchor.constraint(equalTo: topSpacer.bottomAnchor),
       bottomSpacerConnection: existing?.bottomSpacerConnection ?? bottomAnchor.constraint(equalTo: bottomSpacer.topAnchor),
       leadingSpacerConnection: existing?.leadingSpacerConnection ?? leadingAnchor.constraint(equalTo: leadingSpacer.trailingAnchor),
       trailingSpacerConnection: existing?.trailingSpacerConnection ?? trailingAnchor.constraint(equalTo: trailingSpacer.leadingAnchor),
 
+      // Maximize spacer sizes:
       topSpacerMax: existing?.topSpacerMax ?? topSpacer.heightAnchor.constraint(equalTo: superview.heightAnchor),
       trailingSpacerMax: existing?.trailingSpacerMax ?? trailingSpacer.widthAnchor.constraint(equalTo: superview.widthAnchor),
       bottomSpacerMax: existing?.bottomSpacerMax ?? bottomSpacer.heightAnchor.constraint(equalTo: superview.heightAnchor),
       leadingSpacerMax: existing?.leadingSpacerMax ?? leadingSpacer.widthAnchor.constraint(equalTo: superview.widthAnchor),
 
+      // Min spacer sizes:
       topSpacerGT: existing?.topSpacerGT ?? topSpacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
       trailingSpacerGT: existing?.trailingSpacerGT ?? trailingSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
       bottomSpacerGT: existing?.bottomSpacerGT ?? bottomSpacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
       leadingSpacerGT: existing?.leadingSpacerGT ?? leadingSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
 
+      // These maximize video size
       widthMax: existing?.widthMax ?? widthAnchor.constraint(equalTo: superview.widthAnchor),
       heightMax: existing?.heightMax ?? heightAnchor.constraint(equalTo: superview.heightAnchor),
 
@@ -363,17 +370,24 @@ extension VideoView {
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers_Active: true, connectSpacers_Priority: .required,
                 // The desired aspect must always be honored. All constraints are secondary to this.
-                aspect_Active: aspectMultiplier > 0.0, aspect_Priority: musicMode ? .init(499) : .required,
+                aspect_Active: aspectMultiplier > 0.0,
+                aspect_Priority: musicMode ? .init(499) : .required,
 
-                whMax: interactiveMode ? spacerGT?.totalSize : .zero, whMax_Priority: musicMode ? .required : .init(495),
+                whMax: interactiveMode ? spacerGT?.totalSize : .zero,
+                whMax_Priority: musicMode ? .required : .init(495),
 
-                spacerMax_Active: !musicMode, spacerMax_Priority: .init(490),
+                spacerMax_Active: !musicMode && !interactiveMode,
+                spacerMax_Priority: .init(490),
+
+                // For interactive mode, these need to be higher priority than video max
                 spacerGT: spacerGT,
-                spacerGT_V_Priority: interactiveMode ? .init(498) : .init(481),
-                spacerGT_H_Priority: interactiveMode ? .init(498) : .init(482),
+                spacerGT_V_Priority: interactiveMode ? .init(496) : .init(481),
+                spacerGT_H_Priority: interactiveMode ? .init(496) : .init(482),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-                center_Active: !musicMode, center_Priority: .init(480))
+                center_Active: !musicMode,
+                center_Priority: .init(480),
+                log)
 
 
     videoViewConstraints = cons

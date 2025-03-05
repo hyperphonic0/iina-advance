@@ -361,9 +361,6 @@ extension PlayerWindowController {
     } else if transition.isExitingInteractiveMode {
       if transition.outputLayout.isFullScreen {
         videoView.apply(transition.outputGeometry)
-      } else {
-        // No margins (for a nice animation)
-        videoView.apply(nil)
       }
     }
 
@@ -377,7 +374,7 @@ extension PlayerWindowController {
       } else {
         cameraOffset = transition.outputGeometry.topMarginHeight
       }
-      log.verbose{"[\(transition.name)] Applying middleGeo: topBarHeight=\(topBarHeight), cameraOffset=\(cameraOffset)"}
+      log.trace{"[\(transition.name)] CloseOldPanels: applying middleGeo, topBarHeight=\(topBarHeight), cameraOffset=\(cameraOffset)"}
       updateTopBarHeight(to: topBarHeight, topBarPlacement: transition.inputLayout.topBarPlacement, cameraHousingOffset: cameraOffset)
 
       if !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {  // don't do this too soon when exiting Music Mode
@@ -406,8 +403,8 @@ extension PlayerWindowController {
       // Also do not apply when toggling fullscreen because it is not relevant at this stage and will look glitchy because the
       // animation has zero duration.
       if !transition.isWindowInitialLayout && (transition.isTogglingMusicMode || !transition.isTogglingFullScreen) {
-        log.debug{"[\(transition.name)] Calling setFrame from closeOldPanels with middleGeo \(middleGeo.windowFrame)"}
-        player.window.setFrameImmediately(middleGeo, updateVideoView: !transition.isExitingInteractiveMode)
+        log.debug{"[\(transition.name)] CloseOldPanels: applying middleGeo windowFrame=\(middleGeo.windowFrame)"}
+        player.window.setFrameImmediately(middleGeo)
       }
     }
 

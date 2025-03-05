@@ -1747,11 +1747,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // Exits interactive mode, using animations.
   private func exitInteractiveMode(immediately: Bool, newVidGeo: VideoGeometry? = nil) -> [IINAAnimation.Task] {
     var tasks: [IINAAnimation.Task] = []
-
     var geoSet: GeometrySet? = nil
+
     // If these params are present and valid, then need to apply a crop
     if let cropController = cropSettingsView, let newVidGeo, let cropRect = newVidGeo.cropRect {
-
       log.verbose{"Cropping video from videoSizeRaw: \(newVidGeo.videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(cropRect)"}
 
       /// Must update `windowedModeGeo` outside of animation task!
@@ -1766,9 +1765,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         geoSet = buildGeoSet(windowed: newIMGeo, from: currentLayout)
       }
 
-      // Crop animation:
+      // Animate the crop to highlight the piece being cut out.
+      // Remember: this does not run if there is no crop (i.e. cropRect is nil) - see above
       let cropAnimationDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.005
       tasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .default) { [self] in
+        log.verbose{"Start exiting interactive mode: animating crop using: \(newIMGeo)"}
         player.window.setFrameImmediately(newIMGeo)
 
         // Add the crop filter now, if applying crop. The timing should mostly add up and look like it cut out a piece of the whole.

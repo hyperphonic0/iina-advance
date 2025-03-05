@@ -106,6 +106,9 @@ class CropBoxView: NSView {
   // MARK: - Mouse event to change boxRect
 
   override func mouseDown(with event: NSEvent) {
+    guard let pwc = settingsViewController.windowController else { return }
+    pwc.currentDragObject = self
+
     let mousePos = convert(event.locationInWindow, from: nil)
     lastMousePos = mousePos
 
@@ -136,6 +139,8 @@ class CropBoxView: NSView {
 
   override func mouseDragged(with event: NSEvent) {
     let mousePos = convert(event.locationInWindow, from: nil).constrained(to: videoRect)
+    guard let pwc = settingsViewController.windowController else { return }
+    guard pwc.currentDragObject == self else { return }
     Logger.log.trace{"CropBoxView mouseDragged, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)"}
 
     if isDraggingToResize {
@@ -182,6 +187,8 @@ class CropBoxView: NSView {
 
   override func mouseUp(with event: NSEvent) {
     Logger.log.verbose{"CropBoxView mouseUp, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)"}
+    guard let pwc = settingsViewController.windowController else { return }
+
     if isDraggingToResize || isDraggingNew {
       mouseDragged(with: event)
       isDraggingToResize = false
@@ -189,6 +196,10 @@ class CropBoxView: NSView {
       updateCursorRects()
     } else {
       super.mouseUp(with: event)
+    }
+
+    if pwc.currentDragObject == self {
+      pwc.currentDragObject = nil
     }
   }
 

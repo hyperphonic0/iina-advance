@@ -48,7 +48,7 @@ extension PlayerWindowController {
 
     // InputGeometry
     let inputGeometry: PWinGeometry = buildInputGeometry(from: inputLayout, transitionName: transitionName, geo, windowedModeScreen: windowedModeScreen)
-    log.verbose("[\(transitionName)] InputGeometry: \(inputGeometry)")
+    log.verbose("[\(transitionName)] INPUT: \(inputGeometry)")
 
     // OutputGeometry
     let outputGeometry: PWinGeometry = buildOutputGeometry(inputLayout: inputLayout, inputGeometry: inputGeometry,
@@ -62,12 +62,12 @@ extension PlayerWindowController {
     // MiddleGeometry if needed (is applied after ClosePanels step)
     transition.middleGeometry = buildMiddleGeometry(forTransition: transition, geo)
     if let middleGeometry = transition.middleGeometry {
-      log.verbose("[\(transitionName)] MiddleGeometry: \(middleGeometry)")
+      log.verbose("[\(transitionName)] MIDDLE: \(middleGeometry)")
     } else {
-      log.verbose("[\(transitionName)] MiddleGeometry: nil")
+      log.verbose("[\(transitionName)] MIDDLE: nil")
     }
 
-    log.verbose("[\(transitionName)] OutputGeometry: \(outputGeometry)")
+    log.verbose("[\(transitionName)] OUTPUT: \(outputGeometry)")
 
     let closeOldPanelsTiming: CAMediaTimingFunctionName
     let openFinalPanelsTiming: CAMediaTimingFunctionName
@@ -361,7 +361,8 @@ extension PlayerWindowController {
       let outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight >= transition.outputLayout.topBarHeight ? transition.outputLayout.outsideTopBarHeight : 0
 
       if transition.isEnteringInteractiveMode {
-        return transition.outputGeometry.withResizedBars(outsideTop: 0, outsideTrailing: 0,
+        return transition.outputGeometry.withResizedBars(mode: .windowedNormal,
+                                                         outsideTop: 0, outsideTrailing: 0,
                                                          outsideBottom: 0, outsideLeading: 0,
                                                          insideTop: 0, insideTrailing: 0,
                                                          insideBottom: 0, insideLeading: 0,

@@ -262,7 +262,7 @@ extension PlayerWindowController {
     } else if !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
       log.error("PWin MouseDown: ignoring; should be handled by controlBarFloating")
       return
-    } else if let cbView = cropSettingsView?.cropBoxView, !cbView.isHidden && isMouseEvent(event, inAnyOf: [cbView]) {
+    } else if let cbView = cropSettingsView?.cropBoxView, isInInteractiveMode && isMouseEvent(event, inAnyOf: [cbView]) {
       log.error("PWin MouseDown: ignoring; should be handled by CropBoxView")
       return
     } else if startResizingSidebar(with: event) {
