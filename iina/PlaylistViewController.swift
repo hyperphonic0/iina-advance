@@ -571,6 +571,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       reloadCache(forRowIndex: newNowPlayingIndex)
       // ... also make sure the old "now playing" row is redrawn so it loses its status
       reloadCache(forRowIndex: oldNowPlayingIndex)
+
+      playlistTableView.scrollRowToVisible(newNowPlayingIndex)
     }
   }
 
