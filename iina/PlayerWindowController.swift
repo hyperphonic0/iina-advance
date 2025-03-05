@@ -1771,6 +1771,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       tasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .default) { [self] in
         log.verbose{"Start exiting interactive mode: animating crop using: \(newIMGeo)"}
         player.window.setFrameImmediately(newIMGeo)
+        // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
+        videoView.videoViewConstraints?.updateSpacerMin(to: newIMGeo.viewportMargins, spacerMin_Priority: .init(496))
 
         // Add the crop filter now, if applying crop. The timing should mostly add up and look like it cut out a piece of the whole.
         // It's not perfect but better than before

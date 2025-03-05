@@ -128,6 +128,26 @@ extension VideoView {
 #endif
     }
 
+    func updateSpacerMin(to spacerMin: MarginQuad?, spacerMin_Priority: NSLayoutConstraint.Priority) {
+      if let spacerMin {
+        topSpacerMin.animateToConstant(spacerMin.top)
+        bottomSpacerMin.animateToConstant(spacerMin.bottom)
+        leadingSpacerMin.animateToConstant(spacerMin.leading)
+        trailingSpacerMin.animateToConstant(spacerMin.trailing)
+
+        topSpacerMin.priority = spacerMin_Priority
+        bottomSpacerMin.priority = spacerMin_Priority
+        trailingSpacerMin.priority = spacerMin_Priority
+        leadingSpacerMin.priority = spacerMin_Priority
+      }
+
+      let spacerMin_Active = spacerMin != nil
+      topSpacerMin.isActive = spacerMin_Active
+      bottomSpacerMin.isActive = spacerMin_Active
+      trailingSpacerMin.isActive = spacerMin_Active
+      leadingSpacerMin.isActive = spacerMin_Active
+    }
+
     func update(connectSpacers_Active: Bool, connectSpacers_Priority: NSLayoutConstraint.Priority,
                 aspect_Active: Bool, aspect_Priority: NSLayoutConstraint.Priority,
                 whMax: CGSize? = nil, whMax_Priority: NSLayoutConstraint.Priority,
@@ -194,18 +214,6 @@ extension VideoView {
       bottomSpacerMax.priority = spacerMax_Priority
       leadingSpacerMax.priority = spacerMax_Priority
 
-      if let spacerMin {
-        topSpacerMin.animateToConstant(spacerMin.top)
-        bottomSpacerMin.animateToConstant(spacerMin.bottom)
-        leadingSpacerMin.animateToConstant(spacerMin.leading)
-        trailingSpacerMin.animateToConstant(spacerMin.trailing)
-
-        topSpacerMin.priority = spacerMin_Priority
-        bottomSpacerMin.priority = spacerMin_Priority
-        trailingSpacerMin.priority = spacerMin_Priority
-        leadingSpacerMin.priority = spacerMin_Priority
-      }
-
       if let spacerPreferred {
         topSpacerPreferred.animateToConstant(spacerPreferred.top)
         bottomSpacerPreferred.animateToConstant(spacerPreferred.bottom)
@@ -243,12 +251,6 @@ extension VideoView {
       bottomSpacerMax.isActive = spacerMax_Active
       leadingSpacerMax.isActive = spacerMax_Active
 
-      let spacerMin_Active = spacerMin != nil
-      topSpacerMin.isActive = spacerMin_Active
-      bottomSpacerMin.isActive = spacerMin_Active
-      trailingSpacerMin.isActive = spacerMin_Active
-      leadingSpacerMin.isActive = spacerMin_Active
-
       let spacerPreferred_Active = spacerPreferred != nil
       topSpacerPreferred.isActive = spacerPreferred_Active
       bottomSpacerPreferred.isActive = spacerPreferred_Active
@@ -262,6 +264,8 @@ extension VideoView {
 
       centerX.isActive = center_Active
       centerY.isActive = center_Active
+
+      updateSpacerMin(to: spacerMin, spacerMin_Priority: spacerMin_Priority)
     }
   }
 
