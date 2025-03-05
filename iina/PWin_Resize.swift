@@ -865,8 +865,12 @@ extension PlayerWindowController {
 
     // TASK 1: Background prep
     tasks.append(.instantTask { [self] in
-      isAnimatingLayoutTransition = true  /// do not trigger `windowDidResize` if possible
+      isAnimatingLayoutTransition = true  /// do not trigger various listeners if possible
       if isShowingVideoView {
+        if pip.status != .inPIP {
+          // We are about to steal its video; close it:
+          exitPIP()
+        }
         // Show/hide art before showing videoView
         updateDefaultArtVisibility(to: showDefaultArt)
         addVideoViewToWindow(using: outputGeo)
