@@ -620,10 +620,6 @@ class MenuController: NSObject, NSMenuDelegate {
       var rootMenu: NSMenu! = pluginMenu
       let menuItems = (instance.plugin.globalInstance?.menuItems ?? []) + instance.menuItems
       if menuItems.isEmpty { continue }
-      
-      if index != 0 {
-        pluginMenu.addItem(.separator())
-      }
 
       if #available(macOS 14.0, *) {
         pluginMenu.addItem(.sectionHeader(title: instance.plugin.name))
@@ -655,10 +651,11 @@ class MenuController: NSObject, NSMenuDelegate {
             menuItem(forPluginInstance: globalInst, tag: JavasctiptDevTool.JSMenuItemInstance))
         }
       }
+
+      pluginMenu.addItem(.separator())
     }
 
     if #available(macOS 12.0, *) {
-      pluginMenu.addItem(.separator())
       pluginMenu.addItem(developerTool)
     }
     pluginMenu.addItem(withTitle: NSLocalizedString("menu.reload_plugins", comment: "Reload All Plugins"), action: #selector(PlayerWindowController.reloadAllPlugins(_:)), keyEquivalent: "")
