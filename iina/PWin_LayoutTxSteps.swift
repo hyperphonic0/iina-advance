@@ -50,6 +50,11 @@ extension PlayerWindowController {
 
     videoView.videoLayer.enterAsynchronousMode()
 
+    if transition.outputLayout.isInteractiveMode || transition.outputLayout.isFullScreen {
+      // Disable; can cause problems in interactive mode. Set this ASAP because there is sometimes a small delay
+      window.isMovableByWindowBackground = false
+    }
+
     // Need to call this here to avoid border being drawn incorrectly during FS transition.
     // But don't want to interfere with special effects such as fade-in
     let opacity = window.contentView?.layer?.opacity ?? -1

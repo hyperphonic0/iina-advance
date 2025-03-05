@@ -557,8 +557,7 @@ extension PlayerWindowController {
     var disableWindowDrag = true
 
     if isInInteractiveMode {
-      disableWindowDrag = isPoint(pointInWindow, inAnyOf: [viewportView])
-      updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDrag)
+      updateIsMoveableByWindowBackground(disableWindowDrag: true)
       return
     } else if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
         isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: pointInWindow) {

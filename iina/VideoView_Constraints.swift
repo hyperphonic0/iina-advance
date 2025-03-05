@@ -116,8 +116,9 @@ extension VideoView {
 
     func update(connectSpacers_Active: Bool, connectSpacers_Priority: NSLayoutConstraint.Priority,
                 aspect_Active: Bool, aspect_Priority: NSLayoutConstraint.Priority,
-                whMax_Active: Bool, whMax_Priority: NSLayoutConstraint.Priority,
-                marginGT_Active: Bool, marginGT_Priority: NSLayoutConstraint.Priority,
+                whMax: CGSize? = nil, whMax_Priority: NSLayoutConstraint.Priority,
+                spacerMax_Active: Bool, spacerMax_Priority: NSLayoutConstraint.Priority,
+                spacerGT: MarginQuad?, spacerGT_V_Priority: NSLayoutConstraint.Priority, spacerGT_H_Priority: NSLayoutConstraint.Priority,
                 center_Active: Bool, center_Priority: NSLayoutConstraint.Priority) {
 
 #if TEST_VIDEO_CONSTRAINTS
@@ -162,7 +163,7 @@ extension VideoView {
       centerX2.isActive = center2Active
       centerY2.isActive = center2Active
 #endif
-      // - Priorities
+      // - Priorities, Constants
 
       topSpacerConnection.priority = connectSpacers_Priority
       bottomSpacerConnection.priority = connectSpacers_Priority
@@ -171,13 +172,30 @@ extension VideoView {
 
       aspectRatio.priority = aspect_Priority
 
-      topSpacerMax.priority = marginGT_Priority
-      trailingSpacerMax.priority = marginGT_Priority
-      bottomSpacerMax.priority = marginGT_Priority
-      leadingSpacerMax.priority = marginGT_Priority
+      topSpacerMax.priority = spacerMax_Priority
+      trailingSpacerMax.priority = spacerMax_Priority
+      bottomSpacerMax.priority = spacerMax_Priority
+      leadingSpacerMax.priority = spacerMax_Priority
 
-      widthMax.priority = whMax_Priority
-      heightMax.priority = whMax_Priority
+      if let spacerGT {
+        topSpacerGT.animateToConstant(spacerGT.top)
+        bottomSpacerGT.animateToConstant(spacerGT.bottom)
+        topSpacerGT.priority = spacerGT_V_Priority
+        bottomSpacerGT.priority = spacerGT_V_Priority
+
+        leadingSpacerGT.animateToConstant(spacerGT.leading)
+        trailingSpacerGT.animateToConstant(spacerGT.trailing)
+        trailingSpacerGT.priority = spacerGT_H_Priority
+        leadingSpacerGT.priority = spacerGT_H_Priority
+      }
+
+      if let whMax {
+        widthMax.animateToConstant(-whMax.width)
+        heightMax.animateToConstant(-whMax.height)
+
+        widthMax.priority = whMax_Priority
+        heightMax.priority = whMax_Priority
+      }
 
       centerX.priority = center_Priority
       centerY.priority = center_Priority
@@ -191,13 +209,20 @@ extension VideoView {
 
       aspectRatio.isActive = aspect_Active
 
-      topSpacerMax.isActive = marginGT_Active
-      trailingSpacerMax.isActive = marginGT_Active
-      bottomSpacerMax.isActive = marginGT_Active
-      leadingSpacerMax.isActive = marginGT_Active
+      topSpacerMax.isActive = spacerMax_Active
+      trailingSpacerMax.isActive = spacerMax_Active
+      bottomSpacerMax.isActive = spacerMax_Active
+      leadingSpacerMax.isActive = spacerMax_Active
+
+      let spacerGT_Active = spacerGT != nil
+      topSpacerGT.isActive = spacerGT_Active
+      bottomSpacerGT.isActive = spacerGT_Active
+      trailingSpacerGT.isActive = spacerGT_Active
+      leadingSpacerGT.isActive = spacerGT_Active
 
       // TODO: improvements for music mode
-      widthMax.isActive = false// whMax_Active  // not needed due to aspect...
+      let whMax_Active = whMax != nil
+      widthMax.isActive = whMax_Active
       heightMax.isActive = whMax_Active
 
       centerX.isActive = center_Active
@@ -221,9 +246,10 @@ extension VideoView {
 
     cons.update(connectSpacers_Active: true, connectSpacers_Priority: .init(100),
                 aspect_Active: true, aspect_Priority: .init(50),
-                whMax_Active: true, whMax_Priority: .init(99),
-                marginGT_Active: true, marginGT_Priority: .init(98),
-                center_Active: true, center_Priority: .init(97))
+                whMax: .zero, whMax_Priority: .init(99),
+                spacerMax_Active: true, spacerMax_Priority: .init(98),
+                spacerGT: nil, spacerGT_V_Priority: .init(97), spacerGT_H_Priority: .init(97),
+                center_Active: true, center_Priority: .init(96))
   }
 
   /// Add, update, or remove all constraints, based on the given geometry (or lack thereof).
@@ -319,45 +345,38 @@ extension VideoView {
  */
     )
 
-    /// Special case if `keepVideoAwayFromBars` is enabled
-
-    let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
-    if keepVideoAwayFromBars {
-      let inside = geometry.insideBars
-
-      cons.topSpacerGT.animateToConstant(inside.top)
-      cons.bottomSpacerGT.animateToConstant(inside.bottom)
-      let vPriority = NSLayoutConstraint.Priority.init(481)
-      cons.topSpacerGT.priority = vPriority
-      cons.bottomSpacerGT.priority = vPriority
-
-      cons.leadingSpacerGT.animateToConstant(inside.leading)
-      cons.trailingSpacerGT.animateToConstant(inside.trailing)
-      let hPriority = NSLayoutConstraint.Priority.init(482)
-      cons.trailingSpacerGT.priority = hPriority
-      cons.leadingSpacerGT.priority = hPriority
-    }
-    cons.topSpacerGT.isActive = keepVideoAwayFromBars
-    cons.trailingSpacerGT.isActive = keepVideoAwayFromBars
-    cons.bottomSpacerGT.isActive = keepVideoAwayFromBars
-    cons.leadingSpacerGT.isActive = keepVideoAwayFromBars
-
     // - Configuration
 
     let musicMode = false // TODO: improvements for music mode (search for this)
+    let interactiveMode = geometry.mode.isInteractiveMode
+
+    let spacerGT: MarginQuad?
+    if interactiveMode {
+      spacerGT = Constants.InteractiveMode.viewportMargins
+    } else if Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize) {
+      /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
+      spacerGT = geometry.insideBars
+    } else {
+      spacerGT = nil
+    }
 
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers_Active: true, connectSpacers_Priority: .required,
                 // The desired aspect must always be honored. All constraints are secondary to this.
                 aspect_Active: aspectMultiplier > 0.0, aspect_Priority: musicMode ? .init(499) : .required,
 
-                whMax_Active: true, whMax_Priority: musicMode ? .required : .init(495),
-                marginGT_Active: !musicMode, marginGT_Priority: .init(490),
+                whMax: interactiveMode ? spacerGT?.totalSize : .zero, whMax_Priority: musicMode ? .required : .init(495),
+
+                spacerMax_Active: !musicMode, spacerMax_Priority: .init(490),
+                spacerGT: spacerGT,
+                spacerGT_V_Priority: interactiveMode ? .init(498) : .init(481),
+                spacerGT_H_Priority: interactiveMode ? .init(498) : .init(482),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
                 center_Active: !musicMode, center_Priority: .init(480))
-    videoViewConstraints = cons
 
+
+    videoViewConstraints = cons
     needsUpdateConstraints = true
     superview.layout()
   }
