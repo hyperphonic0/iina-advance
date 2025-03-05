@@ -1605,6 +1605,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // Especially needed to avoid duplicate transitions
     guard currentLayout.canEnterInteractiveMode else { return }
 
+    // Can't work with PiP. For now just exit it and don't wait. The animation could be better but it's better
+    // than entering a buggy state.
+    animationPipeline.submitInstantTask{ [self] in
+      if pip.status != .notInPIP {
+        exitPIP()
+      }
+    }
+
     player.mpv.queue.async { [self] in
       let videoGeo = geo.video
       let videoSizeRaw = videoGeo.videoSizeRaw
