@@ -558,8 +558,8 @@ struct Images {
       }
     }
     let fallbackName = fallbackName ?? name
-    Logger.log("Falling back to asset image \(fallbackName) instead of \(name)")
-    return NSImage(named: name)!
+    Logger.log("Falling back to asset image \(fallbackName.quoted) instead of \(name.quoted)")
+    return NSImage(named: fallbackName)!
   }
 
   // Try to keep play & pause icons at the same pt size & scale for fewer animation problems
