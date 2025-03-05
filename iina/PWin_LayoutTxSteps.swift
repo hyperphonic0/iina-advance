@@ -1239,15 +1239,26 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.isTogglingMusicMode && Preference.bool(for: .playlistShowMetadataInMusicMode) {
-      /// Need to toggle music metadata due to music mode switch.
-      /// Do this even if playlist is not visible now, because it will not be be reloaded when toggled.
-      playlistView.reloadPlaylistRows()
-      playlistView.scrollPlaylistToCurrentItem()
+    if transition.isTogglingMusicMode {
+      if Preference.bool(for: .playlistShowMetadataInMusicMode) {
+        /// Need to toggle music metadata due to music mode switch.
+        /// Do this even if playlist is not visible now, because it will not be be reloaded when toggled.
+        playlistView.reloadPlaylistRows()
+        playlistView.scrollPlaylistToCurrentItem()
+      }
+
+      if transition.outputLayout.isMusicMode && transition.outputGeometry.isMusicModePlaylistVisible {
+        // Music mode playlist is visible: need to scroll to current item again due to size change
+        playlistView.scrollPlaylistToCurrentItem()
+      } else if transition.outputLayout.isPlaylistVisible {
+        // Playlist sidebar is visible: need to scroll to current item again due to size change
+        playlistView.scrollPlaylistToCurrentItem()
+      }
     }
 
     refreshHidesOnDeactivateStatus()
     updateIsMoveableByWindowBackground()
+
 
     if !transition.isWindowInitialLayout {
       window.layoutIfNeeded()

@@ -529,6 +529,14 @@ struct LayoutState {
     }
   }
 
+  var isPlaylistVisible: Bool {
+    if isMusicMode {
+      return outsideBottomBarHeight > Constants.Distance.MusicMode.oscHeight
+    } else {
+      return leadingSidebar.visibleTab == .playlist || trailingSidebar.visibleTab == .playlist
+    }
+  }
+
   func computeOnTopButtonVisibility(isOnTop: Bool) -> VisibilityMode {
     let showOnTopStatus = Preference.bool(for: .alwaysShowOnTopIcon) || isOnTop
     if isFullScreen || isMusicMode || !showOnTopStatus {
