@@ -184,11 +184,17 @@ extension IINAAnimation {
       }
     }
 
+    private var submittedTaskCount: Int = 0
+    private var lastLoggedTaskCount: Int = 0
+    private var alarmActivated = false
+    private static let alarmStartWatermark: Int = 100
+    private static let alarmResetWatermark: Int = 10
+
     func _submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
       // Fail if not running on main thread:
       assert(DispatchQueue.isExecutingIn(.main))
 
-      var enqueuedSomething = false
+      var enqueuedCount = 0
 
       if !tasks.isEmpty {
         newestTxID += 1
@@ -197,16 +203,36 @@ extension IINAAnimation {
         for task in tasks {
           taskQueue.append((transactionID, task))
         }
-        enqueuedSomething = true
+        enqueuedCount += tasks.count
       }
 
       if let doAfter {
         newestTxID += 1
         taskQueue.append((newestTxID, .instantTask(doAfter)))
-        enqueuedSomething = true
+        enqueuedCount += 1
       }
 
-      guard enqueuedSomething else { return }
+      guard enqueuedCount > 0 else { return }
+      submittedTaskCount += enqueuedCount
+
+      if Logger.isVerboseEnabled {
+        let taskQueueSize = taskQueue.count
+        let submittedTasks = submittedTaskCount
+        if alarmActivated {
+          let canDisable = taskQueueSize < IINAAnimation.Pipeline.alarmResetWatermark
+          if canDisable {
+            alarmActivated = false
+          }
+          if canDisable || (submittedTasks >= lastLoggedTaskCount + 20) {
+            lastLoggedTaskCount = submittedTasks
+            Logger.log.verbose{"[AnimationPipeline] TaskQueue size: \(taskQueueSize), totalSubmits: \(submittedTasks)"}
+          }
+        } else if taskQueue.count >= IINAAnimation.Pipeline.alarmStartWatermark {
+          alarmActivated = true
+          lastLoggedTaskCount = submittedTaskCount
+          Logger.log.verbose{"[AnimationPipeline] TaskQueue is falling behind! Size: \(taskQueueSize), totalSubmits: \(submittedTaskCount)"}
+        }
+      }
 
       if isRunning {
         // Let existing chain pick up the new animations

@@ -308,7 +308,7 @@ extension PlayerWindowController {
       currentDragObject.mouseDragged(with: event)
       return
     }
-    let sidebarResizeResult = resizeSidebar(with: event)
+    let (sidebarResizeResult, _) = resizeSidebar(with: event)
     applyCustomCursor(sidebarResizeResult)
     let isResizingSidebar = sidebarResizeResult != .normalCursor
     if isResizingSidebar {

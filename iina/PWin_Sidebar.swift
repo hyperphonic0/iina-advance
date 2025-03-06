@@ -903,8 +903,8 @@ extension PlayerWindowController {
     return false
   }
 
-  func resizeSidebar(with dragEvent: NSEvent) -> CursorType {
-    guard leadingSidebarIsResizing || trailingSidebarIsResizing else { return .normalCursor }
+  func resizeSidebar(with dragEvent: NSEvent) -> (CursorType, PWinGeometry?) {
+    guard leadingSidebarIsResizing || trailingSidebarIsResizing else { return (.normalCursor, nil) }
 
     let oldGeo: PWinGeometry
     switch currentLayout.mode {
@@ -936,7 +936,7 @@ extension PlayerWindowController {
       (result, newGeo) = resizeTrailingSidebar(from: oldGeo, desiredWidth: newWidth)
     } else {
       // should be already handled above
-      return .normalCursor
+      return (.normalCursor, nil)
     }
 
     if let newGeo {
@@ -962,7 +962,7 @@ extension PlayerWindowController {
       let newSpec = currentLayout.spec.clone(moreSidebarState: newSidebarState)
       currentLayout = LayoutState.buildFrom(newSpec)
     }
-    return result
+    return (result, newGeo)
   }
 
   private func resizeLeadingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> (CursorType, PWinGeometry?) {
@@ -1060,14 +1060,6 @@ extension PlayerWindowController {
     }
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)
-    // Update layout also. Do this inside the animation pipeline to prevent races
-    animationPipeline.submitInstantTask{ [self] in
-      let prevLayout = self.currentLayout
-      let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: Int(newPlaylistWidth),
-                                                      selectedSubSegment: prevLayout.spec.moreSidebarState.selectedSubSegment,
-                                                      selectedPluginTabID: prevLayout.spec.moreSidebarState.selectedPluginTabID)
-      self.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
-    }
 
     updateTrailingSidebarWidthConstraints(to: newPlaylistWidth, visible: true,
                                           placement: currentLayout.trailingSidebarPlacement,
@@ -1082,19 +1074,30 @@ extension PlayerWindowController {
   }
 
   func finishResizingSidebar(with dragEvent: NSEvent) -> Bool {
-    let sidebarResizeResult = resizeSidebar(with: dragEvent)
-    guard sidebarResizeResult != .normalCursor else { return false }
+    let (newCursor, newGeo) = resizeSidebar(with: dragEvent)
+    guard let newGeo, newCursor != .normalCursor else { return false }
+    let currentLayout = currentLayout
 
+    let newPlaylistWidth: CGFloat
     if leadingSidebarIsResizing {
       // if it's a mouseup after resizing sidebar
       leadingSidebarIsResizing = false
-      let width = currentLayout.spec.moreSidebarState.playlistSidebarWidth
-      log.verbose("Finished resize of leading sidebar; playlist is now \(width)")
+      newPlaylistWidth = currentLayout.leadingSidebar.placement == .outsideViewport ? newGeo.outsideBars.leading : newGeo.insideBars.leading
+      log.verbose("Finished resize of leading sidebar; playlist is now \(newPlaylistWidth)")
     } else if trailingSidebarIsResizing {
       // if it's a mouseup after resizing sidebar
       trailingSidebarIsResizing = false
-      let width = currentLayout.spec.moreSidebarState.playlistSidebarWidth
-      log.verbose("Finished resize of trailing sidebar; playlist is now \(width)")
+      newPlaylistWidth = currentLayout.trailingSidebar.placement == .outsideViewport ? newGeo.outsideBars.trailing : newGeo.insideBars.trailing
+      log.verbose("Finished resize of trailing sidebar; playlist is now \(newPlaylistWidth)")
+    } else {
+      return false
+    }
+    // Update layout also. Do this inside the animation pipeline to prevent (more) races
+    animationPipeline.submitInstantTask{ [self] in
+      let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: Int(newPlaylistWidth),
+                                                      selectedSubSegment: currentLayout.spec.moreSidebarState.selectedSubSegment,
+                                                      selectedPluginTabID: currentLayout.spec.moreSidebarState.selectedPluginTabID)
+      self.currentLayout = LayoutState.buildFrom(currentLayout.spec.clone(moreSidebarState: moreSidebarState))
     }
 
     // Call this to refresh cursor
