@@ -45,14 +45,7 @@ extension PlayerWindowController {
     }
 
     // FIXME: this still doesn't look great in music mode; maybe adjust VideoView constraints
-    CATransaction.begin()
     CATransaction.setAnimationDuration(0)
-    if IINAAnimation.disableActionsWorkaround {
-      CATransaction.setDisableActions(true)
-    }
-    defer {
-      CATransaction.commit()
-    }
 
     return resizeWindowSubviews(window, to: requestedSize)
   }

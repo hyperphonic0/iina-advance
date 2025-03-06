@@ -43,15 +43,6 @@ class PlayerWindow: NSWindow {
    Note: if `notify` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
    */
   func setFrameImmediately(_ geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
-    // Make sure all layout updates are in the same transaction:
-    CATransaction.begin()
-    if IINAAnimation.disableActionsWorkaround {
-      CATransaction.setDisableActions(true)
-    }
-    defer {
-      CATransaction.commit()
-    }
-
     pwc?.resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
 
     guard !frame.equalTo(geometry.windowFrame) else {
