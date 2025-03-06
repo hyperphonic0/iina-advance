@@ -388,7 +388,12 @@ class HistoryController {
 
       // 2. IINA's [ancient] "resume last playback" feature
       // Add this now, or else welcome window will fall out of sync with history list
-      saveToLastPlayedFile(id, duration: durationSec, position: positionSec)
+      if Preference.bool(for: .resumeLastPosition) {
+        saveToLastPlayedFile(id, duration: durationSec, position: positionSec)
+      } else {
+        // May need to clear cached progress in case this pref was toggled from on to off during this launch
+        MediaMetaCache.shared.updateCacheEntry(id, newDuration: durationSec, newProgress: nil)
+      }
 
       if Preference.bool(for: .recordRecentFiles) {
         // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
@@ -430,14 +435,9 @@ class HistoryController {
       log.warn("Cannot save iinaLastPlayedFilePath or iinaLastPlayedFilePosition: playback ID is nil!")
       return
     }
-    guard Preference.bool(for: .resumeLastPosition) else {
-      // May need to clear cached progress in case this pref was toggled from on to off during this launch
-      MediaMetaCache.shared.updateCacheEntry(id, newDuration: duration, newProgress: nil)
-      return
-    }
+
     // FIXME: remove `iinaLastPlayedFilePath` and `iinaLastPlayedFilePosition` - they are not compatible with welcome window list
     Preference.set(id.url, for: .iinaLastPlayedFilePath)
-
     if let position {
       log.verbose{"Saving iinaLastPlayedFilePosition: \(position)s"}
       Preference.set(position, for: .iinaLastPlayedFilePosition)
@@ -445,6 +445,7 @@ class HistoryController {
       log.warn("No position found for file; writing 0 to iinaLastPlayedFilePosition")
       Preference.set(0.0, for: .iinaLastPlayedFilePosition)
     }
+    //////////////////
 
     // Write to cache directly (rather than calling `refreshCachedVideoProgress`).
     // If user only closed the window but didn't quit the app, this can make sure playlist displays the correct progress.

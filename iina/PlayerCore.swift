@@ -929,7 +929,7 @@ class PlayerCore: NSObject {
   ///
   /// This method is called by `MPVController` when mpv emits an event indicating the asynchronous mpv `stop` command
   /// has completed executing.
-  func playbackStopped() {
+  private func playbackStopped() {
     log.debug("Playback has stopped")
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     /// Do not set player's state = `stopped` here. This method seems to get called when it shouldn't
@@ -1665,7 +1665,7 @@ class PlayerCore: NSObject {
   /// mpv `watch-later` + `saveToLastPlayedFile()` (above)
   func savePlaybackMetaBeforePlayerWillStop() {
     guard !isDemoPlayer else { return }
-    guard Preference.bool(for: .resumeLastPosition) else { return }
+    guard mpv.getFlag(MPVOption.WatchLater.savePositionOnQuit) else { return }
 
     // The player must be active to be able to save the watch later configuration.
     if isActive {
