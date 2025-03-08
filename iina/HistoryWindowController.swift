@@ -53,6 +53,8 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   @IBOutlet weak var outlineView: OutlineView!
   @IBOutlet weak var historySearchField: NSSearchField!
 
+  private var fileExistsMap: [URL: Bool] = [:]
+
   private let log: Logger.Subsystem
   private var co: CocoaObserver!
 
@@ -139,6 +141,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
     // Reload table again to refresh statuses
     log.verbose("Reloading History table with updated fileExists data")
+    self.fileExistsMap = HistoryController.shared.fileExistsMap
     outlineView.reloadExistingRows(reselectRowsAfter: true)
     log.verbose("Reloaded History table with fileExists data: done")
   }
@@ -416,7 +419,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
         } else {
           filenameView.textField?.stringValue = entry.url.isFileURL ? entry.name : entry.url.absoluteString
-          let fileExistsMap = HistoryController.shared.fileExistsMap
+          let fileExistsMap = fileExistsMap
           let fileExists = fileExistsMap[entry.url] ?? true
           filenameView.textField?.textColor = fileExists ? .controlTextColor : .disabledControlTextColor
           filenameView.docImage.image = Utility.icon(for: entry.url)
@@ -473,14 +476,14 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     switch menuItem.tag {
     case MenuItemTagShowInFinder:
       if selectedEntries.isEmpty { return false }
-      let fileExistsMap = HistoryController.shared.fileExistsMap
+      let fileExistsMap = fileExistsMap
       return selectedEntries.contains { $0.url.isFileURL && (fileExistsMap[$0.url] ?? false) }
     case MenuItemTagDelete:
       // "Delete" in this case only removes from history
       return !selectedEntries.isEmpty
     case MenuItemTagPlay, MenuItemTagPlayInNewWindow:
       if selectedEntries.isEmpty { return false }
-      let fileExistsMap = HistoryController.shared.fileExistsMap
+      let fileExistsMap = fileExistsMap
       return selectedEntries.contains { !$0.url.isFileURL || (fileExistsMap[$0.url] ?? false) }
     case MenuItemTagSearchFilename:
       menuItem.state = searchType == .filename ? .on : .off

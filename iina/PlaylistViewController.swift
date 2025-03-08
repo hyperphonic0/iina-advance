@@ -29,6 +29,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
    view is ready. The value will be handled after loaded.
    */
   private var pendingSwitchRequest: Sidebar.Tab?
+  private var fileExistsMap: [URL: Bool] = [:]
 
   weak var player: PlayerCore!
   weak var windowController: PlayerWindowController! {
@@ -75,6 +76,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   var playlistChangeObserver: NSObjectProtocol?
   var fileHistoryUpdateObserver: NSObjectProtocol?
+  var fileExistsInfoUpdateObserver: NSObjectProtocol?
   var enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration)
 
   func updateTableColors() {
@@ -163,6 +165,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       }
     }
 
+    fileExistsInfoUpdateObserver = NotificationCenter.default.addObserver(forName: .iinaFileExistsInfoDidUpdate, object: nil, queue: .main) { [self] note in
+      guard !AppDelegate.shared.isTerminating else { return }
+      self.fileExistsMap = HistoryController.shared.fileExistsMap
+    }
+
 #if DEBUG
     enablePrefetching = enablePrefetching && !DebugConfig.disableLookaheadCaches
 #endif
@@ -208,6 +215,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
     if let fileHistoryUpdateObserver {
       NotificationCenter.default.removeObserver(fileHistoryUpdateObserver)
+    }
+    if let fileExistsInfoUpdateObserver {
+      NotificationCenter.default.removeObserver(fileExistsInfoUpdateObserver)
     }
   }
 
