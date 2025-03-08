@@ -692,7 +692,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       cellView.durationLabel.stringValue = ""
     }
     if let progress = cachedMeta?.progress, let duration = cachedMeta?.duration {
-      cellView.playbackProgressView.layerContentsRedrawPolicy = .duringViewResize
+      cellView.playbackProgressView.layerContentsRedrawPolicy = .onSetNeedsDisplay
       cellView.playbackProgressView.percentage = progress / duration
       cellView.playbackProgressView.isHidden = false
     } else {
