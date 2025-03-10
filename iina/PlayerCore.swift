@@ -2673,7 +2673,6 @@ class PlayerCore: NSObject {
   func playbackRestarted() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.debug("Playback restarted")
-
     reloadSavedIINAfilters()
 
     DispatchQueue.main.async { [self] in

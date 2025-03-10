@@ -423,6 +423,11 @@ extension PlayerWindowController {
 
       // Always do this in case the video geometry changed:
       player.reloadQuickSettingsView()
+      
+      // Must force drawing to cover the case where this player was previously used to play a video
+      // and is now playing an audio file without an album cover and without using music mode.
+      // See issue #5403.
+      videoView.forceDraw()
 
       if let onSuccess {
         onSuccess()
