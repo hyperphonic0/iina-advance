@@ -527,4 +527,10 @@ class HistoryController {
       NotificationCenter.default.post(notification)
     }
   }
+
+  // TODO: terribly inefficient. History DB needs complete rework
+  func history(forURL url: URL) -> PlaybackHistory? {
+    let historyList = history
+    return historyList.first(where: { $0.url == url })
+  }
 }

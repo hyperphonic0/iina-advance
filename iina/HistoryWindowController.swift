@@ -24,6 +24,8 @@ fileprivate class LoadingPlaceholder: PlaybackHistory {
   required init?(coder aDecoder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
+
+  static let shared = LoadingPlaceholder()
 }
 
 // MARK: Constants
@@ -71,8 +73,12 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   var searchType: Preference.HistorySearchType
   var searchString: String
 
-  private static let loadingData = [loadingKey: [LoadingPlaceholder()]]
-  private var historyData: [String: [PlaybackHistory]] = HistoryWindowController.loadingData
+  private static let loadingData = [loadingKey: [LoadingPlaceholder.shared.url]]
+
+  // These must only be updated in the main queue
+  // There are still some possible races where data can go stale... Fix in a future version
+  private var historyLookup: [URL: PlaybackHistory] = [LoadingPlaceholder.shared.url: LoadingPlaceholder.shared]
+  private var historyData: [String: [URL]] = HistoryWindowController.loadingData
   private var historyDataKeys: [String] = [loadingKey]
 
   private var selectedEntries: [PlaybackHistory] = []
@@ -124,15 +130,25 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       return
     }
 
-    let historyList = HistoryController.shared.history
-    if let entry = historyList.first(where: { $0.url == url }) {
-      let rowKey = getKey(entry)
-      // This will reload the parent of the target row. Not ideal, but still much faster than full table reload
-      outlineView.reloadItem(rowKey)
-    }
+    // Enqueue in backgroundQueue to ensure happens-before relationship
+    backgroundQueue.async { [self] in
+      guard let entry = HistoryController.shared.history(forURL: url) else {
+        log.error("Cannot update file history: no entry found for URL: \(url)")
+        return
+      }
 
-    log.trace{"History window got iinaFileHistoryDidUpdate but could not find row for updated file; reloading all rows"}
-    outlineView.reloadExistingRows(reselectRowsAfter: true)
+      DispatchQueue.main.async { [self] in
+        // Now trigger UI to update
+        let rowKey = getKey(entry)
+        // Update our copy
+        historyLookup[url] = entry
+        let itemRow = outlineView.row(forItem: rowKey)
+        if itemRow != NSNotFound {
+          // This will reload the parent of the target row. Not ideal, but still much faster than full table reload
+          outlineView.reloadItem(rowKey, reloadChildren: true)
+        }
+      }
+    }
   }
 
   private func onFileExistsInfoDidUpdate(_ note: Notification) {
@@ -265,17 +281,20 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
         return string.localizedStandardContains(searchString)
       }
     }
-    var historyDataUpdated: [String: [PlaybackHistory]] = [:]
+    var historyLookupUpdated: [URL: PlaybackHistory] = [:]
+    var historyDataUpdated: [String: [URL]] = [:]
     var historyDataKeysUpdated: [String] = []
 
     for entry in historyList {
+      historyLookupUpdated[entry.url] = entry
+
       let key = getKey(entry)
 
       if historyDataUpdated[key] == nil {
-        historyDataUpdated[key] = [entry]
+        historyDataUpdated[key] = [entry.url]
         historyDataKeysUpdated.append(key)
       } else {
-        historyDataUpdated[key]!.append(entry)
+        historyDataUpdated[key]!.append(entry.url)
       }
     }
 
@@ -285,6 +304,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       showLoadingMsgTimer.cancel()
 
       // Update data and reload UI
+      historyLookup = historyLookupUpdated
       historyData = historyDataUpdated
       historyDataKeys = historyDataKeysUpdated
 
@@ -371,7 +391,8 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
   func outlineView(_ outlineView: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
     if let item = item {
-      return historyData[item as! String]![index]
+      let url = historyData[item as! String]![index]
+      return historyLookup[url]!
     } else {
       return historyDataKeys[index]
     }

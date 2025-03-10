@@ -111,7 +111,7 @@ struct Preference {
 
     static let actionWhenNoOpenWindow = Key("actionWhenNoOpenWindow")
 
-    /** Resume from last position */
+    /// Enable the use of mpv's Watch Later feature to save & resume playback position (+ other properties)
     static let resumeLastPosition = Key("resumeLastPosition")
 
     static let preventScreenSaver = Key("preventScreenSaver")

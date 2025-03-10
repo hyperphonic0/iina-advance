@@ -179,6 +179,10 @@ struct Constants {
 
     static let keyDownHandlingTimeout = 1.0
 
+    /// There's a lot going on at startup, so wait a bit, to give other queues some time before fetching durations, since
+    /// they are a lot less important.
+    static let initialPlaylistDelayBeforePrefetch = 2.0
+
     /// Seeks are expensive; limit them to this frequency. (note that 1/60 == 0.017 fps)
     static let sliderSeekThrottlingInterval = 0.01
 

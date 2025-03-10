@@ -214,8 +214,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   override func viewDidAppear() {
     scrollPlaylistToCurrentItem()
     updateLoopBtnStatus()
-    /// The observer for `iinaPlaylistChanged` may not have loaded in time to be triggered; kick it off manually:
-    updateCachesForAllItems()
+    /// The observer for `iinaPlaylistChanged` may not have loaded in time to be triggered; kick it off manually.
+    PlayerCore.playlistQueue.asyncAfter(deadline: .now() + Constants.TimeInterval.initialPlaylistDelayBeforePrefetch) { [self] in
+      updateCachesForAllItems()
+    }
   }
 
   deinit {
