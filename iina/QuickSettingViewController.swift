@@ -518,8 +518,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   /// Reload `Subtitles` tab
   private func updateSubTabControls() {
-    hideSwitch.state = player.info.isSubVisible ? .on : .off
-    secHideSwitch.state = player.info.isSecondSubVisible ? .on : .off
+    let isSubVisible = player.info.isSubVisible
+    hideSwitch.state = isSubVisible ? .on : .off
+    subTableView.isEnabled = isSubVisible
+
+    let isSecondSubVisible = player.info.isSecondSubVisible
+    secHideSwitch.state = isSecondSubVisible ? .on : .off
+    secSubTableView.isEnabled = isSecondSubVisible
 
     if let currSub = player.info.currentTrack(.sub) {
       // FIXME: CollorWells cannot be disable?
@@ -704,6 +709,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     } else {
       return nil
     }
+
+    // Gray out table entries if table is disabled
+    if let columnName, let cell = tableView.makeView(withIdentifier: columnName, owner: self) as? NSTableCellView,
+       let textField = cell.textField {
+      textField.textColor = tableView.isEnabled ? .controlTextColor : .disabledControlTextColor
+    }
+
     // return track data
     if columnName == .isChosen {
       let isChosen = track == nil ? (activeId == 0) : (track!.id == activeId)

@@ -1519,14 +1519,15 @@ class MPVController: NSObject {
         player.log.verbose{"Δ mpv prop: `audio-delay` = \(delay)"}
         player.info.audioDelay = delay
         player.sendOSD(.audioDelay(delay))
+        player.reloadQuickSettingsView()
       }
-      player.reloadQuickSettingsView()
 
     case MPVOption.Subtitles.subVisibility:
       if let visible = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee {
         if player.info.isSubVisible != visible {
           player.info.isSubVisible = visible
           player.sendOSD(visible ? .subVisible : .subHidden)
+          player.reloadQuickSettingsView()
         }
       }
 
@@ -1535,6 +1536,7 @@ class MPVController: NSObject {
         if player.info.isSecondSubVisible != visible {
           player.info.isSecondSubVisible = visible
           player.sendOSD(visible ? .secondSubVisible : .secondSubHidden)
+          player.reloadQuickSettingsView()
         }
       }
 
