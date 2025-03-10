@@ -99,6 +99,7 @@ class HistoryController {
   }
 
   private func saveHistoryToFile() {
+    let sw = Utility.Stopwatch()
     do {
       log.verbose("Saving playback history to file \(plistURL.path.pii.quoted)")
       let data = try NSKeyedArchiver.archivedData(withRootObject: history, requiringSecureCoding: true)
@@ -108,7 +109,7 @@ class HistoryController {
       return
     }
 
-    log.verbose("Saving history: done")
+    log.verbose("Saving history done, in \(sw.secElapsedString)")
   }
 
   private func readHistoryFromFile() {
@@ -136,12 +137,17 @@ class HistoryController {
     let sw = Utility.Stopwatch()
 
     log.verbose{"ReloadAll starting, from \(plistURL.path.pii.quoted)"}
+
+    // Resetting this will also reset watch-later status, which is needed for live update after
+    // `PK.resumeLastPosition` is toggled.
+    fileExistsMap = [:]
+
     readHistoryFromFile()
     // Force a timeout to trigger full status reload prior to calling historyListDidUpdate()
     lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
     historyListDidUpdate()
 
-    log.verbose{"ReloadAll: done reading hisory file. Loading recentDocumentURLs"}
+    log.verbose{"ReloadAll: done reading history file. Loading recentDocumentURLs"}
     cachedRecentDocumentURLs = NSDocumentController.shared.recentDocumentURLs
 
     log.verbose{"ReloadAll: posting recentDocumentsDidChange"}
@@ -377,9 +383,13 @@ class HistoryController {
   }
 
   private func saveToLastPlayedFile(_ url: URL?, duration: Double?, position: Double?) {
-    guard Preference.bool(for: .resumeLastPosition) else { return }
     guard let url else {
       log.warn("Cannot save iinaLastPlayedFilePath or iinaLastPlayedFilePosition: url is nil!")
+      return
+    }
+    guard Preference.bool(for: .resumeLastPosition) else {
+      // May need to clear cached progress in case this pref was toggled from on to off during this launch
+      MediaMetaCache.shared.setCachedMediaDurationAndProgress(url, duration: duration, progress: nil)
       return
     }
     // FIXME: remove `iinaLastPlayedFilePath` and `iinaLastPlayedFilePosition` - they are not compatible with welcome window list
@@ -427,6 +437,8 @@ class HistoryController {
     let forceFullStatusReload = Date().timeIntervalSince(lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
     let sw = Utility.Stopwatch()
 
+    let watchLaterProgressEnabled = Preference.bool(for: .resumeLastPosition)
+
     var fileExistsMap: [URL: Bool] = forceFullStatusReload ? [:] : self.fileExistsMap
 
     var examinedCount: Int = 0
@@ -439,12 +451,30 @@ class HistoryController {
       fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
       processedCount += 1
 
-      entry.loadProgressFromWatchLater()
-      let wasWatchLaterFound = entry.mpvProgress != nil
-      if wasWatchLaterFound {
-        watchLaterCount += 1
-        // Notify History window + playlist UI in various windows
-        HistoryController.shared.postFileHistoryUpdateNotification(forURL: entry.url)
+      if watchLaterProgressEnabled {
+        entry.loadProgressFromWatchLater()
+        let wasWatchLaterFound = entry.mpvProgress != nil
+        if wasWatchLaterFound {
+          watchLaterCount += 1
+          // Notify History window + playlist UI in various windows
+          HistoryController.shared.postFileHistoryUpdateNotification(forURL: entry.url)
+        }
+      } else {
+        var didClearCachedProgress = false
+        if let cachedMediaMeta = MediaMetaCache.shared.getCachedMeta(for: entry.url), cachedMediaMeta.progress != nil {
+          MediaMetaCache.shared.setCachedMediaDurationAndProgress(entry.url, duration: cachedMediaMeta.duration, progress: nil)
+          didClearCachedProgress = true
+        }
+        if entry.mpvProgress != nil {
+          // Watch Later is no longer enabled, but its value is still cached.
+          entry.mpvProgress = nil
+          didClearCachedProgress = true
+        }
+        if didClearCachedProgress {
+          // After clearing the cached value, notify the UI that it changed (e.g., playlist may need to hide
+          // its progress bar)
+          HistoryController.shared.postFileHistoryUpdateNotification(forURL: entry.url)
+        }
       }
 
       // Do not batch for more than 1sec at a time

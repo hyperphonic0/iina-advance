@@ -58,6 +58,7 @@ extension PlayerWindowController {
       .controlBarToolbarButtons,
       .oscBarToolIconSize,
       .oscBarToolIconSpacing,
+
       .enableThumbnailPreview,
       .enableThumbnailForRemoteFiles,
       .enableThumbnailForMusicMode,
@@ -66,6 +67,7 @@ extension PlayerWindowController {
       .thumbnailRawSizePercentage,
       .thumbnailDisplayedSizePercentage,
       .thumbnailBorderStyle,
+
       .arrowButtonAction,
       .blackOutMonitor,
       .useLegacyFullScreen,

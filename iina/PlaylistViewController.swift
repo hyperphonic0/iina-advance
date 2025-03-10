@@ -177,6 +177,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     // Set up notification observers last
     playlistChangeObserver = NotificationCenter.default.addObserver(forName: .iinaPlaylistChanged, object: player, queue: .main) { [self] _ in
+      guard player.isPlaylistVisible else {
+        player.log.verbose{"Got iinaPlaylistChanged, but playlist is not visible. Ignoring"}
+        return
+      }
       player.log.verbose{"Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…"}
       playlistTotalLengthIsReady = false
       reloadData(playlist: true, chapters: false)
@@ -200,6 +204,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     fileExistsInfoUpdateObserver = NotificationCenter.default.addObserver(forName: .iinaFileExistsInfoDidUpdate, object: nil, queue: .main) { [self] note in
       guard !AppDelegate.shared.isTerminating else { return }
+      // Just cache this for local use. Doesn't change the displayed table rows
       self.fileExistsMap = HistoryController.shared.fileExistsMap
     }
 

@@ -497,6 +497,7 @@ extension Notification.Name {
   // The AppInputConfig was rebuilt
   static let iinaAppInputConfigDidChange = Notification.Name("IINAAppInputConfigDidChange")
   static let iinaFileLoaded = Notification.Name("IINAFileLoaded")
+  /// The playback history list has been altered in some way, usually requiring full data reload
   static let iinaHistoryListUpdated = Notification.Name("iinaHistoryListUpdated")
   /// Similar to `iinaHistoryListUpdated` but for a single file
   static let iinaFileHistoryDidUpdate = Notification.Name("IINAFileHistoryDidUpdate")

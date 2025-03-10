@@ -73,7 +73,7 @@ class PlaybackHistory: NSObject, NSSecureCoding {
 
     if progressDidChange {
       // Copy from the old paradigm into the new...
-      MediaMetaCache.shared.setCachedMediaDurationAndProgress(url, duration: duration, progress: mpvProgress)
+      MediaMetaCache.shared.setCachedMediaDurationAndProgress(url, duration: duration, progress: progress)
     }
   }
 
