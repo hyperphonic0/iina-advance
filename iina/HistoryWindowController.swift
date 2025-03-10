@@ -281,13 +281,10 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
         return string.localizedStandardContains(searchString)
       }
     }
-    var historyLookupUpdated: [URL: PlaybackHistory] = [:]
     var historyDataUpdated: [String: [URL]] = [:]
     var historyDataKeysUpdated: [String] = []
 
     for entry in historyList {
-      historyLookupUpdated[entry.url] = entry
-
       let key = getKey(entry)
 
       if historyDataUpdated[key] == nil {
@@ -303,8 +300,11 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
       showLoadingMsgTimer.cancel()
 
+      // Store latest history in lookup table. Do not remove any entries, to ensure that lookup will never fail
+      for entry in unfilteredHistory {
+        historyLookup[entry.url] = entry
+      }
       // Update data and reload UI
-      historyLookup = historyLookupUpdated
       historyData = historyDataUpdated
       historyDataKeys = historyDataKeysUpdated
 
