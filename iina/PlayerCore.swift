@@ -2424,6 +2424,7 @@ class PlayerCore: NSObject {
 
     // Cache these vars to keep them constant for background tasks
     let priorStateIfRestoring = windowController.priorStateIfRestoring
+    let isRestoring = priorStateIfRestoring != nil
 
     // Sync tracks
     if let priorStateIfRestoring {
@@ -2470,8 +2471,8 @@ class PlayerCore: NSObject {
                                      priorStateIfRestoring: priorStateIfRestoring)
     }
 
-    // History thread: update history given new playback URL
-    if let url = info.currentURL {
+    // History thread: update history given new playback URL. If restoring a prev playback, do not add again
+    if let url = info.currentURL, !isRestoring {
       // Pass nil as positionSec for now, to reflect mpv watch-later state. The watch-later info is deleted when a file is
       // opened. Later if we implement our own position tracking, we can do something more intuitive.
       HistoryController.shared.savePlaybackMetaAfterFileDidLoad(for: url,
