@@ -40,7 +40,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   private var draggedRowInfo: (Int, IndexSet)? = nil
 
-  private var playlistTableReloadDebouncer = Debouncer(delay: 0.1)
+  // can't use main queue - it will block
+  private var playlistTableReloadDebouncer = Debouncer(delay: 0.1, queue: PlayerCore.playlistQueue)
 
   @IBOutlet weak var playlistTableView: EditableTableView!
   @IBOutlet weak var chapterTableView: EditableTableView!
@@ -74,10 +75,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   private var distObservers: [NSObjectProtocol] = []  // For DistributedNotificationCenter
 
+  // TODO: refactor these into a better observer
   var playlistChangeObserver: NSObjectProtocol?
   var fileHistoryUpdateObserver: NSObjectProtocol?
   var fileExistsInfoUpdateObserver: NSObjectProtocol?
-  var enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration)
+
+  private var enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration)
 
   func updateTableColors() {
     // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
@@ -144,10 +147,40 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     updateVerticalConstraints()
 
-    // notifications
+#if DEBUG
+    enablePrefetching = enablePrefetching && !DebugConfig.disableLookaheadCaches
+#endif
+
+    if !enablePrefetching {
+      player.log.debug("Playlist: video duration prefetch is disabled")
+    }
+
+    // register for double click action
+    let action = #selector(performDoubleAction(sender:))
+    playlistTableView.doubleAction = action
+    playlistTableView.target = self
+    chapterTableView.doubleAction = action
+    chapterTableView.target = self
+
+    // register for drag and drop
+    playlistTableView.registerForDraggedTypes([.nsFilenames, .nsURL, .string])
+
+    (subPopover.contentViewController as! SubPopoverViewController).player = player
+    if let popoverView = subPopover.contentViewController?.view,
+      popoverView.trackingAreas.isEmpty {
+      popoverView.addTrackingArea(NSTrackingArea(rect: popoverView.bounds,
+                                                 options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
+                                                 owner: windowController, userInfo: [PlayerWindowController.TrackingArea.key: PlayerWindowController.TrackingArea.playerWindow]))
+    }
+    view.configureSubtreeForCoreAnimation()
+    view.layoutSubtreeIfNeeded()
+
+    // Set up notification observers last
     playlistChangeObserver = NotificationCenter.default.addObserver(forName: .iinaPlaylistChanged, object: player, queue: .main) { [self] _ in
-      self.playlistTotalLengthIsReady = false
-      self.reloadData(playlist: true, chapters: false)
+      player.log.verbose{"Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…"}
+      playlistTotalLengthIsReady = false
+      reloadData(playlist: true, chapters: false)
+      updateCachesForAllItems()
     }
 
     fileHistoryUpdateObserver = NotificationCenter.default.addObserver(forName: .iinaFileHistoryDidUpdate, object: nil, queue: .main) { [self] note in
@@ -170,39 +203,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       self.fileExistsMap = HistoryController.shared.fileExistsMap
     }
 
-#if DEBUG
-    enablePrefetching = enablePrefetching && !DebugConfig.disableLookaheadCaches
-#endif
-
-    if !enablePrefetching {
-      player.log.debug("Playlist video duration prefetch is disabled")
-    }
-
-    // register for double click action
-    let action = #selector(performDoubleAction(sender:))
-    playlistTableView.doubleAction = action
-    playlistTableView.target = self
-    chapterTableView.doubleAction = action
-    chapterTableView.target = self
-
-    // register for drag and drop
-    playlistTableView.registerForDraggedTypes([.nsFilenames, .nsURL, .string])
-
-    (subPopover.contentViewController as! SubPopoverViewController).player = player
-    if let popoverView = subPopover.contentViewController?.view,
-      popoverView.trackingAreas.isEmpty {
-      popoverView.addTrackingArea(NSTrackingArea(rect: popoverView.bounds,
-                                                 options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
-                                                 owner: windowController, userInfo: [PlayerWindowController.TrackingArea.key: PlayerWindowController.TrackingArea.playerWindow]))
-    }
-    view.configureSubtreeForCoreAnimation()
-    view.layoutSubtreeIfNeeded()
     player.log.verbose{"PlaylistView viewDidLoad done"}
   }
 
   override func viewDidAppear() {
     scrollPlaylistToCurrentItem()
     updateLoopBtnStatus()
+    /// The observer for `iinaPlaylistChanged` may not have loaded in time to be triggered; kick it off manually:
+    updateCachesForAllItems()
   }
 
   deinit {
@@ -232,8 +240,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard player.isActive else { return }
     if playlist {
       playlistTableReloadDebouncer.run { [self] in
-        player.log.verbose{"Reloading playlist table with \(player.info.playlist.count) entries"}
-        playlistTableView.reloadData()
+        DispatchQueue.main.async { [self] in
+          player.log.verbose{"Reloading playlist table with \(player.info.playlist.count) entries"}
+          playlistTableView.reloadData()
+        }
       }
     }
     if chapters {
@@ -265,12 +275,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   private func refreshTotalLength() {
     if let totalDuration = player.info.calculateTotalDuration() {
+      player.log.trace{"Playlist: recalculated total playlist duration: \(totalDuration)"}
       playlistTotalLengthIsReady = true
       playlistTotalLength = totalDuration
       DispatchQueue.main.async {
         self.showTotalLength()
       }
     } else {
+      player.log.verbose{"Playlist: failed to recaculate total duration; hiding length label"}
       DispatchQueue.main.async {
         self.hideTotalLength()
       }
@@ -578,9 +590,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       self.lastNowPlayingIndex = newNowPlayingIndex
 
       // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
-      reloadCache(forRowIndex: newNowPlayingIndex)
+      loadCachedItem(forRowIndex: newNowPlayingIndex, force: true)
       // ... also make sure the old "now playing" row is redrawn so it loses its status
-      reloadCache(forRowIndex: oldNowPlayingIndex)
+      loadCachedItem(forRowIndex: oldNowPlayingIndex, force: true)
 
       playlistTableView.scrollRowToVisible(newNowPlayingIndex)
     }
@@ -596,7 +608,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let rows = rows ?? IndexSet(integersIn: 0..<playlistTableView.numberOfRows)
     playlistTableView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integersIn: 0...1))
   }
-
 
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
     guard let identifier = tableColumn?.identifier else { return nil }
@@ -662,7 +673,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   /// Playlist Table: `Track Name` column cell
   private func updateCellForTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
     // FIXME: refactor to streamline flow of loading. Do not do it here
-    guard let (playlistItem, cachedMeta) = reloadCache(forRowIndex: rowIndex, isPlaying: isPlaying) else {
+    // FIXME: merge these two data structures
+    guard let (playlistItem, cachedMeta) = loadCachedItem(forRowIndex: rowIndex) else {
       player.log.error{"No playlist item found for rowIndex \(rowIndex). Skipping cell update"}
       return
     }
@@ -721,47 +733,91 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @discardableResult
-  func reloadCache(forRowIndex rowIndex: Int, isPlaying: Bool = false) -> (MPVPlaylistItem, MediaMeta?)? {
+  private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> (MPVPlaylistItem, MediaMeta?)? {
     guard rowIndex >= 0 else { return nil }
+    player.log.trace{"Playlist: reloading cache for row \(rowIndex)\(force ? " (forced)" : "")"}
     let playlistItems = player.info.playlist
     guard rowIndex < playlistItems.count else { return nil }
     let playlistItem = playlistItems[rowIndex]
     let url = playlistItem.url
 
     var existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: url)
-    // Kick this off, but return the existing (possibly stale) data below for efficiency
-    player.mpv.queue.async { [self] in
-      guard player.isActive else { return }
-      // Get updated title from mpv
-      let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
-      // FIXME: reload row only if data changed
-      let reloadRowIndex = {
-        DispatchQueue.main.async { [self] in
-          /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row
-          reloadPlaylistRow(rowIndex)
-        }
-      }
+    let needsRefresh = force || existingCachedMeta == nil || (url.isFileURL && !existingCachedMeta!.triedFFmpeg)
+    if needsRefresh {
+      // Kick this off, but return the existing (possibly stale) data below for efficiency
+      player.mpv.queue.async { [self] in
+        guard player.isActive else { return }
+        // Get updated title from mpv
+        let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
-      // Check cache again; we don't know how much time has passed since last access & want to avoid redundant file access
-      existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: url)
-      let needsCacheUpdate = existingCachedMeta == nil || (url.isFileURL && !existingCachedMeta!.triedFFmpeg)
-      if isPlaying || needsCacheUpdate {
+        // Check cache again; we don't know how much time has passed since last access & want to avoid redundant file access
+        existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: url)
+        guard needsRefresh || (mpvTitle != existingCachedMeta!.title) else { return }
+
         PlayerCore.playlistQueue.async { [self] in
           // Get watch-later form file system; get other meta from ffmpeg:
           let cachedMeta = MediaMetaCache.shared.updateCache(for: url, mpvTitle: mpvTitle)
-          if cachedMeta?.duration ?? 0 > 0 {
-            // if FFmpeg got the duration successfully
-            refreshTotalLength()
+          // Now update the total length if needed (but only if it's already done calculating):
+          if playlistTotalLengthIsReady {
+            let prevDuration = existingCachedMeta?.duration ?? 0
+            let updatedDuration = cachedMeta?.duration ?? 0
+            if updatedDuration != prevDuration {
+              // if FFmpeg got the duration successfully
+              refreshTotalLength()
+            }
           }
-          reloadRowIndex()
+          DispatchQueue.main.async { [self] in
+            /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row
+            reloadPlaylistRow(rowIndex)
+          }
         }
-      } else {
-        reloadRowIndex()
       }
     }
 
     return (playlistItem, existingCachedMeta)
+  }
+
+  private func updateCachesForAllItems() {
+    guard enablePrefetching else { return }
+
+    let sw = Utility.Stopwatch()
+
+    player.mpv.queue.async { [self] in
+      guard player.isActive else { return }
+      let playlistItems = player.info.playlist
+      var titles: [String?] = []
+      player.log.verbose{"Playlist: updating caches for \(playlistItems.count) rows…"}
+
+      for rowIndex in 0..<playlistItems.count {
+        // Get updated title from mpv
+        let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
+        titles.append(mpvTitle) // may be nil
+      }
+
+      for (rowIndex, item) in playlistItems.enumerated() {
+        let url = item.url
+        let updatedTitle = titles[rowIndex]
+        let existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: url)
+        let needsRefresh = existingCachedMeta == nil || (url.isFileURL && !existingCachedMeta!.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta!.title)
+        guard needsRefresh else { continue }
+        PlayerCore.playlistQueue.async { [self] in
+          // Get watch-later form file system; get other meta from ffmpeg:
+          MediaMetaCache.shared.updateCache(for: url, mpvTitle: updatedTitle)
+          // Refresh each row as it gets updated. May take a while to refresh all
+          DispatchQueue.main.async { [self] in
+            /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row
+            reloadPlaylistRow(rowIndex)
+          }
+        }
+      }
+
+      // Finally, append a task to recalculate the total length. Do not show it until it is done!
+      PlayerCore.playlistQueue.async { [self] in
+        player.log.verbose{"Playlist: finished cache updates for \(playlistItems.count) rows in \(sw.secElapsedString)"}
+        refreshTotalLength()
+      }
+    }
   }
 
   // MARK: - Context menu

@@ -265,6 +265,7 @@ struct Preference {
     /// Preferred height of playlist (excluding music mode)
     static let playlistWidth = Key("playlistWidth")
     static let prefetchPlaylistVideoDuration = Key("prefetchPlaylistVideoDuration")
+    static let prefetchPlaylistVideoGeometry = Key("prefetchPlaylistVideoGeometry")
 
     // - Thumbnail
 
@@ -1293,6 +1294,7 @@ struct Preference {
     .hideLeadingSidebarOnClick: true,
     .hideTrailingSidebarOnClick: true,
     .prefetchPlaylistVideoDuration: true,
+    .prefetchPlaylistVideoGeometry: false,
     .themeMaterial: Theme.system.rawValue,
     .playerWindowOpacity: 1.0,
     .enableOSD: true,

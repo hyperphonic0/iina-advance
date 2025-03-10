@@ -59,7 +59,11 @@ class MediaMetaCache {
   private var cachedFFMeta: [URL: FFVideoMeta] = [:]
 
   func fillInVideoSizes(_ videoFiles: [FileInfo], onBehalfOf player: PlayerCore) {
-    log.verbose{"Filling in video sizes for \(videoFiles.count) files for player \(player.label)…"}
+    guard Preference.bool(for: .prefetchPlaylistVideoGeometry) else {
+      log.verbose{"Prefetching video sizes is disabled (prefetchPlaylistVideoGeometry=NO), skipping…"}
+      return
+    }
+    log.verbose{"Prefetching video sizes for \(videoFiles.count) files for player \(player.label)…"}
     let sw = Utility.Stopwatch()
     var updateCount = 0
     for fileInfo in videoFiles {
