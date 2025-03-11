@@ -137,7 +137,8 @@ struct ControlBarGeometry {
     } else {
       // First establish bar height
       let desiredBarHeight = desiredBarHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
-      barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
+      // We need a bar height of 0 in some cases, such as resetting at window close, so do not enforce minimum bar height
+      barHeight = desiredBarHeight.clamped(to: 0...Constants.Distance.maxOSCBarHeight)
       let isTwoRowOSC = !forceSingleRowStyle && ControlBarGeometry.qualifiesForMultiLineOSC(barHeight: barHeight, oscPosition, mode)
       if isTwoRowOSC {
         let playSliderHeight: CGFloat
@@ -156,7 +157,7 @@ struct ControlBarGeometry {
         // Is single-line OSC
         self.playSliderHeight = barHeight
         // Reduce max button size so they don't touch edges or (if .top) icons above
-        fullIconHeight = barHeight - 8
+        fullIconHeight = max(0, barHeight - 8)
       }
 
       if forceSingleRowStyle || oscPosition == .top {

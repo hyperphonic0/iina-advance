@@ -157,6 +157,11 @@ extension PlayerWindowController {
       }
     }
 
+    if transition.isWindowInitialLayout {
+      // Reset other views to initial minimums:
+      speedLabelBtmConstraint.isActive = false
+    }
+
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
@@ -275,15 +280,16 @@ extension PlayerWindowController {
 
   /// -------------------------------------------------
   /// CLOSE OLD PANELS
-  /// This step is not always executed (e.g., for full screen toggle).
+  /// This step is not always executed (e.g.: not for initial layout or for full screen toggle).
   /// Expected to be animated.
   func closeOldPanels(_ transition: LayoutTransition) {
     let outputLayout = transition.outputLayout
     let isClosingBarOSC = transition.isClosingBarOSC
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
-    log.verbose{"[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn)"}
+    log.verbose{"[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)"}
 
     // TODO: incorporate this into middleGeometry for cleaner code
+    // This check is true for isWindowInitialLayout, but currently `closeOldPanels` is not executed for that.
     if isOpeningBarOSC || isClosingBarOSC {
       // Shrink all the buttons to create cool animated effect
       for toolbarItem in fragToolbarView.views {

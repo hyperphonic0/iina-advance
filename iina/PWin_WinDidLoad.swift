@@ -472,6 +472,7 @@ extension PlayerWindowController {
 
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
 
+    log.verbose{"Init fragPlaybackBtnsHeightConstraint = 0"}
     fragPlaybackBtnsHeightConstraint = fragPlaybackBtnsView.heightAnchor.constraint(equalToConstant: 0)
     fragPlaybackBtnsHeightConstraint.identifier = "fragPlaybackBtns-HeightConstraint"
     fragPlaybackBtnsHeightConstraint.isActive = true
@@ -514,10 +515,10 @@ extension PlayerWindowController {
     arrowBtnsEqualWidthConstraint.identifier = .init("arrowBtnsEqualWidthConstraint")
     arrowBtnsEqualWidthConstraint.isActive = true
 
-    let leftArrowBtnVertOffsetConstraint = leftArrowButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
-    leftArrowBtnVertOffsetConstraint.isActive = true
-    let rightArrowBtnVertOffsetConstraint = rightArrowButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
-    rightArrowBtnVertOffsetConstraint.isActive = true
+    let leftArrowBtnVertCenterConstraint = leftArrowButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
+    leftArrowBtnVertCenterConstraint.isActive = true
+    let rightArrowBtnVertCenterConstraint = rightArrowButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
+    rightArrowBtnVertCenterConstraint.isActive = true
   }
 
   private func initSpeedLabel() {

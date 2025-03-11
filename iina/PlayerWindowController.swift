@@ -957,8 +957,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       // CLOSE SIDEBARS for reopen
       let currentLayout = currentLayout
+      let newOSCGeo = ControlBarGeometry(mode: .windowedNormal, barHeight: 0)
       let newLayoutSpec = currentLayout.spec.clone(leadingSidebar: currentLayout.leadingSidebar.clone(visibility: .hide),
-                                               trailingSidebar: currentLayout.trailingSidebar.clone(visibility: .hide))
+                                                   trailingSidebar: currentLayout.trailingSidebar.clone(visibility: .hide),
+                                                   controlBarGeo: newOSCGeo)
       let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutSpec, totalStartingDuration: 0, totalEndingDuration: 0)
 
       // Just like at window restore, do all the layout in one block
