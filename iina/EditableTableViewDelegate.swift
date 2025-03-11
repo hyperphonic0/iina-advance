@@ -67,10 +67,17 @@ protocol EditableTableViewDelegate {
   func doEditMenuDelete()
 
   // No need for selectAll - it's trivial and NSTableView provides it
+
+  func handleMouseDown(with event: NSEvent) -> Bool
 }
 
 // Adds null defaults for all protocol methods
 extension EditableTableViewDelegate {
+
+  func handleMouseDown(with event: NSEvent) -> Bool {
+    return false
+  }
+
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
     // If in-line editing is enabled, then this method should be overriden, so this message should never be seen.
     Logger.log("EditableTableViewDelegate.editDidEndWithNewText(): null default method was called!", level: .warning)

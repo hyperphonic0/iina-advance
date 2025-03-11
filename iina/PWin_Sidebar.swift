@@ -850,12 +850,11 @@ extension PlayerWindowController {
       let sf = leadingSidebarView.frame
 
       let dragRectCenterX = videoView.userInterfaceLayoutDirection == .rightToLeft ?
-      sf.origin.x - Constants.Sidebar.resizeActivationRadius : sf.origin.x + sf.width
+      sf.origin.x : sf.origin.x + sf.width
 
-      // TODO: need to find way to resize from inside of sidebar
-      let activationRect = NSRect(x: dragRectCenterX,
+      let activationRect = NSRect(x: dragRectCenterX - Constants.Sidebar.resizeActivationRadius,
                                   y: sf.origin.y,
-                                  width: Constants.Sidebar.resizeActivationRadius,
+                                  width: Constants.Sidebar.resizeActivationRadius + Constants.Sidebar.resizeActivationRadius,
                                   height: sf.height)
       if NSPointInRect(mousePositionInWindow, activationRect) {
         return true
@@ -873,8 +872,9 @@ extension PlayerWindowController {
       // TODO: need to find way to resize from inside of sidebar
       let activationRect = NSRect(x: dragRectCenterX - Constants.Sidebar.resizeActivationRadius,
                                   y: sf.origin.y,
-                                  width: Constants.Sidebar.resizeActivationRadius,
+                                  width: Constants.Sidebar.resizeActivationRadius + Constants.Sidebar.resizeActivationRadius,
                                   height: sf.height)
+      log.verbose{"Point=\(mousePositionInWindow), activationRect: \(activationRect)"}
       if NSPointInRect(mousePositionInWindow, activationRect) {
         return true
       }

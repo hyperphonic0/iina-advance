@@ -118,6 +118,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       view.dataSource = self
     }
     playlistTableView.menu?.delegate = self
+    playlistTableView.editableDelegate = self
 
     [deleteBtn, loopBtn, shuffleBtn].forEach {
       $0?.image?.isTemplate = true
@@ -1079,6 +1080,13 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 }
 
+/// EditableTableViewDelegate
+
+extension PlaylistViewController: EditableTableViewDelegate {
+  func handleMouseDown(with event: NSEvent) -> Bool {
+    return player.windowController.startResizingSidebar(with: event)
+  }
+}
 
 class PlaylistTrackCellView: NSTableCellView {
   @IBOutlet weak var subBtn: NSButton!
