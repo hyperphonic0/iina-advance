@@ -963,19 +963,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                                                    controlBarGeo: newOSCGeo)
       let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutSpec, totalStartingDuration: 0, totalEndingDuration: 0)
 
-      // Just like at window restore, do all the layout in one block
-      animationPipeline.submit(.instantTask { [self] in
-        log.trace("Resetting window geometry for close")
+      // Do all the layout instantly. Need to run each in its own transaction however, to avoid intractable constraint errors
+      var cleanupTasks = resetTransition.tasks.map { IINAAnimation.Task.instantTask($0.runFunc) }
+      cleanupTasks.append(.instantTask { [self] in
         pendingVideoGeoUpdateTasks = []
-        do {
-          for task in resetTransition.tasks {
-            try task.runFunc()
-          }
-
-        } catch {
-          log.error("Failed to run reset layout tasks: \(error)")
-        }
-
         // The user may expect both to be updated.
         // Make sure to set these *after* running the above layout tasks, to ensure correct geometry.
         PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
@@ -983,6 +974,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
         log.trace{"Done: windowWillClose cleanup on main DQ"}
       })
+
+      log.trace("Resetting window geometry for close")
+      animationPipeline.submit(cleanupTasks)
     }
 
     player.mpv.queue.async { [self] in

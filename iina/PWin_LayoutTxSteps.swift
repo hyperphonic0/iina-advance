@@ -533,10 +533,26 @@ extension PlayerWindowController {
     }
 
     if !outputLayout.hasControlBar {
-      log.verbose{"[\(transition.name)] Removing OSC views from window"}
+      log.verbose{"[\(transition.name)] Removing playSliderAndTimeLabelsView, oscOneRowView & oscTwoRowView from window"}
       playSliderAndTimeLabelsView.removeFromSuperview()
-      oscOneRowView.removeFromSuperview()
-      oscTwoRowView.removeFromSuperview()
+      if oscOneRowView.superview != nil {
+        oscOneRowView.dispose()
+      }
+      if oscTwoRowView.superview != nil {
+        oscTwoRowView.dispose()
+      }
+    } else if outputLayout.enableOSC {
+      if outputLayout.controlBarGeo.isTwoRowBarOSC {
+        if oscOneRowView.superview != nil {
+          log.verbose{"[\(transition.name)] Removing oscOneRowView from window"}
+          oscOneRowView.dispose()
+        }
+      } else {
+        if oscTwoRowView.superview != nil {
+          log.verbose{"[\(transition.name)] Removing oscTwoRowView from window"}
+          oscTwoRowView.dispose()
+        }
+      }
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
