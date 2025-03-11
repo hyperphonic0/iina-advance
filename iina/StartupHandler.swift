@@ -503,11 +503,11 @@ class StartupHandler {
 
     if isDoneLaunching {
       if window.isMiniaturized {
-        log.verbose{"OpenWindow: deminiaturizing window \(window.savedStateName.quoted)"}
+        Logger.log.verbose{"OpenWindow: deminiaturizing window \(window.savedStateName.quoted)"}
         // Need to call this instead of showWindow if minimized (otherwise there are visual glitches)
         window.deminiaturize(self)
       } else {
-        log.verbose{"OpenWindow: showing window \(window.savedStateName.quoted)"}
+        Logger.log.verbose{"OpenWindow: showing window \(window.savedStateName.quoted)"}
         wc.showWindow(window)
       }
 

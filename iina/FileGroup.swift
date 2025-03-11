@@ -96,7 +96,7 @@ class FileGroup {
   }
 
   private func tryGroupFiles() {
-    Logger.log("Try group files, prefix=\(prefix), count=\(contents.count)", level: .verbose, subsystem: subsystem)
+    subsystem.verbose("Try group files, prefix=\(prefix.quoted), count=\(contents.count)")
     guard contents.count >= 3 else {
       Logger.log("Contents count < 3, skipped", level: .verbose, subsystem: subsystem)
       return

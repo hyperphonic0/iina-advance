@@ -24,11 +24,15 @@ struct InfoDictionary {
     return String(buildCommit.prefix(7))
   }
 
+  var buildDateString: String? {
+    return dictionary["\(buildKeyPrefix).date"] as? String
+  }
+
   var buildDate: Date? {
     let dateParser: (String) -> Date?
     let formatter = ISO8601DateFormatter()
     dateParser = formatter.date(from:)
-    guard let date = dictionary["\(buildKeyPrefix).date"] as? String,
+    guard let date = buildDateString,
           let dateObj = dateParser(date) else {
       return nil
     }

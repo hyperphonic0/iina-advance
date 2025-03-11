@@ -97,15 +97,10 @@ struct AppDetailsLogging {
   /// - The git branch
   /// - The git commit
   private func logBuildDetails() {
-    guard let date = InfoDictionary.shared.buildDate,
+    guard let date = InfoDictionary.shared.buildDateString,
           let sdk = InfoDictionary.shared.buildSDK,
           let xcode = InfoDictionary.shared.buildXcode else { return }
-    let toString = DateFormatter()
-    toString.dateStyle = .medium
-    toString.timeStyle = .medium
-    // Always use the en_US locale for dates in the log file.
-    toString.locale = Locale(identifier: "en_US")
-    Logger.log("Built using Xcode \(xcode) and macOS SDK \(sdk) on \(toString.string(from: date))")
+    Logger.log("Built using Xcode \(xcode) and macOS SDK \(sdk) on \(date)")
     guard let branch = InfoDictionary.shared.buildBranch,
           let commit = InfoDictionary.shared.buildCommit else { return }
     Logger.log("From branch \(branch), commit \(commit)")

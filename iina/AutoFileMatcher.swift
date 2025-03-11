@@ -114,8 +114,8 @@ class AutoFileMatcher {
       }
     }
 
-    log.debug("Searching subtitles from \(subDirs.count) directories...")
-    log.verbose("\(subDirs)")
+    log.debug{"Searching subtitles from \(subDirs.count) directories..."}
+    log.verbose{"Sub search dirs: \(subDirs)"}
     // get all possible sub files
     var subtitles = subFiles
 
@@ -126,7 +126,7 @@ class AutoFileMatcher {
       }
     }
 
-    log.debug("Got \(subtitles.count) subtitles")
+    log.debug{"Got \(subtitles.count) subtitles"}
     return subtitles
   }
 
@@ -150,7 +150,7 @@ class AutoFileMatcher {
     try checkTicket()
     
     player.mpv.queue.async { [self] in
-      log.debug("Adding \(videoFiles.count) video files & \(audioFiles.count) audio files to playlist")
+      log.debug{"Adding \(videoFiles.count) video files & \(audioFiles.count) audio files to playlist"}
       player._addToPlaylist(pathListIncludingCurrent: pathList)
     }
   }
