@@ -159,8 +159,10 @@ extension PlayerWindowController {
   }
 
   func removeAllObservers() {
-    removeObserver(self, forKeyPath: #keyPath(window.effectiveAppearance))
     co.removeAllObservers()
+    ObjcUtils.silenced { [self] in
+      removeObserver(self, forKeyPath: #keyPath(window.effectiveAppearance))
+    }
   }
 
   /// Called each time a pref `key`'s value is set
