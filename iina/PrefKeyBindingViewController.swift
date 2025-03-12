@@ -63,12 +63,14 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   @IBOutlet weak var showFromAllSourcesBtn: NSButton!
 
   deinit {
-    ObjcUtils.silenced { [self] in
-      for observer in observers {
+    for observer in observers {
+      ObjcUtils.silenced {
         NotificationCenter.default.removeObserver(observer)
       }
-      observers = []
+    }
+    observers = []
 
+    ObjcUtils.silenced { [self] in
       removeObserver(self, forKeyPath: #keyPath(view.effectiveAppearance))
     }
   }

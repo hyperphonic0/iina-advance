@@ -242,6 +242,7 @@ class ShutdownHandler {
         NotificationCenter.default.removeObserver(observer)
       }
     }
+    observers = []
     return true
   }
 

@@ -52,13 +52,15 @@ class ConfTableStateManager: NSObject {
 
   deinit {
     for observer in observers {
-      NotificationCenter.default.removeObserver(observer)
+      ObjcUtils.silenced {
+        NotificationCenter.default.removeObserver(observer)
+      }
     }
     observers = []
 
     // Remove observers for IINA preferences.
-    ObjcUtils.silenced {
-      for key in [Preference.Key.currentInputConfigName] {
+    for key in [Preference.Key.currentInputConfigName] {
+      ObjcUtils.silenced {
         UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
       }
     }

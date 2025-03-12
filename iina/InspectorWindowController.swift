@@ -244,7 +244,9 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
     updateTimer?.invalidate()
     updateTimer = nil
     for observer in observers {
-      NotificationCenter.default.removeObserver(observer)
+      ObjcUtils.silenced {
+        NotificationCenter.default.removeObserver(observer)
+      }
     }
     observers = []
   }

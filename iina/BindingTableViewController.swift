@@ -77,7 +77,9 @@ class BindingTableViewController: NSObject {
 
   deinit {
     for observer in observers {
-      NotificationCenter.default.removeObserver(observer)
+      ObjcUtils.silenced {
+        NotificationCenter.default.removeObserver(observer)
+      }
     }
     observers = []
   }

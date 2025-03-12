@@ -90,7 +90,9 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     super.viewWillDisappear()
     // Disable observers when not in use to save CPU
     for observer in observers {
-      NotificationCenter.default.removeObserver(observer)
+      ObjcUtils.silenced {
+        NotificationCenter.default.removeObserver(observer)
+      }
     }
     observers = []
   }

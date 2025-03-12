@@ -222,18 +222,20 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   deinit {
-    for observer in distObservers {
-      DistributedNotificationCenter.default().removeObserver(observer)
-    }
-    distObservers = []
-    if let playlistChangeObserver {
-      NotificationCenter.default.removeObserver(playlistChangeObserver)
-    }
-    if let fileHistoryUpdateObserver {
-      NotificationCenter.default.removeObserver(fileHistoryUpdateObserver)
-    }
-    if let fileExistsInfoUpdateObserver {
-      NotificationCenter.default.removeObserver(fileExistsInfoUpdateObserver)
+    ObjcUtils.silenced { [self] in
+      for observer in distObservers {
+        DistributedNotificationCenter.default().removeObserver(observer)
+      }
+      distObservers = []
+      if let playlistChangeObserver {
+        NotificationCenter.default.removeObserver(playlistChangeObserver)
+      }
+      if let fileHistoryUpdateObserver {
+        NotificationCenter.default.removeObserver(fileHistoryUpdateObserver)
+      }
+      if let fileExistsInfoUpdateObserver {
+        NotificationCenter.default.removeObserver(fileExistsInfoUpdateObserver)
+      }
     }
   }
 

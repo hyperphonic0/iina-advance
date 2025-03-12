@@ -129,7 +129,9 @@ class FilterWindowController: WindowController, NSWindowDelegate {
   }
 
   deinit {
-    NotificationCenter.default.removeObserver(self)
+    ObjcUtils.silenced { [self] in
+      NotificationCenter.default.removeObserver(self)
+    }
   }
 
   func addFilter(_ filter: MPVFilter) -> Bool {
