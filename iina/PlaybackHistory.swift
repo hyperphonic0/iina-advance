@@ -65,18 +65,6 @@ class PlaybackHistory: NSObject, NSSecureCoding {
     self.duration = duration
   }
 
-  // This is a long-running operation. Load this asynchronously
-  func loadProgressFromWatchLater() {
-    let progress = Utility.playbackProgressFromWatchLater(mpvMd5)
-    let progressDidChange = progress != self.mpvProgress
-    self.mpvProgress = progress
-
-    if progressDidChange {
-      // Copy from the old paradigm into the new...
-      MediaMetaCache.shared.setCachedMediaDurationAndProgress(url, duration: duration, progress: progress)
-    }
-  }
-
   func encode(with aCoder: NSCoder) {
     aCoder.encode(url, forKey: KeyUrl)
     aCoder.encode(name, forKey: KeyName)

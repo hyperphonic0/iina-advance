@@ -199,7 +199,7 @@ class HistoryController {
     let historyList = history
     let historyListVersion = historyListVersion
     bgFileQueue.async { [self] in
-      reloadFileMeta(for: historyList, startingAt: 0, withVersion: historyListVersion)
+      reloadFileExistsAndProgress(forList: historyList, startingAt: 0, withVersion: historyListVersion)
     }
 
     log.verbose("Posting iinaHistoryListUpdated")
@@ -358,7 +358,7 @@ class HistoryController {
         }
       }
       if let historyEntry {
-        reloadFileMeta(forEntry: historyEntry)
+        reloadFileExistsAndProgress(forEntry: historyEntry)
       }
     }
   }
@@ -377,11 +377,11 @@ class HistoryController {
       // Ensure Playback History window is updated in real time
       if Preference.bool(for: .recordPlaybackHistory) {
         /// this will reload the `mpvProgress` field from the `watch-later` config files
-        historyEntry.loadProgressFromWatchLater()
+        loadProgressFromWatchLater(historyEntry)
       }
 
       // Ensure playlist is updated relatively quickly
-      reloadFileMeta(forEntry: historyEntry)
+      reloadFileExistsAndProgress(forEntry: historyEntry)
     }
   }
 
@@ -411,25 +411,27 @@ class HistoryController {
     MediaMetaCache.shared.setCachedMediaDurationAndProgress(url, duration: duration, progress: position)
   }
 
-  // MARK: - FileExists & watch-later
+  // MARK: - FileExists & Progress from watch-later
 
-  private func reloadFileMeta(forEntry entry: PlaybackHistory) {
+  /// Fills in watch-later meta & the fileExists map for the given single history entry.
+  /// NOTE: Unlike `reloadFileExistsAndProgress(forList:)`, this will overwrite any existing entry in the current `fileExistsMap`.
+  private func reloadFileExistsAndProgress(forEntry entry: PlaybackHistory) {
     guard !isAppTerminating else { return }
-
-    let url = entry.url
 
     bgFileQueue.async { [self] in
       guard !isAppTerminating else { return }
-      _reloadFileMeta(forEntry: entry)
+      let fileExists = _reloadFileExistsAndProgress(forEntry: entry)
+      fileExistsMap[entry.url] = fileExists
     }
   }
 
-  private func _reloadFileMeta(forEntry entry: PlaybackHistory) {
-    fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
+  /// Returns true if entry is file and it was found to exist in the file system
+  private func _reloadFileExistsAndProgress(forEntry entry: PlaybackHistory) -> Bool {
+    let fileExists = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
 
     let watchLaterProgressEnabled = Preference.bool(for: .resumeLastPosition)
     if watchLaterProgressEnabled {
-      entry.loadProgressFromWatchLater()
+      loadProgressFromWatchLater(entry)
       let wasWatchLaterFound = entry.mpvProgress != nil
       if wasWatchLaterFound {
         // Notify History window + playlist UI in various windows
@@ -452,10 +454,15 @@ class HistoryController {
         postFileHistoryUpdateNotification(forURL: entry.url)
       }
     }
+
+    return fileExists
   }
 
-  /// Fills in watch-later meta & the fileExists map
-  private func reloadFileMeta(for historyList: [PlaybackHistory], startingAt startIndex: Int, withVersion historyVersion: Int) {
+  /// Fills in watch-later meta & the fileExists map for the given history entries.
+  /// Skips over entries which already have values in the current `fileExistsMap` unless it determines that a full reload
+  /// is due.
+  private func reloadFileExistsAndProgress(forList historyList: [PlaybackHistory],
+                                           startingAt startIndex: Int, withVersion historyVersion: Int) {
     // Put all FileManager stuff in background queue. It can hang for a long time if there are network problems.
     // Network or file system can change over time and cause our info to become out of date.
     assert(DispatchQueue.isExecutingIn(bgFileQueue))
@@ -471,19 +478,18 @@ class HistoryController {
     let forceFullStatusReload = Date().timeIntervalSince(lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
     let sw = Utility.Stopwatch()
 
-    let watchLaterProgressEnabled = Preference.bool(for: .resumeLastPosition)
-
-    var fileExistsMap: [URL: Bool] = forceFullStatusReload ? [:] : self.fileExistsMap
+    var fileExistsMapUpdated: [URL: Bool] = forceFullStatusReload ? [:] : fileExistsMap
 
     var examinedCount: Int = 0
     var processedCount: Int = 0
     var watchLaterCount: Int = 0
     for entry in historyList[startIndex...] {
       examinedCount += 1
-      guard fileExistsMap[entry.url] == nil else { continue }
+      guard fileExistsMapUpdated[entry.url] == nil else { continue }
       guard !isAppTerminating else { break }
 
-      _reloadFileMeta(forEntry: entry)
+      let fileExists = _reloadFileExistsAndProgress(forEntry: entry)
+      fileExistsMapUpdated[entry.url] = fileExists
       processedCount += 1
 
       let wasWatchLaterFound = entry.mpvProgress != nil
@@ -503,7 +509,7 @@ class HistoryController {
       }
     }
 
-    self.fileExistsMap = fileExistsMap
+    self.fileExistsMap = fileExistsMapUpdated
     log.trace{"Filled in fileExists for \(processedCount) / \(examinedCount) histories (\(historyList.count - examinedCount - startIndex) remaining) in \(sw.secElapsedString), fullReload=\(forceFullStatusReload.yn) watchLater=\(watchLaterCount)"}
     if forceFullStatusReload {
       lastCompleteStatusReloadTime = Date()
@@ -523,10 +529,40 @@ class HistoryController {
     } else {
       // Don't hog the queue; allow other tasks to finish & enqueue behind them:
       bgFileQueue.async { [self] in
-        reloadFileMeta(for: historyList, startingAt: newStartIndex, withVersion: historyVersion)
+        reloadFileExistsAndProgress(forList: historyList, startingAt: newStartIndex, withVersion: historyVersion)
       }
     }
   }
+
+  // This is a long-running operation. Load this asynchronously
+  func loadProgressFromWatchLater(_ historyEntry: PlaybackHistory) {
+    let progress = playbackProgressFromWatchLater(historyEntry.mpvMd5)
+    let progressDidChange = progress != historyEntry.mpvProgress
+    historyEntry.mpvProgress = progress
+
+    if progressDidChange {
+      // Copy from the old paradigm into the new...
+      MediaMetaCache.shared.setCachedMediaDurationAndProgress(historyEntry.url, duration: historyEntry.duration, progress: progress)
+    }
+  }
+
+  /// Returns saved playback progress (in seconds) or `nil` if not found in `watch-later` data.
+  func playbackProgressFromWatchLater(_ mpvMd5: String) -> Double? {
+    // No point in loading/showing this if it's not used
+    guard Preference.bool(for: .resumeLastPosition) else { return nil }
+
+    let fileURL = Utility.watchLaterURL.appendingPathComponent(mpvMd5)
+    if let reader = StreamReader(path: fileURL.path),
+       let firstLine = reader.nextLine(),
+       firstLine.hasPrefix("start="),
+       let progressString = firstLine.components(separatedBy: "=").last,
+       let progress = Double(progressString) {
+      return progress
+    } else {
+      return nil
+    }
+  }
+
 
   // MARK: - Notifications
 

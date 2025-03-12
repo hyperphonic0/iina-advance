@@ -874,7 +874,7 @@ extension PlayerWindowController {
                                   y: sf.origin.y,
                                   width: Constants.Sidebar.resizeActivationRadius + Constants.Sidebar.resizeActivationRadius,
                                   height: sf.height)
-      log.verbose{"Point=\(mousePositionInWindow), activationRect: \(activationRect)"}
+      
       if NSPointInRect(mousePositionInWindow, activationRect) {
         return true
       }

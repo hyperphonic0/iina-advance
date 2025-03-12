@@ -741,7 +741,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @discardableResult
-  private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> (MPVPlaylistItem, MediaMeta?)? {
+  private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> (PlaybackID, MediaMeta?)? {
     guard rowIndex >= 0 else { return nil }
     player.log.trace{"Playlist: reloading cache for row \(rowIndex)\(force ? " (forced)" : "")"}
     let playlistItems = player.info.playlist
@@ -921,7 +921,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard let index = sender.targetRows.first else { return }
     let playlistItems = player.info.playlist
     guard index < playlistItems.count else { return }
-    let filename = Playback.path(from: playlistItems[index].url)
+    let filename = playlistItems[index].path
     let fileURL = playlistItems[index].url.deletingLastPathComponent()
     Utility.quickMultipleOpenPanel(title: NSLocalizedString("alert.choose_media_file.title", comment: "Choose Media File"), dir: fileURL, canChooseDir: true) { subURLs in
       for subURL in subURLs {
@@ -936,7 +936,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let playlistItems = player.info.playlist
     for index in sender.targetRows {
       guard index < playlistItems.count else { continue }
-      let filename = Playback.path(from: playlistItems[index].url)
+      let filename = playlistItems[index].path
       player.info.$matchedSubs.withLock { $0[filename]?.removeAll() }
       self.reloadPlaylistRows(sender.targetRows)
     }
@@ -976,7 +976,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     if !rows.isEmpty {
       let firstItem = playlistItems[rows.first!]
-      let matchedSubCount = player.info.getMatchedSubs(Playback.path(from: firstItem.url))?.count ?? 0
+      let matchedSubCount = player.info.getMatchedSubs(firstItem.path)?.count ?? 0
       let title: String = isSingleItem ? firstItem.displayName :
         String(format: NSLocalizedString("pl_menu.title_multi", comment: "%d Items"), rows.count)
 
@@ -1210,7 +1210,7 @@ class SubPopoverViewController: NSViewController, NSTableViewDelegate, NSTableVi
     player.info.$matchedSubs.withLock { $0[filePath]?.removeAll() }
     tableView.reloadData()
     let playlist = player.info.playlist
-    if let row = playlist.firstIndex(where: { Playback.path(from: $0.url) == filePath }) {
+    if let row = playlist.firstIndex(where: { $0.path == filePath }) {
       playlistTableView.reloadData(forRowIndexes: IndexSet(integer: row), columnIndexes: IndexSet(integersIn: 0...1))
     }
   }

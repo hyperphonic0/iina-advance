@@ -17,7 +17,7 @@ extension PlayerWindowController {
         let playlistItems = player.info.playlist
         var playlist = ""
         for item in playlistItems {
-          let filename = Playback.path(from: item.url)
+          let filename = PlaybackID.path(from: item.url)
           playlist.append((filename + "\n"))
         }
         do {

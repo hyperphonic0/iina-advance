@@ -150,7 +150,7 @@ class PlaybackInfo {
   var isBufferUnderrun = false
   var cachedRanges: [(Double, Double)] = []
 
-  var playlist: [MPVPlaylistItem] = []
+  var playlist: [PlaybackID] = []
   var playlistPlayingPos: Int = -1  /// `MPVProperty.playlistPlayingPos`
 
   func constrainVideoPosition() {
@@ -343,13 +343,13 @@ class PlaybackInfo {
   var bufferingState: Int = 0
 
   func calculateTotalDuration() -> Double? {
-    let playlist: [MPVPlaylistItem] = playlist
+    let playlist: [PlaybackID] = playlist
     let urls = playlist.map { $0.url }
     return MediaMetaCache.shared.calculateTotalDuration(urls)
   }
 
   func calculateTotalDuration(_ indexes: IndexSet) -> Double {
-    let playlist: [MPVPlaylistItem] = playlist
+    let playlist: [PlaybackID] = playlist
     let urls = indexes.compactMap{ $0 < playlist.count ? playlist[$0].url : nil }
     return MediaMetaCache.shared.calculateTotalDuration(urls)
   }

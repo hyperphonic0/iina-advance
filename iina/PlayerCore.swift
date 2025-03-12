@@ -391,7 +391,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard !urls.isEmpty else { return 0 }
-    log.debug{"OpenURLs: \(urls.map{Playback.path(from: $0).pii})"}
+    log.debug{"OpenURLs: \(urls.map{PlaybackID.path(from: $0).pii})"}
     // Reset:
     openedWindowsSetIndex = 0
 
@@ -1526,7 +1526,7 @@ class PlayerCore: NSObject {
 
   func loadExternalVideoFile(_ url: URL) {
     mpv.queue.async { [self] in
-      let urlPath = Playback.path(from: url)
+      let urlPath = PlaybackID.path(from: url)
       let code = mpv.command(.videoAdd, args: [urlPath], checkError: false)
       if code < 0 {
         log.error("Unsupported video: \(urlPath)")
@@ -1539,7 +1539,7 @@ class PlayerCore: NSObject {
 
   func loadExternalAudioFile(_ url: URL) {
     mpv.queue.async { [self] in
-      let urlPath = Playback.path(from: url)
+      let urlPath = PlaybackID.path(from: url)
       let code = mpv.command(.audioAdd, args: [urlPath], checkError: false)
       if code < 0 {
         log.error("Unsupported audio: \(urlPath)")
@@ -1576,7 +1576,7 @@ class PlayerCore: NSObject {
       /// ```<select>  Select the subtitle immediately (default).
       ///    <auto>    Don't select the subtitle. (Or in some special situations, let the default stream
       ///              selection mechanism decide.)```
-      let urlPath = Playback.path(from: url)
+      let urlPath = PlaybackID.path(from: url)
       let code = mpv.command(.subAdd, args: [urlPath, "auto"], checkError: false)
       if code < 0 {
         let errorDesc = String(cString: mpv_error_string(code))
@@ -1726,7 +1726,7 @@ class PlayerCore: NSObject {
   func _addToPlaylist(urls: any Collection<URL>, silent: Bool = false) {
     _reloadPlaylist(silent: true)  // get up-to-date list first
     for url in urls {
-      let urlPath = Playback.path(from: url)
+      let urlPath = PlaybackID.path(from: url)
       _addToPlaylist(urlPath)
     }
 
@@ -2373,7 +2373,7 @@ class PlayerCore: NSObject {
     let duration = mpv.getDouble(MPVProperty.duration)
     info.playbackDurationSec = duration
     if let path = mpv.getString(MPVProperty.path) {
-      if let url = Playback.url(fromPath: path) {
+      if let url = PlaybackID.url(fromPath: path) {
         MediaMetaCache.shared.setCachedMediaDuration(url, duration)
       } else {
         log.error{"MediaMetaCache: could not create URL for path, skipping: \(path)"}
@@ -3056,7 +3056,7 @@ class PlayerCore: NSObject {
   private func stopWatchingSubFile() {
     guard let subFileMonitor else { return }
 
-    log.verbose{"Stopping FS watch of sub file \(Playback.path(from: subFileMonitor.url).pii.quoted)"}
+    log.verbose{"Stopping FS watch of sub file \(PlaybackID.path(from: subFileMonitor.url).pii.quoted)"}
     subFileMonitor.stopMonitoring()
     self.subFileMonitor = nil
   }
@@ -3588,13 +3588,15 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
     log.verbose("Reloading playlist")
-    var newPlaylist: [MPVPlaylistItem] = []
+    var newPlaylist: [PlaybackID] = []
     let playlistCount = mpv.getInt(MPVProperty.playlistCount)
     log.verbose{"Reloaded playlist will have \(playlistCount) items"}
     for index in 0..<playlistCount {
       let urlPath = mpv.getString(MPVProperty.playlistNFilename(index))!
-      let url = Playback.url(fromPath: urlPath)!
-      let playlistItem = MPVPlaylistItem(url: url)
+      guard let playlistItem = PlaybackID(path: urlPath) else {
+        log.error{"Playlist item has invalid path; skipping: \(urlPath.pii.quoted)"}
+        continue
+      }
       newPlaylist.append(playlistItem)
     }
     info.playlist = newPlaylist

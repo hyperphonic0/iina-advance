@@ -551,23 +551,6 @@ class Utility {
     return filename.md5
   }
 
-  /// Returns saved playback progress (in seconds) or `nil` if not found in `watch-later` data.
-  static func playbackProgressFromWatchLater(_ mpvMd5: String) -> Double? {
-    // No point in loading/showing this if it's not used
-    guard Preference.bool(for: .resumeLastPosition) else { return nil }
-
-    let fileURL = Utility.watchLaterURL.appendingPathComponent(mpvMd5)
-    if let reader = StreamReader(path: fileURL.path),
-      let firstLine = reader.nextLine(),
-      firstLine.hasPrefix("start="),
-      let progressString = firstLine.components(separatedBy: "=").last,
-      let progress = Double(progressString) {
-      return progress
-    } else {
-      return nil
-    }
-  }
-
   static func getLatestScreenshot(from path: String) -> URL? {
     let folder = URL(fileURLWithPath: NSString(string: path).expandingTildeInPath)
     guard let contents = try? FileManager.default.contentsOfDirectory(

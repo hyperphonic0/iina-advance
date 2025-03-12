@@ -582,7 +582,7 @@ class UIState {
             }
 
             if Logger.isEnabled(.warning) {
-              let path = Playback.path(from: savedState.url(for: .url))
+              let path = PlaybackID.path(from: savedState.url(for: .url))
               log.warn("Deleting orphaned pref entry: \(playerKey.quoted) with path \(path.quoted)")
             }
             UserDefaults.standard.removeObject(forKey: playerKey)

@@ -55,8 +55,7 @@ class Playback: CustomStringConvertible {
     }
   }
 
-  let url: URL
-  let mpvMD5: String
+  let id: PlaybackID
 
   /// Can be `nil` if not loaded yet
   var playlistPos: Int?
@@ -68,37 +67,74 @@ class Playback: CustomStringConvertible {
   /// Is set to `nil` initially because such an update must always run when state transitions to `fileLoaded`.
   var vidTrackLastSized: Int? = nil
 
+  var thumbnails: SingleMediaThumbnailsLoader? = nil
+
+  // Properties from PlaybackID
+  var url: URL { id.url}
+  var mpvMD5: String { id.mpvMD5 }
+  var path: String { id.path }
+  var isNetworkResource: Bool { id.isNetworkResource }
+  var displayName: String { id.displayName }
+
+  var description: String {
+    return "Playback(plPos:\(String(playlistPos)) status:\(state) path:\(path.pii.quoted))"
+  }
+
+  init(_ id: PlaybackID, playlistPos: Int? = nil, state: LifecycleState = .notYetStarted) {
+    self.id = id
+    self.playlistPos = playlistPos
+    self.state = state
+  }
+
+  /// if `url` is `nil`, assumed to be `stdin`
+  convenience init(url: URL?, playlistPos: Int? = nil, state: LifecycleState = .notYetStarted) {
+    let id = PlaybackID(url)
+    self.init(id, playlistPos: playlistPos, state: state)
+  }
+
+  convenience init?(urlPath: String, playlistPos: Int? = nil, state: LifecycleState = .notYetStarted) {
+    guard let id = PlaybackID(path: urlPath) else { return nil }
+    self.init(id, playlistPos: playlistPos, state: state)
+  }
+}
+
+/// `PlaybackID`
+struct PlaybackID {
+  /// Equivalent to `PlaybackID.url(fromPath: mpvFilename)`
+  let url: URL
+  let mpvMD5: String
+
+  /// if `url` is `nil`, assumed to be `stdin`.
+  init(_ url: URL?) {
+    let url = url ?? URL(string: "stdin")!
+    self.url = url
+    mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
+  }
+
+  init?(path: String) {
+    guard let url = PlaybackID.url(fromPath: path) else { return nil }
+    self.url = url
+    mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
+  }
+
   var path: String {
-    return Playback.path(from: url)
+    return PlaybackID.path(from: url)
   }
 
   var isNetworkResource: Bool {
     return !url.isFileURL
   }
 
-  var thumbnails: SingleMediaThumbnailsLoader? = nil
-
   var displayName: String {
-    return Playback.displayName(from: url)
+    return PlaybackID.displayName(from: url)
   }
 
-  var description: String {
-    return "Playback(plPos:\(String(playlistPos)) status:\(state) path:\(path.pii.quoted))"
-  }
-
-  /// if `url` is `nil`, assumed to be `stdin`
-  init(url: URL?, playlistPos: Int? = nil, state: LifecycleState = .notYetStarted) {
-    let url = url ?? URL(string: "stdin")!
-    self.url = url
-    mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
-    self.playlistPos = playlistPos
-    self.state = state
-  }
-
-  convenience init?(urlPath: String, playlistPos: Int? = nil, state: LifecycleState = .notYetStarted) {
-    let url = Playback.url(fromPath: urlPath)
-    guard let url else { return nil }
-    self.init(url: url, playlistPos: playlistPos, state: state)
+  /// Returns the name of this resource as it should be displayed in the UI. Does not account for its `title` or other metadata.
+  static func displayName(from url: URL?) -> String {
+    guard let url else { return "-" }
+    let urlPath = PlaybackID.path(from: url)
+    let isNetworkResource = !url.isFileURL
+    return isNetworkResource ? urlPath : NSString(string: urlPath).lastPathComponent
   }
 
   /// Do not use `url.path` for an unknown URL. Use this instead. It will handle both files and network URLs.
@@ -111,24 +147,16 @@ class Playback: CustomStringConvertible {
     }
   }
 
-  /// Returns the name of this resource as it should be displayed in the UI. Does not account for its `title` or other metadata.
-  static func displayName(from url: URL?) -> String {
-    guard let url else { return "-" }
-    let urlPath = Playback.path(from: url)
-    let isNetworkResource = !url.isFileURL
-    return isNetworkResource ? urlPath : NSString(string: urlPath).lastPathComponent
-  }
-
   /// Converts `urlPath` from what mpv calls `filename` in its APIs.
   ///
   /// This is a string which follows one of the following formats:
   /// 1. If a file resource, a file path in slash notation
   /// 2. If a network resource, a URL string in protocol://domain/resource/etc notation
-  static func url(fromPath urlPath: String) -> URL? {
-    if urlPath.contains("://") {
-      return URL(string: urlPath.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? urlPath)
+  static func url(fromPath path: String) -> URL? {
+    if path.contains("://") {
+      return URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path)
     } else {
-      return URL(fileURLWithPath: urlPath)
+      return URL(fileURLWithPath: path)
     }
   }
 }

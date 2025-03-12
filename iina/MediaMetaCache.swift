@@ -101,7 +101,7 @@ class MediaMetaCache {
     }
   }
 
-  func setCachedMediaDurationAndProgress(_ url: URL, duration: Double?, progress: Double?) {
+  func setCachedMediaDurationAndProgress(_ url: URL, duration: Double? = nil, progress: Double?) {
     metaLock.withLock {
       let oldMeta = cachedMeta[url] ?? MediaMeta.empty
       // nilProgress == kludge to force nil
@@ -131,7 +131,7 @@ class MediaMetaCache {
 
     if url.isFileURL {
       if reloadFromWatchLater {
-        progress = Utility.playbackProgressFromWatchLater(url.path.md5)
+        progress = HistoryController.shared.playbackProgressFromWatchLater(url.path.md5)
       }
 
       if reloadFromFFmpeg {
@@ -173,7 +173,7 @@ class MediaMetaCache {
       let newMeta = oldMeta.clone(duration: duration, progress: progress, nilProgress: progress == nil,
                                   title: title, album: album, artist: artist, triedFFmpeg: triedFFmpeg)
       cachedMeta[url] = newMeta
-      log.trace{"Updated cache entry \(Playback.path(from: url).pii.quoted) ≔ \(newMeta)"}
+      log.trace{"Updated cache entry \(PlaybackID.path(from: url).pii.quoted) ≔ \(newMeta)"}
       return newMeta
     }
   }
@@ -232,7 +232,7 @@ class MediaMetaCache {
       log.verbose{"Skipping ffMeta check; not a file URL: \(url.absoluteString.pii.quoted)"}
       return nil
     }
-    let path = Playback.path(from: url)
+    let path = PlaybackID.path(from: url)
     guard Utility.playableFileExt.contains(path.lowercasedPathExtension) else {
       log.verbose{"Skipping ffMeta check; not a playable file: \(path.pii.quoted)"}
       return nil
