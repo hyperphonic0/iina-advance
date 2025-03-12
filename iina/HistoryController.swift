@@ -12,27 +12,30 @@ class HistoryController {
 
   static let shared = HistoryController(plistFileURL: Utility.playbackHistoryURL)
 
-  var plistURL: URL
-  var history: [PlaybackHistory]
+  let plistURL: URL
+
+  let log = Logger.Subsystem(rawValue: "history")
+  let folderMonitor = FolderMonitor(url: Utility.watchLaterURL)
+
+  private(set) var cachedRecentDocumentURLs: [URL]
+
+  private(set) var history: [PlaybackHistory]
   /// Starts at 0 at each launch. Used by UI to sync to this database more efficiently
-  var historyListVersion: Int = 0
-  var log = Logger.Subsystem(rawValue: "history")
-  var folderMonitor = FolderMonitor(url: Utility.watchLaterURL)
+  private var historyListVersion: Int = 0
+
+  /// Do not use this directly for tasks. Use `HistoryController.shared.async`.
+  private let queue = DispatchQueue.newDQ(label: "IINA-History-BG", qos: .background)
+  /// Number of tasks currently in the queue.
+  @Atomic var tasksOutstanding = 0
+
+  private let bgFileQueue = DispatchQueue.newDQ(label: "History-File-BG", qos: .background)
+  private(set) var fileExistsMap: [URL: Bool] = [:]
+  private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
+
   /// Whether graceful stop of history queue has commenced (via `stop` func).
   /// Use this to check for app termination in queues other than main, as that is a prerequisite for
   /// `AppDelegate.shared.isTerminating`.
   private(set) var isAppTerminating = false
-
-  private var bgFileQueue = DispatchQueue.newDQ(label: "History-File-BG", qos: .background)
-  var fileExistsMap: [URL: Bool] = [:]
-  private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
-
-  /// Number of tasks currently in the queue.
-  @Atomic var tasksOutstanding = 0
-  /// Do not use this directly for tasks. Use `HistoryController.shared.async`.
-  private var queue = DispatchQueue.newDQ(label: "IINAHistoryController", qos: .background)
-
-  var cachedRecentDocumentURLs: [URL]
 
   init(plistFileURL: URL) {
     self.plistURL = plistFileURL
@@ -416,9 +419,38 @@ class HistoryController {
     let url = entry.url
 
     bgFileQueue.async { [self] in
-      fileExistsMap[url] = !url.isFileURL || FileManager.default.fileExists(atPath: url.path)
+      guard !isAppTerminating else { return }
+      _reloadFileMeta(forEntry: entry)
+    }
+  }
+
+  private func _reloadFileMeta(forEntry entry: PlaybackHistory) {
+    fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
+
+    let watchLaterProgressEnabled = Preference.bool(for: .resumeLastPosition)
+    if watchLaterProgressEnabled {
       entry.loadProgressFromWatchLater()
-      postFileHistoryUpdateNotification(forURL: url)
+      let wasWatchLaterFound = entry.mpvProgress != nil
+      if wasWatchLaterFound {
+        // Notify History window + playlist UI in various windows
+        postFileHistoryUpdateNotification(forURL: entry.url)
+      }
+    } else {
+      var didClearCachedProgress = false
+      if let cachedMediaMeta = MediaMetaCache.shared.getCachedMeta(for: entry.url), cachedMediaMeta.progress != nil {
+        MediaMetaCache.shared.setCachedMediaDurationAndProgress(entry.url, duration: cachedMediaMeta.duration, progress: nil)
+        didClearCachedProgress = true
+      }
+      if entry.mpvProgress != nil {
+        // Watch Later is no longer enabled, but its value is still cached.
+        entry.mpvProgress = nil
+        didClearCachedProgress = true
+      }
+      if didClearCachedProgress {
+        // After clearing the cached value, notify the UI that it changed (e.g., playlist may need to hide
+        // its progress bar)
+        postFileHistoryUpdateNotification(forURL: entry.url)
+      }
     }
   }
 
@@ -432,6 +464,8 @@ class HistoryController {
       // Assume work will be enqueued for the new version. Don't process stale data
       return
     }
+
+    guard !isAppTerminating else { return }
 
     // Do a full reload if too much time has gone by since the last full reload
     let forceFullStatusReload = Date().timeIntervalSince(lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
@@ -447,34 +481,14 @@ class HistoryController {
     for entry in historyList[startIndex...] {
       examinedCount += 1
       guard fileExistsMap[entry.url] == nil else { continue }
+      guard !isAppTerminating else { break }
 
-      fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
+      _reloadFileMeta(forEntry: entry)
       processedCount += 1
 
-      if watchLaterProgressEnabled {
-        entry.loadProgressFromWatchLater()
-        let wasWatchLaterFound = entry.mpvProgress != nil
-        if wasWatchLaterFound {
-          watchLaterCount += 1
-          // Notify History window + playlist UI in various windows
-          HistoryController.shared.postFileHistoryUpdateNotification(forURL: entry.url)
-        }
-      } else {
-        var didClearCachedProgress = false
-        if let cachedMediaMeta = MediaMetaCache.shared.getCachedMeta(for: entry.url), cachedMediaMeta.progress != nil {
-          MediaMetaCache.shared.setCachedMediaDurationAndProgress(entry.url, duration: cachedMediaMeta.duration, progress: nil)
-          didClearCachedProgress = true
-        }
-        if entry.mpvProgress != nil {
-          // Watch Later is no longer enabled, but its value is still cached.
-          entry.mpvProgress = nil
-          didClearCachedProgress = true
-        }
-        if didClearCachedProgress {
-          // After clearing the cached value, notify the UI that it changed (e.g., playlist may need to hide
-          // its progress bar)
-          HistoryController.shared.postFileHistoryUpdateNotification(forURL: entry.url)
-        }
+      let wasWatchLaterFound = entry.mpvProgress != nil
+      if wasWatchLaterFound {
+        watchLaterCount += 1
       }
 
       // Do not batch for more than 1sec at a time
@@ -496,7 +510,10 @@ class HistoryController {
     }
 
     guard processedCount > 0 else { return }
-    guard !isAppTerminating else { return }
+    guard !isAppTerminating else {
+      log.verbose{"App is terminating; stopping early"}
+      return
+    }
 
     let newStartIndex = examinedCount + startIndex
     let completed = newStartIndex == historyList.count

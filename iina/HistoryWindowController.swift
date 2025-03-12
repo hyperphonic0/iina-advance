@@ -250,16 +250,17 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
         // Schedule timer to show loading msg if loading takes too long
         showLoadingMsgTimer.restart()
 
-        backgroundQueue.async { [self] in
-          guard isTicketStillValid(ticket) else { return }
-          _reloadHistoryData(ticket: ticket)
-        }
+        _reloadHistoryDataBG(ticket: ticket)
       }
     } else {
-      backgroundQueue.async { [self] in
-        guard !isInitialLoadDone || isTicketStillValid(ticket) else { return }
-        _reloadHistoryData(ticket: ticket)
-      }
+      _reloadHistoryDataBG(ticket: ticket)
+    }
+  }
+
+  private func _reloadHistoryDataBG(ticket: Int) {
+    backgroundQueue.async { [self] in
+      guard !isInitialLoadDone || isTicketStillValid(ticket) else { return }
+      _reloadHistoryData(ticket: ticket)
     }
   }
 
