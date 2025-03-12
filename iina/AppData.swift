@@ -604,7 +604,6 @@ struct DebugConfig {
   static let alwaysApproveRestore = true
   static let enableScrollWheelDebug = false
 
-  static let addHistoryWindowLoadingDelay = true
   static let logAllScreenChangeEvents = false
   static let disableLookaheadCaches = false
 #endif

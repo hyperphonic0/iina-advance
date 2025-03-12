@@ -202,6 +202,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     outlineView.menu?.delegate = self
     outlineView.target = self
     outlineView.doubleAction = #selector(doubleAction)
+    outlineView.sizeLastColumnToFit()
     log.verbose("History windowDidLoad done")
   }
 
@@ -216,17 +217,8 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
     if !isInitialLoadDone {
       showLoadingUI()
-
-#if DEBUG
-      if DebugConfig.addHistoryWindowLoadingDelay {
-        log.debug("Sleeping for 5 sec to test History window async loading...")
-        Thread.sleep(forTimeInterval: 5)
-      }
-#endif
       reloadHistoryData()
     }
-
-    outlineView.sizeLastColumnToFit()
 
     // Reload may take a long time. Send signal to open right away, and refresh when load is done.
     super.openWindow(sender)
