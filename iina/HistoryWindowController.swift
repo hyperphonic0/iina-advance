@@ -217,7 +217,11 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
     if !isInitialLoadDone {
       showLoadingUI()
-      reloadHistoryData()
+      // If app is starting up, need to prevent reload from happening before the history has finished loading,
+      // or else it will immediately show as an empty list.
+      if HistoryController.shared.historyListVersion > 0 {
+        reloadHistoryData()
+      }
     }
 
     // Reload may take a long time. Send signal to open right away, and refresh when load is done.

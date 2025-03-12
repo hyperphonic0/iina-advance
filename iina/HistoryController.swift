@@ -21,7 +21,7 @@ class HistoryController {
 
   private(set) var history: [PlaybackHistory]
   /// Starts at 0 at each launch. Used by UI to sync to this database more efficiently
-  @Atomic private var historyListVersion: Int = 0
+  @Atomic private(set) var historyListVersion: Int = 0
 
   /// Do not use this directly for tasks. Use `HistoryController.shared.async`.
   private let workDQ = DispatchQueue.newDQ(label: "IINA-History-BG", qos: .background)
