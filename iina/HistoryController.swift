@@ -21,7 +21,7 @@ class HistoryController {
 
   private(set) var history: [PlaybackHistory]
   /// Starts at 0 at each launch. Used by UI to sync to this database more efficiently
-  private var historyListVersion: Int = 0
+  @Atomic private var historyListVersion: Int = 0
 
   /// Do not use this directly for tasks. Use `HistoryController.shared.async`.
   private let workDQ = DispatchQueue.newDQ(label: "IINA-History-BG", qos: .background)
@@ -206,10 +206,13 @@ class HistoryController {
   }
 
   func historyListDidUpdate() {
-    historyListVersion += 1
+    let historyListVersion = $historyListVersion.withLock { version in
+      version += 1
+      return version
+    }
     let historyList = history
-    let historyListVersion = historyListVersion
     fileExistsDQ.async { [self] in
+      log.verbose{"Starting fileExists work for \(historyList.count) entries, historyVersion=\(historyListVersion)"}
       reloadFileExistsAndProgress(forList: historyList, startingAt: 0, withVersion: historyListVersion)
     }
 
@@ -480,6 +483,7 @@ class HistoryController {
 
     guard historyVersion == self.historyListVersion else {
       // Assume work will be enqueued for the new version. Don't process stale data
+      log.verbose{"Aborting fileExists task: historyVersion (\(historyVersion)) is not latest (\(self.historyListVersion))"}
       return
     }
 
@@ -526,9 +530,8 @@ class HistoryController {
       lastCompleteStatusReloadTime = Date()
     }
 
-    guard processedCount > 0 else { return }
     guard !isAppTerminating else {
-      log.verbose{"App is terminating; stopping early"}
+      log.verbose{"App is terminating; stopping fileExists work early"}
       return
     }
 

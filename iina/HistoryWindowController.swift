@@ -118,7 +118,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     reloadHistoryData(useLoadingMsg: false)
   }
 
-  // Individual history added or updated:
+  // Individual history added or updated
   private func onFileHistoryDidUpdate(_ note: Notification) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !AppDelegate.shared.isTerminating else { return }
@@ -196,6 +196,11 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     guard let _ = window else { return }  // load window
     assert(isWindowLoaded, "Expected History window to be loaded!")
 
+    co.addAllObservers()
+
+    // Cannot rely on `iinaFileExistsInfoDidUpdate` being sent anytime soon, so pull down the latest copy now
+    fileExistsMap = HistoryController.shared.fileExistsMap
+
     if !isInitialLoadDone {
       showLoadingUI()
 
@@ -207,8 +212,6 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 #endif
       reloadHistoryData()
     }
-
-    co.addAllObservers()
 
     outlineView.sizeLastColumnToFit()
 
