@@ -733,11 +733,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
               let textField = cell.textField else {
           return noneString
         }
-        // Make this entry italic
-        let italicDescriptor: NSFontDescriptor = textField.font!.fontDescriptor.withSymbolicTraits(NSFontDescriptor.SymbolicTraits.italic)
-        let italicFont = NSFont(descriptor: italicDescriptor, size: textField.font!.pointSize)
 
-        return NSMutableAttributedString(string: noneString, attributes: [.font: italicFont!])
+        let mutableString = NSMutableAttributedString(string: noneString)
+        mutableString.addItalic(using: textField.font)
+        return mutableString
       }
     } else if columnName == .trackId {
       return track?.idString

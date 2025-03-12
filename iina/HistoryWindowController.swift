@@ -31,6 +31,7 @@ fileprivate class LoadingPlaceholder: PlaybackHistory {
 // MARK: Constants
 
 fileprivate let loadingKey = "Loading..."
+fileprivate let noResultsKeyFormat = "No results found for \"%@\"."
 fileprivate let loadingPlaceholderLabel = ""  // displayed next to the loading spinner
 
 fileprivate let MenuItemTagShowInFinder = 100
@@ -40,10 +41,24 @@ fileprivate let MenuItemTagSearchFullPath = 201
 fileprivate let MenuItemTagPlay = 300
 fileprivate let MenuItemTagPlayInNewWindow = 301
 
+fileprivate let loadingData = [loadingKey: [LoadingPlaceholder.shared.url]]
+
 fileprivate let timeColMinWidths: [Preference.HistoryGroupBy: CGFloat] = [
   .lastPlayedDay: 60,
   .parentFolder: 145
 ]
+
+class HistoryOutlineView: OutlineView {
+  override func frameOfOutlineCell(atRow row: Int) -> NSRect {
+    if row == 0 {
+      // Disable disclosure triangle if showing No Results msg (which has no children)
+      if let firstItem = item(atRow: row), numberOfChildren(ofItem: firstItem) == 0 {
+        return .zero
+      }
+    }
+    return super.frameOfOutlineCell(atRow: row)
+  }
+}
 
 class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlineViewDataSource,
                                NSMenuDelegate, NSMenuItemValidation {
@@ -73,12 +88,10 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   var searchType: Preference.HistorySearchType
   var searchString: String
 
-  private static let loadingData = [loadingKey: [LoadingPlaceholder.shared.url]]
-
   // These must only be updated in the main queue
   // There are still some possible races where data can go stale... Fix in a future version
   private var historyLookup: [URL: PlaybackHistory] = [LoadingPlaceholder.shared.url: LoadingPlaceholder.shared]
-  private var historyData: [String: [URL]] = HistoryWindowController.loadingData
+  private var historyData: [String: [URL]] = loadingData
   private var historyDataKeys: [String] = [loadingKey]
 
   private var selectedEntries: [PlaybackHistory] = []
@@ -269,6 +282,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     // reconstruct data
     let sw = Utility.Stopwatch()
     let unfilteredHistory = HistoryController.shared.history
+    let searchString = searchString
 
     let historyList: [PlaybackHistory]
     if searchString.isEmpty {
@@ -292,6 +306,14 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       } else {
         historyDataUpdated[key]!.append(entry.url)
       }
+    }
+
+    let hasFilter = !searchString.isEmpty
+    if hasFilter && historyDataUpdated.isEmpty {
+      log.trace("History window: showing No Results placeholder")
+      let noResultsKey = String(format: noResultsKeyFormat, searchString)
+      historyDataUpdated[noResultsKey] = []
+      historyDataKeysUpdated = [noResultsKey]
     }
 
     DispatchQueue.main.async { [self] in
@@ -321,7 +343,8 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
   /// Resets table to loading msg.
   private func showLoadingUI() {
-    historyData = HistoryWindowController.loadingData
+    log.verbose("History window: showing Loading placeholder")
+    historyData = loadingData
     historyDataKeys = [loadingKey]
     outlineView.reloadData()
     // Expand to show loading placeholder
@@ -419,16 +442,17 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
         // Filename cell
         let filenameView = cell as! HistoryFilenameCellView
 
-        if item as? LoadingPlaceholder != nil {
-          // Loading placeholder for initial load
-          let font = filenameView.textField!.font!
-          let italicDescriptor: NSFontDescriptor = font.fontDescriptor.withSymbolicTraits(NSFontDescriptor.SymbolicTraits.italic)
-          let italicFont = NSFont(descriptor: italicDescriptor, size: font.pointSize)
-          let attrString =  NSMutableAttributedString(string: loadingPlaceholderLabel, attributes: [.font: italicFont!])
-          filenameView.textField?.attributedStringValue = attrString
-          filenameView.textField?.textColor = .controlTextColor
-          if #available(macOS 15.0, *) {
-            let spinImage = NSImage(systemSymbolName: "progress.indicator", accessibilityDescription: "Loading...")!
+        let isLoadingPlaceholder = item as? LoadingPlaceholder != nil
+        if isLoadingPlaceholder {
+          if let textField = filenameView.textField {
+            // Loading placeholder for initial load
+            let mutableString = NSMutableAttributedString(string: loadingPlaceholderLabel)
+            mutableString.addItalic(using: textField.font)
+            textField.attributedStringValue = mutableString
+            textField.textColor = .controlTextColor
+          }
+          if #available(macOS 15.0, *),
+             let spinImage = NSImage(systemSymbolName: "progress.indicator", accessibilityDescription: "Loading...") {
             filenameView.docImage.setSymbolImage(spinImage, contentTransition: .automatic)
             let effect = VariableColorSymbolEffect.variableColor.iterative.dimInactiveLayers.nonReversing
             filenameView.docImage.addSymbolEffect(effect, options: .repeat(.continuous))

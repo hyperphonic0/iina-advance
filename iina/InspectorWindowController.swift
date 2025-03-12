@@ -480,10 +480,9 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
         guard !player.isStopping, let value = player.mpv.getString(property) else {
           let errorString = NSLocalizedString("inspector.error", comment: "Error")
 
-          let italicDescriptor: NSFontDescriptor = textField.font!.fontDescriptor.withSymbolicTraits(NSFontDescriptor.SymbolicTraits.italic)
-          let errorFont = NSFont(descriptor: italicDescriptor, size: textField.font!.pointSize)
-
-          textField.attributedStringValue = NSMutableAttributedString(string: errorString, attributes: [.font: errorFont!])
+          let mutableString = NSMutableAttributedString(string: errorString)
+          mutableString.addItalic(using: textField.font)
+          textField.attributedStringValue = mutableString
           textField.textColor = .disabledControlTextColor
           return cell
         }
