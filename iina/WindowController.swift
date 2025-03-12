@@ -41,6 +41,8 @@ class WindowController: NSWindowController {
   ///
   /// See also: `UIState.shared.windowOpenCloseAnimations`.
   func refreshWindowOpenCloseAnimation() {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     guard let window, window.savedStateName != "" else {
       Logger.log.verbose{"refreshWindowOpenCloseAnimation: empty savedStateName for window; skipping"}
       return
@@ -48,6 +50,12 @@ class WindowController: NSWindowController {
     let savedStateName = window.savedStateName
     guard IINAAnimation.isAnimationEnabled else {
       Logger.log.verbose{"refreshWindowOpenCloseAnimation: animation disabled or motion reduction enabled. Using .default for \(savedStateName.quoted)"}
+      window.animationBehavior = .default
+      return
+    }
+
+    guard !AppDelegate.shared.isTerminating else {
+      Logger.log.verbose{"refreshWindowOpenCloseAnimation: app is terminating; using .default for \(savedStateName.quoted)"}
       window.animationBehavior = .default
       return
     }
