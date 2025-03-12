@@ -115,9 +115,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   // History changed in a big or ambiguous way, requiring a full table reload
   private func onHistoryListUpdated(_ note: Notification) {
     log.verbose("History window received iinaHistoryListUpdated; will reload data")
-    backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
-      reloadHistoryData(useLoadingMsg: false)
-    }
+    reloadHistoryData(useLoadingMsg: false)
   }
 
   // Individual history added or updated:
@@ -201,16 +199,13 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     if !isInitialLoadDone {
       showLoadingUI()
 
-      /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with initial history load.
-      HistoryController.shared.async { [self] in
 #if DEBUG
-        if DebugConfig.addHistoryWindowLoadingDelay {
-          log.debug("Sleeping for 5 sec to test History window async loading...")
-          Thread.sleep(forTimeInterval: 5)
-        }
-#endif
-        reloadHistoryData()
+      if DebugConfig.addHistoryWindowLoadingDelay {
+        log.debug("Sleeping for 5 sec to test History window async loading...")
+        Thread.sleep(forTimeInterval: 5)
       }
+#endif
+      reloadHistoryData()
     }
 
     co.addAllObservers()

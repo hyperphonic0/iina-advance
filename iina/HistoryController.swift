@@ -24,15 +24,17 @@ class HistoryController {
   private var historyListVersion: Int = 0
 
   /// Do not use this directly for tasks. Use `HistoryController.shared.async`.
-  private let queue = DispatchQueue.newDQ(label: "IINA-History-BG", qos: .background)
-  /// Number of tasks currently in the queue.
+  private let workDQ = DispatchQueue.newDQ(label: "IINA-History-BG", qos: .background)
+  /// Number of tasks currently in workDQ.
   @Atomic var tasksOutstanding = 0
 
-  private let bgFileQueue = DispatchQueue.newDQ(label: "History-File-BG", qos: .background)
+  private let fileExistsDQ = DispatchQueue.newDQ(label: "History-File-BG", qos: .background)
   private(set) var fileExistsMap: [URL: Bool] = [:]
   private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
+  /// See `stop` func
+  private(set) var fileExistsDQ_ShutdownAck = false
 
-  /// Whether graceful stop of history queue has commenced (via `stop` func).
+  /// Whether graceful stop of history queues has commenced (via `stop` func).
   /// Use this to check for app termination in queues other than main, as that is a prerequisite for
   /// `AppDelegate.shared.isTerminating`.
   private(set) var isAppTerminating = false
@@ -43,7 +45,7 @@ class HistoryController {
     cachedRecentDocumentURLs = []
   }
 
-  /// Enqueues the given task argument in the queue.
+  /// Enqueues the given task argument in workDQ.
   /// If the application is already shutting down, it will not be enqueued or executed.
   func async(_ taskBody: @escaping () -> Void) {
     guard !isAppTerminating else {
@@ -52,7 +54,7 @@ class HistoryController {
     }
 
     $tasksOutstanding.withLock { $0 += 1 }
-    queue.async { [self] in
+    workDQ.async { [self] in
       taskBody()
 
       let tasksOutstanding = $tasksOutstanding.withLock { tasksOutstanding in
@@ -99,6 +101,15 @@ class HistoryController {
     isAppTerminating = true
     log.debug("Stopping watchdog for watch-later dir")
     folderMonitor.stopMonitoring()
+
+    fileExistsDQ.async { [self] in
+      log.debug("Reached end of fileExistsDQ; sending shutdown acknowledgment")
+      fileExistsDQ_ShutdownAck = true
+      // Ping ShutdownHandler:
+      DispatchQueue.main.async {
+        NotificationCenter.default.post(Notification(name: .iinaHistoryTasksFinished))
+      }
+    }
   }
 
   private func saveHistoryToFile() {
@@ -116,7 +127,7 @@ class HistoryController {
   }
 
   private func readHistoryFromFile() {
-    assert(DispatchQueue.isExecutingIn(queue))
+    assert(DispatchQueue.isExecutingIn(workDQ))
     // Avoid logging a scary error if the file does not exist.
     guard FileManager.default.fileExists(atPath: plistURL.path) else { return }
 
@@ -136,7 +147,7 @@ class HistoryController {
   }
 
   func reloadAll() {
-    assert(DispatchQueue.isExecutingIn(queue))
+    assert(DispatchQueue.isExecutingIn(workDQ))
     let sw = Utility.Stopwatch()
 
     log.verbose{"ReloadAll starting, from \(plistURL.path.pii.quoted)"}
@@ -161,7 +172,7 @@ class HistoryController {
 
   @discardableResult
   func add(_ url: URL, duration: Double) -> PlaybackHistory? {
-    assert(DispatchQueue.isExecutingIn(queue))
+    assert(DispatchQueue.isExecutingIn(workDQ))
     guard Preference.bool(for: .recordPlaybackHistory) else { return nil }
 
     if let existingItem = history.first(where: { $0.mpvMd5 == url.path.md5 }), let index = history.firstIndex(of: existingItem) {
@@ -175,7 +186,7 @@ class HistoryController {
   }
 
   func remove(_ entries: [PlaybackHistory]) {
-    assert(DispatchQueue.isExecutingIn(queue))
+    assert(DispatchQueue.isExecutingIn(workDQ))
 
     log.debug{"Clearing \(entries.count) history entries"}
     history = history.filter { !entries.contains($0) }
@@ -198,7 +209,7 @@ class HistoryController {
     historyListVersion += 1
     let historyList = history
     let historyListVersion = historyListVersion
-    bgFileQueue.async { [self] in
+    fileExistsDQ.async { [self] in
       reloadFileExistsAndProgress(forList: historyList, startingAt: 0, withVersion: historyListVersion)
     }
 
@@ -224,14 +235,14 @@ class HistoryController {
   /// information..
   /// - Parameter url: The URL to evaluate.
   func noteNewRecentDocumentURL(_ url: URL) {
-    assert(DispatchQueue.isExecutingIn(queue))
+    assert(DispatchQueue.isExecutingIn(workDQ))
 
     NSDocumentController.shared.noteNewRecentDocumentURL(url)
     saveRecentDocuments()
   }
 
   func noteNewRecentDocumentURLs(_ urls: [URL]) {
-    assert(DispatchQueue.isExecutingIn(queue))
+    assert(DispatchQueue.isExecutingIn(workDQ))
 
     for url in urls {
       NSDocumentController.shared.noteNewRecentDocumentURL(url)
@@ -259,7 +270,7 @@ class HistoryController {
   /// Then this method assumes that the macOS daemon `sharedfilelistd` cleared the list and it populates the list of recent
   /// document URLs with the list stored in IINA's settings.
   private func restoreRecentDocuments() {
-    assert(DispatchQueue.isExecutingIn(queue))
+    assert(DispatchQueue.isExecutingIn(workDQ))
 
     /// Make sure `reloadAll()` was called before this
     let recentDocumentsURLs = cachedRecentDocumentURLs
@@ -311,7 +322,7 @@ class HistoryController {
   /// `restoreRecentDocuments` and the issue [#4688](https://github.com/iina/iina/issues/4688) for more
   /// information..
   func saveRecentDocuments() {
-    assert(DispatchQueue.isExecutingIn(queue))
+    assert(DispatchQueue.isExecutingIn(workDQ))
 
     defer {
       // Notify even for older MacOS
@@ -418,8 +429,8 @@ class HistoryController {
   private func reloadFileExistsAndProgress(forEntry entry: PlaybackHistory) {
     guard !isAppTerminating else { return }
 
-    bgFileQueue.async { [self] in
-      guard !isAppTerminating else { return }
+    fileExistsDQ.async { [self] in
+      guard !isAppTerminating else {return }
       let fileExists = _reloadFileExistsAndProgress(forEntry: entry)
       fileExistsMap[entry.url] = fileExists
     }
@@ -463,9 +474,9 @@ class HistoryController {
   /// is due.
   private func reloadFileExistsAndProgress(forList historyList: [PlaybackHistory],
                                            startingAt startIndex: Int, withVersion historyVersion: Int) {
-    // Put all FileManager stuff in background queue. It can hang for a long time if there are network problems.
+    // Put all FileManager stuff in fileExistsDQ. It can hang for a long time if there are network problems.
     // Network or file system can change over time and cause our info to become out of date.
-    assert(DispatchQueue.isExecutingIn(bgFileQueue))
+    assert(DispatchQueue.isExecutingIn(fileExistsDQ))
 
     guard historyVersion == self.historyListVersion else {
       // Assume work will be enqueued for the new version. Don't process stale data
@@ -528,7 +539,7 @@ class HistoryController {
       postNotification(Notification(name: .iinaFileExistsInfoDidUpdate))
     } else {
       // Don't hog the queue; allow other tasks to finish & enqueue behind them:
-      bgFileQueue.async { [self] in
+      fileExistsDQ.async { [self] in
         reloadFileExistsAndProgress(forList: historyList, startingAt: newStartIndex, withVersion: historyVersion)
       }
     }

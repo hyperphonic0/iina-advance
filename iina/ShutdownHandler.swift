@@ -157,7 +157,15 @@ class ShutdownHandler {
         return
       }
       // If there are still tasks outstanding then must continue waiting.
-      guard HistoryController.shared.tasksOutstanding == 0 else { return }
+      let remainingHistoryTasks = HistoryController.shared.tasksOutstanding
+      guard remainingHistoryTasks == 0 else {
+        Logger.log.trace{"Received iinaHistoryTasksFinished but \(remainingHistoryTasks) tasks still outstanding"}
+        return
+      }
+      guard HistoryController.shared.fileExistsDQ_ShutdownAck else {
+        Logger.log.trace{"Received iinaHistoryTasksFinished but still waiting for fileExistsDQ shutdown ack"}
+        return
+      }
       Logger.log("Saving of playback history finished")
       proceedWithTermination()
     })
@@ -217,10 +225,11 @@ class ShutdownHandler {
     let didSubtitleSvcLogOut = !OnlineSubtitle.loggedIn
     // If still still saving playback history then continue waiting.
     let tasksOutstanding = HistoryController.shared.tasksOutstanding
+    let historyFileQueueDone = HistoryController.shared.fileExistsDQ_ShutdownAck
 
     // All players have shut down.
-    Logger.log("AllPlayersShutdown=\(allPlayersShutdown.yesno) OnlineSubtitleLoggedOut=\(didSubtitleSvcLogOut.yesno) HistoryTasksOutstanding=\(tasksOutstanding)")
-    guard allPlayersShutdown && didSubtitleSvcLogOut  && tasksOutstanding == 0 else { return false }
+    Logger.log("AllPlayersShutdown=\(allPlayersShutdown.yesno) OnlineSubtitleLoggedOut=\(didSubtitleSvcLogOut.yesno) HistoryTasksOutstanding=\(tasksOutstanding) HistoryFileQueueDone=\(historyFileQueueDone.yesno)")
+    guard allPlayersShutdown && didSubtitleSvcLogOut  && tasksOutstanding == 0 && historyFileQueueDone else { return false }
     // All players have shutdown. No longer logged into an online subtitles provider.
 
     Logger.log("Proceeding with application termination")
