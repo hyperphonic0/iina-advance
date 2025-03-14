@@ -22,11 +22,12 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
   }
   private var current: CurrentFocus? = nil
 
-  private let parentTable: EditableTableView
+  private var parentTable: EditableTableView {
+    return delegate.parentTableView
+  }
   private let delegate: EditableTableViewDelegate
 
-  init(parentTable: EditableTableView, delegate: EditableTableViewDelegate) {
-    self.parentTable = parentTable
+  init(delegate: EditableTableViewDelegate) {
     self.delegate = delegate
   }
 

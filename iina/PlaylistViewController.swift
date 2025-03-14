@@ -1085,6 +1085,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 /// EditableTableViewDelegate
 
 extension PlaylistViewController: EditableTableViewDelegate {
+  var parentTableView: EditableTableView! { playlistTableView }
+
   func handleMouseDown(with event: NSEvent) -> Bool {
     return player.windowController.startResizingSidebar(with: event)
   }

@@ -216,6 +216,8 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
     Logger.log.verbose{"Restoring tab selection to index \(selectTabIndex)"}
     tabButtonGroup.selectSegment(withTag: selectTabIndex)
     tabView.selectTabViewItem(at: selectTabIndex)
+    // Do not select tab by default
+    window?.initialFirstResponder = nil
   }
 
   override func showWindow(_ sender: Any?) {
@@ -695,6 +697,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 }
 
 extension InspectorWindowController: EditableTableViewDelegate {
+  var parentTableView: EditableTableView! { watchTableView }
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     // only first column can be edited

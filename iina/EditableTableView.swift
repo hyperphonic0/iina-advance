@@ -34,7 +34,7 @@ class EditableTableView: NSTableView {
   var editableDelegate: EditableTableViewDelegate? = nil {
     didSet {
       if let editableDelegate = editableDelegate {
-        cellEditTracker = CellEditTracker(parentTable: self, delegate: editableDelegate)
+        cellEditTracker = CellEditTracker(delegate: editableDelegate)
       } else {
         cellEditTracker = nil
       }

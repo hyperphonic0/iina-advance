@@ -293,6 +293,8 @@ extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource
 }
 
 extension PrefAdvancedViewController: EditableTableViewDelegate {
+  var parentTableView: EditableTableView! { optionsTableView }
+
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     Logger.log.verbose("Double-click: Edit requested for row \(rowIndex), col \(columnIndex)")
     optionsTableView.editCell(row: rowIndex, column: columnIndex)

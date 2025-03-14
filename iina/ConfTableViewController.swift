@@ -151,6 +151,8 @@ extension ConfTableViewController: NSTableViewDelegate {
 
 extension ConfTableViewController: EditableTableViewDelegate {
 
+  var parentTableView: EditableTableView! { tableView }
+
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     return confTableState.getUserConfName(at: rowIndex) != nil
   }

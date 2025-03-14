@@ -449,6 +449,8 @@ extension BindingTableViewController: NSTableViewDataSource {
 
 extension BindingTableViewController: EditableTableViewDelegate {
 
+  var parentTableView: EditableTableView! { tableView }
+
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     Logger.log("Double-click: Edit requested for row \(rowIndex), col \(columnIndex)")
     return edit(rowIndex: rowIndex, columnIndex: columnIndex, skipInlineEdit: true)

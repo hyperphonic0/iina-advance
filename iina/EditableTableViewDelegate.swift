@@ -11,6 +11,9 @@ import Foundation
 // Adds optional methods for use in conjunction with `EditableTableView`
 // (which will itself hopefully become an extension of `NSTableView` at some point).
 protocol EditableTableViewDelegate {
+  /// Implementors need to provide this
+  var parentTableView: EditableTableView! { get }
+
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool
 
   func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int)
@@ -89,7 +92,11 @@ extension EditableTableViewDelegate {
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     // If in-line editing is enabled, then this method should be overriden, so this message should never be seen.
-    Logger.log("EditableTableViewDelegate.userDidDoubleClickOnCell(): null default method was called!", level: .warning)
+    if let doubleAction = parentTableView.doubleAction {
+      Logger.log.verbose("EditableTableViewDelegate.userDidDoubleClickOnCell: calling default doubleAction")
+      parentTableView.sendAction(doubleAction, to: parentTableView.target)
+      return true
+    }
     return false
   }
 
