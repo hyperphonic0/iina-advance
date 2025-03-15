@@ -1851,6 +1851,7 @@
 		D11E07B82D1812BE00F9FB9F /* SymButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymButton.swift; sourceTree = "<group>"; };
 		D11FB53F2CB8E4E20012A45A /* ShutdownHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShutdownHandler.swift; sourceTree = "<group>"; };
 		D127821A2D840CF20058F609 /* iinaRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iinaRelease.entitlements; sourceTree = "<group>"; };
+		D127821B2D841E040058F609 /* OpenInIINARelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OpenInIINARelease.entitlements; sourceTree = "<group>"; };
 		D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfigBuilder.swift; sourceTree = "<group>"; };
 		D13209BA2B90596000069C94 /* AspectTokenField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AspectTokenField.swift; sourceTree = "<group>"; };
 		D13350942D06B7E200201623 /* GeometryTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometryTransform.swift; sourceTree = "<group>"; };
@@ -2307,6 +2308,7 @@
 		49542976216C34950058F680 /* OpenInIINA */ = {
 			isa = PBXGroup;
 			children = (
+				D127821B2D841E040058F609 /* OpenInIINARelease.entitlements */,
 				49542977216C34950058F680 /* SafariExtensionHandler.swift */,
 				4954297E216C34950058F680 /* Info.plist */,
 				4954297F216C34950058F680 /* open-in-iina.js */,
@@ -5038,6 +5040,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4964988E2919E47900CD61A5 /* OpenInIINA.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = OpenInIINA/OpenInIINARelease.entitlements;
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
@@ -5045,6 +5048,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = PG2MG2559L;
+				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Open in IINA";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2018 lhc. All rights reserved.";
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
