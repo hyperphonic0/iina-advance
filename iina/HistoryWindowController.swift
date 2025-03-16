@@ -18,7 +18,7 @@ fileprivate extension NSUserInterfaceItemIdentifier {
 
 fileprivate class LoadingPlaceholder: PlaybackHistory {
   init() {
-    super.init(url: URL(fileURLWithPath: "/dev/null"), duration: 0, name: "")
+    super.init(id: PlaybackID(URL(fileURLWithPath: "/dev/null")), duration: 0)
   }
 
   required init?(coder aDecoder: NSCoder) {

@@ -171,14 +171,14 @@ class HistoryController {
   }
 
   @discardableResult
-  func add(_ url: URL, duration: Double) -> PlaybackHistory? {
+  func addPlayback(_ id: PlaybackID, duration: Double) -> PlaybackHistory? {
     assert(DispatchQueue.isExecutingIn(workDQ))
     guard Preference.bool(for: .recordPlaybackHistory) else { return nil }
 
-    if let existingItem = history.first(where: { $0.mpvMd5 == url.path.md5 }), let index = history.firstIndex(of: existingItem) {
+    if let existingItem = history.first(where: { $0.mpvMd5 == id.mpvMD5 }), let index = history.firstIndex(of: existingItem) {
       history.remove(at: index)
     }
-    let newEntry = PlaybackHistory(url: url, duration: duration)
+    let newEntry = PlaybackHistory(id: id, duration: duration)
     history.insert(newEntry, at: 0)
     historyListDidUpdate()
     saveHistoryToFile()
@@ -352,19 +352,19 @@ class HistoryController {
 
   // MARK: - Playback Lifecycle Events
 
-  func savePlaybackMetaAfterFileDidLoad(for url: URL, durationSec: Double, positionSec: Double?) {
+  func savePlaybackMetaAfterFileDidLoad(for id: PlaybackID, durationSec: Double, positionSec: Double?) {
     HistoryController.shared.async { [self] in
       // 1. Update main history list
-      let historyEntry = add(url, duration: durationSec)
+      let historyEntry = addPlayback(id, duration: durationSec)
 
       // 2. IINA's [ancient] "resume last playback" feature
       // Add this now, or else welcome window will fall out of sync with history list
-      saveToLastPlayedFile(url, duration: durationSec, position: positionSec)
+      saveToLastPlayedFile(id.url, duration: durationSec, position: positionSec)
 
       if Preference.bool(for: .recordRecentFiles) {
         // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
         if Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
-          HistoryController.shared.noteNewRecentDocumentURL(url)
+          HistoryController.shared.noteNewRecentDocumentURL(id.url)
         } else {
           /// This will get called by `noteNewRecentDocumentURL`. But if it's not called, need to call it
           /// so that welcome window is notified when `iinaLastPlayedFilePosition`, etc. are changed

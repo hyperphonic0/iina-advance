@@ -23,11 +23,15 @@ class PlaybackHistory: NSObject, NSSecureCoding {
   /// Indicate this class supports secure coding.
   static var supportsSecureCoding: Bool { true }
 
-  var url: URL
-  var name: String
-  var mpvMd5: String
+  let id: PlaybackID
 
-  let played: Bool
+  /// As of v1.3, URL is are encapsulated in `id`.
+  var url: URL { id.url }
+  // As of v1.3, this is derived from URL; value stored on disk is redundant & is ignored.
+  var name: String { id.url.lastPathComponent }
+  // As of v1.3, this is derived from URL; value stored on disk is redundant & is ignored.
+  var mpvMd5: String { id.mpvMD5 }
+
   let addedDate: Date
 
   let duration: Double
@@ -36,40 +40,31 @@ class PlaybackHistory: NSObject, NSSecureCoding {
   required init?(coder aDecoder: NSCoder) {
     guard
       let url = aDecoder.decodeObject(of: NSURL.self, forKey: KeyUrl),
-      let name = aDecoder.decodeObject(of: NSString.self, forKey: KeyName),
-      let md5 = aDecoder.decodeObject(of: NSString.self, forKey: KeyMpvMd5),
       let date = aDecoder.decodeObject(of: NSDate.self, forKey: KeyAddedDate)
     else {
       return nil
     }
 
-    let played = aDecoder.decodeBool(forKey: KeyPlayed)
     let duration = aDecoder.decodeDouble(forKey: KeyDuration)
 
-    self.url = url as URL
-    self.name = name as String
-    self.mpvMd5 = md5 as String
-    self.played = played
+    self.id = PlaybackID(url as URL)
     self.addedDate = date as Date
     self.duration = duration
 
     self.mpvProgress = nil
   }
 
-  init(url: URL, duration: Double, name: String? = nil) {
-    self.url = url
-    self.name = name ?? url.lastPathComponent
-    self.mpvMd5 = Utility.mpvWatchLaterMd5(url.path)
-    self.played = true
+  init(id: PlaybackID, duration: Double) {
+    self.id = id
     self.addedDate = Date()
     self.duration = duration
   }
 
   func encode(with aCoder: NSCoder) {
     aCoder.encode(url, forKey: KeyUrl)
-    aCoder.encode(name, forKey: KeyName)
-    aCoder.encode(mpvMd5, forKey: KeyMpvMd5)
-    aCoder.encode(played, forKey: KeyPlayed)
+    aCoder.encode(name, forKey: KeyName)  // obsolete; included only to support legacy versions
+    aCoder.encode(mpvMd5, forKey: KeyMpvMd5)  // obsolete; included only to support legacy versions
+    aCoder.encode(true, forKey: KeyPlayed)  // obsolete; included only to support legacy versions
     aCoder.encode(addedDate, forKey: KeyAddedDate)
     aCoder.encode(duration, forKey: KeyDuration)
   }
