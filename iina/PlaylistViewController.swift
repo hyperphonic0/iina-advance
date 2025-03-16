@@ -767,7 +767,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
         PlayerCore.playlistQueue.async { [self] in
           // Get watch-later form file system; get other meta from ffmpeg:
-          let cachedMeta = MediaMetaCache.shared.updateCache(for: playlistItem, mpvTitle: mpvTitle)
+          let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem, mpvTitle: mpvTitle)
           // Now update the total length if needed (but only if it's already done calculating):
           if playlistTotalLengthIsReady {
             let prevDuration = existingCachedMeta?.duration ?? 0
@@ -812,7 +812,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         guard needsRefresh else { continue }
         PlayerCore.playlistQueue.async { [self] in
           // Get watch-later form file system; get other meta from ffmpeg:
-          MediaMetaCache.shared.updateCache(for: item, mpvTitle: updatedTitle)
+          MediaMetaCache.shared.updateCachedMeta(item, mpvTitle: updatedTitle)
           // Refresh each row as it gets updated. May take a while to refresh all
           DispatchQueue.main.async { [self] in
             /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row

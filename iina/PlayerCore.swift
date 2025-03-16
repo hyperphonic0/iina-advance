@@ -2323,15 +2323,17 @@ class PlayerCore: NSObject {
     }
 
     // Cannot restore playlist until after fileStarted event & mpv has a position for current item
-    if let priorState = windowController.priorStateIfRestoring,
-       let playlistPathList = priorState.properties[PlayerSaveState.PropName.playlistPaths.rawValue] as? [String] {
-      log.debug{"Restoring \(playlistPathList.count) items into playlist"}
-      _addToPlaylist(pathListIncludingCurrent: playlistPathList)
-
-      /// Launches background task which scans video files and collects video size metadata using ffmpeg
-      PlayerCore.backgroundQueue.async { [self] in
-        guard state.isNotYet(.stopping) else { return }
-        MediaMetaCache.shared.fillInVideoSizes(info.currentVideosInfo, onBehalfOf: self)
+    if let priorState = windowController.priorStateIfRestoring {
+      let playlistPathList = priorState.getPlaylistPathList()
+      if !playlistPathList.isEmpty {
+        log.debug{"Restoring \(playlistPathList.count) items into playlist"}
+        _addToPlaylist(pathListIncludingCurrent: playlistPathList)
+        
+        /// Launches background task which scans video files and collects video size metadata using ffmpeg
+        PlayerCore.backgroundQueue.async { [self] in
+          guard state.isNotYet(.stopping) else { return }
+          MediaMetaCache.shared.fillInVideoSizes(info.currentVideosInfo, onBehalfOf: self)
+        }
       }
     }
 

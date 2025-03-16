@@ -112,13 +112,17 @@ class MediaMetaCache {
   // MARK: - Artist, title meta
 
   /**
-   Fetch video duration, playback progress, and name metadata, then save it to cache.
-   It may take some time to run this method, so it should be used in background.
-   Note: This only works for file paths (not network streams)!
+   Updates the cached entry for the item with the given `id`.b
+
+   1. If item is a file & `reloadFromWatchLater` is true, then saved playback progress is updated from the item's watch-later file
+   (or set to `nil` if there is no saved progress)
+   2. If item is a file & `reloadFromFFmpeg` is true, then video duration, title, album, & artist are read from FFmpeg & saved to cache.
+   3. If any of `mpvTitle`, `mpvAlbum`, or `mpvArtist` are specified, overwrite any previous value with these.
+   Items 1 & 2 are expensive operations so this method should be executed in a background queue if either of these are used.
    */
   @discardableResult
-  func updateCache(for id: PlaybackID, reloadFromWatchLater: Bool = true, reloadFromFFmpeg: Bool = true,
-                   mpvTitle: String? = nil, mpvAlbum: String? = nil, mpvArtist: String? = nil) -> MediaMeta? {
+  func updateCachedMeta(_ id: PlaybackID, reloadFromWatchLater: Bool = true, reloadFromFFmpeg: Bool = true,
+                        mpvTitle: String? = nil, mpvAlbum: String? = nil, mpvArtist: String? = nil) -> MediaMeta? {
 
     var progress: Double? = nil
     var duration: Double? = nil

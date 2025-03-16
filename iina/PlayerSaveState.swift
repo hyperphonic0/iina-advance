@@ -171,6 +171,42 @@ struct PlayerSaveState: CustomStringConvertible {
 
   // MARK: - Save State / Serialize to prefs strings
 
+  func getPlaylistPathList() -> [String] {
+    guard let playlistPathList = properties[PlayerSaveState.PropName.playlistPaths.rawValue] as? [String] else {
+      return []
+    }
+
+    return playlistPathList
+    // TODO: resolve bookmarks
+    /*
+    guard let playlistBookmarks = properties[PlayerSaveState.PropName.playlistBookmarks.rawValue] as? [NSData?] else {
+      return playlistPathList
+    }
+
+    guard playlistPathList.count == playlistBookmarks.count else {
+      log.error{"Cannot use bookmarks for restore: found \(playlistBookmarks.count) bookmarks but \(playlistPathList.count) paths! Returning paths as-is"}
+      return playlistPathList
+    }
+
+    var restoredPlaylistPaths: [String] = []
+    var resolvedCount = 0
+    for (bookmark, storedPath) in zip(playlistBookmarks, playlistPathList) {
+      if let bookmarkData = bookmark as? Data, let url = PlaybackID.url(fromBookmark: bookmarkData, log) {
+        let resolvedPath = PlaybackID.path(from: url)
+        restoredPlaylistPaths.append(resolvedPath)
+        resolvedCount += 1
+        if resolvedPath != storedPath {
+          log.debug{"Playlist item from bookmark resolved to a new path than previously stored: \(resolvedPath.pii.quoted) vs. \(storedPath.pii.quoted)"}
+        }
+      } else {
+        restoredPlaylistPaths.append(storedPath)
+      }
+    }
+    log.debug{"Resolved \(resolvedCount)/\(playlistPathList.count) playlist items from bookmarks"}
+    return restoredPlaylistPaths
+     */
+  }
+
   /// Generates a Dictionary of properties for storage into a Preference entry
   static private func generatePropDict(from player: PlayerCore, _ geo: GeometrySet) -> [String: Any] {
     var props: [String: Any] = [:]

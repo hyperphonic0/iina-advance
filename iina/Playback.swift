@@ -143,6 +143,31 @@ struct PlaybackID {
     }
   }
 
+  static func bookmark(fromURL url: URL, _ log: Logger.Subsystem) -> Data? {
+    guard url.isFileURL else { return nil }
+    guard FileManager.default.fileExists(atPath: url.path) else {
+      log.trace{"Cannot create bookmark data from URL \(url.path.pii.quoted): file does not exist"}
+      return nil
+    }
+    do {
+      return try url.bookmarkData(options: .securityScopeAllowOnlyReadAccess, includingResourceValuesForKeys: nil, relativeTo: nil)
+    } catch {
+      log.error{"Failed to create bookmark data from URL \(path(from: url).pii.quoted): \(error)"}
+      return nil
+    }
+  }
+
+  static func url(fromBookmark bookmarkData: Data, _ log: Logger.Subsystem) -> URL? {
+    var isStale = false
+    do {
+      return try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale)
+    } catch {
+      log.error{"Failed to restore bookmark data: \(error)"}
+      return nil
+    }
+  }
+
+
   /// Converts `urlPath` from what mpv calls `filename` in its APIs.
   ///
   /// This is a string which follows one of the following formats:
