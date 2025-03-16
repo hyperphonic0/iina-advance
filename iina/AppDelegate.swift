@@ -371,21 +371,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let windowName = window.savedStateName
     guard !windowName.isEmpty else { return }
 
+    Logger.log.verbose{"Window will close: \(windowName)"}
+
     let wasOpen = UIState.shared.windowsOpen.remove(windowName) != nil
     let wasMinimized = UIState.shared.windowsMinimized.remove(windowName) != nil
 
-    guard wasOpen || wasMinimized else {
-      Logger.log.verbose{"Window already closed, ignoring: \(windowName.quoted)"}
-      return
+    if wasOpen || wasMinimized {
+      lastClosedWindowName = windowName
+
+      /// Query for the list of open windows and save it (excluding the window which is about to close).
+      /// Most cases are covered by saving when `windowDidBecomeMain` is called, but this covers the case where
+      /// the user closes a window which is not in the foreground.
+      UIState.shared.saveCurrentOpenWindowList(excludingWindowName: window.savedStateName)
+    } else {
+      Logger.log.verbose{"Window not marked as open or minimized; skipping state update: \(windowName.quoted)"}
     }
-
-    Logger.log.verbose{"Window will close: \(windowName)"}
-    lastClosedWindowName = windowName
-
-    /// Query for the list of open windows and save it (excluding the window which is about to close).
-    /// Most cases are covered by saving when `windowDidBecomeMain` is called, but this covers the case where
-    /// the user closes a window which is not in the foreground.
-    UIState.shared.saveCurrentOpenWindowList(excludingWindowName: window.savedStateName)
 
     (window.windowController as? WindowController)?.refreshWindowOpenCloseAnimation()
 

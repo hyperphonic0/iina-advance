@@ -38,7 +38,7 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
     return playlist.map {
       [
         "filename": PlaybackID.path(from: $0.url),
-        "title": MediaMetaCache.shared.getCachedMeta(for: $0.url)?.title ?? NSNull(),
+        "title": MediaMetaCache.shared.getCachedMeta(for: $0)?.title ?? NSNull(),
         // TODO: these don't do anything
         "isPlaying": false,
         "isCurrent": false

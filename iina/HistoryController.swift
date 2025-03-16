@@ -359,7 +359,7 @@ class HistoryController {
 
       // 2. IINA's [ancient] "resume last playback" feature
       // Add this now, or else welcome window will fall out of sync with history list
-      saveToLastPlayedFile(id.url, duration: durationSec, position: positionSec)
+      saveToLastPlayedFile(id, duration: durationSec, position: positionSec)
 
       if Preference.bool(for: .recordRecentFiles) {
         // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
@@ -379,14 +379,14 @@ class HistoryController {
 
   /// Actually this is called when player is stopping, so needs to account for watch-later, which (if enabled)
   /// should have been written to prior to calling this function.
-  func savePlaybackMetaBeforeFileWillClose(_ url: URL, duration: Double?, position: Double?) {
+  func savePlaybackMetaBeforeFileWillClose(_ id: PlaybackID, duration: Double?, position: Double?) {
     HistoryController.shared.async { [self] in
-      saveToLastPlayedFile(url, duration: duration, position: position)
+      saveToLastPlayedFile(id, duration: duration, position: position)
 
       // The rest of the stuff below relates to UI updates and should be cancelled if shutting down.
       guard !isAppTerminating else { return }
 
-      guard let historyEntry = history.first(where: {$0.url == url}) else { return }
+      guard let historyEntry = history.first(where: {$0.url == id.url}) else { return }
 
       // Ensure Playback History window is updated in real time
       if Preference.bool(for: .recordPlaybackHistory) {
@@ -399,18 +399,18 @@ class HistoryController {
     }
   }
 
-  private func saveToLastPlayedFile(_ url: URL?, duration: Double?, position: Double?) {
-    guard let url else {
-      log.warn("Cannot save iinaLastPlayedFilePath or iinaLastPlayedFilePosition: url is nil!")
+  private func saveToLastPlayedFile(_ id: PlaybackID?, duration: Double?, position: Double?) {
+    guard let id else {
+      log.warn("Cannot save iinaLastPlayedFilePath or iinaLastPlayedFilePosition: playback ID is nil!")
       return
     }
     guard Preference.bool(for: .resumeLastPosition) else {
       // May need to clear cached progress in case this pref was toggled from on to off during this launch
-      MediaMetaCache.shared.setCachedMediaDurationAndProgress(url, duration: duration, progress: nil)
+      MediaMetaCache.shared.setCachedMediaDurationAndProgress(id, duration: duration, progress: nil)
       return
     }
     // FIXME: remove `iinaLastPlayedFilePath` and `iinaLastPlayedFilePosition` - they are not compatible with welcome window list
-    Preference.set(url, for: .iinaLastPlayedFilePath)
+    Preference.set(id.url, for: .iinaLastPlayedFilePath)
 
     if let position {
       log.verbose{"Saving iinaLastPlayedFilePosition: \(position)s"}
@@ -422,7 +422,7 @@ class HistoryController {
 
     // Write to cache directly (rather than calling `refreshCachedVideoProgress`).
     // If user only closed the window but didn't quit the app, this can make sure playlist displays the correct progress.
-    MediaMetaCache.shared.setCachedMediaDurationAndProgress(url, duration: duration, progress: position)
+    MediaMetaCache.shared.setCachedMediaDurationAndProgress(id, duration: duration, progress: position)
   }
 
   // MARK: - FileExists & Progress from watch-later
@@ -453,8 +453,8 @@ class HistoryController {
       }
     } else {
       var didClearCachedProgress = false
-      if let cachedMediaMeta = MediaMetaCache.shared.getCachedMeta(for: entry.url), cachedMediaMeta.progress != nil {
-        MediaMetaCache.shared.setCachedMediaDurationAndProgress(entry.url, duration: cachedMediaMeta.duration, progress: nil)
+      if let cachedMediaMeta = MediaMetaCache.shared.getCachedMeta(for: entry.id), cachedMediaMeta.progress != nil {
+        MediaMetaCache.shared.setCachedMediaDurationAndProgress(entry.id, duration: cachedMediaMeta.duration, progress: nil)
         didClearCachedProgress = true
       }
       if entry.mpvProgress != nil {
@@ -556,7 +556,7 @@ class HistoryController {
 
     if progressDidChange {
       // Copy from the old paradigm into the new...
-      MediaMetaCache.shared.setCachedMediaDurationAndProgress(historyEntry.url, duration: historyEntry.duration, progress: progress)
+      MediaMetaCache.shared.setCachedMediaDurationAndProgress(historyEntry.id, duration: historyEntry.duration, progress: progress)
     }
   }
 

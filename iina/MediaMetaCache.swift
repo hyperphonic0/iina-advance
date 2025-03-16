@@ -87,9 +87,9 @@ class MediaMetaCache {
     }
   }
 
-  func getCachedMeta(for url: URL) -> MediaMeta? {
+  func getCachedMeta(for id: PlaybackID) -> MediaMeta? {
     metaLock.withLock {
-      return cachedMeta[url]
+      return cachedMeta[id.url]
     }
   }
 
@@ -101,11 +101,11 @@ class MediaMetaCache {
     }
   }
 
-  func setCachedMediaDurationAndProgress(_ url: URL, duration: Double? = nil, progress: Double?) {
+  func setCachedMediaDurationAndProgress(_ id: PlaybackID, duration: Double? = nil, progress: Double?) {
     metaLock.withLock {
-      let oldMeta = cachedMeta[url] ?? MediaMeta.empty
+      let oldMeta = cachedMeta[id.url] ?? MediaMeta.empty
       // nilProgress == kludge to force nil
-      cachedMeta[url] = oldMeta.clone(duration: duration, progress: progress, nilProgress: progress == nil)
+      cachedMeta[id.url] = oldMeta.clone(duration: duration, progress: progress, nilProgress: progress == nil)
     }
   }
 
@@ -117,7 +117,7 @@ class MediaMetaCache {
    Note: This only works for file paths (not network streams)!
    */
   @discardableResult
-  func updateCache(for url: URL, reloadFromWatchLater: Bool = true, reloadFromFFmpeg: Bool = true,
+  func updateCache(for id: PlaybackID, reloadFromWatchLater: Bool = true, reloadFromFFmpeg: Bool = true,
                    mpvTitle: String? = nil, mpvAlbum: String? = nil, mpvArtist: String? = nil) -> MediaMeta? {
 
     var progress: Double? = nil
@@ -129,14 +129,14 @@ class MediaMetaCache {
 
     var triedFFmpeg = false
 
-    if url.isFileURL {
+    if id.isFile {
       if reloadFromWatchLater {
-        progress = HistoryController.shared.playbackProgressFromWatchLater(url.path.md5)
+        progress = HistoryController.shared.playbackProgressFromWatchLater(id.mpvMD5)
       }
 
       if reloadFromFFmpeg {
         triedFFmpeg = true
-        if let dict = FFmpegController.probeVideoInfo(forFile: url.path) {
+        if let dict = FFmpegController.probeVideoInfo(forFile: id.path) {
 
           duration = dict["@iina_duration"] as? Double
 
@@ -169,6 +169,7 @@ class MediaMetaCache {
     }
 
     return metaLock.withLock {
+      let url = id.url
       let oldMeta = cachedMeta[url] ?? MediaMeta.empty
       let newMeta = oldMeta.clone(duration: duration, progress: progress, nilProgress: progress == nil,
                                   title: title, album: album, artist: artist, triedFFmpeg: triedFFmpeg)

@@ -751,7 +751,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let playlistItem = playlistItems[rowIndex]
     let url = playlistItem.url
 
-    var existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: url)
+    var existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: playlistItem)
 
     let needsRefresh = force || existingCachedMeta == nil || (url.isFileURL && !existingCachedMeta!.triedFFmpeg)
     if needsRefresh {
@@ -762,12 +762,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
         // Check cache again; we don't know how much time has passed since last access & want to avoid redundant file access
-        existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: url)
+        existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: playlistItem)
         guard needsRefresh || (mpvTitle != existingCachedMeta!.title) else { return }
 
         PlayerCore.playlistQueue.async { [self] in
           // Get watch-later form file system; get other meta from ffmpeg:
-          let cachedMeta = MediaMetaCache.shared.updateCache(for: url, mpvTitle: mpvTitle)
+          let cachedMeta = MediaMetaCache.shared.updateCache(for: playlistItem, mpvTitle: mpvTitle)
           // Now update the total length if needed (but only if it's already done calculating):
           if playlistTotalLengthIsReady {
             let prevDuration = existingCachedMeta?.duration ?? 0
@@ -806,14 +806,13 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       }
 
       for (rowIndex, item) in playlistItems.enumerated() {
-        let url = item.url
         let updatedTitle = titles[rowIndex]
-        let existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: url)
-        let needsRefresh = existingCachedMeta == nil || (url.isFileURL && !existingCachedMeta!.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta!.title)
+        let existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: item)
+        let needsRefresh = existingCachedMeta == nil || (item.url.isFileURL && !existingCachedMeta!.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta!.title)
         guard needsRefresh else { continue }
         PlayerCore.playlistQueue.async { [self] in
           // Get watch-later form file system; get other meta from ffmpeg:
-          MediaMetaCache.shared.updateCache(for: url, mpvTitle: updatedTitle)
+          MediaMetaCache.shared.updateCache(for: item, mpvTitle: updatedTitle)
           // Refresh each row as it gets updated. May take a while to refresh all
           DispatchQueue.main.async { [self] in
             /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row

@@ -117,17 +117,13 @@ struct PlaybackID {
     mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
   }
 
-  var path: String {
-    return PlaybackID.path(from: url)
-  }
+  var path: String { PlaybackID.path(from: url) }
 
-  var isNetworkResource: Bool {
-    return !url.isFileURL
-  }
+  var isFile: Bool { url.isFileURL }
 
-  var displayName: String {
-    return PlaybackID.displayName(from: url)
-  }
+  var isNetworkResource: Bool { !isFile }
+
+  var displayName: String { PlaybackID.displayName(from: url) }
 
   /// Returns the name of this resource as it should be displayed in the UI. Does not account for its `title` or other metadata.
   static func displayName(from url: URL?) -> String {

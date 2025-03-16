@@ -2199,11 +2199,11 @@ class PlayerCore: NSObject {
       mpv.command(.writeWatchLaterConfig, level: .verbose)
     }
 
-    guard let url = info.currentURL else {
-      log.warn("Cannot save playback meta: no URL")
+    guard let id = info.currentPlayback?.id else {
+      log.warn("Cannot save playback meta: currentPlayback is nil")
       return
     }
-    HistoryController.shared.savePlaybackMetaBeforeFileWillClose(url, duration: info.playbackDurationSec, position: info.playbackPositionSec)
+    HistoryController.shared.savePlaybackMetaBeforeFileWillClose(id, duration: info.playbackDurationSec, position: info.playbackPositionSec)
   }
 
   func getMPVGeometry() -> MPVGeometryDef? {
