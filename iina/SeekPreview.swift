@@ -6,6 +6,8 @@
 //  Copyright © 2024 lhc. All rights reserved.
 //
 
+fileprivate let useThumbfast = false
+
 extension PlayerWindowController {
   // TODO: PK.seekPreviewHasTimeDelta
   // TODO: PK.seekPreviewHasChapter
@@ -94,7 +96,8 @@ extension PlayerWindowController {
     /// `posInWindowX` is where center of timeLabel, thumbnailPeekView should be
     // TODO: Investigate using CoreAnimation!
     // https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/CoreAnimation_guide/CoreAnimationBasics/CoreAnimationBasics.html
-    func showPreview(withThumbnail showThumbnail: Bool, forTime previewTimeSec: Double,
+    func showPreview(withThumbnail showThumbnail: Bool,
+                     forTime previewTimeSec: Double, mediaDuration: Double,
                      posInWindowX: CGFloat, currentControlBar: NSView,
                      _ currentGeo: PWinGeometry) {
 
@@ -310,9 +313,14 @@ extension PlayerWindowController {
         let thumbOriginX = round(posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth))
         let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY.rounded(), width: thumbWidth, height: thumbHeight)
 
-        if false {
+        if useThumbfast {
+          let thumbWidth = 400.0 * currentGeo.mpvVideoScale() // TODO: this is a guess. Need to query thumbfast directly
           // Experiment with Thumbfast Lua script as an alternative (https://github.com/po5/thumbfast)
-          player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: posInWindowX, y: 0)
+          guard player.isActive else { return }
+          let osdWidth = player.mpv.getDouble(MPVProperty.osdWidth)
+          // Thumbfast expects X,Y to represent top-left corner of thumbnail
+          let posInVideoX = min(((previewTimeSec / mediaDuration) * osdWidth), osdWidth - thumbWidth).rounded()
+          player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: posInVideoX, y: 0)
           thumbnailPeekView.isHidden = true
         } else {
           updateThumbnailPeekView(to: ffThumbnail!, thumbFrame: thumbFrame, thumbStore!, currentGeo, previewTimeSec: previewTimeSec)
@@ -530,8 +538,8 @@ extension PlayerWindowController {
     // This may be for music mode also!
     let currentGeo = currentLayout.buildGeometry(windowFrame: latestWindowFrame, screenID: latestScreenID, video: geo.video)
 
-    seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, posInWindowX: pointInWindowCorrected.x,
-                            currentControlBar: currentControlBar, currentGeo)
+    seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, mediaDuration: mediaDuration,
+                            posInWindowX: pointInWindowCorrected.x, currentControlBar: currentControlBar, currentGeo)
     return true
   }
 
