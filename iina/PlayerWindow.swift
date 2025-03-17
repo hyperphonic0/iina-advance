@@ -193,6 +193,14 @@ class PlayerWindow: NSWindow {
     return super.canBecomeKey
   }
 
+  override var level: NSWindow.Level {
+    didSet {
+      // An AppKit bug introduced in MacOS Sequoia causes tracking areas to stop responding after changing window level.
+      // Standard workaround for Apple bugs: toggle off and then on again.
+      pwc?.updateWindowTrackingAreas()
+    }
+  }
+
   override var canBecomeMain: Bool {
     if isCustomWindowStyle {
       return true

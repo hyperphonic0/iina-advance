@@ -20,7 +20,7 @@ extension PlayerWindowController {
         if let keyBinding = player.keyBindingContext.matchActiveKeyBinding(endingWith: normalizedMpvKey) {
           if keyBinding.isIgnored {
             // if "ignore", just swallow the event. Do not forward; do not beep
-            log.verbose("Binding is ignored for key: \(normalizedMpvKey.quoted)")
+            log.verbose{"Binding is ignored for key: \(normalizedMpvKey.quoted)"}
             return true
           } else {
             return handleKeyBinding(keyBinding)

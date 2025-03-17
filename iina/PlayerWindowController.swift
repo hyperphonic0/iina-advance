@@ -1424,7 +1424,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
         if currentLayout.isLegacyFullScreen && window.level != .iinaFloating {
           log.verbose("Window is key: resuming legacy FS window level")
-          changeWindowLevel(to: .iinaFloating)
+          window.level = .iinaFloating
         }
 
         // If focus changed from a different window, need to recalculate the current bindings
@@ -1434,7 +1434,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         /// Always restore window level from `floating` to `normal`, so other windows aren't blocked & cause confusion
         if currentLayout.isLegacyFullScreen && window.level != .normal {
           log.verbose("Window is not key: restoring legacy FS window level to normal")
-          changeWindowLevel(to: .normal)
+          window.level = .normal
         }
 
         if Preference.bool(for: .blackOutMonitor) {
@@ -1442,13 +1442,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         }
       }
     }
-  }
-
-  func changeWindowLevel(to level: NSWindow.Level) {
-    window?.level = level
-    // An AppKit bug introduced in MacOS Sequoia causes tracking areas to stop responding after changing window level.
-    // Standard workaround for Apple bugs: toggle off and then on again.
-    updateWindowTrackingAreas()
   }
 
   // Don't really care if window is main in IINA Advance; we care only if window is key,
