@@ -885,6 +885,10 @@ extension PlayerWindowController {
 
   /// Returns `true` if mouse was within either sidebar's resize rect, and resize was started.
   func startResizingSidebar(with event: NSEvent) -> Bool {
+    guard !leadingSidebarIsResizing, !trailingSidebarIsResizing else {
+      log.verbose{"Not going to start resizing sidebar(s); already resizing (L=\(leadingSidebarIsResizing.yn) T=\(trailingSidebarIsResizing.yn))"}
+      return false
+    }
     let pointInWindow = mouseLocationInWindow
     if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) {
       log.verbose("User started resize of leading sidebar")
@@ -1081,7 +1085,7 @@ extension PlayerWindowController {
       leadingSidebarIsResizing = false
       if let newGeo {
         newPlaylistWidth = currentLayout.leadingSidebar.placement == .outsideViewport ? newGeo.outsideBars.leading : newGeo.insideBars.leading
-        log.verbose("Finished resize of leading sidebar; playlist is now \(newPlaylistWidth)")
+        log.verbose{"Finished resize of leading sidebar; playlist is now \(newPlaylistWidth)"}
       } else {
         log.verbose("Finished resize of leading sidebar; playlist is last value set")
         return true
@@ -1091,7 +1095,7 @@ extension PlayerWindowController {
       trailingSidebarIsResizing = false
       if let newGeo {
         newPlaylistWidth = currentLayout.trailingSidebar.placement == .outsideViewport ? newGeo.outsideBars.trailing : newGeo.insideBars.trailing
-        log.verbose("Finished resize of trailing sidebar; playlist is now \(newPlaylistWidth)")
+        log.verbose{"Finished resize of trailing sidebar; playlist is now \(newPlaylistWidth)"}
       } else {
         log.verbose("Finished resize of trailing sidebar; playlist is last value set")
         return true
@@ -1108,10 +1112,7 @@ extension PlayerWindowController {
       self.currentLayout = LayoutState.buildFrom(currentLayout.spec.clone(moreSidebarState: moreSidebarState))
     }
 
-    guard newCursor != .normalCursor else { return true }
-
-    // Call this to refresh cursor
-    mouseDidMoveInWindow()
+    applyCustomCursor(newCursor)
     return true
   }
 
