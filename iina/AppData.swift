@@ -329,6 +329,10 @@ struct Constants {
     // This multiplied by available window width → snap to center
     static let floatingControllerSnapToCenterThresholdMultiplier = 0.05
 
+    /// Not sure why, but extra width is needs to be added to intrinsicContentSize to prevent
+    /// 1 or 2 letters being replaced with ellipses.
+    static let resizableTextViewExtraWidth = 12.0
+
     struct Slider {
       /// May be overridden
       static let defaultKnobWidth: CGFloat = 3

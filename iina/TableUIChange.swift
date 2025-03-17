@@ -88,21 +88,21 @@ class TableUIChange {
   let completionHandler: TableUIChange.CompletionHandler?
 
   var hasRemove: Bool {
-    if let toRemove = self.toRemove {
+    if let toRemove = toRemove {
       return !toRemove.isEmpty
     }
     return false
   }
 
   var hasInsert: Bool {
-    if let toInsert = self.toInsert {
+    if let toInsert = toInsert {
       return !toInsert.isEmpty
     }
     return false
   }
 
   var hasMove: Bool {
-    if let toMove = self.toMove {
+    if let toMove = toMove {
       return !toMove.isEmpty
     }
     return false
@@ -170,11 +170,11 @@ class TableUIChange {
       }
 
       if wantsReloadOfExistingRows {
-        Logger.log("TableUIChange: reloading existing rows", level: .verbose)
+        Logger.log.verbose("TableUIChange: reloading existing rows")
         /// Also uses `newSelectedRowIndexes`, if it is not nil:
         tableView.reloadExistingRows(reselectRowsAfter: true, usingNewSelection: self.newSelectedRowIndexes)
       } else if let newSelectedRowIndexes = self.newSelectedRowIndexes {
-        Logger.log("TableUIChange: selecting \(newSelectedRowIndexes.count) rows", level: .verbose)
+        Logger.log.verbose("TableUIChange: selecting \(newSelectedRowIndexes.count) rows")
         tableView.selectApprovedRowIndexes(newSelectedRowIndexes)
       } else {
         Logger.log("TableUIChange: no change to row selection", level: .verbose)
@@ -218,7 +218,7 @@ class TableUIChange {
   private func executeGroup(_ groupNode: LinkedList<AnimationBlock>.Node?) {
     guard let groupNode = groupNode else {
       if let lastCompletionHandler = self.completionHandler {
-        Logger.log("Executing custom completion handler for TableUIChange", level: .verbose)
+        Logger.log.verbose("Executing custom completion handler for TableUIChange")
         lastCompletionHandler(self)
       }
       return
@@ -230,25 +230,25 @@ class TableUIChange {
   }
 
   private func executeRowUpdates(on tableView: EditableTableView) {
-    let insertAnimation = IINAAnimation.isAnimationEnabled ? (self.rowInsertAnimation ?? tableView.rowInsertAnimation) : []
-    let removeAnimation = IINAAnimation.isAnimationEnabled ? (self.rowRemoveAnimation ?? tableView.rowRemoveAnimation) : []
+    let insertAnimation = IINAAnimation.isAnimationEnabled ? (rowInsertAnimation ?? tableView.rowInsertAnimation) : []
+    let removeAnimation = IINAAnimation.isAnimationEnabled ? (rowRemoveAnimation ?? tableView.rowRemoveAnimation) : []
 
-    Logger.log("Executing TableUIChange type \"\(self.changeType)\": \(self.toRemove?.count ?? 0) removes, \(self.toInsert?.count ?? 0) inserts, \(self.toMove?.count ?? 0), moves, \(self.toUpdate?.count ?? 0) updates; reloadExisting: \(self.reloadAllExistingRows), \(self.newSelectedRowIndexes?.count ?? -1) selectedRows", level: .verbose)
+    Logger.log.verbose("Executing TableUIChange type \"\(changeType)\": \(toRemove?.count ?? 0) removes, \(toInsert?.count ?? 0) inserts, \(toMove?.count ?? 0), moves, \(toUpdate?.count ?? 0) updates; reloadExisting: \(reloadAllExistingRows), \(newSelectedRowIndexes?.count ?? -1) selectedRows")
 
     switch changeType {
 
       case .removeRows:
-        if let indexes = self.toRemove {
+        if let indexes = toRemove {
           tableView.removeRows(at: indexes, withAnimation: removeAnimation)
         }
 
       case .insertRows:
-        if let indexes = self.toInsert {
+        if let indexes = toInsert {
           tableView.insertRows(at: indexes, withAnimation: insertAnimation)
         }
 
       case .moveRows:
-        if let movePairs = self.toMove {
+        if let movePairs = toMove {
           for (oldIndex, newIndex) in movePairs {
             Logger.log("Moving row \(oldIndex) → \(newIndex)", level: .verbose)
             tableView.moveRow(at: oldIndex, to: newIndex)
@@ -264,23 +264,23 @@ class TableUIChange {
 
       case .reloadAll:
         // Try not to use this much, if at all
-        Logger.log("Executing TableUIChange: ReloadAll", level: .verbose)
+      Logger.log.verbose("Executing TableUIChange: ReloadAll")
         tableView.reloadData()
 
       case .wholeTableDiff:
-        if let toRemove = self.toRemove,
-           let toInsert = self.toInsert,
-           let toUpdate = self.toUpdate,
-           let movePairs = self.toMove {
+        if let toRemove = toRemove,
+           let toInsert = toInsert,
+           let toUpdate = toUpdate,
+           let movePairs = toMove {
           guard !toRemove.isEmpty || !toInsert.isEmpty || !toUpdate.isEmpty || !movePairs.isEmpty else {
-            Logger.log("Executing changes from diff: no rows changed", level: .verbose)
+            Logger.log.verbose("Executing changes from diff: no rows changed")
             break
           }
           // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
           tableView.removeRows(at: toRemove, withAnimation: removeAnimation)
           tableView.insertRows(at: toInsert, withAnimation: insertAnimation)
           for (oldIndex, newIndex) in movePairs {
-            Logger.log("Executing changes from diff: moving row: \(oldIndex) → \(newIndex)", level: .verbose)
+            Logger.log.verbose{"Executing changes from diff: moving row: \(oldIndex) → \(newIndex)"}
             tableView.moveRow(at: oldIndex, to: newIndex)
           }
         }
@@ -291,7 +291,7 @@ class TableUIChange {
   // Don't need to worry about moves & inserts, because those will be highlighted.
   func setUpFlashForChangedRows() {
     flashBefore = IndexSet()
-    if let toRemove = self.toRemove {
+    if let toRemove = toRemove {
       for index in toRemove {
         flashBefore?.insert(index)
       }
@@ -322,17 +322,17 @@ class TableUIChange {
   }
 
   func shallowClone() -> TableUIChange {
-    let clone = TableUIChange(self.changeType, completionHandler: self.completionHandler)
-    clone.toRemove = self.toRemove
-    clone.toInsert = self.toInsert
-    clone.toMove = self.toMove
-    clone.toUpdate = self.toUpdate
-    clone.newSelectedRowIndexes = self.newSelectedRowIndexes
-    clone.oldSelectedRowIndexes = self.oldSelectedRowIndexes
-    clone.rowInsertAnimation = self.rowInsertAnimation
-    clone.rowRemoveAnimation = self.rowRemoveAnimation
-    clone.reloadAllExistingRows = self.reloadAllExistingRows
-    clone.scrollToShowChangedRow = self.scrollToShowChangedRow
+    let clone = TableUIChange(changeType, completionHandler: completionHandler)
+    clone.toRemove = toRemove
+    clone.toInsert = toInsert
+    clone.toMove = toMove
+    clone.toUpdate = toUpdate
+    clone.newSelectedRowIndexes = newSelectedRowIndexes
+    clone.oldSelectedRowIndexes = oldSelectedRowIndexes
+    clone.rowInsertAnimation = rowInsertAnimation
+    clone.rowRemoveAnimation = rowRemoveAnimation
+    clone.reloadAllExistingRows = reloadAllExistingRows
+    clone.scrollToShowChangedRow = scrollToShowChangedRow
 
     return clone
   }
