@@ -684,14 +684,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private func updateCellForTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
     // FIXME: refactor to streamline flow of loading. Do not do it here
     // FIXME: merge these two data structures
-    guard let (playlistItem, cachedMeta) = loadCachedItem(forRowIndex: rowIndex) else {
+    guard let cachedMeta = loadCachedItem(forRowIndex: rowIndex) else {
       player.log.error{"No playlist item found for rowIndex \(rowIndex). Skipping cell update"}
       return
     }
 
     let wantsTitleMeta = Preference.bool(for: .playlistShowMetadata) && (Preference.bool(for: .playlistShowMetadataInMusicMode) ? player.isInMiniPlayer : true)
-    let displayName = (wantsTitleMeta ? cachedMeta?.title : nil) ?? NSString(string: playlistItem.displayName).deletingPathExtension
-    let artist = wantsTitleMeta ? cachedMeta?.artist : nil
+    let displayName = (wantsTitleMeta ? cachedMeta.title : nil) ?? NSString(string: cachedMeta.id.displayName).deletingPathExtension
+    let artist = wantsTitleMeta ? cachedMeta.artist : nil
 
 //    player.log.verbose("Building row \(rowIndex) of playlist: \(displayName.quoted)")
 
@@ -700,7 +700,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     // Title, artist, prefix
     if Preference.bool(for: .shortenFileGroupsInPlaylist),
-       let prefix = player.info.currentVideosInfo.first(where: { $0.url == playlistItem.url })?.prefix,
+       let prefix = player.info.currentVideosInfo.first(where: { $0.url == cachedMeta.id.url })?.prefix,
        !prefix.isEmpty,
        prefix.count <= displayName.count,  // check whether prefix length > displayName length
        prefix.count >= prefixMinLength,
@@ -716,14 +716,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     // playback progress and duration
     cellView.durationLabel.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
-    if let duration = cachedMeta?.duration {
+    if let duration = cachedMeta.duration {
       let durationString = VideoTime(duration).stringRepresentation
       let durationTextColor = isPlaying ? isPlayingTextColor : .secondaryLabelColor
       cellView.durationLabel.setFormattedText(stringValue: durationString, textColor: durationTextColor)
     } else {
       cellView.durationLabel.stringValue = ""
     }
-    if let progress = cachedMeta?.progress, let duration = cachedMeta?.duration {
+    if let progress = cachedMeta.progress, let duration = cachedMeta.duration {
       cellView.playbackProgressView.layerContentsRedrawPolicy = .duringViewResize
       cellView.playbackProgressView.percentage = progress / duration
       cellView.playbackProgressView.isHidden = false
@@ -733,7 +733,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     // sub button
     if !player.info.isMatchingSubtitles,
-       let matchedSubs = player.info.getMatchedSubs(playlistItem.url.path), !matchedSubs.isEmpty {
+       let matchedSubs = player.info.getMatchedSubs(cachedMeta.id.path), !matchedSubs.isEmpty {
       cellView.setDisplaySubButton(true)
     } else {
       cellView.setDisplaySubButton(false)
@@ -743,7 +743,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @discardableResult
-  private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> (PlaybackID, MediaMeta?)? {
+  private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> MediaMeta? {
     guard rowIndex >= 0 else { return nil }
     player.log.trace{"Playlist: reloading cache for row \(rowIndex)\(force ? " (forced)" : "")"}
     let playlistItems = player.info.playlist
@@ -785,7 +785,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       }
     }
 
-    return (playlistItem, existingCachedMeta)
+    return existingCachedMeta
   }
 
   private func updateCachesForAllItems() {
@@ -1081,8 +1081,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 }
 
-/// EditableTableViewDelegate
+// MARK: - EditableTableViewDelegate
 
+/// `EditableTableViewDelegate`
 extension PlaylistViewController: EditableTableViewDelegate {
   var parentTableView: EditableTableView! { playlistTableView }
 

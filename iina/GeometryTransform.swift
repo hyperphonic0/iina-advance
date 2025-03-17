@@ -47,7 +47,7 @@ struct GeometryTransform {
 
       // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
       // This is optional but provides a better viewer experience.
-      let ffMeta = currentPlayback.isNetworkResource ? nil : MediaMetaCache.shared.getOrReadVideoMeta(forURL: currentPlayback.url, log)
+      let ffMeta = currentPlayback.isNetworkResource ? nil : MediaMetaCache.shared.getOrReadVideoMeta(id: currentPlayback.id, log)
 
       if let ffMeta {
         log.debug{"[GeoTF:\(name)] Substituting ffMeta \(ffMeta) into videoGeo \(videoGeo)"}

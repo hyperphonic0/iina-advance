@@ -11,10 +11,11 @@ import Foundation
 fileprivate let subsystem = Logger.makeSubsystem("fgroup")
 
 class FileInfo: Hashable {
-  var url: URL
-  var path: String
+  let id: PlaybackID
+  var url: URL { id.url }
+  var path: String { id.path }
+  var ext: String { id.pathExtension }
   var filename: String
-  var ext: String
   var nameInSeries: String?
   var characters: [Character]
   var dist: [FileInfo: UInt] = [:]
@@ -37,9 +38,7 @@ class FileInfo: Hashable {
   var suffix: String  // filename - prefix
 
   init(_ url: URL) {
-    self.url = url
-    self.path = url.path
-    self.ext = url.pathExtension
+    self.id = PlaybackID(url)
     self.filename = url.deletingPathExtension().lastPathComponent
     self.characters = [Character](self.filename)
     self.prefix = ""

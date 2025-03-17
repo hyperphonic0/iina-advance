@@ -119,6 +119,8 @@ struct PlaybackID {
 
   var path: String { PlaybackID.path(from: url) }
 
+  var pathExtension: String { url.pathExtension }
+
   var isFile: Bool { url.isFileURL }
 
   var isNetworkResource: Bool { !isFile }

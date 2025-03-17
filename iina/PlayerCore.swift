@@ -499,7 +499,7 @@ class PlayerCore: NSObject {
       }
 
       // Load into cache while in mpv queue first
-      MediaMetaCache.shared.ensureVideoMetaIsCached(forURL: info.currentURL, log)
+      MediaMetaCache.shared.ensureVideoMetaIsCached(id: info.currentPlayback?.id, log)
 
       DispatchQueue.main.async { [self] in
         if !windowController.sessionState.isRestoring {
@@ -2328,7 +2328,7 @@ class PlayerCore: NSObject {
       if !playlistPathList.isEmpty {
         log.debug{"Restoring \(playlistPathList.count) items into playlist"}
         _addToPlaylist(pathListIncludingCurrent: playlistPathList)
-        
+
         /// Launches background task which scans video files and collects video size metadata using ffmpeg
         PlayerCore.backgroundQueue.async { [self] in
           guard state.isNotYet(.stopping) else { return }
@@ -2375,8 +2375,8 @@ class PlayerCore: NSObject {
     let duration = mpv.getDouble(MPVProperty.duration)
     info.playbackDurationSec = duration
     if let path = mpv.getString(MPVProperty.path) {
-      if let url = PlaybackID.url(fromPath: path) {
-        MediaMetaCache.shared.setCachedMediaDuration(url, duration)
+      if let id = PlaybackID(path: path) {
+        MediaMetaCache.shared.setCachedMediaDuration(id, duration)
       } else {
         log.error{"MediaMetaCache: could not create URL for path, skipping: \(path)"}
       }
