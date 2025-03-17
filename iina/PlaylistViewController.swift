@@ -646,8 +646,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   /// Playlist Table: `Track Name` column cell
   private func updateCellForTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
-    // FIXME: refactor to streamline flow of loading. Do not do it here
-    // FIXME: merge these two data structures
     guard let cachedMeta = loadCachedItem(forRowIndex: rowIndex) else {
       player.log.error{"No playlist item found for rowIndex \(rowIndex). Skipping cell update"}
       return
@@ -1154,6 +1152,7 @@ class PlaylistTrackCellView: NSTableCellView {
   override func prepareForReuse() {
     super.prepareForReuse()
     playbackProgressView.percentage = 0
+    playbackProgressView.isHidden = true
     playbackProgressView.needsDisplay = true
     setPrefix(nil)
     setAdditionalInfo(nil)
