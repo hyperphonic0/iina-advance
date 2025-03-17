@@ -1281,8 +1281,6 @@ extension PlayerWindowController {
     }
 
     refreshHidesOnDeactivateStatus()
-    updateIsMoveableByWindowBackground()
-
 
     if !transition.isWindowInitialLayout {
       window.layoutIfNeeded()

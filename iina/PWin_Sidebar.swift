@@ -567,7 +567,7 @@ extension PlayerWindowController {
 
   private func updateLeadingSidebarWidthConstraints(to newWidth: CGFloat, visible: Bool, _ placement: Preference.PanelPlacement,
                                          ΔWindowWidth: CGFloat) {
-    log.verbose("\(visible ? "Showing" : "Hiding") leadingSidebar, width=\(newWidth) placement=\(placement), ΔWindowWidth=\(ΔWindowWidth)")
+    log.verbose("Updating leadingSidebar constraints for \(visible ? "OPEN" : "CLOSED"), width=\(newWidth), \(placement), ΔWindowWidth=\(ΔWindowWidth)")
     let coefficients = getLeadingSidebarWidthCoefficients(visible: visible, placement, ΔWindowWidth: ΔWindowWidth)
 
     viewportLeadingOffsetFromLeadingSidebarLeadingConstraint.animateToConstant(coefficients.0 * newWidth)
@@ -668,7 +668,7 @@ extension PlayerWindowController {
   private func updateTrailingSidebarWidthConstraints(to newWidth: CGFloat, visible: Bool,
                                                      placement: Preference.PanelPlacement,
                                                      ΔWindowWidth: CGFloat) {
-    log.verbose("\(visible ? "Showing" : "Hiding") trailingSidebar, width=\(newWidth) placement=\(placement), ΔWindowWidth=\(ΔWindowWidth)")
+    log.verbose("Updating trailingSidebar constraints for \(visible ? "OPEN" : "CLOSED"), width=\(newWidth), \(placement), ΔWindowWidth=\(ΔWindowWidth)")
     let coefficients = getTrailingSidebarWidthCoefficients(visible: visible, placement, ΔWindowWidth: ΔWindowWidth)
 
     viewportTrailingOffsetFromTrailingSidebarLeadingConstraint.animateToConstant(coefficients.0 * newWidth)
@@ -847,7 +847,7 @@ extension PlayerWindowController {
 
   func isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: NSPoint) -> Bool {
     if currentLayout.leadingSidebar.visibleTabGroup == .playlist {
-      let sf = leadingSidebarView.frame
+      let sf = leadingSidebarView.frameInWindowCoords
 
       let dragRectCenterX = videoView.userInterfaceLayoutDirection == .rightToLeft ?
       sf.origin.x : sf.origin.x + sf.width
@@ -857,6 +857,7 @@ extension PlayerWindowController {
                                   width: Constants.Sidebar.resizeActivationRadius + Constants.Sidebar.resizeActivationRadius,
                                   height: sf.height)
       if NSPointInRect(mousePositionInWindow, activationRect) {
+        log.trace{"Mouse location \(mousePositionInWindow) is within leading sidebar resize rect \(activationRect)"}
         return true
       }
     }
@@ -865,26 +866,27 @@ extension PlayerWindowController {
 
   func isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: NSPoint) -> Bool {
     if currentLayout.trailingSidebar.visibleTabGroup == .playlist {
-      let sf = trailingSidebarView.frame
+      let sf = trailingSidebarView.frameInWindowCoords
       let dragRectCenterX = videoView.userInterfaceLayoutDirection == .rightToLeft ?
       sf.origin.x + sf.width + Constants.Sidebar.resizeActivationRadius : sf.origin.x
 
-      // TODO: need to find way to resize from inside of sidebar
       let activationRect = NSRect(x: dragRectCenterX - Constants.Sidebar.resizeActivationRadius,
                                   y: sf.origin.y,
                                   width: Constants.Sidebar.resizeActivationRadius + Constants.Sidebar.resizeActivationRadius,
                                   height: sf.height)
       
       if NSPointInRect(mousePositionInWindow, activationRect) {
+        log.trace{"Mouse location \(mousePositionInWindow) is within trailing sidebar resize rect \(activationRect)"}
         return true
       }
     }
     return false
   }
 
-  /// Returns `true` if mouse was within sidebar resize rect, and resize was started.
+  /// Returns `true` if mouse was within either sidebar's resize rect, and resize was started.
   func startResizingSidebar(with event: NSEvent) -> Bool {
-    if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: event.locationInWindow) {
+    let pointInWindow = mouseLocationInWindow
+    if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) {
       log.verbose("User started resize of leading sidebar")
       leadingSidebarIsResizing = true
       if currentLayout.isWindowed {
@@ -892,8 +894,8 @@ extension PlayerWindowController {
         windowedModeGeo = windowedGeoForCurrentFrame()
       }
       return true
-    } else if isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: event.locationInWindow) {
-      Logger.log("User started resize of trailing sidebar", level: .verbose, subsystem: player.subsystem)
+    } else if isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: pointInWindow) {
+      log.verbose("User started resize of trailing sidebar")
       trailingSidebarIsResizing = true
       if currentLayout.isWindowed {
         windowedModeGeo = windowedGeoForCurrentFrame()
@@ -903,7 +905,7 @@ extension PlayerWindowController {
     return false
   }
 
-  func resizeSidebar(with dragEvent: NSEvent) -> (CursorType, PWinGeometry?) {
+  func continueResizingSidebar(with dragEvent: NSEvent) -> (CursorType, PWinGeometry?) {
     guard leadingSidebarIsResizing || trailingSidebarIsResizing else { return (.normalCursor, nil) }
 
     let oldGeo: PWinGeometry
@@ -940,8 +942,9 @@ extension PlayerWindowController {
 
       switch currentLayout.mode {
       case .windowedNormal:
-        // Need to update this for future operations
-        windowedModeGeo = newGeo
+        // Need to update windowedModeGeo for future operations.
+        // New geo will have fit=.noConstraints, but we don't want to keep it
+        windowedModeGeo = newGeo.clone(screenFit: .stayInside)
       case .fullScreenNormal:
         break
       case .musicMode, .windowedInteractive, .fullScreenInteractive:
@@ -991,16 +994,17 @@ extension PlayerWindowController {
       /// accomodate the change in video height.
       if Preference.bool(for: .lockViewportToVideoSize) {
         let desiredViewportSize = NSSize(width: newViewportWidth, height: round(newViewportWidth / viewportSize.aspect))
-        newGeo = resizedPlaylistGeo.scalingViewport(to: desiredViewportSize)
+        // Do not try to move the window if it's slightly off screen; it looks weird. Use .noConstraints
+        newGeo = resizedPlaylistGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
       } else {
         /// If `lockViewportToVideoSize` is `false`, window size won't change.
         /// But call `refit` to recalculate videoSize or other internal vars
-        newGeo = resizedPlaylistGeo.refitted()
+        newGeo = resizedPlaylistGeo.refitted(using: .noConstraints)
       }
     } else {  /// `.insideViewport`: needs to refit in case window is so small that the viewport is larger than the video
       let insideBarsNew = oldGeo.insideBars.clone(leading: newPlaylistWidth)
       let resizedPlaylistGeo = oldGeo.clone(insideBars: insideBarsNew)
-      newGeo = resizedPlaylistGeo.refitted()
+      newGeo = resizedPlaylistGeo.refitted(using: .noConstraints)
     }
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)
@@ -1044,13 +1048,13 @@ extension PlayerWindowController {
 
       if Preference.bool(for: .lockViewportToVideoSize) {
         let desiredViewportSize = NSSize(width: newViewportWidth, height: round(newViewportWidth / viewportSize.aspect))
-        newGeo = resizedPlaylistGeo.scalingViewport(to: desiredViewportSize)
+        newGeo = resizedPlaylistGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
       } else {
-        newGeo = resizedPlaylistGeo.refitted()
+        newGeo = resizedPlaylistGeo.refitted(using: .noConstraints)
       }
     } else {  /// `.insideViewport`
       let resizedPlaylistGeo = oldGeo.clone(insideBars: oldGeo.insideBars.clone(trailing: newPlaylistWidth))
-      newGeo = resizedPlaylistGeo.refitted()
+      newGeo = resizedPlaylistGeo.refitted(using: .noConstraints)
     }
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)
@@ -1068,24 +1072,34 @@ extension PlayerWindowController {
   }
 
   func finishResizingSidebar(with dragEvent: NSEvent) -> Bool {
-    let (newCursor, newGeo) = resizeSidebar(with: dragEvent)
-    guard let newGeo, newCursor != .normalCursor else { return false }
+    let (newCursor, newGeo) = continueResizingSidebar(with: dragEvent)
     let currentLayout = currentLayout
 
     let newPlaylistWidth: CGFloat
     if leadingSidebarIsResizing {
       // if it's a mouseup after resizing sidebar
       leadingSidebarIsResizing = false
-      newPlaylistWidth = currentLayout.leadingSidebar.placement == .outsideViewport ? newGeo.outsideBars.leading : newGeo.insideBars.leading
-      log.verbose("Finished resize of leading sidebar; playlist is now \(newPlaylistWidth)")
+      if let newGeo {
+        newPlaylistWidth = currentLayout.leadingSidebar.placement == .outsideViewport ? newGeo.outsideBars.leading : newGeo.insideBars.leading
+        log.verbose("Finished resize of leading sidebar; playlist is now \(newPlaylistWidth)")
+      } else {
+        log.verbose("Finished resize of leading sidebar; playlist is last value set")
+        return true
+      }
     } else if trailingSidebarIsResizing {
       // if it's a mouseup after resizing sidebar
       trailingSidebarIsResizing = false
-      newPlaylistWidth = currentLayout.trailingSidebar.placement == .outsideViewport ? newGeo.outsideBars.trailing : newGeo.insideBars.trailing
-      log.verbose("Finished resize of trailing sidebar; playlist is now \(newPlaylistWidth)")
+      if let newGeo {
+        newPlaylistWidth = currentLayout.trailingSidebar.placement == .outsideViewport ? newGeo.outsideBars.trailing : newGeo.insideBars.trailing
+        log.verbose("Finished resize of trailing sidebar; playlist is now \(newPlaylistWidth)")
+      } else {
+        log.verbose("Finished resize of trailing sidebar; playlist is last value set")
+        return true
+      }
     } else {
       return false
     }
+
     // Update layout also. Do this inside the animation pipeline to prevent (more) races
     animationPipeline.submitInstantTask{ [self] in
       let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: Int(newPlaylistWidth),
@@ -1093,6 +1107,8 @@ extension PlayerWindowController {
                                                       selectedPluginTabID: currentLayout.spec.moreSidebarState.selectedPluginTabID)
       self.currentLayout = LayoutState.buildFrom(currentLayout.spec.clone(moreSidebarState: moreSidebarState))
     }
+
+    guard newCursor != .normalCursor else { return true }
 
     // Call this to refresh cursor
     mouseDidMoveInWindow()

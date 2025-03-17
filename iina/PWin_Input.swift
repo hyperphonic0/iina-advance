@@ -308,7 +308,7 @@ extension PlayerWindowController {
       currentDragObject.mouseDragged(with: event)
       return
     }
-    let (sidebarResizeResult, _) = resizeSidebar(with: event)
+    let (sidebarResizeResult, _) = continueResizingSidebar(with: event)
     applyCustomCursor(sidebarResizeResult)
     let isResizingSidebar = sidebarResizeResult != .normalCursor
     if isResizingSidebar {
@@ -332,7 +332,7 @@ extension PlayerWindowController {
       pendingResizeForScreenChange = false
     }
 
-
+    // Check these in the same order as in mouseDown, to avoid going to unexpected states
     if let currentDragObject {
       defer {
         self.currentDragObject = nil
@@ -340,13 +340,13 @@ extension PlayerWindowController {
       log.verbose("PWin MouseUp: finished drag of object")
       currentDragObject.mouseUp(with: event)
       return
+    } else if finishResizingSidebar(with: event) {
+      log.verbose("PWin MouseUp: finishResizingSidebar returned YES")
+      return
     } else if isDragging {
       // if it's a mouseup after dragging window
       log.verbose("PWin MouseUp: finished drag of window")
       isDragging = false
-      return
-    } else if finishResizingSidebar(with: event) {
-      log.verbose("PWin MouseUp: finished resizing sidebar")
       return
     }
 
@@ -548,16 +548,12 @@ extension PlayerWindowController {
     guard currentDragObject == nil else { return }
     guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
 
-    // Do not use `event.locationInWindow`: it can be stale
+    // Do not use `event.locationInWindow`: it can be very stale
     let pointInWindow = mouseLocationInWindow
 
     log.trace{"MouseDidMoveInWindow @ \(pointInWindow)"}
 
-    // Kludge to prevent window drag if trying to drag sidebar or other widget. Do not drag the window!
-    var disableWindowDrag = true
-
     if isInInteractiveMode {
-      updateIsMoveableByWindowBackground(disableWindowDrag: true)
       return
     } else if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
         isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: pointInWindow) {
@@ -570,11 +566,7 @@ extension PlayerWindowController {
       applyCustomCursor(.hoveringInSlider)
     } else {
       applyCustomCursor(.normalCursor)
-      // Kludge to prevent window drag if trying to drag floating OSC.
-      disableWindowDrag = isPoint(pointInWindow, inAnyOf: [controlBarFloating])
     }
-
-    updateIsMoveableByWindowBackground(disableWindowDrag: disableWindowDrag)
 
     // Show Seek Preview on mouse hover. The check at the start of this func will return if in an "active seek"
     // preview to ensure that the "hover" preview here will not activate:
@@ -667,15 +659,6 @@ extension PlayerWindowController {
 
   @objc func handleRotationGesture(recognizer: NSRotationGestureRecognizer) {
     rotationHandler.handleRotationGesture(recognizer: recognizer)
-  }
-
-  func updateIsMoveableByWindowBackground(disableWindowDrag: Bool = false) {
-    if disableWindowDrag || currentLayout.isFullScreen {
-      window?.isMovableByWindowBackground = false
-    } else {
-      // Enable this so that user can drag from title bar with first mouse
-      window?.isMovableByWindowBackground = true
-    }
   }
 
   // MARK: - Cursor
