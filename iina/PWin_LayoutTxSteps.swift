@@ -1205,7 +1205,7 @@ extension PlayerWindowController {
       // Exited FS
 
       if #available(macOS 10.16, *) {
-        window.level = .normal
+        changeWindowLevel(to: .normal)
       } else {
         window.styleMask.remove(.fullScreen)
       }

@@ -928,11 +928,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     guard !AppDelegate.shared.isTerminating else { return }
 
-    // stop tracking mouse event
-    if let contentView = window.contentView {
-      contentView.trackingAreas.forEach(contentView.removeTrackingArea)
-    }
-    playSlider.trackingAreas.forEach(playSlider.removeTrackingArea)
+    // Stop tracking mouse events
+    removeTrackingAreas()
 
     hideOSD(immediately: true)
 
@@ -1427,7 +1424,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
         if currentLayout.isLegacyFullScreen && window.level != .iinaFloating {
           log.verbose("Window is key: resuming legacy FS window level")
-          window.level = .iinaFloating
+          changeWindowLevel(to: .iinaFloating)
         }
 
         // If focus changed from a different window, need to recalculate the current bindings
@@ -1437,7 +1434,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         /// Always restore window level from `floating` to `normal`, so other windows aren't blocked & cause confusion
         if currentLayout.isLegacyFullScreen && window.level != .normal {
           log.verbose("Window is not key: restoring legacy FS window level to normal")
-          window.level = .normal
+          changeWindowLevel(to: .normal)
         }
 
         if Preference.bool(for: .blackOutMonitor) {
@@ -1445,6 +1442,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         }
       }
     }
+  }
+
+  func changeWindowLevel(to level: NSWindow.Level) {
+    window?.level = level
+    // An AppKit bug introduced in MacOS Sequoia causes tracking areas to stop responding after changing window level.
+    // Standard workaround for Apple bugs: toggle off and then on again.
+    updateWindowTrackingAreas()
   }
 
   // Don't really care if window is main in IINA Advance; we care only if window is key,

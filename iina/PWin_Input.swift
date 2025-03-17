@@ -157,23 +157,43 @@ extension PlayerWindowController {
   func updateWindowTrackingAreas() {
     guard let window = self.window, let cv = window.contentView else { return }
 
+    removeTrackingAreas()
+
+    var addedCount = 0
     if cv.trackingAreas.isEmpty {
       let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved]
       cv.addTrackingArea(NSTrackingArea(rect: cv.bounds, options: options, owner: self,
                                         userInfo: [TrackingArea.key: TrackingArea.playerWindow]))
+      addedCount += 1
     }
 
     if playSlider.trackingAreas.isEmpty {
       let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .mouseMoved, .cursorUpdate]
       playSlider.addTrackingArea(NSTrackingArea(rect: playSlider.bounds, options: options, owner: self,
                                                 userInfo: [TrackingArea.key: TrackingArea.playSlider]))
+      addedCount += 1
     }
 
     if volumeSlider.trackingAreas.isEmpty {
       let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .mouseMoved, .cursorUpdate]
       volumeSlider.addTrackingArea(NSTrackingArea(rect: volumeSlider.bounds, options: options, owner: self,
                                                   userInfo: [TrackingArea.key: TrackingArea.volumeSlider]))
+      addedCount += 1
     }
+    log.verbose{"Added \(addedCount) tracking areas"}
+  }
+
+  func removeTrackingAreas() {
+    var removedCount = 0
+    for view in [playSlider, volumeSlider, window?.contentView] {
+      if let view {
+        for area in view.trackingAreas {
+          view.removeTrackingArea(area)
+          removedCount += 1
+        }
+      }
+    }
+    log.verbose{"Removed \(removedCount) tracking areas"}
   }
 
   /// This method is provided soly for invoking plugin input handlers.
