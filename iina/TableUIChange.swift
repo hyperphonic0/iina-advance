@@ -87,22 +87,24 @@ class TableUIChange {
   /// A method which, if supplied, is called at the end of execute()
   let completionHandler: TableUIChange.CompletionHandler?
 
+  var log: Logger.Subsystem { Logger.log }
+
   var hasRemove: Bool {
-    if let toRemove = toRemove {
+    if let toRemove {
       return !toRemove.isEmpty
     }
     return false
   }
 
   var hasInsert: Bool {
-    if let toInsert = toInsert {
+    if let toInsert {
       return !toInsert.isEmpty
     }
     return false
   }
 
   var hasMove: Bool {
-    if let toMove = toMove {
+    if let toMove {
       return !toMove.isEmpty
     }
     return false
@@ -128,7 +130,7 @@ class TableUIChange {
 
 
     // 1. "Before" animations (if provided)
-    if let flashBefore = self.flashBefore, !flashBefore.isEmpty {
+    if let flashBefore, !flashBefore.isEmpty {
       animationGroups.append { context in
         self.animateFlash(forIndexes: flashBefore, in: tableView, context)
       }
@@ -136,7 +138,7 @@ class TableUIChange {
 
 
     // 2. Perform row update animations
-    animationGroups.append { context in
+    animationGroups.append { [self] context in
       // Encapsulate all animations in this function inside a transaction.
       tableView.beginUpdates()
       defer {
@@ -144,7 +146,7 @@ class TableUIChange {
       }
 
       if !IINAAnimation.isAnimationEnabled {
-        Logger.log.verbose{"Animation disabled: nulling out animation"}
+        log.verbose{"Animation disabled: nulling out animation"}
         context.duration = 0.0
         context.allowsImplicitAnimation = false
       }
@@ -158,10 +160,10 @@ class TableUIChange {
     animationGroups.append { [self] context in
       // track this so we don't do it more than once (it fires the selectionChangedListener every time)
       let wantsReloadOfExistingRows: Bool
-      if self.changeType == .reloadAll {
+      if changeType == .reloadAll {
         // Don't reload twice
         wantsReloadOfExistingRows = false
-      } else if self.reloadAllExistingRows || self.changeType == .updateRows || (!(self.toUpdate?.isEmpty ?? true)) {
+      } else if reloadAllExistingRows || changeType == .updateRows || (!(toUpdate?.isEmpty ?? true)) {
         // Just schedule a reload for all of them. This is a very inexpensive operation, and much easier
         // than chasing down all the possible ways other rows could be updated.
         wantsReloadOfExistingRows = true
@@ -170,34 +172,34 @@ class TableUIChange {
       }
 
       if wantsReloadOfExistingRows {
-        Logger.log.verbose("TableUIChange: reloading existing rows")
+        log.verbose("TableUIChange: reloading existing rows")
         /// Also uses `newSelectedRowIndexes`, if it is not nil:
-        tableView.reloadExistingRows(reselectRowsAfter: true, usingNewSelection: self.newSelectedRowIndexes)
-      } else if let newSelectedRowIndexes = self.newSelectedRowIndexes {
-        Logger.log.verbose("TableUIChange: selecting \(newSelectedRowIndexes.count) rows")
+        tableView.reloadExistingRows(reselectRowsAfter: true, usingNewSelection: newSelectedRowIndexes)
+      } else if let newSelectedRowIndexes {
+        log.verbose{"TableUIChange: selecting \(newSelectedRowIndexes.count) rows"}
         tableView.selectApprovedRowIndexes(newSelectedRowIndexes)
       } else {
-        Logger.log("TableUIChange: no change to row selection", level: .verbose)
+        log.verbose{"TableUIChange: no change to row selection"}
       }
 
-      if self.scrollToShowChangedRow {
-        if let newSelectedRowIndexes = self.newSelectedRowIndexes,
+      if scrollToShowChangedRow {
+        if let newSelectedRowIndexes,
            let firstSelectedRowIndex = newSelectedRowIndexes.first {
-          Logger.log("TableUIChange: scrolling to first selected row index: \(firstSelectedRowIndex)", level: .verbose)
+          log.verbose{"TableUIChange: scrolling to first selected row index: \(firstSelectedRowIndex)"}
           tableView.scrollRowToVisible(firstSelectedRowIndex)
         } else if changeType == .wholeTableDiff {
           // TODO: figure out how to show changed row while not changing if not necessary
         } else if changeType != .reloadAll {
-          if let lastInsertedRowIndex = self.toInsert?.last {
-            Logger.log("TableUIChange: scrolling to last inserted row index: \(lastInsertedRowIndex)", level: .verbose)
+          if let lastInsertedRowIndex = toInsert?.last {
+            log.verbose{"TableUIChange: scrolling to last inserted row index: \(lastInsertedRowIndex)"}
             tableView.scrollRowToVisible(lastInsertedRowIndex)
-          } else if let lastRemovedRowIndex = self.toRemove?.last {
+          } else if let lastRemovedRowIndex = toRemove?.last {
             let index = min(max(0, tableView.numberOfRows - 1), lastRemovedRowIndex)
-            Logger.log("TableUIChange: scrolling to last removed row index: \(index)", level: .verbose)
+            log.verbose{"TableUIChange: scrolling to last removed row index: \(index)"}
             tableView.scrollRowToVisible(index)
-          } else if let (_, newIndex) = self.toMove?.last {
+          } else if let (_, newIndex) = toMove?.last {
             let index = min(max(0, tableView.numberOfRows - 1), newIndex)
-            Logger.log("TableUIChange: scrolling to last moved row index: \(index)", level: .verbose)
+            log.verbose{"TableUIChange: scrolling to last moved row index: \(index)"}
             tableView.scrollRowToVisible(index)
           }
         }
@@ -205,7 +207,7 @@ class TableUIChange {
     }
 
     // 4. "After" animations (if provided)
-    if let flashAfter = self.flashAfter, !flashAfter.isEmpty {
+    if let flashAfter, !flashAfter.isEmpty {
       animationGroups.append { context in
         self.animateFlash(forIndexes: flashAfter, in: tableView, context)
       }
@@ -216,9 +218,9 @@ class TableUIChange {
 
   // Recursive function which executions code for a single group in the chain
   private func executeGroup(_ groupNode: LinkedList<AnimationBlock>.Node?) {
-    guard let groupNode = groupNode else {
+    guard let groupNode else {
       if let lastCompletionHandler = self.completionHandler {
-        Logger.log.verbose("Executing custom completion handler for TableUIChange")
+        log.verbose("Executing custom completion handler for TableUIChange")
         lastCompletionHandler(self)
       }
       return
@@ -233,57 +235,57 @@ class TableUIChange {
     let insertAnimation = IINAAnimation.isAnimationEnabled ? (rowInsertAnimation ?? tableView.rowInsertAnimation) : []
     let removeAnimation = IINAAnimation.isAnimationEnabled ? (rowRemoveAnimation ?? tableView.rowRemoveAnimation) : []
 
-    Logger.log.verbose("Executing TableUIChange type \"\(changeType)\": \(toRemove?.count ?? 0) removes, \(toInsert?.count ?? 0) inserts, \(toMove?.count ?? 0), moves, \(toUpdate?.count ?? 0) updates; reloadExisting: \(reloadAllExistingRows), \(newSelectedRowIndexes?.count ?? -1) selectedRows")
+    log.verbose{"Executing TableUIChange type \"\(changeType)\": \(toRemove?.count ?? 0) removes, \(toInsert?.count ?? 0) inserts, \(toMove?.count ?? 0), moves, \(toUpdate?.count ?? 0) updates; reloadExisting: \(reloadAllExistingRows), \(newSelectedRowIndexes?.count ?? -1) selectedRows"}
 
     switch changeType {
 
-      case .removeRows:
-        if let indexes = toRemove {
-          tableView.removeRows(at: indexes, withAnimation: removeAnimation)
+    case .removeRows:
+      if let indexes = toRemove {
+        tableView.removeRows(at: indexes, withAnimation: removeAnimation)
+      }
+
+    case .insertRows:
+      if let indexes = toInsert {
+        tableView.insertRows(at: indexes, withAnimation: insertAnimation)
+      }
+
+    case .moveRows:
+      if let movePairs = toMove {
+        for (oldIndex, newIndex) in movePairs {
+          log.verbose{"Moving row \(oldIndex) → \(newIndex)"}
+          tableView.moveRow(at: oldIndex, to: newIndex)
         }
+      }
 
-      case .insertRows:
-        if let indexes = toInsert {
-          tableView.insertRows(at: indexes, withAnimation: insertAnimation)
+    case .updateRows:
+      // will reload rows in next step
+      break
+
+    case .none:
+      break
+
+    case .reloadAll:
+      // Try not to use this much, if at all
+      log.verbose("Executing TableUIChange: ReloadAll")
+      tableView.reloadData()
+
+    case .wholeTableDiff:
+      if let toRemove,
+         let toInsert,
+         let toUpdate,
+         let movePairs = toMove {
+        guard !toRemove.isEmpty || !toInsert.isEmpty || !toUpdate.isEmpty || !movePairs.isEmpty else {
+          log.verbose("Executing changes from diff: no rows changed")
+          break
         }
-
-      case .moveRows:
-        if let movePairs = toMove {
-          for (oldIndex, newIndex) in movePairs {
-            Logger.log("Moving row \(oldIndex) → \(newIndex)", level: .verbose)
-            tableView.moveRow(at: oldIndex, to: newIndex)
-          }
+        // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
+        tableView.removeRows(at: toRemove, withAnimation: removeAnimation)
+        tableView.insertRows(at: toInsert, withAnimation: insertAnimation)
+        for (oldIndex, newIndex) in movePairs {
+          log.verbose{"Executing changes from diff: moving row: \(oldIndex) → \(newIndex)"}
+          tableView.moveRow(at: oldIndex, to: newIndex)
         }
-
-      case .updateRows:
-        // will reload rows in next step
-        break
-
-      case .none:
-        break
-
-      case .reloadAll:
-        // Try not to use this much, if at all
-      Logger.log.verbose("Executing TableUIChange: ReloadAll")
-        tableView.reloadData()
-
-      case .wholeTableDiff:
-        if let toRemove = toRemove,
-           let toInsert = toInsert,
-           let toUpdate = toUpdate,
-           let movePairs = toMove {
-          guard !toRemove.isEmpty || !toInsert.isEmpty || !toUpdate.isEmpty || !movePairs.isEmpty else {
-            Logger.log.verbose("Executing changes from diff: no rows changed")
-            break
-          }
-          // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
-          tableView.removeRows(at: toRemove, withAnimation: removeAnimation)
-          tableView.insertRows(at: toInsert, withAnimation: insertAnimation)
-          for (oldIndex, newIndex) in movePairs {
-            Logger.log.verbose{"Executing changes from diff: moving row: \(oldIndex) → \(newIndex)"}
-            tableView.moveRow(at: oldIndex, to: newIndex)
-          }
-        }
+      }
     }
   }
 
@@ -291,7 +293,7 @@ class TableUIChange {
   // Don't need to worry about moves & inserts, because those will be highlighted.
   func setUpFlashForChangedRows() {
     flashBefore = IndexSet()
-    if let toRemove = toRemove {
+    if let toRemove {
       for index in toRemove {
         flashBefore?.insert(index)
       }
@@ -299,7 +301,7 @@ class TableUIChange {
   }
 
   private func animateFlash(forIndexes indexes: IndexSet, in tableView: NSTableView, _ context: NSAnimationContext) {
-    Logger.log("Flashing rows: \(indexes.map({$0}))", level: .verbose)
+    log.verbose{"Flashing rows: \(indexes.map({$0}))"}
 
     context.duration = 0.2
     tableView.beginUpdates()
