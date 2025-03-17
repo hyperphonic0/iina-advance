@@ -171,16 +171,16 @@ extension PlayerWindowController {
       CATransaction.commit()
     }
 
-    resizeWindowImmediatelyWithoutTransaction(using: newGeometry)
+    resizeWindowInstantlyNoTransaction(using: newGeometry)
   }
 
-  func resizeWindowImmediatelyWithoutTransaction(using newGeometry: PWinGeometry? = nil) {
+  func resizeWindowInstantlyNoTransaction(using newGeometry: PWinGeometry? = nil) {
     guard let window else { return }
 
     let layout = currentLayout
     let isTransientResize = newGeometry != nil
     let isFullScreen = layout.isFullScreen
-    log.verbose{"[ResizeWindImmediately] fs=\(isFullScreen.yn) live=\(window.inLiveResize.yn) geo=\(newGeometry?.description ?? "nil")"}
+    log.verbose{"[ResizeWindInstantly] fs=\(isFullScreen.yn) live=\(window.inLiveResize.yn) geo=\(newGeometry?.description ?? "nil")"}
 
     // These may no longer be aligned correctly. Just hide them
     hideSeekPreviewImmediately()
@@ -198,7 +198,7 @@ extension PlayerWindowController {
     if !isFullScreen && !isTransientResize {
       player.saveState()
       if layout.mode == .windowedNormal {
-        log.verbose{"[ResizeWindImmediately] calling updateMPVWindowScale"}
+        log.verbose{"[ResizeWindInstantly] calling updateMPVWindowScale"}
         player.updateMPVWindowScale(using: windowedModeGeo)
       }
     }
