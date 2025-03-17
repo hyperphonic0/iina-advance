@@ -19,7 +19,7 @@ fileprivate let MenuItemTagDelete = 604
 fileprivate let isPlayingTextBlendFraction: CGFloat = 0.3
 fileprivate let isPlayingPrefixTextBlendFraction: CGFloat = 0.4
 
-class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate, SidebarTabGroupViewController, NSMenuItemValidation {
+class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate, SidebarTabGroupViewController {
 
   private(set) var currentTab: Sidebar.Tab = .playlist
 
@@ -452,42 +452,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     return pasteFromPasteboard(row: row, from: info.draggingPasteboard)
   }
 
-  // MARK: - Edit Menu Support
-
-  func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-    if currentTab == .playlist {
-      switch menuItem.tag {
-      case MenuItemTagCut, MenuItemTagCopy, MenuItemTagDelete:
-        return playlistTableView.selectedRow != -1
-      case MenuItemTagPaste:
-        return NSPasteboard.general.types?.contains(.nsFilenames) ?? false
-      default:
-        break
-      }
-    }
-    return menuItem.isEnabled
-  }
-
-  @objc func copy(_ sender: NSMenuItem) {
-    copyToPasteboard(playlistTableView, writeRowsWith: playlistTableView.selectedRowIndexes, to: .general)
-  }
-
-  @objc func cut(_ sender: NSMenuItem) {
-    copy(sender)
-    delete(sender)
-  }
-
-  @objc func paste(_ sender: NSMenuItem) {
-    let dest = playlistTableView.selectedRowIndexes.first ?? 0
-    pasteFromPasteboard(row: dest, from: .general)
-  }
-
-  @objc func delete(_ sender: NSMenuItem) {
-    let selectedRows = playlistTableView.selectedRowIndexes
-    if !selectedRows.isEmpty {
-      player.playlistRemove(selectedRows)
-    }
-  }
 
   // MARK: - private methods
 
@@ -1087,9 +1051,54 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 extension PlaylistViewController: EditableTableViewDelegate {
   var parentTableView: EditableTableView! { playlistTableView }
 
+  // Allows for sidebar resize to happen from inside the table, by giving it higher priority than row drag & drop
   func handleMouseDown(with event: NSEvent) -> Bool {
     return player.windowController.startResizingSidebar(with: event)
   }
+
+  // MARK: - Edit Menu Support
+
+  func isCutEnabled() -> Bool {
+    return isCopyEnabled()
+  }
+
+  func isCopyEnabled() -> Bool {
+    (currentTab == .playlist) && (playlistTableView.selectedRow != -1)
+  }
+
+  func isPasteEnabled() -> Bool {
+    (currentTab == .playlist) && (NSPasteboard.general.types?.contains(.nsFilenames) ?? false)
+  }
+
+  func isDeleteEnabled() -> Bool {
+    return isCopyEnabled()
+  }
+
+  func isSelectAllEnabled() -> Bool {
+    (currentTab == .playlist) && (playlistTableView.numberOfRows > 0)
+  }
+
+  func doEditMenuCopy() {
+    copyToPasteboard(playlistTableView, writeRowsWith: playlistTableView.selectedRowIndexes, to: .general)
+  }
+
+  func doEditMenuCut() {
+    doEditMenuCopy()
+    doEditMenuDelete()
+  }
+
+  func doEditMenuPaste() {
+    let dest = playlistTableView.selectedRowIndexes.first ?? 0
+    pasteFromPasteboard(row: dest, from: .general)
+  }
+
+  func doEditMenuDelete() {
+    let selectedRows = playlistTableView.selectedRowIndexes
+    if !selectedRows.isEmpty {
+      player.playlistRemove(selectedRows)
+    }
+  }
+
 }
 
 class PlaylistTrackCellView: NSTableCellView {
