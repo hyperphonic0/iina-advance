@@ -97,6 +97,17 @@ class MediaMetaCache {
     }
   }
 
+  func getOrAddCachedMeta(for id: PlaybackID) -> MediaMeta {
+    metaLock.withLock {
+      if let meta = cachedMeta[id.url] {
+        return meta
+      }
+      let newMeta = MediaMeta(id)
+      cachedMeta[id.url] = newMeta
+      return newMeta
+    }
+  }
+
   func setCachedMediaDuration(_ id: PlaybackID, _ duration: Double) {
     guard duration > 0.0 else { return }
     metaLock.withLock {

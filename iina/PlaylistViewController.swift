@@ -713,9 +713,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let playlistItem = playlistItems[rowIndex]
     let url = playlistItem.url
 
-    var existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: playlistItem)
+    var existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: playlistItem)
 
-    let needsRefresh = force || existingCachedMeta == nil || (url.isFileURL && !existingCachedMeta!.triedFFmpeg)
+    let needsRefresh = force || (url.isFileURL && !existingCachedMeta.triedFFmpeg)
     if needsRefresh {
       // Kick this off, but return the existing (possibly stale) data below for efficiency
       player.mpv.queue.async { [self] in
@@ -724,15 +724,15 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
         // Check cache again; we don't know how much time has passed since last access & want to avoid redundant file access
-        existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: playlistItem)
-        guard needsRefresh || (mpvTitle != existingCachedMeta!.title) else { return }
+        existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: playlistItem)
+        guard needsRefresh || (mpvTitle != existingCachedMeta.title) else { return }
 
         PlayerCore.playlistQueue.async { [self] in
           // Get watch-later form file system; get other meta from ffmpeg:
           let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem, mpvTitle: mpvTitle)
           // Now update the total length if needed (but only if it's already done calculating):
           if playlistTotalLengthIsReady {
-            let prevDuration = existingCachedMeta?.duration ?? 0
+            let prevDuration = existingCachedMeta.duration ?? 0
             let updatedDuration = cachedMeta?.duration ?? 0
             if updatedDuration != prevDuration {
               // if FFmpeg got the duration successfully
@@ -769,8 +769,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
       for (rowIndex, item) in playlistItems.enumerated() {
         let updatedTitle = titles[rowIndex]
-        let existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: item)
-        let needsRefresh = existingCachedMeta == nil || (item.url.isFileURL && !existingCachedMeta!.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta!.title)
+        let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: item)
+        let needsRefresh = (item.url.isFileURL && !existingCachedMeta.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta.title)
         guard needsRefresh else { continue }
         PlayerCore.playlistQueue.async { [self] in
           // Get watch-later form file system; get other meta from ffmpeg:
@@ -1115,11 +1115,14 @@ class PlaylistTrackCellView: NSTableCellView {
     } else {
       // Sorry earlier versions, no color for you
     }
-    if let prefix = prefix {
+    
+    if let prefix {
       prefixBtn.hasPrefix = true
       prefixBtn.text = prefix
+      prefixBtn.isHidden = false
     } else {
       prefixBtn.hasPrefix = false
+      prefixBtn.isHidden = true
     }
   }
 
