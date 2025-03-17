@@ -28,7 +28,7 @@ class PlayerWindow: NSWindow {
   }
 
   var isCustomWindowStyle: Bool {
-    return styleMask.contains(.titled)
+    return !styleMask.contains(.titled)
   }
 
   private var isFullScreen: Bool { pwc?.isFullScreen ?? true }
@@ -187,11 +187,17 @@ class PlayerWindow: NSWindow {
   // MARK: - Custom Window fixes
 
   override var canBecomeKey: Bool {
-    return !isCustomWindowStyle || super.canBecomeKey
+    if isCustomWindowStyle {
+      return true
+    }
+    return super.canBecomeKey
   }
 
   override var canBecomeMain: Bool {
-    return !isCustomWindowStyle || super.canBecomeMain
+    if isCustomWindowStyle {
+      return true
+    }
+    return super.canBecomeMain
   }
 
   /// Setting `alphaValue=0` for Close & Miniaturize (red & green traffic lights) buttons causes `File` > `Close`

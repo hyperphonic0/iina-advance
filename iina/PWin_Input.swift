@@ -164,13 +164,13 @@ extension PlayerWindowController {
     }
 
     if playSlider.trackingAreas.isEmpty {
-      let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .cursorUpdate]
+      let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .mouseMoved, .cursorUpdate]
       playSlider.addTrackingArea(NSTrackingArea(rect: playSlider.bounds, options: options, owner: self,
                                                 userInfo: [TrackingArea.key: TrackingArea.playSlider]))
     }
 
     if volumeSlider.trackingAreas.isEmpty {
-      let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .cursorUpdate]
+      let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .mouseMoved, .cursorUpdate]
       volumeSlider.addTrackingArea(NSTrackingArea(rect: volumeSlider.bounds, options: options, owner: self,
                                                   userInfo: [TrackingArea.key: TrackingArea.volumeSlider]))
     }
@@ -553,6 +553,7 @@ extension PlayerWindowController {
 
     log.trace{"MouseDidMoveInWindow @ \(pointInWindow)"}
 
+    // Update mouse cursor
     if isInInteractiveMode {
       return
     } else if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
@@ -567,6 +568,8 @@ extension PlayerWindowController {
     } else {
       applyCustomCursor(.normalCursor)
     }
+    // Always hide after timeout even if OSD fade time is longer
+    hideCursorTimer.restart()
 
     // Show Seek Preview on mouse hover. The check at the start of this func will return if in an "active seek"
     // preview to ensure that the "hover" preview here will not activate:
@@ -582,9 +585,6 @@ extension PlayerWindowController {
       log.trace("ShouldRestartFadeTimer=\(shouldRestartFadeTimer.yesno) forceShowTopBar=\(forceShowTopBar.yesno)")
     }
     showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
-
-    // Always hide after timeout even if OSD fade time is longer
-    hideCursorTimer.restart()
   }
 
   // Do not show hover cursor if over a button or other view which overlaps PlaySlider.
