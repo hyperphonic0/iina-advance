@@ -506,12 +506,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @discardableResult
-  func pasteFromPasteboard(from pboard: NSPasteboard, to destRow: Int) -> Bool {
+  func pasteFromPasteboard(from pboard: NSPasteboard, to dstRow: Int) -> Bool {
     let playlistItems = readPlaylistItemsFromPasteboard(pboard)
     guard !playlistItems.isEmpty else {
       return false
     }
-    insertPlaylistRows(playlistItems, at: destRow)
+    insertPlaylistRows(playlistItems, at: dstRow)
     return true
   }
 
@@ -1194,8 +1194,8 @@ extension PlaylistViewController: EditableTableViewDelegate {
   }
 
   func doEditMenuPaste() {
-    let destRow = playlistTableView.selectedRowIndexes.first ?? 0
-    pasteFromPasteboard(from: .general, to: destRow)
+    let insertLocation = playlistTableView.selectedRowIndexes.last ?? displayedPlaylist.count
+    pasteFromPasteboard(from: .general, to: insertLocation)
   }
 
   func doEditMenuDelete() {
