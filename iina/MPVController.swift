@@ -1141,6 +1141,10 @@ class MPVController: NSObject {
     sendScriptMessage(to: "thumbfast", args: ["thumb", hoveredSecs, x, y])
   }
 
+  func clearThumbfast() {
+    sendScriptMessage(to: "thumbfast", args: ["clear"])
+  }
+
   func sendScriptMessage(to scriptName: String, args: [LosslessStringConvertible]) {
     var resultNode = mpv_node()
     defer {

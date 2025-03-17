@@ -285,6 +285,8 @@ struct Preference {
     static let thumbnailDisplayedSizePercentage = Key("thumbnailDisplayedSizePercentage")
     static let maxThumbnailPreviewCacheSize = Key("maxThumbnailPreviewCacheSize")
 
+    static let integrateWithThumbfast = Key("integrateWithThumbfast")
+
     // - Seek Preview
 
     static let seekPreviewHasTimeDelta = Key("seekPreviewHasTimeDelta")
@@ -1358,6 +1360,7 @@ struct Preference {
     .thumbnailRawSizePercentage: 100,
     .thumbnailDisplayedSizePercentage: 25,
     .maxThumbnailPreviewCacheSize: 500,
+    .integrateWithThumbfast: false,
 
       .seekPreviewHasTimeDelta: true,
     .seekPreviewHasChapter: true,

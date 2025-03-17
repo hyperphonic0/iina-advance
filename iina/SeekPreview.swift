@@ -6,7 +6,7 @@
 //  Copyright © 2024 lhc. All rights reserved.
 //
 
-fileprivate let useThumbfast = false
+fileprivate let useThumbfast = Preference.bool(for: .integrateWithThumbfast)
 
 extension PlayerWindowController {
   // TODO: PK.seekPreviewHasTimeDelta
@@ -320,7 +320,7 @@ extension PlayerWindowController {
           let osdWidth = player.mpv.getDouble(MPVProperty.osdWidth)
           // Thumbfast expects X,Y to represent top-left corner of thumbnail
           let posInVideoX = min(((previewTimeSec / mediaDuration) * osdWidth), osdWidth - thumbWidth).rounded()
-          player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: posInVideoX, y: 0)
+          player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: posInVideoX, y: 30)
           thumbnailPeekView.isHidden = true
         } else {
           updateThumbnailPeekView(to: ffThumbnail!, thumbFrame: thumbFrame, thumbStore!, currentGeo, previewTimeSec: previewTimeSec)
@@ -453,6 +453,10 @@ extension PlayerWindowController {
     seekPreview.timeLabel.isHidden = true
     seekPreview.currentPreviewTimeSec = nil
     playSlider.hoverIndicator?.isHidden = true
+
+    if useThumbfast {
+      player.mpv.clearThumbfast()
+    }
   }
 
   /// Makes fake point in window to position seek time & thumbnail
