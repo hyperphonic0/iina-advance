@@ -388,13 +388,8 @@ class HistoryController {
 
       guard let historyEntry = history.first(where: {$0.url == id.url}) else { return }
 
-      // Ensure Playback History window is updated in real time
-      if Preference.bool(for: .recordPlaybackHistory) {
-        /// this will reload the `mpvProgress` field from the `watch-later` config files
-        loadProgressFromWatchLater(historyEntry)
-      }
-
       // Ensure playlist is updated relatively quickly
+      /// this will reload the `mpvProgress` field from the `watch-later` config files
       reloadFileExistsAndProgress(forEntry: historyEntry)
     }
   }
@@ -444,10 +439,10 @@ class HistoryController {
     let fileExists = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
 
     let watchLaterProgressEnabled = Preference.bool(for: .resumeLastPosition)
+
     if watchLaterProgressEnabled {
-      loadProgressFromWatchLater(entry)
-      let wasWatchLaterFound = entry.mpvProgress != nil
-      if wasWatchLaterFound {
+      let progressChanged = loadProgressFromWatchLater(entry)
+      if progressChanged {
         // Notify History window + playlist UI in various windows
         postFileHistoryUpdateNotification(forURL: entry.url)
       }
@@ -457,11 +452,11 @@ class HistoryController {
         MediaMetaCache.shared.setCachedMediaDurationAndProgress(entry.id, duration: cachedMediaMeta.duration, progress: nil)
         didClearCachedProgress = true
       }
-      if entry.mpvProgress != nil {
-        // Watch Later is no longer enabled, but its value is still cached.
-        entry.mpvProgress = nil
-        didClearCachedProgress = true
-      }
+      // Watch Later is no longer enabled, but its value is still cached?
+      let oldProgress = entry.mpvProgress
+      entry.mpvProgress = nil
+      didClearCachedProgress = didClearCachedProgress || (oldProgress != nil)
+      
       if didClearCachedProgress {
         // After clearing the cached value, notify the UI that it changed (e.g., playlist may need to hide
         // its progress bar)
@@ -549,7 +544,7 @@ class HistoryController {
   }
 
   // This is a long-running operation. Load this asynchronously
-  func loadProgressFromWatchLater(_ historyEntry: PlaybackHistory) {
+  private func loadProgressFromWatchLater(_ historyEntry: PlaybackHistory) -> Bool {
     let progress = playbackProgressFromWatchLater(historyEntry.mpvMd5)
     let progressDidChange = progress != historyEntry.mpvProgress
     historyEntry.mpvProgress = progress
@@ -558,6 +553,7 @@ class HistoryController {
       // Copy from the old paradigm into the new...
       MediaMetaCache.shared.setCachedMediaDurationAndProgress(historyEntry.id, duration: historyEntry.duration, progress: progress)
     }
+    return progressDidChange
   }
 
   /// Returns saved playback progress (in seconds) or `nil` if not found in `watch-later` data.

@@ -99,7 +99,7 @@ class Playback: CustomStringConvertible {
 }
 
 /// `PlaybackID`
-struct PlaybackID {
+struct PlaybackID: Equatable, Hashable {
   /// Equivalent to `PlaybackID.url(fromPath: mpvFilename)`
   let url: URL
   let mpvMD5: String
@@ -119,6 +119,15 @@ struct PlaybackID {
 
   var path: String { PlaybackID.path(from: url) }
 
+  var filePath: String? {
+    let urlPath = url.path
+    return urlPath.isEmpty ? nil : urlPath
+  }
+
+  var networkPath: String? {
+    isNetworkResource ? path : nil
+  }
+
   var pathExtension: String { url.pathExtension }
 
   var isFile: Bool { url.isFileURL }
@@ -126,6 +135,22 @@ struct PlaybackID {
   var isNetworkResource: Bool { !isFile }
 
   var displayName: String { PlaybackID.displayName(from: url) }
+
+  /// Hashable protocol conformance, to enable diffing
+  var hash: Int {
+    var hasher = Hasher()
+    hasher.combine(url)
+    return hasher.finalize()
+  }
+
+  /// Equatable protocol conformance, to enable diffing
+  func isEqual(_ object: Any?) -> Bool {
+    guard let other = object as? PlaybackID else {
+      return false
+    }
+    return other.url == url
+  }
+
 
   /// Returns the name of this resource as it should be displayed in the UI. Does not account for its `title` or other metadata.
   static func displayName(from url: URL?) -> String {

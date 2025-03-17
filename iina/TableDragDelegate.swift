@@ -67,6 +67,7 @@ class TableDragDelegate<TableItem> {
   /// Drag start: set session variables.
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
                        willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
+    Logger.log.verbose{"Drag session \(session.draggingSequenceNumber) starting from \(tableLoggingName) table"}
     draggedRowInfo = (session.draggingSequenceNumber, rowIndexes)
     targetTable.setDraggingImageToAllColumns(session, screenPoint, rowIndexes)
   }
@@ -82,11 +83,11 @@ class TableDragDelegate<TableItem> {
 
     guard let (sequenceNumber, draggedRowIndexes) = self.draggedRowInfo,
           session.draggingSequenceNumber == sequenceNumber && itemList.count == draggedRowIndexes.count else {
-      Logger.log.error("Cancelling drop into \(tableLoggingName) table: dragged data does not match!")
+      Logger.log.error{"Cancelling drop into \(tableLoggingName) table: dragged data does not match!"}
       return
     }
     
-    Logger.log.verbose("User dragged from \(tableLoggingName) to the trash: \(itemList)")
+    Logger.log.verbose{"User dragged from \(tableLoggingName) to the trash: \(itemList)"}
     // TODO: this is the wrong animation
     NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: 50.0, height: 50.0),
                                                    completionHandler: { [self] in
@@ -144,12 +145,12 @@ class TableDragDelegate<TableItem> {
                        dropOperation: NSTableView.DropOperation) -> Bool {
     
     guard dropOperation == .above else {
-      Logger.log.error("\(tableLoggingName) Table: expected dropOperaion==.above but got: \(dropOperation); aborting drop")
+      Logger.log.error{"\(tableLoggingName) Table: expected dropOperaion==.above but got: \(dropOperation); aborting drop"}
       return false
     }
     
     let itemList = getFromPasteboard(info.draggingPasteboard)
-    Logger.log.debug("User dropped \(itemList.count) text rows into \(tableLoggingName) table \(dropOperation == .on ? "on" : "above") rowIndex \(targetRowIndex)")
+    Logger.log.debug{"User dropped \(itemList.count) text rows into \(tableLoggingName) table \(dropOperation == .on ? "on" : "above") rowIndex \(targetRowIndex)"}
     guard !itemList.isEmpty else {
       return false
     }

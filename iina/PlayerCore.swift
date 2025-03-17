@@ -2464,9 +2464,11 @@ class PlayerCore: NSObject {
     }, video: GeometryTransform.trackChanged)
 
     // Launch auto-load tasks on background thread
-    $backgroundQueueTicket.withLock { $0 += 1 }
     let shouldAutoLoadFiles = info.shouldAutoLoadFiles
-    let currentTicket = backgroundQueueTicket
+    let currentTicket = $backgroundQueueTicket.withLock { latestTicket in
+      latestTicket += 1
+      return latestTicket
+    }
     PlayerCore.backgroundQueue.asyncAfter(deadline: DispatchTime.now() + Constants.TimeInterval.autoLoadDelay) { [self] in
       fileLoaded_backgroundQueueWork(for: currentPlayback, currentTicket: currentTicket,
                                      shouldAutoLoadFiles: shouldAutoLoadFiles,
