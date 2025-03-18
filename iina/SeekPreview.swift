@@ -324,13 +324,12 @@ extension PlayerWindowController {
           let scaleRatio = osdWidth / currentGeo.videoSize.width
           let thumbOriginX = (((posInWindowX - currentGeo.viewportMargins.leading) * scaleRatio).rounded() - (thumbWidth * 0.5)).clamped(to: 0...(max(0, osdWidth - thumbWidth)))
           let videoFrameInWindowCoords = currentGeo.videoFrameInWindowCoords
-          var thumbOriginInVideoY = thumbOriginY - videoFrameInWindowCoords.minY
+          let thumbOriginInVideoY = thumbOriginY - videoFrameInWindowCoords.minY
+          var yConverted = ((currentGeo.videoSize.height - thumbOriginInVideoY) * scaleRatio) - thumbHeight
           if !showAbove {
-            // FIXME: there is a bug somewhere in "below" offset calculation
-            thumbOriginInVideoY += (currentGeo.viewportMargins.top)
+            yConverted -= thumbHeight
           }
-          let yConverted = (currentGeo.videoSize.height - thumbOriginInVideoY) * scaleRatio
-          let thumbOriginY = (yConverted - thumbHeight).clamped(to: 0...(max(0, (currentGeo.videoSize.height * scaleRatio) - thumbHeight)))
+          let thumbOriginY = yConverted.clamped(to: 0...(max(0, (currentGeo.videoSize.height * scaleRatio))))
           player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: thumbOriginX, y: thumbOriginY)
           thumbnailPeekView.isHidden = true
         } else {
