@@ -1241,6 +1241,33 @@ class MPVController: NSObject {
     }
   }
 
+  struct ThumbfastInfo: Decodable {
+    let width: Int
+    let height: Int
+    let available: Bool
+    let disabled: Bool
+    let scale_factor: Double
+
+    static func fromJSON(_ json: String?, _ log: Logger.Subsystem) -> ThumbfastInfo? {
+      do {
+        guard let json else {
+          log.error{"Failed to parse thumbfast-info: obj is nil"}
+          return nil
+        }
+        guard let jsonData = json.data(using: .utf8) else {
+          log.error{"Failed create JSON data for thumbfast-info"}
+          return nil
+        }
+        return try JSONDecoder().decode(ThumbfastInfo.self, from: jsonData)
+      } catch {
+        log.error{"Failed to get or parse thumbfast-info from mpv: \(error)"}
+        return nil
+      }
+    }
+  }
+
+  var thumbfastInfo: ThumbfastInfo?
+
   // Handle the event
   private func handleEvent(_ event: UnsafePointer<mpv_event>!) {
     let eventId: mpv_event_id = event.pointee.event_id
@@ -1258,6 +1285,12 @@ class MPVController: NSObject {
         let bufferPointer = UnsafeBufferPointer(start: msg?.pointee.args, count: numArgs)
         for i in 0..<numArgs {
           args.append(String(cString: (bufferPointer[i])!))
+        }
+
+        if args[0] == "thumbfast-info", args.count > 1 {
+          if let thumbfastInfo = ThumbfastInfo.fromJSON(args[1], player.log) {
+            self.thumbfastInfo = thumbfastInfo
+          }
         }
       }
       player.log.verbose("Got mpv '\(eventId)': \(numArgs >= 0 ? "\(args)": "numArgs=\(numArgs)")")

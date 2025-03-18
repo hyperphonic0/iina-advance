@@ -108,9 +108,14 @@ extension PlayerWindowController {
       let currentLayout = player.windowController.currentLayout
 
       var showThumbnail = showThumbnail
+      var usingThumbfast = false
       var thumbWidth: Double
       var thumbHeight: Double
-      if showThumbnail, let ffThumbnail {
+      if showThumbnail, useThumbfast, let thumbfastInfo = player.mpv.thumbfastInfo, thumbfastInfo.available && !thumbfastInfo.disabled {
+        usingThumbfast = true
+        thumbWidth = Double(thumbfastInfo.width)
+        thumbHeight = Double(thumbfastInfo.height)
+      } else if showThumbnail, let ffThumbnail {
         let rotatedImage = ffThumbnail.image
         thumbWidth = Double(rotatedImage.width)
         thumbHeight = Double(rotatedImage.height)
@@ -146,7 +151,7 @@ extension PlayerWindowController {
 
       var thumbAspect = showThumbnail ? (thumbWidth / thumbHeight) : 1.0
 
-      if showThumbnail {
+      if showThumbnail && !usingThumbfast {
         // The aspect ratio of some videos is different at display time. Resize thumbs on-the-fly
         // once the actual aspect ratio is known.
         let videoAspectCAR = currentGeo.video.videoAspectCAR
@@ -190,7 +195,7 @@ extension PlayerWindowController {
       if currentLayout.isMusicMode {
         showAbove = true  // always show above in music mode
 
-        if showThumbnail {
+        if showThumbnail && !usingThumbfast {
           let totalExtraVerticalSpace = adjustedMarginTotalHeight + timeLabelSize.height
           let availableHeightAbove = max(0, viewportSize.height - totalExtraVerticalSpace)
           if thumbHeight > availableHeightAbove {
@@ -216,14 +221,14 @@ extension PlayerWindowController {
             // If not enough space to show the full-size thumb below, then show above if it has more space
             let availableHeightAboveOSC = max(0, viewportSize.height - (oscOriginInWindowY + oscHeight + totalExtraVerticalSpace + currentGeo.insideBars.top))
             showAbove = availableHeightAboveOSC > availableHeightBelowOSC
-            if showThumbnail, showAbove, thumbHeight > availableHeightAboveOSC {
+            if showThumbnail && !usingThumbfast, showAbove, thumbHeight > availableHeightAboveOSC {
               // Scale down thumbnail so it doesn't get clipped by the side of the window
               thumbHeight = availableHeightAboveOSC
               thumbWidth = thumbHeight * thumbAspect
             }
           }
 
-          if showThumbnail, !showAbove, thumbHeight > availableHeightBelowOSC {
+          if showThumbnail && !usingThumbfast, !showAbove, thumbHeight > availableHeightBelowOSC {
             thumbHeight = availableHeightBelowOSC
             thumbWidth = thumbHeight * thumbAspect
           }
@@ -289,7 +294,7 @@ extension PlayerWindowController {
       log.trace{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY), size=\(timeLabelSize)"}
 
       // Need integers below.
-      if showThumbnail {
+      if showThumbnail && !usingThumbfast {
         thumbWidth = round(thumbWidth)
         thumbHeight = round(thumbHeight)
 
@@ -310,23 +315,31 @@ extension PlayerWindowController {
         }
 
         let thumbWidth_Halved = thumbWidth / 2
-        let thumbOriginX = round(posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth))
-        let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY.rounded(), width: thumbWidth, height: thumbHeight)
 
-        if useThumbfast {
-          let thumbWidth = 400.0 * currentGeo.mpvVideoScale() // TODO: this is a guess. Need to query thumbfast directly
+        if usingThumbfast {
           // Experiment with Thumbfast Lua script as an alternative (https://github.com/po5/thumbfast)
           guard player.isActive else { return }
           let osdWidth = player.mpv.getDouble(MPVProperty.osdWidth)
           // Thumbfast expects X,Y to represent top-left corner of thumbnail
-          let posInVideoX = min(((previewTimeSec / mediaDuration) * osdWidth), osdWidth - thumbWidth).rounded()
-          player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: posInVideoX, y: 30)
+          let scaleRatio = osdWidth / currentGeo.videoSize.width
+          let thumbOriginX = (((posInWindowX - currentGeo.viewportMargins.leading) * scaleRatio).rounded() - (thumbWidth * 0.5)).clamped(to: 0...(max(0, osdWidth - thumbWidth)))
+          let videoFrameInWindowCoords = currentGeo.videoFrameInWindowCoords
+          var thumbOriginInVideoY = thumbOriginY - videoFrameInWindowCoords.minY
+          if !showAbove {
+            // FIXME: there is a bug somewhere in "below" offset calculation
+            thumbOriginInVideoY += (currentGeo.viewportMargins.top)
+          }
+          let yConverted = (currentGeo.videoSize.height - thumbOriginInVideoY) * scaleRatio
+          let thumbOriginY = (yConverted - thumbHeight).clamped(to: 0...(max(0, (currentGeo.videoSize.height * scaleRatio) - thumbHeight)))
+          player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: thumbOriginX, y: thumbOriginY)
           thumbnailPeekView.isHidden = true
         } else {
+          let thumbOriginX = round(posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth))
+          let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY.rounded(), width: thumbWidth, height: thumbHeight)
           updateThumbnailPeekView(to: ffThumbnail!, thumbFrame: thumbFrame, thumbStore!, currentGeo, previewTimeSec: previewTimeSec)
+          thumbnailPeekView.isHidden = !showThumbnail
         }
       }
-      thumbnailPeekView.isHidden = !showThumbnail
       animationState = .shown
       // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
       // reliably, so using a timer works well as a failsafe.

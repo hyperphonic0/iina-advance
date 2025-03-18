@@ -25,6 +25,7 @@ class CropBoxViewController: NSViewController {
 
   lazy var cropBoxView: CropBoxView = {
     let view = CropBoxView()
+    view.idString = "CropBoxView"
     view.settingsViewController = self
     view.translatesAutoresizingMaskIntoConstraints = false
     return view

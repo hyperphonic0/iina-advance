@@ -3420,6 +3420,11 @@ class PlayerCore: NSObject {
 
   func reloadThumbnails() {
     DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.thumbnailRegenerationDelay) { [self] in
+      guard !Preference.bool(for: .integrateWithThumbfast) else {
+        log.verbose("Thumbnails reload stopped pref key `integrateWithThumbfast` is set")
+        touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
+        return
+      }
       guard let currentPlayback = info.currentPlayback else {
         log.debug("Thumbnails reload stopped because no current playback")
         touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
