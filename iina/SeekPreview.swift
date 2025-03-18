@@ -347,35 +347,31 @@ extension PlayerWindowController {
 
     private func updateThumbnailPeekView(to ffThumbnail: Thumbnail, thumbFrame: NSRect, _ thumbStore: SingleMediaThumbnailsLoader,
                                          _ currentGeo: PWinGeometry, previewTimeSec: CGFloat) {
-      // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
-      let somethingChanged = true //thumbStore.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp || thumbnailPeekView.frame.width != thumbFrame.width || thumbnailPeekView.frame.height != thumbFrame.height
-      if somethingChanged {
-        thumbStore.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
-        let cornerRadius = thumbnailPeekView.updateBorderStyle(thumbSize: thumbFrame.size, previewTimeSec: previewTimeSec)
+      thumbStore.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
+      let cornerRadius = thumbnailPeekView.updateBorderStyle(thumbSize: thumbFrame.size, previewTimeSec: previewTimeSec)
 
-        // Apply crop first. Then aspect
-        let croppedImage: CGImage
-        if let normalizedCropRect = currentGeo.video.cropRectNormalized {
-          croppedImage = ffThumbnail.image.cropped(normalizedCropRect: normalizedCropRect)
-        } else {
-          croppedImage = ffThumbnail.image
-        }
-        // The calculations for thumbFrame reflect the final image coordinates. But for faster speed we are going
-        // to use the unflipped, unrotated thumbnail & apply rotation & mirroring/flipping via CoreAnimation transformations.
-        let unrotatedImageSize: CGSize
-        if currentGeo.video.isWidthSwappedWithHeightByTotalRotation {
-          unrotatedImageSize = CGSize(width: thumbFrame.height, height: thumbFrame.width)
-        } else {
-          unrotatedImageSize = thumbFrame.size
-        }
-        let affineImage = croppedImage.resized(newWidth: unrotatedImageSize.widthInt, newHeight: unrotatedImageSize.heightInt,
-                                               cornerRadius: cornerRadius)
-        thumbnailPeekView.image = NSImage.from(affineImage)
-        thumbnailPeekView.widthConstraint.constant = unrotatedImageSize.width
-        thumbnailPeekView.heightConstraint.constant = unrotatedImageSize.height
-
-        thumbnailPeekView.frame.origin = thumbFrame.origin
+      // Apply crop first. Then aspect
+      let croppedImage: CGImage
+      if let normalizedCropRect = currentGeo.video.cropRectNormalized {
+        croppedImage = ffThumbnail.image.cropped(normalizedCropRect: normalizedCropRect)
+      } else {
+        croppedImage = ffThumbnail.image
       }
+      // The calculations for thumbFrame reflect the final image coordinates. But for faster speed we are going
+      // to use the unflipped, unrotated thumbnail & apply rotation & mirroring/flipping via CoreAnimation transformations.
+      let unrotatedImageSize: CGSize
+      if currentGeo.video.isWidthSwappedWithHeightByTotalRotation {
+        unrotatedImageSize = CGSize(width: thumbFrame.height, height: thumbFrame.width)
+      } else {
+        unrotatedImageSize = thumbFrame.size
+      }
+      let affineImage = croppedImage.resized(newWidth: unrotatedImageSize.widthInt, newHeight: unrotatedImageSize.heightInt,
+                                             cornerRadius: cornerRadius)
+      thumbnailPeekView.image = NSImage.from(affineImage)
+      thumbnailPeekView.widthConstraint.constant = unrotatedImageSize.width
+      thumbnailPeekView.heightConstraint.constant = unrotatedImageSize.height
+
+      thumbnailPeekView.frame.origin = thumbFrame.origin
 
       // Apply flip, mirror, & rotate using CoreAnimation for blazing fast transformations
       if player.info.isFlippedHorizontal || player.info.isFlippedVertical || currentGeo.video.totalRotation != 0 {
