@@ -6,8 +6,6 @@
 //  Copyright © 2024 lhc. All rights reserved.
 //
 
-fileprivate let useThumbfast = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .integrateWithThumbfast)
-
 extension PlayerWindowController {
   // TODO: PK.seekPreviewHasTimeDelta
   // TODO: PK.seekPreviewHasChapter
@@ -30,6 +28,8 @@ extension PlayerWindowController {
     var timeLabelHorizontalCenterConstraint: NSLayoutConstraint!
     var timeLabelVerticalSpaceConstraint: NSLayoutConstraint!
 
+    fileprivate var useThumbfast = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .integrateWithThumbfast)
+
     unowned var player: PlayerCore!
     var log: Logger.Subsystem { player.log }
 
@@ -48,6 +48,19 @@ extension PlayerWindowController {
     /// For auto hiding seek time & thumbnail after a timeout.
     /// Calls `PlayerWindowController.seekPreviewTimeout` on timeout.
     let hideTimer = TimeoutTimer(timeout: Constants.TimeInterval.seekPreviewHideTimeout)
+
+    func refreshThumbfastFromPrefs() {
+      let useThumbfastOld = useThumbfast
+      let useThumbfastNew = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .integrateWithThumbfast)
+      useThumbfast = useThumbfastNew
+
+      if useThumbfastOld && !useThumbfastNew {
+        // Disabled thumbfast: make sure we clear any existing thumbfast thumbnail:
+        player.mpv.clearThumbfast()
+        // Now make sure to load traditional thumbs:
+        player.reloadThumbnails()
+      }
+    }
 
     init() {
       timeLabel.identifier = .init("SeekTimeLabel")
@@ -111,7 +124,7 @@ extension PlayerWindowController {
       var usingThumbfast = false
       var thumbWidth: Double
       var thumbHeight: Double
-      if showThumbnail, useThumbfast, let thumbfastInfo = player.mpv.thumbfastInfo, thumbfastInfo.available && !thumbfastInfo.disabled {
+      if showThumbnail, useThumbfast, let thumbfastInfo = player.mpv.thumbfastInfo, thumbfastInfo.isReady {
         usingThumbfast = true
         thumbWidth = Double(thumbfastInfo.width)
         thumbHeight = Double(thumbfastInfo.height)
@@ -329,7 +342,7 @@ extension PlayerWindowController {
           if !showAbove {
             yConverted -= thumbHeight
           }
-          let thumbOriginY = yConverted.clamped(to: 0...(max(0, (currentGeo.videoSize.height * scaleRatio))))
+          let thumbOriginY = yConverted.clamped(to: 0...(max(0, (currentGeo.videoSize.height * scaleRatio) - thumbHeight)))
           player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: thumbOriginX, y: thumbOriginY)
           thumbnailPeekView.isHidden = true
         } else {
@@ -462,7 +475,7 @@ extension PlayerWindowController {
     seekPreview.currentPreviewTimeSec = nil
     playSlider.hoverIndicator?.isHidden = true
 
-    if useThumbfast {
+    if seekPreview.useThumbfast {
       player.mpv.clearThumbfast()
     }
   }

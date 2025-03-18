@@ -1148,10 +1148,12 @@ class MPVController: NSObject {
 
   /// Sends a message to the thumbfast script to show a thumbnail with the given timestamp at the given coordinates.
   func showThumbfast(hoveredSecs: Double, x: Double, y: Double) {
+    guard let thumbfastInfo, thumbfastInfo.isReady else { return }
     sendScriptMessage(to: "thumbfast", args: ["thumb", hoveredSecs, x, y])
   }
 
   func clearThumbfast() {
+    guard let thumbfastInfo, thumbfastInfo.isReady else { return }
     sendScriptMessage(to: "thumbfast", args: ["clear"])
   }
 
@@ -1247,6 +1249,8 @@ class MPVController: NSObject {
     let available: Bool
     let disabled: Bool
     let scale_factor: Double
+
+    var isReady: Bool { available && !disabled }
 
     static func fromJSON(_ json: String?, _ log: Logger.Subsystem) -> ThumbfastInfo? {
       do {

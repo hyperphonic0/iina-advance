@@ -35,6 +35,7 @@ extension PlayerWindowController {
       .showChapterPos,
 
         .seekPreviewShadow,
+      .integrateWithThumbfast,
       .playlistShowMetadata,
       .playlistShowMetadataInMusicMode,
       .shortenFileGroupsInPlaylist,
@@ -173,14 +174,17 @@ extension PlayerWindowController {
     switch key {
     case .enableAdvancedSettings:
       player.mpv.updateUsingMpvOSDFromPrefs()
-      
+
       animationPipeline.submitTask({ [self] in
         // May change enablement of 2-row OSC; refresh:
         updateTitleBarAndOSC()
         updateWindowBorderAndOpacity()
         // may need to hide cropbox label and other advanced stuff
         quickSettingView.reload()
+        seekPreview.refreshThumbfastFromPrefs()
       })
+    case .integrateWithThumbfast:
+      seekPreview.refreshThumbfastFromPrefs()
     case .useMpvOsd:
       player.mpv.updateUsingMpvOSDFromPrefs()
     case .enableToneMapping,
