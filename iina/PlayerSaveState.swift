@@ -401,7 +401,9 @@ struct PlayerSaveState: CustomStringConvertible {
             guard !player.isShuttingDown else { return }
 
             let properties = generatePropDict(from: player, geo)
-            player.log.trace{"Saving player state: \(properties)"}
+            if Logger.isTraceEnabled, Preference.bool(for: .logPlayerSave) {
+              player.log.trace{"Saving player state: \(properties)"}
+            }
             UIState.shared.saveState(forPlayerID: player.label, properties: properties)
           }
         }

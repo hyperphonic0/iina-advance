@@ -63,7 +63,7 @@ class CustomTitleBarViewController: NSViewController {
 
     builder.configureTitleBarButton(leadingSidebarToggleButton,
                                     Images.sidebarLeading,
-                                    identifier: "leadingSidebarToggleButton",
+                                    identifier: "leadingSidebarBtn",
                                     target: windowController,
                                     action: #selector(windowController.toggleLeadingSidebarVisibility(_:)),
                                     bounceOnClick: true)
@@ -132,7 +132,7 @@ class CustomTitleBarViewController: NSViewController {
 
     builder.configureTitleBarButton(trailingSidebarToggleButton,
                                     Images.sidebarTrailing,
-                                    identifier: "TrailingSidebarToggleButton",
+                                    identifier: "TrailingSidebarBtn",
                                     target: windowController,
                                     action: #selector(windowController.toggleTrailingSidebarVisibility(_:)),
                                     bounceOnClick: true)

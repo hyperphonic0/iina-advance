@@ -1913,7 +1913,7 @@ extension NSView {
 
   var idString: String {
     get {
-      return self.identifier?.rawValue ?? ""
+      return self.identifier?.rawValue ?? "<none>"
     }
     set {
       self.identifier = .init(newValue)

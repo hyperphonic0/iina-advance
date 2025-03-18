@@ -466,8 +466,12 @@ struct Preference {
 
     static let enablePiiMaskingInLog = Key("enablePiiMaskingInLog")
 
-    /* [debugging] If true, enables even more verbose logging so that input bindings computations can be more easily debugged. */
+    /// [debugging] If true, enables even more verbose logging so that input bindings computations can be more easily debugged.
     static let logKeyBindingsRebuild = Key("logKeyBindingsRebuild")
+
+    /// If true, and trace-level logging is enabled, log the details of every save of player state.
+    /// This is frequent and verbose and can clutter up even trace-level logs, which is why this setting is false by default.
+    static let logPlayerSave = Key("logPlayerSave")
 
     /* Saved value of checkbox in Key Bindings settings UI */
     static let displayKeyBindingRawValues = Key("displayKeyBindingRawValues")
@@ -1464,6 +1468,7 @@ struct Preference {
     .iinaMpvLogLevel: MPVLogLevel.warn.string,
     .enablePiiMaskingInLog: true,
     .logKeyBindingsRebuild: false,
+    .logPlayerSave: false,
     .displayKeyBindingRawValues: false,
     .showKeyBindingsFromAllSources: true,
     .useInlineEditorInsteadOfDialogForNewInputConf: true,

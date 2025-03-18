@@ -125,7 +125,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Set only for PiP
   var isWindowHidden = false
   var isDragging: Bool = false
-  var currentDragObject: NSView? = nil
+  var currentDragObject: NSView? = nil {
+    didSet {
+      log.verbose{"Updated currentDragObject ≔ \(currentDragObject?.idString ?? "nil")"}
+    }
+  }
   var isLiveResizingWidth: Bool? = nil
   var isMagnifying = false
 

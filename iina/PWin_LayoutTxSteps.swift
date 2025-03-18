@@ -1092,7 +1092,8 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose("[\(transition.name)] FadeInNewViews")
 
-    fadeableViews.applyOnlyIfShowable(outputLayout.controlBarFloating, to: controlBarFloating)
+    fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating)
+    fadeableViews.applyVisibility(outputLayout.topBarView, to: topBarView)
 
     if outputLayout.isFullScreen {
       if !outputLayout.isInteractiveMode && Preference.bool(for: .displayTimeAndBatteryInFullScreen) {
@@ -1162,6 +1163,11 @@ extension PlayerWindowController {
     fadeableViews.animationState = .shown
     fadeableViews.topBarAnimationState = .shown
     fadeableViews.hideTimer.restart()
+    log.verbose{
+      let fadeableIDs = fadeableViews.fadeables.map{$0.idString}
+      let fadeablesTopBarIDs = fadeableViews.fadeablesInTopBar.map{$0.idString}
+      return "[\(transition.name)] FadeableViews: \(fadeableIDs), inTopBar=\(fadeablesTopBarIDs)"
+    }
 
     guard let window else { return }
 

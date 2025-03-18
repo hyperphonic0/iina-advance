@@ -240,7 +240,7 @@ extension PlayerWindowController {
 
     builder.configureTitleBarButton(leadingSidebarToggleButton,
                                     Images.sidebarLeading,
-                                    identifier: "LeadingSidebarToggleButton_Native",
+                                    identifier: "LeadingSidebarBtn_Native",
                                     target: self,
                                     action: #selector(toggleLeadingSidebarVisibility(_:)),
                                     bounceOnClick: true)
@@ -267,7 +267,7 @@ extension PlayerWindowController {
 
     builder.configureTitleBarButton(trailingSidebarToggleButton,
                                     Images.sidebarTrailing,
-                                    identifier: "TrailingSidebarToggleButton_Native",
+                                    identifier: "TrailingSidebarBtn_Native",
                                     target: self,
                                     action: #selector(toggleTrailingSidebarVisibility(_:)),
                                     bounceOnClick: true)

@@ -209,7 +209,9 @@ extension PlayerWindowController {
 
   func hideFadeableViews(hideCursorToo: Bool = false) {
     // Don't hide overlays when in PIP or when they are not actually shown
-    guard pip.status == .notInPIP, (!(window?.isMiniaturized ?? false)) else {
+    let isWindowMinimized = window?.isMiniaturized ?? false
+    guard pip.status == .notInPIP, !isWindowMinimized else {
+      log.trace{"Aborting hide of fadeable views: pipStatus=\(pip.status), windowMinimized=\(isWindowMinimized)"}
       return
     }
 
@@ -318,7 +320,10 @@ extension PlayerWindowController {
   /// Executed when `fadeableViews.hideTimer` fires
   @objc func hideFadeableViewsAndCursor() {
     // don't hide UI when dragging control bar
-    if currentDragObject != nil { return }
+    if currentDragObject != nil {
+      log.trace{"Aborting hide of fadeable views: dragObject != nil"}
+      return
+    }
 
     hideFadeableViews(hideCursorToo: true)
   }
