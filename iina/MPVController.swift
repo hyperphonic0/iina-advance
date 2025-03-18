@@ -362,15 +362,7 @@ class MPVController: NSObject {
 
     // - Advanced
 
-    let useMpvOSD = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
-    player.isUsingMpvOSD = useMpvOSD
-    if useMpvOSD {
-      // If using mpv OSD, then disable IINA's OSD
-      player.hideOSD()
-    } else {
-      // Otherwise disable mpv OSD
-      chkErr(mpv_set_option_string(mpv, MPVOption.OSD.osdLevel, "0"))
-    }
+    _updateUsingMpvOSDFromPrefs()
 
     // Don't log demo player
     if Logger.enabled && !player.isDemoPlayer {
@@ -716,6 +708,24 @@ class MPVController: NSObject {
     // So we must wait until now to log this info, instead of at app start.
     // Should be fine to log this for every mpv core - it may be useful to have it in every mpv log file.
     player.log.verbose("Configuration when building mpv: \(getString(MPVProperty.mpvConfiguration)!)")
+  }
+
+  func updateUsingMpvOSDFromPrefs() {
+    queue.async { [self] in
+      _updateUsingMpvOSDFromPrefs()
+    }
+  }
+
+  func _updateUsingMpvOSDFromPrefs() {
+    let useMpvOSD = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
+    player.isUsingMpvOSD = useMpvOSD
+    if useMpvOSD {
+      // If using mpv OSD, then disable IINA's OSD
+      player.hideOSD()
+    } else {
+      // Otherwise disable mpv OSD
+      chkErr(mpv_set_option_string(mpv, MPVOption.OSD.osdLevel, "0"))
+    }
   }
 
   /// Initialize the `mpv` renderer.

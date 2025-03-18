@@ -26,6 +26,7 @@ extension PlayerWindowController {
       .themeMaterial,
       .playerWindowOpacity,
       .maxVolume,
+      .useMpvOsd,
 
       .showCachedRangesInSlider,
       .roundSliderBarRects,
@@ -171,6 +172,8 @@ extension PlayerWindowController {
 
     switch key {
     case .enableAdvancedSettings:
+      player.mpv.updateUsingMpvOSDFromPrefs()
+      
       animationPipeline.submitTask({ [self] in
         // May change enablement of 2-row OSC; refresh:
         updateTitleBarAndOSC()
@@ -178,6 +181,8 @@ extension PlayerWindowController {
         // may need to hide cropbox label and other advanced stuff
         quickSettingView.reload()
       })
+    case .useMpvOsd:
+      player.mpv.updateUsingMpvOSDFromPrefs()
     case .enableToneMapping,
         .toneMappingTargetPeak,
         .loadIccProfile,
