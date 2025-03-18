@@ -152,6 +152,8 @@ extension IINAAnimation {
     private(set) var isRunning = false
     private var taskQueue = LinkedList<(Int, Task)>()
 
+    var log = Logger.log
+
     // Convenience function. Run the task with no animation / zero duration.
     // Useful for updating constraints, etc., which cannot be animated or do not look good animated.
     func submitInstantTask(_ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
@@ -184,7 +186,7 @@ extension IINAAnimation {
       }
     }
 
-    private var submittedTaskCount: Int = 0
+    private var submitCounter: Int = 0
     private var lastLoggedTaskCount: Int = 0
     private var alarmActivated = false
     private static let alarmStartWatermark: Int = 100
@@ -213,11 +215,11 @@ extension IINAAnimation {
       }
 
       guard enqueuedCount > 0 else { return }
-      submittedTaskCount += enqueuedCount
+      submitCounter += enqueuedCount
 
-      if Logger.isVerboseEnabled {
+      if log.isVerboseEnabled {
         let taskQueueSize = taskQueue.count
-        let submittedTasks = submittedTaskCount
+        let submittedTasks = submitCounter
         if alarmActivated {
           let canDisable = taskQueueSize < IINAAnimation.Pipeline.alarmResetWatermark
           if canDisable {
@@ -225,12 +227,12 @@ extension IINAAnimation {
           }
           if canDisable || (submittedTasks >= lastLoggedTaskCount + 20) {
             lastLoggedTaskCount = submittedTasks
-            Logger.log.verbose{"[AnimationPipeline] TaskQueue size: \(taskQueueSize), totalSubmits: \(submittedTasks)"}
+            log.verbose{"[AnimationPipeline] TaskQueue size: \(taskQueueSize), totalSubmits: \(submittedTasks)"}
           }
         } else if taskQueue.count >= IINAAnimation.Pipeline.alarmStartWatermark {
           alarmActivated = true
-          lastLoggedTaskCount = submittedTaskCount
-          Logger.log.verbose{"[AnimationPipeline] TaskQueue is falling behind! Size: \(taskQueueSize), totalSubmits: \(submittedTaskCount)"}
+          lastLoggedTaskCount = submitCounter
+          log.verbose{"[AnimationPipeline] TaskQueue is falling behind! Size: \(taskQueueSize), submitCount: \(submitCounter)"}
         }
       }
 
@@ -251,7 +253,7 @@ extension IINAAnimation {
         }
 
         guard taskTxID >= currentTxID else {
-          Logger.log.debug("Animation pipeline: skipping task with txID \(taskTxID) (next valid txID: \(currentTxID))")
+          log.debug("Animation pipeline: skipping task with txID \(taskTxID) (next valid txID: \(currentTxID))")
           continue
         }
         currentTxID = taskTxID
@@ -277,11 +279,11 @@ extension IINAAnimation {
         do {
           try nextTask.runFunc()
         } catch IINAError.cancelAnimationTransaction {
-          if Logger.isTraceEnabled {
-            Logger.log.trace("Animation pipeline: task was cancelled")
+          if log.isTraceEnabled {
+            log.trace("Animation pipeline: task was cancelled")
           }
         } catch {
-          Logger.log.error("Animation pipeline: unexpected error thrown by task: \(error)")
+          log.error("Animation pipeline: unexpected error thrown by task: \(error)")
         }
       }, completionHandler: {
         self.runTasks()
