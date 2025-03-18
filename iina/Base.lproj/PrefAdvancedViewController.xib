@@ -96,14 +96,14 @@
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Moa-ah-XjY">
                     <rect key="frame" x="64" y="36" width="89" height="25"/>
-                    <popUpButtonCell key="cell" type="push" title="Trace" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" tag="-1" imageScaling="proportionallyDown" inset="2" selectedItem="pkg-Kg-F56" id="gTP-IE-Lyn">
+                    <popUpButtonCell key="cell" type="push" title="Trace" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="-1" imageScaling="proportionallyDown" inset="2" selectedItem="pkg-Kg-F56" id="gTP-IE-Lyn">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" usesAppearanceFont="YES"/>
                         <menu key="menu" id="lA1-jW-Eyv">
                             <items>
-                                <menuItem title="Trace" tag="-1" id="pkg-Kg-F56"/>
+                                <menuItem title="Trace" state="on" tag="-1" id="pkg-Kg-F56"/>
                                 <menuItem title="Verbose" id="S9M-yY-q0w"/>
-                                <menuItem title="Debug" state="on" tag="1" id="hGq-ek-VHd"/>
+                                <menuItem title="Debug" tag="1" id="hGq-ek-VHd"/>
                                 <menuItem title="Warning" tag="2" id="exP-JC-h7t">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
@@ -114,8 +114,8 @@
                         </menu>
                     </popUpButtonCell>
                     <connections>
-                        <binding destination="nyg-fH-Pug" name="selectedTag" keyPath="values.logLevel" id="WhX-vg-Gen"/>
                         <binding destination="nyg-fH-Pug" name="enabled" keyPath="values.enableAdvancedSettings" id="FeD-g7-qB0"/>
+                        <binding destination="nyg-fH-Pug" name="selectedTag" keyPath="values.logLevel" id="WhX-vg-Gen"/>
                     </connections>
                 </popUpButton>
                 <button identifier="FunctionalButtonShowLog" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XBa-zS-RVU">
@@ -210,6 +210,17 @@
                     <connections>
                         <binding destination="nyg-fH-Pug" name="enabled" keyPath="values.enableAdvancedSettings" id="kEe-GU-chP"/>
                         <binding destination="nyg-fH-Pug" name="value" keyPath="values.useMpvOsd" id="lOz-BL-YHr"/>
+                    </connections>
+                </button>
+                <button translatesAutoresizingMaskIntoConstraints="NO" id="ZQt-93-Phc">
+                    <rect key="frame" x="134" y="271" width="224" height="18"/>
+                    <buttonCell key="cell" type="check" title="Enable thumbfast integration 🧪" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="h9W-uB-KRd">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <binding destination="nyg-fH-Pug" name="enabled" keyPath="values.enableAdvancedSettings" id="QBr-95-aBe"/>
+                        <binding destination="nyg-fH-Pug" name="value" keyPath="values.integrateWithThumbfast" id="UWf-Hs-cT3"/>
                     </connections>
                 </button>
                 <scrollView autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bA7-7o-Vd0">
@@ -454,16 +465,18 @@
                 <constraint firstItem="Gf8-9e-wu7" firstAttribute="leading" secondItem="vY6-lX-1l5" secondAttribute="leading" constant="1" id="77L-nm-7Wg"/>
                 <constraint firstItem="zKI-kU-PWr" firstAttribute="leading" secondItem="vY6-lX-1l5" secondAttribute="leading" constant="1" id="7ef-qu-NyJ"/>
                 <constraint firstItem="jsf-pn-h6s" firstAttribute="top" secondItem="Gf8-9e-wu7" secondAttribute="bottom" constant="8" id="8sD-5a-FXo"/>
+                <constraint firstItem="ZQt-93-Phc" firstAttribute="firstBaseline" secondItem="zKI-kU-PWr" secondAttribute="firstBaseline" id="Cbe-OE-Wpa"/>
                 <constraint firstItem="wWR-n2-u2E" firstAttribute="top" secondItem="zKI-kU-PWr" secondAttribute="bottom" constant="16" id="Cg4-PA-TyS"/>
                 <constraint firstAttribute="trailing" secondItem="hbF-n4-jl3" secondAttribute="trailing" constant="1" id="FDJ-Cp-psA"/>
                 <constraint firstItem="1NU-Lr-cuR" firstAttribute="trailing" secondItem="bA7-7o-Vd0" secondAttribute="trailing" id="HTl-7I-Zcu"/>
                 <constraint firstItem="1NU-Lr-cuR" firstAttribute="top" secondItem="bA7-7o-Vd0" secondAttribute="bottom" constant="-1" id="KSl-QB-xiy"/>
+                <constraint firstItem="dfL-W8-kmJ" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="ZQt-93-Phc" secondAttribute="trailing" id="KaL-HA-d54"/>
+                <constraint firstItem="ZQt-93-Phc" firstAttribute="leading" secondItem="zKI-kU-PWr" secondAttribute="trailing" constant="16" id="MYd-bY-h6l"/>
                 <constraint firstAttribute="bottom" secondItem="jsf-pn-h6s" secondAttribute="bottom" constant="8" id="P70-PP-vNV"/>
                 <constraint firstItem="dfL-W8-kmJ" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="vY6-lX-1l5" secondAttribute="leading" id="RtC-Rh-J6Z"/>
                 <constraint firstItem="bA7-7o-Vd0" firstAttribute="top" secondItem="wWR-n2-u2E" secondAttribute="bottom" constant="8" id="ZB8-eK-Abf"/>
                 <constraint firstItem="wWR-n2-u2E" firstAttribute="leading" secondItem="vY6-lX-1l5" secondAttribute="leading" id="bQ8-hg-8SK"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="wWR-n2-u2E" secondAttribute="trailing" id="cWT-fx-J5u"/>
-                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="zKI-kU-PWr" secondAttribute="trailing" id="ekt-Qq-Yof"/>
                 <constraint firstAttribute="trailing" secondItem="bA7-7o-Vd0" secondAttribute="trailing" id="foA-Yd-KGK"/>
                 <constraint firstItem="hbF-n4-jl3" firstAttribute="baseline" secondItem="Gf8-9e-wu7" secondAttribute="baseline" id="j2y-sy-d0s"/>
                 <constraint firstAttribute="trailing" secondItem="dfL-W8-kmJ" secondAttribute="trailing" id="j5D-rm-Ypb"/>

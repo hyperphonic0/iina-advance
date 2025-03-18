@@ -6,7 +6,7 @@
 //  Copyright © 2024 lhc. All rights reserved.
 //
 
-fileprivate let useThumbfast = Preference.bool(for: .integrateWithThumbfast)
+fileprivate let useThumbfast = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .integrateWithThumbfast)
 
 extension PlayerWindowController {
   // TODO: PK.seekPreviewHasTimeDelta
@@ -291,7 +291,7 @@ extension PlayerWindowController {
       timeLabel.isHidden = false
 
       // Done with timeLabel.
-      log.trace{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY), size=\(timeLabelSize)"}
+      log.trace{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY), size=\(timeLabelSize) thumbnail=\(showThumbnail.yn) thumbfast=\(usingThumbfast.yn)"}
 
       // Need integers below.
       if showThumbnail && !usingThumbfast {
