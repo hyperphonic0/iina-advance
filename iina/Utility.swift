@@ -581,20 +581,28 @@ class Utility {
   static func icon(for url: URL?) -> NSImage {
     if #available(macOS 11.0, *) {
       if let url {
-        let uttypeList = UTType.types(tag: url.pathExtension, tagClass: .filenameExtension, conformingTo: nil)
-        for uttype in uttypeList {
-          if uttype.identifier.starts(with: "io.iina.") {
-            return NSWorkspace.shared.icon(for: uttype)
-          }
+        if let uttype = getBestUTTypeForExt(url.pathExtension) {
+          return NSWorkspace.shared.icon(for: uttype)
         }
-        if let firstUTType = uttypeList.first {
-          return NSWorkspace.shared.icon(for: firstUTType)
+        if !url.isFileURL {
+          // Assume it is network stream
+          return NSWorkspace.shared.icon(for: .url)
         }
       }
       return NSWorkspace.shared.icon(for: .data)
     } else {
       return NSWorkspace.shared.icon(forFileType: url?.pathExtension ?? "")
     }
+  }
+
+  static func getBestUTTypeForExt(_ ext: String) -> UTType? {
+    let uttypeList = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: nil)
+    for uttype in uttypeList {
+      if uttype.identifier.starts(with: "io.iina.") {
+        return uttype
+      }
+    }
+    return uttypeList.first
   }
 
   // MARK: - Util classes

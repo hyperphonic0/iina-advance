@@ -444,7 +444,7 @@ class HistoryController {
       let progressChanged = loadProgressFromWatchLater(entry)
       if progressChanged {
         // Notify History window + playlist UI in various windows
-        postFileHistoryUpdateNotification(forURL: entry.url)
+        MediaMetaCache.shared.postFileHistoryUpdateNotification(forURL: entry.url)
       }
     } else {
       var didClearCachedProgress = false
@@ -456,11 +456,11 @@ class HistoryController {
       let oldProgress = entry.mpvProgress
       entry.mpvProgress = nil
       didClearCachedProgress = didClearCachedProgress || (oldProgress != nil)
-      
+
       if didClearCachedProgress {
         // After clearing the cached value, notify the UI that it changed (e.g., playlist may need to hide
         // its progress bar)
-        postFileHistoryUpdateNotification(forURL: entry.url)
+        MediaMetaCache.shared.postFileHistoryUpdateNotification(forURL: entry.url)
       }
     }
 
@@ -575,11 +575,6 @@ class HistoryController {
 
 
   // MARK: - Notifications
-
-  /// Notifies the UI (playlist panel(s) & History window that the given URL has been updated, so they can pull it & update.
-  func postFileHistoryUpdateNotification(forURL url: URL) {
-    postNotification(Notification(name: .iinaFileHistoryDidUpdate, object: nil, userInfo: ["url": url]))
-  }
 
   func postNotification(_ notification: Notification) {
     /// Launch async on main thread to prevent deadlock. We don't know what thread we are coming from, or

@@ -188,12 +188,35 @@ class MediaMetaCache {
     }
 
     return metaLock.withLock {
-      let oldMeta = cachedMeta[id.url] ?? MediaMeta(id)
+      let existingMeta = cachedMeta[id.url]
+      let oldMeta = existingMeta ?? MediaMeta(id)
       let newMeta = oldMeta.clone(duration: duration, progress: progress, nilProgress: progress == nil,
-                                  title: title, album: album, artist: artist, triedFFmpeg: triedFFmpeg)
+                                  title: title, album: album, artist: artist, triedFFmpeg: oldMeta.triedFFmpeg || triedFFmpeg)
+
+      // Compare oldMeta to newMeta; send update notification if different
+      let didUpdateExisting = existingMeta != nil
+      if didUpdateExisting,
+          oldMeta.duration != newMeta.duration ||
+          oldMeta.progress != newMeta.progress ||
+          oldMeta.title != newMeta.title ||
+          oldMeta.album != newMeta.album ||
+          oldMeta.artist != newMeta.artist {
+        postFileHistoryUpdateNotification(forURL: newMeta.id.url)
+      }
+
       cachedMeta[id.url] = newMeta
       log.trace{"Updated cache entry \(id.path.pii.quoted) ≔ \(newMeta)"}
       return newMeta
+    }
+  }
+
+  /// Notifies the UI (playlist panel(s) & History window that the given URL has been updated, so they can pull it & update.
+  func postFileHistoryUpdateNotification(forURL url: URL) {
+    DispatchQueue.main.async {
+      guard !AppDelegate.shared.isTerminating else { return }
+      // TODO: attach object instead, so we don't have to pull it down
+      let notification = Notification(name: .iinaFileHistoryDidUpdate, object: nil, userInfo: ["url": url])
+      NotificationCenter.default.post(notification)
     }
   }
 

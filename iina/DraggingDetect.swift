@@ -50,6 +50,7 @@ extension PlayerCore {
     var playableFiles: [URL] = []
     for url in urls {
       if !url.isFileURL {
+        // Network streaming URL
         playableFiles.append(url)
         continue
       }

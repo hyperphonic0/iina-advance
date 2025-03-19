@@ -285,7 +285,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   private func refreshTotalLength() {
     if let totalDuration = player.info.calculateTotalDuration() {
-      player.log.trace{"Playlist: recalculated total playlist duration: \(totalDuration)"}
+      player.log.trace{"Playlist: recalculated total duration: \(totalDuration)"}
       playlistTotalLengthIsReady = true
       playlistTotalLength = totalDuration
       DispatchQueue.main.async {

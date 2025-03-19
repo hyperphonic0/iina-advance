@@ -531,7 +531,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     DispatchQueue.main.async { [self] in
-      Logger.log.debug{"Opening URLs (count: \(urls.count))"}
+      Logger.log.debug{"Opening URLs: count=\(urls.count)"}
       var totalFilesOpened = 0
 
       var wcsForOpenFiles: [PlayerWindowController] = []

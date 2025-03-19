@@ -3708,11 +3708,16 @@ class PlayerCore: NSObject {
         mpv.getString("chapter-metadata/by-key/performer") ?? mpv.getString("metadata/by-key/artist") ?? ""
       )
     } else {
-      return (
+      let meta = (
         mpv.getString(MPVProperty.mediaTitle) ?? "",
         mpv.getString("metadata/by-key/album") ?? "",
         mpv.getString("metadata/by-key/artist") ?? ""
       )
+      if let path = mpv.getString(MPVProperty.path), let id = PlaybackID(path: path) {
+        MediaMetaCache.shared.updateCachedMeta(id, reloadFromWatchLater: false, reloadFromFFmpeg: false,
+                                               mpvTitle: meta.0, mpvAlbum: meta.1, mpvArtist: meta.2)
+      }
+      return meta
     }
   }
 
