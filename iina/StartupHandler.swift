@@ -170,7 +170,7 @@ class StartupHandler {
         app.showWelcomeWindow()
       case .preferences:
         addWindowToRestore(savedWindow, app.preferenceWindowController)
-        app.showPreferencesWindow(self)
+        app.showPreferencesWindow(nil)
       case .about:
         addWindowToRestore(savedWindow, app.aboutWindow)
         app.showAboutWindow(self)
@@ -189,13 +189,13 @@ class StartupHandler {
         addWindowToRestore(savedWindow, app.inspector)
       case .videoFilter:
         addWindowToRestore(savedWindow, app.vfWindow)
-        app.showVideoFilterWindow(self)
+        app.showVideoFilterWindow(nil)
       case .audioFilter:
         addWindowToRestore(savedWindow, app.afWindow)
-        app.showAudioFilterWindow(self)
+        app.showAudioFilterWindow(nil)
       case .logViewer:
         addWindowToRestore(savedWindow, app.logWindow)
-        app.showLogWindow(self)
+        app.showLogWindow(nil)
       case .playerWindow(let id):
         restorePlayerWindowFromPriorLaunch(savedWindow, playerID: id)
       case .newFilter, .editFilter, .saveFilter:

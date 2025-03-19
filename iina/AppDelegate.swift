@@ -786,7 +786,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   /// Only used if `Preference.Key.enableCmdN` is set to `true`
-  @IBAction func menuNewWindow(_ sender: Any) {
+  @IBAction func menuNewWindow(_ sender: AnyObject?) {
     showWelcomeWindow()
   }
 
@@ -803,36 +803,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  @IBAction func showPreferencesWindow(_ sender: AnyObject) {
+  @IBAction func showPreferencesWindow(_ sender: AnyObject?) {
     Logger.log("Opening Preferences window", level: .verbose)
-    preferenceWindowController.openWindow(self)
+    preferenceWindowController.openWindow(nil)
   }
 
-  @objc func showPluginPreferences(_ sender: NSMenuItem) {
+  @objc func showPluginPreferences(_ sender: NSMenuItem?) {
     preferenceWindowController.openPreferenceView(withNibName: "PrefPluginViewController")
   }
 
-  @IBAction func showVideoFilterWindow(_ sender: AnyObject) {
+  @IBAction func showVideoFilterWindow(_ sender: AnyObject?) {
     Logger.log("Opening Video Filter window", level: .verbose)
-    vfWindow.openWindow(self)
+    vfWindow.openWindow(nil)
   }
 
-  @IBAction func showAudioFilterWindow(_ sender: AnyObject) {
+  @IBAction func showAudioFilterWindow(_ sender: AnyObject?) {
     Logger.log("Opening Audio Filter window", level: .verbose)
-    afWindow.openWindow(self)
+    afWindow.openWindow(nil)
   }
 
-  @IBAction func showAboutWindow(_ sender: AnyObject) {
+  @IBAction func showAboutWindow(_ sender: AnyObject?) {
     Logger.log("Opening About window", level: .verbose)
-    aboutWindow.openWindow(self)
+    aboutWindow.openWindow(nil)
   }
 
-  @IBAction func showHistoryWindow(_ sender: AnyObject) {
-    Logger.log("Opening History window", level: .verbose)
-    historyWindow.openWindow(self)
+  @IBAction func showHistoryWindow(_ sender: AnyObject?) {
+    Logger.log.verbose("Opening History window")
+    historyWindow.openWindow(nil)
   }
 
-  @objc func toggleInspectorWindow(_ sender: AnyObject) {
+  @objc func toggleInspectorWindow(_ sender: AnyObject?) {
     if inspector.window?.isOpen ?? false {
       inspector.close()
     } else {
@@ -840,24 +840,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  @IBAction func showLogWindow(_ sender: AnyObject) {
-    Logger.log("Opening Log window", level: .verbose)
-    logWindow.openWindow(self)
+  @IBAction func showLogWindow(_ sender: AnyObject?) {
+    Logger.log.verbose("Opening Log window")
+    logWindow.openWindow(nil)
   }
 
-  @IBAction func showHighlights(_ sender: AnyObject) {
+  @IBAction func showHighlights(_ sender: AnyObject?) {
     guideWindow.show(pages: [.highlights])
   }
 
-  @IBAction func helpAction(_ sender: AnyObject) {
+  @IBAction func helpAction(_ sender: AnyObject?) {
     NSWorkspace.shared.open(URL(string: AppData.wikiLink)!)
   }
 
-  @IBAction func githubAction(_ sender: AnyObject) {
+  @IBAction func githubAction(_ sender: AnyObject?) {
     NSWorkspace.shared.open(URL(string: AppData.githubLink)!)
   }
 
-  @IBAction func websiteAction(_ sender: AnyObject) {
+  @IBAction func websiteAction(_ sender: AnyObject?) {
     NSWorkspace.shared.open(URL(string: AppData.websiteLink)!)
   }
 
