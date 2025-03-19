@@ -281,7 +281,7 @@ struct Constants {
     // How close the cursor has to be horizontally to the edge of the sidebar in order to trigger its resize:
     static let resizeActivationRadius: CGFloat = 10.0
 
-    static let minPlaylistWidth: CGFloat = 240
+    static let minPlaylistWidth: CGFloat = 200
     static let maxPlaylistWidth: CGFloat = 800
     static let settingsWidth: CGFloat = 360
 

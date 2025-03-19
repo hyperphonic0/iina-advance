@@ -567,6 +567,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       // ... also make sure the old "now playing" row is redrawn so it loses its status
       loadCachedItem(forRowIndex: oldNowPlayingIndex, force: true)
 
+      // The calls to loadCachedItem should refresh the given indexes, but will go through multiple queues
+      // to do so and may be delayed by a minute or more. We need to update the nowPlaying status ASAP,
+      // so just add extra redraws right away:
+      reloadPlaylistRow(newNowPlayingIndex)
+      reloadPlaylistRow(oldNowPlayingIndex)
+
       playlistTableView.scrollRowToVisible(newNowPlayingIndex)
     }
   }
@@ -599,7 +605,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         v.textField?.setFormattedText(stringValue: text, textColor: isPlayingTextColor)
       case .trackName:
         let cellView = v as! PlaylistTrackCellView
-        updateCellForTrackNameColumn(cellView, rowIndex: row, isPlaying: isPlaying)
+        updateCellForPlaylistTrackNameColumn(cellView, rowIndex: row, isPlaying: isPlaying)
       default:
         Logger.fatal("Unknown identifier in Playlist table: \(identifier)")
       }
@@ -643,7 +649,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     return nil
   }
 
-  private var wantsTitleDisplayed: Bool {
+  private var wantsPlaylistTitleDisplayed: Bool {
     guard Preference.bool(for: .playlistShowMetadata) else { return false }
     let onlyInMusicMode = Preference.bool(for: .playlistShowMetadataInMusicMode)
     if onlyInMusicMode {
@@ -652,15 +658,15 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     return true
   }
 
-  /// Playlist Table: `Track Name` column cell
-  private func updateCellForTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
+  /// Rebuilds playlist table's `Track Name` column cell
+  private func updateCellForPlaylistTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
     guard let cachedMeta = loadCachedItem(forRowIndex: rowIndex) else {
       player.log.error{"No playlist item found for rowIndex \(rowIndex). Skipping cell update"}
       return
     }
 
-    let wantsTitleDisplayed = wantsTitleDisplayed
-    let displayName = (wantsTitleDisplayed ? cachedMeta.title : nil) ?? NSString(string: cachedMeta.id.displayName).deletingPathExtension
+    let wantsTitleDisplayed = wantsPlaylistTitleDisplayed
+    let displayName = (wantsTitleDisplayed ? cachedMeta.title : nil) ?? cachedMeta.id.displayName
     let artist = wantsTitleDisplayed ? cachedMeta.artist : nil
 
     player.log.trace{"Building row \(rowIndex) of playlist: \(displayName.quoted)"}
@@ -715,8 +721,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   @discardableResult
   private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> MediaMeta? {
     guard rowIndex >= 0 else { return nil }
-    player.log.trace{"Playlist: reloading cache for row \(rowIndex)\(force ? " (forced)" : "")"}
     let playlistItems = player.info.playlist
+    player.log.verbose{"Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)\(force ? " (forced)" : "")"}
     guard rowIndex < playlistItems.count else { return nil }
     let playlistItem = playlistItems[rowIndex]
     let url = playlistItem.url
@@ -750,7 +756,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
             }
           }
           DispatchQueue.main.async { [self] in
-            /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row
+            /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
             reloadPlaylistRow(rowIndex)
           }
         }
@@ -787,7 +793,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           MediaMetaCache.shared.updateCachedMeta(item, mpvTitle: updatedTitle)
           // Refresh each row as it gets updated. May take a while to refresh all
           DispatchQueue.main.async { [self] in
-            /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row
+            /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
             reloadPlaylistRow(rowIndex)
           }
         }
