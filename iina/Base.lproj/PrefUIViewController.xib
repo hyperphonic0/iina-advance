@@ -2397,7 +2397,7 @@ For smoothest results, also enable custom full screen.</string>
             <point key="canvasLocation" x="18" y="-219"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="c8m-G4-or8" userLabel="Prefs &gt; UI &gt; OSD" propertyAccessControl="all">
-            <rect key="frame" x="0.0" y="0.0" width="500" height="279"/>
+            <rect key="frame" x="0.0" y="0.0" width="629" height="279"/>
             <subviews>
                 <textField identifier="SectionTitleOSD" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zyi-J3-lSp">
                     <rect key="frame" x="-2" y="239" width="124" height="32"/>
@@ -2408,10 +2408,10 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <stackView distribution="equalSpacing" orientation="vertical" alignment="leading" spacing="4" verticalStackHuggingPriority="751" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tw5-VT-L9M" userLabel="OSDRightColumn VStack View">
-                    <rect key="frame" x="120" y="8" width="372" height="264"/>
+                    <rect key="frame" x="120" y="8" width="501" height="264"/>
                     <subviews>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ler-Pn-RNT" userLabel="EnableOSD HStack View">
-                            <rect key="frame" x="0.0" y="244" width="283" height="20"/>
+                            <rect key="frame" x="0.0" y="244" width="501" height="20"/>
                             <subviews>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="MU2-yF-bjd">
                                     <rect key="frame" x="-2" y="2" width="98" height="18"/>
@@ -2489,14 +2489,31 @@ For smoothest results, also enable custom full screen.</string>
                                         <binding destination="lH7-Vv-0M1" name="selectedTag" keyPath="values.osdPosition" id="2cb-Tj-qiW"/>
                                     </connections>
                                 </popUpButton>
+                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="MSB-Q3-vqV" userLabel="OSD is disabled when using mpv's OSD Label">
+                                    <rect key="frame" x="289" y="3" width="214" height="14"/>
+                                    <textFieldCell key="cell" lineBreakMode="clipping" title="OSD is disabled when using mpv's OSD." id="ebz-0S-0Xg">
+                                        <font key="font" metaFont="smallSystem"/>
+                                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                    <connections>
+                                        <binding destination="-2" name="hidden" keyPath="usingMpvOSD" id="pPd-or-WD2">
+                                            <dictionary key="options">
+                                                <string key="NSValueTransformerName">NSIsNil</string>
+                                            </dictionary>
+                                        </binding>
+                                    </connections>
+                                </textField>
                             </subviews>
                             <visibilityPriorities>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
+                                <integer value="1000"/>
                             </visibilityPriorities>
                             <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
@@ -3452,24 +3469,9 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="-20" y="976"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="none">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="536" height="300"/>
             <subviews>
-                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="tJl-Im-XLs" userLabel="Thumbfast integration is enabled Label">
-                    <rect key="frame" x="309" y="276" width="181" height="14"/>
-                    <textFieldCell key="cell" lineBreakMode="clipping" title="Thumbfast integration is enabled." id="T0I-zN-X1W">
-                        <font key="font" metaFont="smallSystem"/>
-                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
-                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                    </textFieldCell>
-                    <connections>
-                        <binding destination="-2" name="hidden" keyPath="usingThumbfast" id="jYN-db-s2e">
-                            <dictionary key="options">
-                                <string key="NSValueTransformerName">NSIsNil</string>
-                            </dictionary>
-                        </binding>
-                    </connections>
-                </textField>
                 <textField identifier="SectionTitleThumb" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="maZ-e8-1vw" userLabel="Thumbnail Preview Section Label">
                     <rect key="frame" x="-2" y="260" width="124" height="32"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Thumbnail Preview:" id="kYu-0l-jQQ">
@@ -4105,6 +4107,21 @@ For smoothest results, also enable custom full screen.</string>
                         <real value="3.4028234663852886e+38"/>
                     </customSpacing>
                 </stackView>
+                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="tJl-Im-XLs" userLabel="Thumbfast integration is enabled Label">
+                    <rect key="frame" x="325" y="276" width="181" height="14"/>
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="Thumbfast integration is enabled." id="T0I-zN-X1W">
+                        <font key="font" metaFont="smallSystem"/>
+                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                    <connections>
+                        <binding destination="-2" name="hidden" keyPath="usingThumbfast" id="jYN-db-s2e">
+                            <dictionary key="options">
+                                <string key="NSValueTransformerName">NSIsNil</string>
+                            </dictionary>
+                        </binding>
+                    </connections>
+                </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="9ps-qR-8m9" userLabel="White shadow Checkbox">
                     <rect key="frame" x="424" y="160" width="112" height="20"/>
                     <buttonCell key="cell" type="check" title="White shadow" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="yKc-YA-ZwP">
@@ -4131,7 +4148,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="maZ-e8-1vw" firstAttribute="leading" secondItem="3uJ-UU-1zw" secondAttribute="leading" id="VMF-e9-dcW"/>
                 <constraint firstAttribute="trailing" secondItem="47i-yB-uyE" secondAttribute="trailing" id="ZCA-Qc-OoV"/>
                 <constraint firstAttribute="bottom" secondItem="47i-yB-uyE" secondAttribute="bottom" constant="8" id="f1R-1U-HFp"/>
-                <constraint firstItem="tJl-Im-XLs" firstAttribute="leading" secondItem="mvX-qm-iUh" secondAttribute="trailing" constant="12" id="hQf-Li-IQi"/>
+                <constraint firstItem="tJl-Im-XLs" firstAttribute="leading" secondItem="mvX-qm-iUh" secondAttribute="trailing" constant="28" id="hQf-Li-IQi"/>
                 <constraint firstItem="maZ-e8-1vw" firstAttribute="top" secondItem="3uJ-UU-1zw" secondAttribute="top" constant="8" id="tNX-yo-ggt"/>
                 <constraint firstItem="9ps-qR-8m9" firstAttribute="firstBaseline" secondItem="5ri-jj-x4V" secondAttribute="firstBaseline" id="uX1-0P-QqK"/>
             </constraints>
