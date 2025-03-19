@@ -379,7 +379,11 @@ class StartupHandler {
 
   func showWindowsIfReady() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard state == .doneEnqueuing else { return }
+    let log = Logger.Subsystem.restore
+    guard state == .doneEnqueuing else {
+      log.verbose("Skipping showWindowsIfReady: state (\(state)) != doneEnqueuing")
+      return
+    }
     guard wcsDoneWithRestore.count == wcsToRestore.count else {
       dismissTimeoutAlertPanel()
       restoreTimer.restart()
@@ -388,12 +392,17 @@ class StartupHandler {
     // If an new player window was opened at startup (i.e. not a restored window), wait for this also.
     if isOpeningNewWindowsForOpenedFiles {
       // If isOpeningNewWindowsForOpenedFiles is true, the check below will only pass once wcsForOpenFiles becomes non-nil.
-      guard let wcsForOpenFiles else { return }
+      guard let wcsForOpenFiles else {
+        log.verbose{"Restore: isOpeningNewWindowsForOpenedFiles=Y but wcsForOpenFiles is nil; returning"}
+        return
+      }
 
       // If opening more than 1 file, proceed immediately. Otherwise wait for it to be ready.
-      guard wcsForOpenFiles.count > 1 || (wcsForOpenFiles.count == wcsDoneWithFileOpen.count) else { return }
+      guard wcsForOpenFiles.count > 1 || (wcsForOpenFiles.count == wcsDoneWithFileOpen.count) else {
+        log.verbose{"Restore: still waiting for opened file"}
+        return
+      }
     }
-    let log = Logger.Subsystem.restore
 
     let newWindCount = wcsForOpenFiles?.count ?? 0
     log.verbose{"All \(wcsToRestore.count) restored \(newWindCount > 0 ? " & \(newWindCount) new windows ready. Showing all" : "")"}

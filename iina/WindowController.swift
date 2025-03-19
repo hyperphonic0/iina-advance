@@ -50,13 +50,14 @@ class WindowController: NSWindowController {
     let savedStateName = window.savedStateName
     guard IINAAnimation.isAnimationEnabled else {
       Logger.log.verbose{"refreshWindowOpenCloseAnimation: animation disabled or motion reduction enabled. Using .default for \(savedStateName.quoted)"}
-      window.animationBehavior = .default
+      window.animationBehavior = .none
       return
     }
 
     guard !AppDelegate.shared.isTerminating else {
-      Logger.log.verbose{"refreshWindowOpenCloseAnimation: app is terminating; using .default for \(savedStateName.quoted)"}
-      window.animationBehavior = .default
+      // Just terminate ASAP
+      Logger.log.verbose{"refreshWindowOpenCloseAnimation: app is terminating; using .none for \(savedStateName.quoted)"}
+      window.animationBehavior = .none
       return
     }
 
