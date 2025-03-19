@@ -282,6 +282,8 @@ class StartupHandler {
       return
     }
 
+    // FIXME: also show if waiting on opened file
+
     let namesReady = wcsDoneWithRestore.compactMap{$0.window?.savedStateName}
     let wcsStalled: [WindowController] = wcsToRestore.filter{ !namesReady.contains($0.window!.savedStateName) }
     var namesStalled: [String] = []
@@ -303,10 +305,10 @@ class StartupHandler {
     log.debug{"Restore timed out. Progress: \(namesReady.count)/\(wcsToRestore.count). Stalled: \(namesStalled)"}
     log.debug{"Prompting user whether to discard them & continue, or quit"}
 
-    let countFailed = "\(wcsStalled.count)"
+    let countStalled = "\(wcsStalled.count)"
     let countTotal = "\(wcsToRestore.count)"
     let namesStalledString = namesStalled.joined(separator: "\n")
-    let msgArgs = [countFailed, countTotal, namesStalledString]
+    let msgArgs = [countStalled, countTotal, namesStalledString]
     let askPanel = Utility.buildThreeButtonAskPanel("restore_timeout", msgArgs: msgArgs, alertStyle: .critical)
     restoreTimeoutAlertPanel = askPanel
     let userResponse = askPanel.runModal()  // this will block for an indeterminate time
@@ -370,6 +372,7 @@ class StartupHandler {
   /// Call this if the user opened a new file at startup but we want to discard the state for it
   /// (for example if it couldn't be opened).
   func abortWaitForOpenFilePlayerStartup() {
+    assert(DispatchQueue.isExecutingIn(.main))
     Logger.log.verbose("Aborting wait for open files")
     isOpeningNewWindowsForOpenedFiles = false
     wcsForOpenFiles = nil
@@ -385,6 +388,7 @@ class StartupHandler {
       return
     }
     guard wcsDoneWithRestore.count == wcsToRestore.count else {
+      log.verbose("Restarting restore timer: only done with \(wcsDoneWithRestore.count) of \(wcsToRestore.count) windows")
       dismissTimeoutAlertPanel()
       restoreTimer.restart()
       return
@@ -542,12 +546,24 @@ class StartupHandler {
     let log = Logger.Subsystem.restore
 
     guard Preference.bool(for: .isRestoreInProgress) else { return }
-    log.verbose{"Will stop waiting for restored window: \(window.savedStateName.quoted). Progress: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")"}
 
-    // No longer waiting for this window
+    // No longer waiting for this window before showing all windows
+    let toRestoreCountOld = wcsToRestore.count
     wcsToRestore.removeAll(where: { wc in
       wc.window!.savedStateName == window.savedStateName
     })
+
+    let toOpenFileCountOld = wcsForOpenFiles?.count ?? 0
+    wcsForOpenFiles?.removeAll(where: { wc in
+      wc.window!.savedStateName == window.savedStateName
+    })
+    let toOpenFileCountNew = wcsForOpenFiles?.count ?? 0
+
+    let toRestoreCountNew = wcsToRestore.count
+    let removedFromRestoreCount = toRestoreCountOld - toRestoreCountNew
+    let removedFromOpenCount = toOpenFileCountOld - toOpenFileCountNew
+
+    log.verbose{"Canceled wait for window: \(window.savedStateName.quoted) (restore=\(removedFromRestoreCount), open=\(removedFromOpenCount)). Progress is now: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")"}
 
     showWindowsIfReady()
   }
