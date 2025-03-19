@@ -595,6 +595,7 @@ class Utility {
     }
   }
 
+  @available(macOS 11.0, *)
   static func getBestUTTypeForExt(_ ext: String) -> UTType? {
     let uttypeList = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: nil)
     for uttype in uttypeList {
