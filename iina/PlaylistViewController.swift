@@ -722,7 +722,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> MediaMeta? {
     guard rowIndex >= 0 else { return nil }
     let playlistItems = player.info.playlist
-    player.log.verbose{"Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)\(force ? " (forced)" : "")"}
+    player.log.trace{"Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)\(force ? " (forced)" : "")"}
     guard rowIndex < playlistItems.count else { return nil }
     let playlistItem = playlistItems[rowIndex]
     let url = playlistItem.url

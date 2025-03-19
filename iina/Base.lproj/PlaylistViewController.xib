@@ -36,7 +36,7 @@
                     <subviews>
                         <button autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5Zq-JQ-XO4">
                             <rect key="frame" x="8" y="0.0" width="109" height="48"/>
-                            <buttonCell key="cell" type="square" title="PLAYLIST" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingMiddle" refusesFirstResponder="YES" imageScaling="proportionallyDown" inset="2" id="fAq-Pq-ThP">
+                            <buttonCell key="cell" type="square" title="PLAYLIST" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" refusesFirstResponder="YES" imageScaling="proportionallyDown" inset="2" id="fAq-Pq-ThP">
                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                 <font key="font" metaFont="systemBold"/>
                             </buttonCell>
@@ -46,7 +46,7 @@
                         </button>
                         <button autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SOR-3l-PFj">
                             <rect key="frame" x="125" y="0.0" width="108" height="48"/>
-                            <buttonCell key="cell" type="square" title="CHAPTERS" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingMiddle" refusesFirstResponder="YES" imageScaling="proportionallyDown" inset="2" id="jUF-xa-uRI">
+                            <buttonCell key="cell" type="square" title="CHAPTERS" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" refusesFirstResponder="YES" imageScaling="proportionallyDown" inset="2" id="jUF-xa-uRI">
                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                 <font key="font" metaFont="systemBold"/>
                             </buttonCell>
