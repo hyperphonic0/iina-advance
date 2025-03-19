@@ -3652,7 +3652,7 @@ class PlayerCore: NSObject {
   // MARK: - Notifications
 
   func postNotification(_ name: Notification.Name) {
-    log.verbose{"Posting notification: \(name.rawValue)"}
+    log.trace{"Posting notification: \(name.rawValue)"}
     NotificationCenter.default.post(Notification(name: name, object: self))
   }
 
@@ -3690,6 +3690,10 @@ class PlayerCore: NSObject {
 
   func getMediaTitle(withExtension: Bool = true) -> String {
     if let mediaTitle = mpv.getString(MPVProperty.mediaTitle) {
+      if !mediaTitle.isEmpty, let path = mpv.getString(MPVProperty.path), let id = PlaybackID(path: path) {
+        MediaMetaCache.shared.updateCachedMeta(id, reloadFromWatchLater: false, reloadFromFFmpeg: false,
+                                               mpvTitle: mediaTitle)
+      }
       return mediaTitle
     }
     if let url = info.currentURL {

@@ -137,7 +137,7 @@ class MediaMetaCache {
    */
   @discardableResult
   func updateCachedMeta(_ id: PlaybackID, reloadFromWatchLater: Bool = true, reloadFromFFmpeg: Bool = true,
-                        mpvTitle: String? = nil, mpvAlbum: String? = nil, mpvArtist: String? = nil) -> MediaMeta? {
+                        mpvTitle: String? = nil, mpvAlbum: String? = nil, mpvArtist: String? = nil) -> MediaMeta {
 
     var progress: Double? = nil
     var duration: Double? = nil
@@ -192,6 +192,7 @@ class MediaMetaCache {
       let oldMeta = existingMeta ?? MediaMeta(id)
       let newMeta = oldMeta.clone(duration: duration, progress: progress, nilProgress: progress == nil,
                                   title: title, album: album, artist: artist, triedFFmpeg: oldMeta.triedFFmpeg || triedFFmpeg)
+      cachedMeta[id.url] = newMeta
 
       // Compare oldMeta to newMeta; send update notification if different
       let didUpdateExisting = existingMeta != nil
@@ -201,11 +202,10 @@ class MediaMetaCache {
           oldMeta.title != newMeta.title ||
           oldMeta.album != newMeta.album ||
           oldMeta.artist != newMeta.artist {
+        log.trace{"Cache entry changed: \(id.path.pii.quoted) ≔ \(newMeta)"}
         postFileHistoryUpdateNotification(forURL: newMeta.id.url)
       }
 
-      cachedMeta[id.url] = newMeta
-      log.trace{"Updated cache entry \(id.path.pii.quoted) ≔ \(newMeta)"}
       return newMeta
     }
   }

@@ -194,7 +194,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         player.log.error("Cannot update file history: no url found in userInfo!")
         return
       }
-      guard url.isFileURL else { return }
       let playlist = player.info.playlist
       for (rowIndex, item) in playlist.enumerated() {
         if item.url == url {
@@ -644,6 +643,15 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     return nil
   }
 
+  private var wantsTitleDisplayed: Bool {
+    guard Preference.bool(for: .playlistShowMetadata) else { return false }
+    let onlyInMusicMode = Preference.bool(for: .playlistShowMetadataInMusicMode)
+    if onlyInMusicMode {
+      return player.isInMiniPlayer
+    }
+    return true
+  }
+
   /// Playlist Table: `Track Name` column cell
   private func updateCellForTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
     guard let cachedMeta = loadCachedItem(forRowIndex: rowIndex) else {
@@ -651,11 +659,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       return
     }
 
-    let wantsTitleMeta = Preference.bool(for: .playlistShowMetadata) && (Preference.bool(for: .playlistShowMetadataInMusicMode) ? player.isInMiniPlayer : true)
-    let displayName = (wantsTitleMeta ? cachedMeta.title : nil) ?? NSString(string: cachedMeta.id.displayName).deletingPathExtension
-    let artist = wantsTitleMeta ? cachedMeta.artist : nil
+    let wantsTitleDisplayed = wantsTitleDisplayed
+    let displayName = (wantsTitleDisplayed ? cachedMeta.title : nil) ?? NSString(string: cachedMeta.id.displayName).deletingPathExtension
+    let artist = wantsTitleDisplayed ? cachedMeta.artist : nil
 
-//    player.log.verbose("Building row \(rowIndex) of playlist: \(displayName.quoted)")
+    player.log.trace{"Building row \(rowIndex) of playlist: \(displayName.quoted)"}
 
     let textColor = isPlaying ? isPlayingTextColor : .controlTextColor
     let prefixTextColor = isPlaying ? isPlayingPrefixTextColor : .secondaryLabelColor
@@ -724,8 +732,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
         // Check cache again; we don't know how much time has passed since last access & want to avoid redundant file access
-        existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: playlistItem)
-        guard needsRefresh || (mpvTitle != existingCachedMeta.title) else { return }
+        existingCachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem,
+                                                                    reloadFromWatchLater: false, reloadFromFFmpeg: false,
+                                                                    mpvTitle: mpvTitle)
+        guard needsRefresh else { return }
 
         PlayerCore.playlistQueue.async { [self] in
           // Get watch-later form file system; get other meta from ffmpeg:
@@ -733,7 +743,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           // Now update the total length if needed (but only if it's already done calculating):
           if playlistTotalLengthIsReady {
             let prevDuration = existingCachedMeta.duration ?? 0
-            let updatedDuration = cachedMeta?.duration ?? 0
+            let updatedDuration = cachedMeta.duration ?? 0
             if updatedDuration != prevDuration {
               // if FFmpeg got the duration successfully
               refreshTotalLength()

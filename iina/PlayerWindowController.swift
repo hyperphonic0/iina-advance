@@ -1516,25 +1516,21 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         return
       }
 
-      let title: String
+      // Update metadata in cache (also send update if something changed)
+      let (mediaTitle, mediaAlbum, mediaArtist) = player.getMusicMetadata()
 
       if isInMiniPlayer {
         // Update title in music mode control bar
-        let (mediaTitle, mediaAlbum, mediaArtist) = player.getMusicMetadata()
-        title = mediaTitle
-
         DispatchQueue.main.async { [self] in
-          setWindowTitle(title, isFilename: false)
+          setWindowTitle(mediaTitle, isFilename: false)
           miniPlayer.loadIfNeeded()
           miniPlayer.updateTitle(mediaTitle: mediaTitle, mediaAlbum: mediaAlbum, mediaArtist: mediaArtist)
         }
 
       } else if player.info.isNetworkResource {
         // Streaming media: title can change unpredictably
-        title = player.getMediaTitle()
-
         DispatchQueue.main.async { [self] in
-          setWindowTitle(title, isFilename: false)
+          setWindowTitle(mediaTitle, isFilename: false)
         }
       } else {
         let currentURL = currentPlayback.url
@@ -1556,7 +1552,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         // This problem has been reported to Apple as:
         // "setTitleWithRepresentedFilename throws NSInvalidArgumentException: NSNextStepFrame _displayName"
         // Feedback number FB9789129
-        title = currentURL.lastPathComponent
+        let title = currentURL.lastPathComponent
 
         DispatchQueue.main.async { [self] in
           guard let window else { return }
@@ -2200,7 +2196,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // mpv usually hangs at 0% the entire time. Do not show any progress if we do not have progress to show.
       let showNumbers = bufferingState > 0
       let bufStateString = showNumbers ? "\(bufferingState)%" : ""
-      log.verbose{"Showing bufferIndicatorView (\(bufferingState)%, \(usedStr)B, \(speedStr)/s)"}
+      log.trace{"Showing bufferIndicatorView (\(bufferingState)%, \(usedStr)B, \(speedStr)/s)"}
       bufferIndicatorView.isHidden = false
       bufferProgressLabel.stringValue = String(format: NSLocalizedString("main.buffering_indicator", comment:"Buffering... %@"), bufStateString)
       bufferDetailLabel.stringValue = showNumbers ? "\(usedStr)B (\(speedStr)/s)" : ""
