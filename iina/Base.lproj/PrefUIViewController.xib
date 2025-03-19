@@ -2420,6 +2420,11 @@ For smoothest results, also enable custom full screen.</string>
                                         <font key="font" metaFont="system"/>
                                     </buttonCell>
                                     <connections>
+                                        <binding destination="-2" name="enabled" keyPath="usingMpvOSD" id="s83-ht-WlF">
+                                            <dictionary key="options">
+                                                <string key="NSValueTransformerName">NSIsNil</string>
+                                            </dictionary>
+                                        </binding>
                                         <binding destination="lH7-Vv-0M1" name="value" keyPath="values.enableOSD" id="CwB-hu-vT4"/>
                                     </connections>
                                 </button>
@@ -2438,6 +2443,15 @@ For smoothest results, also enable custom full screen.</string>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                     <connections>
+                                        <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="sos-cU-c6L" id="Yk1-9I-ila">
+                                            <dictionary key="options">
+                                                <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                                <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                                <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                                <integer key="NSNullPlaceholder" value="-1"/>
+                                                <string key="NSValueTransformerName">NSIsNotNil</string>
+                                            </dictionary>
+                                        </binding>
                                         <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="sos-cU-c6L">
                                             <dictionary key="options">
                                                 <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -2458,6 +2472,15 @@ For smoothest results, also enable custom full screen.</string>
                                         </menu>
                                     </popUpButtonCell>
                                     <connections>
+                                        <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="N9K-qJ-WRm" id="aIe-4h-yQY">
+                                            <dictionary key="options">
+                                                <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                                <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                                <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                                <integer key="NSNullPlaceholder" value="-1"/>
+                                                <string key="NSValueTransformerName">NSIsNotNil</string>
+                                            </dictionary>
+                                        </binding>
                                         <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="N9K-qJ-WRm">
                                             <dictionary key="options">
                                                 <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -2510,6 +2533,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="bmI-x9-tCy" id="Zaa-KP-yc8">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="bmI-x9-tCy">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -2659,6 +2691,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="vY9-mb-G41" id="SGE-JL-k5L">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="vY9-mb-G41">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -2673,6 +2714,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <constraint firstAttribute="width" id="nEi-sW-vMt"/>
                             </constraints>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="awJ-X1-cYv" id="agD-GO-dOn">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="awJ-X1-cYv">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -2732,6 +2782,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="IeJ-Qo-VTI" id="tBd-5F-lJN">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="IeJ-Qo-VTI">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -2791,6 +2850,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="RZw-Si-IR5" id="a4c-9S-ij5">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="RZw-Si-IR5">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -2805,6 +2873,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <constraint firstAttribute="height" constant="1" id="tTw-Ay-QRO"/>
                             </constraints>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="OJM-gz-TWt" id="KaR-WZ-Iwy">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="OJM-gz-TWt">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -2833,6 +2910,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="tmh-CY-fka" id="QfQ-73-cas">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="tmh-CY-fka">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>

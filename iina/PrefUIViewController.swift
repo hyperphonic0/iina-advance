@@ -18,6 +18,19 @@ fileprivate let SideTopTag = 0
 fileprivate let SideBottomTag = 1
 fileprivate let maxToolbarPreviewSingleRowBarHeight: CGFloat = 52
 
+/// KVC doesn't support Bool natively and it's too hard to figure out how to interpret as char*.
+/// Just use a dummy object instead and interpret via NSIsNil transformer.
+/// - `nil`: `false`
+/// - non-`nil`: `true`
+fileprivate func boolToObjectKludge(_ value: Bool) -> NSNumber? {
+  return value ? NSNumber(value: 1) : nil
+}
+
+/// If `useMpvOsd` is enabled, we want to disable the OSD section.
+fileprivate func isUsingMpvOSD() -> Bool {
+  Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
+}
+
 @objcMembers
 class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable {
   private var lastAppliedGeo = ControlBarGeometry(mode: .windowedNormal) {
@@ -26,6 +39,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     }
   }
 
+  @objc dynamic var usingMpvOSD: NSNumber? = nil
 
   override var nibName: NSNib.Name {
     return NSNib.Name("PrefUIViewController")
@@ -207,6 +221,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   private func configureObservers() {
     co = CocoaObserver(Logger.log, prefDidChange: prefDidChange, [
       .enableAdvancedSettings,
+      .useMpvOsd,
       .showTopBarTrigger,
       .topBarPlacement,
       .bottomBarPlacement,
@@ -251,11 +266,15 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       PK.themeMaterial,
       PK.enableAdvancedSettings:
 
+      usingMpvOSD = boolToObjectKludge(isUsingMpvOSD())
+
       // Use animation where possible to make the transition less jarring
       animationPipeline.submitInstantTask{ [self] in
         refreshTitleBarAndOSCSection()
         updateWindowGeometrySectionFromPrefs()
       }
+    case .useMpvOsd:
+      usingMpvOSD = boolToObjectKludge(isUsingMpvOSD())
     case PK.settingsTabGroupLocation, PK.playlistTabGroupLocation, PK.pluginsTabGroupLocation:
       updateSidebarSectionFromPrefs()
     case PK.oscBarHeight,
@@ -298,6 +317,9 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   private func updateAllSectionsFromPrefs() {
+    // Update KVC vars
+    usingMpvOSD = boolToObjectKludge(isUsingMpvOSD())
+
     // Update sliders from prefs:
     let geo = ControlBarGeometry(mode: .windowedNormal)
     updateOSCSliders(from: geo)
