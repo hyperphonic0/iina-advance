@@ -3452,9 +3452,24 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="-20" y="976"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="all">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="none">
             <rect key="frame" x="0.0" y="0.0" width="536" height="300"/>
             <subviews>
+                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="tJl-Im-XLs" userLabel="Thumbfast integration is enabled Label">
+                    <rect key="frame" x="309" y="276" width="181" height="14"/>
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="Thumbfast integration is enabled." id="T0I-zN-X1W">
+                        <font key="font" metaFont="smallSystem"/>
+                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                    <connections>
+                        <binding destination="-2" name="hidden" keyPath="usingThumbfast" id="jYN-db-s2e">
+                            <dictionary key="options">
+                                <string key="NSValueTransformerName">NSIsNil</string>
+                            </dictionary>
+                        </binding>
+                    </connections>
+                </textField>
                 <textField identifier="SectionTitleThumb" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="maZ-e8-1vw" userLabel="Thumbnail Preview Section Label">
                     <rect key="frame" x="-2" y="260" width="124" height="32"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Thumbnail Preview:" id="kYu-0l-jQQ">
@@ -3463,7 +3478,7 @@ For smoothest results, also enable custom full screen.</string>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <stackView distribution="equalSpacing" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="47i-yB-uyE" userLabel="ThumbnailRightColumn Stack View">
+                <stackView distribution="equalSpacing" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="47i-yB-uyE" userLabel="ThumbnailRightColumn VStack View">
                     <rect key="frame" x="120" y="8" width="416" height="284"/>
                     <subviews>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="mvX-qm-iUh" userLabel="Enable thumbnail preview Checkbox">
@@ -3483,6 +3498,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingThumbfast" previousBinding="yhR-k2-uwe" id="wpV-qO-OvB">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="value" keyPath="values.enableThumbnailForRemoteFiles" id="gje-G2-RzV"/>
                                 <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableThumbnailPreview" id="QnO-oW-DaG"/>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableThumbnailPreview" previousBinding="QnO-oW-DaG" id="yhR-k2-uwe">
@@ -3536,6 +3560,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <constraint firstAttribute="width" constant="1" id="pjl-Ex-mT4"/>
                             </constraints>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingThumbfast" previousBinding="zde-0T-BcL" id="ECC-oZ-5lb">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableThumbnailPreview" id="zde-0T-BcL">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -3593,6 +3626,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingThumbfast" previousBinding="1pe-a3-e0i" id="spO-0b-72V">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableThumbnailPreview" id="1pe-a3-e0i">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -3638,6 +3680,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingThumbfast" previousBinding="DfE-uI-9tt" id="phB-zl-KWV">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableThumbnailPreview" id="DfE-uI-9tt">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -3698,6 +3749,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                             <connections>
+                                <binding destination="-2" name="hidden3" keyPath="usingThumbfast" previousBinding="RRv-NY-NUH" id="vHF-BB-GSn">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden2" keyPath="values.enableThumbnailPreview" previousBinding="wlg-RK-GF9" id="RRv-NY-NUH">
                                     <dictionary key="options">
                                         <integer key="NSMultipleValuesPlaceholder" value="-1"/>
@@ -3764,6 +3824,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                             <connections>
+                                <binding destination="-2" name="hidden3" keyPath="usingThumbfast" previousBinding="UUd-V3-F3R" id="cEG-zH-3Gk">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden2" keyPath="values.enableThumbnailPreview" previousBinding="vnG-2r-YQY" id="UUd-V3-F3R">
                                     <dictionary key="options">
                                         <integer key="NSMultipleValuesPlaceholder" value="-1"/>
@@ -3830,6 +3899,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                             <connections>
+                                <binding destination="-2" name="hidden3" keyPath="usingThumbfast" previousBinding="fm1-sd-R1S" id="zHD-Yp-TZb">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden2" keyPath="values.enableThumbnailPreview" previousBinding="Kx0-X6-vkA" id="fm1-sd-R1S">
                                     <dictionary key="options">
                                         <integer key="NSMultipleValuesPlaceholder" value="-1"/>
@@ -3853,6 +3931,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <constraint firstAttribute="height" id="3Xw-AI-qUj"/>
                             </constraints>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingThumbfast" previousBinding="Vi4-hm-YwE" id="TGW-MP-uTS">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableThumbnailPreview" id="Vi4-hm-YwE">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -3955,6 +4042,15 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                             <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingThumbfast" previousBinding="08R-t5-LkQ" id="H19-UP-Tri">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableThumbnailPreview" id="08R-t5-LkQ">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
@@ -4026,6 +4122,8 @@ For smoothest results, also enable custom full screen.</string>
             <constraints>
                 <constraint firstItem="9ps-qR-8m9" firstAttribute="leading" secondItem="5ri-jj-x4V" secondAttribute="trailing" constant="8" id="B4M-OE-8pa"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="9ps-qR-8m9" secondAttribute="trailing" id="Gnr-7N-OwT"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="tJl-Im-XLs" secondAttribute="trailing" id="IoK-zM-SPF"/>
+                <constraint firstItem="tJl-Im-XLs" firstAttribute="firstBaseline" secondItem="mvX-qm-iUh" secondAttribute="firstBaseline" id="Lhb-6B-nYc"/>
                 <constraint firstItem="47i-yB-uyE" firstAttribute="leading" secondItem="3uJ-UU-1zw" secondAttribute="leading" constant="120" id="Nq0-rL-eHY"/>
                 <constraint firstItem="maZ-e8-1vw" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="3uJ-UU-1zw" secondAttribute="leading" constant="120" id="Pwz-CG-l82"/>
                 <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="maZ-e8-1vw" secondAttribute="bottom" constant="8" id="QX0-CL-Hcs"/>
@@ -4033,6 +4131,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="maZ-e8-1vw" firstAttribute="leading" secondItem="3uJ-UU-1zw" secondAttribute="leading" id="VMF-e9-dcW"/>
                 <constraint firstAttribute="trailing" secondItem="47i-yB-uyE" secondAttribute="trailing" id="ZCA-Qc-OoV"/>
                 <constraint firstAttribute="bottom" secondItem="47i-yB-uyE" secondAttribute="bottom" constant="8" id="f1R-1U-HFp"/>
+                <constraint firstItem="tJl-Im-XLs" firstAttribute="leading" secondItem="mvX-qm-iUh" secondAttribute="trailing" constant="12" id="hQf-Li-IQi"/>
                 <constraint firstItem="maZ-e8-1vw" firstAttribute="top" secondItem="3uJ-UU-1zw" secondAttribute="top" constant="8" id="tNX-yo-ggt"/>
                 <constraint firstItem="9ps-qR-8m9" firstAttribute="firstBaseline" secondItem="5ri-jj-x4V" secondAttribute="firstBaseline" id="uX1-0P-QqK"/>
             </constraints>

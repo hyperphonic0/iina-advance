@@ -31,6 +31,10 @@ fileprivate func isUsingMpvOSD() -> Bool {
   Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
 }
 
+fileprivate func isUsingThumbfastIntegration() -> Bool {
+  Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .integrateWithThumbfast)
+}
+
 @objcMembers
 class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable {
   private var lastAppliedGeo = ControlBarGeometry(mode: .windowedNormal) {
@@ -39,7 +43,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     }
   }
 
+  /// See `isUsingMpvOSD()`
   @objc dynamic var usingMpvOSD: NSNumber? = nil
+
+  /// See `isUsingThumbfastIntegration()`
+  @objc dynamic var usingThumbfast: NSNumber? = nil
 
   override var nibName: NSNib.Name {
     return NSNib.Name("PrefUIViewController")
@@ -222,6 +230,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     co = CocoaObserver(Logger.log, prefDidChange: prefDidChange, [
       .enableAdvancedSettings,
       .useMpvOsd,
+      .integrateWithThumbfast,
       .showTopBarTrigger,
       .topBarPlacement,
       .bottomBarPlacement,
@@ -267,6 +276,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       PK.enableAdvancedSettings:
 
       usingMpvOSD = boolToObjectKludge(isUsingMpvOSD())
+      usingThumbfast = boolToObjectKludge(isUsingThumbfastIntegration())
 
       // Use animation where possible to make the transition less jarring
       animationPipeline.submitInstantTask{ [self] in
@@ -275,6 +285,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       }
     case .useMpvOsd:
       usingMpvOSD = boolToObjectKludge(isUsingMpvOSD())
+    case .integrateWithThumbfast:
+      usingThumbfast = boolToObjectKludge(isUsingThumbfastIntegration())
     case PK.settingsTabGroupLocation, PK.playlistTabGroupLocation, PK.pluginsTabGroupLocation:
       updateSidebarSectionFromPrefs()
     case PK.oscBarHeight,
@@ -319,6 +331,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   private func updateAllSectionsFromPrefs() {
     // Update KVC vars
     usingMpvOSD = boolToObjectKludge(isUsingMpvOSD())
+    usingThumbfast = boolToObjectKludge(isUsingThumbfastIntegration())
 
     // Update sliders from prefs:
     let geo = ControlBarGeometry(mode: .windowedNormal)
@@ -364,7 +377,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   func refreshSeekPreviewShadow() {
     let thumbBorderStyle: Preference.ThumnailBorderStyle = Preference.enum(for: .thumbnailBorderStyle)
-    seekPreviewWhiteShadowCheckbox.isHidden = !(Preference.bool(for: .enableThumbnailPreview) && thumbBorderStyle.hasShadow)
+    seekPreviewWhiteShadowCheckbox.isHidden = !(Preference.bool(for: .enableThumbnailPreview) && !isUsingThumbfastIntegration() && thumbBorderStyle.hasShadow)
     let shadow: Preference.Shadow = Preference.enum(for: .seekPreviewShadow)
     seekPreviewWhiteShadowCheckbox.state = (shadow == .glow) ? .on : .off
   }
