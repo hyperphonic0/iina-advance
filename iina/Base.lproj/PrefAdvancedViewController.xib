@@ -214,7 +214,7 @@
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="ZQt-93-Phc">
                     <rect key="frame" x="134" y="271" width="224" height="18"/>
-                    <buttonCell key="cell" type="check" title="Enable thumbfast integration 🧪" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="h9W-uB-KRd">
+                    <buttonCell key="cell" type="check" title="Integrate with thumbfast for thumbnails 🧪" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="h9W-uB-KRd">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
