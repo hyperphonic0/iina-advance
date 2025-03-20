@@ -196,6 +196,26 @@ extension PlayerWindowController {
     log.verbose{"Removed \(removedCount) tracking areas"}
   }
 
+  /// Checks if an object is marked as being dragged, and if it is, whether the drag is still valid.
+  /// Cancels drag if it is no longer valid.
+  /// Returns: `true` if a drag is in progress and it is valid; `false` if no drag or invalid drag was cleaned up.
+  /// See also: `mouseDown` logic
+  func isValidDragInProgress() -> Bool {
+    guard let currentDragObject else { return false }
+    if isLeftMouseButtonDown {
+      return true
+    }
+
+    // Window will not receive mouseUp events from outside of window, so previous drag may not have finished.
+    // But for our our draggable objects, there is no need to drag outside of window, so we will treat as a cancelled drag.
+    log.debug("Left mouse btn is not down, but found currentDragObject \(currentDragObject.idString.quoted). Assuming mouseUp was outside of window; canceling drag")
+    if let cancellableObject = currentDragObject as? DraggableObject {
+      cancellableObject.cancelDrag()
+    }
+    self.currentDragObject = nil
+    return false
+  }
+
   /// This method is provided soly for invoking plugin input handlers.
   func informPluginMouseDragged(with event: NSEvent) {
     PluginInputManager.handle(
@@ -516,7 +536,7 @@ extension PlayerWindowController {
   }
 
   override func mouseEntered(with event: NSEvent) {
-    guard currentDragObject == nil else { return }
+    guard !isValidDragInProgress() else { return }
     guard !isInInteractiveMode else { return }
     guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
       log.warn("No data for tracking area")
@@ -532,6 +552,7 @@ extension PlayerWindowController {
   }
 
   override func mouseExited(with event: NSEvent) {
+    guard !isValidDragInProgress() else { return }
     guard !isInInteractiveMode else { return }
 
     // Call this out of an abundance of caution. Custom cursors are set via mouseMoved, which only fires while
@@ -545,7 +566,6 @@ extension PlayerWindowController {
 
     switch area {
     case .playerWindow:
-      guard currentDragObject == nil else { return }
 
       if Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
         log.verbose("Mouse moved out of window: hiding fadeableViews")
@@ -563,13 +583,14 @@ extension PlayerWindowController {
     // Disable hover actions if first mouse is disabled & window not in focus:
     guard let window, (Preference.bool(for: .videoViewAcceptsFirstMouse) || window.isKeyWindow) else { return }
 
+    guard !isValidDragInProgress() else { return }
     mouseDidMoveInWindow()
   }
 
   func mouseDidMoveInWindow() {
-    guard currentDragObject == nil else { return }
     guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
-
+    assert(!isValidDragInProgress(),
+           "Must check isValidDragInProgress() before calling mouseDidMoveInWindow()!")
     // Do not use `event.locationInWindow`: it can be very stale
     let pointInWindow = mouseLocationInWindow
 
