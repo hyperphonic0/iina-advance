@@ -345,11 +345,14 @@ class AutoFileMatcher {
   }
 
   func startMatching() {
-    log.debug("**Start matching")
     let shouldAutoLoad = Preference.bool(for: .playlistAutoAdd)
+    log.debug{"**Start matching: autoLoad=\(shouldAutoLoad.yesno)"}
 
     do {
-      guard let folder = player.info.currentURL?.deletingLastPathComponent(), folder.isFileURL else { return }
+      guard let folder = player.info.currentURL?.deletingLastPathComponent(), folder.isFileURL else {
+        log.verbose{"Aborting: parent is not a filesystem folder URL"}
+        return
+      }
       currentFolder = folder
 
       player.info.isMatchingSubtitles = true
