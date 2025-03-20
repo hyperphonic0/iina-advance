@@ -432,72 +432,83 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     if let entry = item as? PlaybackHistory {
       if item as? LoadingPlaceholder != nil {
         return ""
-      } else if tableColumn?.identifier == .time {
-        return getTimeString(from: entry)
-      } else if tableColumn?.identifier == .progress {
-        return VideoTime.string(from: entry.duration)
+      } else if let tableColumn {
+        if tableColumn.identifier == .time {
+          return getTimeString(from: entry)
+        } else if tableColumn.identifier == .progress {
+          if !tableColumn.isHidden {
+            return VideoTime.string(from: entry.duration)
+          }
+        }
       }
     }
     return item
   }
 
   func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
-    if let identifier = tableColumn?.identifier {
-      guard let cell: NSTableCellView = outlineView.makeView(withIdentifier: identifier, owner: nil) as? NSTableCellView else { return nil }
-      guard let entry = item as? PlaybackHistory else { return cell }
-
-      if identifier == .filename {
-        // Filename cell
-        let filenameView = cell as! HistoryFilenameCellView
-
-        let isLoadingPlaceholder = item as? LoadingPlaceholder != nil
-        if isLoadingPlaceholder {
-          if let textField = filenameView.textField {
-            // Loading placeholder for initial load
-            let mutableString = NSMutableAttributedString(string: loadingPlaceholderLabel)
-            mutableString.addItalic(using: textField.font)
-            textField.attributedStringValue = mutableString
-            textField.textColor = .controlTextColor
-          }
-          if #available(macOS 15.0, *),
-             let spinImage = NSImage(systemSymbolName: "progress.indicator", accessibilityDescription: "Loading...") {
-            filenameView.docImage.setSymbolImage(spinImage, contentTransition: .automatic)
-            let effect = VariableColorSymbolEffect.variableColor.iterative.dimInactiveLayers.nonReversing
-            filenameView.docImage.addSymbolEffect(effect, options: .repeat(.continuous))
-          } else {
-            // Just show loading text
-            filenameView.docImage.image = nil
-          }
-
-        } else {
-          filenameView.textField?.stringValue = entry.url.isFileURL ? entry.name : entry.url.absoluteString
-          let fileExistsMap = fileExistsMap
-          let fileExists = fileExistsMap[entry.url] ?? true
-          filenameView.textField?.textColor = fileExists ? .controlTextColor : .disabledControlTextColor
-          filenameView.docImage.image = Utility.icon(for: entry.url)
-        }
-
-      } else if identifier == .progress {
-        // Progress cell
-        let progressView = cell as! HistoryProgressCellView
-        // Do not animate! Causes unneeded slowdown
-        progressView.indicator.usesThreadedAnimation = false
-
-        if let progress = entry.mpvProgress {
-          progressView.textField?.stringValue = VideoTime.string(from: progress)
-          progressView.indicator.isHidden = false
-          progressView.indicator.doubleValue = progress / entry.duration
-        } else {
-          progressView.textField?.stringValue = ""
-          progressView.indicator.isHidden = true
-        }
-      }
-      return cell
-    } else {
+    guard let tableColumn else {
       // group header
       guard let groupCell: NSTableCellView = outlineView.makeView(withIdentifier: .group, owner: nil) as? NSTableCellView else { return nil }
       return groupCell
     }
+
+    let columnID = tableColumn.identifier
+    guard let cell: NSTableCellView = outlineView.makeView(withIdentifier: columnID, owner: nil) as? NSTableCellView else { return nil }
+    guard let entry = item as? PlaybackHistory else { return cell }
+
+    switch columnID {
+    case .filename:
+      let filenameView = cell as! HistoryFilenameCellView
+
+      let isLoadingPlaceholder = item as? LoadingPlaceholder != nil
+      if isLoadingPlaceholder {
+        if let textField = filenameView.textField {
+          // Loading placeholder for initial load
+          let mutableString = NSMutableAttributedString(string: loadingPlaceholderLabel)
+          mutableString.addItalic(using: textField.font)
+          textField.attributedStringValue = mutableString
+          textField.textColor = .controlTextColor
+        }
+        if #available(macOS 15.0, *),
+           let spinImage = NSImage(systemSymbolName: "progress.indicator", accessibilityDescription: "Loading...") {
+          filenameView.docImage.setSymbolImage(spinImage, contentTransition: .automatic)
+          let effect = VariableColorSymbolEffect.variableColor.iterative.dimInactiveLayers.nonReversing
+          filenameView.docImage.addSymbolEffect(effect, options: .repeat(.continuous))
+        } else {
+          // Just show loading text
+          filenameView.docImage.image = nil
+        }
+
+      } else {
+        filenameView.textField?.stringValue = entry.url.isFileURL ? entry.name : entry.url.absoluteString
+        let fileExistsMap = fileExistsMap
+        let fileExists = fileExistsMap[entry.url] ?? true
+        filenameView.textField?.textColor = fileExists ? .controlTextColor : .disabledControlTextColor
+        filenameView.docImage.image = Utility.icon(for: entry.url)
+      }
+
+    case .progress:
+      guard !tableColumn.isHidden else { break }
+
+      let progressView = cell as! HistoryProgressCellView
+      // Do not animate! Causes unneeded slowdown
+      progressView.indicator.usesThreadedAnimation = false
+
+      if let progress = entry.mpvProgress {
+        progressView.textField?.stringValue = VideoTime.string(from: progress)
+        progressView.indicator.isHidden = false
+        progressView.indicator.doubleValue = progress / entry.duration
+      } else {
+        progressView.textField?.stringValue = ""
+        progressView.indicator.isHidden = true
+      }
+    case .time:
+      break
+    default:
+      break
+    }
+
+    return cell
   }
 
   private func getTimeString(from entry: PlaybackHistory) -> String {
