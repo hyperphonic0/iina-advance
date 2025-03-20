@@ -14,7 +14,7 @@ import Cocoa
 /// loop feature when that feature is in use. When the feature is not being used the thumbs are hidden.
 /// - Requires: The custom slider provided by `PlaySlider` must be used with this class.
 /// - Note: This class is derived from `NSView` in part to gain support for help tags (tool tips).
-final class PlaySliderLoopKnob: NSImageView {
+final class PlaySliderLoopKnob: NSImageView, DraggableObject {
 
   /// The location of this knob as a slider value.
   ///
@@ -200,4 +200,10 @@ final class PlaySliderLoopKnob: NSImageView {
   override func mouseUp(with event: NSEvent) {
     updateKnobImage(to: .loopKnob)
   }
+
+  func cancelDrag() {
+    pwc?.log.verbose{"PlaySliderLoopKnob: cancelling drag"}
+    updateKnobImage(to: .loopKnob)
+  }
+
 }

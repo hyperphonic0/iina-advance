@@ -19,7 +19,8 @@ fileprivate let MenuItemTagDelete = 604
 fileprivate let isPlayingTextBlendFraction: CGFloat = 0.3
 fileprivate let isPlayingPrefixTextBlendFraction: CGFloat = 0.4
 
-class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate, SidebarTabGroupViewController {
+class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate,
+                              SidebarTabGroupViewController {
 
   private(set) var currentTab: Sidebar.Tab = .playlist
 
@@ -1065,9 +1066,31 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 extension PlaylistViewController: EditableTableViewDelegate {
   var parentTableView: EditableTableView! { playlistTableView }
 
-  // Allows for sidebar resize to happen from inside the table, by giving it higher priority than row drag & drop
+  // Allows for sidebar resize to happen from inside the table, by giving it higher priority than row drag & drop.
+  // If this returns false, table will proceed to process normally
   func handleMouseDown(with event: NSEvent) -> Bool {
     return player.windowController.startResizingSidebar(with: event)
+  }
+
+  override func mouseDragged(with event: NSEvent) {
+    if let pwc = player.windowController, pwc.currentDragObject == view,
+       let sidebar = pwc.getConfiguredSidebar(forTabGroup: .playlist) {
+
+      pwc.continueResizingSidebar(sidebar.locationID, with: event)
+      return
+    }
+
+    super.mouseDragged(with: event)
+  }
+
+  override func mouseUp(with event: NSEvent) {
+    if let pwc = player.windowController, pwc.currentDragObject == view,
+       let sidebar = pwc.getConfiguredSidebar(forTabGroup: .playlist) {
+      pwc.finishResizingSidebar(sidebar.locationID, with: event)
+      pwc.currentDragObject = nil
+      return
+    }
+    super.mouseUp(with: event)
   }
 
   // MARK: - Edit Menu Support
@@ -1240,4 +1263,14 @@ class SubPopoverViewController: NSViewController, NSTableViewDelegate, NSTableVi
 
 class ChapterTableCellView: NSTableCellView {
   @IBOutlet weak var durationTextField: EditableTextField!
+}
+
+class PlaylistView: NSView, DraggableObject {
+
+  func cancelDrag() {
+    guard let pwc, let sidebar = pwc.getConfiguredSidebar(forTabGroup: .playlist) else { return }
+    pwc.log.verbose("Cancelled drag of playlist sidebar")
+    pwc.finishResizingSidebar(sidebar.locationID)
+  }
+
 }

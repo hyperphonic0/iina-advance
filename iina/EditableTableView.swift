@@ -120,6 +120,7 @@ class EditableTableView: NSTableView {
     super.keyDown(with: event)
   }
 
+  // Need to override here, in case anything needs to be given higher priority than row drag & drop.
   override func mouseDown(with event: NSEvent) {
     if let editableDelegate, editableDelegate.handleMouseDown(with: event) {
       return

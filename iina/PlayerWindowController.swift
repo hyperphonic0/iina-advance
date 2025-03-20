@@ -127,7 +127,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var isDragging: Bool = false
   var currentDragObject: NSView? = nil {
     didSet {
-      log.verbose{"Updated currentDragObject ≔ \(currentDragObject?.idString ?? "nil")"}
+      log.verbose{"Updated currentDragObject ≔ \(currentDragObject?.idString.quoted ?? "nil")"}
+      assert(currentDragObject == nil || (currentDragObject as? DraggableObject != nil),
+             "Expected currentDragObject to conform to DraggableObject: id=\(currentDragObject?.idString.quoted ?? "nil"), obj=\(currentDragObject?.description ?? "nil")")
     }
   }
   var isLiveResizingWidth: Bool? = nil
@@ -238,10 +240,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   /// - Sidebars: See file `Sidebars.swift`
-
-  /// For resize of `playlist` tab group
-  var leadingSidebarIsResizing = false
-  var trailingSidebarIsResizing = false
 
   // Is non-nil if within the activation rect of one of the sidebars
   var customCursor: CursorType = .normalCursor

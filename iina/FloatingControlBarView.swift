@@ -9,7 +9,7 @@
 import Cocoa
 
 // The control bar when position=="floating"
-class FloatingControlBarView: NSVisualEffectView {
+class FloatingControlBarView: NSVisualEffectView, DraggableObject {
   private static let barHeight: CGFloat = 67
   private static let minBarWidth: CGFloat = 200
   private static let preferredBarWidth: CGFloat = 440
@@ -210,6 +210,12 @@ class FloatingControlBarView: NSVisualEffectView {
     } else {
       updateRatios(xConst: xConstraint.constant, yConst: yConstraint.constant, geometry)
     }
+  }
+
+  func cancelDrag() {
+    guard let pwc = playerWindowController, let viewportView = pwc.viewportView else { return }
+    let geometry = FloatingControlBarGeometry(windowLayout: pwc.currentLayout, viewportSize: viewportView.frame.size)
+    updateRatios(xConst: xConstraint.constant, yConst: yConstraint.constant, geometry)
   }
 
   // MARK: - Coordinates in Viewport

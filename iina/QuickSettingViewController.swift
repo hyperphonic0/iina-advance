@@ -1387,11 +1387,3 @@ extension QuickSettingViewController {
     updateAudioEqState()
   }
 }
-
-class QuickSettingView: NSView {
-
-  override func mouseDown(with event: NSEvent) {
-    window?.windowController?.mouseDown(with: event)
-  }
-
-}

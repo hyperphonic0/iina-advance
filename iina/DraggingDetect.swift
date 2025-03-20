@@ -8,6 +8,10 @@
 
 import Foundation
 
+protocol DraggableObject {
+  func cancelDrag()
+}
+
 extension PlayerCore {
 
   /**

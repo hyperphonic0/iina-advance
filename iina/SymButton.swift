@@ -6,7 +6,7 @@
 //
 
 /// Replacement for `NSButton` (which seems to be de-facto deprecated) because that class does not support using symbol animations in newer versions of MacOS.
-class SymButton: NSImageView, NSAccessibilityButton {
+class SymButton: NSImageView, NSAccessibilityButton, DraggableObject {
   var bounceOnClick: Bool = false
 
   var regularColor: NSColor? = nil
@@ -65,7 +65,7 @@ class SymButton: NSImageView, NSAccessibilityButton {
     /// Setting this will cause PlayerWindowController to forward `mouseDragged` & `mouseUp` events to this object even when out of bounds
     pwc?.currentDragObject = self
     let isInsideBounds = updateHighlight(from: event)
-    pwc?.log.verbose("SymButton mouseDown insideBounds=\(isInsideBounds.yn)")
+    pwc?.log.verbose("SymButton \(idString.quoted): mouseDown insideBounds=\(isInsideBounds.yn)")
 
     if enableAcceleration && isInsideBounds {
       pressureStage = 1
@@ -79,7 +79,7 @@ class SymButton: NSImageView, NSAccessibilityButton {
       return
     }
     let isInsideBounds = updateHighlight(from: event)
-    pwc?.log.verbose{"SymButton mouseDragged insideBounds=\(isInsideBounds.yn)"}
+    pwc?.log.trace{"SymButton \(idString.quoted): mouseDragged insideBounds=\(isInsideBounds.yn)"}
   }
 
   override func mouseUp(with event: NSEvent) {
@@ -88,7 +88,7 @@ class SymButton: NSImageView, NSAccessibilityButton {
       return
     }
     let isInsideBounds = isInsideBounds(event)
-    pwc?.log.verbose{"SymButton mouseUp insideBounds=\(isInsideBounds.yn)"}
+    pwc?.log.verbose{"SymButton \(idString.quoted): mouseUp insideBounds=\(isInsideBounds.yn)"}
     if isInsideBounds {
       pressureStage = 0
       pwc?.currentDragObject = nil
@@ -106,15 +106,21 @@ class SymButton: NSImageView, NSAccessibilityButton {
     }
   }
 
+  func cancelDrag() {
+    pwc?.log.verbose{"SymButton \(idString.quoted): cancelling drag"}
+    updateHighlight(isInsideBounds: false)
+  }
+
   override func pressureChange(with event: NSEvent) {
     guard enableAcceleration else { return }
     let pseudoStage = Int(event.pressure * 5)
-    pwc?.player.log.trace{"SymButton: PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition) pressure=\(event.pressure) pseudoStage=\(pseudoStage)"}
+    pwc?.player.log.trace{"SymButton \(idString.quoted): PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition) pressure=\(event.pressure) pseudoStage=\(pseudoStage)"}
     pressureStage = pseudoStage
     sendAction(action, to: target)
   }
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+    // Emulate NSButton, which always accepts first mouse
     true
   }
 

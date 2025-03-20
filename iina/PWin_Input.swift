@@ -276,6 +276,16 @@ extension PlayerWindowController {
     denyWindowResizeIntervalStartTime = Date()
     mouseDownLocationInWindow = event.locationInWindow
 
+    if let currentDragObject {
+      // Window will not receive mouseUp events from outside of window, so previous drag may not have finished.
+      // But for our our draggable objects, there is no need to drag outside of window, so we will treat as a cancelled drag.
+      log.debug("PWin MouseDown: found currentDragObject \(currentDragObject.idString.quoted). Assuming mouseUp was outside of window; canceling drag")
+      if let cancellableObject = currentDragObject as? DraggableObject {
+        cancellableObject.cancelDrag()
+      }
+      self.currentDragObject = nil
+    }
+
     if !speedLabel.isHidden, isMouseEvent(event, inAnyOf: [speedLabel]) {
       log.verbose("PWin MouseDown: user clicked on speedLabel; treating as playButton")
       playButtonAction(self)
@@ -286,7 +296,8 @@ extension PlayerWindowController {
       log.error("PWin MouseDown: ignoring; should be handled by CropBoxView")
       return
     } else if startResizingSidebar(with: event) {
-      // Start resize if applicable
+      // Started resize if applicable. With either sidebar, this will always be dragging the playlist panel
+      currentDragObject = playlistView.view
       return
     } else {
       dragWindowIfQualifying(from: event)
@@ -328,12 +339,6 @@ extension PlayerWindowController {
       currentDragObject.mouseDragged(with: event)
       return
     }
-    let (sidebarResizeResult, _) = continueResizingSidebar(with: event)
-    applyCustomCursor(sidebarResizeResult)
-    let isResizingSidebar = sidebarResizeResult != .normalCursor
-    if isResizingSidebar {
-      return
-    }
 
     dragWindowIfQualifying(from: event)
   }
@@ -359,9 +364,6 @@ extension PlayerWindowController {
       }
       log.verbose("PWin MouseUp: finished drag of object")
       currentDragObject.mouseUp(with: event)
-      return
-    } else if finishResizingSidebar(with: event) {
-      log.verbose("PWin MouseUp: finishResizingSidebar returned YES")
       return
     } else if isDragging {
       // if it's a mouseup after dragging window

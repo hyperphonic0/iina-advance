@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class CropBoxView: NSView {
+class CropBoxView: NSView, DraggableObject {
 
   weak var settingsViewController: CropBoxViewController!
 
@@ -134,14 +134,14 @@ class CropBoxView: NSView {
     if isDraggingToResize || isDraggingNew {
       settingsViewController.windowController.currentDragObject = self
     }
-    Logger.log.verbose{"CropBoxView mouseDown, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)"}
+    pwc.log.verbose{"CropBoxView mouseDown, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)"}
   }
 
   override func mouseDragged(with event: NSEvent) {
     let mousePos = convert(event.locationInWindow, from: nil).constrained(to: videoRect)
     guard let pwc = settingsViewController.windowController else { return }
     guard pwc.currentDragObject == self else { return }
-    Logger.log.trace{"CropBoxView mouseDragged, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)"}
+    pwc.log.trace{"CropBoxView mouseDragged, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)"}
 
     if isDraggingToResize {
       // resizing selected box
@@ -201,6 +201,12 @@ class CropBoxView: NSView {
     if pwc.currentDragObject == self {
       pwc.currentDragObject = nil
     }
+  }
+
+  func cancelDrag() {
+    Logger.log.verbose{"CropBoxView: cancelling drag"}
+    isDraggingToResize = false
+    isDraggingNew = false
   }
 
   // MARK: - Drawing
