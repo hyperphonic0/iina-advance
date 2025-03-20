@@ -111,7 +111,8 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     co = CocoaObserver(log, prefDidChange: prefDidChange, [
       .uiHistoryTableGroupBy,
       .uiHistoryTableSearchType,
-      .uiHistoryTableSearchString
+      .uiHistoryTableSearchString,
+      .resumeLastPosition,
     ], [
       .default: [
         .init(.iinaHistoryListUpdated, self.onHistoryListUpdated),
@@ -186,6 +187,8 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       guard let searchStringNew = HistoryWindowController.getSearchStringFromPrefs(), searchStringNew != searchString else { return }
       searchString = searchStringNew
       historySearchField.stringValue = searchString
+    case .resumeLastPosition:
+      updateProgressColumnVisibility()
 
     default:
       break
@@ -223,6 +226,8 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
         reloadHistoryData()
       }
     }
+
+    updateProgressColumnVisibility()
 
     // Reload may take a long time. Send signal to open right away, and refresh when load is done.
     super.openWindow(sender)
@@ -354,6 +359,13 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
         HistoryController.shared.remove(entries)
       }
     }
+  }
+
+  func updateProgressColumnVisibility() {
+    let showProgressCol = Preference.bool(for: .resumeLastPosition)
+    let progressColIndex = outlineView.column(withIdentifier: .progress)
+    guard progressColIndex >= 0 else { return }
+    outlineView.tableColumns[progressColIndex].isHidden = !showProgressCol
   }
 
   @objc func doubleAction() {
