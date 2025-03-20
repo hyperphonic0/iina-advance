@@ -213,7 +213,7 @@
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="ZQt-93-Phc">
-                    <rect key="frame" x="134" y="271" width="224" height="18"/>
+                    <rect key="frame" x="134" y="271" width="288" height="18"/>
                     <buttonCell key="cell" type="check" title="Integrate with thumbfast for thumbnails 🧪" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="h9W-uB-KRd">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -223,6 +223,17 @@
                         <binding destination="nyg-fH-Pug" name="value" keyPath="values.integrateWithThumbfast" id="UWf-Hs-cT3"/>
                     </connections>
                 </button>
+                <textField identifier="ThumbfastStatusLabel" focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="dPV-Ix-902">
+                    <rect key="frame" x="154" y="255" width="121" height="13"/>
+                    <textFieldCell key="cell" selectable="YES" title="Thumbfast-Status Label" id="97B-WH-f35">
+                        <font key="font" textStyle="caption1" name=".SFNS-Regular"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                    <connections>
+                        <binding destination="-2" name="value" keyPath="thumbfastStatus" id="W1e-bl-QVR"/>
+                    </connections>
+                </textField>
                 <scrollView autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bA7-7o-Vd0">
                     <rect key="frame" x="0.0" y="91" width="480" height="141"/>
                     <clipView key="contentView" id="aL1-v5-nLY">
@@ -468,6 +479,7 @@
                 <constraint firstItem="ZQt-93-Phc" firstAttribute="firstBaseline" secondItem="zKI-kU-PWr" secondAttribute="firstBaseline" id="Cbe-OE-Wpa"/>
                 <constraint firstItem="wWR-n2-u2E" firstAttribute="top" secondItem="zKI-kU-PWr" secondAttribute="bottom" constant="16" id="Cg4-PA-TyS"/>
                 <constraint firstAttribute="trailing" secondItem="hbF-n4-jl3" secondAttribute="trailing" constant="1" id="FDJ-Cp-psA"/>
+                <constraint firstItem="dPV-Ix-902" firstAttribute="top" secondItem="ZQt-93-Phc" secondAttribute="bottom" constant="4" id="HGg-Z5-g6J"/>
                 <constraint firstItem="1NU-Lr-cuR" firstAttribute="trailing" secondItem="bA7-7o-Vd0" secondAttribute="trailing" id="HTl-7I-Zcu"/>
                 <constraint firstItem="1NU-Lr-cuR" firstAttribute="top" secondItem="bA7-7o-Vd0" secondAttribute="bottom" constant="-1" id="KSl-QB-xiy"/>
                 <constraint firstItem="dfL-W8-kmJ" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="ZQt-93-Phc" secondAttribute="trailing" id="KaL-HA-d54"/>
@@ -483,6 +495,7 @@
                 <constraint firstItem="jsf-pn-h6s" firstAttribute="leading" secondItem="Gf8-9e-wu7" secondAttribute="leading" constant="18" id="kCk-Cy-eeA"/>
                 <constraint firstItem="Gf8-9e-wu7" firstAttribute="height" secondItem="zKI-kU-PWr" secondAttribute="height" id="kSI-tz-OWJ"/>
                 <constraint firstItem="hbF-n4-jl3" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Gf8-9e-wu7" secondAttribute="trailing" constant="8" id="ltk-Vb-ZZN"/>
+                <constraint firstItem="dPV-Ix-902" firstAttribute="leading" secondItem="ZQt-93-Phc" secondAttribute="leading" constant="20" id="s1V-gj-b75"/>
                 <constraint firstItem="bA7-7o-Vd0" firstAttribute="leading" secondItem="vY6-lX-1l5" secondAttribute="leading" id="vIL-Pv-g7K"/>
                 <constraint firstItem="Gf8-9e-wu7" firstAttribute="top" secondItem="1NU-Lr-cuR" secondAttribute="bottom" constant="16" id="vlF-g2-sTm"/>
                 <constraint firstAttribute="trailing" secondItem="jsf-pn-h6s" secondAttribute="trailing" id="xHU-Tk-fPb"/>

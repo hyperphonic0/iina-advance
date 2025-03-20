@@ -43,6 +43,8 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     return [headerView, loggingSettingsView, mpvSettingsView]
   }
 
+  var co: CocoaObserver! = nil
+
   private var tableDragDelegate: TableDragDelegate<[String]>? = nil
 
   @IBOutlet var headerView: NSView!
@@ -54,6 +56,8 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   @IBOutlet weak var useAnotherConfigDirBtn: NSButton!
   @IBOutlet weak var chooseConfigDirBtn: NSButton!
   @IBOutlet weak var removeButton: NSButton!
+
+  @objc dynamic var thumbfastStatus: String = ""
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -85,6 +89,55 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
     enableAdvancedSettingsLabel.stringValue = NSLocalizedString("preference.enable_adv_settings",
                                                                 comment: "Enable advanced settings")
+
+    configureObservers()
+  }
+
+  private func configureObservers() {
+    co = CocoaObserver(Logger.log, prefDidChange: prefDidChange, [
+      .enableAdvancedSettings,
+      .integrateWithThumbfast,
+    ])
+  }
+
+  /// Called each time a pref `key`'s value is set
+  func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
+    switch key {
+    case PK.enableAdvancedSettings, PK.integrateWithThumbfast:
+      updateThumbfastStatus()
+    default:
+      break
+    }
+  }
+
+  override func viewWillAppear() {
+    Logger.log.trace("Advanced pref pane will appear")
+    super.viewWillAppear()
+    co.addAllObservers()
+    updateThumbfastStatus()
+  }
+
+  override func viewWillDisappear() {
+    Logger.log.trace("Advanced pref pane will disappear")
+    co.removeAllObservers()
+  }
+
+  func updateThumbfastStatus() {
+    guard Preference.isAdvancedEnabled && Preference.bool(for: .integrateWithThumbfast) else {
+      thumbfastStatus = ""
+      return
+    }
+    for player in PlayerManager.shared.playerCores {
+      if let thumbfastInfo = player.mpv.thumbfastInfo {
+        if thumbfastInfo.isReady {
+          thumbfastStatus = "Found thumbfast-info. √ Ready"
+        } else {
+          thumbfastStatus = "Found thumbfast-info. Ready: NO"
+        }
+        return
+      }
+    }
+    thumbfastStatus = "No thumbfast-info detected"
   }
 
   private func saveToUserDefaults() {
