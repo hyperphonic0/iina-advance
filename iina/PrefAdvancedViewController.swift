@@ -57,6 +57,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   @IBOutlet weak var chooseConfigDirBtn: NSButton!
   @IBOutlet weak var removeButton: NSButton!
 
+  /// Message string which is Cocoa-bound to a text field below the thumbast checkbox
   @objc dynamic var thumbfastStatus: String = ""
 
   override func viewDidLoad() {
@@ -130,14 +131,14 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     for player in PlayerManager.shared.playerCores {
       if let thumbfastInfo = player.mpv.thumbfastInfo {
         if thumbfastInfo.isReady {
-          thumbfastStatus = "Found thumbfast-info. √ Ready"
+          thumbfastStatus = "✅ Found thumbfast-info. ✅ Ready"
         } else {
-          thumbfastStatus = "Found thumbfast-info. Ready: NO"
+          thumbfastStatus = "✅ Found thumbfast-info. ❌ Not Ready"
         }
         return
       }
     }
-    thumbfastStatus = "No thumbfast-info detected"
+    thumbfastStatus = "❌ No thumbfast-info. Make sure thumbfast.lua is installed properly."
   }
 
   private func saveToUserDefaults() {
