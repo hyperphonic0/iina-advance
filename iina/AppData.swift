@@ -66,6 +66,7 @@ struct AppData {
   static let contributorsLink = "https://github.com/iina/iina/graphs/contributors"
   static let crowdinMembersLink = "https://crowdin.com/project/iina"
   static let wikiLink = "https://github.com/iina/iina/wiki"
+  static let wikiLinkAdvance = "https://advancemediaplayer.com/wiki"
   static let websiteLink = "https://iina.io"
   // TODO: update email
   static let emailLink = "developers@iina.io"

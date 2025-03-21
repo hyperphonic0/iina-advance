@@ -223,6 +223,16 @@
                         <binding destination="nyg-fH-Pug" name="value" keyPath="values.integrateWithThumbfast" id="UWf-Hs-cT3"/>
                     </connections>
                 </button>
+                <button hidden="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ogw-ry-4bY" userLabel="Thumbfast-Help Button">
+                    <rect key="frame" x="423" y="266" width="25" height="25"/>
+                    <buttonCell key="cell" type="help" bezelStyle="helpButton" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="bEu-i9-N5x">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="thumbfastHelpBtnAction:" target="-2" id="kil-yA-Yhu"/>
+                    </connections>
+                </button>
                 <textField identifier="ThumbfastStatusLabel" focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="dPV-Ix-902">
                     <rect key="frame" x="154" y="255" width="121" height="13"/>
                     <textFieldCell key="cell" selectable="YES" title="Thumbfast-Status Label" id="97B-WH-f35">
@@ -485,8 +495,10 @@
                 <constraint firstItem="dfL-W8-kmJ" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="ZQt-93-Phc" secondAttribute="trailing" id="KaL-HA-d54"/>
                 <constraint firstItem="ZQt-93-Phc" firstAttribute="leading" secondItem="zKI-kU-PWr" secondAttribute="trailing" constant="16" id="MYd-bY-h6l"/>
                 <constraint firstAttribute="bottom" secondItem="jsf-pn-h6s" secondAttribute="bottom" constant="8" id="P70-PP-vNV"/>
+                <constraint firstItem="ogw-ry-4bY" firstAttribute="centerY" secondItem="ZQt-93-Phc" secondAttribute="centerY" id="P8c-xc-0uB"/>
                 <constraint firstItem="dfL-W8-kmJ" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="vY6-lX-1l5" secondAttribute="leading" id="RtC-Rh-J6Z"/>
                 <constraint firstItem="bA7-7o-Vd0" firstAttribute="top" secondItem="wWR-n2-u2E" secondAttribute="bottom" constant="8" id="ZB8-eK-Abf"/>
+                <constraint firstItem="ogw-ry-4bY" firstAttribute="leading" secondItem="ZQt-93-Phc" secondAttribute="trailing" constant="4" id="aQd-Tm-1UM"/>
                 <constraint firstItem="wWR-n2-u2E" firstAttribute="leading" secondItem="vY6-lX-1l5" secondAttribute="leading" id="bQ8-hg-8SK"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="wWR-n2-u2E" secondAttribute="trailing" id="cWT-fx-J5u"/>
                 <constraint firstAttribute="trailing" secondItem="bA7-7o-Vd0" secondAttribute="trailing" id="foA-Yd-KGK"/>

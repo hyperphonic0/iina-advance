@@ -280,6 +280,10 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   @IBAction func helpBtnAction(_ sender: AnyObject) {
     NSWorkspace.shared.open(URL(string: AppData.wikiLink)!.appendingPathComponent("MPV-Options-and-Properties"))
   }
+
+  @IBAction func thumbfastHelpBtnAction(_ sender: AnyObject) {
+    NSWorkspace.shared.open(URL(string: AppData.wikiLinkAdvance)!.appendingPathComponent("thumbfast-integration"))
+  }
 }
 
 extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource, NSControlTextEditingDelegate {
