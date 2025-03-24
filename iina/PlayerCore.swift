@@ -2408,7 +2408,7 @@ class PlayerCore: NSObject {
 
     if currentPlayback.isNetworkResource {
       DispatchQueue.main.async {
-        let openURLWindow = IINA.AppDelegate.shared.openURLWindow
+        let openURLWindow = IINA_Advance.AppDelegate.shared.openURLWindow
         if openURLWindow.playerCore == self {
           openURLWindow.closeAfterSuccess()
         }
