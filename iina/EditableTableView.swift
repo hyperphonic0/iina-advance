@@ -22,6 +22,10 @@ class EditableTableView: NSTableView {
 
   var tableChangeNotificationName: Notification.Name!
 
+  /// Need to disable this if table is configured to draw horizontal grid lines. The default NSTableView
+  /// will draw a translucent background.
+  var drawBackgroundForEmptyRows: Bool = true
+
   override var isEnabled: Bool {
     didSet {
       Logger.log.verbose{"Table isEnabled changed to \(isEnabled.yesno); reloading data"}
@@ -52,6 +56,12 @@ class EditableTableView: NSTableView {
       }
     }
     observers = []
+  }
+
+  override func drawBackground(inClipRect clipRect: NSRect) {
+    if drawBackgroundForEmptyRows {
+      super.drawBackground(inClipRect: clipRect)
+    }
   }
 
   // MARK: Edit menu > Cut, Copy, Paste, Delete

@@ -126,6 +126,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     playlistTableView.menu?.delegate = self
     playlistTableView.editableDelegate = self
     playlistTableView.selectNextRowAfterDelete = false
+    playlistTableView.drawBackgroundForEmptyRows = false
+    chapterTableView.drawBackgroundForEmptyRows = false
+    // FIXME: need to add a dedicated view behind each table to use for background alpha. TableView doesn't support alpha bg
     playlistDragDelegate = TableDragDelegate<PlaybackID>("Playlist", playlistTableView,
                                                          acceptableDraggedTypes: playlistDraggableTypes,
                                                          tableChangeNotificationName: .init("uiChangeForPlaylistTable-\(player.label)"),
@@ -178,9 +181,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     playlistTableView.target = self
     chapterTableView.doubleAction = action
     chapterTableView.target = self
-
-    playlistTableView.enclosingScrollView?.wantsLayer = true
-    chapterTableView.enclosingScrollView?.wantsLayer = true
 
     (subPopover.contentViewController as! SubPopoverViewController).player = player
     if let popoverView = subPopover.contentViewController?.view,
