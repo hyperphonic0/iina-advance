@@ -599,6 +599,7 @@ class MenuController: NSObject, NSMenuDelegate {
   }
 
   func updatePluginMenu() {
+    guard Preference.bool(for: .iinaEnablePluginSystem) else { return }
     Logger.log.trace("Updating Plugin menu")
     var keyMappings: [MenuItemMapping] = []
     let activePlayer = PlayerManager.shared.activePlayer
