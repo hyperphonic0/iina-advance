@@ -452,8 +452,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   // Drag & drop within playlistTableView
   func movePlaylistRows(from rowIndexes: IndexSet, at targetRowIndex: Int) {
     let (tableUIChange, allItemsNew) = playlistTableView.buildMove(rowIndexes, to: targetRowIndex, in: displayedPlaylist, completionHandler: { [self] _ in
-
-      player.playlistMove(rowIndexes, to: targetRowIndex)
+      player.playlistMove(rowIndexes, to: targetRowIndex, silent: true)
     })
 
     displayedPlaylist = allItemsNew

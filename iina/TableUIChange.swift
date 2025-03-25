@@ -126,38 +126,33 @@ class TableUIChange {
 
   /// Subclasses should override executeContentUpdates() instead of this
   func execute(on tableView: EditableTableView) {
-    let animationGroups = LinkedList<AnimationBlock>()
+    var animationTasks: [IINAAnimation.Task] = []
 
 
     // 1. "Before" animations (if provided)
     if let flashBefore, !flashBefore.isEmpty {
-      animationGroups.append { context in
-        self.animateFlash(forIndexes: flashBefore, in: tableView, context)
-      }
+      animationTasks.append(.init{ [self] in
+        let context = NSAnimationContext.current
+        animateFlash(forIndexes: flashBefore, in: tableView, context)
+      })
     }
 
 
     // 2. Perform row update animations
-    animationGroups.append { [self] context in
+    animationTasks.append(.init{ [self] in
       // Encapsulate all animations in this function inside a transaction.
       tableView.beginUpdates()
       defer {
         tableView.endUpdates()
       }
 
-      if !IINAAnimation.isAnimationEnabled {
-        log.verbose{"Animation disabled: nulling out animation"}
-        context.duration = 0.0
-        context.allowsImplicitAnimation = false
-      }
-
       self.executeRowUpdates(on: tableView)
-    }
+    })
 
 
     // 3. Change row selection.
     // MUST NOT DO THIS IN THE SAME ANIMATION GROUP AS ROW UPDATES or else weird selection "burn-in" can result
-    animationGroups.append { [self] context in
+    animationTasks.append(.init { [self] in
       // track this so we don't do it more than once (it fires the selectionChangedListener every time)
       let wantsReloadOfExistingRows: Bool
       if changeType == .reloadAll {
@@ -204,31 +199,21 @@ class TableUIChange {
           }
         }
       }
-    }
+    })
 
     // 4. "After" animations (if provided)
     if let flashAfter, !flashAfter.isEmpty {
-      animationGroups.append { context in
-        self.animateFlash(forIndexes: flashAfter, in: tableView, context)
-      }
+      animationTasks.append(.init { [self] in
+        let context = NSAnimationContext.current
+        animateFlash(forIndexes: flashAfter, in: tableView, context)
+      })
     }
 
-    executeGroup(animationGroups.firstNode)
-  }
-
-  // Recursive function which executions code for a single group in the chain
-  private func executeGroup(_ groupNode: LinkedList<AnimationBlock>.Node?) {
-    guard let groupNode else {
-      if let lastCompletionHandler = self.completionHandler {
-        log.verbose("Executing custom completion handler for TableUIChange")
-        lastCompletionHandler(self)
-      }
-      return
+    if let animationPipeline = tableView.pwc?.animationPipeline {
+      animationPipeline.submit(animationTasks)
+    } else {
+      IINAAnimation.runAsync(animationTasks)
     }
-
-    NSAnimationContext.runAnimationGroup(groupNode.value, completionHandler: {
-      self.executeGroup(groupNode.next)
-    })
   }
 
   private func executeRowUpdates(on tableView: EditableTableView) {

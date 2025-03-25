@@ -1636,7 +1636,7 @@ class PlayerCore: NSObject {
     }
   }
 
-  func playlistMove(_ srcRows: IndexSet, to dstRow: Int) {
+  func playlistMove(_ srcRows: IndexSet, to dstRow: Int, silent: Bool = false) {
     mpv.queue.async { [self] in
       log.debug("Playlist Drag & Drop: \(srcRows) → \(dstRow)")
       // Drag & drop within playlistTableView
@@ -1650,7 +1650,7 @@ class PlayerCore: NSObject {
           newIndexOffset += 1
         }
       }
-      _reloadPlaylist()
+      _reloadPlaylist(silent: silent)
     }
   }
 
