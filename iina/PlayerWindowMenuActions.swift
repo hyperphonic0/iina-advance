@@ -535,7 +535,8 @@ extension PlayerWindowController {
     default:
       break
     }
-    return true
+    // Probably Undo or Redo. Default to false.
+    return false
   }
 
   // MARK: - Plugin
