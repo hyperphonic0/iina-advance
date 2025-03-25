@@ -55,7 +55,7 @@ class CustomCellView: NSTableCellView {
 
 
 class PreferenceWindowController: WindowController {
-  static unowned var undoManager: UndoManager? = nil
+  unowned var windowUndoManager: UndoManager? = nil
 
   class Trie {
 
@@ -210,7 +210,7 @@ class PreferenceWindowController: WindowController {
     if let undoManager = window?.undoManager {
       Logger.log.verbose{"PreferenceWindow loaded: setting UndoManager"}
       // Make more easily accessible for other components
-      PreferenceWindowController.undoManager = undoManager
+      windowUndoManager = undoManager
     }
 
     window?.titlebarAppearsTransparent = true
@@ -279,6 +279,7 @@ class PreferenceWindowController: WindowController {
 
   override func mouseDown(with event: NSEvent) {
     dismissCompletionList()
+    super.mouseDown(with: event)
   }
 
   // MARK: - Searching
@@ -366,6 +367,12 @@ class PreferenceWindowController: WindowController {
     UIState.shared.set(index, for: .uiPrefWindowNavTableSelectionIndex)
     
     return vc
+  }
+
+  func selectKeyBindingTab() {
+    let kbIndex = viewControllers.firstIndex(where: { $0 is PrefKeyBindingViewController })
+    guard let kbIndex, kbIndex >= 0, tableView.selectedRow != kbIndex else { return }
+    loadTab(at: kbIndex)
   }
 
   private func getLabelDict(inNibNamed name: String) -> [String: [String]] {

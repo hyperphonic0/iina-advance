@@ -21,7 +21,7 @@ class BindingTableStateManager: NSObject {
     case confFile = "InputConfFile"
   }
 
-  private var undoHelper = PrefsWindowUndoHelper()
+  private var undoHelper = PrefKeyBindingUndoHelper()
   private var observers: [NSObjectProtocol] = []
 
   func enableObservers() {

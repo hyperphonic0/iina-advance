@@ -17,7 +17,7 @@ fileprivate let changeSelectedConfActionName: String = "Change Active Config"
  for the Conf table, and `ConfTableState` as a single revision of its data.
  */
 class ConfTableStateManager: NSObject {
-  private var undoHelper = PrefsWindowUndoHelper()
+  private var undoHelper = PrefKeyBindingUndoHelper()
   private var observers: [NSObjectProtocol] = []
 
   private unowned var fileCache = InputConfFile.cache

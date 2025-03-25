@@ -20,6 +20,10 @@ class UndoHelper {
     nil  // Subclasses should override
   }
 
+  func willUndoOrRedo() {
+    // Subclasses should override
+  }
+
   // This can be called both for the "undo" of the original "do", and for the "redo" (AKA the undo of the undo).
   // `actionName` will only be used for the original "do" action, and will be cached for use in "undo" / "redo".
   // Note: the `redo` param exists to (hopefully) improve readability and better indicate intent. It does not need to
@@ -35,17 +39,18 @@ class UndoHelper {
 
     Logger.log("[\(UndoHelper.formatAction(origActionName, undoMan))] Registering for \(undoMan.isRedoing ? UndoHelper.REDO : UndoHelper.UNDO)")
 
-    undoMan.registerUndo(withTarget: self, handler: { manager in
-      guard let undoMan = self.undoManager else {
+    undoMan.registerUndo(withTarget: self, handler: { [self] manager in
+      guard let undoMan = undoManager else {
         Logger.log.error("Cannot undo: undoManager is nil!")
         return
       }
       // Undo starts here. Or: undo of the undo (redo)
       Logger.log("[\(UndoHelper.formatAction(origActionName, undoMan))] Starting \(UndoHelper.currentOp(undoMan)) (\(UndoHelper.extraDebug(undoMan)))")
 
+      willUndoOrRedo()
       undoAction()
 
-      if let redoAction = redoAction {
+      if let redoAction {
         self.register(actionName, undo: redoAction, redo: undoAction)
       }
     })
@@ -98,8 +103,13 @@ class UndoHelper {
   }
 }
 
-class PrefsWindowUndoHelper: UndoHelper {
+class PrefKeyBindingUndoHelper: UndoHelper {
   override var undoManager: UndoManager? {
-    PreferenceWindowController.undoManager
+    AppDelegate.shared.preferenceWindowController.windowUndoManager
+  }
+
+  override func willUndoOrRedo() {
+    // Go into Key Bindings tab so it is clear to user what is being undone.
+    AppDelegate.shared.preferenceWindowController.selectKeyBindingTab()
   }
 }

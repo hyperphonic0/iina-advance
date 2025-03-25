@@ -106,7 +106,7 @@ class EditableTableView: NSTableView {
       Logger.log.verbose{"EditableTableView.validateUserInterfaceItem(): defaulting isAllowed=false for \"\(actionDescription)\""}
       return false
     }
-    Logger.log.verbose{"EditableTableView.validateUserInterfaceItem(): isAllowed=\(isAllowed) for \"\(actionDescription)\""}
+    Logger.log.verbose{"EditableTableView.validateUserInterfaceItem(): isAllowed=\(isAllowed.yesno) for \"\(actionDescription)\""}
     return isAllowed
   }
 
