@@ -59,6 +59,7 @@ class ConfTableViewController: NSObject {
     tableView.menu = NSMenu()
     tableView.menu?.delegate = self
 
+    tableView.drawBackgroundForEmptyRows = false
     tableView.editableTextColumnIndexes = [nameColumnIndex]
     tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForConfTable)
 

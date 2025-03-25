@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="InspectorWindowController" customModule="IINA" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="InspectorWindowController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="abitrateField" destination="S6Z-fT-kcG" id="Oyv-QT-jPj"/>
                 <outlet property="achannelsField" destination="L3Y-pD-V9R" id="5W5-Tc-FSp"/>
@@ -67,10 +67,10 @@
             <rect key="contentRect" x="1539" y="436" width="350" height="430"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
             <view key="contentView" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="InspectorWindow Content View">
-                <rect key="frame" x="0.0" y="0.0" width="400" height="450"/>
+                <rect key="frame" x="0.0" y="0.0" width="1017" height="456"/>
                 <subviews>
-                    <segmentedControl focusRingType="none" verticalHuggingPriority="750" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="0rt-Td-kr8" userLabel="Tab-Button-Group Segmented Control">
-                        <rect key="frame" x="-1" y="396" width="402" height="35"/>
+                    <segmentedControl focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="0rt-Td-kr8" userLabel="Tab-Button-Group Segmented Control">
+                        <rect key="frame" x="308" y="422" width="402" height="35"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="400" id="00B-tA-KhB"/>
                             <constraint firstAttribute="height" constant="32" id="cW8-pr-q3Y"/>
@@ -88,11 +88,11 @@
                             <action selector="tabSwitched:" target="-2" id="XCl-Ve-9U0"/>
                         </connections>
                     </segmentedControl>
-                    <box verticalHuggingPriority="750" ambiguous="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="CDi-R3-knX">
-                        <rect key="frame" x="0.0" y="396" width="400" height="5"/>
+                    <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="CDi-R3-knX">
+                        <rect key="frame" x="0.0" y="422" width="1017" height="5"/>
                     </box>
-                    <tabView ambiguous="YES" drawsBackground="NO" controlSize="small" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="wHY-jo-uW0" userLabel="(General, Tracks, File, Status) Tab View">
-                        <rect key="frame" x="12" y="-14" width="376" height="412"/>
+                    <tabView drawsBackground="NO" controlSize="small" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="wHY-jo-uW0" userLabel="(General, Tracks, File, Status) Tab View">
+                        <rect key="frame" x="12" y="12" width="993" height="412"/>
                         <tabViewItems>
                             <tabViewItem label="General" identifier="1" id="f7a-XG-NCc">
                                 <view key="view" ambiguous="YES" id="mRY-yK-FeT">
@@ -523,7 +523,7 @@
                                             <rect key="frame" x="57" y="379" width="311" height="22"/>
                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="oaq-Mf-xDk">
                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                                <font key="font" metaFont="system"/>
+                                                <font key="font" metaFont="message"/>
                                                 <menu key="menu" id="aXL-3e-ZgD"/>
                                             </popUpButtonCell>
                                             <connections>
@@ -1120,9 +1120,9 @@
                                                     <rect key="frame" x="0.0" y="0.0" width="969" height="174"/>
                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="MlR-S8-3gW" userLabel="WatchTable Clip View">
                                                         <rect key="frame" x="0.0" y="0.0" width="969" height="174"/>
-                                                        <autoresizingMask key="autoresizingMask"/>
+                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>
-                                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="InspectorWatchTable" rowHeight="18" usesAutomaticRowHeights="YES" viewBased="YES" floatsGroupRows="NO" id="oUp-DO-OKl" userLabel="WatchTable Table View" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
+                                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="InspectorWatchTable" rowHeight="18" usesAutomaticRowHeights="YES" viewBased="YES" floatsGroupRows="NO" id="oUp-DO-OKl" userLabel="WatchTable Table View" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
                                                                 <rect key="frame" x="0.0" y="0.0" width="969" height="170"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <size key="intercellSpacing" width="2" height="0.0"/>
@@ -1141,9 +1141,9 @@
                                                                         </textFieldCell>
                                                                         <prototypeCellViews>
                                                                             <tableCellView clipsToBounds="YES" translatesAutoresizingMaskIntoConstraints="NO" id="z2z-PI-nzs" userLabel="Name-Column Table Cell View">
-                                                                                <rect key="frame" x="0.0" y="0.0" width="195" height="18"/>
+                                                                                <rect key="frame" x="1" y="0.0" width="195" height="18"/>
                                                                                 <subviews>
-                                                                                    <textField focusRingType="none" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="vTu-fg-hiW" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
+                                                                                    <textField focusRingType="none" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="vTu-fg-hiW" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                                                         <rect key="frame" x="2" y="2" width="193" height="14"/>
                                                                                         <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="left" title="KeyColumn Text Field" usesSingleLineMode="YES" id="HA9-NO-iHC">
                                                                                             <font key="font" metaFont="systemSemibold" size="11"/>
@@ -1180,7 +1180,7 @@
                                                                                 <rect key="frame" x="198" y="0.0" width="750" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                 <subviews>
-                                                                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="DwZ-IW-2Yw" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
+                                                                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="DwZ-IW-2Yw" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                                                         <rect key="frame" x="0.0" y="2" width="752" height="14"/>
                                                                                         <textFieldCell key="cell" lineBreakMode="charWrapping" sendsActionOnEndEditing="YES" alignment="left" title="ValueColumn Text Field" id="k5Q-ii-1cq">
                                                                                             <font key="font" metaFont="systemLight" size="11"/>

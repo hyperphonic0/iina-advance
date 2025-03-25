@@ -8,6 +8,8 @@
 
 import Cocoa
 
+fileprivate let tableBackgroundColor = CGColor(gray: 1.0, alpha: 0.1)
+
 fileprivate let prefixMinLength = 7
 fileprivate let displayNameMinLength = 12
 
@@ -47,6 +49,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   // can't use main queue - it will block
   private var playlistTableReloadDebouncer = Debouncer(delay: 0.1, queue: PlayerCore.playlistQueue)
 
+  @IBOutlet weak var playlistTableBackgroundView: NSView!
+  @IBOutlet weak var chapterTableBackgroundView: NSView!
   @IBOutlet weak var playlistTableView: EditableTableView!
   @IBOutlet weak var chapterTableView: EditableTableView!
   @IBOutlet weak var playlistBtn: NSButton!
@@ -128,7 +132,13 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     playlistTableView.selectNextRowAfterDelete = false
     playlistTableView.drawBackgroundForEmptyRows = false
     chapterTableView.drawBackgroundForEmptyRows = false
-    // FIXME: need to add a dedicated view behind each table to use for background alpha. TableView doesn't support alpha bg
+    // Need a dedicated view behind each table to use for background color.
+    // NSTableView & its component views don't support translucent background color.
+    playlistTableBackgroundView.wantsLayer = true
+    playlistTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
+    chapterTableBackgroundView.wantsLayer = true
+    chapterTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
+
     playlistDragDelegate = TableDragDelegate<PlaybackID>("Playlist", playlistTableView,
                                                          acceptableDraggedTypes: playlistDraggableTypes,
                                                          tableChangeNotificationName: .init("uiChangeForPlaylistTable-\(player.label)"),
