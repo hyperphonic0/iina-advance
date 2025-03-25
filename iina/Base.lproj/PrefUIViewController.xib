@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="PrefUIViewController" customModule="IINA" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="PrefUIViewController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="arrowButtonActionPopUpButton" destination="SyB-0R-TLF" id="mQe-sW-7py"/>
                 <outlet property="aspectPresetsTokenField" destination="ujy-m2-hkj" id="6na-Cg-CtC"/>
@@ -331,7 +331,7 @@ For smoothest results, also enable custom full screen.</string>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="d9m-Hf-6wE" userLabel="RightColumn Stack View">
                     <rect key="frame" x="120" y="8" width="453" height="122"/>
                     <subviews>
-                        <stackView identifier="CustomFullScreenCollapseView" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="azI-1c-jRR" userLabel="CustomFullScreen Collapse View" customClass="CollapseView" customModule="IINA" customModuleProvider="target">
+                        <stackView identifier="CustomFullScreenCollapseView" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="azI-1c-jRR" userLabel="CustomFullScreen Collapse View" customClass="CollapseView" customModule="IINA_Advance" customModuleProvider="target">
                             <rect key="frame" x="0.0" y="32" width="453" height="90"/>
                             <subviews>
                                 <button identifier="TriggerCustomFullScreen" translatesAutoresizingMaskIntoConstraints="NO" id="KlA-Ot-dln">
@@ -792,7 +792,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </binding>
                                     </connections>
                                 </customView>
-                                <stackView identifier="MpvWinSizeCollapseView" clipsToBounds="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fnx-bb-tli" userLabel="MpvWindowSize Collapse View" customClass="CollapseView" customModule="IINA" customModuleProvider="target">
+                                <stackView identifier="MpvWinSizeCollapseView" clipsToBounds="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fnx-bb-tli" userLabel="MpvWindowSize Collapse View" customClass="CollapseView" customModule="IINA_Advance" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="151" width="390" height="60"/>
                                     <subviews>
                                         <button identifier="TriggerMpvWinSize" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dvv-kN-b5O">
@@ -932,7 +932,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </binding>
                                     </connections>
                                 </customView>
-                                <stackView identifier="MpvWinPosCollapseView" clipsToBounds="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5zT-kW-YFh" userLabel="MpvWindowPosition Collapse View" customClass="CollapseView" customModule="IINA" customModuleProvider="target">
+                                <stackView identifier="MpvWinPosCollapseView" clipsToBounds="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5zT-kW-YFh" userLabel="MpvWindowPosition Collapse View" customClass="CollapseView" customModule="IINA_Advance" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="416" height="135"/>
                                     <subviews>
                                         <button identifier="TriggerMpvWinPos" horizontalHuggingPriority="1" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="tLm-Qr-UNX">
@@ -2583,7 +2583,7 @@ For smoothest results, also enable custom full screen.</string>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Yfc-Gq-NE4" userLabel="SuppressMessages HStack View">
                             <rect key="frame" x="0.0" y="80" width="360" height="135"/>
                             <subviews>
-                                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nbb-vz-BDi" userLabel="SuppressMessages View" customClass="CollapseView" customModule="IINA" customModuleProvider="target">
+                                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nbb-vz-BDi" userLabel="SuppressMessages View" customClass="CollapseView" customModule="IINA_Advance" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="360" height="135"/>
                                     <subviews>
                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="n6h-el-nAa" userLabel="SuppressMessagesHeader View">
@@ -3010,7 +3010,15 @@ For smoothest results, also enable custom full screen.</string>
                                         <gridRow yPlacement="center" height="24" id="hjW-b6-71D" userLabel="Row 0 - SidebarID"/>
                                         <gridRow yPlacement="center" rowAlignment="none" height="24" id="Mi2-xO-LqY" userLabel="Row 1 - Settings-TabGroup"/>
                                         <gridRow yPlacement="center" rowAlignment="none" height="24" id="PUY-2y-GX1" userLabel="Row 2 - Playlist-TabGroup"/>
-                                        <gridRow yPlacement="center" rowAlignment="none" height="24" id="vV4-sP-7hN" userLabel="Row 3 - Plugins-TabGroup"/>
+                                        <gridRow yPlacement="center" rowAlignment="none" height="24" id="vV4-sP-7hN" userLabel="Row 3 - Plugins-TabGroup">
+                                            <connections>
+                                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.iinaEnablePluginSystem" id="5Rq-1F-xs5">
+                                                    <dictionary key="options">
+                                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                                    </dictionary>
+                                                </binding>
+                                            </connections>
+                                        </gridRow>
                                         <gridRow yPlacement="center" rowAlignment="none" height="24" id="rik-aD-Ulq" userLabel="Row 3 - Placement"/>
                                         <gridRow yPlacement="center" rowAlignment="none" height="24" id="xL6-zv-twO" userLabel="Row 4 - Open-Close-Button"/>
                                         <gridRow yPlacement="center" rowAlignment="none" height="24" id="lbI-Sg-f3d" userLabel="Row 5 - Close-When-Clicked"/>
@@ -3335,7 +3343,7 @@ For smoothest results, also enable custom full screen.</string>
                                                             <constraint firstAttribute="bottom" secondItem="juv-F4-U4n" secondAttribute="bottom" id="z7o-7Y-pqO"/>
                                                         </constraints>
                                                     </customView>
-                                                    <tokenField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ujy-m2-hkj" customClass="AspectTokenField" customModule="IINA" customModuleProvider="target">
+                                                    <tokenField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ujy-m2-hkj" customClass="AspectTokenField" customModule="IINA_Advance" customModuleProvider="target">
                                                         <rect key="frame" x="16" y="61" width="350" height="21"/>
                                                         <constraints>
                                                             <constraint firstAttribute="width" constant="350" id="SGF-yh-K2z"/>
@@ -3385,7 +3393,7 @@ For smoothest results, also enable custom full screen.</string>
                                                             <constraint firstAttribute="bottom" secondItem="1NQ-lx-OBs" secondAttribute="bottom" id="pWH-kz-zgV"/>
                                                         </constraints>
                                                     </customView>
-                                                    <tokenField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hg9-M3-Cff" userLabel="Crop Token Field" customClass="AspectTokenField" customModule="IINA" customModuleProvider="target">
+                                                    <tokenField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hg9-M3-Cff" userLabel="Crop Token Field" customClass="AspectTokenField" customModule="IINA_Advance" customModuleProvider="target">
                                                         <rect key="frame" x="16" y="8" width="350" height="21"/>
                                                         <constraints>
                                                             <constraint firstAttribute="width" constant="350" id="trI-Ii-ZG7"/>

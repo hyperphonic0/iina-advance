@@ -51,10 +51,24 @@ struct Sidebar {
       if Preference.enum(for: .playlistTabGroupLocation) == locationID {
         tabGroups.insert(.playlist)
       }
-      if Preference.enum(for: .pluginsTabGroupLocation) == locationID {
+      if Preference.bool(for: .iinaEnablePluginSystem), Preference.enum(for: .pluginsTabGroupLocation) == locationID {
         tabGroups.insert(.plugins)
       }
       return tabGroups
+    }
+
+    /// Enable basic sorting
+    static func isRightGreaterThanLeft(_ lhs: TabGroup, rhs: TabGroup) -> Bool {
+      if case .plugins = lhs {
+        return true
+      }
+      if case .plugins = rhs {
+        return false
+      }
+      if case .playlist = rhs {
+        return true
+      }
+      return false
     }
   }
 
@@ -221,8 +235,8 @@ struct Sidebar {
       return lastVisibleTab
     }
 
-    // Fall back to default for whatever tab group found:
-    if let group = tabGroups.first {
+    // Use highest priority tab group found:
+    if let group = tabGroups.sorted(by: Sidebar.TabGroup.isRightGreaterThanLeft).last {
       switch group {
       case .playlist:
         return Sidebar.Tab.playlist
