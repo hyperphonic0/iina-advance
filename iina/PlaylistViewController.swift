@@ -8,8 +8,6 @@
 
 import Cocoa
 
-fileprivate let tableBackgroundColor = CGColor(gray: 1.0, alpha: 0.1)
-
 fileprivate let prefixMinLength = 7
 fileprivate let displayNameMinLength = 12
 
@@ -134,6 +132,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     chapterTableView.drawBackgroundForEmptyRows = false
     // Need a dedicated view behind each table to use for background color.
     // NSTableView & its component views don't support translucent background color.
+    let tableBackgroundColor = Constants.Color.playlistTableBackground
     playlistTableBackgroundView.wantsLayer = true
     playlistTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
     chapterTableBackgroundView.wantsLayer = true

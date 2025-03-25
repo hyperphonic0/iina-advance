@@ -90,6 +90,10 @@ typealias Str = String
 typealias TimeInt = TimeInterval
 
 struct Constants {
+  /// Official IINA release version numbers, as integers.
+  /// See also:
+  /// 1. `CURRENT_PROJECT_VERSION` & `MARKETING_VERSION` in `Deployment.xcconfig`.
+  /// 2. "Current Project Version" & "Marketing Version" fields of the `iina` target of the Xcode project.
   struct BuildNumber {
     static let V1_0 = 1
     static let V1_1 = 2
@@ -97,6 +101,7 @@ struct Constants {
     static let V1_2_1 = 4
     static let V1_2_2 = 5
     static let V1_3 = 6
+    static let V1_4 = 7
   }
 
   struct String {
@@ -446,6 +451,8 @@ struct Constants {
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.35),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.5),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.6)]
+
+    static let playlistTableBackground = CGColor(gray: 1.0, alpha: 0.1)
 
   }
 }  /// end `Constants`
