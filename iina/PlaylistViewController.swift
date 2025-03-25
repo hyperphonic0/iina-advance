@@ -128,7 +128,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     playlistTableView.selectNextRowAfterDelete = false
     playlistDragDelegate = TableDragDelegate<PlaybackID>("Playlist", playlistTableView,
                                                          acceptableDraggedTypes: playlistDraggableTypes,
-                                                         tableChangeNotificationName: .pendingUIChangeForPlaylistTable,
+                                                         tableChangeNotificationName: .init("uiChangeForPlaylistTable-\(player.label)"),
                                                          getFromPasteboardFunc: readPlaylistItemsFromPasteboard,
                                                          getAllCurentFunc: { self.displayedPlaylist },
                                                          moveFunc: movePlaylistRows,
@@ -178,6 +178,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     playlistTableView.target = self
     chapterTableView.doubleAction = action
     chapterTableView.target = self
+
+    playlistTableView.enclosingScrollView?.wantsLayer = true
+    chapterTableView.enclosingScrollView?.wantsLayer = true
 
     (subPopover.contentViewController as! SubPopoverViewController).player = player
     if let popoverView = subPopover.contentViewController?.view,
@@ -833,6 +836,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
 
     return existingCachedMeta
+  }
+
+  func tableView(_ tableView: NSTableView, didAdd rowView: NSTableRowView, forRow row: Int) {
+    /// The background color for a `NSTableRowView` will default to the parent's background color, which results in an
+    /// unwanted additive effect for translucent backgrounds. Just make each row transparent.
+    rowView.backgroundColor = .clear
   }
 
   private func updateCachesForAllItems() {
