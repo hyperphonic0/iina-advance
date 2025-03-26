@@ -1402,11 +1402,10 @@ class MPVController: NSObject {
           break
         }
 
-        // TODO: implement parsing of screenshot-raw!
       }
 
     default:
-      // Logger.log("Unhandled mpv event: \(eventId)", level: .verbose)
+      player.log.trace("Unhandled mpv event: \(eventId)")
       break
     }
 
@@ -1417,6 +1416,32 @@ class MPVController: NSObject {
       let eventName = "mpv.\(String(cString: mpv_event_name(eventId)))"
       player.events.emit(.init(eventName))
     }
+  }
+
+  func getScreenshot(_ arg: String) -> NSImage? {
+    log.verbose("Taking screenshot-raw \(arg)")
+    var args = try! MPVNode.create(["screenshot-raw", arg])
+    defer {
+      MPVNode.free(args)
+    }
+    var result = mpv_node()
+    mpv_command_node(self.mpv, &args, &result)
+    guard let rawImage = try? MPVNode.parse(result) as? [String: Any] else { return nil }
+    mpv_free_node_contents(&result)
+    var pixelArray = rawImage["data"] as! [UInt8]
+    // According to mpv's client.h, the pixel array mpv returns arrange
+    // color data as "B8G8R8X8", whereas CGImages's data provider needs
+    // RGBA, so swap each pixel at index 0 and 2.
+    for i in 0 ..< pixelArray.count >> 2 {
+      pixelArray.swapAt(i << 2, i << 2 | 2)
+    }
+    let width = Int(truncatingIfNeeded: rawImage["w"] as! Int64)
+    let height = Int(truncatingIfNeeded: rawImage["h"] as! Int64)
+    let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
+    let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
+    let providerRef = CGDataProvider(data: NSData(bytes: pixelArray, length: pixelArray.count))!
+    let cgImage = CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 4 * 8, bytesPerRow: width * 4, space: rgbColorSpace, bitmapInfo: bitmapInfo, provider: providerRef, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
+    return NSImage(cgImage: cgImage!, size: NSSize(width: width, height: height))
   }
 
   // MARK: - Property listeners

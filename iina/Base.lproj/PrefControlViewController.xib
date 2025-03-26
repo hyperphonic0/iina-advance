@@ -84,7 +84,7 @@
                 </popUpButton>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="518-30-0zs">
                     <rect key="frame" x="56" y="265" width="449" height="18"/>
-                    <buttonCell key="cell" type="check" title="Enable slider scrolling when hovering over volume or playback sliders" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="tHH-eK-hGm">
+                    <buttonCell key="cell" type="check" title="Enable scrolling of OSC sliders while hovering over them" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="tHH-eK-hGm">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
