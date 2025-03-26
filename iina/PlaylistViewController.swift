@@ -99,7 +99,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!
       }
     }
-    reloadData(playlist: true, chapters: true)
+    reloadData(playlist: true, chapters: true, animate: false)
   }
 
   func setVerticalConstraints(downshift: CGFloat, tabHeight: CGFloat) {
@@ -160,7 +160,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     removeBtn.toolTip = NSLocalizedString("mini_player.remove", comment: "remove")
 
     hideTotalLength()
-    updateTableColors()
+    updateTableColors()  // this will also load data for tables
 
     // colors
     withAllTableViews { $0.backgroundColor = NSColor.sidebarTableBackground }
@@ -271,12 +271,13 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
   }
 
-  func reloadData(playlist: Bool, chapters: Bool) {
+  /// Use `animate: false` only for initial load, to avoid seeing a briefly empty table
+  func reloadData(playlist: Bool, chapters: Bool, animate: Bool = true) {
     guard player.isActive else { return }
     if playlist {
       playlistTableReloadDebouncer.run { [self] in
         DispatchQueue.main.async { [self] in
-          reloadPlaylistTable()
+          reloadPlaylistTable(animate: animate)
         }
       }
     }
@@ -288,16 +289,21 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
   }
 
-  private func reloadPlaylistTable() {
+  /// If `animate` is false, does a full reload instantly.
+  private func reloadPlaylistTable(animate: Bool) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     let oldPlaylistRows = displayedPlaylist
     let newPlaylistRows = player.info.playlist
-    let tableUIChange = TableUIChange.builder.buildDiff(oldRows: oldPlaylistRows, newRows: newPlaylistRows)
-
-    player.log.verbose{"Updating playlist table via diff"}
-    displayedPlaylist = newPlaylistRows
-    playlistTableView.post(tableUIChange)
+    if animate {
+      let tableUIChange = TableUIChange.builder.buildDiff(oldRows: oldPlaylistRows, newRows: newPlaylistRows)
+      player.log.verbose{"Updating playlist table via diff"}
+      displayedPlaylist = newPlaylistRows
+      playlistTableView.post(tableUIChange)
+    } else {
+      displayedPlaylist = newPlaylistRows
+      playlistTableView.reloadData()
+    }
   }
 
   private func showTotalLength() {
