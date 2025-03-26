@@ -18,6 +18,12 @@ class PlaySliderScrollWheel: SliderScrollWheelDelegate {
    recover the status when scrolling finished. */
   private var wasPlayingBeforeSeeking = false
 
+  override func scrollWheel(with event: NSEvent) {
+    // If we got here, we are hovering over the position slider itself. Check if this is disabled before continuing:
+    guard Preference.bool(for: .enableScrollOverSliders) else { return }
+    super.scrollWheel(with: event)
+  }
+
   override func scrollSessionWillBegin(_ session: ScrollSession) {
     guard let player = slider.associatedPlayer else { return }
 
@@ -69,6 +75,12 @@ class PlaySliderScrollWheel: SliderScrollWheelDelegate {
 ///
 /// Also see `volumeSliderAction(_:)` in `PlayerWindowController`.
 class VolumeSliderScrollWheel: SliderScrollWheelDelegate {
+  override func scrollWheel(with event: NSEvent) {
+    // If we got here, we are hovering over the volume slider itself. Check if this is disabled before continuing:
+    guard Preference.bool(for: .enableScrollOverSliders) else { return }
+    super.scrollWheel(with: event)
+  }
+
   override func scrollSessionWillBegin(_ session: ScrollSession) {
     slider.associatedPlayer?.log.verbose("VolumeSlider scrollWheel seek began")
     session.sensitivity = Preference.volumeScrollSensitivity()

@@ -414,6 +414,9 @@ struct Preference {
     static let volumeScrollAmount = Key("volumeScrollAmount")
     static let verticalScrollAction = Key("verticalScrollAction")
     static let horizontalScrollAction = Key("horizontalScrollAction")
+    /// If true, scrolling either vertically or horizontally while hovered over either the playback position or volume slider
+    /// will adjust the value of that slider.
+    static let enableScrollOverSliders = Key("enableScrollOverSliders")
 
     static let videoViewAcceptsFirstMouse = Key("videoViewAcceptsFirstMouse")
     static let singleClickAction = Key("singleClickAction")
@@ -1509,6 +1512,7 @@ struct Preference {
     .volumeScrollAmount: 3,
     .verticalScrollAction: ScrollAction.volume.rawValue,
     .horizontalScrollAction: ScrollAction.seek.rawValue,
+    .enableScrollOverSliders: true,
     .videoViewAcceptsFirstMouse: true,
     .singleClickAction: MouseClickAction.hideOSC.rawValue,
     .doubleClickAction: MouseClickAction.fullscreen.rawValue,

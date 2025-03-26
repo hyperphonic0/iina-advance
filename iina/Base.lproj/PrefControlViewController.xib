@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="PrefControlViewController" customModule="IINA" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="PrefControlViewController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="forceTouchLabel" destination="rUe-Ix-oaI" id="RWA-jP-now"/>
                 <outlet property="scrollVerticallyLabel" destination="oVB-QD-c1C" id="qip-5h-7Je"/>
@@ -25,10 +25,10 @@
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="Yrj-d0-KaY"/>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="Wmg-PT-BGO" userLabel="Prefs &gt; Control &gt; Mouse">
-            <rect key="frame" x="0.0" y="0.0" width="476" height="310"/>
+            <rect key="frame" x="0.0" y="0.0" width="476" height="334"/>
             <subviews>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="oVB-QD-c1C">
-                    <rect key="frame" x="56" y="290" width="174" height="16"/>
+                    <rect key="frame" x="56" y="314" width="174" height="16"/>
                     <constraints>
                         <constraint firstAttribute="width" priority="501" constant="170" id="miv-vF-277"/>
                     </constraints>
@@ -39,7 +39,7 @@
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ve7-Hz-Drk">
-                    <rect key="frame" x="233" y="283" width="247" height="25"/>
+                    <rect key="frame" x="233" y="307" width="247" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="Adjust volume" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="SYg-hW-b6r" id="q36-W8-OhN">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="message"/>
@@ -59,13 +59,39 @@
                     </connections>
                 </popUpButton>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hxT-iF-nwJ">
-                    <rect key="frame" x="56" y="266" width="174" height="16"/>
+                    <rect key="frame" x="56" y="290" width="174" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Scroll horizontally to:" id="w1Y-jy-vNc">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
+                <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="tL8-ht-RBh">
+                    <rect key="frame" x="233" y="283" width="247" height="25"/>
+                    <popUpButtonCell key="cell" type="push" title="Seek" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="wcS-tP-wav" id="haA-8R-BiR">
+                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="message"/>
+                        <menu key="menu" id="aEA-Qe-wDM">
+                            <items>
+                                <menuItem title="Seek" state="on" tag="1" id="wcS-tP-wav"/>
+                                <menuItem title="Do nothing" tag="2" id="guu-dK-YfL"/>
+                            </items>
+                        </menu>
+                    </popUpButtonCell>
+                    <connections>
+                        <binding destination="Yrj-d0-KaY" name="selectedTag" keyPath="values.horizontalScrollAction" id="TUh-Bc-5Oz"/>
+                    </connections>
+                </popUpButton>
+                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="518-30-0zs">
+                    <rect key="frame" x="56" y="265" width="449" height="18"/>
+                    <buttonCell key="cell" type="check" title="Enable slider scrolling when hovering over volume or playback sliders" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="tHH-eK-hGm">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <binding destination="Yrj-d0-KaY" name="value" keyPath="values.enableScrollOverSliders" id="OZ8-LF-aNw"/>
+                    </connections>
+                </button>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zSQ-pa-Urx">
                     <rect key="frame" x="56" y="228" width="174" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Seek type:" id="1yb-m4-1sK">
@@ -250,22 +276,6 @@
                         <binding destination="Yrj-d0-KaY" name="selectedTag" keyPath="values.rightClickAction" id="u2V-us-lLK"/>
                     </connections>
                 </popUpButton>
-                <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="tL8-ht-RBh">
-                    <rect key="frame" x="233" y="259" width="247" height="25"/>
-                    <popUpButtonCell key="cell" type="push" title="Seek" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="wcS-tP-wav" id="haA-8R-BiR">
-                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="message"/>
-                        <menu key="menu" id="aEA-Qe-wDM">
-                            <items>
-                                <menuItem title="Seek" state="on" tag="1" id="wcS-tP-wav"/>
-                                <menuItem title="Do nothing" tag="2" id="guu-dK-YfL"/>
-                            </items>
-                        </menu>
-                    </popUpButtonCell>
-                    <connections>
-                        <binding destination="Yrj-d0-KaY" name="selectedTag" keyPath="values.horizontalScrollAction" id="TUh-Bc-5Oz"/>
-                    </connections>
-                </popUpButton>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="OhO-nN-LgD">
                     <rect key="frame" x="56" y="8" width="174" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Middle click to:" id="Gyd-Qt-FEo">
@@ -298,7 +308,7 @@
                     </connections>
                 </popUpButton>
                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="2ma-hh-43h" userLabel="Mouse Image Container View">
-                    <rect key="frame" x="0.0" y="267" width="38" height="43"/>
+                    <rect key="frame" x="0.0" y="291" width="38" height="43"/>
                     <subviews>
                         <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="h4p-a3-cku" userLabel="Mouse Image View">
                             <rect key="frame" x="0.0" y="0.0" width="38" height="43"/>
@@ -326,7 +336,7 @@
                 </textField>
             </subviews>
             <constraints>
-                <constraint firstItem="zSQ-pa-Urx" firstAttribute="top" secondItem="hxT-iF-nwJ" secondAttribute="bottom" constant="22" id="1XW-7y-fJE"/>
+                <constraint firstItem="zSQ-pa-Urx" firstAttribute="top" secondItem="518-30-0zs" secondAttribute="bottom" constant="22" id="1XW-7y-fJE"/>
                 <constraint firstItem="Ltc-ek-XnI" firstAttribute="width" secondItem="VlR-LI-plv" secondAttribute="width" id="1Yd-a0-zwF"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="ZXJ-Ad-DoZ" secondAttribute="trailing" id="3Oj-P1-c1S"/>
                 <constraint firstItem="2rD-uu-WVu" firstAttribute="leading" secondItem="IGA-yr-g8l" secondAttribute="leading" id="4Be-qw-dBO"/>
@@ -363,6 +373,7 @@
                 <constraint firstItem="0Qc-Uz-odw" firstAttribute="baseline" secondItem="IGA-yr-g8l" secondAttribute="baseline" id="Uyv-Gq-cEX"/>
                 <constraint firstItem="hxT-iF-nwJ" firstAttribute="top" secondItem="oVB-QD-c1C" secondAttribute="bottom" constant="8" id="V5N-Ni-OSu"/>
                 <constraint firstItem="2rD-uu-WVu" firstAttribute="top" secondItem="IGA-yr-g8l" secondAttribute="bottom" constant="8" id="W8k-YO-5Qh"/>
+                <constraint firstItem="518-30-0zs" firstAttribute="leading" secondItem="hxT-iF-nwJ" secondAttribute="leading" id="WHh-iV-tFW"/>
                 <constraint firstItem="hVI-sA-syi" firstAttribute="leading" secondItem="m0j-Zw-pcy" secondAttribute="leading" id="ZrL-2T-Jk4"/>
                 <constraint firstAttribute="trailing" secondItem="LN0-rs-jJB" secondAttribute="trailing" id="aqH-aA-ann"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="l7e-jz-0cj" secondAttribute="trailing" id="asT-15-xMc"/>
@@ -391,6 +402,7 @@
                 <constraint firstItem="mdI-b4-54O" firstAttribute="baseline" secondItem="2rD-uu-WVu" secondAttribute="baseline" id="pfD-jn-rps"/>
                 <constraint firstItem="E8B-5D-NHc" firstAttribute="leading" secondItem="hVI-sA-syi" secondAttribute="leading" id="qZC-ch-xVk"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="b09-X3-Mpi" secondAttribute="trailing" id="rbM-h8-sI0"/>
+                <constraint firstItem="518-30-0zs" firstAttribute="top" secondItem="hxT-iF-nwJ" secondAttribute="bottom" constant="8" id="rmT-cQ-y17"/>
                 <constraint firstItem="hxT-iF-nwJ" firstAttribute="leading" secondItem="oVB-QD-c1C" secondAttribute="leading" id="sOu-mG-Job"/>
                 <constraint firstItem="OhO-nN-LgD" firstAttribute="leading" secondItem="2rD-uu-WVu" secondAttribute="leading" id="te6-C6-9nQ"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="0Qc-Uz-odw" secondAttribute="trailing" id="uGB-yu-D3m"/>
