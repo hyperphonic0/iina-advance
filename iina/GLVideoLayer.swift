@@ -14,6 +14,12 @@ class GLVideoLayer: CAOpenGLLayer {
 
   unowned var videoView: VideoView!
 
+  var player: PlayerCore { videoView.player }
+
+  var mpvRenderContext: OpaquePointer?
+
+  var openGLContext: CGLContextObj! = nil
+
   private var bufferDepth: GLint = 8
 
   private let cglContext: CGLContextObj
@@ -28,6 +34,20 @@ class GLVideoLayer: CAOpenGLLayer {
 
   private let asychronousModeLock: Lock
   private var asychronousModeTimer: Timer?
+
+  func displayLinkCallback(
+    _ displayLink: CVDisplayLink, _ inNow: UnsafePointer<CVTimeStamp>,
+    _ inOutputTime: UnsafePointer<CVTimeStamp>,
+    _ flagsIn: CVOptionFlags,
+    _ flagsOut: UnsafeMutablePointer<CVOptionFlags>,
+    _ context: UnsafeMutableRawPointer?) -> CVReturn {
+      let videoView = unsafeBitCast(context, to: VideoView.self)
+      videoView.$isUninited.withLock() { isUninited in
+        guard !isUninited else { return }
+        mpvReportSwap()
+      }
+      return kCVReturnSuccess
+    }
 
   /// To enable `LOG_VIDEO_LAYER`:
   /// 1. In Xcode, go to `iina` project > select `iina` target > Build Settings > search for `Custom Flags` (under `Swift Compiler`)
@@ -102,12 +122,36 @@ class GLVideoLayer: CAOpenGLLayer {
 
   override func copyCGLContext(forPixelFormat pf: CGLPixelFormatObj) -> CGLContextObj { cglContext }
 
+  /// Lock the OpenGL context associated with the mpv renderer and set it to be the current context for this thread.
+  ///
+  /// This method is needed to meet this requirement from `mpv/render.h`:
+  ///
+  /// If the OpenGL backend is used, for all functions the OpenGL context must be "current" in the calling thread, and it must be the
+  /// same OpenGL context as the `mpv_render_context` was created with. Otherwise, undefined behavior will occur.
+  ///
+  /// - Reference: [mpv render.h](https://github.com/mpv-player/mpv/blob/master/libmpv/render.h)
+  /// - Reference: [Concurrency and OpenGL](https://developer.apple.com/library/archive/documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_threading/opengl_threading.html)
+  /// - Reference: [OpenGL Context](https://www.khronos.org/opengl/wiki/OpenGL_Context)
+  /// - Attention: Do not forget to unlock the OpenGL context by calling `unlockOpenGLContext`
+  @discardableResult
+  func lockAndSetOpenGLContext() -> Bool {
+    guard let openGLContext else { return false }
+    CGLLockContext(openGLContext)
+    CGLSetCurrentContext(openGLContext)
+    return true
+  }
+
+  /// Unlock the OpenGL context associated with the mpv renderer.
+  func unlockOpenGLContext() {
+    CGLUnlockContext(openGLContext)
+  }
+
   // MARK: Draw
 
   override func canDraw(inCGLContext ctx: CGLContextObj, pixelFormat pf: CGLPixelFormatObj,
                         forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) -> Bool {
-    guard videoView.lockAndSetOpenGLContext() else { return false }
-    defer { videoView.unlockOpenGLContext() }
+    guard lockAndSetOpenGLContext() else { return false }
+    defer { unlockOpenGLContext() }
     return videoView.$isUninited.withLock { isUninited in
       guard !isUninited else { return false }
 #if LOG_VIDEO_LAYER
@@ -121,7 +165,7 @@ class GLVideoLayer: CAOpenGLLayer {
       //    printStats()
 #endif
       if forceRender { return true }
-      return videoView.shouldRenderUpdateFrame()
+      return shouldRenderUpdateFrame()
     }
   }
 
@@ -129,11 +173,10 @@ class GLVideoLayer: CAOpenGLLayer {
                      forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) {
     assert(DispatchQueue.current == nil || DispatchQueue.current!.qos == DispatchQoS.userInteractive,
            "Unexpected DQ priority for: \(DispatchQueue.current!.label)")
-    videoView.lockAndSetOpenGLContext()
-    defer { videoView.unlockOpenGLContext() }
+    lockAndSetOpenGLContext()
+    defer { unlockOpenGLContext() }
     guard !videoView.isUninited else { return }
 
-    let mpv = videoView.player.mpv!
     needsMPVRender = false
 
     glClear(GLbitfield(GL_COLOR_BUFFER_BIT))
@@ -146,7 +189,7 @@ class GLVideoLayer: CAOpenGLLayer {
     var flip: CInt = 1
 
     withUnsafeMutablePointer(to: &flip) { flip in
-      if let context = videoView.mpvRenderContext {
+      if let context = mpvRenderContext {
         fbo = i != 0 ? i : fbo
 #if LOG_VIDEO_LAYER
         lastWidth = Int32(dims[2])
@@ -226,8 +269,8 @@ class GLVideoLayer: CAOpenGLLayer {
     assert(DispatchQueue.current == nil || DispatchQueue.current!.qos == DispatchQoS.userInteractive,
            "Unexpected DQ priority for: \(DispatchQueue.current!.label)")
     do {
-      guard videoView.lockAndSetOpenGLContext() else { return }
-      defer { videoView.unlockOpenGLContext() }
+      guard lockAndSetOpenGLContext() else { return }
+      defer { unlockOpenGLContext() }
 
       // The properties forceRender and needsMPVRender are always accessed while holding isUninited's
       // lock. This avoids the need for separate locks to avoid data races with these flags. No need
@@ -253,8 +296,8 @@ class GLVideoLayer: CAOpenGLLayer {
     // checked the flags to see if a skip renderer is needed because the OpenGL context must always
     // be locked before locking the isUninited lock to avoid deadlocks. The flags can't be checked
     // without locking isUninited to avoid data races.
-    guard videoView.lockAndSetOpenGLContext() else { return }
-    defer { videoView.unlockOpenGLContext() }
+    guard lockAndSetOpenGLContext() else { return }
+    defer { unlockOpenGLContext() }
     videoView.$isUninited.withLock() { [self] isUninited in
       guard !isUninited else { return }
 
@@ -267,8 +310,8 @@ class GLVideoLayer: CAOpenGLLayer {
       // Neither canDraw nor draw(inCGLContext:) were called by AppKit, needs a skip render.
       // This can happen when IINA is playing in another space, as might occur when just playing
       // audio. See issue #5025.
-      if let renderContext = videoView.mpvRenderContext,
-         videoView.shouldRenderUpdateFrame() {
+      if let renderContext = mpvRenderContext,
+         shouldRenderUpdateFrame() {
         var skip: CInt = 1
         withUnsafeMutablePointer(to: &skip) { skip in
           var params: [mpv_render_param] = [
@@ -279,6 +322,103 @@ class GLVideoLayer: CAOpenGLLayer {
         }
       }
       needsMPVRender = false
+    }
+  }
+
+  /// Initialize the `mpv` renderer.
+  ///
+  /// This method creates and initializes the `mpv` renderer and sets the callback that `mpv` calls when a new video frame is available.
+  ///
+  /// - Note: Advanced control must be enabled for the screenshot command to work when the window flag is used. See issue
+  ///         [#4822](https://github.com/iina/iina/issues/4822) for details.
+  /// Initialize the `mpv` renderer.
+  ///
+  /// This method creates and initializes the `mpv` renderer and sets the callback that `mpv` calls when a new video frame is available.
+  ///
+  /// - Note: Advanced control must be enabled for the screenshot command to work when the window flag is used. See issue
+  ///         [#4822](https://github.com/iina/iina/issues/4822) for details.
+  func initGLRendering() {
+    guard let mpv = player.mpv else {
+      fatalError("initGLRendering() should be called after mpv handle being initialized!")
+    }
+    let apiType = UnsafeMutableRawPointer(mutating: (MPV_RENDER_API_TYPE_OPENGL as NSString).utf8String)
+
+    func mpvGetOpenGLFunc(_ ctx: UnsafeMutableRawPointer?, _ name: UnsafePointer<Int8>?) -> UnsafeMutableRawPointer? {
+      let symbolName: CFString = CFStringCreateWithCString(kCFAllocatorDefault, name, kCFStringEncodingASCII);
+      guard let addr = CFBundleGetFunctionPointerForName(CFBundleGetBundleWithIdentifier(CFStringCreateCopy(kCFAllocatorDefault, "com.apple.opengl" as CFString)), symbolName) else {
+        Logger.fatal("Cannot get OpenGL function pointer!")
+      }
+      return addr
+    }
+
+    func mpvUpdateCallback(_ ctx: UnsafeMutableRawPointer?) {
+      let layer = bridge(ptr: ctx!) as GLVideoLayer
+      layer.drawAsync()
+    }
+
+    var openGLInitParams = mpv_opengl_init_params(get_proc_address: mpvGetOpenGLFunc,
+                                                  get_proc_address_ctx: nil)
+    withUnsafeMutablePointer(to: &openGLInitParams) { openGLInitParams in
+      var advanced: CInt = 1
+      withUnsafeMutablePointer(to: &advanced) { advanced in
+        var params = [
+          mpv_render_param(type: MPV_RENDER_PARAM_API_TYPE, data: apiType),
+          mpv_render_param(type: MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, data: openGLInitParams),
+          mpv_render_param(type: MPV_RENDER_PARAM_ADVANCED_CONTROL, data: advanced),
+          mpv_render_param()
+        ]
+        mpv.chkErr(mpv_render_context_create(&mpvRenderContext, mpv.mpv, &params))
+      }
+      openGLContext = CGLGetCurrentContext()
+      mpv_render_context_set_update_callback(mpvRenderContext!, mpvUpdateCallback, mutableRawPointerOf(obj: self))
+    }
+  }
+
+  func deinitGLRendering() {
+    guard let mpvRenderContext = mpvRenderContext else { return }
+    player.log.verbose("Uninit mpv rendering")
+    mpv_render_context_set_update_callback(mpvRenderContext, nil, nil)
+    mpv_render_context_free(mpvRenderContext)
+    self.mpvRenderContext = nil
+  }
+
+  func mpvReportSwap() {
+    guard let mpvRenderContext = mpvRenderContext else { return }
+    mpv_render_context_report_swap(mpvRenderContext)
+  }
+
+  func shouldRenderUpdateFrame() -> Bool {
+    guard let mpvRenderContext = mpvRenderContext else { return false }
+    guard !player.isStopping else { return false }
+    let flags: UInt64 = mpv_render_context_update(mpvRenderContext)
+    return flags & UInt64(MPV_RENDER_UPDATE_FRAME.rawValue) > 0
+  }
+
+  /// Set an ICC profile for use with the mpv [icc-profile-auto](https://mpv.io/manual/stable/#options-icc-profile-auto)
+  /// option.
+  ///
+  /// This method fulfills the mpv requirement that applications using libmpv with the render API provide the ICC profile via
+  /// `MPV_RENDER_PARAM_ICC_PROFILE` in order for the `--icc-profile-auto` option to work. The ICC profile data will not
+  /// be used by mpv unless the option is enabled.
+  ///
+  /// The IINA `Load ICC profile` setting is tied to the `--icc-profile-auto` option. This allows users to override IINA using
+  /// the [--icc-profile](https://mpv.io/manual/stable/#options-icc-profile) option.
+  func setRenderICCProfile(_ profile: NSColorSpace) {
+    guard let renderContext = mpvRenderContext else { return }
+    guard var iccData = profile.iccProfileData else {
+      let name = profile.localizedName ?? "unnamed"
+      player.log.warn{"Color space \(name) does not contain ICC profile data"}
+      return
+    }
+    iccData.withUnsafeMutableBytes { (ptr: UnsafeMutableRawBufferPointer) in
+      guard let baseAddress = ptr.baseAddress, ptr.count > 0 else { return }
+
+      let u8Ptr = baseAddress.assumingMemoryBound(to: UInt8.self)
+      var icc = mpv_byte_array(data: u8Ptr, size: ptr.count)
+      withUnsafeMutableBytes(of: &icc) { (ptr: UnsafeMutableRawBufferPointer) in
+        let params = mpv_render_param(type: MPV_RENDER_PARAM_ICC_PROFILE, data: ptr.baseAddress)
+        mpv_render_context_set_parameter(renderContext, params)
+      }
     }
   }
 

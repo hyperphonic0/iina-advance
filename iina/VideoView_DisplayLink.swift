@@ -28,13 +28,16 @@ extension VideoView {
   }
 
   func startDisplayLink() {
+    assert(DispatchQueue.isExecutingIn(.main))
     let link = obtainDisplayLink()
 
     guard !CVDisplayLinkIsRunning(link) else { return }
     updateDisplayLink()
 
-    checkResult(CVDisplayLinkSetOutputCallback(link, displayLinkCallback, mutableRawPointerOf(obj: self)),
-                "CVDisplayLinkSetOutputCallback")
+    if let glVideoLayer = layer as? GLVideoLayer {
+      checkResult(CVDisplayLinkSetOutputCallback(link, displayLinkCallback, mutableRawPointerOf(obj: glVideoLayer)),
+                  "CVDisplayLinkSetOutputCallback")
+    }
     checkResult(CVDisplayLinkStart(link), "CVDisplayLinkStart")
     log.verbose("DisplayLink started")
   }
@@ -120,7 +123,8 @@ extension VideoView {
     displayIdleTimer.restart()
   }
 
-  @objc func makeDisplayIdle() {
+  /// Triggered when `displayIdleTimer` times out
+  @objc func displayIdleDidTimeout() {
     videoLayer.exitAsynchronousMode()
     videoLayer.videoView.stopDisplayLink()
   }
@@ -197,16 +201,16 @@ extension VideoView {
   }
 }
 
-fileprivate func displayLinkCallback(
+func displayLinkCallback(
   _ displayLink: CVDisplayLink, _ inNow: UnsafePointer<CVTimeStamp>,
   _ inOutputTime: UnsafePointer<CVTimeStamp>,
   _ flagsIn: CVOptionFlags,
   _ flagsOut: UnsafeMutablePointer<CVOptionFlags>,
   _ context: UnsafeMutableRawPointer?) -> CVReturn {
-    let videoView = unsafeBitCast(context, to: VideoView.self)
-    videoView.$isUninited.withLock() { isUninited in
+    let glVideoLayer = unsafeBitCast(context, to: GLVideoLayer.self)
+    glVideoLayer.videoView.$isUninited.withLock() { isUninited in
       guard !isUninited else { return }
-      videoView.mpvReportSwap()
+      glVideoLayer.mpvReportSwap()
     }
     return kCVReturnSuccess
   }

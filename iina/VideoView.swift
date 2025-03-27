@@ -29,10 +29,6 @@ class VideoView: NSView {
     return layer as! GLVideoLayer
   }
 
-  var mpvRenderContext: OpaquePointer?
-
-  var openGLContext: CGLContextObj! = nil
-
   @Atomic var isUninited = false
 
   // cached indicator to prevent unnecessary updates of DisplayLink
@@ -53,7 +49,7 @@ class VideoView: NSView {
     self.player = player
     super.init(frame: frame)
 
-    displayIdleTimer.action = makeDisplayIdle
+    displayIdleTimer.action = displayIdleDidTimeout
 
     initConstraints()
 
@@ -82,6 +78,7 @@ class VideoView: NSView {
   ///     used to coordinate uninitializing the view so that other threads do not attempt to use the mpv core while it is shutting down.
   func uninit() {
     log.verbose("VideoView uninit start")
+    stopDisplayLink()
     guard lockAndSetOpenGLContext() else { return }
     defer { unlockOpenGLContext() }
     $isUninited.withLock() { [self] isUninited in
@@ -91,8 +88,7 @@ class VideoView: NSView {
       }
       isUninited = true
 
-      stopDisplayLink()
-      deinitGLRendering()
+      videoLayer.deinitGLRendering()
       log.verbose("VideoView uninit done")
     }
   }
@@ -154,87 +150,19 @@ class VideoView: NSView {
   /// Called when property `self.wantsLayer` is set to `true`.
   override func makeBackingLayer() -> CALayer {
     let layer = GLVideoLayer(self)
+    // init mpv render context.
     return layer
   }
 
   func initGLVideo() {
-    log.verbose("Init video")
+    log.verbose("Init OpenGL video")
+    assert(DispatchQueue.isExecutingIn(.main))
 
     /// This will create & add the `GLVideoLayer` if it was not already init:
     wantsLayer = true
+    videoLayer.initGLRendering()
 
-    // init mpv render context.
-    initGLRendering()
     startDisplayLink()
-  }
-
-  /// Initialize the `mpv` renderer.
-  ///
-  /// This method creates and initializes the `mpv` renderer and sets the callback that `mpv` calls when a new video frame is available.
-  ///
-  /// - Note: Advanced control must be enabled for the screenshot command to work when the window flag is used. See issue
-  ///         [#4822](https://github.com/iina/iina/issues/4822) for details.
-  /// Initialize the `mpv` renderer.
-  ///
-  /// This method creates and initializes the `mpv` renderer and sets the callback that `mpv` calls when a new video frame is available.
-  ///
-  /// - Note: Advanced control must be enabled for the screenshot command to work when the window flag is used. See issue
-  ///         [#4822](https://github.com/iina/iina/issues/4822) for details.
-  private func initGLRendering() {
-    guard let mpv = player.mpv else {
-      fatalError("initGLRendering() should be called after mpv handle being initialized!")
-    }
-    let apiType = UnsafeMutableRawPointer(mutating: (MPV_RENDER_API_TYPE_OPENGL as NSString).utf8String)
-
-    func mpvGetOpenGLFunc(_ ctx: UnsafeMutableRawPointer?, _ name: UnsafePointer<Int8>?) -> UnsafeMutableRawPointer? {
-      let symbolName: CFString = CFStringCreateWithCString(kCFAllocatorDefault, name, kCFStringEncodingASCII);
-      guard let addr = CFBundleGetFunctionPointerForName(CFBundleGetBundleWithIdentifier(CFStringCreateCopy(kCFAllocatorDefault, "com.apple.opengl" as CFString)), symbolName) else {
-        Logger.fatal("Cannot get OpenGL function pointer!")
-      }
-      return addr
-    }
-
-    func mpvUpdateCallback(_ ctx: UnsafeMutableRawPointer?) {
-      let layer = bridge(ptr: ctx!) as GLVideoLayer
-      layer.drawAsync()
-    }
-
-    var openGLInitParams = mpv_opengl_init_params(get_proc_address: mpvGetOpenGLFunc,
-                                                  get_proc_address_ctx: nil)
-    withUnsafeMutablePointer(to: &openGLInitParams) { openGLInitParams in
-      var advanced: CInt = 1
-      withUnsafeMutablePointer(to: &advanced) { advanced in
-        var params = [
-          mpv_render_param(type: MPV_RENDER_PARAM_API_TYPE, data: apiType),
-          mpv_render_param(type: MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, data: openGLInitParams),
-          mpv_render_param(type: MPV_RENDER_PARAM_ADVANCED_CONTROL, data: advanced),
-          mpv_render_param()
-        ]
-        mpv.chkErr(mpv_render_context_create(&mpvRenderContext, mpv.mpv, &params))
-      }
-      openGLContext = CGLGetCurrentContext()
-      mpv_render_context_set_update_callback(mpvRenderContext!, mpvUpdateCallback, mutableRawPointerOf(obj: player.videoView.videoLayer))
-    }
-  }
-
-  func deinitGLRendering() {
-    guard let mpvRenderContext = mpvRenderContext else { return }
-    player.log.verbose("Uninit mpv rendering")
-    mpv_render_context_set_update_callback(mpvRenderContext, nil, nil)
-    mpv_render_context_free(mpvRenderContext)
-    self.mpvRenderContext = nil
-  }
-
-  func mpvReportSwap() {
-    guard let mpvRenderContext = mpvRenderContext else { return }
-    mpv_render_context_report_swap(mpvRenderContext)
-  }
-
-  func shouldRenderUpdateFrame() -> Bool {
-    guard let mpvRenderContext = mpvRenderContext else { return false }
-    guard !player.isStopping else { return false }
-    let flags: UInt64 = mpv_render_context_update(mpvRenderContext)
-    return flags & UInt64(MPV_RENDER_UPDATE_FRAME.rawValue) > 0
   }
 
   /// Lock the OpenGL context associated with the mpv renderer and set it to be the current context for this thread.
@@ -250,15 +178,14 @@ class VideoView: NSView {
   /// - Attention: Do not forget to unlock the OpenGL context by calling `unlockOpenGLContext`
   @discardableResult
   func lockAndSetOpenGLContext() -> Bool {
-    guard let openGLContext else { return false }
-    CGLLockContext(openGLContext)
-    CGLSetCurrentContext(openGLContext)
-    return true
+    guard let glVideoLayer = layer as? GLVideoLayer else { return false }
+    return glVideoLayer.lockAndSetOpenGLContext()
   }
 
   /// Unlock the OpenGL context associated with the mpv renderer.
   func unlockOpenGLContext() {
-    CGLUnlockContext(openGLContext)
+    guard let glVideoLayer = layer as? GLVideoLayer else { return }
+    glVideoLayer.unlockOpenGLContext()
   }
 
   // MARK: - Video State
@@ -324,7 +251,7 @@ class VideoView: NSView {
       defer { unlockOpenGLContext() }
       $isUninited.withLock() { [self] isUninited in
         guard !isUninited else { return }
-        setRenderICCProfile(screenColorSpace)
+        videoLayer.setRenderICCProfile(screenColorSpace)
       }
 
     } else {
@@ -348,34 +275,6 @@ class VideoView: NSView {
     player.mpv.setString(MPVOption.GPURendererOptions.toneMapping, "auto")
     player.mpv.setString(MPVOption.GPURendererOptions.toneMappingParam, "default")
     player.mpv.setFlag(MPVOption.Screenshot.screenshotTagColorspace, false)
-  }
-
-  /// Set an ICC profile for use with the mpv [icc-profile-auto](https://mpv.io/manual/stable/#options-icc-profile-auto)
-  /// option.
-  ///
-  /// This method fulfills the mpv requirement that applications using libmpv with the render API provide the ICC profile via
-  /// `MPV_RENDER_PARAM_ICC_PROFILE` in order for the `--icc-profile-auto` option to work. The ICC profile data will not
-  /// be used by mpv unless the option is enabled.
-  ///
-  /// The IINA `Load ICC profile` setting is tied to the `--icc-profile-auto` option. This allows users to override IINA using
-  /// the [--icc-profile](https://mpv.io/manual/stable/#options-icc-profile) option.
-  private func setRenderICCProfile(_ profile: NSColorSpace) {
-    guard let renderContext = mpvRenderContext else { return }
-    guard var iccData = profile.iccProfileData else {
-      let name = profile.localizedName ?? "unnamed"
-      player.log.warn{"Color space \(name) does not contain ICC profile data"}
-      return
-    }
-    iccData.withUnsafeMutableBytes { (ptr: UnsafeMutableRawBufferPointer) in
-      guard let baseAddress = ptr.baseAddress, ptr.count > 0 else { return }
-
-      let u8Ptr = baseAddress.assumingMemoryBound(to: UInt8.self)
-      var icc = mpv_byte_array(data: u8Ptr, size: ptr.count)
-      withUnsafeMutableBytes(of: &icc) { (ptr: UnsafeMutableRawBufferPointer) in
-        let params = mpv_render_param(type: MPV_RENDER_PARAM_ICC_PROFILE, data: ptr.baseAddress)
-        mpv_render_context_set_parameter(renderContext, params)
-      }
-    }
   }
 
   // MARK: - HDR
