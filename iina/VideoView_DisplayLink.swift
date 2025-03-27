@@ -206,7 +206,7 @@ fileprivate func displayLinkCallback(
     let videoView = unsafeBitCast(context, to: VideoView.self)
     videoView.$isUninited.withLock() { isUninited in
       guard !isUninited else { return }
-      videoView.player.mpv.mpvReportSwap()
+      videoView.mpvReportSwap()
     }
     return kCVReturnSuccess
   }

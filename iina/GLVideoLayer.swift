@@ -106,8 +106,8 @@ class GLVideoLayer: CAOpenGLLayer {
 
   override func canDraw(inCGLContext ctx: CGLContextObj, pixelFormat pf: CGLPixelFormatObj,
                         forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) -> Bool {
-    guard videoView.player.mpv.lockAndSetOpenGLContext() else { return false }
-    defer { videoView.player.mpv.unlockOpenGLContext() }
+    guard videoView.lockAndSetOpenGLContext() else { return false }
+    defer { videoView.unlockOpenGLContext() }
     return videoView.$isUninited.withLock { isUninited in
       guard !isUninited else { return false }
 #if LOG_VIDEO_LAYER
@@ -121,7 +121,7 @@ class GLVideoLayer: CAOpenGLLayer {
       //    printStats()
 #endif
       if forceRender { return true }
-      return videoView.player.mpv.shouldRenderUpdateFrame()
+      return videoView.shouldRenderUpdateFrame()
     }
   }
 
@@ -129,8 +129,8 @@ class GLVideoLayer: CAOpenGLLayer {
                      forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) {
     assert(DispatchQueue.current == nil || DispatchQueue.current!.qos == DispatchQoS.userInteractive,
            "Unexpected DQ priority for: \(DispatchQueue.current!.label)")
-    videoView.player.mpv.lockAndSetOpenGLContext()
-    defer { videoView.player.mpv.unlockOpenGLContext() }
+    videoView.lockAndSetOpenGLContext()
+    defer { videoView.unlockOpenGLContext() }
     guard !videoView.isUninited else { return }
 
     let mpv = videoView.player.mpv!
@@ -146,7 +146,7 @@ class GLVideoLayer: CAOpenGLLayer {
     var flip: CInt = 1
 
     withUnsafeMutablePointer(to: &flip) { flip in
-      if let context = mpv.mpvRenderContext {
+      if let context = videoView.mpvRenderContext {
         fbo = i != 0 ? i : fbo
 #if LOG_VIDEO_LAYER
         lastWidth = Int32(dims[2])
@@ -226,8 +226,8 @@ class GLVideoLayer: CAOpenGLLayer {
     assert(DispatchQueue.current == nil || DispatchQueue.current!.qos == DispatchQoS.userInteractive,
            "Unexpected DQ priority for: \(DispatchQueue.current!.label)")
     do {
-      guard videoView.player.mpv.lockAndSetOpenGLContext() else { return }
-      defer { videoView.player.mpv.unlockOpenGLContext() }
+      guard videoView.lockAndSetOpenGLContext() else { return }
+      defer { videoView.unlockOpenGLContext() }
 
       // The properties forceRender and needsMPVRender are always accessed while holding isUninited's
       // lock. This avoids the need for separate locks to avoid data races with these flags. No need
@@ -253,8 +253,8 @@ class GLVideoLayer: CAOpenGLLayer {
     // checked the flags to see if a skip renderer is needed because the OpenGL context must always
     // be locked before locking the isUninited lock to avoid deadlocks. The flags can't be checked
     // without locking isUninited to avoid data races.
-    guard videoView.player.mpv.lockAndSetOpenGLContext() else { return }
-    defer { videoView.player.mpv.unlockOpenGLContext() }
+    guard videoView.lockAndSetOpenGLContext() else { return }
+    defer { videoView.unlockOpenGLContext() }
     videoView.$isUninited.withLock() { [self] isUninited in
       guard !isUninited else { return }
 
@@ -267,8 +267,8 @@ class GLVideoLayer: CAOpenGLLayer {
       // Neither canDraw nor draw(inCGLContext:) were called by AppKit, needs a skip render.
       // This can happen when IINA is playing in another space, as might occur when just playing
       // audio. See issue #5025.
-      if let renderContext = videoView.player.mpv.mpvRenderContext,
-         videoView.player.mpv.shouldRenderUpdateFrame() {
+      if let renderContext = videoView.mpvRenderContext,
+         videoView.shouldRenderUpdateFrame() {
         var skip: CInt = 1
         withUnsafeMutablePointer(to: &skip) { skip in
           var params: [mpv_render_param] = [

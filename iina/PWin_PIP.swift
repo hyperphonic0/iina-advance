@@ -96,8 +96,8 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     showFadeableViews()
 
     do {
-      videoView.player.mpv.lockAndSetOpenGLContext()
-      defer { videoView.player.mpv.unlockOpenGLContext() }
+      videoView.lockAndSetOpenGLContext()
+      defer { videoView.unlockOpenGLContext() }
 
       pip.videoController = NSViewController()
       pip.videoController.view = videoView

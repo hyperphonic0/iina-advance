@@ -664,10 +664,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard let window else { return }
     let isViewportDoneWithInit = loaded
     do {
-      let hasOpenGL = player.mpv.lockAndSetOpenGLContext()
+      let hasOpenGL = videoView.lockAndSetOpenGLContext()
       defer {
         if hasOpenGL {
-          player.mpv.unlockOpenGLContext()
+          videoView.unlockOpenGLContext()
         }
       }
       videoView.$isUninited.withLock() { isUninited in
