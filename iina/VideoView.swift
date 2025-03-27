@@ -94,7 +94,7 @@ class VideoView: NSView {
       isUninited = true
       
       stopDisplayLink()
-      player.mpv.mpvUninitRendering()
+      player.mpv.deinitGLRendering()
       log.verbose("VideoView uninit done")
     }
   }
@@ -155,6 +155,24 @@ class VideoView: NSView {
 
   override func draw(_ dirtyRect: NSRect) {
     // do nothing
+  }
+
+  func forceDraw() {
+    assert(DispatchQueue.isExecutingIn(.main))
+    guard let currentVideoTrack = player.info.currentTrack(.video), currentVideoTrack.id != 0 else {
+      log.verbose("Skipping force video redraw: no video track selected")
+      return
+    }
+    guard player.windowController.loaded, player.isActive, player.info.isPaused || currentVideoTrack.isAlbumart else { return }
+    guard !Preference.bool(for: .isRestoreInProgress) else { return }
+    log.trace("Forcing video redraw")
+    // Does nothing if already active. Will restart idle timer if paused
+    displayActive(temporary: player.info.isPaused)
+    videoLayer.drawAsync(forced: true)
+  }
+
+  func enterAsynchronousMode() {
+    videoLayer.enterAsynchronousMode()
   }
 
   /// Returns `true` if screenScaleFactor changed

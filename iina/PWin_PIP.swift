@@ -137,7 +137,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       }
     }
 
-    forceDraw()
+    videoView.forceDraw()
     player.saveState()
     player.events.emit(.pipChanged, data: true)
   }
@@ -238,7 +238,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       // are paused, because this causes a janky animation in either case but as
       // it's not necessary while the video is playing and significantly more
       // noticeable, we only redraw if we are paused.
-      forceDraw()
+      videoView.forceDraw()
 
       fadeableViews.hideTimer.restart()
 

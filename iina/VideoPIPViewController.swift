@@ -16,7 +16,7 @@ class VideoPIPViewController: PIPViewController {
   /// track is an album art still image then drawing is required.
   private func forceDraw() {
     guard let controller = delegate as? PlayerWindowController else { return }
-    controller.forceDraw()
+    controller.videoView.forceDraw()
   }
 
   /// Force a draw after entering PiP.

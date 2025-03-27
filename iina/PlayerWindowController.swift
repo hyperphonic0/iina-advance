@@ -879,7 +879,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
         updateTitle()
         window?.isExcludedFromWindowsMenu = false
-        forceDraw()  // needed if restoring while paused
+        videoView.forceDraw()  // needed if restoring while paused
       })
 
       let pendingTasks = pendingVideoGeoUpdateTasks
@@ -1214,7 +1214,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func windowDidChangeOcclusionState(_ notification: Notification) {
     log.trace("WindowDidChangeOcclusionState received")
     assert(DispatchQueue.isExecutingIn(.main))
-    forceDraw()
+    videoView.forceDraw()
   }
 
   func colorSpaceDidChange(_ notification: Notification) {
@@ -2444,20 +2444,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   // MARK: - Utility
-
-  func forceDraw() {
-    assert(DispatchQueue.isExecutingIn(.main))
-    guard let currentVideoTrack = player.info.currentTrack(.video), currentVideoTrack.id != 0 else {
-      log.verbose("Skipping force video redraw: no video track selected")
-      return
-    }
-    guard loaded, player.isActive, player.info.isPaused || currentVideoTrack.isAlbumart else { return }
-    guard !Preference.bool(for: .isRestoreInProgress) else { return }
-    log.trace("Forcing video redraw")
-    // Does nothing if already active. Will restart idle timer if paused
-    videoView.displayActive(temporary: player.info.isPaused)
-    videoView.videoLayer.drawAsync(forced: true)
-  }
 
   func setEmptySpaceColor(to newColor: CGColor) {
     guard let window else { return }

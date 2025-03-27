@@ -565,8 +565,6 @@ class PlayerCore: NSObject {
     if isAudioOnly {
       log.debug("Player is audio only. Will not init video or plugins")
     } else {
-      /// This will create & add the `GLVideoLayer` if it was not already init:
-      videoView.wantsLayer = true
       initVideo()
     }
     state = .started
@@ -600,8 +598,11 @@ class PlayerCore: NSObject {
   private func initVideo() {
     log.verbose("Init video")
 
+    /// This will create & add the `GLVideoLayer` if it was not already init:
+    videoView.wantsLayer = true
+
     // init mpv render context.
-    mpv.mpvInitRendering()
+    mpv.initGLRendering()
     videoView.startDisplayLink()
   }
 

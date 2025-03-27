@@ -728,6 +728,8 @@ class MPVController: NSObject {
     }
   }
 
+  // MARK: - OpenGL Rendering
+
   /// Initialize the `mpv` renderer.
   ///
   /// This method creates and initializes the `mpv` renderer and sets the callback that `mpv` calls when a new video frame is available.
@@ -740,11 +742,25 @@ class MPVController: NSObject {
   ///
   /// - Note: Advanced control must be enabled for the screenshot command to work when the window flag is used. See issue
   ///         [#4822](https://github.com/iina/iina/issues/4822) for details.
-  func mpvInitRendering() {
+  func initGLRendering() {
     guard let mpv = mpv else {
-      fatalError("mpvInitRendering() should be called after mpv handle being initialized!")
+      fatalError("initGLRendering() should be called after mpv handle being initialized!")
     }
     let apiType = UnsafeMutableRawPointer(mutating: (MPV_RENDER_API_TYPE_OPENGL as NSString).utf8String)
+
+    func mpvGetOpenGLFunc(_ ctx: UnsafeMutableRawPointer?, _ name: UnsafePointer<Int8>?) -> UnsafeMutableRawPointer? {
+      let symbolName: CFString = CFStringCreateWithCString(kCFAllocatorDefault, name, kCFStringEncodingASCII);
+      guard let addr = CFBundleGetFunctionPointerForName(CFBundleGetBundleWithIdentifier(CFStringCreateCopy(kCFAllocatorDefault, "com.apple.opengl" as CFString)), symbolName) else {
+        Logger.fatal("Cannot get OpenGL function pointer!")
+      }
+      return addr
+    }
+
+    func mpvUpdateCallback(_ ctx: UnsafeMutableRawPointer?) {
+      let layer = bridge(ptr: ctx!) as GLVideoLayer
+      layer.drawAsync()
+    }
+
     var openGLInitParams = mpv_opengl_init_params(get_proc_address: mpvGetOpenGLFunc,
                                                   get_proc_address_ctx: nil)
     withUnsafeMutablePointer(to: &openGLInitParams) { openGLInitParams in
@@ -787,22 +803,12 @@ class MPVController: NSObject {
     CGLUnlockContext(openGLContext)
   }
 
-  func mpvUninitRendering() {
+  func deinitGLRendering() {
     guard let mpvRenderContext = mpvRenderContext else { return }
     player.log.verbose("Uninit mpv rendering")
     mpv_render_context_set_update_callback(mpvRenderContext, nil, nil)
     mpv_render_context_free(mpvRenderContext)
     self.mpvRenderContext = nil
-  }
-
-  func mpvDestroy() {
-    player.log.verbose("Destroying mpv")
-    guard mpv != nil else {
-      log.error("mpvUninitRendering() called but mpv handle is nil!")
-      return
-    }
-    mpv_destroy(mpv)
-    mpv = nil
   }
 
   func mpvReportSwap() {
@@ -816,6 +822,8 @@ class MPVController: NSObject {
     let flags: UInt64 = mpv_render_context_update(mpvRenderContext)
     return flags & UInt64(MPV_RENDER_UPDATE_FRAME.rawValue) > 0
   }
+
+  // MARK: - Shutdown
 
   /// Remove observers for IINA preferences and mpv properties.
   /// - Important: Observers **must** be removed before sending a `quit` command to mpv. Accessing a mpv core after it
@@ -846,7 +854,7 @@ class MPVController: NSObject {
     }
   }
 
-  /// Shutdown this mpv controller.
+  /// Shut down this mpv controller.
   func mpvQuit() {
     player.log.verbose("Quitting mpv")
     // Observers must be removed to avoid accessing the mpv core after it has shutdown.
@@ -854,6 +862,16 @@ class MPVController: NSObject {
     // Start mpv quitting. Even though this command is being sent using the synchronous command API
     // the quit command is special and will be executed by mpv asynchronously.
     command(.quit, level: .verbose)
+  }
+
+  func mpvDestroy() {
+    player.log.verbose("Destroying mpv")
+    guard mpv != nil else {
+      log.error("mpvDestroy() called but mpv handle is nil!")
+      return
+    }
+    mpv_destroy(mpv)
+    mpv = nil
   }
 
   // MARK: - Command & property
@@ -2116,17 +2134,4 @@ class MPVController: NSObject {
   private func isPresent(_ option: String, in userOptions: [[String]]) -> Bool {
     return userOptions.contains { $0.count >= 1 && $0[0] == option }
   }
-}
-
-fileprivate func mpvGetOpenGLFunc(_ ctx: UnsafeMutableRawPointer?, _ name: UnsafePointer<Int8>?) -> UnsafeMutableRawPointer? {
-  let symbolName: CFString = CFStringCreateWithCString(kCFAllocatorDefault, name, kCFStringEncodingASCII);
-  guard let addr = CFBundleGetFunctionPointerForName(CFBundleGetBundleWithIdentifier(CFStringCreateCopy(kCFAllocatorDefault, "com.apple.opengl" as CFString)), symbolName) else {
-    Logger.fatal("Cannot get OpenGL function pointer!")
-  }
-  return addr
-}
-
-fileprivate func mpvUpdateCallback(_ ctx: UnsafeMutableRawPointer?) {
-  let layer = bridge(ptr: ctx!) as GLVideoLayer
-  layer.drawAsync()
 }

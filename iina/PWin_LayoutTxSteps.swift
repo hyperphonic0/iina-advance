@@ -48,7 +48,7 @@ extension PlayerWindowController {
 
     guard let window = window else { return }
 
-    videoView.videoLayer.enterAsynchronousMode()
+    videoView.enterAsynchronousMode()
 
     if transition.outputLayout.isInteractiveMode || transition.outputLayout.isFullScreen {
       // Disable; can cause problems in interactive mode. Set this ASAP because there is sometimes a small delay
@@ -163,7 +163,7 @@ extension PlayerWindowController {
     }
 
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
-      forceDraw()
+      videoView.forceDraw()
     }
   }
 
@@ -415,7 +415,7 @@ extension PlayerWindowController {
     }
 
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
-      forceDraw()
+      videoView.forceDraw()
     }
   }
 
@@ -908,7 +908,7 @@ extension PlayerWindowController {
     playSlider.needsDisplay = true
 
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
-      forceDraw()
+      videoView.forceDraw()
     }
   }  /// end `updateHiddenViewsAndConstraints`
 
@@ -1080,7 +1080,7 @@ extension PlayerWindowController {
     }
 
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
-      forceDraw()
+      videoView.forceDraw()
     }
   }
 
@@ -1290,7 +1290,7 @@ extension PlayerWindowController {
 
     if !transition.isWindowInitialLayout {
       window.layoutIfNeeded()
-      forceDraw()
+      videoView.forceDraw()
 
       // Do not run sanity checks for initial layout, because in that case all task funcs combined into a single
       // animation task, which means that frames will not be updated yet & can't be measured correctly

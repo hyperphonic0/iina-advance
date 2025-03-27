@@ -52,7 +52,7 @@ extension PlayerWindowController {
 
   func resizeWindowSubviews(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     defer {
-      forceDraw()  // needed if scaling to get a clearer image
+      videoView.forceDraw()  // needed if scaling to get a clearer image
     }
 
     let currentLayout = currentLayout
@@ -61,7 +61,7 @@ extension PlayerWindowController {
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
     log.verbose{"[WinWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)"}
 
-    videoView.videoLayer.enterAsynchronousMode()
+    videoView.enterAsynchronousMode()
 
     if lockViewportToVideoSize && inLiveResize {
       /// Notes on the trickiness of live window resize:
@@ -162,7 +162,7 @@ extension PlayerWindowController {
   /// Can be used in windowed or full screen modes.
   /// Can be used in music mode only if playlist is hidden.
   func resizeWindowImmediately(using newGeometry: PWinGeometry? = nil) {
-    videoView.videoLayer.enterAsynchronousMode()
+    videoView.enterAsynchronousMode()
 
     CATransaction.begin()
     CATransaction.setDisableActions(true)
@@ -208,7 +208,7 @@ extension PlayerWindowController {
 
   /// Resizes *only* the subviews in the window, not the window frame. Updates other state needed when resizing window.
   func resizeWindowSubviews(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
-    videoView.videoLayer.enterAsynchronousMode()
+    videoView.enterAsynchronousMode()
     if updateVideoView {
       // Not sure if this helps fix the aspect constraint transition
       videoView.apply(newGeometry)
@@ -802,7 +802,7 @@ extension PlayerWindowController {
 
     tasks.append(.instantTask{ [self] in
       isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
-      videoView.videoLayer.enterAsynchronousMode()
+      videoView.enterAsynchronousMode()
 
       assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
 
@@ -898,7 +898,7 @@ extension PlayerWindowController {
 
         // Need to force draw if window was restored while paused + video hidden
         if outputGeo.isVideoVisible {
-          forceDraw()
+          videoView.forceDraw()
         }
       })
     }
@@ -945,7 +945,7 @@ extension PlayerWindowController {
     let geometry = geometry.refitted()  // enforces internal constraints, and constrains to screen
     log.verbose{"Applying \(geometry), setFrame=\(setFrame.yn) updateCache=\(updateCache.yn)"}
 
-    videoView.videoLayer.enterAsynchronousMode()
+    videoView.enterAsynchronousMode()
 
     // This is only needed to achieve "fade-in" effect when opening window:
     updateWindowBorderAndOpacity()
