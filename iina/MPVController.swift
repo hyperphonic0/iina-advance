@@ -150,58 +150,6 @@ class MPVController: NSObject {
     removeOptionObservers()
   }
 
-  /// Returns true if mpv's state has fallen behind the current user intention and it is currently operating on an entry
-  /// which IINA doesn't care about anymore.
-  ///
-  /// mpv's `playlist-current-pos` tracks the lifecycle of a playlist entry from start to end.
-  /// Should not be confused with `playlist-playing-pos`, which is used for the "playing" highlighted row in the playlist.
-  func isStale() -> Bool {
-    assert(DispatchQueue.isExecutingIn(queue))
-    let mpv = getInt(MPVProperty.playlistCurrentPos)
-    guard let iina = player.info.currentPlayback?.playlistPos else {
-      // Note: not current if both are nil
-      player.log.verbose("The current playlistPos from mpv (\(mpv)) is stale because there should be no media loaded")
-      return true
-    }
-    let isStale = mpv != iina
-    player.log.verbose("IINA \(iina), mpv \(mpv) → isStale=\(isStale.yesno)")
-    return isStale
-  }
-
-  func updateKeepOpenOptionFromPrefs() {
-    setUserOption(PK.keepOpenOnFileEnd, type: .other, forName: MPVOption.Window.keepOpen,
-                  sync: false, level: .verbose) { key in
-      let keepOpen = Preference.bool(for: PK.keepOpenOnFileEnd)
-      let keepOpenPl = !Preference.bool(for: PK.playlistAutoPlayNext)
-      return keepOpenPl ? "always" : (keepOpen ? Constants.String.mpvYes : Constants.String.mpvNo)
-    }
-
-    setUserOption(PK.playlistAutoPlayNext, type: .other, forName: MPVOption.Window.keepOpen,
-                  sync: false, level: .verbose) { key in
-      let keepOpen = Preference.bool(for: PK.keepOpenOnFileEnd)
-      let keepOpenPl = !Preference.bool(for: PK.playlistAutoPlayNext)
-      return keepOpenPl ? "always" : (keepOpen ? Constants.String.mpvYes : Constants.String.mpvNo)
-    }
-  }
-
-  func updateUsingMpvOSDFromPrefs() {
-    queue.async { [self] in
-      _updateUsingMpvOSDFromPrefs()
-    }
-  }
-
-  func _updateUsingMpvOSDFromPrefs() {
-    let useMpvOSD = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
-    player.isUsingMpvOSD = useMpvOSD
-    if useMpvOSD {
-      // If using mpv OSD, then disable IINA's OSD
-      player.hideOSD()
-    } else {
-      // Otherwise disable mpv OSD
-      chkErr(mpv_set_option_string(mpv, MPVOption.OSD.osdLevel, "0"))
-    }
-  }
-
   // MARK: - Shutdown
 
   /// Remove observers for IINA preferences and mpv properties.
@@ -616,6 +564,58 @@ class MPVController: NSObject {
     let providerRef = CGDataProvider(data: NSData(bytes: pixelArray, length: pixelArray.count))!
     let cgImage = CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 4 * 8, bytesPerRow: width * 4, space: rgbColorSpace, bitmapInfo: bitmapInfo, provider: providerRef, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
     return NSImage(cgImage: cgImage!, size: NSSize(width: width, height: height))
+  }
+
+  /// Returns true if mpv's state has fallen behind the current user intention and it is currently operating on an entry
+  /// which IINA doesn't care about anymore.
+  ///
+  /// mpv's `playlist-current-pos` tracks the lifecycle of a playlist entry from start to end.
+  /// Should not be confused with `playlist-playing-pos`, which is used for the "playing" highlighted row in the playlist.
+  func isStale() -> Bool {
+    assert(DispatchQueue.isExecutingIn(queue))
+    let mpv = getInt(MPVProperty.playlistCurrentPos)
+    guard let iina = player.info.currentPlayback?.playlistPos else {
+      // Note: not current if both are nil
+      player.log.verbose("The current playlistPos from mpv (\(mpv)) is stale because there should be no media loaded")
+      return true
+    }
+    let isStale = mpv != iina
+    player.log.verbose("IINA \(iina), mpv \(mpv) → isStale=\(isStale.yesno)")
+    return isStale
+  }
+
+  func updateKeepOpenOptionFromPrefs() {
+    setUserOption(PK.keepOpenOnFileEnd, type: .other, forName: MPVOption.Window.keepOpen,
+                  sync: false, level: .verbose) { key in
+      let keepOpen = Preference.bool(for: PK.keepOpenOnFileEnd)
+      let keepOpenPl = !Preference.bool(for: PK.playlistAutoPlayNext)
+      return keepOpenPl ? "always" : (keepOpen ? Constants.String.mpvYes : Constants.String.mpvNo)
+    }
+
+    setUserOption(PK.playlistAutoPlayNext, type: .other, forName: MPVOption.Window.keepOpen,
+                  sync: false, level: .verbose) { key in
+      let keepOpen = Preference.bool(for: PK.keepOpenOnFileEnd)
+      let keepOpenPl = !Preference.bool(for: PK.playlistAutoPlayNext)
+      return keepOpenPl ? "always" : (keepOpen ? Constants.String.mpvYes : Constants.String.mpvNo)
+    }
+  }
+
+  func updateUsingMpvOSDFromPrefs() {
+    queue.async { [self] in
+      _updateUsingMpvOSDFromPrefs()
+    }
+  }
+
+  func _updateUsingMpvOSDFromPrefs() {
+    let useMpvOSD = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
+    player.isUsingMpvOSD = useMpvOSD
+    if useMpvOSD {
+      // If using mpv OSD, then disable IINA's OSD
+      player.hideOSD()
+    } else {
+      // Otherwise disable mpv OSD
+      chkErr(mpv_set_option_string(mpv, MPVOption.OSD.osdLevel, "0"))
+    }
   }
 
   // MARK: - Thumbfast
