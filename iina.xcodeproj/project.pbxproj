@@ -354,6 +354,7 @@
 		D1A8878C29D16452000D1AE4 /* RotGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */; };
 		D1A8878E29D1696C000D1AE4 /* PWin_Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */; };
 		D1ACFDC92D93637F00F45712 /* MetalVideoLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDC82D93637A00F45712 /* MetalVideoLayer.swift */; };
+		D1ACFDCB2D9675DD00F45712 /* MPV_Init.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */; };
 		D1AD325A2ACC078600F86EE8 /* LayoutState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AD32592ACC078600F86EE8 /* LayoutState.swift */; };
 		D1AD325C2ACC07E500F86EE8 /* LayoutTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */; };
 		D1AE04CE2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */; };
@@ -1895,6 +1896,7 @@
 		D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotGestureHandler.swift; sourceTree = "<group>"; };
 		D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Sidebar.swift; sourceTree = "<group>"; };
 		D1ACFDC82D93637A00F45712 /* MetalVideoLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalVideoLayer.swift; sourceTree = "<group>"; };
+		D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPV_Init.swift; sourceTree = "<group>"; };
 		D1AD32592ACC078600F86EE8 /* LayoutState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutState.swift; sourceTree = "<group>"; };
 		D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutTransition.swift; sourceTree = "<group>"; };
 		D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_LayoutTxBuilder.swift; sourceTree = "<group>"; };
@@ -2961,6 +2963,7 @@
 		D1D736172989693A000EB5F4 /* Player */ = {
 			isa = PBXGroup;
 			children = (
+				D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */,
 				84A0BA961D2FA1CE00BC8DA1 /* PlayerCore.swift */,
 				D19247FC2BC634D3003BEEE8 /* PlayerCrop.swift */,
 				84A0BA981D2FAAA700BC8DA1 /* MPVController.swift */,
@@ -3396,6 +3399,7 @@
 				D1049C892872CAD6003D47C1 /* ConfTableState.swift in Sources */,
 				E3958565253133E80096811F /* SidebarTabView.swift in Sources */,
 				D1B492E62AA0BB9A00212E9C /* MagGestureHandler.swift in Sources */,
+				D1ACFDCB2D9675DD00F45712 /* MPV_Init.swift in Sources */,
 				E3C12F6B201F281F00297964 /* FirstRunManager.swift in Sources */,
 				84EB1F071D2F5E76004FA5A1 /* Utility.swift in Sources */,
 				84D0FB7E1F5E519300C6A6A7 /* FreeSelectingViewController.swift in Sources */,

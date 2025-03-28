@@ -40,7 +40,7 @@ extension PlayerWindowController {
     window.initialFirstResponder = nil
 
     window.minSize = Constants.WindowedMode.minWindowSize
-    contentView.idString = "WndCV"
+    contentView.idString = "PWinCV"
 
     leftTimeLabel.mode = .current
     rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration

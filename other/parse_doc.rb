@@ -3,7 +3,8 @@
 require 'nokogiri'
 require 'open-uri'
 
-DOC_URL = "https://mpv.io/manual/stable/"
+# This no longer works the public URL. Need to generate HTML 4 from the Git source; see below.
+#DOC_URL = "https://mpv.io/manual/stable/"
 
 class String
   def to_camel
@@ -11,7 +12,11 @@ class String
   end
 end
 
-doc = Nokogiri::HTML URI.open(DOC_URL)
+#doc = Nokogiri::HTML URI.open(DOC_URL)
+
+# In Terminal, first convert the RST to HTML:
+# rst2html4 ${MPV_PROJECT_ROOT}/DOCS/man/mpv.rst > mpv.html
+doc = File.open(File.join(__dir__, 'mpv.html')) { |f| Nokogiri::HTML(f) }
 
 # property
 
