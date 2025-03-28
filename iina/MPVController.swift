@@ -53,6 +53,7 @@ extension mpv_event_end_file {
 // Global functions
 
 class MPVController: NSObject {
+  // Cached for prefs display. TODO: use ad hoc call using demo player instead
   static var watchLaterOptions: String = ""
 
   struct UserData {
@@ -60,77 +61,25 @@ class MPVController: NSObject {
     static let screenshotRaw: UInt64 = 1000001
   }
 
-  // The mpv_handle
+  /// The mpv_handle
   var mpv: OpaquePointer!
 
   var mpvVersion: String!
 
-  var queue: DispatchQueue
-
-  static func createQueue(playerLabel: String) -> DispatchQueue {
-    return DispatchQueue.newDQ(label: "com.colliderli.iina.controller.\(playerLabel)", qos: .userInitiated)
-  }
+  /// The DispatchQueue which is used to process events & (ideally) should be used to send all mpv commands.
+  let queue: DispatchQueue
 
   unowned let player: PlayerCore
+  let mpvLogScanner: MPVLogScanner!
 
   var needRecordSeekTime: Bool = false
   var recordedSeekStartTime: CFTimeInterval = 0
   var recordedSeekTimeListener: ((Double) -> Void)?
 
-  let mpvLogScanner: MPVLogScanner!
-
   @Atomic var hooks: [UInt64: MPVHookValue] = [:]
   private var hookCounter: UInt64 = 1
 
-  let observeProperties: [String: mpv_format] = [
-    MPVProperty.trackList: MPV_FORMAT_NONE,
-    MPVProperty.vf: MPV_FORMAT_NONE,
-    MPVProperty.af: MPV_FORMAT_NONE,
-    MPVOption.Video.videoAspectOverride: MPV_FORMAT_NONE,
-    MPVOption.TrackSelection.vid: MPV_FORMAT_INT64,
-    MPVOption.TrackSelection.aid: MPV_FORMAT_INT64,
-    MPVOption.TrackSelection.sid: MPV_FORMAT_INT64,
-    MPVOption.Subtitles.secondarySid: MPV_FORMAT_INT64,
-    MPVOption.PlaybackControl.pause: MPV_FORMAT_FLAG,
-    MPVOption.PlaybackControl.loopPlaylist: MPV_FORMAT_STRING,
-    MPVOption.PlaybackControl.loopFile: MPV_FORMAT_STRING,
-    MPVOption.OSD.osdLevel: MPV_FORMAT_INT64,
-    MPVProperty.chapter: MPV_FORMAT_INT64,
-    MPVOption.Video.deinterlace: MPV_FORMAT_FLAG,
-    MPVOption.Video.hwdec: MPV_FORMAT_STRING,
-    MPVOption.Video.videoRotate: MPV_FORMAT_INT64,
-    MPVOption.Audio.mute: MPV_FORMAT_FLAG,
-    MPVOption.Audio.volume: MPV_FORMAT_DOUBLE,
-    MPVOption.Audio.audioDelay: MPV_FORMAT_DOUBLE,
-    MPVOption.PlaybackControl.speed: MPV_FORMAT_DOUBLE,
-    MPVOption.Subtitles.secondarySubVisibility: MPV_FORMAT_FLAG,
-    MPVOption.Subtitles.secondarySubDelay: MPV_FORMAT_DOUBLE,
-    MPVOption.Subtitles.secondarySubPos: MPV_FORMAT_DOUBLE,
-    MPVOption.Subtitles.subDelay: MPV_FORMAT_DOUBLE,
-    MPVOption.Subtitles.subPos: MPV_FORMAT_DOUBLE,
-    MPVOption.Subtitles.subColor: MPV_FORMAT_STRING,
-    MPVOption.Subtitles.subFont: MPV_FORMAT_STRING,
-    MPVOption.Subtitles.subFontSize: MPV_FORMAT_INT64,
-    MPVOption.Subtitles.subBold: MPV_FORMAT_FLAG,
-    MPVOption.Subtitles.subBorderColor: MPV_FORMAT_STRING,
-    MPVOption.Subtitles.subBorderSize: MPV_FORMAT_INT64,
-    MPVOption.Subtitles.subBackColor: MPV_FORMAT_STRING,
-    MPVOption.Subtitles.subScale: MPV_FORMAT_DOUBLE,
-    MPVOption.Subtitles.subVisibility: MPV_FORMAT_FLAG,
-    MPVOption.Equalizer.contrast: MPV_FORMAT_INT64,
-    MPVOption.Equalizer.brightness: MPV_FORMAT_INT64,
-    MPVOption.Equalizer.gamma: MPV_FORMAT_INT64,
-    MPVOption.Equalizer.hue: MPV_FORMAT_INT64,
-    MPVOption.Equalizer.saturation: MPV_FORMAT_INT64,
-    MPVOption.Window.fullscreen: MPV_FORMAT_FLAG,
-    MPVOption.Window.ontop: MPV_FORMAT_FLAG,
-    MPVOption.Window.windowScale: MPV_FORMAT_DOUBLE,
-    MPVProperty.mediaTitle: MPV_FORMAT_STRING,
-    MPVProperty.videoParamsRotate: MPV_FORMAT_INT64,
-    MPVProperty.videoParamsPrimaries: MPV_FORMAT_STRING,
-    MPVProperty.videoParamsGamma: MPV_FORMAT_STRING,
-    MPVProperty.idleActive: MPV_FORMAT_FLAG
-  ]
+  var thumbfastInfo: ThumbfastInfo?
 
   var log: Logger.Subsystem { mpvLogScanner.mpvLogSubsystem }
 
@@ -139,7 +88,7 @@ class MPVController: NSObject {
   ///   - playerCore: The player this `MPVController` will be associated with.
   init(playerCore: PlayerCore) {
     self.player = playerCore
-    self.queue = MPVController.createQueue(playerLabel: playerCore.label)
+    self.queue = DispatchQueue.newDQ(label: "com.iina-advance.mpv.\(playerCore.label)", qos: .userInitiated)
     self.mpvLogScanner = MPVLogScanner(player: playerCore)
     super.init()
   }
@@ -644,8 +593,6 @@ class MPVController: NSObject {
       }
     }
   }
-
-  var thumbfastInfo: ThumbfastInfo?
 
   /// Sends a message to the thumbfast script to show a thumbnail with the given timestamp at the given coordinates.
   func showThumbfast(hoveredSecs: Double, x: Double, y: Double) {

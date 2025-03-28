@@ -34,7 +34,7 @@ class JavascriptAPIEvent: JavascriptAPI, JavascriptAPIEventExportable {
       return nil
     }
     let eventName = String(splitted[1])
-    if isMpv && isPropertyChangedListener && player!.mpv.observeProperties[eventName] == nil {
+    if isMpv && isPropertyChangedListener && MPVController.observeProperties[eventName] == nil {
       player!.mpv.observe(property: eventName)
     }
     let name = EventController.Name(event)

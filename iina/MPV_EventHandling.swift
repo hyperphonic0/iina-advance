@@ -8,6 +8,69 @@
 fileprivate let logEvents = false
 
 extension MPVController {
+  static let observeProperties: [String: mpv_format] = [
+    MPVProperty.trackList: MPV_FORMAT_NONE,
+    MPVProperty.vf: MPV_FORMAT_NONE,
+    MPVProperty.af: MPV_FORMAT_NONE,
+    MPVOption.Video.videoAspectOverride: MPV_FORMAT_NONE,
+    MPVOption.TrackSelection.vid: MPV_FORMAT_INT64,
+    MPVOption.TrackSelection.aid: MPV_FORMAT_INT64,
+    MPVOption.TrackSelection.sid: MPV_FORMAT_INT64,
+    MPVOption.Subtitles.secondarySid: MPV_FORMAT_INT64,
+    MPVOption.PlaybackControl.pause: MPV_FORMAT_FLAG,
+    MPVOption.PlaybackControl.loopPlaylist: MPV_FORMAT_STRING,
+    MPVOption.PlaybackControl.loopFile: MPV_FORMAT_STRING,
+    MPVOption.OSD.osdLevel: MPV_FORMAT_INT64,
+    MPVProperty.chapter: MPV_FORMAT_INT64,
+    MPVOption.Video.deinterlace: MPV_FORMAT_FLAG,
+    MPVOption.Video.hwdec: MPV_FORMAT_STRING,
+    MPVOption.Video.videoRotate: MPV_FORMAT_INT64,
+    MPVOption.Audio.mute: MPV_FORMAT_FLAG,
+    MPVOption.Audio.volume: MPV_FORMAT_DOUBLE,
+    MPVOption.Audio.audioDelay: MPV_FORMAT_DOUBLE,
+    MPVOption.PlaybackControl.speed: MPV_FORMAT_DOUBLE,
+    MPVOption.Subtitles.secondarySubVisibility: MPV_FORMAT_FLAG,
+    MPVOption.Subtitles.secondarySubDelay: MPV_FORMAT_DOUBLE,
+    MPVOption.Subtitles.secondarySubPos: MPV_FORMAT_DOUBLE,
+    MPVOption.Subtitles.subDelay: MPV_FORMAT_DOUBLE,
+    MPVOption.Subtitles.subPos: MPV_FORMAT_DOUBLE,
+    MPVOption.Subtitles.subColor: MPV_FORMAT_STRING,
+    MPVOption.Subtitles.subFont: MPV_FORMAT_STRING,
+    MPVOption.Subtitles.subFontSize: MPV_FORMAT_INT64,
+    MPVOption.Subtitles.subBold: MPV_FORMAT_FLAG,
+    MPVOption.Subtitles.subBorderColor: MPV_FORMAT_STRING,
+    MPVOption.Subtitles.subBorderSize: MPV_FORMAT_INT64,
+    MPVOption.Subtitles.subBackColor: MPV_FORMAT_STRING,
+    MPVOption.Subtitles.subScale: MPV_FORMAT_DOUBLE,
+    MPVOption.Subtitles.subVisibility: MPV_FORMAT_FLAG,
+    MPVOption.Equalizer.contrast: MPV_FORMAT_INT64,
+    MPVOption.Equalizer.brightness: MPV_FORMAT_INT64,
+    MPVOption.Equalizer.gamma: MPV_FORMAT_INT64,
+    MPVOption.Equalizer.hue: MPV_FORMAT_INT64,
+    MPVOption.Equalizer.saturation: MPV_FORMAT_INT64,
+    MPVOption.Window.fullscreen: MPV_FORMAT_FLAG,
+    MPVOption.Window.ontop: MPV_FORMAT_FLAG,
+    MPVOption.Window.windowScale: MPV_FORMAT_DOUBLE,
+    MPVProperty.mediaTitle: MPV_FORMAT_STRING,
+    MPVProperty.videoParamsRotate: MPV_FORMAT_INT64,
+    MPVProperty.videoParamsPrimaries: MPV_FORMAT_STRING,
+    MPVProperty.videoParamsGamma: MPV_FORMAT_STRING,
+    MPVProperty.idleActive: MPV_FORMAT_FLAG
+  ]
+
+  func addEventCallbacks() {
+    // Set a custom function that should be called when there are new events.
+    mpv_set_wakeup_callback(self.mpv, { (ctx) in
+      let mpvController = unsafeBitCast(ctx, to: MPVController.self)
+      mpvController.readEvents()
+    }, mutableRawPointerOf(obj: self))
+    
+    // Observe properties.
+    MPVController.observeProperties.forEach { (k, v) in
+      mpv_observe_property(mpv, 0, k, v)
+    }
+  }
+
 
   /// As events arrive, read one at a time & handle it async
   func readEvents() {

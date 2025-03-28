@@ -318,16 +318,7 @@ extension MPVController {
     // Request tick event.
     // chkErr(mpv_request_event(mpv, MPV_EVENT_TICK, 1))
 
-    // Set a custom function that should be called when there are new events.
-    mpv_set_wakeup_callback(self.mpv, { (ctx) in
-      let mpvController = unsafeBitCast(ctx, to: MPVController.self)
-      mpvController.readEvents()
-    }, mutableRawPointerOf(obj: self))
-
-    // Observe properties.
-    observeProperties.forEach { (k, v) in
-      mpv_observe_property(mpv, 0, k, v)
-    }
+    addEventCallbacks()
 
     // Initialize an uninitialized mpv instance. If the mpv instance is already running, an error is returned.
     chkErr(mpv_initialize(mpv))
