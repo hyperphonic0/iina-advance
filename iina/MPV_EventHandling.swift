@@ -9,7 +9,7 @@ fileprivate let logEvents = false
 
 extension MPVController {
 
-  /// Read event and handle it async
+  /// As events arrive, read one at a time & handle it async
   func readEvents() {
     queue.async {
       while ((self.mpv) != nil) {
@@ -28,7 +28,7 @@ extension MPVController {
     }
   }
 
-  // Handle the event
+  /// Process the event
   private func handleEvent(_ event: UnsafePointer<mpv_event>!) {
     let eventId: mpv_event_id = event.pointee.event_id
     if logEvents && Logger.isEnabled(.verbose) {
@@ -36,6 +36,12 @@ extension MPVController {
     }
 
     switch eventId {
+    case MPV_EVENT_PROPERTY_CHANGE:
+      let dataOpaquePtr = OpaquePointer(event.pointee.data)
+      if let property = UnsafePointer<mpv_event_property>(dataOpaquePtr)?.pointee {
+        handlePropertyChange(property)
+      }
+
     case MPV_EVENT_CLIENT_MESSAGE:
       let dataOpaquePtr = OpaquePointer(event.pointee.data)
       let msg = UnsafeMutablePointer<mpv_event_client_message>(dataOpaquePtr)
@@ -79,13 +85,8 @@ extension MPVController {
         mpv_hook_continue(self.mpv, hookID)
       }
 
-    case MPV_EVENT_PROPERTY_CHANGE:
-      let dataOpaquePtr = OpaquePointer(event.pointee.data)
-      if let property = UnsafePointer<mpv_event_property>(dataOpaquePtr)?.pointee {
-        handlePropertyChange(property)
-      }
-
-    case MPV_EVENT_AUDIO_RECONFIG: break
+    case MPV_EVENT_AUDIO_RECONFIG:
+      break
 
     case MPV_EVENT_VIDEO_RECONFIG:
       break

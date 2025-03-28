@@ -8,22 +8,7 @@
 
 import VideoToolbox
 
-/// Map from mpv codec name to core media video codec types.
-///
-/// This map only contains the mpv codecs `adjustCodecWhiteList` can remove from the mpv `hwdec-codecs` option.
-/// If any codec types are added then `HardwareDecodeCapabilities` will need to be updated to support them.
-fileprivate let mpvCodecToCodecTypes: [String: [CMVideoCodecType]] = [
-  "av1": [kCMVideoCodecType_AV1],
-  "prores": [kCMVideoCodecType_AppleProRes422, kCMVideoCodecType_AppleProRes422HQ,
-             kCMVideoCodecType_AppleProRes422LT, kCMVideoCodecType_AppleProRes422Proxy,
-             kCMVideoCodecType_AppleProRes4444, kCMVideoCodecType_AppleProRes4444XQ,
-             kCMVideoCodecType_AppleProResRAW, kCMVideoCodecType_AppleProResRAWHQ],
-  "vp9": [kCMVideoCodecType_VP9]
-]
-
-// Contains mpv init
 extension MPVController {
-
   /**
    Init the mpv context, set options
    */
@@ -534,3 +519,16 @@ extension MPVController {
   }
 
 }
+
+/// Map from mpv codec name to core media video codec types.
+///
+/// This map only contains the mpv codecs `adjustCodecWhiteList` can remove from the mpv `hwdec-codecs` option.
+/// If any codec types are added then `HardwareDecodeCapabilities` will need to be updated to support them.
+fileprivate let mpvCodecToCodecTypes: [String: [CMVideoCodecType]] = [
+  "av1": [kCMVideoCodecType_AV1],
+  "prores": [kCMVideoCodecType_AppleProRes422, kCMVideoCodecType_AppleProRes422HQ,
+             kCMVideoCodecType_AppleProRes422LT, kCMVideoCodecType_AppleProRes422Proxy,
+             kCMVideoCodecType_AppleProRes4444, kCMVideoCodecType_AppleProRes4444XQ,
+             kCMVideoCodecType_AppleProResRAW, kCMVideoCodecType_AppleProResRAWHQ],
+  "vp9": [kCMVideoCodecType_VP9]
+]
