@@ -170,14 +170,14 @@ class MPVController: NSObject {
 
   func updateKeepOpenOptionFromPrefs() {
     setUserOption(PK.keepOpenOnFileEnd, type: .other, forName: MPVOption.Window.keepOpen,
-                  level: .verbose) { key in
+                  sync: false, level: .verbose) { key in
       let keepOpen = Preference.bool(for: PK.keepOpenOnFileEnd)
       let keepOpenPl = !Preference.bool(for: PK.playlistAutoPlayNext)
       return keepOpenPl ? "always" : (keepOpen ? Constants.String.mpvYes : Constants.String.mpvNo)
     }
 
     setUserOption(PK.playlistAutoPlayNext, type: .other, forName: MPVOption.Window.keepOpen,
-                  level: .verbose) { key in
+                  sync: false, level: .verbose) { key in
       let keepOpen = Preference.bool(for: PK.keepOpenOnFileEnd)
       let keepOpenPl = !Preference.bool(for: PK.playlistAutoPlayNext)
       return keepOpenPl ? "always" : (keepOpen ? Constants.String.mpvYes : Constants.String.mpvNo)
