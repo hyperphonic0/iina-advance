@@ -355,6 +355,7 @@
 		D1A8878E29D1696C000D1AE4 /* PWin_Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */; };
 		D1ACFDC92D93637F00F45712 /* MetalVideoLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDC82D93637A00F45712 /* MetalVideoLayer.swift */; };
 		D1ACFDCB2D9675DD00F45712 /* MPV_Init.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */; };
+		D1ACFDCD2D967FAD00F45712 /* MPV_EventHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDCC2D967FA700F45712 /* MPV_EventHandling.swift */; };
 		D1AD325A2ACC078600F86EE8 /* LayoutState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AD32592ACC078600F86EE8 /* LayoutState.swift */; };
 		D1AD325C2ACC07E500F86EE8 /* LayoutTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */; };
 		D1AE04CE2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */; };
@@ -1897,6 +1898,7 @@
 		D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Sidebar.swift; sourceTree = "<group>"; };
 		D1ACFDC82D93637A00F45712 /* MetalVideoLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalVideoLayer.swift; sourceTree = "<group>"; };
 		D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPV_Init.swift; sourceTree = "<group>"; };
+		D1ACFDCC2D967FA700F45712 /* MPV_EventHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPV_EventHandling.swift; sourceTree = "<group>"; };
 		D1AD32592ACC078600F86EE8 /* LayoutState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutState.swift; sourceTree = "<group>"; };
 		D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutTransition.swift; sourceTree = "<group>"; };
 		D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_LayoutTxBuilder.swift; sourceTree = "<group>"; };
@@ -2967,6 +2969,7 @@
 				D19247FC2BC634D3003BEEE8 /* PlayerCrop.swift */,
 				84A0BA981D2FAAA700BC8DA1 /* MPVController.swift */,
 				D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */,
+				D1ACFDCC2D967FA700F45712 /* MPV_EventHandling.swift */,
 				D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */,
 				D18333BD2834CE620060A4E9 /* PlayerInputContext.swift */,
 				D1FF15782A7FA6A300C0CE86 /* PlayerSaveState.swift */,
@@ -3388,6 +3391,7 @@
 				84E295C01E2CF9F5006388F7 /* ObjcUtils.m in Sources */,
 				8400D5C41E17C6D2006785F5 /* AboutWindowController.swift in Sources */,
 				D1A8878E29D1696C000D1AE4 /* PWin_Sidebar.swift in Sources */,
+				D1ACFDCD2D967FAD00F45712 /* MPV_EventHandling.swift in Sources */,
 				D1AD325C2ACC07E500F86EE8 /* LayoutTransition.swift in Sources */,
 				84A886E41E24F37D008755BB /* ShooterSubtitle.swift in Sources */,
 				D17CBBA32CC8E37F006160AC /* PWin_WinDidLoad.swift in Sources */,
