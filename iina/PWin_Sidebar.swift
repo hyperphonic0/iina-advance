@@ -935,7 +935,7 @@ extension PlayerWindowController {
       Logger.fatal("ResizeSidebar: current mode unexpected: \(currentLayout.mode)")
     }
 
-    videoView.videoLayer.enterAsynchronousMode()
+    videoView.enterAsynchronousMode()
     CATransaction.setDisableActions(true)
     CATransaction.setAnimationDuration(0)  // need immediate effect. No lag!
 

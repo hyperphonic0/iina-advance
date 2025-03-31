@@ -195,10 +195,10 @@ class PlayerManager {
       } else {
         Logger.log("Creating demo player")
         player = PlayerCore("demo", isDemoPlayer: true)
-        player.start()
         _demoPlayer = player
       }
     }
+    player.start()
     return player
   }
 

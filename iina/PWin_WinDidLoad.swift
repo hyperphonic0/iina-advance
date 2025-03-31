@@ -716,5 +716,9 @@ extension PlayerWindowController {
     hlBoxTop.isActive = true
     let hlBoxLeading = customWindowBorderTopHighlightBox.leadingAnchor.constraint(equalTo: customWindowBorderBox.leadingAnchor, constant: 0)
     hlBoxLeading.isActive = true
+
+    // Hide by default
+    customWindowBorderTopHighlightBox.isHidden = true
+    customWindowBorderBox.isHidden = true
   }
 }

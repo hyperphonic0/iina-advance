@@ -18,7 +18,7 @@ extension MPVController {
     mpv = mpv_create()
 
     let userOptions: [[String]]
-    if Preference.bool(for: .enableAdvancedSettings) {
+    if !player.isDemoPlayer && Preference.bool(for: .enableAdvancedSettings) {
       if let opts = Preference.value(for: .userOptions) as? [[String]] {
         // User Options table allows saving of empty values. Filter those out
         userOptions = opts.filter{ $0.count > 0 && !$0[0].isEmpty }
