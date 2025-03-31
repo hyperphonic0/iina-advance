@@ -526,7 +526,8 @@ extension PlayerWindowController {
   }
 
   /// This is called explicitly via project code: see `PlayerWindow`.
-  func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
+  /// If this method returns `nil`, it should be handled by the caller.
+  func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool? {
     switch item.action {
     case #selector(menuDeleteCurrentFile(_:)), #selector(menuShowCurrentFileInFinder(_:)):
       return player.info.currentURL != nil && !player.info.isNetworkResource
@@ -535,8 +536,8 @@ extension PlayerWindowController {
     default:
       break
     }
-    // Probably Undo or Redo. Default to false.
-    return false
+    // default: let caller handle it
+    return nil
   }
 
   // MARK: - Plugin

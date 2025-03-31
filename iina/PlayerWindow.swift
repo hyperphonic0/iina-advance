@@ -244,10 +244,11 @@ class PlayerWindow: NSWindow {
       // Do not allow when in legacy full screen
       return !isFullScreen
     default:
-      if let pwc {
-        return pwc.validateUserInterfaceItem(item)
+      // See if PlayerWindowController recognizes it and can respond
+      if let pwc, let pwcResponse = pwc.validateUserInterfaceItem(item) {
+        return pwcResponse
       }
-      log.error("validateUserInterfaceItem: should never reach this line")
+      // See if super can handle it
       return super.validateUserInterfaceItem(item)
     }
   }
