@@ -33,8 +33,10 @@ extension MPVController {
       logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadStatsOverlay, "no"))
       logError(mpv_initialize(mpv))
 
-      chkErr(setString(MPVOption.Video.vo, "libmpv", level: .verbose))
+      logError(setString(MPVOption.Video.vo, "libmpv", level: .verbose))
 
+      logError(mpv_request_log_messages(mpv, MPVLogLevel.warn.description))
+      addEventCallbacks()
       mpvVersion = getString(MPVProperty.mpvVersion)
       return
     }
