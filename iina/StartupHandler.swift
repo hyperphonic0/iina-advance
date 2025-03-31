@@ -96,7 +96,7 @@ class StartupHandler {
     let log = Logger.Subsystem.restore
 
     guard UIState.shared.isRestoreEnabled else {
-      log.debug("Restore is disabled. Wll not restore windows")
+      log.debug("Restore is disabled; will not restore windows")
       return false
     }
 

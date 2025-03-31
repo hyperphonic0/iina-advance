@@ -412,6 +412,7 @@ struct PlayerSaveState: CustomStringConvertible {
   }
 
   static func saveSynchronously(_ player: PlayerCore) {
+    guard UIState.shared.isSaveEnabled else { return }
     assert(DispatchQueue.isExecutingIn(.main))
     player.log.debug("Saving player state synchronously")
     let wc = player.windowController!
