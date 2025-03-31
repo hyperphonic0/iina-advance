@@ -309,5 +309,6 @@ class OnlineSubtitle {
 extension Logger {
   struct Sub {
     static let onlinesub = Logger.makeSubsystem("onlinesub")
+    static let mpvDefaults = Logger.makeSubsystem("mpv-defaults")
   }
 }

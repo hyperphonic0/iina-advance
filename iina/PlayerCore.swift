@@ -74,7 +74,6 @@ class PlayerCore: NSObject {
   unowned var log: Logger.Subsystem { self.subsystem }
   var label: String
   let isDemoPlayer: Bool
-  var isAudioOnly: Bool { return isDemoPlayer }
 
   // At launch, wait until all windows are open before resuming video
   var pendingResumeWhenShowingWindow: Bool = false
@@ -563,7 +562,7 @@ class PlayerCore: NSObject {
     log.verbose("Player start")
     startMPV()
     
-    if isAudioOnly {
+    if isDemoPlayer {
       log.debug("Player is audio only. Will not init video or plugins")
     } else {
       videoView.initGLVideo()
@@ -573,7 +572,7 @@ class PlayerCore: NSObject {
 
   private func startMPV() {
     assert(DispatchQueue.isExecutingIn(.main))
-    
+
     // set path for youtube-dl
     let oldPath = String(cString: getenv("PATH")!)
     var path = Utility.exeDirURL.path + ":" + oldPath

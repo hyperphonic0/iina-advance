@@ -17,7 +17,6 @@ class MetalLayer: CAMetalLayer {
 
   // necessary for when the layer containing window changes the screen
   override init(layer: Any) {
-    let oldLayer = layer as! MetalLayer
     super.init()
   }
 

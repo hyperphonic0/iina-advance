@@ -110,7 +110,7 @@ class MPVController: NSObject {
     // Remove observers for mpv properties. Because 0 was passed for reply_userdata when registering
     // mpv property observers all observers can be removed in one call.
     guard let mpv else {
-      player.log.debug("Skipping called to mpv_unobserve_property because mpv is nil")
+      player.log.debug("Skipping call to mpv_unobserve_property: mpv handle is nil")
       return
     }
     player.log.verbose("Calling mpv_unobserve_property")
@@ -141,7 +141,7 @@ class MPVController: NSObject {
   func mpvDestroy() {
     player.log.verbose("Destroying mpv")
     guard mpv != nil else {
-      log.error("mpvDestroy() called but mpv handle is nil!")
+      log.error("Skipping call to mpv_destroy; mpv handle is nil!")
       return
     }
     mpv_destroy(mpv)
@@ -833,13 +833,21 @@ class MPVController: NSObject {
    */
   func chkErr(_ status: Int32!) {
     guard status < 0 else { return }
+    let message = "mpv API error: \"\(String(cString: mpv_error_string(status)))\", Return value: \(status!)."
+    player.log.error{message}
+
     DispatchQueue.main.async { [self] in
-      let message = "mpv API error: \"\(String(cString: mpv_error_string(status)))\", Return value: \(status!)."
-      player.log.error(message)
       Utility.showAlert("fatal_error", arguments: [message])
       player.shutdown()
       player.windowController.close()
     }
+  }
+
+  @discardableResult
+  func logError(_ errorCode: Int32) -> Int32 {
+    guard errorCode < 0 else { return errorCode }
+    player.log.error{"mpv API error: \"\(String(cString: mpv_error_string(errorCode)))\", Return value: \(errorCode)"}
+    return errorCode
   }
 
   /// Convert the given mpv color string containing color components specified in hex to floating point.

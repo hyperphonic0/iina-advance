@@ -20,9 +20,27 @@ extension MPVController {
     player.log.verbose("Init mpv")
     // Create a new mpv instance and an associated client API handle to control the mpv instance.
     mpv = mpv_create()
+    guard mpv != nil else {
+      player.log.error{"Failed to create mpv instance"}
+      return
+    }
+
+    if player.isDemoPlayer {
+      // Do the minimum needed for demo player
+      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadAutoProfiles, "no"))
+      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadOsdConsole, "no"))
+      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadScripts, "no"))
+      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadStatsOverlay, "no"))
+      logError(mpv_initialize(mpv))
+
+      chkErr(setString(MPVOption.Video.vo, "libmpv", level: .verbose))
+
+      mpvVersion = getString(MPVProperty.mpvVersion)
+      return
+    }
 
     let userOptions: [[String]]
-    if !player.isDemoPlayer && Preference.bool(for: .enableAdvancedSettings) {
+    if Preference.bool(for: .enableAdvancedSettings) {
       if let opts = Preference.value(for: .userOptions) as? [[String]] {
         // User Options table allows saving of empty values. Filter those out
         userOptions = opts.filter{ $0.count > 0 && !$0[0].isEmpty }
@@ -54,9 +72,10 @@ extension MPVController {
     _updateUsingMpvOSDFromPrefs()
 
     // Don't log demo player
-    if Logger.enabled && !player.isDemoPlayer {
+    // FIXME: allow hot toggling of log
+    if Logger.enabled {
       let path = Logger.logDirectory.appendingPathComponent("mpv-\(player.label).log").path
-      player.log.debug("Path of mpv log: \(path.quoted)")
+      player.log.debug{"Path of mpv log: \(path.quoted)"}
       chkErr(setOptionString(MPVOption.ProgramBehavior.logFile, path, level: .verbose))
     }
 

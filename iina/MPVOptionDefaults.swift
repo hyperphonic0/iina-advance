@@ -44,19 +44,12 @@ class MPVOptionDefaults {
     return version
   }
 
-  private let mpv: OpaquePointer?
+  private let mpvCore: MPVController
+  private var mpv: OpaquePointer? { mpvCore.mpv }
 
   private init() {
-    mpv = mpv_create()
-    guard mpv != nil else {
-      MPVOptionDefaults.log("Failed to create a mpv instance", level: .error)
-      return
-    }
-    logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadAutoProfiles, "no"))
-    logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadOsdConsole, "no"))
-    logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadScripts, "no"))
-    logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadStatsOverlay, "no"))
-    logError(mpv_initialize(mpv))
+    // Quick & dirty bridge code: just get reference to demo player's MPVController
+    mpvCore = PlayerManager.shared.getOrCreateDemo().mpv
   }
 
   // MARK: - Default Value Getters
@@ -107,13 +100,13 @@ class MPVOptionDefaults {
   /// - Returns: Error code, 0 and positive values mean success, negative values are always errors.
   private func getDefaultValue(_ name: String, _ format: mpv_format, _ data: UnsafeMutableRawPointer) -> Int32 {
     guard mpv != nil else { return Int32.min }
-    return logError(mpv_get_property(mpv, formPropertyName(name), format, data))
+    return mpvCore.logError(mpv_get_property(mpv, formPropertyName(name), format, data))
   }
 
   private func getPropertyAsInt(_ name: String) -> Int? {
     guard mpv != nil else { return nil }
     var data = Int64()
-    let errorCode = logError(mpv_get_property(mpv, name, MPV_FORMAT_INT64, &data))
+    let errorCode = mpvCore.logError(mpv_get_property(mpv, name, MPV_FORMAT_INT64, &data))
     guard errorCode >= 0 else { return nil }
     return Int(data)
   }
@@ -126,18 +119,4 @@ class MPVOptionDefaults {
     return str
   }
 
-  @discardableResult
-  private func logError(_ errorCode: Int32) -> Int32 {
-    guard errorCode < 0 else { return errorCode }
-    MPVOptionDefaults.log("mpv API error: \"\(String(cString: mpv_error_string(errorCode)))\", Return value: \(errorCode)", level: .error)
-    return errorCode
-  }
-
-  private static func log(_ message: String, level: Logger.Level = .debug) {
-    Logger.log(message, level: level, subsystem: Logger.Sub.mpvDefaults)
-  }
-}
-
-extension Logger.Sub {
-  static let mpvDefaults = Logger.makeSubsystem("mpv-defaults")
 }
