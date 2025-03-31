@@ -34,8 +34,8 @@ extension VideoView {
     guard !CVDisplayLinkIsRunning(link) else { return }
     updateDisplayLink()
 
-    if let glVideoLayer = layer as? GLVideoLayer {
-      checkResult(CVDisplayLinkSetOutputCallback(link, displayLinkCallback, mutableRawPointerOf(obj: glVideoLayer)),
+    if let glLayer {
+      checkResult(CVDisplayLinkSetOutputCallback(link, displayLinkCallback, mutableRawPointerOf(obj: glLayer)),
                   "CVDisplayLinkSetOutputCallback")
     }
     checkResult(CVDisplayLinkStart(link), "CVDisplayLinkStart")
@@ -125,8 +125,9 @@ extension VideoView {
 
   /// Triggered when `displayIdleTimer` times out
   @objc func displayIdleDidTimeout() {
-    videoLayer.exitAsynchronousMode()
-    videoLayer.videoView.stopDisplayLink()
+    guard let glLayer else { return }
+    glLayer.exitAsynchronousMode()
+    glLayer.videoView.stopDisplayLink()
   }
 
 

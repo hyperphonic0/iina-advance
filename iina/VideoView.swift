@@ -25,8 +25,13 @@ class VideoView: NSView {
     return player.log
   }
 
-  var videoLayer: GLVideoLayer {
-    return layer as! GLVideoLayer
+  /// The GLVideoLayer layer, if using OpenGL with proper init
+  var glLayer: GLVideoLayer? { layer as? GLVideoLayer }
+  /// The Metal layer, if using MoltenVK with proper init
+  var metalLayer: CAMetalLayer? { layer as? CAMetalLayer }
+
+  var layerColorspace: CGColorSpace? {
+    return glLayer?.colorspace ?? metalLayer?.colorspace
   }
 
   @Atomic var isUninited = false
@@ -88,7 +93,7 @@ class VideoView: NSView {
       }
       isUninited = true
 
-      videoLayer.deinitGLRendering()
+      glLayer?.deinitGLRendering()
       log.verbose("VideoView uninit done")
     }
   }
@@ -160,7 +165,7 @@ class VideoView: NSView {
 
     /// This will create & add the `GLVideoLayer` if it was not already init:
     wantsLayer = true
-    videoLayer.initGLRendering()
+    glLayer?.initGLRendering()
 
     startDisplayLink()
   }
@@ -188,11 +193,11 @@ class VideoView: NSView {
     glVideoLayer.unlockOpenGLContext()
   }
 
-  // MARK: - Video State
+  // MARK: - Misc
 
-  override func draw(_ dirtyRect: NSRect) {
-    // do nothing
-  }
+//  override func draw(_ dirtyRect: NSRect) {
+//    // do nothing
+//  }
 
   func forceDraw() {
     assert(DispatchQueue.isExecutingIn(.main))
@@ -205,11 +210,17 @@ class VideoView: NSView {
     log.trace("Forcing video redraw")
     // Does nothing if already active. Will restart idle timer if paused
     displayActive(temporary: player.info.isPaused)
-    videoLayer.drawAsync(forced: true)
+    glLayer?.drawAsync(forced: true)
+  }
+
+  func prepareForPIPEntry() {
+    // Remove remaining constraints. The PiP superview will manage videoView's layout.
+    removeVideoConstraints()
+    layer?.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
   }
 
   func enterAsynchronousMode() {
-    videoLayer.enterAsynchronousMode()
+    glLayer?.enterAsynchronousMode()
   }
 
   /// Returns `true` if screenScaleFactor changed
@@ -217,6 +228,7 @@ class VideoView: NSView {
   func refreshContentsScale() -> Bool {
     guard let window else { return false }
     guard player.isActive else { return false }
+    guard let videoLayer = layer else { return false }
     let oldScaleFactor = videoLayer.contentsScale
     let newScaleFactor = window.backingScaleFactor
     if oldScaleFactor != newScaleFactor {
@@ -239,6 +251,11 @@ class VideoView: NSView {
   // MARK: - Color
 
   func setICCProfile() {
+    guard let glLayer else {
+      // TODO: is this relevant for Metal layer?
+      logHDR.verbose { "Skipping ICC profile: no OpenGL layer" }
+      return
+    }
     let screenColorSpace = player.windowController.window?.screen?.colorSpace
     if !Preference.bool(for: .loadIccProfile) {
       logHDR.verbose("Not using ICC profile due to user preference")
@@ -249,9 +266,9 @@ class VideoView: NSView {
 
       guard lockAndSetOpenGLContext() else { return }
       defer { unlockOpenGLContext() }
-      $isUninited.withLock() { [self] isUninited in
+      $isUninited.withLock() { isUninited in
         guard !isUninited else { return }
-        videoLayer.setRenderICCProfile(screenColorSpace)
+        glLayer.setRenderICCProfile(screenColorSpace)
       }
 
     } else {
@@ -259,11 +276,11 @@ class VideoView: NSView {
     }
 
     let sdrColorSpace = screenColorSpace?.cgColorSpace ?? VideoView.SRGB
-    if videoLayer.colorspace != sdrColorSpace {
+    if glLayer.colorspace != sdrColorSpace {
       let name = sdrColorSpace.name as? String ?? screenColorSpace?.localizedName ?? "Unspecified"
       logHDR.verbose{"Setting layer color space to \(name.quoted)"}
-      videoLayer.colorspace = sdrColorSpace
-      videoLayer.wantsExtendedDynamicRangeContent = false
+      glLayer.colorspace = sdrColorSpace
+      glLayer.wantsExtendedDynamicRangeContent = false
     }
 
     let useAutoICC = Preference.bool(for: .loadIccProfile) &&  screenColorSpace != nil
@@ -342,9 +359,15 @@ class VideoView: NSView {
 
     guard player.info.hdrEnabled else { return nil }
 
+    guard let glLayer else {
+      // TODO: is this relevant for Metal layer?
+      logHDR.verbose { "Aborting HDR mode: no OpenGL layer" }
+      return nil
+    }
+
     logHDR.debug{"Using HDR color space instead of ICC profile (maxEDR=\(maxRangeEDR))"}
-    videoLayer.wantsExtendedDynamicRangeContent = true
-    videoLayer.colorspace = CGColorSpace(name: name)
+    glLayer.wantsExtendedDynamicRangeContent = true
+    glLayer.colorspace = CGColorSpace(name: name)
     mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, false)
     mpv.setString(MPVOption.GPURendererOptions.targetPrim, primaries)
     // PQ videos will be display as it was, HLG videos will be converted to PQ

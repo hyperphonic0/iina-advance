@@ -35,20 +35,6 @@ class GLVideoLayer: CAOpenGLLayer {
   private let asychronousModeLock: Lock
   private var asychronousModeTimer: Timer?
 
-  func displayLinkCallback(
-    _ displayLink: CVDisplayLink, _ inNow: UnsafePointer<CVTimeStamp>,
-    _ inOutputTime: UnsafePointer<CVTimeStamp>,
-    _ flagsIn: CVOptionFlags,
-    _ flagsOut: UnsafeMutablePointer<CVOptionFlags>,
-    _ context: UnsafeMutableRawPointer?) -> CVReturn {
-      let videoView = unsafeBitCast(context, to: VideoView.self)
-      videoView.$isUninited.withLock() { isUninited in
-        guard !isUninited else { return }
-        mpvReportSwap()
-      }
-      return kCVReturnSuccess
-    }
-
   /// To enable `LOG_VIDEO_LAYER`:
   /// 1. In Xcode, go to `iina` project > select `iina` target > Build Settings > search for `Custom Flags` (under `Swift Compiler`)
   /// 2. Set flag using -D prefix (without white spaces), for Debug, Release, etc. So this is: `-DLOG_VIDEO_LAYER`
@@ -382,6 +368,7 @@ class GLVideoLayer: CAOpenGLLayer {
     self.mpvRenderContext = nil
   }
 
+  /// Called repeated by DisplayLink callback
   func mpvReportSwap() {
     guard let mpvRenderContext = mpvRenderContext else { return }
     mpv_render_context_report_swap(mpvRenderContext)

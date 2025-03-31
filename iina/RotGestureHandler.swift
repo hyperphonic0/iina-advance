@@ -122,6 +122,11 @@ class RotationGestureHandler {
       return
     }
 
+    guard let videoLayer = videoView.layer else {
+      log.warn{"Aborting rotation of videoView: videoView.layer is nil!"}
+      return
+    }
+
     // Animation is enabled by default for this view.
     // We only want to animate some rotations and not others, and never want to animate
     // position change. So put these in an explicitly disabled transaction block:
@@ -129,8 +134,8 @@ class RotationGestureHandler {
     CATransaction.setDisableActions(true)
     // Rotate about center point. Also need to change position so that it pivots around the center
     let centerPoint = CGPointMake(NSMidX(videoView.frame), NSMidY(videoView.frame))
-    videoView.videoLayer.position = centerPoint
-    videoView.videoLayer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+    videoLayer.position = centerPoint
+    videoLayer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
 
     if animate {
       log.verbose{"Animating rotation from \(fromDegrees)° to \(toDegrees)°"}
@@ -143,14 +148,14 @@ class RotationGestureHandler {
       rotateAnimation.fromValue = CGFloat.degToRad(fromDegrees)
       rotateAnimation.toValue = toRadians
       rotateAnimation.duration = 0.2
-      videoView.videoLayer.add(rotateAnimation, forKey: "transform")
+      videoLayer.add(rotateAnimation, forKey: "transform")
       CATransaction.commit()
     }
 
     // This block updates the view's permanent position, but won't animate.
     // Need to call this even if running the animation above, or else layer will revert to its prev appearance after
     CATransaction.setDisableActions(true)
-    videoView.videoLayer.transform = CATransform3DMakeRotation(toRadians, 0, 0, 1)
+    videoLayer.transform = CATransform3DMakeRotation(toRadians, 0, 0, 1)
     CATransaction.commit()
 
     cgCurrentRotationDegrees = toDegrees
