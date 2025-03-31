@@ -9,10 +9,14 @@
 import VideoToolbox
 
 extension MPVController {
-  /**
-   Init the mpv context, set options
-   */
+  /// Init the mpv context, set options.
+  ///
+  /// This is expected to be executed in the main DispatchQueue because of: reasons.
+  /// But race conditions should not be a problem because it is not reusing resources.
+  /// But once returned, all libmpv API calls should only be made via tasks on `mpv.queue`.
   func mpvInit() {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     player.log.verbose("Init mpv")
     // Create a new mpv instance and an associated client API handle to control the mpv instance.
     mpv = mpv_create()
@@ -24,7 +28,8 @@ extension MPVController {
         userOptions = opts.filter{ $0.count > 0 && !$0[0].isEmpty }
       } else {
         userOptions = []
-        DispatchQueue.main.async {  // do not block at startup! Must avoid deadlock in static initializers
+        // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
+        DispatchQueue.main.async {
           Utility.showAlert("extra_option.cannot_read")
         }
       }
@@ -274,7 +279,10 @@ extension MPVController {
       setOptionString("config", "yes")
       let status = setOptionString(MPVOption.ProgramBehavior.configDir, userConfDir)
       if status < 0 {
-        Utility.showAlert("extra_option.config_folder", arguments: [userConfDir], disableMenus: true)
+        // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
+        DispatchQueue.main.async {
+          Utility.showAlert("extra_option.config_folder", arguments: [userConfDir], disableMenus: true)
+        }
       }
     }
 
@@ -290,7 +298,8 @@ extension MPVController {
         let status = setOptionString(op[0], op[1])
         if status < 0 {
           let errorString = String(cString: mpv_error_string(status))
-          DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers
+          // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
+          DispatchQueue.main.async {
             Utility.showAlert("extra_option.error", arguments: [op[0], op[1], status, errorString])
           }
         }

@@ -822,8 +822,10 @@ class MPVController: NSObject {
 
     if code < 0 {
       let message = errorString(code)
-      player.log.error("Displaying mpv msg popup for error (\(code), name: \(name.quoted)): \"\(message)\"")
-      Utility.showAlert("mpv_error", arguments: [message, "\(code)", name], disableMenus: true)
+      /// We may be on the main DQ already. Must async out of it to avoid deadlocking!
+      DispatchQueue.main.async {
+        Utility.showAlert("mpv_error", arguments: [message, "\(code)", name], disableMenus: true)
+      }
     }
 
     if sync {

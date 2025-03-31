@@ -557,6 +557,7 @@ class PlayerCore: NSObject {
 
   // Does nothing if already started
   func start() {
+    assert(DispatchQueue.isExecutingIn(.main))
     guard state == .notYetStarted else { return }
 
     log.verbose("Player start")
@@ -571,6 +572,8 @@ class PlayerCore: NSObject {
   }
 
   private func startMPV() {
+    assert(DispatchQueue.isExecutingIn(.main))
+    
     // set path for youtube-dl
     let oldPath = String(cString: getenv("PATH")!)
     var path = Utility.exeDirURL.path + ":" + oldPath
