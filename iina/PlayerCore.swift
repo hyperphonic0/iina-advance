@@ -2794,6 +2794,8 @@ class PlayerCore: NSObject {
     reloadQuickSettingsView()
   }
 
+  func subColorChanged
+
   func trackListChanged() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     // No need to process track list changes if playback is being stopped. Must not process track

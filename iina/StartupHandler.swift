@@ -489,7 +489,7 @@ class StartupHandler {
     // Init MediaPlayer integration
     MediaPlayerIntegration.shared.update()
 
-    log.debug("Activating app")
+    Logger.log.debug("Activating app")
     NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
     NSApplication.shared.servicesProvider = self
 

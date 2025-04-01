@@ -385,12 +385,11 @@ extension MPVController {
       log.verbose("Using gpu-next")
       metalLayer.device = MTLCreateSystemDefaultDevice()!
 //      metalLayer.framebufferOnly = true
-      metalLayer.displaySyncEnabled = false
-      mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &metalLayer)
+//      metalLayer.displaySyncEnabled = false
+//      mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &metalLayer)
 
       mpv_set_property_string(mpv, "vo", "gpu-next")
       mpv_set_property_string(mpv, "gpu-api", "vulkan")
-      mpv_set_property_string(mpv, "gpu-context", "moltenvk")
     } else {
       log.verbose("Using libmpv")
       // Set options that can be override by user's config. mpv will log user config when initialize,

@@ -447,6 +447,10 @@ extension MPVController {
       }
       player.subPosChanged(data)
 
+    case MPVOption.Subtitles.subColor:
+      // TODO:
+      break
+
     case MPVOption.Subtitles.subFont:
       player.reloadQuickSettingsView()
       // TODO: OSD
