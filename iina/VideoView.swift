@@ -17,6 +17,7 @@ import Cocoa
 /// `VideoView_Constraints.swift`: for enforcing aspect ratio & other AutoLayout constraints.
 /// `GLVideoLayer.swift`: the OpenGL video layer for this view.
 class VideoView: NSView {
+  let useOpenGL = true
 
   weak var player: PlayerCore!
   var link: CVDisplayLink?
@@ -154,20 +155,25 @@ class VideoView: NSView {
 
   /// Called when property `self.wantsLayer` is set to `true`.
   override func makeBackingLayer() -> CALayer {
-    let layer = GLVideoLayer(self)
-    // init mpv render context.
-    return layer
+    if useOpenGL {
+      return GLVideoLayer(self)
+    } else {
+      return CAMetalLayer()
+    }
   }
 
-  func initGLVideo() {
-    log.verbose("Init OpenGL video")
+  func initVideoLayer() {
     assert(DispatchQueue.isExecutingIn(.main))
-
-    /// This will create & add the `GLVideoLayer` if it was not already init:
-    wantsLayer = true
-    glLayer?.initGLRendering()
-
-    startDisplayLink()
+    if useOpenGL {
+      log.verbose("Init OpenGL layer")
+      /// This will create & add the layer if it was not already init'd:
+      wantsLayer = true
+      glLayer?.initGLRendering()
+      startDisplayLink()
+    } else {
+      log.verbose("Init Metal layer")
+      wantsLayer = true
+    }
   }
 
   /// Lock the OpenGL context associated with the mpv renderer and set it to be the current context for this thread.
@@ -194,10 +200,6 @@ class VideoView: NSView {
   }
 
   // MARK: - Misc
-
-//  override func draw(_ dirtyRect: NSRect) {
-//    // do nothing
-//  }
 
   func forceDraw() {
     assert(DispatchQueue.isExecutingIn(.main))

@@ -856,6 +856,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         transformGeometry("OpenNetStreamWindow", video: GeometryTransform.trackChanged)
       }
     }
+    // FIXME: don't leave in
+    postWindowIsReadyToShow()
+    showWindow(self)
   }
 
   override func showWindow(_ sender: Any?) {

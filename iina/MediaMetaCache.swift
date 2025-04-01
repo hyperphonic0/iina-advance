@@ -6,7 +6,11 @@
 //
 
 // TODO: consider merging this with MediaMeta
-struct FFVideoMeta {
+struct FFVideoMeta : CustomStringConvertible {
+  var description: String {
+    "FFVideoMeta(w=\(width) h=\(height) rot=\(streamRotation))"
+  }
+
   let width: Int
   let height: Int
   /// Should match mpv's `video-params/rotate`

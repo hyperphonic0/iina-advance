@@ -558,15 +558,21 @@ class PlayerCore: NSObject {
   func start() {
     assert(DispatchQueue.isExecutingIn(.main))
     guard state == .notYetStarted else { return }
-
     log.verbose("Player start")
-    startMPV()
-    
+
     if isDemoPlayer {
       log.debug("Player is audio only. Will not init video or plugins")
+      startMPV()
     } else {
-      videoView.initGLVideo()
+      if videoView.useOpenGL {
+        startMPV()
+        videoView.initVideoLayer()
+      } else {
+        videoView.initVideoLayer()
+        startMPV()
+      }
     }
+
     state = .started
   }
 

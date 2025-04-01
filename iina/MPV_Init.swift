@@ -73,7 +73,7 @@ extension MPVController {
 
     _updateUsingMpvOSDFromPrefs()
 
-    // Don't log demo player
+    // Don't give Demo player its own log file
     // FIXME: allow hot toggling of log
     if Logger.enabled {
       let path = Logger.logDirectory.appendingPathComponent("mpv-\(player.label).log").path
@@ -381,9 +381,22 @@ extension MPVController {
     adjustCodecWhiteList(userOptions: userOptions)
     applyHardwareAccelerationWorkaround(userOptions: userOptions)
 
-    // Set options that can be override by user's config. mpv will log user config when initialize,
-    // so we put them here.
-    chkErr(setString(MPVOption.Video.vo, "libmpv", level: .verbose))
+    if var metalLayer = player.videoView.metalLayer {
+      log.verbose("Using gpu-next")
+      metalLayer.device = MTLCreateSystemDefaultDevice()!
+//      metalLayer.framebufferOnly = true
+      metalLayer.displaySyncEnabled = false
+      mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &metalLayer)
+
+      mpv_set_property_string(mpv, "vo", "gpu-next")
+      mpv_set_property_string(mpv, "gpu-api", "vulkan")
+      mpv_set_property_string(mpv, "gpu-context", "moltenvk")
+    } else {
+      log.verbose("Using libmpv")
+      // Set options that can be override by user's config. mpv will log user config when initialize,
+      // so we put them here.
+      chkErr(setString(MPVOption.Video.vo, "libmpv", level: .verbose))
+    }
     chkErr(setString(MPVOption.Window.keepaspect, "no", level: .verbose))
     chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))
 

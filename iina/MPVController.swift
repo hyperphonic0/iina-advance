@@ -222,6 +222,7 @@ class MPVController: NSObject {
   func setFlag(_ name: String, _ flag: Bool, level: Logger.Level = .debug) {
     log.log("Set property: \(name)=\(flag.yesno)", level: level)
     var data: Int = flag ? 1 : 0
+    guard mpv != nil else { log.warn("Aborting setProperty: mpv is nil"); return }
     let code = mpv_set_property(mpv, name, MPV_FORMAT_FLAG, &data)
     if code < 0 {
       player.log.error("Failed to set mpv_property \(name.quoted) = \(flag). Error: \(errorString(code))")
@@ -231,18 +232,21 @@ class MPVController: NSObject {
   func setInt(_ name: String, _ value: Int, level: Logger.Level = .debug) {
     log.log("Set property: \(name)=\(value)", level: level)
     var data = Int64(value)
+    guard mpv != nil else { log.warn("Aborting setProperty: mpv is nil"); return }
     mpv_set_property(mpv, name, MPV_FORMAT_INT64, &data)
   }
 
   func setDouble(_ name: String, _ value: Double, level: Logger.Level = .debug) {
     log.log("Set property: \(name)=\(value)", level: level)
     var data = value
+    guard mpv != nil else { log.warn("Aborting setProperty: mpv is nil"); return }
     mpv_set_property(mpv, name, MPV_FORMAT_DOUBLE, &data)
   }
 
   @discardableResult
   func setString(_ name: String, _ value: String, level: Logger.Level = .debug) -> Int32 {
     log.log("Set property: \(name)=\(value)", level: level)
+    guard mpv != nil else { log.warn("Aborting setProperty: mpv is nil"); return -1 }
     return mpv_set_property_string(mpv, name, value)
   }
 
@@ -355,7 +359,9 @@ class MPVController: NSObject {
   /// - Returns: `true` if the filter was successfully removed, `false` if the filter was not removed.
   func removeFilter(_ name: String, _ index: Int) -> Bool {
     assert(DispatchQueue.isExecutingIn(queue))
-    Logger.ensure(name == MPVProperty.vf || name == MPVProperty.af, "removeFilter() does not support \(name)!")
+    Logger.ensure(name == MPVProperty.vf || name == MPVProperty.af,
+                  "removeFilter() does not support \(name)!")
+    guard mpv != nil else { log.warn("Aborting removeFilter: mpv is nil"); return false }
 
     // Get the current list of filters from mpv as a mpv_node tree.
     var oldNode = mpv_node()
@@ -439,6 +445,7 @@ class MPVController: NSObject {
   }
 
   func sendScriptMessage(to scriptName: String, args: [LosslessStringConvertible]) {
+    guard mpv != nil else { log.warn("Aborting mpv_command_node: mpv is nil"); return }
     var resultNode = mpv_node()
     defer {
       mpv_free_node_contents(&resultNode)
@@ -453,6 +460,7 @@ class MPVController: NSObject {
   }
 
   func getNode(_ name: String) -> Any? {
+    guard mpv != nil else { log.warn("Aborting mpv_get_property: mpv is nil"); return nil }
     var node = mpv_node()
     mpv_get_property(mpv, name, MPV_FORMAT_NODE, &node)
     let parsed = try? MPVNode.parse(node)
