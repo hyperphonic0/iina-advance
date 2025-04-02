@@ -35,6 +35,24 @@ fileprivate class GrayHighlightRowView: NSTableRowView {
   }
 }
 
+fileprivate var customCursor: NSCursor? = nil
+
+fileprivate func setCustomCursor(to newCursor: NSCursor?) {
+  assert(DispatchQueue.isExecutingIn(.main))
+
+  guard NSCursor.current != newCursor else { return }
+  if let newCursor {
+    if customCursor == nil {
+      newCursor.push()
+    } else {
+      newCursor.set()
+    }
+  } else {
+    NSCursor.pop()
+  }
+  customCursor = newCursor
+}
+
 class InitialWindowController: WindowController, NSWindowDelegate {
 
   override var windowNibName: NSNib.Name {
@@ -143,11 +161,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     recentFilesTableView.delegate = self
     recentFilesTableView.dataSource = self
     recentFilesTableView.action = #selector(self.onTableClicked)
-    recentFilesTableView.addTrackingArea(NSTrackingArea(rect: recentFilesTableView.bounds,
-                                        options: [.activeInKeyWindow, .mouseMoved], owner: self, userInfo: nil))
-    recentFilesTableView.addTrackingArea(NSTrackingArea(rect: recentFilesTableView.bounds,
-                                                        options: [.activeInKeyWindow, .mouseEnteredAndExited], owner: self, userInfo: nil))
-
+    addTrackingAreasIfMissing()
     setMaterial()
 
     observedPrefKeys.forEach { key in
@@ -160,6 +174,29 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     }
 
     Logger.log("WelcomeWindow windowDidLoad done", level: .verbose)
+  }
+
+  func windowDidBecomeKey(_ notification: Notification) {
+    addTrackingAreasIfMissing()
+  }
+
+  func windowWillClose(_ notification: Notification) {
+    removeTrackingAreasIfPresent()
+  }
+
+  private func addTrackingAreasIfMissing() {
+    if recentFilesTableView.trackingAreas.isEmpty {
+      recentFilesTableView.addTrackingArea(NSTrackingArea(rect: recentFilesTableView.bounds,
+                                                          options: [.activeInKeyWindow, .mouseMoved, .mouseEnteredAndExited], owner: self, userInfo: nil))
+
+    }
+  }
+
+  private func removeTrackingAreasIfPresent() {
+    let trackingAreas = recentFilesTableView.trackingAreas
+    for trackingArea in trackingAreas {
+      recentFilesTableView.removeTrackingArea(trackingArea)
+    }
   }
 
   private func setMaterial() {
@@ -303,6 +340,7 @@ extension InitialWindowController: NSTableViewDelegate, NSTableViewDataSource {
     let rowIndex = recentFilesTableView.row(at: point)
 
     if rowIndex >= 0 {
+      setCustomCursor(to: .pointingHand)
       guard let rowView = recentFilesTableView.rowView(atRow: rowIndex, makeIfNecessary: false) as? GrayHighlightRowView else {
         return
       }
@@ -315,12 +353,14 @@ extension InitialWindowController: NSTableViewDelegate, NSTableViewDataSource {
       currentlyHoveredRow?.unsetHoverHighlight()
       currentlyHoveredRow = rowView
     } else {
+      setCustomCursor(to: nil)
       currentlyHoveredRow?.unsetHoverHighlight()
       currentlyHoveredRow = nil
     }
   }
 
   override func mouseExited(with event: NSEvent) {
+    setCustomCursor(to: nil)
     currentlyHoveredRow?.unsetHoverHighlight()
     currentlyHoveredRow = nil
   }
@@ -411,7 +451,11 @@ class InitialWindowViewActionButton: NSView {
   override func awakeFromNib() {
     self.layer?.cornerRadius = 6  // Round highlights
     self.layer?.backgroundColor = normalBackground.cgColor
-    self.addTrackingArea(NSTrackingArea(rect: self.bounds, options: [.activeInKeyWindow, .mouseEnteredAndExited], owner: self, userInfo: nil))
+    self.addTrackingArea(NSTrackingArea(rect: self.bounds, options: [.activeInKeyWindow, .mouseEnteredAndExited, .cursorUpdate], owner: self, userInfo: nil))
+  }
+
+  override func cursorUpdate(with event: NSEvent) {
+    setCustomCursor(to: .pointingHand)
   }
 
   override func mouseEntered(with event: NSEvent) {
@@ -488,12 +532,12 @@ class BetaIndicatorView: NSView {
 
   override func mouseEntered(with event: NSEvent) {
     guard InfoDictionary.shared.buildType != .debug else { return }
-    NSCursor.pointingHand.push()
+    setCustomCursor(to: .pointingHand)
   }
 
   override func mouseExited(with event: NSEvent) {
     guard InfoDictionary.shared.buildType != .debug else { return }
-    NSCursor.pop()
+    setCustomCursor(to: nil)
   }
 
   override func mouseUp(with event: NSEvent) {

@@ -746,7 +746,10 @@ extension PlayerWindowController {
     // Combined, using cursorUpdate works for sliders when window is main, and this method picks up the work for them when non-main.
     if customCursor == .normalCursor {
       newCursor.push()
-    } else if customCursor != newCursorType {
+    } else if (customCursor != newCursorType) || (NSCursor.current != newCursor) {
+      // There seems to be a race condition in Apple's code which causes push() or set()
+      // to get ignored, so we cannot assume they succeeded.
+      // Partial workaround: add the extra check against NSCursor.current above.
       newCursor.set()
     }
     customCursor = newCursorType
