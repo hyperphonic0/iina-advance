@@ -359,7 +359,9 @@ return -1;\
   ret = avformat_open_input(&pFormatCtx, cFilename, NULL, NULL);
   free(cFilename);
   if (ret < 0) {
-    LOG_ERROR(@"Error opening file \"%@\" to obtain info: %s (%d)", file, av_err2str(ret), ret);
+    // This often happens when something is wrong with the file, e.g. it's an incomplete download.
+    // Not a tragic failure. Just note & move on.
+    LOG_DEBUG(@"Failed to open file \"%@\" to obtain info: %s (%d)", file, av_err2str(ret), ret);
     return NULL;
   }
 
@@ -367,7 +369,7 @@ return -1;\
   if (duration <= 0) {
     ret = avformat_find_stream_info(pFormatCtx, NULL);
     if (ret < 0) {
-      LOG_ERROR(@"Error probing file \"%@\" to obtain info: %s (%d)", file, av_err2str(ret), ret);
+      LOG_DEBUG(@"Failed to get stream info for file \"%@\": %s (%d)", file, av_err2str(ret), ret);
       duration = -1;
     } else
       duration = pFormatCtx->duration;
@@ -400,14 +402,14 @@ return -1;\
   ret = avformat_open_input(&pFormatCtx, cFilename, NULL, NULL);
   free(cFilename);
   if (ret < 0) {
-    NSLog(@"Error reading video size: Cannot open video (%d)", ret);
+    LOG_DEBUG(@"Failed to open file \"%@\" to obtain video dimensions: %s (%d)", file, av_err2str(ret), ret);
     return nil;
   }
 
   // Find stream information
   ret = avformat_find_stream_info(pFormatCtx, NULL);
   if (ret < 0) {
-    NSLog(@"Error reading video size: Cannot get stream info (%d)", ret);
+    LOG_DEBUG(@"Failed to get stream info for file \"%@\" to obtain video dimensions: %s (%d)", file, av_err2str(ret), ret);
     return nil;
   }
 
@@ -420,7 +422,7 @@ return -1;\
     }
   }
   if (videoStream < 0) {
-    NSLog(@"Error reading video size: No video stream (%d)", videoStream);
+    LOG_DEBUG(@"Error reading video size: for file \"%@\": no video stream", file);
     return nil;
   }
 
@@ -431,14 +433,14 @@ return -1;\
 
   // Check whether the denominator (AVRational.den) is zero to prevent division-by-zero
   if (videoAvgFrameRate.den == 0 || av_q2d(videoAvgFrameRate) == 0) {
-    NSLog(@"Avg frame rate = 0, ignore");
+    LOG_DEBUG(@"Avg frame rate == 0; returning");
     return nil;
   }
 
   // Find the decoder for the video stream
   const AVCodec *pCodec = avcodec_find_decoder(pVideoStream->codecpar->codec_id);
   if (pCodec == NULL) {
-    NSLog(@"Error reading video size: Unsupported codec");
+    LOG_DEBUG(@"Failed to read video size for file \"%@\": unsupported codec", file);
     return nil;
   }
 
@@ -452,13 +454,13 @@ return -1;\
   if (pCodecCtx->pix_fmt < 0 || pCodecCtx->pix_fmt >= AV_PIX_FMT_NB) {
     avcodec_free_context(&pCodecCtx);
     avformat_close_input(&pFormatCtx);
-    NSLog(@"Error reading video size: Pixel format is null");
+    LOG_DEBUG(@"Failed to read video size for file \"%@\": pixel format is null", file);
     return nil;
   }
 
   ret = avcodec_open2(pCodecCtx, pCodec, &optionsDict);
   if (ret < 0) {
-    NSLog(@"Error reading video size: Cannot open codec (%d)", ret);
+    LOG_DEBUG(@"Failed to read video size for file \"%@\": could not open codec: %s (%d)", file, av_err2str(ret), ret);
   }
 
   const AVPacketSideData *sd = av_packet_side_data_get(pCodecCtx->coded_side_data,
@@ -470,7 +472,7 @@ return -1;\
   if (sd) {
     double r = av_display_rotation_get(((const int32_t *)sd));
     rotation = ((((int)(-r)) % 360) + 360) % 360;
-    NSLog(@"ROTATION: %d", rotation);
+    LOG_DEBUG(@"ROTATION: %d", rotation);
   }
 
   static int sizeArray[3];
