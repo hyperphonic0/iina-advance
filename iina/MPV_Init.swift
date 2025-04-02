@@ -381,17 +381,20 @@ extension MPVController {
     adjustCodecWhiteList(userOptions: userOptions)
     applyHardwareAccelerationWorkaround(userOptions: userOptions)
 
-    if var metalLayer = player.videoView.metalLayer {
-      log.verbose("Using gpu-next")
-      mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &metalLayer)
-
-      mpv_set_property_string(mpv, "vo", "gpu-next")
-      mpv_set_property_string(mpv, "gpu-api", "vulkan")
-    } else {
-      log.verbose("Using libmpv")
+    if player.videoView.useOpenGL {
+      log.verbose("Using legacy libmpv + OpenGEL rendering")
       // Set options that can be override by user's config. mpv will log user config when initialize,
       // so we put them here.
-      chkErr(setString(MPVOption.Video.vo, "libmpv", level: .verbose))
+      chkErr(setString(MPVOption.Video.vo, "libmpv", level: .debug))
+    } else {
+      log.verbose("Using gpu-next + Vulkan rendering")
+      let widPtr = UnsafeMutablePointer<Int64>.allocate(capacity: 1)
+      widPtr.pointee = unsafeBitCast(player.window, to: Int64.self)
+      mpv_set_option(mpv, MPVOption.Window.wid, MPV_FORMAT_INT64, widPtr)
+
+      chkErr(setString(MPVOption.Video.vo, "gpu-next", level: .debug))
+      chkErr(setString(MPVOption.GPURendererOptions.gpuApi, "vulkan", level: .debug))
+      chkErr(setString(MPVOption.Video.hwdec, "vulkan", level: .debug))
     }
     chkErr(setString(MPVOption.Window.keepaspect, "no", level: .verbose))
     chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))
