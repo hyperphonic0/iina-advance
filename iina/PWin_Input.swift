@@ -758,8 +758,7 @@ extension PlayerWindowController {
         isPoint(event.locationInWindow, inAnyOf: [volumeSlider]) else {
       return
     }
-    let newCursor = NSCursor.pointingHand
-    newCursor.set()
+    applyCustomCursor(.hoveringInSlider)
   }
 
   /// Only hides cursor if in full screen or windowed (non-interactive) modes, and only if mouse is within
