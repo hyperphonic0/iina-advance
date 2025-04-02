@@ -17,6 +17,8 @@ import Cocoa
 /// `VideoView_Constraints.swift`: for enforcing aspect ratio & other AutoLayout constraints.
 /// `GLVideoLayer.swift`: the OpenGL video layer for this view.
 class VideoView: NSView {
+  /// `true`: use legacy OpenGL / libmpv
+  /// `false`: use gpu-next / Vulkan
   let useOpenGL = true
 
   weak var player: PlayerCore!

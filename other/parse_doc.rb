@@ -14,8 +14,12 @@ end
 
 #doc = Nokogiri::HTML URI.open(DOC_URL)
 
-# In Terminal, first convert the RST to HTML:
+## In Terminal, first convert the RST to HTML:
 # rst2html4 ${MPV_PROJECT_ROOT}/DOCS/man/mpv.rst > mpv.html
+## Then run this script:
+# ./parse_doc.rb
+## Then overwrite old generated files:
+# mv ./MPV* ../iina/
 doc = File.open(File.join(__dir__, 'mpv.html')) { |f| Nokogiri::HTML(f) }
 
 # property
@@ -155,7 +159,7 @@ end
 
 # command
 
-command_list = doc.css '#list-of-input-commands > .docutils > dt > tt, #input-commands-that-are-possibly-subject-to-change > .docutils > dt > tt'
+command_list = doc.css '#list-of-input-commands > div > dl.docutils > dt > tt'
 
 File.open(File.join(__dir__, 'MPVCommand.swift'), 'w') do |file|
   file.write "import Foundation\n\n"

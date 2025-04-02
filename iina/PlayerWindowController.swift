@@ -857,8 +857,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
     }
     // FIXME: don't leave in
-    postWindowIsReadyToShow()
-    showWindow(self)
+//    postWindowIsReadyToShow()
+//    showWindow(self)
   }
 
   override func showWindow(_ sender: Any?) {

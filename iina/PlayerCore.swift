@@ -1428,7 +1428,7 @@ class PlayerCore: NSObject {
         // Setting the window-scale property seems to result in a small hiccup during playback.
         // Not sure if this is an mpv limitation
         log.verbose{"Updating mpv window-scale from videoSize=\(windowGeo.videoSize): \(currentVideoScale) → \(desiredVideoScale)"}
-        mpv.setDouble(MPVProperty.windowScale, desiredVideoScale)
+        mpv.setDouble(MPVOption.Window.windowScale, desiredVideoScale)
 
       } else {
         log.verbose{"Skipping update to mpv window-scale: no change from existing (\(currentVideoScale))"}
@@ -2167,14 +2167,14 @@ class PlayerCore: NSObject {
   func setSubTextBorderColor(_ colorString: String) {
     mpv.queue.async { [self] in
       Preference.set(colorString, for: .subBorderColorString)
-      mpv.setString("options/" + MPVOption.Subtitles.subBorderColor, colorString)
+      mpv.setString("options/" + MPVOption.Subtitles.subOutlineColor, colorString)
     }
   }
 
   func setSubTextBorderSize(_ size: Double) {
     mpv.queue.async { [self] in
       Preference.set(size, for: .subBorderSize)
-      mpv.setDouble("options/" + MPVOption.Subtitles.subBorderSize, size)
+      mpv.setDouble("options/" + MPVOption.Subtitles.subOutlineSize, size)
     }
   }
 
@@ -3268,8 +3268,6 @@ class PlayerCore: NSObject {
   }
 
   func updateCacheInfo() {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-
     var cachedRanges: [(Double, Double)] = []
     info.pausedForCache = mpv.getFlag(MPVProperty.pausedForCache)
     if let demuxerCacheState = mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any] {
