@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22690"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="InitialWindowController" customModule="IINA" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="InitialWindowController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="appIcon" destination="nrn-G9-P2A" id="2hO-5g-HzS"/>
                 <outlet property="betaIndicatorView" destination="7SF-fn-3LF" id="uST-Lq-V3d"/>
@@ -29,8 +29,8 @@
         <window title="Welcome" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="F0z-JX-Cv5">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" fullSizeContentView="YES"/>
             <rect key="contentRect" x="931" y="455" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
-            <view key="contentView" wantsLayer="YES" id="se5-gp-TjO" customClass="InitialWindowContentView" customModule="IINA" customModuleProvider="target">
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
+            <view key="contentView" wantsLayer="YES" id="se5-gp-TjO" customClass="InitialWindowContentView" customModule="IINA_Advance" customModuleProvider="target">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
@@ -60,7 +60,7 @@
                                         </constraints>
                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="iina_arrow" id="QyS-ah-TEY"/>
                                     </imageView>
-                                    <customView identifier="openFile" translatesAutoresizingMaskIntoConstraints="NO" id="ZGi-N7-Zv2" customClass="InitialWindowViewActionButton" customModule="IINA" customModuleProvider="target">
+                                    <customView identifier="openFile" translatesAutoresizingMaskIntoConstraints="NO" id="ZGi-N7-Zv2" customClass="InitialWindowViewActionButton" customModule="IINA_Advance" customModuleProvider="target">
                                         <rect key="frame" x="204" y="340" width="392" height="28"/>
                                         <subviews>
                                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" tag="1" translatesAutoresizingMaskIntoConstraints="NO" id="4fw-9s-a6m">
@@ -89,7 +89,7 @@
                                             <constraint firstItem="otz-1h-7O6" firstAttribute="leading" secondItem="ZGi-N7-Zv2" secondAttribute="leading" constant="12" id="zYz-oQ-i9N"/>
                                         </constraints>
                                     </customView>
-                                    <customView identifier="openURL" translatesAutoresizingMaskIntoConstraints="NO" id="hmC-XZ-bFe" customClass="InitialWindowViewActionButton" customModule="IINA" customModuleProvider="target">
+                                    <customView identifier="openURL" translatesAutoresizingMaskIntoConstraints="NO" id="hmC-XZ-bFe" customClass="InitialWindowViewActionButton" customModule="IINA_Advance" customModuleProvider="target">
                                         <rect key="frame" x="204" y="312" width="392" height="28"/>
                                         <subviews>
                                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6nX-pp-BEb">
@@ -124,7 +124,7 @@
                                             <rect key="frame" x="0.0" y="0.0" width="392" height="246"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
-                                                <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="28" rowSizeStyle="automatic" viewBased="YES" id="VeK-rB-yjt">
+                                                <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="28" rowSizeStyle="automatic" viewBased="YES" id="VeK-rB-yjt" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="0.0" width="392" height="246"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <size key="intercellSpacing" width="3" height="2"/>
@@ -220,7 +220,7 @@
                                             <color key="backgroundColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <customView hidden="YES" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7SF-fn-3LF" customClass="BetaIndicatorView" customModule="IINA" customModuleProvider="target">
+                                    <customView hidden="YES" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7SF-fn-3LF" customClass="BetaIndicatorView" customModule="IINA_Advance" customModuleProvider="target">
                                         <rect key="frame" x="66" y="148" width="44" height="17"/>
                                         <subviews>
                                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="aUL-kg-QKC">
@@ -245,7 +245,7 @@
                                             <outlet property="text2" destination="eyw-wY-nUV" id="S5I-b1-jXh"/>
                                         </connections>
                                     </customView>
-                                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="XbN-3R-9zz" customClass="InitialWindowViewActionButton" customModule="IINA" customModuleProvider="target">
+                                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="XbN-3R-9zz" customClass="InitialWindowViewActionButton" customModule="IINA_Advance" customModuleProvider="target">
                                         <rect key="frame" x="204" y="278" width="392" height="28"/>
                                         <subviews>
                                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Rqr-FQ-Pb0">

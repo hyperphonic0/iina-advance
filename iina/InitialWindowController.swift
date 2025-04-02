@@ -53,6 +53,15 @@ fileprivate func setCustomCursor(to newCursor: NSCursor?) {
   customCursor = newCursor
 }
 
+extension InitialWindowController: EditableTableViewDelegate {
+  var parentTableView: EditableTableView! { recentFilesTableView }
+
+  func handleMouseDown(with event: NSEvent) -> Bool {
+    onTableClicked()
+    return true
+  }
+}
+
 class InitialWindowController: WindowController, NSWindowDelegate {
 
   override var windowNibName: NSNib.Name {
@@ -61,7 +70,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
 
   var isFirstLoad = true
 
-  @IBOutlet weak var recentFilesTableView: NSTableView!
+  @IBOutlet weak var recentFilesTableView: EditableTableView!
   @IBOutlet weak var appIcon: NSImageView!
   @IBOutlet weak var versionLabel: NSTextField!
   @IBOutlet weak var visualEffectView: NSVisualEffectView!
@@ -159,6 +168,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     }
 
     recentFilesTableView.delegate = self
+    recentFilesTableView.editableDelegate = self
     recentFilesTableView.dataSource = self
     recentFilesTableView.action = #selector(self.onTableClicked)
     addTrackingAreasIfMissing()
@@ -187,7 +197,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
   private func addTrackingAreasIfMissing() {
     if recentFilesTableView.trackingAreas.isEmpty {
       recentFilesTableView.addTrackingArea(NSTrackingArea(rect: recentFilesTableView.bounds,
-                                                          options: [.activeInKeyWindow, .mouseMoved, .mouseEnteredAndExited], owner: self, userInfo: nil))
+                                                          options: [.activeAlways, .mouseMoved, .mouseEnteredAndExited], owner: self, userInfo: nil))
 
     }
   }
@@ -217,7 +227,10 @@ class InitialWindowController: WindowController, NSWindowDelegate {
   }
 
   @objc func onTableClicked() {
-    openRecentItemFromTable(recentFilesTableView.clickedRow)
+    // Do not use recentFilesTableView.clickedRow. It always returns -1 when window is not main
+    let clickedPoint = recentFilesTableView.convert(mouseLocationInWindow, from: nil)
+    let clickedRow = recentFilesTableView.row(at: clickedPoint)
+    openRecentItemFromTable(clickedRow)
   }
 
   private func openRecentItemFromTable(_ rowIndex: Int) {
@@ -448,10 +461,14 @@ class InitialWindowViewActionButton: NSView {
   var hoverBackground = NSColor.initialWindowActionButtonBackgroundHover
   var pressedBackground = NSColor.initialWindowActionButtonBackgroundPressed
 
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+    true
+  }
+
   override func awakeFromNib() {
     self.layer?.cornerRadius = 6  // Round highlights
     self.layer?.backgroundColor = normalBackground.cgColor
-    self.addTrackingArea(NSTrackingArea(rect: self.bounds, options: [.activeInKeyWindow, .mouseEnteredAndExited, .cursorUpdate], owner: self, userInfo: nil))
+    self.addTrackingArea(NSTrackingArea(rect: self.bounds, options: [.activeAlways, .mouseEnteredAndExited, .cursorUpdate], owner: self, userInfo: nil))
   }
 
   override func cursorUpdate(with event: NSEvent) {
@@ -459,6 +476,7 @@ class InitialWindowViewActionButton: NSView {
   }
 
   override func mouseEntered(with event: NSEvent) {
+    setCustomCursor(to: .pointingHand)
     if let windowController = window?.windowController as? InitialWindowController {
       if windowController.recentFilesTableView.selectedRow >= 0 {
         self.layer?.backgroundColor = NSColor.initialWindowActionButtonBackgroundHover.cgColor
@@ -469,6 +487,7 @@ class InitialWindowViewActionButton: NSView {
   }
 
   override func mouseExited(with event: NSEvent) {
+    setCustomCursor(to: nil)
     self.layer?.backgroundColor = normalBackground.cgColor
     if let windowController = window?.windowController as? InitialWindowController {
       windowController.updateLastFileButtonHighlight()

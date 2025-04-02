@@ -45,6 +45,10 @@ class EditableTableView: NSTableView {
     }
   }
 
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+    true
+  }
+
   private var cellEditTracker: CellEditTracker? = nil
   private var lastEditedTextField: EditableTextField? = nil
   private var observers: [NSObjectProtocol] = []
