@@ -461,14 +461,16 @@ return -1;\
     NSLog(@"Error reading video size: Cannot open codec (%d)", ret);
   }
 
+  const AVPacketSideData *sd = av_packet_side_data_get(pCodecCtx->coded_side_data,
+                                                       pCodecCtx->nb_coded_side_data,
+                                                       AV_PKT_DATA_DISPLAYMATRIX);
   // Find rotate tag in the stream's side data
-  // Code copied from mpv_image.c
-  uint8_t *sd = av_stream_get_side_data(pVideoStream, AV_PKT_DATA_DISPLAYMATRIX, NULL);
+  // Code copied from mp_image.c
   int rotation = 0;
   if (sd) {
     double r = av_display_rotation_get(((const int32_t *)sd));
     rotation = ((((int)(-r)) % 360) + 360) % 360;
-//    NSLog(@"ROTATION: %d", rotation);
+    NSLog(@"ROTATION: %d", rotation);
   }
 
   static int sizeArray[3];
