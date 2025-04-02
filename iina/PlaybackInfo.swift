@@ -338,8 +338,6 @@ class PlaybackInfo {
   var pausedForCache: Bool = false
   var cacheUsed: Int = 0
   var cacheSpeed: Int = 0
-  /// mpv's `demuxer-cache-time`: Approximate timestamp of video buffered in the demuxer, in seconds
-  var cacheTime: Double = 0
   var bufferingState: Int = 0
 
   func calculateTotalDuration() -> Double? {

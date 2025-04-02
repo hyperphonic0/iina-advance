@@ -86,7 +86,7 @@ class PlayerWindow: NSWindow {
         return
       }
     }
-    pwc.updateUI()  // Call explicitly to make sure it gets attention
+    pwc.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
 
     if menu?.performKeyEquivalent(with: event) == true {
       log.verbose("KeyDown was handled by menu item; no more to do")
@@ -156,7 +156,7 @@ class PlayerWindow: NSWindow {
         break
       }
     }
-    pwc?.updateUI()  // Call explicitly to make sure it gets attention
+    pwc?.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
 
     /// Need to check this to prevent a strange bug, where using `Ctrl+{key}` will activate a menu item which is mapped as `{key}`.
     /// MacOS quirk? Obscure feature? A user has also demonstrated a case where `Space` is ignored. It looks like bindings which don't

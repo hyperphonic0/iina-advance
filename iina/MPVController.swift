@@ -562,6 +562,7 @@ class MPVController: NSObject {
   }
 
   func _updateUsingMpvOSDFromPrefs() {
+    guard player.isActive, !player.isDemoPlayer else { return }
     let useMpvOSD = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
     player.isUsingMpvOSD = useMpvOSD
     if useMpvOSD {

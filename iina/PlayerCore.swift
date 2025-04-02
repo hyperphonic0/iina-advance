@@ -75,6 +75,9 @@ class PlayerCore: NSObject {
   var label: String
   let isDemoPlayer: Bool
 
+  /// Time of the last player state save when called by `updatePlaybackTimeInfo`.
+  private var lastStateSaveTime = Date().timeIntervalSince1970
+
   // At launch, wait until all windows are open before resuming video
   var pendingResumeWhenShowingWindow: Bool = false
   /// If a set of windows was opened at the same time, each is assigned an index, so they can be arranged slightly offset from each another.
@@ -339,6 +342,7 @@ class PlayerCore: NSObject {
   }
 
   func clearPlugins() {
+    log.verbose{"Clearing plugins"}
     pluginMap.removeAll()
     plugins.removeAll()
 
@@ -346,6 +350,7 @@ class PlayerCore: NSObject {
   }
 
   func loadPlugins() {
+    log.verbose{"Loading plugins"}
     pluginMap.removeAll()
     plugins = JavascriptPlugin.plugins.compactMap { plugin in
       guard plugin.enabled else { return nil }
@@ -359,6 +364,7 @@ class PlayerCore: NSObject {
 
   func reloadPlugin(_ plugin: JavascriptPlugin, forced: Bool = false) {
     let id = plugin.identifier
+    log.verbose{"Reloading plugin: \(id.quoted)"}
     if let _ = pluginMap[id] {
       if plugin.enabled {
         // no need to reload, unless forced
@@ -2668,6 +2674,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.debug("Playback restarted")
 
+    updatePlaybackTimeInfo()  // prepare for updateUI()
     DispatchQueue.main.async { [self] in
       windowController.updateUI()
 
@@ -2793,8 +2800,6 @@ class PlayerCore: NSObject {
     saveState()
     reloadQuickSettingsView()
   }
-
-  func subColorChanged
 
   func trackListChanged() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
@@ -3195,7 +3200,7 @@ class PlayerCore: NSObject {
     // updated now. Playback may be paused. If that is the case then the timer will not be started.
     if !wasTimerRunning {
       // Do not wait for first redraw
-      windowController.updateUI()
+      windowController.updateUI(pullUpdatesFromMpv: true)
     }
 
     guard useTimer && (timerRestartNeeded || !wasTimerRunning) else {
@@ -3218,14 +3223,12 @@ class PlayerCore: NSObject {
   }
 
   @objc func fireSyncUITimer() {
-    windowController.updateUI()
+    windowController.updateUI(pullUpdatesFromMpv: true)
   }
-
-  private var lastSaveTime = Date().timeIntervalSince1970
 
   func updatePlaybackTimeInfo() {
     guard state.isAtLeast(.started), state.isNotYet(.stopping) else {
-      log.verbose("syncUITime: not syncing")
+      log.verbose("updatePlaybackTimeInfo: not syncing")
       return
     }
     
@@ -3249,22 +3252,24 @@ class PlayerCore: NSObject {
     info.constrainVideoPosition()
     if isNetworkStream || Preference.bool(for: .showCachedRangesInSlider) {
       updateCacheInfo()
-    } else {
-      // info.cachedRanges will be cleared by pref observer
-      info.cacheTime = 0
     }
+    // else: info.cachedRanges will be cleared by pref observer
 
-    // Ensure user can resume playback by periodically saving
-    let now = Date().timeIntervalSince1970
-    let secSinceLastSave = now - lastSaveTime
-    if secSinceLastSave >= Constants.TimeInterval.playTimeSaveStateFrequency {
-      log.trace{"Another \(Constants.TimeInterval.playTimeSaveStateFrequency)s has passed: saving player state"}
-      saveState()
-      lastSaveTime = now
+    if UIState.shared.isSaveEnabled {
+      // Ensure user can resume playback by periodically saving
+      let now = Date().timeIntervalSince1970
+      let secSinceLastSave = now - lastStateSaveTime
+      if secSinceLastSave >= Constants.TimeInterval.playTimeSaveStateFrequency {
+        log.trace{"Another \(Constants.TimeInterval.playTimeSaveStateFrequency)s has passed: saving player state"}
+        saveState()
+        lastStateSaveTime = now
+      }
     }
   }
 
   func updateCacheInfo() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+
     var cachedRanges: [(Double, Double)] = []
     info.pausedForCache = mpv.getFlag(MPVProperty.pausedForCache)
     if let demuxerCacheState = mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any] {
@@ -3301,7 +3306,6 @@ class PlayerCore: NSObject {
       }
     }
     info.cacheSpeed = mpv.getInt(MPVProperty.cacheSpeed)
-    info.cacheTime = mpv.getDouble(MPVProperty.demuxerCacheTime)
     info.bufferingState = mpv.getInt(MPVProperty.cacheBufferingState)
   }
 

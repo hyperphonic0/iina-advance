@@ -350,7 +350,7 @@ class ConfTableStateManager: NSObject {
     let isReadOnly = ConfTableState.isBuiltinConf(targetConfName)
     let confFilePath = currentState.getFilePath(forConfName: targetConfName)
 
-    AppInputConfig.log.debug("Loading inputConfFile for \(targetConfName.pii.quoted)")
+    AppInputConfig.log.debug{"Loading InputConf file for \(targetConfName.pii.quoted)"}
     return fileCache.getOrLoadConfFile(at: confFilePath, isReadOnly: isReadOnly, confName: targetConfName)
   }
 
@@ -359,7 +359,7 @@ class ConfTableStateManager: NSObject {
   private func loadSelectedConfBindingsIntoAppConfig() -> Bool {
     let inputConfFile = loadConfFile()
     guard !inputConfFile.failedToLoad else {
-      AppInputConfig.log.error("Cannot get bindings from \(inputConfFile.confName.pii.quoted) because it failed to load")
+      AppInputConfig.log.error{"Cannot get bindings from \(inputConfFile.confName.pii.quoted): file failed to load"}
       let fileName = URL(fileURLWithPath: inputConfFile.filePath).lastPathComponent
       sendErrorAlert(key: "keybinding_config.error", args: [fileName])
       ConfTableState.current.fallBackToDefaultConf()

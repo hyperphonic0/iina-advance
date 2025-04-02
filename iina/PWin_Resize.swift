@@ -502,7 +502,7 @@ extension PlayerWindowController {
         hideSeekPreviewImmediately()
         updateDefaultArtVisibility(to: showDefaultArt)
         player.updateMPVWindowScale(using: fsGeo)
-        updateUI()  /// see note about OSD in `buildApplyWindowGeoTasks`
+        updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyWindowGeoTasks`
       })]
 
     case .musicMode:
@@ -832,7 +832,7 @@ extension PlayerWindowController {
     tasks.append(.instantTask{ [self] in
       isAnimatingLayoutTransition = false
       // OSD messages may have been supressed because file was not done loading. Display now if needed:
-      updateUI()
+      updateUI(pullUpdatesFromMpv: true)
       player.events.emit(.windowSizeAdjusted, data: newGeometry.windowFrame)
     })
 
@@ -928,7 +928,7 @@ extension PlayerWindowController {
       }
 
       isAnimatingLayoutTransition = false
-      updateUI()  /// see note about OSD in `buildApplyWindowGeoTasks`
+      updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyWindowGeoTasks`
     })
 
     if thenRun {

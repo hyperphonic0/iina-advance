@@ -110,8 +110,13 @@ extension PlayerWindowController {
       // Make sure to set this inside the animation task! See note above
       loaded = true
 
-      // Update to corect values before displaying. Only useful when restoring at launch
-      updateUI()
+      // Update to correct values before displaying. Only useful when restoring at launch
+      player.mpv.queue.async { [self] in
+        player.updatePlaybackTimeInfo()
+        DispatchQueue.main.async { [self] in
+          updateUI()
+        }
+      }
 
       if let priorState = priorStateIfRestoring {
         if let layoutSpec = priorState.layoutSpec {

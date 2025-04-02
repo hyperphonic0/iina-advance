@@ -490,7 +490,11 @@ class StartupHandler {
     MediaPlayerIntegration.shared.update()
 
     Logger.log.debug("Activating app")
-    NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
+    if #available(macOS 14.0, *) {
+      NSRunningApplication.current.activate(options: [.activateAllWindows])
+    } else {
+      NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
+    }
     NSApplication.shared.servicesProvider = self
 
     let timeElapsed: Double = CFAbsoluteTimeGetCurrent() - launchStartTime

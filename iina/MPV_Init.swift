@@ -383,10 +383,7 @@ extension MPVController {
 
     if var metalLayer = player.videoView.metalLayer {
       log.verbose("Using gpu-next")
-      metalLayer.device = MTLCreateSystemDefaultDevice()!
-//      metalLayer.framebufferOnly = true
-//      metalLayer.displaySyncEnabled = false
-//      mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &metalLayer)
+      mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &metalLayer)
 
       mpv_set_property_string(mpv, "vo", "gpu-next")
       mpv_set_property_string(mpv, "gpu-api", "vulkan")

@@ -158,7 +158,7 @@ class VideoView: NSView {
     if useOpenGL {
       return GLVideoLayer(self)
     } else {
-      return CAMetalLayer()
+      return MetalVideoLayer()
     }
   }
 

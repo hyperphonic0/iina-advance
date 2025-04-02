@@ -1936,7 +1936,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   /// Updates all UI controls
-  func updateUI() {
+  func updateUI(pullUpdatesFromMpv: Bool = false) {
     assert(DispatchQueue.isExecutingIn(.main))
     // This method is often run outside of the animation queue, which can be dangerous.
     // Just don't update in this case
@@ -1945,7 +1945,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard player.state.isNotYet(.shuttingDown) else { return }
 
     // scroll wheel will set newer value; do not overwrite it until it is done
-    if !isScrollingOrDraggingPlaySlider {
+    if pullUpdatesFromMpv && !isScrollingOrDraggingPlaySlider {
       player.updatePlaybackTimeInfo()
     }
 
@@ -1980,6 +1980,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   private func updatePlaybackTimeUI() {
+    assert(DispatchQueue.isExecutingIn(.main))
     // IINA listens for changes to mpv properties such as chapter that can occur during file loading
     // resulting in this function being called before mpv has set its position and duration
     // properties. Confirm the window and file have been loaded.
