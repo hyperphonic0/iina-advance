@@ -225,7 +225,6 @@ typedef enum mpv_render_param_type {
      */
     MPV_RENDER_PARAM_ICC_PROFILE = 6,
     /**
-     * Deprecated
      * Ambient light in lux. Valid for mpv_render_context_set_parameter().
      * Type: int*
      * This can be used for automatic gamma correction.

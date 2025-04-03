@@ -558,7 +558,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       let subDelay = isPrimary ? player.info.subDelay : player.info.sub2Delay
 
       let fontSize = player.mpv.getInt(MPVOption.Subtitles.subFontSize)
-      let borderWidth = player.mpv.getDouble(MPVOption.Subtitles.subOutlineSize)
+      let borderWidth = player.mpv.getDouble(MPVOption.Subtitles.subBorderSize)
 
       DispatchQueue.main.async { [self] in
         subSegmentedControl.setSelected(true, forSegment: isPrimary ? 0 : 1)

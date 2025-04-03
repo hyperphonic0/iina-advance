@@ -38,8 +38,8 @@ extension MPVController {
     MPVOption.Subtitles.subFont: MPV_FORMAT_STRING,
     MPVOption.Subtitles.subFontSize: MPV_FORMAT_INT64,
     MPVOption.Subtitles.subBold: MPV_FORMAT_FLAG,
-    MPVOption.Subtitles.subOutlineColor: MPV_FORMAT_STRING,
-    MPVOption.Subtitles.subOutlineSize: MPV_FORMAT_INT64,
+    MPVOption.Subtitles.subBorderColor: MPV_FORMAT_STRING,
+    MPVOption.Subtitles.subBorderSize: MPV_FORMAT_INT64,
     MPVOption.Subtitles.subBackColor: MPV_FORMAT_STRING,
     MPVOption.Subtitles.subScale: MPV_FORMAT_DOUBLE,
     MPVOption.Subtitles.subVisibility: MPV_FORMAT_FLAG,
@@ -468,11 +468,11 @@ extension MPVController {
       //        // TODO: OSD
       //      }
 
-    case MPVOption.Subtitles.subOutlineColor:
+    case MPVOption.Subtitles.subBorderColor:
       player.reloadQuickSettingsView()
       // TODO: OSD
 
-    case MPVOption.Subtitles.subOutlineSize:
+    case MPVOption.Subtitles.subBorderSize:
       player.reloadQuickSettingsView()
       //      if let borderSize = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee {
       //        // TODO: OSD

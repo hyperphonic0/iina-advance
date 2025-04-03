@@ -86,10 +86,6 @@ struct MPVProperty {
   static let playbackTime = "playback-time"
   /** playback-time/full */
   static let playbackTimeFull = "playback-time/full"
-  /** remaining-file-loops */
-  static let remainingFileLoops = "remaining-file-loops"
-  /** remaining-ab-loops */
-  static let remainingAbLoops = "remaining-ab-loops"
   /** chapter */
   static let chapter = "chapter"
   /** edition */
@@ -288,22 +284,16 @@ struct MPVProperty {
   static let videoFrameInfoTff = "video-frame-info/tff"
   /** video-frame-info/repeat */
   static let videoFrameInfoRepeat = "video-frame-info/repeat"
-  /** video-frame-info/gop-timecode */
-  static let videoFrameInfoGopTimecode = "video-frame-info/gop-timecode"
-  /** video-frame-info/smpte-timecode */
-  static let videoFrameInfoSmpteTimecode = "video-frame-info/smpte-timecode"
-  /** video-frame-info/estimated-smpte-timecode */
-  static let videoFrameInfoEstimatedSmpteTimecode = "video-frame-info/estimated-smpte-timecode"
   /** container-fps */
   static let containerFps = "container-fps"
   /** estimated-vf-fps */
   static let estimatedVfFps = "estimated-vf-fps"
+  /** window-scale */
+  static let windowScale = "window-scale"
   /** current-window-scale */
   static let currentWindowScale = "current-window-scale"
   /** focused */
   static let focused = "focused"
-  /** ambient-light */
-  static let ambientLight = "ambient-light"
   /** display-names */
   static let displayNames = "display-names"
   /** display-fps */
@@ -358,44 +348,20 @@ struct MPVProperty {
   static let mousePosY = "mouse-pos/y"
   /** mouse-pos/hover */
   static let mousePosHover = "mouse-pos/hover"
-  /** touch-pos */
-  static let touchPos = "touch-pos"
-  /** touch-pos/count */
-  static let touchPosCount = "touch-pos/count"
-  /** touch-pos/N/x */
-  static func touchPosNX(_ n: Int) -> String {
-    return "touch-pos/\(n)/x"
-  }
-  /** touch-pos/N/y */
-  static func touchPosNY(_ n: Int) -> String {
-    return "touch-pos/\(n)/y"
-  }
-  /** touch-pos/N/id */
-  static func touchPosNId(_ n: Int) -> String {
-    return "touch-pos/\(n)/id"
-  }
   /** sub-ass-extradata */
   static let subAssExtradata = "sub-ass-extradata"
   /** sub-text */
   static let subText = "sub-text"
-  /** sub-text/ass */
-  static let subTextAss = "sub-text/ass"
-  /** sub-text/ass-full */
-  static let subTextAssFull = "sub-text/ass-full"
-  /** subTextAss1 */
-  static let subTextAss1 = "subTextAss1"
+  /** sub-text-ass */
+  static let subTextAss = "sub-text-ass"
   /** secondary-sub-text */
   static let secondarySubText = "secondary-sub-text"
   /** sub-start */
   static let subStart = "sub-start"
-  /** sub-start/full */
-  static let subStartFull = "sub-start/full"
   /** secondary-sub-start */
   static let secondarySubStart = "secondary-sub-start"
   /** sub-end */
   static let subEnd = "sub-end"
-  /** sub-end/full */
-  static let subEndFull = "sub-end/full"
   /** secondary-sub-end */
   static let secondarySubEnd = "secondary-sub-end"
   /** playlist-pos */
@@ -442,12 +408,6 @@ struct MPVProperty {
   static let trackList = "track-list"
   /** track-list/count */
   static let trackListCount = "track-list/count"
-  /** track-list/video */
-  static let trackListVideo = "track-list/video"
-  /** track-list/audio */
-  static let trackListAudio = "track-list/audio"
-  /** track-list/sub */
-  static let trackListSub = "track-list/sub"
   /** track-list/N/id */
   static func trackListNId(_ n: Int) -> String {
     return "track-list/\(n)/id"
@@ -484,26 +444,6 @@ struct MPVProperty {
   static func trackListNForced(_ n: Int) -> String {
     return "track-list/\(n)/forced"
   }
-  /** track-list/N/dependent */
-  static func trackListNDependent(_ n: Int) -> String {
-    return "track-list/\(n)/dependent"
-  }
-  /** track-list/N/visual-impaired */
-  static func trackListNVisualImpaired(_ n: Int) -> String {
-    return "track-list/\(n)/visual-impaired"
-  }
-  /** track-list/N/hearing-impaired */
-  static func trackListNHearingImpaired(_ n: Int) -> String {
-    return "track-list/\(n)/hearing-impaired"
-  }
-  /** track-list/N/hls-bitrate */
-  static func trackListNHlsBitrate(_ n: Int) -> String {
-    return "track-list/\(n)/hls-bitrate"
-  }
-  /** track-list/N/program-id */
-  static func trackListNProgramId(_ n: Int) -> String {
-    return "track-list/\(n)/program-id"
-  }
   /** track-list/N/codec */
   static func trackListNCodec(_ n: Int) -> String {
     return "track-list/\(n)/codec"
@@ -535,10 +475,6 @@ struct MPVProperty {
   /** track-list/N/ff-index */
   static func trackListNFfIndex(_ n: Int) -> String {
     return "track-list/\(n)/ff-index"
-  }
-  /** track-list/N/decoder */
-  static func trackListNDecoder(_ n: Int) -> String {
-    return "track-list/\(n)/decoder"
   }
   /** track-list/N/decoder-desc */
   static func trackListNDecoderDesc(_ n: Int) -> String {
@@ -620,18 +556,6 @@ struct MPVProperty {
   static func trackListNReplaygainAlbumGain(_ n: Int) -> String {
     return "track-list/\(n)/replaygain-album-gain"
   }
-  /** track-list/N/dolby-vision-profile */
-  static func trackListNDolbyVisionProfile(_ n: Int) -> String {
-    return "track-list/\(n)/dolby-vision-profile"
-  }
-  /** track-list/N/dolby-vision-level */
-  static func trackListNDolbyVisionLevel(_ n: Int) -> String {
-    return "track-list/\(n)/dolby-vision-level"
-  }
-  /** track-list/N/metadata */
-  static func trackListNMetadata(_ n: Int) -> String {
-    return "track-list/\(n)/metadata"
-  }
   /** current-tracks/audio/id */
   static let currentTracksAudioId = "current-tracks/audio/id"
   /** current-tracks/video/id */
@@ -704,46 +628,6 @@ struct MPVProperty {
   static let currentTracksSubForced = "current-tracks/sub/forced"
   /** current-tracks/sub2/forced */
   static let currentTracksSub2Forced = "current-tracks/sub2/forced"
-  /** current-tracks/audio/dependent */
-  static let currentTracksAudioDependent = "current-tracks/audio/dependent"
-  /** current-tracks/video/dependent */
-  static let currentTracksVideoDependent = "current-tracks/video/dependent"
-  /** current-tracks/sub/dependent */
-  static let currentTracksSubDependent = "current-tracks/sub/dependent"
-  /** current-tracks/sub2/dependent */
-  static let currentTracksSub2Dependent = "current-tracks/sub2/dependent"
-  /** current-tracks/audio/visual-impaired */
-  static let currentTracksAudioVisualImpaired = "current-tracks/audio/visual-impaired"
-  /** current-tracks/video/visual-impaired */
-  static let currentTracksVideoVisualImpaired = "current-tracks/video/visual-impaired"
-  /** current-tracks/sub/visual-impaired */
-  static let currentTracksSubVisualImpaired = "current-tracks/sub/visual-impaired"
-  /** current-tracks/sub2/visual-impaired */
-  static let currentTracksSub2VisualImpaired = "current-tracks/sub2/visual-impaired"
-  /** current-tracks/audio/hearing-impaired */
-  static let currentTracksAudioHearingImpaired = "current-tracks/audio/hearing-impaired"
-  /** current-tracks/video/hearing-impaired */
-  static let currentTracksVideoHearingImpaired = "current-tracks/video/hearing-impaired"
-  /** current-tracks/sub/hearing-impaired */
-  static let currentTracksSubHearingImpaired = "current-tracks/sub/hearing-impaired"
-  /** current-tracks/sub2/hearing-impaired */
-  static let currentTracksSub2HearingImpaired = "current-tracks/sub2/hearing-impaired"
-  /** current-tracks/audio/hls-bitrate */
-  static let currentTracksAudioHlsBitrate = "current-tracks/audio/hls-bitrate"
-  /** current-tracks/video/hls-bitrate */
-  static let currentTracksVideoHlsBitrate = "current-tracks/video/hls-bitrate"
-  /** current-tracks/sub/hls-bitrate */
-  static let currentTracksSubHlsBitrate = "current-tracks/sub/hls-bitrate"
-  /** current-tracks/sub2/hls-bitrate */
-  static let currentTracksSub2HlsBitrate = "current-tracks/sub2/hls-bitrate"
-  /** current-tracks/audio/program-id */
-  static let currentTracksAudioProgramId = "current-tracks/audio/program-id"
-  /** current-tracks/video/program-id */
-  static let currentTracksVideoProgramId = "current-tracks/video/program-id"
-  /** current-tracks/sub/program-id */
-  static let currentTracksSubProgramId = "current-tracks/sub/program-id"
-  /** current-tracks/sub2/program-id */
-  static let currentTracksSub2ProgramId = "current-tracks/sub2/program-id"
   /** current-tracks/audio/codec */
   static let currentTracksAudioCodec = "current-tracks/audio/codec"
   /** current-tracks/video/codec */
@@ -808,14 +692,6 @@ struct MPVProperty {
   static let currentTracksSubFfIndex = "current-tracks/sub/ff-index"
   /** current-tracks/sub2/ff-index */
   static let currentTracksSub2FfIndex = "current-tracks/sub2/ff-index"
-  /** current-tracks/audio/decoder */
-  static let currentTracksAudioDecoder = "current-tracks/audio/decoder"
-  /** current-tracks/video/decoder */
-  static let currentTracksVideoDecoder = "current-tracks/video/decoder"
-  /** current-tracks/sub/decoder */
-  static let currentTracksSubDecoder = "current-tracks/sub/decoder"
-  /** current-tracks/sub2/decoder */
-  static let currentTracksSub2Decoder = "current-tracks/sub2/decoder"
   /** current-tracks/audio/decoder-desc */
   static let currentTracksAudioDecoderDesc = "current-tracks/audio/decoder-desc"
   /** current-tracks/video/decoder-desc */
@@ -976,30 +852,6 @@ struct MPVProperty {
   static let currentTracksSubReplaygainAlbumGain = "current-tracks/sub/replaygain-album-gain"
   /** current-tracks/sub2/replaygain-album-gain */
   static let currentTracksSub2ReplaygainAlbumGain = "current-tracks/sub2/replaygain-album-gain"
-  /** current-tracks/audio/dolby-vision-profile */
-  static let currentTracksAudioDolbyVisionProfile = "current-tracks/audio/dolby-vision-profile"
-  /** current-tracks/video/dolby-vision-profile */
-  static let currentTracksVideoDolbyVisionProfile = "current-tracks/video/dolby-vision-profile"
-  /** current-tracks/sub/dolby-vision-profile */
-  static let currentTracksSubDolbyVisionProfile = "current-tracks/sub/dolby-vision-profile"
-  /** current-tracks/sub2/dolby-vision-profile */
-  static let currentTracksSub2DolbyVisionProfile = "current-tracks/sub2/dolby-vision-profile"
-  /** current-tracks/audio/dolby-vision-level */
-  static let currentTracksAudioDolbyVisionLevel = "current-tracks/audio/dolby-vision-level"
-  /** current-tracks/video/dolby-vision-level */
-  static let currentTracksVideoDolbyVisionLevel = "current-tracks/video/dolby-vision-level"
-  /** current-tracks/sub/dolby-vision-level */
-  static let currentTracksSubDolbyVisionLevel = "current-tracks/sub/dolby-vision-level"
-  /** current-tracks/sub2/dolby-vision-level */
-  static let currentTracksSub2DolbyVisionLevel = "current-tracks/sub2/dolby-vision-level"
-  /** current-tracks/audio/metadata */
-  static let currentTracksAudioMetadata = "current-tracks/audio/metadata"
-  /** current-tracks/video/metadata */
-  static let currentTracksVideoMetadata = "current-tracks/video/metadata"
-  /** current-tracks/sub/metadata */
-  static let currentTracksSubMetadata = "current-tracks/sub/metadata"
-  /** current-tracks/sub2/metadata */
-  static let currentTracksSub2Metadata = "current-tracks/sub2/metadata"
   /** chapter-list */
   static let chapterList = "chapter-list"
   /** chapter-list/count */
@@ -1024,8 +876,6 @@ struct MPVProperty {
   static let playbackAbort = "playback-abort"
   /** cursor-autohide */
   static let cursorAutohide = "cursor-autohide"
-  /** term-clip-cc */
-  static let termClipCc = "term-clip-cc"
   /** osd-sym-cc */
   static let osdSymCc = "osd-sym-cc"
   /** osd-ass-cc */
@@ -1068,6 +918,12 @@ struct MPVProperty {
   static let audioBitrate = "audio-bitrate"
   /** sub-bitrate */
   static let subBitrate = "sub-bitrate"
+  /** packet-video-bitrate */
+  static let packetVideoBitrate = "packet-video-bitrate"
+  /** packet-audio-bitrate */
+  static let packetAudioBitrate = "packet-audio-bitrate"
+  /** packet-sub-bitrate */
+  static let packetSubBitrate = "packet-sub-bitrate"
   /** audio-device-list */
   static let audioDeviceList = "audio-device-list"
   /** audio-device */
@@ -1080,22 +936,10 @@ struct MPVProperty {
   static let currentAo = "current-ao"
   /** user-data */
   static let userData = "user-data"
-  /** user-data/osc/margins */
-  static let userDataOscMargins = "user-data/osc/margins"
-  /** user-data/mpv/ytdl */
-  static let userDataMpvYtdl = "user-data/mpv/ytdl"
-  /** user-data/mpv/ytdl/path */
-  static let userDataMpvYtdlPath = "user-data/mpv/ytdl/path"
-  /** user-data/mpv/ytdl/json-subprocess-result */
-  static let userDataMpvYtdlJsonSubprocessResult = "user-data/mpv/ytdl/json-subprocess-result"
-  /** user-data/mpv/console/open */
-  static let userDataMpvConsoleOpen = "user-data/mpv/console/open"
   /** menu-data */
   static let menuData = "menu-data"
   /** working-directory */
   static let workingDirectory = "working-directory"
-  /** current-watch-later-dir */
-  static let currentWatchLaterDir = "current-watch-later-dir"
   /** protocol-list */
   static let protocolList = "protocol-list"
   /** decoder-list */
@@ -1144,10 +988,6 @@ struct MPVProperty {
   static func optionInfoSetLocally(_ name: String) -> String {
     return "option-info/\(name)/set-locally"
   }
-  /** option-info/<name>/expects-file */
-  static func optionInfoExpectsFile(_ name: String) -> String {
-    return "option-info/\(name)/expects-file"
-  }
   /** option-info/<name>/default-value */
   static func optionInfoDefaultValue(_ name: String) -> String {
     return "option-info/\(name)/default-value"
@@ -1172,14 +1012,4 @@ struct MPVProperty {
   static let commandList = "command-list"
   /** input-bindings */
   static let inputBindings = "input-bindings"
-  /** clipboard */
-  static let clipboard = "clipboard"
-  /** clipboard/text */
-  static let clipboardText = "clipboard/text"
-  /** clipboard/text-primary */
-  static let clipboardTextPrimary = "clipboard/text-primary"
-  /** current-clipboard-backend */
-  static let currentClipboardBackend = "current-clipboard-backend"
-  /** clock */
-  static let clock = "clock"
 }

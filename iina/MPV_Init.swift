@@ -28,7 +28,7 @@ extension MPVController {
     if player.isDemoPlayer {
       // Do the minimum needed for demo player
       logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadAutoProfiles, "no"))
-      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadConsole, "no"))
+      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadOsdConsole, "no"))
       logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadScripts, "no"))
       logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadStatsOverlay, "no"))
       logError(mpv_initialize(mpv))
@@ -201,14 +201,14 @@ extension MPVController {
     setUserOption(PK.subSpacing, type: .float, forName: MPVOption.Subtitles.subSpacing,
                   verboseIfDefault: true)
 
-    setUserOption(PK.subBorderSize, type: .float, forName: MPVOption.Subtitles.subOutlineSize,
+    setUserOption(PK.subBorderSize, type: .float, forName: MPVOption.Subtitles.subBorderSize,
                   verboseIfDefault: true)
-    setUserOption(PK.subBorderColorString, type: .color, forName: MPVOption.Subtitles.subOutlineColor,
+    setUserOption(PK.subBorderColorString, type: .color, forName: MPVOption.Subtitles.subBorderColor,
                   verboseIfDefault: true)
 
     setUserOption(PK.subShadowSize, type: .float, forName: MPVOption.Subtitles.subShadowOffset,
                   verboseIfDefault: true)
-    setUserOption(PK.subShadowColorString, type: .color, forName: MPVOption.Subtitles.subBackColor,
+    setUserOption(PK.subShadowColorString, type: .color, forName: MPVOption.Subtitles.subShadowColor,
                   verboseIfDefault: true)
 
     setUserOption(PK.subAlignX, type: .other, forName: MPVOption.Subtitles.subAlignX,
