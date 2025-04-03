@@ -3381,6 +3381,7 @@
 		};
 		84B1CE561F98CAE300994D63 /* Copy Dylib Symlinks */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -5145,8 +5146,6 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/deps/lib",
 				);
-				LINKER_DISPLAYS_MANGLED_NAMES = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				SKIP_INSTALL = NO;
@@ -5204,8 +5203,6 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/deps/lib",
 				);
-				LINKER_DISPLAYS_MANGLED_NAMES = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				SKIP_INSTALL = NO;
@@ -5276,8 +5273,6 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/deps/lib",
 				);
-				LINKER_DISPLAYS_MANGLED_NAMES = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
 				SKIP_INSTALL = NO;
@@ -5307,8 +5302,6 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/deps/lib",
 				);
-				LINKER_DISPLAYS_MANGLED_NAMES = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.4;
 				OTHER_CODE_SIGN_FLAGS = "--deep --timestamp";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.iina-advance";
