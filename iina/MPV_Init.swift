@@ -33,7 +33,9 @@ extension MPVController {
       logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadStatsOverlay, "no"))
       logError(mpv_initialize(mpv))
 
-      logError(setString(MPVOption.Video.vo, "libmpv", level: .verbose))
+      logError(setString(MPVOption.Video.vo, "gpu", level: .verbose))
+      logError(mpv_set_option_string(mpv, MPVOption.Video.hwdec, Constants.String.mpvNo))
+      chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))
 
       logError(mpv_request_log_messages(mpv, MPVLogLevel.warn.description))
       addEventCallbacks()
@@ -132,37 +134,27 @@ extension MPVController {
 
     // - Codec
 
-    setUserOption(PK.videoThreads, type: .int, forName: MPVOption.Video.vdLavcThreads,
-                  verboseIfDefault: true)
-    setUserOption(PK.audioThreads, type: .int, forName: MPVOption.Audio.adLavcThreads,
-                  verboseIfDefault: true)
+    setUserOption(PK.videoThreads, type: .int, forName: MPVOption.Video.vdLavcThreads, verboseIfDefault: true)
+    setUserOption(PK.audioThreads, type: .int, forName: MPVOption.Audio.adLavcThreads, verboseIfDefault: true)
 
-    setUserOption(PK.hardwareDecoder, type: .other, forName: MPVOption.Video.hwdec,
-                  verboseIfDefault: true) { key in
+    setUserOption(PK.hardwareDecoder, type: .other, forName: MPVOption.Video.hwdec, verboseIfDefault: true) { key in
       let value = Preference.integer(for: key)
       return Preference.HardwareDecoderOption(rawValue: value)?.mpvString ?? "auto"
     }
 
     setUserOption(PK.maxVolume, type: .int, forName: MPVOption.Audio.volumeMax, level: .verbose)
 
-    setUserOption(PK.videoThreads, type: .int, forName: MPVOption.Video.vdLavcThreads, level: .verbose)
-    setUserOption(PK.audioThreads, type: .int, forName: MPVOption.Audio.adLavcThreads, level: .verbose)
-
-    setUserOption(PK.audioLanguage, type: .string, forName: MPVOption.TrackSelection.alang,
-                  level: .verbose)
+    setUserOption(PK.audioLanguage, type: .string, forName: MPVOption.TrackSelection.alang, level: .verbose)
 
     var spdif: [String] = []
     if Preference.bool(for: PK.spdifAC3) { spdif.append("ac3") }
     if Preference.bool(for: PK.spdifDTS){ spdif.append("dts") }
     if Preference.bool(for: PK.spdifDTSHD) { spdif.append("dts-hd") }
-    chkErr(setOptionString(MPVOption.Audio.audioSpdif, spdif.joined(separator: ","),
-                           verboseIfDefault: true))
+    chkErr(setOptionString(MPVOption.Audio.audioSpdif, spdif.joined(separator: ","), verboseIfDefault: true))
 
-    setUserOption(PK.audioDevice, type: .string, forName: MPVOption.Audio.audioDevice,
-                  verboseIfDefault: true)
+    setUserOption(PK.audioDevice, type: .string, forName: MPVOption.Audio.audioDevice, verboseIfDefault: true)
 
-    setUserOption(PK.replayGain, type: .other, forName: MPVOption.Audio.replaygain,
-                  verboseIfDefault: true) { key in
+    setUserOption(PK.replayGain, type: .other, forName: MPVOption.Audio.replaygain, verboseIfDefault: true) { key in
       let value = Preference.integer(for: key)
       return Preference.ReplayGainOption(rawValue: value)?.mpvString ?? Constants.String.mpvNo
     }

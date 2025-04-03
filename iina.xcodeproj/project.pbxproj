@@ -335,8 +335,6 @@
 		D17CBBA82CCF64C2006160AC /* PWin_Observers.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17CBBA72CCF64BE006160AC /* PWin_Observers.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
 		D18333BE2834CE620060A4E9 /* PlayerInputContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerInputContext.swift */; };
-		D186D0342D98093E009D3ED9 /* libMoltenVK.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D186D0332D98093E009D3ED9 /* libMoltenVK.dylib */; };
-		D186D0352D9809B4009D3ED9 /* libMoltenVK.dylib in Copy Dylibs */ = {isa = PBXBuildFile; fileRef = D186D0332D98093E009D3ED9 /* libMoltenVK.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		D186D06B2D980A05009D3ED9 /* vulkan.cppm in Resources */ = {isa = PBXBuildFile; fileRef = D186D04C2D980A05009D3ED9 /* vulkan.cppm */; };
 		D186D06D2D980C01009D3ED9 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = D186D06C2D980C01009D3ED9 /* libc++.tbd */; };
 		D186D06F2D980C7D009D3ED9 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D186D06E2D980C7D009D3ED9 /* Metal.framework */; };
@@ -580,7 +578,6 @@
 				34ACABD42C142A0C00F871A0 /* liblcms2.2.dylib in Copy Dylibs */,
 				34ACABD52C142A0C00F871A0 /* libluajit-5.1.2.dylib in Copy Dylibs */,
 				D186D0832D9B97B5009D3ED9 /* libplacebo.349.dylib in Copy Dylibs */,
-				D186D0352D9809B4009D3ED9 /* libMoltenVK.dylib in Copy Dylibs */,
 				34ACABD62C142A0C00F871A0 /* liblz4.1.dylib in Copy Dylibs */,
 				34ACABD72C142A0C00F871A0 /* liblzma.5.dylib in Copy Dylibs */,
 				34ACABD82C142A0C00F871A0 /* libmpv.2.dylib in Copy Dylibs */,
@@ -1865,6 +1862,7 @@
 		D127821A2D840CF20058F609 /* iinaRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iinaRelease.entitlements; sourceTree = "<group>"; };
 		D127821B2D841E040058F609 /* OpenInIINARelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OpenInIINARelease.entitlements; sourceTree = "<group>"; };
 		D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfigBuilder.swift; sourceTree = "<group>"; };
+		D12D507D2D9E46B80092A906 /* stream_cb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stream_cb.h; sourceTree = "<group>"; };
 		D13209BA2B90596000069C94 /* AspectTokenField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AspectTokenField.swift; sourceTree = "<group>"; };
 		D13350942D06B7E200201623 /* GeometryTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometryTransform.swift; sourceTree = "<group>"; };
 		D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGeometry.swift; sourceTree = "<group>"; };
@@ -1890,7 +1888,6 @@
 		D17CBBA72CCF64BE006160AC /* PWin_Observers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Observers.swift; sourceTree = "<group>"; };
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
 		D18333BD2834CE620060A4E9 /* PlayerInputContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerInputContext.swift; sourceTree = "<group>"; };
-		D186D0332D98093E009D3ED9 /* libMoltenVK.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libMoltenVK.dylib; path = deps/lib/libMoltenVK.dylib; sourceTree = "<group>"; };
 		D186D0362D980A05009D3ED9 /* mvk_config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mvk_config.h; sourceTree = "<group>"; };
 		D186D0372D980A05009D3ED9 /* mvk_datatypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mvk_datatypes.h; sourceTree = "<group>"; };
 		D186D0382D980A05009D3ED9 /* mvk_deprecated_api.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mvk_deprecated_api.h; sourceTree = "<group>"; };
@@ -2298,7 +2295,6 @@
 				34ACAB7E2C142A0500F871A0 /* libvulkan.1.dylib in Frameworks */,
 				8403CEA72007CBD400645516 /* MediaPlayer.framework in Frameworks */,
 				D186D0822D9B9754009D3ED9 /* libplacebo.349.dylib in Frameworks */,
-				D186D0342D98093E009D3ED9 /* libMoltenVK.dylib in Frameworks */,
 				34ACAB782C142A0500F871A0 /* libsharpyuv.0.dylib in Frameworks */,
 				D186D0712D980DF6009D3ED9 /* IOSurface.framework in Frameworks */,
 				34ACAB852C142A0500F871A0 /* libdav1d.7.dylib in Frameworks */,
@@ -2589,7 +2585,6 @@
 				34ACAB3C2C142A0300F871A0 /* libvidstab.1.2.dylib */,
 				34ACAB392C142A0300F871A0 /* libvulkan.1.dylib */,
 				D186D0812D9B9754009D3ED9 /* libplacebo.349.dylib */,
-				D186D0332D98093E009D3ED9 /* libMoltenVK.dylib */,
 				34ACAB3D2C142A0300F871A0 /* libwebp.7.dylib */,
 				34ACAB372C142A0300F871A0 /* libwebpmux.3.dylib */,
 				34ACAB5C2C142A0400F871A0 /* libX11.6.dylib */,
@@ -2983,6 +2978,7 @@
 				34ACAC7D2C142CE600F871A0 /* client.h */,
 				34ACAC7B2C142CE600F871A0 /* render_gl.h */,
 				34ACAC7E2C142CE600F871A0 /* render.h */,
+				D12D507D2D9E46B80092A906 /* stream_cb.h */,
 			);
 			path = mpv;
 			sourceTree = "<group>";

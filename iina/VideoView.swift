@@ -294,7 +294,10 @@ class VideoView: NSView {
     player.mpv.setString(MPVOption.GPURendererOptions.targetPrim, "auto")
     player.mpv.setString(MPVOption.GPURendererOptions.targetPeak, "auto")
     player.mpv.setString(MPVOption.GPURendererOptions.toneMapping, "auto")
-    player.mpv.setString(MPVOption.GPURendererOptions.toneMappingParam, "default")
+    // Check first to avoid spurious error in mpv 0.40.0 log complaining about the value being out of range
+    if player.mpv.getString(MPVOption.GPURendererOptions.toneMappingParam) != "default" {
+      player.mpv.setString(MPVOption.GPURendererOptions.toneMappingParam, "default")
+    }
     player.mpv.setFlag(MPVOption.Screenshot.screenshotTagColorspace, false)
   }
 
