@@ -3227,6 +3227,10 @@ class PlayerCore: NSObject {
   }
 
   func updatePlaybackTimeInfo() {
+    guard videoView.useOpenGL || DispatchQueue.isExecutingIn(mpv.queue, logError: false) else {
+      log.warn("FIXME: skipping sync of playback time info for gpu-next")
+      return
+    }
     guard state.isAtLeast(.started), state.isNotYet(.stopping) else {
       log.verbose("updatePlaybackTimeInfo: not syncing")
       return

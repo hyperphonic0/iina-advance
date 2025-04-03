@@ -335,7 +335,6 @@
 		D17CBBA82CCF64C2006160AC /* PWin_Observers.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17CBBA72CCF64BE006160AC /* PWin_Observers.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
 		D18333BE2834CE620060A4E9 /* PlayerInputContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerInputContext.swift */; };
-		D186D06B2D980A05009D3ED9 /* vulkan.cppm in Resources */ = {isa = PBXBuildFile; fileRef = D186D04C2D980A05009D3ED9 /* vulkan.cppm */; };
 		D186D06D2D980C01009D3ED9 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = D186D06C2D980C01009D3ED9 /* libc++.tbd */; };
 		D186D06F2D980C7D009D3ED9 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D186D06E2D980C7D009D3ED9 /* Metal.framework */; };
 		D186D0712D980DF6009D3ED9 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D186D0702D980DF6009D3ED9 /* IOSurface.framework */; };
@@ -1894,50 +1893,6 @@
 		D186D0392D980A05009D3ED9 /* mvk_private_api.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mvk_private_api.h; sourceTree = "<group>"; };
 		D186D03A2D980A05009D3ED9 /* mvk_vulkan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mvk_vulkan.h; sourceTree = "<group>"; };
 		D186D03B2D980A05009D3ED9 /* vk_mvk_moltenvk.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vk_mvk_moltenvk.h; sourceTree = "<group>"; };
-		D186D03D2D980A05009D3ED9 /* vulkan_video_codec_av1std.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_video_codec_av1std.h; sourceTree = "<group>"; };
-		D186D03E2D980A05009D3ED9 /* vulkan_video_codec_av1std_decode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_video_codec_av1std_decode.h; sourceTree = "<group>"; };
-		D186D03F2D980A05009D3ED9 /* vulkan_video_codec_h264std.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_video_codec_h264std.h; sourceTree = "<group>"; };
-		D186D0402D980A05009D3ED9 /* vulkan_video_codec_h264std_decode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_video_codec_h264std_decode.h; sourceTree = "<group>"; };
-		D186D0412D980A05009D3ED9 /* vulkan_video_codec_h264std_encode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_video_codec_h264std_encode.h; sourceTree = "<group>"; };
-		D186D0422D980A05009D3ED9 /* vulkan_video_codec_h265std.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_video_codec_h265std.h; sourceTree = "<group>"; };
-		D186D0432D980A05009D3ED9 /* vulkan_video_codec_h265std_decode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_video_codec_h265std_decode.h; sourceTree = "<group>"; };
-		D186D0442D980A05009D3ED9 /* vulkan_video_codec_h265std_encode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_video_codec_h265std_encode.h; sourceTree = "<group>"; };
-		D186D0452D980A05009D3ED9 /* vulkan_video_codecs_common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_video_codecs_common.h; sourceTree = "<group>"; };
-		D186D0472D980A05009D3ED9 /* vk_icd.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vk_icd.h; sourceTree = "<group>"; };
-		D186D0482D980A05009D3ED9 /* vk_layer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vk_layer.h; sourceTree = "<group>"; };
-		D186D0492D980A05009D3ED9 /* vk_platform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vk_platform.h; sourceTree = "<group>"; };
-		D186D04A2D980A05009D3ED9 /* vulkan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan.h; sourceTree = "<group>"; };
-		D186D04B2D980A05009D3ED9 /* vulkan.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan.hpp; sourceTree = "<group>"; };
-		D186D04C2D980A05009D3ED9 /* vulkan.cppm */ = {isa = PBXFileReference; lastKnownFileType = text; path = vulkan.cppm; sourceTree = "<group>"; };
-		D186D04D2D980A05009D3ED9 /* vulkan_android.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_android.h; sourceTree = "<group>"; };
-		D186D04E2D980A05009D3ED9 /* vulkan_beta.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_beta.h; sourceTree = "<group>"; };
-		D186D04F2D980A05009D3ED9 /* vulkan_core.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_core.h; sourceTree = "<group>"; };
-		D186D0502D980A05009D3ED9 /* vulkan_directfb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_directfb.h; sourceTree = "<group>"; };
-		D186D0512D980A05009D3ED9 /* vulkan_enums.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_enums.hpp; sourceTree = "<group>"; };
-		D186D0522D980A05009D3ED9 /* vulkan_extension_inspection.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_extension_inspection.hpp; sourceTree = "<group>"; };
-		D186D0532D980A05009D3ED9 /* vulkan_format_traits.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_format_traits.hpp; sourceTree = "<group>"; };
-		D186D0542D980A05009D3ED9 /* vulkan_fuchsia.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_fuchsia.h; sourceTree = "<group>"; };
-		D186D0552D980A05009D3ED9 /* vulkan_funcs.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_funcs.hpp; sourceTree = "<group>"; };
-		D186D0562D980A05009D3ED9 /* vulkan_ggp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_ggp.h; sourceTree = "<group>"; };
-		D186D0572D980A05009D3ED9 /* vulkan_handles.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_handles.hpp; sourceTree = "<group>"; };
-		D186D0582D980A05009D3ED9 /* vulkan_hash.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_hash.hpp; sourceTree = "<group>"; };
-		D186D0592D980A05009D3ED9 /* vulkan_hpp_macros.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_hpp_macros.hpp; sourceTree = "<group>"; };
-		D186D05A2D980A05009D3ED9 /* vulkan_ios.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_ios.h; sourceTree = "<group>"; };
-		D186D05B2D980A05009D3ED9 /* vulkan_macos.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_macos.h; sourceTree = "<group>"; };
-		D186D05C2D980A05009D3ED9 /* vulkan_metal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_metal.h; sourceTree = "<group>"; };
-		D186D05D2D980A05009D3ED9 /* vulkan_raii.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_raii.hpp; sourceTree = "<group>"; };
-		D186D05E2D980A05009D3ED9 /* vulkan_screen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_screen.h; sourceTree = "<group>"; };
-		D186D05F2D980A05009D3ED9 /* vulkan_shared.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_shared.hpp; sourceTree = "<group>"; };
-		D186D0602D980A05009D3ED9 /* vulkan_static_assertions.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_static_assertions.hpp; sourceTree = "<group>"; };
-		D186D0612D980A05009D3ED9 /* vulkan_structs.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_structs.hpp; sourceTree = "<group>"; };
-		D186D0622D980A05009D3ED9 /* vulkan_to_string.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_to_string.hpp; sourceTree = "<group>"; };
-		D186D0632D980A05009D3ED9 /* vulkan_vi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_vi.h; sourceTree = "<group>"; };
-		D186D0642D980A05009D3ED9 /* vulkan_video.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vulkan_video.hpp; sourceTree = "<group>"; };
-		D186D0652D980A05009D3ED9 /* vulkan_wayland.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_wayland.h; sourceTree = "<group>"; };
-		D186D0662D980A05009D3ED9 /* vulkan_win32.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_win32.h; sourceTree = "<group>"; };
-		D186D0672D980A05009D3ED9 /* vulkan_xcb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_xcb.h; sourceTree = "<group>"; };
-		D186D0682D980A05009D3ED9 /* vulkan_xlib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_xlib.h; sourceTree = "<group>"; };
-		D186D0692D980A05009D3ED9 /* vulkan_xlib_xrandr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vulkan_xlib_xrandr.h; sourceTree = "<group>"; };
 		D186D06C2D980C01009D3ED9 /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
 		D186D06E2D980C7D009D3ED9 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		D186D0702D980DF6009D3ED9 /* IOSurface.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOSurface.framework; path = System/Library/Frameworks/IOSurface.framework; sourceTree = SDKROOT; };
@@ -2966,8 +2921,6 @@
 				84BC78C01EEECBE30068BF17 /* libswscale */,
 				84FF846F1D2FF698001B318A /* mpv */,
 				D186D03C2D980A05009D3ED9 /* MoltenVK */,
-				D186D0462D980A05009D3ED9 /* vk_video */,
-				D186D06A2D980A05009D3ED9 /* vulkan */,
 			);
 			path = include;
 			sourceTree = "<group>";
@@ -3011,64 +2964,6 @@
 				D186D03B2D980A05009D3ED9 /* vk_mvk_moltenvk.h */,
 			);
 			path = MoltenVK;
-			sourceTree = "<group>";
-		};
-		D186D0462D980A05009D3ED9 /* vk_video */ = {
-			isa = PBXGroup;
-			children = (
-				D186D03D2D980A05009D3ED9 /* vulkan_video_codec_av1std.h */,
-				D186D03E2D980A05009D3ED9 /* vulkan_video_codec_av1std_decode.h */,
-				D186D03F2D980A05009D3ED9 /* vulkan_video_codec_h264std.h */,
-				D186D0402D980A05009D3ED9 /* vulkan_video_codec_h264std_decode.h */,
-				D186D0412D980A05009D3ED9 /* vulkan_video_codec_h264std_encode.h */,
-				D186D0422D980A05009D3ED9 /* vulkan_video_codec_h265std.h */,
-				D186D0432D980A05009D3ED9 /* vulkan_video_codec_h265std_decode.h */,
-				D186D0442D980A05009D3ED9 /* vulkan_video_codec_h265std_encode.h */,
-				D186D0452D980A05009D3ED9 /* vulkan_video_codecs_common.h */,
-			);
-			path = vk_video;
-			sourceTree = "<group>";
-		};
-		D186D06A2D980A05009D3ED9 /* vulkan */ = {
-			isa = PBXGroup;
-			children = (
-				D186D0472D980A05009D3ED9 /* vk_icd.h */,
-				D186D0482D980A05009D3ED9 /* vk_layer.h */,
-				D186D0492D980A05009D3ED9 /* vk_platform.h */,
-				D186D04A2D980A05009D3ED9 /* vulkan.h */,
-				D186D04B2D980A05009D3ED9 /* vulkan.hpp */,
-				D186D04C2D980A05009D3ED9 /* vulkan.cppm */,
-				D186D04D2D980A05009D3ED9 /* vulkan_android.h */,
-				D186D04E2D980A05009D3ED9 /* vulkan_beta.h */,
-				D186D04F2D980A05009D3ED9 /* vulkan_core.h */,
-				D186D0502D980A05009D3ED9 /* vulkan_directfb.h */,
-				D186D0512D980A05009D3ED9 /* vulkan_enums.hpp */,
-				D186D0522D980A05009D3ED9 /* vulkan_extension_inspection.hpp */,
-				D186D0532D980A05009D3ED9 /* vulkan_format_traits.hpp */,
-				D186D0542D980A05009D3ED9 /* vulkan_fuchsia.h */,
-				D186D0552D980A05009D3ED9 /* vulkan_funcs.hpp */,
-				D186D0562D980A05009D3ED9 /* vulkan_ggp.h */,
-				D186D0572D980A05009D3ED9 /* vulkan_handles.hpp */,
-				D186D0582D980A05009D3ED9 /* vulkan_hash.hpp */,
-				D186D0592D980A05009D3ED9 /* vulkan_hpp_macros.hpp */,
-				D186D05A2D980A05009D3ED9 /* vulkan_ios.h */,
-				D186D05B2D980A05009D3ED9 /* vulkan_macos.h */,
-				D186D05C2D980A05009D3ED9 /* vulkan_metal.h */,
-				D186D05D2D980A05009D3ED9 /* vulkan_raii.hpp */,
-				D186D05E2D980A05009D3ED9 /* vulkan_screen.h */,
-				D186D05F2D980A05009D3ED9 /* vulkan_shared.hpp */,
-				D186D0602D980A05009D3ED9 /* vulkan_static_assertions.hpp */,
-				D186D0612D980A05009D3ED9 /* vulkan_structs.hpp */,
-				D186D0622D980A05009D3ED9 /* vulkan_to_string.hpp */,
-				D186D0632D980A05009D3ED9 /* vulkan_vi.h */,
-				D186D0642D980A05009D3ED9 /* vulkan_video.hpp */,
-				D186D0652D980A05009D3ED9 /* vulkan_wayland.h */,
-				D186D0662D980A05009D3ED9 /* vulkan_win32.h */,
-				D186D0672D980A05009D3ED9 /* vulkan_xcb.h */,
-				D186D0682D980A05009D3ED9 /* vulkan_xlib.h */,
-				D186D0692D980A05009D3ED9 /* vulkan_xlib_xrandr.h */,
-			);
-			path = vulkan;
 			sourceTree = "<group>";
 		};
 		D1A44D882A5E18B10089B283 /* PlayerWindow */ = {
@@ -3436,7 +3331,6 @@
 				8400D5E11E1AB32F006785F5 /* PrefUIViewController.xib in Resources */,
 				E338368A202651CF00ABC812 /* PrefOSCToolbarDraggingItemViewController.xib in Resources */,
 				34ACA04B29DBB0090030C09C /* LogWindowController.xib in Resources */,
-				D186D06B2D980A05009D3ED9 /* vulkan.cppm in Resources */,
 				8483FB001EDFF325000F55D6 /* Credits.rtf in Resources */,
 				34F8B6F62C6C7B0100AE4B16 /* PrefPluginViewController.xib in Resources */,
 				84F5D49A1E44E9A50060A838 /* KeyBinding.strings in Resources */,

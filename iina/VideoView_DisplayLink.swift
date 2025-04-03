@@ -82,9 +82,10 @@ extension VideoView {
       log.debug{"Switching standard display refresh rate: \(actualFps) → 60"}
       actualFps = 60
     }
-    player.mpv.setDouble(MPVOption.Video.displayFpsOverride, actualFps)
-
-    log.verbose("Done updating DisplayLink")
+    player.mpv.queue.async { [self] in
+      player.mpv.setDouble(MPVOption.Video.displayFpsOverride, actualFps)
+      log.verbose("Done updating DisplayLink")
+    }
   }
 
 
