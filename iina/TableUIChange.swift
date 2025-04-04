@@ -209,6 +209,13 @@ class TableUIChange {
       })
     }
 
+    if let completionHandler {
+      animationTasks.append(.instantTask{ [self] in
+        log.trace{"TableUIChange: running completion handler"}
+        completionHandler(self)
+      })
+    }
+
     if let animationPipeline = tableView.pwc?.animationPipeline {
       animationPipeline.submit(animationTasks)
     } else {

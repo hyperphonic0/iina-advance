@@ -261,19 +261,19 @@ extension EditableTableView {
   func buildInsert<T>(of itemsToInsert: [T], at insertIndex: Int, in allCurrentItems: [T],
                       completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
     return TableUIChange.builder.buildInsert(of: itemsToInsert, at: insertIndex, in: allCurrentItems,
-                                           completionHandler: completionHandler)
+                                             completionHandler: completionHandler)
   }
   func buildRemove<T>(_ indexesToRemove: IndexSet, in allCurrentRows: [T],
                       completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
     return TableUIChange.builder.buildRemove(indexesToRemove, in: allCurrentRows,
-                                           selectNextRowAfterDelete: selectNextRowAfterDelete,
-                                           completionHandler: completionHandler)
+                                             selectNextRowAfterDelete: selectNextRowAfterDelete,
+                                             completionHandler: completionHandler)
   }
   func buildMove<T>(_ indexesToMove: IndexSet,
                     to insertIndex: Int,
                     in allCurrentRows: [T],
                     completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
     return TableUIChange.builder.buildMove(indexesToMove, to: insertIndex, in: allCurrentRows,
-                                         completionHandler: completionHandler)
+                                           completionHandler: completionHandler)
   }
 }
