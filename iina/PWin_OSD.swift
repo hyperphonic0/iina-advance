@@ -269,11 +269,11 @@ extension PlayerWindowController {
         _displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController)
       })
     }
-    if !isScrollingOrDraggingPlaySlider {
-      player.updatePlaybackTimeInfo()
-    }
     // Need to do the UI sync in the main queue
     DispatchQueue.main.async { [self] in
+      if !isScrollingOrDraggingPlaySlider {
+        player.updatePlaybackTimeInfo()
+      }
       updateUI()
     }
   }

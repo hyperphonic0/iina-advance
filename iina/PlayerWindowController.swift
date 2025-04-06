@@ -209,6 +209,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var windowScrollWheel: PWinScrollWheel!
 
   var isScrollingOrDraggingPlaySlider: Bool {
+    assert(DispatchQueue.isExecutingIn(.main))  // Must use main DQ to avoid error whe accessing playSlider.customCell
     if playSlider.customCell.isDragging {
       // Dragging play slider
       return true

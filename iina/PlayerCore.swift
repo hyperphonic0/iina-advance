@@ -2674,8 +2674,8 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.debug("Playback restarted")
 
-    updatePlaybackTimeInfo()  // prepare for updateUI()
     DispatchQueue.main.async { [self] in
+      updatePlaybackTimeInfo()  // prepare for updateUI()
       windowController.updateUI()
 
       // When playback is paused the display link may be shutdown in order to not waste energy.
