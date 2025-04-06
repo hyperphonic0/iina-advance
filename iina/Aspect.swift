@@ -127,7 +127,7 @@ class Aspect: NSObject {
   static func mpvVideoAspectOverride(fromAspectLabel aspectLabel: String) -> String {
     switch aspectLabel {
     case defaultIdentifier:
-      return "-1"
+      return Constants.String.mpvNo
     default:
       return aspectLabel
     }
@@ -160,7 +160,8 @@ class Aspect: NSObject {
 
   init?(string: String) {
     guard string != Aspect.defaultIdentifier else { return nil }
-    
+    guard string != Constants.String.mpvNo else { return nil }
+
     // Look up mpv name and translate it to ratio (if applicable)
     let string = Aspect.resolvingMpvName(string)
 

@@ -105,22 +105,21 @@ class PlayerWindow: NSWindow {
   }
 
   override func keyUp(with event: NSEvent) {
+    guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.keyUp!") }
     keyUpCount += 1
+    let keyCode: String = KeyCodeHelper.mpvKeyCode(from: event)
+
     // The user expects certain keys to end editing of text fields. But all the other controls in the sidebar refuse first responder
     // status, so we cannot rely on the key-view-loop to end editing. Need to do this explicitly.
-    if let responder = firstResponder, let textView = responder as? NSTextView {
-      let keySequence: String = KeyCodeHelper.mpvKeyCode(from: event)
-      if keySequence == "ENTER" || keySequence == "TAB" {
+    if let textView = firstResponder as? NSTextView {
+      if keyCode == "ENTER" || keyCode == "TAB" {
         self.endEditing(for: textView)
         return
       }
     }
 
-    let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
     let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
     log.verbose{"KEYUP #\(keyUpCount): \(normalizedKeyCode.quoted)"}
-
-    guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.keyDown()!") }
 
     PluginInputManager.handle(
       input: normalizedKeyCode, event: .keyUp, player: pwc.player,
@@ -132,21 +131,22 @@ class PlayerWindow: NSWindow {
   }
 
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
-    if let pwc, pwc.isInInteractiveMode, let cropController = pwc.cropSettingsView {
-      let keySequence: String = KeyCodeHelper.mpvKeyCode(from: event)
-      if keySequence == "ESC" || keySequence == "ENTER" {
-        cropController.handleKeyDown(mpvKeyCode: keySequence)
+    guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.performKeyEquivalent!") }
+    let keyCode: String = KeyCodeHelper.mpvKeyCode(from: event)
+
+    if pwc.isInInteractiveMode, let cropController = pwc.cropSettingsView {
+      if keyCode == "ESC" || keyCode == "ENTER" {
+        cropController.handleKeyDown(mpvKeyCode: keyCode)
         return true
       }
     }
+
+    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
 
     /// AppKit by default will prioritize menu item key equivalents over arrow key navigation
     /// (although for some reason it is the opposite for `ESC`, `TAB`, `ENTER` or `RETURN`).
     /// Need to add an explicit check here for arrow keys to ensure that they always work when desired.
     if let responder = firstResponder, shouldFavorArrowKeyNavigation(for: responder) {
-      let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
-      let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-
       switch normalizedKeyCode {
       case "UP", "DOWN", "LEFT", "RIGHT":
         // Send arrow keys to view to enable key navigation
@@ -156,24 +156,24 @@ class PlayerWindow: NSWindow {
         break
       }
     }
-    pwc?.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
+    pwc.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
 
     /// Need to check this to prevent a strange bug, where using `Ctrl+{key}` will activate a menu item which is mapped as `{key}`.
     /// MacOS quirk? Obscure feature? A user has also demonstrated a case where `Space` is ignored. It looks like bindings which don't
     /// use the command key are sometimes unreliable.
     /// Let's take all the bindings which don't include command and invert their precedence, so that the window is allowed to handle it
     /// before the menu.
-    if let pwc, !event.modifierFlags.contains(.command) {
-      let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
-      let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
+    if !event.modifierFlags.contains(.command) {
       log.verbose{"KEY Equiv: \(normalizedKeyCode.quoted)"}
       return pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode)
     }
+
     return super.performKeyEquivalent(with: event)
   }
 
   private func shouldFavorArrowKeyNavigation(for responder: NSResponder) -> Bool {
     if responder as? NSTextView != nil {
+      // Always favor text fields
       return true
     }
     /// There is some ambiguity about when a table is in focus, so only favor arrow keys when there's
