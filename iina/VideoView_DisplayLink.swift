@@ -50,9 +50,7 @@ extension VideoView {
 
   /// This should be called at start or if the window has changed displays
   func updateDisplayLink() {
-    guard let window = window, let link = link, let screen = window.screen else { return }
-    guard !player.isStopping else { return }
-    let displayId = screen.displayId
+    guard let link, let displayId = window?.screen?.displayId else { return }
 
     // Do nothing if on the same display
     guard currentDisplay != displayId else {
@@ -83,6 +81,7 @@ extension VideoView {
       actualFps = 60
     }
     player.mpv.queue.async { [self] in
+      guard !player.isStopping else { return }
       player.mpv.setDouble(MPVOption.Video.displayFpsOverride, actualFps)
       log.verbose("Done updating DisplayLink")
     }

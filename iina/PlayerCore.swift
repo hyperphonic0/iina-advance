@@ -162,13 +162,13 @@ class PlayerCore: NSObject {
 
   var isUsingMpvOSD = false {
     didSet {
-      log.verbose("Updated isUsingMpvOSD=\(isUsingMpvOSD.yn)")
+      log.verbose("Updated isUsingMpvOSD ≔ \(isUsingMpvOSD.yn)")
     }
   }
 
   var state: LifecycleState = .notYetStarted {
     didSet {
-      log.verbose("Updated lifecycleState to \(state)")
+      log.verbose("Updated lifecycleState ≔ \(state)")
     }
   }
 

@@ -562,8 +562,10 @@ class MPVController: NSObject {
   }
 
   func _updateUsingMpvOSDFromPrefs() {
-    guard player.isActive, !player.isDemoPlayer else { return }
+    // This can be called during init
+    guard !player.isStopping, !player.isDemoPlayer else { return }
     let useMpvOSD = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
+    log.verbose{"User pref: isUsingMpvOSD=\(useMpvOSD)"}
     player.isUsingMpvOSD = useMpvOSD
     if useMpvOSD {
       // If using mpv OSD, then disable IINA's OSD
