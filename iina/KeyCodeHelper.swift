@@ -163,6 +163,10 @@ class KeyCodeHelper {
       "KP7": "7",
       "KP8": "8",
       "KP9": "9",
+      "KP_ADD": "+",
+      "KP_SUBTRACT": "-",
+      "KP_MULTIPLY": "*",
+      "KP_DIVIDE": "/",
     ]
   }
 
@@ -175,6 +179,8 @@ class KeyCodeHelper {
       "DOWN": NSDownArrowFunctionKey,
       "BS": NSBackspaceCharacter,
       "KP_DEL": NSDeleteCharacter,
+      "TAB": NSTabCharacter,
+      "Shift+TAB": NSBackTabCharacter,  // KLUDGE!
       "DEL": NSDeleteCharacter,
       "KP_INS": NSInsertFunctionKey,
       "INS": NSInsertFunctionKey,
@@ -226,6 +232,11 @@ class KeyCodeHelper {
     "KP_DEL": "⌦",
     "INS": "Ins",
     "KP_INS": "Ins",
+    "KP_ADD": "+",
+    "KP_SUBTRACT": "-",
+    "KP_MULTIPLY": "*",
+    "KP_DIVIDE": "/",
+    "KP_DEC": ".",
     "TAB": "⇥",
     "ESC": "⎋",
     "UP": "↑",
@@ -520,10 +531,13 @@ class KeyCodeHelper {
       AppInputConfig.log.error("macOSKeyEquivalent(): found more than one keystroke in input string: \"\(normalizedMpvKey)\"")
     }
     let splitted = keystrokeList[0].components(separatedBy: "+")
-    var key: String
     var modifiers: NSEvent.ModifierFlags = []
     guard !splitted.isEmpty else { return nil }
-    key = splitted.last!
+    var key: String = splitted.last!
+    var didResolve = false
+    if key.count == 1 && key[key.startIndex].isASCII {
+      didResolve = true
+    }
     splitted.dropLast().forEach { k in
       switch k {
       case META_KEY: modifiers.insert(.command)
@@ -534,13 +548,29 @@ class KeyCodeHelper {
       }
     }
     if let asciiKey = NumberPad.mpvSymbolToKeyChar[key] {
+      didResolve = true
       key = asciiKey
       modifiers.insert(.numericPad)
     }
-    if let realKey = (usePrintableKeyName ? mpvSymbolToPrettyMacKey : mpvSymbolToKeyChar)[key] {
-      key = realKey
+    if usePrintableKeyName {
+      if let realKey = mpvSymbolToPrettyMacKey[key] {
+        didResolve = true
+        key = realKey
+      }
+    } else {
+      if modifiers.contains(.shift) && key == "TAB" {
+        if let realKey = mpvSymbolToKeyChar["Shift+TAB"] {
+          didResolve = true
+          key = realKey
+        }
+      } else {
+        if let realKey = mpvSymbolToKeyChar[key] {
+          didResolve = true
+          key = realKey
+        }
+      }
     }
-    guard key.count == 1 else { return nil }
+    guard didResolve else { return nil }  // make sure key contains actual printable char(s)
     return (key, modifiers)
   }
 

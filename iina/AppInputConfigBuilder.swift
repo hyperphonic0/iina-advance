@@ -89,7 +89,7 @@ class AppInputConfigBuilder {
       // Iterate from bottom to the top of the "stack":
       for enabledSectionMeta in sectionStack.sectionsEnabled {
         if DebugConfig.logBindingsRebuild {
-          log.error{"RebuildBindings: examining enabled section: \(enabledSectionMeta.name.quoted)"}
+          log.verbose{"RebuildBindings: examining enabled section: \(enabledSectionMeta.name.quoted)"}
         }
         guard let inputSection = sectionStack.sectionsDefined[enabledSectionMeta.name] else {
           // indicates serious internal error

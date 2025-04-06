@@ -186,12 +186,28 @@ class MPVLogScanner {
     for line in contentsUnparsed.components(separatedBy: "\\n") {
       if !line.isEmpty {
         let tokens = line.split(separator: " ")
-        if tokens.count == 3 && tokens[1] == MPVCommand.scriptBinding.rawValue {
-          keyMappings.append(KeyMapping(rawKey: String(tokens[0]), rawAction: "\(tokens[1]) \(tokens[2])"))
+        if tokens.count >= 3 && tokens.count <= 4 && tokens[tokens.count-2] == MPVCommand.scriptBinding.rawValue {
+          let rawKey = String(tokens[0])
+          let rawAction: String
+          if tokens.count == 4 {
+            let prefix = tokens[1]
+            switch prefix {
+              // TODO: try to support more input command prefixes
+            case "raw",
+              "nonscalable":
+              break
+            default:
+              player.log.warn{"Unrecognized mpv input command prefix in `define-section`; ignoring: \(String(prefix).quoted)"}
+            }
+            rawAction = tokens[2...].joined(separator: " ")
+          } else {
+            rawAction = tokens[1...].joined(separator: " ")
+          }
+          keyMappings.append(KeyMapping(rawKey: rawKey, rawAction: rawAction))
         } else {
           // "This command can be used to dispatch arbitrary keys to a script or a client API user".
           // Need to figure out whether to add support for these as well.
-          Logger.log("Unrecognized mpv command in `define-section`; skipping line: \"\(line)\"", level: .warning, subsystem: player.subsystem)
+          player.log.warn("Unrecognized mpv command in `define-section`; skipping line: \(line.quoted)")
         }
       }
     }
@@ -235,17 +251,28 @@ class MPVLogScanner {
     }
 
     let section = MPVInputSection(name: name, parseMappingsFromDefineSectionContents(content), isForce: isForce, origin: .libmpv)
-    Logger.log("Got 'define-section' from mpv: \"\(section.name)\", keyMappings=\(section.keyMappingList.count), force=\(section.isForce) ", subsystem: player.subsystem)
-    if Logger.enabled && Logger.Level.preferred >= .verbose {
-      let keyMappingList = section.keyMappingList.map { ("\t<\(section.name)> \($0.normalizedMpvKey) -> \($0.rawAction ?? "nil")") }
-      let bindingsString: String
-      if keyMappingList.isEmpty {
-        bindingsString = " (none)"
-      } else {
-        bindingsString = "\n\(keyMappingList.joined(separator: "\n"))"
+    player.log.verbose{"Got 'define-section' from mpv: \"\(section.name)\", keyMappings=\(section.keyMappingList.count), force=\(section.isForce) "}
+    if Logger.enabled {
+      let keyMappingList: [String] = section.keyMappingList.compactMap { keyMapping in
+        let normalizedMpvKey = keyMapping.normalizedMpvKey
+        let line = "\t{\(section.name)} \(keyMapping.normalizedMpvKey) -> \(keyMapping.rawAction ?? "nil")"
+        guard KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey) != nil else {
+          player.log.error{"Unrecognized key in input binding: \(line)"}
+            return nil
+          }
+          return line
+        }
+        let bindingsString: String
+        if keyMappingList.isEmpty {
+          bindingsString = " (none)"
+        } else {
+          bindingsString = "\n\(keyMappingList.joined(separator: "\n"))"
+        }
+        player.log.verbose{"Bindings for section \"\(section.name)\":\(bindingsString)"}
       }
-      Logger.log("Bindings for section \"\(section.name)\":\(bindingsString)", level: .verbose, subsystem: player.subsystem)
-    }
+    // FIXME: skip unrecognized bindings
+    // FIXME: script bindings' raw keys are all lowercase in Key Bindings UI
+    // FIXME: script bindings disappear when changing selected conf
     player.keyBindingContext.defineSection(section)
   }
 
