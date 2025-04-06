@@ -8,23 +8,23 @@
 
 import Foundation
 
-/*
- Every player contains an InputSectionStack, to keep track of key binding assignments. See `PlayerInputContext` for more info.
+/**
+ Every player contains an `InputSectionStack`, to keep track of key binding assignments. See `PlayerInputContext` for more info.
 
  The data structures in this class should look roughly similar to mpv's `struct input_ctx`, because they result from an attempt to mimic
  its functionality in order to suport all varieties of Lua scripts, while also supporting IINA's needs such as key equivalents set via
  plugins.
  */
 class InputSectionStack {
-  // More than one of these is probably excessive, since there will only ever be one active player at a time making changes
+  /// More than one of these is probably excessive, since there will only ever be one active player at a time making changes
   static let lock = Lock()
 
-  // For storage in `sectionsEnabled`
+  /// For storage in `sectionsEnabled`
   struct EnabledSectionMeta {
     let name: String
 
-    /*
-     When a section is enabled with the MP_INPUT_EXCLUSIVE flag, its bindings are the only ones used, and all other sections are ignored
+    /**
+     When a section is enabled with the `MP_INPUT_EXCLUSIVE` flag, its bindings are the only ones used, and all other sections are ignored
      until it is disabled. If, while an exclusive section is enabled, another section is enabled with the "exclusive" flag,
      the latest section is pushed onto the top of the stack. An "exclusive" section which is no longer at the top can become active again by
      either another explicit call to enable it with the "exclusive" flag, or it can wait for the sections above it to be disabled.
@@ -34,18 +34,18 @@ class InputSectionStack {
 
   // MARK: Single player instance
 
-  /* mpv euivalent:   `struct cmd_bind_section **sections` */
+  /// mpv euivalent:   `struct cmd_bind_section **sections`
   var sectionsDefined: [String : InputSection] = [:]
 
-  /*
-   mpv equivalent: `struct active_section active_sections[MAX_ACTIVE_SECTIONS];` (MAX_ACTIVE_SECTIONS = 50)
+  /**
+   mpv equivalent: `struct active_section active_sections[MAX_ACTIVE_SECTIONS]; MAX_ACTIVE_SECTIONS = 50`
    This has the behavior of a stack which is also an ordered set. We use the convention that the head of the list is considered the "top".
    But it is also keyed by section name. Adding a section to the list with the same name as something in the list will
    remove the previous section from wherever it is before pushing the new section to the front.
    */
   var sectionsEnabled = LinkedList<EnabledSectionMeta>()
 
-  let log = AppInputConfig.log
+  var log: Logger.Subsystem { Logger.Subsystem.input }
 
   init(initialEnabledSections: [InputSection]? = nil) {
     let sections: [InputSection]
@@ -71,13 +71,13 @@ class InputSectionStack {
 
   // MARK: MPV Input Section API
 
-  /*
+  /**
    From the mpv manual:
    Input sections group a set of bindings, and enable or disable them at once.
    In input.conf, each key binding is assigned to an input section, rather than actually having explicit text sections.
    ...
 
-   define-section <name> <contents> [<flags>]
+   `define-section <name> <contents> [<flags>]`
    Possible flags:
    * `default`: (also used if parameter omitted)
    Use a key binding defined by this section only if the user hasn't already bound this key to a command.
@@ -88,7 +88,7 @@ class InputSectionStack {
    `unmapped` can be used to match any unmapped key.
 
    Contents will always contain a list of:
-   script-binding <name>
+   `script-binding <name>`
    * Invoke a script-provided key binding. This can be used to remap key bindings provided by external Lua scripts.
    * The argument is the name of the binding.
 
@@ -99,7 +99,7 @@ class InputSectionStack {
    `ESC script-binding webm/ESC`
    Here, `ESC` is the key, `webm/ESC` is the name, which consists of the script name as prefix, then slash, then the binding name.
 
-   See: `mp_input_define_section` in mpv source
+   See: `mp_input_define_section` in mpv's source code.
    */
   func defineSection(_ inputSection: MPVInputSection) {
     InputSectionStack.lock.withLock {
@@ -113,7 +113,7 @@ class InputSectionStack {
     }
   }
 
-  /*
+  /**
    From the mpv manual (and also mpv code comments):
    Enable all key bindings in the named input section.
 
@@ -127,7 +127,6 @@ class InputSectionStack {
    above them are removed. In other words, the new section shadows all previous sections.
    * `allow-hide-cursor` (MP_INPUT_ALLOW_HIDE_CURSOR): Don't force mouse pointer visible, even if inside the mouse area.
    * `allow-vo-dragging` (MP_INPUT_ALLOW_VO_DRAGGING): Let mp_input_test_dragging() return true, even if inside the mouse area.
-
    */
   func enableSection(_ sectionName: String, _ flags: [String]) {
     InputSectionStack.lock.withLock {
@@ -160,9 +159,7 @@ class InputSectionStack {
     }
   }
 
-  /*
-   Disable the named input section. Undoes enable-section.
-   */
+   /// Disable the named input section. Undoes `enable-section`.
   func disableSection(_ sectionName: String) {
     InputSectionStack.lock.withLock {
       disableSection_Unsafe(sectionName)

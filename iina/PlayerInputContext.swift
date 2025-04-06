@@ -75,6 +75,8 @@ class PlayerInputContext {
 
   private let log: Logger.Subsystem
 
+  private unowned let player: PlayerCore
+
   // Data structure which keeps track of a player's input sections
   private var sectionStack: InputSectionStack
 
@@ -86,6 +88,7 @@ class PlayerInputContext {
   private var keyPressHistory = RingBuffer<String>(capacity: MP_MAX_KEY_DOWN)
 
   init(playerCore: PlayerCore) {
+    self.player = playerCore
     self.log = Logger.Subsystem(rawValue: "\(playerCore.log.rawValue)/\(Logger.Subsystem.input.rawValue)")
 
     // Default to adding the static shared sections
@@ -98,7 +101,7 @@ class PlayerInputContext {
 
   func makeAppInputConfigBuilder() -> AppInputConfigBuilder {
     // this class is the only other class which can access this player's InputSectionStack.
-    AppInputConfigBuilder(sectionStack)
+    AppInputConfigBuilder(sectionStack, playerLabel: player.label)
   }
 
   // MARK: MPV Input section API

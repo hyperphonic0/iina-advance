@@ -194,7 +194,7 @@ class PlayerManager {
         player = _demoPlayer
       } else {
         Logger.log("Creating demo player")
-        player = PlayerCore("demo", isDemoPlayer: true)
+        player = PlayerCore(Constants.demoPlayerLabel, isDemoPlayer: true)
         _demoPlayer = player
       }
     }

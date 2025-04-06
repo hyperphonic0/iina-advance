@@ -173,6 +173,8 @@ struct Constants {
   // Should PlaySlider height be capped at 2x its minimum?
   static let twoRowOSC_LimitPlaySliderHeight = false
 
+  static let demoPlayerLabel = "demo"
+
   /// All values are in seconds unless explicitly named differently
   struct TimeInterval {
 

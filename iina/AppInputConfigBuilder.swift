@@ -11,24 +11,28 @@ import Foundation
 class AppInputConfigBuilder {
   private unowned var log = Logger.Subsystem.input
   private let sectionStack: InputSectionStack
+  private let playerLabel: String
 
   /// See `AppInputConfig.userConfSectionStartIndex`
   private var userConfSectionStartIndex: Int? = nil
   /// See `AppInputConfig.userConfSectionEndIndex`
   private var userConfSectionEndIndex: Int? = nil
 
-  init(_ sectionStack: InputSectionStack) {
+  init(_ sectionStack: InputSectionStack, playerLabel: String) {
     self.sectionStack = sectionStack
+    self.playerLabel = playerLabel
   }
 
   func build(version: Int) -> AppInputConfig {
     if DebugConfig.logBindingsRebuild {
-      log.verbose{"Starting rebuild of AppInputConfig v\(version)"}
+      log.verbose{"Starting rebuild of AppInputConfig v\(version) (player-\(playerLabel))"}
     }
 
     /// Build the list of `InputBinding`s, including redundancies. We're not done setting each's `isEnabled` field though.
     /// This also sets `userConfSectionStartIndex` and `userConfSectionEndIndex`.
-    let bindingCandidateList = self.combineEnabledSectionBindings()
+    let bindingCandidateList = InputSectionStack.lock.withLock {
+      return self.combineEnabledSectionBindings()
+    }
     var resolverDict: [String: InputBinding] = [:]
     var duplicateKeys = Set<String>()
 
@@ -63,7 +67,8 @@ class AppInputConfigBuilder {
     // This will update all standard menu item bindings, and also update the isMenuItem status of each:
     menuController.updateKeyEquivalents(from: bindingCandidateList)
 
-    let appBindings = AppInputConfig(version: version, bindingCandidateList: bindingCandidateList, resolverDict: resolverDict,
+    let appBindings = AppInputConfig(version: version, playerLabel: playerLabel,
+                                     bindingCandidateList: bindingCandidateList, resolverDict: resolverDict,
                                      duplicateKeys: duplicateKeys,
                                      userConfSectionStartIndex: userConfSectionStartIndex!, userConfSectionEndIndex: userConfSectionEndIndex!)
     if DebugConfig.logBindingsRebuild {
@@ -80,75 +85,74 @@ class AppInputConfigBuilder {
    Bindings with identical keys will not be filtered or disabled here.
    */
   private func combineEnabledSectionBindings() -> [InputBinding] {
-    InputSectionStack.lock.withLock {
-      var linkedList = LinkedList<InputBinding>()
+    var linkedList = LinkedList<InputBinding>()
 
-      var countOfUserConfSectionBindings: Int = 0
-      var countOfWeakSectionBindings: Int = 0
+    var countOfUserConfSectionBindings: Int = 0
+    var countOfWeakSectionBindings: Int = 0
 
-      // Iterate from bottom to the top of the "stack":
-      for enabledSectionMeta in sectionStack.sectionsEnabled {
-        if DebugConfig.logBindingsRebuild {
-          log.verbose{"RebuildBindings: examining enabled section: \(enabledSectionMeta.name.quoted)"}
-        }
-        guard let inputSection = sectionStack.sectionsDefined[enabledSectionMeta.name] else {
-          // indicates serious internal error
-          log.error{"RebuildBindings: failed to find section: \(enabledSectionMeta.name.quoted)"}
-          continue
-        }
-
-        if inputSection.origin == .confFile && inputSection.name == SharedInputSection.USER_CONF_SECTION_NAME {
-          countOfUserConfSectionBindings = inputSection.keyMappingList.count
-        } else if !inputSection.isForce {
-          countOfWeakSectionBindings += inputSection.keyMappingList.count
-        }
-
-        addAllBindings(from: inputSection, to: &linkedList)
-
-        if DebugConfig.logBindingsRebuild {
-          log.verbose{"RebuildBindings: CandidateList in increasing priority: \(linkedList.map({$0.keyMapping.normalizedMpvKey}).joined(separator: ", "))"}
-        }
-
-        if enabledSectionMeta.isExclusive {
-          log.verbose{"RebuildBindings: section \(inputSection.name.quoted) was enabled exclusively"}
-          return Array<InputBinding>(linkedList)
-        }
+    // Iterate from bottom to the top of the "stack":
+    for enabledSectionMeta in sectionStack.sectionsEnabled {
+      if DebugConfig.logBindingsRebuild {
+        log.verbose{"RebuildBindings: examining enabled section: \(enabledSectionMeta.name.quoted)"}
+      }
+      guard let inputSection = sectionStack.sectionsDefined[enabledSectionMeta.name] else {
+        // indicates serious internal error
+        log.error{"RebuildBindings: failed to find section: \(enabledSectionMeta.name.quoted)"}
+        continue
       }
 
-      // Best to set these variables here while still having a well-defined section structure, than try to guess it later.
-      // Remember, all weak bindings precede the default section, and all strong bindings come after it.
-      // But any section may have zero bindings.
-      userConfSectionStartIndex = countOfWeakSectionBindings
-      userConfSectionEndIndex = countOfWeakSectionBindings + countOfUserConfSectionBindings
+      if inputSection.origin == .confFile && inputSection.name == SharedInputSection.USER_CONF_SECTION_NAME {
+        countOfUserConfSectionBindings = inputSection.keyMappingList.count
+      } else if !inputSection.isForce {
+        countOfWeakSectionBindings += inputSection.keyMappingList.count
+      }
 
-      return Array<InputBinding>(linkedList)
+      addAllBindings(from: inputSection, to: &linkedList)
+
+      if DebugConfig.logBindingsRebuild {
+        log.verbose{"RebuildBindings: CandidateList in increasing priority: \(linkedList.map({$0.keyMapping.normalizedMpvKey}).joined(separator: ", "))"}
+      }
+
+      if enabledSectionMeta.isExclusive {
+        log.verbose{"RebuildBindings: section \(inputSection.name.quoted) was enabled exclusively"}
+        return Array<InputBinding>(linkedList)
+      }
     }
+
+    // Best to set these variables here while still having a well-defined section structure, than try to guess it later.
+    // Remember, all weak bindings precede the default section, and all strong bindings come after it.
+    // But any section may have zero bindings.
+    userConfSectionStartIndex = countOfWeakSectionBindings
+    userConfSectionEndIndex = countOfWeakSectionBindings + countOfUserConfSectionBindings
+
+    return Array<InputBinding>(linkedList)
   }
 
   private func addAllBindings(from inputSection: InputSection, to linkedList: inout LinkedList<InputBinding>) {
-    if inputSection.keyMappingList.isEmpty {
+    guard !inputSection.keyMappingList.isEmpty else {
       if DebugConfig.logBindingsRebuild {
-        log.verbose{"RebuildBindings: skipping \(inputSection.name) as it has no bindings"}
+        log.verbose{"RebuildBindings: skipping section \(inputSection.name.quoted) as it has no bindings"}
+      }
+      return
+    }
+
+    if inputSection.isForce {
+      if DebugConfig.logBindingsRebuild {
+        log.verbose{"RebuildBindings: adding bindings from \(inputSection) to tail of list"}
+      }
+      // Strong section: Iterate from top of section to bottom (increasing priority) and add to end of list
+      for keyMapping in inputSection.keyMappingList {
+        let activeBinding = buildNewInputBinding(from: keyMapping, section: inputSection)
+        linkedList.append(activeBinding)
       }
     } else {
-      if inputSection.isForce {
-        if DebugConfig.logBindingsRebuild {
-          log.verbose{"RebuildBindings: adding bindings from \(inputSection) to tail of list"}
-        }
-        // Strong section: Iterate from top of section to bottom (increasing priority) and add to end of list
-        for keyMapping in inputSection.keyMappingList {
-          let activeBinding = buildNewInputBinding(from: keyMapping, section: inputSection)
-          linkedList.append(activeBinding)
-        }
-      } else {
-        // Weak section: Iterate from top of section to bottom (decreasing priority) and add backwards to beginning of list
-        if DebugConfig.logBindingsRebuild {
-          log.verbose{"RebuildBindings: adding bindings from \(inputSection) to head of list, in reverse order"}
-        }
-        for keyMapping in inputSection.keyMappingList.reversed() {
-          let activeBinding = buildNewInputBinding(from: keyMapping, section: inputSection)
-          linkedList.prepend(activeBinding)
-        }
+      // Weak section: Iterate from top of section to bottom (decreasing priority) and add backwards to beginning of list
+      if DebugConfig.logBindingsRebuild {
+        log.verbose{"RebuildBindings: adding bindings from \(inputSection) to head of list, in reverse order"}
+      }
+      for keyMapping in inputSection.keyMappingList.reversed() {
+        let activeBinding = buildNewInputBinding(from: keyMapping, section: inputSection)
+        linkedList.prepend(activeBinding)
       }
     }
   }

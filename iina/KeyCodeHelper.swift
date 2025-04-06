@@ -578,7 +578,9 @@ class KeyCodeHelper {
   static func readableString(fromKey key: String, modifiers: NSEvent.ModifierFlags) -> String {
     var key = key
     var modifiers = modifiers
-    if let uScalar = key.first?.unicodeScalars.first, NSCharacterSet.uppercaseLetters.contains(uScalar) {
+
+    // Is uppercase char?
+    if key.count == 1, let uScalar = key.first?.unicodeScalars.first, NSCharacterSet.uppercaseLetters.contains(uScalar) {
       modifiers.insert(.shift)
     }
     key = key.uppercased()

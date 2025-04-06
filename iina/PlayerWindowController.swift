@@ -1436,7 +1436,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
         // If focus changed from a different window, need to recalculate the current bindings
         // so that this window's input sections are included and the other window's are not:
-        AppInputConfig.rebuildCurrent()
+        if AppInputConfig.current.associatedPlayerLabel != player.label {
+          AppInputConfig.rebuildCurrent()
+        }
       } else {
         /// Always restore window level from `floating` to `normal`, so other windows aren't blocked & cause confusion
         if currentLayout.isLegacyFullScreen && window.level != .normal {

@@ -14,7 +14,7 @@ struct AppInputConfig {
   /// Return true to send notifications; false otherwise
   typealias NotificationData = [AnyHashable : Any]
 
-  static unowned var log = Logger.Subsystem.input
+  static var log: Logger.Subsystem { Logger.Subsystem.input }
 
   // MARK: Shared input sections
 
@@ -69,11 +69,13 @@ struct AppInputConfig {
 
   // MARK: Other Static
 
-  static private var lastStartedVersion: Int = 0
+  static private var rebuildTicketCounter: Int = 0
 
+  // Use dummy player label initially to ensure it gets overwritten by rebuildCurrent() below.
+  // We do not want to init the demo player in a variable initializer.
   /// The current instance. The app can only ever support one set of active key bindings at a time, so each time a change is made,
   /// the active bindings are rebuilt and the old set is discarded.
-  static private(set) var current = AppInputConfig(version: 0, bindingCandidateList: [], resolverDict: [:], duplicateKeys: [],
+  static private(set) var current = AppInputConfig(version: 0, playerLabel: "null", bindingCandidateList: [], resolverDict: [:], duplicateKeys: [],
                                                    userConfSectionStartIndex: 0, userConfSectionEndIndex: 0)
 
   /// This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c.
@@ -81,9 +83,9 @@ struct AppInputConfig {
   /// When done, notifies the Preferences > Key Bindings table of the update so it can refresh itself, as well
   /// as notifies the other callbacks supplied here as needed.
   static func rebuildCurrent(attaching userData: NotificationData? = nil) {
-    let requestedVersion = AppInputConfig.lastStartedVersion + 1
+    let ticket = AppInputConfig.rebuildTicketCounter + 1
     if DebugConfig.logBindingsRebuild {
-      log.verbose("Requesting AppInputConfig build v\(requestedVersion)")
+      log.verbose("Requesting AppInputConfig rebuild (tkt #\(ticket))")
     }
 
     DispatchQueue.main.async {
@@ -91,19 +93,19 @@ struct AppInputConfig {
 
       // Optimization: drop all but the most recent request (but not if there is an attachment to deliver)
       let hasAttachedData = (userData?.count ?? 0) > 0
-      if requestedVersion <= AppInputConfig.lastStartedVersion && !hasAttachedData {
+      if ticket <= AppInputConfig.rebuildTicketCounter && !hasAttachedData {
         return
       }
 
-      AppInputConfig.lastStartedVersion = requestedVersion
+      AppInputConfig.rebuildTicketCounter = ticket
 
-      let player = PlayerManager.shared.activePlayer ?? PlayerManager.shared.getOrCreateDemo()
+      let player = PlayerManager.shared.lastActivePlayer ?? PlayerManager.shared.getOrCreateDemo()
       guard let activePlayerInputContext = player.keyBindingContext else {
-        Logger.fatal("AppInputConfig.rebuildCurrent(): player has no keyBindingContext!")  // should never happen
+        Logger.fatal("AppInputConfig.rebuildCurrent(): player \(player.label) has no keyBindingContext!")  // should never happen
       }
 
       let builder = activePlayerInputContext.makeAppInputConfigBuilder()
-      let appInputConfigNew = builder.build(version: requestedVersion)
+      let appInputConfigNew = builder.build(version: ticket)
 
       AppInputConfig.current = appInputConfigNew
 
@@ -122,6 +124,8 @@ struct AppInputConfig {
   // MARK: Single instance
 
   let version: Int
+
+  let associatedPlayerLabel: String
 
   /// The list of all bindings including those with duplicate keys. The list `allRows` of `BindingTableState` should be kept
   /// consistent with this one as much as possible, but some brief inconsistencies may be acceptable due to the asynchronous nature of UI.
@@ -150,9 +154,11 @@ struct AppInputConfig {
     userConfSectionEndIndex - userConfSectionStartIndex
   }
 
-  init(version: Int, bindingCandidateList: [InputBinding], resolverDict: [String: InputBinding], duplicateKeys: Set<String>,
+  init(version: Int, playerLabel: String,
+       bindingCandidateList: [InputBinding], resolverDict: [String: InputBinding], duplicateKeys: Set<String>,
        userConfSectionStartIndex: Int, userConfSectionEndIndex: Int) {
     self.version = version
+    self.associatedPlayerLabel = playerLabel
     self.bindingCandidateList = bindingCandidateList
     self.resolverDict = resolverDict
     self.duplicateKeys = duplicateKeys
