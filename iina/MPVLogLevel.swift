@@ -9,14 +9,14 @@
 import Foundation
 
 enum MPVLogLevel: Int, CustomStringConvertible {
-  case no = 0  // - disable absolutely all messages
-  case fatal   // - critical/aborting errors
-  case error   // - simple errors
-  case warn    // - possible problems
-  case info    // - informational message
-  case verbose // - noisy informational message
-  case debug   // - very noisy technical information
-  case trace   // - extremely noisy
+  case trace = 0 // - extremely noisy
+  case debug     // - very noisy technical information
+  case verbose   // - noisy informational message
+  case info      // - informational message
+  case warn      // - possible problems
+  case error     // - simple errors
+  case fatal     // - critical/aborting errors
+  case no        // - disable absolutely all messages
 
   static func fromString(_ name: String) -> MPVLogLevel? {
     if name.count == 1 {
@@ -91,16 +91,16 @@ enum MPVLogLevel: Int, CustomStringConvertible {
     return string
   }
 
-  /*
+  /**
    Assumes that `self` represents a logging threshold.
    Returns  true if the given level falls within this logging threshold.
-   Example: MPVLogLevel.debug.shouldLog(5) -> true
+   Example: MPVLogLevel.debug.shouldLog(1) -> true
    */
   public func shouldLog(severity: Int) -> Bool {
-    return rawValue >= severity
+    return rawValue <= severity
   }
 
-  /*
+  /**
    Assumes that `self` represents a logging threshold.
    Returns  true if the given level falls within this logging threshold.
    Examples:

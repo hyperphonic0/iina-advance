@@ -16,6 +16,7 @@ extension PlayerWindowController {
 
     let observedPrefKeys: [Preference.Key] = [
       .enableAdvancedSettings,
+      .mpvEventLogLevel,
       .enableToneMapping,
       .toneMappingTargetPeak,
       .loadIccProfile,
@@ -173,6 +174,7 @@ extension PlayerWindowController {
 
     switch key {
     case .enableAdvancedSettings:
+      player.mpv.mpvLogScanner.updateMpvEventLogLevel()
       player.mpv.updateUsingMpvOSDFromPrefs()
 
       animationPipeline.submitTask({ [self] in
@@ -183,6 +185,8 @@ extension PlayerWindowController {
         quickSettingView.reload()
         seekPreview.refreshThumbfastFromPrefs()
       })
+    case .mpvEventLogLevel:
+      player.mpv.mpvLogScanner.updateMpvEventLogLevel()
     case .integrateWithThumbfast:
       seekPreview.refreshThumbfastFromPrefs()
     case .useMpvOsd:

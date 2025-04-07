@@ -465,7 +465,7 @@ struct Preference {
     /// in the IINA log with the format `mpv-{playerID}`.
     ///
     /// The value contained in this pref should be a string which matches the name of an mpv log level. See `MPVLogLevel`.
-    static let iinaMpvLogLevel = Key("iinaMpvLogLevel")
+    static let mpvEventLogLevel = Key("mpvEventLogLevel")
 
     static let enablePiiMaskingInLog = Key("enablePiiMaskingInLog")
 
@@ -1468,7 +1468,7 @@ struct Preference {
     .useMpvOsd: false,
     .enableLogging: false,
     .logLevel: Logger.Level.debug.rawValue,
-    .iinaMpvLogLevel: MPVLogLevel.warn.string,
+    .mpvEventLogLevel: MPVLogLevel.warn.rawValue,
     .enablePiiMaskingInLog: true,
     .logKeyBindingsRebuild: false,
     .logPlayerSave: false,

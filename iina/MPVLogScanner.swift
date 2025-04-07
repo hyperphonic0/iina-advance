@@ -51,18 +51,24 @@ class MPVLogScanner {
    */
   let mpvLogSubsystem: Logger.Subsystem
 
-  let fileLogLevel: MPVLogLevel
+  var mpvEventLogLevel: MPVLogLevel = .warn
 
   init(player: PlayerCore) {
     self.player = player
     mpvLogSubsystem = Logger.Subsystem(rawValue: String(format: Constants.String.iinaMpvCategoryFmt, player.label))
-    if let logLevelString = Preference.string(for: .iinaMpvLogLevel), let mpvLogLevel = MPVLogLevel.fromString(logLevelString) {
-      fileLogLevel = mpvLogLevel
+
+    updateMpvEventLogLevel()
+  }
+
+  func updateMpvEventLogLevel() {
+    let logLevelInt = Preference.integer(for: .mpvEventLogLevel)
+    if let mpvLogLevel = MPVLogLevel(rawValue: logLevelInt) {
+      mpvEventLogLevel = mpvLogLevel
+      mpvLogSubsystem.debug{"Will log mpv events in IINA log with level: \(mpvEventLogLevel)"}
     } else {
-      mpvLogSubsystem.error("Invalid value for pref \(Preference.Key.iinaMpvLogLevel.rawValue): \(Preference.string(for: .iinaMpvLogLevel)?.quoted ?? "nil"). Will disable mpv log printing in the IINA log file")
-      fileLogLevel = MPVLogLevel.no
+      mpvLogSubsystem.error{"Invalid value for pref \(Preference.Key.mpvEventLogLevel.rawValue.quoted): \(logLevelInt). Will default to `warn` for mpv events in IINA log"}
+      mpvEventLogLevel = .warn
     }
-    mpvLogSubsystem.debug("Log level for mpv events: \(fileLogLevel)")
   }
 
   // Remove newline from msg if there is one
@@ -78,7 +84,7 @@ class MPVLogScanner {
     let mpvLevel = MPVLogLevel.fromString(level) ?? MPVLogLevel.no
 
     // Log mpv msg to IINA log if configured
-    if fileLogLevel.shouldLog(severity: mpvLevel.rawValue) {
+    if mpvEventLogLevel.shouldLog(severity: mpvLevel.rawValue) {
       let iinaLevel = mpvIINALogLevelMap[mpvLevel]!
       Logger.log("[\(prefix)|\(level.first ?? "?")] \(removeNewline(from: msg))", level: iinaLevel, subsystem: mpvLogSubsystem)
     }
