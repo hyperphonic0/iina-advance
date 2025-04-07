@@ -156,9 +156,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     return isVisible || isMinimized
   }
 
-  // Make sure the event loop is emptied before setting to false again. Otherwise a simple click can result in a resize.
-  // Very kludgey, but nothing better discovered yet.
-  var denyWindowResizeIntervalStartTime = Date()
+  /// Make sure the event loop is emptied before setting to false again. Otherwise a simple click can result in a resize.
+  /// Very kludgey, but nothing better discovered yet.
+  /// See: `restartWindowResizeDenialPeriod()`
+  var denyWindowResizePeriodStartTime = Date()
   var pendingResizeForScreenChange = false
 
   var isClosing: Bool {
@@ -1204,15 +1205,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func windowDidChangeBackingProperties(_ notification: Notification) {
     log.verbose("WindowDidChangeBackingProperties received")
     videoView.refreshContentsScale()
-    // Do not allow MacOS to change the window size
-    denyWindowResizeIntervalStartTime = Date()
+    restartWindowResizeDenialPeriod()
   }
 
   func windowDidChangeScreenProfile(_ notification: Notification) {
     log.verbose("WindowDidChangeScreenProfile received")
     videoView.refreshContentsScale()
-    // Do not allow MacOS to change the window size
-    denyWindowResizeIntervalStartTime = Date()
+    restartWindowResizeDenialPeriod()
   }
 
   func windowDidChangeOcclusionState(_ notification: Notification) {
@@ -1228,8 +1227,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // Note: this gets triggered by many unnecessary situations, e.g. several times each time full screen is toggled.
   func windowDidChangeScreen(_ notification: Notification) {
-    // Do not allow MacOS to change the window size
-    denyWindowResizeIntervalStartTime = Date()
+    restartWindowResizeDenialPeriod()
     pendingResizeForScreenChange = true
 
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by debouncing
@@ -1334,8 +1332,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func windowDidMove(_ notification: Notification) {
-    guard !isAnimating, !isAnimatingLayoutTransition, !isMagnifying, !sessionState.isRestoring else { return }
+    guard !isAnimatingLayoutTransition, !isMagnifying, !sessionState.isRestoring else { return }
     guard let window = window else { return }
+
+    guard !isAnimating else { return }
 
     // We can get here if external calls from accessibility APIs change the window location.
     // Inserting a small delay seems to help to avoid race conditions as the window seems to need time to "settle"

@@ -32,22 +32,31 @@ extension PlayerWindowController {
   /// Do not use because it interferes with animations in progress.
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
-    guard !isAnimatingLayoutTransition else {
-      return requestedSize
+    guard !isInWindowResizeDenialPeriod() else {
+      log.verbose{"[WinWillResize] Denying request=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)"}
+      return window.frame.size
     }
 
-    let denyWindowResize = Date() < denyWindowResizeIntervalStartTime + Constants.TimeInterval.denyWindowResizeTimeout
-    if !currentLayout.isFullScreen && !window.inLiveResize {
-      guard !denyWindowResize else {
-        log.verbose{"[WinWillResize] Denying request=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)"}
-        return window.frame.size
-      }
+    guard !isAnimatingLayoutTransition else {
+      return requestedSize
     }
 
     // FIXME: this still doesn't look great in music mode; maybe adjust VideoView constraints
     CATransaction.setAnimationDuration(0)
 
     return resizeWindowSubviews(window, to: requestedSize)
+  }
+
+  func restartWindowResizeDenialPeriod() {
+    // Do not allow MacOS to change the window size
+    denyWindowResizePeriodStartTime = Date()
+  }
+
+  func isInWindowResizeDenialPeriod() -> Bool {
+    guard let window else { return false }
+    guard !currentLayout.isFullScreen && !window.inLiveResize else { return false }
+    let denyWindowResize = Date() < denyWindowResizePeriodStartTime + Constants.TimeInterval.denyWindowResizeTimeout
+    return denyWindowResize
   }
 
   func resizeWindowSubviews(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {

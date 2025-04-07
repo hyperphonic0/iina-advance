@@ -293,7 +293,7 @@ extension PlayerWindowController {
     log.verbose{"PWin MouseDown @ \(event.locationInWindow) clickCount=\(event.clickCount) eventNum=\(event.eventNumber)"}
 
     wasKeyWindowAtMouseDown = lastKeyWindowStatus
-    denyWindowResizeIntervalStartTime = Date()
+    restartWindowResizeDenialPeriod()
     mouseDownLocationInWindow = event.locationInWindow
 
     if let currentDragObject {
@@ -373,7 +373,7 @@ extension PlayerWindowController {
     mouseDownLocationInWindow = nil
     // In case WindowDidChangeScreen already timed out, or another event put the window in a "metastable" state.
     if pendingResizeForScreenChange {
-      denyWindowResizeIntervalStartTime = Date()
+      restartWindowResizeDenialPeriod()
       pendingResizeForScreenChange = false
     }
 

@@ -39,6 +39,8 @@ extension PlayerWindowController {
 
     window.initialFirstResponder = nil
 
+    shouldCascadeWindows = false
+
     window.minSize = Constants.WindowedMode.minWindowSize
     contentView.idString = "PWinCV"
 
