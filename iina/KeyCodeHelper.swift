@@ -528,7 +528,7 @@ class KeyCodeHelper {
     }
     let keystrokeList = splitKeystrokes(normalizedMpvKey)
     if keystrokeList.count > 1 {
-      AppInputConfig.log.error("macOSKeyEquivalent(): found more than one keystroke in input string: \"\(normalizedMpvKey)\"")
+      AppInputConfig.log.error{"MacOSKeyEquivalent: found more than one keystroke in input string: \(normalizedMpvKey.quoted)"}
     }
     let splitted = keystrokeList[0].components(separatedBy: "+")
     var modifiers: NSEvent.ModifierFlags = []

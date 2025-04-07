@@ -131,7 +131,7 @@
                 </button>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="OgN-cA-cof">
                     <rect key="frame" x="-1" y="43" width="125" height="16"/>
-                    <textFieldCell key="cell" lineBreakMode="clipping" title="mpv event log level:" id="elw-zF-oHx">
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="mpv log-message level:" id="elw-zF-oHx">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>

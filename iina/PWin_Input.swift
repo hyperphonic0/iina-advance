@@ -18,13 +18,7 @@ extension PlayerWindowController {
     let wasHandled = PluginInputManager.handle(
       input: normalizedMpvKey, event: .keyDown, player: player, arguments: keyEventArgs(event), handler: { [self] in
         if let keyBinding = player.keyBindingContext.matchActiveKeyBinding(endingWith: normalizedMpvKey) {
-          if keyBinding.isIgnored {
-            // if "ignore", just swallow the event. Do not forward; do not beep
-            log.verbose{"Binding is ignored for key: \(normalizedMpvKey.quoted)"}
-            return true
-          } else {
-            return handleKeyBinding(keyBinding)
-          }
+          return handleKeyBinding(keyBinding)
         }
         return false
       })
@@ -44,6 +38,12 @@ extension PlayerWindowController {
   @discardableResult
   func handleKeyBinding(_ keyBinding: KeyMapping) -> Bool {
     assert(DispatchQueue.isExecutingIn(.main))
+
+    if keyBinding.isIgnored {
+      // if "ignore", just swallow the event. Do not forward; do not beep
+      log.verbose{"Binding is ignored for key: \(keyBinding.normalizedMpvKey.quoted)"}
+      return true
+    }
 
     if let menuItem = keyBinding.menuItem, let action = menuItem.action {
       log.verbose{"Key binding is attached to menu item: \(menuItem.title.quoted) but was not handled by MenuController. Calling it manually"}

@@ -123,11 +123,9 @@ class PlayerInputContext {
 
   // MARK: Key resolution
 
-  /*
-   Similar to `matchActiveKeyBinding()`, but takes a raw string directly (does not examine past key presses). Must be normalized.
-   */
+  /// Similar to `matchActiveKeyBinding()`, but takes a raw string directly (does not examine past key presses). Must be normalized.
   func resolveMpvKey(_ keySequence: String) -> KeyMapping? {
-    AppInputConfig.current.resolverDict[keySequence]?.keyMapping
+    return AppInputConfig.current.resolveInputBinding(keySequence)?.keyMapping
   }
 
   /*
@@ -142,12 +140,12 @@ class PlayerInputContext {
      in a key sequence.
    */
   func matchActiveKeyBinding(endingWith normalizedMpvKeyCode: String) -> KeyMapping? {
-    return matchShortestKeySequence(endingWith: normalizedMpvKeyCode)
+    let appInputConfig: AppInputConfig = AppInputConfig.current
+    return matchShortestKeySequence(endingWith: normalizedMpvKeyCode, in: appInputConfig)
   }
 
   // Try to match key sequences, up to 4 keystrokes. shortest match wins
-  private func matchShortestKeySequence(endingWith lastKeyStroke: String) -> KeyMapping? {
-    let appBindings: AppInputConfig = AppInputConfig.current
+  private func matchShortestKeySequence(endingWith lastKeyStroke: String, in appInputConfig: AppInputConfig) -> KeyMapping? {
     var keySequence = ""
     var hasPartialValidSequence = false
 
@@ -162,11 +160,11 @@ class PlayerInputContext {
 
       log.verbose{"Checking keySeq: \(keySequence.quoted)"}
 
-      if let binding = appBindings.resolverDict[keySequence] {
+      if let binding = appInputConfig.resolveInputBinding(keySequence) {
         if keyPressHistory.count > 1 && (binding.origin != .confFile && binding.origin != .libmpv) {
           // Make extra sure we don't resolve plugin bindings here
           log.error{"Sequence \(keySequence.quoted) resolved to a non-mpv binding and will be ignored (source=\(binding.origin))! This indicates a bug which should be fixed"}
-          appBindings.logEnabledBindings()
+          appInputConfig.logEnabledBindings()
           return nil
         }
         let keyMapping = binding.keyMapping
@@ -189,7 +187,7 @@ class PlayerInputContext {
     } else {
       // Not even part of a valid sequence = invalid keystroke
       log.debug{"No active binding for keystroke \(lastKeyStroke.quoted)"}
-      appBindings.logEnabledBindings()
+      appInputConfig.logEnabledBindings()
       return nil
     }
   }

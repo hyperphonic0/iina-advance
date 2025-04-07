@@ -325,8 +325,7 @@ extension MPVController {
     let inputConfPath = ConfTableState.current.selectedConfFilePath
     chkErr(setOptionalOptionString(MPVOption.Input.inputConf, inputConfPath, level: .verbose))
 
-    // Receive log messages at given level of verbosity.
-    chkErr(mpv_request_log_messages(mpv, Constants.mpvLogSubscriptionLevel))
+    setMpvEventLogSubscription()
 
     // Request tick event.
     // chkErr(mpv_request_event(mpv, MPV_EVENT_TICK, 1))

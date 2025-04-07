@@ -152,11 +152,11 @@ struct Constants {
 
   // - Quantities:
 
-  /*
-   * Change this variable to adjust threshold for *receiving* MPV_EVENT_LOG_MESSAGE messages.
-   * NOTE: Lua keybindings require at *least* level "debug", so don't set threshold to be stricter than this level
+  /**
+   * Min threshold for *receiving* MPV_EVENT_LOG_MESSAGE messages.
+   * Lua keybindings require level "debug" or higher, so don't set threshold to be stricter than this level
    */
-  static let mpvLogSubscriptionLevel = MPVLogLevel.debug.description
+  static let minMpvEventLogLevel = MPVLogLevel.debug
 
   static let maxCachedVideoSizes: Int = 100000
   static let maxWindowNamesInRestoreTimeoutAlert: Int = 8

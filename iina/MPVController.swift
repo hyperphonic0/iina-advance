@@ -282,6 +282,27 @@ class MPVController: NSObject {
     return str
   }
 
+  /// Call this only after player is done loading
+  func updateLoggingLevels() {
+    mpvLogScanner.updateMpvEventLogLevel()
+
+    player.mpv.queue.async { [self] in
+      guard player.isActive else { return }
+      player.mpv.setMpvEventLogSubscription()
+    }
+  }
+
+  func setMpvEventLogSubscription() {
+    guard !player.isDemoPlayer else { return }
+
+    // Must still subscribe to min level or above, even if not logging
+    let subscriptionLevel = mpvLogScanner.mpvEventLogLevel.shouldLog(severity: Constants.minMpvEventLogLevel.rawValue) ? mpvLogScanner.mpvEventLogLevel : Constants.minMpvEventLogLevel
+
+    // Receive MPV_EVENT_LOG messages at given level of verbosity.
+    log.verbose{"Updating MPV log event subscription level to \(subscriptionLevel.string.quoted)"}
+    chkErr(mpv_request_log_messages(mpv, subscriptionLevel.string))
+  }
+
   func getInputBindings(filterCommandsBy filter: ((Substring) -> Bool)? = nil) -> [KeyMapping] {
     player.log.verbose("Requesting from mpv: \(MPVProperty.inputBindings)")
     let parsed = getNode(MPVProperty.inputBindings)

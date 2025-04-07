@@ -87,8 +87,8 @@ class PlayerWindow: NSWindow {
       }
     }
     pwc.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
-
-    if menu?.performKeyEquivalent(with: event) == true {
+0
+    if event.modifierFlags.contains(.command), menu?.performKeyEquivalent(with: event) == true {
       log.verbose("KeyDown was handled by menu item; no more to do")
       return
     }

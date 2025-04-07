@@ -121,10 +121,12 @@ struct AppInputConfig {
     }
   }
 
-  // MARK: Single instance
+  // MARK: - Single instance
 
   let version: Int
 
+  /// The player for which the `default` section & various other player-related sections are relevant.
+  /// Should be the last active player when this object was built, or (if no player window was opened since app launch) the "demo" player.
   let associatedPlayerLabel: String
 
   /// The list of all bindings including those with duplicate keys. The list `allRows` of `BindingTableState` should be kept
@@ -171,7 +173,12 @@ struct AppInputConfig {
   func logEnabledBindings() {
     if DebugConfig.logBindingsRebuild, Logger.enabled && Logger.Level.preferred >= .verbose {
       let bindingList = bindingCandidateList.filter({ $0.isEnabled })
-      AppInputConfig.log.verbose("Currently enabled bindings (\(bindingList.count)):\n\(bindingList.map { "\t\($0)" }.joined(separator: "\n"))")
+      AppInputConfig.log.verbose{"Currently enabled bindings (\(bindingList.count)):\n\(bindingList.map { "\t\($0)" }.joined(separator: "\n"))"}
     }
+  }
+
+  /// Takes a raw string directly (does not examine past key presses). Must be normalized.
+  func resolveInputBinding(_ keySequence: String) -> InputBinding? {
+    return resolverDict[keySequence]
   }
 }

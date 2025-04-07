@@ -174,7 +174,7 @@ extension PlayerWindowController {
 
     switch key {
     case .enableAdvancedSettings:
-      player.mpv.mpvLogScanner.updateMpvEventLogLevel()
+      player.mpv.updateLoggingLevels()
       player.mpv.updateUsingMpvOSDFromPrefs()
 
       animationPipeline.submitTask({ [self] in
@@ -186,7 +186,7 @@ extension PlayerWindowController {
         seekPreview.refreshThumbfastFromPrefs()
       })
     case .mpvEventLogLevel:
-      player.mpv.mpvLogScanner.updateMpvEventLogLevel()
+      player.mpv.updateLoggingLevels()
     case .integrateWithThumbfast:
       seekPreview.refreshThumbfastFromPrefs()
     case .useMpvOsd:
