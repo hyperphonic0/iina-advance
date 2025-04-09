@@ -138,6 +138,9 @@ struct AppInputConfig {
   /// For lookup use `resolveMpvKey()` or `matchActiveKeyBinding()` from the active player's input config.
   let resolverDict: [String: InputBinding]
 
+  /// Binding for mpv's `ANY_UNICODE` wildcard, if any (as of mpv 0.40.0).
+  let anyUnicode: InputBinding?
+
   /// (Note: These two fields are used for optimizing the Key Bindings UI  but are otherwise not important.)
   /// The index into `bindingCandidateList` of the first binding in the "default" (user conf) section.
   /// • If the "default" section has no bindings, then this will be the index of the next binding after it in the list,
@@ -157,12 +160,13 @@ struct AppInputConfig {
   }
 
   init(version: Int, playerLabel: String,
-       bindingCandidateList: [InputBinding], resolverDict: [String: InputBinding], duplicateKeys: Set<String>,
-       userConfSectionStartIndex: Int, userConfSectionEndIndex: Int) {
+       bindingCandidateList: [InputBinding], resolverDict: [String: InputBinding], anyUnicode: InputBinding? = nil,
+       duplicateKeys: Set<String>, userConfSectionStartIndex: Int, userConfSectionEndIndex: Int) {
     self.version = version
     self.associatedPlayerLabel = playerLabel
     self.bindingCandidateList = bindingCandidateList
     self.resolverDict = resolverDict
+    self.anyUnicode = anyUnicode
     self.duplicateKeys = duplicateKeys
     self.userConfSectionStartIndex = userConfSectionStartIndex
     self.userConfSectionEndIndex = userConfSectionEndIndex
