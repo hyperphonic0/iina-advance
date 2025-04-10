@@ -158,6 +158,7 @@ struct Constants {
    */
   static let minMpvEventLogLevel = MPVLogLevel.debug
   static let anyUnicodeKey = "ANY_UNICODE"
+  static let unmappedKey = "UNMAPPED"
 
   static let maxCachedVideoSizes: Int = 100000
   static let maxWindowNamesInRestoreTimeoutAlert: Int = 8

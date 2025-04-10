@@ -283,6 +283,14 @@ class KeyCodeHelper {
   /** Also includes symbols (e.g., `uppercaseMpvKeySet["4"] == "$"`)  */
   private static var uppercaseMpvKeySet: Set<String> = Set(lowerToUpperKeyMap.values)
 
+  static func isTypedUnicodeChar(normalizedMpvKey: String) -> Bool {
+    if let (key, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey),
+       KeyCodeHelper.isTypedUnicodeChar(key, modifiers) {
+      return true
+    }
+    return false
+  }
+
   static func isTypedUnicodeChar(_ event: NSEvent) -> Bool {
     let modifiers = event.modifierFlags
     guard let charString = event.charactersIgnoringModifiers else { return false }

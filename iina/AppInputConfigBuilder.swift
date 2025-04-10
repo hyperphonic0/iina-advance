@@ -36,6 +36,7 @@ class AppInputConfigBuilder {
     var resolverDict: [String: InputBinding] = [:]
     var duplicateKeys = Set<String>()
     var anyUnicodeBinding: InputBinding? = nil
+    var unmappedBinding: InputBinding? = nil
 
     // Now build the resolverDict, disabling redundant key bindings along the way.
     for (candidateIndex, binding) in bindingCandidateList.enumerated() {
@@ -60,13 +61,19 @@ class AppInputConfigBuilder {
         for index in 0..<candidateIndex {
           let prevBinding = bindingCandidateList[index]
           let bindingKey = prevBinding.keyMapping.normalizedMpvKey
-          if let (key, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: bindingKey),
-             KeyCodeHelper.isTypedUnicodeChar(key, modifiers) {
+          if KeyCodeHelper.isTypedUnicodeChar(normalizedMpvKey: bindingKey) {
             prevBinding.isEnabled = false
             duplicateKeys.insert(bindingKey)
             prevBinding.displayMessage = "This binding is overridden by an \(key.quoted) binding below."
           }
         }
+      } else if key == Constants.unmappedKey {
+        // Wildcard binding
+        prevSameKeyBinding = unmappedBinding
+        if let prevSameKeyBinding {
+          log.warn{"Multiple UNMAPPED bindings found in input conf! Overriding action \(prevSameKeyBinding.keyMapping.rawAction?.quoted ?? "nil") with \(binding.keyMapping.rawAction?.quoted ?? "nil")"}
+        }
+        unmappedBinding = binding
       } else {
         // Regular binding
         prevSameKeyBinding = resolverDict[key]
@@ -97,7 +104,7 @@ class AppInputConfigBuilder {
 
     let appInputConfig = AppInputConfig(version: version, playerLabel: playerLabel,
                                         bindingCandidateList: bindingCandidateList, resolverDict: resolverDict,
-                                        anyUnicode: anyUnicodeBinding, duplicateKeys: duplicateKeys,
+                                        anyUnicode: anyUnicodeBinding, unmapped: unmappedBinding, duplicateKeys: duplicateKeys,
                                         userConfSectionStartIndex: userConfSectionStartIndex!, userConfSectionEndIndex: userConfSectionEndIndex!)
     if DebugConfig.logBindingsRebuild {
       log.verbose{"Finished AppInputConfig rebuild with \(appInputConfig.resolverDict.count) bindings"}

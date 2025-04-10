@@ -141,11 +141,6 @@ class PlayerInputContext {
    */
   func matchActiveKeyBinding(endingWith normalizedMpvKeyCode: String, _ event: NSEvent) -> KeyMapping? {
     let appInputConfig: AppInputConfig = AppInputConfig.current
-    // Emulate mpv logic for matching ANY_UNICODE
-    if let anyUnicode = appInputConfig.anyUnicode, KeyCodeHelper.isTypedUnicodeChar(event) {
-      log.trace{"Key \(normalizedMpvKeyCode.quoted) matches ANY_UNICODE binding"}
-      return anyUnicode.keyMapping
-    }
     return matchShortestKeySequence(endingWith: normalizedMpvKeyCode, in: appInputConfig)
   }
 
