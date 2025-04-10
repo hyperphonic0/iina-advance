@@ -306,6 +306,7 @@ extension PlayerWindowController {
   func initTopBarView(in contentView: NSView) {
     // Top bar: other init
     topBarView.clipsToBounds = true
+    topBarView.translatesAutoresizingMaskIntoConstraints = false
 
     /// `controlBarTop`
     controlBarTop.translatesAutoresizingMaskIntoConstraints = false

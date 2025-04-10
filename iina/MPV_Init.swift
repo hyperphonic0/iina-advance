@@ -299,7 +299,7 @@ extension MPVController {
       }
     }
 
-    // Set user defined options.
+    // Set user-defined options.
     if !userOptions.isEmpty {
       log.debug("Setting \(userOptions.count) user configured mpv option values")
       for op in userOptions {
