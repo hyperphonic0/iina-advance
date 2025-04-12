@@ -304,8 +304,9 @@ extension PlayerWindowController {
   }
 
   func initTopBarView(in contentView: NSView) {
-    // Top bar: other init
+    // Needed to try to clip half of topBarBottomBorder, to achieve 0.5px ideally. See below
     topBarView.clipsToBounds = true
+    topBarView.translatesAutoresizingMaskIntoConstraints = false
 
     /// `controlBarTop`
     controlBarTop.translatesAutoresizingMaskIntoConstraints = false
@@ -316,7 +317,6 @@ extension PlayerWindowController {
 
     topOSCHeightConstraint = topBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
     topOSCHeightConstraint.identifier = .init("TopOSC-HeightConstraint")
-    topOSCHeightConstraint.priority = .init(900) // TODO
     topOSCHeightConstraint.isActive = true
 
     /// `titleBarView`
@@ -341,11 +341,16 @@ extension PlayerWindowController {
     topBarBottomBorder.borderWidth = 0
     topBarBottomBorder.borderColor = .clear
     topBarBottomBorder.fillColor = .titleBarBorder
+    topBarBottomBorder.setContentHugging(h: 1, v: 1000)
+    topBarBottomBorder.setCCResistance(h: 1, v: 1000)
     topBarBottomBorder.translatesAutoresizingMaskIntoConstraints = false
     topBarView.addSubview(topBarBottomBorder)
-    topBarBottomBorder.addConstraintsToFillSuperview(bottom: 0, leading: 0, trailing: 0)
-    let topBarBottomBorder_HeightConstraint = topBarView.bottomAnchor.constraint(equalTo: topBarBottomBorder.topAnchor, constant: 0.5)
+    topBarBottomBorder.addConstraintsToFillSuperview(bottom: -0.5, leading: 0, trailing: 0)
+    // Want to make a 0.5px border. But it seems that in some display modes, that is not only not possible,
+    // but it will trigger an auto-layout constraint error. So use defaultHigh and be prepared to accept a 1px border.
+    let topBarBottomBorder_HeightConstraint = topBarBottomBorder.topAnchor.constraint(equalTo: topBarView.bottomAnchor, constant: -0.5)
     topBarBottomBorder_HeightConstraint.identifier = .init("TopBarBottomBorder-HeightConstraint")
+    topBarBottomBorder_HeightConstraint.priority = .defaultHigh
     topBarBottomBorder_HeightConstraint.isActive = true
 
   }
@@ -704,10 +709,10 @@ extension PlayerWindowController {
     customWindowBorderBox.borderWidth = 1
     customWindowBorderBox.cornerRadius = 0
     customWindowBorderBox.borderColor = .customWindowBorder
-    contentView.addSubview(customWindowBorderBox, positioned: .below, relativeTo: topBarView)
     customWindowBorderBox.translatesAutoresizingMaskIntoConstraints = false
+    contentView.addSubview(customWindowBorderBox, positioned: .below, relativeTo: topBarView)
     // Deviate from the native look slightly by reducing trailing & bottom by 0.5pt. Just looks too distracting otherwise
-    customWindowBorderBox.addConstraintsToFillSuperview(top: 0, .init(900), bottom: -0.5, .init(900),
+    customWindowBorderBox.addConstraintsToFillSuperview(top: 0, .required, bottom: -0.5, .required,
                                                         leading: 0, .required, trailing: -0.5, .required)
 
     customWindowBorderTopHighlightBox.idString = "CustomWndBorderTopHighlightBox"
@@ -716,12 +721,11 @@ extension PlayerWindowController {
     customWindowBorderTopHighlightBox.borderWidth = 0.5
     customWindowBorderTopHighlightBox.cornerRadius = 0
     customWindowBorderTopHighlightBox.borderColor = .customWindowBorderHighlight
-    contentView.addSubview(customWindowBorderTopHighlightBox, positioned: .above, relativeTo: customWindowBorderBox)
     customWindowBorderTopHighlightBox.translatesAutoresizingMaskIntoConstraints = false
+    contentView.addSubview(customWindowBorderTopHighlightBox, positioned: .above, relativeTo: customWindowBorderBox)
     // No highlight at all on the bottom & trailing: hide those sides outside superview bounds
     customWindowBorderTopHighlightBox.addConstraintsToFillSuperview(bottom: -1.0, trailing: -1.0)
     let hlBoxTop = customWindowBorderTopHighlightBox.topAnchor.constraint(equalTo: customWindowBorderBox.topAnchor, constant: 0)
-    hlBoxTop.priority = .init(900)
     hlBoxTop.isActive = true
     let hlBoxLeading = customWindowBorderTopHighlightBox.leadingAnchor.constraint(equalTo: customWindowBorderBox.leadingAnchor, constant: 0)
     hlBoxLeading.isActive = true

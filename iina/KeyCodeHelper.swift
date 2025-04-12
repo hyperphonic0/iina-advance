@@ -283,11 +283,37 @@ class KeyCodeHelper {
   /** Also includes symbols (e.g., `uppercaseMpvKeySet["4"] == "$"`)  */
   private static var uppercaseMpvKeySet: Set<String> = Set(lowerToUpperKeyMap.values)
 
+  static func isTypedUnicodeChar(normalizedMpvKey: String) -> Bool {
+    if let (key, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey),
+       KeyCodeHelper.isTypedUnicodeChar(key, modifiers) {
+      return true
+    }
+    return false
+  }
+
+  static func isTypedUnicodeChar(_ event: NSEvent) -> Bool {
+    let modifiers = event.modifierFlags
+    guard let charString = event.charactersIgnoringModifiers else { return false }
+    return isTypedUnicodeChar(charString, modifiers)
+  }
+
+  /// This has "Unicode" in the name because it is based on mpv's `ANY_UNICODE` wildcard logic, but it appears to be checking for ASCII.
+  static func isTypedUnicodeChar(_ charString: String, _ f: NSEvent.ModifierFlags) -> Bool {
+    guard !f.contains(.option), !f.contains(.control),
+          !f.contains(.command), !f.contains(.numericPad) else {
+      return false
+    }
+
+    return isPrintable(charString) || charString == " "
+  }
+
+  /// #Deprecated
   static func canBeModifiedByShift(_ key: UInt16) -> Bool {
     return key != 0x24 && (key <= 0x2F || key == 0x32)
   }
 
-  static func isPrintable(_ char: String) -> Bool {
+  /// Is ASCII char? (except for SPACE)
+ static func isPrintable(_ char: String) -> Bool {
     let utf8View = char.utf8
     return utf8View.count == 1 && utf8View.first! > 32 && utf8View.first! < 127
   }

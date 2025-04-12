@@ -139,7 +139,7 @@ class PlayerInputContext {
    - (a non-null) KeyMapping whose action is not "ignore" if the keystroke matched an active (non-ignored) key binding or the final keystroke
      in a key sequence.
    */
-  func matchActiveKeyBinding(endingWith normalizedMpvKeyCode: String) -> KeyMapping? {
+  func matchActiveKeyBinding(endingWith normalizedMpvKeyCode: String, _ event: NSEvent) -> KeyMapping? {
     let appInputConfig: AppInputConfig = AppInputConfig.current
     return matchShortestKeySequence(endingWith: normalizedMpvKeyCode, in: appInputConfig)
   }

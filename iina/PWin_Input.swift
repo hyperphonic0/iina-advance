@@ -17,7 +17,11 @@ extension PlayerWindowController {
   func handleKeyDown(event: NSEvent, normalizedMpvKey: String) -> Bool {
     let wasHandled = PluginInputManager.handle(
       input: normalizedMpvKey, event: .keyDown, player: player, arguments: keyEventArgs(event), handler: { [self] in
-        if let keyBinding = player.keyBindingContext.matchActiveKeyBinding(endingWith: normalizedMpvKey) {
+        if let keyBinding = player.keyBindingContext.matchActiveKeyBinding(endingWith: normalizedMpvKey, event) {
+          if keyBinding.normalizedMpvKey == Constants.anyUnicodeKey {
+            player.mpv.command(MPVCommand.keypress, args: [normalizedMpvKey], checkError: false)
+            return true
+          }
           return handleKeyBinding(keyBinding)
         }
         return false

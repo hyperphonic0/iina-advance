@@ -35,9 +35,11 @@ class AppInputConfigBuilder {
     }
     var resolverDict: [String: InputBinding] = [:]
     var duplicateKeys = Set<String>()
+    var anyUnicodeBinding: InputBinding? = nil
+    var unmappedBinding: InputBinding? = nil
 
     // Now build the resolverDict, disabling redundant key bindings along the way.
-    for binding in bindingCandidateList {
+    for (candidateIndex, binding) in bindingCandidateList.enumerated() {
       guard binding.isEnabled else { continue }
 
       let key = binding.keyMapping.normalizedMpvKey
@@ -45,18 +47,51 @@ class AppInputConfigBuilder {
       // Ignore empty bindings added by the prefs UI:
       guard !key.isEmpty else { continue }
 
+      let prevSameKeyBinding: InputBinding?
+
+      if key == Constants.anyUnicodeKey {
+        // Wildcard binding
+        prevSameKeyBinding = anyUnicodeBinding
+        if let prevSameKeyBinding {
+          log.warn{"Multiple ANY_UNICODE bindings found in input conf! Overriding action \(prevSameKeyBinding.keyMapping.rawAction?.quoted ?? "nil") with \(binding.keyMapping.rawAction?.quoted ?? "nil")"}
+        }
+        anyUnicodeBinding = binding
+
+        // Go back and disable all previous candidates which match ANY_UNICODE
+        for index in 0..<candidateIndex {
+          let prevBinding = bindingCandidateList[index]
+          let bindingKey = prevBinding.keyMapping.normalizedMpvKey
+          if KeyCodeHelper.isTypedUnicodeChar(normalizedMpvKey: bindingKey) {
+            prevBinding.isEnabled = false
+            duplicateKeys.insert(bindingKey)
+            prevBinding.displayMessage = "This binding is overridden by an \(key.quoted) binding below."
+          }
+        }
+      } else if key == Constants.unmappedKey {
+        // Wildcard binding
+        prevSameKeyBinding = unmappedBinding
+        if let prevSameKeyBinding {
+          log.warn{"Multiple UNMAPPED bindings found in input conf! Overriding action \(prevSameKeyBinding.keyMapping.rawAction?.quoted ?? "nil") with \(binding.keyMapping.rawAction?.quoted ?? "nil")"}
+        }
+        unmappedBinding = binding
+      } else {
+        // Regular binding
+        prevSameKeyBinding = resolverDict[key]
+
+        // Store it, overwriting any previous entry:
+        resolverDict[key] = binding
+      }
+
       // If multiple bindings map to the same key, favor the last one always.
-      if let prevSameKeyBinding = resolverDict[key] {
+      if let prevSameKeyBinding {
         duplicateKeys.insert(key)
         prevSameKeyBinding.isEnabled = false
         if prevSameKeyBinding.origin == .iinaPlugin {
           prevSameKeyBinding.displayMessage = "\(key.quoted) is overridden by \(binding.keyMapping.actionDescription().quoted). Plugins must use key bindings which have not already been used."
         } else {
-          prevSameKeyBinding.displayMessage = "This binding is overridden by a binding below it which also uses \(key.quoted)"
+          prevSameKeyBinding.displayMessage = "This binding is overridden by a binding below it which also uses \(key.quoted)."
         }
       }
-      // Store it, overwriting any previous entry:
-      resolverDict[key] = binding
     }
 
     // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
@@ -67,16 +102,16 @@ class AppInputConfigBuilder {
     // This will update all standard menu item bindings, and also update the isMenuItem status of each:
     menuController.updateKeyEquivalents(from: bindingCandidateList)
 
-    let appBindings = AppInputConfig(version: version, playerLabel: playerLabel,
-                                     bindingCandidateList: bindingCandidateList, resolverDict: resolverDict,
-                                     duplicateKeys: duplicateKeys,
-                                     userConfSectionStartIndex: userConfSectionStartIndex!, userConfSectionEndIndex: userConfSectionEndIndex!)
+    let appInputConfig = AppInputConfig(version: version, playerLabel: playerLabel,
+                                        bindingCandidateList: bindingCandidateList, resolverDict: resolverDict,
+                                        anyUnicode: anyUnicodeBinding, unmapped: unmappedBinding, duplicateKeys: duplicateKeys,
+                                        userConfSectionStartIndex: userConfSectionStartIndex!, userConfSectionEndIndex: userConfSectionEndIndex!)
     if DebugConfig.logBindingsRebuild {
-      log.verbose{"Finished AppInputConfig rebuild with \(appBindings.resolverDict.count) bindings"}
+      log.verbose{"Finished AppInputConfig rebuild with \(appInputConfig.resolverDict.count) bindings"}
     }
-    appBindings.logEnabledBindings()
+    appInputConfig.logEnabledBindings()
 
-    return appBindings
+    return appInputConfig
   }
 
   /*

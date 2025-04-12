@@ -41,7 +41,7 @@ struct AppData {
   // Used internally as identifiers when communicating with mpv. Should not be displayed because they are not localized:
   static let noneCropIdentifier = "None"
   static let customCropIdentifier = "Custom"
-  
+
   static let rotations: [Int] = [0, 90, 180, 270]
   static let scaleStep: CGFloat = 25
 
@@ -157,6 +157,8 @@ struct Constants {
    * Lua keybindings require level "debug" or higher, so don't set threshold to be stricter than this level
    */
   static let minMpvEventLogLevel = MPVLogLevel.debug
+  static let anyUnicodeKey = "ANY_UNICODE"
+  static let unmappedKey = "UNMAPPED"
 
   static let maxCachedVideoSizes: Int = 100000
   static let maxWindowNamesInRestoreTimeoutAlert: Int = 8
