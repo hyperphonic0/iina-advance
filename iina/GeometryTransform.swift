@@ -33,31 +33,6 @@ struct GeometryTransform {
                      player: player)
     }
 
-    /// If current media is file, this should be called after it is done loading.
-    /// If current media is network resource, should be called immediately & show buffering msg.
-    /// If current media's vid track changed, may need to apply new geometry
-    func trackChanged() -> VideoGeometry? {
-      assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-
-      guard let videoGeo = syncVideoParamsFromMpv() else { return nil }
-      if currentMediaAudioStatus.isAudio || vidTrackID == 0 {
-        // Square album art
-        return videoGeo
-      }
-
-      // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
-      // This is optional but provides a better viewer experience.
-      let ffMeta = currentPlayback.isNetworkResource ? nil : MediaMetaCache.shared.getOrReadVideoMeta(id: currentPlayback.id, log)
-
-      if let ffMeta {
-        log.debug{"[GeoTF:\(name)] Substituting ffMeta \(ffMeta) into videoGeo \(videoGeo)"}
-        return videoGeo.substituting(ffMeta)
-      } else {
-        log.debug{"[GeoTF:\(name)] Derived videoGeo \(videoGeo)"}
-        return videoGeo
-      }
-    }  // end of transform block
-
     struct VideoParams: Decodable {
       let aspect: Double
       let par: Double
@@ -65,6 +40,7 @@ struct GeometryTransform {
       let h: Int
       let dw: Int
       let dh: Int
+      let rotate: Int
 
       static func fromJSON(_ json: String?, _ objName: String, _ log: Logger.Subsystem) -> VideoParams? {
         do {
@@ -84,7 +60,7 @@ struct GeometryTransform {
       }
     }
 
-    // Returns (propertyValue, isError)
+    /// Returns (propertyValue, isError)
     private func getWithRetries(_ mpvPropertyName: String) -> (String?, Bool) {
       let retriesMax = 3
       var retryNum = 1
@@ -127,15 +103,15 @@ struct GeometryTransform {
       // data for videoOutParams! Seems like the best option is to wait for it. But adding some guardrails...
       // Fortunately we are already in the mpv queue. So we shouldn't block the UI, but we will be blocking mpv from processing
       // more user requests which would only add to the burden.
-      let (videoDecParamsJson, errorOccurred1) = getWithRetries(MPVProperty.videoDecParams)
-      guard !errorOccurred1 else { return nil }
+      let (videoDecParamsJson, errorOccurredGettingVideoDecParams) = getWithRetries(MPVProperty.videoDecParams)
+      guard !errorOccurredGettingVideoDecParams else { return nil }
       let videoDecParams = VideoParams.fromJSON(videoDecParamsJson, "videoDecParams", log)
 
       /// `video-out-params` == final video params for display
       /// This is known to return `nil` during startup, when loading a media file on a remote volume.
       /// Just wait for it as well.
-      let (videoOutParamsJson, errorOccurred2) = getWithRetries(MPVProperty.videoOutParams)
-      guard !errorOccurred2 else { return nil }
+      let (videoOutParamsJson, errorOccurredGettingVideoOutParams) = getWithRetries(MPVProperty.videoOutParams)
+      guard !errorOccurredGettingVideoOutParams else { return nil }
       let videoOutParams = VideoParams.fromJSON(videoOutParamsJson, "videoOutParams", log)
 
       if Logger.isVerboseEnabled {
@@ -181,7 +157,7 @@ struct GeometryTransform {
         codecAspect = nil
       }
 
-      // Sync video's raw dimensions from mpv. This is especially important for streaming videos, which won't have cached ffMeta.
+      // Sync video's raw dimensions from mpv. This is especially important for streaming videos, which won't have cached videoMeta.
       // Fortunately the number don't seem to change between videoDecParams & videoOutParams.
       let rawWidth: Int?
       let rawHeight: Int?
@@ -201,15 +177,29 @@ struct GeometryTransform {
 
       // TODO: sync video-crop (actually, add support for video-crop...)
 
-      let decodedRotation = player.mpv.getInt(MPVProperty.videoParamsRotate)
+      let streamRotation = player.mpv.getInt(MPVProperty.videoParamsRotate)
       // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
       let userRotation = player.mpv.getInt(MPVOption.Video.videoRotate)
+
+#if DEBUG
+      // TODO: clean up these checks after doing more research
+      if let videoDecParams {
+        if streamRotation != videoDecParams.rotate {
+          player.log.error{"Mismatch: streamRotation (\(streamRotation)) != videoDecParams.rotate (\(videoDecParams.rotate))"}
+        }
+      }
+      if let videoOutParams {
+        if streamRotation != videoOutParams.rotate {
+          player.log.error{"Mismatch: streamRotation (\(streamRotation)) != videoOutParams.rotate (\(videoOutParams.rotate))"}
+        }
+      }
+#endif
 
       // If opening window, videoGeo may still have the global (default) log. Update it
       let videoGeo = oldGeo.video.clone(rawWidth: rawWidth, rawHeight: rawHeight,
                                         decodedAspectLabel: codecAspect,
                                         userAspectLabel: userAspectLabelDerived,
-                                        decodedRotation: decodedRotation,
+                                        streamRotation: streamRotation,
                                         userRotation: userRotation,
                                         log)
 
@@ -226,6 +216,33 @@ struct GeometryTransform {
 
       return videoGeo
     }
+
+    /// If current media is file, this should be called after it is done loading.
+    /// If current media is network resource, should be called immediately & show buffering msg.
+    /// If current media's vid track changed, may need to apply new geometry
+    func trackChanged() -> VideoGeometry? {
+      assert(DispatchQueue.isExecutingIn(player.mpv.queue))
+
+      guard let videoGeo = syncVideoParamsFromMpv() else { return nil }
+
+      if currentMediaAudioStatus.isAudio || vidTrackID == 0 {
+        // Square album art
+        return videoGeo
+      }
+
+      // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for
+      // the current mpv instance to finish loading it.
+      // This is optional but can provide a better viewer experience.
+      let videoMeta = currentPlayback.isNetworkResource ? nil : MediaMetaCache.shared.getOrReadVideoMeta(id: currentPlayback.id, log)
+      if let videoMeta {
+        log.debug{"[GeoTF:\(name)] Substituting videoMeta \(videoMeta) into videoGeo \(videoGeo)"}
+        return videoGeo.substituting(videoMeta)
+      } else {
+        log.debug{"[GeoTF:\(name)] Derived videoGeo \(videoGeo)"}
+        return videoGeo
+      }
+    }  // end of transform block
+
   }
 
   let name: String

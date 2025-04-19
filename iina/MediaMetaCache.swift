@@ -5,14 +5,23 @@
 //  Created by Matt Svoboda on 2024-09-22.
 //
 
-// TODO: consider merging this with MediaMeta
-struct FFVideoMeta : CustomStringConvertible {
+/// Additional meta for the video track of a given media, if it has any video tracks.
+struct VideoMeta : CustomStringConvertible {
   var description: String {
-    "FFVideoMeta(w=\(width) h=\(height) rot=\(streamRotation))"
+    "VideoMeta(w=\(rawWidth) h=\(rawHeight) rot=\(streamRotation))"
   }
 
-  let width: Int
-  let height: Int
+  /// The native ("raw") stored dimensions of the video, before any transformation is applied.
+  /// From the mpv manual:
+  /// ```
+  /// width, height
+  ///   Video size. This uses the size of the video as decoded, or if no video frame has been decoded yet,
+  ///   the (possibly incorrect) container indicated size.
+  /// ```
+  /// NOTE: Unlike mpv's usage, neither of these values should ever be `0`.
+  let rawWidth: Int
+  let rawHeight: Int
+
   /// Should match mpv's `video-params/rotate`
   let streamRotation: Int
 }
@@ -26,12 +35,18 @@ struct MediaMeta: CustomStringConvertible {
   let album: String?
   let artist: String?
 
+  let video: [VideoMeta]?
+
   /// Sometimes ffmpeg fails to read the file's meta. But we need to know it tried, so we don't keep retrying forever.
+  ///
+  /// We only use ffmpeg to read the text meta fields above, not `video`.
+  // TODO: use mpv alone to probe all fields
   let triedFFmpeg: Bool
 
   init(_ id: PlaybackID,
        duration: Double? = nil, progress: Double? = nil,
        title: String? = nil, album: String? = nil, artist: String? = nil,
+       video: [VideoMeta]? = nil,
        triedFFmpeg: Bool = false) {
     self.id = id
     self.duration = duration
@@ -40,17 +55,35 @@ struct MediaMeta: CustomStringConvertible {
     self.title = title?.replacingOccurrences(of: "\r", with: "").replacingOccurrences(of: "\n", with: " ")
     self.album = album
     self.artist = artist
+    self.video = video
     self.triedFFmpeg = triedFFmpeg
   }
 
-  func clone(duration: Double? = nil, progress: Double? = nil, nilProgress: Bool = false,
-             title: String? = nil, album: String? = nil, artist: String? = nil, triedFFmpeg: Bool = false) -> MediaMeta {
-    return MediaMeta(id, duration: duration ?? self.duration, progress: nilProgress ? nil : (progress ?? self.progress),
-                     title: title ?? self.title, album: album ?? self.album, artist: artist ?? self.artist, triedFFmpeg: triedFFmpeg || self.triedFFmpeg)
+  /// Use a negative value for `progress` to overwrite with `nil`.
+  func clone(duration: Double? = nil, progress: Double? = nil,
+             title: String? = nil, album: String? = nil, artist: String? = nil,
+             video: [VideoMeta]? = nil,
+             triedFFmpeg: Bool = false) -> MediaMeta {
+
+    let newProgress: Double?
+    if let progress {
+      if progress < 0.0 {
+        newProgress = nil
+      } else {
+        newProgress = progress
+      }
+    } else {
+      newProgress = self.progress
+    }
+
+    return MediaMeta(id, duration: duration ?? self.duration, progress: newProgress,
+                     title: title ?? self.title, album: album ?? self.album, artist: artist ?? self.artist,
+                     video: video ?? self.video,
+                     triedFFmpeg: triedFFmpeg || self.triedFFmpeg)
   }
 
   var description: String {
-    "Media{dur=\(duration?.description ?? "␀") prog=\(progress?.description ?? "␀") title=\(title?.description ?? "␀") album=\(album?.description ?? "␀") artist=\(artist?.description ?? "␀")}"
+    "Media{dur=\(duration?.description ?? "␀") prog=\(progress?.description ?? "␀") title=\(title?.description.quoted ?? "␀") album=\(album?.description.quoted ?? "␀") artist=\(artist?.description.quoted ?? "␀") tried=\(triedFFmpeg.yn) vid=\(video?.map(\.description).joined(separator: ", ") ?? "␀")}"
   }
 }
 
@@ -64,7 +97,6 @@ class MediaMetaCache {
   private let log: Logger.Subsystem = Logger.makeSubsystem("metaCache")
   private let metaLock = Lock()
   private var cachedMeta: [URL: MediaMeta] = [:]
-  private var cachedFFMeta: [URL: FFVideoMeta] = [:]
 
   func fillInVideoSizes(_ videoFiles: [FileInfo], onBehalfOf player: PlayerCore) {
     guard Preference.bool(for: .prefetchPlaylistVideoGeometry) else {
@@ -80,7 +112,7 @@ class MediaMetaCache {
         return
       }
       if getCachedVideoMeta(id: fileInfo.id) == nil {
-        if reloadCachedVideoMeta(id: fileInfo.id) != nil {
+        if readVideoMetaIntoCache(id: fileInfo.id) != nil {
           updateCount += 1
         }
       }
@@ -95,12 +127,15 @@ class MediaMetaCache {
     }
   }
 
+  /// Returns entry from the cache with the given `id`, or `nil` if no such entry was found in the cache.
   func getCachedMeta(for id: PlaybackID) -> MediaMeta? {
     metaLock.withLock {
       return cachedMeta[id.url]
     }
   }
 
+  /// Returns entry from the cache with the given `id`, if found in the cache; otherwise returns a newly created
+  /// bare-bones entry for the given `id` after storing it in the cache.
   func getOrAddCachedMeta(for id: PlaybackID) -> MediaMeta {
     metaLock.withLock {
       if let meta = cachedMeta[id.url] {
@@ -112,19 +147,17 @@ class MediaMetaCache {
     }
   }
 
-  func setCachedMediaDuration(_ id: PlaybackID, _ duration: Double) {
-    guard duration > 0.0 else { return }
-    metaLock.withLock {
-      let oldMeta = cachedMeta[id.url] ?? MediaMeta(id)
-      cachedMeta[id.url] = oldMeta.clone(duration: duration)
-    }
-  }
-
-  func setCachedMediaDurationAndProgress(_ id: PlaybackID, duration: Double? = nil, progress: Double?) {
-    metaLock.withLock {
+  /// Updates the item in the cache with the given `id` using the provided values. The item is first created if
+  /// necessary. The updated item is stored back into the cache and is then returned.
+  ///
+  /// Use `Constants.unknownProgress` (or any negative value) for `newProgress` to overwrite with `nil`.
+  @discardableResult
+  func updateCacheEntry(_ id: PlaybackID, newDuration: Double? = nil, newProgress: Double? = nil) -> MediaMeta {
+    return metaLock.withLock {
       let oldMeta = cachedMeta[id.url] ??  MediaMeta(id)
-      // nilProgress == kludge to force nil
-      cachedMeta[id.url] = oldMeta.clone(duration: duration, progress: progress, nilProgress: progress == nil)
+      let newMeta = oldMeta.clone(duration: newDuration, progress: newProgress)
+      cachedMeta[id.url] = newMeta
+      return newMeta
     }
   }
 
@@ -154,12 +187,15 @@ class MediaMetaCache {
 
     if id.isFile {
       if reloadFromWatchLater {
-        progress = HistoryController.shared.playbackProgressFromWatchLater(id.mpvMD5)
+        // If watch-later returns nil, send negative value to clone() to ensure it is nilled out.
+        // This is important to do to ensure that toggling the history checkbox in Preferences ends up
+        // hiding the progress bars in the UI.
+        progress = HistoryController.shared.playbackProgressFromWatchLater(id.mpvMD5) ?? -1
       }
 
       if reloadFromFFmpeg {
         triedFFmpeg = true
-        if let dict = FFmpegController.probeVideoInfo(forFile: id.path) {
+        if let dict = FFmpegController.probeStringMetaAndDuration(forFile: id.path) {
 
           duration = dict["@iina_duration"] as? Double
 
@@ -194,8 +230,9 @@ class MediaMetaCache {
     return metaLock.withLock {
       let existingMeta = cachedMeta[id.url]
       let oldMeta = existingMeta ?? MediaMeta(id)
-      let newMeta = oldMeta.clone(duration: duration, progress: progress, nilProgress: progress == nil,
-                                  title: title, album: album, artist: artist, triedFFmpeg: oldMeta.triedFFmpeg || triedFFmpeg)
+      let newMeta = oldMeta.clone(duration: duration, progress: progress,
+                                  title: title, album: album, artist: artist,
+                                  triedFFmpeg: oldMeta.triedFFmpeg || triedFFmpeg)
       cachedMeta[id.url] = newMeta
 
       // Compare oldMeta to newMeta; send update notification if different
@@ -227,21 +264,16 @@ class MediaMetaCache {
 
   // MARK: - Video Meta
 
-  func getCachedVideoMeta(id: PlaybackID?) -> FFVideoMeta? {
+  func getCachedVideoMeta(id: PlaybackID?) -> VideoMeta? {
     guard let id else { return nil }
     guard id.isFile else { return nil }
     guard id.path != "stdin" else { return nil }
 
-    var ffMeta: FFVideoMeta? = nil
-    metaLock.withLock {
-      if let cachedMeta = cachedFFMeta[id.url] {
-        ffMeta = cachedMeta
-      }
-    }
-    return ffMeta
+    let mediaMeta = getCachedMeta(for: id)
+    return mediaMeta?.video?.first
   }
 
-  func reloadCachedVideoMeta(id: PlaybackID?) -> FFVideoMeta? {
+  private func readVideoMetaIntoCache(id: PlaybackID?) -> VideoMeta? {
     guard let id else { return nil }
     guard id.isFile else { return nil }
     let path = id.path
@@ -251,21 +283,23 @@ class MediaMetaCache {
       return nil
     }
 
-    if let sizeArray = FFmpegController.readVideoSize(forFile: path) {
-      let ffMeta = FFVideoMeta(width: Int(sizeArray[0]), height: Int(sizeArray[1]), streamRotation: Int(sizeArray[2]))
-      metaLock.withLock {
-        // Don't let this get too big
-        if cachedFFMeta.count > Constants.maxCachedVideoSizes {
-          log.debug{"Too many cached FF meta entries (count=\(cachedFFMeta.count); maximum=\(Constants.maxCachedVideoSizes)). Clearing cached FF meta..."}
-          cachedFFMeta.removeAll()
-        }
-        cachedFFMeta[id.url] = ffMeta
-      }
-      return ffMeta
-    } else {
-      // Not a serious error. Can happen for audio files.
-      log.debug{"FFmpeg could not read video size for \(path.pii.quoted)"}
-    }
+    // FIXME: use mpv instead!
+
+//    if let sizeArray = FFmpegController.readVideoSize(forFile: path) {
+//      let ffMeta = FFVideoMeta(width: Int(sizeArray[0]), height: Int(sizeArray[1]), streamRotation: Int(sizeArray[2]))
+//      metaLock.withLock {
+//        // Don't let this get too big
+//        if cachedFFMeta.count > Constants.maxCachedVideoSizes {
+//          log.debug{"Too many cached FF meta entries (count=\(cachedFFMeta.count); maximum=\(Constants.maxCachedVideoSizes)). Clearing cached FF meta..."}
+//          cachedFFMeta.removeAll()
+//        }
+//        cachedFFMeta[id.url] = ffMeta
+//      }
+//      return ffMeta
+//    } else {
+//      // Not a serious error. Can happen for audio files.
+//      log.debug{"FFmpeg could not read video size for \(path.pii.quoted)"}
+//    }
     return nil
   }
 
@@ -273,7 +307,7 @@ class MediaMetaCache {
     _ = getOrReadVideoMeta(id: id, log)
   }
 
-  func getOrReadVideoMeta(id: PlaybackID?, _ log: Logger.Subsystem) -> FFVideoMeta? {
+  func getOrReadVideoMeta(id: PlaybackID?, _ log: Logger.Subsystem) -> VideoMeta? {
     guard let id else { return nil }
 
     guard id.isFile else {
@@ -282,23 +316,23 @@ class MediaMetaCache {
     }
     let path = id.path
     guard Utility.playableFileExt.contains(path.lowercasedPathExtension) else {
-      log.verbose{"Skipping ffMeta check; not a playable file: \(path.pii.quoted)"}
+      log.verbose{"Skipping videoMeta check; not a playable file: \(path.pii.quoted)"}
       return nil
     }
 
     var missed = false
-    var ffMeta = getCachedVideoMeta(id: id)
-    if ffMeta == nil {
+    var videoMeta = getCachedVideoMeta(id: id)
+    if videoMeta == nil {
       missed = true
-      ffMeta = reloadCachedVideoMeta(id: id)
+      videoMeta = readVideoMetaIntoCache(id: id)
     }
 
-    guard let ffMeta else {
+    guard let videoMeta else {
       log.error{"Unable to find ffMeta from either cache or ffmpeg for \(path.pii.quoted)"}
       return nil
     }
-    log.verbose{"Found ffMeta via \(missed ? "ffmpeg" : "cache"): \(ffMeta), for \(path.pii.quoted)"}
-    return ffMeta
+    log.verbose{"Found videoMeta via \(missed ? "probe" : "cache"): \(videoMeta), for \(path.pii.quoted)"}
+    return videoMeta
   }
 
 }

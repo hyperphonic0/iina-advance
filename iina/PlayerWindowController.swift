@@ -1335,6 +1335,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard !isAnimatingLayoutTransition, !isMagnifying, !sessionState.isRestoring else { return }
     guard let window = window else { return }
 
+    restartWindowResizeDenialPeriod()
+    // TODO: also deny scroll wheel for a period
     guard !isAnimating else { return }
 
     // We can get here if external calls from accessibility APIs change the window location.
@@ -1617,7 +1619,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       log.verbose("Entering interactive mode: \(mode)")
 
-      if videoGeo.decodedRotation != 0 {
+      if videoGeo.streamRotation != 0 {
         log.warn("FIXME: Video codec rotation is not yet supported in interactive mode! Any selection chosen will be completely wrong!")
       }
 

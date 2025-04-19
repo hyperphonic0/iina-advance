@@ -56,7 +56,10 @@
 - (void)generateThumbnailForFile:(nonnull NSString *)file
                       thumbWidth:(int)thumbWidth;
 
-+ (nullable NSDictionary *)probeVideoInfoForFile:(nonnull NSString *)file;
-
-+ (nullable int *)readVideoSizeForFile:(nonnull NSString *)file;
+/// Determines the values for:
+/// - Media duration (in `iina_duration`)
+/// - Title
+/// - Album
+/// - Artist
++ (nullable NSDictionary *)probeStringMetaAndDurationForFile:(nonnull NSString *)file;
 @end

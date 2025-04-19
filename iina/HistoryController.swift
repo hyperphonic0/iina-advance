@@ -401,7 +401,7 @@ class HistoryController {
     }
     guard Preference.bool(for: .resumeLastPosition) else {
       // May need to clear cached progress in case this pref was toggled from on to off during this launch
-      MediaMetaCache.shared.setCachedMediaDurationAndProgress(id, duration: duration, progress: nil)
+      MediaMetaCache.shared.updateCacheEntry(id, newDuration: duration, newProgress: nil)
       return
     }
     // FIXME: remove `iinaLastPlayedFilePath` and `iinaLastPlayedFilePosition` - they are not compatible with welcome window list
@@ -417,7 +417,7 @@ class HistoryController {
 
     // Write to cache directly (rather than calling `refreshCachedVideoProgress`).
     // If user only closed the window but didn't quit the app, this can make sure playlist displays the correct progress.
-    MediaMetaCache.shared.setCachedMediaDurationAndProgress(id, duration: duration, progress: position)
+    MediaMetaCache.shared.updateCacheEntry(id, newDuration: duration, newProgress: position)
   }
 
   // MARK: - FileExists & Progress from watch-later
@@ -449,7 +449,7 @@ class HistoryController {
     } else {
       var didClearCachedProgress = false
       if let cachedMediaMeta = MediaMetaCache.shared.getCachedMeta(for: entry.id), cachedMediaMeta.progress != nil {
-        MediaMetaCache.shared.setCachedMediaDurationAndProgress(entry.id, duration: cachedMediaMeta.duration, progress: nil)
+        MediaMetaCache.shared.updateCacheEntry(entry.id, newDuration: cachedMediaMeta.duration, newProgress: Constants.unknownProgress)
         didClearCachedProgress = true
       }
       // Watch Later is no longer enabled, but its value is still cached?
@@ -551,7 +551,8 @@ class HistoryController {
 
     if progressDidChange {
       // Copy from the old paradigm into the new...
-      MediaMetaCache.shared.setCachedMediaDurationAndProgress(historyEntry.id, duration: historyEntry.duration, progress: progress)
+      let newProgress = progress == nil ? Constants.unknownProgress : progress
+      MediaMetaCache.shared.updateCacheEntry(historyEntry.id, newDuration: historyEntry.duration, newProgress: newProgress)
     }
     return progressDidChange
   }

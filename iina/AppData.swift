@@ -160,6 +160,8 @@ struct Constants {
   static let anyUnicodeKey = "ANY_UNICODE"
   static let unmappedKey = "UNMAPPED"
 
+  static let unknownProgress: Double = -1.0
+
   static let maxCachedVideoSizes: Int = 100000
   static let maxWindowNamesInRestoreTimeoutAlert: Int = 8
   static let mpvOptionsTableMaxRowsPerOperation: Int = 1000

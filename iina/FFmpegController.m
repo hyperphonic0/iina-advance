@@ -346,9 +346,9 @@ return -1;\
   }
 }
 
-// MARK: - Probing Video
+// MARK: - Probing Meta
 
-+ (NSDictionary *)probeVideoInfoForFile:(nonnull NSString *)file
++ (NSDictionary *)probeStringMetaAndDurationForFile:(nonnull NSString *)file
 {
   int ret;
   int64_t duration;
@@ -387,100 +387,6 @@ return -1;\
   return info;
 }
 
-
-+ (int *)readVideoSizeForFile:(nonnull NSString *)file
-{
-  int i, ret;
-
-  char *cFilename = strdup(file.fileSystemRepresentation);
-
-  // Register all formats and codecs. mpv should have already called it.
-  // av_register_all();
-
-  // Open video file
-  AVFormatContext *pFormatCtx = NULL;
-  ret = avformat_open_input(&pFormatCtx, cFilename, NULL, NULL);
-  free(cFilename);
-  if (ret < 0) {
-    LOG_DEBUG(@"Failed to open file \"%@\" to obtain video dimensions: %s (%d)", file, av_err2str(ret), ret);
-    return nil;
-  }
-
-  // Find stream information
-  ret = avformat_find_stream_info(pFormatCtx, NULL);
-  if (ret < 0) {
-    LOG_DEBUG(@"Failed to get stream info for file \"%@\" to obtain video dimensions: %s (%d)", file, av_err2str(ret), ret);
-    return nil;
-  }
-
-  // Find the first video stream
-  int videoStream = -1;
-  for (i = 0; i < pFormatCtx->nb_streams; i++) {
-    if (pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-      videoStream = i;
-      break;
-    }
-  }
-  if (videoStream < 0) {
-    LOG_DEBUG(@"Error reading video size: for file \"%@\": no video stream", file);
-    return nil;
-  }
-
-  // Get the codec context for the video stream
-  AVStream *pVideoStream = pFormatCtx->streams[videoStream];
-
-  AVRational videoAvgFrameRate = pVideoStream->avg_frame_rate;
-
-  // Check whether the denominator (AVRational.den) is zero to prevent division-by-zero
-  if (videoAvgFrameRate.den == 0 || av_q2d(videoAvgFrameRate) == 0) {
-    LOG_DEBUG(@"Avg frame rate == 0; returning");
-    return nil;
-  }
-
-  // Find the decoder for the video stream
-  const AVCodec *pCodec = avcodec_find_decoder(pVideoStream->codecpar->codec_id);
-  if (pCodec == NULL) {
-    LOG_DEBUG(@"Failed to read video size for file \"%@\": unsupported codec", file);
-    return nil;
-  }
-
-  // Open codec
-  AVCodecContext *pCodecCtx = avcodec_alloc_context3(pCodec);
-  AVDictionary *optionsDict = NULL;
-
-  avcodec_parameters_to_context(pCodecCtx, pVideoStream->codecpar);
-  pCodecCtx->time_base = pVideoStream->time_base;
-
-  if (pCodecCtx->pix_fmt < 0 || pCodecCtx->pix_fmt >= AV_PIX_FMT_NB) {
-    avcodec_free_context(&pCodecCtx);
-    avformat_close_input(&pFormatCtx);
-    LOG_DEBUG(@"Failed to read video size for file \"%@\": pixel format is null", file);
-    return nil;
-  }
-
-  ret = avcodec_open2(pCodecCtx, pCodec, &optionsDict);
-  if (ret < 0) {
-    LOG_DEBUG(@"Failed to read video size for file \"%@\": could not open codec: %s (%d)", file, av_err2str(ret), ret);
-  }
-
-  const AVPacketSideData *sd = av_packet_side_data_get(pCodecCtx->coded_side_data,
-                                                       pCodecCtx->nb_coded_side_data,
-                                                       AV_PKT_DATA_DISPLAYMATRIX);
-  // Find rotate tag in the stream's side data
-  // Code copied from mp_image.c
-  int rotation = 0;
-  if (sd) {
-    double r = av_display_rotation_get(((const int32_t *)sd));
-    rotation = ((((int)(-r)) % 360) + 360) % 360;
-    LOG_DEBUG(@"ROTATION: %d", rotation);
-  }
-
-  static int sizeArray[3];
-  sizeArray[0] = pCodecCtx->width;
-  sizeArray[1] = pCodecCtx->height;
-  sizeArray[2] = rotation;
-  return sizeArray;
-}
 
 // MARK: - Decoding Image
 

@@ -28,7 +28,8 @@ fileprivate extension CGColor {
 /// 
 /// In the future, the sliders should be entirely custom, instead of relying on legacy `NSSlider`. Then the knob & slider can be
 /// implemented via their own separate `CALayer`s which should enable more optimization opportunities. It's not been tested whether drawing
-/// into (possibly cached) `CGImage`s as this class currently does delivers any improved performance (or is even slower)...
+/// into a `CGImage`s as this class does currently delivers any improved performance (or is even slower) than the standard `NSSlider` redrawing,
+/// although empirical results so far haven't seemed too bad...
 class BarFactory {
   // MARK: - Init / Config
 

@@ -2380,7 +2380,7 @@ class PlayerCore: NSObject {
     info.playbackDurationSec = duration
     if let path = mpv.getString(MPVProperty.path) {
       if let id = PlaybackID(path: path) {
-        MediaMetaCache.shared.setCachedMediaDuration(id, duration)
+        MediaMetaCache.shared.updateCacheEntry(id, newDuration: duration)
       } else {
         log.error{"MediaMetaCache: could not create URL for path, skipping: \(path)"}
       }

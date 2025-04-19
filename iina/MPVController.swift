@@ -186,6 +186,7 @@ class MPVController: NSObject {
     if checkError {
       chkErr(returnValue)
     }
+
     return returnValue
   }
 
