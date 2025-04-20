@@ -83,11 +83,11 @@
         </customView>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customView id="co6-LF-8Q2" userLabel="Prefs &gt; Advanced: Logging Section">
-            <rect key="frame" x="0.0" y="0.0" width="450" height="96"/>
+            <rect key="frame" x="0.0" y="0.0" width="486" height="96"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="upp-mq-cio">
-                    <rect key="frame" x="-1" y="71" width="125" height="16"/>
+                    <rect key="frame" x="-1" y="71" width="192" height="16"/>
                     <textFieldCell key="cell" lineBreakMode="clipping" title="Log level:" id="nFf-vh-bNd">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -95,7 +95,7 @@
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Moa-ah-XjY">
-                    <rect key="frame" x="127" y="64" width="89" height="25"/>
+                    <rect key="frame" x="194" y="64" width="109" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="Debug" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="hGq-ek-VHd" id="gTP-IE-Lyn">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" usesAppearanceFont="YES"/>
@@ -119,7 +119,7 @@
                     </connections>
                 </popUpButton>
                 <button identifier="FunctionalButtonShowLog" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XBa-zS-RVU">
-                    <rect key="frame" x="217" y="61" width="153" height="32"/>
+                    <rect key="frame" x="304" y="61" width="153" height="32"/>
                     <buttonCell key="cell" type="push" title="Show Log Viewer" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Owx-92-Ogg">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -130,31 +130,31 @@
                     </connections>
                 </button>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="OgN-cA-cof">
-                    <rect key="frame" x="-1" y="43" width="125" height="16"/>
-                    <textFieldCell key="cell" lineBreakMode="clipping" title="mpv log-message level:" id="elw-zF-oHx">
+                    <rect key="frame" x="19" y="43" width="172" height="16"/>
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="mpv &quot;log-message&quot; events:" id="elw-zF-oHx">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="wok-OV-b6N">
-                    <rect key="frame" x="127" y="36" width="109" height="25"/>
-                    <popUpButtonCell key="cell" type="push" title="Warn" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="4" imageScaling="proportionallyDown" inset="2" selectedItem="Ls0-AF-7w8" id="xeN-4l-Fiu">
+                    <rect key="frame" x="194" y="36" width="109" height="25"/>
+                    <popUpButtonCell key="cell" type="push" title="𐄒 Warn" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="4" imageScaling="proportionallyDown" inset="2" selectedItem="Ls0-AF-7w8" id="xeN-4l-Fiu">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="system"/>
+                        <font key="font" usesAppearanceFont="YES"/>
                         <menu key="menu" id="Rzc-Jt-6wZ">
                             <items>
-                                <menuItem title="Trace" id="02t-Pl-pVS"/>
-                                <menuItem title="Debug" tag="1" id="5nc-XS-tIQ"/>
-                                <menuItem title="Verbose" tag="2" id="fPe-u4-voQ"/>
-                                <menuItem title="Info" tag="3" id="3L1-i6-IwA"/>
-                                <menuItem title="Warn" state="on" tag="4" id="Ls0-AF-7w8">
+                                <menuItem title="𐄗 Trace" id="02t-Pl-pVS"/>
+                                <menuItem title="𐄕 Debug" tag="1" id="5nc-XS-tIQ"/>
+                                <menuItem title="𐄔 Verbose" tag="2" id="fPe-u4-voQ"/>
+                                <menuItem title="𐄓 Info" tag="3" id="3L1-i6-IwA"/>
+                                <menuItem title="𐄒 Warn" state="on" tag="4" id="Ls0-AF-7w8">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
-                                <menuItem title="Error" tag="5" id="OOD-Rd-eFW">
+                                <menuItem title="𐄑 Error" tag="5" id="OOD-Rd-eFW">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
-                                <menuItem title="Fatal" tag="6" id="Vqc-6z-5Ke">
+                                <menuItem title="𐄐 Fatal" tag="6" id="Vqc-6z-5Ke">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
                                 <menuItem title="No Logging" tag="7" id="fRC-gF-KKB">
@@ -169,7 +169,7 @@
                     </connections>
                 </popUpButton>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="SHQ-mh-jeX">
-                    <rect key="frame" x="-1" y="10" width="213" height="18"/>
+                    <rect key="frame" x="-1" y="10" width="300" height="18"/>
                     <buttonCell key="cell" type="check" title="Enable logging to file" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="LCd-uY-Yze">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -183,7 +183,7 @@
                     </connections>
                 </button>
                 <button identifier="FunctionalButtonLogDirectory" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="shz-CZ-kqM">
-                    <rect key="frame" x="217" y="1" width="153" height="32"/>
+                    <rect key="frame" x="304" y="1" width="153" height="32"/>
                     <buttonCell key="cell" type="push" title="Open Log Directory" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="JDA-g3-RNX">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -202,7 +202,7 @@
                     </connections>
                 </button>
                 <textField identifier="SectionTitleLogging" hidden="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="JVL-Sw-TcX" userLabel="Logging">
-                    <rect key="frame" x="399" y="80" width="53" height="16"/>
+                    <rect key="frame" x="435" y="80" width="53" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Logging" id="BK9-mL-ip5">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -214,6 +214,7 @@
                 <constraint firstItem="JVL-Sw-TcX" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="XBa-zS-RVU" secondAttribute="leading" id="30Z-TO-ypg"/>
                 <constraint firstItem="shz-CZ-kqM" firstAttribute="firstBaseline" secondItem="SHQ-mh-jeX" secondAttribute="firstBaseline" id="3Y3-fD-94U"/>
                 <constraint firstItem="XBa-zS-RVU" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Moa-ah-XjY" secondAttribute="trailing" constant="12" id="5Ej-Y2-aQq"/>
+                <constraint firstItem="wok-OV-b6N" firstAttribute="trailing" secondItem="Moa-ah-XjY" secondAttribute="trailing" id="7xC-Qr-guC"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="XBa-zS-RVU" secondAttribute="trailing" constant="8" id="AsQ-gq-eBZ"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="upp-mq-cio" secondAttribute="trailing" id="FjG-MD-Vdp"/>
                 <constraint firstItem="XBa-zS-RVU" firstAttribute="firstBaseline" secondItem="Moa-ah-XjY" secondAttribute="firstBaseline" id="Hsp-Tr-QlX"/>
@@ -222,7 +223,7 @@
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="SHQ-mh-jeX" secondAttribute="trailing" id="TNL-q6-43x"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="shz-CZ-kqM" secondAttribute="trailing" constant="8" id="WMD-zR-vHx"/>
                 <constraint firstItem="wok-OV-b6N" firstAttribute="leading" secondItem="OgN-cA-cof" secondAttribute="trailing" constant="8" symbolic="YES" id="XYh-qq-PbN"/>
-                <constraint firstItem="OgN-cA-cof" firstAttribute="leading" secondItem="upp-mq-cio" secondAttribute="leading" id="XcI-80-BTq"/>
+                <constraint firstItem="OgN-cA-cof" firstAttribute="leading" secondItem="upp-mq-cio" secondAttribute="leading" constant="20" id="XcI-80-BTq"/>
                 <constraint firstItem="shz-CZ-kqM" firstAttribute="leading" secondItem="SHQ-mh-jeX" secondAttribute="trailing" priority="900" constant="12" id="XrI-fY-KB0"/>
                 <constraint firstItem="Moa-ah-XjY" firstAttribute="firstBaseline" secondItem="upp-mq-cio" secondAttribute="firstBaseline" id="ZD7-0V-y8b"/>
                 <constraint firstItem="JVL-Sw-TcX" firstAttribute="top" secondItem="co6-LF-8Q2" secondAttribute="top" id="aAn-uv-4p8"/>
@@ -293,7 +294,7 @@
                     <rect key="frame" x="0.0" y="91" width="480" height="141"/>
                     <clipView key="contentView" id="aL1-v5-nLY">
                         <rect key="frame" x="1" y="1" width="478" height="139"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="mpvOptionsTable" rowHeight="18" rowSizeStyle="automatic" headerView="wiq-g9-ouS" viewBased="YES" id="LPs-2B-Pt0" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="478" height="116"/>
@@ -315,7 +316,7 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView clipsToBounds="YES" translatesAutoresizingMaskIntoConstraints="NO" id="aYw-Un-OIE">
-                                                <rect key="frame" x="2" y="1" width="122" height="18"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="122" height="18"/>
                                                 <subviews>
                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="jGv-Vw-Iau" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                         <rect key="frame" x="2" y="1" width="132" height="16"/>
@@ -350,7 +351,7 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView clipsToBounds="YES" translatesAutoresizingMaskIntoConstraints="NO" id="dJ7-Mq-OHX">
-                                                <rect key="frame" x="128" y="1" width="320" height="18"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="320" height="18"/>
                                                 <subviews>
                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="DWx-cI-Qdh" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                         <rect key="frame" x="2" y="1" width="316" height="16"/>
