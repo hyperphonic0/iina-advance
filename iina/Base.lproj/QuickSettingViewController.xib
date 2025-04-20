@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23504" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="QuickSettingViewController" customModule="IINA" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="QuickSettingViewController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="aspectPresetsSegment" destination="Ljl-w6-gIf" id="X3Q-8g-q0e"/>
                 <outlet property="audioDelayResetBtn" destination="vl8-xk-OxH" id="XSg-0g-s15"/>
@@ -171,7 +171,7 @@
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="863"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
-                                                <view autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ZGz-La-n9c" userLabel="VideoTab Flipped CONTENT VIEW" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
+                                                <view autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ZGz-La-n9c" userLabel="VideoTab Flipped CONTENT VIEW" customClass="FlippedView" customModule="IINA_Advance" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="119" width="360" height="744"/>
                                                     <subviews>
                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="seu-WU-cTV" userLabel="HORIZONTAL-INSETS">
@@ -979,7 +979,7 @@
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="863"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" userLabel="AudioTab Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
+                                                <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" userLabel="AudioTab Flipped View" customClass="FlippedView" customModule="IINA_Advance" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="347" width="360" height="516"/>
                                                     <subviews>
                                                         <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="my2-5o-bNb" userLabel="AudioTab CONTENT VIEW">
@@ -1717,7 +1717,7 @@
                                             <rect key="frame" x="0.0" y="0.0" width="362" height="863"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pm4-x9-WJ5" userLabel="SubtitlesTab Flipped CONTENT VIEW" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
+                                                <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pm4-x9-WJ5" userLabel="SubtitlesTab Flipped CONTENT VIEW" customClass="FlippedView" customModule="IINA_Advance" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="15" width="362" height="848"/>
                                                     <subviews>
                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="PJb-5N-8QM" userLabel="PANEL EDGE INSETS">
@@ -1735,7 +1735,7 @@
                                                                         <rect key="frame" x="0.0" y="0.0" width="362" height="75"/>
                                                                         <autoresizingMask key="autoresizingMask"/>
                                                                         <subviews>
-                                                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="2vU-hm-gGB" userLabel="SubTable Table View" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
+                                                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="2vU-hm-gGB" userLabel="SubTable Table View" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="362" height="75"/>
                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                 <size key="intercellSpacing" width="3" height="2"/>
@@ -1759,12 +1759,12 @@
                                                                                                 <rect key="frame" x="1" y="1" width="21" height="17"/>
                                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                 <subviews>
-                                                                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="7Ky-LN-z9K" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
+                                                                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="7Ky-LN-z9K" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                                                                         <rect key="frame" x="0.0" y="0.0" width="21" height="17"/>
                                                                                                         <constraints>
                                                                                                             <constraint firstAttribute="height" constant="17" id="ANA-U2-c96"/>
                                                                                                         </constraints>
-                                                                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="Jvb-cP-PSf" customClass="EditableTextFieldCell" customModule="IINA" customModuleProvider="target">
+                                                                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="Jvb-cP-PSf" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                                                                             <font key="font" metaFont="system"/>
                                                                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -1801,7 +1801,7 @@
                                                                                                 <rect key="frame" x="25" y="1" width="33" height="17"/>
                                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                 <subviews>
-                                                                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Ydk-iU-8pQ" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
+                                                                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Ydk-iU-8pQ" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                                                                         <rect key="frame" x="0.0" y="0.0" width="33" height="17"/>
                                                                                                         <constraints>
                                                                                                             <constraint firstAttribute="height" constant="17" id="hAr-TV-jh1"/>
@@ -1843,12 +1843,12 @@
                                                                                                 <rect key="frame" x="61" y="1" width="286" height="17"/>
                                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                 <subviews>
-                                                                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="E2W-Vb-Tgt" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
+                                                                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="E2W-Vb-Tgt" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                                                                         <rect key="frame" x="0.0" y="0.0" width="286" height="17"/>
                                                                                                         <constraints>
                                                                                                             <constraint firstAttribute="height" constant="17" id="Z7t-1Z-ziR"/>
                                                                                                         </constraints>
-                                                                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="Qpg-8B-Eks" customClass="EditableTextFieldCell" customModule="IINA" customModuleProvider="target">
+                                                                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="Qpg-8B-Eks" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                                                                             <font key="font" metaFont="system"/>
                                                                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -1891,7 +1891,7 @@
                                                                         <rect key="frame" x="0.0" y="0.0" width="362" height="75"/>
                                                                         <autoresizingMask key="autoresizingMask"/>
                                                                         <subviews>
-                                                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="Jve-qX-Agy" userLabel="SecondarySub Table View" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
+                                                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="Jve-qX-Agy" userLabel="SecondarySub Table View" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="362" height="75"/>
                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                 <size key="intercellSpacing" width="3" height="2"/>
@@ -1915,12 +1915,12 @@
                                                                                                 <rect key="frame" x="1" y="1" width="21" height="17"/>
                                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                 <subviews>
-                                                                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="615-Ps-9YF" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
+                                                                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="615-Ps-9YF" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                                                                         <rect key="frame" x="0.0" y="0.0" width="21" height="17"/>
                                                                                                         <constraints>
                                                                                                             <constraint firstAttribute="height" constant="17" id="qtL-Np-vkj"/>
                                                                                                         </constraints>
-                                                                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="f23-sU-Thx" customClass="EditableTextFieldCell" customModule="IINA" customModuleProvider="target">
+                                                                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="f23-sU-Thx" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                                                                             <font key="font" metaFont="system"/>
                                                                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -1957,12 +1957,12 @@
                                                                                                 <rect key="frame" x="25" y="1" width="33" height="17"/>
                                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                 <subviews>
-                                                                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="CCb-vZ-l96" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
+                                                                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="CCb-vZ-l96" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                                                                         <rect key="frame" x="0.0" y="0.0" width="33" height="17"/>
                                                                                                         <constraints>
                                                                                                             <constraint firstAttribute="height" constant="17" id="plc-pR-j5l"/>
                                                                                                         </constraints>
-                                                                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="right" title="Table View Cell" id="YOu-ft-k7r" customClass="EditableTextFieldCell" customModule="IINA" customModuleProvider="target">
+                                                                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="right" title="Table View Cell" id="YOu-ft-k7r" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                                                                             <font key="font" metaFont="systemBold"/>
                                                                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -1999,12 +1999,12 @@
                                                                                                 <rect key="frame" x="61" y="1" width="286" height="17"/>
                                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                 <subviews>
-                                                                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="ig9-1H-Wpa" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
+                                                                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="ig9-1H-Wpa" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                                                                         <rect key="frame" x="0.0" y="0.0" width="286" height="17"/>
                                                                                                         <constraints>
                                                                                                             <constraint firstAttribute="height" constant="17" id="mlg-vW-akC"/>
                                                                                                         </constraints>
-                                                                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="51L-l6-3vz" customClass="EditableTextFieldCell" customModule="IINA" customModuleProvider="target">
+                                                                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="51L-l6-3vz" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                                                                             <font key="font" metaFont="system"/>
                                                                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -2280,7 +2280,7 @@
                                                                         <rect key="frame" x="4" y="5" width="320" height="172"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
-                                                                            <colorWell translatesAutoresizingMaskIntoConstraints="NO" id="9mo-uL-hfC" customClass="RoundedColorWell" customModule="IINA" customModuleProvider="target">
+                                                                            <colorWell translatesAutoresizingMaskIntoConstraints="NO" id="9mo-uL-hfC" customClass="RoundedColorWell" customModule="IINA_Advance" customModuleProvider="target">
                                                                                 <rect key="frame" x="49" y="119" width="27" height="25"/>
                                                                                 <constraints>
                                                                                     <constraint firstAttribute="height" constant="21" id="Rgf-Cu-gr0"/>
@@ -2365,7 +2365,7 @@
                                                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                                 </textFieldCell>
                                                                             </textField>
-                                                                            <colorWell translatesAutoresizingMaskIntoConstraints="NO" id="U2e-zB-Kue" customClass="RoundedColorWell" customModule="IINA" customModuleProvider="target">
+                                                                            <colorWell translatesAutoresizingMaskIntoConstraints="NO" id="U2e-zB-Kue" customClass="RoundedColorWell" customModule="IINA_Advance" customModuleProvider="target">
                                                                                 <rect key="frame" x="49" y="63" width="27" height="25"/>
                                                                                 <constraints>
                                                                                     <constraint firstAttribute="height" constant="21" id="OaA-1O-DoB"/>
@@ -2376,7 +2376,7 @@
                                                                                     <action selector="subTextBorderColorAction:" target="-2" id="ACh-s2-ew1"/>
                                                                                 </connections>
                                                                             </colorWell>
-                                                                            <colorWell translatesAutoresizingMaskIntoConstraints="NO" id="Ure-tT-JEy" customClass="RoundedColorWell" customModule="IINA" customModuleProvider="target">
+                                                                            <colorWell translatesAutoresizingMaskIntoConstraints="NO" id="Ure-tT-JEy" customClass="RoundedColorWell" customModule="IINA_Advance" customModuleProvider="target">
                                                                                 <rect key="frame" x="49" y="7" width="27" height="25"/>
                                                                                 <constraints>
                                                                                     <constraint firstAttribute="height" constant="21" id="Ivi-Q0-PSs"/>

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="16097.2" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="16097.2"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="GuideWindowController" customModule="IINA" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="GuideWindowController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="highlightsContainerView" destination="yEy-Df-H4W" id="wgV-b5-Ra1"/>
                 <outlet property="highlightsLoadingFailedBox" destination="vEa-x6-5Uc" id="7qs-os-VlD"/>
@@ -19,7 +19,7 @@
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="F0z-JX-Cv5">
             <windowStyleMask key="styleMask" titled="YES" closable="YES"/>
             <rect key="contentRect" x="196" y="240" width="740" height="540"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <view key="contentView" id="se5-gp-TjO">
                 <rect key="frame" x="0.0" y="0.0" width="740" height="588"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -31,13 +31,13 @@
                                 <rect key="frame" x="354" y="254" width="32" height="32"/>
                             </progressIndicator>
                             <box hidden="YES" boxType="custom" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="vEa-x6-5Uc">
-                                <rect key="frame" x="190" y="219" width="360" height="103"/>
+                                <rect key="frame" x="190" y="219" width="360" height="102"/>
                                 <view key="contentView" id="wmd-Zb-vpy">
-                                    <rect key="frame" x="1" y="1" width="358" height="101"/>
+                                    <rect key="frame" x="1" y="1" width="358" height="100"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="QVK-HC-cyL">
-                                            <rect key="frame" x="14" y="53" width="330" height="32"/>
+                                        <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="QVK-HC-cyL">
+                                            <rect key="frame" x="14" y="52" width="330" height="32"/>
                                             <textFieldCell key="cell" alignment="center" title="Failed to load highlights. Please visit our website https://iina.io for more information." id="oaH-Na-skD">
                                                 <font key="font" usesAppearanceFont="YES"/>
                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -45,7 +45,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IXf-x5-M4T">
-                                            <rect key="frame" x="135" y="9" width="89" height="32"/>
+                                            <rect key="frame" x="138" y="9" width="83" height="32"/>
                                             <buttonCell key="cell" type="push" title="Website" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="FJS-b9-ATj">
                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                 <font key="font" metaFont="system"/>
@@ -86,16 +86,16 @@
                             <visualEffectView blendingMode="behindWindow" material="titlebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="AIT-ym-6Ds">
                                 <rect key="frame" x="0.0" y="0.0" width="740" height="48"/>
                                 <subviews>
-                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Tcg-UF-mNa">
+                                    <button wantsLayer="YES" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Tcg-UF-mNa">
                                         <rect key="frame" x="300" y="8" width="140" height="32"/>
+                                        <buttonCell key="cell" type="square" title="Continue" bezelStyle="shadowlessSquare" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="pRW-Nk-MIQ" customClass="GuideWindowButtonCell" customModule="IINA_Advance" customModuleProvider="target">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="32" id="6XF-aJ-Jbl"/>
                                             <constraint firstAttribute="width" constant="140" id="Fdm-rr-ixH"/>
                                         </constraints>
-                                        <buttonCell key="cell" type="square" title="Continue" bezelStyle="shadowlessSquare" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="pRW-Nk-MIQ" customClass="GuideWindowButtonCell" customModule="IINA" customModuleProvider="target">
-                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                            <font key="font" metaFont="system"/>
-                                        </buttonCell>
                                         <connections>
                                             <action selector="continueBtnAction:" target="-2" id="Cip-4l-dp3"/>
                                         </connections>

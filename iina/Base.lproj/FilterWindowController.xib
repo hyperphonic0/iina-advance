@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22690"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="FilterWindowController" customModule="IINA" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="FilterWindowController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="currentFiltersTableView" destination="iTp-t4-bao" id="kgR-wA-2qY"/>
                 <outlet property="editFilterKeyRecordView" destination="dAY-w3-zCx" id="45M-ij-r6G"/>
@@ -139,11 +139,11 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView id="lPY-eq-bPA">
-                                                <rect key="frame" x="49" y="1" width="527" height="17"/>
+                                                <rect key="frame" x="49" y="1" width="528" height="17"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="AfO-KW-cSw">
-                                                        <rect key="frame" x="0.0" y="1" width="527" height="16"/>
+                                                        <rect key="frame" x="0.0" y="1" width="528" height="16"/>
                                                         <textFieldCell key="cell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" title="Table View Cell" id="gtr-Iv-kcK">
                                                             <font key="font" usesAppearanceFont="YES"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -178,7 +178,7 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView id="6Ia-1U-G2V">
-                                                <rect key="frame" x="579.5" y="1" width="50" height="17"/>
+                                                <rect key="frame" x="579.5" y="1" width="49" height="17"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="3dk-bb-Au2">
@@ -298,7 +298,7 @@
                     <rect key="frame" x="-1" y="-1" width="642" height="149"/>
                     <clipView key="contentView" id="xDQ-TM-9KQ">
                         <rect key="frame" x="1" y="1" width="640" height="147"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" alternatingRowBackgroundColors="YES" multipleSelection="NO" autosaveColumns="NO" rowHeight="42" rowSizeStyle="automatic" viewBased="YES" id="cw6-pW-oMs">
                                 <rect key="frame" x="0.0" y="0.0" width="640" height="147"/>
@@ -462,13 +462,13 @@
             <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <value key="minSize" type="size" width="320" height="370"/>
             <view key="contentView" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RNP-NG-UVn" userLabel="Window Content View">
-                <rect key="frame" x="0.0" y="0.0" width="450" height="252"/>
+                <rect key="frame" x="0.0" y="118" width="450" height="252"/>
                 <subviews>
                     <scrollView autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="15J-Tp-Ccx" userLabel="Left Bordered Scroll View">
                         <rect key="frame" x="12" y="29" width="160" height="211"/>
                         <clipView key="contentView" id="evP-Km-Po1" userLabel="Left Clip View">
                             <rect key="frame" x="1" y="1" width="158" height="209"/>
-                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <subviews>
                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" translatesAutoresizingMaskIntoConstraints="NO" id="n0t-vk-dME" userLabel="FilterPresets Table View">
                                     <rect key="frame" x="-1" y="0.0" width="160" height="209"/>
@@ -537,9 +537,9 @@
                         <rect key="frame" x="180" y="40" width="258" height="200"/>
                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ig8-nk-a17" userLabel="Right Clip View">
                             <rect key="frame" x="0.0" y="0.0" width="258" height="200"/>
-                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <subviews>
-                                <view fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZHP-RK-Ly4" userLabel="Right Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
+                                <view fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZHP-RK-Ly4" userLabel="Right Flipped View" customClass="FlippedView" customModule="IINA_Advance" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="258" height="200"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES" heightSizable="YES"/>
                                 </view>
@@ -604,7 +604,7 @@ DQ
             </view>
             <point key="canvasLocation" x="279" y="681"/>
         </window>
-        <viewController id="bda-X5-kCJ" customClass="NewFilterSheetViewController" customModule="IINA" customModuleProvider="target">
+        <viewController id="bda-X5-kCJ" customClass="NewFilterSheetViewController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="addButton" destination="THV-Yh-VnK" id="GeO-qk-FbF"/>
                 <outlet property="filterWindow" destination="-2" id="Pjr-CT-nJA"/>
@@ -639,7 +639,7 @@ DQ
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
-                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="Tl9-qS-Ybu" customClass="KeyRecordView" customModule="IINA" customModuleProvider="target">
+                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="Tl9-qS-Ybu" customClass="KeyRecordView" customModule="IINA_Advance" customModuleProvider="target">
                         <rect key="frame" x="12" y="40" width="379" height="48"/>
                         <subviews>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="oDS-CG-efd">
@@ -778,7 +778,7 @@ Gw
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
-                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="dAY-w3-zCx" customClass="KeyRecordView" customModule="IINA" customModuleProvider="target">
+                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="dAY-w3-zCx" customClass="KeyRecordView" customModule="IINA_Advance" customModuleProvider="target">
                         <rect key="frame" x="12" y="40" width="369" height="48"/>
                         <subviews>
                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="B5v-za-vBd">

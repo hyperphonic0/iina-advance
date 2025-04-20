@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23504" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="HistoryWindowController" customModule="IINA" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="HistoryWindowController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="historySearchField" destination="nfA-G1-DVj" id="ySQ-Ee-v7t"/>
                 <outlet property="outlineView" destination="6jR-CS-fgx" id="kxD-T8-Xoo"/>
@@ -93,7 +93,7 @@
                             <rect key="frame" x="1" y="1" width="598" height="266"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <outlineView verticalHuggingPriority="750" misplaced="YES" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="HistoryWindowTable" rowHeight="22" headerView="MiB-ow-W6T" viewBased="YES" indentationPerLevel="12" indentationMarkerFollowsCell="NO" outlineTableColumn="DIC-tR-R2F" translatesAutoresizingMaskIntoConstraints="NO" id="6jR-CS-fgx" userLabel="PlaybackHistoryTable Outline View" customClass="HistoryOutlineView" customModule="IINA" customModuleProvider="target">
+                                <outlineView verticalHuggingPriority="750" misplaced="YES" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="HistoryWindowTable" rowHeight="22" headerView="MiB-ow-W6T" viewBased="YES" indentationPerLevel="12" indentationMarkerFollowsCell="NO" outlineTableColumn="DIC-tR-R2F" translatesAutoresizingMaskIntoConstraints="NO" id="6jR-CS-fgx" userLabel="PlaybackHistoryTable Outline View" customClass="HistoryOutlineView" customModule="IINA_Advance" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="606" height="243"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <size key="intercellSpacing" width="8" height="2"/>
@@ -112,7 +112,7 @@
                                             </textFieldCell>
                                             <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                             <prototypeCellViews>
-                                                <tableCellView identifier="Filename" id="wYh-IS-KLy" customClass="HistoryFilenameCellView" customModule="IINA" customModuleProvider="target">
+                                                <tableCellView identifier="Filename" id="wYh-IS-KLy" customClass="HistoryFilenameCellView" customModule="IINA_Advance" customModuleProvider="target">
                                                     <rect key="frame" x="4" y="1" width="410" height="17"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <subviews>
@@ -184,7 +184,7 @@
                                             </textFieldCell>
                                             <tableColumnResizingMask key="resizingMask" userResizable="YES"/>
                                             <prototypeCellViews>
-                                                <tableCellView id="pqd-3v-fYy" customClass="HistoryProgressCellView" customModule="IINA" customModuleProvider="target">
+                                                <tableCellView id="pqd-3v-fYy" customClass="HistoryProgressCellView" customModule="IINA_Advance" customModuleProvider="target">
                                                     <rect key="frame" x="422" y="1" width="110" height="17"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <subviews>

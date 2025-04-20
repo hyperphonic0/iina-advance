@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23504" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
@@ -11,7 +12,7 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="IINA" customModuleProvider="target">
+        <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="dockMenu" destination="fxS-xv-Jb2" id="YdT-kw-qmk"/>
                 <outlet property="menuController" destination="cyK-tE-xgA" id="6U6-oJ-g0G"/>
@@ -689,7 +690,7 @@ CA
             </items>
             <point key="canvasLocation" x="140" y="154"/>
         </menu>
-        <customObject id="cyK-tE-xgA" customClass="MenuController" customModule="IINA" customModuleProvider="target">
+        <customObject id="cyK-tE-xgA" customClass="MenuController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="abLoop" destination="i3P-Xw-8D7" id="cBJ-XW-MJ0"/>
                 <outlet property="advancedScreenshot" destination="CKi-JE-yLT" id="pRb-CI-7g9"/>
