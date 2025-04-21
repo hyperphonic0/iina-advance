@@ -491,7 +491,7 @@ class MenuController: NSObject, NSMenuDelegate {
     let isDisplayingChapters = player.windowController.isShowing(sidebarTab: .chapters)
     chapterPanel?.title = isDisplayingChapters ? Constants.String.hideChaptersPanel : Constants.String.chaptersPanel
     pause.title = player.info.isPaused ? Constants.String.resume : Constants.String.pause
-    let speed = player.info.playSpeed.string
+    let speed = player.info.playSpeed.stringWithMaxFractionDigits6
     speedIndicator.title = String(format: NSLocalizedString("menu.speed", comment: "Speed:"), speed)
     player.mpv.queue.async { [self] in
       guard player.isActive else { return }
@@ -1103,7 +1103,7 @@ class MenuController: NSObject, NSMenuDelegate {
       case "speed_up",
         "speed_down":
         // Title format expects arg type: String
-        valObj = abs(value).string
+        valObj = abs(value).stringWithMaxFractionDigits6
       default:
         // Title format expects numeric arg
         valObj = abs(value)

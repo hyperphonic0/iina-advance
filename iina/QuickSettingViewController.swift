@@ -247,11 +247,11 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     switchHorizontalLine2.layer?.opacity = 0.5
 
     // Localize decimal format of numbers
-    speedSlider0_25xLabel.stringValue = "\(0.25.string)x"
+    speedSlider0_25xLabel.stringValue = "\(0.25.stringWithMaxFractionDigits6)x"
     // Unclear if these need to be localized. Better to be safe?
-    speedSlider1xLabel.stringValue = "\(1.string)x"
-    speedSlider4xLabel.stringValue = "\(4.string)x"
-    speedSlider16xLabel.stringValue = "\(16.string)x"
+    speedSlider1xLabel.stringValue = "\(1.stringWithMaxFractionDigits6)x"
+    speedSlider4xLabel.stringValue = "\(4.stringWithMaxFractionDigits6)x"
+    speedSlider16xLabel.stringValue = "\(16.stringWithMaxFractionDigits6)x"
 
     customSpeedTextField.formatter = speedFormatter
 

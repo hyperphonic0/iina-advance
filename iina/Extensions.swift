@@ -577,13 +577,9 @@ extension Double {
   /// let goodStr = "Value is \(num.string)"  // goodStr will be "Value is 12,34"
   /// ```
   ///
-  /// Currently the output string is limited to 15 digits after the decimal. This should be more than
-  /// enough for any imaginable use right now, but the limit can and should be increased in the future if
-  /// needed. (It's not clear what the maximum allowed value for `NumberFormatter.maximumFractionDigits`
-  /// actually is. An attempt to set it equal to `NSIntegerMax` seemed to result in it being silently set to
-  /// `6` instead.)
-  var string: String {
-    return fmtDecimalGroupingMaxFractionDigits15.string(from: self as NSNumber) ?? "NaN"
+  /// Currently the output string is limited to 6 digits after the decimal. This matches the pattern set by mpv's APIs.
+  var stringWithMaxFractionDigits6: String {
+    return fmtDecimalGroupingMaxFractionDigits6.string(from: self as NSNumber) ?? "NaN"
   }
 
   var logStr: String {
@@ -599,8 +595,8 @@ extension Double {
 }
 
 extension CGFloat {
-  var string: String {
-    return Double(self).string
+  var stringWithMaxFractionDigits6: String {
+    return Double(self).stringWithMaxFractionDigits6
   }
 
   /// Formats the decimal for logging. Omits trailing zeroes & grouping separator.
@@ -693,21 +689,20 @@ struct StandardizedDecimalFormatters {
 fileprivate let fmtStdDecimal = StandardizedDecimalFormatters()
 
 /// Formatter for `Double`, `CGFloat`.
-/// - Displays up to 15 digits after the decimal before rounding.
+/// - Displays up to 6 digits after the decimal before rounding.
 /// - Omits trailing zeroes.
 /// - Uses grouping separator (e.g. comma) for large numbers.
-fileprivate let fmtDecimalGroupingMaxFractionDigits15: NumberFormatter = {
+fileprivate let fmtDecimalGroupingMaxFractionDigits6: NumberFormatter = {
   let fmt = NumberFormatter()
   fmt.numberStyle = .decimal
   fmt.usesGroupingSeparator = true
-  fmt.maximumSignificantDigits = 25
   fmt.minimumFractionDigits = 0
-  fmt.maximumFractionDigits = 15
+  fmt.maximumFractionDigits = 6
   fmt.usesSignificantDigits = false
   return fmt
 }()
 
-/// Formatter for `Double`, `CGFloat`. Similar to `fmtDecimalGroupingMaxFractionDigits15` but no gropuing separator.
+/// Formatter for `Double`, `CGFloat`. Similar to `fmtDecimalGroupingMaxFractionDigits6` but no gropuing separator.
 /// - Displays up to 15 digits after the decimal before rounding.
 /// - Omits trailing zeroes.
 /// - Does not use grouping separator (e.g. comma) for large numbers.

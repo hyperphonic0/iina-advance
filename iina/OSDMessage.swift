@@ -196,7 +196,7 @@ enum OSDMessage {
 
     case .speed(let value):
       return (
-        String(format: NSLocalizedString("osd.speed", comment: "Speed: %@x"), value.string),
+        String(format: NSLocalizedString("osd.speed", comment: "Speed: %@x"), value.stringWithMaxFractionDigits6),
         .normal
       )
 
@@ -244,7 +244,7 @@ enum OSDMessage {
         )
       }
 
-      let delayString = abs(value).string
+      let delayString = abs(value).stringWithMaxFractionDigits6
       let str: String
       if value > 0.0 {
         str = String(format: NSLocalizedString("osd.audio_delay.later", comment: "Audio Delay: %@s Later"),
@@ -261,7 +261,7 @@ enum OSDMessage {
           .withProgress(0.5))
       }
 
-      let delayString = abs(value).string
+      let delayString = abs(value).stringWithMaxFractionDigits6
       let str: String
       if value > 0.0 {
         str = String(format: NSLocalizedString("osd.sub_second_delay.later", comment: "Secondary Subtitle Delay: %@s Later"),
@@ -284,7 +284,7 @@ enum OSDMessage {
                 .withProgress(0.5))
       }
 
-      let delayString = abs(value).string
+      let delayString = abs(value).stringWithMaxFractionDigits6
       let str: String
       if value > 0.0 {
         str = String(format: NSLocalizedString("osd.sub_delay.later", comment: "Subtitle Delay: %@s Later"),
