@@ -13,6 +13,11 @@ import Foundation
  */
 class EditableTextField: NSTextField {
   var editTracker: CellEditTracker? = nil
+  /// Created & activated when editing starts, then removed when editing ends.
+  ///
+  /// This is a bit of a kludge to force a multi-line text field to maintain its height during editing.
+  /// Otherwise it wants to collapse into the height of a single line when the field editor is inserted…
+  var heightConstraint: NSLayoutConstraint? = nil
 
   override func mouseDown(with event: NSEvent) {
     if event.clickCount == 2 {

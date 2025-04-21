@@ -1939,6 +1939,10 @@ extension NSView {
     return true
   }
 
+  func containsSubview(_ view: NSView) -> Bool {
+    subviews.contains(view)
+  }
+
   func setContentHugging(h: Float, v: Float) {
     setContentHuggingPriority(.init(h), for: .horizontal)
     setContentHuggingPriority(.init(v), for: .vertical)

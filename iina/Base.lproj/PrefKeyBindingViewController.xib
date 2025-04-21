@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23504" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
         <capability name="System colors introduced in macOS 10.14" minToolsVersion="10.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -259,7 +259,7 @@
                         <rect key="frame" x="1" y="1" width="266" height="111"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <tableView autoresizesSubviews="NO" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="PrefBindingTable" rowHeight="18" rowSizeStyle="automatic" headerView="OOd-BT-w3p" viewBased="YES" id="1Z4-NL-6P3" userLabel="BindingTable Table View" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
+                            <tableView autoresizesSubviews="NO" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="PrefBindingTable" rowHeight="18" usesAutomaticRowHeights="YES" headerView="OOd-BT-w3p" viewBased="YES" id="1Z4-NL-6P3" userLabel="BindingTable Table View" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="266" height="88"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="4" height="3"/>
@@ -271,19 +271,19 @@
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                         </tableHeaderCell>
-                                        <textFieldCell key="dataCell" controlSize="large" lineBreakMode="truncatingTail" title="Text Cell" id="c46-i5-iw0" userLabel="Key Text Cell">
+                                        <textFieldCell key="dataCell" controlSize="large" lineBreakMode="charWrapping" title="Text Cell" id="c46-i5-iw0" userLabel="Key Text Cell">
                                             <font key="font" metaFont="system"/>
                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                         <tableColumnResizingMask key="resizingMask" userResizable="YES"/>
                                         <prototypeCellViews>
-                                            <tableCellView clipsToBounds="YES" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nMC-X0-DpK" userLabel="Key TableCellView">
-                                                <rect key="frame" x="2" y="1" width="120" height="18"/>
+                                            <tableCellView clipsToBounds="YES" autoresizesSubviews="NO" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="nMC-X0-DpK" userLabel="Key TableCellView">
+                                                <rect key="frame" x="2" y="1" width="120" height="34"/>
                                                 <subviews>
-                                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="wdS-kV-koV" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
-                                                        <rect key="frame" x="2" y="1" width="132" height="16"/>
-                                                        <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" title="Key EditableTextField" id="D4i-Dv-Avr" userLabel="Key TextFieldCell" customClass="EditableTextFieldCell" customModule="IINA_Advance">
+                                                    <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="wdS-kV-koV" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
+                                                        <rect key="frame" x="2" y="1" width="116" height="32"/>
+                                                        <textFieldCell key="cell" controlSize="large" lineBreakMode="charWrapping" sendsActionOnEndEditing="YES" title="Key EditableTextFieldCell" id="D4i-Dv-Avr" userLabel="Key TextFieldCell" customClass="EditableTextFieldCell" customModule="IINA_Advance">
                                                             <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -291,9 +291,10 @@
                                                     </textField>
                                                 </subviews>
                                                 <constraints>
-                                                    <constraint firstItem="wdS-kV-koV" firstAttribute="centerY" secondItem="nMC-X0-DpK" secondAttribute="centerY" id="RAT-r0-VMr"/>
+                                                    <constraint firstItem="wdS-kV-koV" firstAttribute="top" secondItem="nMC-X0-DpK" secondAttribute="top" constant="1" id="9Hh-87-ooH"/>
+                                                    <constraint firstAttribute="bottom" secondItem="wdS-kV-koV" secondAttribute="bottom" priority="900" constant="1" id="bVu-Ur-QEb"/>
                                                     <constraint firstItem="wdS-kV-koV" firstAttribute="leading" secondItem="nMC-X0-DpK" secondAttribute="leading" constant="4" id="oPT-0t-ktJ"/>
-                                                    <constraint firstItem="wdS-kV-koV" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="nMC-X0-DpK" secondAttribute="trailing" constant="-4" id="r63-p4-fXs"/>
+                                                    <constraint firstAttribute="trailing" secondItem="wdS-kV-koV" secondAttribute="trailing" constant="4" id="r63-p4-fXs"/>
                                                 </constraints>
                                                 <connections>
                                                     <outlet property="textField" destination="wdS-kV-koV" id="Owc-hd-Rl6"/>
@@ -306,7 +307,7 @@
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         </tableHeaderCell>
-                                        <textFieldCell key="dataCell" controlSize="large" lineBreakMode="truncatingTail" title="Text Cell" id="LFa-rl-jev" userLabel="Status Text Cell">
+                                        <textFieldCell key="dataCell" controlSize="large" lineBreakMode="truncatingTail" refusesFirstResponder="YES" title="Text Cell" id="LFa-rl-jev" userLabel="Status Text Cell">
                                             <font key="font" metaFont="system"/>
                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -315,7 +316,7 @@
                                             <tableCellView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="oiC-ty-779" userLabel="Status TableCellView">
                                                 <rect key="frame" x="126" y="1" width="18" height="18"/>
                                                 <subviews>
-                                                    <imageView identifier="status" horizontalHuggingPriority="249" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="caJ-NG-b5Y" userLabel="Status Image">
+                                                    <imageView identifier="status" autoresizesSubviews="NO" horizontalHuggingPriority="249" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="caJ-NG-b5Y" userLabel="Status Image">
                                                         <rect key="frame" x="0.0" y="9" width="18" height="0.0"/>
                                                         <imageCell key="cell" continuous="YES" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" id="orV-Kp-CKN" userLabel="Status ImageCell"/>
                                                     </imageView>
@@ -324,7 +325,7 @@
                                                     <constraint firstItem="caJ-NG-b5Y" firstAttribute="leading" secondItem="oiC-ty-779" secondAttribute="leading" id="NyZ-jv-fYD"/>
                                                     <constraint firstAttribute="width" constant="18" id="gus-Q5-e84"/>
                                                     <constraint firstAttribute="trailing" secondItem="caJ-NG-b5Y" secondAttribute="trailing" id="mhN-82-0Yx"/>
-                                                    <constraint firstItem="caJ-NG-b5Y" firstAttribute="centerY" secondItem="oiC-ty-779" secondAttribute="centerY" id="x7t-MN-sMP"/>
+                                                    <constraint firstItem="caJ-NG-b5Y" firstAttribute="centerY" secondItem="oiC-ty-779" secondAttribute="top" constant="9" id="x7t-MN-sMP"/>
                                                 </constraints>
                                                 <connections>
                                                     <outlet property="imageView" destination="caJ-NG-b5Y" id="QV7-CU-jTD"/>
@@ -337,19 +338,19 @@
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                         </tableHeaderCell>
-                                        <textFieldCell key="dataCell" controlSize="large" lineBreakMode="truncatingTail" title="Text Cell" id="aXG-QD-GyW" userLabel="Action Text Cell">
+                                        <textFieldCell key="dataCell" controlSize="large" lineBreakMode="charWrapping" title="Text Cell" id="aXG-QD-GyW" userLabel="Action Text Cell">
                                             <font key="font" metaFont="system"/>
                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES"/>
                                         <prototypeCellViews>
-                                            <tableCellView clipsToBounds="YES" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Fx4-cZ-KSl" userLabel="Action TableCellView">
-                                                <rect key="frame" x="148" y="1" width="110" height="18"/>
+                                            <tableCellView clipsToBounds="YES" autoresizesSubviews="NO" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Fx4-cZ-KSl" userLabel="Action TableCellView">
+                                                <rect key="frame" x="148" y="1" width="110" height="34"/>
                                                 <subviews>
-                                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="90m-qq-SPn" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
-                                                        <rect key="frame" x="2" y="1" width="149" height="16"/>
-                                                        <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" title="Action EditableTextField" id="5Ny-gY-KGz" customClass="EditableTextFieldCell" customModule="IINA_Advance">
+                                                    <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="200" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="1000" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="90m-qq-SPn" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
+                                                        <rect key="frame" x="2" y="1" width="108" height="32"/>
+                                                        <textFieldCell key="cell" controlSize="large" lineBreakMode="charWrapping" sendsActionOnEndEditing="YES" title="Action EditableTextFieldCell" id="5Ny-gY-KGz" customClass="EditableTextFieldCell" customModule="IINA_Advance">
                                                             <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -358,8 +359,9 @@
                                                 </subviews>
                                                 <constraints>
                                                     <constraint firstItem="90m-qq-SPn" firstAttribute="leading" secondItem="Fx4-cZ-KSl" secondAttribute="leading" constant="4" id="8pu-AB-e7M"/>
-                                                    <constraint firstItem="90m-qq-SPn" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="Fx4-cZ-KSl" secondAttribute="trailing" constant="-4" id="CDM-q6-3C1"/>
-                                                    <constraint firstItem="90m-qq-SPn" firstAttribute="centerY" secondItem="Fx4-cZ-KSl" secondAttribute="centerY" id="T4I-Zb-Fp6"/>
+                                                    <constraint firstAttribute="trailing" secondItem="90m-qq-SPn" secondAttribute="trailing" constant="2" id="CDM-q6-3C1"/>
+                                                    <constraint firstAttribute="bottom" secondItem="90m-qq-SPn" secondAttribute="bottom" priority="900" constant="1" id="H7E-Sr-u9f"/>
+                                                    <constraint firstItem="90m-qq-SPn" firstAttribute="top" secondItem="Fx4-cZ-KSl" secondAttribute="top" constant="1" id="b2d-n8-ZID"/>
                                                 </constraints>
                                                 <connections>
                                                     <outlet property="textField" destination="90m-qq-SPn" id="dnR-B7-scN"/>

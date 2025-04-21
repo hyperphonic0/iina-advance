@@ -85,12 +85,12 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       if row == prev.row && column == prev.column && textField == prev.textField {
         return
       } else {
-        Logger.log("CellEditTracker: changing cell from (\(prev.row), \(prev.column)) to (\(row), \(column))", level: .verbose)
+        Logger.log.verbose{"CellEditTracker: changing cell from (\(prev.row), \(prev.column)) to (\(row), \(column))"}
         // Make sure old editor is closed and saved if appropriate:
         endEdit()
       }
     } else {
-      Logger.log("CellEditTracker: changing cell to (\(row), \(column))", level: .verbose)
+      Logger.log.verbose{"CellEditTracker: changing cell to (\(row), \(column))"}
     }
     // keep track of it all
     self.current = CurrentFocus(textField: textField, stringValueOrig: textField.stringValue, row: row, column: column, editInProgress: false)
@@ -108,12 +108,19 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     }
 
     let textField = current.textField
-    Logger.log("START Edit [\(current.row), \(current.column)] \"\(textField.stringValue)\"", level: .verbose)
+    Logger.log.verbose{"START Edit [\(current.row), \(current.column)] \"\(textField.stringValue)\""}
     self.current = CurrentFocus(textField: textField, stringValueOrig: textField.stringValue, row: current.row, column: current.column, editInProgress: true)
     textField.isEditable = true
     textField.isSelectable = true
-    textField.selectText(nil)  // creates editor
     textField.textColor = .controlTextColor // Reset any custom coloring
+
+    // Prevent field editor from collapsing to the height of a single line during editing.
+    // This unfortunately doesn't support live updates to the height during editing even when lines are added or removed.
+    // But should be "good enough" for now.
+    textField.heightConstraint = textField.heightAnchor.constraint(equalToConstant: textField.frame.height)
+    textField.heightConstraint?.isActive = true
+
+    textField.selectText(nil)  // creates editor
     textField.needsDisplay = true
   }
 
@@ -126,16 +133,16 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       }
 
       if self.delegate.editDidEndWithNewText(newValue: current.textField.stringValue, row: current.row, column: current.column) {
-        Logger.log("editDidEndWithNewText() returned TRUE: assuming new value accepted", level: .verbose)
+        Logger.log.verbose{"editDidEndWithNewText() returned TRUE: assuming new value accepted"}
         return true
       } else {
         // a return value of false tells us to revert to the previous value
-        Logger.log("editDidEndWithNewText() returned FALSE: reverting displayed value to \"\(current.stringValueOrig)\"", level: .verbose)
+        Logger.log.verbose{"editDidEndWithNewText() returned FALSE: reverting displayed value to \"\(current.stringValueOrig)\""}
         current.textField.stringValue = current.stringValueOrig
         return false
       }
     } else {
-      Logger.log("endEdit() calling editDidEndWithNoChange()", level: .verbose)
+      Logger.log.verbose{"endEdit() calling editDidEndWithNoChange()"}
       self.delegate.editDidEndWithNoChange(row: current.row, column: current.column)
     }
     return true
@@ -146,9 +153,12 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     guard let current = current, current.editInProgress else { return false }
 
     let textField = current.textField
-    Logger.log("END Edit   [\(current.row), \(current.column)] \"\(textField.stringValue)\"", level: .verbose)
+    Logger.log.verbose{"END Edit   [\(current.row), \(current.column)] \"\(textField.stringValue)\""}
 
     let shouldContinue = commitChanges(to: current)
+
+    textField.heightConstraint?.isActive = false
+    textField.heightConstraint = nil
 
     self.current = CurrentFocus(textField: textField, stringValueOrig: textField.stringValue, row: current.row, column: current.column, editInProgress: false)
 
