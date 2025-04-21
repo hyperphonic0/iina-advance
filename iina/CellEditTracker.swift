@@ -48,6 +48,14 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       return "backtab"
     case .cancel:
       return "cancel"
+    case .left:
+      return "left"
+    case .right:
+      return "right"
+    case .up:
+      return "up"
+    case .down:
+      return "down"
     case .other:
       return "other"
     case .tab:
@@ -220,9 +228,10 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     return editColumns[0]
   }
 
-  // Thanks to:
-  // https://samwize.com/2018/11/13/how-to-tab-to-next-row-in-nstableview-view-based-solution/
-  // Returns true if it resulted in another editor being opened [asychronously], false if not.
+  /// Thanks to:
+  /// https://samwize.com/2018/11/13/how-to-tab-to-next-row-in-nstableview-view-based-solution/
+  /// Returns `true` if it resulted in another editor being opened [asychronously], `false` if not.
+  /// Currently, {`up`, `down`, `left`, `right`} text movements are not supported, but may be in the future.
   @discardableResult
   func editAnotherCellAfterEditEnd(oldRow rowIndex: Int, oldColumn columnIndex: Int, _ textMovement: NSTextMovement) -> Bool {
     let isInterRowTabEditingEnabled = Preference.bool(for: .tableEditKeyNavContinuesBetweenRows)
@@ -267,7 +276,16 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       } else {
         newRowIndex = rowIndex
       }
-    case .return:
+    case .up:
+      guard isInterRowTabEditingEnabled else {
+        return false
+      }
+      newRowIndex = rowIndex - 1
+      if newRowIndex < 0 {
+        return false
+      }
+      newColIndex = columnIndex
+    case .return, .down:
       guard isInterRowTabEditingEnabled else {
         return false
       }

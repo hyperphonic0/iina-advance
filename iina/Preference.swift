@@ -1477,7 +1477,7 @@ struct Preference {
     .useInlineEditorInsteadOfDialogForNewInputConf: true,
     .acceptRawTextAsKeyBindings: false,
     .animateKeyBindingTableReloadAll: true,
-    .tableEditKeyNavContinuesBetweenRows: false,
+    .tableEditKeyNavContinuesBetweenRows: true,
     .launchCount: 0,
     .enableRestoreUIState: true,
     .alwaysAskBeforeRestoreAtLaunch: false,
