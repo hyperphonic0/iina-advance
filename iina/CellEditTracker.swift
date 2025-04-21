@@ -285,7 +285,10 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
         return false
       }
       newColIndex = columnIndex
-    case .return, .down:
+    case .return:
+      // Always just end editing when RETURN/ENTER is pressed.
+      return false
+    case .down:
       guard isInterRowTabEditingEnabled else {
         return false
       }
