@@ -573,12 +573,12 @@ extension Double {
   /// a comma to signify the decimal):
   /// ```
   /// let num: Double = 12.34
-  /// let badStr = "Value is \(num)"          // badStr will *always* be "Value is 12.34"
-  /// let goodStr = "Value is \(num.string)"  // goodStr will be "Value is 12,34"
+  /// let badStr = "Value is \(num)"                              // badStr will *always* be "Value is 12.34"
+  /// let goodStr = "Value is \(num.groupedStringUpTo6Decimals)"  // goodStr will be "Value is 12,34"
   /// ```
   ///
-  /// Currently the output string is limited to 6 digits after the decimal. This matches the pattern set by mpv's APIs.
-  var stringWithMaxFractionDigits6: String {
+  /// Currently the output string is limited to 6 digits after the decimal. This matches the precision used by mpv's APIs.
+  var groupedStringUpTo6Decimals: String {
     return fmtDecimalGroupingMaxFractionDigits6.string(from: self as NSNumber) ?? "NaN"
   }
 
@@ -595,8 +595,8 @@ extension Double {
 }
 
 extension CGFloat {
-  var stringWithMaxFractionDigits6: String {
-    return Double(self).stringWithMaxFractionDigits6
+  var groupedStringUpTo6Decimals: String {
+    return Double(self).groupedStringUpTo6Decimals
   }
 
   /// Formats the decimal for logging. Omits trailing zeroes & grouping separator.
