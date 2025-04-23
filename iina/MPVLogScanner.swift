@@ -25,15 +25,15 @@ private func all(_ string: String) -> NSRange {
   return NSRange(location: 0, length: string.count)
 }
 
-/*
- "no"    - disable absolutely all messages
- "fatal" - critical/aborting errors
- "error" - simple errors
- "warn"  - possible problems
- "info"  - informational message
- "v"     - noisy informational message
- "debug" - very noisy technical information
- "trace" - extremely noisy
+/**
+ - "no"    - disable absolutely all messages
+ - "fatal" - critical/aborting errors
+ - "error" - simple errors
+ - "warn"  - possible problems
+ - "info"  - informational message
+ - "v"     - noisy informational message
+ - "debug" - very noisy technical information
+ - "trace" - extremely noisy
  */
 fileprivate let mpvIINALogLevelMap: [MPVLogLevel: Logger.Level] = [.fatal: .error,
                                                                    .error: .error,
@@ -46,9 +46,7 @@ fileprivate let mpvIINALogLevelMap: [MPVLogLevel: Logger.Level] = [.fatal: .erro
 class MPVLogScanner {
   private unowned let player: PlayerCore
 
-  /*
-   Only used for messages coming directly from the mpv log event stream
-   */
+  /// Only used for messages coming directly from the mpv log event stream
   let mpvLogSubsystem: Logger.Subsystem
 
   var mpvEventLogLevel: MPVLogLevel = .warn

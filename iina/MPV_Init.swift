@@ -8,6 +8,9 @@
 
 import VideoToolbox
 
+fileprivate let yes = Constants.String.mpvYes
+fileprivate let no = Constants.String.mpvNo
+
 extension MPVController {
   /// Init the mpv context, set options.
   ///
@@ -27,14 +30,14 @@ extension MPVController {
 
     if player.isDemoPlayer {
       // Do the minimum needed for demo player
-      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadAutoProfiles, "no"))
-      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadOsdConsole, "no"))
-      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadScripts, "no"))
-      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadStatsOverlay, "no"))
+      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadAutoProfiles, no))
+      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadOsdConsole, no))
+      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadScripts, no))
+      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadStatsOverlay, no))
       logError(mpv_initialize(mpv))
 
       logError(setString(MPVOption.Video.vo, "gpu", level: .verbose))
-      logError(mpv_set_option_string(mpv, MPVOption.Video.hwdec, Constants.String.mpvNo))
+      logError(mpv_set_option_string(mpv, MPVOption.Video.hwdec, no))
       chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))
 
       logError(mpv_request_log_messages(mpv, MPVLogLevel.warn.description))
@@ -95,7 +98,7 @@ extension MPVController {
 
     if !isPresent(MPVOption.PlaybackControl.hrSeek, in: userOptions) {
       // Use exact seeks by default
-      mpv_set_option_string(mpv, MPVOption.PlaybackControl.hrSeek, Constants.String.mpvYes)
+      mpv_set_option_string(mpv, MPVOption.PlaybackControl.hrSeek, yes)
     }
 
     setUserOption(PK.screenshotSaveToFile, type: .other, forName: MPVOption.Screenshot.screenshotDir,
@@ -119,7 +122,7 @@ extension MPVController {
 
     // Disable mpv's media key system as it now uses the MediaPlayer Framework.
     // Dropped media key support in 10.11 and 10.12.
-    chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputMediaKeys, Constants.String.mpvNo))
+    chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputMediaKeys, no))
 
     updateKeepOpenOptionFromPrefs()
 
@@ -156,7 +159,7 @@ extension MPVController {
 
     setUserOption(PK.replayGain, type: .other, forName: MPVOption.Audio.replaygain, verboseIfDefault: true) { key in
       let value = Preference.integer(for: key)
-      return Preference.ReplayGainOption(rawValue: value)?.mpvString ?? Constants.String.mpvNo
+      return Preference.ReplayGainOption(rawValue: value)?.mpvString ?? no
     }
     setUserOption(PK.replayGainPreamp, type: .float, forName: MPVOption.Audio.replaygainPreamp,
                   verboseIfDefault: true)
@@ -167,7 +170,7 @@ extension MPVController {
 
     // - Sub
 
-    chkErr(setOptionString(MPVOption.Subtitles.subAuto, Constants.String.mpvNo, level: .verbose))
+    chkErr(setOptionString(MPVOption.Subtitles.subAuto, no, level: .verbose))
     chkErr(setOptionalOptionString(MPVOption.Subtitles.subCodepage,
                                    Preference.string(for: .defaultEncoding), verboseIfDefault: true))
     player.info.subEncoding = Preference.string(for: .defaultEncoding)
@@ -244,7 +247,7 @@ extension MPVController {
 
     setUserOption(PK.enableCache, type: .other, forName: MPVOption.Cache.cache,
                   verboseIfDefault: true) { key in
-      return Preference.bool(for: key) ? nil : Constants.String.mpvNo
+      return Preference.bool(for: key) ? nil : no
     }
 
     setUserOption(PK.defaultCacheSize, type: .other, forName: MPVOption.Demuxer.demuxerMaxBytes,
@@ -269,9 +272,9 @@ extension MPVController {
                   verboseIfDefault: true) { key in
       let v = Preference.bool(for: .ytdlEnabled)
       if JavascriptPlugin.hasYTDL {
-        return "no"
+        return no
       }
-      return v ? "yes" : "no"
+      return v ? yes : no
     }
     setUserOption(PK.ytdlRawOptions, type: .string, forName: MPVOption.ProgramBehavior.ytdlRawOptions,
                   verboseIfDefault: true)
@@ -289,7 +292,7 @@ extension MPVController {
        Preference.bool(for: .useUserDefinedConfDir),
        var userConfDir = Preference.string(for: .userDefinedConfDir) {
       userConfDir = NSString(string: userConfDir).standardizingPath
-      setOptionString("config", "yes")
+      setOptionString("config", yes)
       let status = setOptionString(MPVOption.ProgramBehavior.configDir, userConfDir)
       if status < 0 {
         // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
@@ -387,7 +390,7 @@ extension MPVController {
       chkErr(setString(MPVOption.GPURendererOptions.gpuApi, "vulkan", level: .debug))
       chkErr(setString(MPVOption.Video.hwdec, "vulkan", level: .debug))
     }
-    chkErr(setString(MPVOption.Window.keepaspect, "no", level: .verbose))
+    chkErr(setString(MPVOption.Window.keepaspect, no, level: .verbose))
     chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))
 
     // The option watch-later-options is not available until after the mpv instance is initialized.

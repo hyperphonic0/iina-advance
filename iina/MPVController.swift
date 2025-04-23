@@ -50,8 +50,20 @@ extension mpv_event_end_file {
   }
 }
 
-// Global functions
-
+/// Encapsulates the mpv handle for a single PlayerCore and its supporting functions.
+///
+/// To help make size more manageable, this class is broken up into multiple files grouped by functionality:
+/// `MPVController.swift`: the class definition with init/deinit and various functions for options & property
+/// handling.
+///
+/// See also:
+/// - `MPV_Init.swift`: contains `mpvInit()` & its support functions, which call `mpv_create` & `mpv_initialize`,
+///   and set initial mpv options.
+/// - `MPV_EventHandling.swift`: calls `mpv_set_wakeup_callback` & `mpv_observe_property` to set up for asynchronous
+///   callbacks, and encapsulates property changes for `handleEvent` & `handlePropertyChange` for subscribed events
+///   & property changes, respectively.
+/// - `MPVLogScanner.swift`: contains logic to parse certain `MPV_EVENT_LOG_MESSAGE` events to extract information which
+///   cannot be determined elsewhere, and react appropriately.
 class MPVController: NSObject {
   // Cached for prefs display. TODO: use ad hoc call using demo player instead
   static var watchLaterOptions: String = ""
