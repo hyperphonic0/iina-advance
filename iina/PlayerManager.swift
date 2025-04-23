@@ -209,10 +209,10 @@ class PlayerManager {
   }
 
   private func _createNewPlayerCore(withLabel label: String? = nil) -> PlayerCore {
-    Logger.log("Creating PlayerCore instance with ID \(label?.quoted ?? "nil")")
+    Logger.log.debug{"Creating PlayerCore instance with ID \(label?.quoted ?? "nil")"}
     let pc: PlayerCore
     if let label = label {
-      if _playerExists(withLabel: label) {
+      guard !_playerExists(withLabel: label) else {
         Logger.fatal("Cannot create new PlayerCore: a player already exists with label \(label.quoted)")
       }
       pc = PlayerCore(label)
@@ -224,7 +224,7 @@ class PlayerManager {
       pc = PlayerCore(playerLabel)
       playerCoreCounter += 1
     }
-    Logger.log("Successfully created PlayerCore \(pc.label)")
+    Logger.log.debug{"Successfully created PlayerCore \(pc.label)"}
 
     _playerCores.append(pc)
     return pc

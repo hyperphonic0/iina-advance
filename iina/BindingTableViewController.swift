@@ -129,9 +129,7 @@ extension BindingTableViewController: NSTableViewDelegate {
     return approvedSelectionIndexes
   }
 
-  /**
-   Make cell view when asked
-   */
+   /// Makes cell view for given `tableColumn` & `row` when asked
   @objc func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
     guard let bindingRow = bindingTableState.getDisplayedRow(at: row) else {
       return nil

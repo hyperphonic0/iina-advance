@@ -316,7 +316,7 @@ class PlayerCore: NSObject {
 
   init(_ label: String, isDemoPlayer: Bool = false) {
     let log = Logger.subsystem(forPlayerID: label)
-    log.debug{"PlayerCore \(label) init"}
+    log.debug{"PlayerCore init: starting"}
     self.label = label
     self.subsystem = log
     self.info = PlaybackInfo(log: log)
@@ -332,6 +332,7 @@ class PlayerCore: NSObject {
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeFnModes)
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeGlobal)
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModePerApp)
+    log.verbose{"PlayerCore init: done"}
   }
 
   // MARK: - Plugins
