@@ -75,6 +75,13 @@ class PlayerCore: NSObject {
   var label: String
   let isDemoPlayer: Bool
 
+  /// Args when opened via a command line launch.
+  ///
+  /// - These are combined with the options in the `userOptions` preference if enabled (in Settings > Advanced > Additional mpv options).
+  ///   If the user options contain an arg with the same name as a command line arg, the command line arg will override it.
+  /// - This array will always be empty unless the app was opened from the command line.
+  var commandLineArgs: [(String, String)] = []
+
   /// Time of the last player state save when called by `updatePlaybackTimeInfo`.
   private var lastStateSaveTime = Date().timeIntervalSince1970
 

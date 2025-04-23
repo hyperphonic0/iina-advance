@@ -55,10 +55,10 @@ class StartupHandler {
 
   // Command Line
 
-  private var commandLineStatus: CommandLineState? = nil
+  private var commandLineState: CommandLineState? = nil
 
   var isCommandLine: Bool {
-    commandLineStatus != nil
+    commandLineState != nil
   }
 
   /// If launched from command line, should ignore `application(_, openFiles:)` during launch.
@@ -82,7 +82,7 @@ class StartupHandler {
     // Restore window state *before* hooking up the listener which saves state.
     restoreWindowsFromPreviousLaunch()
 
-    commandLineStatus?.startFromCommandLine()
+    commandLineState?.startFromCommandLine()
 
     state = .doneEnqueuing
     // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
@@ -575,6 +575,6 @@ class StartupHandler {
   // MARK: - Command Line
 
   func parseCommandLine(_ cmdLineArgs: ArraySlice<String>) {
-    commandLineStatus = CommandLineState(cmdLineArgs)
+    commandLineState = CommandLineState(cmdLineArgs)
   }
 }

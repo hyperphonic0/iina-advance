@@ -46,21 +46,15 @@ extension MPVController {
       return
     }
 
-    let userOptions: [[String]]
-    if Preference.bool(for: .enableAdvancedSettings) {
-      if let opts = Preference.value(for: .userOptions) as? [[String]] {
-        // User Options table allows saving of empty values. Filter those out
-        userOptions = opts.filter{ $0.count > 0 && !$0[0].isEmpty }
-      } else {
-        userOptions = []
-        // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
-        DispatchQueue.main.async {
-          Utility.showAlert("extra_option.cannot_read")
+    var userOptions: [(String, String)] = getUserOptionsFromPrefs()
+    if Logger.isDebugEnabled {
+      for cmdLineArgPair in player.commandLineArgs {
+        if isPresent(cmdLineArgPair.0, in: userOptions) {
+          player.log.debug{"Command-line mpv arg has the same name as user option and may override it: \(cmdLineArgPair.0)=\(cmdLineArgPair.1)"}
         }
       }
-    } else {
-      userOptions = []
     }
+    userOptions.append(contentsOf: player.commandLineArgs)
 
     // User default settings
 
@@ -306,17 +300,12 @@ extension MPVController {
     if !userOptions.isEmpty {
       log.debug("Setting \(userOptions.count) user configured mpv option values")
       for op in userOptions {
-        guard op.count == 2 else {
-          log.error("Invalid user option, skipping: \(op)")
-          continue
-        }
-
-        let status = setOptionString(op[0], op[1])
+        let status = setOptionString(op.0, op.1)
         if status < 0 {
           let errorString = String(cString: mpv_error_string(status))
           // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
           DispatchQueue.main.async {
-            Utility.showAlert("extra_option.error", arguments: [op[0], op[1], status, errorString])
+            Utility.showAlert("extra_option.error", arguments: [op.0, op.1, status, errorString])
           }
         }
       }
@@ -421,6 +410,21 @@ extension MPVController {
     player.log.verbose("Configuration when building mpv: \(getString(MPVProperty.mpvConfiguration)!)")
   }
 
+  private func getUserOptionsFromPrefs() -> [(String, String)] {
+    guard Preference.bool(for: .enableAdvancedSettings) else { return [] }
+
+    guard let opts = Preference.value(for: .userOptions) as? [[String]] else {
+      // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
+      DispatchQueue.main.async {
+        Utility.showAlert("extra_option.cannot_read")
+      }
+      return []
+    }
+
+    // User Options table allows saving of empty values. Filter those out
+    return opts.filter{ $0.count == 2 && !$0[0].isEmpty }.map { ($0[0], $0[1]) }
+  }
+
   // MARK: - Support Functions
 
   /// Remove codecs from the hardware decoding white list that this Mac does not support.
@@ -433,7 +437,7 @@ extension MPVController {
   /// hardware decoding support on this Mac. This is not comprehensive. This method only covers the recent codecs whose support
   /// for hardware decoding varies among Macs. This merely reduces the dependence upon the FFmpeg fallback to software decoding
   /// feature in some cases.
-  private func adjustCodecWhiteList(userOptions: [[String]]) {
+  private func adjustCodecWhiteList(userOptions: [(String, String)]) {
     // Allow the user to override this behavior.
     guard !isPresent(MPVOption.Video.hwdecCodecs, in: userOptions) else {
       log.debug("""
@@ -503,7 +507,7 @@ extension MPVController {
   ///
   /// The workaround removes VP9 from the value of the mpv [hwdec-codecs](https://mpv.io/manual/master/#options-hwdec-codecs) option,
   /// the list of codecs eligible for hardware acceleration.
-  private func applyHardwareAccelerationWorkaround(userOptions: [[String]]) {
+  private func applyHardwareAccelerationWorkaround(userOptions: [(String, String)]) {
     // The problem is not reproducible under Apple Silicon.
     guard !runningOnAppleSilicon() else {
       log.debug("Running on Apple Silicon, not applying FFmpeg 9599 workaround")
@@ -541,8 +545,8 @@ extension MPVController {
   /// Searches the list of user configured `mpv` options and returns `true` if the given option is present.
   /// - Parameter option: Option to look for.
   /// - Returns: `true` if the `mpv` option is found, `false` otherwise.
-  private func isPresent(_ option: String, in userOptions: [[String]]) -> Bool {
-    return userOptions.contains { $0.count >= 1 && $0[0] == option }
+  private func isPresent(_ option: String, in userOptions: [(String, String)]) -> Bool {
+    return userOptions.contains { $0.0 == option }
   }
 
 }

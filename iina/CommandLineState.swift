@@ -141,16 +141,18 @@ class CommandLineState {
 
   func getOrCreatePlayerWithCmdLineArgs() -> PlayerCore {
     let playerCore = PlayerManager.shared.getIdleOrCreateNew()
-    Logger.log("Setting mpv properties from arguments: \(mpvArguments)")
+    Logger.log.debug{"Setting mpv properties from arguments: \(mpvArguments)"}
+    var cmdLineArgs: [(String, String)] = []
     for argPair in mpvArguments {
-      if argPair.0 == "shuffle" && argPair.1 == "yes" {
+      if argPair.0 == MPVOption.PlaybackControl.shuffle && argPair.1 == Constants.String.mpvYes {
         // Special handling for this one
-        Logger.log("Found \"shuffle\" request in command-line args. Adding mpv hook to shuffle playlist")
+        Logger.log.debug{"Found \"shuffle\" request in command-line args. Adding mpv hook to shuffle playlist"}
         playerCore.addShufflePlaylistHook()
       } else {
-        playerCore.mpv.setString(argPair.0, argPair.1)
+        cmdLineArgs.append(argPair)
       }
     }
+    playerCore.commandLineArgs = cmdLineArgs
     return playerCore
   }
 
