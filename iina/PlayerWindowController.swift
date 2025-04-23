@@ -15,7 +15,6 @@ import Cocoa
 // TODO: stick window to individual side of screen
 // TODO: auto-adjust window size when Dock shown/hidden
 // TODO: investigate generating thumbnails & Now Playing art from mpv screenshot cmd via RPC
-// TODO: intelligently move video if possible so that bottom/top inside bars don't overlap it
 // TODO: merge Music Mode geometry with PWin, and add .mini to OSC layout types
 class PlayerWindowController: WindowController, NSWindowDelegate {
   unowned var player: PlayerCore

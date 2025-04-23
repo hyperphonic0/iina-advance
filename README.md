@@ -18,7 +18,7 @@ A main goal of IINA Advance is to retain as many of IINA's features and options 
 
 
 ---
-## Major improvements from IINA
+## Improvements from upstream IINA
 
 * Can restore all its open windows and state when reopening the app.
 * A revamped, more animated on-screen controller for a more responsive feel and fresh appearance, with more customization options such as the ability to change its size.
@@ -26,18 +26,18 @@ A main goal of IINA Advance is to retain as many of IINA's features and options 
 * A new "custom" window mode which supports sharp corners, and seamless integration with the "custom full screen" mode.
 * Can show a sidebar on the left side, instead of or in addition to the right sidebar.
 * A new "inside vs. outside" layout paradigm, where the sidebars, "top", & "bottom" panels, can individually be configured to be displayed either as:
-  *  "Inside": shown as traditional overlay on top of the video, with options to control how they will be hidden again.
+  *  "Inside": shown as a traditional overlay on top of the video, with options to control how they will be hidden again.
   *  "Outside": the panel does not overlap the video. Top and/or bottom panels do not auto-hide when in this mode.
 * Smooth animations wherever possible when switching between various modes (such as to/from music mode), and window handling in general, made possible by a new window layout system.
-* Improved & optimized thumbnail handling with more options, including the abilty to show thumbnails of any size.
+* Improved & optimized thumbnail handling with more options, including the ability to show thumbnails of any size.
 * A massive rewrite of the key bindings handling system, which supports bindings being set by Lua scripts, as well as mpv "key sequences". The Key Bindings editor is enhanced with color coding & status icons, + detection of conflicting bindings, as well as supporting copy/paste, undo/redo, & drag & drop.
 * Tons of bug fixes and other enhancements under the hood.
 
 
-## Note about reusing previous settings
-At present, IINA Advance shares most of the same settings as IINA, and each can share the same settings files without harming the other's. However, because the two apps have different bundle IDs, they store their settings in separate locations and do not share them.
+## (Optional) How to copy history & settings from upstream IINA
+At present, IINA Advance retains IINA's history database format and shares most of the same settings as IINA, so each should be able to use the other's files without harm. However, because the two apps have different bundle IDs, they store their support files in separate locations and do not share them.
 
-For those who have been using IINA previously and want to copy over their settings, history, and other state, copy each location in the first column to the location in the second column:
+For those who have been using IINA previously and want to copy over its settings, history, and other state, copy each location in the first column below to the location in the second column:
 
 |                       | IINA                                                 | IINA Advance                                      |
 |-----------------------|------------------------------------------------------|---------------------------------------------------|
