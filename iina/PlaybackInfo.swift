@@ -259,7 +259,7 @@ class PlaybackInfo {
 
   var selectedSub: MPVTrack? {
     infoLock.withLock {
-      let selected = infoLock.withLock { subTracks.filter { $0.id == sid } }
+      let selected = subTracks.filter { $0.id == sid }
       if selected.count > 0 {
         return selected[0]
       }
