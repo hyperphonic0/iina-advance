@@ -8,32 +8,26 @@
 
 import Foundation
 
-guard var execURL = Bundle.main.executableURL else {
+let executableName = "IINA Advance"
+
+// This is the path to this executable (iina-cli)
+guard let execURL = Bundle.main.executableURL?.resolvingSymlinksInPath() else {
   print("Cannot get executable path.")
   exit(1)
 }
 
 let currentDirURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 
-execURL.resolveSymlinksInPath()
+let iinaURL = execURL.deletingLastPathComponent().appendingPathComponent(executableName)
 
-let processInfo = ProcessInfo.processInfo
-
-let iinaPath = execURL.deletingLastPathComponent().appendingPathComponent("IINA Advance").path
-
-guard FileManager.default.fileExists(atPath: iinaPath) else {
-  print("Cannot find IINA binary. This command line tool only works in IINA.app bundle.")
+guard FileManager.default.fileExists(atPath: iinaURL.path) else {
+  print("Cannot find \(executableName) binary. This command line tool only works in \(executableName).app bundle.")
   exit(1)
 }
 
-let task = Process()
-task.launchPath = iinaPath
-
-var keepRunning = false
-
 // Check arguments
 
-var userArgs = Array(processInfo.arguments.dropFirst())
+var userArgs = Array(ProcessInfo.processInfo.arguments.dropFirst())
 
 if userArgs.contains(where: { $0 == "--help" || $0 == "-h" }) {
   print(
@@ -75,6 +69,12 @@ if userArgs.contains("--music-mode"), userArgs.contains("--pip") {
   // Command line usage error.
   exit(EX_USAGE)
 }
+
+// Run executable as a separate process. Not sure if/why this is strictly necessary...
+let task = Process()
+task.executableURL = iinaURL
+
+var keepRunning = false
 
 var isStdin = false
 var userSpecifiedStdin = false

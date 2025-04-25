@@ -282,6 +282,10 @@ extension PlayerWindowController {
           log.verbose{"[GeoTF:\(transformName)] Aborting: \(reasonDebugMsg)"}
         }
 
+        guard !player.isStopping else {
+          return abort("player stopping (status=\(player.state))")
+        }
+
         guard let currentPlayback = player.info.currentPlayback else {
           return abort("currentPlayback is nil")
         }
@@ -291,10 +295,6 @@ extension PlayerWindowController {
         // ...But streaming files can often fail to connect. So reopen those right away if restoring (we already have their saved geometry anyway).
         guard currentPlayback.state.isAtLeast(.loaded) || (sessionState.isRestoring && currentPlayback.isNetworkResource) else {
           return abort("playbackState=\(currentPlayback.state) restoring=\(sessionState.isRestoring) network=\(currentPlayback.isNetworkResource.yn)")
-        }
-
-        guard !player.isStopping else {
-          return abort("player stopping (status=\(player.state))")
         }
 
         let vidTrackID = player.info.vid ?? 0

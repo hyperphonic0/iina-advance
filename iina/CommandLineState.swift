@@ -110,6 +110,7 @@ class CommandLineState {
       }
 
       if openSeparateWindows {
+        Logger.log.verbose{"Opening separate windows for \(validFileURLs.count) URLs"}
         for url in validFileURLs {
           lastPlayerCore = getOrCreatePlayerWithCmdLineArgs()
           lastPlayerCore?.openURL(url)

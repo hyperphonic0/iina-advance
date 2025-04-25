@@ -824,18 +824,18 @@ class PlayerCore: NSObject {
 
     mpv.queue.async { [self] in
       guard state.isNotYet(.stopping) else {
-        log.debug("Stop called, but state is already \(state); aborting redundant stop call")
+        log.verbose("Ignoring redundant stop call: player state is already \(state)")
         return
       }
 
       log.verbose("Stop called")
 
-      stopWatchingSubFile()
-
       /// call this BEFORE setting state to `.stopping`
       savePlaybackMetaBeforePlayerWillStop() // Save state to mpv watch-later (if enabled)
 
       state = .stopping
+
+      stopWatchingSubFile()
 
       DispatchQueue.main.async { [self] in
         videoView.stopDisplayLink()
@@ -864,9 +864,8 @@ class PlayerCore: NSObject {
       DispatchQueue.main.async { [self] in
         refreshSyncUITimer()
       }
+      
       mpv.command(.stop, level: .verbose)
-
-
     }
   }
 
