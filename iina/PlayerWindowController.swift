@@ -1482,7 +1482,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     animationPipeline.submitInstantTask { [self] in
       log.verbose("Window did miniaturize")
       isWindowMiniturized = true
-      if Preference.bool(for: .togglePipByMinimizingWindow) && !isWindowMiniaturizedDueToPip {
+      if Preference.bool(for: .togglePipByMinimizingWindow) &&
+          (!Preference.bool(for: .togglePipByMinimizingWindowForVideoOnly) ||  player.info.currentMediaAudioStatus == .notAudio)
+          && !isWindowMiniaturizedDueToPip {
         enterPIP()
       }
       player.events.emit(.windowMiniaturized)
@@ -1497,7 +1499,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         player.resume()
         isPausedDueToMiniaturization = false
       }
-      if Preference.bool(for: .togglePipByMinimizingWindow) && !isWindowMiniaturizedDueToPip {
+      if Preference.bool(for: .togglePipByMinimizingWindow) &&
+          (!Preference.bool(for: .togglePipByMinimizingWindowForVideoOnly) ||  player.info.currentMediaAudioStatus == .notAudio)
+          && !isWindowMiniaturizedDueToPip {
         exitPIP()
       }
       player.events.emit(.windowDeminiaturized)

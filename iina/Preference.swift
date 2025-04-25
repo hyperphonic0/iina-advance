@@ -309,6 +309,7 @@ struct Preference {
     static let pauseWhenPip = Key("pauseWhenPip")
     static let togglePipByMinimizingWindow = Key("togglePipByMinimizingWindow")
     static let togglePipWhenSwitchingSpaces = Key("togglePipWhenSwitchingSpaces")
+    static let togglePipByMinimizingWindowForVideoOnly = Key("togglePipByMinimizingWindowForVideoOnly")
 
     static let disableAnimations = Key("disableAnimations")
     static let windowLaunchAnimation = Key("windowLaunchAnimation")
@@ -1384,6 +1385,7 @@ struct Preference {
     .pauseWhenPip: false,
     .togglePipByMinimizingWindow: false,
     .togglePipWhenSwitchingSpaces: false,
+    .togglePipByMinimizingWindowForVideoOnly: false,
     .disableAnimations: false,
     .windowLaunchAnimation: WindowOpenCloseAnimation.useDefault.rawValue,
     .playerWindowOpenCloseAnimation: WindowOpenCloseAnimation.useDefault.rawValue,
