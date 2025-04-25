@@ -2609,7 +2609,7 @@ class PlayerCore: NSObject {
   func idleActiveChanged() {
     let isFileLoaded = info.isFileLoaded
     let eofWhileLoading = receivedEndFileWhileLoading
-    log.verbose{"Got mpv 'idle-active' (isFileLoaded=\(isFileLoaded.yn) eofLoading=\(eofWhileLoading.yn) playerState=\(state))"}
+    log.verbose{"Got mpv 'idle-active': isFileLoaded=\(isFileLoaded.yn) eofLoading=\(eofWhileLoading.yn) playerState=\(state)"}
     /// Make sure to check that `info.currentPlayback != nil` before outputting error
     if eofWhileLoading, let playback = info.currentPlayback, playback.state.isNotYet(.loaded) {
       log.error{"Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted). Will display alert to user and close window"}

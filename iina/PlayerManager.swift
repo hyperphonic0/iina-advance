@@ -69,10 +69,6 @@ class PlayerManager {
         Logger.log.verbose("Players have not yet shut down: \(runningLabels)")
         return false
       }
-      if let demoPlayer = _demoPlayer, !demoPlayer.isShutDown {
-        demoPlayer.log.verbose("Demo player has not yet shut down")
-        return false
-      }
       return true
     }
   }

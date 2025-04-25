@@ -150,8 +150,6 @@ extension PlayerWindowController {
   private func initViewportView(in contentView: NSView) {
     viewportView.clipsToBounds = true
     viewportView.translatesAutoresizingMaskIntoConstraints = false
-//    window?.contentView?.autoresizesSubviews = true
-//    viewportView.autoresizesSubviews = true
     // These don't seem to matter. But set to reasonable values:
     viewportView.setContentHugging(h: 250, v: 250)
     viewportView.setCCResistance(h: 250, v: 250)

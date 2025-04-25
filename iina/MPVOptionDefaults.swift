@@ -50,6 +50,7 @@ class MPVOptionDefaults {
   private init() {
     // Quick & dirty bridge code: just get reference to demo player's MPVController
     mpvCore = PlayerManager.shared.getOrCreateDemo().mpv
+    Logger.log.verbose("MPVOptionDefaults initialized")
   }
 
   // MARK: - Default Value Getters

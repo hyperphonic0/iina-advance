@@ -34,14 +34,11 @@ extension MPVController {
       logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadOsdConsole, no))
       logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadScripts, no))
       logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadStatsOverlay, no))
-      logError(mpv_initialize(mpv))
-
-      logError(setString(MPVOption.Video.vo, "gpu", level: .verbose))
-      logError(mpv_set_option_string(mpv, MPVOption.Video.hwdec, no))
-      chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))
+      _updateUsingMpvOSDFromPrefs()  // will disable mpv OSD for demo player
 
       logError(mpv_request_log_messages(mpv, MPVLogLevel.warn.description))
-      addEventCallbacks()
+      logError(mpv_initialize(mpv))
+
       mpvVersion = getString(MPVProperty.mpvVersion)
       return
     }

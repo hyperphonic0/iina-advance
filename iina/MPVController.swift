@@ -306,8 +306,6 @@ class MPVController: NSObject {
   }
 
   func setMpvEventLogSubscription() {
-    guard !player.isDemoPlayer else { return }
-
     // Must still subscribe to min level or above, even if not logging
     let subscriptionLevel = mpvLogScanner.mpvEventLogLevel.shouldLog(severity: Constants.minMpvEventLogLevel.rawValue) ? mpvLogScanner.mpvEventLogLevel : Constants.minMpvEventLogLevel
 
@@ -597,9 +595,9 @@ class MPVController: NSObject {
 
   func _updateUsingMpvOSDFromPrefs() {
     // This can be called during init
-    guard !player.isStopping, !player.isDemoPlayer else { return }
-    let useMpvOSD = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
-    log.verbose{"User pref: isUsingMpvOSD=\(useMpvOSD)"}
+    guard !player.isStopping else { return }
+    let useMpvOSD = !player.isDemoPlayer && Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
+    log.verbose{"Derived isUsingMpvOSD=\(useMpvOSD.yn)"}
     player.isUsingMpvOSD = useMpvOSD
     if useMpvOSD {
       // If using mpv OSD, then disable IINA's OSD

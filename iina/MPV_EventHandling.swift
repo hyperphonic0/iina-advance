@@ -66,7 +66,8 @@ extension MPVController {
     }, mutableRawPointerOf(obj: self))
     
     // Observe properties.
-    MPVController.observeProperties.forEach { (k, v) in
+
+    for (k, v) in MPVController.observeProperties {
       mpv_observe_property(mpv, 0, k, v)
     }
   }

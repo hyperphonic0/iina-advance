@@ -171,6 +171,8 @@ extension PlayerWindowController {
   /// Called each time a pref `key`'s value is set
   func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     guard isOpen else { return }  // do not want to respond to some things like blackOutOtherMonitors while closed!
+    
+    guard !player.isDemoPlayer else { return }
 
     switch key {
     case .enableAdvancedSettings:
