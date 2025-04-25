@@ -546,15 +546,18 @@ class KeyCodeHelper {
     return normalizedString
   }
 
-  /** Converts an mpv-formatted key string to a (key, modifiers) pair suitable for assignment to a MacOS menu item.
-   IMPORTANT: `normalizedMpvKey` must be normalized first! Use `KeyCodeHelper.normalizeMpv()`. */
+  /// Converts an mpv-formatted key string to a (key, modifiers) pair suitable for assignment to a MacOS menu item.
+  /// - IMPORTANT: `normalizedMpvKey` must be normalized first! Use `KeyCodeHelper.normalizeMpv()`.
+  /// - Also, note that mpv key sequences (e.g. the 4-keystroke string "A-B-C-D") are considered to have no equivalent
+  /// and will return `nil`.
   static func macOSKeyEquivalent(from normalizedMpvKey: String, usePrintableKeyName: Bool = false) -> (key: String, modifiers: NSEvent.ModifierFlags)? {
     if normalizedMpvKey == "default-bindings" {
       return nil
     }
     let keystrokeList = splitKeystrokes(normalizedMpvKey)
-    if keystrokeList.count > 1 {
-      AppInputConfig.log.error{"MacOSKeyEquivalent: found more than one keystroke in input string: \(normalizedMpvKey.quoted)"}
+    guard keystrokeList.count == 1 else {
+      AppInputConfig.log.verbose{"MacOSKeyEquivalent: string has >1 keystroke; returning nil for: \(normalizedMpvKey.quoted)"}
+      return nil
     }
     let splitted = keystrokeList[0].components(separatedBy: "+")
     var modifiers: NSEvent.ModifierFlags = []
