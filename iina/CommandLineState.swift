@@ -41,7 +41,7 @@ class CommandLineState {
     }
 
     Logger.log.debug{"Parsed command-line args: isStdin=\(isStdin.yn) separateWindows=\(openSeparateWindows.yn), enterMusicMode=\(enterMusicMode.yn), enterPIP=\(enterPIP.yn)"}
-    Logger.log.debug{"Filenames from arguments: \(filenames.map{$0.pii.quoted})"}
+    Logger.log.debug{"Filenames from arguments: \(filenames.map{$0.pii})"}
     Logger.log.debug{"Derived mpv properties from args: \(mpvArguments)"}
 
     guard !filenames.isEmpty || isStdin else {
@@ -58,6 +58,7 @@ class CommandLineState {
       // mpv args
       let strippedName = String(name.dropFirst(4))
       if strippedName == "-" {
+        Logger.log.debug{"Found single-dash arg; setting isStdin=YES"}
         isStdin = true
       } else if splitted.count <= 1 {
         if strippedName.hasPrefix("no-") {

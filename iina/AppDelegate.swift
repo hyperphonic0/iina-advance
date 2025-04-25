@@ -510,7 +510,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func application(_ sender: NSApplication, openFiles filePaths: [String]) {
     let shouldIgnoreOpenFile = startupHandler.shouldIgnoreOpenFile
-    Logger.log.debug{"application(openFiles:) called with: \(filePaths.map{$0.pii}), willIgnore=\(shouldIgnoreOpenFile)"}
+    Logger.log.debug{"application(openFiles:) called with: \(filePaths.map{$0.pii}), willIgnore=\(shouldIgnoreOpenFile.yn)"}
     // if launched from command line, should ignore openFile during launch
     guard !shouldIgnoreOpenFile else { return }
     let urls = filePaths.map { URL(fileURLWithPath: $0) }

@@ -152,7 +152,7 @@ class PlayerManager {
       Logger.log.debug("Found idle player: #\(idleCore.label)")
       core = idleCore
     } else {
-      Logger.log.debug("No idle player found. Will create new")
+      Logger.log.debug("No idle player found; creating new")
       core = _createNewPlayerCore()
     }
     return core

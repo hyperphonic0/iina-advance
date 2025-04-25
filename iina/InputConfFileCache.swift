@@ -46,7 +46,7 @@ class InputConfFileCache {
       storage[confName] = confFile
     }
 
-    Logger.log.verbose{"Updating memory cache entry for InputConf \(confName.pii.quoted) (loadedOK: \((!confFile.failedToLoad).yn))"}
+    Logger.log.verbose{"Updating memory cache entry for InputConf \(confName.pii.quoted), loadedOK=\((!confFile.failedToLoad).yn)"}
     return confFile
   }
 
@@ -55,7 +55,7 @@ class InputConfFileCache {
   fileprivate func saveFile(_ inputConfFile: InputConfFile) throws {
     switch inputConfFile.status {
     case .readOnly:
-      Logger.log.error{"Aborting saveFile() for \(inputConfFile.filePath.pii.quoted): isReadOnly==true!"}
+      Logger.log.error{"Aborting saveFile() for \(inputConfFile.filePath.pii.quoted): isReadOnly==Y!"}
       throw IINAError.confFileIsReadOnly
     case .failedToLoad:
       Logger.log.error{"Aborting saveFile() for \(inputConfFile.filePath.pii.quoted): invalid operation: file never loaded properly!"}

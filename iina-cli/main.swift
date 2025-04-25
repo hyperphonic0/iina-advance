@@ -87,7 +87,8 @@ userArgs = userArgs.compactMap { arg in
   case "--stdin":
     isStdin = true
     userSpecifiedStdin = true
-  case "--no-stdin":
+  case "--stdin=no", "--no-stdin",    // check for all forms
+    "--terminal=no", "--no-terminal": // `--terminal=no` disables any use of the terminal and stdin/stdout/stderr.
     isStdin = false
     userSpecifiedStdin = true
   default:
@@ -115,6 +116,7 @@ if !userSpecifiedStdin {
   stdin.open()
   isStdin = stdin.hasBytesAvailable
   if isStdin {
+    print("Found stdin data, no user hint; adding --stdin")
     userArgs.insert("--stdin", at: 0)
   }
 }

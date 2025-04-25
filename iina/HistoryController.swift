@@ -85,7 +85,7 @@ class HistoryController {
     // and we don't want to tie up the main thread.
     self.async { [self] in
       // Make sure to start listening before reload, to avoid creating race condition
-      log.debug("Starting to watch for watch-later dir")
+      log.debug("Starting monitoring of watch-later dir")
       folderMonitor.folderDidChange = self.watchLaterDirDidChange
       folderMonitor.startMonitoring()
 

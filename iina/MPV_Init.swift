@@ -32,6 +32,7 @@ extension MPVController {
       // Do the minimum needed for demo player
       logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadAutoProfiles, no))
       logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadOsdConsole, no))
+      logError(mpv_set_option_string(mpv, MPVOption.OSD.osc, no))
       logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadScripts, no))
       logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadStatsOverlay, no))
       _updateUsingMpvOSDFromPrefs()  // will disable mpv OSD for demo player
@@ -75,6 +76,10 @@ extension MPVController {
       let path = Logger.logDirectory.appendingPathComponent("mpv-\(player.label).log").path
       player.log.debug{"Path of mpv log: \(path.quoted)"}
       chkErr(setOptionString(MPVOption.ProgramBehavior.logFile, path, level: .verbose))
+    }
+
+    if !isPresent(MPVOption.OSD.osc, in: userOptions) {
+      logError(mpv_set_option_string(mpv, MPVOption.OSD.osc, no))
     }
 
     // - General

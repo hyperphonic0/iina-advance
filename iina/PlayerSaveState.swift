@@ -335,6 +335,8 @@ struct PlayerSaveState: CustomStringConvertible {
     props[PropName.isSubVisible.rawValue] = info.isSubVisible.yn
     props[PropName.isSub2Visible.rawValue] = info.isSecondSubVisible.yn
 
+    // FIXME: these mpv calls are in the wrong queue! Should cache these & use the cached values!
+
     let abLoopA: Double = player.abLoopA
     if abLoopA != 0 {
       props[PropName.abLoopA.rawValue] = abLoopA.stringMaxFrac6
@@ -343,8 +345,6 @@ struct PlayerSaveState: CustomStringConvertible {
     if abLoopB != 0 {
       props[PropName.abLoopB.rawValue] = abLoopB.stringMaxFrac6
     }
-
-    // mpv calls - should cache these instead eventually
 
     let maxVolume = player.mpv.getInt(MPVOption.Audio.volumeMax)
     if maxVolume != 100 {
