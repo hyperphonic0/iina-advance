@@ -19,6 +19,7 @@ class CommandLineState {
     var dropNextArg = false
     for arg in arguments {
       if dropNextArg {
+        Logger.log.verbose{"Ignoring arg: \(arg)"}
         continue
       } else if arg == "-" {
         // single '-'
@@ -29,6 +30,8 @@ class CommandLineState {
       } else if arg.hasPrefix("--") {
         parseDoubleDashedArg(arg)
       } else if arg.hasPrefix("-") {
+        // MacOS runtime arg names are prefixed with a single dash & a space to separate name from value.
+        /// Example: `-NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints YES`
         Logger.log.verbose{"Ignoring arg: \(arg)"}
         dropNextArg = true
       } else {
@@ -57,7 +60,12 @@ class CommandLineState {
       if strippedName == "-" {
         isStdin = true
       } else if splitted.count <= 1 {
-        mpvArguments.append((strippedName, Constants.String.mpvYes))
+        if strippedName.hasPrefix("no-") {
+          let optName = String(strippedName.dropFirst(3))
+          mpvArguments.append((optName, Constants.String.mpvNo))
+        } else {
+          mpvArguments.append((strippedName, Constants.String.mpvYes))
+        }
       } else {
         mpvArguments.append((strippedName, String(splitted[1])))
       }
@@ -75,7 +83,12 @@ class CommandLineState {
         enterPIP = true
       default:
         if splitted.count <= 1 {
-          mpvArguments.append((name, Constants.String.mpvYes))
+          if name.hasPrefix("no-") {
+            let optName = String(name.dropFirst(3))
+            mpvArguments.append((optName, Constants.String.mpvNo))
+          } else {
+            mpvArguments.append((name, Constants.String.mpvYes))
+          }
         } else {
           mpvArguments.append((name, String(splitted[1])))
         }

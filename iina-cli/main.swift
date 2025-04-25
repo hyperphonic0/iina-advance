@@ -92,11 +92,7 @@ userArgs = userArgs.compactMap { arg in
     userSpecifiedStdin = true
   default:
     if passedDoubleDash, arg.hasPrefix("--") {
-      if arg.hasPrefix("--no-") {
-        return "--mpv-\(arg.dropFirst(5))=no"
-      } else {
-        return "--mpv-\(arg.dropFirst(2))"
-      }
+      return "--mpv-\(arg.dropFirst(2))"
     } else if !arg.hasPrefix("-"), !Regex.url.matches(arg),
        let encodedFilePath = arg.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
        let fileURL = URL(string: encodedFilePath, relativeTo: currentDirURL),

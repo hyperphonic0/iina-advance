@@ -418,8 +418,24 @@ extension MPVController {
       return []
     }
 
-    // User Options table allows saving of empty values. Filter those out
-    return opts.filter{ $0.count == 2 && !$0[0].isEmpty }.map { ($0[0], $0[1]) }
+    return opts.compactMap { optArr in
+      // User Options table allows saving of empty values. Filter those out
+      guard !optArr.isEmpty, !optArr[0].isEmpty else { return nil }
+
+      // If option has value, use that
+      let name = optArr[0]
+      if optArr.count == 2, !optArr[1].isEmpty {
+        return (name, optArr[1])
+      }
+
+      // check for special syntax for yes/no
+      if name.hasPrefix("no-") {
+        let baseName = String(name.dropFirst(3))
+        return (baseName, Constants.String.mpvNo)
+      } else {
+        return (name, Constants.String.mpvYes)
+      }
+    }
   }
 
   // MARK: - Support Functions

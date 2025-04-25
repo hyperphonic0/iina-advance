@@ -463,7 +463,12 @@ fileprivate func optionsToStrings(_ optionsList: [[String]]) -> [String] {
 }
 
 fileprivate func optionToString(_ option: [String]) -> String {
-  return option.joined(separator: "=")
+  if option.count >= 2 && !option[1].isEmpty {
+    return option.joined(separator: "=")
+  } else if option.count >= 1 {
+    return option[0]
+  }
+  return ""
 }
 
 fileprivate func optionFromString(_ stringItem: String) -> [String] {
