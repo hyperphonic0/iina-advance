@@ -57,7 +57,7 @@ class CommandLineState {
       if strippedName == "-" {
         isStdin = true
       } else if splitted.count <= 1 {
-        mpvArguments.append((strippedName, "yes"))
+        mpvArguments.append((strippedName, Constants.String.mpvYes))
       } else {
         mpvArguments.append((strippedName, String(splitted[1])))
       }
@@ -75,7 +75,7 @@ class CommandLineState {
         enterPIP = true
       default:
         if splitted.count <= 1 {
-          mpvArguments.append((name, "yes"))
+          mpvArguments.append((name, Constants.String.mpvYes))
         } else {
           mpvArguments.append((name, String(splitted[1])))
         }

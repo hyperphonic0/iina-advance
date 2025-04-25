@@ -16,8 +16,6 @@ guard let execURL = Bundle.main.executableURL?.resolvingSymlinksInPath() else {
   exit(1)
 }
 
-let currentDirURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-
 let iinaURL = execURL.deletingLastPathComponent().appendingPathComponent(executableName)
 
 guard FileManager.default.fileExists(atPath: iinaURL.path) else {
@@ -70,80 +68,73 @@ if userArgs.contains("--music-mode"), userArgs.contains("--pip") {
   exit(EX_USAGE)
 }
 
-// Run executable as a separate process. Not sure if/why this is strictly necessary...
-let task = Process()
-task.executableURL = iinaURL
-
+let currentDirURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 var keepRunning = false
-
 var isStdin = false
 var userSpecifiedStdin = false
+var passedDoubleDash = false
 
-for arg in userArgs {
-  if arg == "--stdin" {
+userArgs = userArgs.compactMap { arg in
+  switch arg {
+  case "-w":
+    return "--separate-windows"
+  case "--":
+    passedDoubleDash = true
+    return nil
+  case "--keep-running":
+    keepRunning = true
+    return nil
+  case "--stdin":
     isStdin = true
     userSpecifiedStdin = true
-  } else if arg == "--no-stdin" {
+  case "--no-stdin":
     isStdin = false
     userSpecifiedStdin = true
-  } else if arg == "--" {
-    break
+  default:
+    if passedDoubleDash, arg.hasPrefix("--") {
+      if arg.hasPrefix("--no-") {
+        return "--mpv-\(arg.dropFirst(5))=no"
+      } else {
+        return "--mpv-\(arg.dropFirst(2))"
+      }
+    } else if !arg.hasPrefix("-"), !Regex.url.matches(arg),
+       let encodedFilePath = arg.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+       let fileURL = URL(string: encodedFilePath, relativeTo: currentDirURL),
+       FileManager.default.fileExists(atPath: fileURL.path) {
+      // Change relative file paths to absolute(?)
+      return fileURL.path
+    }
   }
+
+  return arg
 }
 
-if (!userSpecifiedStdin) {
+// Configure stdin
+
+if !userSpecifiedStdin {
   guard let stdin = InputStream(fileAtPath: "/dev/stdin") else {
     print("Cannot open stdin.")
     exit(1)
   }
   stdin.open()
   isStdin = stdin.hasBytesAvailable
-}
-
-if let dashIndex = userArgs.firstIndex(of: "--") {
-  userArgs.remove(at: dashIndex)
-  for i in dashIndex..<userArgs.count {
-    let arg = userArgs[i]
-    if arg.hasPrefix("--") {
-      if arg.hasPrefix("--no-") {
-        userArgs[i] = "--mpv-\(arg.dropFirst(5))=no"
-      } else {
-        userArgs[i] = "--mpv-\(arg.dropFirst(2))"
-      }
-    }
+  if isStdin {
+    userArgs.insert("--stdin", at: 0)
   }
 }
 
-userArgs = userArgs.map { arg in
-  if !arg.hasPrefix("-"),
-    !Regex.url.matches(arg),
-    let encodedFilePath = arg.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-    let fileURL = URL(string: encodedFilePath, relativeTo: currentDirURL),
-    FileManager.default.fileExists(atPath: fileURL.path) {
-    return fileURL.path
-  } else if arg == "-w" {
-    return "--separate-windows"
-  }
-  if arg == "--keep-running" {
-    keepRunning = true
-  }
-  return arg
-}
-
-// Handle stdin
+// Run executable as a separate process. Not sure if/why this is strictly necessary...
+let task = Process()
+task.executableURL = iinaURL
+task.arguments = userArgs
 
 if isStdin {
   task.standardInput = FileHandle.standardInput
   task.standardOutput = FileHandle.standardOutput
-  if !userSpecifiedStdin {
-    userArgs.insert("--stdin", at: 0)
-  }
 } else {
   task.standardOutput = nil
   task.standardError = nil
 }
-
-task.arguments = userArgs
 
 func terminateTaskIfRunning() {
   if task.isRunning {
