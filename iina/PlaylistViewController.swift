@@ -234,6 +234,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       self.fileExistsMap = HistoryController.shared.fileExistsMap
     }
 
+    // Register this sidebar for dragged files, just so we can deny all drops onto the sidebar
+    // not including the Playlist table. See note in QuickSettingsViewController.viewDidLoad().
+    view.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
+
     player.log.verbose{"PlaylistView viewDidLoad done"}
   }
 

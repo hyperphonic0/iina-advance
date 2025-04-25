@@ -282,6 +282,14 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     view.configureSubtreeForCoreAnimation()
     view.layoutSubtreeIfNeeded()
 
+    // We register some of the tables for drag & drop (see below), so users will drag over the
+    // sidebar to get to them. However, ViewportView & VideoView both also accept fileURLs, and
+    // will do so even if occluded by the sidebar! We don't want (e.g.) audio files to be accidentally
+    // dropped onto the sidebar instead of the audio table, because that will replace the current video
+    // being played! Solution: register the sidebar for drops too, so it receives them before ViewportView,
+    // and then just deny all of them. The denial will happen by default for NSViews.
+    view.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
+
     if #available(OSX 10.13, *) {
       subTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
       secSubTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
