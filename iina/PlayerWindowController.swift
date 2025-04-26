@@ -929,6 +929,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       guard !Preference.bool(for: .pauseWhenOpen) else { return }
     }
 
+    log.verbose("Resuming playback after window was shown")
     player.mpv.setFlag(MPVOption.PlaybackControl.pause, false)
   }
 

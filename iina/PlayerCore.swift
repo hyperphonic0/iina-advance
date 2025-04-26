@@ -567,6 +567,7 @@ class PlayerCore: NSObject {
           }
 
           if pauseUntilWindowOpen {
+            log.debug{"Pausing playback until window is done opening"}
             // Pause until window opens, to avoid blips or other loading unpleasantness
             mpv.setFlag(MPVOption.PlaybackControl.pause, true)
             // ...or stay paused if configured
@@ -2408,10 +2409,18 @@ class PlayerCore: NSObject {
     // note: player may be "stopped" here
     guard !isStopping else { return }
 
+    // mpv will play when loaded by default.
     // If restoring, playback was already paused (and will not be unpaused until window is ready to show)
     if !isRestoring {
-      let pause = Preference.bool(for: .pauseWhenOpen)
-      mpv.setFlag(MPVOption.PlaybackControl.pause, pause)
+      var shouldPause = Preference.bool(for: .pauseWhenOpen)
+      for option in userOptions.reversed() {
+        if option.0 == MPVOption.PlaybackControl.pause {
+          // User option or cmd line option, if provided, takes priority over pref
+          shouldPause = option.1.isEmpty || option.1 == Constants.String.mpvYes
+          break
+        }
+      }
+      mpv.setFlag(MPVOption.PlaybackControl.pause, shouldPause)
     }
     log.verbose{"FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")"}
 
