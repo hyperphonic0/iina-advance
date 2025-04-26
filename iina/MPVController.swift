@@ -320,6 +320,14 @@ class MPVController: NSObject {
     return toKeyMappings(parsed)
   }
 
+  func getInputKeyList() -> [String] {
+    player.log.verbose("Requesting from mpv: \(MPVProperty.inputKeyList)")
+    if let csv = getString(MPVProperty.inputKeyList) {
+      return csv.split(separator: ",").map{String($0)}
+    }
+    return []
+  }
+
   func toKeyMappings(_ inputBindingArray: Any?, filterCommandsBy filter: ((Substring) -> Bool)? = nil) -> [KeyMapping] {
     var keyMappingList: [KeyMapping] = []
     if let mapList = inputBindingArray as? [Any?] {

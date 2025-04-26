@@ -53,16 +53,15 @@ extension MPVController {
       }
     }
     userOptions.append(contentsOf: player.commandLineArgs)
+    player.userOptions = userOptions
 
     // User default settings
 
     if !player.isRestoring {
       if Preference.bool(for: .enableInitialVolume) {
-        setUserOption(PK.initialVolume, type: .int, forName: MPVOption.Audio.volume, sync: false,
-                      level: .verbose)
+        setUserOption(PK.initialVolume, type: .int, forName: MPVOption.Audio.volume, sync: false, level: .verbose)
       } else {
-        setUserOption(PK.softVolume, type: .int, forName: MPVOption.Audio.volume, sync: false,
-                      level: .verbose)
+        setUserOption(PK.softVolume, type: .int, forName: MPVOption.Audio.volume, sync: false, level: .verbose)
       }
     }
 
@@ -364,25 +363,29 @@ extension MPVController {
 
     // Must be called after mpv_initialize which sets the default value for hwdec-codecs.
     adjustCodecWhiteList(userOptions: userOptions)
-    applyHardwareAccelerationWorkaround(userOptions: userOptions)
 
-    if player.videoView.useOpenGL {
-      log.verbose("Using legacy libmpv + OpenGEL rendering")
-      // Set options that can be override by user's config. mpv will log user config when initialize,
-      // so we put them here.
-      chkErr(setString(MPVOption.Video.vo, "libmpv", level: .debug))
-    } else {
-      log.verbose("Using gpu-next + Vulkan rendering")
-      let widPtr = UnsafeMutablePointer<Int64>.allocate(capacity: 1)
-      widPtr.pointee = unsafeBitCast(player.window, to: Int64.self)
-      mpv_set_option(mpv, MPVOption.Window.wid, MPV_FORMAT_INT64, widPtr)
+    // If --o is specified, encoding mode is being used. If so, skip setting --vo as it will lead to error
+    if !isPresent(MPVEncoding.o, in: userOptions) {
+      applyHardwareAccelerationWorkaround(userOptions: userOptions)
 
-      chkErr(setString(MPVOption.Video.vo, "gpu-next", level: .debug))
-      chkErr(setString(MPVOption.GPURendererOptions.gpuApi, "vulkan", level: .debug))
-      chkErr(setString(MPVOption.Video.hwdec, "vulkan", level: .debug))
+      if player.videoView.useOpenGL {
+        log.verbose("Using legacy libmpv + OpenGEL rendering")
+        // Set options that can be override by user's config. mpv will log user config when initialize,
+        // so we put them here.
+        chkErr(setString(MPVOption.Video.vo, "libmpv", level: .debug))
+      } else {
+        log.verbose("Using gpu-next + Vulkan rendering")
+        let widPtr = UnsafeMutablePointer<Int64>.allocate(capacity: 1)
+        widPtr.pointee = unsafeBitCast(player.window, to: Int64.self)
+        mpv_set_option(mpv, MPVOption.Window.wid, MPV_FORMAT_INT64, widPtr)
+
+        chkErr(setString(MPVOption.Video.vo, "gpu-next", level: .debug))
+        chkErr(setString(MPVOption.GPURendererOptions.gpuApi, "vulkan", level: .debug))
+        chkErr(setString(MPVOption.Video.hwdec, "vulkan", level: .debug))
+      }
+      chkErr(setString(MPVOption.Window.keepaspect, no, level: .verbose))
+      chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))
     }
-    chkErr(setString(MPVOption.Window.keepaspect, no, level: .verbose))
-    chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))
 
     // The option watch-later-options is not available until after the mpv instance is initialized.
     // In mpv 0.34.1 the default value for the watch-later-options property contains the option

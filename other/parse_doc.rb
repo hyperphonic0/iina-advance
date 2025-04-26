@@ -178,3 +178,35 @@ File.open(File.join(__dir__, 'MPVCommand.swift'), 'w') do |file|
   end
   file.write "}\n"
 end
+
+# encoding
+
+encoding_list = doc.css '#encoding > dl.docutils > dt > tt'
+
+File.open(File.join(__dir__, 'MPVEncoding.swift'), 'w') do |file|
+  file.write "import Foundation\n\n"
+  file.write "/// Named constants for mpv [encoding commands](https://mpv.io/manual/stable/#encoding).\n"
+  write_common_header(file)
+  file.write "struct MPVEncoding: RawRepresentable {\n\n"
+  file.write "  typealias RawValue = String\n\n"
+  file.write "  var rawValue: RawValue\n\n"
+  file.write "  init(_ string: String) { self.rawValue = string }\n\n"
+  file.write "  init?(rawValue: RawValue) { self.rawValue = rawValue }\n\n"
+    encoding_list.each do |option|
+      # puts option
+      op_format = option.content
+      op_format.gsub(/<(.+?)>/) {|m| $0.gsub(',', '$')}  # remove ',' temporarily
+      op_format.split(',').each do |f|
+        f.gsub('$', ',')  # add back ','
+        match = f.match(/--(.+?)(=|\Z)/)
+        if match.nil? then next end
+        op_name = match[1]
+        if exist_op.include?(op_name) or op_name.include?('...') then next end
+        file.write "    /** #{f} */\n"
+        file.write "    static let #{op_name.to_camel} = \"#{op_name}\"\n"
+        exist_op << op_name
+      end
+    end
+    file.write "  }\n\n"
+
+end

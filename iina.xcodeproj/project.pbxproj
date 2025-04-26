@@ -306,6 +306,7 @@
 		D1049C852872C154003D47C1 /* ConfTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C842872C154003D47C1 /* ConfTableViewController.swift */; };
 		D1049C872872C17F003D47C1 /* BindingTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C862872C17F003D47C1 /* BindingTableViewController.swift */; };
 		D1049C892872CAD6003D47C1 /* ConfTableState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* ConfTableState.swift */; };
+		D1108E5B2DBC7B1900344C7C /* MPVEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1108E5A2DBC7B1900344C7C /* MPVEncoding.swift */; };
 		D114C7AE2BEDEE150002D077 /* PrefDataViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D114C7AD2BEDEE150002D077 /* PrefDataViewController.swift */; };
 		D114C7B12BEDEF3E0002D077 /* PrefDataViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D114C7AF2BEDEF3E0002D077 /* PrefDataViewController.xib */; };
 		D11AB83628EEE72A00673A90 /* EditableTableViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */; };
@@ -1849,6 +1850,7 @@
 		D1049C842872C154003D47C1 /* ConfTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTableViewController.swift; sourceTree = "<group>"; };
 		D1049C862872C17F003D47C1 /* BindingTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingTableViewController.swift; sourceTree = "<group>"; };
 		D1049C882872CAD6003D47C1 /* ConfTableState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTableState.swift; sourceTree = "<group>"; };
+		D1108E5A2DBC7B1900344C7C /* MPVEncoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVEncoding.swift; sourceTree = "<group>"; };
 		D114C7AD2BEDEE150002D077 /* PrefDataViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefDataViewController.swift; sourceTree = "<group>"; };
 		D114C7B02BEDEF3E0002D077 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PrefDataViewController.xib; sourceTree = "<group>"; };
 		D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableViewDelegate.swift; sourceTree = "<group>"; };
@@ -2349,6 +2351,7 @@
 			children = (
 				847644091D48CC3D004F6DF5 /* MPVCommand.swift */,
 				847644071D48B413004F6DF5 /* MPVOption.swift */,
+				D1108E5A2DBC7B1900344C7C /* MPVEncoding.swift */,
 				84F7258E1D486185000DEF1B /* MPVProperty.swift */,
 			);
 			name = Generated;
@@ -3466,6 +3469,7 @@
 				E3785B072A83039600787CB7 /* JavascriptAPIWebSocket.swift in Sources */,
 				E342832F20B7149800139865 /* Logger.swift in Sources */,
 				84F725561D4783EE000DEF1B /* VolumeSliderCell.swift in Sources */,
+				D1108E5B2DBC7B1900344C7C /* MPVEncoding.swift in Sources */,
 				845040401E0ACADD0079C194 /* MPVNode.swift in Sources */,
 				D17CBBA82CCF64C2006160AC /* PWin_Observers.swift in Sources */,
 				84795C3A1E083EE30059A648 /* PrefControlViewController.swift in Sources */,

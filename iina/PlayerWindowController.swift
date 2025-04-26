@@ -904,12 +904,31 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       animationPipeline.submit(animationTasks)
 
       player.mpv.queue.async { [self] in
-        if player.pendingResumeWhenShowingWindow {
-          player.pendingResumeWhenShowingWindow = false
-          player.mpv.setFlag(MPVOption.PlaybackControl.pause, false)
-        }
+        resumeIfNeededForShowingWindow()
       }
     }
+  }
+
+  // this is getting pretty kludgey...
+  private func resumeIfNeededForShowingWindow() {
+    guard player.pendingResumeWhenShowingWindow else { return }
+    player.pendingResumeWhenShowingWindow = false
+
+    if !player.isRestoring {  // if restoring, all logic has already been evaluated.
+      for option in player.userOptions.reversed() {
+        if option.0 == MPVOption.PlaybackControl.pause, option.1.isEmpty || option.1 == Constants.String.mpvYes {
+          // User option overrides
+          return
+        }
+      }
+      guard !Preference.bool(for: .pauseWhenOpen) else { return }
+    }
+
+    player.mpv.setFlag(MPVOption.PlaybackControl.pause, false)
+  }
+
+  private func isPresent(_ option: String, in userOptions: [(String, String)]) -> Bool {
+    return userOptions.contains { $0.0 == option }
   }
 
   /// Do not use the offical `NSWindowDelegate` method. This method will be called by the global window listener.

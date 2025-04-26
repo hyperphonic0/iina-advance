@@ -82,6 +82,9 @@ class PlayerCore: NSObject {
   /// - This array will always be empty unless the app was opened from the command line.
   var commandLineArgs: [(String, String)] = []
 
+  /// After mpvInit, contains both the user options in Settings > Advanced, + commandLineArgs
+  var userOptions: [(String, String)] = []
+
   /// Time of the last player state save when called by `updatePlaybackTimeInfo`.
   private var lastStateSaveTime = Date().timeIntervalSince1970
 
@@ -538,7 +541,7 @@ class PlayerCore: NSObject {
             // Pause until window opens, to avoid blips or other loading unpleasantness
             mpv.setFlag(MPVOption.PlaybackControl.pause, true)
             // ...or stay paused if configured
-            pendingResumeWhenShowingWindow = !Preference.bool(for: .pauseWhenOpen)
+            pendingResumeWhenShowingWindow = true
           }
 
           // Not restoring

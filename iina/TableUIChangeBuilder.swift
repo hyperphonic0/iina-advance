@@ -113,7 +113,7 @@ class TableUIChangeBuilder {
     // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
 
     let steps = newRows.difference(from: oldRows).steps
-    Logger.log("Computing TableUIChange from diff: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
+    Logger.log.verbose{"Computing TableUIChange from diff: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows"}
 
     // If overrideSingleRowMove==true, override default behavior for single row: treat del + ins as move.
     // This results in a more pleasant animation in cases such as when an inline edit is finished.
