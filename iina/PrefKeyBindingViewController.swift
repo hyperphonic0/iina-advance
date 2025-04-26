@@ -80,10 +80,9 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
     super.viewWillAppear()
     BindingTableState.manager.applyStateUpdate(AppInputConfig.current)  // bring up to date
     BindingTableState.manager.enableObservers()
-    let keyList = PlayerManager.shared.getOrCreateDemo().mpv.getInputKeyList()
-    Logger.log.debug("Key List (count: \(keyList.count))")
-    for key in keyList {
-      Logger.log.debug("\(key)")
+    if DebugConfig.logBindingsRebuild {
+      let keyList = PlayerManager.shared.getOrCreateDemo().mpv.getInputKeyList()
+      Logger.log.debug("Key List (count=\(keyList.count)): \(keyList)")
     }
   }
 

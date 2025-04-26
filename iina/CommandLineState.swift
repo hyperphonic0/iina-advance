@@ -167,7 +167,15 @@ class CommandLineState {
         cmdLineArgs.append(argPair)
       }
     }
-    playerCore.commandLineArgs = cmdLineArgs
+
+    if Logger.isDebugEnabled {
+      for cmdLineArgPair in cmdLineArgs {
+        if playerCore.userOptions.contains(where: { $0.0 == cmdLineArgPair.0 }) {
+          playerCore.log.debug{"Command-line mpv arg has the same name as user option and may override it: \(cmdLineArgPair.0)=\(cmdLineArgPair.1)"}
+        }
+      }
+    }
+    playerCore.userOptions.append(contentsOf: cmdLineArgs)
     return playerCore
   }
 

@@ -75,15 +75,8 @@ class PlayerCore: NSObject {
   var label: String
   let isDemoPlayer: Bool
 
-  /// Args when opened via a command line launch.
-  ///
-  /// - These are combined with the options in the `userOptions` preference if enabled (in Settings > Advanced > Additional mpv options).
-  ///   If the user options contain an arg with the same name as a command line arg, the command line arg will override it.
-  /// - This array will always be empty unless the app was opened from the command line.
-  var commandLineArgs: [(String, String)] = []
-
   /// After mpvInit, contains both the user options in Settings > Advanced, + commandLineArgs
-  var userOptions: [(String, String)] = []
+  var userOptions: [(String, String)]
 
   /// Time of the last player state save when called by `updatePlaybackTimeInfo`.
   private var lastStateSaveTime = Date().timeIntervalSince1970
@@ -324,13 +317,16 @@ class PlayerCore: NSObject {
     abLoopA != 0 && abLoopB != 0 && mpv.getString(MPVOption.PlaybackControl.abLoopCount) != "0"
   }
 
-  init(_ label: String, isDemoPlayer: Bool = false) {
+  init(_ label: String, isDemoPlayer: Bool = false, commandLineArgs: [(String, String)] = []) {
     let log = Logger.subsystem(forPlayerID: label)
     log.debug{"PlayerCore init: starting"}
     self.label = label
     self.subsystem = log
     self.info = PlaybackInfo(log: log)
     self.isDemoPlayer = isDemoPlayer
+
+    userOptions = PlayerCore.getMpvUserOptionsFromPrefs()
+
     super.init()
     self.videoView = VideoView(player: self)
     self.mpv = MPVController(playerCore: self)
@@ -344,6 +340,39 @@ class PlayerCore: NSObject {
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModePerApp)
     log.verbose{"PlayerCore init: done"}
   }
+
+
+  static func getMpvUserOptionsFromPrefs() -> [(String, String)] {
+    guard Preference.bool(for: .enableAdvancedSettings) else { return [] }
+
+    guard let opts = Preference.value(for: .userOptions) as? [[String]] else {
+      // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
+      DispatchQueue.main.async {
+        Utility.showAlert("extra_option.cannot_read")
+      }
+      return []
+    }
+
+    return opts.compactMap { optArr in
+      // User Options table allows saving of empty values. Filter those out
+      guard !optArr.isEmpty, !optArr[0].isEmpty else { return nil }
+
+      // If option has value, use that
+      let name = optArr[0]
+      if optArr.count == 2, !optArr[1].isEmpty {
+        return (name, optArr[1])
+      }
+
+      // check for special syntax for yes/no
+      if name.hasPrefix("no-") {
+        let baseName = String(name.dropFirst(3))
+        return (baseName, Constants.String.mpvNo)
+      } else {
+        return (name, Constants.String.mpvYes)
+      }
+    }
+  }
+
 
   // MARK: - Plugins
 

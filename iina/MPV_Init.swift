@@ -44,18 +44,8 @@ extension MPVController {
       return
     }
 
-    var userOptions: [(String, String)] = getUserOptionsFromPrefs()
-    if Logger.isDebugEnabled {
-      for cmdLineArgPair in player.commandLineArgs {
-        if isPresent(cmdLineArgPair.0, in: userOptions) {
-          player.log.debug{"Command-line mpv arg has the same name as user option and may override it: \(cmdLineArgPair.0)=\(cmdLineArgPair.1)"}
-        }
-      }
-    }
-    userOptions.append(contentsOf: player.commandLineArgs)
-    player.userOptions = userOptions
-
     // User default settings
+    let userOptions = player.userOptions
 
     if !player.isRestoring {
       if Preference.bool(for: .enableInitialVolume) {
@@ -413,37 +403,6 @@ extension MPVController {
     // So we must wait until now to log this info, instead of at app start.
     // Should be fine to log this for every mpv core - it may be useful to have it in every mpv log file.
     player.log.verbose("Configuration when building mpv: \(getString(MPVProperty.mpvConfiguration)!)")
-  }
-
-  private func getUserOptionsFromPrefs() -> [(String, String)] {
-    guard Preference.bool(for: .enableAdvancedSettings) else { return [] }
-
-    guard let opts = Preference.value(for: .userOptions) as? [[String]] else {
-      // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
-      DispatchQueue.main.async {
-        Utility.showAlert("extra_option.cannot_read")
-      }
-      return []
-    }
-
-    return opts.compactMap { optArr in
-      // User Options table allows saving of empty values. Filter those out
-      guard !optArr.isEmpty, !optArr[0].isEmpty else { return nil }
-
-      // If option has value, use that
-      let name = optArr[0]
-      if optArr.count == 2, !optArr[1].isEmpty {
-        return (name, optArr[1])
-      }
-
-      // check for special syntax for yes/no
-      if name.hasPrefix("no-") {
-        let baseName = String(name.dropFirst(3))
-        return (baseName, Constants.String.mpvNo)
-      } else {
-        return (name, Constants.String.mpvYes)
-      }
-    }
   }
 
   // MARK: - Support Functions

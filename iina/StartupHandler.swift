@@ -576,5 +576,9 @@ class StartupHandler {
 
   func parseCommandLine(_ cmdLineArgs: ArraySlice<String>) {
     commandLineState = CommandLineState(cmdLineArgs)
+    if let commandLineState, commandLineState.mpvArguments.contains(where: { $0.0 == MPVEncoding.o }) {
+      Logger.Subsystem.restore.debug{"Found --o arg in cmd line. Disabling save/restore for this launch."}
+      UIState.shared.disableSaveAndRestoreUntilNextLaunch()
+    }
   }
 }
