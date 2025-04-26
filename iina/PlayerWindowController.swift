@@ -857,15 +857,20 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         transformGeometry("OpenNetStreamWindow", video: GeometryTransform.trackChanged)
       }
     }
-    // FIXME: don't leave in
-//    postWindowIsReadyToShow()
-//    showWindow(self)
   }
 
   override func showWindow(_ sender: Any?) {
     guard player.state.isNotYet(.stopping) else {
       log.verbose("Aborting showWindow - player is stopping")
       return
+    }
+    // Do not show window if in encoding mode, unless --force-window=yes|immediate is also given
+    if player.userOptions.contains(where: { $0.0 == MPVEncoding.o}) {
+      let forceWindowOption = player.userOptions.first(where: { $0.0 == MPVOption.Window.forceWindow })?.1
+      if forceWindowOption == nil || forceWindowOption == Constants.String.mpvNo {
+        log.verbose("Aborting showWindow: found --o option, --force-window is not set")
+        return
+      }
     }
     log.verbose("Showing PlayerWindow")
     super.showWindow(sender)

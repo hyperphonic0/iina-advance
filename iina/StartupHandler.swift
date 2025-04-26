@@ -576,9 +576,27 @@ class StartupHandler {
 
   func parseCommandLine(_ cmdLineArgs: ArraySlice<String>) {
     commandLineState = CommandLineState(cmdLineArgs)
-    if let commandLineState, commandLineState.mpvArguments.contains(where: { $0.0 == MPVEncoding.o }) {
-      Logger.Subsystem.restore.debug{"Found --o arg in cmd line. Disabling save/restore for this launch."}
-      UIState.shared.disableSaveAndRestoreUntilNextLaunch()
+    if let commandLineState {
+      if commandLineState.mpvArguments.contains(where: { $0.0 == MPVEncoding.o }) {
+        Logger.Subsystem.restore.debug{"Found --o arg in cmd line. Disabling save/restore for this launch."}
+        UIState.shared.disableSaveAndRestoreUntilNextLaunch()
+      }
+
+      if let option = commandLineState.mpvArguments.first(where: { $0.0 == MPVOption.GPURendererOptions.macosAppActivationPolicy}), !option.1.isEmpty {
+        switch option.1 {
+        case "regular":
+          Logger.Subsystem.restore.debug{"Setting NSApp activation policy to .regular"}
+          NSApp.setActivationPolicy(.regular)
+        case "accessory":
+          Logger.Subsystem.restore.debug{"Setting NSApp activation policy to .accessory"}
+          NSApp.setActivationPolicy(.accessory)
+        case "prohibited":
+          Logger.Subsystem.restore.debug{"Setting NSApp activation policy to .prohibited"}
+          NSApp.setActivationPolicy(.prohibited)
+        default:
+          break
+        }
+      }
     }
   }
 }

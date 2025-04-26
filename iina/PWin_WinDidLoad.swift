@@ -14,6 +14,7 @@ extension PlayerWindowController {
   override func windowDidLoad() {
     log.verbose("PlayerWindow windowDidLoad starting")
     super.windowDidLoad()
+
     guard let window else { return }
     guard let contentView = window.contentView else { return }
 
