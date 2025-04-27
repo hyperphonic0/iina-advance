@@ -373,6 +373,27 @@ class PlayerCore: NSObject {
     }
   }
 
+  /// Searches the list of user configured `mpv` options and returns `true` if the given option is present.
+  /// - Parameter option: Option to look for.
+  /// - Returns: `true` if the `mpv` option is found, `false` otherwise.
+  func isPresentInUserOptions(_ option: String) -> Bool {
+    let userOptions = userOptions
+    for userOption in userOptions {
+      if userOption.0 == option {
+        return true
+      }
+
+      if userOption.0.prefix(3) == "no-" {
+        // Try removing the "--no-" prefix if present to match against the option's true name
+        let optionName = userOption.0.replacingOccurrences(of: "no-", with: "")
+        if optionName == option {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
 
   // MARK: - Plugins
 

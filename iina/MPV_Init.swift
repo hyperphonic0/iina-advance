@@ -44,9 +44,6 @@ extension MPVController {
       return
     }
 
-    // User default settings
-    let userOptions = player.userOptions
-
     if !player.isRestoring {
       if Preference.bool(for: .enableInitialVolume) {
         setUserOption(PK.initialVolume, type: .int, forName: MPVOption.Audio.volume, sync: false, level: .verbose)
@@ -67,78 +64,106 @@ extension MPVController {
       chkErr(setOptionString(MPVOption.ProgramBehavior.logFile, path, level: .verbose))
     }
 
-    if !isPresent(MPVOption.OSD.osc, in: userOptions) {
+    if !player.isPresentInUserOptions(MPVOption.OSD.osc) {
       logError(mpv_set_option_string(mpv, MPVOption.OSD.osc, no))
     }
 
     // - General
 
-    let setScreenshotPath = { (key: Preference.Key) -> String in
-      if Preference.bool(for: .screenshotSaveToFile) {
-        return Utility.screenshotCacheURL.path
-      }
-      let screenshotPath = Preference.string(for: .screenshotFolder)!
-      return NSString(string: screenshotPath).expandingTildeInPath
-    }
-
-    if !isPresent(MPVOption.PlaybackControl.hrSeek, in: userOptions) {
+    if !player.isPresentInUserOptions(MPVOption.PlaybackControl.hrSeek) {
       // Use exact seeks by default
       mpv_set_option_string(mpv, MPVOption.PlaybackControl.hrSeek, yes)
     }
 
-    setUserOption(PK.screenshotSaveToFile, type: .other, forName: MPVOption.Screenshot.screenshotDir,
-                  level: .verbose, transformer: setScreenshotPath)
+    if !player.isPresentInUserOptions(MPVOption.Screenshot.screenshotDir) {
+      let setScreenshotPath = { (key: Preference.Key) -> String in
+        if Preference.bool(for: .screenshotSaveToFile) {
+          return Utility.screenshotCacheURL.path
+        }
+        let screenshotPath = Preference.string(for: .screenshotFolder)!
+        return NSString(string: screenshotPath).expandingTildeInPath
+      }
 
-    setUserOption(PK.screenshotFormat, type: .other, forName: MPVOption.Screenshot.screenshotFormat,
-                  verboseIfDefault: true) { key in
-      let v = Preference.integer(for: key)
-      let format = Preference.ScreenshotFormat(rawValue: v)
-      // Workaround for mpv issue #15107, HDR screenshots are unimplemented (gpu/gpu-next).
-      // If the screenshot format is set to JPEG XL then set the screenshot-sw option to yes. This
-      // causes the screenshot to be rendered by software instead of the VO. If a HDR video is being
-      // displayed in HDR then the resulting screenshot will be HDR.
-      self.chkErr(self.setOptionFlag(MPVOption.Screenshot.screenshotSw, format == .jxl,
-                                     verboseIfDefault: true))
-      return format?.string
+      setUserOption(PK.screenshotSaveToFile, type: .other, forName: MPVOption.Screenshot.screenshotDir,
+                    level: .verbose, transformer: setScreenshotPath)
     }
 
-    setUserOption(PK.screenshotTemplate, type: .string,
-                  forName: MPVOption.Screenshot.screenshotTemplate)
+    if !player.isPresentInUserOptions(MPVOption.Screenshot.screenshotFormat) {
+      setUserOption(PK.screenshotFormat, type: .other, forName: MPVOption.Screenshot.screenshotFormat,
+                    verboseIfDefault: true) { key in
+        let v = Preference.integer(for: key)
+        let format = Preference.ScreenshotFormat(rawValue: v)
+        // Workaround for mpv issue #15107, HDR screenshots are unimplemented (gpu/gpu-next).
+        // If the screenshot format is set to JPEG XL then set the screenshot-sw option to yes. This
+        // causes the screenshot to be rendered by software instead of the VO. If a HDR video is being
+        // displayed in HDR then the resulting screenshot will be HDR.
+        self.chkErr(self.setOptionFlag(MPVOption.Screenshot.screenshotSw, format == .jxl,
+                                       verboseIfDefault: true))
+        return format?.string
+      }
+    }
+
+    if !player.isPresentInUserOptions(MPVOption.Screenshot.screenshotTemplate) {
+      setUserOption(PK.screenshotTemplate, type: .string,
+                    forName: MPVOption.Screenshot.screenshotTemplate)
+    }
 
     // Disable mpv's media key system as it now uses the MediaPlayer Framework.
     // Dropped media key support in 10.11 and 10.12.
     chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputMediaKeys, no))
 
-    updateKeepOpenOptionFromPrefs()
+    if !player.isPresentInUserOptions(MPVOption.Window.keepOpen) {
+      updateKeepOpenOptionFromPrefs()
+    }
 
-    chkErr(setOptionString(MPVOption.WatchLater.watchLaterDir, Utility.watchLaterURL.path, level: .verbose))
-    setUserOption(PK.resumeLastPosition, type: .bool, forName: MPVOption.WatchLater.savePositionOnQuit,
-                  verboseIfDefault: true)
-    setUserOption(PK.resumeLastPosition, type: .bool, forName: "resume-playback", verboseIfDefault: true)
+    if !player.isPresentInUserOptions(MPVOption.WatchLater.watchLaterDir) {
+      chkErr(setOptionString(MPVOption.WatchLater.watchLaterDir, Utility.watchLaterURL.path, level: .verbose))
+    }
+    if !player.isPresentInUserOptions(MPVOption.WatchLater.savePositionOnQuit) {
+      setUserOption(PK.resumeLastPosition, type: .bool, forName: MPVOption.WatchLater.savePositionOnQuit,
+                    verboseIfDefault: true)
+    }
+    if !player.isPresentInUserOptions(MPVOption.WatchLater.resumePlayback) {
+      setUserOption(PK.resumeLastPosition, type: .bool, forName: MPVOption.WatchLater.resumePlayback, verboseIfDefault: true)
+    }
 
-    // FIXME: set this strategically, based on when to resize.
-    setUserOption(.initialWindowSizePosition, type: .string, forName: MPVOption.Window.geometry,
-                  level: .verbose)
+    if !player.isPresentInUserOptions(MPVOption.Window.geometry) {
+      // FIXME: set this strategically, based on when to resize.
+      setUserOption(.initialWindowSizePosition, type: .string, forName: MPVOption.Window.geometry,
+                    level: .verbose)
+    }
 
     // - Codec
 
-    setUserOption(PK.videoThreads, type: .int, forName: MPVOption.Video.vdLavcThreads, verboseIfDefault: true)
-    setUserOption(PK.audioThreads, type: .int, forName: MPVOption.Audio.adLavcThreads, verboseIfDefault: true)
-
-    setUserOption(PK.hardwareDecoder, type: .other, forName: MPVOption.Video.hwdec, verboseIfDefault: true) { key in
-      let value = Preference.integer(for: key)
-      return Preference.HardwareDecoderOption(rawValue: value)?.mpvString ?? "auto"
+    if !player.isPresentInUserOptions(MPVOption.Video.vdLavcThreads) {
+      setUserOption(PK.videoThreads, type: .int, forName: MPVOption.Video.vdLavcThreads, verboseIfDefault: true)
+    }
+    if !player.isPresentInUserOptions(MPVOption.Audio.adLavcThreads) {
+      setUserOption(PK.audioThreads, type: .int, forName: MPVOption.Audio.adLavcThreads, verboseIfDefault: true)
     }
 
-    setUserOption(PK.maxVolume, type: .int, forName: MPVOption.Audio.volumeMax, level: .verbose)
+    if !player.isPresentInUserOptions(MPVOption.Video.hwdec) {
+      setUserOption(PK.hardwareDecoder, type: .other, forName: MPVOption.Video.hwdec, verboseIfDefault: true) { key in
+        let value = Preference.integer(for: key)
+        return Preference.HardwareDecoderOption(rawValue: value)?.mpvString ?? "auto"
+      }
+    }
 
-    setUserOption(PK.audioLanguage, type: .string, forName: MPVOption.TrackSelection.alang, level: .verbose)
+    if !player.isPresentInUserOptions(MPVOption.Audio.volumeMax) {
+      setUserOption(PK.maxVolume, type: .int, forName: MPVOption.Audio.volumeMax, level: .verbose)
+    }
 
-    var spdif: [String] = []
-    if Preference.bool(for: PK.spdifAC3) { spdif.append("ac3") }
-    if Preference.bool(for: PK.spdifDTS){ spdif.append("dts") }
-    if Preference.bool(for: PK.spdifDTSHD) { spdif.append("dts-hd") }
-    chkErr(setOptionString(MPVOption.Audio.audioSpdif, spdif.joined(separator: ","), verboseIfDefault: true))
+    if !player.isPresentInUserOptions(MPVOption.TrackSelection.alang) {
+      setUserOption(PK.audioLanguage, type: .string, forName: MPVOption.TrackSelection.alang, level: .verbose)
+    }
+
+    if !player.isPresentInUserOptions(MPVOption.Audio.audioSpdif) {
+      var spdif: [String] = []
+      if Preference.bool(for: PK.spdifAC3) { spdif.append("ac3") }
+      if Preference.bool(for: PK.spdifDTS){ spdif.append("dts") }
+      if Preference.bool(for: PK.spdifDTSHD) { spdif.append("dts-hd") }
+      chkErr(setOptionString(MPVOption.Audio.audioSpdif, spdif.joined(separator: ","), verboseIfDefault: true))
+    }
 
     setUserOption(PK.audioDevice, type: .string, forName: MPVOption.Audio.audioDevice, verboseIfDefault: true)
 
@@ -230,9 +255,11 @@ extension MPVController {
 
     // - Network / cache settings
 
-    setUserOption(PK.enableCache, type: .other, forName: MPVOption.Cache.cache,
-                  verboseIfDefault: true) { key in
-      return Preference.bool(for: key) ? nil : no
+    if !player.isPresentInUserOptions(MPVOption.Cache.cache) {
+      setUserOption(PK.enableCache, type: .other, forName: MPVOption.Cache.cache,
+                    verboseIfDefault: true) { key in
+        return Preference.bool(for: key) ? nil : no
+      }
     }
 
     setUserOption(PK.defaultCacheSize, type: .other, forName: MPVOption.Demuxer.demuxerMaxBytes,
@@ -247,49 +274,62 @@ extension MPVController {
       return ua.isEmpty ? nil : ua
     }
 
-    setUserOption(PK.transportRTSPThrough, type: .other, forName: MPVOption.Network.rtspTransport,
-                  verboseIfDefault: true) { key in
-      let v: Preference.RTSPTransportation = Preference.enum(for: .transportRTSPThrough)
-      return v.string
+    if !player.isPresentInUserOptions(MPVOption.Network.rtspTransport) {
+      setUserOption(PK.transportRTSPThrough, type: .other, forName: MPVOption.Network.rtspTransport,
+                    verboseIfDefault: true) { key in
+        let v: Preference.RTSPTransportation = Preference.enum(for: .transportRTSPThrough)
+        return v.string
+      }
     }
 
-    setUserOption(PK.ytdlEnabled, type: .other, forName: MPVOption.ProgramBehavior.ytdl,
-                  verboseIfDefault: true) { key in
-      let v = Preference.bool(for: .ytdlEnabled)
-      if JavascriptPlugin.hasYTDL {
-        return no
+    if !player.isPresentInUserOptions(MPVOption.ProgramBehavior.ytdl) {
+      setUserOption(PK.ytdlEnabled, type: .other, forName: MPVOption.ProgramBehavior.ytdl,
+                    verboseIfDefault: true) { key in
+        let v = Preference.bool(for: .ytdlEnabled)
+        if JavascriptPlugin.hasYTDL {
+          return no
+        }
+        return v ? yes : no
       }
-      return v ? yes : no
     }
-    setUserOption(PK.ytdlRawOptions, type: .string, forName: MPVOption.ProgramBehavior.ytdlRawOptions,
-                  verboseIfDefault: true)
+    if !player.isPresentInUserOptions(MPVOption.ProgramBehavior.ytdlRawOptions) {
+      setUserOption(PK.ytdlRawOptions, type: .string, forName: MPVOption.ProgramBehavior.ytdlRawOptions,
+                    verboseIfDefault: true)
+    }
+
     let propertiesToReset = [MPVOption.PlaybackControl.abLoopA, MPVOption.PlaybackControl.abLoopB]
     chkErr(setOptionString(MPVOption.ProgramBehavior.resetOnNextFile,
                            propertiesToReset.joined(separator: ","), level: .verbose))
 
-    setUserOption(PK.audioDriverEnableAVFoundation, type: .other, forName: MPVOption.Audio.ao,
-                  verboseIfDefault: true) { key in
-      Preference.bool(for: key) ? "avfoundation" : "coreaudio"
+    if !player.isPresentInUserOptions(MPVOption.Audio.ao) {
+      setUserOption(PK.audioDriverEnableAVFoundation, type: .other, forName: MPVOption.Audio.ao,
+                    verboseIfDefault: true) { key in
+        Preference.bool(for: key) ? "avfoundation" : "coreaudio"
+      }
     }
 
-    // Set user defined conf dir.
-    if Preference.bool(for: .enableAdvancedSettings),
-       Preference.bool(for: .useUserDefinedConfDir),
-       var userConfDir = Preference.string(for: .userDefinedConfDir) {
-      userConfDir = NSString(string: userConfDir).standardizingPath
-      setOptionString("config", yes)
-      let status = setOptionString(MPVOption.ProgramBehavior.configDir, userConfDir)
-      if status < 0 {
-        // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
-        DispatchQueue.main.async {
-          Utility.showAlert("extra_option.config_folder", arguments: [userConfDir], disableMenus: true)
+    if !player.isPresentInUserOptions(MPVOption.ProgramBehavior.noConfig),
+       !player.isPresentInUserOptions(MPVOption.ProgramBehavior.configDir) {
+      // Set user defined conf dir.
+      if Preference.bool(for: .enableAdvancedSettings),
+         Preference.bool(for: .useUserDefinedConfDir),
+         var userConfDir = Preference.string(for: .userDefinedConfDir) {
+        userConfDir = NSString(string: userConfDir).standardizingPath
+        setOptionString("config", yes)
+        let status = setOptionString(MPVOption.ProgramBehavior.configDir, userConfDir)
+        if status < 0 {
+          // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
+          DispatchQueue.main.async {
+            Utility.showAlert("extra_option.config_folder", arguments: [userConfDir], disableMenus: true)
+          }
         }
       }
     }
 
     // Set user-defined options.
+    let userOptions = player.userOptions
     if !userOptions.isEmpty {
-      log.debug("Setting \(userOptions.count) user configured mpv option values")
+      log.debug{"Setting \(userOptions.count) user configured mpv option values"}
       for op in userOptions {
         let status = setOptionString(op.0, op.1)
         if status < 0 {
@@ -304,9 +344,11 @@ extension MPVController {
 
     // Load external scripts
 
-    // Load keybindings. This is still required for mpv to handle media keys or apple remote.
-    let inputConfPath = ConfTableState.current.selectedConfFilePath
-    chkErr(setOptionalOptionString(MPVOption.Input.inputConf, inputConfPath, level: .verbose))
+    if !player.isPresentInUserOptions(MPVOption.Input.inputConf) {
+      // Load keybindings. This is still required for mpv to handle media keys or apple remote.
+      let inputConfPath = ConfTableState.current.selectedConfFilePath
+      chkErr(setOptionalOptionString(MPVOption.Input.inputConf, inputConfPath, level: .verbose))
+    }
 
     setMpvEventLogSubscription()
 
@@ -321,7 +363,7 @@ extension MPVController {
     // The option watch-later-options is not available until after the mpv instance is initialized.
     // Workaround for mpv issue #14417, watch-later-options missing secondary subtitle delay and sid.
     // Allow the user to override this workaround by setting this mpv option in advanced settings.
-    if !isPresent(MPVOption.WatchLater.watchLaterOptions, in: userOptions),
+    if !player.isPresentInUserOptions(MPVOption.WatchLater.watchLaterOptions),
        var watchLaterOptions = getString(MPVOption.WatchLater.watchLaterOptions) {
 
       // In mpv 0.38.0 the default value for the watch-later-options property contains the options
@@ -347,52 +389,48 @@ extension MPVController {
       }
     }
     if let watchLaterOptions = getString(MPVOption.WatchLater.watchLaterOptions) {
-      let sorted = watchLaterOptions.components(separatedBy: ",").sorted().joined(separator: ",")
-      log.debug("Options mpv is configured to save in watch later files: \(sorted)")
+      player.log.debug("Options mpv is configured to save in watch later files: \(watchLaterOptions)")
+      MPVController.watchLaterOptions = watchLaterOptions
+      DispatchQueue.main.async { [self] in
+        NotificationCenter.default.post(name: .watchLaterOptionsDidChange, object: player)
+      }
     }
 
     // Must be called after mpv_initialize which sets the default value for hwdec-codecs.
-    adjustCodecWhiteList(userOptions: userOptions)
+    adjustCodecWhiteList()
 
     // If --o is specified, encoding mode is being used. If so, skip setting --vo as it will lead to error
-    if !isPresent(MPVEncoding.o, in: userOptions) {
-      applyHardwareAccelerationWorkaround(userOptions: userOptions)
+    if !player.isPresentInUserOptions(MPVEncoding.o) {
+      applyHardwareAccelerationWorkaround()
 
       if player.videoView.useOpenGL {
-        log.verbose("Using legacy libmpv + OpenGEL rendering")
-        // Set options that can be override by user's config. mpv will log user config when initialize,
-        // so we put them here.
-        chkErr(setString(MPVOption.Video.vo, "libmpv", level: .debug))
+        if !player.isPresentInUserOptions(MPVOption.Video.vo) {
+          log.verbose("Using legacy libmpv + OpenGEL rendering")
+          // Set options that can be override by user's config. mpv will log user config when initialize,
+          // so we put them here.
+          chkErr(setString(MPVOption.Video.vo, "libmpv", level: .debug))
+        }
       } else {
         log.verbose("Using gpu-next + Vulkan rendering")
         let widPtr = UnsafeMutablePointer<Int64>.allocate(capacity: 1)
         widPtr.pointee = unsafeBitCast(player.window, to: Int64.self)
         mpv_set_option(mpv, MPVOption.Window.wid, MPV_FORMAT_INT64, widPtr)
 
-        chkErr(setString(MPVOption.Video.vo, "gpu-next", level: .debug))
-        chkErr(setString(MPVOption.GPURendererOptions.gpuApi, "vulkan", level: .debug))
-        chkErr(setString(MPVOption.Video.hwdec, "vulkan", level: .debug))
+        if !player.isPresentInUserOptions(MPVOption.Video.vo) {
+          chkErr(setString(MPVOption.Video.vo, "gpu-next", level: .debug))
+        }
+        if !player.isPresentInUserOptions(MPVOption.GPURendererOptions.gpuApi) {
+          chkErr(setString(MPVOption.GPURendererOptions.gpuApi, "vulkan", level: .debug))
+        }
+        if !player.isPresentInUserOptions(MPVOption.Video.hwdec) {
+          chkErr(setString(MPVOption.Video.hwdec, "vulkan", level: .debug))
+        }
       }
-      chkErr(setString(MPVOption.Window.keepaspect, no, level: .verbose))
-      chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))
-    }
-
-    // The option watch-later-options is not available until after the mpv instance is initialized.
-    // In mpv 0.34.1 the default value for the watch-later-options property contains the option
-    // sub-visibility, but the option secondary-sub-visibility is missing. This inconsistency is
-    // likely to confuse users, so insure the visibility setting for secondary subtitles is also
-    // saved in watch later files.
-    if let watchLaterOptions = getString(MPVOption.WatchLater.watchLaterOptions),
-       watchLaterOptions.contains(MPVOption.Subtitles.subVisibility),
-       !watchLaterOptions.contains(MPVOption.Subtitles.secondarySubVisibility) {
-      setString(MPVOption.WatchLater.watchLaterOptions, watchLaterOptions + "," +
-                MPVOption.Subtitles.secondarySubVisibility)
-    }
-    if let watchLaterOptions = getString(MPVOption.WatchLater.watchLaterOptions) {
-      player.log.debug("Options mpv is configured to save in watch later files: \(watchLaterOptions)")
-      MPVController.watchLaterOptions = watchLaterOptions
-      DispatchQueue.main.async { [self] in
-        NotificationCenter.default.post(name: .watchLaterOptionsDidChange, object: player)
+      if !player.isPresentInUserOptions(MPVOption.Window.keepaspect) {
+        chkErr(setString(MPVOption.Window.keepaspect, no, level: .verbose))
+      }
+      if !player.isPresentInUserOptions(MPVOption.Video.gpuHwdecInterop) {
+        chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))
       }
     }
 
@@ -417,9 +455,9 @@ extension MPVController {
   /// hardware decoding support on this Mac. This is not comprehensive. This method only covers the recent codecs whose support
   /// for hardware decoding varies among Macs. This merely reduces the dependence upon the FFmpeg fallback to software decoding
   /// feature in some cases.
-  private func adjustCodecWhiteList(userOptions: [(String, String)]) {
+  private func adjustCodecWhiteList() {
     // Allow the user to override this behavior.
-    guard !isPresent(MPVOption.Video.hwdecCodecs, in: userOptions) else {
+    guard !player.isPresentInUserOptions(MPVOption.Video.hwdecCodecs) else {
       log.debug("""
         Option \(MPVOption.Video.hwdecCodecs) has been set in advanced settings, \
         will not adjust white list
@@ -487,14 +525,14 @@ extension MPVController {
   ///
   /// The workaround removes VP9 from the value of the mpv [hwdec-codecs](https://mpv.io/manual/master/#options-hwdec-codecs) option,
   /// the list of codecs eligible for hardware acceleration.
-  private func applyHardwareAccelerationWorkaround(userOptions: [(String, String)]) {
+  private func applyHardwareAccelerationWorkaround() {
     // The problem is not reproducible under Apple Silicon.
     guard !runningOnAppleSilicon() else {
       log.debug("Running on Apple Silicon, not applying FFmpeg 9599 workaround")
       return
     }
     // Allow the user to override this behavior.
-    guard !isPresent(MPVOption.Video.hwdecCodecs, in: userOptions) else {
+    guard !player.isPresentInUserOptions(MPVOption.Video.hwdecCodecs) else {
       log.debug("""
         Option \(MPVOption.Video.hwdecCodecs) has been set in advanced settings, \
         not applying FFmpeg 9599 workaround
@@ -520,13 +558,6 @@ extension MPVController {
       log.debug("Disabling hardware acceleration for VP9 encoded videos to workaround FFmpeg 9599")
       chkErr(setOptionString(MPVOption.Video.hwdecCodecs, adjusted.joined(separator: ",")))
     }
-  }
-
-  /// Searches the list of user configured `mpv` options and returns `true` if the given option is present.
-  /// - Parameter option: Option to look for.
-  /// - Returns: `true` if the `mpv` option is found, `false` otherwise.
-  private func isPresent(_ option: String, in userOptions: [(String, String)]) -> Bool {
-    return userOptions.contains { $0.0 == option }
   }
 
 }
