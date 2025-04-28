@@ -22,25 +22,34 @@ class CommandLineState {
         // Second token in pair to ignore
         dropNextToken = false
         continue
-      } else if token == "-" {
-        // single '-'
+      }
+
+      // Check for IINA args
+      switch token {
+      case "-", "--stdin", "--mpv--":
         isStdin = true
-      } else if token == "-w" {
-        // Alternate form of --separate-windows
+      case "-w", "--separate-windows":
         openSeparateWindows = true
-      } else if token == "--" {
+      case "--music-mode":
+        enterMusicMode = true
+      case "--pip":
+        enterPIP = true
+      case "--":
         // ignore
         continue
-      } else if token.hasPrefix("--") {
-        parseDoubleDashedToken(token)
-      } else if token.hasPrefix("-") {
-        // MacOS runtime arg names are prefixed with a single dash & a space to separate name from value.
-        /// Example: `-NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints YES`
-        /// Ignore this token, and also the next one.
-        dropNextToken = true
-      } else {
-        // assume token with no starting dashes is a filename
-        filenames.append(token)
+      default:
+        if token.hasPrefix("--") {
+          // Assume all other double-dashed tokens are mpv args.
+          parseDoubleDashedToken(token)
+        } else if token.hasPrefix("-") {
+          // MacOS runtime arg names are prefixed with a single dash & a space to separate name from value.
+          /// Example: `-NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints YES`
+          /// Ignore this token, and also the next one.
+          dropNextToken = true
+        } else {
+          // assume token with no starting dashes is a filename
+          filenames.append(token)
+        }
       }
     }
 
@@ -51,48 +60,24 @@ class CommandLineState {
     }
   }
 
+  // mpv args
   private func parseDoubleDashedToken(_ token: String) {
     let splitted = token.dropFirst(2).split(separator: "=", maxSplits: 1)
-    let name = String(splitted[0])
+    var name = String(splitted[0])
+
     if name.hasPrefix("mpv-") {
-      // mpv args
-      let strippedName = String(name.dropFirst(4))
-      if strippedName == "-" {
-        isStdin = true
-      } else if splitted.count <= 1 {
-        if strippedName.hasPrefix("no-") {
-          let optName = String(strippedName.dropFirst(3))
-          mpvArguments.append((optName, Constants.String.mpvNo))
-        } else {
-          mpvArguments.append((strippedName, Constants.String.mpvYes))
-        }
+      name = String(name.dropFirst(4))
+    }
+
+    if splitted.count <= 1 {
+      if name.hasPrefix("no-") {
+        let optName = String(name.dropFirst(3))
+        mpvArguments.append((optName, Constants.String.mpvNo))
       } else {
-        mpvArguments.append((strippedName, String(splitted[1])))
+        mpvArguments.append((name, Constants.String.mpvYes))
       }
     } else {
-      // Check for IINA args. If an arg is not recognized, assume it is an mpv arg.
-      // (The names here should match the "Usage" message in main.swift)
-      switch name {
-      case "stdin":
-        isStdin = true
-      case "separate-windows":
-        openSeparateWindows = true
-      case "music-mode":
-        enterMusicMode = true
-      case "pip":
-        enterPIP = true
-      default:
-        if splitted.count <= 1 {
-          if name.hasPrefix("no-") {
-            let optName = String(name.dropFirst(3))
-            mpvArguments.append((optName, Constants.String.mpvNo))
-          } else {
-            mpvArguments.append((name, Constants.String.mpvYes))
-          }
-        } else {
-          mpvArguments.append((name, String(splitted[1])))
-        }
-      }
+      mpvArguments.append((name, String(splitted[1])))
     }
   }
 
