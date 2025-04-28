@@ -1905,6 +1905,12 @@ extension NSControl {
 
 }
 
+extension NSSize {
+  func canFitInside(_ enclosingSize: NSSize) -> Bool {
+    width <= enclosingSize.width && height <= enclosingSize.height
+  }
+}
+
 extension NSView {
   var pwc: PlayerWindowController? {
     window?.windowController as? PlayerWindowController

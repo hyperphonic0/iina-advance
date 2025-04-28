@@ -161,6 +161,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var denyWindowResizePeriodStartTime = Date()
   var pendingResizeForScreenChange = false
 
+  var denyWindowScrollPeriodStartTime = Date()
+
   var isClosing: Bool {
     return player.state.isAtLeast(.stopping)
   }
@@ -1255,28 +1257,31 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // Note: this gets triggered by many unnecessary situations, e.g. several times each time full screen is toggled.
   func windowDidChangeScreen(_ notification: Notification) {
+    guard let window = window, let screen = window.screen else { return }
+    let displayId = screen.displayId
+    
+    if videoView.currentDisplay == displayId {
+      log.trace{"WindowDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged"}
+      return
+    }
+    log.verbose("WindowDidChangeScreen received: \(screen.displayId)")
     restartWindowResizeDenialPeriod()
     pendingResizeForScreenChange = true
 
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by debouncing
     screenChangedDebouncer.run { [self] in
       guard !isClosing else { return }
-      guard let window = window, let screen = window.screen else { return }
-      let displayId = screen.displayId
-      guard videoView.currentDisplay != displayId else {
-        log.trace{"WindowDidChangeScreen: no work needed; currentDisplayID \(displayId) is unchanged"}
+      if videoView.currentDisplay == displayId {
+        log.trace{"WindowDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged"}
         return
+      } else {
+        animationPipeline.submitInstantTask({ [self] in
+          log.verbose("WindowDidChangeScreen wnd=\(window.windowNumber): frame=\(window.frame) screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
+          applyThemeMaterial(window, screen)  // scaleFactor may have changed
+          videoView.refreshAllVideoDisplayState()
+          player.events.emit(.windowScreenChanged)
+        })
       }
-
-
-      animationPipeline.submitInstantTask({ [self] in
-        log.verbose("WindowDidChangeScreen wnd=\(window.windowNumber): screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
-        applyThemeMaterial(window, screen)  // scaleFactor may have changed
-        videoView.refreshAllVideoDisplayState()
-        player.events.emit(.windowScreenChanged)
-      })
-
-      // Legacy FS work below can be very slow. Try to avoid if possible
 
       let blackWindows = self.blackWindows
       if isFullScreen && Preference.bool(for: .blackOutMonitor) && blackWindows.compactMap({$0.screen?.displayId}).contains(displayId) {
@@ -1303,10 +1308,24 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           // Update screenID at least, so that window won't go back to other screen when exiting FS
           windowedModeGeo = windowedModeGeo.clone(screenID: screenID)
           player.saveState()
-        } else if currentLayout.mode == .windowedNormal {
+        } else if currentLayout.mode == .windowedNormal && windowedModeGeo.screenFit.shouldMoveWindowToKeepInContainer {
           // Update windowedModeGeo with new window position & screen (but preserve previous size)
-          let newWindowFrame = NSRect(origin: window.frame.origin, size: windowedModeGeo.windowFrame.size)
-          windowedModeGeo = windowedModeGeo.clone(windowFrame: newWindowFrame, screenID: screenID)
+          DispatchQueue.main.async { [self] in
+            let oldWindowFrame = windowedModeGeo.windowFrame
+            let newWindowFrame = NSRect(origin: window.frame.origin, size: oldWindowFrame.size)
+            if let screenFrame = NSScreen.forScreenID(screenID)?.visibleFrame {
+              // If user is dragging with mouse, it feels more jarring to change the window frame, so try to avoid that.
+              // So if not using the mouse, always move & resize (if configured for shouldMoveWindowToKeepInContainer, as checked above).
+              // If using the mouse, only move & resize if the window is too large to fit the screen. (This is probably the best policy
+              // - as of MacOS Sequoia 15.4.1, the window manager gets very anxious when the window is large and snaps it to the
+              // top of the screen after every move, which results an unpleasant UX).
+              if !isLeftMouseButtonDown || !oldWindowFrame.size.canFitInside(screenFrame.size) {
+                windowedModeGeo = windowedModeGeo.clone(windowFrame: newWindowFrame, screenID: screenID).refitted()
+                log.verbose{"WindowDidChangeScreen: updating windowFrame to fit screen: \(oldWindowFrame) → \(newWindowFrame)"}
+                player.window.setFrameImmediately(windowedModeGeo)
+              }
+            }
+          }
         }
       })
     }
@@ -1360,17 +1379,21 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func windowDidMove(_ notification: Notification) {
+    // Do not allow scrolling if window recently moved! By default, multi-touch gestures can trigger scrolling
+    // either before or after the gesture if not all fingers are down/up at precisely the same time.
+    windowScrollWheel.delegate?.endScrollSessionIfExists()
+    restartWindowScrollDenialPeriod()
+
     guard !isAnimatingLayoutTransition, !isMagnifying, !sessionState.isRestoring else { return }
     guard let window = window else { return }
 
-    restartWindowResizeDenialPeriod()
-    // TODO: also deny scroll wheel for a period
     guard !isAnimating else { return }
 
     // We can get here if external calls from accessibility APIs change the window location.
     // Inserting a small delay seems to help to avoid race conditions as the window seems to need time to "settle"
     DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.windowDidMoveProcessingDelay) { [self] in
       animationPipeline.submitInstantTask({ [self] in
+
         let layout = currentLayout
         if layout.isLegacyFullScreen {
           // MacOS (as of 14.0 Sonoma) sometimes moves the window around when there are multiple screens

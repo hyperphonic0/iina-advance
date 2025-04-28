@@ -143,7 +143,12 @@ class VirtualScrollWheel {
   }
 
   // MARK: State API
-  
+
+  /// Optionally override this method to deny (or just delay) scroll session from starting based on custom logic
+  func scrollSessionShouldBegin(_ session: ScrollSession) -> Bool {
+    return true
+  }
+
   /// Called when scroll starts. Subclasses should override.
   ///
   /// - This is only called for scrolls originating from Magic Mouse or trackpad. Will never be called for non-Apple mice.
@@ -194,6 +199,11 @@ class VirtualScrollWheel {
       // nothing to do
       return
     }
+    endScrollSession()
+  }
+
+  func endScrollSessionIfExists() {
+    guard currentSession != nil else { return }
     endScrollSession()
   }
 
@@ -269,8 +279,10 @@ class VirtualScrollWheel {
         } else {
           let timeElapsedSinceIntentStart = Date().timeIntervalSince1970 - intentStartTime
           if timeElapsedSinceIntentStart >= Constants.TimeInterval.minQualifyingScrollWheelDuration {
-            startScrolling = true
-            log.verbose{"Time elapsed (\(timeElapsedSinceIntentStart.stringTrunc3f)) ≥ minQualifyingScrollWheelDuration (\(Constants.TimeInterval.minQualifyingScrollWheelDuration)): starting scroll session"}
+            if scrollSessionShouldBegin(currentSession) {
+              startScrolling = true
+              log.verbose{"Time elapsed (\(timeElapsedSinceIntentStart.stringTrunc3f)) ≥ minQualifyingScrollWheelDuration (\(Constants.TimeInterval.minQualifyingScrollWheelDuration)): starting scroll session"}
+            }
           }
         }
 

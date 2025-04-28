@@ -112,6 +112,33 @@ class PWinScrollWheel: VirtualScrollWheel {
     self.log = playerWindowController.player.log
   }
 
+  /// Return false to veto the start of a scroll session.
+  ///
+  /// More context: We are hobbled by AppKit's API which is far too sensitive and too likely to scroll,
+  /// so this is one of a few tweaks to try to tame it.
+  override func scrollSessionShouldBegin(_ session: ScrollSession) -> Bool {
+    if wc.isInWindowScrollDenialPeriod() {
+      log.verbose{"Scroll session cannot start: still in windowScroll denial period"}
+      return false
+    }
+
+    var deltaX: CGFloat = 0.0
+    var deltaY: CGFloat = 0.0
+    for event in session.eventsPending {
+      deltaX += event.scrollingDeltaX
+      deltaY += event.scrollingDeltaY
+    }
+
+    let distX = deltaX.magnitude
+    let distY = deltaY.magnitude
+    if distX <= 0.1 && distY <= 0.1 {
+      log.verbose{"Not enough movement to begin session. ΔX: \(distX), ΔY: \(distY)"}
+      return false
+    }
+
+    return true
+  }
+
   override func scrollSessionWillBegin(_ session: ScrollSession) {
     var scrollAction: Preference.ScrollAction? = nil
     // Determine scroll direction, then scroll action, based on cumulative scroll deltas.

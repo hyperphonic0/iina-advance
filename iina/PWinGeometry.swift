@@ -235,21 +235,19 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
              viewportMargins: MarginQuad? = nil,
              video: VideoGeometry? = nil) -> PWinGeometry {
 
-    var windowFrame = windowFrame ?? self.windowFrame
+    let windowFrame = windowFrame ?? self.windowFrame
     let screenFit = screenFit ?? self.screenFit
-    if let screenID, screenID != self.screenID, screenFit.shouldMoveWindowToKeepInContainer {
-      windowFrame = moveOriginToMatchScreen(screenID: screenID, screenFit: screenFit, windowFrame: windowFrame)
-    }
 
-    return PWinGeometry(windowFrame: windowFrame,
-                        screenID: screenID ?? self.screenID,
-                        screenFit: screenFit,
-                        mode: mode ?? self.mode,
-                        topMarginHeight: topMarginHeight ?? self.topMarginHeight,
-                        outsideBars: outsideBars ?? self.outsideBars,
-                        insideBars: insideBars ?? self.insideBars,
-                        viewportMargins: viewportMargins,
-                        video: video ?? self.video)
+    var newGeo = PWinGeometry(windowFrame: windowFrame,
+                              screenID: screenID ?? self.screenID,
+                              screenFit: screenFit,
+                              mode: mode ?? self.mode,
+                              topMarginHeight: topMarginHeight ?? self.topMarginHeight,
+                              outsideBars: outsideBars ?? self.outsideBars,
+                              insideBars: insideBars ?? self.insideBars,
+                              viewportMargins: viewportMargins,
+                              video: video ?? self.video)
+    return newGeo
   }
 
   // MARK: - Computed properties
@@ -644,29 +642,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   private func getContainerFrame(screenFit: ScreenFit? = nil) -> NSRect? {
     return PWinGeometry.getContainerFrame(forScreenID: screenID, screenFit: screenFit ?? self.screenFit)
-  }
-
-  /// Checks if origin of `windowFrame` does not belong to `screenID`. If it does not, adjusts its origin to move it inside that screen
-  private func moveOriginToMatchScreen(screenID: String, screenFit: ScreenFit, windowFrame: NSRect) -> NSRect {
-    guard let currentScreenID = NSScreen.getOwnerScreenID(forViewRect: windowFrame) else {
-      return windowFrame
-    }
-    if screenID == currentScreenID {
-      return windowFrame
-    }
-    guard let newScreenFrame = PWinGeometry.getContainerFrame(forScreenID: screenID, screenFit: screenFit) else {
-      return windowFrame
-    }
-    guard let currentScreenFrame = PWinGeometry.getContainerFrame(forScreenID: currentScreenID, screenFit: screenFit) else {
-      return windowFrame
-    }
-
-    let originOffset = NSPoint(x: newScreenFrame.origin.x - currentScreenFrame.origin.x, y: newScreenFrame.origin.y - currentScreenFrame.origin.y)
-    let newOrigin = NSPoint(x: windowFrame.origin.x + originOffset.x, y: windowFrame.origin.y + originOffset.y)
-    let newWindowFrame = NSRect(origin: newOrigin, size: windowFrame.size)
-
-    log.verbose("[geo] Adjusting window origin to put inside screenID \(screenID.quoted) (was: \(currentScreenID.quoted), screenFit: \(screenFit)) → \(newWindowFrame)")
-    return newWindowFrame
   }
 
   /// Adjusts the window origin for given `newWindowSize` such that the window's center does not move.

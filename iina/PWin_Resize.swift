@@ -34,6 +34,12 @@ extension PlayerWindowController {
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     guard !isInWindowResizeDenialPeriod() else {
       log.verbose{"[WinWillResize] Denying request=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)"}
+      pendingResizeForScreenChange = false  // should be safe to reset this now
+      return window.frame.size
+    }
+    if !window.inLiveResize && isLeftMouseButtonDown {
+      // Looks like user is moving the window, but not resizing it. Prevent the system from trying to resize it..
+      log.verbose{"[WinWillResize] Denying request=\(requestedSize): left mouseBtn down, but not resizing"}
       return window.frame.size
     }
 
@@ -49,14 +55,26 @@ extension PlayerWindowController {
 
   func restartWindowResizeDenialPeriod() {
     // Do not allow MacOS to change the window size
+    log.verbose{"Restarting window resize denial period"}
     denyWindowResizePeriodStartTime = Date()
   }
 
   func isInWindowResizeDenialPeriod() -> Bool {
-    guard let window else { return false }
-    guard !currentLayout.isFullScreen && !window.inLiveResize else { return false }
+    guard !currentLayout.isFullScreen else { return false }
     let denyWindowResize = Date() < denyWindowResizePeriodStartTime + Constants.TimeInterval.denyWindowResizeTimeout
     return denyWindowResize
+  }
+
+  func restartWindowScrollDenialPeriod() {
+    // Do not allow MacOS to change the window size
+    log.trace{"Restarting window scroll denial period"}
+    denyWindowResizePeriodStartTime = Date()
+  }
+
+  func isInWindowScrollDenialPeriod() -> Bool {
+    guard !currentLayout.isFullScreen else { return false }
+    let denyWindowScroll = Date() < denyWindowScrollPeriodStartTime + Constants.TimeInterval.denyWindowResizeTimeout
+    return denyWindowScroll
   }
 
   func resizeWindowSubviews(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {

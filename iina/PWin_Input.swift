@@ -313,7 +313,6 @@ extension PlayerWindowController {
     log.verbose{"PWin MouseDown @ \(event.locationInWindow) clickCount=\(event.clickCount) eventNum=\(event.eventNumber)"}
 
     wasKeyWindowAtMouseDown = lastKeyWindowStatus
-    restartWindowResizeDenialPeriod()
     mouseDownLocationInWindow = event.locationInWindow
 
     if let currentDragObject {
@@ -391,9 +390,13 @@ extension PlayerWindowController {
     // Always do these:
     hideCursorTimer.restart()
     mouseDownLocationInWindow = nil
-    // In case WindowDidChangeScreen already timed out, or another event put the window in a "metastable" state.
+
+    // If WindowDidChangeScreen during window drag, the resize event won't appear until after mouseUp, which can
+    // be an arbitrary amount of time after the screen change. So make sure to deny it now, with some fuzz depending on
+    // when the event gets processed.
+    // FIXME: there should be a way to search the queued events and deny the resize event proactively! Check Apple docs
     if pendingResizeForScreenChange {
-      restartWindowResizeDenialPeriod()
+      restartWindowResizeDenialPeriod() 
       pendingResizeForScreenChange = false
     }
 

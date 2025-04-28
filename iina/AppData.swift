@@ -235,7 +235,7 @@ struct Constants {
 
     static let musicModeChangeTrackTimeout = 1.0
     static let historyTableDelayBeforeLoadingMsgDisplay = 0.25
-    static let denyWindowResizeTimeout = 0.3
+    static let denyWindowResizeTimeout = 0.2
     static let musicModePopoverMinTimeout = 2.0
 
     // This should match what is in Settings > UI
