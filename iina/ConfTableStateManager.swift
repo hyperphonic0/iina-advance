@@ -34,20 +34,6 @@ class ConfTableStateManager: NSObject {
   // Should not be called until the init() methods of all major components have completed
   func startUp() {
     _ = loadSelectedConfBindingsIntoAppConfig()
-
-    InputConfFileCache.fileDQ.async {
-      let defaults = Constants.InputConf.defaults
-      AppInputConfig.log.debug("Loading \(defaults.count) builtin conf files into cache")
-      for (confName, filePath) in defaults {
-        self.fileCache.getOrLoadConfFile(at: filePath, isReadOnly: true, confName: confName)
-      }
-      
-      let currentState = ConfTableState.current
-      AppInputConfig.log.debug("Loading \(currentState.userConfDict.count) user conf files into cache")
-      for (confName, filePath) in currentState.userConfDict {
-        self.fileCache.getOrLoadConfFile(at: filePath, isReadOnly: false, confName: confName)
-      }
-    }
   }
 
   deinit {
@@ -135,12 +121,13 @@ class ConfTableStateManager: NSObject {
   func appendBindingsToUserConfFile(_ mappingsToAppend: [KeyMapping], targetConfName: String) {
     guard targetConfName != ConfTableState.current.selectedConfName else {
       // Should use BindingTableState instead
-      AppInputConfig.log.verbose("appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\(targetConfName.quoted))!")
+      AppInputConfig.log.verbose{"appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\(targetConfName.quoted))! Ignoring."}
       return
     }
 
-    guard let inputConfFile = fileCache.getConfFile(confName: targetConfName), !inputConfFile.failedToLoad else {
-      AppInputConfig.log.error("Cannot append to conf: \(targetConfName.quoted): file was not loaded properly!")
+    let inputConfFile = fileCache.getOrLoadConfFile(confName: targetConfName)
+    guard !inputConfFile.failedToLoad else {
+      AppInputConfig.log.error{"Cannot append to conf: \(targetConfName.quoted): file was not loaded properly!"}
       return
     }
 
@@ -347,11 +334,9 @@ class ConfTableStateManager: NSObject {
   func loadConfFile(withConfName confName: String? = nil) -> InputConfFile {
     let currentState = ConfTableState.current
     let targetConfName = confName ?? currentState.selectedConfName
-    let isReadOnly = ConfTableState.isBuiltinConf(targetConfName)
-    let confFilePath = currentState.getFilePath(forConfName: targetConfName)
 
     AppInputConfig.log.debug{"Loading InputConf file for \(targetConfName.pii.quoted)"}
-    return fileCache.getOrLoadConfFile(at: confFilePath, isReadOnly: isReadOnly, confName: targetConfName)
+    return fileCache.getOrLoadConfFile(confName: targetConfName)
   }
 
   // Conf File load. Triggered any time `selectedConfName` is changed (ignoring case).

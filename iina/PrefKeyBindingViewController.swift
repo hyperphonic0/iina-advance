@@ -96,6 +96,22 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   override func viewDidLoad() {
     super.viewDidLoad()
 
+    // Load files into cache all at once; it should be fast enough (and doing so on an as-needed basis was not originally tested...)
+    // But do not load them unless the user navigates to the Key Bindings preference pane.
+    InputConfFileCache.fileDQ.async {
+      let defaults = Constants.InputConf.defaults
+      AppInputConfig.log.debug{"Loading \(defaults.count) builtin conf files into cache"}
+      for confName in defaults.keys {
+        InputConfFile.cache.getOrLoadConfFile(confName: confName)
+      }
+
+      let currentState = ConfTableState.current
+      AppInputConfig.log.debug{"Loading \(currentState.userConfDict.count) user conf files into cache"}
+      for confName in currentState.userConfDict.keys {
+        InputConfFile.cache.getOrLoadConfFile(confName: confName)
+      }
+    }
+
     let bindingTableController = BindingTableViewController(bindingTableView, selectionDidChangeHandler: updateTableButtonVisibilities)
     self.bindingTableController = bindingTableController
     confTableController = ConfTableViewController(confTableView, bindingTableController, selectionDidChangeHandler: updateTableButtonVisibilities)

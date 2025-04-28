@@ -221,8 +221,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Call this *before* registering for url events, to guarantee that menu is init'd
     confTableStateManager.startUp()
 
-    HistoryController.shared.start()
-
     // register for url event
     NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(self.handleURLEvent(event:withReplyEvent:)), forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
 
@@ -233,6 +231,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let cmdLineArgs = ProcessInfo.processInfo.arguments.dropFirst()
     Logger.log.debug{"All app arguments: \(cmdLineArgs)"}
     startupHandler.parseCommandLine(cmdLineArgs)
+
+    // Do this *after* parseCommandLine(), because it can disable history
+    HistoryController.shared.start()
   }
 
   private func registerUserDefaultValues() {

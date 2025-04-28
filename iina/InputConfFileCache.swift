@@ -33,13 +33,15 @@ class InputConfFileCache {
   // When support is added, it must be done in a way that ties into the `UndoManager` (maybe create an undoable action
   // similar to how conf file imports are currently done),
   @discardableResult
-  func getOrLoadConfFile(at filePath: String, isReadOnly: Bool = true, confName: String) -> InputConfFile {
+  func getOrLoadConfFile(confName: String) -> InputConfFile {
     if let cachedConfFile = self.getConfFile(confName: confName) {
       Logger.log.verbose{"Found InputConf \(confName.pii.quoted) in memory cache"}
       return cachedConfFile
     }
-
-    let confFile = loadFile(at: filePath, isReadOnly: isReadOnly, confName: confName)
+    var defaultConfFile = Constants.InputConf.defaults[confName]
+    let isReadOnly = defaultConfFile != nil
+    let confFilePath = defaultConfFile ?? ConfTableState.current.getFilePath(forConfName: confName)
+    let confFile = loadFile(at: confFilePath, isReadOnly: isReadOnly, confName: confName)
 
     // read-through
     storageLock.withLock {

@@ -50,7 +50,6 @@ class BindingTableStateManager: NSObject {
   }
 
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-
     DispatchQueue.main.async {
       switch keyPath {
       case Preference.Key.showKeyBindingsFromAllSources.rawValue:
