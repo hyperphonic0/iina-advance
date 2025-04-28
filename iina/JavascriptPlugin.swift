@@ -39,6 +39,8 @@ class JavascriptPlugin: NSObject {
     case cannotLoadPlugin
   }
 
+  static var iinaPluginSystemEnabled: Bool = Preference.bool(for: .iinaEnablePluginSystem)
+
   static var hasYTDL: Bool {
     return plugins.contains { $0.identifier == "io.iina.ytdl" }
   }
@@ -109,7 +111,7 @@ class JavascriptPlugin: NSObject {
   }
 
   static private func loadPlugins() -> [JavascriptPlugin] {
-    guard Preference.bool(for: .iinaEnablePluginSystem) else { return [] }
+    guard JavascriptPlugin.iinaPluginSystemEnabled else { return [] }
 
     Logger.log("Reading plugins from directory \"\(Utility.pluginsURL)\"")
     guard let contents = try?
@@ -159,6 +161,8 @@ class JavascriptPlugin: NSObject {
   }
 
   static func loadGlobalInstances() {
+    guard iinaPluginSystemEnabled else { return }
+
     Logger.log("Loading all plugins")
     plugins.forEach { plugin in
       guard plugin.enabled else { return }

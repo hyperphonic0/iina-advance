@@ -51,7 +51,7 @@ struct Sidebar {
       if Preference.enum(for: .playlistTabGroupLocation) == locationID {
         tabGroups.insert(.playlist)
       }
-      if Preference.bool(for: .iinaEnablePluginSystem), Preference.enum(for: .pluginsTabGroupLocation) == locationID {
+      if JavascriptPlugin.iinaPluginSystemEnabled, Preference.enum(for: .pluginsTabGroupLocation) == locationID {
         tabGroups.insert(.plugins)
       }
       return tabGroups

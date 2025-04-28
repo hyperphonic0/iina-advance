@@ -318,6 +318,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
   // Video is about to start playing in a new window, but welcome window needs to be closed first.
   // Need to add special logic around `close()` so that it doesn't think the last window is being closed, and decide to quit.
   func closePriorToOpeningPlayerWindow() {
+    guard let window, window.isOpen else { return }
     Logger.log.verbose{"Welcome window closing prior to opening player window"}
     self.close()
   }

@@ -12,7 +12,10 @@ class HistoryController {
 
   static let shared = HistoryController(plistFileURL: Utility.playbackHistoryURL)
 
-  /// Certain command-line arguments can result in history being disabled for the launch
+  /// Master kill switch: if false, all history operations become no-ops.
+  /// It is preferable to disable history load/save when certain command-line arguments are used,
+  /// such as encoding mode, both because they should not be counted as a history entry and to improve performance
+  /// by skipping unnecessary operations.
   var historyEnabled: Bool = true
 
   let plistURL: URL
@@ -81,6 +84,10 @@ class HistoryController {
 
   private func watchLaterDirDidChange() {
     postNotification(Notification(name: .watchLaterDirDidChange))
+  }
+
+  func disableHistoryForThisLaunch() {
+    historyEnabled = false
   }
 
   func start() {

@@ -383,6 +383,8 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
   }
 
   @IBAction func promptToInstallFromGitHub(_ sender: Any) {
+    guard JavascriptPlugin.iinaPluginSystemEnabled else { return }
+
     defaultPluginsData = defaultPlugins.map { d in
       let installed = JavascriptPlugin.plugins.contains { $0.identifier == d["id"] }
       return [
@@ -398,6 +400,8 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
   }
 
   @IBAction func installPluginFromGitHub(_ sender: Any) {
+    guard JavascriptPlugin.iinaPluginSystemEnabled else { return }
+
     let source = self.newPluginSourceTextField.stringValue
 
     // Validate URL before starting install, so typos don't close the window
@@ -432,6 +436,8 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
   }
 
   @IBAction func installPluginFromLocalPackage(_ sender: Any) {
+    guard JavascriptPlugin.iinaPluginSystemEnabled else { return }
+
     Utility.quickOpenPanel(title: "Install from local package",
                            chooseDir: false, sheetWindow: view.window, allowedFileTypes: ["iinaplgz"]) { url in
       self.queue.async {

@@ -990,7 +990,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let newLayoutSpec = currentLayout.spec.clone(leadingSidebar: currentLayout.leadingSidebar.clone(visibility: .hide),
                                                    trailingSidebar: currentLayout.trailingSidebar.clone(visibility: .hide),
                                                    controlBarGeo: newOSCGeo)
-      let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutSpec, totalStartingDuration: 0, totalEndingDuration: 0)
+      let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutSpec,
+                                                  totalStartingDuration: 0, totalEndingDuration: 0)
 
       // Do all the layout instantly. Need to run each in its own transaction however, to avoid intractable constraint errors
       var cleanupTasks = resetTransition.tasks.map { IINAAnimation.Task.instantTask($0.runFunc) }

@@ -63,6 +63,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: State
 
+  /// If false, app was launched in a special mode which does not allow windows to be shown.
+  var uiIsEnabled = true
+
   var startupHandler = StartupHandler()
   private var shutdownHandler = ShutdownHandler()
   private var co: CocoaObserver!
@@ -417,7 +420,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return false
     }
 
+    // Window hidden for PiP? Need special check becuase it will not be in windowsOpen set
     if let activePlayer = PlayerManager.shared.activePlayer, activePlayer.windowController.isWindowHidden {
+      Logger.log.verbose{"App will not terminate: found active but hidden player (\(activePlayer.label))"}
+      return false
+    }
+
+    guard uiIsEnabled else {
+      Logger.log.verbose{"App will not terminate for window close: app-wide UI is disabled"}
       return false
     }
 
@@ -434,6 +444,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   private func doActionWhenLastWindowWillClose() {
     assert(DispatchQueue.isExecutingIn(.main))
+    guard uiIsEnabled else {
+      Logger.log.verbose{"Aborting action when last window closed: app-wide UI is disabled"}
+      return
+    }
     guard !isTerminating else { return }
     guard let noOpenWindowAction = Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) else { return }
     Logger.log.verbose{"ActionWhenNoOpenWindow: \(noOpenWindowAction). LastClosedWindowName: \(lastClosedWindowName.quoted)"}

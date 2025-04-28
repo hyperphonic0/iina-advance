@@ -411,6 +411,10 @@ class PlayerCore: NSObject {
   }
 
   func loadPlugins() {
+    guard JavascriptPlugin.iinaPluginSystemEnabled else {
+      log.verbose{"Plugin system disabled; skipping load of plugins"}
+      return
+    }
     log.verbose{"Loading plugins"}
     pluginMap.removeAll()
     plugins = JavascriptPlugin.plugins.compactMap { plugin in
@@ -424,6 +428,8 @@ class PlayerCore: NSObject {
   }
 
   func reloadPlugin(_ plugin: JavascriptPlugin, forced: Bool = false) {
+    guard JavascriptPlugin.iinaPluginSystemEnabled else { return }
+
     let id = plugin.identifier
     log.verbose{"Reloading plugin: \(id.quoted)"}
     if let _ = pluginMap[id] {
@@ -559,7 +565,6 @@ class PlayerCore: NSObject {
       info.currentPlayback = playback
       log.debug{"Opening PlayerWindow for \(path.pii.quoted), playerState=\(state), sessionState=\(windowController.sessionState)"}
 
-      // Reset state flags
       if state == .stopping || state == .idle {
         state = .started
       }

@@ -307,6 +307,7 @@
 		D1049C872872C17F003D47C1 /* BindingTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C862872C17F003D47C1 /* BindingTableViewController.swift */; };
 		D1049C892872CAD6003D47C1 /* ConfTableState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* ConfTableState.swift */; };
 		D1108E5B2DBC7B1900344C7C /* MPVEncoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1108E5A2DBC7B1900344C7C /* MPVEncoding.swift */; };
+		D1108E5E2DBF566300344C7C /* InfoDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C1BA39291CA76700C1208A /* InfoDictionary.swift */; };
 		D114C7AE2BEDEE150002D077 /* PrefDataViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D114C7AD2BEDEE150002D077 /* PrefDataViewController.swift */; };
 		D114C7B12BEDEF3E0002D077 /* PrefDataViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D114C7AF2BEDEF3E0002D077 /* PrefDataViewController.xib */; };
 		D11AB83628EEE72A00673A90 /* EditableTableViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */; };
@@ -3646,6 +3647,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D1108E5E2DBF566300344C7C /* InfoDictionary.swift in Sources */,
 				E3DE8DCD1FD8166A0021921C /* main.swift in Sources */,
 				E3CB75BB1FD998F5004DB10A /* Regex.swift in Sources */,
 			);
