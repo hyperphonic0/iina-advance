@@ -119,7 +119,12 @@ class Logger: NSObject {
   static private(set) var enabled: Bool = false
 
   /// Updates global enablement flag
-  static func updateEnablement() {
+  static func updateEnablement(uiIsEnabled: Bool) {
+    if !uiIsEnabled && !Preference.bool(for: .logNonInteractiveLaunches) {
+      Logger.log("Logging disabled for non-interactive launch")
+      enabled = false
+      return
+    }
     let newValue = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableLogging)
     if enabled && !newValue {
       Logger.log("Logging disabled")
@@ -150,8 +155,8 @@ class Logger: NSObject {
     return formatter
   }()
 
-  static func initLogging() {
-    updateEnablement()
+  static func initLogging(uiIsEnabled: Bool) {
+    updateEnablement(uiIsEnabled: uiIsEnabled)
 
     // Mask library URL in subsequent logging
     _ = getOrCreatePII(for: libraryDirectory.path)

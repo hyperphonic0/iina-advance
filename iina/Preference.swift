@@ -477,6 +477,10 @@ struct Preference {
     /// This is frequent and verbose and can clutter up even trace-level logs, which is why this setting is false by default.
     static let logPlayerSave = Key("logPlayerSave")
 
+    /// Normally, all logging is disabled if using options `--o` or `--macos-app-activation-policy=accessory` (both of which
+    /// are used by `thumbfast.lua`). Change this to true to log these launches like any other.
+    static let logNonInteractiveLaunches = Key("logNonInteractiveLaunches")
+
     /* Saved value of checkbox in Key Bindings settings UI */
     static let displayKeyBindingRawValues = Key("displayKeyBindingRawValues")
 
@@ -1474,6 +1478,7 @@ struct Preference {
     .enablePiiMaskingInLog: true,
     .logKeyBindingsRebuild: false,
     .logPlayerSave: false,
+    .logNonInteractiveLaunches: false,
     .displayKeyBindingRawValues: false,
     .showKeyBindingsFromAllSources: true,
     .useInlineEditorInsteadOfDialogForNewInputConf: true,

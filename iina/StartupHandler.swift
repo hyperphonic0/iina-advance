@@ -55,7 +55,7 @@ class StartupHandler {
 
   // Command Line
 
-  private var commandLineState: CommandLineState? = nil
+  var commandLineState: CommandLineState? = nil
 
   var isCommandLine: Bool {
     commandLineState != nil
@@ -580,7 +580,6 @@ class StartupHandler {
 
   func parseCommandLine(_ cmdLineArgs: ArraySlice<String>) {
     if cmdLineArgs.contains(where: { $0 == "--help" || $0 == "-h" }) {
-      Logger.Subsystem.restore.debug{"Help requested from command line: displaying & exiting"}
       print(InfoDictionary.usageText)
       exit(0)
     }
@@ -590,38 +589,40 @@ class StartupHandler {
       // Replicate logic from main.swift in case this launch did not originate there
       if commandLineState.enterMusicMode && commandLineState.enterPIP {
         // Music mode does not support Picture-in-Picture. Combining these options is not permitted.
-        Logger.Subsystem.restore.debug{"Cannot specify both --music-mode and --pip; will exit"}
         print("Cannot specify both --music-mode and --pip")
         // Command line usage error.
         exit(EX_USAGE)
       }
 
-      if commandLineState.mpvArguments.contains(where: { $0.0 == MPVEncoding.o }) {
-        Logger.Subsystem.restore.debug{"Found --o arg in cmd line. Disabling save/restore, history, plugins, UI for this launch."}
-        UIState.shared.disableSaveAndRestoreUntilNextLaunch()
-        HistoryController.shared.disableHistoryForThisLaunch()
-        JavascriptPlugin.iinaPluginSystemEnabled = false
-        AppDelegate.shared.uiIsEnabled = false
-      }
+      var isInteractiveLaunch = true
 
-      if let option = commandLineState.mpvArguments.first(where: { $0.0 == MPVOption.GPURendererOptions.macosAppActivationPolicy}), !option.1.isEmpty {
-        switch option.1 {
+      let activationPolicy = commandLineState.mpvArguments.last(where: { argPair in
+        argPair.0 == MPVOption.GPURendererOptions.macosAppActivationPolicy && !argPair.1.isEmpty
+      })
+      if let activationPolicy {
+        switch activationPolicy.1 {
         case "regular":
-          Logger.Subsystem.restore.debug{"Setting NSApp activation policy to .regular"}
           NSApp.setActivationPolicy(.regular)
         case "accessory":
-          Logger.Subsystem.restore.debug{"Setting NSApp activation policy to .accessory & disabling save/restore, history, plugins, UI for this launch"}
           NSApp.setActivationPolicy(.accessory)
-          UIState.shared.disableSaveAndRestoreUntilNextLaunch()
-          HistoryController.shared.disableHistoryForThisLaunch()
-          JavascriptPlugin.iinaPluginSystemEnabled = false
-          AppDelegate.shared.uiIsEnabled = false
+          isInteractiveLaunch = false
         case "prohibited":
-          Logger.Subsystem.restore.debug{"Setting NSApp activation policy to .prohibited"}
           NSApp.setActivationPolicy(.prohibited)
         default:
           break
         }
+      }
+
+      if commandLineState.mpvArguments.contains(where: { $0.0 == MPVEncoding.o }) {
+        isInteractiveLaunch = false
+      }
+
+      if !isInteractiveLaunch {
+        // Disable save/restore, history, plugins, UI for this launch
+        UIState.shared.disableSaveAndRestoreUntilNextLaunch()
+        HistoryController.shared.disableHistoryForThisLaunch()
+        JavascriptPlugin.iinaPluginSystemEnabled = false
+        AppDelegate.shared.uiIsEnabled = false
       }
     }
   }

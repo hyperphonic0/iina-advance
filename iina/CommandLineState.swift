@@ -19,7 +19,7 @@ class CommandLineState {
     var dropNextArg = false
     for arg in arguments {
       if dropNextArg {
-        Logger.log.verbose{"Ignoring arg: \(arg)"}
+//        Logger.log.verbose{"Ignoring arg: \(arg)"}
         continue
       } else if arg == "-" {
         // single '-'
@@ -35,16 +35,13 @@ class CommandLineState {
       } else if arg.hasPrefix("-") {
         // MacOS runtime arg names are prefixed with a single dash & a space to separate name from value.
         /// Example: `-NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints YES`
-        Logger.log.verbose{"Ignoring arg: \(arg)"}
+//        Logger.log.verbose{"Ignoring arg: \(arg)"}
         dropNextArg = true
       } else {
         // assume arg with no starting dashes is a filename
         filenames.append(arg)
       }
     }
-
-    Logger.log.debug{"Parsed IINA CLI args: stdin=\(isStdin.yn) separateWindows=\(openSeparateWindows.yn), musicMode=\(enterMusicMode.yn) pip=\(enterPIP.yn). Filenames from arguments: \(filenames.map{$0.pii})"}
-    Logger.log.debug{"Derived mpv properties from args: \(mpvArguments)"}
 
     guard !filenames.isEmpty || isStdin else {
       print("This binary is not intended for being used as a command line tool. Please use the bundled iina-cli.")
@@ -60,7 +57,7 @@ class CommandLineState {
       // mpv args
       let strippedName = String(name.dropFirst(4))
       if strippedName == "-" {
-        Logger.log.debug{"Found single-dash arg; setting isStdin=YES"}
+//        Logger.log.debug{"Found single-dash arg; setting isStdin=YES"}
         isStdin = true
       } else if splitted.count <= 1 {
         if strippedName.hasPrefix("no-") {

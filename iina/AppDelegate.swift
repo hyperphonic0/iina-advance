@@ -86,7 +86,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     switch key {
     case PK.enableAdvancedSettings, PK.enableLogging, PK.logLevel:
-      Logger.updateEnablement()
+      Logger.updateEnablement(uiIsEnabled: uiIsEnabled)
       // depends on advanced being enabled:
       menuController.refreshCmdNStatus()
       menuController.refreshBuiltInMenuItemBindings()
@@ -149,10 +149,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Must setup preferences before logging so log level is set correctly.
     registerUserDefaultValues()
 
-    Logger.initLogging()
+    // Parse & process command line arguments, if any.
+    // Do this *before* loading history or even initLogging, because both can be disabled by CLI args.
+    let cmdLineArgs = ProcessInfo.processInfo.arguments.dropFirst()
+    startupHandler.parseCommandLine(cmdLineArgs)  // may update `uiIsEnabled`
+
+    Logger.initLogging(uiIsEnabled: uiIsEnabled)
     AppDetailsLogging.shared.logAllAppDetails()
 
     Logger.log.debug{"App will launch. LaunchID: \(UIState.shared.currentLaunchID)"}
+
+    Logger.log.debug{"All app arguments: \(cmdLineArgs)"}
+    if let cli = startupHandler.commandLineState {
+      Logger.log.debug{"Parsed IINA CLI args: stdin=\(cli.isStdin.yn) separateWindows=\(cli.openSeparateWindows.yn), musicMode=\(cli.enterMusicMode.yn) pip=\(cli.enterPIP.yn). Filenames from arguments: \(cli.filenames.map{$0.pii})"}
+      Logger.log.debug{"Derived mpv properties from args: \(cli.mpvArguments)"}
+    }
 
     // Start asynchronously gathering and caching information about the hardware decoding
     // capabilities of this Mac.
@@ -221,19 +232,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Call this *before* registering for url events, to guarantee that menu is init'd
     confTableStateManager.startUp()
 
+    HistoryController.shared.start()
+
     // register for url event
     NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(self.handleURLEvent(event:withReplyEvent:)), forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
 
     // Hide Window > "Enter Full Screen" menu item, because this is already present in the Video menu
     UserDefaults.standard.set(false, forKey: "NSFullScreenMenuItemEverywhere")
-
-    // handle command line arguments
-    let cmdLineArgs = ProcessInfo.processInfo.arguments.dropFirst()
-    Logger.log.debug{"All app arguments: \(cmdLineArgs)"}
-    startupHandler.parseCommandLine(cmdLineArgs)
-
-    // Do this *after* parseCommandLine(), because it can disable history
-    HistoryController.shared.start()
   }
 
   private func registerUserDefaultValues() {
