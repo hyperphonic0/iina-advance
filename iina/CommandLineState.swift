@@ -13,33 +13,34 @@ class CommandLineState {
   var mpvArguments: [(String, String)] = []
   var filenames: [String] = []
 
-  init?(_ arguments: ArraySlice<String>) {
-    guard !arguments.isEmpty else { return nil }
+  init?(_ tokens: ArraySlice<String>) {
+    guard !tokens.isEmpty else { return nil }
 
-    var dropNextArg = false
-    for arg in arguments {
-      if dropNextArg {
-//        Logger.log.verbose{"Ignoring arg: \(arg)"}
+    var dropNextToken = false
+    for token in tokens {
+      if dropNextToken {
+        // Second token in pair to ignore
+        dropNextToken = false
         continue
-      } else if arg == "-" {
+      } else if token == "-" {
         // single '-'
         isStdin = true
-      } else if arg == "-w" {
+      } else if token == "-w" {
         // Alternate form of --separate-windows
         openSeparateWindows = true
-      } else if arg == "--" {
+      } else if token == "--" {
         // ignore
         continue
-      } else if arg.hasPrefix("--") {
-        parseDoubleDashedArg(arg)
-      } else if arg.hasPrefix("-") {
+      } else if token.hasPrefix("--") {
+        parseDoubleDashedToken(token)
+      } else if token.hasPrefix("-") {
         // MacOS runtime arg names are prefixed with a single dash & a space to separate name from value.
         /// Example: `-NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints YES`
-//        Logger.log.verbose{"Ignoring arg: \(arg)"}
-        dropNextArg = true
+        /// Ignore this token, and also the next one.
+        dropNextToken = true
       } else {
-        // assume arg with no starting dashes is a filename
-        filenames.append(arg)
+        // assume token with no starting dashes is a filename
+        filenames.append(token)
       }
     }
 
@@ -50,14 +51,13 @@ class CommandLineState {
     }
   }
 
-  private func parseDoubleDashedArg(_ arg: String) {
-    let splitted = arg.dropFirst(2).split(separator: "=", maxSplits: 1)
+  private func parseDoubleDashedToken(_ token: String) {
+    let splitted = token.dropFirst(2).split(separator: "=", maxSplits: 1)
     let name = String(splitted[0])
     if name.hasPrefix("mpv-") {
       // mpv args
       let strippedName = String(name.dropFirst(4))
       if strippedName == "-" {
-//        Logger.log.debug{"Found single-dash arg; setting isStdin=YES"}
         isStdin = true
       } else if splitted.count <= 1 {
         if strippedName.hasPrefix("no-") {
@@ -94,14 +94,6 @@ class CommandLineState {
         }
       }
     }
-  }
-
-  private func parseSingleDashedArg(_ arg: String) {
-    if arg == "-" {
-      // single '-'
-      isStdin = true
-    }
-    // else ignore all single-dashed args
   }
 
   func startFromCommandLine() {
