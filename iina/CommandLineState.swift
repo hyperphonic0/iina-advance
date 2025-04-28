@@ -52,12 +52,6 @@ class CommandLineState {
         }
       }
     }
-
-    guard !filenames.isEmpty || isStdin else {
-      print("This binary is not intended for being used as a command line tool. Please use the bundled iina-cli.")
-      print("Please ignore this message if you are running in a debug environment.")
-      return nil
-    }
   }
 
   // mpv args
