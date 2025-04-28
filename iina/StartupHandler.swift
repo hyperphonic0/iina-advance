@@ -580,7 +580,7 @@ class StartupHandler {
 
   func parseCommandLine(_ cmdLineArgs: ArraySlice<String>) {
     if cmdLineArgs.contains(where: { $0 == "--help" || $0 == "-h" }) {
-      print(InfoDictionary.usageText)
+      print(InfoDictionary.iinaBinaryUsageText)
       exit(0)
     }
 

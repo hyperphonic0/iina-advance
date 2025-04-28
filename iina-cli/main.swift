@@ -8,18 +8,16 @@
 
 import Foundation
 
-let executableName = "IINA Advance"
-
 // This is the path to this executable (iina-cli)
 guard let execURL = Bundle.main.executableURL?.resolvingSymlinksInPath() else {
   print("Cannot get executable path.")
   exit(1)
 }
 
-let iinaURL = execURL.deletingLastPathComponent().appendingPathComponent(executableName)
+let iinaURL = execURL.deletingLastPathComponent().appendingPathComponent(InfoDictionary.executableName)
 
 guard FileManager.default.fileExists(atPath: iinaURL.path) else {
-  print("Cannot find \(executableName) binary. This command line tool only works in \(executableName).app bundle.")
+  print("Cannot find \(InfoDictionary.executableName) binary. This command line tool only works in \(InfoDictionary.executableName).app bundle.")
   exit(1)
 }
 
@@ -28,7 +26,7 @@ guard FileManager.default.fileExists(atPath: iinaURL.path) else {
 var userArgs = Array(ProcessInfo.processInfo.arguments.dropFirst())
 
 if userArgs.contains(where: { $0 == "--help" || $0 == "-h" }) {
-  print(InfoDictionary.usageText)
+  print(InfoDictionary.iinaCLIUsageText)
   exit(0)
 }
 

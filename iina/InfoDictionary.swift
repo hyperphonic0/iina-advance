@@ -13,9 +13,16 @@ import Foundation
 /// This class exposes some of the entries contained in `Bundle.main.infoDictionary` as properties to provide for easier access
 /// to information contained in the dictionary from other classes.
 struct InfoDictionary {
+  static let executableName = "IINA Advance"
   /// The usage message to be displayed for help on the command line.
-  static let usageText = """
-    Usage: iina-cli [arguments] [files] [-- mpv_option [...]]
+  static var iinaBinaryUsageText: String { buildUsageText(iinaCLI: false) }
+  static var iinaCLIUsageText: String { buildUsageText(iinaCLI: true) }
+
+  private static func buildUsageText(iinaCLI: Bool) -> String {
+    let execName = iinaCLI ? "iina-cli" : executableName
+    var text =
+    """
+    Usage: \(execName) [arguments] [files] [-- mpv_option [...]]
     
     Arguments:
     --mpv-*:
@@ -24,13 +31,22 @@ struct InfoDictionary {
     --separate-windows | -w:
             Open all files in separate windows.
     --stdin, --no-stdin:
-            You may also pipe to stdin directly. Sometimes iina-cli can detect whether
-            stdin has file, but sometimes not. Therefore it's recommended to always
-            supply --stdin when piping to iina, and --no-stdin when you are not intend
-            to use stdin.
-    --keep-running:
-            Normally iina-cli launches IINA and quits immediately. Supply this option
-            if you would like to keep it running until the main application exits.
+            You may also pipe to stdin directly. Sometimes \(execName) can detect whether
+            stdin has a file, but sometimes not. Therefore it's recommended to always
+            supply --stdin when piping to iina, and --no-stdin when you do not intend
+            to use stdin.\n
+    """
+
+    if iinaCLI {
+      text +=
+      """
+      --keep-running:
+              Normally iina-cli launches IINA and quits immediately. Supply this option
+              if you would like to keep it running until the main application exits.\n
+      """
+    }
+    text +=
+    """
     --music-mode:
             Enter music mode after opening the media.
     --pip:
@@ -43,6 +59,9 @@ struct InfoDictionary {
     Raw mpv options without --mpv- prefix. All mpv options are supported here.
     Example: --volume=20 --no-resume-playback
     """
+
+    return text
+  }
 
   static let shared = InfoDictionary()
 
