@@ -123,11 +123,6 @@ class PlayerInputContext {
 
   // MARK: Key resolution
 
-  /// Similar to `matchActiveKeyBinding()`, but takes a raw string directly (does not examine past key presses). Must be normalized.
-  func resolveMpvKey(_ keySequence: String) -> KeyMapping? {
-    return AppInputConfig.current.resolveInputBinding(keySequence)?.keyMapping
-  }
-
   /*
    Parses the user's most recent keystroke from the given keyDown event and determines if it (a) matches a key binding for a single keystroke,
    or (b) when combined with the user's previous keystrokes, matches a key binding for a key sequence.
@@ -139,7 +134,7 @@ class PlayerInputContext {
    - (a non-null) KeyMapping whose action is not "ignore" if the keystroke matched an active (non-ignored) key binding or the final keystroke
      in a key sequence.
    */
-  func matchActiveKeyBinding(endingWith normalizedMpvKeyCode: String, _ event: NSEvent) -> KeyMapping? {
+  func matchActiveKeyBinding(endingWith normalizedMpvKeyCode: String) -> KeyMapping? {
     let appInputConfig: AppInputConfig = AppInputConfig.current
     return matchShortestKeySequence(endingWith: normalizedMpvKeyCode, in: appInputConfig)
   }

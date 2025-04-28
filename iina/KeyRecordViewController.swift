@@ -105,22 +105,6 @@ class KeyRecordViewController: NSViewController, KeyRecordViewDelegate, NSRuleEd
     updateCommandField()
   }
 
-  // MARK: IBAction
-
-  @IBAction func ChooseMediaKeyAction(_ sender: NSPopUpButton) {
-    switch sender.selectedTag() {
-    case 0:
-      keyLabel.stringValue = "PLAY"
-    case 1:
-      keyLabel.stringValue = "PREV"
-    case 2:
-      keyLabel.stringValue = "NEXT"
-    default:
-      break
-    }
-    NotificationCenter.default.post(.init(name: NSControl.textDidChangeNotification, object: keyLabel))
-  }
-
   // MARK: - Other
 
   private func updateCommandField() {

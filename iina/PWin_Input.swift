@@ -17,17 +17,33 @@ extension PlayerWindowController {
   func handleKeyDown(event: NSEvent, normalizedMpvKey: String) -> Bool {
     let wasHandled = PluginInputManager.handle(
       input: normalizedMpvKey, event: .keyDown, player: player, arguments: keyEventArgs(event), handler: { [self] in
-        if let keyBinding = player.keyBindingContext.matchActiveKeyBinding(endingWith: normalizedMpvKey, event) {
-          if keyBinding.normalizedMpvKey == Constants.anyUnicodeKey {
-            player.mpv.command(MPVCommand.keypress, args: [normalizedMpvKey], checkError: false)
-            return true
-          }
-          return handleKeyBinding(keyBinding)
-        }
-        return false
+        return executeActionForKey(normalizedMpvKey: normalizedMpvKey)
       })
 
     return wasHandled
+  }
+
+  /// Returns true if handled (or ignored), false if not.
+  /// If `fallbackAction` is given, always returns true.
+  @discardableResult
+  func executeActionForKey(normalizedMpvKey: String, fallbackAction: (() -> Void)? = nil) -> Bool {
+    if let keyBinding = player.keyBindingContext.matchActiveKeyBinding(endingWith: normalizedMpvKey) {
+      if keyBinding.normalizedMpvKey == Constants.anyUnicodeKey {
+        // Matched ANY_UNICODE: just pass the key through to mpv. It will know what to do with it.
+        player.mpv.command(MPVCommand.keypress, args: [normalizedMpvKey], checkError: false)
+        return true
+      }
+      // Matched regular key binding
+      return handleKeyBinding(keyBinding)
+    }
+
+    if let fallbackAction {
+      log.verbose{"Executing fallback action for key \(normalizedMpvKey)"}
+      fallbackAction()
+      return true
+    }
+
+    return false
   }
 
   func keyEventArgs(_ event: NSEvent) -> [[String: Any]] {

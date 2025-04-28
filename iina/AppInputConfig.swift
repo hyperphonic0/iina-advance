@@ -135,7 +135,7 @@ struct AppInputConfig {
 
   /// This structure results from merging the layers of enabled input sections for the currently active player using precedence rules.
   /// Contains only the bindings which are currently enabled for this player, plus extra dummy "ignored" bindings for partial key sequences.
-  /// For lookup use `resolveMpvKey()` or `matchActiveKeyBinding()` from the active player's input config.
+  /// For lookup use `resolveInputBinding()` or `matchActiveKeyBinding()` from the active player's input config.
   let resolverDict: [String: InputBinding]
 
   /// Binding for mpv's `ANY_UNICODE` wildcard, if any (as of mpv 0.40.0).
@@ -186,7 +186,8 @@ struct AppInputConfig {
     }
   }
 
-  /// Takes a raw string directly (does not examine past key presses). Must be normalized.
+  /// Takes a raw string directly, and does not examine past key presses.
+  /// - `keySequence` must be normalized.
   func resolveInputBinding(_ keySequence: String) -> InputBinding? {
     // Emulate mpv logic for matching ANY_UNICODE
     let keyStrokes = KeyCodeHelper.splitKeystrokes(keySequence)
