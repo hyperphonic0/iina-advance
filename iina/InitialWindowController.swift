@@ -139,7 +139,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
   }
 
   override func windowDidLoad() {
-    Logger.log("WelcomeWindow windowDidLoad starting", level: .verbose)
+    Logger.log.verbose("WelcomeWindow windowDidLoad starting")
     super.windowDidLoad()
 
     // "utility" style doesn't animate well with VisualEffectView. No good options
@@ -183,7 +183,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
       reloadData()
     }
 
-    Logger.log("WelcomeWindow windowDidLoad done", level: .verbose)
+    Logger.log.verbose("WelcomeWindow windowDidLoad done")
   }
 
   func windowDidBecomeKey(_ notification: Notification) {

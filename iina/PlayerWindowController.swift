@@ -842,7 +842,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       if case .restoring(let priorState) = sessionState {
         restoreFromMiscWindowBools(priorState)
       } else {
-        AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
+        // check this first! Referencing initialWindow will cause it to be loaded!
+        if AppDelegate.shared.uiIsEnabled && (UIState.shared.windowsOpen.contains(WindowAutosaveName.welcome.string) || UIState.shared.windowsMinimized.contains(WindowAutosaveName.welcome.string)) {
+          AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
+        }
         if !window.isMiniaturized {
           UIState.shared.windowsOpen.insert(window.savedStateName)
         }

@@ -98,6 +98,10 @@ class HistoryController {
     // Launch this as a background task! Resolution can take a long time if waiting for remote servers to time out
     // and we don't want to tie up the main thread.
     self.async { [self] in
+      guard historyEnabled else {  // check again to avoid race condition
+        log.trace("History was disabled; aborting history start")
+        return
+      }
       // Make sure to start listening before reload, to avoid creating race condition
       log.debug("Starting monitoring of watch-later dir")
       folderMonitor.folderDidChange = self.watchLaterDirDidChange
@@ -295,6 +299,10 @@ class HistoryController {
   /// document URLs with the list stored in IINA's settings.
   private func restoreRecentDocuments() {
     assert(DispatchQueue.isExecutingIn(workDQ))
+    guard historyEnabled else {
+      log.verbose("History is disabled; will not restore list of recent documents from prefs")
+      return
+    }
 
     /// Make sure `reloadAll()` was called before this
     let recentDocumentsURLs = cachedRecentDocumentURLs

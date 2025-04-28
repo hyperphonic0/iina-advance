@@ -397,19 +397,23 @@ class StartupHandler {
     if isOpeningNewWindowsForOpenedFiles {
       // If isOpeningNewWindowsForOpenedFiles is true, the check below will only pass once wcsForOpenFiles becomes non-nil.
       guard let wcsForOpenFiles else {
-        log.verbose{"Restore: isOpeningNewWindowsForOpenedFiles=Y but wcsForOpenFiles is nil; returning"}
+        log.verbose{"Startup: isOpeningNewWindowsForOpenedFiles=Y but wcsForOpenFiles is nil; returning"}
         return
       }
 
       // If opening more than 1 file, proceed immediately. Otherwise wait for it to be ready.
       guard wcsForOpenFiles.count > 1 || (wcsForOpenFiles.count == wcsDoneWithFileOpen.count) else {
-        log.verbose{"Restore: still waiting for opened file"}
+        log.verbose{"Startup: still waiting for opened file"}
         return
       }
     }
 
     let newWindCount = wcsForOpenFiles?.count ?? 0
-    log.verbose{"All \(wcsToRestore.count) restored \(newWindCount > 0 ? " & \(newWindCount) new windows ready. Showing all" : "")"}
+    if newWindCount == 0 && wcsToRestore.count == 0 {
+      log.verbose{"No windows needed to be waited for; finishing startup"}
+    } else {
+      log.verbose{"All \(wcsToRestore.count) restored \(newWindCount > 0 ? " & \(newWindCount) new windows ready. Showing all" : "")"}
+    }
     restoreTimer.cancel()
 
     var prevWindowNumber: Int? = nil

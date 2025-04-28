@@ -901,7 +901,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     panel.begin(completionHandler: { [self] result in
       if result == .OK {  /// OK
         Logger.log.verbose{"OpenFile: user chose \(panel.urls.count) files"}
-        if Preference.bool(for: .recordRecentFiles) {
+        if Preference.bool(for: .recordRecentFiles) && HistoryController.shared.historyEnabled {
           let urls = panel.urls  // must call this on the main thread
           HistoryController.shared.async {
             HistoryController.shared.noteNewRecentDocumentURLs(urls)
