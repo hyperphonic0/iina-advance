@@ -24,6 +24,9 @@ class CommandLineState {
       } else if arg == "-" {
         // single '-'
         isStdin = true
+      } else if arg == "-w" {
+        // Alternate form of --separate-windows
+        openSeparateWindows = true
       } else if arg == "--" {
         // ignore
         continue
@@ -40,8 +43,7 @@ class CommandLineState {
       }
     }
 
-    Logger.log.debug{"Parsed command-line args: isStdin=\(isStdin.yn) separateWindows=\(openSeparateWindows.yn), enterMusicMode=\(enterMusicMode.yn), enterPIP=\(enterPIP.yn)"}
-    Logger.log.debug{"Filenames from arguments: \(filenames.map{$0.pii})"}
+    Logger.log.debug{"Parsed IINA CLI args: stdin=\(isStdin.yn) separateWindows=\(openSeparateWindows.yn), musicMode=\(enterMusicMode.yn) pip=\(enterPIP.yn). Filenames from arguments: \(filenames.map{$0.pii})"}
     Logger.log.debug{"Derived mpv properties from args: \(mpvArguments)"}
 
     guard !filenames.isEmpty || isStdin else {

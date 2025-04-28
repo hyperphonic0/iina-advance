@@ -76,8 +76,6 @@ var passedDoubleDash = false
 
 userArgs = userArgs.compactMap { arg in
   switch arg {
-  case "-w":
-    return "--separate-windows"
   case "--":
     passedDoubleDash = true
     return nil

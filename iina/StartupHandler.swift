@@ -578,8 +578,9 @@ class StartupHandler {
     commandLineState = CommandLineState(cmdLineArgs)
     if let commandLineState {
       if commandLineState.mpvArguments.contains(where: { $0.0 == MPVEncoding.o }) {
-        Logger.Subsystem.restore.debug{"Found --o arg in cmd line. Disabling save/restore for this launch."}
+        Logger.Subsystem.restore.debug{"Found --o arg in cmd line. Disabling save/restore & history for this launch."}
         UIState.shared.disableSaveAndRestoreUntilNextLaunch()
+        HistoryController.shared.historyEnabled = false
       }
 
       if let option = commandLineState.mpvArguments.first(where: { $0.0 == MPVOption.GPURendererOptions.macosAppActivationPolicy}), !option.1.isEmpty {
@@ -588,8 +589,9 @@ class StartupHandler {
           Logger.Subsystem.restore.debug{"Setting NSApp activation policy to .regular"}
           NSApp.setActivationPolicy(.regular)
         case "accessory":
-          Logger.Subsystem.restore.debug{"Setting NSApp activation policy to .accessory"}
+          Logger.Subsystem.restore.debug{"Setting NSApp activation policy to .accessory, disabling history for this launch"}
           NSApp.setActivationPolicy(.accessory)
+          HistoryController.shared.historyEnabled = false
         case "prohibited":
           Logger.Subsystem.restore.debug{"Setting NSApp activation policy to .prohibited"}
           NSApp.setActivationPolicy(.prohibited)

@@ -54,6 +54,9 @@ public class FolderMonitor {
 
   /// Stop listening for changes to the directory, if the source has been created.
   public func stopMonitoring() {
-    folderMonitorSource?.cancel()
+    if let folderMonitorSource {
+      HistoryController.shared.log.debug("Stopping watchdog for watch-later dir")
+      folderMonitorSource.cancel()
+    }
   }
 }

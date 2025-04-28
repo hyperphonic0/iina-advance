@@ -12,6 +12,9 @@ class HistoryController {
 
   static let shared = HistoryController(plistFileURL: Utility.playbackHistoryURL)
 
+  /// Certain command-line arguments can result in history being disabled for the launch
+  var historyEnabled: Bool = true
+
   let plistURL: URL
 
   let log = Logger.Subsystem(rawValue: "history")
@@ -81,6 +84,10 @@ class HistoryController {
   }
 
   func start() {
+    guard historyEnabled else {
+      log.trace("History disabled; skipping history start")
+      return
+    }
     // Launch this as a background task! Resolution can take a long time if waiting for remote servers to time out
     // and we don't want to tie up the main thread.
     self.async { [self] in
@@ -99,7 +106,6 @@ class HistoryController {
 
   func stop() {
     isAppTerminating = true
-    log.debug("Stopping watchdog for watch-later dir")
     folderMonitor.stopMonitoring()
 
     fileExistsDQ.async { [self] in
@@ -113,6 +119,10 @@ class HistoryController {
   }
 
   private func saveHistoryToFile() {
+    guard historyEnabled else {
+      log.trace("History disabled; skipping history save")
+      return
+    }
     let sw = Utility.Stopwatch()
     do {
       log.verbose("Saving playback history to file \(plistURL.path.pii.quoted)")
@@ -148,6 +158,10 @@ class HistoryController {
 
   func reloadAll() {
     assert(DispatchQueue.isExecutingIn(workDQ))
+    guard historyEnabled else {
+      log.trace("History disabled; skipping history reload")
+      return
+    }
     let sw = Utility.Stopwatch()
 
     log.verbose{"ReloadAll starting, from \(plistURL.path.pii.quoted)"}
@@ -171,7 +185,7 @@ class HistoryController {
   }
 
   @discardableResult
-  func addPlayback(_ id: PlaybackID, duration: Double) -> PlaybackHistory? {
+  private func addPlayback(_ id: PlaybackID, duration: Double) -> PlaybackHistory? {
     assert(DispatchQueue.isExecutingIn(workDQ))
     guard Preference.bool(for: .recordPlaybackHistory) else { return nil }
 
@@ -205,7 +219,7 @@ class HistoryController {
     }
   }
 
-  func historyListDidUpdate() {
+  private func historyListDidUpdate() {
     let historyListVersion = $historyListVersion.withLock { version in
       version += 1
       return version
@@ -353,6 +367,8 @@ class HistoryController {
   // MARK: - Playback Lifecycle Events
 
   func savePlaybackMetaAfterFileDidLoad(for id: PlaybackID, durationSec: Double, positionSec: Double?) {
+    guard historyEnabled else { return }
+
     HistoryController.shared.async { [self] in
       // 1. Update main history list
       let historyEntry = addPlayback(id, duration: durationSec)
@@ -380,6 +396,8 @@ class HistoryController {
   /// Actually this is called when player is stopping, so needs to account for watch-later, which (if enabled)
   /// should have been written to prior to calling this function.
   func savePlaybackMetaBeforeFileWillClose(_ id: PlaybackID, duration: Double?, position: Double?) {
+    guard historyEnabled else { return }
+
     HistoryController.shared.async { [self] in
       saveToLastPlayedFile(id, duration: duration, position: position)
 

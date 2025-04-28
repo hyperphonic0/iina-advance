@@ -165,34 +165,49 @@ extension MPVController {
       chkErr(setOptionString(MPVOption.Audio.audioSpdif, spdif.joined(separator: ","), verboseIfDefault: true))
     }
 
-    setUserOption(PK.audioDevice, type: .string, forName: MPVOption.Audio.audioDevice, verboseIfDefault: true)
-
-    setUserOption(PK.replayGain, type: .other, forName: MPVOption.Audio.replaygain, verboseIfDefault: true) { key in
-      let value = Preference.integer(for: key)
-      return Preference.ReplayGainOption(rawValue: value)?.mpvString ?? no
+    if !player.isPresentInUserOptions(MPVOption.Audio.audioDevice) {
+      setUserOption(PK.audioDevice, type: .string, forName: MPVOption.Audio.audioDevice, verboseIfDefault: true)
     }
-    setUserOption(PK.replayGainPreamp, type: .float, forName: MPVOption.Audio.replaygainPreamp,
-                  verboseIfDefault: true)
-    setUserOption(PK.replayGainClip, type: .bool, forName: MPVOption.Audio.replaygainClip,
-                  verboseIfDefault: true)
-    setUserOption(PK.replayGainFallback, type: .float, forName: MPVOption.Audio.replaygainFallback,
-                  verboseIfDefault: true)
+
+    if !player.isPresentInUserOptions(MPVOption.Audio.replaygain) {
+      setUserOption(PK.replayGain, type: .other, forName: MPVOption.Audio.replaygain, verboseIfDefault: true) { key in
+        let value = Preference.integer(for: key)
+        return Preference.ReplayGainOption(rawValue: value)?.mpvString ?? no
+      }
+    }
+    if !player.isPresentInUserOptions(MPVOption.Audio.replaygainPreamp) {
+      setUserOption(PK.replayGainPreamp, type: .float, forName: MPVOption.Audio.replaygainPreamp, verboseIfDefault: true)
+    }
+    if !player.isPresentInUserOptions(MPVOption.Audio.replaygainClip) {
+      setUserOption(PK.replayGainClip, type: .bool, forName: MPVOption.Audio.replaygainClip, verboseIfDefault: true)
+    }
+    if !player.isPresentInUserOptions(MPVOption.Audio.replaygainFallback) {
+      setUserOption(PK.replayGainFallback, type: .float, forName: MPVOption.Audio.replaygainFallback, verboseIfDefault: true)
+    }
 
     // - Sub
 
-    chkErr(setOptionString(MPVOption.Subtitles.subAuto, no, level: .verbose))
-    chkErr(setOptionalOptionString(MPVOption.Subtitles.subCodepage,
-                                   Preference.string(for: .defaultEncoding), verboseIfDefault: true))
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subAuto) {
+      chkErr(setOptionString(MPVOption.Subtitles.subAuto, no, level: .verbose))
+    }
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subCodepage) {
+      chkErr(setOptionalOptionString(MPVOption.Subtitles.subCodepage,
+                                     Preference.string(for: .defaultEncoding), verboseIfDefault: true))
+    }
     player.info.subEncoding = Preference.string(for: .defaultEncoding)
 
     let subOverrideHandler: OptionObserverInfo.Transformer = { key in
       (Preference.enum(for: key) as Preference.SubOverrideLevel).string
     }
-    setUserOption(PK.subOverrideLevel, type: .other, forName: MPVOption.Subtitles.subAssOverride,
-                  verboseIfDefault: true, transformer: subOverrideHandler)
-    setUserOption(PK.secondarySubOverrideLevel, type: .other,
-                  forName: MPVOption.Subtitles.secondarySubAssOverride, verboseIfDefault: true,
-                  transformer: subOverrideHandler)
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subAssOverride) {
+      setUserOption(PK.subOverrideLevel, type: .other, forName: MPVOption.Subtitles.subAssOverride,
+                    verboseIfDefault: true, transformer: subOverrideHandler)
+    }
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subAssOverride) {
+      setUserOption(PK.secondarySubOverrideLevel, type: .other,
+                    forName: MPVOption.Subtitles.subAssOverride, verboseIfDefault: true,
+                    transformer: subOverrideHandler)
+    }
 
     setUserOption(PK.subTextFont, type: .string, forName: MPVOption.Subtitles.subFont,
                   verboseIfDefault: true)
@@ -243,15 +258,19 @@ extension MPVController {
 
     setUserOption(PK.subPos, type: .float, forName: MPVOption.Subtitles.subPos, verboseIfDefault: true)
 
-    setUserOption(PK.subLang, type: .string, forName: MPVOption.TrackSelection.slang, level: .verbose)
+    if !player.isPresentInUserOptions(MPVOption.TrackSelection.slang) {
+      setUserOption(PK.subLang, type: .string, forName: MPVOption.TrackSelection.slang, level: .verbose)
+    }
 
     setUserOption(PK.displayInLetterBox, type: .bool, forName: MPVOption.Subtitles.subUseMargins,
                   verboseIfDefault: true)
     setUserOption(PK.displayInLetterBox, type: .bool, forName: MPVOption.Subtitles.subAssForceMargins,
                   verboseIfDefault: true)
 
-    setUserOption(PK.subScaleWithWindow, type: .bool, forName: MPVOption.Subtitles.subScaleByWindow,
-                  verboseIfDefault: true)
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subScaleByWindow) {
+      setUserOption(PK.subScaleWithWindow, type: .bool, forName: MPVOption.Subtitles.subScaleByWindow,
+                    verboseIfDefault: true)
+    }
 
     // - Network / cache settings
 
@@ -262,16 +281,22 @@ extension MPVController {
       }
     }
 
-    setUserOption(PK.defaultCacheSize, type: .other, forName: MPVOption.Demuxer.demuxerMaxBytes,
-                  verboseIfDefault: true) { key in
-      return "\(Preference.integer(for: key))KiB"
+    if !player.isPresentInUserOptions(MPVOption.Demuxer.demuxerMaxBytes) {
+      setUserOption(PK.defaultCacheSize, type: .other, forName: MPVOption.Demuxer.demuxerMaxBytes,
+                    verboseIfDefault: true) { key in
+        return "\(Preference.integer(for: key))KiB"
+      }
     }
-    setUserOption(PK.secPrefech, type: .int, forName: MPVOption.Cache.cacheSecs, verboseIfDefault: true)
+    if !player.isPresentInUserOptions(MPVOption.Cache.cacheSecs) {
+      setUserOption(PK.secPrefech, type: .int, forName: MPVOption.Cache.cacheSecs, verboseIfDefault: true)
+    }
 
-    setUserOption(PK.userAgent, type: .other, forName: MPVOption.Network.userAgent,
-                  verboseIfDefault: true) { key in
-      let ua = Preference.string(for: key)!
-      return ua.isEmpty ? nil : ua
+    if !player.isPresentInUserOptions(MPVOption.Network.userAgent) {
+      setUserOption(PK.userAgent, type: .other, forName: MPVOption.Network.userAgent,
+                    verboseIfDefault: true) { key in
+        let ua = Preference.string(for: key)!
+        return ua.isEmpty ? nil : ua
+      }
     }
 
     if !player.isPresentInUserOptions(MPVOption.Network.rtspTransport) {
@@ -309,6 +334,7 @@ extension MPVController {
     }
 
     if !player.isPresentInUserOptions(MPVOption.ProgramBehavior.noConfig),
+       !player.isPresentInUserOptions("config"),
        !player.isPresentInUserOptions(MPVOption.ProgramBehavior.configDir) {
       // Set user defined conf dir.
       if Preference.bool(for: .enableAdvancedSettings),
@@ -355,7 +381,9 @@ extension MPVController {
     // Request tick event.
     // chkErr(mpv_request_event(mpv, MPV_EVENT_TICK, 1))
 
-    addEventCallbacks()
+    if !player.isPresentInUserOptions(MPVEncoding.o) {
+      addEventCallbacks()
+    }
 
     // Initialize an uninitialized mpv instance. If the mpv instance is already running, an error is returned.
     chkErr(mpv_initialize(mpv))
