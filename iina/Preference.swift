@@ -440,48 +440,15 @@ struct Preference {
     /// If true, scan playlist filenames with identical starting strings.  replace them with `…` button
     static let shortenFileGroupsInPlaylist = Key("shortenFileGroupsInPlaylist")
 
-    // Input
+    // MARK: Input / Key Bindings
 
-    /** Whether catch media keys event (bool) */
+    /// Whether to integrate with Media Center to enable use of media keys and also Now Playing (bool)
     static let useMediaKeys = Key("useMediaKeys")
-    static let useAppleRemote = Key("useAppleRemote")
 
-    /** Current input config name */
+    /// The file name (without the .conf suffix) of the currently active input configuration.
     static let currentInputConfigName = Key("currentInputConfigName")
 
-    // MARK: - Keys: Advanced
-
-    /** Enable advanced settings */
-    static let enableAdvancedSettings = Key("enableAdvancedSettings")
-
-    /** Use mpv's OSD (bool) */
-    static let useMpvOsd = Key("useMpvOsd")
-
-    /** Log to log folder (bool) */
-    static let enableLogging = Key("enableLogging")
-    static let logLevel = Key("logLevel")
-    /// [advanced] Specifies the highest level of mpv logging to include in the IINA log. Only enabled if `enableLogging` is true.
-    ///
-    /// This mechanism is mutually exclusive to any log files which mpv writes to. Each mpv core will have its own category name
-    /// in the IINA log with the format `mpv-{playerID}`.
-    ///
-    /// The value contained in this pref should be a string which matches the name of an mpv log level. See `MPVLogLevel`.
-    static let mpvEventLogLevel = Key("mpvEventLogLevel")
-
-    static let enablePiiMaskingInLog = Key("enablePiiMaskingInLog")
-
-    /// [debugging] If true, enables even more verbose logging so that input bindings computations can be more easily debugged.
-    static let logKeyBindingsRebuild = Key("logKeyBindingsRebuild")
-
-    /// If true, and trace-level logging is enabled, log the details of every save of player state.
-    /// This is frequent and verbose and can clutter up even trace-level logs, which is why this setting is false by default.
-    static let logPlayerSave = Key("logPlayerSave")
-
-    /// Normally, all logging is disabled if using options `--o` or `--macos-app-activation-policy=accessory` (both of which
-    /// are used by `thumbfast.lua`). Change this to true to log these launches like any other.
-    static let logNonInteractiveLaunches = Key("logNonInteractiveLaunches")
-
-    /* Saved value of checkbox in Key Bindings settings UI */
+    /// Saved value of checkbox in Key Bindings settings UI
     static let displayKeyBindingRawValues = Key("displayKeyBindingRawValues")
 
     /* Behavior when setting the name of a new configuration to the Settings > Key Bindings > Configuration table, when duplicating an
@@ -508,17 +475,51 @@ struct Preference {
      */
     static let tableEditKeyNavContinuesBetweenRows = Key("tableEditKeyNavContinuesBetweenRows")
 
-    /** unused */
-    // static let resizeFrameBuffer = Key("resizeFrameBuffer")
+    // MARK: - Keys: Advanced
 
-    /** User defined options ([string, string]) */
+    /// Enable advanced settings
+    static let enableAdvancedSettings = Key("enableAdvancedSettings")
+
+    /// Use mpv's OSD (bool)
+    static let useMpvOsd = Key("useMpvOsd")
+
+    // MARK: Logging
+
+    /// Master switch to enable logging to stdout and/or file, Log window (bool)
+    static let enableLogging = Key("enableLogging")
+    static let logLevel = Key("logLevel")
+    /// Log level threshold for logging to stdout via print() statements.
+    /// The value given in `logLevel` will be the maximum level which will be honored.
+    static let stdoutLogLevel = Key("stdoutLogLevel")
+    /// [advanced] Specifies the highest level of mpv logging to include in the IINA log. Only enabled if `enableLogging` is true.
+    ///
+    /// - This mechanism is mutually exclusive to any log files which mpv writes to. Each mpv core will have its own category name
+    ///   in the IINA log with the format `mpv-{playerID}`.
+    /// - The value contained in this pref should be a string which matches the name of an mpv log level. See `MPVLogLevel`.
+    static let mpvEventLogLevel = Key("mpvEventLogLevel")
+
+    static let enablePiiMaskingInLog = Key("enablePiiMaskingInLog")
+
+    /// [debugging] If true, enables even more verbose logging so that input bindings computations can be more easily debugged.
+    static let logKeyBindingsRebuild = Key("logKeyBindingsRebuild")
+
+    /// If true, and trace-level logging is enabled, log the details of every save of player state.
+    /// This is frequent and verbose and can clutter up even trace-level logs, which is why this setting is false by default.
+    static let logPlayerSave = Key("logPlayerSave")
+
+    /// Normally, all logging is disabled if using options `--o` or `--macos-app-activation-policy=accessory` (both of which
+    /// are used by `thumbfast.lua`). Change this to true to log these launches like any other.
+    static let logNonInteractiveLaunches = Key("logNonInteractiveLaunches")
+
+    /// User defined mpv options ([string, string])
     static let userOptions = Key("userOptions")
 
-    /** User defined conf directory */
+    /// Whether to use a user-defined mpv config directory (`PK.userDefinedConfDir`)
     static let useUserDefinedConfDir = Key("useUserDefinedConfDir")
+    /// User-defined mpv config directory (e.g., `~/.config/mpv/`
     static let userDefinedConfDir = Key("userDefinedConfDir")
 
-    // Inspector window watch list
+    /// Inspector window watch list
     static let watchProperties = Key("watchProperties")
 
     static let savedVideoFilters = Key("savedVideoFilters")
@@ -1336,7 +1337,6 @@ struct Preference {
     .preventScreenSaver: true,
     .allowScreenSaverForAudio: true,
     .useMediaKeys: true,
-    .useAppleRemote: false,
     .alwaysFloatOnTop: false,
     .alwaysShowOnTopIcon: false,
     .blackOutMonitor: false,
@@ -1474,6 +1474,7 @@ struct Preference {
     .useMpvOsd: false,
     .enableLogging: false,
     .logLevel: Logger.Level.debug.rawValue,
+    .stdoutLogLevel: Logger.Level.error.rawValue,
     .mpvEventLogLevel: MPVLogLevel.warn.rawValue,
     .enablePiiMaskingInLog: true,
     .logKeyBindingsRebuild: false,

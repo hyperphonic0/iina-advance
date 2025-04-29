@@ -77,6 +77,8 @@ class Logger: NSObject {
   /// a separate file which can be used to look up the PII tokens from the log; if it is false, then the values are not logged.
   static let writeUnmaskedPiiToFile = true
 
+  static let stdoutLogLevel = Level(rawValue: Preference.integer(for: .stdoutLogLevel).clamped(to: Level.trace.rawValue...Level.error.rawValue))!
+
   // Try to prevent false positives duing search & replace by not allowing matches which are too short to
   // be meaningful
   static let minMatchLength = 4
@@ -508,7 +510,13 @@ class Logger: NSObject {
       logs.append(log)
     }
 
+#if DEBUG
     print(string, terminator: "")
+#else
+    if level >= stdoutLogLevel {
+      print(string, terminator: "")
+    }
+#endif
 
     guard let data = string.data(using: .utf8) else {
       print(formatMessage("Cannot encode log string!", .error, Logger.loggerSubsystem, false))
