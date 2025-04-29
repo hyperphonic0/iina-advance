@@ -364,7 +364,7 @@ extension PlayerWindowController {
             let isRestoringMinimizedWindow = cxt.sessionState.isRestoring && UIState.shared.windowsMinimized.contains(window!.savedStateName)
             if isRestoringMinimizedWindow {
               // Minimized: can't rely on showWindow() being called, but window changes won't be seen anyway. Just run end task now.
-              log.verbose{"[GeoTF:\(cxt.name)] Restoring minimized window: will run tasks immediately instead of queueing"}
+              log.verbose{"[GeoTF:\(cxt.name)] Restoring minimized window: will run tasks immediately instead of enqueueing"}
               immediateTasks.append(contentsOf: videoGeoUpdateTasks)
             } else {
               pendingVideoGeoUpdateTasks = videoGeoUpdateTasks

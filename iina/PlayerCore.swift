@@ -75,6 +75,9 @@ class PlayerCore: NSObject {
   var label: String
   let isDemoPlayer: Bool
 
+  /// For explicit request via command line
+  var startInMusicModeRequested = false
+
   /// After mpvInit, contains both the user options in Settings > Advanced, + commandLineArgs
   var userOptions: [(String, String)]
 

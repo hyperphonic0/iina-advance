@@ -108,9 +108,16 @@ class StartupHandler {
   /// Open files either from `application(_ ,openFiles:)`, or via command line interface (CLI).
   @discardableResult
   func openFiles(_ urls: [URL], applyingCLI cli: CommandLineState?) -> Int {
-    // Can force --separate-windows via CLI in addition to pref
-    let separateWindowsSpecified = cli?.openSeparateWindows ?? false
-    let openingMultipleWindows = urls.count > 1 && (Preference.bool(for: .alwaysOpenInNewWindow) || separateWindowsSpecified)
+    let openingMultipleWindows: Bool
+    if urls.count <= 1 {
+      openingMultipleWindows = false
+    } else if let separateWindowsCLI = cli?.openSeparateWindows {
+      // Can force --separate-windows via CLI in addition to pref, for both yes/no
+      openingMultipleWindows = separateWindowsCLI
+    } else {
+      openingMultipleWindows = Preference.bool(for: .alwaysOpenInNewWindow)
+    }
+
     if !openingMultipleWindows {
       // Use only if opening single window.
       // If multiple windows, don't wait; open each as soon as it loads
@@ -174,7 +181,7 @@ class StartupHandler {
       self.wcsForOpenFiles = wcsForOpenFiles
 
       if let cli, let lastPlayer {
-        cli.applyOptionsToLastPlayer(lastPlayer)
+        cli.applySpecialOptionsToLastPlayer(lastPlayer)
       }
     }
     showWindowsIfReady()
@@ -514,6 +521,14 @@ class StartupHandler {
       log.verbose{"All \(wcsToRestore.count) restored \(newWindCount > 0 ? " & \(newWindCount) new windows ready. Showing all" : "")"}
     }
     restoreTimer.cancel()
+
+    // Bring this app to the front, possibly annoying the user who got bored waiting & is now doing something else.
+    // Especially needed for CLI launches, where activation never seems to happen automatically.
+    if #available(macOS 14.0, *) {
+      NSApp.activate()
+    } else {
+      NSApp.activate(ignoringOtherApps: true)
+    }
 
     var prevWindowNumber: Int? = nil
     for wc in wcsToRestore {

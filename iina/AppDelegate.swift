@@ -161,7 +161,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     Logger.log.debug{"All app arguments: \(cmdLineArgs)"}
     if let cli = startupHandler.commandLineState {
-      Logger.log.debug{"Parsed IINA CLI args: stdin=\(cli.isStdin.yn) separateWindows=\(cli.openSeparateWindows.yn), musicMode=\(cli.enterMusicMode.yn) pip=\(cli.enterPIP.yn). Filenames from arguments: \(cli.filenames.map{$0.pii})"}
+      Logger.log.debug{"Parsed IINA CLI args: stdin=\(cli.isStdin.yn) separateWindows=\(cli.openSeparateWindows?.yn ?? "-") musicMode=\(cli.enterMusicMode.yn) pip=\(cli.enterPIP.yn). Filenames from arguments: \(cli.filenames.map{$0.pii})"}
       Logger.log.debug{"Derived mpv properties from args: \(cli.mpvArguments)"}
     }
 

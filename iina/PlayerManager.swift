@@ -55,15 +55,13 @@ class PlayerManager {
 
   // Returns a copy of the list of PlayerCores, to ensure concurrency
   var playerCores: [PlayerCore] {
-    var coreList: [PlayerCore]? = nil
     lock.withLock {
-      coreList = _playerCores
+      _playerCores
     }
-    return coreList!
   }
 
   var allPlayersShutdown: Bool {
-    return lock.withLock {
+    lock.withLock {
       let runningLabels = _playerCores.compactMap({ $0.isShutDown ? nil : $0.label})
       if !runningLabels.isEmpty {
         Logger.log.verbose("Players have not yet shut down: \(runningLabels)")
@@ -83,43 +81,41 @@ class PlayerManager {
   }
 
   private func _getOrCreateFirst() -> PlayerCore {
-    var core: PlayerCore
     if _playerCores.isEmpty {
-      core = _createNewPlayerCore()
-    } else {
-      core = _playerCores[0]
+      return _createNewPlayerCore()
     }
-    return core
+    return _playerCores[0]
   }
 
   func getOrCreateFirst() -> PlayerCore {
-    var core: PlayerCore? = nil
     lock.withLock {
-      core = _getOrCreateFirst()
+      _getOrCreateFirst()
     }
-    return core!
   }
 
   func getActiveOrCreateNew() -> PlayerCore {
-    var core: PlayerCore? = nil
     lock.withLock {
       if _playerCores.isEmpty {
-        core = _createNewPlayerCore()
+        return _createNewPlayerCore()
       } else {
         if Preference.bool(for: .alwaysOpenInNewWindow) {
-          core = _getIdleOrCreateNew()
+          return _getIdleOrCreateNew()
         } else {
-          core = findCurrentlyActivePlayer()
+          if let activePlayer = findCurrentlyActivePlayer() {
+            return activePlayer
+          } else {
+            Logger.log.debug("No active player found; creating new")
+            return _createNewPlayerCore()
+          }
         }
       }
     }
-    return core!
   }
 
   /// `isAlternative` means to negate the current value of pref `.alwaysOpenInNewWindow`
   func getActiveOrNewForMenuAction(isAlternative: Bool) -> PlayerCore {
     let useNew = Preference.bool(for: .alwaysOpenInNewWindow) != isAlternative
-    if !useNew, let activePlayer = activePlayer {
+    if !useNew, let activePlayer {
       return activePlayer
     }
     // If no active player, need to create new. Or if by pref
@@ -139,36 +135,29 @@ class PlayerManager {
   }
 
   func getNonIdle() -> [PlayerCore] {
-    var cores: [PlayerCore]? = nil
     lock.withLock {
-      cores = _playerCores.filter { $0.isActive }
+      _playerCores.filter { $0.isActive }
     }
-    return cores!
   }
 
   private func _getIdleOrCreateNew() -> PlayerCore {
-    var core: PlayerCore
     if let idleCore = _findIdlePlayerCore() {
       Logger.log.debug("Found idle player: #\(idleCore.label)")
-      core = idleCore
-    } else {
-      Logger.log.debug("No idle player found; creating new")
-      core = _createNewPlayerCore()
+      return idleCore
     }
-    return core
+    Logger.log.debug("No idle player found; creating new")
+    return _createNewPlayerCore()
   }
 
   func getIdleOrCreateNew() -> PlayerCore {
-    var core: PlayerCore!
     lock.withLock {
-      core = _getIdleOrCreateNew()
+      _getIdleOrCreateNew()
     }
-    return core
   }
 
   var activePlayer: PlayerCore? {
     lock.withLock {
-      return findCurrentlyActivePlayer()
+      findCurrentlyActivePlayer()
     }
   }
 
@@ -184,14 +173,14 @@ class PlayerManager {
 
   /// Demo player is a redundant player which is used for app-wide things such as configuring audio devices or input bindings in prefs
   func getOrCreateDemo() -> PlayerCore {
-    var player: PlayerCore!
-    lock.withLock {
+    let player = lock.withLock {
       if let _demoPlayer {
-        player = _demoPlayer
+        return _demoPlayer
       } else {
-        Logger.log("Creating demo player")
-        player = PlayerCore(Constants.demoPlayerLabel, isDemoPlayer: true)
+        Logger.log.debug("Creating demo player")
+        let player = PlayerCore(Constants.demoPlayerLabel, isDemoPlayer: true)
         _demoPlayer = player
+        return player
       }
     }
     player.start()

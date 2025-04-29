@@ -7,7 +7,7 @@
 
 class CommandLineState {
   var isStdin = false
-  var openSeparateWindows = false
+  var openSeparateWindows: Bool? = nil
   var enterMusicMode = false
   var enterPIP = false
   var mpvArguments: [(String, String)] = []
@@ -32,6 +32,8 @@ class CommandLineState {
         isStdin = true
       case "-w", "--separate-windows":
         openSeparateWindows = true
+      case "--separate-windows=no", "--no-separate-windows":
+        openSeparateWindows = false
       case "--music-mode":
         enterMusicMode = true
       case "--pip":
@@ -84,48 +86,6 @@ class CommandLineState {
     }
   }
 
-  /// Launches players for URLs similar to `application(_, openFiles:)`, but also handles `stdin`
-  func startFromCommandLine() {
-    var lastPlayerCore: PlayerCore? = nil
-    if isStdin {
-      let player = PlayerManager.shared.getIdleOrCreateNew()
-      lastPlayerCore = player
-      applyCommandLineArgs(to: player)
-      player.openURLString("-")
-    } else {
-      let validFileURLs: [URL] = filenames.compactMap { filename in
-        if Regex.url.matches(filename) {
-          return URL(string: filename.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? filename)
-        } else {
-          return FileManager.default.fileExists(atPath: filename) ? URL(fileURLWithPath: filename) : nil
-        }
-      }
-      guard !validFileURLs.isEmpty else {
-        Logger.log.error("No valid file URLs provided via command line! Nothing to do")
-        return
-      }
-
-      if openSeparateWindows {
-        Logger.log.verbose{"Opening separate windows for \(validFileURLs.count) URLs"}
-        for url in validFileURLs {
-          let player = PlayerManager.shared.getIdleOrCreateNew()
-          lastPlayerCore = player
-          applyCommandLineArgs(to: player)
-          player.openURL(url)
-        }
-      } else {
-        let player = PlayerManager.shared.getIdleOrCreateNew()
-        lastPlayerCore = player
-        applyCommandLineArgs(to: player)
-        player.openURLs(validFileURLs)
-      }
-    }
-
-    if let lastPlayerCore {
-      applyOptionsToLastPlayer(lastPlayerCore)
-    }
-  }
-
   func applyCommandLineArgs(to playerCore: PlayerCore) {
     Logger.log.debug{"Setting mpv properties from arguments: \(mpvArguments)"}
     var cmdLineArgs: [(String, String)] = []
@@ -149,21 +109,18 @@ class CommandLineState {
     playerCore.userOptions.append(contentsOf: cmdLineArgs)
   }
 
-  func applyOptionsToLastPlayer(_ lastPlayer: PlayerCore) {
+  func applySpecialOptionsToLastPlayer(_ lastPlayer: PlayerCore) {
     if enterMusicMode {
-      Logger.log.verbose("Entering music mode as specified via command line")
-      if enterPIP {
-        // PiP is not supported in music mode. Combining these options is not permitted and is
-        // rejected by iina-cli. The IINA executable must have been invoked directly with
-        // arguments.
-        Logger.log.error("Cannot specify both --music-mode and --pip")
-        // Command line usage error.
-        exit(EX_USAGE)
+      DispatchQueue.main.async {
+        lastPlayer.log.verbose("Player will start in music mode as specified via command line")
+        lastPlayer.startInMusicModeRequested = true
       }
-      lastPlayer.enterMusicMode()
+
     } else if enterPIP {
-      Logger.log.verbose("Entering PIP as specified via command line")
-      lastPlayer.windowController.enterPIP()
+      DispatchQueue.main.async {
+        lastPlayer.log.verbose("Entering PIP as specified via command line")
+        lastPlayer.windowController.enterPIP()
+      }
     }
   }
 

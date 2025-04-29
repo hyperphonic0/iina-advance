@@ -82,8 +82,12 @@ extension PlayerWindowController {
       log.verbose("[GeoTF:\(cxt.name)] Transitioning to initial layout from app prefs")
       var mode: PlayerWindowMode = .windowedNormal
 
-      if Preference.bool(for: .autoSwitchToMusicMode) && currentMediaAudioStatus.isAudio {
-        log.debug("[GeoTF:\(cxt.name)] Opened media is audio: will auto-switch to music mode")
+      if player.startInMusicModeRequested {
+        log.debug("[GeoTF:\(cxt.name)] Will open window in music mode as requested via CLI")
+        player.startInMusicModeRequested = false  // reset for reuse
+        mode = .musicMode
+      } else if Preference.bool(for: .autoSwitchToMusicMode) && currentMediaAudioStatus.isAudio {
+        log.debug("[GeoTF:\(cxt.name)] Opened media is audio: will open window in music mode")
         mode = .musicMode
       } else if Preference.bool(for: .fullScreenWhenOpen) {
         player.didEnterFullScreenViaUserToggle = false
