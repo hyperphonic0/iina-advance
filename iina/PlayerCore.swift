@@ -2326,7 +2326,7 @@ class PlayerCore: NSObject {
     mpv.addHook(MPVHook.onBeforeStartFile, hook: MPVHookValue(withBlock: callback))
   }
 
-  // MARK: - Listeners
+  // MARK: - mpv Event Callbacks
 
   /// A [MPV_EVENT_START_FILE](https://mpv.io/manual/stable/#command-interface-mpv-event-start-file) was received.
   func fileStarted(path: String, playlistPos: Int) {
@@ -2412,20 +2412,8 @@ class PlayerCore: NSObject {
     events.emit(.fileStarted)
   }
 
-  /// Called via mpv hook `on_load`, right before file is loaded.
-  func fileWillLoad() {
-    /// Currently this method is only used to honor `--shuffle` arg via iina-cli
-    guard shufflePending else { return }
-    shufflePending = false
 
-    log.debug("Shuffling playlist")
-    mpv.command(.playlistShuffle)
-    /// will cancel this file load sequence (so `fileLoaded` will not be called), then will start loading item at index 0
-    mpv.command(.playlistPlayIndex, args: ["0"])
-  }
-
-
-  /// A [MPV_EVENT_FILE_LOADED](https://mpv.io/manual/stable/#command-interface-mpv-event-file-loaded) was received.
+  /// When [MPV_EVENT_FILE_LOADED](https://mpv.io/manual/stable/#command-interface-mpv-event-file-loaded) was received.
   ///
   /// This function is called right after file loaded, triggered by mpv `fileLoaded` notification.
   /// We should now be able to get track info from mpv and can start rendering the video in the final size.

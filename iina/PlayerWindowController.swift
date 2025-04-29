@@ -1304,7 +1304,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         if currentLayout.isLegacyFullScreen {
           let layout = currentLayout
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
-          log.verbose{"WindowDidChangeScreen: updating legacy full screen window"}
+          log.verbose{"WindowDidChangeScreen: updating legacy FS window"}
           let fsGeo = layout.buildFullScreenGeometry(inScreenID: screenID, video: geo.video)
           applyLegacyFSGeo(fsGeo)
           // Update screenID at least, so that window won't go back to other screen when exiting FS
