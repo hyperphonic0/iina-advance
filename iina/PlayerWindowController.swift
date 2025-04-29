@@ -1235,13 +1235,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func windowDidChangeBackingProperties(_ notification: Notification) {
     log.verbose("WindowDidChangeBackingProperties received")
     videoView.refreshContentsScale()
-    restartWindowResizeDenialPeriod()
+    restartWindowResizeDenialPeriod("WindowDidChangeBackingProperties")
   }
 
   func windowDidChangeScreenProfile(_ notification: Notification) {
     log.verbose("WindowDidChangeScreenProfile received")
     videoView.refreshContentsScale()
-    restartWindowResizeDenialPeriod()
+    restartWindowResizeDenialPeriod("WindowDidChangeScreenProfile")
   }
 
   func windowDidChangeOcclusionState(_ notification: Notification) {
@@ -1259,14 +1259,16 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func windowDidChangeScreen(_ notification: Notification) {
     guard let window = window, let screen = window.screen else { return }
     let displayId = screen.displayId
-    
+
     if videoView.currentDisplay == displayId {
       log.trace{"WindowDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged"}
       return
     }
-    log.verbose("WindowDidChangeScreen received: \(screen.displayId)")
-    restartWindowResizeDenialPeriod()
-    pendingResizeForScreenChange = true
+    log.verbose("WindowDidChangeScreen received: \(videoView.currentDisplay?.description ?? "nil") → \(screen.displayId)")
+    if videoView.currentDisplay != nil {  // Don't need for first update
+      restartWindowResizeDenialPeriod("windowDidChangeScreen")
+      pendingResizeForScreenChange = true
+    }
 
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by debouncing
     screenChangedDebouncer.run { [self] in
@@ -1312,7 +1314,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           // Update windowedModeGeo with new window position & screen (but preserve previous size)
           DispatchQueue.main.async { [self] in
             let oldWindowFrame = windowedModeGeo.windowFrame
-            let newWindowFrame = NSRect(origin: window.frame.origin, size: oldWindowFrame.size)
+            let newWindowFrame = window.frame
             if let screenFrame = NSScreen.forScreenID(screenID)?.visibleFrame {
               // If user is dragging with mouse, it feels more jarring to change the window frame, so try to avoid that.
               // So if not using the mouse, always move & resize (if configured for shouldMoveWindowToKeepInContainer, as checked above).
@@ -1320,9 +1322,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
               // - as of MacOS Sequoia 15.4.1, the window manager gets very anxious when the window is large and snaps it to the
               // top of the screen after every move, which results an unpleasant UX).
               if !isLeftMouseButtonDown || !oldWindowFrame.size.canFitInside(screenFrame.size) {
-                windowedModeGeo = windowedModeGeo.clone(windowFrame: newWindowFrame, screenID: screenID).refitted()
-                log.verbose{"WindowDidChangeScreen: updating windowFrame to fit screen: \(oldWindowFrame) → \(newWindowFrame)"}
-                player.window.setFrameImmediately(windowedModeGeo)
+                let newGeo = windowedModeGeo.clone(windowFrame: newWindowFrame, screenID: screenID).refitted()
+                log.verbose{"WindowDidChangeScreen: updating windowFrame to fit screen: \(oldWindowFrame) → \(newGeo.windowFrame)"}
+                windowedModeGeo = newGeo
+                player.window.setFrameImmediately(newGeo)
               }
             }
           }

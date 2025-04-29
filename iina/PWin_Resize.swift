@@ -53,27 +53,31 @@ extension PlayerWindowController {
     return resizeWindowSubviews(window, to: requestedSize)
   }
 
-  func restartWindowResizeDenialPeriod() {
+  func restartWindowResizeDenialPeriod(_ reason: String) {
     // Do not allow MacOS to change the window size
-    log.verbose{"Restarting window resize denial period"}
+    log.verbose{"Restarting window resize denial period due to: \(reason)"}
     denyWindowResizePeriodStartTime = Date()
   }
 
   func isInWindowResizeDenialPeriod() -> Bool {
     guard !currentLayout.isFullScreen else { return false }
-    let denyWindowResize = Date() < denyWindowResizePeriodStartTime + Constants.TimeInterval.denyWindowResizeTimeout
+    let timeElapsed = Date().timeIntervalSince(denyWindowResizePeriodStartTime)
+    let denyWindowResize = timeElapsed - Constants.TimeInterval.denyWindowResizeTimeout < 0
+    log.trace{"Time elapsed=\(timeElapsed), timeout=\(Constants.TimeInterval.denyWindowResizeTimeout) → DenyWinResize=\(denyWindowResize.yn)"}
     return denyWindowResize
   }
 
   func restartWindowScrollDenialPeriod() {
     // Do not allow MacOS to change the window size
     log.trace{"Restarting window scroll denial period"}
-    denyWindowResizePeriodStartTime = Date()
+    denyWindowScrollPeriodStartTime = Date()
   }
 
   func isInWindowScrollDenialPeriod() -> Bool {
     guard !currentLayout.isFullScreen else { return false }
-    let denyWindowScroll = Date() < denyWindowScrollPeriodStartTime + Constants.TimeInterval.denyWindowResizeTimeout
+    let timeElapsed = Date().timeIntervalSince(denyWindowScrollPeriodStartTime)
+    let denyWindowScroll = timeElapsed - Constants.TimeInterval.denyWindowScrollTimeout < 0
+    log.trace{"Time elapsed=\(timeElapsed), timeout=\(Constants.TimeInterval.denyWindowResizeTimeout) → DenyWinScroll=\(denyWindowScroll.yn)"}
     return denyWindowScroll
   }
 

@@ -396,7 +396,7 @@ extension PlayerWindowController {
     // when the event gets processed.
     // FIXME: there should be a way to search the queued events and deny the resize event proactively! Check Apple docs
     if pendingResizeForScreenChange {
-      restartWindowResizeDenialPeriod() 
+      restartWindowResizeDenialPeriod("mouseUp-pendingResizeForScreenChange")
       pendingResizeForScreenChange = false
     }
 
