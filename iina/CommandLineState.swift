@@ -15,12 +15,14 @@ class CommandLineState {
 
   init?(_ tokens: ArraySlice<String>) {
     guard !tokens.isEmpty else { return nil }
+    var droppedTokens = 0
 
     var dropNextToken = false
     for token in tokens {
       if dropNextToken {
         // Second token in pair to ignore
         dropNextToken = false
+        droppedTokens += 1
         continue
       }
 
@@ -36,6 +38,7 @@ class CommandLineState {
         enterPIP = true
       case "--":
         // ignore
+        droppedTokens += 1
         continue
       default:
         if token.hasPrefix("--") {
@@ -46,11 +49,17 @@ class CommandLineState {
           /// Example: `-NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints YES`
           /// Ignore this token, and also the next one.
           dropNextToken = true
+          droppedTokens += 1
         } else {
           // assume token with no starting dashes is a filename
           filenames.append(token)
         }
       }
+    }
+
+    if tokens.count - droppedTokens == 0 {
+      // Does not qualify as a CLI launch
+      return nil
     }
   }
 
@@ -75,11 +84,14 @@ class CommandLineState {
     }
   }
 
+  /// Launches players for URLs similar to `application(_, openFiles:)`, but also handles `stdin`
   func startFromCommandLine() {
     var lastPlayerCore: PlayerCore? = nil
     if isStdin {
-      lastPlayerCore = getOrCreatePlayerWithCmdLineArgs()
-      lastPlayerCore?.openURLString("-")
+      let player = PlayerManager.shared.getIdleOrCreateNew()
+      lastPlayerCore = player
+      applyCommandLineArgs(to: player)
+      player.openURLString("-")
     } else {
       let validFileURLs: [URL] = filenames.compactMap { filename in
         if Regex.url.matches(filename) {
@@ -96,36 +108,25 @@ class CommandLineState {
       if openSeparateWindows {
         Logger.log.verbose{"Opening separate windows for \(validFileURLs.count) URLs"}
         for url in validFileURLs {
-          lastPlayerCore = getOrCreatePlayerWithCmdLineArgs()
-          lastPlayerCore?.openURL(url)
+          let player = PlayerManager.shared.getIdleOrCreateNew()
+          lastPlayerCore = player
+          applyCommandLineArgs(to: player)
+          player.openURL(url)
         }
       } else {
-        lastPlayerCore = getOrCreatePlayerWithCmdLineArgs()
-        lastPlayerCore?.openURLs(validFileURLs)
+        let player = PlayerManager.shared.getIdleOrCreateNew()
+        lastPlayerCore = player
+        applyCommandLineArgs(to: player)
+        player.openURLs(validFileURLs)
       }
     }
 
-    if let pc = lastPlayerCore {
-      if enterMusicMode {
-        Logger.log.verbose("Entering music mode as specified via command line")
-        if enterPIP {
-          // PiP is not supported in music mode. Combining these options is not permitted and is
-          // rejected by iina-cli. The IINA executable must have been invoked directly with
-          // arguments.
-          Logger.log.error("Cannot specify both --music-mode and --pip")
-          // Command line usage error.
-          exit(EX_USAGE)
-        }
-        pc.enterMusicMode()
-      } else if enterPIP {
-        Logger.log.verbose("Entering PIP as specified via command line")
-        pc.windowController.enterPIP()
-      }
+    if let lastPlayerCore {
+      applyOptionsToLastPlayer(lastPlayerCore)
     }
   }
 
-  func getOrCreatePlayerWithCmdLineArgs() -> PlayerCore {
-    let playerCore = PlayerManager.shared.getIdleOrCreateNew()
+  func applyCommandLineArgs(to playerCore: PlayerCore) {
     Logger.log.debug{"Setting mpv properties from arguments: \(mpvArguments)"}
     var cmdLineArgs: [(String, String)] = []
     for argPair in mpvArguments {
@@ -146,7 +147,24 @@ class CommandLineState {
       }
     }
     playerCore.userOptions.append(contentsOf: cmdLineArgs)
-    return playerCore
+  }
+
+  func applyOptionsToLastPlayer(_ lastPlayer: PlayerCore) {
+    if enterMusicMode {
+      Logger.log.verbose("Entering music mode as specified via command line")
+      if enterPIP {
+        // PiP is not supported in music mode. Combining these options is not permitted and is
+        // rejected by iina-cli. The IINA executable must have been invoked directly with
+        // arguments.
+        Logger.log.error("Cannot specify both --music-mode and --pip")
+        // Command line usage error.
+        exit(EX_USAGE)
+      }
+      lastPlayer.enterMusicMode()
+    } else if enterPIP {
+      Logger.log.verbose("Entering PIP as specified via command line")
+      lastPlayer.windowController.enterPIP()
+    }
   }
 
 }

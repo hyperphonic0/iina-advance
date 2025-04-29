@@ -530,71 +530,32 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func application(_ sender: NSApplication, openFiles filePaths: [String]) {
     let shouldIgnoreOpenFile = startupHandler.shouldIgnoreOpenFile
-    Logger.log.debug{"application(openFiles:) called with: \(filePaths.map{$0.pii}), willIgnore=\(shouldIgnoreOpenFile.yn)"}
+    Logger.log.debug{"application(openFiles:) called with: \(filePaths.map{$0.pii})\(shouldIgnoreOpenFile ? " (ignoring; launched from CLI)" : "")"}
     // if launched from command line, should ignore openFile during launch
     guard !shouldIgnoreOpenFile else { return }
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
 
-    // if installing a plugin package
-    if let pluginPackageURL = urls.first(where: { $0.pathExtension == "iinaplgz" }) {
-      Logger.log.debug{"Opening plugin URL: \(pluginPackageURL.absoluteString.pii.quoted)"}
-      showPreferencesWindow(self)
-      preferenceWindowController.performAction(.installPlugin(url: pluginPackageURL))
-      return
-    }
-
-    let openingMultipleWindows = Preference.bool(for: .alwaysOpenInNewWindow) && urls.count > 1
-    if !openingMultipleWindows {
-      // Use only if opening single window.
-      // If multiple windows, don't wait; open each as soon as it loads
-      startupHandler.isOpeningNewWindowsForOpenedFiles = true
-    }
-
     DispatchQueue.main.async { [self] in
-      Logger.log.debug{"Opening URLs: count=\(urls.count)"}
-      var totalFilesOpened = 0
-
-      var wcsForOpenFiles: [PlayerWindowController] = []
-      if openingMultipleWindows {
-        if urls.count > 10 {
-          // TODO: put up a confirmation prompt
-          Logger.log.warn{"User requested to open a lot of windows (count: \(urls.count))"}
-        }
-        for url in urls {
-          // open one window per file
-          let newPlayer = PlayerManager.shared.getIdleOrCreateNew()
-          let playerFilesOpened = newPlayer.openURLs([url])
-
-          guard playerFilesOpened > 0 else { continue }
-          newPlayer.openedWindowsSetIndex = wcsForOpenFiles.count
-          wcsForOpenFiles.append(newPlayer.windowController)
-          totalFilesOpened += playerFilesOpened
-        }
-      } else {
-        // open pending files in single window
-        let player = PlayerManager.shared.getActiveOrCreateNew()
-        let playerFilesOpened = player.openURLs(urls)
-        if playerFilesOpened > 0 {
-          wcsForOpenFiles.append(player.windowController)
-          totalFilesOpened += playerFilesOpened
-        }
+      // if installing a plugin package
+      if let pluginPackageURL = urls.first(where: { $0.pathExtension == "iinaplgz" }) {
+        Logger.log.debug{"Opening plugin URL: \(pluginPackageURL.absoluteString.pii.quoted)"}
+        showPreferencesWindow(self)
+        preferenceWindowController.performAction(.installPlugin(url: pluginPackageURL))
+        return
       }
 
-      if totalFilesOpened == 0 {
-        startupHandler.abortWaitForOpenFilePlayerStartup()
-
-        Logger.log.verbose("Notifying user nothing was opened")
-        Utility.showAlert("nothing_to_open")
+      let openedSomething = startupHandler.openFiles(urls, applyingCLI: nil) > 0
+      if openedSomething {
+        Logger.log.verbose{"Replying to NSApp: success"}
+        NSApp.reply(toOpenOrPrint: .success)
       } else {
-        Logger.log.verbose{"Total new windows opening: \(wcsForOpenFiles.count), with \(totalFilesOpened) files"}
-        // Now set wcsForOpenFiles in StartupHandler:
-        startupHandler.wcsForOpenFiles = wcsForOpenFiles
+        Logger.log.verbose{"Replying to NSApp: fail"}
+        NSApp.reply(toOpenOrPrint: .failure)
       }
-      startupHandler.showWindowsIfReady()
     }
   }
 
-  // MARK: - Accept dropped string and URL on Dock icon
+  // MARK: - Accept dropped URL string on Dock icon
 
   @objc
   func droppedText(_ pboard: NSPasteboard, userData: String, error: NSErrorPointer) {

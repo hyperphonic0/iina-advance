@@ -63,8 +63,7 @@ class StartupHandler {
 
   /// If launched from command line, should ignore `application(_, openFiles:)` during launch.
   var shouldIgnoreOpenFile: Bool {
-    guard isCommandLine else { return false }
-    return !isDoneLaunching
+    isCommandLine && !isDoneLaunching
   }
 
   // MARK: Init
@@ -82,11 +81,104 @@ class StartupHandler {
     // Restore window state *before* hooking up the listener which saves state.
     restoreWindowsFromPreviousLaunch()
 
-    commandLineState?.startFromCommandLine()
+    // If launched via command line, use the logic below to open files and/or stdin, bypassing the normal application openFiles callback
+    openFilesFromCommandLine()
 
     state = .doneEnqueuing
     // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
     showWindowsIfReady()
+  }
+
+  private func openFilesFromCommandLine() {
+    guard let cli = commandLineState else { return }
+    let validFileURLs: [URL] = cli.filenames.compactMap { filename in
+      if Regex.url.matches(filename) {
+        return URL(string: filename.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? filename)
+      } else {
+        return FileManager.default.fileExists(atPath: filename) ? URL(fileURLWithPath: filename) : nil
+      }
+    }
+    guard !validFileURLs.isEmpty else {
+      Logger.log.error("No valid file URLs provided via command line! Nothing to do")
+      return
+    }
+    openFiles(validFileURLs, applyingCLI: cli)
+  }
+
+  /// Open files either from `application(_ ,openFiles:)`, or via command line interface (CLI).
+  @discardableResult
+  func openFiles(_ urls: [URL], applyingCLI cli: CommandLineState?) -> Int {
+    // Can force --separate-windows via CLI in addition to pref
+    let separateWindowsSpecified = cli?.openSeparateWindows ?? false
+    let openingMultipleWindows = urls.count > 1 && (Preference.bool(for: .alwaysOpenInNewWindow) || separateWindowsSpecified)
+    if !openingMultipleWindows {
+      // Use only if opening single window.
+      // If multiple windows, don't wait; open each as soon as it loads
+      isOpeningNewWindowsForOpenedFiles = true
+    }
+
+    Logger.log.debug{"Opening URLs: count=\(urls.count) cli=\((cli != nil).yn) multipleWindows=\(openingMultipleWindows.yn)"}
+    var totalFilesOpened = 0
+
+    var lastPlayer: PlayerCore? = nil
+    var wcsForOpenFiles: [PlayerWindowController] = []
+    if openingMultipleWindows {
+      if urls.count > 10 {
+        // TODO: put up a confirmation prompt
+        Logger.log.warn{"User requested to open a large number of windows (count: \(urls.count))"}
+      }
+      for url in urls {
+        // open one window per file
+        let player = PlayerManager.shared.getIdleOrCreateNew()
+        if let cli {
+          cli.applyCommandLineArgs(to: player)
+        }
+        let playerFilesOpened = player.openURLs([url])
+
+        guard playerFilesOpened > 0 else { continue }
+        player.openedWindowsSetIndex = wcsForOpenFiles.count
+        wcsForOpenFiles.append(player.windowController)
+        totalFilesOpened += playerFilesOpened
+        lastPlayer = player
+      }
+    } else {
+      // open pending files in single window
+      let player = PlayerManager.shared.getActiveOrCreateNew()
+      if let cli {
+        cli.applyCommandLineArgs(to: player)
+      }
+      let playerFilesOpened = player.openURLs(urls)
+      if playerFilesOpened > 0 {
+        wcsForOpenFiles.append(player.windowController)
+        totalFilesOpened += playerFilesOpened
+        lastPlayer = player
+      }
+    }
+
+    if let cli, cli.isStdin {
+      let player = PlayerManager.shared.getIdleOrCreateNew()
+      lastPlayer = player
+      cli.applyCommandLineArgs(to: player)
+      player.openURLString("-")
+      totalFilesOpened += 1
+    }
+
+    if totalFilesOpened == 0 {
+      abortWaitForOpenFilePlayerStartup()
+
+      Logger.log.verbose("Notifying user nothing was opened")
+      Utility.showAlert("nothing_to_open")
+    } else {
+      Logger.log.verbose{"Total new windows opening: \(wcsForOpenFiles.count), with \(totalFilesOpened) files"}
+      // Now set wcsForOpenFiles in StartupHandler:
+      self.wcsForOpenFiles = wcsForOpenFiles
+
+      if let cli, let lastPlayer {
+        cli.applyOptionsToLastPlayer(lastPlayer)
+      }
+    }
+    showWindowsIfReady()
+    return totalFilesOpened
   }
 
   /// Returns `true` if any windows were restored; `false` otherwise.
@@ -388,7 +480,14 @@ class StartupHandler {
       return
     }
     guard wcsDoneWithRestore.count == wcsToRestore.count else {
-      log.verbose("Restarting restore timer: only done with \(wcsDoneWithRestore.count) of \(wcsToRestore.count) windows")
+      log.verbose{
+        let openStr: String
+        if let wcsForOpenFiles {
+          openStr = " & opening \(wcsDoneWithFileOpen.count) / \(wcsForOpenFiles.count)"
+        } else {
+          openStr = ""
+        }
+        return "Restarting restore timer: only done restoring \(wcsDoneWithRestore.count) / \(wcsToRestore.count)\(openStr)"}
       dismissTimeoutAlertPanel()
       restoreTimer.restart()
       return

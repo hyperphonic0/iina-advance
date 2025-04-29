@@ -312,7 +312,7 @@ extension PlayerWindowController {
         // ...Unless we are restoring. But then we still want to wait until all windows are done loading, so we can open them all at once.
         // ...But streaming files can often fail to connect. So reopen those right away if restoring (we already have their saved geometry anyway).
         guard currentPlayback.state.isAtLeast(.loaded) || (sessionState.isRestoring && currentPlayback.isNetworkResource) else {
-          return abort("playbackState=\(currentPlayback.state) restoring=\(sessionState.isRestoring) network=\(currentPlayback.isNetworkResource.yn)")
+          return abort("playbackState=\(currentPlayback.state) restoring=\(sessionState.isRestoring.yn) network=\(currentPlayback.isNetworkResource.yn)")
         }
 
         let vidTrackID = player.info.vid ?? 0
