@@ -180,7 +180,7 @@ class StartupHandler {
       Logger.log.verbose("Notifying user nothing was opened")
       Utility.showAlert("nothing_to_open")
     } else {
-      Logger.log.verbose{"Total new windows opening: \(wcsForOpenFiles.count), with \(totalFilesOpened) files"}
+      Logger.log.verbose{"Total new players opening: \(wcsForOpenFiles.count), with \(totalFilesOpened) files"}
       if isInteractiveLaunch {
         // Set wcsForOpenFiles so they can be tracked & shown when ready:
         self.wcsForOpenFiles = wcsForOpenFiles
@@ -203,12 +203,12 @@ class StartupHandler {
     let log = Logger.Subsystem.restore
 
     guard UIState.shared.isRestoreEnabled else {
-      log.debug("Restore is disabled; will not restore windows")
+      log.debug("Restore is disabled. Skipping restore")
       return false
     }
 
     if isCommandLine && !(Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableRestoreUIStateForCmdLineLaunches)) {
-      log.debug("Restore is disabled for command-line launches. Wll not restore windows or save state for this launch")
+      log.debug("Restore is disabled for command-line launches. Will not restore launches or save this launch's state")
       UIState.shared.disableSaveAndRestoreUntilNextLaunch()
       return false
     }

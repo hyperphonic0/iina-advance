@@ -310,7 +310,7 @@ class MPVController: NSObject {
     let subscriptionLevel = mpvLogScanner.mpvEventLogLevel.shouldLog(severity: Constants.minMpvEventLogLevel.rawValue) ? mpvLogScanner.mpvEventLogLevel : Constants.minMpvEventLogLevel
 
     // Receive MPV_EVENT_LOG messages at given level of verbosity.
-    log.verbose{"Updating MPV log event subscription level to \(subscriptionLevel.string.quoted)"}
+    log.verbose{"Updating mpv log event subscription level to \(subscriptionLevel.string.quoted)"}
     chkErr(mpv_request_log_messages(mpv, subscriptionLevel.string))
   }
 
