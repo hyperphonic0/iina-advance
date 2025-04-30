@@ -605,7 +605,7 @@ class MPVController: NSObject {
     // This can be called during init
     guard !player.isStopping else { return }
     let useMpvOSD = !player.isDemoPlayer && Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
-    log.verbose{"Derived isUsingMpvOSD=\(useMpvOSD.yn)"}
+    log.verbose{"Derived isUsingMpvOSD: \(useMpvOSD.yn)"}
     player.isUsingMpvOSD = useMpvOSD
     if useMpvOSD {
       // If using mpv OSD, then disable IINA's OSD

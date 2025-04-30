@@ -636,7 +636,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                            video: VideoGeometry.defaultGeometry(player.log))
     super.init(window: nil)
     osd.hideOSDTimer.action = { self.hideOSD() }
-    log.verbose("PlayerWindowController init done")
+    log.verbose("PlayerWindowController init: done")
   }
 
   required init?(coder: NSCoder) {
@@ -803,6 +803,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func _openWindow() {
     guard let window = self.window else { return }
 
+    guard AppDelegate.shared.isInteractiveLaunch else {
+      log.verbose("PlayerWindow openWindow aborting: launch is non-interactive")
+      return
+    }
     log.verbose("PlayerWindow openWindow starting")
 
     // Must workaround an AppKit defect in some versions of macOS. This defect is known to exist in
@@ -845,7 +849,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         restoreFromMiscWindowBools(priorState)
       } else {
         // check this first! Referencing initialWindow will cause it to be loaded!
-        if AppDelegate.shared.uiIsEnabled && (UIState.shared.windowsOpen.contains(WindowAutosaveName.welcome.string) || UIState.shared.windowsMinimized.contains(WindowAutosaveName.welcome.string)) {
+        if UIState.shared.windowsOpen.contains(WindowAutosaveName.welcome.string) ||
+            UIState.shared.windowsMinimized.contains(WindowAutosaveName.welcome.string) {
           AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
         }
         if !window.isMiniaturized {
@@ -869,13 +874,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       log.verbose("Aborting showWindow - player is stopping")
       return
     }
-    // Do not show window if in encoding mode, unless --force-window=yes|immediate is also given
-    if player.userOptions.contains(where: { $0.0 == MPVEncoding.o}) {
-      let forceWindowOption = player.userOptions.first(where: { $0.0 == MPVOption.Window.forceWindow })?.1
-      if forceWindowOption == nil || forceWindowOption == Constants.String.mpvNo {
-        log.verbose("Aborting showWindow: found --o option, --force-window is not set")
-        return
-      }
+    guard AppDelegate.shared.isInteractiveLaunch else {
+      // Should not even get here if everything else is working properly
+      log.verbose("Aborting showWindow: launch is non-interactive")
+      return
     }
     log.verbose("Showing PlayerWindow")
     super.showWindow(sender)
@@ -2522,6 +2524,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Do not call this in while in native full screen. It seems to cause FS to get stuck and unable to exit.
   /// Try not to call this while animating. It can cause the window to briefly disappear
   func resetCollectionBehavior() {
+    guard AppDelegate.shared.startupHandler.isInteractiveLaunch else { return }
+
     guard !NSApp.presentationOptions.contains(.fullScreen) else {
       log.error("resetCollectionBehavior() should not have been called while in native FS - ignoring")
       return

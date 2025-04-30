@@ -28,14 +28,33 @@ extension MPVController {
       return
     }
 
+    _updateUsingMpvOSDFromPrefs()  // will disable mpv OSD if demo player
+    if player.isDemoPlayer || !player.isPresentInUserOptions(MPVOption.OSD.osc) {
+      logError(mpv_set_option_string(mpv, MPVOption.OSD.osc, no))
+    }
+
+    // Disable mpv's media key system as it now uses the MediaPlayer Framework.
+    // Dropped media key support in 10.11 and 10.12.
+    chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputMediaKeys, no))
+
     if player.isDemoPlayer {
       // Do the minimum needed for demo player
-      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadAutoProfiles, no))
-      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadOsdConsole, no))
-      logError(mpv_set_option_string(mpv, MPVOption.OSD.osc, no))
-      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadScripts, no))
-      logError(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.loadStatsOverlay, no))
-      _updateUsingMpvOSDFromPrefs()  // will disable mpv OSD for demo player
+      setFlag(MPVOption.ProgramBehavior.loadAutoProfiles, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.loadOsdConsole, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.loadScripts, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.loadStatsOverlay, false, level: .verbose)
+      setString("config", no)
+
+      setFlag(MPVOption.WatchLater.savePositionOnQuit, false, level: .verbose)
+      setFlag(MPVOption.WatchLater.resumePlayback, false, level: .verbose)
+      setFlag(MPVOption.Window.keepOpen, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.ytdl, false, level: .verbose)
+
+      setInt(MPVOption.Demuxer.demuxerReadaheadSecs, 0, level: .verbose)
+      setString(MPVOption.Demuxer.demuxerMaxBytes, "128KiB", level: .verbose)
+      setFlag("audio", false, level: .verbose)
+
+      setString(MPVOption.Video.hwdec, no)
 
       logError(mpv_request_log_messages(mpv, MPVLogLevel.warn.description))
       logError(mpv_initialize(mpv))
@@ -54,18 +73,12 @@ extension MPVController {
 
     // - Advanced
 
-    _updateUsingMpvOSDFromPrefs()
-
     // Don't give Demo player its own log file
     // FIXME: allow hot toggling of log
     if Logger.enabled {
       let path = Logger.logDirectory.appendingPathComponent("mpv-\(player.label).log").path
       player.log.debug{"Path of mpv log: \(path.quoted)"}
       chkErr(setOptionString(MPVOption.ProgramBehavior.logFile, path, level: .verbose))
-    }
-
-    if !player.isPresentInUserOptions(MPVOption.OSD.osc) {
-      logError(mpv_set_option_string(mpv, MPVOption.OSD.osc, no))
     }
 
     // - General
@@ -107,10 +120,6 @@ extension MPVController {
       setUserOption(PK.screenshotTemplate, type: .string,
                     forName: MPVOption.Screenshot.screenshotTemplate)
     }
-
-    // Disable mpv's media key system as it now uses the MediaPlayer Framework.
-    // Dropped media key support in 10.11 and 10.12.
-    chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputMediaKeys, no))
 
     if !player.isPresentInUserOptions(MPVOption.Window.keepOpen) {
       updateKeepOpenOptionFromPrefs()
@@ -355,7 +364,7 @@ extension MPVController {
     // Set user-defined options.
     let userOptions = player.userOptions
     if !userOptions.isEmpty {
-      log.debug{"Setting \(userOptions.count) user configured mpv option values"}
+      log.debug{"Setting \(userOptions.count) user-configured mpv options"}
       for op in userOptions {
         let status = setOptionString(op.0, op.1)
         if status < 0 {

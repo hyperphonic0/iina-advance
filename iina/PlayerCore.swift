@@ -495,7 +495,7 @@ class PlayerCore: NSObject {
       return 0
     }
 
-    info.shouldAutoLoadFiles = !windowController.sessionState.isRestoring && playableFiles.count == 1
+    info.shouldAutoLoadFiles = AppDelegate.shared.isInteractiveLaunch && !windowController.sessionState.isRestoring && playableFiles.count == 1
 
     // open the first file
     openPlayerWindow(playableFiles)
@@ -548,6 +548,7 @@ class PlayerCore: NSObject {
   /// The caller must ensure that `urls` is *never* empty!
   private func openPlayerWindow(_ urls: [URL]) {
     assert(DispatchQueue.isExecutingIn(.main))
+    let isInteractiveLaunch = AppDelegate.shared.isInteractiveLaunch
 
     guard urls.count > 0 else {
       log.fatalError("Cannot open player window: empty url list!")
@@ -555,7 +556,7 @@ class PlayerCore: NSObject {
 
     let playback = Playback(url: urls[0])
 
-    if playback.isNetworkResource {
+    if isInteractiveLaunch && playback.isNetworkResource {
       windowController.close()
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
@@ -569,22 +570,27 @@ class PlayerCore: NSObject {
       log.debug{"Opening PlayerWindow for \(path.pii.quoted), playerState=\(state), sessionState=\(windowController.sessionState)"}
 
       if state == .stopping || state == .idle {
+        // Player was previously started, but closed & is now being reopened
         state = .started
       }
 
-      // Load into cache while in mpv queue first
-      MediaMetaCache.shared.ensureVideoMetaIsCached(id: info.currentPlayback?.id, log)
-
       DispatchQueue.main.async { [self] in
         if !windowController.sessionState.isRestoring {
-          windowController.osd.clearQueuedOSDs()
+          if isInteractiveLaunch {
+            windowController.osd.clearQueuedOSDs()
+          }
           windowController.sessionState = windowController.sessionState.newSession()
         }
 
         /// This doesn't apply to restore. That is handled in `mpvRestoreWorkItem`.
-        let pauseUntilWindowOpen = !windowController.isOpen
+        let pauseUntilWindowOpen = isInteractiveLaunch && !windowController.isOpen
 
-        windowController.openWindow(nil)
+        if isInteractiveLaunch {
+          windowController.openWindow(nil)
+        } else {
+          // Make sure mpv core is started
+          start()
+        }
 
         mpv.queue.async { [self] in
           // Send load file command
@@ -2363,6 +2369,31 @@ class PlayerCore: NSObject {
     if let parentPlaylist = mpv.getString(MPVProperty.playlistPath) {
       // TODO!
       playback.parentPlaylist = parentPlaylist
+    }
+
+    if let cachedVideoMeta = MediaMetaCache.shared.getCachedVideoMeta(id: playback.id) {
+      log.verbose("FileStarted: found cached videoMeta for playback")
+
+      windowController.transformGeometry("FileStarted", stateChange: { [self] context in
+        let newSessionsState: PWinSessionState?
+
+        switch context.sessionState {
+        case .existingSession_continuing:
+          newSessionsState = .existingSession_startingNewPlayback
+        default:
+          if context.sessionState.isOpeningFile {
+            newSessionsState = context.sessionState
+          } else {
+            log.verbose("Not the right sessionState; will let another handler take this")
+            newSessionsState = nil
+          }
+        }
+
+        log.verbose{"Calling transformGeometry from fileStarted; sessionState: \(context.sessionState) → \(newSessionsState?.description ?? "nil")"}
+        return newSessionsState
+      }, video: { cxt in
+        cxt.oldGeo.video.substituting(cachedVideoMeta)
+      })  // end of transform block
     }
 
     // Stop watchers from prev media (if any)

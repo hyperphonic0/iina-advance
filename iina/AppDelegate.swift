@@ -64,7 +64,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   // MARK: State
 
   /// If false, app was launched in a special mode which does not allow windows to be shown.
-  var uiIsEnabled = true
+  var isInteractiveLaunch: Bool {
+    startupHandler.isInteractiveLaunch
+  }
 
   var startupHandler = StartupHandler()
   private var shutdownHandler = ShutdownHandler()
@@ -86,7 +88,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     switch key {
     case PK.enableAdvancedSettings, PK.enableLogging, PK.logLevel:
-      Logger.updateEnablement(uiIsEnabled: uiIsEnabled)
+      Logger.updateEnablement(isInteractiveLaunch: isInteractiveLaunch)
       // depends on advanced being enabled:
       menuController.refreshCmdNStatus()
       menuController.refreshBuiltInMenuItemBindings()
@@ -154,10 +156,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let cmdLineArgs = ProcessInfo.processInfo.arguments.dropFirst()
     startupHandler.parseCommandLine(cmdLineArgs)  // may update `uiIsEnabled`
 
-    Logger.initLogging(uiIsEnabled: uiIsEnabled)
+    Logger.initLogging(isInteractiveLaunch: isInteractiveLaunch)
     AppDetailsLogging.shared.logAllAppDetails()
 
-    Logger.log.debug{"App will launch. LaunchID: \(UIState.shared.currentLaunchID)"}
+    Logger.log.debug{"App will launch\(isInteractiveLaunch ? "" : " (non-interactive)"). LaunchID: \(UIState.shared.currentLaunchID)"}
 
     Logger.log.debug{"All app arguments: \(cmdLineArgs)"}
     if let cli = startupHandler.commandLineState {
@@ -169,6 +171,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // capabilities of this Mac.
     HardwareDecodeCapabilities.shared.checkCapabilities()
 
+    // Wait until after logging is done to run this (need PII):
+    UIState.shared.updateCachedScreens()
+
+    // Set up observers
 
     var ncDefaultObservers: [CocoaObserver.NCObserver] = [ .init(.windowIsReadyToShow, startupHandler.windowIsReadyToShow),
                                                            .init(.windowMustCancelShow, startupHandler.windowMustCancelShow)]
@@ -183,28 +189,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       ncDefaultObservers.append(.init(NSWindow.didEndSheetNotification, windowDidEndSheet))
       ncDefaultObservers.append(.init(NSWindow.didMiniaturizeNotification, windowDidMiniaturize))
       ncDefaultObservers.append(.init(NSWindow.didDeminiaturizeNotification, windowDidDeminiaturize))
-#if DEBUG
-      if DebugConfig.logAllScreenChangeEvents {
-        ncDefaultObservers.append(.init(NSWindow.didChangeScreenNotification, { noti in
-          let window = noti.object as! NSWindow
-          let screenID = window.screen?.screenID.quoted ?? "nil"
-          Logger.log.verbose{"WindowDidChangeScreen \(window.windowNumber): \(screenID)"}
-        }))
-      }
-#endif
     } else {
       // TODO: remove existing state...somewhere
-      Logger.log("Note: UI state saving is disabled")
+      Logger.log.debug("Skipping setup for global window observers: save/restore of UI state is disabled")
     }
 
-    // Wait until after logging is done to run this (need PII):
-    UIState.shared.updateCachedScreens()
+#if DEBUG
+    if DebugConfig.logAllScreenChangeEvents {
+      ncDefaultObservers.append(.init(NSWindow.didChangeScreenNotification, { noti in
+        let window = noti.object as! NSWindow
+        let screenID = window.screen?.screenID.quoted ?? "nil"
+        Logger.log.verbose{"WindowDidChangeScreen \(window.windowNumber): \(screenID)"}
+      }))
+    }
+#endif
 
-    /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
-    /// before `applicationDidFinishLaunching`.
-    co = CocoaObserver(Logger.log,
-                       prefDidChange: prefDidChange,
-                       legacyPrefKeyObserver: self, [
+    let observedPrefKeys: [Preference.Key] = !startupHandler.isInteractiveLaunch ? [] : [
       .logLevel,
       .enableLogging,
       .enableAdvancedSettings,
@@ -212,7 +212,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       .resumeLastPosition,
       .useMediaKeys,
       //    .hideWindowsWhenInactive, // TODO: #1, see below
-    ],[
+    ]
+
+    /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
+    /// before `applicationDidFinishLaunching`.
+    co = CocoaObserver(Logger.log, prefDidChange: prefDidChange,
+                       legacyPrefKeyObserver: self, observedPrefKeys, [
       .default: ncDefaultObservers
     ])
 
@@ -232,13 +237,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Call this *before* registering for url events, to guarantee that menu is init'd
     confTableStateManager.startUp()
 
-    HistoryController.shared.start()
+    if startupHandler.isInteractiveLaunch {
+      HistoryController.shared.start()
 
-    // register for url event
-    NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(self.handleURLEvent(event:withReplyEvent:)), forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
+      Logger.log.verbose("Registering for URL events")
+      NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(self.handleURLEvent(event:withReplyEvent:)), forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
 
-    // Hide Window > "Enter Full Screen" menu item, because this is already present in the Video menu
-    UserDefaults.standard.set(false, forKey: "NSFullScreenMenuItemEverywhere")
+      // Hide Window > "Enter Full Screen" menu item, because this is already present in the Video menu
+      UserDefaults.standard.set(false, forKey: "NSFullScreenMenuItemEverywhere")
+    }
   }
 
   private func registerUserDefaultValues() {
@@ -415,7 +422,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return false }
-    guard startupHandler.state == .doneOpening else { return false }
+    guard startupHandler.state == .doneOpening else {
+      Logger.log.verbose{"App will not terminate due to window closed: not yet done launching (state: \(startupHandler.state))"}
+      return false
+    }
 
     /// Certain events (like when PIP is enabled) can result in this being called when it shouldn't.
     /// Another case is when the welcome window is closed prior to a new player window opening.
@@ -432,26 +442,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return false
     }
 
-    guard uiIsEnabled else {
-      Logger.log.verbose{"App will not terminate for window close: app-wide UI is disabled"}
+    guard isInteractiveLaunch else {
+      Logger.log.debug{"App will not terminate for window close: app-wide UI is disabled"}
       return false
     }
 
-    if Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit {
-      UIState.shared.clearSavedLaunchForThisLaunch()
-      Logger.log.verbose{"Last window was closed. App will quit due to configured pref"}
-      return true
+    guard Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) != .quit else {
+      Logger.log.verbose{"Last window was closed. Will do configured action"}
+      doActionWhenLastWindowWillClose()
+      return false
     }
 
-    Logger.log.verbose{"Last window was closed. Will do configured action"}
-    doActionWhenLastWindowWillClose()
-    return false
+    assert(Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit,
+           "Unexpected actionWhenNoOpenWindow for quit: \(Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow).debugDescription)")
+    UIState.shared.clearSavedLaunchForThisLaunch()
+    Logger.log.verbose{"Last window was closed. App will quit as configured via pref"}
+    return true
   }
 
   private func doActionWhenLastWindowWillClose() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard uiIsEnabled else {
-      Logger.log.verbose{"Aborting action when last window closed: app-wide UI is disabled"}
+    guard isInteractiveLaunch else {
+      Logger.log.debug{"Aborting action when last window closed: app-wide UI is disabled"}
       return
     }
     guard !isTerminating else { return }
@@ -530,7 +542,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func application(_ sender: NSApplication, openFiles filePaths: [String]) {
     let shouldIgnoreOpenFile = startupHandler.shouldIgnoreOpenFile
-    Logger.log.debug{"application(openFiles:) called with: \(filePaths.map{$0.pii})\(shouldIgnoreOpenFile ? " (ignoring; launched from CLI)" : "")"}
+    Logger.log.debug{"application(openFiles:) called with: \(filePaths.map{$0.pii})\(shouldIgnoreOpenFile ? ". Ignoring; launched from CLI" : "")"}
     // if launched from command line, should ignore openFile during launch
     guard !shouldIgnoreOpenFile else { return }
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
@@ -548,6 +560,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if openedSomething {
         Logger.log.verbose{"Replying to NSApp: success"}
         NSApp.reply(toOpenOrPrint: .success)
+
+        startupHandler.showWindowsIfReady()
       } else {
         Logger.log.verbose{"Replying to NSApp: fail"}
         NSApp.reply(toOpenOrPrint: .failure)

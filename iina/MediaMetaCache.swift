@@ -35,7 +35,8 @@ struct MediaMeta: CustomStringConvertible {
   let album: String?
   let artist: String?
 
-  let video: [VideoMeta]?
+  /// Only a single video geometry per media is supported at present.
+  let video: VideoMeta?
 
   /// Sometimes ffmpeg fails to read the file's meta. But we need to know it tried, so we don't keep retrying forever.
   ///
@@ -46,7 +47,7 @@ struct MediaMeta: CustomStringConvertible {
   init(_ id: PlaybackID,
        duration: Double? = nil, progress: Double? = nil,
        title: String? = nil, album: String? = nil, artist: String? = nil,
-       video: [VideoMeta]? = nil,
+       video: VideoMeta? = nil,
        triedFFmpeg: Bool = false) {
     self.id = id
     self.duration = duration
@@ -62,7 +63,7 @@ struct MediaMeta: CustomStringConvertible {
   /// Use a negative value for `progress` to overwrite with `nil`.
   func clone(duration: Double? = nil, progress: Double? = nil,
              title: String? = nil, album: String? = nil, artist: String? = nil,
-             video: [VideoMeta]? = nil,
+             video: VideoMeta? = nil,
              triedFFmpeg: Bool = false) -> MediaMeta {
 
     let newProgress: Double?
@@ -83,7 +84,7 @@ struct MediaMeta: CustomStringConvertible {
   }
 
   var description: String {
-    "Media{dur=\(duration?.description ?? "␀") prog=\(progress?.description ?? "␀") title=\(title?.description.quoted ?? "␀") album=\(album?.description.quoted ?? "␀") artist=\(artist?.description.quoted ?? "␀") tried=\(triedFFmpeg.yn) vid=\(video?.map(\.description).joined(separator: ", ") ?? "␀")}"
+    "Media{dur=\(duration?.description ?? "␀") prog=\(progress?.description ?? "␀") title=\(title?.description.quoted ?? "␀") album=\(album?.description.quoted ?? "␀") artist=\(artist?.description.quoted ?? "␀") tried=\(triedFFmpeg.yn) vid=\(video?.description ?? "␀")}"
   }
 }
 
@@ -111,10 +112,8 @@ class MediaMetaCache {
         log.verbose{"Stopping after \(updateCount)/\(videoFiles.count) video sizes due to player \(player.label) stopping"}
         return
       }
-      if getCachedVideoMeta(id: fileInfo.id) == nil {
-        if readVideoMetaIntoCache(id: fileInfo.id) != nil {
-          updateCount += 1
-        }
+      if getOrReadVideoMeta(id: fileInfo.id, player.log) != nil {
+        updateCount += 1
       }
     }
     log.verbose{"Filled in \(updateCount)/\(videoFiles.count) video sizes for \(player.label) in \(sw) ms"}
@@ -264,13 +263,28 @@ class MediaMetaCache {
 
   // MARK: - Video Meta
 
+  func updateCachedVideoMeta(id: PlaybackID, _ vidGeo: VideoGeometry, _ log: Logger.Subsystem) {
+    guard id.isFile else { return }
+    guard id.path != "stdin" else { return }  // do not cache stdin!
+    guard Utility.playableFileExt.contains(id.path.lowercasedPathExtension) else {
+      log.verbose{"Cannot update videoMeta, not a playable file: \(id.path.pii.quoted)"}
+      return
+    }
+
+    let videoMeta = VideoMeta(rawWidth: vidGeo.rawWidth, rawHeight: vidGeo.rawHeight, streamRotation: vidGeo.streamRotation)
+    metaLock.withLock {
+      let existingMeta = cachedMeta[id.url]
+      let oldMeta = existingMeta ?? MediaMeta(id)
+      let newMeta = oldMeta.clone(video: videoMeta)
+      cachedMeta[id.url] = newMeta
+    }
+  }
+
   func getCachedVideoMeta(id: PlaybackID?) -> VideoMeta? {
     guard let id else { return nil }
-    guard id.isFile else { return nil }
-    guard id.path != "stdin" else { return nil }
 
     let mediaMeta = getCachedMeta(for: id)
-    return mediaMeta?.video?.first
+    return mediaMeta?.video
   }
 
   private func readVideoMetaIntoCache(id: PlaybackID?) -> VideoMeta? {
@@ -278,8 +292,17 @@ class MediaMetaCache {
     guard id.isFile else { return nil }
     let path = id.path
     guard path != "stdin" else { return nil }  // do not cache stdin!
+    guard id.isFile else {
+      log.verbose{"Cannot read videoMeta, not a file URL: \(id.url.absoluteString.pii.quoted)"}
+      return nil
+    }
+    guard Utility.playableFileExt.contains(path.lowercasedPathExtension) else {
+      log.verbose{"Cannot read videoMeta, not a playable file: \(path.pii.quoted)"}
+      return nil
+    }
+
     guard FileManager.default.fileExists(atPath: path) else {
-      log.verbose{"Skipping ffMeta update, file does not exist: \(path.pii.quoted)"}
+      log.verbose{"Skipping videoMeta update, file does not exist: \(path.pii.quoted)"}
       return nil
     }
 
@@ -310,16 +333,6 @@ class MediaMetaCache {
   func getOrReadVideoMeta(id: PlaybackID?, _ log: Logger.Subsystem) -> VideoMeta? {
     guard let id else { return nil }
 
-    guard id.isFile else {
-      log.verbose{"Skipping ffMeta check; not a file URL: \(id.url.absoluteString.pii.quoted)"}
-      return nil
-    }
-    let path = id.path
-    guard Utility.playableFileExt.contains(path.lowercasedPathExtension) else {
-      log.verbose{"Skipping videoMeta check; not a playable file: \(path.pii.quoted)"}
-      return nil
-    }
-
     var missed = false
     var videoMeta = getCachedVideoMeta(id: id)
     if videoMeta == nil {
@@ -328,10 +341,10 @@ class MediaMetaCache {
     }
 
     guard let videoMeta else {
-      log.error{"Unable to find ffMeta from either cache or ffmpeg for \(path.pii.quoted)"}
+      log.error{"Unable to find videoMeta from either cache or probe for \(id.path.pii.quoted)"}
       return nil
     }
-    log.verbose{"Found videoMeta via \(missed ? "probe" : "cache"): \(videoMeta), for \(path.pii.quoted)"}
+    log.verbose{"Found videoMeta via \(missed ? "probe" : "cache"): \(videoMeta), for \(id.path.pii.quoted)"}
     return videoMeta
   }
 

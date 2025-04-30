@@ -23,6 +23,10 @@ class StartupHandler {
 
   let launchStartTime = CFAbsoluteTimeGetCurrent()
 
+  /// Can be set to `false` if launched in non-interactive modes, e.g. encoding mode,
+  ///  or with `--macos-app-activation-policy=accessory`
+  var isInteractiveLaunch = true
+
   var state: OpenWindowsState = .stillEnqueuing
 
   var isDoneLaunching: Bool { state == .doneOpening }
@@ -177,14 +181,18 @@ class StartupHandler {
       Utility.showAlert("nothing_to_open")
     } else {
       Logger.log.verbose{"Total new windows opening: \(wcsForOpenFiles.count), with \(totalFilesOpened) files"}
-      // Now set wcsForOpenFiles in StartupHandler:
-      self.wcsForOpenFiles = wcsForOpenFiles
+      if isInteractiveLaunch {
+        // Set wcsForOpenFiles so they can be tracked & shown when ready:
+        self.wcsForOpenFiles = wcsForOpenFiles
+      } else {
+        // Clear this flag to avoid waiting on opened files
+        isOpeningNewWindowsForOpenedFiles = false
+      }
 
       if let cli, let lastPlayer {
         cli.applySpecialOptionsToLastPlayer(lastPlayer)
       }
     }
-    showWindowsIfReady()
     return totalFilesOpened
   }
 
@@ -482,138 +490,138 @@ class StartupHandler {
   func showWindowsIfReady() {
     assert(DispatchQueue.isExecutingIn(.main))
     let log = Logger.Subsystem.restore
-    guard state == .doneEnqueuing else {
-      log.verbose("Skipping showWindowsIfReady: state (\(state)) != doneEnqueuing")
-      return
-    }
-    guard wcsDoneWithRestore.count == wcsToRestore.count else {
-      log.verbose{
-        let openStr: String
-        if let wcsForOpenFiles {
-          openStr = " & opening \(wcsDoneWithFileOpen.count) / \(wcsForOpenFiles.count)"
-        } else {
-          openStr = ""
+    let isInteractiveLaunch = AppDelegate.shared.isInteractiveLaunch
+
+    if isInteractiveLaunch {
+      guard state == .doneEnqueuing else {
+        log.verbose("Skipping showWindowsIfReady: state (\(state)) != doneEnqueuing")
+        return
+      }
+
+      guard wcsDoneWithRestore.count == wcsToRestore.count else {
+        log.verbose{
+          let openStr: String
+          if let wcsForOpenFiles {
+            openStr = " & opening \(wcsDoneWithFileOpen.count) / \(wcsForOpenFiles.count)"
+          } else {
+            openStr = ""
+          }
+          return "Restarting restore timer: only done restoring \(wcsDoneWithRestore.count) / \(wcsToRestore.count)\(openStr)"}
+        dismissTimeoutAlertPanel()
+        restoreTimer.restart()
+        return
+      }
+      // If an new player window was opened at startup (i.e. not a restored window), wait for this also.
+      if isOpeningNewWindowsForOpenedFiles {
+        // If isOpeningNewWindowsForOpenedFiles is true, the check below will only pass once wcsForOpenFiles becomes non-nil.
+        guard let wcsForOpenFiles else {
+          log.verbose{"Startup: isOpeningNewWindowsForOpenedFiles=Y but wcsForOpenFiles is nil; returning"}
+          return
         }
-        return "Restarting restore timer: only done restoring \(wcsDoneWithRestore.count) / \(wcsToRestore.count)\(openStr)"}
-      dismissTimeoutAlertPanel()
-      restoreTimer.restart()
-      return
-    }
-    // If an new player window was opened at startup (i.e. not a restored window), wait for this also.
-    if isOpeningNewWindowsForOpenedFiles {
-      // If isOpeningNewWindowsForOpenedFiles is true, the check below will only pass once wcsForOpenFiles becomes non-nil.
-      guard let wcsForOpenFiles else {
-        log.verbose{"Startup: isOpeningNewWindowsForOpenedFiles=Y but wcsForOpenFiles is nil; returning"}
-        return
+
+        // If opening more than 1 file, proceed immediately. Otherwise wait for it to be ready.
+        guard wcsForOpenFiles.count > 1 || (wcsForOpenFiles.count == wcsDoneWithFileOpen.count) else {
+          log.verbose{"Startup: still waiting for opened file"}
+          return
+        }
       }
 
-      // If opening more than 1 file, proceed immediately. Otherwise wait for it to be ready.
-      guard wcsForOpenFiles.count > 1 || (wcsForOpenFiles.count == wcsDoneWithFileOpen.count) else {
-        log.verbose{"Startup: still waiting for opened file"}
-        return
+      let newWindCount = wcsForOpenFiles?.count ?? 0
+      if newWindCount == 0 && wcsToRestore.count == 0 {
+        log.verbose{"No windows exist to wait for; finishing startup"}
+      } else {
+        log.verbose{"All \(wcsToRestore.count) restored \(newWindCount > 0 ? " & \(newWindCount) new windows ready. Showing all" : "")"}
       }
-    }
+      restoreTimer.cancel()
 
-    let newWindCount = wcsForOpenFiles?.count ?? 0
-    if newWindCount == 0 && wcsToRestore.count == 0 {
-      log.verbose{"No windows needed to be waited for; finishing startup"}
-    } else {
-      log.verbose{"All \(wcsToRestore.count) restored \(newWindCount > 0 ? " & \(newWindCount) new windows ready. Showing all" : "")"}
-    }
-    restoreTimer.cancel()
-
-    // Bring this app to the front, possibly annoying the user who got bored waiting & is now doing something else.
-    // Especially needed for CLI launches, where activation never seems to happen automatically.
-    if #available(macOS 14.0, *) {
-      NSApp.activate()
-    } else {
-      NSApp.activate(ignoringOtherApps: true)
-    }
-
-    var prevWindowNumber: Int? = nil
-    for wc in wcsToRestore {
-      let wndName = wc.window!.savedStateName
-      let windowIsMinimized = UIState.shared.windowsMinimized.contains(wndName)
-      log.verbose{"Showing restored window: \(wndName)\(windowIsMinimized ? " (minimized)" : "")"}
-      guard !windowIsMinimized else { continue }
-
-      if let prevWindowNumber {
-        wc.window?.order(.above, relativeTo: prevWindowNumber)
+      // Bring this app to the front, possibly annoying the user who got bored waiting & is now doing something else.
+      Logger.log.debug("Activating app")
+      if #available(macOS 14.0, *) {
+        NSApp.activate()
+      } else {
+        NSApp.activate(ignoringOtherApps: true)
       }
-      prevWindowNumber = wc.window?.windowNumber
-      wc.showWindow(self)
-    }
 
-    // Windows for opened files (if any).
-    // Don't wait for these to be ready. But at least ensure that their ordering is correct.
-    if let wcsForOpenFiles {
-      for wc in wcsForOpenFiles {
+      var prevWindowNumber: Int? = nil
+      for wc in wcsToRestore {
         let wndName = wc.window!.savedStateName
-        log.verbose{"Showing new window: \(wndName)"}
+        let windowIsMinimized = UIState.shared.windowsMinimized.contains(wndName)
+        log.verbose{"Showing restored window: \(wndName)\(windowIsMinimized ? " (minimized)" : "")"}
+        guard !windowIsMinimized else { continue }
 
-        // Make this topmost
         if let prevWindowNumber {
           wc.window?.order(.above, relativeTo: prevWindowNumber)
         }
         prevWindowNumber = wc.window?.windowNumber
         wc.showWindow(self)
       }
-    }
 
-    if restoreOpenFileWindow {
-      // TODO: persist isAlternativeAction too
-      AppDelegate.shared.showOpenFileWindow(isAlternativeAction: false)
-    }
+      // Windows for opened files (if any).
+      // Don't wait for these to be ready. But at least ensure that their ordering is correct.
+      if let wcsForOpenFiles {
+        for wc in wcsForOpenFiles {
+          let wndName = wc.window!.savedStateName
+          log.verbose{"Showing new window: \(wndName)"}
 
-    let didRestoreSomething = !wcsToRestore.isEmpty
+          // Make this topmost
+          if let prevWindowNumber {
+            wc.window?.order(.above, relativeTo: prevWindowNumber)
+          }
+          prevWindowNumber = wc.window?.windowNumber
+          wc.showWindow(self)
+        }
+      }
 
-    if Preference.bool(for: .isRestoreInProgress) {
-      log.verbose{"Done restoring windows (\(wcsToRestore.count))"}
-      Preference.set(false, for: .isRestoreInProgress)
-    } else {
-      log.verbose("Done opening windows")
+      if restoreOpenFileWindow {
+        // TODO: persist isAlternativeAction too
+        AppDelegate.shared.showOpenFileWindow(isAlternativeAction: false)
+      }
+
+      if Preference.bool(for: .isRestoreInProgress) {
+        log.verbose{"Done restoring windows (\(wcsToRestore.count))"}
+        Preference.set(false, for: .isRestoreInProgress)
+      } else {
+        log.verbose("Done opening windows")
+      }
+
+      // other initializations at App level
+      NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
+
+      // TODO: try to get tabbing working
+      NSWindow.allowsAutomaticWindowTabbing = false
+      // NSWindow.userTabbingPreference
     }
 
     state = .doneOpening
 
-    /// Make sure to do this *after* `state = .doneOpening`:
-    dismissTimeoutAlertPanel()
+    if isInteractiveLaunch {
+      /// Make sure to do this *after* `state = .doneOpening`:
+      dismissTimeoutAlertPanel()
 
-    // other initializations at App level
-    NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
+      JavascriptPlugin.loadGlobalInstances()
 
-    // TODO: try to get tabbing working
-    NSWindow.allowsAutomaticWindowTabbing = false
-    // NSWindow.userTabbingPreference
+      if let menuController = AppDelegate.shared.menuController {
+        menuController.bindMenuItems()
+        menuController.updatePluginMenu()
+        menuController.refreshBuiltInMenuItemBindings()
+      }
 
-    JavascriptPlugin.loadGlobalInstances()
+      // FIXME: this actually causes a window to open in the background. Should wait until intending to show it
+      // show alpha in color panels
+      NSColorPanel.shared.showsAlpha = true
 
-    if let menuController = AppDelegate.shared.menuController {
-      menuController.bindMenuItems()
-      menuController.updatePluginMenu()
-      menuController.refreshBuiltInMenuItemBindings()
+      let didRestoreSomething = !wcsToRestore.isEmpty || restoreOpenFileWindow
+      let didShowSomething = didRestoreSomething || wcsForOpenFiles != nil
+      if !isCommandLine && !didShowSomething {
+        // Fall back to default action:
+        AppDelegate.shared.doLaunchOrReopenAction()
+      }
+
+      // Init MediaPlayer integration
+      MediaPlayerIntegration.shared.update()
+
+      NSApplication.shared.servicesProvider = self
     }
-
-    // FIXME: this actually causes a window to open in the background. Should wait until intending to show it
-    // show alpha in color panels
-    NSColorPanel.shared.showsAlpha = true
-
-    let didOpenSomething = didRestoreSomething || wcsForOpenFiles != nil
-    if !isCommandLine && !didOpenSomething {
-      // Fall back to default action:
-      AppDelegate.shared.doLaunchOrReopenAction()
-    }
-
-    // Init MediaPlayer integration
-    MediaPlayerIntegration.shared.update()
-
-    Logger.log.debug("Activating app")
-    if #available(macOS 14.0, *) {
-      NSRunningApplication.current.activate(options: [.activateAllWindows])
-    } else {
-      NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
-    }
-    NSApplication.shared.servicesProvider = self
 
     let timeElapsed: Double = CFAbsoluteTimeGetCurrent() - launchStartTime
     Logger.log.verbose{"Done with startup (\(timeElapsed.stringMaxFrac2)s)"}
@@ -699,45 +707,44 @@ class StartupHandler {
     }
 
     commandLineState = CommandLineState(cmdLineArgs)
-    if let commandLineState {
-      // Replicate logic from main.swift in case this launch did not originate there
-      if commandLineState.enterMusicMode && commandLineState.enterPIP {
-        // Music mode does not support Picture-in-Picture. Combining these options is not permitted.
-        print("Cannot specify both --music-mode and --pip")
-        // Command line usage error.
-        exit(EX_USAGE)
-      }
+    guard let commandLineState else { return }
 
-      var isInteractiveLaunch = true
+    // Apply args
 
-      let activationPolicy = commandLineState.mpvArguments.last(where: { argPair in
-        argPair.0 == MPVOption.GPURendererOptions.macosAppActivationPolicy && !argPair.1.isEmpty
-      })
-      if let activationPolicy {
-        switch activationPolicy.1 {
-        case "regular":
-          NSApp.setActivationPolicy(.regular)
-        case "accessory":
-          NSApp.setActivationPolicy(.accessory)
-          isInteractiveLaunch = false
-        case "prohibited":
-          NSApp.setActivationPolicy(.prohibited)
-        default:
-          break
-        }
-      }
+    // Replicate logic from main.swift in case this launch did not originate there
+    if commandLineState.enterMusicMode && commandLineState.enterPIP {
+      // Music mode does not support Picture-in-Picture. Combining these options is not permitted.
+      print("Cannot specify both --music-mode and --pip")
+      // Command line usage error.
+      exit(EX_USAGE)
+    }
 
-      if commandLineState.mpvArguments.contains(where: { $0.0 == MPVEncoding.o }) {
+    let activationPolicy = commandLineState.mpvArguments.last(where: { argPair in
+      argPair.0 == MPVOption.GPURendererOptions.macosAppActivationPolicy && !argPair.1.isEmpty
+    })
+    if let activationPolicy {
+      switch activationPolicy.1 {
+      case "regular":
+        NSApp.setActivationPolicy(.regular)
+      case "accessory":
+        NSApp.setActivationPolicy(.accessory)
         isInteractiveLaunch = false
+      case "prohibited":
+        NSApp.setActivationPolicy(.prohibited)
+      default:
+        break
       }
+    }
 
-      if !isInteractiveLaunch {
-        // Disable save/restore, history, plugins, UI for this launch
-        UIState.shared.disableSaveAndRestoreUntilNextLaunch()
-        HistoryController.shared.disableHistoryForThisLaunch()
-        JavascriptPlugin.iinaPluginSystemEnabled = false
-        AppDelegate.shared.uiIsEnabled = false
-      }
+    if commandLineState.mpvArguments.contains(where: { $0.0 == MPVEncoding.o }) {
+      isInteractiveLaunch = false
+    }
+
+    if !isInteractiveLaunch {
+      // Disable save/restore, history, plugins, UI for this launch
+      UIState.shared.disableSaveAndRestoreUntilNextLaunch()
+      HistoryController.shared.disableHistoryForThisLaunch()
+      JavascriptPlugin.iinaPluginSystemEnabled = false
     }
   }
 }

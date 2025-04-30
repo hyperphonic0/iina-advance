@@ -203,6 +203,8 @@ struct GeometryTransform {
                                         userRotation: userRotation,
                                         log)
 
+
+
       // FIXME: audioStatus==notAudio for playlist which auto-plays audio
       if !currentMediaAudioStatus.isAudio, vidTrackID != 0 {
         let dwidth = videoOutParams?.dw ?? 0
@@ -230,20 +232,16 @@ struct GeometryTransform {
         return videoGeo
       }
 
-      // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for
-      // the current mpv instance to finish loading it.
-      // This is optional but can provide a better viewer experience.
-      let videoMeta = currentPlayback.isNetworkResource ? nil : MediaMetaCache.shared.getOrReadVideoMeta(id: currentPlayback.id, log)
-      if let videoMeta {
-        log.debug{"[GeoTF:\(name)] Substituting videoMeta \(videoMeta) into videoGeo \(videoGeo)"}
-        return videoGeo.substituting(videoMeta)
-      } else {
-        log.debug{"[GeoTF:\(name)] Derived videoGeo \(videoGeo)"}
-        return videoGeo
+      if !currentPlayback.isNetworkResource {
+        // Update cache with latest video params
+        MediaMetaCache.shared.updateCachedVideoMeta(id: currentPlayback.id, videoGeo, log)
       }
+
+      log.debug{"[GeoTF:\(name)] Derived videoGeo \(videoGeo)"}
+      return videoGeo
     }  // end of transform block
 
-  }
+  }  // end struct GeometryTransform.Context
 
   let name: String
 
