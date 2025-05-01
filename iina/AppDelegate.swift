@@ -81,7 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   private var lastClosedWindowName: String = ""
   var isShowingOpenFileWindow = false
 
-  func reenableInteractiveLaunch() {
+  func ensureInteractiveLaunchEnabled() {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !AppDelegate.isInteractiveLaunch else { return }
 
@@ -142,9 +142,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard let keyPath, let change, keyPath == UIState.shared.currentLaunchName, let newLaunchLifecycleState = change[.newKey] as? Int else { return }
     guard !isTerminating else { return }
     guard newLaunchLifecycleState != 0 else { return }
-    Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)). Probably a newer instance of IINA has started and is attempting to restore")
-    Logger.log("Changing our lifecycle state back to 'stillRunning' so the other launch will skip this instance.")
-    UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: keyPath)
+
+    if UIState.shared.isSaveEnabled {
+      Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)). Probably a younger instance of IINA has started and is attempting to restore")
+      Logger.log("Changing our lifecycle state back to 'stillRunning' so the other launch will skip this instance.")
+      UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: keyPath)
+    } else {
+      Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)), but save is disabled; ignoring")
+    }
     DispatchQueue.main.async { [self] in
       NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
     }
@@ -199,17 +204,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Here we add a listener which fires when *any* window is closed, in order to handle that logic all in one place.
     ncDefaultObservers.append(.init(NSWindow.willCloseNotification, windowWillClose))
 
-    if UIState.shared.isSaveEnabled {
-      // Save ordered list of open windows each time the order of windows changed.
-      ncDefaultObservers.append(.init(NSWindow.didBecomeMainNotification, windowDidBecomeMain))
-      ncDefaultObservers.append(.init(NSWindow.willBeginSheetNotification, windowWillBeginSheet))
-      ncDefaultObservers.append(.init(NSWindow.didEndSheetNotification, windowDidEndSheet))
-      ncDefaultObservers.append(.init(NSWindow.didMiniaturizeNotification, windowDidMiniaturize))
-      ncDefaultObservers.append(.init(NSWindow.didDeminiaturizeNotification, windowDidDeminiaturize))
-    } else {
-      // TODO: remove existing state...somewhere
-      Logger.log.debug("Skipping setup for global window observers: save/restore of UI state is disabled")
-    }
+    // Save ordered list of open windows each time the order of windows changed.
+    ncDefaultObservers.append(.init(NSWindow.didBecomeMainNotification, windowDidBecomeMain))
+    ncDefaultObservers.append(.init(NSWindow.willBeginSheetNotification, windowWillBeginSheet))
+    ncDefaultObservers.append(.init(NSWindow.didEndSheetNotification, windowDidEndSheet))
+    ncDefaultObservers.append(.init(NSWindow.didMiniaturizeNotification, windowDidMiniaturize))
+    ncDefaultObservers.append(.init(NSWindow.didDeminiaturizeNotification, windowDidDeminiaturize))
 
 #if DEBUG
     if DebugConfig.logAllScreenChangeEvents {
@@ -253,15 +253,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // Call this *before* registering for url events, to guarantee that menu is init'd
     AppInputConfig.loadSelectedConfBindingsIntoAppConfig()
-
-    if AppDelegate.isInteractiveLaunch {
-
-      Logger.log.verbose("Registering for URL events")
-      NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(self.handleURLEvent(event:withReplyEvent:)), forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
-
-      // Hide Window > "Enter Full Screen" menu item, because this is already present in the Video menu
-      UserDefaults.standard.set(false, forKey: "NSFullScreenMenuItemEverywhere")
-    }
   }
 
   private func registerUserDefaultValues() {
@@ -565,9 +556,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
 
     DispatchQueue.main.async { [self] in
-      if !AppDelegate.isInteractiveLaunch {
-        AppDelegate.shared.reenableInteractiveLaunch()
-      }
+      // If launched non-interactively, load all the UI stuff now
+      ensureInteractiveLaunchEnabled()
 
       // if installing a plugin package
       if let pluginPackageURL = urls.first(where: { $0.pathExtension == "iinaplgz" }) {
@@ -715,15 +705,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   /// Called when user clicks the dock icon of the already-running application.
   func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
-    // Once termination starts subsystems such as mpv are being shutdown. Accessing mpv
+    // Once termination starts subsystems such as mpv are being shut down. Accessing mpv
     // once it has been instructed to shutdown can trigger a crash. MUST NOT permit
     // reopening once termination has started.
     guard !isTerminating else { return false }
     guard startupHandler.state == .doneOpening else { return false }
-    // OpenFile is an NSPanel, which AppKit considers not to be a window. Need to account for this ourselves.
-    guard !hasVisibleWindows && !isShowingOpenFileWindow else { return true }
 
-    Logger.log("Handle reopen")
+    // OpenFile is an NSPanel, which AppKit considers not to be a window. Need to account for this ourselves.
+    guard !hasVisibleWindows && !isShowingOpenFileWindow else {
+      Logger.log.verbose("HandleReopen: has visible windows")
+      return true
+    }
+
+    Logger.log.debug("HandleReopen: doing actionAfterLaunch")
     doLaunchOrReopenAction()
     return true
   }
@@ -880,12 +874,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   // MARK: - Other window open methods
 
   func showWelcomeWindow() {
-    Logger.log("Showing WelcomeWindow", level: .verbose)
+    Logger.log.verbose("Showing WelcomeWindow")
     initialWindow.openWindow(self)
   }
 
   func showOpenFileWindow(isAlternativeAction: Bool) {
-    Logger.log.verbose{"Showing OpenFileWindow: isAlternativeAction=\(isAlternativeAction.yesno)"}
+    Logger.log.verbose{"Showing OpenFileWindow: isAltAction=\(isAlternativeAction.yesno)"}
     guard !isShowingOpenFileWindow else {
       // Do not allow more than one open file window at a time
       Logger.log.debug("Ignoring request to show OpenFileWindow: already showing one")

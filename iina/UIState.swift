@@ -318,11 +318,13 @@ class UIState {
         openWindowNames.append(windName)
       }
     }
+
+    guard UIState.shared.isSaveEnabled else { return }
+
     log.trace{"Saving window list: open=\(openWindowNames), minimized=\(minimizedWindowNames)"}
     let minimizedStrings = minimizedWindowNames.map({ "\(SavedWindow.minimizedPrefix)\($0)" })
     saveOpenWindowList(windowNamesBackToFront: minimizedStrings + openWindowNames)
 
-    guard UIState.shared.isSaveEnabled else { return }
     if UserDefaults.standard.integer(forKey: currentLaunchName) != LaunchLifecycleState.stillRunning.rawValue {
       // The entry will be missing if the user cleared saved state but then re-enabled save in the same launch.
       // We can easily add the missing lifecycleState again.
@@ -334,6 +336,7 @@ class UIState {
   private func saveOpenWindowList(windowNamesBackToFront: [String]) {
     guard isSaveEnabled else { return }
     //      log.verbose("Saving open windows: \(windowNamesBackToFront)")
+    
     let csv = windowNamesBackToFront.map{ $0 }.joined(separator: ",")
     let key = makeOpenWindowListKey(forLaunchID: currentLaunchID)
 

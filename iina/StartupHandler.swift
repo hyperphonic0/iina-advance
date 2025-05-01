@@ -75,7 +75,10 @@ class StartupHandler {
   func doStartup() {
     // Register to restore for successive launches. Set status to currently running so that it isn't restored immediately by the next launch.
     // Do this *before* restoring, because the cleanup task will reassign windows to this launch
-    UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: UIState.shared.currentLaunchName)
+    if UIState.shared.isSaveEnabled {
+      UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: UIState.shared.currentLaunchName)
+    }
+    // Add observer even if save is disabled; it may be re-enabled again
     UserDefaults.standard.addObserver(AppDelegate.shared, forKeyPath: UIState.shared.currentLaunchName, options: .new, context: nil)
 
     // Restore window state *before* hooking up the listener which saves state.
@@ -631,6 +634,12 @@ class StartupHandler {
     MediaPlayerIntegration.shared.update()
 
     NSApplication.shared.servicesProvider = self
+
+    Logger.log.verbose("Registering for URL events")
+    NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(AppDelegate.shared.handleURLEvent(event:withReplyEvent:)), forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
+
+    // Hide Window > "Enter Full Screen" menu item, because this is already present in the Video menu
+    UserDefaults.standard.set(false, forKey: "NSFullScreenMenuItemEverywhere")
   }
 
   // MARK: - Notification Listeners

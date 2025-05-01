@@ -76,7 +76,9 @@ class PlayerCore: NSObject {
   let isDemoPlayer: Bool
 
   /// If `false`, has player functionality without use of a player window. Must be `true` to show a player window.
-  var enableWindow = false
+  var isInteractivePlayer = false
+
+  var isSaveEnabled: Bool { isInteractivePlayer && UIState.shared.isSaveEnabled }
 
   /// For explicit request via command line
   var startInMusicModeRequested = false
@@ -551,7 +553,10 @@ class PlayerCore: NSObject {
   /// The caller must ensure that `urls` is *never* empty!
   private func openPlayerWindow(_ urls: [URL]) {
     assert(DispatchQueue.isExecutingIn(.main))
-    enableWindow = AppDelegate.isInteractiveLaunch
+    guard !isDemoPlayer else {
+      log.fatalError("Cannot open player window for demo player!")
+    }
+    isInteractivePlayer = AppDelegate.isInteractiveLaunch
 
     guard urls.count > 0 else {
       log.fatalError("Cannot open player window: empty url list!")
@@ -559,7 +564,7 @@ class PlayerCore: NSObject {
 
     let playback = Playback(url: urls[0])
 
-    if enableWindow && playback.isNetworkResource {
+    if isInteractivePlayer && playback.isNetworkResource {
       windowController.close()
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
@@ -570,7 +575,7 @@ class PlayerCore: NSObject {
     mpv.queue.sync { [self] in
       let path = playback.path
       info.currentPlayback = playback
-      log.debug{"Opening PlayerWindow for \(path.pii.quoted), playerState=\(state), sessionState=\(windowController.sessionState)"}
+      log.debug{"Opening player (window=\(isInteractivePlayer.yn)) for \(path.pii.quoted), playerState=\(state), sessionState=\(windowController.sessionState)"}
 
       if state == .stopping || state == .idle {
         // Player was previously started, but closed & is now being reopened
@@ -579,16 +584,16 @@ class PlayerCore: NSObject {
 
       DispatchQueue.main.async { [self] in
         if !windowController.sessionState.isRestoring {
-          if enableWindow {
+          if isInteractivePlayer {
             windowController.osd.clearQueuedOSDs()
           }
           windowController.sessionState = windowController.sessionState.newSession()
         }
 
         /// This doesn't apply to restore. That is handled in `mpvRestoreWorkItem`.
-        let pauseUntilWindowOpen = enableWindow && !windowController.isOpen
+        let pauseUntilWindowOpen = isInteractivePlayer && !windowController.isOpen
 
-        if enableWindow {
+        if isInteractivePlayer {
           windowController.openWindow(nil)
         } else {
           // Make sure mpv core is started
@@ -3361,7 +3366,7 @@ class PlayerCore: NSObject {
     }
     // else: info.cachedRanges will be cleared by pref observer
 
-    if UIState.shared.isSaveEnabled {
+    if isSaveEnabled {
       // Ensure user can resume playback by periodically saving
       let now = Date().timeIntervalSince1970
       let secSinceLastSave = now - lastStateSaveTime

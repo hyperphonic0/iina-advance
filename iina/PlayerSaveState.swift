@@ -364,7 +364,7 @@ struct PlayerSaveState: CustomStringConvertible {
 
   // Saves this player's state asynchronously
   static func save(_ player: PlayerCore) {
-    guard UIState.shared.isSaveEnabled else { return }
+    guard player.isSaveEnabled else { return }
 
     /// Runs asynchronously in background queue to avoid blocking UI.
     /// Cuts down on duplicate work via delay and ticket check.
@@ -412,7 +412,7 @@ struct PlayerSaveState: CustomStringConvertible {
   }
 
   static func saveSynchronously(_ player: PlayerCore) {
-    guard UIState.shared.isSaveEnabled else { return }
+    guard player.isSaveEnabled else { return }
     assert(DispatchQueue.isExecutingIn(.main))
     player.log.debug("Saving player state synchronously")
     let wc = player.windowController!
