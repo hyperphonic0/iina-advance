@@ -360,7 +360,7 @@ extension PlayerWindowController {
         /// (Apple's trackpad in particular is very sensitive and tends to call `mouseDragged()` if there is even the slightest
         /// roll of the finger during a click, and the distance of the "drag" may be less than `minimumInitialDragDistance`)
         let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
-        guard dragDistance > Constants.WindowedMode.minInitialDragThreshold else { return }
+        guard dragDistance > Constants.Window.minInitialDragThreshold else { return }
 
         log.verbose{"PWin MouseDrag: minimum dragging distance was met (\(dragDistance))"}
         isDragging = true

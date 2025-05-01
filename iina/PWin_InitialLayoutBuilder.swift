@@ -294,8 +294,8 @@ extension PlayerWindowController {
       /// Use `minVideoSize` at first when a new window is opened, so that when `transformGeometry()` is called shortly after,
       /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
       let viewportSize = CGSize.computeMinSize(withAspect: videoGeo.videoAspectCAR,
-                                               minWidth: Constants.WindowedMode.minViewportSize.width,
-                                               minHeight: Constants.WindowedMode.minViewportSize.height)
+                                               minWidth: Constants.Window.minViewportSize.width,
+                                               minHeight: Constants.Window.minViewportSize.height)
       let intendedWindowSize = NSSize(width: viewportSize.width + initialLayout.outsideLeadingBarWidth + initialLayout.outsideTrailingBarWidth,
                                       height: viewportSize.height + initialLayout.outsideTopBarHeight + initialLayout.outsideBottomBarHeight)
       let windowFrame = NSRect(origin: NSPoint.zero, size: intendedWindowSize)

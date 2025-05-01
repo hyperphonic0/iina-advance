@@ -335,9 +335,7 @@ struct Constants {
     static let rawHeight: Int = 480
     static let aspectLabel = "4:3"
   }
-
-  // TODO: Rename to simply "Window"
-  struct WindowedMode {
+  struct Window {
     static let minViewportSize = CGSize(width: 285, height: 120)
     static let minWindowSize = CGSize(width: 285, height: 160)
     // The minimum distance that the user must drag before their click or tap gesture is interpreted as a drag gesture:
@@ -459,7 +457,7 @@ struct Constants {
     struct MusicMode {
       static let oscHeight: CGFloat = 72
       static let positionSliderWrapperViewHeight: CGFloat = 32
-      static let minWindowWidth: CGFloat = Constants.WindowedMode.minViewportSize.width
+      static let minWindowWidth: CGFloat = Constants.Window.minViewportSize.width
       static let defaultWindowWidth: CGFloat = minWindowWidth
       // Hide playlist if its height is too small to display at least 3 items:
       static let minPlaylistHeight: CGFloat = 138

@@ -370,14 +370,14 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     var viewportMinW: CGFloat
     switch mode {
     case .windowedNormal, .fullScreenNormal:
-      viewportMinW = Constants.WindowedMode.minViewportSize.width
+      viewportMinW = Constants.Window.minViewportSize.width
       // Take sidebars into account:
       viewportMinW = max(viewportMinW, insideBars.totalWidth + Constants.Sidebar.minWidthBetweenInsideSidebars)
-      return NSSize(width: viewportMinW, height: Constants.WindowedMode.minViewportSize.height)
+      return NSSize(width: viewportMinW, height: Constants.Window.minViewportSize.height)
     case .windowedInteractive, .fullScreenInteractive:
       viewportMinW = Constants.InteractiveMode.minWindowWidth
       // assume viewport aspect is same as video for now
-      return NSSize(width: viewportMinW, height: Constants.WindowedMode.minViewportSize.height)
+      return NSSize(width: viewportMinW, height: Constants.Window.minViewportSize.height)
     case .musicMode:
       // note that a viewport height of zero would be ok if video was disabled in music mode
       return NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: 0)

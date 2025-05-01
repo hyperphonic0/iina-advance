@@ -42,7 +42,7 @@ extension PlayerWindowController {
 
     shouldCascadeWindows = false
 
-    window.minSize = Constants.WindowedMode.minWindowSize
+    window.minSize = Constants.Window.minWindowSize
     contentView.idString = "PWinCV"
 
     leftTimeLabel.mode = .current

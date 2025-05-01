@@ -153,7 +153,7 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
 
     if !minDragDistanceMet {
       let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
-      guard dragDistance >= Constants.WindowedMode.minInitialDragThreshold else { return }
+      guard dragDistance >= Constants.Window.minInitialDragThreshold else { return }
       pwc.log.verbose{"FloatingOSC mouseDrag: minimum dragging distance was met"}
       minDragDistanceMet = true
     }
