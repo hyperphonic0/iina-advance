@@ -238,7 +238,7 @@ class UIState {
   }
 
   var isRestoreEnabled: Bool {
-    return !disableForThisInstance && Preference.bool(for: .enableRestoreUIState)
+    return !disableForThisInstance && AppDelegate.isInteractiveLaunch && Preference.bool(for: .enableRestoreUIState)
   }
 
   func disableSaveAndRestoreUntilNextLaunch() {
@@ -322,6 +322,7 @@ class UIState {
     let minimizedStrings = minimizedWindowNames.map({ "\(SavedWindow.minimizedPrefix)\($0)" })
     saveOpenWindowList(windowNamesBackToFront: minimizedStrings + openWindowNames)
 
+    guard UIState.shared.isSaveEnabled else { return }
     if UserDefaults.standard.integer(forKey: currentLaunchName) != LaunchLifecycleState.stillRunning.rawValue {
       // The entry will be missing if the user cleared saved state but then re-enabled save in the same launch.
       // We can easily add the missing lifecycleState again.

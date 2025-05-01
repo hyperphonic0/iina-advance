@@ -19,7 +19,7 @@ class WindowController: NSWindowController {
   }
 
   func openWindow(_ sender: Any?) {
-    guard AppDelegate.shared.isInteractiveLaunch else {
+    guard AppDelegate.isInteractiveLaunch else {
       Logger.log.debug{"Aborting openWindow (\(window?.savedStateName ?? "nil")): launch is non-interactive"}
       return
     }

@@ -31,11 +31,6 @@ class ConfTableStateManager: NSObject {
     }
   }
 
-  // Should not be called until the init() methods of all major components have completed
-  func startUp() {
-    _ = loadSelectedConfBindingsIntoAppConfig()
-  }
-
   deinit {
     for observer in observers {
       ObjcUtils.silenced {
@@ -250,7 +245,7 @@ class ConfTableStateManager: NSObject {
     // Update selectedConfName and load new file if changed
     let hasSelectionChange = !tableStateOld.selectedConfName.equalsIgnoreCase(tableStateNew.selectedConfName)
     if hasSelectionChange {
-      if !loadSelectedConfBindingsIntoAppConfig() {
+      if !AppInputConfig.loadSelectedConfBindingsIntoAppConfig() {
         return
       }
       if skipSaveToPrefs || Preference.string(for: .currentInputConfigName) == tableStateNew.selectedConfName {
@@ -320,7 +315,7 @@ class ConfTableStateManager: NSObject {
   }
 
   // Utility function: show error popup to user
-  private func sendErrorAlert(key alertKey: String, args: [String]) {
+  func sendErrorAlert(key alertKey: String, args: [String]) {
     let alertInfo = Utility.AlertInfo(key: alertKey, args: args)
     NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
   }
@@ -337,33 +332,5 @@ class ConfTableStateManager: NSObject {
 
     AppInputConfig.log.debug{"Loading InputConf file for \(targetConfName.pii.quoted)"}
     return fileCache.getOrLoadConfFile(confName: targetConfName)
-  }
-
-  // Conf File load. Triggered any time `selectedConfName` is changed (ignoring case).
-  // Returns `true` if load was successful; `false` otherwise.
-  private func loadSelectedConfBindingsIntoAppConfig() -> Bool {
-    let inputConfFile = loadConfFile()
-    guard !inputConfFile.failedToLoad else {
-      AppInputConfig.log.error{"Cannot get bindings from \(inputConfFile.confName.pii.quoted): file failed to load"}
-      let fileName = URL(fileURLWithPath: inputConfFile.filePath).lastPathComponent
-      sendErrorAlert(key: "keybinding_config.error", args: [fileName])
-      ConfTableState.current.fallBackToDefaultConf()
-      return false
-    }
-
-    var userData: [BindingTableStateManager.Key: Any] = [BindingTableStateManager.Key.confFile: inputConfFile]
-
-    // Key Bindings table will reload after it receives new data from AppInputConfig.
-    // It will default to an animated transition based on calculated diff.
-    // To disable animation, specify type .reloadAll explicitly.
-    if !Preference.bool(for: .animateKeyBindingTableReloadAll) {
-      userData[BindingTableStateManager.Key.tableUIChange] = TableUIChange(.reloadAll)
-    }
-
-    // Send down the pipeline
-    let userConfMappingsNew = inputConfFile.parseMappings()
-    AppInputConfig.replaceUserConfSectionMappings(with: userConfMappingsNew, attaching: userData)
-
-    return true
   }
 }

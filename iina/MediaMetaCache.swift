@@ -22,6 +22,8 @@ struct VideoMeta : CustomStringConvertible {
   let rawWidth: Int
   let rawHeight: Int
 
+  let decodedAspectLabel: String
+
   /// Should match mpv's `video-params/rotate`
   let streamRotation: Int
 }
@@ -271,7 +273,9 @@ class MediaMetaCache {
       return
     }
 
-    let videoMeta = VideoMeta(rawWidth: vidGeo.rawWidth, rawHeight: vidGeo.rawHeight, streamRotation: vidGeo.streamRotation)
+    let videoMeta = VideoMeta(rawWidth: vidGeo.rawWidth, rawHeight: vidGeo.rawHeight,
+                              decodedAspectLabel: vidGeo.decodedAspectLabel,
+                              streamRotation: vidGeo.streamRotation)
     metaLock.withLock {
       let existingMeta = cachedMeta[id.url]
       let oldMeta = existingMeta ?? MediaMeta(id)

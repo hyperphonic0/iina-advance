@@ -106,6 +106,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
 
   func substituting(_ videoMeta: VideoMeta, _ log: Logger.Subsystem? = nil) -> VideoGeometry {
     return clone(rawWidth: videoMeta.rawWidth, rawHeight: videoMeta.rawHeight,
+                 decodedAspectLabel: videoMeta.decodedAspectLabel,
                  streamRotation: videoMeta.streamRotation, log)
   }
 

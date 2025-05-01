@@ -60,7 +60,7 @@ class PlayerCore: NSObject {
   }
 
   /// - Important: Code referencing this property **must** be run on the main thread because it references
-  ///              [NSApplication.windowController`](https://developer.apple.com/documentation/appkit/nsapplication/1428723-mainwindow)
+  ///   [NSApplication.windowController`](https://developer.apple.com/documentation/appkit/nsapplication/1428723-mainwindow)
   static var active: PlayerCore? {
     assert(DispatchQueue.isExecutingIn(.main))
     return PlayerManager.shared.activePlayer
@@ -74,6 +74,9 @@ class PlayerCore: NSObject {
   unowned var log: Logger.Subsystem { self.subsystem }
   var label: String
   let isDemoPlayer: Bool
+
+  /// If `false`, has player functionality without use of a player window. Must be `true` to show a player window.
+  var enableWindow = false
 
   /// For explicit request via command line
   var startInMusicModeRequested = false
@@ -414,7 +417,7 @@ class PlayerCore: NSObject {
   }
 
   func loadPlugins() {
-    guard JavascriptPlugin.iinaPluginSystemEnabled else {
+    guard AppDelegate.iinaPluginSystemEnabled else {
       log.verbose{"Plugin system disabled; skipping load of plugins"}
       return
     }
@@ -431,7 +434,7 @@ class PlayerCore: NSObject {
   }
 
   func reloadPlugin(_ plugin: JavascriptPlugin, forced: Bool = false) {
-    guard JavascriptPlugin.iinaPluginSystemEnabled else { return }
+    guard AppDelegate.iinaPluginSystemEnabled else { return }
 
     let id = plugin.identifier
     log.verbose{"Reloading plugin: \(id.quoted)"}
@@ -495,7 +498,7 @@ class PlayerCore: NSObject {
       return 0
     }
 
-    info.shouldAutoLoadFiles = AppDelegate.shared.isInteractiveLaunch && !windowController.sessionState.isRestoring && playableFiles.count == 1
+    info.shouldAutoLoadFiles = AppDelegate.isInteractiveLaunch && !windowController.sessionState.isRestoring && playableFiles.count == 1
 
     // open the first file
     openPlayerWindow(playableFiles)
@@ -548,7 +551,7 @@ class PlayerCore: NSObject {
   /// The caller must ensure that `urls` is *never* empty!
   private func openPlayerWindow(_ urls: [URL]) {
     assert(DispatchQueue.isExecutingIn(.main))
-    let isInteractiveLaunch = AppDelegate.shared.isInteractiveLaunch
+    enableWindow = AppDelegate.isInteractiveLaunch
 
     guard urls.count > 0 else {
       log.fatalError("Cannot open player window: empty url list!")
@@ -556,7 +559,7 @@ class PlayerCore: NSObject {
 
     let playback = Playback(url: urls[0])
 
-    if isInteractiveLaunch && playback.isNetworkResource {
+    if enableWindow && playback.isNetworkResource {
       windowController.close()
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
@@ -576,16 +579,16 @@ class PlayerCore: NSObject {
 
       DispatchQueue.main.async { [self] in
         if !windowController.sessionState.isRestoring {
-          if isInteractiveLaunch {
+          if enableWindow {
             windowController.osd.clearQueuedOSDs()
           }
           windowController.sessionState = windowController.sessionState.newSession()
         }
 
         /// This doesn't apply to restore. That is handled in `mpvRestoreWorkItem`.
-        let pauseUntilWindowOpen = isInteractiveLaunch && !windowController.isOpen
+        let pauseUntilWindowOpen = enableWindow && !windowController.isOpen
 
-        if isInteractiveLaunch {
+        if enableWindow {
           windowController.openWindow(nil)
         } else {
           // Make sure mpv core is started
@@ -2372,7 +2375,7 @@ class PlayerCore: NSObject {
     }
 
     if let cachedVideoMeta = MediaMetaCache.shared.getCachedVideoMeta(id: playback.id) {
-      log.verbose("FileStarted: found cached videoMeta for playback")
+      log.verbose{"FileStarted: found cached videoMeta for playback: \(cachedVideoMeta)"}
 
       windowController.transformGeometry("FileStarted", stateChange: { [self] context in
         let newSessionsState: PWinSessionState?

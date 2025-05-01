@@ -23,10 +23,6 @@ class StartupHandler {
 
   let launchStartTime = CFAbsoluteTimeGetCurrent()
 
-  /// Can be set to `false` if launched in non-interactive modes, e.g. encoding mode,
-  ///  or with `--macos-app-activation-policy=accessory`
-  var isInteractiveLaunch = true
-
   var state: OpenWindowsState = .stillEnqueuing
 
   var isDoneLaunching: Bool { state == .doneOpening }
@@ -181,7 +177,7 @@ class StartupHandler {
       Utility.showAlert("nothing_to_open")
     } else {
       Logger.log.verbose{"Total new players opening: \(wcsForOpenFiles.count), with \(totalFilesOpened) files"}
-      if isInteractiveLaunch {
+      if AppDelegate.isInteractiveLaunch {
         // Set wcsForOpenFiles so they can be tracked & shown when ready:
         self.wcsForOpenFiles = wcsForOpenFiles
       } else {
@@ -490,7 +486,7 @@ class StartupHandler {
   func showWindowsIfReady() {
     assert(DispatchQueue.isExecutingIn(.main))
     let log = Logger.Subsystem.restore
-    let isInteractiveLaunch = AppDelegate.shared.isInteractiveLaunch
+    let isInteractiveLaunch = AppDelegate.isInteractiveLaunch
 
     if isInteractiveLaunch {
       guard state == .doneEnqueuing else {
@@ -583,13 +579,6 @@ class StartupHandler {
       } else {
         log.verbose("Done opening windows")
       }
-
-      // other initializations at App level
-      NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
-
-      // TODO: try to get tabbing working
-      NSWindow.allowsAutomaticWindowTabbing = false
-      // NSWindow.userTabbingPreference
     }
 
     state = .doneOpening
@@ -598,17 +587,7 @@ class StartupHandler {
       /// Make sure to do this *after* `state = .doneOpening`:
       dismissTimeoutAlertPanel()
 
-      JavascriptPlugin.loadGlobalInstances()
-
-      if let menuController = AppDelegate.shared.menuController {
-        menuController.bindMenuItems()
-        menuController.updatePluginMenu()
-        menuController.refreshBuiltInMenuItemBindings()
-      }
-
-      // FIXME: this actually causes a window to open in the background. Should wait until intending to show it
-      // show alpha in color panels
-      NSColorPanel.shared.showsAlpha = true
+      initAppUI()
 
       let didRestoreSomething = !wcsToRestore.isEmpty || restoreOpenFileWindow
       let didShowSomething = didRestoreSomething || wcsForOpenFiles != nil
@@ -616,17 +595,43 @@ class StartupHandler {
         // Fall back to default action:
         AppDelegate.shared.doLaunchOrReopenAction()
       }
-
-      // Init MediaPlayer integration
-      MediaPlayerIntegration.shared.update()
-
-      NSApplication.shared.servicesProvider = self
     }
 
     let timeElapsed: Double = CFAbsoluteTimeGetCurrent() - launchStartTime
     Logger.log.verbose{"Done with startup (\(timeElapsed.stringMaxFrac2)s)"}
   }
 
+
+  func initAppUI() {
+    Logger.log.debug{"Init app UI"}
+    if NSApp.activationPolicy() != .regular {
+      NSApp.setActivationPolicy(.regular)
+    }
+
+    // Various initializations at App level
+    NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
+
+    // TODO: try to get tabbing working
+    NSWindow.allowsAutomaticWindowTabbing = false
+    // NSWindow.userTabbingPreference
+
+    JavascriptPlugin.loadGlobalInstances()
+
+    if let menuController = AppDelegate.shared.menuController {
+      menuController.bindMenuItems()
+      menuController.updatePluginMenu()
+      menuController.refreshBuiltInMenuItemBindings()
+    }
+
+    // FIXME: this actually causes a window to open in the background. Should wait until intending to show it
+    // show alpha in color panels
+    NSColorPanel.shared.showsAlpha = true
+
+    // Init MediaPlayer integration
+    MediaPlayerIntegration.shared.update()
+
+    NSApplication.shared.servicesProvider = self
+  }
 
   // MARK: - Notification Listeners
 
@@ -728,7 +733,7 @@ class StartupHandler {
         NSApp.setActivationPolicy(.regular)
       case "accessory":
         NSApp.setActivationPolicy(.accessory)
-        isInteractiveLaunch = false
+        AppDelegate.isInteractiveLaunch = false
       case "prohibited":
         NSApp.setActivationPolicy(.prohibited)
       default:
@@ -737,14 +742,7 @@ class StartupHandler {
     }
 
     if commandLineState.mpvArguments.contains(where: { $0.0 == MPVEncoding.o }) {
-      isInteractiveLaunch = false
-    }
-
-    if !isInteractiveLaunch {
-      // Disable save/restore, history, plugins, UI for this launch
-      UIState.shared.disableSaveAndRestoreUntilNextLaunch()
-      HistoryController.shared.disableHistoryForThisLaunch()
-      JavascriptPlugin.iinaPluginSystemEnabled = false
+      AppDelegate.isInteractiveLaunch = false
     }
   }
 }

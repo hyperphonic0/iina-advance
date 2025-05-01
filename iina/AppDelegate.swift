@@ -64,8 +64,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   // MARK: State
 
   /// If false, app was launched in a special mode which does not allow windows to be shown.
-  var isInteractiveLaunch: Bool {
-    startupHandler.isInteractiveLaunch
+  /// Can be set to `false` if launched in non-interactive modes, e.g. encoding mode (`--o`),
+  ///  or with `--macos-app-activation-policy=accessory`.
+  ///
+  /// If disabled, disables save/restore, history, plugins, and general UI for this launch.
+  static var isInteractiveLaunch: Bool = true
+
+  static var iinaPluginSystemEnabled: Bool {
+    Preference.bool(for: .iinaEnablePluginSystem) && isInteractiveLaunch
   }
 
   var startupHandler = StartupHandler()
@@ -74,6 +80,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   private var lastClosedWindowName: String = ""
   var isShowingOpenFileWindow = false
+
+  func reenableInteractiveLaunch() {
+    assert(DispatchQueue.isExecutingIn(.main))
+    guard !AppDelegate.isInteractiveLaunch else { return }
+
+    AppDelegate.isInteractiveLaunch = true
+    Logger.updateEnablement()  // in case it was disabled previously
+    Logger.log.debug("Re-enabling interactive launch")
+    startupHandler.initAppUI()
+    HistoryController.shared.start()
+  }
 
   var isTerminating: Bool {
     return shutdownHandler.isTerminating
@@ -88,7 +105,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     switch key {
     case PK.enableAdvancedSettings, PK.enableLogging, PK.logLevel:
-      Logger.updateEnablement(isInteractiveLaunch: isInteractiveLaunch)
+      Logger.updateEnablement()
       // depends on advanced being enabled:
       menuController.refreshCmdNStatus()
       menuController.refreshBuiltInMenuItemBindings()
@@ -156,10 +173,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let cmdLineArgs = ProcessInfo.processInfo.arguments.dropFirst()
     startupHandler.parseCommandLine(cmdLineArgs)  // may update `uiIsEnabled`
 
-    Logger.initLogging(isInteractiveLaunch: isInteractiveLaunch)
+    Logger.initLogging()
     AppDetailsLogging.shared.logAllAppDetails()
 
-    Logger.log.debug{"App will launch\(isInteractiveLaunch ? "" : " (non-interactive)"). LaunchID: \(UIState.shared.currentLaunchID)"}
+    Logger.log.debug{"App will launch\(AppDelegate.isInteractiveLaunch ? "" : " (non-interactive)"). LaunchID: \(UIState.shared.currentLaunchID)"}
 
     Logger.log.debug{"All app arguments: \(cmdLineArgs)"}
     if let cli = startupHandler.commandLineState {
@@ -204,7 +221,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 #endif
 
-    let observedPrefKeys: [Preference.Key] = !startupHandler.isInteractiveLaunch ? [] : [
+    let observedPrefKeys: [Preference.Key] = !AppDelegate.isInteractiveLaunch ? [] : [
       .logLevel,
       .enableLogging,
       .enableAdvancedSettings,
@@ -235,10 +252,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 #endif
 
     // Call this *before* registering for url events, to guarantee that menu is init'd
-    confTableStateManager.startUp()
+    AppInputConfig.loadSelectedConfBindingsIntoAppConfig()
 
-    if startupHandler.isInteractiveLaunch {
-      HistoryController.shared.start()
+    if AppDelegate.isInteractiveLaunch {
 
       Logger.log.verbose("Registering for URL events")
       NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(self.handleURLEvent(event:withReplyEvent:)), forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
@@ -258,6 +274,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   // MARK: - Window Notifications
+  // Keep maintaining the window lists even if save is disabled, because it may be needed if save is enabled again.
 
   /// Sheet window is opening. Track it like a regular window.
   ///
@@ -442,7 +459,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return false
     }
 
-    guard isInteractiveLaunch else {
+    guard AppDelegate.isInteractiveLaunch else {
       Logger.log.debug{"App will not terminate for window close: app-wide UI is disabled"}
       return false
     }
@@ -462,7 +479,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   private func doActionWhenLastWindowWillClose() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard isInteractiveLaunch else {
+    guard AppDelegate.isInteractiveLaunch else {
       Logger.log.debug{"Aborting action when last window closed: app-wide UI is disabled"}
       return
     }
@@ -548,6 +565,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
 
     DispatchQueue.main.async { [self] in
+      if !AppDelegate.isInteractiveLaunch {
+        AppDelegate.shared.reenableInteractiveLaunch()
+      }
+
       // if installing a plugin package
       if let pluginPackageURL = urls.first(where: { $0.pathExtension == "iinaplgz" }) {
         Logger.log.debug{"Opening plugin URL: \(pluginPackageURL.absoluteString.pii.quoted)"}

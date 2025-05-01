@@ -803,7 +803,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func _openWindow() {
     guard let window = self.window else { return }
 
-    guard AppDelegate.shared.isInteractiveLaunch else {
+    guard AppDelegate.isInteractiveLaunch else {
       log.verbose("PlayerWindow openWindow aborting: launch is non-interactive")
       return
     }
@@ -874,7 +874,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       log.verbose("Aborting showWindow - player is stopping")
       return
     }
-    guard AppDelegate.shared.isInteractiveLaunch else {
+    guard AppDelegate.isInteractiveLaunch else {
       // Should not even get here if everything else is working properly
       log.verbose("Aborting showWindow: launch is non-interactive")
       return
@@ -2524,7 +2524,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Do not call this in while in native full screen. It seems to cause FS to get stuck and unable to exit.
   /// Try not to call this while animating. It can cause the window to briefly disappear
   func resetCollectionBehavior() {
-    guard AppDelegate.shared.startupHandler.isInteractiveLaunch else { return }
+    guard AppDelegate.isInteractiveLaunch else { return }
 
     guard !NSApp.presentationOptions.contains(.fullScreen) else {
       log.error("resetCollectionBehavior() should not have been called while in native FS - ignoring")

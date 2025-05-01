@@ -57,6 +57,10 @@ public class FolderMonitor {
     if let folderMonitorSource {
       HistoryController.shared.log.debug("Stopping watchdog for watch-later dir")
       folderMonitorSource.cancel()
+
+      // Reset variables
+      self.folderMonitorSource = nil
+      monitoredFolderFileDescriptor = -1
     }
   }
 }

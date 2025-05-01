@@ -121,6 +121,40 @@ struct AppInputConfig {
     }
   }
 
+  /// Loads the currently selected user InputConf file from cache or disk, using its contents as the `default` section in rebuild
+  /// of the app-wide conf (calling `AppInputConfig.rebuildCurrent()`.
+  ///
+  /// 1. Needs to be called at app launch to do the initial build.
+  /// 2. Also triggered any time the selected conf is changed in the Configuration table (specifically, in response to
+  /// the value of `ConfTableState.current.selectedConfName` being changed (ignoring case).
+  /// Returns `true` if load was successful; `false` if not successful and the default IINA conf was used as a fallback.
+  @discardableResult
+  static func loadSelectedConfBindingsIntoAppConfig() -> Bool {
+    let confManager = ConfTableState.manager
+    let inputConfFile = confManager.loadConfFile()
+    guard !inputConfFile.failedToLoad else {
+      log.error{"Cannot get bindings from \(inputConfFile.confName.pii.quoted): file failed to load"}
+      let fileName = URL(fileURLWithPath: inputConfFile.filePath).lastPathComponent
+      confManager.sendErrorAlert(key: "keybinding_config.error", args: [fileName])
+      ConfTableState.current.fallBackToDefaultConf()
+      return false
+    }
+
+    var userData: [BindingTableStateManager.Key: Any] = [BindingTableStateManager.Key.confFile: inputConfFile]
+
+    // Key Bindings table will reload after it receives new data from AppInputConfig.
+    // It will default to an animated transition based on calculated diff.
+    // To disable animation, specify type .reloadAll explicitly.
+    if !Preference.bool(for: .animateKeyBindingTableReloadAll) {
+      userData[BindingTableStateManager.Key.tableUIChange] = TableUIChange(.reloadAll)
+    }
+
+    // Send down the pipeline
+    let userConfMappingsNew = inputConfFile.parseMappings()
+    replaceUserConfSectionMappings(with: userConfMappingsNew, attaching: userData)
+    return true
+  }
+
   // MARK: - Single instance
 
   let version: Int

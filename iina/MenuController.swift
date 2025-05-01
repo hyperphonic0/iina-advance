@@ -402,7 +402,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
     // Plugin
 
-    if JavascriptPlugin.iinaPluginSystemEnabled {
+    if AppDelegate.iinaPluginSystemEnabled {
       pluginMenu.delegate = self
     } else {
       pluginMenuItem.isHidden = true
@@ -599,7 +599,7 @@ class MenuController: NSObject, NSMenuDelegate {
   }
 
   func updatePluginMenu() {
-    guard JavascriptPlugin.iinaPluginSystemEnabled else { return }
+    guard AppDelegate.iinaPluginSystemEnabled else { return }
     Logger.log.trace("Updating Plugin menu")
     var keyMappings: [MenuItemMapping] = []
     let activePlayer = PlayerManager.shared.activePlayer
