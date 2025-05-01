@@ -1042,7 +1042,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func window(_ window: NSWindow, startCustomAnimationToEnterFullScreenOn screen: NSScreen, withDuration duration: TimeInterval) {
-    animateEntryIntoFullScreen(withDuration: IINAAnimation.NativeFullScreenTransitionDuration, isLegacy: false)
+    animateEntryIntoFullScreen(withDuration: Constants.AnimationDuration.nativeFullScreenTransition, isLegacy: false)
   }
 
   // Animation: Enter FullScreen
@@ -1070,7 +1070,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// There does not appear to be any similar problem when entering fullscreen.
   func windowDidExitFullScreen(_ notification: Notification) {
     if AccessibilityPreferences.motionReductionEnabled {
-      animateExitFromFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: false)
+      animateExitFromFullScreen(withDuration: Constants.AnimationDuration.fullScreenTransition, isLegacy: false)
     } else {
       animationPipeline.submitInstantTask { [self] in
         // Kludge/workaround for race condition when exiting native FS to native windowed mode
@@ -1140,7 +1140,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     if isLegacy {
       animationPipeline.submitInstantTask({ [self] in
-        animateEntryIntoFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
+        animateEntryIntoFullScreen(withDuration: Constants.AnimationDuration.fullScreenTransition, isLegacy: true)
       })
     } else if !isFullScreen {
       /// `collectionBehavior` *must* be correct or else `toggleFullScreen` may do nothing!
@@ -1158,7 +1158,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       log.verbose{"ExitFullScreen called, legacy=\(isLegacyFS.yn)"}
       animationPipeline.submitInstantTask({ [self] in
         // If "legacy" pref was toggled while in fullscreen, still need to exit native FS
-        animateExitFromFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
+        animateExitFromFullScreen(withDuration: Constants.AnimationDuration.fullScreenTransition, isLegacy: true)
       })
     } else {
       let isActuallyNativeFullScreen = NSApp.presentationOptions.contains(.fullScreen)
@@ -1359,7 +1359,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // is disconnected. In legacy full screen mode IINA is responsible for adjusting the window's
       // frame.
       // Use very short duration. This usually gets triggered at the end when entering fullscreen, when the dock and/or menu bar are hidden.
-      animationPipeline.submitTask(duration: IINAAnimation.VideoReconfigDuration, { [self] in
+      animationPipeline.submitTask(duration: Constants.AnimationDuration.videoReconfig, { [self] in
         let layout = currentLayout
         if layout.isLegacyFullScreen {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
@@ -1756,7 +1756,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
             if currentLayout.mode == .windowedNormal {
               // TODO: integrate this task into LayoutTransition build
-              let uncropDuration = IINAAnimation.CropAnimationDuration * 0.1
+              let uncropDuration = Constants.AnimationDuration.cropAnimation * 0.1
               tasks.append(IINAAnimation.Task(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
                 isAnimatingLayoutTransition = true  // tell window resize listeners to do nothing
                 player.window.setFrameImmediately(uncroppedClosedBarsGeo)
@@ -1783,7 +1783,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func buildTransitionToEnterInteractiveMode(_ mode: InteractiveMode, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
     let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenNormal ? .fullScreenInteractive : .windowedInteractive
     let interactiveModeLayout = currentLayout.spec.clone(mode: newMode, interactiveMode: mode)
-    let startDuration = IINAAnimation.CropAnimationDuration * 0.5
+    let startDuration = Constants.AnimationDuration.cropAnimation * 0.5
     let endDuration = currentLayout.mode == .fullScreenNormal ? startDuration * 0.5 : startDuration
     let transition = buildLayoutTransition(named: "EnterInteractiveMode", from: currentLayout, to: interactiveModeLayout,
                                            totalStartingDuration: startDuration, totalEndingDuration: endDuration, geo)
@@ -1836,7 +1836,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       // Animate the crop to highlight the piece being cut out.
       // Remember: this does not run if there is no crop (i.e. cropRect is nil) - see above
-      let cropAnimationDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.005
+      let cropAnimationDuration = immediately ? 0 : Constants.AnimationDuration.cropAnimation * 0.005
       tasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .default) { [self] in
         log.verbose{"Start exiting interactive mode: animating crop using: \(newIMGeo)"}
         player.window.setFrameImmediately(newIMGeo)
@@ -1866,8 +1866,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let lastSpec = currentLayout.mode == .fullScreenInteractive ? currentLayout.spec : lastWindowedLayoutSpec
     log.verbose("Exiting interactive mode, newMode: \(newMode)")
     let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
-    let startDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.75
-    let endDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.25
+    let startDuration = immediately ? 0 : Constants.AnimationDuration.cropAnimation * 0.75
+    let endDuration = immediately ? 0 : Constants.AnimationDuration.cropAnimation * 0.25
     let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: currentLayout, to: newLayoutSpec,
                                            totalStartingDuration: startDuration, totalEndingDuration: endDuration, geoSet)
     tasks.append(contentsOf: transition.tasks)
@@ -2088,7 +2088,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let volumeImage = volumeIcon(volume: volume, isMuted: isMuted)
     if let volumeImage, volumeImage != muteButton.image {
-      let task = IINAAnimation.Task(duration: IINAAnimation.btnLayoutChangeDuration, { [self] in
+      let task = IINAAnimation.Task(duration: Constants.AnimationDuration.btnLayoutChange, { [self] in
         volumeIconAspectConstraint.isActive = false
         volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volumeImage.aspect)
         volumeIconAspectConstraint.isActive = true
@@ -2152,7 +2152,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // Update status in menu bar menu (if enabled)
     MediaPlayerIntegration.shared.update()
 
-    let duration = (hasSpeedLayoutChange || hasPlayButtonChange) ? IINAAnimation.btnLayoutChangeDuration * 4 : 0.0
+    let duration = (hasSpeedLayoutChange || hasPlayButtonChange) ? Constants.AnimationDuration.btnLayoutChange * 4 : 0.0
     IINAAnimation.runAsync(.init(duration: duration) { [self] in
       // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
       // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.

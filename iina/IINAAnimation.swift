@@ -12,20 +12,6 @@ class IINAAnimation {
   static let disableActionsWorkaround = true
   typealias TaskFunc = (() throws -> Void)
 
-  // MARK: Durations
-
-  // FIXME: put in Constants.AnimationDuration enum. Add Task constructor with enum param. Change names to camel case
-  static var DefaultDuration: CGFloat = { CGFloat(Preference.float(for: .animationDurationDefault)) }()
-  static var VideoReconfigDuration: CGFloat = { DefaultDuration * 0.5 }()
-  static var InitialVideoReconfigDuration: CGFloat = { DefaultDuration }()
-  static var FullScreenTransitionDuration: CGFloat = { CGFloat(Preference.float(for: .animationDurationFullScreen)) }()
-  static var NativeFullScreenTransitionDuration: CGFloat = 0.5
-  static var btnLayoutChangeDuration: CGFloat = { DefaultDuration * 0.25 }()
-  static var OSDAnimationDuration: CGFloat = { CGFloat(Preference.float(for: .animationDurationOSD)) }()
-  static var CropAnimationDuration: CGFloat = { CGFloat(Preference.float(for: .animationDurationCrop)) }()
-  static var MusicModeShowButtonsDuration: CGFloat = 0.2
-  static var HideSeekPreviewDuration: CGFloat = OSDAnimationDuration * 0.5
-
   // MARK: Misc static stuff
 
   /// "Disable all" override switch
@@ -118,7 +104,7 @@ extension IINAAnimation {
     init(duration: CGFloat? = nil,
          timing timingName: CAMediaTimingFunctionName? = nil,
          _ runFunc: @escaping TaskFunc) {
-      self.duration = duration ?? IINAAnimation.DefaultDuration
+      self.duration = duration ?? Constants.AnimationDuration.standard
       self.timingName = timingName
       self.runFunc = runFunc
     }
@@ -175,7 +161,7 @@ extension IINAAnimation {
 
     /// Recursive function which enqueues each of the given `AnimationTask`s for execution, one after another.
     /// Will execute without animation if motion reduction is enabled, or if wrapped in a call to `IINAAnimation.disableAnimation()`.
-    /// If animating, it uses either the supplied `duration` for duration, or if that is not provided, uses `IINAAnimation.DefaultDuration`.
+    /// If animating, it uses either the supplied `duration` for duration, or if that is not provided, uses `Constants.AnimationDuration.standard`.
     func submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
       if DispatchQueue.isExecutingIn(.main, logError: false) {
         _submit(tasks, then: doAfter)

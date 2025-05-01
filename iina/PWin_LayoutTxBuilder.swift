@@ -94,11 +94,11 @@ extension PlayerWindowController {
     } else if transition.isEnteringFullScreen {
       startingAnimationDuration = 0
     } else if transition.isEnteringMusicMode && !transition.isExitingFullScreen {
-      startingAnimationDuration = IINAAnimation.DefaultDuration
+      startingAnimationDuration = Constants.AnimationDuration.standard
     } else if let totalStartingDuration {
       startingAnimationDuration = totalStartingDuration / 3
     } else {
-      startingAnimationDuration = IINAAnimation.DefaultDuration
+      startingAnimationDuration = Constants.AnimationDuration.standard
     }
 
     var showFadeableViewsDuration: CGFloat = startingAnimationDuration
@@ -128,7 +128,7 @@ extension PlayerWindowController {
     if transition.isWindowInitialLayout {
       endingAnimationDuration = 0
     } else {
-      endingAnimationDuration = totalEndingDuration ?? IINAAnimation.DefaultDuration
+      endingAnimationDuration = totalEndingDuration ?? Constants.AnimationDuration.standard
     }
 
     // Extra animation when entering legacy full screen: cover camera housing with black bar

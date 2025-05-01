@@ -447,7 +447,7 @@ extension PlayerWindowController {
   fileprivate func hideSeekPreviewWithAnimation() {
     var tasks: [IINAAnimation.Task] = []
 
-    tasks.append(.init(duration: IINAAnimation.HideSeekPreviewDuration) { [self] in
+    tasks.append(.init(duration: Constants.AnimationDuration.hideSeekPreview) { [self] in
       seekPreview.animationState = .willHide
       seekPreview.thumbnailPeekView.animator().alphaValue = 0
       seekPreview.timeLabel.animator().alphaValue = 0

@@ -441,7 +441,7 @@ extension PlayerWindowController {
       player.refreshSyncUITimer()
     }
 
-    IINAAnimation.runAsync(IINAAnimation.Task(duration: immediately ? 0 : IINAAnimation.OSDAnimationDuration, { [self] in
+    IINAAnimation.runAsync(IINAAnimation.Task(duration: immediately ? 0 : Constants.AnimationDuration.osdAnimation, { [self] in
       osdVisualEffectView.alphaValue = 0
 
     }), then: { [self] in

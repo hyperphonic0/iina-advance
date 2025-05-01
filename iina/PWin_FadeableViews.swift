@@ -80,7 +80,7 @@ extension PlayerWindowController {
 
   // Shows fadeables and titlebar via fade
   func showFadeableViews(thenRestartFadeTimer restartFadeTimer: Bool = true,
-                         duration: CGFloat = IINAAnimation.DefaultDuration,
+                         duration: CGFloat = Constants.AnimationDuration.standard,
                          forceShowTopBar: Bool = false) {
     guard !player.disableUI && !isInInteractiveMode else { return }
 
@@ -123,7 +123,7 @@ extension PlayerWindowController {
 
   /// This is only expected to be called by `showFadeableViews()` and by the animation transition builder. Do not call directly from elsewhere.
   func buildAnimationToShowFadeableViews(restartFadeTimer: Bool = true,
-                                         duration: CGFloat = IINAAnimation.DefaultDuration,
+                                         duration: CGFloat = Constants.AnimationDuration.standard,
                                          forceShow: Bool = false,
                                          forceShowTopBar: Bool = false) -> [IINAAnimation.Task] {
 
@@ -247,7 +247,7 @@ extension PlayerWindowController {
         fadeableViews.hideTimer.cancel()
       },
 
-      IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
+      IINAAnimation.Task(duration: Constants.AnimationDuration.standard) { [self] in
         if hideCursorToo {
           hideCursor()
         }
@@ -283,7 +283,7 @@ extension PlayerWindowController {
         }
       },
 
-      IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
+      IINAAnimation.Task(duration: Constants.AnimationDuration.standard) { [self] in
         // if no interrupt then hide animation
         guard fadeableViews.animationState == .willHide else {
           assert(false, "Expected fadeableViews.animationState to be .willHide; but found \(fadeableViews.animationState)")

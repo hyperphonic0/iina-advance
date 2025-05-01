@@ -272,7 +272,7 @@ extension PlayerWindowController {
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true
     case .controlBarAutoHideTimeout:
-      fadeableViews.hideTimer.timeout = max(IINAAnimation.DefaultDuration, Double(Preference.float(for: .controlBarAutoHideTimeout)))
+      fadeableViews.hideTimer.timeout = max(Constants.AnimationDuration.standard, Double(Preference.float(for: .controlBarAutoHideTimeout)))
       fadeableViews.hideTimer.restart()
     case .lockViewportToVideoSize:
       if let isLocked = newValue as? Bool, isLocked {

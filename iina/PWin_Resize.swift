@@ -471,7 +471,7 @@ extension PlayerWindowController {
       // There's no good animation for rotation (yet), so just do as little animation as possible in this case
       duration = 0.0
     } else {
-      duration = IINAAnimation.VideoReconfigDuration
+      duration = Constants.AnimationDuration.videoReconfig
     }
     var timing = CAMediaTimingFunctionName.easeInEaseOut
 
@@ -495,7 +495,7 @@ extension PlayerWindowController {
           return []
         case .creatingNew:
           // Just opened new window. Use a longer duration for this one, because the window starts small and will zoom into place.
-          duration = IINAAnimation.InitialVideoReconfigDuration
+          duration = Constants.AnimationDuration.initialVideoReconfig
           timing = .linear
           resizedGeo = applyResizePrefsForWindowedFileOpen(cxt, newVidGeo: newVidGeo)
         case .newReplacingExisting:
@@ -561,7 +561,7 @@ extension PlayerWindowController {
 
       if oldMusicModeGeo.isVideoVisible != newMusicModeGeo.isVideoVisible {
         // Toggling videoView visiblity: use longer duration for nicety
-        duration = IINAAnimation.DefaultDuration
+        duration = Constants.AnimationDuration.standard
       }
       /// Default album art: check state before doing anything so that we don't duplicate work. Don't change in miniPlayer if videoView not visible.
       /// If `showDefaultArt == nil`, don't change existing visibility.
@@ -695,7 +695,7 @@ extension PlayerWindowController {
    ensure it is placed entirely inside `screen.visibleFrame`.
    */
   func resizeViewport(to desiredViewportSize: CGSize? = nil, centerOnScreen: Bool = false,
-                      duration: CGFloat = IINAAnimation.DefaultDuration) {
+                      duration: CGFloat = Constants.AnimationDuration.standard) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     switch currentLayout.mode {
@@ -827,7 +827,7 @@ extension PlayerWindowController {
   /// Also updates cached `windowedModeGeo` and saves updated state.
   @discardableResult
   func buildApplyWindowGeoTasks(_ newGeometry: PWinGeometry,
-                                duration: CGFloat = IINAAnimation.DefaultDuration,
+                                duration: CGFloat = Constants.AnimationDuration.standard,
                                 timing: CAMediaTimingFunctionName = .easeInEaseOut,
                                 showDefaultArt: Bool? = nil,
                                 thenRun: Bool = false) -> [IINAAnimation.Task] {
@@ -883,7 +883,7 @@ extension PlayerWindowController {
 
   @discardableResult
   func buildApplyMusicModeGeoTasks(from inputGeo: MusicModeGeometry, to outputGeo: MusicModeGeometry,
-                                   duration: CGFloat = IINAAnimation.DefaultDuration,
+                                   duration: CGFloat = Constants.AnimationDuration.standard,
                                    setFrame: Bool = true, updateCache: Bool = true,
                                    showDefaultArt: Bool? = nil,
                                    thenRun: Bool = false) -> [IINAAnimation.Task] {

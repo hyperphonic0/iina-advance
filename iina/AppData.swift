@@ -270,6 +270,18 @@ struct Constants {
 
     static let historyTableCompleteFileStatusReload = 600.0
   }
+  struct AnimationDuration {
+    static var standard: CGFloat = { CGFloat(Preference.float(for: .animationDurationDefault)) }()
+    static var videoReconfig: CGFloat = { standard * 0.5 }()
+    static var initialVideoReconfig: CGFloat = { standard }()
+    static var fullScreenTransition: CGFloat = { CGFloat(Preference.float(for: .animationDurationFullScreen)) }()
+    static var nativeFullScreenTransition: CGFloat = 0.5
+    static var btnLayoutChange: CGFloat = { standard * 0.25 }()
+    static var osdAnimation: CGFloat = { CGFloat(Preference.float(for: .animationDurationOSD)) }()
+    static var cropAnimation: CGFloat = { CGFloat(Preference.float(for: .animationDurationCrop)) }()
+    static var musicModeShowButtons: CGFloat = 0.2
+    static var hideSeekPreview: CGFloat = osdAnimation * 0.5
+  }
   struct FilterLabel {
     static let crop = "iina_crop"
     static let flip = "iina_flip"
