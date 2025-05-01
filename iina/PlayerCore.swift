@@ -173,13 +173,13 @@ class PlayerCore: NSObject {
 
   var isUsingMpvOSD = false {
     didSet {
-      log.verbose("Updated isUsingMpvOSD ≔ \(isUsingMpvOSD.yn)")
+      log.verbose("Δ isUsingMpvOSD ≔ \(isUsingMpvOSD.yn)")
     }
   }
 
   var state: LifecycleState = .notYetStarted {
     didSet {
-      log.verbose("Updated lifecycleState ≔ \(state)")
+      log.verbose("Δ lifecycleState ≔ \(state)")
     }
   }
 
@@ -651,7 +651,6 @@ class PlayerCore: NSObject {
     log.verbose("Player start")
 
     if isDemoPlayer {
-      log.debug("Player is audio only. Will not init video or plugins")
       startMPV()
     } else {
       if videoView.useOpenGL {

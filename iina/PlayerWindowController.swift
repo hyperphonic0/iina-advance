@@ -93,13 +93,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // While true, disable window geometry listeners so they don't overwrite cache with intermediate data
   var isAnimatingLayoutTransition: Bool = false {
     didSet {
-      log.verbose{"Updated isAnimatingLayoutTransition ≔ \(isAnimatingLayoutTransition.yesno)"}
+      log.verbose{"Δ isAnimatingLayoutTransition ≔ \(isAnimatingLayoutTransition.yesno)"}
     }
   }
 
   var sessionState: PWinSessionState = .noSession {
     willSet {
-      log.verbose{"Changing sessionState: \(sessionState) → \(newValue)"}
+      log.verbose{"Δ sessionState: \(sessionState) → \(newValue)"}
       assert(sessionState.isRestoring || DispatchQueue.isExecutingIn(DispatchQueue.main))
     }
   }
@@ -126,7 +126,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var isDragging: Bool = false
   var currentDragObject: NSView? = nil {
     didSet {
-      log.verbose{"Updated currentDragObject ≔ \(currentDragObject?.idString.quoted ?? "nil")"}
+      log.verbose{"Δ currentDragObject ≔ \(currentDragObject?.idString.quoted ?? "nil")"}
       assert(currentDragObject == nil || (currentDragObject as? DraggableObject != nil),
              "Expected currentDragObject to conform to DraggableObject: id=\(currentDragObject?.idString.quoted ?? "nil"), obj=\(currentDragObject?.description ?? "nil")")
     }
