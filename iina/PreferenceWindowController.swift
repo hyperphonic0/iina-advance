@@ -377,6 +377,12 @@ class PreferenceWindowController: WindowController {
     loadTab(at: kbIndex)
   }
 
+  func selectAdvancedTab() {
+    let kbIndex = viewControllers.firstIndex(where: { $0 is PrefAdvancedViewController })
+    guard let kbIndex, kbIndex >= 0, tableView.selectedRow != kbIndex else { return }
+    loadTab(at: kbIndex)
+  }
+
   private func getLabelDict(inNibNamed name: String) -> [String: [String]] {
     var objects: NSArray? = NSArray()
     Bundle.main.loadNibNamed(NSNib.Name(name), owner: nil, topLevelObjects: &objects)

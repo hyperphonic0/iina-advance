@@ -21,6 +21,8 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
   var viewIdentifier: String = "PrefAdvancedViewController"
 
+  private var undoHelper = PrefAdvancedUndoHelper()
+
   var preferenceTabTitle: String {
     view.layoutSubtreeIfNeeded()
     return NSLocalizedString("preference.advanced", comment: "Advanced")
@@ -74,6 +76,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     optionsTableView.editableDelegate = self
     optionsTableView.editableTextColumnIndexes = [0, 1]
     optionsTableView.selectNextRowAfterDelete = false
+    optionsTableView.animationPipeline = AppDelegate.shared.preferenceWindowController.animationPipeline
     refreshRemoveButton()
     
     tableDragDelegate = TableDragDelegate<[String]>("mpvOptions",
@@ -83,9 +86,9 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
                                                     getFromPasteboardFunc: readOptionsListFromPasteboard,
                                                     getAllCurentFunc: { self.optionsList },
                                                     moveFunc: moveOptionRows,
-                                                    insertFunc: insertOptionRows,
+                                                    insertFunc: { self.insertOptionRows($0, at: $1) },
                                                     removeFunc: removeOptionRows)
-    
+
     optionsTableView.sizeLastColumnToFit()
     
     enableAdvancedSettingsLabel.stringValue = NSLocalizedString("preference.enable_adv_settings",
@@ -101,9 +104,6 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     ]])
   }
 
-  private func refreshSavedLaunchSummary(_ notification: Notification) {
-  }
-  
   /// Called each time a pref `key`'s value is set
   func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     switch key {
@@ -196,36 +196,39 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
   // MARK: - Options Table CRUD
 
-  func insertOptionRows(_ itemList: [[String]], at targetRowIndex: Int? = nil) {
-    let (tableUIChange, allItemsNew) = optionsTableView.buildInsert(of: itemList, at: targetRowIndex, in: optionsList,
-                                                                    completionHandler: { [self] tableUIChange in
-      // Do not query table directly here. It seems to interfere with the row animations.
-      // Easy enough to get the selection from the TableUIChange object.
-      removeButton.isHidden = !tableUIChange.hasSelectionAfterChange
-    })
-    
-    // Save model
-    optionsList = allItemsNew
-    saveToUserDefaults()
-
-    // Notify Options table of update:
-    optionsTableView.post(tableUIChange)
-  }
-
-  func insertNewOptionRows(_ newItems: [[String]], at targetRowIndex: Int, thenStartEdit: Bool = false) {
+  func insertOptionRows(_ newItems: [[String]], at targetRowIndex: Int? = nil, thenStartEdit: Bool = false) {
     let (tableUIChange, allItemsNew) = optionsTableView.buildInsert(of: newItems, at: targetRowIndex, in: optionsList,
                                                                     completionHandler: { [self] tableUIChange in
       // We don't know beforehand exactly which row it will end up at, but we can get this info from the TableUIChange object
       if thenStartEdit, let insertedRowIndex = tableUIChange.toInsert?.first {
         optionsTableView.editCell(row: insertedRowIndex, column: 0)
       }
+      // Do not query table directly here. It seems to interfere with the row animations.
+      // Easy enough to get the selection from the TableUIChange object.
       removeButton.isHidden = !tableUIChange.hasSelectionAfterChange
     })
 
-    optionsList = allItemsNew
-    saveToUserDefaults()
+    let allItemsOld = optionsList         // needed for Undo
 
-    optionsTableView.post(tableUIChange)
+    let doAction = { [self] in
+      optionsList = allItemsNew           // update cached data
+      saveToUserDefaults()                // update saved data
+      optionsTableView.post(tableUIChange)// update UI
+    }
+
+    doAction()
+
+    undoHelper.register(buildActionName(basedOn: tableUIChange), undo: { [self] in
+      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
+      tableUIChangeUndo.setUpFlashForChangedRows()
+
+      optionsList = allItemsOld
+      saveToUserDefaults()
+      optionsTableView.post(tableUIChangeUndo)
+    }, redo: {
+      doAction()
+    })
+
   }
 
   func moveOptionRows(from rowIndexes: IndexSet, to targetRowIndex: Int) {
@@ -234,25 +237,74 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
       removeButton.isHidden = !tableUIChange.hasSelectionAfterChange
     })
 
-    optionsList = allItemsNew
-    saveToUserDefaults()
+    let allItemsOld = optionsList         // needed for Undo
 
-    optionsTableView.post(tableUIChange)
+    let doAction = { [self] in
+      optionsList = allItemsNew           // update cached data
+      saveToUserDefaults()                // update saved data
+      optionsTableView.post(tableUIChange)// update UI
+    }
+
+    doAction()
+
+    undoHelper.register(buildActionName(basedOn: tableUIChange), undo: { [self] in
+      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
+      optionsList = allItemsOld
+      saveToUserDefaults()
+      optionsTableView.post(tableUIChangeUndo)
+    }, redo: {
+      doAction()
+    })
   }
 
   func removeOptionRows(_ rowIndexes: IndexSet) {
     guard !rowIndexes.isEmpty else { return }
-    
+
     Logger.log.verbose("Removing rows from Options table: \(rowIndexes)")
     let (tableUIChange, allItemsNew) = optionsTableView.buildRemove(rowIndexes, in: optionsList,
                                                                     completionHandler: { [self] tableUIChange in
       removeButton.isHidden = !tableUIChange.hasSelectionAfterChange
     })
 
-    optionsList = allItemsNew
-    saveToUserDefaults()
+    let allItemsOld = optionsList         // needed for Undo
 
-    optionsTableView.post(tableUIChange)
+    let doAction = { [self] in
+      optionsList = allItemsNew           // update cached data
+      saveToUserDefaults()                // update saved data
+      optionsTableView.post(tableUIChange)// update UI
+    }
+
+    doAction()
+
+    undoHelper.register(buildActionName(basedOn: tableUIChange), undo: { [self] in
+      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
+      optionsList = allItemsOld
+      saveToUserDefaults()
+      optionsTableView.post(tableUIChangeUndo)
+    }, redo: {
+      doAction()
+    })
+  }
+
+  // Format the action name for Edit menu display (Undo/Redo)
+  private func buildActionName(basedOn tableUIChange: TableUIChange? = nil) -> String? {
+
+    guard let tableUIChange = tableUIChange else {
+      return nil
+    }
+
+    switch tableUIChange.changeType {
+    case .insertRows:
+      return Utility.format(.option, tableUIChange.toInsert?.count ?? 0, .add)
+    case .removeRows:
+      return Utility.format(.option, tableUIChange.toRemove?.count ?? 0, .delete)
+    case .moveRows:
+      return Utility.format(.option, tableUIChange.toMove?.count ?? 0, .move)
+    case .updateRows:
+      return Utility.format(.option, tableUIChange.toUpdate?.count ?? 0, .update)
+    default:
+      return nil
+    }
   }
 
   // MARK: - IBAction
@@ -268,7 +320,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   @IBAction func addOptionBtnAction(_ sender: AnyObject) {
     let selectedRowIndexes = optionsTableView.selectedRowIndexes
     let insertIndex = selectedRowIndexes.isEmpty ? optionsTableView.numberOfRows : selectedRowIndexes.max()! + 1
-    insertNewOptionRows([["", ""]], at: insertIndex, thenStartEdit: true)
+    insertOptionRows([["", ""]], at: insertIndex, thenStartEdit: true)
   }
 
   @IBAction func removeOptionBtnAction(_ sender: AnyObject) {
@@ -457,7 +509,7 @@ extension PrefAdvancedViewController: EditableTableViewDelegate {
       insertIndex = optionsTableView.numberOfRows
     }
 
-    insertNewOptionRows(optionsToInsert, at: insertIndex)
+    insertOptionRows(optionsToInsert, at: insertIndex)
   }
 
   fileprivate var selectedOptions: [[String]] {

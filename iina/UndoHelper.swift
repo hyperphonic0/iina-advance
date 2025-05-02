@@ -113,3 +113,14 @@ class PrefKeyBindingUndoHelper: UndoHelper {
     AppDelegate.shared.preferenceWindowController.selectKeyBindingTab()
   }
 }
+
+class PrefAdvancedUndoHelper: UndoHelper {
+  override var undoManager: UndoManager? {
+    AppDelegate.shared.preferenceWindowController.windowUndoManager
+  }
+
+  override func willUndoOrRedo() {
+    // Go into Key Bindings tab so it is clear to user what is being undone.
+    AppDelegate.shared.preferenceWindowController.selectAdvancedTab()
+  }
+}

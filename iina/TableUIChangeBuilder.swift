@@ -249,6 +249,7 @@ class TableUIChangeBuilder {
 
     let tableUIChange = TableUIChange(.moveRows, completionHandler: completionHandler)
     tableUIChange.toMove = moveIndexPairs
+    tableUIChange.oldSelectedRowIndexes = indexesToMove  // to help restore selection on undo
     tableUIChange.newSelectedRowIndexes = dstIndexes
 
     return (tableUIChange, allRowsUpdated)

@@ -107,7 +107,6 @@ struct BindingTableState {
     let srcIndexes = ensureUnfilteredIndexes(forRowIndexes: rowIndexes)  // guarantees unfiltered indexes
     let (tableUIChange, allRowsUpdated) = TableUIChange.builder.buildMove(rowIndexes, to: insertIndex, in: allRows,
                                                                           completionHandler: afterComplete)
-    tableUIChange.oldSelectedRowIndexes = srcIndexes  // to help restore selection on undo
 
     Logger.log.verbose("Generated \(tableUIChange.toMove!.count) movePairs: \(tableUIChange.toMove!); will change selection: \(srcIndexes.map{$0}) → \(tableUIChange.newSelectedRowIndexes!.map{$0})")
     doAction(allRowsUpdated, tableUIChange)
