@@ -647,15 +647,15 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
   }
 
   @IBAction func addWatchAction(_ sender: AnyObject) {
-    Utility.quickPromptPanel("add_watch", validator: optionNameValidator, sheetWindow: window) { [self] str in
-      self.watchProperties.append(str)
-      self.saveWatchList()
-
-      // Append row to end of table, with animation if preferred
-      let insertIndexSet = IndexSet(integer: watchTableView.numberOfRows)
-      watchTableView.insertRows(at: insertIndexSet, withAnimation: IINAAnimation.isAnimationEnabled ? .slideDown : [])
-      watchTableView.selectRowIndexes(insertIndexSet, byExtendingSelection: false)
-      watchTableView.scrollRowToVisible(watchTableView.numberOfRows - 1)
+    Utility.quickPromptPanel("add_watch", validator: optionNameValidator, sheetWindow: window) { [self] newWatchKey in
+      // Append row after last selected row, or if no selection, to end of table
+      let insertIndex: Int
+      if let lastSelectedRow = watchTableView.selectedRowIndexes.last {
+        insertIndex = lastSelectedRow + 1
+      } else {
+        insertIndex = watchProperties.count
+      }
+      insertWatchRows([newWatchKey], at: insertIndex)
     }
   }
 
