@@ -196,7 +196,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
   // MARK: - Options Table CRUD
 
-  func insertOptionRows(_ itemList: [[String]], at targetRowIndex: Int) {
+  func insertOptionRows(_ itemList: [[String]], at targetRowIndex: Int? = nil) {
     let (tableUIChange, allItemsNew) = optionsTableView.buildInsert(of: itemList, at: targetRowIndex, in: optionsList,
                                                                     completionHandler: { [self] tableUIChange in
       // Do not query table directly here. It seems to interfere with the row animations.

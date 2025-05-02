@@ -115,7 +115,7 @@ struct AppInputConfig {
       let notification = Notification(name: .iinaAppInputConfigDidChange,
                                       object: nil, userInfo: data)
       if DebugConfig.logBindingsRebuild {
-        log.verbose("Completed AppInputConfig v\(appInputConfigNew.version); posting notification: \(notification.name.rawValue.quoted)")
+        log.verbose{"Completed AppInputConfig v\(appInputConfigNew.version); posting notification: \(notification.name.rawValue.quoted)"}
       }
       NotificationCenter.default.post(notification)
     }

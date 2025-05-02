@@ -76,13 +76,13 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   }
 
   override func viewWillAppear() {
-    Logger.log("Key Bindings pref pane will appear", level: .verbose)
+    Logger.log.verbose{"Key Bindings pref pane will appear"}
     super.viewWillAppear()
     BindingTableState.manager.applyStateUpdate(AppInputConfig.current)  // bring up to date
     BindingTableState.manager.enableObservers()
     if DebugConfig.logBindingsRebuild {
       let keyList = PlayerManager.shared.getOrCreateDemo().mpv.getInputKeyList()
-      Logger.log.debug("Key List (count=\(keyList.count)): \(keyList)")
+      Logger.log.debug{"Key List (count=\(keyList.count)): \(keyList)"}
     }
   }
 
@@ -95,6 +95,11 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
 
   override func viewDidLoad() {
     super.viewDidLoad()
+
+    // Need table updates to execute in serial queue
+    let animationPipeline = AppDelegate.shared.preferenceWindowController.animationPipeline
+    bindingTableView.animationPipeline = animationPipeline
+    confTableView.animationPipeline = animationPipeline
 
     // Load files into cache all at once; it should be fast enough (and doing so on an as-needed basis was not originally tested...)
     // But do not load them unless the user navigates to the Key Bindings preference pane.
@@ -130,7 +135,7 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
 
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingSearchFieldShouldUpdate, object: nil, queue: .main) { notification in
       guard let newStringValue = notification.object as? String else {
-        Logger.log("Received \(notification.name.rawValue.quoted) with invalid object: \(type(of: notification.object))", level: .error)
+        Logger.log.error{"Received \(notification.name.rawValue.quoted) with invalid object: \(type(of: notification.object))"}
         return
       }
       guard self.bindingSearchField.stringValue != newStringValue else {

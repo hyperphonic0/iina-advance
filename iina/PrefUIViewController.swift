@@ -166,7 +166,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var pipHideWindow: NSButton!
   @IBOutlet weak var pipMinimizeWindow: NSButton!
 
-  private let animationPipeline = IINAAnimation.Pipeline()
+  /// Weak reference to `PreferenceWindowController.animationPipeline`.
+  private unowned var animationPipeline: IINAAnimation.Pipeline!
 
   // MARK: Init
 
@@ -180,6 +181,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   override func viewDidLoad() {
     super.viewDidLoad()
+
+    animationPipeline = AppDelegate.shared.preferenceWindowController.animationPipeline
 
     for sectionView in sectionViews {
       // helps with show/hide animations

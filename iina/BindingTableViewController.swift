@@ -42,7 +42,7 @@ class BindingTableViewController: NSObject {
   fileprivate var builtinMenuItemIconColor: NSColor = .textColor
 
   init(_ bindingTableView: EditableTableView, selectionDidChangeHandler: @escaping () -> Void) {
-    Logger.log("BindingTableViewController init", level: .verbose)
+    Logger.log.verbose{"BindingTableViewController init"}
     self.tableView = bindingTableView
     self.selectionDidChangeHandler = selectionDidChangeHandler
 
@@ -576,8 +576,7 @@ extension BindingTableViewController: EditableTableViewDelegate {
     } else {
       showEditBindingPopup(ok: { rawKey, rawAction, isIINACommand in
         let newMapping = KeyMapping(rawKey: rawKey, rawAction: rawAction, isIINACommand: isIINACommand)
-        self.bindingTableState.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping,
-                                                afterComplete: self.scrollToFirstInserted)
+        self.bindingTableState.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping)
       })
     }
   }
@@ -624,8 +623,7 @@ extension BindingTableViewController: EditableTableViewDelegate {
     // Make sure to use copy() to clone the object here
     let newMappings: [KeyMapping] = mappingList.map { $0.clone() }
 
-    bindingTableState.insertNewBindings(relativeTo: rowIndex, newMappings,
-                                        afterComplete: scrollToFirstInserted)
+    bindingTableState.insertNewBindings(relativeTo: rowIndex, newMappings)
   }
 
   // e.g., drag & drop "move" operation
@@ -633,17 +631,8 @@ extension BindingTableViewController: EditableTableViewDelegate {
     guard requireCurrentConfIsEditable(forAction: "move binding(s)") else { return }
     guard !rowIndexes.isEmpty else { return }
 
-    let firstInsertedRowIndex = bindingTableState.moveBindings(from: rowIndexes, to: rowIndex,
-                                                               afterComplete: self.scrollToFirstInserted)
+    let firstInsertedRowIndex = bindingTableState.moveBindings(from: rowIndexes, to: rowIndex)
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
-  }
-
-  // Each TableUpdate executes asynchronously, but we need to wait for it to complete in order to do any further work on
-  // inserted rows.
-  private func scrollToFirstInserted(_ tableUIChange: TableUIChange) {
-    if let firstInsertedRowIndex = tableUIChange.toInsert?.first {
-      self.tableView.scrollRowToVisible(firstInsertedRowIndex)
-    }
   }
 
   func removeSelectedBindings() {
@@ -718,7 +707,7 @@ extension BindingTableViewController: EditableTableViewDelegate {
     }
 
     if rows.isEmpty {
-      Logger.log("No bindings to copy: not touching clipboard", level: .verbose)
+      Logger.log.verbose{"No bindings to copy: not touching clipboard"}
       return false
     }
 
@@ -726,19 +715,18 @@ extension BindingTableViewController: EditableTableViewDelegate {
 
     NSPasteboard.general.clearContents()
     NSPasteboard.general.writeObjects(mappings)
-    Logger.log("Copied \(rows.count) bindings to the clipboard", level: .verbose)
+    Logger.log.verbose{"Copied \(rows.count) bindings to the clipboard"}
     return true
   }
 
   private func pasteFromClipboard(relativeTo rowIndex: Int, isAfterNotAt: Bool = false) {
     let mappingsToInsert = readBindingsFromClipboard()
     guard !mappingsToInsert.isEmpty else {
-      Logger.log("Aborting Paste action because there is nothing to paste", level: .warning)
+      Logger.log.warn{"Aborting Paste action because there is nothing to paste"}
       return
     }
-    Logger.log("Pasting \(mappingsToInsert.count) bindings \(isAfterNotAt ? "after" : "at") index \(rowIndex)")
-    bindingTableState.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, mappingsToInsert,
-                                        afterComplete: self.scrollToFirstInserted)
+    Logger.log.verbose{"Pasting \(mappingsToInsert.count) bindings \(isAfterNotAt ? "after" : "at") index \(rowIndex)"}
+    bindingTableState.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, mappingsToInsert)
   }
 
   func readBindingsFromClipboard() -> [KeyMapping] {

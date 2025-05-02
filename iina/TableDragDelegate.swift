@@ -28,7 +28,7 @@ class TableDragDelegate<TableItem> {
        getFromPasteboardFunc: @escaping (_: NSPasteboard) -> [TableItem],
        getAllCurentFunc: @escaping () -> [TableItem],
        moveFunc: @escaping (_: IndexSet, _: Int) -> Void,
-       insertFunc: @escaping ([TableItem], _: Int) -> Void,
+       insertFunc: @escaping ([TableItem], _: Int?) -> Void,
        removeFunc: @escaping (_: IndexSet) -> Void) {
     self.tableLoggingName = tableLoggingName
     self.targetTable = targetTable

@@ -452,14 +452,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   // MARK: - Playlist Table CRUD
 
-  func insertPlaylistRows(_ desiredRowList: [PlaybackID], at targetRowIndex: Int) {
+  func insertPlaylistRows(_ desiredRowList: [PlaybackID], at targetRowIndex: Int? = nil) {
     let playableFiles = player.getPlayableFiles(in: desiredRowList.map{ $0.url })
     guard playableFiles.count > 0 else { return }
     let rowList = playableFiles.map { PlaybackID($0) }
-    player.log.verbose{"Inserting \(desiredRowList.count) rows into playlist at index \(targetRowIndex): \(rowList.map{$0.path.pii})"}
+    player.log.verbose{"Inserting \(desiredRowList.count) rows into playlist at index \(targetRowIndex?.description ?? "nil"): \(rowList.map{$0.path.pii})"}
 
-    let (tableUIChange, allItemsNew) = playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: displayedPlaylist, completionHandler: { [self] _ in
-      player.addToPlaylist(paths: rowList.map { $0.path }, at: targetRowIndex)
+    let (tableUIChange, allItemsNew) = playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: displayedPlaylist, completionHandler: { [self] tuic in
+      player.addToPlaylist(paths: rowList.map { $0.path }, at: tuic.toInsert!.first!)
       player.sendOSD(.addToPlaylist(rowList.count))
     })
 
@@ -527,12 +527,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @discardableResult
-  func pasteFromPasteboard(from pboard: NSPasteboard, to dstRow: Int) -> Bool {
+  func pasteFromPasteboard(from pboard: NSPasteboard) -> Bool {
     let playlistItems = readPlaylistItemsFromPasteboard(pboard)
     guard !playlistItems.isEmpty else {
       return false
     }
-    insertPlaylistRows(playlistItems, at: dstRow)
+    insertPlaylistRows(playlistItems)
     return true
   }
 
@@ -1221,8 +1221,7 @@ extension PlaylistViewController: EditableTableViewDelegate {
   }
 
   func doEditMenuPaste() {
-    let insertLocation = playlistTableView.selectedRowIndexes.last ?? displayedPlaylist.count
-    pasteFromPasteboard(from: .general, to: insertLocation)
+    pasteFromPasteboard(from: .general)
   }
 
   func doEditMenuDelete() {

@@ -128,56 +128,66 @@ class TableUIChange {
   func execute(on tableView: EditableTableView) {
     var animationTasks: [IINAAnimation.Task] = []
 
-
     // 1. "Before" animations (if provided)
     if let flashBefore, !flashBefore.isEmpty {
       animationTasks.append(.init{ [self] in
+        // Doesn't matter the Task animation duration; it will be changed inside animateFlash()
         let context = NSAnimationContext.current
+        log.verbose{"Flashing rows before animation: \(flashBefore.map({$0}))"}
         animateFlash(forIndexes: flashBefore, in: tableView, context)
       })
     }
 
 
     // 2. Perform row update animations
-    animationTasks.append(.init{ [self] in
-      // Encapsulate all animations in this function inside a transaction.
-      tableView.beginUpdates()
-      defer {
-        tableView.endUpdates()
-      }
-
+    var flashCount = 0
+    if (!(flashBefore == nil || flashBefore!.isEmpty)) {
+      flashCount += 1
+    }
+    if (!(flashAfter == nil || flashAfter!.isEmpty)) {
+      flashCount += 1
+    }
+    // Strive for a consistent animation duration for all operations.
+    // Operations such as "remove" may have a flash animation which takes some time, so subtract from this animation to compensate
+    let duration = max(0.0, Constants.AnimationDuration.tableUIChange - (CGFloat(flashCount) * Constants.AnimationDuration.tableUIFlash))
+    animationTasks.append(.init(duration: duration) { [self] in
       self.executeRowUpdates(on: tableView)
+
+      if let newSelectedRowIndexes {
+        log.verbose{"TableUIChange: changing row selection (\(newSelectedRowIndexes.count) rows)"}
+        tableView.selectApprovedRowIndexes(newSelectedRowIndexes)
+      } else {
+        log.trace{"TableUIChange: no change to row selection"}
+      }
     })
 
 
-    // 3. Change row selection.
-    // MUST NOT DO THIS IN THE SAME ANIMATION GROUP AS ROW UPDATES or else weird selection "burn-in" can result
-    animationTasks.append(.init { [self] in
-      // track this so we don't do it more than once (it fires the selectionChangedListener every time)
-      let wantsReloadOfExistingRows: Bool
-      if changeType == .reloadAll {
-        // Don't reload twice
-        wantsReloadOfExistingRows = false
-      } else if reloadAllExistingRows || changeType == .updateRows || (!(toUpdate?.isEmpty ?? true)) {
-        // Just schedule a reload for all of them. This is a very inexpensive operation, and much easier
-        // than chasing down all the possible ways other rows could be updated.
-        wantsReloadOfExistingRows = true
-      } else {
-        wantsReloadOfExistingRows = false
-      }
+    // track this so we don't do it more than once (it fires the selectionChangedListener every time)
+    let wantsReloadOfExistingRows: Bool
+    if changeType == .reloadAll {
+      // Don't reload twice
+      wantsReloadOfExistingRows = false
+    } else if reloadAllExistingRows || changeType == .updateRows || (!(toUpdate?.isEmpty ?? true)) {
+      // Just schedule a reload for all of them. This is a very inexpensive operation, and much easier
+      // than chasing down all the possible ways other rows could be updated.
+      wantsReloadOfExistingRows = true
+    } else {
+      wantsReloadOfExistingRows = false
+    }
 
-      if wantsReloadOfExistingRows {
+    if wantsReloadOfExistingRows {
+      // 3. Reload.
+      // MUST NOT DO THIS IN THE SAME ANIMATION TASK AS ROW UPDATES or else weird selection "burn-in" can result
+      animationTasks.append(.instantTask { [self] in
         log.verbose("TableUIChange: reloading existing rows")
         /// Also uses `newSelectedRowIndexes`, if it is not nil:
-        tableView.reloadExistingRows(reselectRowsAfter: true, usingNewSelection: newSelectedRowIndexes)
-      } else if let newSelectedRowIndexes {
-        log.verbose{"TableUIChange: selecting \(newSelectedRowIndexes.count) rows"}
-        tableView.selectApprovedRowIndexes(newSelectedRowIndexes)
-      } else {
-        log.verbose{"TableUIChange: no change to row selection"}
-      }
+        tableView.reloadExistingRows(reselectRowsAfter: false)
+      })
+    }
 
-      if scrollToShowChangedRow {
+    // 4. (maybe) scroll to changed row.
+    if scrollToShowChangedRow {
+      animationTasks.append(.instantTask { [self] in
         if let newSelectedRowIndexes,
            let firstSelectedRowIndex = newSelectedRowIndexes.first {
           log.verbose{"TableUIChange: scrolling to first selected row index: \(firstSelectedRowIndex)"}
@@ -198,13 +208,14 @@ class TableUIChange {
             tableView.scrollRowToVisible(index)
           }
         }
-      }
-    })
+      })
+    }
 
-    // 4. "After" animations (if provided)
+    // 5. "After" animations (if provided)
     if let flashAfter, !flashAfter.isEmpty {
       animationTasks.append(.init { [self] in
         let context = NSAnimationContext.current
+        log.verbose{"Flashing rows after animation: \(flashAfter.map({$0}))"}
         animateFlash(forIndexes: flashAfter, in: tableView, context)
       })
     }
@@ -216,7 +227,9 @@ class TableUIChange {
       })
     }
 
-    if let animationPipeline = tableView.pwc?.animationPipeline {
+    if let animationPipeline = tableView.animationPipeline {
+      animationPipeline.submit(animationTasks)
+    } else if let animationPipeline = tableView.pwc?.animationPipeline {
       animationPipeline.submit(animationTasks)
     } else {
       IINAAnimation.runAsync(animationTasks)
@@ -227,7 +240,7 @@ class TableUIChange {
     let insertAnimation = IINAAnimation.isAnimationEnabled ? (rowInsertAnimation ?? tableView.rowInsertAnimation) : []
     let removeAnimation = IINAAnimation.isAnimationEnabled ? (rowRemoveAnimation ?? tableView.rowRemoveAnimation) : []
 
-    log.verbose{"Executing TableUIChange type \"\(changeType)\": \(toRemove?.count ?? 0) removes, \(toInsert?.count ?? 0) inserts, \(toMove?.count ?? 0), moves, \(toUpdate?.count ?? 0) updates; reloadExisting: \(reloadAllExistingRows), \(newSelectedRowIndexes?.count ?? -1) selectedRows"}
+    log.verbose{"Executing TableUIChange type \"\(changeType)\": \(toRemove?.count ?? 0) removes, \(toInsert?.count ?? 0) inserts, \(toMove?.count ?? 0), moves, \(toUpdate?.count ?? 0) updates; reloadExisting: \(reloadAllExistingRows.yn), \(newSelectedRowIndexes?.count ?? -1) selectedRows"}
 
     switch changeType {
 
@@ -293,9 +306,7 @@ class TableUIChange {
   }
 
   private func animateFlash(forIndexes indexes: IndexSet, in tableView: NSTableView, _ context: NSAnimationContext) {
-    log.verbose{"Flashing rows: \(indexes.map({$0}))"}
-
-    context.duration = 0.2
+    context.duration = Constants.AnimationDuration.tableUIFlash
     tableView.beginUpdates()
     defer {
       tableView.endUpdates()

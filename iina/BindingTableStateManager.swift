@@ -162,6 +162,7 @@ class BindingTableStateManager: NSObject {
 
   // Not an undoable action; just a UI change (but possibly saved in UI state prefs)
   func applyFilter(newFilterString: String) {
+    Logger.log.verbose{"Applying Key Bindings filter: \(newFilterString)"}
     UIState.shared.set(newFilterString, for: .uiPrefBindingsTableSearchString)
     applyStateUpdate(AppInputConfig.current, newFilterString: newFilterString)
     // Tell search field to update if needed:
@@ -169,25 +170,29 @@ class BindingTableStateManager: NSObject {
   }
 
   private func clearFilter() {
-    Logger.log("Clearing Key Bindings filter", level: .verbose)
+    Logger.log.verbose{"Clearing Key Bindings filter"}
     applyFilter(newFilterString: "")
   }
 
+  /// All table changes should go through this callback
   private func appInputConfigDidChange(_ notification: Notification) {
-    Logger.log("BindingTableStateManager received \(notification.name.rawValue.quoted)", level: .verbose)
+    Logger.log.verbose{"BindingTableStateManager received \(notification.name.rawValue.quoted)"}
     guard let userData = notification.userInfo else {
-      Logger.log("Notification \(notification.name.rawValue.quoted): contains no data!", level: .error)
-      return
-    }
-    guard let appInputConfig = userData[BindingTableStateManager.Key.appInputConfig] as? AppInputConfig else {
-      Logger.log("Notification \(notification.name.rawValue.quoted): no AppInputConfig!", level: .error)
+      Logger.log.error{"Notification \(notification.name.rawValue.quoted): contains no data!"}
       return
     }
 
-    let tableUIChange = userData[BindingTableStateManager.Key.tableUIChange] as? TableUIChange
-    let newInputConfFile = userData[BindingTableStateManager.Key.confFile] as? InputConfFile
+    AppDelegate.shared.preferenceWindowController.animationPipeline.submitInstantTask{ [self] in
+      guard let appInputConfig = userData[BindingTableStateManager.Key.appInputConfig] as? AppInputConfig else {
+        Logger.log.error{"Notification \(notification.name.rawValue.quoted): no AppInputConfig!"}
+        return
+      }
 
-    self.applyStateUpdate(appInputConfig, desiredTableUIChange: tableUIChange, newInputConfFile: newInputConfFile)
+      let tableUIChange = userData[BindingTableStateManager.Key.tableUIChange] as? TableUIChange
+      let newInputConfFile = userData[BindingTableStateManager.Key.confFile] as? InputConfFile
+
+      applyStateUpdate(appInputConfig, desiredTableUIChange: tableUIChange, newInputConfFile: newInputConfFile)
+    }
   }
 
   /**
@@ -205,11 +210,11 @@ class BindingTableStateManager: NSObject {
 
     let showAllBindings = Preference.bool(for: .showKeyBindingsFromAllSources)
 
-    Logger.log("Updating Binding table state: hasUIChange=\(desiredTableUIChange != nil) filterUpdate=\(newFilterString?.quoted ?? "nil") showAllBindings=\(showAllBindings)", level: .verbose)
+    Logger.log.verbose{"Updating Binding table state: hasUIChange=\((desiredTableUIChange != nil).yn) filterUpdate=\(newFilterString?.quoted ?? "nil") showAllBindings=\(showAllBindings.yn)"}
     let oldState = BindingTableState.current
     if oldState.appInputConfig.version == appInputConfigNew.version
         && desiredTableUIChange == nil && newFilterString == nil && newInputConfFile == nil && showAllBindings == oldState.showAllBindings {
-      Logger.log("BindingTableStateManager.applyStateUpdate(): ignoring update because nothing new: (v\(appInputConfigNew.version))", level: .verbose)
+      Logger.log.verbose{"BindingTableStateManager.applyStateUpdate(): ignoring update because nothing new: (v\(appInputConfigNew.version))"}
       return
     }
 

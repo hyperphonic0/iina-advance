@@ -121,9 +121,9 @@ struct BindingTableState {
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ mappingList: [KeyMapping],
                          afterComplete: TableUIChange.CompletionHandler? = nil) {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt, returnUnfilteredIndex: true)
-    Logger.log("Inserting \(mappingList.count) bindings \(isAfterNotAt ? "after" : "into") \(isFiltered ? "filtered" : "unfiltered") rowIndex \(index) → insert at \(insertIndex)", level: .verbose)
+    Logger.log.verbose{"Inserting \(mappingList.count) bindings \(isAfterNotAt ? "after" : "into") \(isFiltered ? "filtered" : "unfiltered") rowIndex \(index) → insert at \(insertIndex)"}
     guard canModifyCurrentConf else {
-      Logger.log("Aborting: cannot modify current conf!", level: .error)
+      Logger.log.error{"Aborting: cannot modify current conf!"}
       return
     }
 

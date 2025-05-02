@@ -30,7 +30,7 @@ class TableUIChangeBuilder {
 
     case .none, .reloadAll, .wholeTableDiff:
       // Will not cause a failure. But can't think of a reason to ever invert these types
-      Logger.log("Calling inverted() on content change type '\(original.changeType)': was this intentional?", level: .warning)
+      Logger.log.warn{"Calling inverted() on content change type '\(original.changeType)': was this intentional?"}
       inverted = TableUIChange(original.changeType)
     }
 
@@ -44,15 +44,15 @@ class TableUIChangeBuilder {
       for insertIndex in inverted.toInsert! {
         inverted.newSelectedRowIndexes?.insert(insertIndex)
       }
-      Logger.log("Invert: changed removes=\(removed.map{$0}) into inserts=\(inverted.toInsert!.map{$0})", level: .verbose)
+      Logger.log.verbose{"Invert: changed removes=\(removed.map{$0}) into inserts=\(inverted.toInsert!.map{$0})"}
     }
     if let toInsert = original.toInsert {
       inverted.toRemove = IndexSet(toInsert.map({ $0 + offset }))
-      Logger.log("Invert: changed inserts=\(toInsert.map{$0}) into removes=\(inverted.toRemove!.map{$0})", level: .verbose)
+      Logger.log.verbose{"Invert: changed inserts=\(toInsert.map{$0}) into removes=\(inverted.toRemove!.map{$0})"}
     }
     if let toUpdate = original.toUpdate {
       inverted.toUpdate = IndexSet(toUpdate.map({ $0 + offset }))
-      Logger.log("Invert: changed updates=\(toUpdate.map{$0}) into updates=\(inverted.toUpdate!.map{$0})", level: .verbose)
+      Logger.log.verbose{"Invert: changed updates=\(toUpdate.map{$0}) into updates=\(inverted.toUpdate!.map{$0})"}
       // Add updated lines to selection
       for updateIndex in inverted.toUpdate! {
         inverted.newSelectedRowIndexes?.insert(updateIndex)
@@ -74,7 +74,7 @@ class TableUIChangeBuilder {
          let origEndingSelection = original.newSelectedRowIndexes, inverted.changeType == .moveRows {
         inverted.newSelectedRowIndexes = origBeginningSelection
         inverted.oldSelectedRowIndexes = origEndingSelection
-        Logger.log("Invert: changed movePairs from \(movePairsOrig) to \(inverted.toMove!.map{$0}); changed selection from \(origEndingSelection.map{$0}) to \(origBeginningSelection.map{$0})", level: .verbose)
+        Logger.log.verbose{"Invert: changed movePairs from \(movePairsOrig) to \(inverted.toMove!.map{$0}); changed selection from \(origEndingSelection.map{$0}) to \(origBeginningSelection.map{$0})"}
       }
     }
 
@@ -124,11 +124,11 @@ class TableUIChangeBuilder {
         case let .insert(_, indexToInsert):
           if indexToRemove == indexToInsert {
             diff.toUpdate = IndexSet(integer: indexToInsert)
-            Logger.log("Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 update: \(indexToInsert)", level: .verbose)
+            Logger.log.verbose{"Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 update: \(indexToInsert)"}
             return diff
           }
           diff.toMove?.append((indexToRemove, indexToInsert))
-          Logger.log("Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 move: from \(indexToRemove) to \(indexToInsert)", level: .verbose)
+          Logger.log.verbose{"Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 move: from \(indexToRemove) to \(indexToInsert)"}
           return diff
         default: break
         }
@@ -258,8 +258,17 @@ class TableUIChangeBuilder {
 // MARK: - EditableTableView
 
 extension EditableTableView {
-  func buildInsert<T>(of itemsToInsert: [T], at insertIndex: Int, in allCurrentItems: [T],
-                      completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+  func buildInsert<T>(of itemsToInsert: [T], at desiredInsertIndex: Int? = nil, in allCurrentItems: [T],
+  completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+    // Append row after last selected row, or if no selection, to end of table
+    let insertIndex: Int
+    if let desiredInsertIndex {
+      insertIndex = desiredInsertIndex
+    } else if let lastSelectedRow = selectedRowIndexes.last {
+      insertIndex = lastSelectedRow + 1
+    } else {
+      insertIndex = numberOfRows
+    }
     return TableUIChange.builder.buildInsert(of: itemsToInsert, at: insertIndex, in: allCurrentItems,
                                              completionHandler: completionHandler)
   }

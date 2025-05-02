@@ -67,12 +67,16 @@ class InputConfFileCache {
     }
 
     storageLock.withLock {
-      Logger.log.verbose{"Updating memory cache entry for InputConf: \(inputConfFile.confName.pii.quoted)"}
+      if DebugConfig.logBindingsRebuild {
+        Logger.log.verbose{"Updating memory cache entry for InputConf: \(inputConfFile.confName.pii.quoted)"}
+      }
       InputConfFile.cache.storage[inputConfFile.confName] = inputConfFile
     }
 
     InputConfFileCache.fileDQ.async {
-      Logger.log.verbose{"Saving InputConf \(inputConfFile.confName.pii.quoted) to file path \(inputConfFile.filePath.pii.quoted)"}
+      if DebugConfig.logBindingsRebuild {
+        Logger.log.verbose{"Saving InputConf \(inputConfFile.confName.pii.quoted) to file path \(inputConfFile.filePath.pii.quoted)"}
+      }
       do {
         let newFileContent: String = inputConfFile.lines.joined(separator: "\n")
         try newFileContent.write(toFile: inputConfFile.filePath, atomically: true, encoding: .utf8)
@@ -90,7 +94,9 @@ class InputConfFileCache {
     let newFilePath = Utility.buildConfFilePath(for: newConfName)
 
     storageLock.withLock {
-      Logger.log.verbose{"Updating memory cache: renaming/moving InputConf \(oldConfName.pii.quoted) -> \(newConfName.pii.quoted)"}
+      if DebugConfig.logBindingsRebuild {
+        Logger.log.verbose{"Updating memory cache: renaming/moving InputConf \(oldConfName.pii.quoted) -> \(newConfName.pii.quoted)"}
+      }
       guard let inputConfFile = storage.removeValue(forKey: oldConfName) else {
         Logger.log.error{"Cannot move InputConf file: no entry in cache for \(oldConfName.pii.quoted). This should never happen!"}
         sendErrorAlert(key: "error_finding_file", args: ["config"])

@@ -2708,7 +2708,7 @@ class PlayerCore: NSObject {
     log.verbose{"Got mpv 'idle-active': isFileLoaded=\(isFileLoaded.yn) eofLoading=\(eofWhileLoading.yn) playerState=\(state)"}
     /// Make sure to check that `info.currentPlayback != nil` before outputting error
     if eofWhileLoading, let playback = info.currentPlayback, playback.state.isNotYet(.loaded) {
-      log.error{"Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted). Will display alert to user and close window"}
+      log.error{"Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted)! Will stop player\(isInteractivePlayer ? " & close window" : "")"}
       DispatchQueue.main.async { [self] in
         Utility.showAlert("error_open_name", arguments: [playback.path.quoted])
         let openURLWindow = AppDelegate.shared.openURLWindow
@@ -3522,6 +3522,10 @@ class PlayerCore: NSObject {
   private func _closeWindow() {
     assert(DispatchQueue.isExecutingIn(.main))
     stop()
+    guard isInteractivePlayer else {
+      log.verbose("Called stop, but no window to close (player is non-interactive)")
+      return
+    }
     windowController.postWindowMustCancelShow()
     log.verbose("Closing window")
     windowController.close()

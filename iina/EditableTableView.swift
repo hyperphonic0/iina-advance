@@ -9,6 +9,8 @@
 import Foundation
 
 class EditableTableView: NSTableView {
+  /// Optional. If set, `TableUIChange` updates will be executed via this.
+  var animationPipeline: IINAAnimation.Pipeline? = nil
 
   // Can be overridden by each TableUIChange if set there
   var rowInsertAnimation: NSTableView.AnimationOptions = .slideUp

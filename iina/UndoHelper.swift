@@ -37,7 +37,7 @@ class UndoHelper {
 
     let origActionName: String? = UndoHelper.getOrSetOriginalActionName(actionName, undoMan)
 
-    Logger.log("[\(UndoHelper.formatAction(origActionName, undoMan))] Registering for \(undoMan.isRedoing ? UndoHelper.REDO : UndoHelper.UNDO)")
+    Logger.log.trace{"[\(UndoHelper.formatAction(origActionName, undoMan))] Registering for \(undoMan.isRedoing ? UndoHelper.REDO : UndoHelper.UNDO)"}
 
     undoMan.registerUndo(withTarget: self, handler: { [self] manager in
       guard let undoMan = undoManager else {
@@ -45,7 +45,7 @@ class UndoHelper {
         return
       }
       // Undo starts here. Or: undo of the undo (redo)
-      Logger.log("[\(UndoHelper.formatAction(origActionName, undoMan))] Starting \(UndoHelper.currentOp(undoMan)) (\(UndoHelper.extraDebug(undoMan)))")
+      Logger.log.verbose{"[\(UndoHelper.formatAction(origActionName, undoMan))] Starting \(UndoHelper.currentOp(undoMan)) (\(UndoHelper.extraDebug(undoMan)))"}
 
       willUndoOrRedo()
       undoAction()
@@ -87,7 +87,7 @@ class UndoHelper {
   }
 
   static private func extraDebug(_ undoMan: UndoManager) -> String {
-    "canUndo: \(undoMan.canUndo), canRedo: \(undoMan.canRedo)"
+    "canUndo=\(undoMan.canUndo.yn) canRedo=\(undoMan.canRedo.yn)"
   }
 
   static private func currentOp(_ undoMan: UndoManager) -> String {
