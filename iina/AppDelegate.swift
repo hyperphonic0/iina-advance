@@ -76,7 +76,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   var startupHandler = StartupHandler()
   private var shutdownHandler = ShutdownHandler()
-  private var co: CocoaObserver!
+  private var co: NotificationHandler!
 
   private var lastClosedWindowName: String = ""
   var isShowingOpenFileWindow = false
@@ -198,7 +198,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // Set up observers
 
-    var ncDefaultObservers: [CocoaObserver.NCObserver] = [ .init(.windowIsReadyToShow, startupHandler.windowIsReadyToShow),
+    var ncDefaultObservers: [NotificationHandler.NCObserver] = [ .init(.windowIsReadyToShow, startupHandler.windowIsReadyToShow),
                                                            .init(.windowMustCancelShow, startupHandler.windowMustCancelShow)]
     // The "action on last window closed" action will vary slightly depending on which type of window was closed.
     // Here we add a listener which fires when *any* window is closed, in order to handle that logic all in one place.
@@ -233,7 +233,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
     /// before `applicationDidFinishLaunching`.
-    co = CocoaObserver(Logger.log, prefDidChange: prefDidChange,
+    co = NotificationHandler(Logger.log, prefDidChange: prefDidChange,
                        legacyPrefKeyObserver: self, observedPrefKeys, [
       .default: ncDefaultObservers
     ])

@@ -70,7 +70,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
             sectionThumbnailView, sectionPictureInPictureView, sectionAccessibilityView]
   }
 
-  var co: CocoaObserver! = nil
+  var notiHandler: NotificationHandler! = nil
 
   private let toolbarSettingsSheetController = PrefOSCToolbarSettingsSheetController()
 
@@ -208,7 +208,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   override func viewWillAppear() {
     super.viewWillAppear()
 
-    co.addAllObservers()
+    notiHandler.addAllObservers()
     // Set up key-value observing for changes to this view's properties:
     addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [.old, .new], context: nil)
 
@@ -218,7 +218,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   override func viewWillDisappear() {
-    co.removeAllObservers()
+    notiHandler.removeAllObservers()
     ObjcUtils.silenced {
       UserDefaults.standard.removeObserver(self, forKeyPath: #keyPath(view.effectiveAppearance))
     }
@@ -227,7 +227,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   // MARK: Observers
 
   private func configureObservers() {
-    co = CocoaObserver(Logger.log, prefDidChange: prefDidChange, [
+    notiHandler = NotificationHandler(Logger.log, prefDidChange: prefDidChange, [
       .enableAdvancedSettings,
       .useMpvOsd,
       .integrateWithThumbfast,

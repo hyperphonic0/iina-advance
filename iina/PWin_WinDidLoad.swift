@@ -23,7 +23,7 @@ extension PlayerWindowController {
 
     viewportView.player = player
 
-    co = buildObservers()
+    notiHandler = buildObservers()
 
     // The fade timer is only used if auto-hide is enabled
     fadeableViews.hideTimer.startFunction = { _ in Preference.bool(for: .enableControlBarAutoHide) }

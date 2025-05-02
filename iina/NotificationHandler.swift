@@ -1,5 +1,5 @@
 //
-//  CocoaObserver.swift
+//  NotificationHandler.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2024-10-15.
@@ -10,8 +10,8 @@ import Foundation
 typealias PrefDidChangeCallback = (_ key: Preference.Key, _ newValue: Any?) -> Void
 typealias NotiCenterCallback = (Notification) -> Void
 
-/// Convenience class for dealing with `NotificationCenter` notifications and `Preference` change observation
-class CocoaObserver: NSObject {
+/// Convenience class for observing AppKit's `NotificationCenter` notifications and `Preference` changes
+class NotificationHandler: NSObject {
   struct NCObserver {
     let name: Notification.Name
     let object: Any?

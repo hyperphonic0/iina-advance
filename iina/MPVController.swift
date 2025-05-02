@@ -91,7 +91,13 @@ class MPVController: NSObject {
   @Atomic var hooks: [UInt64: MPVHookValue] = [:]
   private var hookCounter: UInt64 = 1
 
-  var thumbfastInfo: ThumbfastInfo?
+  var thumbfastInfo: ThumbfastInfo? {
+    didSet {
+      DispatchQueue.main.async {
+        NotificationCenter.default.post(Notification(name: .thumbfastInfoDidChange, object: nil))
+      }
+    }
+  }
 
   var log: Logger.Subsystem { mpvLogScanner.mpvLogSubsystem }
 

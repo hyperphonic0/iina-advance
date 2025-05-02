@@ -79,7 +79,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var pendingVideoGeoUpdateTasks: [IINAAnimation.Task] = []
 
   /// For responding to changes to app prefs & other notifications
-  var co: CocoaObserver!
+  var notiHandler: NotificationHandler!
 
   var barFactory: BarFactory?
   let knobFactory = KnobFactory()

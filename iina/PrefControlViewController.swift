@@ -36,7 +36,7 @@ class PrefControlViewController: PreferenceViewController, PreferenceWindowEmbed
   @IBOutlet weak var seekScrollSensitivityLabel: NSTextField!
   @IBOutlet weak var volumeScrollSensitivityLabel: NSTextField!
 
-  var co: CocoaObserver! = nil
+  var notiHandler: NotificationHandler! = nil
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -45,18 +45,18 @@ class PrefControlViewController: PreferenceViewController, PreferenceWindowEmbed
 
   override func viewDidAppear() {
     super.viewDidAppear()
-    co.addAllObservers()
+    notiHandler.addAllObservers()
     updateLabels()
   }
 
   override func viewWillDisappear() {
-    co.removeAllObservers()
+    notiHandler.removeAllObservers()
   }
 
   // MARK: Observers
 
   private func configureObservers() {
-    co = CocoaObserver(Logger.log, prefDidChange: prefDidChange, [
+    notiHandler = NotificationHandler(Logger.log, prefDidChange: prefDidChange, [
       .relativeSeekAmount,
       .volumeScrollAmount,
     ])

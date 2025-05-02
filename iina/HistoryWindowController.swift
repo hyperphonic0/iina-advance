@@ -73,7 +73,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   private var fileExistsMap: [URL: Bool] = [:]
 
   private let log: Logger.Subsystem
-  private var co: CocoaObserver!
+  private var notiHandler: NotificationHandler!
 
   @Atomic private var reloadTicketCounter: Int = 0
   private var isInitialLoadDone = false
@@ -108,7 +108,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
     showLoadingMsgTimer.action = showLoadingUI
 
-    co = CocoaObserver(log, prefDidChange: prefDidChange, [
+    notiHandler = NotificationHandler(log, prefDidChange: prefDidChange, [
       .uiHistoryTableGroupBy,
       .uiHistoryTableSearchType,
       .uiHistoryTableSearchString,
@@ -213,7 +213,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     guard let _ = window else { return }  // load window
     assert(isWindowLoaded, "Expected History window to be loaded!")
 
-    co.addAllObservers()
+    notiHandler.addAllObservers()
 
     // Cannot rely on `iinaFileExistsInfoDidUpdate` being sent anytime soon, so pull down the latest copy now
     fileExistsMap = HistoryController.shared.fileExistsMap
@@ -236,7 +236,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   func windowWillClose(_ notification: Notification) {
     log.verbose("History window will close")
     invalidateTicket()
-    co.removeAllObservers()
+    notiHandler.removeAllObservers()
   }
 
   private func isTicketStillValid(_ ticket: Int) -> Bool {

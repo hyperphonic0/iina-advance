@@ -43,7 +43,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     return [headerView, loggingSettingsView, mpvSettingsView]
   }
 
-  var co: CocoaObserver! = nil
+  var notiHandler: NotificationHandler! = nil
 
   private var tableDragDelegate: TableDragDelegate<[String]>? = nil
 
@@ -62,20 +62,20 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
   override func viewDidLoad() {
     super.viewDidLoad()
-
+    
     guard let userOptions = Preference.value(for: .userOptions) as? [[String]] else {
       Utility.showAlert("extra_option.cannot_read", sheetWindow: view.window)
       return
     }
     optionsList = userOptions
-
+    
     optionsTableView.dataSource = self
     optionsTableView.delegate = self
     optionsTableView.editableDelegate = self
     optionsTableView.editableTextColumnIndexes = [0, 1]
     optionsTableView.selectNextRowAfterDelete = false
     refreshRemoveButton()
-
+    
     tableDragDelegate = TableDragDelegate<[String]>("mpvOptions",
                                                     optionsTableView,
                                                     acceptableDraggedTypes: [.string],
@@ -85,22 +85,25 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
                                                     moveFunc: moveOptionRows,
                                                     insertFunc: insertOptionRows,
                                                     removeFunc: removeOptionRows)
-
+    
     optionsTableView.sizeLastColumnToFit()
-
+    
     enableAdvancedSettingsLabel.stringValue = NSLocalizedString("preference.enable_adv_settings",
                                                                 comment: "Enable advanced settings")
 
-    configureObservers()
-  }
-
-  private func configureObservers() {
-    co = CocoaObserver(Logger.log, prefDidChange: prefDidChange, [
+    notiHandler = NotificationHandler(Logger.log, prefDidChange: prefDidChange, [
       .enableAdvancedSettings,
       .integrateWithThumbfast,
-    ])
+    ], [.default: [
+      .init(.thumbfastInfoDidChange, { [self] noti in
+        updateThumbfastStatus()
+      }),
+    ]])
   }
 
+  private func refreshSavedLaunchSummary(_ notification: Notification) {
+  }
+  
   /// Called each time a pref `key`'s value is set
   func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     switch key {
@@ -114,13 +117,13 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   override func viewWillAppear() {
     Logger.log.trace("Advanced pref pane will appear")
     super.viewWillAppear()
-    co.addAllObservers()
+    notiHandler.addAllObservers()
     updateThumbfastStatus()
   }
 
   override func viewWillDisappear() {
     Logger.log.trace("Advanced pref pane will disappear")
-    co.removeAllObservers()
+    notiHandler.removeAllObservers()
   }
 
   func updateThumbfastStatus() {
@@ -128,7 +131,14 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
       thumbfastStatus = ""
       return
     }
-    for player in PlayerManager.shared.playerCores {
+
+    let startedPlayers = PlayerManager.shared.playerCores.filter({ $0.isInteractivePlayer && $0.state.isAtLeast(.started) })
+    if startedPlayers.isEmpty {
+      thumbfastStatus = "⚠️ Unknown status. Make sure you have at least one player window open."
+      return
+    }
+
+    for player in startedPlayers {
       if let thumbfastInfo = player.mpv.thumbfastInfo {
         if thumbfastInfo.isReady {
           thumbfastStatus = "✅ Found thumbfast-info. ✅ Ready"

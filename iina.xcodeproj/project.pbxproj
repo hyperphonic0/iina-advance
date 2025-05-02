@@ -404,7 +404,7 @@
 		D1FA42E528E5E54700DF49DD /* AppInputConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */; };
 		D1FD2DD828521AD500CF7B35 /* MPVLogScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */; };
 		D1FD2DDC28533EE700CF7B35 /* InputSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DDB28533EE700CF7B35 /* InputSection.swift */; };
-		D1FD62AE2CBF6FBA00FFCF21 /* CocoaObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD62AD2CBF6F8100FFCF21 /* CocoaObserver.swift */; };
+		D1FD62AE2CBF6FBA00FFCF21 /* NotificationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD62AD2CBF6F8100FFCF21 /* NotificationHandler.swift */; };
 		D1FF15752A7E072200C0CE86 /* PlayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FF15742A7E072200C0CE86 /* PlayerManager.swift */; };
 		D1FF15772A7E35F300C0CE86 /* WindowAutosaveName.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FF15762A7E35F300C0CE86 /* WindowAutosaveName.swift */; };
 		D1FF15792A7FA6A300C0CE86 /* PlayerSaveState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FF15782A7FA6A300C0CE86 /* PlayerSaveState.swift */; };
@@ -1949,7 +1949,7 @@
 		D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfig.swift; sourceTree = "<group>"; };
 		D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogScanner.swift; sourceTree = "<group>"; };
 		D1FD2DDB28533EE700CF7B35 /* InputSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSection.swift; sourceTree = "<group>"; };
-		D1FD62AD2CBF6F8100FFCF21 /* CocoaObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaObserver.swift; sourceTree = "<group>"; };
+		D1FD62AD2CBF6F8100FFCF21 /* NotificationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationHandler.swift; sourceTree = "<group>"; };
 		D1FF15742A7E072200C0CE86 /* PlayerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerManager.swift; sourceTree = "<group>"; };
 		D1FF15762A7E35F300C0CE86 /* WindowAutosaveName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAutosaveName.swift; sourceTree = "<group>"; };
 		D1FF15782A7FA6A300C0CE86 /* PlayerSaveState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerSaveState.swift; sourceTree = "<group>"; };
@@ -2594,7 +2594,7 @@
 				8461C52F1D462488006E91FF /* VideoTime.swift */,
 				8434BAA61D5DF2DA003BECF2 /* Extensions.swift */,
 				D1E1446B29E3971C005DCEA3 /* IINAAnimation.swift */,
-				D1FD62AD2CBF6F8100FFCF21 /* CocoaObserver.swift */,
+				D1FD62AD2CBF6F8100FFCF21 /* NotificationHandler.swift */,
 				84C8D5901D796F9700D98A0E /* Aspect.swift */,
 				84AABE961DBFB62F00D138FD /* FixedFontManager.h */,
 				84AABE971DBFB62F00D138FD /* FixedFontManager.m */,
@@ -3442,7 +3442,7 @@
 				519872FF26879B9B00F84BCC /* AccessibilityPreferences.swift in Sources */,
 				842904E21F0EC01600478376 /* AutoFileMatcher.swift in Sources */,
 				D1C741122CB6503400522FA7 /* PWin_Enums.swift in Sources */,
-				D1FD62AE2CBF6FBA00FFCF21 /* CocoaObserver.swift in Sources */,
+				D1FD62AE2CBF6FBA00FFCF21 /* NotificationHandler.swift in Sources */,
 				D1049C852872C154003D47C1 /* ConfTableViewController.swift in Sources */,
 				D13A7F122D3B6CC400840277 /* TabService.swift in Sources */,
 				8466BE181D5CDD0300039D03 /* QuickSettingViewController.swift in Sources */,

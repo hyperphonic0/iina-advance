@@ -8,10 +8,10 @@
 
 import Foundation
 
-/// `NotificationCenter` & `UserDefaults` observers for the player window. See also: `CocoaObserver`
+/// `NotificationCenter` & `UserDefaults` observers for the player window. See also: `NotificationHandler`
 extension PlayerWindowController {
 
-  func buildObservers() -> CocoaObserver {
+  func buildObservers() -> NotificationHandler {
     let window = window!
 
     let observedPrefKeys: [Preference.Key] = [
@@ -92,7 +92,7 @@ extension PlayerWindowController {
       .allowVideoToOverlapCameraHousing,
     ]
 
-    let ncList: [NotificationCenter: [CocoaObserver.NCObserver]]
+    let ncList: [NotificationCenter: [NotificationHandler.NCObserver]]
     ncList = [
       .default: [
         .init(NSScreen.colorSpaceDidChangeNotification) { note in self.colorSpaceDidChange(note) },
@@ -152,17 +152,17 @@ extension PlayerWindowController {
       ]
     ]
 
-    return CocoaObserver(player.log, prefDidChange: prefDidChange, observedPrefKeys, ncList)
+    return NotificationHandler(player.log, prefDidChange: prefDidChange, observedPrefKeys, ncList)
   }
 
   func addAllObservers() {
-    co.addAllObservers()
+    notiHandler.addAllObservers()
     addObserver(self, forKeyPath: #keyPath(window.effectiveAppearance), options: [.old, .new], context: nil)
     log.verbose("Done adding all observers")
   }
 
   func removeAllObservers() {
-    co.removeAllObservers()
+    notiHandler.removeAllObservers()
     ObjcUtils.silenced { [self] in
       removeObserver(self, forKeyPath: #keyPath(window.effectiveAppearance))
     }

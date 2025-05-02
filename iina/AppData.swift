@@ -556,6 +556,7 @@ extension Notification.Name {
   static let watchLaterOptionsDidChange = Notification.Name("watchLaterOptionsDidChange")
   static let recentDocumentsDidChange = Notification.Name("recentDocumentsDidChange")
   static let savedWindowStateDidChange = Notification.Name("savedWindowStateDidChange")
+  static let thumbfastInfoDidChange = Notification.Name("thumbfastInfoDidChange")
   static let iinaSecondSubVisibilityChanged = Notification.Name("iinaSecondSubVisibilityChanged")
   static let iinaSubVisibilityChanged = Notification.Name("iinaSubVisibilityChanged")
   static let iinaHistoryTasksFinished = Notification.Name("iinaHistoryTasksFinished")

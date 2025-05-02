@@ -52,9 +52,9 @@ extension MPVController {
 
       setInt(MPVOption.Demuxer.demuxerReadaheadSecs, 0, level: .verbose)
       setString(MPVOption.Demuxer.demuxerMaxBytes, "128KiB", level: .verbose)
-      setFlag("audio", false, level: .verbose)
+      setString(MPVOption.TrackSelection.aid, no, level: .verbose)
 
-      setString(MPVOption.Video.hwdec, no)
+      setString(MPVOption.Video.hwdec, no, level: .verbose)
 
       logError(mpv_request_log_messages(mpv, MPVLogLevel.warn.description))
       logError(mpv_initialize(mpv))
