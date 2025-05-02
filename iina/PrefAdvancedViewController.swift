@@ -196,6 +196,12 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
   // MARK: - Options Table CRUD
 
+  func doAtomicTableUpdate(_ tableUIChange: TableUIChange, _ allItemsNew: [[String]]) {
+    optionsList = allItemsNew           // update cached data
+    saveToUserDefaults()                // update saved data
+    optionsTableView.post(tableUIChange)// update UI
+  }
+
   func insertOptionRows(_ newItems: [[String]], at targetRowIndex: Int? = nil, thenStartEdit: Bool = false) {
     let (tableUIChange, allItemsNew) = optionsTableView.buildInsert(of: newItems, at: targetRowIndex, in: optionsList,
                                                                     completionHandler: { [self] tableUIChange in
@@ -211,9 +217,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     let allItemsOld = optionsList         // needed for Undo
 
     let doAction = { [self] in
-      optionsList = allItemsNew           // update cached data
-      saveToUserDefaults()                // update saved data
-      optionsTableView.post(tableUIChange)// update UI
+      doAtomicTableUpdate(tableUIChange, allItemsNew)
     }
 
     doAction()
@@ -222,9 +226,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
       let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
       tableUIChangeUndo.setUpFlashForChangedRows()
 
-      optionsList = allItemsOld
-      saveToUserDefaults()
-      optionsTableView.post(tableUIChangeUndo)
+      doAtomicTableUpdate(tableUIChangeUndo, allItemsOld)
     }, redo: {
       doAction()
     })
@@ -240,18 +242,14 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     let allItemsOld = optionsList         // needed for Undo
 
     let doAction = { [self] in
-      optionsList = allItemsNew           // update cached data
-      saveToUserDefaults()                // update saved data
-      optionsTableView.post(tableUIChange)// update UI
+      doAtomicTableUpdate(tableUIChange, allItemsNew)
     }
 
     doAction()
 
     undoHelper.register(buildActionName(basedOn: tableUIChange), undo: { [self] in
       let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
-      optionsList = allItemsOld
-      saveToUserDefaults()
-      optionsTableView.post(tableUIChangeUndo)
+      doAtomicTableUpdate(tableUIChangeUndo, allItemsOld)
     }, redo: {
       doAction()
     })
@@ -269,18 +267,14 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     let allItemsOld = optionsList         // needed for Undo
 
     let doAction = { [self] in
-      optionsList = allItemsNew           // update cached data
-      saveToUserDefaults()                // update saved data
-      optionsTableView.post(tableUIChange)// update UI
+      doAtomicTableUpdate(tableUIChange, allItemsNew)
     }
 
     doAction()
 
     undoHelper.register(buildActionName(basedOn: tableUIChange), undo: { [self] in
       let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
-      optionsList = allItemsOld
-      saveToUserDefaults()
-      optionsTableView.post(tableUIChangeUndo)
+      doAtomicTableUpdate(tableUIChangeUndo, allItemsOld)
     }, redo: {
       doAction()
     })

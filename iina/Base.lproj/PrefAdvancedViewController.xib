@@ -68,6 +68,7 @@
                 </textField>
             </subviews>
             <constraints>
+                <constraint firstItem="3Gg-Io-SlS" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="zdc-Lf-XU2" secondAttribute="trailing" constant="8" symbolic="YES" id="1bM-dF-KDz"/>
                 <constraint firstAttribute="trailing" secondItem="3Gg-Io-SlS" secondAttribute="trailing" constant="1" id="1yC-lU-olv"/>
                 <constraint firstItem="M2l-at-Cbp" firstAttribute="top" secondItem="Tik-eR-DDp" secondAttribute="bottom" constant="8" symbolic="YES" id="2jE-Zj-lQd"/>
                 <constraint firstItem="zdc-Lf-XU2" firstAttribute="leading" secondItem="Tik-eR-DDp" secondAttribute="trailing" constant="8" symbolic="YES" id="IYw-iY-FGZ"/>
@@ -294,7 +295,7 @@
                     <rect key="frame" x="0.0" y="91" width="480" height="141"/>
                     <clipView key="contentView" id="aL1-v5-nLY">
                         <rect key="frame" x="1" y="1" width="478" height="139"/>
-                        <autoresizingMask key="autoresizingMask"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="mpvOptionsTable" rowHeight="18" rowSizeStyle="automatic" headerView="wiq-g9-ouS" viewBased="YES" id="LPs-2B-Pt0" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="478" height="116"/>
@@ -316,7 +317,7 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView clipsToBounds="YES" translatesAutoresizingMaskIntoConstraints="NO" id="aYw-Un-OIE">
-                                                <rect key="frame" x="0.0" y="0.0" width="122" height="18"/>
+                                                <rect key="frame" x="2" y="1" width="122" height="18"/>
                                                 <subviews>
                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="jGv-Vw-Iau" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                         <rect key="frame" x="2" y="1" width="132" height="16"/>
@@ -351,10 +352,10 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView clipsToBounds="YES" translatesAutoresizingMaskIntoConstraints="NO" id="dJ7-Mq-OHX">
-                                                <rect key="frame" x="0.0" y="0.0" width="320" height="18"/>
+                                                <rect key="frame" x="128" y="1" width="320" height="18"/>
                                                 <subviews>
                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="DWx-cI-Qdh" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
-                                                        <rect key="frame" x="2" y="1" width="316" height="16"/>
+                                                        <rect key="frame" x="4" y="1" width="312" height="16"/>
                                                         <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Value EditableTextField" id="qOl-B1-6Cg">
                                                             <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -532,6 +533,7 @@
                 <constraint firstItem="Gf8-9e-wu7" firstAttribute="leading" secondItem="vY6-lX-1l5" secondAttribute="leading" constant="1" id="77L-nm-7Wg"/>
                 <constraint firstItem="zKI-kU-PWr" firstAttribute="leading" secondItem="vY6-lX-1l5" secondAttribute="leading" constant="1" id="7ef-qu-NyJ"/>
                 <constraint firstItem="jsf-pn-h6s" firstAttribute="top" secondItem="Gf8-9e-wu7" secondAttribute="bottom" constant="8" id="8sD-5a-FXo"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="ogw-ry-4bY" secondAttribute="trailing" id="99B-MC-Izm"/>
                 <constraint firstItem="ZQt-93-Phc" firstAttribute="firstBaseline" secondItem="zKI-kU-PWr" secondAttribute="firstBaseline" id="Cbe-OE-Wpa"/>
                 <constraint firstItem="wWR-n2-u2E" firstAttribute="top" secondItem="zKI-kU-PWr" secondAttribute="bottom" constant="16" id="Cg4-PA-TyS"/>
                 <constraint firstAttribute="trailing" secondItem="hbF-n4-jl3" secondAttribute="trailing" constant="1" id="FDJ-Cp-psA"/>
@@ -557,6 +559,7 @@
                 <constraint firstItem="bA7-7o-Vd0" firstAttribute="leading" secondItem="vY6-lX-1l5" secondAttribute="leading" id="vIL-Pv-g7K"/>
                 <constraint firstItem="Gf8-9e-wu7" firstAttribute="top" secondItem="1NU-Lr-cuR" secondAttribute="bottom" constant="16" id="vlF-g2-sTm"/>
                 <constraint firstAttribute="trailing" secondItem="jsf-pn-h6s" secondAttribute="trailing" id="xHU-Tk-fPb"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="dPV-Ix-902" secondAttribute="trailing" id="zD9-8y-CdS"/>
             </constraints>
             <point key="canvasLocation" x="-397" y="227"/>
         </customView>

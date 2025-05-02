@@ -307,10 +307,6 @@ class TableUIChange {
 
   private func animateFlash(forIndexes indexes: IndexSet, in tableView: NSTableView, _ context: NSAnimationContext) {
     context.duration = Constants.AnimationDuration.tableUIFlash
-    tableView.beginUpdates()
-    defer {
-      tableView.endUpdates()
-    }
 
     for index in indexes {
       if let rowView = tableView.rowView(atRow: index, makeIfNecessary: false) {

@@ -102,13 +102,13 @@ struct BindingTableState {
                     afterComplete: TableUIChange.CompletionHandler? = nil) -> Int {
 
     let insertIndex = getClosestValidInsertIndex(from: index, returnUnfilteredIndex: true)
-    Logger.log.verbose("Moving \(rowIndexes.count) bindings to \(isFiltered ? "filtered" : "unfiltered") index \(index), which equates to insert at unfiltered index \(insertIndex)")
+    Logger.log.verbose{"Moving \(rowIndexes.count) bindings to \(isFiltered ? "filtered" : "unfiltered") index \(index), which equates to insert at unfiltered index \(insertIndex)"}
 
     let srcIndexes = ensureUnfilteredIndexes(forRowIndexes: rowIndexes)  // guarantees unfiltered indexes
     let (tableUIChange, allRowsUpdated) = TableUIChange.builder.buildMove(rowIndexes, to: insertIndex, in: allRows,
                                                                           completionHandler: afterComplete)
 
-    Logger.log.verbose("Generated \(tableUIChange.toMove!.count) movePairs: \(tableUIChange.toMove!); will change selection: \(srcIndexes.map{$0}) → \(tableUIChange.newSelectedRowIndexes!.map{$0})")
+    Logger.log.verbose{"Generated \(tableUIChange.toMove!.count) movePairs: \(tableUIChange.toMove!); will change selection: \(srcIndexes.map{$0}) → \(tableUIChange.newSelectedRowIndexes!.map{$0})"}
     doAction(allRowsUpdated, tableUIChange)
     return insertIndex
   }
