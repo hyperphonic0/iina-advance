@@ -80,7 +80,7 @@ class BindingTableStateManager: NSObject {
    4. Push update to the Key Bindings table in the UI so it can be animated.
    */
   func doAction(_ allRowsNew: [InputBinding], _ tableUIChange: TableUIChange) {
-    // Currently don't care about any rows except for "default" section
+    // Currently don't care about any rows except for "default" section (i.e., from the user conf file)
     let userConfMappingsNew = extractUserConfMappings(from: allRowsNew)
 
     // If a filter is active for these ops, clear it. Otherwise the new row may be hidden by the filter, which might confuse the user.
@@ -98,7 +98,7 @@ class BindingTableStateManager: NSObject {
 
     let tableStateOld = BindingTableState.current
 
-    undoHelper.register(buildActionName(basedOn: tableUIChange), undo: { [self] in
+    undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
       let tableStateNew = BindingTableState.current
 
       /**
@@ -137,27 +137,6 @@ class BindingTableStateManager: NSObject {
 
   private func extractUserConfMappings(from bindingRows: [InputBinding]) -> [KeyMapping] {
     bindingRows.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
-  }
-
-  // Format the action name for Edit menu display (Undo/Redo)
-  private func buildActionName(basedOn tableUIChange: TableUIChange? = nil) -> String? {
-
-    guard let tableUIChange = tableUIChange else {
-      return nil
-    }
-
-    switch tableUIChange.changeType {
-    case .insertRows:
-      return Utility.format(.keyBinding, tableUIChange.toInsert?.count ?? 0, .add)
-    case .removeRows:
-      return Utility.format(.keyBinding, tableUIChange.toRemove?.count ?? 0, .delete)
-    case .moveRows:
-      return Utility.format(.keyBinding, tableUIChange.toMove?.count ?? 0, .move)
-    case .updateRows:
-      return Utility.format(.keyBinding, tableUIChange.toUpdate?.count ?? 0, .update)
-    default:
-      return nil
-    }
   }
 
   // Not an undoable action; just a UI change (but possibly saved in UI state prefs)

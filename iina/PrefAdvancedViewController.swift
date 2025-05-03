@@ -222,7 +222,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
     doAction()
 
-    undoHelper.register(buildActionName(basedOn: tableUIChange), undo: { [self] in
+    undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
       let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
       tableUIChangeUndo.setUpFlashForChangedRows()
 
@@ -247,7 +247,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
     doAction()
 
-    undoHelper.register(buildActionName(basedOn: tableUIChange), undo: { [self] in
+    undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
       let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
       doAtomicTableUpdate(tableUIChangeUndo, allItemsOld)
     }, redo: {
@@ -272,33 +272,12 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
     doAction()
 
-    undoHelper.register(buildActionName(basedOn: tableUIChange), undo: { [self] in
+    undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
       let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
       doAtomicTableUpdate(tableUIChangeUndo, allItemsOld)
     }, redo: {
       doAction()
     })
-  }
-
-  // Format the action name for Edit menu display (Undo/Redo)
-  private func buildActionName(basedOn tableUIChange: TableUIChange? = nil) -> String? {
-
-    guard let tableUIChange = tableUIChange else {
-      return nil
-    }
-
-    switch tableUIChange.changeType {
-    case .insertRows:
-      return Utility.format(.option, tableUIChange.toInsert?.count ?? 0, .add)
-    case .removeRows:
-      return Utility.format(.option, tableUIChange.toRemove?.count ?? 0, .delete)
-    case .moveRows:
-      return Utility.format(.option, tableUIChange.toMove?.count ?? 0, .move)
-    case .updateRows:
-      return Utility.format(.option, tableUIChange.toUpdate?.count ?? 0, .update)
-    default:
-      return nil
-    }
   }
 
   // MARK: - IBAction

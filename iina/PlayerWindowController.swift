@@ -30,6 +30,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     return player.videoView
   }
 
+  var undoHelper: PlayerWindowUndoHelper!
+
   var bestScreen: NSScreen {
     window?.screen ?? NSScreen.main!
   }

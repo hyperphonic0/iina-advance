@@ -21,6 +21,8 @@ extension PlayerWindowController {
     miniPlayer = MiniPlayerViewController()
     miniPlayer.windowController = self
 
+    undoHelper = PlayerWindowUndoHelper(self, window.undoManager)
+
     viewportView.player = player
 
     notiHandler = buildObservers()

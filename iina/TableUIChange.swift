@@ -297,8 +297,8 @@ class TableUIChange {
   // Set up a flash animation to make it clear which rows were updated or removed.
   // Don't need to worry about moves & inserts, because those will be highlighted.
   func setUpFlashForChangedRows() {
-    flashBefore = IndexSet()
     if let toRemove {
+      flashBefore = IndexSet()
       for index in toRemove {
         flashBefore?.insert(index)
       }

@@ -491,6 +491,7 @@ struct Unit {
   static let config = Unit(singular: "Config", plural: "Configs")
   static let keyBinding = Unit(singular: "Binding", plural: "Bindings")
   static let option = Unit(singular: "Option", plural: "Options")
+  static let playlistItem = Unit(singular: "Item", plural: "Items")
 }
 struct UnitActionFormat {
   let none: String      // action only

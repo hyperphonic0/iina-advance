@@ -11,27 +11,27 @@ import Foundation
 class TableUIChangeBuilder {
   // Derives the inverse of the given `TableUIChange` (as suitable for an Undo) and returns it.
   func inverted(from original: TableUIChange, andAdjustAllIndexesBy offset: Int = 0,
-                selectNextRowAfterDelete: Bool) -> TableUIChange {
+                selectNextRowAfterDelete: Bool, completionHandler: TableUIChange.CompletionHandler? = nil) -> TableUIChange {
     let inverted: TableUIChange
 
     switch original.changeType {
 
     case .removeRows:
-      inverted = TableUIChange(.insertRows)
+      inverted = TableUIChange(.insertRows, completionHandler: completionHandler)
 
     case .insertRows:
-      inverted = TableUIChange(.removeRows)
+      inverted = TableUIChange(.removeRows, completionHandler: completionHandler)
 
     case .moveRows:
-      inverted = TableUIChange(.moveRows)
+      inverted = TableUIChange(.moveRows, completionHandler: completionHandler)
 
     case .updateRows:
-      inverted = TableUIChange(.updateRows)
+      inverted = TableUIChange(.updateRows, completionHandler: completionHandler)
 
     case .none, .reloadAll, .wholeTableDiff:
       // Will not cause a failure. But can't think of a reason to ever invert these types
       Logger.log.warn{"Calling inverted() on content change type '\(original.changeType)': was this intentional?"}
-      inverted = TableUIChange(original.changeType)
+      inverted = TableUIChange(original.changeType, completionHandler: completionHandler)
     }
 
     if inverted.changeType != .none && inverted.changeType != .reloadAll {

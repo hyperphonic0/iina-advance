@@ -666,7 +666,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if let enqueueValue = queryDict["enqueue"], enqueueValue == "1",
          let lastActivePlayer = PlayerManager.shared.lastActivePlayer,
          !lastActivePlayer.info.playlist.isEmpty {
-        lastActivePlayer.addToPlaylist(urlValue)
+        lastActivePlayer.appendToPlaylist(urlValue)
         lastActivePlayer.sendOSD(.addToPlaylist(1))
       } else {
         startupHandler.isOpeningNewWindowsForOpenedFiles = true

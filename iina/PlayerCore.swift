@@ -621,7 +621,7 @@ class PlayerCore: NSObject {
 
           if urls.count > 1 {
             log.verbose{"Adding \(urls.count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)"}
-            _addToPlaylist(urls: urls[1..<urls.count], silent: true)
+            _appendToPlaylist(urls: urls[1..<urls.count], silent: true)
             postNotification(.iinaPlaylistChanged)
           } else {
             // Only one entry in playlist, but still need to pull it from mpv
@@ -1778,11 +1778,11 @@ class PlayerCore: NSObject {
       if path == info.currentPlayback?.path {
         addedCurrentItem = true
       } else if addedCurrentItem {
-        _addToPlaylist(path)
+        _appendToPlaylist(path)
       } else {
         let count = mpv.getInt(MPVProperty.playlistCount)
         let current = mpv.getInt(MPVProperty.playlistPos)
-        _addToPlaylist(path)
+        _appendToPlaylist(path)
         let err = mpv.command(.playlistMove, args: ["\(count)", "\(current)"], checkError: false)
         if err != 0 {
           log.error("Error \(err) when auto-adding files into playlist")
@@ -1795,25 +1795,25 @@ class PlayerCore: NSObject {
     _reloadPlaylist()
   }
 
-  func addToPlaylist(_ path: String, silent: Bool = false) {
+  func appendToPlaylist(_ path: String, silent: Bool = false) {
     mpv.queue.async { [self] in
-      _addToPlaylist(path)
+      _appendToPlaylist(path)
       _reloadPlaylist(silent: silent)
     }
   }
 
-  func addToPlaylist(urls: any Collection<URL>, silent: Bool = false) {
+  func appendToPlaylist(urls: any Collection<URL>, silent: Bool = false) {
     guard !urls.isEmpty else { return }
     mpv.queue.async { [self] in
-      _addToPlaylist(urls: urls, silent: silent)
+      _appendToPlaylist(urls: urls, silent: silent)
     }
   }
 
-  func _addToPlaylist(urls: any Collection<URL>, silent: Bool = false) {
+  func _appendToPlaylist(urls: any Collection<URL>, silent: Bool = false) {
     _reloadPlaylist(silent: true)  // get up-to-date list first
     for url in urls {
       let urlPath = PlaybackID.path(from: url)
-      _addToPlaylist(urlPath)
+      _appendToPlaylist(urlPath)
     }
 
     _reloadPlaylist(silent: silent)
@@ -1826,7 +1826,7 @@ class PlayerCore: NSObject {
     mpv.queue.async { [self] in
       _reloadPlaylist(silent: true)
       for path in paths {
-        _addToPlaylist(path)
+        _appendToPlaylist(path)
       }
       let playlist = info.playlist
       if index <= playlist.count && index >= 0 {
@@ -1840,7 +1840,29 @@ class PlayerCore: NSObject {
     }
   }
 
-  func _addToPlaylist(_ urlPath: String) {
+  // TODO: this is untested
+  /// Insert playlist items at mapped indexes
+  func insertPlaylistItemsAtIndexes(_ itemsAtIndexes: [(Int, String)]) {
+    mpv.queue.async { [self] in
+      _reloadPlaylist(silent: true)
+      log.verbose{"Inserting mpv playlist items at indexes: \(itemsAtIndexes.map(\.0))"}
+      guard itemsAtIndexes.allSatisfy({$0.0 >= 0 && $0.0 < info.playlist.count}) else {
+        log.error{"Invalid index(es); cannot insert playlist items at indexes: \(itemsAtIndexes.map(\.0)) (playlist size: \(info.playlist.count))"}
+        return
+      }
+      for (itemToInsertIndex, itemToInsertPath) in itemsAtIndexes.reversed() {
+        _insertInPlaylist(itemToInsertPath, at: itemToInsertIndex)
+      }
+      _reloadPlaylist()
+      saveState()  // save playlist URLs to prefs
+    }
+  }
+
+  func _insertInPlaylist(_ urlPath: String, at insertIndex: Int) {
+    mpv.command(.loadfile, args: [urlPath, "insert-at", "\(insertIndex)"])
+  }
+
+  func _appendToPlaylist(_ urlPath: String) {
     log.verbose("Appending to mpv playlist: \(urlPath.pii.quoted)")
     mpv.command(.loadfile, args: [urlPath, "append"])
   }
@@ -1855,11 +1877,13 @@ class PlayerCore: NSObject {
 
   func playlistRemove(_ indexSet: IndexSet) {
     mpv.queue.async { [self] in
-      log.verbose("Will remove rows \(indexSet.map{$0}) from playlist")
-      var count = 0
-      for i in indexSet {
-        _playlistRemove(i - count)
-        count += 1
+      log.verbose{"Will remove rows \(indexSet.map{$0}) from playlist"}
+      // Remove playlist items one at a time, from top to bottom (increasing index).
+      // After an item is removed, the indexes of all items below it are subtracted by 1.
+      var countRemoved = 0
+      for origIndex in indexSet {
+        _playlistRemove(origIndex - countRemoved)
+        countRemoved += 1
       }
       _reloadPlaylist()
     }
@@ -2410,7 +2434,7 @@ class PlayerCore: NSObject {
       // Check this inside main DispatchQueue
       if isPlaylistVisible {
         // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
-        windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos)
+        windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos, thenScrollToVisible: true)
       }
 
       MediaPlayerIntegration.shared.update()
@@ -3729,7 +3753,7 @@ class PlayerCore: NSObject {
     info.currentPlayback?.playlistPos = mpvPlaylistPos
     if isPlaylistVisible {
       DispatchQueue.main.async { [self] in
-        windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: mpvPlaylistPos)
+        windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: mpvPlaylistPos, thenScrollToVisible: false)
       }
     }
     log.verbose{"After reloading playlist: playlistPos is: \(mpvPlaylistPos)"}

@@ -42,6 +42,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
   }
 
+  var undoHelper: PlayerWindowUndoHelper {
+    windowController.undoHelper
+  }
+
   private var draggedRowInfo: (Int, IndexSet)? = nil
 
   // can't use main queue - it will block
@@ -383,7 +387,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let buttonTag: Int
     switch tab {
     case .playlist:
-      refreshNowPlayingIndex()
+      refreshNowPlayingIndex(thenScrollToVisible: true)
       buttonTag = 0
     case .chapters:
       buttonTag = 1
@@ -458,13 +462,34 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let rowList = playableFiles.map { PlaybackID($0) }
     player.log.verbose{"Inserting \(desiredRowList.count) rows into playlist at index \(targetRowIndex?.description ?? "nil"): \(rowList.map{$0.path.pii})"}
 
+    // TODO: this flow isn't robust enough for undo. Need to refactor!
+    // Need to START with mpv command (not after), then update UI only after success. Also report error (add callbacks for both)
     let (tableUIChange, allItemsNew) = playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: displayedPlaylist, completionHandler: { [self] tuic in
       player.addToPlaylist(paths: rowList.map { $0.path }, at: tuic.toInsert!.first!)
       player.sendOSD(.addToPlaylist(rowList.count))
     })
 
-    displayedPlaylist = allItemsNew
-    playlistTableView.post(tableUIChange)
+    let doAction = { [self] in
+      displayedPlaylist = allItemsNew       // update cached data
+      playlistTableView.post(tableUIChange) // update UI
+    }
+
+    doAction()
+/*
+    let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
+    undoHelper.register(actionName, undo: { [self] in
+      guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
+        Logger.log.error{"Cannot undo insert of playlist items: playlist is in unexpected state!"}
+        return
+      }
+      let rmStartIndex = tableUIChange.toInsert!.first!
+      let rmEndIndex = rmStartIndex + desiredRowList.count
+      let rowIndexesToRemove = IndexSet(rmStartIndex...rmEndIndex)
+      removePlaylistRows(rowIndexesToRemove)
+    }, redo: {
+      doAction()
+    })
+*/
   }
 
   private func sanitizeRows(_ stringList: [String]) -> [String] {
@@ -477,20 +502,75 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       player.playlistMove(rowIndexes, to: targetRowIndex, silent: true)
     })
 
-    displayedPlaylist = allItemsNew
-    playlistTableView.post(tableUIChange)
+//    let allItemsOld = displayedPlaylist     // save in case of undo
+    let doAction = { [self] in
+      displayedPlaylist = allItemsNew       // update cached data
+      playlistTableView.post(tableUIChange) // update UI
+    }
+
+    doAction()
+/*
+    let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
+    undoHelper.register(actionName, undo: { [self] in
+      guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
+        Logger.log.error{"Cannot undo move of playlist items: playlist is in unexpected state!"}
+        return
+      }
+      // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
+      // can be at non-contiguous indexes in the playlist.
+      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete:
+                                                              playlistTableView.selectNextRowAfterDelete, completionHandler: { [self] _ in
+        let indexedMoveItems = rowIndexes.map{ ($0, allItemsOld[$0].path) }
+
+      })
+      displayedPlaylist = allItemsOld           // update cached data
+      playlistTableView.post(tableUIChangeUndo) // update UI
+    }, redo: {
+      doAction()
+    })
+*/
   }
 
   func removePlaylistRows(_ rowIndexes: IndexSet) {
     guard !rowIndexes.isEmpty else { return }
 
-    Logger.log.verbose("Removing rows from Playlist table: \(rowIndexes)")
+    Logger.log.verbose{"Removing rows from Playlist table: \(rowIndexes)"}
     let (tableUIChange, allItemsNew) = playlistTableView.buildRemove(rowIndexes, in: displayedPlaylist, completionHandler: { [self] _ in
       player.playlistRemove(rowIndexes)
     })
 
-    displayedPlaylist = allItemsNew
-    playlistTableView.post(tableUIChange)
+//    let allItemsOld = displayedPlaylist     // save in case of undo
+    let doAction = { [self] in
+      displayedPlaylist = allItemsNew       // update cached data
+      playlistTableView.post(tableUIChange) // update UI
+    }
+
+    doAction()
+/*
+    let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
+    undoHelper.register(actionName, undo: { [self] in
+      guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
+        Logger.log.error{"Cannot undo remove of playlist items: playlist is in unexpected state!"}
+        return
+      }
+      // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
+      // can be at non-contiguous indexes in the playlist.
+      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete:
+                                                              playlistTableView.selectNextRowAfterDelete, completionHandler: { [self] _ in
+        let indexedInsertItems = rowIndexes.map{ ($0, allItemsOld[$0].path) }
+        player.insertPlaylistItemsAtIndexes(indexedInsertItems)
+      })
+      displayedPlaylist = allItemsOld           // update cached data
+      playlistTableView.post(tableUIChangeUndo) // update UI
+    }, redo: {
+      doAction()
+    })
+*/
+  }
+
+  private func validateItemsAreEqual(_ current: [PlaybackID], _ expected: [PlaybackID]) -> Bool {
+    let currentPlaylistPaths = current.map{ $0.path }
+    return (currentPlaylistPaths.count == expected.count) && expected.map({$0.path}).elementsEqual(currentPlaylistPaths)
   }
 
   private func copyPlaylistRowsToPasteboard(_ rowIndexes: IndexSet, to pboard: NSPasteboard) {
@@ -572,7 +652,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   @IBAction func addURLAction(_ sender: AnyObject) {
     Utility.quickPromptPanel("add_url") { url in
       if Regex.url.matches(url) {
-        self.player.addToPlaylist(url)
+        self.player.appendToPlaylist(url)
         self.player.sendOSD(.addToPlaylist(1))
       } else {
         Utility.showAlert("wrong_url_format")
@@ -580,7 +660,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
   }
 
-  // TODO:
   @IBAction func clearPlaylistBtnAction(_ sender: AnyObject) {
     player.clearPlaylist()
     player.sendOSD(.clearPlaylist)
@@ -642,7 +721,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   // Updates index of playing item Don't need to reload whole playlist
-  func refreshNowPlayingIndex(setNewIndexTo newNowPlayingIndex: Int? = nil) {
+  func refreshNowPlayingIndex(setNewIndexTo newNowPlayingIndex: Int? = nil, thenScrollToVisible: Bool = false) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard isViewLoaded else { return }
     guard !view.isHidden else { return }
@@ -664,7 +743,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       reloadPlaylistRow(newNowPlayingIndex)
       reloadPlaylistRow(oldNowPlayingIndex)
 
-      playlistTableView.scrollRowToVisible(newNowPlayingIndex)
+      if thenScrollToVisible {
+        playlistTableView.scrollRowToVisible(newNowPlayingIndex)
+      }
     }
   }
 
@@ -1192,11 +1273,11 @@ extension PlaylistViewController: EditableTableViewDelegate {
   // MARK: - Edit Menu Support
 
   func isCutEnabled() -> Bool {
-    return isCopyEnabled()
+    return hasSelectionInPlaylistTable()
   }
 
   func isCopyEnabled() -> Bool {
-    (currentTab == .playlist) && (playlistTableView.selectedRow != -1)
+    return hasSelectionInPlaylistTable()
   }
 
   func isPasteEnabled() -> Bool {
@@ -1204,7 +1285,7 @@ extension PlaylistViewController: EditableTableViewDelegate {
   }
 
   func isDeleteEnabled() -> Bool {
-    return isCopyEnabled()
+    return hasSelectionInPlaylistTable()
   }
 
   func isSelectAllEnabled() -> Bool {
@@ -1228,6 +1309,9 @@ extension PlaylistViewController: EditableTableViewDelegate {
     removePlaylistRows(playlistTableView.selectedRowIndexes)
   }
 
+  private func hasSelectionInPlaylistTable() -> Bool {
+    (currentTab == .playlist) && !playlistTableView.selectedRowIndexes.isEmpty
+  }
 }
 
 class PlaylistTrackCellView: NSTableCellView {

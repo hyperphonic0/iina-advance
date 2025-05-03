@@ -69,6 +69,25 @@ class UndoHelper {
     return false
   }
 
+  // Format the action name for Edit menu display (Undo/Redo)
+  fileprivate func buildActionName(_ unit: Unit, basedOn tableUIChange: TableUIChange? = nil) -> String? {
+    guard let tableUIChange else { return nil }
+
+    switch tableUIChange.changeType {
+    case .insertRows:
+      return Utility.format(unit, tableUIChange.toInsert?.count ?? 0, .add)
+    case .removeRows:
+      return Utility.format(unit, tableUIChange.toRemove?.count ?? 0, .delete)
+    case .moveRows:
+      return Utility.format(unit, tableUIChange.toMove?.count ?? 0, .move)
+    case .updateRows:
+      return Utility.format(unit, tableUIChange.toUpdate?.count ?? 0, .update)
+    default:
+      return nil
+    }
+  }
+
+
   static private func getOrSetOriginalActionName(_ actionName: String?, _ undoMan: UndoManager) -> String? {
     if undoMan.isUndoing {
       return undoMan.undoActionName
@@ -103,6 +122,28 @@ class UndoHelper {
   }
 }
 
+class PlayerWindowUndoHelper: UndoHelper {
+  unowned var pwc: PlayerWindowController
+  unowned var _undoManager: UndoManager? = nil
+
+  init(_ pwc: PlayerWindowController, _ undoManager: UndoManager?) {
+    self.pwc = pwc
+    self._undoManager = undoManager
+  }
+
+  override var undoManager: UndoManager? {
+    _undoManager
+  }
+
+  override func willUndoOrRedo() {
+    pwc.showWindow(nil)
+  }
+
+  func buildActionName(basedOn tableUIChange: TableUIChange? = nil) -> String? {
+    return buildActionName(.playlistItem, basedOn: tableUIChange)
+  }
+}
+
 class PrefKeyBindingUndoHelper: UndoHelper {
   override var undoManager: UndoManager? {
     AppDelegate.shared.preferenceWindowController.windowUndoManager
@@ -111,6 +152,11 @@ class PrefKeyBindingUndoHelper: UndoHelper {
   override func willUndoOrRedo() {
     // Go into Key Bindings tab so it is clear to user what is being undone.
     AppDelegate.shared.preferenceWindowController.selectKeyBindingTab()
+  }
+
+  /// Format the action name for Edit menu display (Undo/Redo)
+  func buildActionName(basedOn tableUIChange: TableUIChange? = nil) -> String? {
+    return buildActionName(.keyBinding, basedOn: tableUIChange)
   }
 }
 
@@ -122,5 +168,9 @@ class PrefAdvancedUndoHelper: UndoHelper {
   override func willUndoOrRedo() {
     // Go into Key Bindings tab so it is clear to user what is being undone.
     AppDelegate.shared.preferenceWindowController.selectAdvancedTab()
+  }
+
+  func buildActionName(basedOn tableUIChange: TableUIChange? = nil) -> String? {
+    return buildActionName(.option, basedOn: tableUIChange)
   }
 }
