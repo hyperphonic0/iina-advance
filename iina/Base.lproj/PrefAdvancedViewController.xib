@@ -301,7 +301,7 @@
                                 <rect key="frame" x="0.0" y="0.0" width="478" height="116"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="4" height="2"/>
-                                <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="calibratedRGB"/>
                                 <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                 <tableColumns>
                                     <tableColumn identifier="Key" width="118" minWidth="40" maxWidth="1000" id="E3I-Q7-9t1">
@@ -355,7 +355,7 @@
                                                 <rect key="frame" x="128" y="1" width="320" height="18"/>
                                                 <subviews>
                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="DWx-cI-Qdh" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
-                                                        <rect key="frame" x="4" y="1" width="312" height="16"/>
+                                                        <rect key="frame" x="2" y="1" width="316" height="16"/>
                                                         <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Value EditableTextField" id="qOl-B1-6Cg">
                                                             <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
