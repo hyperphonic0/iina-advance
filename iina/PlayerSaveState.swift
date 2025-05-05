@@ -535,9 +535,11 @@ struct PlayerSaveState: CustomStringConvertible {
                                   videoSizeDisplayOverride: nil)
     }
 
+    let screenMetas = (props[PropName.screens.rawValue] as? [String] ?? []).compactMap({ScreenMeta.from($0)})
+
     let windowedCSV = PlayerSaveState.string(for: .windowedModeGeo, props)
     let savedWindowedGeo = PWinGeometry.fromCSV(windowedCSV, videoGeoFallback: videoGeo, log)
-    let windowedGeo: PWinGeometry
+    var windowedGeo: PWinGeometry
     if let savedWindowedGeo {
       windowedGeo = savedWindowedGeo
     } else {
@@ -545,15 +547,47 @@ struct PlayerSaveState: CustomStringConvertible {
       windowedGeo = PlayerWindowController.windowedModeGeoLastClosed
     }
 
+    let defaultScreen = NSScreen.main ?? NSScreen.screens[0]
+    let defaultScreenID = defaultScreen.screenID
+
+    // Need to replace `,` with `;` to avoid breaking CSV (ugly kludge)
+    let windowedFrameScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: windowedGeo.windowFrame, fallbackScreenID: defaultScreenID).replacingOccurrences(of: ",", with: ";")
+    let windowedGeoScreenID = windowedGeo.screenID.replacingOccurrences(of: ",", with: ";")
+    if windowedFrameScreenID != windowedGeoScreenID {
+      // The previous window origin is not in the previous screen, or possibly any screen.
+      // Could be an external screen is no longer connected or the arrangement of the screens has changed.
+      log.warn("Windowed geometry's frame is invalid for screen \(windowedGeoScreenID.quoted). Will use default screen instead (\(defaultScreen.screenID.quoted))")
+      if let screenMeta = screenMetas.first(where: {$0.screenID == windowedGeoScreenID}), screenMeta.visibleFrame.contains(windowedGeo.windowFrame.origin) {
+        // TODO: preserve relative window frame inside new screen
+      } else {
+      }
+      windowedGeo = windowedGeo.clone(screenID: defaultScreenID).refitted(using: .stayInside)
+    }
+
     let musicModeCSV = PlayerSaveState.string(for: .musicModeGeo, props)
     let savedMusicModeGeo = MusicModeGeometry.fromCSV(musicModeCSV, videoGeoFallback: videoGeo, log)
-    let musicModeGeo: MusicModeGeometry
+    var musicModeGeo: MusicModeGeometry
     if let savedMusicModeGeo {
       musicModeGeo = savedMusicModeGeo
     } else {
       log.errorDebugAlert{"Failed to restore MusicModeGeometry from CSV! Will fall back to last closed geometry"}
       musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
     }
+
+    // Need to replace `,` with `;` to avoid breaking CSV (ugly kludge)
+    let musicModeFrameScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: musicModeGeo.windowFrame, fallbackScreenID: defaultScreenID).replacingOccurrences(of: ",", with: ";")
+    let musicModeGeoScreenID = musicModeGeo.screenID.replacingOccurrences(of: ",", with: ";")
+    if musicModeFrameScreenID != musicModeGeoScreenID {
+      // The previous window origin is not in the previous screen, or possibly any screen.
+      // Could be an external screen is no longer connected or the arrangement of the screens has changed.
+      log.warn("MusicMode geometry's frame is invalid for screen \(musicModeGeoScreenID.quoted). Will use default screen instead (\(defaultScreen.screenID.quoted))")
+      if let screenMeta = screenMetas.first(where: {$0.screenID == musicModeGeoScreenID}), screenMeta.visibleFrame.contains(musicModeGeo.windowFrame.origin) {
+        // TODO: preserve relative window frame inside new screen
+      } else {
+      }
+      musicModeGeo = musicModeGeo.clone(screenID: defaultScreenID).refitted()
+    }
+
     return GeometrySet(windowed: windowedGeo, musicMode: musicModeGeo, video: videoGeo)
   }
 
@@ -886,6 +920,19 @@ struct ScreenMeta {
     assert(csv.split(separator: ",").count == ScreenMeta.expectedCSVTokenCount,
            "Invalid ScreenMeta CSV (expected \(ScreenMeta.expectedCSVTokenCount) tokens: \(csv.quoted)")
     return csv
+  }
+
+  var screenID: String {
+    if #available(macOS 10.15, *) {
+      return "\(displayID):\(name)"
+    }
+    return "\(displayID)"
+  }
+
+  func matches(_ otherScreen: NSScreen) -> Bool {
+    guard name != "?" else { return false }
+    let otherScreenID = otherScreen.screenID.replacingOccurrences(of: ",", with: ";")
+    return screenID == otherScreenID
   }
 
   static func from(_ screen: NSScreen) -> ScreenMeta {

@@ -239,7 +239,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     ])
 
     // Install plugins
-    if iinaPluginSystemEnabled, FirstRunManager.isFirstRun(for: .init("installedDefaultPlugins")) {
+    if AppDelegate.iinaPluginSystemEnabled, FirstRunManager.isFirstRun(for: .init("installedDefaultPlugins")) {
       var hasError = false
       Logger.log.debug("Installing default plugins")
       if let pluginPath = Bundle.main.resourcePath?.appending("/plugins"),
