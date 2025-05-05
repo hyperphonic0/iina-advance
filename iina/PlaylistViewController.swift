@@ -465,8 +465,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     // TODO: this flow isn't robust enough for undo. Need to refactor!
     // Need to START with mpv command (not after), then update UI only after success. Also report error (add callbacks for both)
     let (tableUIChange, allItemsNew) = playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: displayedPlaylist, completionHandler: { [self] tuic in
-      player.addToPlaylist(paths: rowList.map { $0.path }, at: tuic.toInsert!.first!)
-      player.sendOSD(.addToPlaylist(rowList.count))
+      player.addToPlaylist(paths: rowList.map { $0.path }, at: tuic.toInsert!.first!, onSuccess: { [self] in
+        player.sendOSD(.addToPlaylist(rowList.count))
+        return true
+      })
     })
 
     let doAction = { [self] in
@@ -499,7 +501,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   // Drag & drop within playlistTableView
   func movePlaylistRows(from rowIndexes: IndexSet, at targetRowIndex: Int) {
     let (tableUIChange, allItemsNew) = playlistTableView.buildMove(rowIndexes, to: targetRowIndex, in: displayedPlaylist, completionHandler: { [self] _ in
-      player.playlistMove(rowIndexes, to: targetRowIndex, silent: true)
+      player.playlistMove(rowIndexes, to: targetRowIndex, thenPostNotification: false)
     })
 
 //    let allItemsOld = displayedPlaylist     // save in case of undo
@@ -650,10 +652,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @IBAction func addURLAction(_ sender: AnyObject) {
-    Utility.quickPromptPanel("add_url") { url in
+    Utility.quickPromptPanel("add_url") { [self] url in
       if Regex.url.matches(url) {
-        self.player.appendToPlaylist(url)
-        self.player.sendOSD(.addToPlaylist(1))
+        player.appendToPlaylist(url)
       } else {
         Utility.showAlert("wrong_url_format")
       }
