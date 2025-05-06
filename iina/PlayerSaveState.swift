@@ -279,7 +279,7 @@ struct PlayerSaveState: CustomStringConvertible {
       props[PropName.playlistPaths.rawValue] = playlistPaths
     }
     if let playlistPos = info.currentPlayback?.playlistPos {
-      props[PropName.playlistPos.rawValue] = playlistPaths
+      props[PropName.playlistPos.rawValue] = playlistPos
     }
 
     if let playbackPositionSec = info.playbackPositionSec {

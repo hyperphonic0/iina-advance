@@ -218,7 +218,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       player.log.verbose{"Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…"}
       playlistTotalLengthIsReady = false
       reloadData(playlist: true, chapters: false)
-      updateCachesForAllItems()
     }
 
     fileHistoryUpdateObserver = NotificationCenter.default.addObserver(forName: .iinaFileHistoryDidUpdate, object: nil, queue: .main) { [self] note in
@@ -286,6 +285,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   /// Use `animate: false` only for initial load, to avoid seeing a briefly empty table
   func reloadData(playlist: Bool, chapters: Bool, animate: Bool = true) {
     guard player.isActive else { return }
+
     if playlist {
       playlistTableReloadDebouncer.run { [self] in
         DispatchQueue.main.async { [self] in
@@ -293,12 +293,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         }
       }
     }
+
     if chapters {
       player.log.verbose{"Reloading chapters table for \(player.info.chapters.count) entries"}
       chapterTableView.reloadData()
     }
-
-    removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
   }
 
   /// If `animate` is false, does a full reload instantly.
@@ -309,13 +308,23 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let newPlaylistRows = player.info.playlist
     displayedPlaylist = newPlaylistRows
 
+    let doAfterReload: () -> Void = { [self] in
+      refreshNowPlayingIndex()
+      updateCachesForAllItems()
+      removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
+    }
+
     if animate {
       let tableUIChange = TableUIChange.builder.buildDiff(oldRows: oldPlaylistRows,
-                                                          newRows: newPlaylistRows)
+                                                          newRows: newPlaylistRows, completionHandler: { _ in
+        doAfterReload()
+      })
       player.log.verbose{"Updating playlist table via diff"}
       playlistTableView.post(tableUIChange)
     } else {
+      player.log.trace{"Updating playlist table via reloadData"}
       playlistTableView.reloadData()
+      doAfterReload()
     }
   }
 
@@ -500,7 +509,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       Logger.log.debug{"Clearing undo stack for playlist due to insert error"}
       undoHelper.clearUndoes()
     })
-    
+
   }
 
   /// Drag & drop within `playlistTableView`

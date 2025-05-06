@@ -1924,7 +1924,7 @@ class PlayerCore: NSObject {
     var prevInsertCount = 0
     for (itemToInsertIndex, itemToInsertPath) in itemsAtIndexes {
       let insertIndex = itemToInsertIndex + prevInsertCount
-      let returnCode = mpv.command(.loadfile, args: [itemToInsertPath, "insert-at", "\(insertIndex)"])
+      let returnCode = mpv.command(.loadfile, args: [itemToInsertPath, "insert-at", "\(insertIndex)"], checkError: false)
       guard returnCode == 0 else {
         if let onError {
           let errorString = String(cString: mpv_error_string(returnCode))
@@ -2007,7 +2007,7 @@ class PlayerCore: NSObject {
   func clearPlaylist() {
     mpv.queue.async { [self] in
       log.verbose("Sending 'playlist-clear' cmd to mpv")
-      mpv.command(.playlistClear)
+      mpv.command(.playlistClear, checkError: false)
       _reloadPlaylist()
     }
   }
@@ -2015,11 +2015,12 @@ class PlayerCore: NSObject {
   func playFile(_ path: String) {
     mpv.queue.async { [self] in
       info.shouldAutoLoadFiles = true
-      mpv.command(.loadfile, args: [path, "replace"])
-      mpv.queue.async { [self] in
-        _reloadPlaylist()
-        saveState()
+      let returnCode = mpv.command(.loadfile, args: [path, "replace"], checkError: false)
+      guard returnCode == 0 else {
+        // TODO: report error
+        return
       }
+      _reloadPlaylist()
     }
   }
 
@@ -2027,7 +2028,6 @@ class PlayerCore: NSObject {
     mpv.queue.async { [self] in
       log.verbose{"Changing mpv playlist-pos to \(pos)"}
       mpv.setInt(MPVProperty.playlistPos, pos)
-      saveState()
     }
   }
 
@@ -2257,10 +2257,10 @@ class PlayerCore: NSObject {
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
   @discardableResult
   func addAudioFilter(_ filter: String) -> Bool {
-    log.debug("Adding audio filter \(filter)...")
+    log.debug{"Adding audio filter \(filter)…"}
     var result = true
     result = mpv.command(.af, args: ["add", filter], checkError: false) >= 0
-    Logger.log(result ? "Succeeded" : "Failed", subsystem: self.subsystem)
+    log.debug{result ? "Succeeded" : "Failed"}
     return result
   }
 
@@ -2281,7 +2281,7 @@ class PlayerCore: NSObject {
   /// - Parameter index: The index of the filter to be removed.
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   func removeAudioFilter(_ filter: String, _ index: Int) -> Bool {
-    log.debug("Removing audio filter \(filter)...")
+    log.debug{"Removing audio filter \(filter)…"}
     let result = mpv.removeFilter(MPVProperty.af, index)
     logRemoveFilter(type: "audio", result: result, name: filter)
     return result
@@ -2311,9 +2311,9 @@ class PlayerCore: NSObject {
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   @discardableResult
   func removeAudioFilter(_ filter: String) -> Bool {
-    Logger.log("Removing audio filter \(filter)...", subsystem: subsystem)
+    log.debug{"Removing audio filter \(filter)…"}
     let returnCode = mpv.command(.af, args: ["remove", filter], checkError: false) >= 0
-    Logger.log(returnCode ? "Succeeded" : "Failed", subsystem: self.subsystem)
+    log.debug{returnCode ? "Succeeded" : "Failed"}
     return returnCode
   }
 
@@ -2328,7 +2328,7 @@ class PlayerCore: NSObject {
 
   func setAudioDevice(_ name: String) {
     mpv.queue.async { [self] in
-      log.verbose("Seting mpv audioDevice to \(name.pii.quoted)")
+      log.verbose{"Seting mpv audioDevice to \(name.pii.quoted)"}
       mpv.setString(MPVProperty.audioDevice, name)
     }
   }
@@ -3846,11 +3846,10 @@ class PlayerCore: NSObject {
   func _reloadPlaylist(thenPostNotification: Bool = true, savePlayerState: Bool = true) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
-    log.verbose("Reloading playlist")
 
     var newPlaylist: [PlaybackID] = []
     let playlistCount = mpv.getInt(MPVProperty.playlistCount)
-    log.verbose{"Reloaded playlist will have \(playlistCount) items"}
+    log.verbose{"Reloading playlist with \(playlistCount) items"}
     for index in 0..<playlistCount {
       let urlPath = mpv.getString(MPVProperty.playlistNFilename(index))!
       guard let playlistItem = PlaybackID(path: urlPath) else {
