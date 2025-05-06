@@ -179,6 +179,7 @@ class MPVController: NSObject {
   }
 
   /// Send arbitrary mpv command. Returns mpv return code.
+  /// Warning: if `checkError: false` is not given, and an error occurs, this mpv core will go into shutdown!
   @discardableResult
   func command(_ command: MPVCommand, args: [String?] = [], checkError: Bool = true,
                level: Logger.Level = .debug) -> Int32 {
@@ -203,6 +204,8 @@ class MPVController: NSObject {
     let returnValue = mpv_command(mpv, &cargs)
     if checkError {
       chkErr(returnValue)
+    } else {
+      logError(returnValue)
     }
 
     return returnValue
@@ -210,7 +213,8 @@ class MPVController: NSObject {
 
   func command(rawString: String, level: Logger.Level = .debug) -> Int32 {
     log.log("Run cmd: \(rawString)", level: level)
-    return mpv_command_string(mpv, rawString)
+    let returnValue = mpv_command_string(mpv, rawString)
+    return logError(returnValue)
   }
 
   func asyncCommand(_ command: MPVCommand, args: [String?] = [], checkError: Bool = true,
@@ -903,6 +907,7 @@ class MPVController: NSObject {
   @discardableResult
   func logError(_ errorCode: Int32) -> Int32 {
     guard errorCode < 0 else { return errorCode }
+    guard player.log.isErrorEnabled else { return errorCode }
     player.log.error{"mpv API error: \"\(String(cString: mpv_error_string(errorCode)))\", Return value: \(errorCode)"}
     return errorCode
   }

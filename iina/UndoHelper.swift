@@ -58,6 +58,10 @@ class UndoHelper {
     return true
   }
 
+  func clearUndoes() {
+    undoManager?.removeAllActions(withTarget: self)
+  }
+
   func isUndoing() -> Bool {
     return self.undoManager?.isUndoing ?? false
   }

@@ -8,6 +8,9 @@
 
 import Cocoa
 
+// TODO: need to reconcile undo/redo with player non-UI actions
+fileprivate let enableUndoRedo = false
+
 fileprivate let prefixMinLength = 7
 fileprivate let displayNameMinLength = 12
 
@@ -211,9 +214,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         player.log.verbose{"Got iinaPlaylistChanged, but playlist is not visible. Ignoring"}
         return
       }
+
       player.log.verbose{"Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…"}
       playlistTotalLengthIsReady = false
       reloadData(playlist: true, chapters: false)
+      refreshNowPlayingIndex()
       updateCachesForAllItems()
     }
 
@@ -457,49 +462,57 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   // MARK: - Playlist Table CRUD
 
   func insertPlaylistRows(_ desiredRowList: [PlaybackID], at targetRowIndex: Int? = nil) {
+    insertPlaylistRows(desiredRowList, at: targetRowIndex, registerUndoRedo: enableUndoRedo)
+  }
+
+  func insertPlaylistRows(_ desiredRowList: [PlaybackID], at targetRowIndex: Int? = nil, registerUndoRedo: Bool) {
     let playableFiles = player.getPlayableFiles(in: desiredRowList.map{ $0.url })
     guard playableFiles.count > 0 else { return }
     let rowList = playableFiles.map { PlaybackID($0) }
     player.log.verbose{"Inserting \(desiredRowList.count) rows into playlist at index \(targetRowIndex?.description ?? "nil"): \(rowList.map{$0.path.pii})"}
 
-    // TODO: this flow isn't robust enough for undo. Need to refactor!
-    // Need to START with mpv command (not after), then update UI only after success. Also report error (add callbacks for both)
-    let (tableUIChange, allItemsNew) = playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: displayedPlaylist, completionHandler: { [self] tuic in
-      player.addToPlaylist(paths: rowList.map { $0.path }, at: tuic.toInsert!.first!, onSuccess: { [self] in
-        player.sendOSD(.addToPlaylist(rowList.count))
-        return true
-      })
-    })
+    let (tableUIChange, allItemsNew) = playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: displayedPlaylist)
 
-    let doAction = { [self] in
+    player.addToPlaylist(paths: rowList.map { $0.path }, at: tableUIChange.toInsert!.first!, onSuccess: { [self] in
       displayedPlaylist = allItemsNew       // update cached data
       playlistTableView.post(tableUIChange) // update UI
-    }
+      player.sendOSD(.addToPlaylist(rowList.count))
 
-    doAction()
-/*
-    let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
-    undoHelper.register(actionName, undo: { [self] in
-      guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
-        Logger.log.error{"Cannot undo insert of playlist items: playlist is in unexpected state!"}
-        return
+      // Register undo/redo for this action?
+      if registerUndoRedo {
+        let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
+        undoHelper.register(actionName, undo: { [self] in
+          guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
+            Logger.log.error{"Cannot undo insert of playlist items: playlist is in unexpected state!"}
+            return
+          }
+          let rmStartIndex = tableUIChange.toInsert!.first!
+          let rmEndIndex = rmStartIndex + desiredRowList.count
+          let rowIndexesToRemove = IndexSet(rmStartIndex..<rmEndIndex)
+          removePlaylistRows(rowIndexesToRemove, registerUndoRedo: false)
+        }, redo: { [self] in
+          insertPlaylistRows(desiredRowList, at: targetRowIndex, registerUndoRedo: false)
+        })
       }
-      let rmStartIndex = tableUIChange.toInsert!.first!
-      let rmEndIndex = rmStartIndex + desiredRowList.count
-      let rowIndexesToRemove = IndexSet(rmStartIndex...rmEndIndex)
-      removePlaylistRows(rowIndexesToRemove)
-    }, redo: {
-      doAction()
+
+      return true
+    }, onError: { [self] errorString in
+      Logger.log.debug{"Clearing undo stack for playlist due to insert error"}
+      undoHelper.clearUndoes()
     })
-*/
+
   }
 
   private func sanitizeRows(_ stringList: [String]) -> [String] {
     return stringList.compactMap { String($0.split(separator: "=").first!) }
   }
 
-  // Drag & drop within playlistTableView
-  func movePlaylistRows(from rowIndexes: IndexSet, at targetRowIndex: Int) {
+  /// Drag & drop within `playlistTableView`
+  func movePlaylistRows(from rowIndexes: IndexSet, to targetRowIndex: Int) {
+    movePlaylistRows(from: rowIndexes, to: targetRowIndex, registerUndoRedo: enableUndoRedo)
+  }
+
+  func movePlaylistRows(from rowIndexes: IndexSet, to targetRowIndex: Int, registerUndoRedo: Bool) {
     let (tableUIChange, allItemsNew) = playlistTableView.buildMove(rowIndexes, to: targetRowIndex, in: displayedPlaylist, completionHandler: { [self] _ in
       player.playlistMove(rowIndexes, to: targetRowIndex, thenPostNotification: false)
     })
@@ -533,41 +546,57 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 */
   }
 
+
   func removePlaylistRows(_ rowIndexes: IndexSet) {
+    removePlaylistRows(rowIndexes, registerUndoRedo: enableUndoRedo)
+  }
+
+  func removePlaylistRows(_ rowIndexes: IndexSet, registerUndoRedo: Bool) {
     guard !rowIndexes.isEmpty else { return }
 
     Logger.log.verbose{"Removing rows from Playlist table: \(rowIndexes)"}
-    let (tableUIChange, allItemsNew) = playlistTableView.buildRemove(rowIndexes, in: displayedPlaylist, completionHandler: { [self] _ in
-      player.playlistRemove(rowIndexes)
-    })
+    let (tableUIChange, allItemsNew) = playlistTableView.buildRemove(rowIndexes, in: displayedPlaylist)
+    let allItemsOld = displayedPlaylist     // save in case of undo
 
-//    let allItemsOld = displayedPlaylist     // save in case of undo
-    let doAction = { [self] in
+    // Do the action:
+    player.playlistRemove(rowIndexes, onSuccess: { [self] in
       displayedPlaylist = allItemsNew       // update cached data
       playlistTableView.post(tableUIChange) // update UI
-    }
+      // finally do this to make sure player's playlist is up to date
+      player._reloadPlaylist(thenPostNotification: false)
 
-    doAction()
-/*
-    let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
-    undoHelper.register(actionName, undo: { [self] in
-      guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
-        Logger.log.error{"Cannot undo remove of playlist items: playlist is in unexpected state!"}
-        return
-      }
-      // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
-      // can be at non-contiguous indexes in the playlist.
-      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete:
-                                                              playlistTableView.selectNextRowAfterDelete, completionHandler: { [self] _ in
+      // Register undo/redo?
+      guard registerUndoRedo else { return true }
+      let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
+      undoHelper.register(actionName, undo: { [self] in
+        guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
+          Logger.log.error{"Cannot undo remove of playlist items: playlist is in unexpected state!"}
+          return
+        }
+        // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
+        // can be at non-contiguous indexes in the playlist.
         let indexedInsertItems = rowIndexes.map{ ($0, allItemsOld[$0].path) }
-        player.insertPlaylistItemsAtIndexes(indexedInsertItems)
+        let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete:
+                                                                playlistTableView.selectNextRowAfterDelete)
+        player.insertPlaylistItemsAtIndexes(indexedInsertItems, onSuccess: { [self] in
+          displayedPlaylist = allItemsOld           // update cached data
+          playlistTableView.post(tableUIChangeUndo) // update UI
+          player.sendOSD(.addToPlaylist(indexedInsertItems.count))
+          return true
+        }, onError: { [self] errorString in
+          Logger.log.debug{"Clearing undo stack for playlist due to insert error"}
+          undoHelper.clearUndoes()
+        })
+      }, redo: { [self] in
+        // Almost the same code as above. But don't want to re-register an undo action
+        removePlaylistRows(rowIndexes, registerUndoRedo: false)
       })
-      displayedPlaylist = allItemsOld           // update cached data
-      playlistTableView.post(tableUIChangeUndo) // update UI
-    }, redo: {
-      doAction()
+
+      return true
+    }, onError: { [self] errorString in
+      Logger.log.debug{"Clearing undo stack for playlist due to remove error"}
+      undoHelper.clearUndoes()
     })
-*/
   }
 
   private func validateItemsAreEqual(_ current: [PlaybackID], _ expected: [PlaybackID]) -> Bool {
@@ -611,6 +640,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   @discardableResult
   func pasteFromPasteboard(from pboard: NSPasteboard) -> Bool {
     let playlistItems = readPlaylistItemsFromPasteboard(pboard)
+    player.log.verbose{"User pasted \(playlistItems.count) items from pasteboard into playlist"}
+
     guard !playlistItems.isEmpty else {
       return false
     }
@@ -727,26 +758,26 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard isViewLoaded else { return }
     guard !view.isHidden else { return }
 
-    let oldNowPlayingIndex = self.lastNowPlayingIndex
+    let oldNowPlayingIndex = lastNowPlayingIndex
     let newNowPlayingIndex = newNowPlayingIndex ?? player.info.currentPlayback?.playlistPos ?? oldNowPlayingIndex
-    if newNowPlayingIndex != oldNowPlayingIndex {
-      player.log.verbose{"Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)"}
-      self.lastNowPlayingIndex = newNowPlayingIndex
+    guard newNowPlayingIndex != oldNowPlayingIndex else { return }
 
-      // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
-      loadCachedItem(forRowIndex: newNowPlayingIndex, force: true)
-      // ... also make sure the old "now playing" row is redrawn so it loses its status
-      loadCachedItem(forRowIndex: oldNowPlayingIndex, force: true)
+    player.log.verbose{"Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)"}
+    self.lastNowPlayingIndex = newNowPlayingIndex
 
-      // The calls to loadCachedItem should refresh the given indexes, but will go through multiple queues
-      // to do so and may be delayed by a minute or more. We need to update the nowPlaying status ASAP,
-      // so just add extra redraws right away:
-      reloadPlaylistRow(newNowPlayingIndex)
-      reloadPlaylistRow(oldNowPlayingIndex)
+    // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
+    loadCachedItem(forRowIndex: newNowPlayingIndex, force: true)
+    // ... also make sure the old "now playing" row is redrawn so it loses its status
+    loadCachedItem(forRowIndex: oldNowPlayingIndex, force: true)
 
-      if thenScrollToVisible {
-        playlistTableView.scrollRowToVisible(newNowPlayingIndex)
-      }
+    // The calls to loadCachedItem should refresh the given indexes, but will go through multiple queues
+    // to do so and may be delayed by a minute or more. We need to update the nowPlaying status ASAP,
+    // so just add extra redraws right away:
+    reloadPlaylistRow(newNowPlayingIndex)
+    reloadPlaylistRow(oldNowPlayingIndex)
+
+    if thenScrollToVisible {
+      playlistTableView.scrollRowToVisible(newNowPlayingIndex)
     }
   }
 

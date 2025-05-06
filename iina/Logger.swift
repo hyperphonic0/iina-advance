@@ -58,6 +58,9 @@ class Logger: NSObject {
   static var isDebugEnabled: Bool {
     return Logger.isEnabled(.debug)
   }
+  static var isErrorEnabled: Bool {
+    return Logger.isEnabled(.error)
+  }
 
   fileprivate static let sessionDirName: String = {
     let formatter = DateFormatter()
@@ -207,6 +210,10 @@ class Logger: NSObject {
 
     var isDebugEnabled: Bool {
       return Logger.isDebugEnabled
+    }
+
+    var isErrorEnabled: Bool {
+      return Logger.isErrorEnabled
     }
 
     required init(rawValue: String) {

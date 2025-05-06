@@ -240,7 +240,7 @@ class TableUIChange {
     let insertAnimation = IINAAnimation.isAnimationEnabled ? (rowInsertAnimation ?? tableView.rowInsertAnimation) : []
     let removeAnimation = IINAAnimation.isAnimationEnabled ? (rowRemoveAnimation ?? tableView.rowRemoveAnimation) : []
 
-    log.verbose{"Executing TableUIChange type \"\(changeType)\": \(toRemove?.count ?? 0) removes, \(toInsert?.count ?? 0) inserts, \(toMove?.count ?? 0), moves, \(toUpdate?.count ?? 0) updates; reloadExisting: \(reloadAllExistingRows.yn), \(newSelectedRowIndexes?.count ?? -1) selectedRows"}
+    log.verbose{"Executing TableUIChange type=\"\(changeType)\": removes=\(toRemove?.count ?? 0) inserts=\(toInsert?.count ?? 0) moves=\(toMove?.count ?? 0) updates=\(toUpdate?.count ?? 0) reloadExisting=\(reloadAllExistingRows.yn) selectedRows=\(newSelectedRowIndexes?.count.description ?? "nil")"}
 
     switch changeType {
 

@@ -455,7 +455,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return false
     }
 
-    guard Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) != .quit else {
+    guard Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit else {
       Logger.log.verbose{"Last window was closed. Will do configured action"}
       doActionWhenLastWindowWillClose()
       return false

@@ -50,7 +50,7 @@ extension PlayerCore {
      - urls: The list as an array of `URL`.
    - Returns: URLs of all playable files as an array of `URL`.
    */
-  func getPlayableFiles(in urls: [URL]) -> [URL] {
+  func getPlayableFiles(in urls: [URL], organizeList: Bool = false) -> [URL] {
     var playableFiles: [URL] = []
     for url in urls {
       if !url.isFileURL {
@@ -75,14 +75,17 @@ extension PlayerCore {
         }
       }
     }
-    return Array(Set(playableFiles)).sorted { url1, url2 in
-      let folder1 = url1.deletingLastPathComponent(), folder2 = url2.deletingLastPathComponent()
-      if folder1.absoluteString == folder2.absoluteString {
-        return url1.lastPathComponent.localizedStandardCompare(url2.lastPathComponent) == .orderedAscending
-      } else {
-        return folder1.absoluteString < folder2.absoluteString
+    if organizeList {
+      return Array(playableFiles).sorted { url1, url2 in
+        let folder1 = url1.deletingLastPathComponent(), folder2 = url2.deletingLastPathComponent()
+        if folder1.absoluteString == folder2.absoluteString {
+          return url1.lastPathComponent.localizedStandardCompare(url2.lastPathComponent) == .orderedAscending
+        } else {
+          return folder1.absoluteString < folder2.absoluteString
+        }
       }
     }
+    return playableFiles
   }
 
   /**
