@@ -118,6 +118,7 @@
 "osd.chapter" = "Chapter: %@";
 "osd.subtitle_scale" = "Subtitle Scale: %.2fx";
 "osd.add_to_playlist" = "Added %i Files to Playlist";
+"osd.remove_from_playlist" = "Removed %i Files from Playlist";
 "osd.clear_playlist" = "Cleared Playlist";
 "osd.video_eq.contrast" = "Contrast: %i";
 "osd.video_eq.gamma" = "Gamma: %i";

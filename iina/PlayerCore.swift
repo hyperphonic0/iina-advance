@@ -1776,7 +1776,7 @@ class PlayerCore: NSObject {
   func _addToPlaylist(pathListIncludingCurrent pathList: [String]) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    _reloadPlaylist(thenPostNotification: false)
+    _reloadPlaylist(thenPostNotification: false, savePlayerState: false)
 
     var addedCurrentItem = false
 
@@ -1844,61 +1844,52 @@ class PlayerCore: NSObject {
                          onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) -> Bool {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    guard !paths.isEmpty else { return true }
-
-    // TODO:
-//    _reloadPlaylist(thenPostNotification: false)  // get up-to-date list first
-    for urlPath in paths {
-      log.verbose{"Appending to mpv playlist: \(urlPath.pii.quoted)"}
-      mpv.command(.loadfile, args: [urlPath, "append"])
-    }
-
-    // TODO: verify result!
-
-    if let onSuccess {
-      return onSuccess()
-    } else {
-      // Default onSuccess callback: update playlist, send update notification, & send OSD msg
-      _reloadPlaylist()
-      sendOSD(.addToPlaylist(paths.count))
-      return true
-    }
+    log.verbose{"Appending \(paths.count) items to mpv playlist"}
+    return _addToPlaylist(paths, info.playlist, onSuccess: onSuccess, onError: onError)
   }
 
-  func addToPlaylist(paths: [String], at index: Int = -1, onSuccess: (() -> Bool)? = nil, onError: ((String) -> Void)? = nil) {
+  func addToPlaylist(paths: [String], at index: Int = -1,
+                     _ expectedCurrentPlaylist: [PlaybackID]? = nil,
+                     onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
     mpv.queue.async { [self] in
-      let playlistSize = info.playlist.count
-      let insertStartIndex = index >= 0 && index <= playlistSize ? index : playlistSize
-      let itemsAtIndexes = paths.map ({ path in (insertStartIndex, path)} )
-
-      _insertPlaylistItemsAtIndexes(itemsAtIndexes, onSuccess: { [self] in
-        postNotification(.iinaPlaylistChanged)
-        saveState()  // save playlist URLs to prefs
-        if let onSuccess {
-          return onSuccess()
-        }
-        return true
-      }, onError: onError)
+      _addToPlaylist(paths, at: index, expectedCurrentPlaylist, onSuccess: onSuccess, onError: onError)
     }
   }
 
-  // TODO: this is untested
+  @discardableResult
+  func _addToPlaylist(_ paths: [String], at index: Int = -1,
+                      _ expectedCurrentPlaylist: [PlaybackID]? = nil,
+                      onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) -> Bool {
+    let playlistSize = info.playlist.count
+    let insertStartIndex = (index >= 0 && index <= playlistSize) ? index : playlistSize
+    let itemsAtIndexes = paths.map ({ path in (insertStartIndex, path)} )
+
+    return _playlistInsert(itemsAtIndexes, expectedCurrentPlaylist, onSuccess: { [self] in
+      sendOSD(.addToPlaylist(paths.count))
+      _reloadPlaylist()  // will send notification + save state
+      if let onSuccess {
+        return onSuccess()
+      }
+      return true
+    }, onError: onError)
+  }
+
   /// Insert playlist items at mapped indexes.
   /// `itemsAtIndexes` must be in ascending index order
-  func insertPlaylistItemsAtIndexes(_ itemsAtIndexes: [(Int, String)],
+  func playlistInsert(_ itemsAtIndexes: [(Int, String)],
                                     _ expectedCurrentPlaylist: [PlaybackID]? = nil,
                                     onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
     assert(itemsAtIndexes.map(\.0).sorted(by: { $0 < $1 }).elementsEqual(itemsAtIndexes.map(\.0)),
            "itemsAtIndexes must be sorted in ascending order, but found: \(itemsAtIndexes.map(\.0))")
     mpv.queue.async { [self] in
-      _insertPlaylistItemsAtIndexes(itemsAtIndexes, expectedCurrentPlaylist, onSuccess: onSuccess, onError: onError)
+      _playlistInsert(itemsAtIndexes, expectedCurrentPlaylist, onSuccess: onSuccess, onError: onError)
     }
   }
 
   @discardableResult
-  func _insertPlaylistItemsAtIndexes(_ itemsAtIndexes: [(Int, String)],
-                                     _ expectedCurrentPlaylist: [PlaybackID]? = nil,
-                                     onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) -> Bool {
+  func _playlistInsert(_ itemsAtIndexes: [(Int, String)],
+                                    _ expectedCurrentPlaylist: [PlaybackID]? = nil,
+                                    onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) -> Bool {
     // Verify playlist state first before changing anything
     let expectedPlaylistBeforeInsert = expectedCurrentPlaylist ?? info.playlist
     _reloadPlaylist(thenPostNotification: false, savePlayerState: false)
@@ -1990,6 +1981,7 @@ class PlayerCore: NSObject {
     if let onSuccess {
       _ = onSuccess()
     } else {
+      sendOSD(.removeFromPlaylist(countRemoved))
       _reloadPlaylist()
     }
   }
@@ -3658,8 +3650,7 @@ class PlayerCore: NSObject {
     windowController.postWindowMustCancelShow()
     log.verbose("Closing window")
     windowController.close()
-    /// `windowController.close()` doesn't always fire notification (e.g., if the window is ordered out).
-    /// Call manually to ensure things execute:
+    /// Some doubts about whether `windowWillClose` is always fired. Call manually to ensure things execute:
     AppDelegate.shared.windowWillClose(window)
   }
 
@@ -3832,9 +3823,9 @@ class PlayerCore: NSObject {
   }
 
   /// Reloads playlist from mpv, then enqueues state save & sends `iinaPlaylistChanged` notification.
-  func reloadPlaylist(thenPostNotification: Bool = true) {
+  func reloadPlaylist(thenPostNotification: Bool = true, savePlayerState: Bool = true) {
     mpv.queue.async { [self] in
-      _reloadPlaylist(thenPostNotification: thenPostNotification)
+      _reloadPlaylist(thenPostNotification: thenPostNotification, savePlayerState: savePlayerState)
     }
   }
 

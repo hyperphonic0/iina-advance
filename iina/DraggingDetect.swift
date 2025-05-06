@@ -227,7 +227,6 @@ extension PlayerCore {
         return true
       } else {
         // add multiple files to playlist
-        sendOSD(.addToPlaylist(loadedFileCount))
         return true
       }
     } else if types.contains(.nsURL) {

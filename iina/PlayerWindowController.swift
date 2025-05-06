@@ -969,12 +969,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     guard !AppDelegate.shared.isTerminating else { return }
 
-    // Stop tracking mouse events
-    removeTrackingAreas()
-
     hideOSD(immediately: true)
 
-    // Reset state flags
+    // Reset state to prepare window for reuse
+    undoHelper.clearUndoes()
+    removeTrackingAreas()
     window.displaysWhenScreenProfileChanges = false
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false

@@ -67,6 +67,7 @@ enum OSDMessage {
   case track(MPVTrack)
   case audioTrack(MPVTrack, Double)
   case addToPlaylist(Int)
+  case removeFromPlaylist(Int)
   case clearPlaylist
 
   case contrast(Int)
@@ -388,6 +389,12 @@ enum OSDMessage {
     case .addToPlaylist(let count):
       return (
         String(format: NSLocalizedString("osd.add_to_playlist", comment: "Added %i Files to Playlist"), count),
+        .normal
+      )
+
+    case .removeFromPlaylist(let count):
+      return (
+        String(format: NSLocalizedString("osd.remove_from_playlist", comment: "Removed %i Files from Playlist"), count),
         .normal
       )
 

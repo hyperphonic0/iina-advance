@@ -218,7 +218,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       player.log.verbose{"Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…"}
       playlistTotalLengthIsReady = false
       reloadData(playlist: true, chapters: false)
-      refreshNowPlayingIndex()
       updateCachesForAllItems()
     }
 
@@ -308,13 +307,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     let oldPlaylistRows = displayedPlaylist
     let newPlaylistRows = player.info.playlist
+    displayedPlaylist = newPlaylistRows
+
     if animate {
-      let tableUIChange = TableUIChange.builder.buildDiff(oldRows: oldPlaylistRows, newRows: newPlaylistRows)
+      let tableUIChange = TableUIChange.builder.buildDiff(oldRows: oldPlaylistRows,
+                                                          newRows: newPlaylistRows)
       player.log.verbose{"Updating playlist table via diff"}
-      displayedPlaylist = newPlaylistRows
       playlistTableView.post(tableUIChange)
     } else {
-      displayedPlaylist = newPlaylistRows
       playlistTableView.reloadData()
     }
   }
@@ -512,6 +512,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     movePlaylistRows(from: rowIndexes, to: targetRowIndex, registerUndoRedo: enableUndoRedo)
   }
 
+  // FIXME: refactor this like the others
   func movePlaylistRows(from rowIndexes: IndexSet, to targetRowIndex: Int, registerUndoRedo: Bool) {
     let (tableUIChange, allItemsNew) = playlistTableView.buildMove(rowIndexes, to: targetRowIndex, in: displayedPlaylist, completionHandler: { [self] _ in
       player.playlistMove(rowIndexes, to: targetRowIndex, thenPostNotification: false)
@@ -564,6 +565,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       playlistTableView.post(tableUIChange) // update UI
       // finally do this to make sure player's playlist is up to date
       player._reloadPlaylist(thenPostNotification: false)
+      player.sendOSD(.removeFromPlaylist(rowIndexes.count))
 
       // Register undo/redo?
       guard registerUndoRedo else { return true }
@@ -578,7 +580,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         let indexedInsertItems = rowIndexes.map{ ($0, allItemsOld[$0].path) }
         let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete:
                                                                 playlistTableView.selectNextRowAfterDelete)
-        player.insertPlaylistItemsAtIndexes(indexedInsertItems, onSuccess: { [self] in
+        player.playlistInsert(indexedInsertItems, onSuccess: { [self] in
           displayedPlaylist = allItemsOld           // update cached data
           playlistTableView.post(tableUIChangeUndo) // update UI
           player.sendOSD(.addToPlaylist(indexedInsertItems.count))
@@ -752,18 +754,21 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
   }
 
-  // Updates index of playing item Don't need to reload whole playlist
-  func refreshNowPlayingIndex(setNewIndexTo newNowPlayingIndex: Int? = nil, thenScrollToVisible: Bool = false) {
+  // Updates index of playing item. Don't need to reload whole playlist
+  func refreshNowPlayingIndex(setNewIndexTo newNowPlayingIndex: Int? = nil,
+                              forceRedraw: Bool = false, thenScrollToVisible: Bool = false) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard isViewLoaded else { return }
     guard !view.isHidden else { return }
 
     let oldNowPlayingIndex = lastNowPlayingIndex
     let newNowPlayingIndex = newNowPlayingIndex ?? player.info.currentPlayback?.playlistPos ?? oldNowPlayingIndex
-    guard newNowPlayingIndex != oldNowPlayingIndex else { return }
-
-    player.log.verbose{"Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)"}
-    self.lastNowPlayingIndex = newNowPlayingIndex
+    if newNowPlayingIndex != oldNowPlayingIndex {
+      player.log.verbose{"Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)"}
+      self.lastNowPlayingIndex = newNowPlayingIndex
+    } else if !forceRedraw {
+      return
+    }
 
     // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
     loadCachedItem(forRowIndex: newNowPlayingIndex, force: true)
@@ -797,7 +802,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let v = tableView.makeView(withIdentifier: identifier, owner: self) as! NSTableCellView
 
     if tableView == playlistTableView {  // Playlist table
-      refreshNowPlayingIndex()
+      refreshNowPlayingIndex()  // make sure this is up-to-date
       // use cached value
       let isPlaying = self.lastNowPlayingIndex == row
 
