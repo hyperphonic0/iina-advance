@@ -1770,36 +1770,49 @@ class PlayerCore: NSObject {
     }
   }
 
-  /// Adds all the media in `pathList` to the current playlist.
-  /// This checks whether the currently playing item is in the list, so that it may end up in the middle of the playlist.
-  /// Also note that each item in `pathList` may be either a file path or a network URL.
-  func _addToPlaylist(pathListIncludingCurrent pathList: [String]) {
+  /// For restore, or auto-load. Adds all the media in `pathList` to the current playlist, except for the now-playing item.
+  /// Each item in `pathList` may be either a file path or a network URL.
+  ///
+  /// • The current mpv core is expected to have only this item in its playlist at the time of this operation. If additional
+  ///   items are present in the playlist, they will get pushed to the top or to the bottom of the playlist.
+  /// • This inserts around the currently playing item is in the list, so that it may end up at `indexOfCurrentItem`
+  ///   (if provided), which may be in the middle of the playlist.
+  func _addAllToPlaylist(pathListIncludingCurrent pathList: [String], indexOfCurrentItem: Int? = nil) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard !isStopping else { return }
 
     _reloadPlaylist(thenPostNotification: false, savePlayerState: false)
-
-    var addedCurrentItem = false
-
-    for path in pathList {
-      guard !isStopping else { return }
-      if path == info.currentPlayback?.path {
-        addedCurrentItem = true
-      } else if addedCurrentItem {
-        _appendToPlaylist(path)
-      } else {
-        let count = mpv.getInt(MPVProperty.playlistCount)
-        let current = mpv.getInt(MPVProperty.playlistPos)
-        _appendToPlaylist(path)
-        let err = mpv.command(.playlistMove, args: ["\(count)", "\(current)"], checkError: false)
-        if err != 0 {
-          log.error("Error \(err) when auto-adding files into playlist")
-          if err == MPV_ERROR_COMMAND.rawValue {
-            return
-          }
-        }
-      }
+    if info.playlist.count != 1 {
+      log.debug{"Found \(info.playlist.count) items instead of exactly 1 before bulk-loading the playlist. Some items may be out of order afterwards"}
     }
-    _reloadPlaylist()
+
+    let currentItem: Int
+    if let indexOfCurrentItem {
+      // Newer versions should include this info
+      currentItem = indexOfCurrentItem
+    } else if let currentPath = info.currentPlayback?.path,
+              let firstMatchingIndex = pathList.firstIndex(of: currentPath) {
+      // Try to derive current item index.
+      // Use index of first match found. If there are duplicate paths in the playlist, this will be wrong,
+      // but older versions of IINA did not support duplicates in the playlist, so shouldn't be an issue.
+      currentItem = firstMatchingIndex
+    } else {
+      log.warn{"Failed to find currently playing item in playlist of size \(info.playlist.count)!"}
+      assert(false, "should never get here if used properly!")
+      currentItem = -1
+    }
+
+    let itemsAtInsertIndexes: [(Int, String)] = pathList.enumerated().compactMap { index, path in
+      // skip current item bc it's already present in playlist
+      if index == currentItem { return nil }
+      // Insert in 2 blocks: before & after current item, respectively
+      return (index < currentItem ? 0 : 1, path)
+    }
+
+    _playlistInsert(itemsAtInsertIndexes, info.playlist, onSuccess: { [self] in
+      _reloadPlaylist(savePlayerState: false)  // will send notification
+      return true
+    })
   }
 
   func appendToPlaylist(_ path: String,
@@ -2558,8 +2571,9 @@ class PlayerCore: NSObject {
     if let priorState = windowController.priorStateIfRestoring {
       let playlistPathList = priorState.getPlaylistPathList()
       if !playlistPathList.isEmpty {
-        log.debug{"Restoring \(playlistPathList.count) items into playlist"}
-        _addToPlaylist(pathListIncludingCurrent: playlistPathList)
+        let playlistPos: Int? = priorState.int(for: .playlistPos)
+        log.debug{"Restoring \(playlistPathList.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")"}
+        _addAllToPlaylist(pathListIncludingCurrent: playlistPathList, indexOfCurrentItem: playlistPos)
 
         /// Launches background task which scans video files and collects video size metadata using ffmpeg
         PlayerCore.backgroundQueue.async { [self] in

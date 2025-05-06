@@ -151,7 +151,7 @@ class AutoFileMatcher {
     
     player.mpv.queue.async { [self] in
       log.debug{"Adding \(videoFiles.count) video files & \(audioFiles.count) audio files to playlist"}
-      player._addToPlaylist(pathListIncludingCurrent: pathList)
+      player._addAllToPlaylist(pathListIncludingCurrent: pathList)
     }
   }
 

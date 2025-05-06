@@ -13,9 +13,10 @@ fileprivate let embeddedSeparator: Character = "|"
 // Data structure for saving to prefs / restoring from prefs the UI state of a single player window
 struct PlayerSaveState: CustomStringConvertible {
   enum PropName: String {
-    case buildNumber = "buildNum"       // Added in v1.2
+    case buildNumber = "buildNum"       /// Added in v1.2
     case launchID = "launchID"
 
+    case playlistPos = "playlistPos"    /// `MPVProperty.playlistPos`. Added in v1.4
     case playlistPaths = "playlistPaths"
 
     case playlistVideos = "playlistVideos"
@@ -276,6 +277,9 @@ struct PlayerSaveState: CustomStringConvertible {
     let playlistPaths: [String] = playlist.compactMap{ PlaybackID.path(from: $0.url) }
     if !playlistPaths.isEmpty {
       props[PropName.playlistPaths.rawValue] = playlistPaths
+    }
+    if let playlistPos = info.currentPlayback?.playlistPos {
+      props[PropName.playlistPos.rawValue] = playlistPaths
     }
 
     if let playbackPositionSec = info.playbackPositionSec {

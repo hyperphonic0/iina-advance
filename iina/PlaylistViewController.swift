@@ -500,11 +500,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       Logger.log.debug{"Clearing undo stack for playlist due to insert error"}
       undoHelper.clearUndoes()
     })
-
-  }
-
-  private func sanitizeRows(_ stringList: [String]) -> [String] {
-    return stringList.compactMap { String($0.split(separator: "=").first!) }
+    
   }
 
   /// Drag & drop within `playlistTableView`
