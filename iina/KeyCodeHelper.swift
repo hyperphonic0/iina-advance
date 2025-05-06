@@ -644,7 +644,12 @@ class KeyCodeHelper {
     return macKeyList.joined(separator: ", ")
   }
 
+  /// Returns empty string if no mapping exists, e.g. if `modifiers` contains the MacOS `fn` key.
   static func macOSToMpv(key: String, modifiers: NSEvent.ModifierFlags, useExplicitShift: Bool = false) -> String {
+    guard !modifiers.contains(.function) else {
+      // No mpv mapping exists
+      return ""
+    }
     var modifiers = modifiers
     var key = key
     // MacOS key equivalents always display single characters in uppercase, but mpv can also use "Shift+"

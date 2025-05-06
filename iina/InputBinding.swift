@@ -44,7 +44,7 @@ class InputBinding: NSObject {
     self.origin = origin
     self.srcSectionName = srcSectionName
     self.isEnabled = isEnabled
-    self.displayMessage = displayMessage
+    self.displayMessage = displayMessage.isEmpty ? (keyMapping.comment ?? "") : displayMessage
   }
 
   /// Only mpv bindings in the "default" section can be modified or deleted

@@ -630,8 +630,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
       for item in menuItems {
         if counter == 5 {
-          Logger.log("Please avoid adding too many first-level menu items. IINA will only display the first 5 of them.",
-                     level: .warning, subsystem: instance.subsystem)
+          Logger.log.warn{"Please avoid adding too many first-level menu items. IINA will only display the first 5 of them."}
           let moreItem = NSMenuItem()
           moreItem.title = NSLocalizedString("menu.more_plugin", comment: "More…")
           rootMenu = NSMenu()
@@ -673,7 +672,7 @@ class MenuController: NSObject, NSMenuDelegate {
       return item
     }
 
-    Logger.log("Adding Plugin menu item: \"\(item.title)\", key=\"\(item.keyBinding ?? "")\"", level: .verbose)
+    Logger.log.verbose{"Adding Plugin menu item: \"\(item.title)\", key=\"\(item.keyBinding ?? "")\""}
 
     let menuItem: NSMenuItem
     if item.action == nil {
@@ -720,7 +719,7 @@ class MenuController: NSObject, NSMenuDelegate {
     if let titles = titles {
       // options and objects must be same
       guard objects == nil || titles.count == objects?.count else {
-        Logger.log("different object count when binding menu", level: .error)
+        Logger.log.error{"different object count when binding menu"}
         return
       }
       // add menu items
@@ -771,7 +770,7 @@ class MenuController: NSObject, NSMenuDelegate {
   // MARK: - Menu delegate
 
   func menuWillOpen(_ menu: NSMenu) {
-    Logger.log("Updating menu: \(menu.title.quoted)", level: .verbose)
+    Logger.log.verbose{"Updating menu: \(menu.title.quoted)"}
 
     // If all menu items are disabled do not update the menus.
     guard !isDisabled else { return }
@@ -848,7 +847,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
       if DebugConfig.logBindingsRebuild {
         let readableKey = KeyCodeHelper.readableString(fromKey: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
-        Logger.log("Updating menuItem for \(isVideo ? "VF" : "AF") \(filter.name.quoted) with keyEquiv: \(readableKey.quoted)")
+        Logger.log.verbose{"Updating menuItem for \(isVideo ? "VF" : "AF") \(filter.name.quoted) with keyEquiv: \(readableKey.quoted)"}
       }
 
       let rawKey = KeyCodeHelper.macOSToMpv(key: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
@@ -861,9 +860,9 @@ class MenuController: NSObject, NSMenuDelegate {
     AppInputConfig.replaceMappings(forSharedSectionName: sectionName, with: keyMappings)
   }
 
-  // Refreshes list of built-in menu items, replacing the lastmost input section. They override all other bindings.
-  // Instead of trying to keep track of them manually, just see which menu items have bindings which  haven't already been
-  // accounted for.
+  /// Refreshes the lastmost (i.e., highest-priority) input section, which contains the app's built-in menu items.
+  /// Instead of trying to keep track of them manually, just recurse through all the menus and find all the menu item
+  /// bindings which haven't already been accounted for.
   func refreshBuiltInMenuItemBindings() {
     let filterDict = AppInputConfig.current.resolverDict.filter{$0.value.origin != .builtInMenuItem}
     let builtInMenuItemBindings: [KeyMapping] = self.getBuiltInMenuItems(filterOut: filterDict)
@@ -874,8 +873,7 @@ class MenuController: NSObject, NSMenuDelegate {
     var menuItemMappings: [KeyMapping] = []
 
     for menu in NSApp.mainMenu!.items {
-      // Skip Edit menu; it is not used
-      if menu.hasSubmenu, menu.title != "Edit", let subMenu = menu.submenu {
+      if menu.hasSubmenu, let subMenu = menu.submenu {
         for subMenuItem in subMenu.items {
           forMenuItemAndAllDescendents(subMenuItem, do: { menuItem in
             guard !menuItem.keyEquivalent.isEmpty else { return }
@@ -893,8 +891,9 @@ class MenuController: NSObject, NSMenuDelegate {
               /// Exclude `File` > `New Window` if it is not enabled
               return
             }
+            let actionDesc = "This key binding will activate the menu item: \(menuItem.menuPathDescription)"
             menuItemMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: "built-in", menuItem: menuItem,
-                                                    actionDescription: menuItem.menuPathDescription))
+                                                    actionDescription: actionDesc))
           })
         }
       }
@@ -955,17 +954,17 @@ class MenuController: NSObject, NSMenuDelegate {
         menuItem.keyEquivalentModifierMask = kMdf
         binding.displayMessage = "This key binding will activate the menu item: \(menuItem.menuPathDescription)"
         if DebugConfig.logBindingsRebuild {
-          Logger.log("Set menu keyEquiv: \(mpvKey.quoted) → \(menuItem.menuPathDescription)", level: .verbose)
+          Logger.log.verbose{"Set menu keyEquiv: \(mpvKey.quoted) → \(menuItem.menuPathDescription)"}
         }
       } else {
-        Logger.log("Failed to get MacOS menu item key equivalent for \(mpvKey.quoted)", level: .error)
+        Logger.log.error{"Failed to get MacOS menu item key equivalent for \(mpvKey.quoted)"}
       }
     } else {
       // Conflict! Key binding already reserved
       menuItem.keyEquivalent = ""
       menuItem.keyEquivalentModifierMask = []
       if DebugConfig.logBindingsRebuild {
-        Logger.log("Unset menu keyEquiv: \(menuItem.title.quoted)", level: .verbose)
+        Logger.log.verbose{"Unset menu keyEquiv: \(menuItem.title.quoted)"}
       }
     }
   }
