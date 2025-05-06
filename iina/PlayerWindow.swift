@@ -88,7 +88,8 @@ class PlayerWindow: NSWindow {
     }
     pwc.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
 
-    if event.modifierFlags.contains(.command), menu?.performKeyEquivalent(with: event) == true {
+    /// This check is needed for some edge cases, like `BS` for` Edit` > `Delete` when playlist items are selected.
+    if menu?.performKeyEquivalent(with: event) == true {
       log.verbose("KeyDown was handled by menu item; no more to do")
       return
     }
