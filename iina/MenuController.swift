@@ -891,7 +891,7 @@ class MenuController: NSObject, NSMenuDelegate {
               /// Exclude `File` > `New Window` if it is not enabled
               return
             }
-            let actionDesc = "This key binding will activate the menu item: \(menuItem.menuPathDescription)"
+            let actionDesc = "This key binding will activate the menu item:\n\(menuItem.menuPathDescription)"
             menuItemMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: "built-in", menuItem: menuItem,
                                                     actionDescription: actionDesc))
           })
@@ -952,7 +952,7 @@ class MenuController: NSObject, NSMenuDelegate {
       if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: mpvKey) {
         menuItem.keyEquivalent = kEqv
         menuItem.keyEquivalentModifierMask = kMdf
-        binding.displayMessage = "This key binding will activate the menu item: \(menuItem.menuPathDescription)"
+        binding.displayMessage = "This key binding will activate the menu item:\n\(menuItem.menuPathDescription)"
         if DebugConfig.logBindingsRebuild {
           Logger.log.verbose{"Set menu keyEquiv: \(mpvKey.quoted) → \(menuItem.menuPathDescription)"}
         }
@@ -1070,7 +1070,7 @@ class MenuController: NSObject, NSMenuDelegate {
         }
         kb.menuItem = kbMenuItem
         /// Make sure this is executed after `updateMenuItem()` to ensure it contains the accurate menu item title:
-        binding.displayMessage = "This key binding will activate the menu item: \(menuItem.menuPathDescription)"
+        binding.displayMessage = "This key binding will activate the menu item:\n\(menuItem.menuPathDescription)"
         updateMenuItem(kbMenuItem, keyEquiv: keyEquivalent, keyModifierMask, l10nKey: l10nKey, value: value, extraData: extraData)
       }
 
