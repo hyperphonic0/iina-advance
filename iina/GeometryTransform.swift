@@ -7,10 +7,51 @@
 
 
 struct GeometryTransform {
+  // MARK: - GeometryTransform Fields
+
+  /// Name of the transform
+  let name: String
+
+  /// If `stateTransition` is `nil` (omitted), treat as no-op and continue to `videoTransform`.
+  /// If `stateTransition` returns `nil`, transition should be aborted.
+  let stateTransition: PWinSessionState.Transform?
+
+  let videoTransform: VideoGeometry.Transform?
+  let windowedTransform: PWinGeometry.Transform?
+  let musicModeTransform: MusicModeGeometry.Transform?
+
+  let onSuccess: (() -> Void)?
+
+  init(name: String,
+       state: ((Context) -> PWinSessionState?)? = nil,
+       video: ((Context) -> VideoGeometry?)? = nil,
+       windowed: ((Context) -> PWinGeometry?)? = nil,
+       musicMode: ((Context) -> MusicModeGeometry?)? = nil,
+       onSuccess: (() -> Void)? = nil) {
+    self.name = name
+    self.stateTransition = state
+    self.videoTransform = video
+    self.windowedTransform = windowed
+    self.musicModeTransform = musicMode
+    self.onSuccess = onSuccess
+  }
+
+  /// Standard `VideoGeometry.Transform` for use in response to a `vid` property change event from mpv.
+  /// If current media is file, this should be called after it is done loading.
+  /// If current media is network resource, should be called immediately & show buffering msg.
+  /// If current media's vid track changed, may need to apply new geometry
+  static func trackChanged(_ context: Context) -> VideoGeometry? {
+    context.vidTrackChanged()
+  }
+
+  // MARK: - Context
+
+  /// `struct GeometryTransform.Context`
   /// Can be used for `VideoGeometry` transforms, `PWinGeometry` transforms, or `MusicModeGeometry` transforms.
   struct Context {
-    /// Name of the transform
-    let name: String
+    let tf: GeometryTransform
+    var name: String { tf.name }
+
     /// Contains most up-to-date version of the geometries (as well as possibly unapplied changes), which transforms should build
     /// on top of. (The `PlayerWindowController`'s `geo` field should not be referenced).
     let oldGeo: GeometrySet
@@ -27,11 +68,33 @@ struct GeometryTransform {
     var log: Logger.Subsystem { player.log }
 
     func clone(oldGeo: GeometrySet? = nil, sessionState: PWinSessionState? = nil) -> Context {
-      return Context(name: self.name, oldGeo: oldGeo ?? self.oldGeo,
+      return Context(tf: self.tf, oldGeo: oldGeo ?? self.oldGeo,
                      sessionState: sessionState ?? self.sessionState, currentPlayback: self.currentPlayback,
                      vidTrackID: self.vidTrackID, currentMediaAudioStatus: self.currentMediaAudioStatus,
                      player: player)
     }
+
+    /// Standard `VideoGeometry.Transform` for video track change
+    fileprivate func vidTrackChanged() -> VideoGeometry? {
+      assert(DispatchQueue.isExecutingIn(player.mpv.queue))
+
+      guard let videoGeo = syncVideoParamsFromMpv() else { return nil }
+
+      if currentMediaAudioStatus.isAudio || vidTrackID == 0 {
+        // Square album art
+        return videoGeo
+      }
+
+      if !currentPlayback.isNetworkResource {
+        // Update cache with latest video params
+        MediaMetaCache.shared.updateCachedVideoMeta(id: currentPlayback.id, videoGeo, log)
+      }
+
+      log.debug{"[GeoTF:\(name)] Derived videoGeo \(videoGeo)"}
+      return videoGeo
+    }  // end of transform block
+
+    // MARK: - Utils
 
     struct VideoParams: Decodable {
       let aspect: Double
@@ -60,8 +123,9 @@ struct GeometryTransform {
       }
     }
 
-    /// Returns (propertyValue, isError)
-    private func getWithRetries(_ mpvPropertyName: String) -> (String?, Bool) {
+    /// Gets the given mpv property
+    private func getWithRetries(_ mpvPropertyName: String) -> (propertyValue: String?, isError: Bool) {
+      assert(DispatchQueue.isExecutingIn(player.mpv.queue))
       let retriesMax = 3
       var retryNum = 1
       while true {
@@ -85,6 +149,7 @@ struct GeometryTransform {
     }
 
     func syncVideoParamsFromMpv() -> VideoGeometry? {
+      assert(DispatchQueue.isExecutingIn(player.mpv.queue))
       log.verbose{"[GeoTF:\(name)] Starting transform of \(currentPlayback.url.lastPathComponent.pii.quoted), vid=\(String(vidTrackID))|\(currentMediaAudioStatus), sessionState=\(sessionState)"}
       let vid = Int(player.mpv.getInt(MPVOption.TrackSelection.vid))
       guard vidTrackID == vid else {
@@ -200,8 +265,7 @@ struct GeometryTransform {
                                         decodedAspectLabel: codecAspect,
                                         userAspectLabel: userAspectLabelDerived,
                                         streamRotation: streamRotation,
-                                        userRotation: userRotation,
-                                        log)
+                                        userRotation: userRotation)
 
 
 
@@ -219,63 +283,5 @@ struct GeometryTransform {
       return videoGeo
     }
 
-    /// If current media is file, this should be called after it is done loading.
-    /// If current media is network resource, should be called immediately & show buffering msg.
-    /// If current media's vid track changed, may need to apply new geometry
-    func trackChanged() -> VideoGeometry? {
-      assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-
-      guard let videoGeo = syncVideoParamsFromMpv() else { return nil }
-
-      if currentMediaAudioStatus.isAudio || vidTrackID == 0 {
-        // Square album art
-        return videoGeo
-      }
-
-      if !currentPlayback.isNetworkResource {
-        // Update cache with latest video params
-        MediaMetaCache.shared.updateCachedVideoMeta(id: currentPlayback.id, videoGeo, log)
-      }
-
-      log.debug{"[GeoTF:\(name)] Derived videoGeo \(videoGeo)"}
-      return videoGeo
-    }  // end of transform block
-
   }  // end struct GeometryTransform.Context
-
-  let name: String
-
-  /// If func returns `nil`, transition should be aborted. But if func is `nil`, treat as no-op.
-  let changeState: ((Context) -> PWinSessionState?)?
-  let videoTransform: ((Context) -> VideoGeometry?)?
-  let windowedTransform: ((Context) -> PWinGeometry?)?
-  let musicModeTransform: ((Context) -> MusicModeGeometry?)?
-
-  init(name: String,
-       changeState: ((Context) -> PWinSessionState?)? = nil,
-       videoTransform: ((Context) -> VideoGeometry?)? = nil,
-       windowedTransform: ((Context) -> PWinGeometry?)? = nil,
-       musicModeTransform: ((Context) -> MusicModeGeometry?)? = nil) {
-    self.name = name
-    self.changeState = changeState
-    self.videoTransform = videoTransform
-    self.windowedTransform = windowedTransform
-    self.musicModeTransform = musicModeTransform
-  }
-
-  private static func defaultVideoTransform(_ context: Context) -> VideoGeometry? {
-    return context.oldGeo.video
-  }
-
-  private static func defaultWindowedGeoTransform(_ context: Context) -> PWinGeometry? {
-    return context.oldGeo.windowed
-  }
-
-  private static func defaultMusicModeTransform(_ context: Context) -> MusicModeGeometry? {
-    return context.oldGeo.musicMode
-  }
-
-  static func trackChanged(_ context: Context) -> VideoGeometry? {
-    context.trackChanged()
-  }
 }

@@ -2516,6 +2516,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // MARK: - Utility
 
+  func resetRotationPreview() {
+    guard pip.status == .notInPIP else { return }
+
+    // Seems that this looks better if done before updating the window frame...
+    // FIXME: this isn't perfect - a bad frame briefly appears during transition
+    log.verbose{"Resetting videoView rotation"}
+    rotationHandler.rotateVideoView(toDegrees: 0, animate: false)
+  }
+
   func setEmptySpaceColor(to newColor: CGColor) {
     guard let window else { return }
     window.contentView?.layer?.backgroundColor = newColor

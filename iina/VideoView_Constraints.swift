@@ -295,7 +295,7 @@ extension VideoView {
   }
 
   /// Add, update, or remove all constraints, based on the given geometry (or lack thereof).
-  func apply(_ geometry: PWinGeometry?, updateAspect: Bool = true) {
+  func apply(_ geometry: PWinGeometry?) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     // TODO: implement a custom animation for change to aspect constraint
@@ -309,6 +309,11 @@ extension VideoView {
       return
     }
 
+    if player.windowController.pip.status == .inPIP {
+      log.verbose("VideoView: currently in PiP. Updating aspectRatio in PiP controller to: \(geometry.video.videoSizeCAR)")
+      player.windowController.pip.controller.aspectRatio = geometry.video.videoSizeCAR
+      return
+    }
     guard player.windowController.pip.status == .notInPIP else {
       log.verbose("VideoView: currently in PiP; skipping constraints")
       return
@@ -325,7 +330,7 @@ extension VideoView {
 
     let aspect: NSLayoutConstraint
     if let existing {
-      if aspectMultiplier != existing.aspectRatio.multiplier, updateAspect {
+      if aspectMultiplier != existing.aspectRatio.multiplier {
         // cannot reuse aspect constraint
         existing.aspectRatio.isActive = false
         aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)

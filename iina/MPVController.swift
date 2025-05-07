@@ -325,13 +325,13 @@ class MPVController: NSObject {
   }
 
   func getInputBindings(filterCommandsBy filter: ((Substring) -> Bool)? = nil) -> [KeyMapping] {
-    player.log.verbose("Requesting from mpv: \(MPVProperty.inputBindings)")
+    player.log.verbose{"Requesting from mpv: \(MPVProperty.inputBindings)"}
     let parsed = getNode(MPVProperty.inputBindings)
     return toKeyMappings(parsed)
   }
 
   func getInputKeyList() -> [String] {
-    player.log.verbose("Requesting from mpv: \(MPVProperty.inputKeyList)")
+    player.log.verbose{"Requesting from mpv: \(MPVProperty.inputKeyList)"}
     if let csv = getString(MPVProperty.inputKeyList) {
       return csv.split(separator: ",").map{String($0)}
     }

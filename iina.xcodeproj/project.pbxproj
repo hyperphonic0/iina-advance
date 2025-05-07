@@ -397,7 +397,7 @@
 		D1F2B0992CFEFA4200F995B3 /* StartupHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2B0982CFEFA3C00F995B3 /* StartupHandler.swift */; };
 		D1F2B09B2CFF07D500F995B3 /* AppDetailsLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2B09A2CFF07CC00F995B3 /* AppDetailsLogging.swift */; };
 		D1F2B09D2CFF272100F995B3 /* MediaPlayerIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2B09C2CFF271900F995B3 /* MediaPlayerIntegration.swift */; };
-		D1F2D93C2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2D93B2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift */; };
+		D1F2D93C2C61CE090078E304 /* PWin_GeoTransformTxBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2D93B2C61CE090078E304 /* PWin_GeoTransformTxBuilder.swift */; };
 		D1F64E902B2A655C0030E07E /* PWin_Resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */; };
 		D1F68E752C6ABC22003D1208 /* movist-v2-default-input.conf in Resources */ = {isa = PBXBuildFile; fileRef = D1F68E742C6ABC22003D1208 /* movist-v2-default-input.conf */; };
 		D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */; };
@@ -1942,7 +1942,7 @@
 		D1F2B0982CFEFA3C00F995B3 /* StartupHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupHandler.swift; sourceTree = "<group>"; };
 		D1F2B09A2CFF07CC00F995B3 /* AppDetailsLogging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDetailsLogging.swift; sourceTree = "<group>"; };
 		D1F2B09C2CFF271900F995B3 /* MediaPlayerIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPlayerIntegration.swift; sourceTree = "<group>"; };
-		D1F2D93B2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_InitialLayoutBuilder.swift; sourceTree = "<group>"; };
+		D1F2D93B2C61CE090078E304 /* PWin_GeoTransformTxBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_GeoTransformTxBuilder.swift; sourceTree = "<group>"; };
 		D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Resize.swift; sourceTree = "<group>"; };
 		D1F68E742C6ABC22003D1208 /* movist-v2-default-input.conf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "movist-v2-default-input.conf"; sourceTree = "<group>"; };
 		D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSectionStack.swift; sourceTree = "<group>"; };
@@ -2942,14 +2942,14 @@
 				D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */,
 				D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */,
 				D13E807D2C026A2700537954 /* PWin_GeoSet.swift */,
-				D13350942D06B7E200201623 /* GeometryTransform.swift */,
-				D1AD32592ACC078600F86EE8 /* LayoutState.swift */,
-				D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */,
-				D1F2D93B2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift */,
-				D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */,
-				D191EE142ACE763A00FEF801 /* PWin_LayoutTxSteps.swift */,
 				D1A44D892A5E18D00089B283 /* PWinGeometry.swift */,
 				D19CF7152AB846D300511F80 /* MusicModeGeo.swift */,
+				D13350942D06B7E200201623 /* GeometryTransform.swift */,
+				D1F2D93B2C61CE090078E304 /* PWin_GeoTransformTxBuilder.swift */,
+				D1AD32592ACC078600F86EE8 /* LayoutState.swift */,
+				D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */,
+				D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */,
+				D191EE142ACE763A00FEF801 /* PWin_LayoutTxSteps.swift */,
 				D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */,
 				D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */,
 				D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */,
@@ -3496,7 +3496,7 @@
 				84A0BA901D2F8D4100BC8DA1 /* IINAError.swift in Sources */,
 				D1FD2DDC28533EE700CF7B35 /* InputSection.swift in Sources */,
 				D15CABE62B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift in Sources */,
-				D1F2D93C2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift in Sources */,
+				D1F2D93C2C61CE090078E304 /* PWin_GeoTransformTxBuilder.swift in Sources */,
 				D1FF15752A7E072200C0CE86 /* PlayerManager.swift in Sources */,
 				D1D87E042932086000737886 /* TableUIChangeBuilder.swift in Sources */,
 				84C6D3621EAF8D63009BF721 /* HistoryController.swift in Sources */,

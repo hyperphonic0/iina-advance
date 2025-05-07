@@ -151,7 +151,7 @@ class PlayerCore: NSObject {
   
   // Windows
 
-  var windowController: PlayerWindowController!
+  unowned var windowController: PlayerWindowController!
 
   var window: PlayerWindow {
     return windowController.window as! PlayerWindow

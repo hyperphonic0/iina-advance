@@ -288,11 +288,15 @@ extension PlayerWindowController {
   ///     is expected to output a ` MusicModeGeometry` containing further transforms which should be applied. If it returns `nil`,
   ///     the transform will not transform the geometry.
   func transformGeometry(_ transformName: String,
-                         stateChange: ((GeometryTransform.Context) -> PWinSessionState?)? = nil,
+                         stateChange: PWinSessionState.Transform? = nil,
                          video videoTransform: VideoGeometry.Transform? = nil,
                          windowed windowedTransform: PWinGeometry.Transform? = nil,
                          musicMode musicModeTransform: MusicModeGeometry.Transform? = nil,
                          onSuccess: (() -> Void)? = nil) {
+    // FIXME: figure out if this gets called before fileLoaded
+
+    let tf = GeometryTransform(name: transformName, state: stateChange, video: videoTransform,
+                               windowed: windowedTransform, musicMode: musicModeTransform, onSuccess: onSuccess)
 
     animationPipeline.submitInstantTask { [self] in
       let oldGeo = geo
@@ -321,7 +325,7 @@ extension PlayerWindowController {
 
         let vidTrackID = player.info.vid ?? 0
 
-        var cxt = GeometryTransform.Context(name: transformName, oldGeo: oldGeo, sessionState: sessionState,
+        var cxt = GeometryTransform.Context(tf: tf, oldGeo: oldGeo, sessionState: sessionState,
                                            currentPlayback: currentPlayback, vidTrackID: vidTrackID,
                                            currentMediaAudioStatus: player.info.currentMediaAudioStatus,
                                            player: player)
@@ -348,31 +352,30 @@ extension PlayerWindowController {
           newVidGeo = oldGeo.video
         }
 
+
         animationPipeline.submitInstantTask { [self] in
           log.verbose{"[GeoTF:\(cxt.name)] sessionState=\(cxt.sessionState)"}
 
           var immediateTasks: [IINAAnimation.Task]
 
-          let builder = InitialLayoutBuilder(cxt: cxt, currentLayout: currentLayout, outputVidGeo: newVidGeo)
+          let builder = GeometryTransform.TaskBuilder(cxt: cxt, currentLayout: currentLayout, outputVidGeo: newVidGeo)
           if cxt.sessionState.isStartingSession {
-            immediateTasks = builder.buildWindowInitialLayoutTasks(for: self)
+            immediateTasks = builder.buildWindowInitialLayoutTasks()
 
             /// These tasks should not execute until *after* `super.showWindow` is called.
-            var videoGeoUpdateTasks = buildVidGeoUpdateTasks(using: builder, windowedTransform, musicModeTransform)
-            videoGeoUpdateTasks.append(buildEndTask(builder.cxt, onSuccess: onSuccess))
+            let geoTransitionTasks = builder.buildGeoTransitionTasks()
 
             let isRestoringMinimizedWindow = cxt.sessionState.isRestoring && UIState.shared.windowsMinimized.contains(window!.savedStateName)
             if isRestoringMinimizedWindow {
               // Minimized: can't rely on showWindow() being called, but window changes won't be seen anyway. Just run end task now.
               log.verbose{"[GeoTF:\(cxt.name)] Restoring minimized window: will run tasks immediately instead of enqueueing"}
-              immediateTasks += videoGeoUpdateTasks
+              immediateTasks += geoTransitionTasks
             } else {
-              pendingVideoGeoUpdateTasks = videoGeoUpdateTasks
+              pendingVideoGeoUpdateTasks = geoTransitionTasks
             }
 
           } else {
-            immediateTasks = buildVidGeoUpdateTasks(using: builder, windowedTransform, musicModeTransform)
-            immediateTasks.append(buildEndTask(builder.cxt, onSuccess: onSuccess))
+            immediateTasks = builder.buildGeoTransitionTasks()
 
             // Need to switch to music mode? Append to above tasks
             if case .existingSession_startingNewPlayback = cxt.sessionState, Preference.bool(for: .autoSwitchToMusicMode) {
@@ -396,249 +399,6 @@ extension PlayerWindowController {
           animationPipeline.submit(immediateTasks)
         }
 
-      }
-    }
-  }
-
-  /// Cleanup, update `sessionState` & UI.
-  private func buildEndTask(_ cxt: GeometryTransform.Context, onSuccess: (() -> Void)? = nil) -> IINAAnimation.Task {
-    IINAAnimation.Task.instantTask{ [self] in
-      log.verbose{"[GeoTF:\(cxt.name)] Running endTask for sessionState=\(cxt.sessionState) vid=\(cxt.vidTrackID)"}
-      if cxt.sessionState.isChangingVideoTrack {
-        // Set to prevent future duplicate calls from continuing
-        cxt.currentPlayback.vidTrackLastSized = cxt.vidTrackID
-        // Return to normal status:
-        sessionState = .existingSession_continuing
-
-        // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
-        // The OSD can have weird stretching glitches if displayed while zooming open...
-        if cxt.currentPlayback.state == .loaded {
-          // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do this for all cases now.
-          log.debug{"[GeoTF:\(cxt.name)] Updating playback.state = .loadedAndSized, vidTrackLastSized=\(cxt.vidTrackID), will emit fileLoaded notifications"}
-          cxt.currentPlayback.state = .loadedAndSized
-          // Should refresh EDR each time switching files
-          videoView.refreshAllVideoDisplayState()
-
-          // If is network resource, may not be loaded yet. If file, it will be.
-          player.postNotification(.iinaFileLoaded)
-          player.events.emit(.fileLoaded, data: cxt.currentPlayback.url.absoluteString)
-        }
-      }
-
-      // Need to call here to ensure file title OSD is displayed when navigating playlist...
-      player.refreshSyncUITimer()
-      // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
-      updateWindowBorderAndOpacity()
-
-      // Always do this in case the video geometry changed:
-      player.reloadQuickSettingsView()
-      
-      // Must force drawing to cover the case where this player was previously used to play a video
-      // and is now playing an audio file without an album cover and without using music mode.
-      // See issue #5403.
-      videoView.forceDraw()
-
-      if let onSuccess {
-        onSuccess()
-      }
-    }
-  }
-
-  /// Only `transformGeometry` should call this.
-  /// Note: `builder` is only used here for data storage. Will refactor to a cleaner design later
-  private func buildVidGeoUpdateTasks(using builder: InitialLayoutBuilder,
-                                      _ windowedTransform: PWinGeometry.Transform? = nil,
-                                      _ musicModeTransform: MusicModeGeometry.Transform? = nil) -> [IINAAnimation.Task] {
-    let cxt = builder.cxt
-    let sessionState = cxt.sessionState
-
-    var duration: CGFloat
-    let didRotate = cxt.oldGeo.video.userRotation != builder.outputVidGeo.userRotation
-    if didRotate {
-      // There's no good animation for rotation (yet), so just do as little animation as possible in this case
-      duration = 0.0
-    } else {
-      duration = Constants.AnimationDuration.videoReconfig
-    }
-    var timing = CAMediaTimingFunctionName.easeInEaseOut
-
-    /// See also: `doPIPEntry`
-    // TODO: find place for this in tasks
-    pip.controller.aspectRatio = builder.outputVidGeo.videoSizeCAR
-
-    let newCxt = cxt.clone(oldGeo: buildGeoSet(from: builder.outputLayout, baseGeoSet: cxt.oldGeo))
-    log.verbose{"[GeoTF:\(cxt.name)] Mode=\(builder.outputLayout.mode): updated cxt=\(newCxt)"}
-    switch builder.outputLayout.mode {
-
-    case .windowedNormal:
-      let resizedGeo: PWinGeometry?
-
-      if let windowedTransform {
-        resizedGeo = windowedTransform(newCxt)
-      } else {
-        switch sessionState {
-        case .restoring(_):
-          log.verbose{"[GeoTF:\(cxt.name)] Restore is in progress; aborting"}
-          return []
-        case .creatingNew:
-          // Just opened new window. Use a longer duration for this one, because the window starts small and will zoom into place.
-          duration = Constants.AnimationDuration.initialVideoReconfig
-          timing = .linear
-          resizedGeo = applyResizePrefsForWindowedFileOpen(cxt, newVidGeo: builder.outputVidGeo)
-        case .newReplacingExisting:
-          resizedGeo = applyResizePrefsForWindowedFileOpen(cxt, newVidGeo: builder.outputVidGeo)
-        case .existingSession_startingNewPlayback:
-          resizedGeo = applyResizePrefsForWindowedFileOpen(cxt, newVidGeo: builder.outputVidGeo)
-        case .existingSession_videoTrackChangedForSamePlayback,
-            .existingSession_continuing:
-          // Not a new file. Some other change to a video geo property. Fall through and resize minimally
-          resizedGeo = nil
-        case .noSession:
-          Logger.fatal("[GeoTF:\(cxt.name)] Invalid sessionState: \(sessionState)")
-        }
-      }
-
-      let intendedViewportSize: CGSize? = sessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
-      let newGeo = resizedGeo ?? newCxt.oldGeo.windowed.resizeMinimally(forNewVideoGeo: builder.outputVidGeo,
-                                                                        intendedViewportSize: intendedViewportSize)
-
-      let showDefaultArt: Bool? = player.info.shouldShowDefaultArt
-
-      log.debug{"[GeoTF:\(cxt.name)] Will apply windowed result (newSessionState=\(sessionState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)"}
-      return buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
-
-    case .fullScreenNormal:
-      let intendedViewportSize: CGSize? = sessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
-      let newWinGeo = cxt.oldGeo.windowed.resizeMinimally(forNewVideoGeo: builder.outputVidGeo,
-                                                          intendedViewportSize: intendedViewportSize)
-      let fsGeo = builder.outputLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: builder.outputVidGeo)
-      let showDefaultArt: Bool? = player.info.shouldShowDefaultArt
-      log.debug{"[GeoTF:\(cxt.name)] Will apply FS result: \(fsGeo), showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
-
-      return [.init(duration: duration, { [self] in
-        // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
-        log.verbose{"[GeoTF:\(cxt.name)]: Updating videoView (FS), videoSize=\(fsGeo.videoSize)"}
-        videoView.apply(fsGeo)
-        /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
-        windowedModeGeo = newWinGeo
-
-        resetRotationPreview()
-        hideSeekPreviewImmediately()
-        updateDefaultArtVisibility(to: showDefaultArt)
-        player.updateMPVWindowScale(using: fsGeo)
-        updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyWindowGeoTasks`
-      })]
-
-    case .musicMode:
-      if case .creatingNew = sessionState {
-        log.verbose{"[GeoTF:\(cxt.name)] Music mode already handled for opened window: \(musicModeGeo)"}
-        return []
-      }
-      let oldMusicModeGeo = newCxt.oldGeo.musicMode  // has updated windowFrame
-      let newMusicModeGeo: MusicModeGeometry
-      if let musicModeTransform {
-        guard let transformedGeo = musicModeTransform(newCxt) else {
-          return []
-        }
-        newMusicModeGeo = transformedGeo
-      } else {
-        newMusicModeGeo = oldMusicModeGeo.clone(video: builder.outputVidGeo)
-      }
-      /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
-      /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
-
-      if oldMusicModeGeo.isVideoVisible != newMusicModeGeo.isVideoVisible {
-        // Toggling videoView visiblity: use longer duration for nicety
-        duration = Constants.AnimationDuration.standard
-      }
-      /// Default album art: check state before doing anything so that we don't duplicate work. Don't change in miniPlayer if videoView not visible.
-      /// If `showDefaultArt == nil`, don't change existing visibility.
-      let shouldDecideDefaultArtStatus = oldMusicModeGeo.isVideoVisible || newMusicModeGeo.isVideoVisible
-      let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? player.info.shouldShowDefaultArt : nil
-      log.verbose{"[GeoTF:\(cxt.name)] Applying musicMode result: \(newMusicModeGeo) (sessionState=\(sessionState) showDefaultArt=\(showDefaultArt?.yn ?? "nil"))"}
-      return buildApplyMusicModeGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo,
-                                         duration: duration, showDefaultArt: showDefaultArt)
-    default:
-      log.error{"[GeoTF:\(cxt.name)] INVALID MODE: \(builder.outputLayout.mode)"}
-      return []
-    }
-  }
-
-  private func resetRotationPreview() {
-    guard pip.status == .notInPIP else { return }
-
-    // Seems that this looks better if done before updating the window frame...
-    // FIXME: this isn't perfect - a bad frame briefly appears during transition
-    log.verbose{"Resetting videoView rotation"}
-    rotationHandler.rotateVideoView(toDegrees: 0, animate: false)
-  }
-
-  /// Applies the prefs `.resizeWindowTiming` & `resizeWindowScheme`, if applicable.
-  /// Returns `nil` if no applicable settings were found/applied, and should fall back to minimal resize.
-  private func applyResizePrefsForWindowedFileOpen(_ cxt: GeometryTransform.Context, newVidGeo: VideoGeometry) -> PWinGeometry? {
-    // resize option applies
-    let resizeTiming = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
-    switch resizeTiming {
-    case .always:
-      log.verbose{"[GeoTF:\(cxt.name)] FileOpened & resizeTiming='Always' → will resize window"}
-    case .onlyWhenOpen:
-      if !cxt.sessionState.isOpeningFileManually {
-        log.verbose{"[GeoTF:\(cxt.name)] FileOpened & resizeTiming='OnlyWhenOpen', but isOpeningFileManually=N → will resize minimally"}
-        return nil
-      }
-    case .never:
-      if !cxt.sessionState.isOpeningFileManually {
-        log.verbose("[GeoTF:\(cxt.name)] FileOpened (not manually) & resizeTiming='Never' → will resize minimally")
-        return nil
-      }
-      log.verbose{"[GeoTF:\(cxt.name)] FileOpenedManually & resizeTiming='Never' → using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)"}
-      return currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                       video: newVidGeo, keepFullScreenDimensions: true,
-                                                       applyOffsetIndex: player.openedWindowsSetIndex, log)
-    }
-
-    let windowGeo = windowedGeoForCurrentFrame(newVidGeo: newVidGeo)
-    let screenVisibleFrame = NSScreen.getScreenOrDefault(screenID: windowGeo.screenID).visibleFrame
-
-    let resizeScheme: Preference.ResizeWindowScheme = Preference.enum(for: .resizeWindowScheme)
-    switch resizeScheme {
-    case .mpvGeometry:
-      // check if have mpv geometry set (initial window position/size)
-      guard let mpvGeometry = player.getMPVGeometry() else {
-        if cxt.sessionState.isOpeningFileManually {
-          log.debug{"[GeoTF:\(cxt.name)] No mpv geometry found. Will fall back to windowedModeGeoLastClosed"}
-          return currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                           video: newVidGeo, keepFullScreenDimensions: true,
-                                                           applyOffsetIndex: player.openedWindowsSetIndex, log)
-        } else {
-          log.debug{"[GeoTF:\(cxt.name)] No mpv geometry found. Will fall back to minimal resize"}
-          return nil
-        }
-      }
-
-      var preferredGeo = windowGeo
-      if Preference.bool(for: .lockViewportToVideoSize), cxt.sessionState.canUseIntendedViewportSize,
-         let intendedViewportSize = player.info.intendedViewportSize {
-        log.verbose{"[GeoTF:\(cxt.name)] Using intendedViewportSize \(intendedViewportSize)"}
-        preferredGeo = windowGeo.scalingViewport(to: intendedViewportSize)
-      }
-      log.verbose{"[GeoTF:\(cxt.name)] Applying mpv \(mpvGeometry) within screen \(screenVisibleFrame)"}
-      return windowGeo.apply(mpvGeometry: mpvGeometry, desiredWindowSize: preferredGeo.windowFrame.size)
-
-    case .simpleVideoSizeMultiple:
-      let resizeWindowStrategy: Preference.ResizeWindowOption = Preference.enum(for: .resizeWindowOption)
-      if resizeWindowStrategy == .fitScreen {
-        log.verbose{"[GeoTF:\(cxt.name)] ResizeWindowOption=FitToScreen. Using screenFrame \(screenVisibleFrame)"}
-        return windowGeo.scalingViewport(to: screenVisibleFrame.size, screenFit: .centerInside)
-      } else {
-        let resizeRatio = resizeWindowStrategy.ratio
-        let scaledVideoSize = newVidGeo.videoSizeCAR * resizeRatio
-        log.verbose{"[GeoTF:\(cxt.name)] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(scaledVideoSize)"}
-        let centeredScaledGeo = windowGeo.scalingVideo(to: scaledVideoSize, screenFit: .centerInside, mode: currentLayout.mode)
-        // User has actively resized the video. Assume this is the new preferred resolution
-        player.info.intendedViewportSize = centeredScaledGeo.viewportSize
-        log.verbose{"[GeoTF:\(cxt.name)] After scaleVideo: \(centeredScaledGeo)"}
-        return centeredScaledGeo
       }
     }
   }
@@ -808,6 +568,24 @@ extension PlayerWindowController {
 
     log.verbose{"Calling setFrame for legacyFullScreen, to \(geometry)"}
     player.window.setFrameImmediately(geometry)
+  }
+
+   func buildApplyFullScreenGeoTasks(fsGeo: PWinGeometry, newWindowedGeo: PWinGeometry,
+                                     duration: CGFloat, showDefaultArt: Bool?) -> [IINAAnimation.Task] {
+    let task = IINAAnimation.Task(duration: duration, { [self] in
+      // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
+      log.verbose{"Applying full screen geometry: updating videoView, videoSize=\(fsGeo.videoSize)"}
+      videoView.apply(fsGeo)
+      /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
+      windowedModeGeo = newWindowedGeo
+
+      resetRotationPreview()
+      hideSeekPreviewImmediately()
+      updateDefaultArtVisibility(to: showDefaultArt)
+      player.updateMPVWindowScale(using: fsGeo)
+      updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyWindowGeoTasks`
+    })
+    return [task]
   }
 
   /// Updates/redraws current `window.frame` and its internal views from `newGeometry`. Animated. Windowed mode only!
