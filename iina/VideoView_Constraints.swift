@@ -6,6 +6,8 @@
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
+fileprivate let musicMode = false // TODO: improvements for music mode (search for this)
+
 extension VideoView {
 
   /// Only called once, at VideoView init
@@ -398,7 +400,6 @@ extension VideoView {
 
     // - Configuration
 
-    let musicMode = false // TODO: improvements for music mode (search for this)
     let interactiveMode = geometry.mode.isInteractiveMode
 
     let spacerMin: MarginQuad = interactiveMode ? Constants.InteractiveMode.viewportMargins : .zero

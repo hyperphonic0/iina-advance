@@ -1476,7 +1476,6 @@ class PlayerCore: NSObject {
   }
 
   func _setVideoAspectOverride(_ aspectString: String) {
-    log.verbose{"Got request to set videoAspectOverride to: \(aspectString.quoted)"}
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isRestoring else { return }
 
