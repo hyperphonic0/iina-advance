@@ -9,6 +9,30 @@ import Foundation
 
 /// Window Initial Layout
 extension PlayerWindowController {
+  class InitialLayoutBuilder {
+    let cxt: GeometryTransform.Context
+    let inputLayout: LayoutState
+
+    let outputVidGeo: VideoGeometry
+    var outputLayout: LayoutState
+    fileprivate var needsNativeFullScreen = false
+
+    fileprivate var tasks: [IINAAnimation.Task] = []
+
+    init(cxt: GeometryTransform.Context, currentLayout: LayoutState, outputVidGeo: VideoGeometry) {
+      self.cxt = cxt
+      self.inputLayout = currentLayout
+      self.outputLayout = currentLayout  // for now at least
+      self.outputVidGeo = outputVidGeo
+    }
+
+    func buildWindowInitialLayoutTasks(for pwc: PlayerWindowController) -> [IINAAnimation.Task] {
+      // See below
+      pwc.buildWindowInitialLayoutTasks(using: self)
+      return tasks
+    }
+  }
+
 
   /// Builds tasks to transition the window to its "initial" layout.
   ///
@@ -18,68 +42,40 @@ extension PlayerWindowController {
   /// 3. Restoring from prior launch.
   ///
   /// See `PWinSessionState`.
-  func buildWindowInitialLayoutTasks(_ cxt: GeometryTransform.Context,
-                                     newVidGeo: VideoGeometry) -> (LayoutState, [IINAAnimation.Task]) {
+  fileprivate func buildWindowInitialLayoutTasks(using builder: InitialLayoutBuilder) {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    let newSessionState = cxt.sessionState
+    let cxt = builder.cxt
     let currentMediaAudioStatus = cxt.currentMediaAudioStatus
 
-    guard newSessionState.isStartingSession, let window = window else {
-      return (currentLayout, [])
+    guard cxt.sessionState.isStartingSession, let window = window else {
+      return
     }
 
-    var needsNativeFullScreen = false
-    var tasks: [IINAAnimation.Task]
-    let initialLayout: LayoutState
-
-    switch newSessionState {
+    switch cxt.sessionState {
     case .restoring(let priorState):
-      if let priorLayoutSpec = priorState.layoutSpec {
-        log.verbose("[GeoTF:\(cxt.name)] Transitioning to initial layout from prior window state")
-
-        let initialLayoutSpec: LayoutSpec
-        if priorLayoutSpec.isNativeFullScreen {
-          // Special handling for native fullscreen. Rely on mpv to put us in FS when it is ready
-          initialLayoutSpec = priorLayoutSpec.clone(mode: .windowedNormal)
-          needsNativeFullScreen = true
-        } else {
-          initialLayoutSpec = priorLayoutSpec
-        }
-        initialLayout = LayoutState.buildFrom(initialLayoutSpec)
-      } else {
-        log.error("[GeoTF:\(cxt.name)] Failed to read LayoutSpec object for restore! Will try to assemble window from prefs instead")
-        let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutSpec)
-        initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
-      }
-
-      let newGeoSet = configureFromRestore(priorState, initialLayout)
-      tasks = buildTransitionTasks(from: currentLayout, to: initialLayout, newGeoSet,
-                                   isRestoringFromPrevLaunch: true,
-                                   needsNativeFullScreen: needsNativeFullScreen)
+      buildForRestore(priorState, builder)
 
     case .newReplacingExisting:
-      initialLayout = currentLayout
-      log.verbose("[GeoTF:\(cxt.name)] Opening a new file in an already open window, mode=\(initialLayout.mode)")
+      log.verbose("[GeoTF:\(cxt.name)] Opening a new file in an already open window, mode=\(builder.inputLayout.mode)")
 
       /// `windowFrame` may be slightly off; update it
-      if initialLayout.mode == .windowedNormal {
+      if builder.inputLayout.mode == .windowedNormal {
         /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
         /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
-        PlayerWindowController.windowedModeGeoLastClosed = initialLayout.buildGeometry(windowFrame: window.frame,
-                                                                                       screenID: bestScreen.screenID,
-                                                                                       video: newVidGeo)
-      } else if initialLayout.mode == .musicMode {
+        PlayerWindowController.windowedModeGeoLastClosed = builder.inputLayout.buildGeometry(windowFrame: window.frame,
+                                                                                             screenID: bestScreen.screenID,
+                                                                                             video: builder.outputVidGeo)
+      } else if builder.inputLayout.mode == .musicMode {
         /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
         PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame,
                                                                            screenID: bestScreen.screenID,
-                                                                           video: newVidGeo)
+                                                                           video: builder.outputVidGeo)
       }
       // No additional layout needed
-      tasks = []
 
     case .creatingNew:
-      log.verbose("[GeoTF:\(cxt.name)] Transitioning to initial layout from app prefs")
+      log.verbose("[GeoTF:\(cxt.name)] Window is opening: setting initial layout from app prefs")
       var mode: PlayerWindowMode = .windowedNormal
 
       if player.startInMusicModeRequested {
@@ -96,26 +92,25 @@ extension PlayerWindowController {
         if useLegacyFS {
           mode = .fullScreenNormal
         } else {
-          needsNativeFullScreen = true
+          builder.needsNativeFullScreen = true
         }
       }
 
       // Set to default layout, but use existing aspect ratio & video size for now, because we don't have that info yet for the new video
       let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: mode, fillingInFrom: lastWindowedLayoutSpec)
-      initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
-      let newGeoSet = configureFromPrefs(initialLayout, newVidGeo)
+      builder.outputLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
+      let newGeoSet = configureFromPrefs(builder.outputLayout, builder.outputVidGeo)
 
-      tasks = buildTransitionTasks(from: currentLayout, to: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
-                                   needsNativeFullScreen: needsNativeFullScreen)
+      buildTransitionTasks(builder, newGeoSet)
     default:
-      Logger.fatal("Invalid PWinSessionState for initial layout: \(newSessionState)")
+      Logger.fatal("Invalid PWinSessionState for initial layout: \(cxt.sessionState)")
     }
 
-    tasks.append(.instantTask{ [self] in
+    builder.tasks.append(.instantTask{ [self] in
       defer {
-        if newSessionState.isRestoring, window.isMiniaturized {
+        if cxt.sessionState.isRestoring, window.isMiniaturized {
           log.verbose("Restoring minimized window; skipping windowIsReadyToShow")
-        } else if newSessionState.isRestoring, isWindowHidden {
+        } else if cxt.sessionState.isRestoring, isWindowHidden {
           log.verbose("Restoring window which was hidden; posting windowMustCancelShow")
           postWindowMustCancelShow()
         } else {
@@ -131,7 +126,7 @@ extension PlayerWindowController {
       player.refreshSyncUITimer()
       player.touchBarSupport.setupTouchBarUI()
 
-      let shouldDecideDefaultArtStatus = !initialLayout.isMusicMode || (musicModeGeo.isVideoVisible)
+      let shouldDecideDefaultArtStatus = !builder.outputLayout.isMusicMode || (musicModeGeo.isVideoVisible)
       let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? player.info.shouldShowDefaultArt : nil
       if let showDefaultArt {
         // May need to set this while restoring a network audio stream
@@ -158,13 +153,13 @@ extension PlayerWindowController {
         if Preference.bool(for: .autoSwitchToMusicMode) {
           if player.overrideAutoMusicMode {
             log.verbose("[GeoTF:\(cxt.name)] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
-          } else if cxt.currentMediaAudioStatus.isAudio && !initialLayout.isMusicMode && !initialLayout.isFullScreen {
+          } else if cxt.currentMediaAudioStatus.isAudio && !builder.outputLayout.isMusicMode && !builder.outputLayout.isFullScreen {
             log.debug("[GeoTF:\(cxt.name)] Opened media is audio: auto-switching to music mode")
-            player.enterMusicMode(automatically: true, withNewVidGeo: newVidGeo)
+            player.enterMusicMode(automatically: true, withNewVidGeo: builder.outputVidGeo)
             return  // do not even try to go to full screen if already going to music mode
-          } else if cxt.currentMediaAudioStatus == .notAudio && initialLayout.isMusicMode {
+          } else if cxt.currentMediaAudioStatus == .notAudio && builder.outputLayout.isMusicMode {
             log.debug("[GeoTF:\(cxt.name)] Opened media is not audio: auto-switching to normal window")
-            player.exitMusicMode(automatically: true, withNewVidGeo: newVidGeo)
+            player.exitMusicMode(automatically: true, withNewVidGeo: builder.outputVidGeo)
             return  // do not even try to go to full screen if already going to windowed mode
           }
         }
@@ -176,50 +171,45 @@ extension PlayerWindowController {
         }
       }
     })
-
-    return (initialLayout, tasks)
   }
 
   /// Generates animation tasks to adjust the window layout appropriately for a newly opened file.
-  private func buildTransitionTasks(from inputLayout: LayoutState, to outputLayout: LayoutState, _ newGeoSet: GeometrySet,
-                                    isRestoringFromPrevLaunch: Bool, needsNativeFullScreen: Bool) -> [IINAAnimation.Task] {
-
-    var tasks: [IINAAnimation.Task] = []
+  private func buildTransitionTasks(_ builder: InitialLayoutBuilder, _ newGeoSet: GeometrySet) {
 
     // Don't want window resize/move listeners doing something untoward
     isAnimatingLayoutTransition = true
 
     // Send GeometrySet object to builder so that it doesn't default to current window frame
-    log.verbose("Setting initial \(outputLayout.spec), windowedModeGeo=\(newGeoSet.windowed), musicModeGeo=\(newGeoSet.musicMode)")
+    log.verbose{"Setting initial \(builder.outputLayout.spec), windowedModeGeo=\(newGeoSet.windowed), musicModeGeo=\(newGeoSet.musicMode)"}
 
-    let transitionName = "\(isRestoringFromPrevLaunch ? "Restore" : "Set")InitialLayout"
+    let isRestoring = builder.cxt.sessionState.isRestoring
+    let transitionName = "\(isRestoring ? "Restore" : "Set")InitialLayout"
     let initialTransition = buildLayoutTransition(named: transitionName,
-                                                  from: currentLayout, to: outputLayout.spec, isWindowInitialLayout: true, newGeoSet)
+                                                  from: builder.inputLayout, to: builder.outputLayout.spec,
+                                                  isWindowInitialLayout: true, newGeoSet)
 
-    tasks.append(.instantTask { [self] in
-
+    builder.tasks.append(.instantTask { [self] in
       // For initial layout (when window is first shown), to reduce jitteriness when drawing, do all the layout
       // in a single animation block.
-
       do {
         for task in initialTransition.tasks {
           try task.runFunc()
         }
       } catch {
-        log.error("Failed to run initial layout tasks: \(error)")
+        log.error{"Failed to run initial layout tasks: \(error)"}
       }
 
-      if !isRestoringFromPrevLaunch {
-        if outputLayout.mode == .windowedNormal {
+      if !isRestoring {
+        if builder.outputLayout.mode == .windowedNormal {
           player.info.intendedViewportSize = initialTransition.outputGeometry.viewportSize
 
           // Set window opacity to 0 initially to start fade-in effect
-          updateWindowBorderAndOpacity(using: outputLayout, windowOpacity: 0.0)
+          updateWindowBorderAndOpacity(using: builder.outputLayout, windowOpacity: 0.0)
         }
 
-        if !outputLayout.isFullScreen, Preference.bool(for: .alwaysFloatOnTop) && !player.info.isPaused {
+        if !builder.outputLayout.isFullScreen, Preference.bool(for: .alwaysFloatOnTop) && !player.info.isPaused {
           log.verbose("Setting window OnTop=Y per app pref")
-          setWindowFloatingOnTop(true, from: outputLayout)
+          setWindowFloatingOnTop(true, from: builder.outputLayout)
         }
       }
 
@@ -227,19 +217,19 @@ extension PlayerWindowController {
       log.verbose("Done with transition to initial layout")
     })
 
-    if needsNativeFullScreen {
-      tasks.append(.instantTask { [self] in
+    if builder.needsNativeFullScreen {
+      builder.tasks.append(.instantTask { [self] in
         enterFullScreen()
       })
-      return tasks
+      return
     }
 
-    if isRestoringFromPrevLaunch {
+    if isRestoring {
       /// Stored window state may not be consistent with global IINA prefs.
       /// To check this, build another `LayoutSpec` from the global prefs, then compare it to the player's.
-      let prefsSpec = LayoutSpec.fromPreferences(fillingInFrom: outputLayout.spec)
-      if outputLayout.spec.hasSamePrefsValues(as: prefsSpec) {
-        log.verbose("Saved layout is consistent with IINA global prefs")
+      let prefsSpec = LayoutSpec.fromPreferences(fillingInFrom: builder.outputLayout.spec)
+      if builder.outputLayout.spec.hasSamePrefsValues(as: prefsSpec) {
+        log.verbose{"Saved layout is consistent with IINA global prefs"}
       } else {
         // Not consistent. But we already have the correct spec, so just build a layout from it and transition to correct layout
 #if DEBUG
@@ -247,38 +237,59 @@ extension PlayerWindowController {
 #else
         log.warn{"Player's saved layout does not match IINA app prefs. Will fix & apply corrected layout"}
 #endif
-        log.debug("SavedSpec: \(currentLayout.spec). PrefsSpec: \(prefsSpec)")
+        log.debug{"SavedSpec: \(currentLayout.spec). PrefsSpec: \(prefsSpec)"}
         let transition = buildLayoutTransition(named: "FixInvalidInitialLayout",
                                                from: initialTransition.outputLayout, to: prefsSpec)
 
-        tasks.append(contentsOf: transition.tasks)
+        builder.tasks.append(contentsOf: transition.tasks)
       }
     }
-    return tasks
   }
 
-  private func configureFromRestore(_ priorState: PlayerSaveState, _ initialLayout: LayoutState) -> GeometrySet {
-    log.verbose("Setting geometries from prior state, windowed=\(priorState.geoSet.windowed), musicMode=\(priorState.geoSet.musicMode)")
+  private func buildForRestore(_ priorState: PlayerSaveState, _ builder: InitialLayoutBuilder) {
+    log.verbose{"Setting geometries from prior state, windowed=\(priorState.geoSet.windowed), musicMode=\(priorState.geoSet.musicMode)"}
+    let cxt = builder.cxt
 
-    if initialLayout.mode == .musicMode {
+    if let priorLayoutSpec = priorState.layoutSpec {
+      log.verbose("[GeoTF:\(cxt.name)] Transitioning to initial layout from prior window state")
+
+      let initialLayoutSpec: LayoutSpec
+      if priorLayoutSpec.isNativeFullScreen {
+        // Special handling for native fullscreen. Rely on mpv to put us in FS when it is ready
+        initialLayoutSpec = priorLayoutSpec.clone(mode: .windowedNormal)
+        builder.needsNativeFullScreen = true
+      } else {
+        initialLayoutSpec = priorLayoutSpec
+      }
+      builder.outputLayout = LayoutState.buildFrom(initialLayoutSpec)
+    } else {
+      log.error("[GeoTF:\(cxt.name)] Failed to read LayoutSpec object for restore! Will try to assemble window from prefs instead")
+      let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutSpec)
+      builder.outputLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
+    }
+
+    if builder.outputLayout.mode == .musicMode {
       player.overrideAutoMusicMode = true
     }
 
     // Clean up windowedModeGeo if serious errors found with it
     let priorWindowedModeGeo = priorState.geoSet.windowed
     if !priorWindowedModeGeo.mode.isWindowed || priorWindowedModeGeo.screenFit.isFullScreen {
-      log.error("While transitioning to initial layout: windowedModeGeo from prior state has invalid mode (\(priorWindowedModeGeo.mode)) or screenFit (\(priorWindowedModeGeo.screenFit)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead")
+      log.error{"While transitioning to initial layout: windowedModeGeo from prior state has invalid mode (\(priorWindowedModeGeo.mode)) or screenFit (\(priorWindowedModeGeo.screenFit)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead"}
       let lastClosedGeo = PlayerWindowController.windowedModeGeoLastClosed
       let windowed: PWinGeometry
       if lastClosedGeo.mode.isWindowed && !lastClosedGeo.screenFit.isFullScreen {
-        windowed = initialLayout.convertWindowedModeGeometry(from: lastClosedGeo, video: priorState.geoSet.video,
-                                                             keepFullScreenDimensions: false, log)
+        windowed = builder.outputLayout.convertWindowedModeGeometry(from: lastClosedGeo, video: priorState.geoSet.video,
+                                                                    keepFullScreenDimensions: false, log)
       } else {
-        windowed = initialLayout.buildDefaultInitialGeometry(screen: bestScreen, video: priorState.geoSet.video)
+        windowed = builder.outputLayout.buildDefaultInitialGeometry(screen: bestScreen, video: priorState.geoSet.video)
       }
-      return priorState.geoSet.clone(windowed: windowed)
+      let initialGeoSet = priorState.geoSet.clone(windowed: windowed)
+      buildTransitionTasks(builder, initialGeoSet)
+    } else {
+      buildTransitionTasks(builder, priorState.geoSet)
     }
-    return priorState.geoSet
+
   }
 
   private func configureFromPrefs(_ initialLayout: LayoutState, _ videoGeo: VideoGeometry) -> GeometrySet {
