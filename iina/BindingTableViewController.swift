@@ -184,7 +184,7 @@ extension BindingTableViewController: NSTableViewDelegate {
           case .savedFilter:
             imageView.image = NSImage(systemSymbolName: "camera.filters", accessibilityDescription: nil)!
             imageView.contentTintColor = filterIconColor
-          case .builtInMenuItem:
+          case .staticMenuItem:
             imageView.image = NSImage(systemSymbolName: "menubar.rectangle", accessibilityDescription: nil)!
             imageView.contentTintColor = builtinMenuItemIconColor
           default:
@@ -798,7 +798,7 @@ extension BindingTableViewController: NSMenuDelegate {
         culprit = "the saved filter \(sourceName.quoted)"
       case .libmpv:
         culprit = "a Lua script or via mpv RPC"
-      case .builtInMenuItem:
+      case .staticMenuItem:
         culprit = "a built-in menu item"
       default:
         Logger.log("Unrecognized binding origin for rowIndex \(clickedRowIndex): \(clickedRow.origin)", level: .error)

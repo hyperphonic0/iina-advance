@@ -13,7 +13,7 @@ enum InputBindingOrigin: Codable {
   case libmpv          /// Set via mpv input sections sent from libmpv (usually Lua scripts, but could include other RPC clients)
   case iinaPlugin      /// Plugin menu key equivalent
   case savedFilter     /// Key equivalent for saved video or audio filter
-  case builtInMenuItem /// Key equivalent for built-in menu items which don't belong to the other groups
+  case staticMenuItem  /// MacOS menu items which have hard-coded key eqivalents, which are not included in other sections
 }
 
 protocol InputSection: CustomStringConvertible {
@@ -69,15 +69,15 @@ class SharedInputSection: MPVInputSection {
   /// Note: mpv expects this section to be named "default", so this constant should not be changed.
   static let USER_CONF_SECTION_NAME = "default"
 
-  static let VIDEO_FILTERS_SECTION_NAME = "IINA Video Filters"
-  static let AUDIO_FILTERS_SECTION_NAME = "IINA Audio Filters"
+  static let VIDEO_FILTERS_SECTION_NAME = "Video Filters"
+  static let AUDIO_FILTERS_SECTION_NAME = "Audio Filters"
 
   /// One section to store the key equivalents for all the IINA plugins.
   /// Only one instance of this exists for the whole IINA app.
   /// Its `keyMappingList` will be regenerated each time the Plugin menu is updated.
   static let PLUGINS_SECTION_NAME = "IINA Plugins"
 
-  static let BUILTIN_MENU_ITEMS_SECTION_NAME = "IINA Built-in Menu Items"
+  static let STATIC_MENU_ITEMS_SECTION_NAME = "Static Menu Items"
 
   init(name: String, isForce: Bool, origin: InputBindingOrigin) {
     super.init(name: name, [], isForce: isForce, origin: origin)

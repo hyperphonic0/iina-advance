@@ -205,7 +205,14 @@ class MenuController: NSObject, NSMenuDelegate {
 
   // MARK: - Construct Menus
 
-  func bindMenuItems() {
+  /// Should be called only once, at application start
+  func initMenus() {
+    bindMenuItems()
+    updatePluginMenu()
+    refreshStaticMenuItemBindings()
+  }
+
+  private func bindMenuItems() {
 
     [cycleSubtitles, cycleAudioTracks, cycleVideoTracks].forEach { item in
       item?.action = #selector(PlayerWindowController.menuCycleTrack(_:))
@@ -416,12 +423,10 @@ class MenuController: NSObject, NSMenuDelegate {
     miniPlayer.action = #selector(PlayerWindowController.menuSwitchToMiniPlayer(_:))
   }
 
-  @discardableResult
-  func refreshCmdNStatus() -> Bool {
+  func refreshCmdNStatus() {
     let isEnabled = Preference.isAdvancedEnabled && Preference.bool(for: .enableCmdN)
     newWindowSeparator.isHidden = !isEnabled
     newWindow.isHidden = !isEnabled
-    return isEnabled
   }
 
   // MARK: - Update Menus
@@ -863,13 +868,13 @@ class MenuController: NSObject, NSMenuDelegate {
   /// Refreshes the lastmost (i.e., highest-priority) input section, which contains the app's built-in menu items.
   /// Instead of trying to keep track of them manually, just recurse through all the menus and find all the menu item
   /// bindings which haven't already been accounted for.
-  func refreshBuiltInMenuItemBindings() {
-    let filterDict = AppInputConfig.current.resolverDict.filter{$0.value.origin != .builtInMenuItem}
-    let builtInMenuItemBindings: [KeyMapping] = self.getBuiltInMenuItems(filterOut: filterDict)
-    AppInputConfig.replaceMappings(forSharedSectionName: SharedInputSection.BUILTIN_MENU_ITEMS_SECTION_NAME, with: builtInMenuItemBindings, onlyIfDifferent: true)
+  func refreshStaticMenuItemBindings() {
+    let filterDict = AppInputConfig.current.resolverDict.filter{$0.value.origin != .staticMenuItem}
+    let staticMenuItemBindings: [KeyMapping] = self.findStaticMenuItems(filterOut: filterDict)
+    AppInputConfig.replaceMappings(forSharedSectionName: SharedInputSection.STATIC_MENU_ITEMS_SECTION_NAME, with: staticMenuItemBindings, onlyIfDifferent: true)
   }
 
-  private func getBuiltInMenuItems(filterOut filterDict: [String: InputBinding]) -> [KeyMapping] {
+  private func findStaticMenuItems(filterOut filterDict: [String: InputBinding]) -> [KeyMapping] {
     var menuItemMappings: [KeyMapping] = []
 
     for menu in NSApp.mainMenu!.items {

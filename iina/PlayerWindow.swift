@@ -88,21 +88,33 @@ class PlayerWindow: NSWindow {
     }
     pwc.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
 
-    /// This check is needed for some edge cases, like `BS` for` Edit` > `Delete` when playlist items are selected.
+    // Menu item key equivalents take priority
     if menu?.performKeyEquivalent(with: event) == true {
-      log.verbose("KeyDown was handled by menu item; no more to do")
+      log.verbose("KeyDown: was handled by menu item; returning")
+      return
+    }
+
+    let staticMenuItemMappings = AppInputConfig.staticMenuItemMappings
+    if staticMenuItemMappings.contains(where: { $0.normalizedMpvKey == normalizedKeyCode }) {
+      // For the sake of consistency, do not fall through & try to process a key mapping, even
+      // if the corresponding menu item is disabled.
+      log.verbose("KeyDown: key was not handled, but is a known menu item binding; ignoring")
       return
     }
 
     /// Forward all other key events which the window receives to its controller.
     /// This allows `ESC` & `TAB` key bindings to work, instead of getting swallowed by
     /// MacOS keyboard focus navigation (which PlayerWindow doesn't use).
-    if !pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode) {
-      /// Invalid key: beep if cmd failed
-      /// NOTE: send to PlayerWindowController instead of PlayerWindow!
-      /// Otherwise it may get sent to `performKeyEquivalent` multiple times
-      pwc.keyDown(with: event)
+    if pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode) {
+      log.trace("KeyDown: was handled by key binding")
+      return
     }
+
+    log.trace("KeyDown: did not match any binding")
+    /// If we got here, there is no user binding for key, even if an "ignore". Beep to indicate no action.
+    /// NOTE: send to PlayerWindowController instead of PlayerWindow!
+    /// Otherwise it may get sent to `performKeyEquivalent` multiple times
+    pwc.keyDown(with: event)
   }
 
   override func keyUp(with event: NSEvent) {
@@ -143,6 +155,7 @@ class PlayerWindow: NSWindow {
     }
 
     let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
+    log.verbose{"KEY Equiv: \(normalizedKeyCode.quoted)"}
 
     /// AppKit by default will prioritize menu item key equivalents over arrow key navigation
     /// (although for some reason it is the opposite for `ESC`, `TAB`, `ENTER` or `RETURN`).
@@ -159,17 +172,34 @@ class PlayerWindow: NSWindow {
     }
     pwc.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
 
+    if menu?.performKeyEquivalent(with: event) == true {
+      log.verbose("KeyDown: was handled by menu item; returning")
+      return true
+    }
+
+    let staticMenuItemMappings = AppInputConfig.staticMenuItemMappings
+    if staticMenuItemMappings.contains(where: { $0.normalizedMpvKey == normalizedKeyCode }) {
+      // For the sake of consistency, do not fall through & try to process a key mapping, even
+      // if the corresponding menu item is disabled.
+      log.verbose("KeyDown: key was not handled, but is a known menu item binding")
+      return false
+    }
+
     /// Need to check this to prevent a strange bug, where using `Ctrl+{key}` will activate a menu item which is mapped as `{key}`.
     /// MacOS quirk? Obscure feature? A user has also demonstrated a case where `Space` is ignored. It looks like bindings which don't
     /// use the command key are sometimes unreliable.
     /// Let's take all the bindings which don't include command and invert their precedence, so that the window is allowed to handle it
     /// before the menu.
-    if !event.modifierFlags.contains(.command) {
-      log.verbose{"KEY Equiv: \(normalizedKeyCode.quoted)"}
-      return pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode)
+    if pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode) {
+      log.trace("Key equiv: trying to process as a key binding")
+      return true
     }
 
-    return super.performKeyEquivalent(with: event)
+    /// NOTE: send to PlayerWindowController instead of PlayerWindow!
+    /// Otherwise it may get sent to `performKeyEquivalent` multiple times
+    log.verbose("Key equiv: unmapped key; beeping")
+    pwc.keyDown(with: event)
+    return true
   }
 
   private func shouldFavorArrowKeyNavigation(for responder: NSResponder) -> Bool {

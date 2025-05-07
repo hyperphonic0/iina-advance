@@ -25,7 +25,7 @@ struct AppInputConfig {
     SharedInputSection(name: SharedInputSection.AUDIO_FILTERS_SECTION_NAME, isForce: true, origin: .savedFilter),
     SharedInputSection(name: SharedInputSection.VIDEO_FILTERS_SECTION_NAME, isForce: true, origin: .savedFilter),
     SharedInputSection(name: SharedInputSection.PLUGINS_SECTION_NAME, isForce: false, origin: .iinaPlugin),
-    SharedInputSection(name: SharedInputSection.BUILTIN_MENU_ITEMS_SECTION_NAME, isForce: true, origin: .builtInMenuItem)
+    SharedInputSection(name: SharedInputSection.STATIC_MENU_ITEMS_SECTION_NAME, isForce: true, origin: .staticMenuItem)
   ])
 
   static var sharedSections: [InputSection] {
@@ -34,6 +34,10 @@ struct AppInputConfig {
 
   static var userConfMappings: [KeyMapping] {
     return sharedSectionStack.sectionsDefined[SharedInputSection.USER_CONF_SECTION_NAME]!.keyMappingList
+  }
+
+  static var staticMenuItemMappings: [KeyMapping] {
+    return sharedSectionStack.sectionsDefined[SharedInputSection.STATIC_MENU_ITEMS_SECTION_NAME]!.keyMappingList
   }
 
   static func replaceUserConfSectionMappings(with userConfMappings: [KeyMapping], attaching userData: NotificationData? = nil) {

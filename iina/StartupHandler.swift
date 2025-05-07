@@ -621,9 +621,7 @@ class StartupHandler {
     JavascriptPlugin.loadGlobalInstances()
 
     if let menuController = AppDelegate.shared.menuController {
-      menuController.bindMenuItems()
-      menuController.updatePluginMenu()
-      menuController.refreshBuiltInMenuItemBindings()
+      menuController.initMenus()
     }
 
     // FIXME: this actually causes a window to open in the background. Should wait until intending to show it

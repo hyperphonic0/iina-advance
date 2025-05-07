@@ -9,7 +9,7 @@
 import Cocoa
 
 // TODO: need to reconcile undo/redo with player non-UI actions
-fileprivate let enableUndoRedo = false
+fileprivate let enableUndoRedo = true
 
 fileprivate let prefixMinLength = 7
 fileprivate let displayNameMinLength = 12

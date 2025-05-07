@@ -108,11 +108,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Logger.updateEnablement()
       // depends on advanced being enabled:
       menuController.refreshCmdNStatus()
-      menuController.refreshBuiltInMenuItemBindings()
+      menuController.refreshStaticMenuItemBindings()
 
     case PK.enableCmdN:
       menuController.refreshCmdNStatus()
-      menuController.refreshBuiltInMenuItemBindings()
+      menuController.refreshStaticMenuItemBindings()
 
     case PK.resumeLastPosition:
       HistoryController.shared.async {
