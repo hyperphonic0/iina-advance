@@ -238,7 +238,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let windowFrame = windowFrame ?? self.windowFrame
     let screenFit = screenFit ?? self.screenFit
 
-    var newGeo = PWinGeometry(windowFrame: windowFrame,
+    let newGeo = PWinGeometry(windowFrame: windowFrame,
                               screenID: screenID ?? self.screenID,
                               screenFit: screenFit,
                               mode: mode ?? self.mode,

@@ -9,6 +9,8 @@
 import Foundation
 import JavaScriptCore
 
+fileprivate let useBash = false
+
 fileprivate func searchBinary(_ file: String, in url: URL) -> URL? {
   let url = url.appendingPathComponent(file)
   return FileManager.default.fileExists(atPath: url.path) ? url : nil
@@ -109,7 +111,6 @@ class JavascriptAPIUtils: JavascriptAPI, JavascriptAPIUtilsExportable {
           }
         } else {
           // assume it's a system command
-          let useBash = false
           if useBash {
             path = "/bin/bash"
             args.insert(file, at: 0)

@@ -38,7 +38,7 @@ class InputConfFileCache {
       Logger.log.verbose{"Found InputConf \(confName.pii.quoted) in memory cache"}
       return cachedConfFile
     }
-    var defaultConfFile = Constants.InputConf.defaults[confName]
+    let defaultConfFile = Constants.InputConf.defaults[confName]
     let isReadOnly = defaultConfFile != nil
     let confFilePath = defaultConfFile ?? ConfTableState.current.getFilePath(forConfName: confName)
     let confFile = loadFile(at: confFilePath, isReadOnly: isReadOnly, confName: confName)
