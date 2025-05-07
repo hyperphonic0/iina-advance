@@ -282,7 +282,7 @@ struct BindingTableState {
   }
 
   func applyFilter(_ searchString: String) {
-    Logger.log("Updating Bindings UI filter to \(searchString.quoted)", level: .verbose)
+    Logger.log.verbose{"Updating Bindings UI filter to \(searchString.quoted)"}
     manager.applyFilter(newFilterString: searchString)
   }
 

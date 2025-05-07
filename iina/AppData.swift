@@ -216,7 +216,9 @@ struct Constants {
 
     /// Delay before auto-loading playlist from files in the opened file's directory
     static let autoLoadDelay = 1.0
-    
+
+    static let keyBindingsSearchDebounceDelay: TimeInt = 0.1
+
     static let pastLaunchResponseTimeout = 1.0
     static let asynchronousModeTimeout: TimeInt = 2.0
 

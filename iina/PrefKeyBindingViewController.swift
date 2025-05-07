@@ -47,6 +47,8 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
 
   private var observers: [NSObjectProtocol] = []
 
+  private var searchActionDebouncer = Debouncer(delay: Constants.TimeInterval.keyBindingsSearchDebounceDelay)
+
   // MARK: - Outlets
 
   @IBOutlet weak var confTableView: EditableTableView!
@@ -216,7 +218,9 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   }
 
   @IBAction func searchAction(_ sender: NSSearchField) {
-    bindingTableState.applyFilter(sender.stringValue)
+    searchActionDebouncer.run { [self] in
+      bindingTableState.applyFilter(sender.stringValue)
+    }
   }
 
   // MARK: - UI
