@@ -335,6 +335,7 @@ extension PlayerWindowController {
           guard let newSessionState = stateChange(cxt) else {
             return abort("state change func returned nil from sessionState=\(sessionState)")
           }
+          log.verbose{"[GeoTF:\(cxt.name)] sessionState change applied: \(cxt.sessionState) → \(newSessionState.description)"}
           cxt = cxt.clone(sessionState: newSessionState)
         } else {
           log.verbose{"[GeoTF:\(cxt.name)] Reusing current sessionState: \(cxt.sessionState)"}
@@ -363,7 +364,7 @@ extension PlayerWindowController {
             immediateTasks = builder.buildWindowInitialLayoutTasks()
 
             /// These tasks should not execute until *after* `super.showWindow` is called.
-            let geoTransitionTasks = builder.buildGeoTransitionTasks()
+            let geoTransitionTasks = builder.buildApplyTransformTasks()
 
             let isRestoringMinimizedWindow = cxt.sessionState.isRestoring && UIState.shared.windowsMinimized.contains(window!.savedStateName)
             if isRestoringMinimizedWindow {
@@ -375,7 +376,7 @@ extension PlayerWindowController {
             }
 
           } else {
-            immediateTasks = builder.buildGeoTransitionTasks()
+            immediateTasks = builder.buildApplyTransformTasks()
 
             // Need to switch to music mode? Append to above tasks
             if case .existingSession_startingNewPlayback = cxt.sessionState, Preference.bool(for: .autoSwitchToMusicMode) {

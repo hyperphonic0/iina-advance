@@ -61,7 +61,7 @@ struct GeometryTransform {
     let sessionState: PWinSessionState
     let currentPlayback: Playback
     let vidTrackID: Int
-    let currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus
+    let currentMediaAudioStatus: PlaybackInfo.MediaAudioStatus
 
     let player: PlayerCore
 

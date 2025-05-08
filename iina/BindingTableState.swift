@@ -227,7 +227,7 @@ struct BindingTableState {
 
     // If there is an active filter, convert the filtered index to unfiltered index
     if let unfilteredIndex = getUnfilteredIndex(fromFiltered: requestedIndex) {
-      Logger.log("Translated filtered index \(requestedIndex) to unfiltered index \(unfilteredIndex)", level: .verbose)
+      Logger.log.verbose{"Translated filtered index \(requestedIndex) to unfiltered index \(unfilteredIndex)"}
       insertIndex = unfilteredIndex
       didUnfilter = true
     }

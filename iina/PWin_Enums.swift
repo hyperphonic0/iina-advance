@@ -78,19 +78,19 @@ enum PWinSessionState: CustomStringConvertible {
 
   /// Returns `true` if session finished its initial load. May be changing tracks or files within the session.
   var hasOpenSession: Bool {
-    return !isNone && !isOpeningFileManually
+    return !isNone && !isStartingNewPlaybackManually
   }
 
   /// Returns true if starting or resuming a session.
   var isStartingSession: Bool {
-    return !isNone && isOpeningFileManually
+    return !isNone && isStartingNewPlaybackManually
   }
 
   /// Most similar to the term "Opening file" in Settings window's UI, but also applies when changing video track
   /// in the same file.
   ///
   /// Note that case `.restoring` is considered to be opening a file and thus returns `true`.
-  /// See also: `isOpeningFileManually`.
+  /// See also: `isStartingNewPlaybackManually`.
   var isChangingVideoTrack: Bool {
     switch self {
     case .restoring,
@@ -105,7 +105,8 @@ enum PWinSessionState: CustomStringConvertible {
     }
   }
 
-  var isOpeningFile: Bool {
+  /// AKA "opening file" when using the same language as Settings window.
+  var isStartingNewPlayback: Bool {
     switch self {
     case .restoring,
         .creatingNew,
@@ -122,7 +123,7 @@ enum PWinSessionState: CustomStringConvertible {
   /// Most similar to the term "Opening file manually" in Settings window's UI.
   ///
   /// Note that case `.restoring` is considered to be opening a file and thus returns `true`.
-  var isOpeningFileManually: Bool {
+  var isStartingNewPlaybackManually: Bool {
     switch self {
     case .restoring,
         .creatingNew,

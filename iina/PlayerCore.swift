@@ -1691,10 +1691,7 @@ class PlayerCore: NSObject {
       guard isActive else { return }
       let currentSubName = info.currentTrack(.sub)?.externalFilename
       for subTrack in info.subTracks {
-        let code = mpv.command(.subReload, args: ["\(subTrack.id)"], checkError: false)
-        if code < 0 {
-          log.error("Failed reloading subtitles: error code \(code)")
-        }
+        mpv.command(.subReload, args: ["\(subTrack.id)"], checkError: false)
       }
       guard reloadTrackInfo() else { return }
       if let currentSub = info.subTracks.first(where: {$0.externalFilename == currentSubName}) {
@@ -2514,23 +2511,22 @@ class PlayerCore: NSObject {
     if let cachedVideoMeta = MediaMetaCache.shared.getCachedVideoMeta(id: playback.id) {
       log.verbose{"FileStarted: found cached videoMeta for playback: \(cachedVideoMeta)"}
 
-      windowController.transformGeometry("FileStarted", stateChange: { [self] context in
-        let newSessionsState: PWinSessionState?
-
-        switch context.sessionState {
+      windowController.transformGeometry("FileStarted", stateChange: { [self] cxt in
+        guard cxt.currentPlayback.state == .started else {
+          log.verbose{"[GeoTF:\(cxt.name)] Expected currentPlayback.state == .started, but found: \(cxt.currentPlayback.state)"}
+          return nil
+        }
+        switch cxt.sessionState {
         case .existingSession_continuing:
-          newSessionsState = .existingSession_startingNewPlayback
+          return .existingSession_startingNewPlayback
         default:
-          if context.sessionState.isOpeningFile {
-            newSessionsState = context.sessionState
+          if cxt.sessionState.isStartingNewPlayback {
+            return cxt.sessionState
           } else {
             log.verbose("Not the right sessionState; will let another handler take this")
-            newSessionsState = nil
+            return nil
           }
         }
-
-        log.verbose{"Calling transformGeometry from fileStarted; sessionState: \(context.sessionState) → \(newSessionsState?.description ?? "nil")"}
-        return newSessionsState
       }, video: { cxt in
         cxt.oldGeo.video.substituting(cachedVideoMeta)
       })  // end of transform block
@@ -2633,12 +2629,12 @@ class PlayerCore: NSObject {
     }
 
     guard let currentPlayback = info.currentPlayback else {
-      log.debug("FileLoaded: aborting - currentPlayback was nil")
+      log.debug("FileLoaded: aborting: currentPlayback was nil")
       return
     }
 
     guard !mpv.isStale() else {
-      log.debug("FileLoaded: aborting - mpv is stale")
+      log.debug("FileLoaded: aborting: mpv is stale")
       return
     }
 
@@ -2662,7 +2658,8 @@ class PlayerCore: NSObject {
     checkUnsyncedWindowOptions()
     if !reloadTrackInfo() {
       // TODO: can this ever happen here?! May need to terminate player if so
-      log.error("No tracks returned by mpv!")
+      log.error("FileLoaded: no tracks returned by mpv! Returning early…")
+      return
     }
 
     // Cache these vars to keep them constant for background tasks
@@ -2689,16 +2686,19 @@ class PlayerCore: NSObject {
     syncAbLoop()
     // Done syncing tracks
 
-    windowController.transformGeometry("FileLoaded", stateChange: { [self] context in
-      log.verbose{"Calling transformGeometry from fileLoaded; sessionState=\(context.sessionState)"}
-      switch context.sessionState {
+    windowController.transformGeometry("FileLoaded", stateChange: { [self] cxt in
+      guard cxt.currentPlayback.state == .loaded else {
+        log.verbose{"[GeoTF:\(cxt.name)] Expected currentPlayback.state == .loaded, but found: \(cxt.currentPlayback.state)"}
+        return nil
+      }
+      switch cxt.sessionState {
       case .existingSession_continuing:
         return .existingSession_startingNewPlayback
       default:
-        if context.sessionState.isOpeningFile {
-          return context.sessionState
+        if cxt.sessionState.isStartingNewPlayback {
+          return cxt.sessionState
         } else {
-          log.verbose("Not the right sessionState; will let another handler take this")
+          log.verbose("[GeoTF:\(cxt.name)] Not the right sessionState; will let another handler take this")
           return nil
         }
       }
@@ -3163,7 +3163,7 @@ class PlayerCore: NSObject {
         return
       }
 
-      _ = reloadTrackInfo()
+      guard reloadTrackInfo() else { return }
       let vidTrackCount = info.videoTracks.count
       let hasVidTrack = vidTrackCount > 0
       let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
@@ -3775,7 +3775,7 @@ class PlayerCore: NSObject {
 
     let trackCount = mpv.getInt(MPVProperty.trackListCount)
     guard trackCount > 0 else {
-      log.verbose("No tracks returned by mpv's trackListCount; ignoring")
+      log.warn("No tracks returned by mpv's trackListCount; ignoring")
       return false
     }
 
@@ -3827,12 +3827,11 @@ class PlayerCore: NSObject {
   private func reloadSelectedTracks(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.verbose("Reloading selected tracks")
+
     aidChanged(silent: silent)
     vidChanged(silent: silent)
     sidChanged(silent: silent)
     secondarySidChanged(silent: silent)
-
-    saveState()
   }
 
   /// Reloads playlist from mpv, then enqueues state save & sends `iinaPlaylistChanged` notification.

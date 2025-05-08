@@ -36,7 +36,7 @@ class PlaybackInfo {
   var isPaused: Bool = false {
     willSet {
       if isPaused != newValue {
-        log.verbose("Playback is \(newValue ? "PAUSED" : "PLAYING")")
+        log.verbose{"Playback is \(newValue ? "PAUSED" : "PLAYING")"}
       }
     }
   }
@@ -47,7 +47,7 @@ class PlaybackInfo {
 
   var currentPlayback: Playback? = nil {
     didSet {
-      log.verbose("Updated currentPlayback to \(currentPlayback?.description ?? "nil")")
+      log.verbose{"Updated currentPlayback to \(currentPlayback?.description ?? "nil")"}
     }
   }
 
@@ -210,7 +210,7 @@ class PlaybackInfo {
 
   // -- PERSISTENT PROPERTIES END --
 
-  enum CurrentMediaAudioStatus {
+  enum MediaAudioStatus {
     case unknown
     case isAudioWithoutArt
     case isAudioWithArtHidden
@@ -227,7 +227,7 @@ class PlaybackInfo {
     }
   }
 
-  var currentMediaAudioStatus: CurrentMediaAudioStatus {
+  var currentMediaAudioStatus: MediaAudioStatus {
     guard !isNetworkResource else { return .notAudio }
     let noVideoTrack = videoTracks.isEmpty
     let noAudioTrack = audioTracks.isEmpty
