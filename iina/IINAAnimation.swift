@@ -137,6 +137,9 @@ extension IINAAnimation {
 
     private(set) var isRunning = false
     private var taskQueue = LinkedList<(Int, Task)>()
+    private var geoTransformQueue = LinkedList<GeometryTransform>()
+    private var lastStartedGeoTransformID: Int = 0
+    private var lastCompletedGeoTransformID: Int = 0
 
     var log = Logger.log
 
@@ -248,7 +251,20 @@ extension IINAAnimation {
     }
 
     private func runTasks() {
-      guard let nextTask = popNextValidTask() else { return }
+      let nextTask: Task
+
+      // First check for enqueued GeometryTransforms.
+      if !geoTransformQueue.isEmpty, lastStartedGeoTransformID == lastCompletedGeoTransformID, let tf = geoTransformQueue.removeFirst() {
+        lastStartedGeoTransformID += 1
+
+        nextTask = Task.instantTask { [self] in
+          log.verbose{"Animation pipeline: starting TF \(tf.name.quoted), id=\(lastStartedGeoTransformID)"}
+          tf.execute()
+        }
+      } else {
+        guard let task = popNextValidTask() else { return }
+        nextTask = task
+      }
 
       NSAnimationContext.runAnimationGroup({ context in
         let disableAnimation = !isAnimationEnabled
@@ -275,6 +291,33 @@ extension IINAAnimation {
         self.runTasks()
       })
     }
+
+    /// Uses a queue if necessary to ensure that only one `GeometryTransform` is ever running at a time.
+    /// This is a safety feature. The transform's work takes place asynchronously via multiple tasks across
+    /// multiple `DispatchQueue`s, while drawing from disparate state variables, so if they overlapped they
+    /// could interfere with each other in difficult-to-predict ways.
+    func submit(_ tf: GeometryTransform) {
+      submitInstantTask{ [self] in
+        if lastStartedGeoTransformID == lastCompletedGeoTransformID {
+          lastStartedGeoTransformID += 1
+          log.verbose{"Animation pipeline: starting TF \(tf.name.quoted), id=\(lastStartedGeoTransformID)"}
+          tf.execute()
+        } else {
+          log.verbose{"Animation pipeline: lastStartedGeoTransformID=\(lastStartedGeoTransformID) ≠ lastCompletedGeoTransformID=\(lastCompletedGeoTransformID)"}
+          log.verbose{"Animation pipeline: TF will be enqueued: \(tf.name.quoted)"}
+          geoTransformQueue.append(tf)
+        }
+      }
+    }
+
+    /// Can be called in any DispatchQueue.
+    func geoTransformDidFinish(_ tf: GeometryTransform) {
+      submitInstantTask{ [self] in
+        log.verbose{"Animation pipeline: finished TF \(tf.name.quoted), id=\(lastStartedGeoTransformID)"}
+        lastCompletedGeoTransformID += 1
+      }
+    }
+
   }
 }
 

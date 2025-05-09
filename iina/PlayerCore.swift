@@ -1454,7 +1454,7 @@ class PlayerCore: NSObject {
       sendOSD(.rotation(userRotation))
       return videoGeo.clone(userRotation: userRotation)
     })
-    tf.submit()
+    windowController.animationPipeline.submit(tf)
   }
 
   /// Set video's aspect ratio override. The `aspect` param is a string which may be one of the following formats:

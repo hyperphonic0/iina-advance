@@ -43,125 +43,123 @@ struct GeometryTransform {
     self.onSuccess = onSuccess
   }
 
-  /// Submit the transform for execution.
-  func submit() {
+  /// Do not call directly. Should only be called from an animation pipeline.
+  /// Use `IINAAnimation.Pipeline.submit` to execute a `GeometryTransform`.
+  func execute() {
+    assert(DispatchQueue.isExecutingIn(.main))
     guard let pwc = player.windowController else { return }
 
-    pwc.animationPipeline.submitInstantTask { [self] in
-      // Get a copy of geo inside animationPipeline to ensure serial access.
-      // This is reused asynchronously down below, so some parts of it may fall out of date, but
-      // shouldn't be the parts we need for now...
-      let oldGeo = pwc.geo
+    // Get a copy of geo inside animationPipeline to ensure serial access.
+    // This is reused asynchronously down below, so some parts of it may fall out of date, but
+    // shouldn't be the parts we need for now...
+    let oldGeo = pwc.geo
 
-      // Need to be inside mpv queue to ensuren serial access to sessionState et al
-      player.mpv.queue.async { [self] in
+    // Need to be inside mpv queue to ensuren serial access to sessionState et al
+    player.mpv.queue.async { [self] in
 
-        /// Make sure `doAfter` is always executed
-        func abort(_ reasonDebugMsg: String) {
-          log.verbose{"[GeoTF:\(name)] Aborting TF: \(reasonDebugMsg)"}
+      /// Make sure `doAfter` is always executed
+      func abort(_ reasonDebugMsg: String) {
+        log.verbose{"[GeoTF:\(name)] Aborting TF: \(reasonDebugMsg)"}
+        pwc.animationPipeline.geoTransformDidFinish(self)
+      }
+
+      guard !player.isStopping else {
+        return abort("player stopping (status=\(player.state))")
+      }
+
+      guard let currentPlayback = player.info.currentPlayback else {
+        return abort("currentPlayback is nil")
+      }
+
+      let sessionState = pwc.sessionState
+
+      // File needs to be loaded before we can know its video geometry.
+      // ...Unless we are restoring. But then we still want to wait until all windows are done loading, so we can open them all at once.
+      // ...But streaming files can often fail to connect. So reopen those right away if restoring (we already have their saved geometry anyway).
+      guard currentPlayback.state.isAtLeast(.started) || (sessionState.isRestoring && currentPlayback.isNetworkResource) else {
+        return abort("playbackState=\(currentPlayback.state) restoring=\(sessionState.isRestoring.yn) network=\(currentPlayback.isNetworkResource.yn)")
+      }
+
+      let vidTrackID = player.info.vid ?? 0
+
+      var cxt = GeometryTransform.Context(tf: self, currentPlayback: currentPlayback, vidTrackID: vidTrackID,
+                                          currentMediaAudioStatus: player.info.currentMediaAudioStatus,
+                                          sessionState: sessionState, oldGeo: oldGeo)
+
+      /// 1: Apply `stateChange` if present
+      if let stateChange = stateTransition {
+        log.verbose{"[GeoTF:\(name)] Calling sessionStateChange func"}
+        guard let newSessionState = stateChange(cxt) else {
+          return abort("state change func returned nil from sessionState=\(sessionState)")
         }
+        log.verbose{"[GeoTF:\(name)] Result of sessionStateChange: \(sessionState) → \(newSessionState.description)"}
+        cxt.sessionState = newSessionState
+      } else {
+        log.verbose{"[GeoTF:\(name)] No sessionStateChange func, will stay at: \(sessionState)"}
+      }
 
-        guard !player.isStopping else {
-          return abort("player stopping (status=\(player.state))")
+      /// 2: Apply `videoTransform` if present.
+      /// This needs to be on the mpv queue, because some transforms make mpv calls.
+      if let videoTransform {
+        log.verbose{"[GeoTF:\(name)] Calling videoTransform func (sessionState=\(sessionState))"}
+        guard let transformedGeo = videoTransform(cxt) else {
+          return abort("videoTransform returned nil")
         }
+        log.verbose{"[GeoTF:\(name)] Result of videoTransform: \(transformedGeo)"}
+        cxt.outputVidGeo = transformedGeo
+      } else {
+        log.verbose{"[GeoTF:\(name)] No videoTransform given, skipping"}
+        cxt.outputVidGeo = cxt.oldGeo.video
+      }
 
-        guard let currentPlayback = player.info.currentPlayback else {
-          return abort("currentPlayback is nil")
-        }
+      pwc.animationPipeline.submitInstantTask { [self] in
+        // Cache this inside animation task to ensure serial access
+        cxt.inputLayout = pwc.currentLayout
 
-        let sessionState = pwc.sessionState
+        /// 3. (Optional) Transition window to initial layout. Must exexcute before `buildApplyTransformTasks`.
+        /// Will return empty task list if not applicable
+        var immediateTasks = pwc.buildWindowInitialLayoutTasks(using: &cxt)
 
-        // File needs to be loaded before we can know its video geometry.
-        // ...Unless we are restoring. But then we still want to wait until all windows are done loading, so we can open them all at once.
-        // ...But streaming files can often fail to connect. So reopen those right away if restoring (we already have their saved geometry anyway).
-        guard currentPlayback.state.isAtLeast(.started) || (sessionState.isRestoring && currentPlayback.isNetworkResource) else {
-          return abort("playbackState=\(currentPlayback.state) restoring=\(sessionState.isRestoring.yn) network=\(currentPlayback.isNetworkResource.yn)")
-        }
+        /// 4. Apply `windowedTransform` / `musicModeTransform`
+        let transformTasks = cxt.buildApplyTransformTasks()
 
-        let vidTrackID = player.info.vid ?? 0
+        // Update context's geo with current window frame
+        cxt.oldGeo = pwc.buildGeoSet(from: cxt.outputLayout, baseGeoSet: cxt.oldGeo)
 
-        var cxt = GeometryTransform.Context(tf: self, currentPlayback: currentPlayback, vidTrackID: vidTrackID,
-                                            currentMediaAudioStatus: player.info.currentMediaAudioStatus,
-                                            sessionState: sessionState, oldGeo: oldGeo)
-
-        /// 1: Apply `stateChange` if present
-        if let stateChange = stateTransition {
-          log.verbose{"[GeoTF:\(name)] Calling sessionStateChange func"}
-          guard let newSessionState = stateChange(cxt) else {
-            return abort("state change func returned nil from sessionState=\(sessionState)")
-          }
-          log.verbose{"[GeoTF:\(name)] Result of sessionStateChange: \(sessionState) → \(newSessionState.description)"}
-          cxt.sessionState = newSessionState
-        } else {
-          log.verbose{"[GeoTF:\(name)] No sessionStateChange func, will stay at: \(sessionState)"}
-        }
-
-        /// 2: Apply `videoTransform` if present.
-        /// This needs to be on the mpv queue, because some transforms make mpv calls.
-        if let videoTransform {
-          log.verbose{"[GeoTF:\(name)] Calling videoTransform func (sessionState=\(sessionState))"}
-          guard let transformedGeo = videoTransform(cxt) else {
-            return abort("videoTransform returned nil")
-          }
-          log.verbose{"[GeoTF:\(name)] Result of videoTransform: \(transformedGeo)"}
-          cxt.outputVidGeo = transformedGeo
-        } else {
-          log.verbose{"[GeoTF:\(name)] No videoTransform given, skipping"}
-          cxt.outputVidGeo = cxt.oldGeo.video
-        }
-
-        pwc.animationPipeline.submitInstantTask { [self] in
-          // Cache this inside animation task to ensure serial access
-          cxt.inputLayout = pwc.currentLayout
-
-          var immediateTasks: [IINAAnimation.Task] = []
-
-          /// 3. (Optional) Transition window to initial layout. Must exexcute before `buildApplyTransformTasks`
-          if sessionState.isStartingSession {
-            immediateTasks = pwc.buildWindowInitialLayoutTasks(using: &cxt)
-          }
-
-          /// 4. Apply `windowedTransform` / `musicModeTransform`
-          let transformTasks = cxt.buildApplyTransformTasks()
-
-          // Update context's geo with current window frame
-          cxt.oldGeo = pwc.buildGeoSet(from: cxt.outputLayout, baseGeoSet: cxt.oldGeo)
-
-          if sessionState.isStartingSession {
-            let isRestoringMinimizedWindow = sessionState.isRestoring && UIState.shared.windowsMinimized.contains(pwc.window!.savedStateName)
-            if isRestoringMinimizedWindow {
-              // Minimized: can't rely on showWindow() being called, but window changes won't be seen anyway. Just run end task now.
-              log.verbose{"[GeoTF:\(name)] Restoring minimized window: will run tasks immediately instead of enqueueing"}
-              immediateTasks += transformTasks
-            } else {
-              /// These tasks should not execute until *after* `super.showWindow` is called.
-              pwc.pendingVideoGeoUpdateTasks = transformTasks
-            }
-
-          } else {
+        if sessionState.isStartingSession {
+          let isRestoringMinimizedWindow = sessionState.isRestoring && UIState.shared.windowsMinimized.contains(pwc.window!.savedStateName)
+          if isRestoringMinimizedWindow {
+            // Minimized: can't rely on showWindow() being called, but window changes won't be seen anyway. Just run end task now.
+            log.verbose{"[GeoTF:\(name)] Restoring minimized window: will run tasks immediately instead of enqueueing"}
             immediateTasks += transformTasks
-
-            /// 5. Need to switch to music mode? Append to above tasks
-            if case .existingSession_startingNewPlayback = sessionState, Preference.bool(for: .autoSwitchToMusicMode) {
-              let layout = cxt.outputLayout
-              if player.overrideAutoMusicMode {
-                log.verbose{"[GeoTF:\(name)] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y"}
-              } else if cxt.currentMediaAudioStatus.isAudio && !layout.isMusicMode && !layout.isFullScreen {
-                log.debug{"[GeoTF:\(name)] Opened media is audio: auto-switching to music mode"}
-                let geo = pwc.buildGeoSet(video: cxt.outputVidGeo, from: layout)
-                let enterMusicModeTransitionTasks = pwc.buildTransitionTasksToEnterMusicMode(automatically: true, from: layout, geo)
-                immediateTasks += enterMusicModeTransitionTasks
-              } else if cxt.currentMediaAudioStatus == .notAudio && layout.isMusicMode {
-                log.debug{"[GeoTF:\(name)] Opened media is not audio: auto-switching to normal window"}
-                let geo = pwc.buildGeoSet(video: cxt.outputVidGeo, from: layout)
-                let enterMusicModeTransitionTasks = pwc.buildTransitionTasksToExitMusicMode(automatically: true, from: layout, geo)
-                immediateTasks += enterMusicModeTransitionTasks
-              }
-            }
+          } else {
+            /// These tasks should not execute until *after* `super.showWindow` is called.
+            pwc.pendingVideoGeoUpdateTasks = transformTasks
           }
 
-          pwc.animationPipeline.submit(immediateTasks)
+        } else {
+          immediateTasks += transformTasks
+
+          /// 5. Need to switch to music mode? Append to above tasks
+          if case .existingSession_startingNewPlayback = sessionState, Preference.bool(for: .autoSwitchToMusicMode) {
+            let layout = cxt.outputLayout
+            if player.overrideAutoMusicMode {
+              log.verbose{"[GeoTF:\(name)] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y"}
+            } else if cxt.currentMediaAudioStatus.isAudio && !layout.isMusicMode && !layout.isFullScreen {
+              log.debug{"[GeoTF:\(name)] Opened media is audio: auto-switching to music mode"}
+              let geo = pwc.buildGeoSet(video: cxt.outputVidGeo, from: layout)
+              let enterMusicModeTransitionTasks = pwc.buildTransitionTasksToEnterMusicMode(automatically: true, from: layout, geo)
+              immediateTasks += enterMusicModeTransitionTasks
+            } else if cxt.currentMediaAudioStatus == .notAudio && layout.isMusicMode {
+              log.debug{"[GeoTF:\(name)] Opened media is not audio: auto-switching to normal window"}
+              let geo = pwc.buildGeoSet(video: cxt.outputVidGeo, from: layout)
+              let enterMusicModeTransitionTasks = pwc.buildTransitionTasksToExitMusicMode(automatically: true, from: layout, geo)
+              immediateTasks += enterMusicModeTransitionTasks
+            }
+          }
         }
+
+        pwc.animationPipeline.submit(immediateTasks)
       }
     }
   }
@@ -260,7 +258,7 @@ struct GeometryTransform {
 
     /// Only `transformGeometry` should call this.
     fileprivate func buildApplyTransformTasks() -> [IINAAnimation.Task] {
-      log.verbose{"[GeoTF:\(name)] Mode=\(outputLayout.mode): updated cxt=\(self)"}
+      log.verbose{"[GeoTF:\(name)] Building transform tasks, mode=\(outputLayout.mode)"}
 
       // There's no good animation for rotation (yet), so just do as little animation as possible in this case
       var duration: CGFloat = isVideoRotating ? 0.0 : Constants.AnimationDuration.videoReconfig
@@ -277,8 +275,11 @@ struct GeometryTransform {
         } else {
           switch sessionState {
           case .restoring(_):
-            log.verbose{"[GeoTF:\(name)] Restore is in progress; aborting"}
-            return []
+            log.verbose{"[GeoTF:\(name)] Restore is in progress: no transform needed"}
+            // still need post-transition task
+            return [.instantTask{ [self] in
+              doPostTransformWork()
+            }]
 
           case .creatingNew:
             // Just opened new window. Use a longer duration for this one, because the window starts small and will zoom into place.
@@ -402,8 +403,7 @@ struct GeometryTransform {
         onSuccess()
       }
 
-      // TODO: 
-//      pwc.animationPipeline.geoTransformDidFinish(self)
+      pwc.animationPipeline.geoTransformDidFinish(tf)
     }
 
     /// Applies the prefs `.resizeWindowTiming` & `resizeWindowScheme`, if applicable.
@@ -693,6 +693,8 @@ struct GeometryTransform {
   }  // end struct GeometryTransform.Context
 }
 
+// MARK: - Window Initial Layout
+
 extension PlayerWindowController {
 
   /// Builds tasks to transition the window to its "initial" layout.
@@ -737,7 +739,7 @@ extension PlayerWindowController {
       tasks = []
 
     case .creatingNew:
-      log.verbose("[GeoTF:\(cxt.name)] Window is opening: setting initial layout from app prefs")
+      log.verbose("[GeoTF:\(cxt.name)] Window is opening: building initial layout tasks")
 
       tasks = buildTasksForNewWindow(&cxt)
 
@@ -1010,6 +1012,9 @@ extension PlayerWindowController {
     return GeometrySet(windowed: windowedModeGeo, musicMode: musicModeGeo, video: cxt.outputVidGeo)
   }
 
+  // ---------------------------------------
+  // TODO: delete this func
+
   /// Applies changes to window geometry, possibly animating any changes.
   ///
   /// # Arguments:
@@ -1040,7 +1045,7 @@ extension PlayerWindowController {
 
     let tf = GeometryTransform(name: transformName, player: player, state: stateChange, video: videoTransform,
                                windowed: windowedTransform, musicMode: musicModeTransform, onSuccess: onSuccess)
-    tf.submit()
+    animationPipeline.submit(tf)
   }
 
 
