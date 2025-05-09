@@ -80,7 +80,7 @@ class GLVideoLayer: CAOpenGLLayer {
     super.init()
     isOpaque = true
     /// Do not set to `[.layerWidthSizable, .layerHeightSizable]` resizable! It messes up during window resize if the trailing inside sidebar is open.
-    /// HOWEVER: the above mask *is* needed when in PiP so that it resizes with the PiP panel
+    /// HOWEVER: the above mask *is* needed when in PiP so that it resizes with the PiP panel.
     autoresizingMask = []
     if bufferDepth > 8 {
       contentsFormat = .RGBA16Float

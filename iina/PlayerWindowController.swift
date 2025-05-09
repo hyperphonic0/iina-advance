@@ -304,7 +304,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       return geo.windowed
     } set {
       geo = geo.clone(windowed: newValue)
-      log.verbose{"Updated windowedModeGeo ≔ \(newValue)"}
+      log.verbose{"Δ windowedModeGeo ≔ \(newValue)"}
       assert(newValue.mode.isWindowed, "windowedModeGeo has unexpected mode: \(newValue.mode)")
       assert(!newValue.screenFit.isFullScreen, "windowedModeGeo has invalid screenFit: \(newValue.screenFit)")
     }
@@ -2522,7 +2522,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     // Seems that this looks better if done before updating the window frame...
     // FIXME: this isn't perfect - a bad frame briefly appears during transition
-    log.verbose{"Resetting videoView rotation"}
     rotationHandler.rotateVideoView(toDegrees: 0, animate: false)
   }
 

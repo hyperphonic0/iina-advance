@@ -137,9 +137,8 @@ class RotationGestureHandler {
     videoLayer.position = centerPoint
     videoLayer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
 
+    log.verbose{"Rotating from \(fromDegrees)° to \(toDegrees)°, animated=\(animate.yn)"}
     if animate {
-      log.verbose{"Animating rotation from \(fromDegrees)° to \(toDegrees)°"}
-
       CATransaction.begin()
       // This will show an animation but doesn't change its permanent state.
       // Still need the rotation call down below to do that.

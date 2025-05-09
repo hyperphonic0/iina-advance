@@ -64,7 +64,7 @@ extension PlayerWindowController {
 
   func buildGeoSet(windowed: PWinGeometry? = nil, musicMode: MusicModeGeometry? = nil,
                    video: VideoGeometry? = nil, from inputLayout: LayoutState,
-                   baseGeoSet: GeometrySet? = nil) -> GeometrySet {
+                   baseGeoSet: GeometrySet? = nil, forceWinFrameUpdate: Bool = false) -> GeometrySet {
     let geo = baseGeoSet ?? geo
 
     guard inputLayout.mode == currentLayout.mode else {
@@ -72,7 +72,7 @@ extension PlayerWindowController {
       return geo
     }
 
-    let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID() ?? (nil, nil)
+    let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: forceWinFrameUpdate) ?? (nil, nil)
 
     let windowedNew: PWinGeometry
     let musicModeNew: MusicModeGeometry

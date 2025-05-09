@@ -138,8 +138,8 @@ extension PlayerWindowController {
       }
 
       /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
-      /// within the same animation transaction as the code below. But this solution seems to get us 99% there; the video
-      /// only exhibits a small noticeable wobble for some limited cases ...
+      /// within the same animation transaction as the code below. But the existing `VideoView` constraints should ensure
+      /// that everything resizes properly.
       resizeWindowSubviews(using: newGeometry, updateVideoView: false)
       // fall through
 
@@ -463,7 +463,7 @@ extension PlayerWindowController {
                                 showDefaultArt: Bool? = nil,
                                 thenRun: Bool = false) -> [IINAAnimation.Task] {
 
-    log.verbose{"ApplyWindowGeo: dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) newGeo=\(newGeometry)"}
+    log.verbose{"ApplyWindowGeo: dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) \(newGeometry)"}
 
     var tasks: [IINAAnimation.Task] = []
 

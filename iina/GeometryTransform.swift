@@ -107,7 +107,7 @@ struct GeometryTransform {
 
       /// 1: Apply `stateChange` if present
       if let stateChange = stateTransition {
-        log.verbose{"[GeoTF:\(name)] Calling sessionStateChange func"}
+        log.verbose{"[GeoTF:\(name)] Calling sessionStateChange"}
         guard let newSessionState = stateChange(cxt) else {
           return abort("state change func returned nil from sessionState=\(sessionState)")
         }
@@ -120,7 +120,7 @@ struct GeometryTransform {
       /// 2: Apply `videoTransform` if present.
       /// This needs to be on the mpv queue, because some transforms make mpv calls.
       if let videoTransform {
-        log.verbose{"[GeoTF:\(name)] Calling videoTransform func, sessionState=\(sessionState)"}
+        log.verbose{"[GeoTF:\(name)] Calling videoTransform"}
         guard let transformedGeo = videoTransform(cxt) else {
           return abort("videoTransform returned nil")
         }
@@ -135,15 +135,15 @@ struct GeometryTransform {
         // Cache this inside animation task to ensure serial access
         cxt.inputLayout = pwc.currentLayout
 
+        // Update context's geo with current window frame
+        cxt.oldGeo = pwc.buildGeoSet(from: cxt.outputLayout, baseGeoSet: cxt.oldGeo, forceWinFrameUpdate: true)
+
         /// 3. (Optional) Transition window to initial layout. Must exexcute before `buildApplyTransformTasks`.
         /// Will return empty task list if not applicable
         var immediateTasks = pwc.buildWindowInitialLayoutTasks(using: &cxt)
 
         /// 4. Apply `windowedTransform` / `musicModeTransform`
         let transformTasks = cxt.buildApplyTransformTasks()
-
-        // Update context's geo with current window frame
-        cxt.oldGeo = pwc.buildGeoSet(from: cxt.outputLayout, baseGeoSet: cxt.oldGeo)
 
         if sessionState.isStartingSession {
           let isRestoringMinimizedWindow = sessionState.isRestoring && UIState.shared.windowsMinimized.contains(pwc.window!.savedStateName)
@@ -325,7 +325,7 @@ struct GeometryTransform {
 
         let showDefaultArt: Bool? = player.info.shouldShowDefaultArt
 
-        log.debug{"[GeoTF:\(name)] Will apply windowed result (newSessionState=\(sessionState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)"}
+        log.verbose{"[GeoTF:\(name)] Building windowed tasks: newSess=\(sessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newGeo)"}
         tasks = pwc.buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
       case .fullScreenNormal:
@@ -334,7 +334,7 @@ struct GeometryTransform {
                                                             intendedViewportSize: intendedViewportSize)
         let fsGeo = outputLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: outputVidGeo)
         let showDefaultArt: Bool? = player.info.shouldShowDefaultArt
-        log.debug{"[GeoTF:\(name)] Will apply FS result: \(fsGeo), showDefaultArt=\(showDefaultArt?.yn ?? "nil")"}
+        log.verbose{"[GeoTF:\(name)] Building FS tasks: defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(fsGeo)"}
 
         tasks = pwc.buildApplyFullScreenGeoTasks(fsGeo: fsGeo, newWindowedGeo: newWinGeo, duration: duration, showDefaultArt: showDefaultArt)
 
@@ -364,7 +364,7 @@ struct GeometryTransform {
         /// If `showDefaultArt == nil`, don't change existing visibility.
         let shouldDecideDefaultArtStatus = oldMusicModeGeo.isVideoVisible || newMusicModeGeo.isVideoVisible
         let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? player.info.shouldShowDefaultArt : nil
-        log.verbose{"[GeoTF:\(name)] Applying musicMode result: \(newMusicModeGeo) (sessionState=\(sessionState) showDefaultArt=\(showDefaultArt?.yn ?? "nil"))"}
+        log.verbose{"[GeoTF:\(name)] Building musicMode tasks: sess=\(sessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newMusicModeGeo)"}
         tasks = pwc.buildApplyMusicModeGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo,
                                                 duration: duration, showDefaultArt: showDefaultArt)
       default:

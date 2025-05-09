@@ -150,15 +150,15 @@ extension VideoView {
       leadingSpacerMin.isActive = spacerMin_Active
     }
 
-    func update(connectSpacers_Active: Bool, connectSpacers_Priority: NSLayoutConstraint.Priority,
-                aspect_Active: Bool, aspect_Priority: NSLayoutConstraint.Priority,
-                whMax: CGSize? = nil, whMax_Priority: NSLayoutConstraint.Priority,
-                spacerMax_Active: Bool, spacerMax_Priority: NSLayoutConstraint.Priority,
-                spacerMin: MarginQuad?, spacerMin_Priority: NSLayoutConstraint.Priority,
-                spacerPreferred: MarginQuad?, spacerPreferred_Priority: NSLayoutConstraint.Priority,
-                center_Active: Bool, center_Priority: NSLayoutConstraint.Priority) {
+    fileprivate func update(connectSpacers_Active: Bool, connectSpacers_Priority: NSLayoutConstraint.Priority,
+                            aspect_Active: Bool, aspect_Priority: NSLayoutConstraint.Priority,
+                            whMax: CGSize? = nil, whMax_Priority: NSLayoutConstraint.Priority,
+                            spacerMax_Active: Bool, spacerMax_Priority: NSLayoutConstraint.Priority,
+                            spacerMin: MarginQuad?, spacerMin_Priority: NSLayoutConstraint.Priority,
+                            spacerPreferred: MarginQuad?, spacerPreferred_Priority: NSLayoutConstraint.Priority,
+                            center_Active: Bool, center_Priority: NSLayoutConstraint.Priority) {
 
-      log.verbose{"VideoView: updating constraints to whMax=\(whMax?.description ?? "nil")|\(whMax_Priority.rawValue), spacerMax=\(spacerMax_Active.yn)|\(spacerMax_Priority.rawValue) spacerMin=\(spacerMin?.description ?? "nil")|\(spacerMin_Priority.rawValue) spacerPref=\(spacerPreferred?.description ?? "nil")|\(spacerPreferred_Priority.rawValue) aspect=\(aspectRatio.multiplier)|\(aspect_Active.yn)|\(aspect_Priority.rawValue)"}
+      log.verbose{"Δ VideoView constraints ≔ whMax=\(whMax?.description ?? "nil")|\(whMax_Priority.rawValue) spacerMax=\(spacerMax_Active.yn)|\(spacerMax_Priority.rawValue) spacerMin=\(spacerMin?.description ?? "nil")|\(spacerMin_Priority.rawValue) spacerPref=\(spacerPreferred?.description ?? "nil")|\(spacerPreferred_Priority.rawValue) aspect=\(aspect_Active.yn)|\(aspectRatio.multiplier)|\(aspect_Priority.rawValue)"}
 
 #if TEST_VIDEO_CONSTRAINTS
       // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
