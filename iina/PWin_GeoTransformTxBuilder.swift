@@ -41,7 +41,7 @@ extension GeometryTransform {
     }
 
     /// Only `transformGeometry` should call this.
-    func buildApplyTransformTasks() -> [IINAAnimation.Task] {
+    fileprivate func buildApplyTransformTasks() -> [IINAAnimation.Task] {
       // Update context's geo with current window frame
       cxt = cxt.clone(oldGeo: pwc.buildGeoSet(from: outputLayout, baseGeoSet: cxt.oldGeo))
       log.verbose{"[GeoTF:\(cxt.name)] Mode=\(outputLayout.mode): updated cxt=\(cxt)"}
@@ -266,6 +266,12 @@ extension GeometryTransform {
     }
 
   }  // class TaskBuilder
+
+  /// Submit the transform for execution
+  func submit() {
+    guard let pwc = player.windowController else { return }
+    pwc.transformGeometry(self)
+  }
 
 }    // extension GeometryTransform
 
@@ -570,6 +576,150 @@ extension PlayerWindowController {
     }
 
     return GeometrySet(windowed: windowedModeGeo, musicMode: musicModeGeo, video: videoGeo)
+  }
+
+  /// Applies changes to window geometry, possibly animating any changes.
+  ///
+  /// # Arguments:
+  /// - `stateChange`: optional operator function for transforming `sessionState` and/or cancelling the transform.
+  ///   - If `nil`, the transform will proceed with the existing `sessionState`.
+  ///   - If non-nil, this function will be run in the mpv queue. It is given the current window's `sessionState` & is expected
+  ///     to output a new value of `sessionState` to set at the end of the transform if it succeeds.
+  ///     But if it returns `nil`, the transform will be cancelled.
+  /// - `videoTransform`: optional operator function which, if provided, will run in the mpv queue.
+  ///   - If `nil`, the transform will proceed with the existing `VideoGeometry`.
+  ///   - If non-`nil`: t is given the current window's `VideoGeometry` (and other context), & is expected to output a new, possibly
+  ///     transformed ` VideoGeometry`. But if it returns `nil`, then transform will be cancelled and no state will be changed.
+  /// - `windowedTransform`: optional operator function which if provided, will run in the main queue.
+  ///   - If non-nil, and if in music mode, this function is given the `PWinGeometry` which would otherwise be applied and is
+  ///     is expected to output a ` PWinGeometry` containing further transforms which should be applied. If it returns `nil`,
+  ///     the transform will ignore it and will proceed with its calculated values.
+  /// - `musicModeTransform`: optional operator function which if provided, will run in the main queue.
+  ///   - If non-nil, and if in music mode, this function is given the `MusicModeGeometry` which would otherwise be applied and is
+  ///     is expected to output a ` MusicModeGeometry` containing further transforms which should be applied. If it returns `nil`,
+  ///     the transform will not transform the geometry.
+  func transformGeometry(_ transformName: String,
+                         stateChange: PWinSessionState.Transform? = nil,
+                         video videoTransform: VideoGeometry.Transform? = nil,
+                         windowed windowedTransform: PWinGeometry.Transform? = nil,
+                         musicMode musicModeTransform: MusicModeGeometry.Transform? = nil,
+                         onSuccess: (() -> Void)? = nil) {
+    // FIXME: figure out if this gets called before fileLoaded
+
+    let tf = GeometryTransform(name: transformName, player: player, state: stateChange, video: videoTransform,
+                               windowed: windowedTransform, musicMode: musicModeTransform, onSuccess: onSuccess)
+    transformGeometry(tf)
+  }
+
+  fileprivate func transformGeometry(_ tf: GeometryTransform) {
+    animationPipeline.submitInstantTask { [self] in
+      // Get a copy of geo inside animationPipeline to ensure serial access
+      let inputGeo = geo
+
+      // Need to be inside mpv queue to ensuren serial access to sessionState et al
+      player.mpv.queue.async { [self] in
+
+        /// Make sure `doAfter` is always executed
+        func abort(_ reasonDebugMsg: String) {
+          log.verbose{"[GeoTF:\(tf.name)] Aborting TF: \(reasonDebugMsg)"}
+        }
+
+        guard !player.isStopping else {
+          return abort("player stopping (status=\(player.state))")
+        }
+
+        guard let currentPlayback = player.info.currentPlayback else {
+          return abort("currentPlayback is nil")
+        }
+
+        // File needs to be loaded before we can know its video geometry.
+        // ...Unless we are restoring. But then we still want to wait until all windows are done loading, so we can open them all at once.
+        // ...But streaming files can often fail to connect. So reopen those right away if restoring (we already have their saved geometry anyway).
+        guard currentPlayback.state.isAtLeast(.started) || (sessionState.isRestoring && currentPlayback.isNetworkResource) else {
+          return abort("playbackState=\(currentPlayback.state) restoring=\(sessionState.isRestoring.yn) network=\(currentPlayback.isNetworkResource.yn)")
+        }
+
+        let vidTrackID = player.info.vid ?? 0
+
+        var cxt = GeometryTransform.Context(tf: tf, oldGeo: inputGeo, sessionState: sessionState,
+                                            currentPlayback: currentPlayback, vidTrackID: vidTrackID,
+                                            currentMediaAudioStatus: player.info.currentMediaAudioStatus)
+
+        /// 1: Apply `stateChange` if present
+        if let stateChange = tf.stateTransition {
+          guard let newSessionState = stateChange(cxt) else {
+            return abort("state change func returned nil from sessionState=\(sessionState)")
+          }
+          log.verbose{"[GeoTF:\(cxt.name)] sessionState change applied: \(cxt.sessionState) → \(newSessionState.description)"}
+          cxt = cxt.clone(sessionState: newSessionState)
+        } else {
+          log.verbose{"[GeoTF:\(cxt.name)] Reusing current sessionState: \(cxt.sessionState)"}
+        }
+
+        /// 2: Apply `videoTransform` if present
+        let outputVidGeo: VideoGeometry
+        if let videoTransform = tf.videoTransform {
+          guard let transformedGeo = videoTransform(cxt) else {
+            return abort("videoTransform returned nil")
+          }
+          log.verbose{"[GeoTF:\(cxt.name)] VideoTransform returned: \(transformedGeo)"}
+          outputVidGeo = transformedGeo
+        } else {
+          outputVidGeo = cxt.oldGeo.video
+        }
+
+
+        animationPipeline.submitInstantTask { [self] in
+          log.verbose{"[GeoTF:\(cxt.name)] sessionState=\(cxt.sessionState)"}
+
+          var immediateTasks: [IINAAnimation.Task]
+
+          let builder = GeometryTransform.TaskBuilder(cxt: cxt, currentLayout: currentLayout, outputVidGeo: outputVidGeo)
+          if cxt.sessionState.isStartingSession {
+            /// 3. (Optional) Transition window to initial layout. Must exexcute before `buildApplyTransformTasks`
+            immediateTasks = builder.buildWindowInitialLayoutTasks()
+
+            /// 4. Apply `windowedTransform` / `musicModeTransform`
+            let geoTransitionTasks = builder.buildApplyTransformTasks()
+
+            let isRestoringMinimizedWindow = cxt.sessionState.isRestoring && UIState.shared.windowsMinimized.contains(window!.savedStateName)
+            if isRestoringMinimizedWindow {
+              // Minimized: can't rely on showWindow() being called, but window changes won't be seen anyway. Just run end task now.
+              log.verbose{"[GeoTF:\(cxt.name)] Restoring minimized window: will run tasks immediately instead of enqueueing"}
+              immediateTasks += geoTransitionTasks
+            } else {
+              /// These tasks should not execute until *after* `super.showWindow` is called.
+              pendingVideoGeoUpdateTasks = geoTransitionTasks
+            }
+
+          } else {
+            /// 4. Apply `windowedTransform` / `musicModeTransform`
+            immediateTasks = builder.buildApplyTransformTasks()
+
+            /// 5. Need to switch to music mode? Append to above tasks
+            if case .existingSession_startingNewPlayback = cxt.sessionState, Preference.bool(for: .autoSwitchToMusicMode) {
+              let layout = builder.outputLayout
+              if player.overrideAutoMusicMode {
+                log.verbose{"[GeoTF:\(cxt.name)] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y"}
+              } else if cxt.currentMediaAudioStatus.isAudio && !layout.isMusicMode && !layout.isFullScreen {
+                log.debug{"[GeoTF:\(cxt.name)] Opened media is audio: auto-switching to music mode"}
+                let geo = buildGeoSet(video: outputVidGeo, from: layout)
+                let enterMusicModeTransitionTasks = buildTransitionTasksToEnterMusicMode(automatically: true, from: layout, geo)
+                immediateTasks += enterMusicModeTransitionTasks
+              } else if cxt.currentMediaAudioStatus == .notAudio && layout.isMusicMode {
+                log.debug{"[GeoTF:\(cxt.name)] Opened media is not audio: auto-switching to normal window"}
+                let geo = buildGeoSet(video: outputVidGeo, from: layout)
+                let enterMusicModeTransitionTasks = buildTransitionTasksToExitMusicMode(automatically: true, from: layout, geo)
+                immediateTasks += enterMusicModeTransitionTasks
+              }
+            }
+          }
+
+          animationPipeline.submit(immediateTasks)
+        }
+
+      }
+    }
   }
 
 }

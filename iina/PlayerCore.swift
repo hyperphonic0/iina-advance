@@ -1446,13 +1446,15 @@ class PlayerCore: NSObject {
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    windowController.transformGeometry("UserRotation", video: { [self] cxt -> VideoGeometry? in
+    let tf = GeometryTransform(name: "UserRotation", player: self,
+                               video: { [self] cxt -> VideoGeometry? in
       guard userRotation != cxt.oldGeo.video.userRotation else { return nil }
       log.verbose{"[GeoTF:\(cxt.name)] Applying rotation: \(userRotation)"}
       // Update window geometry
       sendOSD(.rotation(userRotation))
       return videoGeo.clone(userRotation: userRotation)
     })
+    tf.submit()
   }
 
   /// Set video's aspect ratio override. The `aspect` param is a string which may be one of the following formats:

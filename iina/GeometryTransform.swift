@@ -6,11 +6,16 @@
 //
 
 
+/// See also: `PWin_GeoTransformTxBuilder.swift`
 struct GeometryTransform {
   // MARK: - GeometryTransform Fields
 
   /// Name of the transform
   let name: String
+
+  let player: PlayerCore
+
+  var log: Logger.Subsystem { player.log }
 
   /// If `stateTransition` is `nil` (omitted), treat as no-op and continue to `videoTransform`.
   /// If `stateTransition` returns `nil`, transition should be aborted.
@@ -23,12 +28,14 @@ struct GeometryTransform {
   let onSuccess: (() -> Void)?
 
   init(name: String,
+       player: PlayerCore,
        state: ((Context) -> PWinSessionState?)? = nil,
        video: ((Context) -> VideoGeometry?)? = nil,
        windowed: ((Context) -> PWinGeometry?)? = nil,
        musicMode: ((Context) -> MusicModeGeometry?)? = nil,
        onSuccess: (() -> Void)? = nil) {
     self.name = name
+    self.player = player
     self.stateTransition = state
     self.videoTransform = video
     self.windowedTransform = windowed
@@ -63,15 +70,14 @@ struct GeometryTransform {
     let vidTrackID: Int
     let currentMediaAudioStatus: PlaybackInfo.MediaAudioStatus
 
-    let player: PlayerCore
+    var player: PlayerCore { tf.player }
 
     var log: Logger.Subsystem { player.log }
 
     func clone(oldGeo: GeometrySet? = nil, sessionState: PWinSessionState? = nil) -> Context {
       return Context(tf: self.tf, oldGeo: oldGeo ?? self.oldGeo,
                      sessionState: sessionState ?? self.sessionState, currentPlayback: self.currentPlayback,
-                     vidTrackID: self.vidTrackID, currentMediaAudioStatus: self.currentMediaAudioStatus,
-                     player: player)
+                     vidTrackID: self.vidTrackID, currentMediaAudioStatus: self.currentMediaAudioStatus)
     }
 
     /// Standard `VideoGeometry.Transform` for video track change
