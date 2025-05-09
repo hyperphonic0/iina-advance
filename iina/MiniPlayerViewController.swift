@@ -304,7 +304,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       } else {
         /// If hiding video, do animations first, then call `setVideoTrackDisabled()` (via `applyMusicModeGeo`).
         // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
-        windowController.transformGeometry("HideVideoView",
+        let tf = GeometryTransform("HideVideoView", player,
                                            video: GeometryTransform.trackChanged,
                                            musicMode: { [self] ctx in
           let oldGeo = ctx.oldGeo.musicMode
@@ -312,6 +312,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
           log.verbose{"MusicMode: changing videoView visibility: \(oldGeo.isVideoVisible.yesno) → NO, H=\(newGeo.videoHeight)"}
           return newGeo
         })
+        windowController.animationPipeline.submit(tf)
       }
     })
   }

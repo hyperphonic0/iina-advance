@@ -85,9 +85,9 @@ class IINAAnimation {
       do {
         try task.runFunc()
       } catch IINAError.cancelAnimationTransaction {
-        Logger.log.debug("Animation pipeline: async task was cancelled")
+        Logger.log.debug("[AnimPipeline] Async task was cancelled")
       } catch {
-        Logger.log.error("Animation pipeline: unexpected error thrown by async task: \(error)")
+        Logger.log.error("[AnimPipeline] Unexpected error thrown by async task: \(error)")
       }
     }, completionHandler: {
       runSequentially(taskIterator)
@@ -216,12 +216,12 @@ extension IINAAnimation {
           }
           if canDisable || (submittedTasks >= lastLoggedTaskCount + 20) {
             lastLoggedTaskCount = submittedTasks
-            log.verbose{"[AnimationPipeline] TaskQueue size: \(taskQueueSize), totalSubmits: \(submittedTasks)"}
+            log.verbose{"[AnimPipeline] TaskQueue size: \(taskQueueSize), totalSubmits: \(submittedTasks)"}
           }
         } else if taskQueue.count >= IINAAnimation.Pipeline.alarmStartWatermark {
           alarmActivated = true
           lastLoggedTaskCount = submitCounter
-          log.verbose{"[AnimationPipeline] TaskQueue is falling behind! Size: \(taskQueueSize), submitCount: \(submitCounter)"}
+          log.verbose{"[AnimPipeline] TaskQueue is falling behind! Size: \(taskQueueSize), submitCount: \(submitCounter)"}
         }
       }
 
@@ -242,7 +242,7 @@ extension IINAAnimation {
         }
 
         guard taskTxID >= currentTxID else {
-          log.debug("Animation pipeline: skipping task with txID \(taskTxID) (next valid txID: \(currentTxID))")
+          log.debug("[AnimPipeline] Skipping task with txID \(taskTxID) (next valid txID: \(currentTxID))")
           continue
         }
         currentTxID = taskTxID
@@ -258,7 +258,7 @@ extension IINAAnimation {
         lastStartedGeoTransformID += 1
 
         nextTask = Task.instantTask { [self] in
-          log.verbose{"Animation pipeline: starting TF \(tf.name.quoted), id=\(lastStartedGeoTransformID)"}
+          log.verbose{"[AnimPipeline] Starting GeoTF \(tf.name.quoted), id=\(lastStartedGeoTransformID)"}
           tf.execute()
         }
       } else {
@@ -282,10 +282,10 @@ extension IINAAnimation {
           try nextTask.runFunc()
         } catch IINAError.cancelAnimationTransaction {
           if log.isTraceEnabled {
-            log.trace("Animation pipeline: task was cancelled")
+            log.trace("[AnimPipeline] Task was cancelled")
           }
         } catch {
-          log.error("Animation pipeline: unexpected error thrown by task: \(error)")
+          log.error("[AnimPipeline] Unexpected error thrown by task: \(error)")
         }
       }, completionHandler: {
         self.runTasks()
@@ -300,11 +300,10 @@ extension IINAAnimation {
       submitInstantTask{ [self] in
         if lastStartedGeoTransformID == lastCompletedGeoTransformID {
           lastStartedGeoTransformID += 1
-          log.verbose{"Animation pipeline: starting TF \(tf.name.quoted), id=\(lastStartedGeoTransformID)"}
+          log.verbose{"[AnimPipeline] Starting GeoTF \(tf.name.quoted), id=\(lastStartedGeoTransformID)"}
           tf.execute()
         } else {
-          log.verbose{"Animation pipeline: lastStartedGeoTransformID=\(lastStartedGeoTransformID) ≠ lastCompletedGeoTransformID=\(lastCompletedGeoTransformID)"}
-          log.verbose{"Animation pipeline: TF will be enqueued: \(tf.name.quoted)"}
+          log.verbose{"[AnimPipeline] Enqueuing GeoTF: \(tf.name.quoted). Queue status: \(lastCompletedGeoTransformID) / \(lastStartedGeoTransformID)"}
           geoTransformQueue.append(tf)
         }
       }
@@ -313,7 +312,7 @@ extension IINAAnimation {
     /// Can be called in any DispatchQueue.
     func geoTransformDidFinish(_ tf: GeometryTransform) {
       submitInstantTask{ [self] in
-        log.verbose{"Animation pipeline: finished TF \(tf.name.quoted), id=\(lastStartedGeoTransformID)"}
+        log.verbose{"[AnimPipeline] Done: GeoTF \(tf.name.quoted), id=\(lastStartedGeoTransformID)"}
         lastCompletedGeoTransformID += 1
       }
     }

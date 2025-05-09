@@ -281,7 +281,7 @@ extension PlayerWindowController {
       return
     }
 
-    transformGeometry("SetVideoScale", windowed: { [self] cxt -> PWinGeometry? in
+    let tf = GeometryTransform("SetVideoScale", player, windowed: { [self] cxt -> PWinGeometry? in
       let oldWindowedGeo = cxt.oldGeo.windowed
       // TODO: if Preference.bool(for: .usePhysicalResolution) {}
       // Not supported in music mode at this time. Need to resolve backing scale bugs
@@ -298,6 +298,7 @@ extension PlayerWindowController {
       player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
       return newGeoUnconstrained.refitted(using: .stayInside)
     })
+    animationPipeline.submit(tf)
   }
 
   /**
@@ -356,7 +357,7 @@ extension PlayerWindowController {
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
         return newGeoUnconstrained.refitted(using: .stayInside)
       }
-      transformGeometry("ScaleVideoBy\(widthStep)px", windowed: windowedTransform)
+      animationPipeline.submit(GeometryTransform("ScaleVideoBy\(widthStep)px", player, windowed: windowedTransform))
 
     case .musicMode:
       let musicModeTransform: (GeometryTransform.Context) -> MusicModeGeometry? = { [self] cxt -> MusicModeGeometry? in
@@ -365,7 +366,7 @@ extension PlayerWindowController {
         log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
         return cxt.oldGeo.musicMode.scalingViewport(to: desiredViewportSize)
       }
-      transformGeometry("ScaleVideoBy\(widthStep)px", musicMode: musicModeTransform)
+      animationPipeline.submit(GeometryTransform("ScaleVideoBy\(widthStep)px", player, musicMode: musicModeTransform))
     default:
       return
     }

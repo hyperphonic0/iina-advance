@@ -1446,7 +1446,7 @@ class PlayerCore: NSObject {
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    let tf = GeometryTransform(name: "UserRotation", player: self,
+    let tf = GeometryTransform("UserRotation", self,
                                video: { [self] cxt -> VideoGeometry? in
       guard userRotation != cxt.oldGeo.video.userRotation else { return nil }
       log.verbose{"[GeoTF:\(cxt.name)] Applying rotation: \(userRotation)"}
@@ -1483,7 +1483,8 @@ class PlayerCore: NSObject {
 
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
 
-    windowController.transformGeometry("AspectOverride", video: { [self] cxt -> VideoGeometry? in
+    let tf = GeometryTransform("AspectOverride", self,
+                               video: { [self] cxt -> VideoGeometry? in
       let oldVideoGeo = cxt.oldGeo.video
       guard oldVideoGeo.userAspectLabel != aspectLabel else { return nil }
 
@@ -1499,6 +1500,7 @@ class PlayerCore: NSObject {
       log.verbose{"[GeoTF:\(cxt.name)] changing userAspectLabel: \(oldVideoGeo.userAspectLabel.quoted) → \(aspectLabel.quoted)"}
       return oldVideoGeo.clone(userAspectLabel: aspectLabel)
     })
+    windowController.animationPipeline.submit(tf)
   }
 
   func updateMPVWindowScale(using windowGeo: PWinGeometry) {
@@ -2491,7 +2493,7 @@ class PlayerCore: NSObject {
     let playback: Playback
     if let existingPlayback = info.currentPlayback, existingPlayback.url == playbackFromPath.url {
       guard existingPlayback.state.isNotYet(.started) else {
-        log.warn{"FileStarted: found existing playback for \(existingPlayback.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'started', found: \(existingPlayback.state.rawValue))"}
+        log.warn{"FileStarted: found existing playback for \(existingPlayback.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'notYetStarted', found: \(existingPlayback.state.rawValue))"}
         return
       }
       playback = existingPlayback
@@ -2505,34 +2507,13 @@ class PlayerCore: NSObject {
       info.currentPlayback = playbackFromPath
       playback = playbackFromPath
     }
+
     if let parentPlaylist = mpv.getString(MPVProperty.playlistPath) {
       // TODO!
       playback.parentPlaylist = parentPlaylist
     }
 
-    if let cachedVideoMeta = MediaMetaCache.shared.getCachedVideoMeta(id: playback.id) {
-      log.verbose{"FileStarted: found cached videoMeta for playback: \(cachedVideoMeta)"}
-
-      windowController.transformGeometry("FileStarted", stateChange: { [self] cxt in
-        guard cxt.currentPlayback.state == .started else {
-          log.verbose{"[GeoTF:\(cxt.name)] Expected currentPlayback.state == .started, but found: \(cxt.currentPlayback.state)"}
-          return nil
-        }
-        switch cxt.sessionState {
-        case .existingSession_continuing:
-          return .existingSession_startingNewPlayback
-        default:
-          if cxt.sessionState.isStartingNewPlayback {
-            return cxt.sessionState
-          } else {
-            log.verbose("Not the right sessionState; will let another handler take this")
-            return nil
-          }
-        }
-      }, video: { cxt in
-        cxt.oldGeo.video.substituting(cachedVideoMeta)
-      })  // end of transform block
-    }
+    playback.state = .started
 
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()
@@ -2688,7 +2669,8 @@ class PlayerCore: NSObject {
     syncAbLoop()
     // Done syncing tracks
 
-    windowController.transformGeometry("FileLoaded", stateChange: { [self] cxt in
+    let tf = GeometryTransform("FileLoaded", self,
+                               state: { [self] cxt in
       guard cxt.currentPlayback.state == .loaded else {
         log.verbose{"[GeoTF:\(cxt.name)] Expected currentPlayback.state == .loaded, but found: \(cxt.currentPlayback.state)"}
         return nil
@@ -2705,6 +2687,7 @@ class PlayerCore: NSObject {
         }
       }
     }, video: GeometryTransform.trackChanged)
+    windowController.animationPipeline.submit(tf)
 
     // Launch auto-load tasks on background thread
     let shouldAutoLoadFiles = info.shouldAutoLoadFiles
@@ -3098,6 +3081,7 @@ class PlayerCore: NSObject {
     postNotification(.iinaVIDChanged)
 
     log.verbose{"Calling transformGeometry for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(windowController.sessionState)"}
+
     let stateChangeFunc: (GeometryTransform.Context) -> PWinSessionState? = { [self] cxt -> PWinSessionState? in
       log.verbose{"[GeoTF:\(cxt.name)] Changing sessionState for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(cxt.sessionState), showVideoPending=\(isShowVideoPendingInMiniPlayer.yn)"}
       if case .existingSession_continuing = cxt.sessionState {
@@ -3126,10 +3110,12 @@ class PlayerCore: NSObject {
       let newGeo = oldMusicModeGeo.withVideoViewVisible(true)
       return newGeo
     }
-    windowController.transformGeometry("VidTrackChanged",
-                                       stateChange: stateChangeFunc,
-                                       video: GeometryTransform.trackChanged,
-                                       musicMode: musicModeTransform)
+
+    let tf = GeometryTransform("VidTrackChanged", self,
+                               state: stateChangeFunc,
+                               video: GeometryTransform.trackChanged,
+                               musicMode: musicModeTransform)
+    windowController.animationPipeline.submit(tf)
 
   }
 

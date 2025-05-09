@@ -6,7 +6,26 @@
 //
 
 
-/// See also: `PWin_GeoTransformTxBuilder.swift`
+/// Applies changes to window geometry, possibly animating any changes.
+///
+/// # Important Fields:
+/// - `stateChange`: optional operator function for transforming `sessionState` and/or cancelling the transform.
+///   - If `nil`, the transform will proceed with the existing `sessionState`.
+///   - If non-nil, this function will be run in the mpv queue. It is given the current window's `sessionState` & is expected
+///     to output a new value of `sessionState` to set at the end of the transform if it succeeds.
+///     But if it returns `nil`, the transform will be cancelled.
+/// - `videoTransform`: optional operator function which, if provided, will run in the mpv queue.
+///   - If `nil`, the transform will proceed with the existing `VideoGeometry`.
+///   - If non-`nil`: t is given the current window's `VideoGeometry` (and other context), & is expected to output a new, possibly
+///     transformed ` VideoGeometry`. But if it returns `nil`, then transform will be cancelled and no state will be changed.
+/// - `windowedTransform`: optional operator function which if provided, will run in the main queue.
+///   - If non-nil, and if in music mode, this function is given the `PWinGeometry` which would otherwise be applied and is
+///     is expected to output a ` PWinGeometry` containing further transforms which should be applied. If it returns `nil`,
+///     the transform will ignore it and will proceed with its calculated values.
+/// - `musicModeTransform`: optional operator function which if provided, will run in the main queue.
+///   - If non-nil, and if in music mode, this function is given the `MusicModeGeometry` which would otherwise be applied and is
+///     is expected to output a ` MusicModeGeometry` containing further transforms which should be applied. If it returns `nil`,
+///     the transform will not transform the geometry.
 struct GeometryTransform {
   // MARK: - GeometryTransform Fields
 
@@ -27,8 +46,8 @@ struct GeometryTransform {
 
   let onSuccess: (() -> Void)?
 
-  init(name: String,
-       player: PlayerCore,
+  init(_ name: String,
+       _ player: PlayerCore,
        state: ((Context) -> PWinSessionState?)? = nil,
        video: ((Context) -> VideoGeometry?)? = nil,
        windowed: ((Context) -> PWinGeometry?)? = nil,
@@ -76,7 +95,7 @@ struct GeometryTransform {
       // File needs to be loaded before we can know its video geometry.
       // ...Unless we are restoring. But then we still want to wait until all windows are done loading, so we can open them all at once.
       // ...But streaming files can often fail to connect. So reopen those right away if restoring (we already have their saved geometry anyway).
-      guard currentPlayback.state.isAtLeast(.started) || (sessionState.isRestoring && currentPlayback.isNetworkResource) else {
+      guard currentPlayback.state.isAtLeast(.loaded) || (sessionState.isRestoring && currentPlayback.isNetworkResource) else {
         return abort("playbackState=\(currentPlayback.state) restoring=\(sessionState.isRestoring.yn) network=\(currentPlayback.isNetworkResource.yn)")
       }
 
@@ -101,7 +120,7 @@ struct GeometryTransform {
       /// 2: Apply `videoTransform` if present.
       /// This needs to be on the mpv queue, because some transforms make mpv calls.
       if let videoTransform {
-        log.verbose{"[GeoTF:\(name)] Calling videoTransform func (sessionState=\(sessionState))"}
+        log.verbose{"[GeoTF:\(name)] Calling videoTransform func, sessionState=\(sessionState)"}
         guard let transformedGeo = videoTransform(cxt) else {
           return abort("videoTransform returned nil")
         }
@@ -989,7 +1008,7 @@ extension PlayerWindowController {
       windowedModeGeo = PlayerWindowController.windowedModeGeoLastClosed
 
     } else {
-      /// Use `minVideoSize` at first when a new window is opened, so that when `transformGeometry()` is called shortly after,
+      /// Use `minVideoSize` at first when a new window is opened, so that when `GeometryTransform` is submitted shortly after,
       /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
       let viewportSize = CGSize.computeMinSize(withAspect: cxt.outputVidGeo.videoAspectCAR,
                                                minWidth: Constants.Window.minViewportSize.width,
@@ -1011,42 +1030,5 @@ extension PlayerWindowController {
 
     return GeometrySet(windowed: windowedModeGeo, musicMode: musicModeGeo, video: cxt.outputVidGeo)
   }
-
-  // ---------------------------------------
-  // TODO: delete this func
-
-  /// Applies changes to window geometry, possibly animating any changes.
-  ///
-  /// # Arguments:
-  /// - `stateChange`: optional operator function for transforming `sessionState` and/or cancelling the transform.
-  ///   - If `nil`, the transform will proceed with the existing `sessionState`.
-  ///   - If non-nil, this function will be run in the mpv queue. It is given the current window's `sessionState` & is expected
-  ///     to output a new value of `sessionState` to set at the end of the transform if it succeeds.
-  ///     But if it returns `nil`, the transform will be cancelled.
-  /// - `videoTransform`: optional operator function which, if provided, will run in the mpv queue.
-  ///   - If `nil`, the transform will proceed with the existing `VideoGeometry`.
-  ///   - If non-`nil`: t is given the current window's `VideoGeometry` (and other context), & is expected to output a new, possibly
-  ///     transformed ` VideoGeometry`. But if it returns `nil`, then transform will be cancelled and no state will be changed.
-  /// - `windowedTransform`: optional operator function which if provided, will run in the main queue.
-  ///   - If non-nil, and if in music mode, this function is given the `PWinGeometry` which would otherwise be applied and is
-  ///     is expected to output a ` PWinGeometry` containing further transforms which should be applied. If it returns `nil`,
-  ///     the transform will ignore it and will proceed with its calculated values.
-  /// - `musicModeTransform`: optional operator function which if provided, will run in the main queue.
-  ///   - If non-nil, and if in music mode, this function is given the `MusicModeGeometry` which would otherwise be applied and is
-  ///     is expected to output a ` MusicModeGeometry` containing further transforms which should be applied. If it returns `nil`,
-  ///     the transform will not transform the geometry.
-  func transformGeometry(_ transformName: String,
-                         stateChange: PWinSessionState.Transform? = nil,
-                         video videoTransform: VideoGeometry.Transform? = nil,
-                         windowed windowedTransform: PWinGeometry.Transform? = nil,
-                         musicMode musicModeTransform: MusicModeGeometry.Transform? = nil,
-                         onSuccess: (() -> Void)? = nil) {
-    // FIXME: figure out if this gets called before fileLoaded
-
-    let tf = GeometryTransform(name: transformName, player: player, state: stateChange, video: videoTransform,
-                               windowed: windowedTransform, musicMode: musicModeTransform, onSuccess: onSuccess)
-    animationPipeline.submit(tf)
-  }
-
 
 }

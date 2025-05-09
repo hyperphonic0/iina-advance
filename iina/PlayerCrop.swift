@@ -61,7 +61,7 @@ extension PlayerCore {
   }
 
   func removeCrop() {
-    windowController.transformGeometry("RemoveCrop", video: { [self] cxt in
+    let tf = GeometryTransform("RemoveCrop", self, video: { [self] cxt in
       // special kludge when removing crop while entering interactive mode
       guard !info.videoFiltersDisabled.keys.contains(Constants.FilterLabel.crop) else {
         log.verbose("Ignoring request to remove crop because looks like we are transitioning to interactive mode")
@@ -77,12 +77,13 @@ extension PlayerCore {
       removeVideoFilter(cropFilter, verify: false, notify: false)
       return oldVideoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
     })
+    windowController.animationPipeline.submit(tf)
   }
 
   func updateSelectedCrop(to newCropLabel: String) {
     guard !isRestoring else { return }
 
-    windowController.transformGeometry("SetCrop", video: { [self] cxt -> VideoGeometry? in
+    let tf = GeometryTransform("SetCrop", self, video: { [self] cxt -> VideoGeometry? in
       assert(DispatchQueue.isExecutingIn(mpv.queue))
 
       let oldVideoGeo = cxt.oldGeo.video
@@ -99,6 +100,7 @@ extension PlayerCore {
       guard let updatedVidGeo = cxt.syncVideoParamsFromMpv() else { return nil }
       return updatedVidGeo.clone(selectedCropLabel: newCropLabel)
     })
+    windowController.animationPipeline.submit(tf)
   }
 }
 
