@@ -1729,7 +1729,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                                insideTop: 0, insideTrailing: 0,
                                insideBottom: 0, insideLeading: 0,
                                video: newVideoGeo,
-                               keepFullScreenDimensions: !lockViewportToVideoSize)
+                               pinWidthOrHeightIfAtMax: !lockViewportToVideoSize)
 
             if lockViewportToVideoSize {
               // Otherwise try to avoid shrinking the window too much if the aspect changes dramatically.

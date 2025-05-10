@@ -669,7 +669,7 @@ struct LayoutState {
 
   // Converts & updates existing geometry to this layout
   func convertWindowedModeGeometry(from existingGeometry: PWinGeometry, video: VideoGeometry? = nil,
-                                   keepFullScreenDimensions: Bool,
+                                   pinWidthOrHeightIfAtMax: Bool,
                                    applyOffsetIndex offsetIndex: Int = 0, _ log: Logger.Subsystem) -> PWinGeometry {
     assert(existingGeometry.mode.isWindowed, "Expected existingGeometry to be windowed: \(existingGeometry)")
     let resizedBarsGeo = existingGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
@@ -681,7 +681,7 @@ struct LayoutState {
                                                           insideBottom: insideBottomBarHeight,
                                                           insideLeading: insideLeadingBarWidth,
                                                           video: video,
-                                                          keepFullScreenDimensions: keepFullScreenDimensions).refitted()
+                                                          pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax).refitted()
 
     var geo = resizedBarsGeo
     if offsetIndex > 0 {

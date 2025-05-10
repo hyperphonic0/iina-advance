@@ -320,7 +320,7 @@ extension PlayerWindowController {
         prevWindowedGeo = geo.windowed
       }
       return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, video: inputGeometry.video,
-                                                      keepFullScreenDimensions: !isWindowInitialLayout, log)
+                                                      pinWidthOrHeightIfAtMax: !isWindowInitialLayout, log)
 
     case .windowedInteractive:
       if inputGeometry.mode == .windowedInteractive {
@@ -339,11 +339,11 @@ extension PlayerWindowController {
 
     case .fullScreenNormal, .fullScreenInteractive:
       // Full screen always uses same screen as windowed mode
-      return outputLayout.buildFullScreenGeometry(inScreenID: inputGeometry.screenID, video: geo.video)
+      return outputLayout.buildFullScreenGeometry(inScreenID: inputGeometry.screenID, video: inputGeometry.video)
 
     case .musicMode:
       /// `videoAspect` may have gone stale while not in music mode. Update it (playlist height will be recalculated if needed):
-      let musicModeGeoCorrected = geo.musicMode.clone(video: geo.video).refitted()
+      let musicModeGeoCorrected = geo.musicMode.clone(video: inputGeometry.video).refitted()
       return musicModeGeoCorrected.toPWinGeometry()
 
     }
@@ -365,7 +365,7 @@ extension PlayerWindowController {
                                                          outsideBottom: 0, outsideLeading: 0,
                                                          insideTop: 0, insideTrailing: 0,
                                                          insideBottom: 0, insideLeading: 0,
-                                                         keepFullScreenDimensions: !(Preference.bool(for: .lockViewportToVideoSize)))
+                                                         pinWidthOrHeightIfAtMax: !(Preference.bool(for: .lockViewportToVideoSize)))
 
       } else if transition.isExitingInteractiveMode {
         let videoFrame = transition.outputGeometry.videoFrameInScreenCoords
@@ -485,7 +485,7 @@ extension PlayerWindowController {
                                                                    insideTrailing: insideTrailingBarWidth,
                                                                    insideBottom: insideBottomBarHeight,
                                                                    insideLeading: insideLeadingBarWidth,
-                                                                   keepFullScreenDimensions: true)
+                                                                   pinWidthOrHeightIfAtMax: true)
     return resizedBarsGeo.refitted()
   }
 

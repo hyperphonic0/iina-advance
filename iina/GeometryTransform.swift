@@ -445,7 +445,7 @@ struct GeometryTransform {
         }
         log.verbose{"[GeoTF:\(name)] FileOpenedManually & resizeTiming='Never' → using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)"}
         return outputLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                        video: outputVidGeo, keepFullScreenDimensions: true,
+                                                        video: outputVidGeo, pinWidthOrHeightIfAtMax: true,
                                                         applyOffsetIndex: player.openedWindowsSetIndex, log)
       }
 
@@ -460,7 +460,7 @@ struct GeometryTransform {
           if sessionState.isStartingNewPlaybackManually {
             log.debug{"[GeoTF:\(name)] No mpv geometry found, starting new playback: will fall back to windowedModeGeoLastClosed"}
             return outputLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                            video: outputVidGeo, keepFullScreenDimensions: true,
+                                                            video: outputVidGeo, pinWidthOrHeightIfAtMax: true,
                                                             applyOffsetIndex: player.openedWindowsSetIndex, log)
           } else {
             log.debug{"[GeoTF:\(name)] No mpv geometry found. Will fall back to minimal resize"}
@@ -952,7 +952,7 @@ extension PlayerWindowController {
       let windowed: PWinGeometry
       if lastClosedGeo.mode.isWindowed && !lastClosedGeo.screenFit.isFullScreen {
         windowed = cxt.outputLayout.convertWindowedModeGeometry(from: lastClosedGeo, video: priorState.geoSet.video,
-                                                                    keepFullScreenDimensions: false, log)
+                                                                    pinWidthOrHeightIfAtMax: false, log)
       } else {
         windowed = cxt.outputLayout.buildDefaultInitialGeometry(screen: bestScreen, video: priorState.geoSet.video)
       }
