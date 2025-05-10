@@ -548,6 +548,10 @@ extension PlayerWindowController {
   }
 
   @objc func reloadAllPlugins(_ sender: NSMenuItem) {
+    // Remove the developer tool menu item that retains the plugin instance
+    AppDelegate.shared.menuController.pluginMenu.items
+      .compactMap { $0.submenu }.flatMap { $0.items }
+      .forEach { $0.representedObject = nil }
     AppDelegate.shared.menuController.pluginMenu.removeAllItems()
 
     for player in PlayerManager.shared.playerCores {
