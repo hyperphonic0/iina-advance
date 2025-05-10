@@ -273,7 +273,7 @@ extension PlayerWindowController {
       cropController.cropBoxView.alphaValue = 0
     }
 
-    if transition.isTopBarPlacementOrStyleChanging || transition.isBottomBarPlacementOrStyleChanging || transition.isTogglingVisibilityOfAnySidebar {
+    if transition.isTopBarPlacementOrStyleChanging || transition.isBottomBarPlacementOrStyleChanging || transition.isOpeningOrClosingAnySidebar {
       hideSeekPreviewImmediately()
     }
   }
@@ -401,8 +401,8 @@ extension PlayerWindowController {
       // Sidebars (if closing)
       let ΔWindowWidth = middleGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
       animateShowOrHideSidebars(transition: transition, layout: transition.inputLayout,
-                                setLeadingTo: transition.isHidingLeadingSidebar ? .hide : nil,
-                                setTrailingTo: transition.isHidingTrailingSidebar ? .hide : nil,
+                                setLeadingTo: transition.isClosingLeadingSidebar ? .hide : nil,
+                                setTrailingTo: transition.isClosingTrailingSidebar ? .hide : nil,
                                 ΔWindowWidth: ΔWindowWidth)
 
       // Do not do this when first opening the window though, because it will cause the window location restore to be incorrect.
@@ -562,18 +562,18 @@ extension PlayerWindowController {
     // Sidebars
 
     /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
-    if transition.isHidingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
+    if transition.isClosingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
       /// Finish closing (if closing)
       removeSidebarTabGroupView(group: tabToHide.group)
     }
-    if transition.isHidingTrailingSidebar, let tabToHide = transition.inputLayout.trailingSidebar.visibleTab {
+    if transition.isClosingTrailingSidebar, let tabToHide = transition.inputLayout.trailingSidebar.visibleTab {
       /// Finish closing (if closing).
       /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
       removeSidebarTabGroupView(group: tabToHide.group)
     }
 
     // - Leading Sidebar
-    if transition.isShowingLeadingSidebar {
+    if transition.isOpeningLeadingSidebar {
       // Opening sidebar from closed state
       prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
                               parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
@@ -585,7 +585,7 @@ extension PlayerWindowController {
     }
 
     // - Trailing Sidebar
-    if transition.isShowingTrailingSidebar {
+    if transition.isOpeningTrailingSidebar {
       // Opening sidebar from closed state
       prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
                               parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
@@ -972,8 +972,8 @@ extension PlayerWindowController {
     let ΔWindowWidth = transition.ΔWindowWidth
     animateShowOrHideSidebars(transition: transition,
                               layout: transition.outputLayout,
-                              setLeadingTo: transition.isShowingLeadingSidebar ? leadingSidebar.visibility : nil,
-                              setTrailingTo: transition.isShowingTrailingSidebar ? trailingSidebar.visibility : nil,
+                              setLeadingTo: transition.isOpeningLeadingSidebar ? leadingSidebar.visibility : nil,
+                              setTrailingTo: transition.isOpeningTrailingSidebar ? trailingSidebar.visibility : nil,
                               ΔWindowWidth: ΔWindowWidth)
 
     // Update sidebar downshift & tab heights
@@ -1723,14 +1723,14 @@ extension PlayerWindowController {
   /// `videoView` is smaller than that of the sidebar being toggled, must ensure that the sidebar being animated is below
   /// the other one, otherwise it will be briefly seen popping out on top of the other one.
   private func prepareDepthOrderOfOutsideSidebarsForToggle(_ transition: LayoutTransition) {
-    guard transition.isTogglingVisibilityOfAnySidebar,
+    guard transition.isOpeningOrClosingAnySidebar,
           transition.outputLayout.leadingSidebar.placement == .outsideViewport,
           transition.outputLayout.trailingSidebar.placement == .outsideViewport else { return }
     guard let contentView = window?.contentView else { return }
 
-    if transition.isShowingLeadingSidebar || transition.isHidingLeadingSidebar {
+    if transition.isOpeningLeadingSidebar || transition.isClosingLeadingSidebar {
       contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: trailingSidebarView)
-    } else if transition.isShowingTrailingSidebar || transition.isHidingTrailingSidebar {
+    } else if transition.isOpeningTrailingSidebar || transition.isClosingTrailingSidebar {
       contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: leadingSidebarView)
     }
   }

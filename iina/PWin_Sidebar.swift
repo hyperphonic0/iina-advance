@@ -259,12 +259,12 @@ struct Sidebar {
 extension PlayerWindowController {
   // MARK: - Show/Hide functions
 
-  func isShowing(sidebarTabGroup tabGroup: Sidebar.TabGroup) -> Bool {
+  func isOpening(sidebarTabGroup tabGroup: Sidebar.TabGroup) -> Bool {
     let layout = currentLayout
     return layout.leadingSidebar.visibleTabGroup == tabGroup || layout.trailingSidebar.visibleTabGroup == tabGroup
   }
 
-  func isShowing(sidebarTab tab: Sidebar.Tab) -> Bool {
+  func isOpening(sidebarTab tab: Sidebar.Tab) -> Bool {
     let layout = currentLayout
     return layout.leadingSidebar.visibleTab == tab || layout.trailingSidebar.visibleTab == tab
   }

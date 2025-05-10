@@ -603,7 +603,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   private func switchToTab(_ tab: Sidebar.Tab) {
     guard isViewLoaded else { return }
-    assert(player.windowController.isShowing(sidebarTabGroup: .settings),
+    assert(player.windowController.isOpening(sidebarTabGroup: .settings),
            "switchToTab should not be called when settings TabGroup is not shown")
     guard currentTab != tab else { return }
     guard tab.group == .settings else {

@@ -74,7 +74,7 @@ extension PlayerWindowController {
         // Avoid bounciness and possible unwanted video scaling animation (not needed for ->FS anyway)
         return false
       }
-      return isHidingLeadingSidebar || isHidingTrailingSidebar
+      return isClosingLeadingSidebar || isClosingTrailingSidebar
       || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
       || (inputLayout.spec.isLegacyStyle != outputLayout.spec.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
@@ -85,7 +85,7 @@ extension PlayerWindowController {
     // Always need to execute this step. But may not need to use an animation
     var needsAnimationForOpenFinalPanels: Bool {
       return (inputGeometry.topMarginHeight != outputGeometry.topMarginHeight)
-      || isShowingLeadingSidebar || isShowingTrailingSidebar
+      || isOpeningLeadingSidebar || isOpeningTrailingSidebar
       || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
       || (inputLayout.spec.isLegacyStyle != outputLayout.spec.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
@@ -196,38 +196,38 @@ extension PlayerWindowController {
       return inputLayout.trailingSidebarPlacement != outputLayout.trailingSidebarPlacement
     }
 
-    lazy var isShowingLeadingSidebar: Bool = {
-      return isShowing(.leadingSidebar)
+    lazy var isOpeningLeadingSidebar: Bool = {
+      return isOpening(.leadingSidebar)
     }()
 
-    lazy var isShowingTrailingSidebar: Bool = {
-      return isShowing(.trailingSidebar)
+    lazy var isOpeningTrailingSidebar: Bool = {
+      return isOpening(.trailingSidebar)
     }()
 
-    lazy var isHidingLeadingSidebar: Bool = {
-      return isHiding(.leadingSidebar)
+    lazy var isClosingLeadingSidebar: Bool = {
+      return isClosing(.leadingSidebar)
     }()
 
-    lazy var isHidingTrailingSidebar: Bool = {
-      return isHiding(.trailingSidebar)
+    lazy var isClosingTrailingSidebar: Bool = {
+      return isClosing(.trailingSidebar)
     }()
 
-    lazy var isTogglingVisibilityOfAnySidebar: Bool = {
-      return isShowingLeadingSidebar || isShowingTrailingSidebar || isHidingLeadingSidebar || isHidingTrailingSidebar
+    lazy var isOpeningOrClosingAnySidebar: Bool = {
+      return isOpeningLeadingSidebar || isOpeningTrailingSidebar || isClosingLeadingSidebar || isClosingTrailingSidebar
     }()
 
     /// Is opening given sidebar?
-    func isShowing(_ sidebarID: Preference.SidebarLocation) -> Bool {
+    func isOpening(_ sidebarID: Preference.SidebarLocation) -> Bool {
       let oldState = inputLayout.sidebar(withID: sidebarID)
       let newState = outputLayout.sidebar(withID: sidebarID)
       if !oldState.isVisible && newState.isVisible {
         return true
       }
-      return isHidingAndThenShowing(sidebarID)
+      return isClosingAndThenOpening(sidebarID)
     }
 
     /// Is closing given sidebar?
-    func isHiding(_ sidebarID: Preference.SidebarLocation) -> Bool {
+    func isClosing(_ sidebarID: Preference.SidebarLocation) -> Bool {
       let oldState = inputLayout.sidebar(withID: sidebarID)
       let newState = outputLayout.sidebar(withID: sidebarID)
       if oldState.isVisible {
@@ -239,14 +239,14 @@ extension PlayerWindowController {
           return true
         }
         if let visibleTabGroup = oldState.visibleTabGroup, !newState.tabGroups.contains(visibleTabGroup) {
-          Logger.log("isHiding(sidebarID:): visibleTabGroup \(visibleTabGroup.rawValue.quoted) is not present in newState!", level: .error)
+          Logger.log.error{"isClosing(sidebarID:): visibleTabGroup \(visibleTabGroup.rawValue.quoted) is not present in newState!"}
           return true
         }
       }
-      return isHidingAndThenShowing(sidebarID)
+      return isClosingAndThenOpening(sidebarID)
     }
 
-    func isHidingAndThenShowing(_ sidebarID: Preference.SidebarLocation) -> Bool {
+    func isClosingAndThenOpening(_ sidebarID: Preference.SidebarLocation) -> Bool {
       let oldState = inputLayout.sidebar(withID: sidebarID)
       let newState = outputLayout.sidebar(withID: sidebarID)
       if oldState.isVisible && newState.isVisible {
@@ -254,7 +254,7 @@ extension PlayerWindowController {
           return true
         }
         guard let oldGroup = oldState.visibleTabGroup, let newGroup = newState.visibleTabGroup else {
-          Logger.log("needToCloseAndReopen(sidebarID:): visibleTabGroup missing!", level: .error)
+          Logger.log.error{"needToCloseAndReopen(sidebarID:): visibleTabGroup missing!"}
           return false
         }
         if oldGroup != newGroup {

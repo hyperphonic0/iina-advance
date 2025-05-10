@@ -75,7 +75,7 @@ extension PlayerWindowController {
     if transition.isTogglingFullScreen {
       closeOldPanelsTiming = .easeOut
       openFinalPanelsTiming = .easeOut
-    } else if transition.isTogglingVisibilityOfAnySidebar {
+    } else if transition.isOpeningOrClosingAnySidebar {
       closeOldPanelsTiming = .easeIn
       openFinalPanelsTiming = .easeIn
     } else if transition.isExitingInteractiveMode {
@@ -447,7 +447,7 @@ extension PlayerWindowController {
     // LEADING
     let insideLeadingBarWidth: CGFloat
     let outsideLeadingBarWidth: CGFloat
-    if transition.isHidingLeadingSidebar {
+    if transition.isClosingLeadingSidebar {
       insideLeadingBarWidth = 0
       outsideLeadingBarWidth = 0
     } else {
@@ -458,7 +458,7 @@ extension PlayerWindowController {
     // TRAILING
     let insideTrailingBarWidth: CGFloat
     let outsideTrailingBarWidth: CGFloat
-    if transition.isHidingTrailingSidebar {
+    if transition.isClosingTrailingSidebar {
       insideTrailingBarWidth = 0
       outsideTrailingBarWidth = 0
     } else {

@@ -762,7 +762,7 @@ extension PlayerWindowController {
       tasks = []
 
     case .creatingNew:
-      log.verbose("[GeoTF:\(cxt.name)] Window is opening: building initial layout tasks")
+      log.verbose{"[GeoTF:\(cxt.name)] Window is opening: building initial layout tasks"}
 
       tasks = buildTasksForNewWindow(&cxt)
 
@@ -974,16 +974,16 @@ extension PlayerWindowController {
     var mode: PlayerWindowMode = .windowedNormal
 
     if player.startInMusicModeRequested {
-      log.debug("[GeoTF:\(cxt.name)] Will open window in music mode as requested via CLI")
+      log.debug{"[GeoTF:\(cxt.name)] Will open window in music mode as requested via CLI"}
       player.startInMusicModeRequested = false  // reset for reuse
       mode = .musicMode
     } else if Preference.bool(for: .autoSwitchToMusicMode) && cxt.currentMediaAudioStatus.isAudio {
-      log.debug("[GeoTF:\(cxt.name)] Opened media is audio: will open window in music mode")
+      log.debug{"[GeoTF:\(cxt.name)] Opened media is audio: will open window in music mode"}
       mode = .musicMode
     } else if Preference.bool(for: .fullScreenWhenOpen) {
       player.didEnterFullScreenViaUserToggle = false
       let useLegacyFS = Preference.bool(for: .useLegacyFullScreen)
-      log.debug("[GeoTF:\(cxt.name)] Changing to \(useLegacyFS ? "legacy " : "")fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
+      log.debug{"[GeoTF:\(cxt.name)] Changing to \(useLegacyFS ? "legacy " : "")fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y"}
       if useLegacyFS {
         mode = .fullScreenNormal
       } else {
@@ -1029,7 +1029,7 @@ extension PlayerWindowController {
       let initialGeo = cxt.outputLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, video: cxt.outputVidGeo).refitted(using: .stayInside)
       let windowSize = initialGeo.windowFrame.size
       let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
-      log.verbose("Initial layout: starting with tiny window, videoAspect=\(cxt.outputVidGeo.videoAspectCAR), windowSize=\(windowSize)")
+      log.verbose{"Initial layout: starting with tiny window, videoAspect=\(cxt.outputVidGeo.videoAspectCAR), windowSize=\(windowSize)"}
       windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refitted(using: .stayInside)
     }
 

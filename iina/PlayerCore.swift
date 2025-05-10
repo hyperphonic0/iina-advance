@@ -248,7 +248,7 @@ class PlayerCore: NSObject {
   var useExactSeekForCurrentFile: Bool = true
 
   var isPlaylistVisible: Bool {
-    isInMiniPlayer ? windowController.miniPlayer.isPlaylistVisible : windowController.isShowing(sidebarTab: .playlist)
+    isInMiniPlayer ? windowController.miniPlayer.isPlaylistVisible : windowController.isOpening(sidebarTab: .playlist)
   }
 
   var isOnlyOpenPlayer: Bool {
@@ -3567,7 +3567,7 @@ class PlayerCore: NSObject {
           guard windowController.miniPlayer.isPlaylistVisible else { return }
           windowController.miniPlayer.loadIfNeeded()
         } else {
-          guard windowController.isShowing(sidebarTab: .chapters) else { return }
+          guard windowController.isOpening(sidebarTab: .chapters) else { return }
         }
 
         windowController.playlistView.chapterTableView.reloadData()
