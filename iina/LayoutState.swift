@@ -669,7 +669,7 @@ struct LayoutState {
 
   // Converts & updates existing geometry to this layout
   func convertWindowedModeGeometry(from existingGeometry: PWinGeometry, video: VideoGeometry? = nil,
-                                   pinWidthOrHeightIfAtMax: Bool,
+                                   pinWidthOrHeightIfAtMax: Bool, pinToAnySideOfScreen: Bool,
                                    applyOffsetIndex offsetIndex: Int = 0, _ log: Logger.Subsystem) -> PWinGeometry {
     assert(existingGeometry.mode.isWindowed, "Expected existingGeometry to be windowed: \(existingGeometry)")
     let resizedBarsGeo = existingGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
@@ -681,11 +681,12 @@ struct LayoutState {
                                                           insideBottom: insideBottomBarHeight,
                                                           insideLeading: insideLeadingBarWidth,
                                                           video: video,
-                                                          pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax).refitted()
+                                                          pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax,
+                                                          pinToAnySideOfScreen: pinToAnySideOfScreen).refitted()
 
     var geo = resizedBarsGeo
     if offsetIndex > 0 {
-      let screenVisibleFrame: NSRect = PWinGeometry.getContainerFrame(forScreenID: geo.screenID, screenFit: .stayInside)!
+      let screenVisibleFrame: NSRect = geo.getContainerFrame(screenFit: .stayInside)!
       let offsetIncrement = Constants.Distance.multiWindowOpenOffsetIncrement
       for _ in 1...offsetIndex {
         var newWindowFrame = NSRect(origin: NSPoint(x: geo.windowFrame.origin.x + offsetIncrement,

@@ -319,8 +319,10 @@ extension PlayerWindowController {
       } else {
         prevWindowedGeo = geo.windowed
       }
+      let pinToAnySideOfScreen = !isWindowInitialLayout && !Preference.bool(for: .lockViewportToVideoSize)
       return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, video: inputGeometry.video,
-                                                      pinWidthOrHeightIfAtMax: !isWindowInitialLayout, log)
+                                                      pinWidthOrHeightIfAtMax: !isWindowInitialLayout,
+                                                      pinToAnySideOfScreen: pinToAnySideOfScreen, log)
 
     case .windowedInteractive:
       if inputGeometry.mode == .windowedInteractive {
@@ -361,11 +363,13 @@ extension PlayerWindowController {
       let outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight >= transition.outputLayout.topBarHeight ? transition.outputLayout.outsideTopBarHeight : 0
 
       if transition.isEnteringInteractiveMode {
+        let pinToSides = !Preference.bool(for: .lockViewportToVideoSize)
         return transition.outputGeometry.withResizedBars(outsideTop: 0, outsideTrailing: 0,
                                                          outsideBottom: 0, outsideLeading: 0,
                                                          insideTop: 0, insideTrailing: 0,
                                                          insideBottom: 0, insideLeading: 0,
-                                                         pinWidthOrHeightIfAtMax: !(Preference.bool(for: .lockViewportToVideoSize)))
+                                                         pinWidthOrHeightIfAtMax: pinToSides,
+                                                         pinToAnySideOfScreen: pinToSides)
 
       } else if transition.isExitingInteractiveMode {
         let videoFrame = transition.outputGeometry.videoFrameInScreenCoords
@@ -399,7 +403,7 @@ extension PlayerWindowController {
         return nil
       }
       // Only bottom bar needs to be closed. No need to constrain in screen
-      return transition.inputGeometry.withResizedOutsideBars(bottom: 0)
+      return transition.inputGeometry.withResizedBars(outsideBottom: 0, pinWidthOrHeightIfAtMax: false, pinToAnySideOfScreen: false)
     }
 
     // TOP
@@ -477,6 +481,7 @@ extension PlayerWindowController {
                                         allowVideoToOverlapCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
     }
 
+    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
     let resizedBarsGeo = transition.outputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
                                                                    outsideTrailing: outsideTrailingBarWidth,
                                                                    outsideBottom: outsideBottomBarHeight,
@@ -485,7 +490,8 @@ extension PlayerWindowController {
                                                                    insideTrailing: insideTrailingBarWidth,
                                                                    insideBottom: insideBottomBarHeight,
                                                                    insideLeading: insideLeadingBarWidth,
-                                                                   pinWidthOrHeightIfAtMax: true)
+                                                                   pinWidthOrHeightIfAtMax: true,
+                                                                   pinToAnySideOfScreen: !lockViewportToVideoSize)
     return resizedBarsGeo.refitted()
   }
 

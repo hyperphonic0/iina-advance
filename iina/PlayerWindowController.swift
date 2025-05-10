@@ -12,7 +12,6 @@ import Cocoa
 // FIXME: multiple issues with crop rendering
 // TODO: persist mpv properties in saved player state
 // TODO: support parent playlist
-// TODO: stick window to individual side of screen
 // TODO: auto-adjust window size when Dock shown/hidden
 // TODO: investigate generating thumbnails & Now Playing art from mpv screenshot cmd via RPC
 // TODO: merge Music Mode geometry with PWin, and add .mini to OSC layout types
@@ -1729,7 +1728,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                                insideTop: 0, insideTrailing: 0,
                                insideBottom: 0, insideLeading: 0,
                                video: newVideoGeo,
-                               pinWidthOrHeightIfAtMax: !lockViewportToVideoSize)
+                               pinWidthOrHeightIfAtMax: !lockViewportToVideoSize,
+                               pinToAnySideOfScreen: !lockViewportToVideoSize)
 
             if lockViewportToVideoSize {
               // Otherwise try to avoid shrinking the window too much if the aspect changes dramatically.

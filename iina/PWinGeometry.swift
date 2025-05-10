@@ -640,7 +640,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return PWinGeometry.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
   }
 
-  private func getContainerFrame(screenFit: ScreenFit? = nil) -> NSRect? {
+  func getContainerFrame(screenFit: ScreenFit? = nil) -> NSRect? {
     return PWinGeometry.getContainerFrame(forScreenID: screenID, screenFit: screenFit ?? self.screenFit)
   }
 
@@ -888,37 +888,32 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return clone(video: newVidGeo).scalingViewport(to: desiredViewportSize)
   }
 
-  // Resizes the window appropriately to add or subtract from outside bars. Adjusts window origin to prevent the viewport from moving
-  // (but clamps each dimension's size to the container/screen, if any).
+  /// Resizes the window appropriately to add or subtract from outside bar sizes (a bar in its "closed" state == 0).
+  /// Adjusts window origin to prevent the viewport from moving (but clamps each dimension's size to the container/screen, if any).
+  ///
+  /// If `pinWidthOrHeightIfAtMax` is `true` and the window's width or height, independently, is at max, that dimension will stay at max.
+  /// This way the window will seem to "stick" to the screen edges when already maximized.
+  /// But if the window is already smaller, the window will be allowed to shrink or grow normally.
+  /// This should be more intuitive to the user which is expecting "near" full screen behavior when maximized.
   func withResizedOutsideBars(top: CGFloat? = nil, trailing: CGFloat? = nil,
-                              bottom: CGFloat? = nil, leading: CGFloat? = nil) -> PWinGeometry {
+                              bottom: CGFloat? = nil, leading: CGFloat? = nil,
+                              pinWidthOrHeightIfAtMax: Bool,
+                              pinToAnySideOfScreen: Bool) -> PWinGeometry {
     assert((top ?? 0) >= 0)
     assert((trailing ?? 0) >= 0)
     assert((bottom ?? 0) >= 0)
     assert((trailing ?? 0) >= 0)
 
-    var ΔW: CGFloat = 0
-    var ΔH: CGFloat = 0
-    var ΔX: CGFloat = 0
-    var ΔY: CGFloat = 0
-    if let top {
-      let ΔTop = top - self.outsideBars.top
-      ΔH += ΔTop
-    }
-    if let trailing {
-      let ΔRight = trailing - self.outsideBars.trailing
-      ΔW += ΔRight
-    }
-    if let bottom {
-      let ΔBottom = bottom - self.outsideBars.bottom
-      ΔH += ΔBottom
-      ΔY -= ΔBottom
-    }
-    if let leading {
-      let ΔLeft = leading - self.outsideBars.leading
-      ΔW += ΔLeft
-      ΔX -= ΔLeft
-    }
+    let ΔTop = (top ?? self.outsideBars.top) - self.outsideBars.top
+    let ΔTrailing = (trailing ?? self.outsideBars.trailing) - self.outsideBars.trailing
+    let ΔBottom = (bottom ?? self.outsideBars.bottom) - self.outsideBars.bottom
+    let ΔLeading = (leading ?? self.outsideBars.leading) - self.outsideBars.leading
+
+    let ΔX = -ΔLeading
+    let ΔY = -ΔBottom
+
+    let ΔW = ΔLeading + ΔTrailing
+    let ΔH = ΔTop + ΔBottom
 
     var newX = windowFrame.origin.x + ΔX
     var newY = windowFrame.origin.y + ΔY
@@ -927,15 +922,31 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     // Special logic if output has reached out the size of the screen.
     // Do not allow it to get bigger than the screen.
-    if let screenFrame = PWinGeometry.getContainerFrame(forScreenID: screenID, screenFit: screenFit) {
-      if newWindowWidth > screenFrame.width {
+    if let screenFrame = getContainerFrame(), screenFit.shouldMoveWindowToKeepInContainer {
+      if newWindowWidth > screenFrame.width || (pinWidthOrHeightIfAtMax && (abs(screenFrame.width - windowFrame.width) <= 1)) {
         newWindowWidth = screenFrame.width
-        newX = windowFrame.origin.x  // don't move in X
+        newX = screenFrame.origin.x  // Move to fit in screen
+      } else if pinToAnySideOfScreen {
+        if abs(screenFrame.minX - windowFrame.minX) <= 1 {
+          // Was aligned to screen's LEADING edge
+          newX = screenFrame.minX
+        } else if abs(screenFrame.maxX - windowFrame.maxX) <= 1 {
+          // Was aligned to screen's TRAILING edge
+          newX = screenFrame.maxX - newWindowWidth
+        }
       }
 
-      if newWindowHeight > screenFrame.height {
+      if newWindowHeight > screenFrame.height || (pinWidthOrHeightIfAtMax && (abs(screenFrame.height - windowFrame.height) <= 1)) {
         newWindowHeight = screenFrame.height
-        newY = windowFrame.origin.y
+        newY = screenFrame.origin.y  // Move to fit in screen
+      } else if pinToAnySideOfScreen {
+        if abs(screenFrame.minY - windowFrame.minY) <= 1 {
+          // Was aligned to screen's BOTTOM edge
+          newY = screenFrame.minY
+        } else if abs(screenFrame.maxY - windowFrame.maxY) <= 1 {
+          // Was aligned to screen's TOP edge
+          newY = screenFrame.maxY - newWindowHeight
+        }
       }
     }
 
@@ -945,99 +956,37 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                     trailing: trailing ?? outsideBars.trailing,
                                     bottom: bottom ?? outsideBars.bottom,
                                     leading: leading ?? outsideBars.leading)
-    return self.clone(windowFrame: newWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars)
+
+    let resizedBarsGeo = clone(windowFrame: newWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars)
+    log.verbose{"[ResizeBars] ΔW=\(ΔW.logStr) ΔH=\(ΔH.logStr) pinMax=\(pinWidthOrHeightIfAtMax.yn) pinSides=\(pinToAnySideOfScreen.yn) moveToKeepInScreen:\(resizedBarsGeo.screenFit.shouldMoveWindowToKeepInContainer.yesno)"}
+    return resizedBarsGeo
   }
 
   /// Like `withResizedOutsideBars`, but can resize the inside bars at the same time.
-  /// If `pinWidthOrHeightIfAtMax` is `true` and the window's width or height,independently, is at max, that dimension will stay at max.
-  /// This way the window will seem to "stick" to the screen edges when already maximized.
-  /// But if the window is already smaller, the window will be allowed to shrink or grow normally.
-  /// This should be more intuitive to the user which is expecting "near" full screen behavior when maximized.
   func withResizedBars(screenFit: ScreenFit? = nil, mode: PlayerWindowMode? = nil,
                        outsideTop: CGFloat? = nil, outsideTrailing: CGFloat? = nil,
                        outsideBottom: CGFloat? = nil, outsideLeading: CGFloat? = nil,
                        insideTop: CGFloat? = nil, insideTrailing: CGFloat? = nil,
                        insideBottom: CGFloat? = nil, insideLeading: CGFloat? = nil,
                        video: VideoGeometry? = nil,
-                       pinWidthOrHeightIfAtMax: Bool = false) -> PWinGeometry {
+                       pinWidthOrHeightIfAtMax: Bool = false,
+                       pinToAnySideOfScreen: Bool = false) -> PWinGeometry {
 
+    // Inside bars
     let newInsideBars = MarginQuad(top: insideTop ?? insideBars.top,
                                    trailing: insideTrailing ?? insideBars.trailing,
                                    bottom: insideBottom ?? insideBars.bottom,
                                    leading: insideLeading ?? insideBars.leading)
-    // Inside bars
     let resizedInsideBarsGeo = clone(screenFit: screenFit, mode: mode, insideBars: newInsideBars, video: video)
 
-    var resizedBarsGeo = resizedInsideBarsGeo.withResizedOutsideBars(top: outsideTop,
-                                                                     trailing: outsideTrailing,
-                                                                     bottom: outsideBottom,
-                                                                     leading: outsideLeading)
-
-    if pinWidthOrHeightIfAtMax {
-      resizedBarsGeo = pinToMaxWidthOrHeightIfAtMax(of: resizedBarsGeo)
-    }
-    return resizedBarsGeo
+    // Outside bars
+    return resizedInsideBarsGeo.withResizedOutsideBars(top: outsideTop,
+                                                       trailing: outsideTrailing,
+                                                       bottom: outsideBottom,
+                                                       leading: outsideLeading,
+                                                       pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax,
+                                                       pinToAnySideOfScreen: pinToAnySideOfScreen)
   }
-
-  private func pinToMaxWidthOrHeightIfAtMax(of resizedBarsGeo: PWinGeometry) -> PWinGeometry {
-    guard let screenFrame = PWinGeometry.getContainerFrame(forScreenID: screenID, screenFit: resizedBarsGeo.screenFit) else { return resizedBarsGeo }
-    let fillHeightOfScreen = screenFrame.height - windowFrame.height <= 0
-    let fillWidthOfScreen = screenFrame.width - windowFrame.width <= 0
-
-    let ΔOutsideWidth = resizedBarsGeo.outsideBars.totalWidth - outsideBars.totalWidth
-    let ΔOutsideHeight = resizedBarsGeo.outsideBars.totalHeight - outsideBars.totalHeight
-
-    log.verbose{"[ResizeBars] W={Δ:\(ΔOutsideWidth.logStr) fill:\(fillWidthOfScreen.yn)}, H={Δ:\(ΔOutsideHeight.logStr) fill:\(fillHeightOfScreen.yn)) moveToKeepInScreen:\(resizedBarsGeo.screenFit.shouldMoveWindowToKeepInContainer.yesno)"}
-
-    let newViewportSize: NSSize
-    // If window already fills screen width, do not shrink window width when collapsing outside sidebars.
-    if ΔOutsideWidth != 0, fillWidthOfScreen {
-      let newViewportWidth = screenFrame.width - resizedBarsGeo.outsideBars.totalWidth
-      let newViewportHeight: CGFloat
-      if fillHeightOfScreen {
-        newViewportHeight = screenFrame.height - resizedBarsGeo.outsideBars.totalHeight
-      } else {
-        let widthRatio = newViewportWidth / viewportSize.width
-        newViewportHeight = (viewportSize.height * widthRatio).rounded()
-      }
-      newViewportSize = NSSize(width: newViewportWidth, height: newViewportHeight)
-    } else if ΔOutsideHeight != 0, fillHeightOfScreen {
-      // If window already fills screen height, keep window height (do not shrink window) when collapsing outside bars.
-      let newViewportHeight = screenFrame.height - resizedBarsGeo.outsideBars.totalHeight
-      let heightRatio = newViewportHeight / viewportSize.height
-      let newViewportWidth = fillWidthOfScreen ? viewportSize.width : round(viewportSize.width * heightRatio)
-      newViewportSize = NSSize(width: newViewportWidth, height: newViewportHeight)
-    } else {
-      return resizedBarsGeo
-    }
-
-    var pinnedGeo = resizedBarsGeo.scalingViewport(to: newViewportSize, mode: resizedBarsGeo.mode)
-
-    if !pinnedGeo.screenFit.shouldMoveWindowToKeepInContainer {
-      /// Kludge to fix unwanted window movement when opening/closing sidebars and `Preference.moveWindowIntoVisibleScreenOnResize==false`.
-      /// Use previous origin, because scalingViewport() causes it to move when we don't want it to.
-      let newOrigin = CGPoint(x: fillWidthOfScreen ? windowFrame.origin.x : pinnedGeo.windowFrame.origin.x,
-                              y: fillHeightOfScreen ? windowFrame.origin.y : pinnedGeo.windowFrame.origin.y)
-      let newWindowFrame = NSRect(origin: newOrigin, size: pinnedGeo.windowFrame.size)
-      pinnedGeo = pinnedGeo.clone(windowFrame: newWindowFrame)
-    }
-    /// Else window origin was already changed by `scalingViewport` to keep it on screen. No change needed
-    return pinnedGeo
-  }
-
-//  private func pinToAnySideOfScreen(of resizedBarsGeo: PWinGeometry) -> PWinGeometry {
-//    guard let screenFrame = PWinGeometry.getContainerFrame(forScreenID: screenID, screenFit: resizedBarsGeo.screenFit) else { return resizedBarsGeo }
-//
-//    let wasAlignedToLeading = screenFrame.minX.distance(to: windowFrame.minX) <= 1
-//    let wasAlignedToTrailing = screenFrame.maxX.distance(to: windowFrame.maxX) <= 1
-//    let wasAlignedToBottom = screenFrame.minY.distance(to: windowFrame.minY) <= 1
-//    let wasAlignedToTop = screenFrame.maxY.distance(to: windowFrame.maxY) <= 1
-//
-//    if wasAlignedToLeading {
-//      let Δx = resizedBarsGeo.windowFrame.minX - windowFrame.minX
-//
-//    }
-//  }
 
   /// Calculate the window frame from a parsed struct of mpv's `geometry` option.
   func apply(mpvGeometry: MPVGeometryDef, desiredWindowSize: NSSize) -> PWinGeometry {
@@ -1198,7 +1147,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                      outsideLeading: 0,
                                      insideTop: 0, insideTrailing: 0,
                                      insideBottom: 0, insideLeading: 0,
-                                     pinWidthOrHeightIfAtMax: !lockViewportToVideoSize)
+                                     pinWidthOrHeightIfAtMax: !lockViewportToVideoSize,
+                                     pinToAnySideOfScreen: !lockViewportToVideoSize)
     return resizedGeo.refitted()
   }
 
@@ -1213,7 +1163,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                      outsideBottom: 0, outsideLeading: 0,
                                      insideTop: 0, insideTrailing: 0,
                                      insideBottom: 0, insideLeading: 0,
-                                     pinWidthOrHeightIfAtMax: true)
+                                     pinWidthOrHeightIfAtMax: true,
+                                     pinToAnySideOfScreen: true)
     return resizedGeo
   }
 
