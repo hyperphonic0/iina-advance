@@ -8,9 +8,6 @@
 
 import Cocoa
 
-// TODO: need to reconcile undo/redo with player non-UI actions
-fileprivate let enableUndoRedo = true
-
 fileprivate let prefixMinLength = 7
 fileprivate let displayNameMinLength = 12
 
@@ -472,7 +469,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   // MARK: - Playlist Table CRUD
 
   func insertPlaylistRows(_ desiredRowList: [PlaybackID], at targetRowIndex: Int? = nil) {
-    insertPlaylistRows(desiredRowList, at: targetRowIndex, registerUndoRedo: enableUndoRedo)
+    insertPlaylistRows(desiredRowList, at: targetRowIndex, registerUndoRedo: true)
   }
 
   func insertPlaylistRows(_ desiredRowList: [PlaybackID], at targetRowIndex: Int? = nil, registerUndoRedo: Bool) {
@@ -515,7 +512,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   /// Drag & drop within `playlistTableView`
   func movePlaylistRows(from rowIndexes: IndexSet, to targetRowIndex: Int) {
-    movePlaylistRows(from: rowIndexes, to: targetRowIndex, registerUndoRedo: enableUndoRedo)
+    movePlaylistRows(from: rowIndexes, to: targetRowIndex, registerUndoRedo: true)
   }
 
   func movePlaylistRows(from rowIndexes: IndexSet, to targetRowIndex: Int, registerUndoRedo: Bool) {
@@ -562,7 +559,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   func removePlaylistRows(_ rowIndexes: IndexSet) {
-    removePlaylistRows(rowIndexes, registerUndoRedo: enableUndoRedo)
+    removePlaylistRows(rowIndexes, registerUndoRedo: true)
   }
 
   func removePlaylistRows(_ rowIndexes: IndexSet, registerUndoRedo: Bool) {

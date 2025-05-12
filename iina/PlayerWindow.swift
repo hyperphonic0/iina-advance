@@ -196,11 +196,10 @@ class PlayerWindow: NSWindow {
       return true
     }
 
-    /// NOTE: send to PlayerWindowController instead of PlayerWindow!
-    /// Otherwise it may get sent to `performKeyEquivalent` multiple times
-    log.verbose("KeyEquiv: key is unmapped. Beeping")
-    pwc.keyDown(with: event)
-    return true
+    // Apparently it is important to return false here, for some system shortcuts to be handled,
+    // e.g. ⌘` (command+grave), which cycles application windows
+    log.verbose("KeyEquiv: key is unrecognized")
+    return false
   }
 
   private func shouldFavorArrowKeyNavigation(for responder: NSResponder) -> Bool {
@@ -281,7 +280,8 @@ class PlayerWindow: NSWindow {
         return pwcResponse
       }
       // See if super can handle it
-      return super.validateUserInterfaceItem(item)
+      let response = super.validateUserInterfaceItem(item)
+      return response
     }
   }
 
