@@ -98,7 +98,8 @@ class PlayerWindow: NSWindow {
     if staticMenuItemMappings.contains(where: { $0.normalizedMpvKey == normalizedKeyCode }) {
       // For the sake of consistency, do not fall through & try to process a key mapping, even
       // if the corresponding menu item is disabled.
-      log.verbose("KeyDown: key was not handled, but is a known menu item binding; ignoring")
+      log.verbose("KeyDown: key is a known menu item binding but was not handled. Beeping")
+      pwc.keyDown(with: event)
       return
     }
 
@@ -173,7 +174,7 @@ class PlayerWindow: NSWindow {
     pwc.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
 
     if menu?.performKeyEquivalent(with: event) == true {
-      log.verbose("KeyDown: was handled by menu item; returning")
+      log.verbose("KeyEquiv: key was handled by menu item; returning")
       return true
     }
 
@@ -181,7 +182,7 @@ class PlayerWindow: NSWindow {
     if staticMenuItemMappings.contains(where: { $0.normalizedMpvKey == normalizedKeyCode }) {
       // For the sake of consistency, do not fall through & try to process a key mapping, even
       // if the corresponding menu item is disabled.
-      log.verbose("KeyDown: key was not handled, but is a known menu item binding")
+      log.verbose("KeyEquiv: key was not handled, but is a known menu item binding. Skipping")
       return false
     }
 
@@ -191,13 +192,13 @@ class PlayerWindow: NSWindow {
     /// Let's take all the bindings which don't include command and invert their precedence, so that the window is allowed to handle it
     /// before the menu.
     if pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode) {
-      log.trace("Key equiv: trying to process as a key binding")
+      log.trace("KeyEquiv: trying to process as a key binding")
       return true
     }
 
     /// NOTE: send to PlayerWindowController instead of PlayerWindow!
     /// Otherwise it may get sent to `performKeyEquivalent` multiple times
-    log.verbose("Key equiv: unmapped key; beeping")
+    log.verbose("KeyEquiv: key is unmapped. Beeping")
     pwc.keyDown(with: event)
     return true
   }

@@ -9,8 +9,9 @@
 import Foundation
 
 class TableUIChangeBuilder {
-  // Derives the inverse of the given `TableUIChange` (as suitable for an Undo) and returns it.
-  func inverted(from original: TableUIChange, andAdjustAllIndexesBy offset: Int = 0,
+  /// Derives the inverse of the given `TableUIChange` (as suitable for an Undo) and returns it.
+  /// `indexAdjustment`: if given, shifts all indexes by this amount. Should not be needed for most cases.
+  func inverted(from original: TableUIChange, andAdjustAllIndexesBy indexAdjustment: Int = 0,
                 selectNextRowAfterDelete: Bool, completionHandler: TableUIChange.CompletionHandler? = nil) -> TableUIChange {
     let inverted: TableUIChange
 
@@ -39,7 +40,7 @@ class TableUIChangeBuilder {
     }
 
     if let removed = original.toRemove {
-      inverted.toInsert = IndexSet(removed.map({ $0 + offset }))
+      inverted.toInsert = IndexSet(removed.map({ $0 + indexAdjustment }))
       // Add inserted lines to selection
       for insertIndex in inverted.toInsert! {
         inverted.newSelectedRowIndexes?.insert(insertIndex)
@@ -47,11 +48,11 @@ class TableUIChangeBuilder {
       Logger.log.verbose{"Invert: changed removes=\(removed.map{$0}) into inserts=\(inverted.toInsert!.map{$0})"}
     }
     if let toInsert = original.toInsert {
-      inverted.toRemove = IndexSet(toInsert.map({ $0 + offset }))
+      inverted.toRemove = IndexSet(toInsert.map({ $0 + indexAdjustment }))
       Logger.log.verbose{"Invert: changed inserts=\(toInsert.map{$0}) into removes=\(inverted.toRemove!.map{$0})"}
     }
     if let toUpdate = original.toUpdate {
-      inverted.toUpdate = IndexSet(toUpdate.map({ $0 + offset }))
+      inverted.toUpdate = IndexSet(toUpdate.map({ $0 + indexAdjustment }))
       Logger.log.verbose{"Invert: changed updates=\(toUpdate.map{$0}) into updates=\(inverted.toUpdate!.map{$0})"}
       // Add updated lines to selection
       for updateIndex in inverted.toUpdate! {
@@ -62,8 +63,8 @@ class TableUIChangeBuilder {
       var movePairsInverted: [(Int, Int)] = []
 
       for (fromIndex, toIndex) in movePairsOrig {
-        let fromIndexNew = toIndex + offset
-        let toIndexNew = fromIndex + offset
+        let fromIndexNew = toIndex + indexAdjustment
+        let toIndexNew = fromIndex + indexAdjustment
         movePairsInverted.append((fromIndexNew, toIndexNew))
       }
 

@@ -97,7 +97,7 @@ extension PlayerWindowController {
         window.styleMask.remove(.resizable)
 
         // auto hide menubar and dock (this will freeze all other animations, so must do it last)
-        updatePresentationOptionsForLegacyFullScreen(entering: true)
+        updatePresentationOptions(windowIsLegacyFS: true)
 
         /// When restoring, it's possible this window is not actually topmost.
         /// Make sure to check before putting it on top.
@@ -920,7 +920,7 @@ extension PlayerWindowController {
 
     if transition.isExitingLegacyFullScreen {
       /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
-      updatePresentationOptionsForLegacyFullScreen(entering: false)
+      updatePresentationOptions(windowIsLegacyFS: false)
     }
 
     // Update heights to their final values:

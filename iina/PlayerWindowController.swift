@@ -961,7 +961,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
 
     if currentLayout.isLegacyFullScreen {
-      updatePresentationOptionsForLegacyFullScreen(entering: false)
+      updatePresentationOptions(windowIsLegacyFS: false)
     }
 
     // Stop playing. This will save state if configured to do so:
@@ -1171,22 +1171,20 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Hide menu bar & dock if current window is in legacy full screen.
   /// Show menu bar & dock if current window is not in full screen (either legacy or native).
-  func updatePresentationOptionsForLegacyFullScreen(entering: Bool? = nil) {
+  func updatePresentationOptions(windowIsLegacyFS: Bool) {
     assert(DispatchQueue.isExecutingIn(.main))
+    guard let window else { return }
 
-    // Use currentLayout if not explicitly specified
-    var isEnteringLegacyFS = entering ?? currentLayout.isLegacyFullScreen
-    if let window, window.isAnotherWindowInFullScreen {
-      isEnteringLegacyFS = true  // override if still in FS in another window
-    }
+    // Set to true if in legacy FS in any window
+    let appIsLegacyFS = windowIsLegacyFS || window.isAnotherWindowInLegacyFullScreen
 
     guard !NSApp.presentationOptions.contains(.fullScreen) else {
       log.error("Cannot add presentation options for legacy full screen: window is already in full screen!")
       return
     }
 
-    log.verbose{"Updating presentationOptions, legacyFS=\(isEnteringLegacyFS ? "entering" : "exiting")"}
-    if isEnteringLegacyFS {
+    log.verbose{"Updating presentationOptions: legacyFS=\(appIsLegacyFS.yn)"}
+    if appIsLegacyFS {
       // Unfortunately, the check for native FS can return false if the window is in full screen but not the active space.
       // Fall back to checking this one
       guard !NSApp.presentationOptions.contains(.hideMenuBar) else {

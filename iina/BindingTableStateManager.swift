@@ -112,7 +112,8 @@ class BindingTableStateManager: NSObject {
       let userConfSectionStartIndexOld = tableStateOld.appInputConfig.userConfSectionStartIndex
       let userConfSectionStartIndexNew = tableStateNew.appInputConfig.userConfSectionStartIndex
       let userConfSectionOffsetChange = userConfSectionStartIndexOld - userConfSectionStartIndexNew
-      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange, selectNextRowAfterDelete: selectNextRowAfterDelete)
+      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange,
+                                                             selectNextRowAfterDelete: selectNextRowAfterDelete)
       tableUIChangeUndo.setUpFlashForChangedRows()
 
       let bindingRowsOld = tableStateOld.appInputConfig.bindingCandidateList

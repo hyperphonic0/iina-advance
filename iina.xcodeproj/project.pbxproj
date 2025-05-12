@@ -2762,19 +2762,13 @@
 		84D377681D7413D8007F7396 /* Accessories */ = {
 			isa = PBXGroup;
 			children = (
+				D14A45762DD1D48A007FEF8C /* Table */,
 				D1D5EC912D585F8700B468FA /* WindowController.swift */,
 				D13BEC542D476E6400BF1071 /* SpacerView.swift */,
-				D1E407B82CC1CA73002A2F9B /* TableDragDelegate.swift */,
 				51096C0A2CD88BEC00702C31 /* MPVOptionDefaults.swift */,
 				E3DBD23C218EF4F100B3AFBF /* AboutWindowContributorAvatarItem.swift */,
 				E3DBD23D218EF4F100B3AFBF /* AboutWindowContributorAvatarItem.xib */,
 				9E47DABF1E3CFA6D00457420 /* DurationDisplayTextField.swift */,
-				D19F9DA928645C860054CC45 /* EditableTableView.swift */,
-				D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */,
-				D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */,
-				D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */,
-				D1EAF5E628E6B6780023BACF /* TableUIChange.swift */,
-				D1D87E032932086000737886 /* TableUIChangeBuilder.swift */,
 				D13A7F172D3C55AD00840277 /* Slider */,
 				8487BEC01D744FA800FD17B0 /* FlippedView.swift */,
 				84817C971DBDCE4300CC2279 /* RoundedColorWell.swift */,
@@ -2921,6 +2915,20 @@
 				D160783A2D140DDB00105001 /* BarFactoryUtil.swift */,
 			);
 			path = Slider;
+			sourceTree = "<group>";
+		};
+		D14A45762DD1D48A007FEF8C /* Table */ = {
+			isa = PBXGroup;
+			children = (
+				D1E407B82CC1CA73002A2F9B /* TableDragDelegate.swift */,
+				D19F9DA928645C860054CC45 /* EditableTableView.swift */,
+				D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */,
+				D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */,
+				D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */,
+				D1EAF5E628E6B6780023BACF /* TableUIChange.swift */,
+				D1D87E032932086000737886 /* TableUIChangeBuilder.swift */,
+			);
+			path = Table;
 			sourceTree = "<group>";
 		};
 		D1A44D882A5E18B10089B283 /* PlayerWindow */ = {

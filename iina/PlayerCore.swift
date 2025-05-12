@@ -1721,34 +1721,7 @@ class PlayerCore: NSObject {
     }
   }
 
-  func playlistMove(_ from: Int, to: Int) {
-    mpv.queue.async { [self] in
-      _playlistMove(from, to: to)
-      _reloadPlaylist()
-    }
-  }
-
-  func playlistMove(_ srcRows: IndexSet, to dstRow: Int, thenPostNotification: Bool = true) {
-    mpv.queue.async { [self] in
-      log.debug{"Playlist move items: \(srcRows) → \(dstRow)"}
-      // Drag & drop within playlistTableView
-      var oldIndexOffset = 0, newIndexOffset = 0
-      for oldIndex in srcRows {
-        if oldIndex < dstRow {
-          _playlistMove(oldIndex + oldIndexOffset, to: dstRow)
-          oldIndexOffset -= 1
-        } else {
-          _playlistMove(oldIndex, to: dstRow + newIndexOffset)
-          newIndexOffset += 1
-        }
-      }
-      _reloadPlaylist(thenPostNotification: thenPostNotification)
-    }
-  }
-
-  private func _playlistMove(_ from: Int, to: Int) {
-    mpv.command(.playlistMove, args: ["\(from)", "\(to)"], level: .verbose)
-  }
+  // MARK: - mpv: Playlist Operations
 
   func playNextInPlaylist(_ playlistItemIndexes: IndexSet) {
     mpv.queue.async { [self] in
@@ -1757,12 +1730,15 @@ class PlayerCore: NSObject {
       var mc = 1  // moved item count, +1 because move to next item of current played one
       for item in playlistItemIndexes {
         if item == current { continue }
+        let from: Int
+        let to = current + mc + ob
         if item < current {
-          _playlistMove(item + ob, to: current + mc + ob)
+          from = item + ob
           ob -= 1
         } else {
-          _playlistMove(item, to: current + mc + ob)
+          from = item
         }
+        mpv.command(.playlistMove, args: ["\(from)", "\(to)"], level: .verbose)
         mc += 1
       }
 
@@ -1968,8 +1944,9 @@ class PlayerCore: NSObject {
     }
   }
 
+  @discardableResult
   func _playlistRemove(_ indexSet: IndexSet,
-                       onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
+                       onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) -> Bool {
     log.verbose{"Will remove rows \(indexSet.map{$0}) from playlist"}
     // Remove playlist items one at a time, from top to bottom (increasing index).
     // After an item is removed, the indexes of all items below it are subtracted by 1.
@@ -1986,16 +1963,95 @@ class PlayerCore: NSObject {
         }
         // Show updated state in the UI, whatever that may be
         _reloadPlaylist(savePlayerState: false)
-        return
+        return false
       }
       countRemoved += 1
     }
 
     if let onSuccess {
-      _ = onSuccess()
+      return onSuccess()
     } else {
       sendOSD(.removeFromPlaylist(countRemoved))
       _reloadPlaylist()
+      return true
+    }
+  }
+
+  /// Drag & drop within `playlistTableView`
+  func playlistMoveIndexPairs(_ indexPairs: [(Int, Int)],
+                              onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
+    mpv.queue.async { [self] in
+      log.debug{"Playlist move index pairs: \(indexPairs)"}
+      for (srcIndex, dstIndex) in indexPairs {
+        let returnCode = mpv.command(.playlistMove, args: ["\(srcIndex)", "\(dstIndex)"], checkError: false, level: .verbose)
+        guard returnCode == 0 else {
+          if let onError {
+            let errorString = String(cString: mpv_error_string(returnCode))
+            onError("Failed to move playlist item \(srcIndex) → \(dstIndex): \(errorString)")
+          }
+          // Show updated state in the UI, whatever that may be
+          _reloadPlaylist(savePlayerState: false)
+          return
+        }
+      }
+
+      if let onSuccess {
+        _ = onSuccess()
+      } else {
+        _reloadPlaylist()
+      }
+    }
+
+  }
+
+
+  func playlistMove(_ fromIndex: Int, to toIndex: Int) {
+    playlistMove(IndexSet(integer: fromIndex), to: toIndex)
+  }
+
+  func playlistMove(_ srcRows: IndexSet, to dstRow: Int,
+                    onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
+    mpv.queue.async { [self] in
+      _playlistMove(srcRows, to: dstRow, onSuccess: onSuccess, onError: onError)
+    }
+  }
+
+  @discardableResult
+  private func _playlistMove(_ srcRows: IndexSet, to dstRow: Int,
+                             onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) -> Bool {
+    log.debug{"Playlist move items: \(srcRows) → \(dstRow)"}
+    // Drag & drop within playlistTableView
+    var oldIndexOffset = 0
+    var newIndexOffset = 0
+    for oldIndex in srcRows {
+      let from: Int
+      let to: Int
+      if oldIndex < dstRow {
+        from = oldIndex + oldIndexOffset
+        to = dstRow
+        oldIndexOffset -= 1
+      } else {
+        from = oldIndex
+        to = dstRow + newIndexOffset
+        newIndexOffset += 1
+      }
+      let returnCode = mpv.command(.playlistMove, args: ["\(from)", "\(to)"], level: .verbose)
+      guard returnCode == 0 else {
+        if let onError {
+          let errorString = String(cString: mpv_error_string(returnCode))
+          onError("Failed to move playlist item \(from) → \(to): \(errorString)")
+        }
+        // Show updated state in the UI, whatever that may be
+        _reloadPlaylist(savePlayerState: false)
+        return false
+      }
+    }
+
+    if let onSuccess {
+      return onSuccess()
+    } else {
+      _reloadPlaylist()
+      return true
     }
   }
 
@@ -2054,6 +2110,8 @@ class PlayerCore: NSObject {
     }
     return chapter
   }
+
+  // MARK: - mpv: Filter Operations
 
   func setAudioEq(fromGains gains: [Double]) {
     let freqList = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
@@ -2316,6 +2374,8 @@ class PlayerCore: NSObject {
     log.debug{returnCode ? "Succeeded" : "Failed"}
     return returnCode
   }
+
+  // MARK: - Other mpv Operations
 
   func getAudioDevices() -> [[String: String]] {
     let raw = mpv.getNode(MPVProperty.audioDeviceList)
