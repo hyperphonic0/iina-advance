@@ -627,11 +627,11 @@ class MenuController: NSObject, NSMenuDelegate {
       let menuItems = (instance.plugin.globalInstance?.menuItems ?? []) + instance.menuItems
       if menuItems.isEmpty { continue }
 
-      if #available(macOS 14.0, *) {
-        pluginMenu.addItem(.sectionHeader(title: instance.plugin.name))
-      } else {
-        pluginMenu.addItem(withTitle: instance.plugin.name, enabled: false)
-      }
+        if #available(macOS 14.0, *) {
+          pluginMenu.addItem(.sectionHeader(title: instance.plugin.name))
+        } else {
+          pluginMenu.addItem(withTitle: instance.plugin.name, enabled: false)
+        }
 
       for item in menuItems {
         if counter == 5 {
