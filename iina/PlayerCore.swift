@@ -1723,26 +1723,12 @@ class PlayerCore: NSObject {
 
   // MARK: - mpv: Playlist Operations
 
+  /// Moves the given items so that they are immediately following the now-playing item
+  /// (i.e. they will be next in the queue).
   func playNextInPlaylist(_ playlistItemIndexes: IndexSet) {
     mpv.queue.async { [self] in
       let current = mpv.getInt(MPVProperty.playlistPos)
-      var ob = 0  // index offset before current playing item
-      var mc = 1  // moved item count, +1 because move to next item of current played one
-      for item in playlistItemIndexes {
-        if item == current { continue }
-        let from: Int
-        let to = current + mc + ob
-        if item < current {
-          from = item + ob
-          ob -= 1
-        } else {
-          from = item
-        }
-        mpv.command(.playlistMove, args: ["\(from)", "\(to)"], level: .verbose)
-        mc += 1
-      }
-
-      _reloadPlaylist()
+      _playlistMove(playlistItemIndexes, to: current + 1)
     }
   }
 
