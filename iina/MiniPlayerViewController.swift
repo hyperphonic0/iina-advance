@@ -251,7 +251,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   /// Action: Show/Hide playlist
-  @IBAction func togglePlaylist(_ sender: Any) {
+  @IBAction func togglePlaylist(_ sender: AnyObject?) {
     windowController.animationPipeline.submitInstantTask({ [self] in
       let showPlaylist = !isPlaylistVisible
       log.verbose{"Toggling playlist visibility: \((!showPlaylist).yn) → \(showPlaylist.yn)"}
@@ -293,7 +293,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   /// Action: Show/Hide `videoView`
-  @IBAction func toggleVideoViewVisibleState(_ sender: Any) {
+  @IBAction func toggleVideoViewVisibleState(_ sender: AnyObject?) {
     windowController.animationPipeline.submitInstantTask({ [self] in
       let showVideoView = !isVideoVisible
       log.verbose{"MusicMode: user clicked video toggle btn. Changing videoView visibility: \((!showVideoView).yn) → \(showVideoView.yn)"}

@@ -259,12 +259,12 @@ struct Sidebar {
 extension PlayerWindowController {
   // MARK: - Show/Hide functions
 
-  func isOpening(sidebarTabGroup tabGroup: Sidebar.TabGroup) -> Bool {
+  func isOpen(sidebarTabGroup tabGroup: Sidebar.TabGroup) -> Bool {
     let layout = currentLayout
     return layout.leadingSidebar.visibleTabGroup == tabGroup || layout.trailingSidebar.visibleTabGroup == tabGroup
   }
 
-  func isOpening(sidebarTab tab: Sidebar.Tab) -> Bool {
+  func isOpen(sidebarTab tab: Sidebar.Tab) -> Bool {
     let layout = currentLayout
     return layout.leadingSidebar.visibleTab == tab || layout.trailingSidebar.visibleTab == tab
   }
@@ -317,6 +317,21 @@ extension PlayerWindowController {
     log.verbose{"ShowSidebar for tab=\(tab.name.quoted) force=\(force.yn) hideIfAlreadyShown=\(hideIfAlreadyShown.yn)"}
 
     animationPipeline.submitInstantTask { [self] in
+      if currentLayout.isMusicMode && tab.group == .playlist {
+        // Music mode
+        if miniPlayer.isPlaylistVisible && playlistView.currentTab == tab {
+          if hideIfAlreadyShown {
+            miniPlayer.togglePlaylist(nil)
+          }
+        } else {
+          if !miniPlayer.isPlaylistVisible {
+            miniPlayer.togglePlaylist(nil)
+          }
+          playlistView.pleaseSwitchToTab(tab)
+        }
+        return
+      }
+
       guard let destinationSidebar = getConfiguredSidebar(forTabGroup: tab.group) else { return }
 
       if destinationSidebar.visibleTab == tab {

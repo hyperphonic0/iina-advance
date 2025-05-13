@@ -491,9 +491,9 @@ class MenuController: NSObject, NSMenuDelegate {
 
   private func updatePlaybackMenu() {
     guard let player = PlayerCore.active else { return }
-    let isDisplayingPlaylist = player.windowController.isOpening(sidebarTab: .playlist)
+    let isDisplayingPlaylist = player.windowController.isOpen(sidebarTab: .playlist)
     playlistPanel?.title = isDisplayingPlaylist ? Constants.String.hidePlaylistPanel : Constants.String.playlistPanel
-    let isDisplayingChapters = player.windowController.isOpening(sidebarTab: .chapters)
+    let isDisplayingChapters = player.windowController.isOpen(sidebarTab: .chapters)
     chapterPanel?.title = isDisplayingChapters ? Constants.String.hideChaptersPanel : Constants.String.chaptersPanel
     pause.title = player.info.isPaused ? Constants.String.resume : Constants.String.pause
     let speed = player.info.playSpeed.groupedStringUpTo6Decimals
@@ -512,7 +512,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   private func updateVideoMenu() {
     guard let player = PlayerCore.active else { return }
-    let isDisplayingSettings = player.windowController.isOpening(sidebarTab: .video)
+    let isDisplayingSettings = player.windowController.isOpen(sidebarTab: .video)
     quickSettingsVideo?.title = isDisplayingSettings ? Constants.String.hideVideoPanel :
         Constants.String.videoPanel
     let isInFullScreen = player.windowController.isFullScreen
@@ -529,7 +529,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   private func updateAudioMenu() {
     guard let player = PlayerCore.active else { return }
-    let isDisplayingSettings = player.windowController.isOpening(sidebarTab: .audio)
+    let isDisplayingSettings = player.windowController.isOpen(sidebarTab: .audio)
     quickSettingsAudio?.title = isDisplayingSettings ? Constants.String.hideAudioPanel :
         Constants.String.audioPanel
     let volFmtString: String
@@ -564,7 +564,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   private func updateSubMenu() {
     guard let player = PlayerCore.active else { return }
-    let isDisplayingSettings = player.windowController.isOpening(sidebarTab: .sub)
+    let isDisplayingSettings = player.windowController.isOpen(sidebarTab: .sub)
     quickSettingsSub?.title = isDisplayingSettings ? Constants.String.hideSubtitlesPanel :
         Constants.String.subtitlesPanel
     hideSubtitles.title = player.info.isSubVisible ? Constants.String.hideSubtitles :

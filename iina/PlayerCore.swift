@@ -175,7 +175,7 @@ class PlayerCore: NSObject {
   let playlistTableChangeNotificationName: NSNotification.Name
 
   var isPlaylistVisible: Bool {
-    isInMiniPlayer ? windowController.miniPlayer.isPlaylistVisible : windowController.isOpening(sidebarTab: .playlist)
+    isInMiniPlayer ? windowController.miniPlayer.isPlaylistVisible : windowController.isOpen(sidebarTab: .playlist)
   }
 
   // Player lifecycle state
@@ -2761,7 +2761,7 @@ class PlayerCore: NSObject {
           guard windowController.miniPlayer.isPlaylistVisible else { return }
           windowController.miniPlayer.loadIfNeeded()
         } else {
-          guard windowController.isOpening(sidebarTab: .chapters) else { return }
+          guard windowController.isOpen(sidebarTab: .chapters) else { return }
         }
 
         windowController.playlistView.chapterTableView.reloadData()

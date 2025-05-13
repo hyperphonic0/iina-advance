@@ -408,7 +408,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       player.log.error{"PlaylistViewController: cannot switch to tab: \(tab)"}
       return
     }
-    assert(player.windowController.isInMiniPlayer || player.windowController.isOpening(sidebarTabGroup: .playlist),
+    assert(player.windowController.isInMiniPlayer || player.windowController.isOpen(sidebarTabGroup: .playlist),
            "switchToTab should not be called when playlist TabGroup is not shown or not in music mode")
     let buttonTag: Int
     switch tab {
