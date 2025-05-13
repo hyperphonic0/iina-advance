@@ -337,4 +337,19 @@ class TableUIChange {
 
     return clone
   }
+
+  // MARK: - Other Utils
+
+  func postNotification(name tableChangeNotificationName: Notification.Name) {
+    let not = Notification(name: tableChangeNotificationName, object: self)
+    Logger.log.trace{"Posting \(not.name.rawValue.quoted) notification with changeType \(changeType)"}
+    NotificationCenter.default.post(not)
+  }
+
+
+  func inverted(adjustAllIndexesBy indexAdjustment: Int = 0,
+                selectNextRowAfterDelete: Bool, completionHandler: TableUIChange.CompletionHandler? = nil) -> TableUIChange {
+    TableUIChange.builder.inverted(from: self, andAdjustAllIndexesBy: indexAdjustment,
+                                   selectNextRowAfterDelete: selectNextRowAfterDelete, completionHandler: completionHandler)
+  }
 }

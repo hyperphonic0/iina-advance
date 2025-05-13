@@ -355,9 +355,7 @@ class EditableTableView: NSTableView {
   }
 
   func post(_ tableUIChange:  TableUIChange) {
-    let not = Notification(name: tableChangeNotificationName, object: tableUIChange)
-    Logger.log.trace{"Posting \(not.name.rawValue.quoted) notification with changeType \(tableUIChange.changeType)"}
-    NotificationCenter.default.post(not)
+    tableUIChange.postNotification(name: tableChangeNotificationName)
   }
 
   // Row(s) changed in datasource. Could be insertions, deletions, selection change, etc (see: `ContentChangeType`).
