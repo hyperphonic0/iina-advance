@@ -2354,7 +2354,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       return
     case .playlist:
       guard didRelease else { return }
-      player.mpv.command(left ? .playlistPrev : .playlistNext, checkError: false)
+      player.navigateInPlaylist(nextMedia: left)
 
     case .seek:
       guard didRelease else { return }

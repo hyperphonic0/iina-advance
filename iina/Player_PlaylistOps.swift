@@ -488,6 +488,7 @@ extension PlayerCore {
 
   func clearPlaylist() {
     mpv.queue.async { [self] in
+      guard !isStopping else { return }
       log.verbose("[Playlist] Sending 'playlist-clear' cmd to mpv")
       mpv.command(.playlistClear, checkError: false)
       _reloadPlaylist()
@@ -498,6 +499,7 @@ extension PlayerCore {
 
   func playFile(_ path: String) {
     mpv.queue.async { [self] in
+      guard !isStopping else { return }
       info.shouldAutoLoadFiles = true
       let returnCode = mpv.command(.loadfile, args: [path, "replace"], checkError: false)
       guard returnCode == 0 else {
@@ -510,6 +512,7 @@ extension PlayerCore {
 
   func playFileInPlaylist(_ pos: Int) {
     mpv.queue.async { [self] in
+      guard !isStopping else { return }
       log.verbose{"[Playlist] Changing mpv playlist-pos to \(pos)"}
       mpv.setInt(MPVProperty.playlistPos, pos)
     }
@@ -517,6 +520,18 @@ extension PlayerCore {
 
   func navigateInPlaylist(nextMedia: Bool) {
     mpv.queue.async { [self] in
+      guard !isStopping else { return }
+      if nextMedia {
+        mpv.command(.playlistNext, checkError: false)
+      } else {
+        // Prev
+        let playlistPos = mpv.getInt(MPVProperty.playlistPos)
+        if playlistPos == 0 {
+          seek(absoluteSecond: 0)
+        } else {
+          mpv.command(.playlistPrev, checkError: false)
+        }
+      }
       mpv.command(nextMedia ? .playlistNext : .playlistPrev, checkError: false)
     }
   }
