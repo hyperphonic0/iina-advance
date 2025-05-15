@@ -44,6 +44,16 @@ class ConfTableViewController: NSObject {
     builtInConfTextColor = builtInItemTextColor
   }
 
+  let configNameValidator: Utility.InputValidator<String> = { input in
+    if input.isEmpty {
+      return .valueIsEmpty
+    }
+    if ConfTableState.current.userConfDict[input] != nil || Constants.InputConf.defaults[input] != nil {
+      return .valueAlreadyExists
+    }
+    return .ok
+  }
+
   init(_ inputConfTableView: EditableTableView, _ bindingTableViewController: BindingTableViewController,
        selectionDidChangeHandler: @escaping () -> Void) {
     self.tableView = inputConfTableView
@@ -609,17 +619,8 @@ extension ConfTableViewController:  NSMenuDelegate {
         }
       })
     } else {
-      let validator: Utility.InputValidator<String> = { [self] input in
-        if input.isEmpty {
-          return .valueIsEmpty
-        }
-        if confTableState.userConfDict[input] != nil || Constants.InputConf.defaults[input] != nil {
-          return .valueAlreadyExists
-        }
-        return .ok
-      }
       // Open modal dialog and prompt user
-      Utility.quickPromptPanel("config.new", validator: validator, sheetWindow: tableView.window) { newName in
+      Utility.quickPromptPanel("config.new", validator: configNameValidator, sheetWindow: tableView.window) { newName in
         guard !newName.isEmpty else {
           Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
           return
@@ -653,7 +654,7 @@ extension ConfTableViewController:  NSMenuDelegate {
       }
     } else {
       // prompt
-      Utility.quickPromptPanel("config.duplicate", sheetWindow: tableView.window) { newName in
+      Utility.quickPromptPanel("config.duplicate", validator: configNameValidator, sheetWindow: tableView.window) { newName in
         guard !newName.isEmpty else {
           Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
           return

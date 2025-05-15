@@ -192,7 +192,7 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   @IBAction func duplicateConfFileAction(_ sender: AnyObject) {
     confTableController?.duplicateConf(confTableState.selectedConfName)
   }
-
+  
   @IBAction func showConfFileAction(_ sender: AnyObject) {
     confTableController?.showInFinder(confTableState.selectedConfName)
   }
