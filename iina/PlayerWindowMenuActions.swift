@@ -39,7 +39,7 @@ extension PlayerWindowController {
     guard let url = player.info.currentURL, !player.info.isNetworkResource else { return }
     do {
       let index = player.mpv.getInt(MPVProperty.playlistPos)
-      player.playlistRemove(index)
+      player.playlistRemove(index, clearUndoStack: true)
       try FileManager.default.trashItem(at: url, resultingItemURL: nil)
     } catch let error {
       Utility.showAlert("playlist.error_deleting", arguments: [error.localizedDescription])
@@ -51,7 +51,7 @@ extension PlayerWindowController {
     guard let url = player.info.currentURL, !player.info.isNetworkResource else { return }
     do {
       let index = player.mpv.getInt(MPVProperty.playlistPos)
-      player.playlistRemove(index)
+      player.playlistRemove(index, clearUndoStack: true)
       try FileManager.default.removeItem(at: url)
     } catch let error {
       Utility.showAlert("playlist.error_deleting", arguments: [error.localizedDescription])

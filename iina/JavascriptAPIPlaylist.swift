@@ -82,7 +82,7 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
         log("playlist.remove: Invalid index.", level: .error)
         return false
       }
-      player!.playlistRemove(IndexSet(indices))
+      player!.playlistRemove(IndexSet(indices), clearUndoStack: true)
       return true
     } else if index.isNumber {
       let index = Int(index.toInt32())
@@ -90,7 +90,7 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
         log("playlist.remove: Invalid index.", level: .error)
         return false
       }
-      player!.playlistRemove(index)
+      player!.playlistRemove(index, clearUndoStack: true)
       return true
     }
     log("playlist.remove: The argument should be a number or an array of numbers.", level: .error)

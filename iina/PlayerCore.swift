@@ -1792,6 +1792,7 @@ class PlayerCore: NSObject {
     })
   }
 
+  // FIXME: tie into Undo/Redo
   func appendToPlaylist(_ path: String,
                         onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
     appendToPlaylist([path], onSuccess: onSuccess, onError: onError)
@@ -1867,8 +1868,8 @@ class PlayerCore: NSObject {
   /// Insert playlist items at mapped indexes.
   /// `itemsAtIndexes` must be in ascending index order
   func playlistInsert(_ itemsAtIndexes: [(Int, String)],
-                                    _ expectedCurrentPlaylist: [PlaybackID]? = nil,
-                                    onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
+                      _ expectedCurrentPlaylist: [PlaybackID]? = nil,
+                      onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
     assert(itemsAtIndexes.map(\.0).sorted(by: { $0 < $1 }).elementsEqual(itemsAtIndexes.map(\.0)),
            "itemsAtIndexes must be sorted in ascending order, but found: \(itemsAtIndexes.map(\.0))")
     mpv.queue.async { [self] in
@@ -1878,8 +1879,8 @@ class PlayerCore: NSObject {
 
   @discardableResult
   func _playlistInsert(_ itemsAtIndexes: [(Int, String)],
-                                    _ expectedCurrentPlaylist: [PlaybackID]? = nil,
-                                    onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) -> Bool {
+                       _ expectedCurrentPlaylist: [PlaybackID]? = nil,
+                       onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) -> Bool {
     // Verify playlist state first before changing anything
     let expectedPlaylistBeforeInsert = expectedCurrentPlaylist ?? info.playlist
     _reloadPlaylist(thenPostNotification: false, savePlayerState: false)
@@ -1932,50 +1933,6 @@ class PlayerCore: NSObject {
       return onSuccess()
     }
     return true
-  }
-
-  func playlistRemove(_ index: Int) {
-    playlistRemove(IndexSet(integer: index))
-  }
-
-  func playlistRemove(_ indexSet: IndexSet,
-                      onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
-    mpv.queue.async { [self] in
-      _playlistRemove(indexSet, onSuccess: onSuccess, onError: onError)
-    }
-  }
-
-  @discardableResult
-  func _playlistRemove(_ indexSet: IndexSet,
-                       onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) -> Bool {
-    log.verbose{"Will remove rows \(indexSet.map{$0}) from playlist"}
-    // Remove playlist items one at a time, from top to bottom (increasing index).
-    // After an item is removed, the indexes of all items below it are subtracted by 1.
-    var countRemoved = 0
-    for origIndex in indexSet {
-      let index = origIndex - countRemoved
-      log.verbose("Removing row \(index) from playlist")
-      let returnCode = mpv.command(.playlistRemove, args: [index.description], checkError: false)
-      // If error occurred, report using callback, reload state, and do not continue
-      guard returnCode == 0 else {
-        if let onError {
-          let errorString = String(cString: mpv_error_string(returnCode))
-          onError("Failed to remove playlist item \(countRemoved) / \(indexSet.count): \(errorString)")
-        }
-        // Show updated state in the UI, whatever that may be
-        _reloadPlaylist(savePlayerState: false)
-        return false
-      }
-      countRemoved += 1
-    }
-
-    if let onSuccess {
-      return onSuccess()
-    } else {
-      sendOSD(.removeFromPlaylist(countRemoved))
-      _reloadPlaylist()
-      return true
-    }
   }
 
   func playlistMove(_ fromIndex: Int, to targetRowIndex: Int) {
@@ -2097,7 +2054,57 @@ class PlayerCore: NSObject {
     }, onError: { [self] errorString in
       Logger.log.debug{"Clearing undo stack for playlist due to remove error"}
       undoHelper.clearUndoes()
-    })
+    }, clearUndoStack: false)
+  }
+
+  func playlistRemove(_ index: Int, clearUndoStack: Bool) {
+    playlistRemove(IndexSet(integer: index), clearUndoStack: clearUndoStack)
+  }
+
+  func playlistRemove(_ indexSet: IndexSet,
+                      onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil,
+                      clearUndoStack: Bool) {
+    mpv.queue.async { [self] in
+      _playlistRemove(indexSet, onSuccess: onSuccess, onError: onError, clearUndoStack: clearUndoStack)
+    }
+  }
+
+  @discardableResult
+  func _playlistRemove(_ indexSet: IndexSet,
+                       onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil,
+                       clearUndoStack: Bool) -> Bool {
+    log.verbose{"Will remove rows \(indexSet.map{$0}) from playlist"}
+    // Remove playlist items one at a time, from top to bottom (increasing index).
+    // After an item is removed, the indexes of all items below it are subtracted by 1.
+    var countRemoved = 0
+    for origIndex in indexSet {
+      let index = origIndex - countRemoved
+      log.verbose("Removing row \(index) from playlist")
+      let returnCode = mpv.command(.playlistRemove, args: [index.description], checkError: false)
+      // If error occurred, report using callback, reload state, and do not continue
+      guard returnCode == 0 else {
+        if let onError {
+          let errorString = String(cString: mpv_error_string(returnCode))
+          onError("Failed to remove playlist item \(countRemoved) / \(indexSet.count): \(errorString)")
+        }
+        // Show updated state in the UI, whatever that may be
+        _reloadPlaylist(savePlayerState: false)
+        return false
+      }
+      countRemoved += 1
+    }
+
+    if clearUndoStack {
+      Logger.log.verbose{"Clearing undo stack for playlist after remove due to clearUndoStack=Y"}
+      undoHelper.clearUndoes()
+    }
+    if let onSuccess {
+      return onSuccess()
+    } else {
+      sendOSD(.removeFromPlaylist(countRemoved))
+      _reloadPlaylist()
+      return true
+    }
   }
 
 
@@ -2153,6 +2160,8 @@ class PlayerCore: NSObject {
       log.verbose("Sending 'playlist-clear' cmd to mpv")
       mpv.command(.playlistClear, checkError: false)
       _reloadPlaylist()
+      log.verbose("Clearing undo stack after 'playlist-clear' cmd")
+      undoHelper.clearUndoes()
     }
   }
 
