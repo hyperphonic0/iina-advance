@@ -62,11 +62,11 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
     }
     if url.isArray {
       if let paths = url.toArray() as? [String] {
-        player!.addToPlaylist(paths: paths, at: at)
+        player!.addToPlaylist(paths: paths, at: at, registerUndoRedo: true)
         return true
       }
     } else if url.isString {
-      player!.addToPlaylist(paths: [url.toString()], at: at)
+      player!.addToPlaylist(paths: [url.toString()], at: at, registerUndoRedo: true)
       return true
     }
     log("playlist.add: The first argument should be a string or an array of strings.", level: .error)

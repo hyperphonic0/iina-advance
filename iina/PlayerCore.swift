@@ -172,7 +172,7 @@ class PlayerCore: NSObject {
       windowController.playlistView.displayedPlaylist = newValue
     }
   }
-  let playlistTableSelectNextRowAfterDelete = true
+  let playlistTableSelectNextRowAfterDelete = false
 
   var plugins: [JavascriptPluginInstance] = []
   private var pluginMap: [String: JavascriptPluginInstance] = [:]
@@ -640,10 +640,8 @@ class PlayerCore: NSObject {
 
           if urls.count > 1 {
             log.verbose{"Adding \(urls.count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)"}
-            _appendToPlaylist(urls: urls[1..<urls.count], onSuccess: { [self] in
-              _reloadPlaylist(savePlayerState: false)
-              return true
-            })
+            let urls = urls.map({PlaybackID.path(from: $0)})
+            _addAllToPlaylist(pathListIncludingCurrent: urls, indexOfCurrentItem: 0)
           } else {
             // Only one entry in playlist, but still need to pull it from mpv
             _reloadPlaylist()
@@ -1786,7 +1784,7 @@ class PlayerCore: NSObject {
       return (index < currentItem ? 0 : 1, path)
     }
 
-    _playlistInsert(itemsAtInsertIndexes, info.playlist, onSuccess: { [self] in
+    _playlistInsert(itemsAtIndexes: itemsAtInsertIndexes, info.playlist, onSuccess: { [self] in
       _reloadPlaylist(savePlayerState: false)  // will send notification
       return true
     })
@@ -1799,60 +1797,80 @@ class PlayerCore: NSObject {
 
   func appendToPlaylist(_ paths: [String],
                         onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
-    mpv.queue.async { [self] in
-      _addToPlaylist(paths, onSuccess: onSuccess, onError: onError)
-    }
+    addToPlaylist(paths: paths, onSuccess: onSuccess, onError: onError, registerUndoRedo: true)
   }
 
   func appendToPlaylist(urls: any Collection<URL>,
                         onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
-    mpv.queue.async { [self] in
-      _appendToPlaylist(urls: urls, onSuccess: onSuccess, onError: onError)
-    }
-  }
-
-  func _appendToPlaylist(urls: any Collection<URL>,
-                        onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
     let paths = urls.map({PlaybackID.path(from: $0)})
-    _addToPlaylist(paths, onSuccess: onSuccess, onError: onError)
+    addToPlaylist(paths: paths, onSuccess: onSuccess, onError: onError, registerUndoRedo: true)
   }
 
-  func addToPlaylist(paths: [String], at index: Int = -1,
-                     onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
-    mpv.queue.async { [self] in
-      _addToPlaylist(paths, at: index, onSuccess: onSuccess, onError: onError)
-    }
+  func addToPlaylist(paths: [String], at targetRowIndex: Int? = nil,
+                     onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil,
+                     registerUndoRedo: Bool) {
+
+    let rowList = paths.compactMap{PlaybackID(path: $0)}
+    insertPlaylistRows(rowList, registerUndoRedo: registerUndoRedo)
   }
 
-  @discardableResult
-  func _addToPlaylist(_ paths: [String], at index: Int = -1,
-                      _ expectedCurrentPlaylist: [PlaybackID]? = nil,
-                      onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) -> Bool {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
+  /// All playlist "insert" operations should ultimately call this method.
+  func insertPlaylistRows(_ desiredRowList: [PlaybackID], at targetRowIndex: Int? = nil, registerUndoRedo: Bool) {
+    let playableFiles = getPlayableFiles(in: desiredRowList.map{ $0.url })
+    guard playableFiles.count > 0 else { return }
+    let rowList = playableFiles.map { PlaybackID($0) }
+    log.verbose{"Inserting \(rowList.count) rows into playlist at index \(targetRowIndex?.description ?? "nil"): \(rowList.map{$0.path.pii})"}
+
+
+    let (tableUIChange, allItemsNew) = windowController.playlistView.isViewLoaded
+    ? windowController.playlistView.playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: displayedPlaylist)
+    : TableUIChange.builder.buildInsert(of: rowList, at: targetRowIndex ?? displayedPlaylist.count, in: displayedPlaylist)
+
     let playlistSize = info.playlist.count
-    let insertStartIndex = (index >= 0 && index <= playlistSize) ? index : playlistSize
+    var insertStartIndex = targetRowIndex ?? playlistSize
+    insertStartIndex = (insertStartIndex >= 0 && insertStartIndex <= playlistSize) ? insertStartIndex : playlistSize
+    let paths = rowList.map { $0.path }
     let itemsAtIndexes = paths.map ({ path in (insertStartIndex, path)} )
 
-    return _playlistInsert(itemsAtIndexes, expectedCurrentPlaylist, onSuccess: { [self] in
-      sendOSD(.addToPlaylist(paths.count))
-      _reloadPlaylist()  // will send notification + save state
-      if let onSuccess {
-        return onSuccess()
-      }
-      return true
-    }, onError: { [self] errorString in
-      Logger.log.debug{"Clearing undo stack for playlist due to insert error"}
-      undoHelper.clearUndoes()
-      if let onError {
-        onError(errorString)
-      }
-    })
+    let expectedCurrentPlaylist = displayedPlaylist
+    mpv.queue.async { [self] in
+      _playlistInsert(itemsAtIndexes: itemsAtIndexes, expectedCurrentPlaylist, onSuccess: { [self] in
+//        displayedPlaylist = allItemsNew                                            // update cached data
+//        tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // update UI
+        _reloadPlaylist()  // will send notification + save state
+        sendOSD(.addToPlaylist(paths.count))
+
+        // Register undo/redo for this action?
+        if registerUndoRedo {
+          let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
+          undoHelper.register(actionName, undo: { [self] in
+            guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
+              Logger.log.error{"Cannot undo insert of playlist items: playlist is in unexpected state!"}
+              return
+            }
+            let rmStartIndex = tableUIChange.toInsert!.first!
+            let rmEndIndex = rmStartIndex + rowList.count
+            let rowIndexesToRemove = IndexSet(rmStartIndex..<rmEndIndex)
+            removePlaylistRows(rowIndexesToRemove, registerUndoRedo: false)
+          }, redo: { [self] in
+            insertPlaylistRows(rowList, at: targetRowIndex, registerUndoRedo: false)
+          })
+        }
+
+        return true
+      }, onError: { [self] errorString in
+        Logger.log.debug{"Clearing undo stack for playlist due to insert error"}
+        undoHelper.clearUndoes()
+      })
+    }
+
   }
 
-  /// Insert playlist items at mapped indexes. All playlist "insert" operations should call this.
-  /// `itemsAtIndexes` must be in ascending index order
+  /// Insert playlist items at mapped indexes. Internal: should *only* be called by `insertPlaylistRows` or by
+  /// other non-private `PlayerCore` methods.
+  /// - `itemsAtIndexes` must be in ascending index order.
   @discardableResult
-  func _playlistInsert(_ itemsAtIndexes: [(Int, String)],
+  func _playlistInsert(itemsAtIndexes: [(Int, String)],
                        _ expectedCurrentPlaylist: [PlaybackID]? = nil,
                        onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) -> Bool {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
@@ -1909,47 +1927,6 @@ class PlayerCore: NSObject {
       return onSuccess()
     }
     return true
-  }
-
-  func insertPlaylistRows(_ desiredRowList: [PlaybackID], at targetRowIndex: Int? = nil, registerUndoRedo: Bool) {
-    let playableFiles = getPlayableFiles(in: desiredRowList.map{ $0.url })
-    guard playableFiles.count > 0 else { return }
-    let rowList = playableFiles.map { PlaybackID($0) }
-    log.verbose{"Inserting \(desiredRowList.count) rows into playlist at index \(targetRowIndex?.description ?? "nil"): \(rowList.map{$0.path.pii})"}
-
-
-    let (tableUIChange, allItemsNew) = windowController.playlistView.isViewLoaded
-    ? windowController.playlistView.playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: displayedPlaylist)
-    : TableUIChange.builder.buildInsert(of: rowList, at: targetRowIndex ?? displayedPlaylist.count, in: displayedPlaylist)
-
-    addToPlaylist(paths: rowList.map { $0.path }, at: tableUIChange.toInsert!.first!, onSuccess: { [self] in
-      displayedPlaylist = allItemsNew                                            // update cached data
-      tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // update UI
-      sendOSD(.addToPlaylist(rowList.count))
-
-      // Register undo/redo for this action?
-      if registerUndoRedo {
-        let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
-        undoHelper.register(actionName, undo: { [self] in
-          guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
-            Logger.log.error{"Cannot undo insert of playlist items: playlist is in unexpected state!"}
-            return
-          }
-          let rmStartIndex = tableUIChange.toInsert!.first!
-          let rmEndIndex = rmStartIndex + desiredRowList.count
-          let rowIndexesToRemove = IndexSet(rmStartIndex..<rmEndIndex)
-          removePlaylistRows(rowIndexesToRemove, registerUndoRedo: false)
-        }, redo: { [self] in
-          insertPlaylistRows(desiredRowList, at: targetRowIndex, registerUndoRedo: false)
-        })
-      }
-
-      return true
-    }, onError: { [self] errorString in
-      Logger.log.debug{"Clearing undo stack for playlist due to insert error"}
-      undoHelper.clearUndoes()
-    })
-
   }
 
   private func validateItemsAreEqual(_ actual: [PlaybackID], _ expected: [PlaybackID]) -> Bool {
@@ -2056,12 +2033,12 @@ class PlayerCore: NSObject {
         }
         // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
         // can be at non-contiguous indexes in the playlist.
-        let indexedInsertItems = rowIndexes.map{ ($0, allItemsOld[$0].path) }
+        let indexedInsertItems = rowIndexes.enumerated().map{ ($0.element - $0.offset, allItemsOld[$0.element].path) }
         assert(indexedInsertItems.map(\.0).sorted(by: { $0 < $1 }).elementsEqual(indexedInsertItems.map(\.0)),
                "itemsAtIndexes must be sorted in ascending order, but found: \(indexedInsertItems.map(\.0))")
         let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
         mpv.queue.async { [self] in
-          _playlistInsert(indexedInsertItems, onSuccess: { [self] in
+          _playlistInsert(itemsAtIndexes: indexedInsertItems, onSuccess: { [self] in
             displayedPlaylist = allItemsOld                                                // update cached data
             tableUIChangeUndo.postNotification(name: playlistTableChangeNotificationName)  // update UI
             sendOSD(.addToPlaylist(indexedInsertItems.count))
