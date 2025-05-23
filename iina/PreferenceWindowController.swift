@@ -116,7 +116,8 @@ class PreferenceWindowController: WindowController {
     }
 
     func search(_ str: String) {
-      for c in str {
+      let lowercaseStr = str.lowercased()
+      for c in lowercaseStr {
         // half-width and full-width spaces
         if c == " " || c == "　" {
           lastPosition = root
@@ -309,10 +310,9 @@ class PreferenceWindowController: WindowController {
     if newSearchString.isEmpty {
       dismissCompletionList()
     } else {
-      if newSearchString.hasPrefix(searchString) {
-        tries.filter { $0.active }.forEach { $0.search(String(newSearchString.dropFirst(searchString.count))) }
-      } else {
-        tries.forEach { $0.reset(); $0.search(newSearchString) }
+      for trie in tries {
+        trie.reset()
+        trie.search(newSearchString)
       }
       currentCompletionResults = tries.filter { $0.active }.map { $0.returnValue }
       completeSearchField()
