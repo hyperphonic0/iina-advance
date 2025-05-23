@@ -40,42 +40,46 @@ class TableUIChangeBuilder {
     }
 
     if let removed = original.toRemove {
-      inverted.toInsert = IndexSet(removed.map({ $0 + indexAdjustment }))
+      let toInsert = IndexSet(removed.map({ $0 + indexAdjustment }))
+      inverted.toInsert = toInsert
       // Add inserted lines to selection
-      for insertIndex in inverted.toInsert! {
+      for insertIndex in toInsert {
         inverted.newSelectedRowIndexes?.insert(insertIndex)
       }
-      Logger.log.verbose{"Invert: changed removes=\(removed.map{$0}) into inserts=\(inverted.toInsert!.map{$0})"}
+      Logger.log.verbose{"Invert: changed removes=\(removed.toArray()) into inserts=\(toInsert.toArray())"}
     }
-    if let toInsert = original.toInsert {
-      inverted.toRemove = IndexSet(toInsert.map({ $0 + indexAdjustment }))
-      Logger.log.verbose{"Invert: changed inserts=\(toInsert.map{$0}) into removes=\(inverted.toRemove!.map{$0})"}
+    if let inserted = original.toInsert {
+      let toRemove = IndexSet(inserted.map({ $0 + indexAdjustment }))
+      inverted.toRemove = toRemove
+      Logger.log.verbose{"Invert: changed inserts=\(inserted.toArray()) into removes=\(toRemove.toArray())"}
     }
-    if let toUpdate = original.toUpdate {
-      inverted.toUpdate = IndexSet(toUpdate.map({ $0 + indexAdjustment }))
-      Logger.log.verbose{"Invert: changed updates=\(toUpdate.map{$0}) into updates=\(inverted.toUpdate!.map{$0})"}
+    if let updated = original.toUpdate {
+      let toUpdate = IndexSet(updated.map({ $0 + indexAdjustment }))
+      inverted.toUpdate = toUpdate
+      Logger.log.verbose{"Invert: changed updates=\(updated.toArray()) into updates=\(toUpdate.toArray())"}
       // Add updated lines to selection
-      for updateIndex in inverted.toUpdate! {
+      for updateIndex in toUpdate {
         inverted.newSelectedRowIndexes?.insert(updateIndex)
       }
     }
-    if let movePairsOrig = original.toMove {
+    if let movedPairs = original.toMove {
       var movePairsInverted: [(Int, Int)] = []
 
-      for (fromIndex, toIndex) in movePairsOrig {
+      for (fromIndex, toIndex) in movedPairs {
         let fromIndexNew = toIndex + indexAdjustment
         let toIndexNew = fromIndex + indexAdjustment
         movePairsInverted.append((fromIndexNew, toIndexNew))
       }
 
-      inverted.toMove = movePairsInverted.reversed()  // Need to reverse order for proper animation
+      movePairsInverted = movePairsInverted.reversed()  // Need to reverse order for proper animation
+      inverted.toMove = movePairsInverted
 
       // Preserve selection if possible:
       if let origBeginningSelection = original.oldSelectedRowIndexes,
          let origEndingSelection = original.newSelectedRowIndexes, inverted.changeType == .moveRows {
         inverted.newSelectedRowIndexes = origBeginningSelection
         inverted.oldSelectedRowIndexes = origEndingSelection
-        Logger.log.verbose{"Invert: changed movePairs from \(movePairsOrig) to \(inverted.toMove!.map{$0}); changed selection from \(origEndingSelection.map{$0}) to \(origBeginningSelection.map{$0})"}
+        Logger.log.verbose{"Invert: changed movePairs from \(movedPairs) to \(movePairsInverted.map{$0}); changed selection from \(origEndingSelection.map{$0}) to \(origBeginningSelection.map{$0})"}
       }
     }
 

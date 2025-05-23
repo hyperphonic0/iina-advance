@@ -476,7 +476,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   func removePlaylistRows(_ rowIndexes: IndexSet) {
-    player.removePlaylistRows(rowIndexes, registerUndoRedo: true)
+    player.removePlaylistRows(rowIndexes, registerUndoRedo: true, clearUndoStack: false)
   }
 
   private func validateItemsAreEqual(_ current: [PlaybackID], _ expected: [PlaybackID]) -> Bool {
@@ -958,12 +958,13 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       }
     }
     if !successes.isEmpty {
-      removePlaylistRows(successes)
+      player.removePlaylistRows(successes, registerUndoRedo: false, clearUndoStack: true)
     }
   }
 
   @IBAction func contextMenuDeleteFileAfterPlayback(_ sender: NSMenuItem) {
     // WIP
+    // TODO: WIP, really?
   }
 
   private func getFiles(fromPlaylistRows rows: IndexSet) -> [URL] {
@@ -1221,7 +1222,7 @@ extension PlaylistViewController: EditableTableViewDelegate {
   }
 
   func doEditMenuDelete() {
-    removePlaylistRows(playlistTableView.selectedRowIndexes)
+    player.removePlaylistRows(playlistTableView.selectedRowIndexes, registerUndoRedo: true, clearUndoStack: false)
   }
 
   private func hasSelectionInPlaylistTable() -> Bool {

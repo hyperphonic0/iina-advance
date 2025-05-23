@@ -138,6 +138,8 @@ struct GeometryTransform {
         // Update context's geo with current window frame
         cxt.oldGeo = pwc.buildGeoSet(from: cxt.outputLayout, baseGeoSet: cxt.oldGeo, forceWinFrameUpdate: true)
 
+        log.verbose{"[GeoTF:\(name)] Building transition tasks"}
+
         /// 3. (Optional) Transition window to initial layout. Must exexcute before `buildApplyTransformTasks`.
         /// Will return empty task list if not applicable
         var immediateTasks = pwc.buildWindowInitialLayoutTasks(using: &cxt)
@@ -524,8 +526,9 @@ struct GeometryTransform {
       return videoGeo
     }  // end of transform block
 
-    // MARK: - Utils
+    // MARK: - Sync VideoGeometry from mpv video-params
 
+    /// Each instance holds metadata from one of the mpv properties: `video-params`, `video-dec-params`, or `video-out-params`.
     struct VideoParams: Decodable {
       let aspect: Double
       let par: Double

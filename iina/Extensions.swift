@@ -910,6 +910,12 @@ extension RangeExpression where Bound == String.Index  {
   func nsRange<S: StringProtocol>(in string: S) -> NSRange { .init(self, in: string) }
 }
 
+extension IndexSet {
+  func toArray() -> [Int] {
+    map{$0}
+  }
+}
+
 // MARK: - Data
 
 extension NSData {

@@ -496,7 +496,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         case .openFile:
           quitForAction = .openPanel
         case .welcome:
-          guard !UIState.shared.windowsOpen.isEmpty else {
+          let windowsOpen = UIState.shared.windowsOpen
+          guard windowsOpen.isEmpty else {
+            Logger.log.verbose{"LastWindowClosed == ActionWhenNoOpenWindow == welcomeWindow, but \(windowsOpen.count) other windows are open(ing): ignoring"}
             return
           }
           quitForAction = .welcomeWindow

@@ -82,83 +82,17 @@ extension VideoView {
     let heightMin: NSLayoutConstraint
 #endif
 
-    func disableAll() {
-      topSpacerConnection.isActive = false
-      bottomSpacerConnection.isActive = false
-      leadingSpacerConnection.isActive = false
-      trailingSpacerConnection.isActive = false
-
-      topSpacerMin.isActive = false
-      trailingSpacerMin.isActive = false
-      bottomSpacerMin.isActive = false
-      leadingSpacerMin.isActive = false
-
-      topSpacerMax.isActive = false
-      trailingSpacerMax.isActive = false
-      bottomSpacerMax.isActive = false
-      leadingSpacerMax.isActive = false
-
-      topSpacerPreferred.isActive = false
-      trailingSpacerPreferred.isActive = false
-      bottomSpacerPreferred.isActive = false
-      leadingSpacerPreferred.isActive = false
-
-      widthMax.isActive = false
-      heightMax.isActive = false
-
-      centerX.isActive = false
-      centerY.isActive = false
-
-      aspectRatio.isActive = false
-
-#if TEST_VIDEO_CONSTRAINTS
-      eqOffsetTop.isActive = false
-      eqOffsetTrailing.isActive = false
-      eqOffsetBottom.isActive = false
-      eqOffsetLeading.isActive = false
-
-      ltOffsetTop.isActive = false
-      ltOffsetTrailing.isActive = false
-      ltOffsetBottom.isActive = false
-      ltOffsetLeading.isActive = false
-
-      widthMin.isActive = false
-      heightMin.isActive = false
-
-      centerX2.isActive = false
-      centerY2.isActive = false
-#endif
-    }
-
-    func updateSpacerMin(to spacerMin: MarginQuad?, spacerMin_Priority: NSLayoutConstraint.Priority) {
-      if let spacerMin {
-        topSpacerMin.animateToConstant(spacerMin.top)
-        bottomSpacerMin.animateToConstant(spacerMin.bottom)
-        leadingSpacerMin.animateToConstant(spacerMin.leading)
-        trailingSpacerMin.animateToConstant(spacerMin.trailing)
-
-        topSpacerMin.priority = spacerMin_Priority
-        bottomSpacerMin.priority = spacerMin_Priority
-        trailingSpacerMin.priority = spacerMin_Priority
-        leadingSpacerMin.priority = spacerMin_Priority
-      }
-
-      let spacerMin_Active = spacerMin != nil
-      topSpacerMin.isActive = spacerMin_Active
-      bottomSpacerMin.isActive = spacerMin_Active
-      trailingSpacerMin.isActive = spacerMin_Active
-      leadingSpacerMin.isActive = spacerMin_Active
-    }
-
+    /// UPDATE FUNC
     fileprivate func update(connectSpacers_Active: Bool, connectSpacers_Priority: NSLayoutConstraint.Priority,
-                            aspect_Active: Bool, aspect_Priority: NSLayoutConstraint.Priority,
-                            whMax: CGSize? = nil, whMax_Priority: NSLayoutConstraint.Priority,
+                            aspectMultiplier: CGFloat, aspect_Priority: NSLayoutConstraint.Priority,
+                            wMax: CGFloat? = nil, hMax: CGFloat? = nil, whMax_Priority: NSLayoutConstraint.Priority,
                             spacerMax_Active: Bool, spacerMax_Priority: NSLayoutConstraint.Priority,
                             spacerMin: MarginQuad?, spacerMin_Priority: NSLayoutConstraint.Priority,
                             spacerPreferred: MarginQuad?, spacerPreferred_Priority: NSLayoutConstraint.Priority,
                             center_Active: Bool, center_Priority: NSLayoutConstraint.Priority) {
 
-      log.verbose{"Δ VideoView constraints ≔ whMax=\(whMax?.description ?? "nil")|\(whMax_Priority.rawValue) spacerMax=\(spacerMax_Active.yn)|\(spacerMax_Priority.rawValue) spacerMin=\(spacerMin?.description ?? "nil")|\(spacerMin_Priority.rawValue) spacerPref=\(spacerPreferred?.description ?? "nil")|\(spacerPreferred_Priority.rawValue) aspect=\(aspect_Active.yn)|\(aspectRatio.multiplier)|\(aspect_Priority.rawValue)"}
+      let aspect_Active = aspectMultiplier > 0.0
+      log.verbose{"Δ VideoView constraints ≔ maxSize: {w=\(wMax?.description ?? "nil") from super.w, h=\(hMax?.description ?? "nil") from super.h}@\(whMax_Priority.rawValue) spacers:{max=\(spacerMax_Active.yn)@\(spacerMax_Priority.rawValue) min=\(spacerMin?.description ?? "nil")@\(spacerMin_Priority.rawValue) pref=\(spacerPreferred?.description ?? "nil")@\(spacerPreferred_Priority.rawValue)} aspect=\(aspect_Active.yn)|\(aspectRatio.multiplier)@\(aspect_Priority.rawValue)"}
 
 #if TEST_VIDEO_CONSTRAINTS
       // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
@@ -228,12 +162,13 @@ extension VideoView {
         leadingSpacerPreferred.priority = spacerPreferred_Priority
       }
 
-      if let whMax {
-        widthMax.animateToConstant(-whMax.width)
-        heightMax.animateToConstant(-whMax.height)
-
-        widthMax.priority = whMax_Priority
-        heightMax.priority = whMax_Priority
+      if let wMax {
+        widthMax.animateToConstant(wMax)
+        widthMax.priority = whMax_Priority //+ (aspectMultiplier > 1 ? 1 : 0)
+      }
+      if let hMax {
+        heightMax.animateToConstant(hMax)
+        heightMax.priority = whMax_Priority //+ (aspectMultiplier > 1 ? 0 : 1)
       }
 
       centerX.priority = center_Priority
@@ -260,39 +195,84 @@ extension VideoView {
       leadingSpacerPreferred.isActive = spacerPreferred_Active
 
       // TODO: improvements for music mode
-      let whMax_Active = whMax != nil
-      widthMax.isActive = whMax_Active
-      heightMax.isActive = whMax_Active
+      widthMax.isActive = wMax != nil
+      heightMax.isActive = hMax != nil
 
       centerX.isActive = center_Active
       centerY.isActive = center_Active
 
       updateSpacerMin(to: spacerMin, spacerMin_Priority: spacerMin_Priority)
     }
-  }
 
-  func removeVideoConstraints() {
-    guard let cons = videoViewConstraints else {
-      log.verbose("VideoView: all video constraints already removed")
-      return
+    func updateSpacerMin(to spacerMin: MarginQuad?, spacerMin_Priority: NSLayoutConstraint.Priority) {
+      if let spacerMin {
+        topSpacerMin.animateToConstant(spacerMin.top)
+        bottomSpacerMin.animateToConstant(spacerMin.bottom)
+        leadingSpacerMin.animateToConstant(spacerMin.leading)
+        trailingSpacerMin.animateToConstant(spacerMin.trailing)
+
+        topSpacerMin.priority = spacerMin_Priority
+        bottomSpacerMin.priority = spacerMin_Priority
+        trailingSpacerMin.priority = spacerMin_Priority
+        leadingSpacerMin.priority = spacerMin_Priority
+      }
+
+      let spacerMin_Active = spacerMin != nil
+      topSpacerMin.isActive = spacerMin_Active
+      bottomSpacerMin.isActive = spacerMin_Active
+      trailingSpacerMin.isActive = spacerMin_Active
+      leadingSpacerMin.isActive = spacerMin_Active
     }
 
-    log.verbose("VideoView: removing all video constraints")
-    cons.disableAll()
-    videoViewConstraints = nil
-  }
+    func disableAll() {
+      topSpacerConnection.isActive = false
+      bottomSpacerConnection.isActive = false
+      leadingSpacerConnection.isActive = false
+      trailingSpacerConnection.isActive = false
 
-  func loosenConstraints() {
-    guard let cons = videoViewConstraints else { return }
+      topSpacerMin.isActive = false
+      trailingSpacerMin.isActive = false
+      bottomSpacerMin.isActive = false
+      leadingSpacerMin.isActive = false
 
-    cons.update(connectSpacers_Active: true, connectSpacers_Priority: .init(100),
-                aspect_Active: true, aspect_Priority: .init(50),
-                whMax: .zero, whMax_Priority: .init(99),
-                spacerMax_Active: true, spacerMax_Priority: .init(98),
-                spacerMin: nil, spacerMin_Priority: .init(97),
-                spacerPreferred: nil, spacerPreferred_Priority: .init(97),
-                center_Active: true, center_Priority: .init(96))
-  }
+      topSpacerMax.isActive = false
+      trailingSpacerMax.isActive = false
+      bottomSpacerMax.isActive = false
+      leadingSpacerMax.isActive = false
+
+      topSpacerPreferred.isActive = false
+      trailingSpacerPreferred.isActive = false
+      bottomSpacerPreferred.isActive = false
+      leadingSpacerPreferred.isActive = false
+
+      widthMax.isActive = false
+      heightMax.isActive = false
+
+      centerX.isActive = false
+      centerY.isActive = false
+
+      aspectRatio.isActive = false
+
+#if TEST_VIDEO_CONSTRAINTS
+      eqOffsetTop.isActive = false
+      eqOffsetTrailing.isActive = false
+      eqOffsetBottom.isActive = false
+      eqOffsetLeading.isActive = false
+
+      ltOffsetTop.isActive = false
+      ltOffsetTrailing.isActive = false
+      ltOffsetBottom.isActive = false
+      ltOffsetLeading.isActive = false
+
+      widthMin.isActive = false
+      heightMin.isActive = false
+
+      centerX2.isActive = false
+      centerY2.isActive = false
+#endif
+    }
+
+  }  // end struct VideoViewConstraints
 
   /// Add, update, or remove all constraints, based on the given geometry (or lack thereof).
   func apply(_ geometry: PWinGeometry?) {
@@ -415,10 +395,12 @@ extension VideoView {
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers_Active: true, connectSpacers_Priority: .required,
                 // The desired aspect must always be honored. All constraints are secondary to this.
-                aspect_Active: aspectMultiplier > 0.0,
+                aspectMultiplier: aspectMultiplier,
                 aspect_Priority: musicMode ? .init(499) : .required,
 
-                whMax: spacerMin.totalSize,
+                /// For interactive mode, max width should equal superview's width minus minMargins
+                wMax: -spacerMin.totalWidth,
+                hMax: -spacerMin.totalHeight,
                 whMax_Priority: musicMode ? .required : .init(495),
 
                 spacerMax_Active: !musicMode && !interactiveMode,
@@ -440,4 +422,31 @@ extension VideoView {
     needsUpdateConstraints = true
     superview.layout()
   }
+
+  /// Need to remove all constraints when in PiP: it will do layout based on the layer's `autoresizingMask`.
+  func removeVideoConstraints() {
+    guard let cons = videoViewConstraints else {
+      log.verbose("VideoView: all video constraints already removed")
+      return
+    }
+
+    log.verbose("VideoView: removing all video constraints")
+    cons.disableAll()
+    videoViewConstraints = nil
+  }
+
+#if TEST_VIDEO_CONSTRAINTS
+  func loosenConstraints() {
+    guard let cons = videoViewConstraints else { return }
+
+    cons.update(connectSpacers_Active: true, connectSpacers_Priority: .init(100),
+                aspectMultiplier: cons.aspectRatio.multiplier, aspect_Priority: .init(50),
+                wMax: 0, hMax: 0, whMax_Priority: .init(99),
+                spacerMax_Active: true, spacerMax_Priority: .init(98),
+                spacerMin: nil, spacerMin_Priority: .init(97),
+                spacerPreferred: nil, spacerPreferred_Priority: .init(97),
+                center_Active: true, center_Priority: .init(96))
+  }
+#endif
+
 }

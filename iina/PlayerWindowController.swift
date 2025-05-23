@@ -849,13 +849,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       if case .restoring(let priorState) = sessionState {
         restoreFromMiscWindowBools(priorState)
       } else {
-        // check this first! Referencing initialWindow will cause it to be loaded!
+        // MUST register new window before closing welcome window. If welcome window was only window open,
+        // doActionWhenLastWindowWillClose() can be triggered, which consults UIState.shared.windowsOpen to check for open or pending open windows
+        if !window.isMiniaturized {
+          UIState.shared.windowsOpen.insert(window.savedStateName)
+        }
+        // Referencing AppDelegate.shared.initialWindow directly will cause it to be loaded! So check list of open windows instead:
         if UIState.shared.windowsOpen.contains(WindowAutosaveName.welcome.string) ||
             UIState.shared.windowsMinimized.contains(WindowAutosaveName.welcome.string) {
           AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
-        }
-        if !window.isMiniaturized {
-          UIState.shared.windowsOpen.insert(window.savedStateName)
         }
       }
     }
