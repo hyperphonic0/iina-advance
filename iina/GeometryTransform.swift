@@ -617,6 +617,16 @@ struct GeometryTransform {
         log.verbose{"[GeoTF:\(name)] Vid \(vidTrackID) has mpv videoDecParams=\(videoDecParamsJson ?? "nil"), videoParams=\(videoParams ?? "nil"), videoOutParams=\(videoOutParamsJson ?? "nil")"}
       }
 
+      /// Find `codecAspect`:
+      let codecAspect: String?
+      if let videoDecParams {
+        /// `codecAspect` should match the product `par * sar`
+        codecAspect = String(videoDecParams.aspect)
+      } else {
+        log.errorDebugAlert{"[GeoTF:\(name)] Failed to get codecAspect from either videoDecParams or videoOutParams"}
+        codecAspect = nil
+      }
+
       // Sync video-aspect-override. This does get synced from an mpv notification, but there is a noticeable delay
       var userAspectLabelDerived = ""
       if let mpvVideoAspectOverride = player.mpv.getString(MPVOption.Video.videoAspectOverride) {
@@ -625,34 +635,6 @@ struct GeometryTransform {
           // Not necessarily an error? Need to improve aspect name matching logic
           log.debug{"[GeoTF:\(name)] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(oldGeo.video.userAspectLabel.quoted))"}
         }
-      }
-
-      /// Find `codecAspect`:
-      let codecAspect: String?
-      if let videoDecParams {
-        /// `codecAspect` should match the product `par * sar`
-        codecAspect = String(videoDecParams.aspect)
-      } else if let videoOutParams {
-        // It looks like libmpv is not always reliable at delivering videoDecParams, even at fileLoaded... Seems more likely under heavy load?
-        // Try to derive codecAspect from other variables.
-        // The aspect in videoOutParams should contain the number we want, unless there is an aspect override applied.
-        let aspectDisplayed = videoOutParams.aspect
-        let aspectDerived: Double
-        if let aspectOverride = Aspect(string: userAspectLabelDerived)?.mpvAspect {
-          // Looks like mpv modifies the video's par to get to the desired aspect. Should be able to work in reverse.
-          assert(Double(aspectOverride).roundedTo6() == aspectDisplayed.roundedTo6(),
-                 "aspectOverride \(aspectOverride) != displayedAspect \(aspectDisplayed)")
-          let par = videoOutParams.par
-          aspectDerived = aspectDisplayed / par
-          log.debug{"[GeoTF:\(name)] Could not get videoDecParams; aspectOverride=\(aspectOverride); derived codecAspect from displayedAspect=\(aspectDisplayed) / par=\(par) → \(aspectDerived)"}
-        } else {
-          aspectDerived = aspectDisplayed
-          log.debug{"[GeoTF:\(name)] Could not get videoDecParams; assuming codecAspect ≍ displayedAspect=\(aspectDisplayed), ∵ ∄ aspectOverride"}
-        }
-        codecAspect = String(aspectDerived.roundedTo6())
-      } else {
-        log.errorDebugAlert{"[GeoTF:\(name)] Failed to get codecAspect from either videoDecParams or videoOutParams"}
-        codecAspect = nil
       }
 
       // Sync video's raw dimensions from mpv. This is especially important for streaming videos, which won't have cached videoMeta.

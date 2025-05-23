@@ -1954,6 +1954,7 @@ class PlayerCore: NSObject {
 
   }
 
+  // FIXME: there is a bug here
   func movePlaylistRows(from rowIndexes: IndexSet, to targetRowIndex: Int, registerUndoRedo: Bool) {
     let (tableUIChange, allItemsNew) = TableUIChange.builder.buildMove(rowIndexes, to: targetRowIndex, in: displayedPlaylist)
     let allItemsOld = displayedPlaylist                                          // save in case of undo

@@ -87,6 +87,7 @@ extension PlayerWindowController {
       // Update this here to reduce animation jitter on older versions of MacOS:
       viewportTopOffsetFromTopBarTopConstraint.constant = Constants.Distance.standardTitleBarHeight
 
+      window.preservesContentDuringLiveResize = false
       initViewportView(in: contentView)
       initAlbumArtView()
       initSeekPreview(in: contentView)

@@ -47,7 +47,8 @@ extension PlayerWindowController {
       return requestedSize
     }
 
-    // FIXME: this still doesn't look great in music mode; maybe adjust VideoView constraints
+    // Tweak to improve responsiveness in music mode. Doesn't seem to affect normal windowed mode.
+    // FIXME: this still doesn't look great. Maybe tweak VideoView constraints in music mode
     CATransaction.setAnimationDuration(0)
 
     return resizeWindowSubviews(window, to: requestedSize)
