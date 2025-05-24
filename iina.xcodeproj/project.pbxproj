@@ -356,6 +356,7 @@
 		D1A4D9882B1486A10009AB4E /* LegacyMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */; };
 		D1A8878C29D16452000D1AE4 /* RotGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */; };
 		D1A8878E29D1696C000D1AE4 /* PWin_Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */; };
+		D1AC43942DE1BADC00189782 /* VideoGeo_Sync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AC43932DE1BACA00189782 /* VideoGeo_Sync.swift */; };
 		D1ACFDC92D93637F00F45712 /* MetalVideoLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDC82D93637A00F45712 /* MetalVideoLayer.swift */; };
 		D1ACFDCB2D9675DD00F45712 /* MPV_Init.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */; };
 		D1ACFDCD2D967FAD00F45712 /* MPV_EventHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDCC2D967FA700F45712 /* MPV_EventHandling.swift */; };
@@ -1900,6 +1901,7 @@
 		D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyMigration.swift; sourceTree = "<group>"; };
 		D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotGestureHandler.swift; sourceTree = "<group>"; };
 		D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Sidebar.swift; sourceTree = "<group>"; };
+		D1AC43932DE1BACA00189782 /* VideoGeo_Sync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGeo_Sync.swift; sourceTree = "<group>"; };
 		D1ACFDC82D93637A00F45712 /* MetalVideoLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalVideoLayer.swift; sourceTree = "<group>"; };
 		D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPV_Init.swift; sourceTree = "<group>"; };
 		D1ACFDCC2D967FA700F45712 /* MPV_EventHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPV_EventHandling.swift; sourceTree = "<group>"; };
@@ -2951,6 +2953,7 @@
 				D1A44D892A5E18D00089B283 /* PWinGeometry.swift */,
 				D19CF7152AB846D300511F80 /* MusicModeGeo.swift */,
 				D13350942D06B7E200201623 /* GeometryTransform.swift */,
+				D1AC43932DE1BACA00189782 /* VideoGeo_Sync.swift */,
 				D1AD32592ACC078600F86EE8 /* LayoutState.swift */,
 				D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */,
 				D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */,
@@ -3385,6 +3388,7 @@
 				D160783B2D140DEE00105001 /* BarFactoryUtil.swift in Sources */,
 				84E745D61DFDD4FD00588DED /* KeyCodeHelper.swift in Sources */,
 				840D479B1DFEF649000D9A64 /* KeyRecordViewController.swift in Sources */,
+				D1AC43942DE1BADC00189782 /* VideoGeo_Sync.swift in Sources */,
 				D101635D2C197D4D00D1D663 /* PWin_OSD.swift in Sources */,
 				E3965E1A2487C99900607EB4 /* JavascriptPluginSubtitle.swift in Sources */,
 				D1E407BD2CC39549002A2F9B /* PWin_Input.swift in Sources */,
