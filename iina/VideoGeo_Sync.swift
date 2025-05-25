@@ -63,22 +63,21 @@ extension GeometryTransform.Context {
     // data for videoOutParams! Seems like the best option is to wait for it. But adding some guardrails...
     // Fortunately we are already in the mpv queue. So we shouldn't block the UI, but we will be blocking mpv from processing
     // more user requests which would only add to the burden.
-    let videoDecParams: MpvVideoParams? = getWithRetries(propName: MPVProperty.videoDecParams)
+    guard let videoDecParams: MpvVideoParams = getWithRetries(propName: MPVProperty.videoDecParams) else {
+      log.verbose{"[GeoTF:\(name)] Aborting: could not get video-dec-params"}
+      return nil
+    }
 
     /// `video-out-params` == final video params for display
     /// This is known to return `nil` during startup, when loading a media file on a remote volume.
     /// Just wait for it as well.
-    let videoOutParams: MpvVideoParams? = getWithRetries(propName: MPVProperty.videoOutParams)
-
-    /// Find `codecAspect`:
-    let codecAspect: String?
-    if let videoDecParams {
-      /// `codecAspect` should match the product `par * sar`
-      codecAspect = String(videoDecParams.aspect)
-    } else {
-      log.errorDebugAlert{"[GeoTF:\(name)] Failed to get codecAspect from either videoDecParams or videoOutParams"}
-      codecAspect = nil
+    guard let videoOutParams: MpvVideoParams = getWithRetries(propName: MPVProperty.videoOutParams) else {
+      log.verbose{"[GeoTF:\(name)] Aborting: could not get video-out-params"}
+      return nil
     }
+
+    /// `codecAspect` should match the product `par * sar`
+    let codecAspect = String(videoDecParams.aspect)
 
     // Sync video-aspect-override. This does get synced from an mpv notification, but there is a noticeable delay
     var userAspectLabelDerived = ""
@@ -94,10 +93,10 @@ extension GeometryTransform.Context {
     // Fortunately the number don't seem to change between videoDecParams & videoOutParams.
     let rawWidth: Int?
     let rawHeight: Int?
-    if let videoOutParams, videoOutParams.w > 0, videoOutParams.h > 0 {
+    if videoOutParams.w > 0, videoOutParams.h > 0 {
       rawWidth = videoOutParams.w
       rawHeight = videoOutParams.h
-    } else if let videoDecParams, videoDecParams.w > 0, videoDecParams.h > 0 {
+    } else if videoDecParams.w > 0, videoDecParams.h > 0 {
       rawWidth = videoDecParams.w
       rawHeight = videoDecParams.h
     } else {
@@ -116,36 +115,46 @@ extension GeometryTransform.Context {
 
 #if DEBUG
     // TODO: clean up these checks after doing more research
-    if let videoDecParams {
-      if streamRotation != videoDecParams.rotate {
-        player.log.error{"Mismatch: streamRotation (\(streamRotation)) != videoDecParams.rotate (\(videoDecParams.rotate))"}
-      }
+    if streamRotation != videoDecParams.rotate {
+      player.log.error{"Mismatch: streamRotation (\(streamRotation)) != videoDecParams.rotate (\(videoDecParams.rotate))"}
     }
-    if let videoOutParams {
-      if streamRotation != videoOutParams.rotate {
-        player.log.error{"Mismatch: streamRotation (\(streamRotation)) != videoOutParams.rotate (\(videoOutParams.rotate))"}
-      }
+    if streamRotation != videoOutParams.rotate {
+      player.log.error{"Mismatch: streamRotation (\(streamRotation)) != videoOutParams.rotate (\(videoOutParams.rotate))"}
     }
 #endif
 
     // If opening window, videoGeo may still have the global (default) log. Update it
-    let videoGeo = oldGeo.video.clone(rawWidth: rawWidth, rawHeight: rawHeight,
+    var videoGeo = oldGeo.video.clone(rawWidth: rawWidth, rawHeight: rawHeight,
                                       decodedAspectLabel: codecAspect,
                                       userAspectLabel: userAspectLabelDerived,
                                       streamRotation: streamRotation,
                                       userRotation: userRotation)
 
-
-
     // FIXME: audioStatus==notAudio for playlist which auto-plays audio
     if !currentMediaAudioStatus.isAudio, vidTrackID != 0 {
-      let dwidth = videoOutParams?.dw ?? 0
-      let dheight = videoOutParams?.dh ?? 0
-      let ours = videoGeo.videoSizeCA
-      // Apparently mpv can sometimes add a pixel. Not our fault...
-      if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
-        player.log.errorDebugAlert{"[\(name)] ❌ Sanity check for VideoGeometry failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours)). VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect ?? "nil")"}
+      if videoOutParams.dw > 0, videoOutParams.dh > 0 {
+        let dwidth = videoOutParams.dw
+        let dheight = videoOutParams.dh
+
+        let videoSizeDisplay: CGSize
+        if videoGeo.isWidthSwappedWithHeightByTotalRotation {
+          videoSizeDisplay = CGSize(width: dheight, height: dwidth)
+        } else {
+          videoSizeDisplay = CGSize(width: dwidth, height: dheight)
+        }
+
+        let ours = videoGeo.videoSizeCA
+
+        // Apparently mpv can sometimes add a pixel. Not our fault...
+        if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
+          player.log.errorDebugAlert{"[\(name)] ❌ Sanity check for VideoGeometry failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours)). VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect)"}
+        }
+
+        videoGeo = videoGeo.clone(videoSizeDisplay: videoSizeDisplay)
+      } else {
+        player.log.errorDebugAlert{"[\(name)] ❌ Sanity check for VideoGeometry failed: dw or dh is nil in video-out-params! VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect)"}
       }
+
     }
 
     return videoGeo

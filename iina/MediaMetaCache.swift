@@ -22,6 +22,8 @@ struct VideoMeta : CustomStringConvertible {
   let rawWidth: Int
   let rawHeight: Int
 
+  /// The "inherent" aspect of the video as specified in its stream headers, transport data, etc., not including
+  /// any overrides.
   let decodedAspectLabel: String
 
   /// Should match mpv's `video-params/rotate`

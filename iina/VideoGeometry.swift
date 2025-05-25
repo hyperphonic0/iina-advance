@@ -50,6 +50,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
        decodedAspectLabel: String, userAspectLabel: String,
        streamRotation: Int, userRotation: Int,
        selectedCropLabel: String,
+       videoSizeDisplay: CGSize? = nil,
        log: Logger.Subsystem) {
     self.rawWidth = rawWidth
     self.rawHeight = rawHeight
@@ -69,6 +70,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     } else {
       self.cropRectNormalized = nil
     }
+    self._videoSizeDisplay = videoSizeDisplay
     self.log = log
   }
 
@@ -91,17 +93,22 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
 
   // MARK: - Substitution convenience functions
 
+  /// Any fields omitted here will use values from self - except for `videoSizeDisplay`, which will be reset to `nil` if omitted.
   func clone(rawWidth: Int? = nil, rawHeight: Int? = nil,
              decodedAspectLabel: String? = nil,
              userAspectLabel: String? = nil,
              streamRotation: Int? = nil, userRotation: Int? = nil,
-             selectedCropLabel: String? = nil, _ log: Logger.Subsystem? = nil) -> VideoGeometry {
+             selectedCropLabel: String? = nil,
+             videoSizeDisplay: CGSize? = nil,
+             _ log: Logger.Subsystem? = nil) -> VideoGeometry {
     return VideoGeometry(rawWidth: rawWidth ?? self.rawWidth, rawHeight: rawHeight ?? self.rawHeight,
                          decodedAspectLabel: decodedAspectLabel ?? self.decodedAspectLabel,
                          userAspectLabel: userAspectLabel ?? self.userAspectLabel,
                          streamRotation: streamRotation ?? self.streamRotation,
                          userRotation: userRotation ?? self.userRotation,
-                         selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel, log: log ?? self.log)
+                         selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel,
+                         videoSizeDisplay: videoSizeDisplay,
+                         log: log ?? self.log)
   }
 
   func substituting(_ videoMeta: VideoMeta, _ log: Logger.Subsystem? = nil) -> VideoGeometry {
@@ -173,8 +180,10 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: - TRANSFORMATION 2: Aspect
   // (Crop + Aspect)
 
-  /// The video's aspect ratio. This may be the result of applying pixel aspect ratio, etc, and may be different than
-  /// simple width / height.
+  /// The video's aspect ratio. This may be the result of applying pixel aspect from the video stream's headers or other
+  /// metadata, which may be different than the standard calculation of `rawWidth / rawHeight`.
+  ///
+  /// Does not include any video aspect overrides. For that, see `userAspectLabel`.
   ///
   /// This is a string so that it can be used to identify the currently selected aspect in the Video menu & in the Video Settings
   /// sidebar's segmented control. It ideally should be in the format `"W:H"` to match the UI and avoid number rounding issues,
@@ -188,7 +197,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   /// but this is also allowed to contain a decimal number (only the first 2 digits of its decimal will be read, however).
   ///
   /// This roughly corresponds to mpv's `--video-aspect-override` option. But does not allow values of `0` or `no` to
-  /// use square pixels.
+  /// use square pixels; these will be replaced with `Aspect.defaultIdentifier`.
   let userAspectLabel: String
 
   /// Same as `userAspectLabel`, but in Double format, or `nil` if no change from codec aspect.
@@ -262,6 +271,20 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   /// If displaying album art, this will be `1` (square).
   var videoAspectCAR: Double {
     return videoSizeCAR.mpvAspect
+  }
+
+  private var _videoSizeDisplay: CGSize? = nil
+  var videoSizeDisplay: CGSize {
+    get {
+      _videoSizeDisplay ?? videoSizeCAR
+    }
+    set {
+      _videoSizeDisplay = newValue
+    }
+  }
+
+  var videoAspectDisplay: CGFloat {
+    videoSizeDisplay.mpvAspect
   }
 
   // MARK: - Protocol conformance

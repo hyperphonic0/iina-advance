@@ -159,7 +159,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
            "Expected integer W & H for viewportSize, found \(viewportSize)")
 #endif
 
-    let targetVideoAspect = video.videoAspectCAR
+    let targetVideoAspect = video.videoAspectDisplay
     let videoSize = PWinGeometry.computeVideoSize(withAspectRatio: targetVideoAspect, toFillIn: viewportSize,
                                                   minViewportMargins: viewportMargins, mode: mode)
     self.videoSize = videoSize
@@ -270,10 +270,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   /// Final aspect ratio of `videoView`. Very close to `video.videoAspectCAR`, except it is calculated from the actual pixels
-  /// of the final `videoSize`. Very limited utility. In most cases `video.videoAspectCAR` should be used, as it is the target.
+  /// of the final `videoSize`. Very limited utility. In most cases `video.videoAspectDisplay` should be used, as it is the target.
   var videoViewAspect: CGFloat {
-    // Just use videoAspectCAR for now because it's a consistent value
-    return video.videoAspectCAR
+    // Just use videoAspectDisplay for now because it's a consistent value
+    return video.videoAspectDisplay
   }
 
   let videoSize: NSSize
