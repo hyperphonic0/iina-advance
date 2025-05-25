@@ -141,7 +141,7 @@ struct GeometryTransform {
         log.verbose{"[GeoTF:\(name)] Building transition tasks"}
 
         /// 3. (Optional) Transition window to initial layout. Must exexcute before `buildApplyTransformTasks`.
-        /// Will return empty task list if not applicable
+        /// Will return` []` if not applicable.
         var immediateTasks = pwc.buildWindowInitialLayoutTasks(using: &cxt)
 
         /// 4. Apply `windowedTransform` / `musicModeTransform`
@@ -190,7 +190,7 @@ struct GeometryTransform {
   /// If current media is file, this should be called after it is done loading.
   /// If current media is network resource, should be called immediately & show buffering msg.
   /// If current media's vid track changed, may need to apply new geometry
-  static func trackChanged(_ context: Context) -> VideoGeometry? {
+  static func vidTrackChanged(_ context: Context) -> VideoGeometry? {
     context.vidTrackChanged()
   }
 
@@ -507,22 +507,16 @@ struct GeometryTransform {
       inputVidGeo.userRotation != outputVidGeo.userRotation
     }
 
-    /// Standard `VideoGeometry.Transform` for video track change
+    /// Standard `VideoGeometry.Transform` for use in response to a `vid` property change event from mpv.
+    /// If current media is file, this should be called after it is done loading.
+    /// If current media is network resource, should be called immediately & show buffering msg.
+    /// If current media's vid track changed, may need to apply new geometry
+    ///
+    /// See: `GeometryTransform.vidTrackChanged`
     fileprivate func vidTrackChanged() -> VideoGeometry? {
       assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
       guard let videoGeo = syncVideoParamsFromMpv() else { return nil }
-
-      if currentMediaAudioStatus.isAudio || vidTrackID == 0 {
-        // Square album art
-        return videoGeo
-      }
-
-      if !currentPlayback.isNetworkResource {
-        // Update cache with latest video params
-        MediaMetaCache.shared.updateCachedVideoMeta(id: currentPlayback.id, videoGeo, log)
-      }
-
       log.debug{"[GeoTF:\(name)] Derived videoGeo \(videoGeo)"}
       return videoGeo
     }  // end of transform block

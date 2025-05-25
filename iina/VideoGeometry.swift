@@ -107,7 +107,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
                          streamRotation: streamRotation ?? self.streamRotation,
                          userRotation: userRotation ?? self.userRotation,
                          selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel,
-                         videoSizeDisplay: videoSizeDisplay,
+                         videoSizeDisplay: videoSizeDisplay ?? self.videoSizeDisplay,
                          log: log ?? self.log)
   }
 

@@ -50,7 +50,7 @@ extension PlayerCore {
     }
 
     mpv.queue.async { [self] in
-      /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
+      /// Do not call `updateSelectedCrop` - it will be called in response to `vf` property change event
       let addSucceeded = addVideoFilter(vf)
       if !addSucceeded {
         log.error{"Failed to add crop filter \(newCropLabel.quoted); setting crop to None"}

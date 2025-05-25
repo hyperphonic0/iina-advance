@@ -64,7 +64,7 @@ extension GeometryTransform.Context {
     // Fortunately we are already in the mpv queue. So we shouldn't block the UI, but we will be blocking mpv from processing
     // more user requests which would only add to the burden.
     guard let videoDecParams: MpvVideoParams = getWithRetries(propName: MPVProperty.videoDecParams) else {
-      log.verbose{"[GeoTF:\(name)] Aborting: could not get video-dec-params"}
+      log.verbose{"[GeoTF:\(name)] Aborting: could not get video-dec-params for playback"}
       return nil
     }
 
@@ -72,7 +72,7 @@ extension GeometryTransform.Context {
     /// This is known to return `nil` during startup, when loading a media file on a remote volume.
     /// Just wait for it as well.
     guard let videoOutParams: MpvVideoParams = getWithRetries(propName: MPVProperty.videoOutParams) else {
-      log.verbose{"[GeoTF:\(name)] Aborting: could not get video-out-params"}
+      log.verbose{"[GeoTF:\(name)] Aborting: could not get video-out-params for playback"}
       return nil
     }
 
@@ -100,9 +100,8 @@ extension GeometryTransform.Context {
       rawWidth = videoDecParams.w
       rawHeight = videoDecParams.h
     } else {
-      if vidTrackID != 0 {
-        log.warn{"[GeoTF:\(name)]: mpv returned 0 for w or h. Using cached size instead"}
-      }
+      assert(vidTrackID != 0, "[GeoTF:\(name)]: vidTrackID is 0, but we expected it to be non-zero")
+      log.warn{"[GeoTF:\(name)]: mpv returned 0 for w or h. Using cached size instead"}
       rawWidth = nil
       rawHeight = nil
     }
@@ -131,32 +130,36 @@ extension GeometryTransform.Context {
                                       userRotation: userRotation)
 
     // FIXME: audioStatus==notAudio for playlist which auto-plays audio
-    if !currentMediaAudioStatus.isAudio, vidTrackID != 0 {
-      if videoOutParams.dw > 0, videoOutParams.dh > 0 {
-        let dwidth = videoOutParams.dw
-        let dheight = videoOutParams.dh
 
-        let videoSizeDisplay: CGSize
-        if videoGeo.isWidthSwappedWithHeightByTotalRotation {
-          videoSizeDisplay = CGSize(width: dheight, height: dwidth)
-        } else {
-          videoSizeDisplay = CGSize(width: dwidth, height: dheight)
-        }
-
-        let ours = videoGeo.videoSizeCA
-
-        // Apparently mpv can sometimes add a pixel. Not our fault...
-        if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
-          player.log.errorDebugAlert{"[\(name)] ❌ Sanity check for VideoGeometry failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours)). VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect)"}
-        }
-
-        videoGeo = videoGeo.clone(videoSizeDisplay: videoSizeDisplay)
+    assert(!currentMediaAudioStatus.isAudio && (vidTrackID != 0), "Unexpected currentMediaAudioStatus=\(currentMediaAudioStatus) for vidTrackID=\(vidTrackID)")
+    if videoOutParams.dw <= 0 || videoOutParams.dh <= 0 {
+      player.log.errorDebugAlert{"[\(name)] ❌ Sanity check for VideoGeometry failed: dw or dh is nil in video-out-params! VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect)"}
+      return videoGeo
+    } else {
+      let dwidth = videoOutParams.dw
+      let dheight = videoOutParams.dh
+      
+      let videoSizeDisplay: CGSize
+      if videoGeo.isWidthSwappedWithHeightByTotalRotation {
+        videoSizeDisplay = CGSize(width: dheight, height: dwidth)
       } else {
-        player.log.errorDebugAlert{"[\(name)] ❌ Sanity check for VideoGeometry failed: dw or dh is nil in video-out-params! VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect)"}
+        videoSizeDisplay = CGSize(width: dwidth, height: dheight)
       }
-
+      
+      let ours = videoGeo.videoSizeCAR
+      // Apparently mpv can sometimes add a pixel. Not our fault...
+      if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
+        player.log.errorDebugAlert{"[\(name)] ❌ Sanity check for VideoGeometry failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours)). VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect)"}
+      }
+      
+      videoGeo = videoGeo.clone(videoSizeDisplay: videoSizeDisplay)
+      
+      if !currentPlayback.isNetworkResource {
+        // Update cache with latest video params
+        MediaMetaCache.shared.updateCachedVideoMeta(id: currentPlayback.id, videoGeo, log)
+      }
     }
-
+    log.debug{"[GeoTF:\(name)] Derived videoGeo from mpv video-params: \(videoGeo)"}
     return videoGeo
   }
 

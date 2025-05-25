@@ -2225,17 +2225,6 @@ class PlayerCore: NSObject {
     didSucceed = mpv.command(.vf, args: ["add", filter], checkError: false) >= 0
     log.debug{"Add filter: \(didSucceed ? "Succeeded" : "Failed")"}
 
-    if didSucceed, let vf = MPVFilter(rawString: filter) {
-      if Thread.isMainThread {
-        mpv.queue.async { [self] in
-          setPlaybackInfoFilter(vf)
-        }
-      } else {
-        assert(DispatchQueue.isExecutingIn(mpv.queue))
-        setPlaybackInfoFilter(vf)
-      }
-    }
-
     return didSucceed
   }
 
@@ -2307,8 +2296,9 @@ class PlayerCore: NSObject {
       return false
     }
 
-    /// `getVideoFilters` will ensure various filter caches will stay up to date
-    let didRemoveSuccessfully = !getVideoFilters().compactMap({$0.label}).contains(label)
+    let updatedFilterList = updateVideoFiltersFromMpv()
+    /// `updateVideoFiltersFromMpv` will ensure various filter caches will stay up to date
+    let didRemoveSuccessfully = !updatedFilterList.compactMap({$0.label}).contains(label)
     guard !verify || didRemoveSuccessfully else {
       log.error("Failed to remove video filter \(label.quoted): filter still present after vf remove!")
       return false
@@ -2387,7 +2377,9 @@ class PlayerCore: NSObject {
   /// - Parameter filter: The filter to remove.
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   @discardableResult
-  func removeAudioFilter(_ filter: MPVFilter) -> Bool { removeAudioFilter(filter.stringFormat) }
+  func removeAudioFilter(_ filter: MPVFilter) -> Bool {
+    removeAudioFilter(filter.stringFormat)
+  }
 
   /// Remove an audio filter given as a string.
   ///
@@ -2777,7 +2769,7 @@ class PlayerCore: NSObject {
           return nil
         }
       }
-    }, video: GeometryTransform.trackChanged)
+    }, video: GeometryTransform.vidTrackChanged)
     windowController.animationPipeline.submit(tf)
 
     // Launch auto-load tasks on background thread
@@ -2865,7 +2857,7 @@ class PlayerCore: NSObject {
 
   func afChanged() {
     guard !isStopping else { return }
-    _ = getAudioFilters()
+    _ = updateAudioFiltersFromMpv()
     saveState()
     reloadQuickSettingsView()
     postNotification(.iinaAFChanged)
@@ -3134,7 +3126,7 @@ class PlayerCore: NSObject {
   func vfChanged() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
-    let vf = getVideoFilters()
+    let vf = updateVideoFiltersFromMpv()
     log.verbose{"Δ mpv prop: `vf = \(vf)"}
     postNotification(.iinaVFChanged)
 
@@ -3204,7 +3196,7 @@ class PlayerCore: NSObject {
 
     let tf = GeometryTransform("VidTrackChanged", self,
                                state: stateChangeFunc,
-                               video: GeometryTransform.trackChanged,
+                               video: GeometryTransform.vidTrackChanged,
                                musicMode: musicModeTransform)
     windowController.animationPipeline.submit(tf)
 
@@ -4079,15 +4071,15 @@ class PlayerCore: NSObject {
   func reloadSavedIINAfilters() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    let videoFilters = getVideoFilters()
+    let videoFilters = updateVideoFiltersFromMpv()
     postNotification(.iinaVFChanged)
-    let audioFilters = getAudioFilters()
+    let audioFilters = updateAudioFiltersFromMpv()
     postNotification(.iinaAFChanged)
     log.verbose{"Total filters from mpv: \(videoFilters.count) vf, \(audioFilters.count) af"}
   }
 
   /// `vf`: gets up-to-date list of video filters AND updates associated state in the process
-  func getVideoFilters() -> [MPVFilter] {
+  func updateVideoFiltersFromMpv() -> [MPVFilter] {
     // Clear cached filters first:
     info.flipFilter = nil
     info.mirrorFilter = nil
@@ -4095,7 +4087,7 @@ class PlayerCore: NSObject {
     let videoFilters = mpv.getFilters(MPVProperty.vf)
     var foundCropFilter = false
     for filter in videoFilters {
-      log.verbose{"Got mpv vf, name: \(filter.name.quoted), label: \(filter.label?.quoted ?? "nil"), params: \(filter.params ?? [:])"}
+      log.verbose{"Got mpv vf: name=\(filter.name.quoted) label=\(filter.label?.quoted ?? "nil") params=\(filter.params ?? [:])"}
       if filter.label == Constants.FilterLabel.crop {
         foundCropFilter = true
       }
@@ -4119,7 +4111,7 @@ class PlayerCore: NSObject {
   }
 
   /// `af`: gets up-to-date list of audio filters AND updates associated state in the process
-  func getAudioFilters() -> [MPVFilter] {
+  func updateAudioFiltersFromMpv() -> [MPVFilter] {
     let audioFilters = mpv.getFilters(MPVProperty.af)
     for filter in audioFilters {
       log.verbose{"Got mpv af, name: \(filter.name.quoted), label: \(filter.label?.quoted ?? "nil"), params: \(filter.params ?? [:])"}

@@ -868,7 +868,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       if let currentPlayback = player.info.currentPlayback, currentPlayback.isNetworkResource {
         log.verbose("Current playback is network resource: calling transformGeometry now")
         animationPipeline.submit(GeometryTransform("OpenNetStreamWindow", player,
-                                                   video: GeometryTransform.trackChanged))
+                                                   video: GeometryTransform.vidTrackChanged))
       }
     }
   }
