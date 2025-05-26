@@ -1991,13 +1991,21 @@ class PlayerCore: NSObject {
     return moveIndexPairs
   }
 
-  func buildInvertedMpvMoveIndexPairs(from moveIndexPairs: [(Int, Int)]) -> [(Int, Int)] {
+  func buildInvertedMpvMoveIndexPairs(from rowIndexes: IndexSet, to insertIndex: Int) -> [(Int, Int)] {
     var movePairsInverted: [(Int, Int)] = []
 
-    for (fromIndex, toIndex) in moveIndexPairs {
-      movePairsInverted.append((toIndex, fromIndex))
+    var moveFromOffset = 0
+    var moveToOffset = 0
+    for origIndex in rowIndexes {
+      if insertIndex < origIndex {
+        movePairsInverted.append((insertIndex, origIndex + moveFromOffset))
+        moveFromOffset -= 1
+      } else {
+        movePairsInverted.append((insertIndex + moveToOffset - 1, origIndex))
+        moveToOffset += 1
+      }
     }
-    return movePairsInverted
+    return movePairsInverted.reversed()
   }
 
   func movePlaylistRows(from rowIndexes: IndexSet, to insertIndex: Int, _ undoOption: UndoOption) {
@@ -2028,7 +2036,7 @@ class PlayerCore: NSObject {
           // can be at non-contiguous indexes in the playlist.
           let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
           // FIXME: there is a bug here
-          let undoMoveIndexPairs = buildInvertedMpvMoveIndexPairs(from: moveIndexPairs)
+          let undoMoveIndexPairs = buildInvertedMpvMoveIndexPairs(from: rowIndexes, to: insertIndex)
 
           log.verbose{"Undo move of playlist rows=\(rowIndexes.toArray()) → \(insertIndex); undoMoveIndexPairs=\(undoMoveIndexPairs)"}
           playlistMoveIndexPairs(undoMoveIndexPairs, allItemsNew, onSuccess: { [self] in

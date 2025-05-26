@@ -126,6 +126,7 @@ class TableUIChange {
 
   /// Subclasses should override executeContentUpdates() instead of this
   func execute(on tableView: EditableTableView) {
+    let log = tableView.log
     var animationTasks: [IINAAnimation.Task] = []
 
     // 1. "Before" animations (if provided)
@@ -178,7 +179,7 @@ class TableUIChange {
     if wantsReloadOfExistingRows {
       // 3. Reload.
       // MUST NOT DO THIS IN THE SAME ANIMATION TASK AS ROW UPDATES or else weird selection "burn-in" can result
-      animationTasks.append(.instantTask { [self] in
+      animationTasks.append(.instantTask {
         log.verbose("TableUIChange: reloading existing rows")
         /// Also uses `newSelectedRowIndexes`, if it is not nil:
         tableView.reloadExistingRows(reselectRowsAfter: false)
@@ -240,6 +241,7 @@ class TableUIChange {
     let insertAnimation = IINAAnimation.isAnimationEnabled ? (rowInsertAnimation ?? tableView.rowInsertAnimation) : []
     let removeAnimation = IINAAnimation.isAnimationEnabled ? (rowRemoveAnimation ?? tableView.rowRemoveAnimation) : []
 
+    let log = tableView.log
     log.verbose{"Executing TableUIChange type=\"\(changeType)\": removes=\(toRemove?.count ?? 0) inserts=\(toInsert?.count ?? 0) moves=\(toMove?.count ?? 0) updates=\(toUpdate?.count ?? 0) reloadExisting=\(reloadAllExistingRows.yn) selectedRows=\(newSelectedRowIndexes?.count.description ?? "nil")"}
 
     switch changeType {
@@ -257,7 +259,7 @@ class TableUIChange {
     case .moveRows:
       if let movePairs = toMove {
         for (oldIndex, newIndex) in movePairs {
-          log.verbose{"Moving row \(oldIndex) → \(newIndex)"}
+          log.verbose{"TableUIChange: Moving row \(oldIndex) → \(newIndex)"}
           tableView.moveRow(at: oldIndex, to: newIndex)
         }
       }

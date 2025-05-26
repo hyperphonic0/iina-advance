@@ -28,9 +28,13 @@ class EditableTableView: NSTableView {
   /// will draw a translucent background.
   var drawBackgroundForEmptyRows: Bool = true
 
+  var log: Logger.Subsystem {
+    associatedPlayer?.log ?? Logger.log
+  }
+
   override var isEnabled: Bool {
     didSet {
-      Logger.log.verbose{"Table isEnabled changed to \(isEnabled.yesno); reloading data"}
+      log.verbose{"Table isEnabled changed to \(isEnabled.yesno); reloading data"}
       // Need to reload rows in order to redraw them as grayed out
       reloadData()
     }
@@ -92,7 +96,7 @@ class EditableTableView: NSTableView {
   override func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
     let actionDescription = item.action == nil ? "nil" : "\(item.action!)"
     guard let delegate = self.editableDelegate else {
-      Logger.log.warn{"EditableTableView.validateUserInterfaceItem(): no delegate! Disabling \"\(actionDescription)\""}
+      log.warn{"EditableTableView: no delegate! Disabling action \"\(actionDescription)\""}
       return false
     }
 
@@ -109,10 +113,10 @@ class EditableTableView: NSTableView {
     case #selector(selectAll(_:)):
       isAllowed = delegate.isSelectAllEnabled()
     default:
-      Logger.log.verbose{"EditableTableView.validateUserInterfaceItem(): defaulting isAllowed=false for \"\(actionDescription)\""}
+      log.verbose{"EditableTableView: defaulting isAllowed=NO for action \"\(actionDescription)\""}
       return false
     }
-    Logger.log.verbose{"EditableTableView.validateUserInterfaceItem(): isAllowed=\(isAllowed.yesno) for \"\(actionDescription)\""}
+    log.trace{"EditableTableView: isAllowed=\(isAllowed.yesno) for action \"\(actionDescription)\""}
     return isAllowed
   }
 
@@ -124,7 +128,7 @@ class EditableTableView: NSTableView {
       case "ENTER", "KP_ENTER":
         if selectedRow >= 0 && selectedRow < numberOfRows && !editableTextColumnIndexes.isEmpty {
           if let delegate = self.editableDelegate, delegate.userDidPressEnterOnRow(selectedRow) {
-            Logger.log("TableView.KeyDown: \(keyChar) on row \(selectedRow)")
+            log.debug{"TableView.KeyDown: \(keyChar) on row \(selectedRow)"}
             editCell(row: selectedRow, column: editableTextColumnIndexes[0])
             return
           }
@@ -181,15 +185,15 @@ class EditableTableView: NSTableView {
     }
 
     guard rowIndex >= 0 && columnIndex >= 0 else {
-      Logger.log("Discarding request to edit cell: rowIndex (\(rowIndex)) or columnIndex (\(columnIndex)) is less than 0", level: .error)
+      log.error{"Discarding request to edit cell: rowIndex (\(rowIndex)) or columnIndex (\(columnIndex)) is less than 0"}
       return
     }
     guard rowIndex < numberOfRows else {
-      Logger.log("Discarding request to edit cell: rowIndex (\(rowIndex)) cannot be >= numberOfRows (\(numberOfRows))", level: .error)
+      log.error{"Discarding request to edit cell: rowIndex (\(rowIndex)) cannot be >= numberOfRows (\(numberOfRows))"}
       return
     }
     guard columnIndex < numberOfColumns else {
-      Logger.log("Discarding request to edit cell: columnIndex (\(columnIndex)) cannot be >= numberOfColumns (\(numberOfColumns))", level: .error)
+      log.error{"Discarding request to edit cell: columnIndex (\(columnIndex)) cannot be >= numberOfColumns (\(numberOfColumns))"}
       return
     }
 
@@ -199,7 +203,7 @@ class EditableTableView: NSTableView {
       return
     }
 
-    Logger.log.verbose{"EditableTableView: Opening inline editor for row \(rowIndex), col \(columnIndex)"}
+    log.verbose{"EditableTableView: Opening inline editor for row \(rowIndex), col \(columnIndex)"}
 
     self.scrollRowToVisible(rowIndex)
     cellEditTracker.changeCurrentCell(to: editableTextField, row: rowIndex, column: columnIndex)
@@ -244,20 +248,20 @@ class EditableTableView: NSTableView {
     var dragStartColumnIndex = self.column(at: dragStartPointInTable)
     var dragStartRowIndex = self.row(at: dragStartPointInTable)
     if dragStartColumnIndex < 0 || dragStartRowIndex < 0 {
-      Logger.log("Failed to get cellView from drag start coordinates! Cannot calculate drag image offset!", level: .error)
+      log.error{"Failed to get cellView from drag start coordinates! Cannot calculate drag image offset!"}
       dragStartColumnIndex = 0
       dragStartRowIndex = 0
     } else {
       if let clickedCell = view(atColumn: dragStartColumnIndex, row: dragStartRowIndex, makeIfNecessary: false) {
         dragStartPointInCell = clickedCell.convert(dragStartPointInTable, from: self)
-        Logger.log("Drag cell: row \(dragStartRowIndex), col \(dragStartColumnIndex); dragPoint \(dragStartPointInCell)", level: .verbose)
+        log.verbose{"Drag cell: row \(dragStartRowIndex), col \(dragStartColumnIndex); dragPoint \(dragStartPointInCell)"}
       }
     }
 
     session.enumerateDraggingItems(options: .clearNonenumeratedImages, for: nil, classes: [NSPasteboardItem.self],
-                                   searchOptions: [:]) {(draggingItem, rowNumber, stop) in
+                                   searchOptions: [:]) {[self] (draggingItem, rowNumber, stop) in
 
-      draggingItem.imageComponentsProvider = {
+      draggingItem.imageComponentsProvider = { [self] in
         var componentArray: [NSDraggingImageComponent] = []
 
         guard rowNumber < rowIndexArray.count else { return componentArray }
@@ -311,9 +315,9 @@ class EditableTableView: NSTableView {
         let draggingFrameSize = CGSize(width: self.frame.width,
                                        height: self.rowHeight * CGFloat(rowIndexArray.count))
         draggingItem.draggingFrame = NSRect(origin: draggingFrameOrigin, size: draggingFrameSize)
-        Logger.log.trace{"DraggingFrame: \(draggingItem.draggingFrame)"}
+        log.trace{"DraggingFrame: \(draggingItem.draggingFrame)"}
 
-        Logger.log.trace{"Returning \(componentArray.count) draggingImageComponents"}
+        log.trace{"Returning \(componentArray.count) draggingImageComponents"}
         return componentArray
       }
     }
@@ -327,7 +331,7 @@ class EditableTableView: NSTableView {
   // This will preserve the selection indexes (whereas reloadData() will not)
   func reloadExistingRows(reselectRowsAfter: Bool, usingNewSelection newRowIndexes: IndexSet? = nil) {
     let selectedRows = newRowIndexes ?? self.selectedRowIndexes
-    Logger.log.verbose{"Reloading existing rows\(reselectRowsAfter ? " (will re-select \(selectedRows) after)" : "")"}
+    log.verbose{"Reloading existing rows\(reselectRowsAfter ? " (will re-select \(selectedRows) after)" : "")"}
     reloadData(forRowIndexes: IndexSet(0..<numberOfRows), columnIndexes: IndexSet(0..<numberOfColumns))
     if reselectRowsAfter {
       // Fires change listener...
@@ -339,10 +343,10 @@ class EditableTableView: NSTableView {
     // It seems that `selectionIndexesForProposedSelection` needs to be called explicitly
     // in order to keep enforcing selection rules.
     if let approvedRows = self.delegate?.tableView?(self, selectionIndexesForProposedSelection: newSelectedRowIndexes) {
-      Logger.log.trace{"Updating table selection to approved indexes: \(approvedRows.map{$0})"}
+      log.trace{"Updating table selection to approved indexes: \(approvedRows.map{$0})"}
       self.selectRowIndexes(approvedRows, byExtendingSelection: byExtendingSelection)
     } else {
-      Logger.log.trace{"Updating table selection (no approval) to indexes: \(newSelectedRowIndexes.map{$0})"}
+      log.trace{"Updating table selection (no approval) to indexes: \(newSelectedRowIndexes.map{$0})"}
       self.selectRowIndexes(newSelectedRowIndexes, byExtendingSelection: byExtendingSelection)
     }
   }
@@ -362,11 +366,11 @@ class EditableTableView: NSTableView {
   // This notification contains the information needed to make the updates to the table (see: `TableUIChange`).
   private func tableShouldChange(_ notification: Notification) {
     guard let tableUIChange = notification.object as? TableUIChange else {
-      Logger.log.error("Received \"\(notification.name.rawValue)\" with invalid object: \(type(of: notification.object))")
+      log.error{"Received \"\(notification.name.rawValue)\" with invalid object: \(type(of: notification.object))"}
       return
     }
 
-    Logger.log.trace{"Received \"\(notification.name.rawValue)\" notification with changeType \(tableUIChange.changeType)"}
+    log.trace{"Received \"\(notification.name.rawValue)\" notification with changeType \(tableUIChange.changeType)"}
     tableUIChange.execute(on: self)
   }
 }

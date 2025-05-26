@@ -35,6 +35,10 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     current?.editInProgress ?? false
   }
 
+  var log: Logger.Subsystem {
+    parentTable.log
+  }
+
   private func getTextMovementName(from notification: Notification) -> String {
     guard let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int else {
       return "nil"
@@ -66,7 +70,7 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
   }
 
   @objc func controlTextDidEndEditing(_ notification: Notification) {
-    Logger.log("DidEndEditing (nextNav: \(getTextMovementName(from: notification)))", level: .verbose)
+    log.verbose{"DidEndEditing (nextNav: \(getTextMovementName(from: notification)))"}
 
     guard let current = self.current else {
       return
@@ -93,12 +97,12 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       if row == prev.row && column == prev.column && textField == prev.textField {
         return
       } else {
-        Logger.log.verbose{"CellEditTracker: changing cell from (\(prev.row), \(prev.column)) to (\(row), \(column))"}
+        log.verbose{"CellEditTracker: changing cell from (\(prev.row), \(prev.column)) to (\(row), \(column))"}
         // Make sure old editor is closed and saved if appropriate:
         endEdit()
       }
     } else {
-      Logger.log.verbose{"CellEditTracker: changing cell to (\(row), \(column))"}
+      log.verbose{"CellEditTracker: changing cell to (\(row), \(column))"}
     }
     // keep track of it all
     self.current = CurrentFocus(textField: textField, stringValueOrig: textField.stringValue, row: row, column: column, editInProgress: false)
@@ -116,7 +120,7 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     }
 
     let textField = current.textField
-    Logger.log.verbose{"START Edit [\(current.row), \(current.column)] \"\(textField.stringValue)\""}
+    log.verbose{"START Edit [\(current.row), \(current.column)] \"\(textField.stringValue)\""}
     self.current = CurrentFocus(textField: textField, stringValueOrig: textField.stringValue, row: current.row, column: current.column, editInProgress: true)
     textField.isEditable = true
     textField.isSelectable = true
@@ -141,16 +145,16 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       }
 
       if self.delegate.editDidEndWithNewText(newValue: current.textField.stringValue, row: current.row, column: current.column) {
-        Logger.log.verbose{"editDidEndWithNewText() returned TRUE: assuming new value accepted"}
+        log.verbose{"editDidEndWithNewText() returned TRUE: assuming new value accepted"}
         return true
       } else {
         // a return value of false tells us to revert to the previous value
-        Logger.log.verbose{"editDidEndWithNewText() returned FALSE: reverting displayed value to \"\(current.stringValueOrig)\""}
+        log.verbose{"editDidEndWithNewText() returned FALSE: reverting displayed value to \"\(current.stringValueOrig)\""}
         current.textField.stringValue = current.stringValueOrig
         return false
       }
     } else {
-      Logger.log.verbose{"endEdit() calling editDidEndWithNoChange()"}
+      log.verbose{"endEdit() calling editDidEndWithNoChange()"}
       self.delegate.editDidEndWithNoChange(row: current.row, column: current.column)
     }
     return true
@@ -161,7 +165,7 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     guard let current = current, current.editInProgress else { return false }
 
     let textField = current.textField
-    Logger.log.verbose{"END Edit   [\(current.row), \(current.column)] \"\(textField.stringValue)\""}
+    log.verbose{"END Edit   [\(current.row), \(current.column)] \"\(textField.stringValue)\""}
 
     let shouldContinue = commitChanges(to: current)
 
@@ -191,13 +195,13 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     if let current = current {
       guard self.parentTable.isEnabled else {
         // deselect rows
-        Logger.log.verbose{"Table is not enabled, deselecting row(s)"}
+        log.verbose{"Table is not enabled, deselecting row(s)"}
         self.parentTable.selectApprovedRowIndexes(IndexSet())
         return false
       }
       return self.delegate.userDidDoubleClickOnCell(row: current.row, column: current.column)
     }
-    Logger.log.verbose{"No current focused cell; auto-denying double-click"}
+    log.verbose{"No current focused cell; auto-denying double-click"}
     return false
   }
 
@@ -208,7 +212,7 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
         return indexIndex
       }
     }
-    Logger.log("Failed to find index \(columnIndex) in editableTextColumnIndexes (\(editColumns))", level: .error)
+    log.error{"Failed to find index \(columnIndex) in editableTextColumnIndexes (\(editColumns))"}
     return nil
   }
 
@@ -243,7 +247,7 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       // Snake down the grid, left to right, top down
       newColIndex = nextTabColumnIndex(columnIndex)
       if newColIndex < 0 {
-        Logger.log("Invalid value for next column: \(newColIndex)", level: .error)
+        log.error{"Invalid value for next column: \(newColIndex)"}
         return false
       }
       if newColIndex <= columnIndex {
@@ -262,7 +266,7 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       // Snake up the grid, right to left, bottom up
       newColIndex = prevTabColumnIndex(columnIndex)
       if newColIndex < 0 {
-        Logger.log("Invalid value for prev column: \(newColIndex)", level: .error)
+        log.error{"Invalid value for prev column: \(newColIndex)"}
         return false
       }
       if newColIndex >= columnIndex {
