@@ -42,8 +42,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
   }
 
-  var undoHelper: PlayerWindowUndoHelper { windowController.undoHelper }
-
   private var draggedRowInfo: (Int, IndexSet)? = nil
 
   // can't use main queue - it will block

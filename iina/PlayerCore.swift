@@ -46,7 +46,7 @@ class PlayerCore: NSObject {
     }
   }
 
-  // MARK: - Multiple instances
+  // MARK: - Singleton Fields
 
   /// Returns the last player whose window was "active" (or in MacOS terminology, was the key window).
   ///
@@ -72,47 +72,66 @@ class PlayerCore: NSObject {
 
   static var mouseLocationAtLastOpen: NSPoint? = nil
 
-  var undoHelper: PlayerWindowUndoHelper { windowController.undoHelper }
+  /// A DispatchQueue for auto load feature.
+  static let backgroundQueue = DispatchQueue.newDQ(label: "IINAPlayerCoreTask", qos: .background)
+  static let playlistQueue = DispatchQueue.newDQ(label: "IINAPlaylistTask", qos: .utility)
+  static let thumbnailQueue = DispatchQueue.newDQ(label: "IINAPlayerCoreThumbnailTask", qos: .utility)
 
-  // MARK: - Fields
+  // MARK: - Instance Fields
 
   let subsystem: Logger.Subsystem
-  unowned var log: Logger.Subsystem { self.subsystem }
+  var log: Logger.Subsystem { self.subsystem }
   var label: String
   let isDemoPlayer: Bool
 
   /// If `false`, has player functionality without use of a player window. Must be `true` to show a player window.
   var isInteractivePlayer = false
 
-  var isSaveEnabled: Bool { isInteractivePlayer && UIState.shared.isSaveEnabled }
-
-  /// For explicit request via command line
-  var startInMusicModeRequested = false
-
   /// After mpvInit, contains both the user options in Settings > Advanced, + commandLineArgs
   var userOptions: [(String, String)]
-
-  /// Time of the last player state save when called by `updatePlaybackTimeInfo`.
-  private var lastStateSaveTime = Date().timeIntervalSince1970
 
   // At launch, wait until all windows are open before resuming video
   var pendingResumeWhenShowingWindow: Bool = false
   /// If a set of windows was opened at the same time, each is assigned an index, so they can be arranged slightly offset from each another.
   var openedWindowsSetIndex: Int = 0
 
+  var isSaveEnabled: Bool { isInteractivePlayer && UIState.shared.isSaveEnabled }
+
+  /// Time of the last player state save when called by `updatePlaybackTimeInfo`.
+  private var lastStateSaveTime = Date().timeIntervalSince1970
+
+  var undoHelper: PlayerWindowUndoHelper { windowController.undoHelper }
+
+  private var subFileMonitor: FileMonitor? = nil
+
+  // Concurrency
+
+  /// This ticket will be increased each time before a new task being submitted to `backgroundQueue`.
+  ///
+  /// Each task holds a copy of ticket value at creation, so that a previous task will perceive & quit early if new tasks are awaiting.
+  ///
+  /// **See also**: `autoLoadFilesInCurrentFolder(ticket:)`
+  @Atomic var backgroundQueueTicket = 0
+  @Atomic var thumbnailQueueTicket = 0
+
   let saveUIStateDebouncer = Debouncer(delay: Constants.TimeInterval.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
   let thumbReloadDebouncer = Debouncer(delay: Constants.TimeInterval.thumbnailRegenerationDelay, queue: PlayerCore.thumbnailQueue)
   let sliderSeekDebouncer = Debouncer(delay: Constants.TimeInterval.sliderSeekThrottlingInterval)
 
   // Plugins
+
   var isManagedByPlugin = false
   var userLabel: String?
   var disableUI = false
   var disableWindowAnimation = false
 
-  var touchBarSupport: TouchBarSupport!
+  var plugins: [JavascriptPluginInstance] = []
+  private var pluginMap: [String: JavascriptPluginInstance] = [:]
+  var events = EventController()
 
-  private var subFileMonitor: FileMonitor? = nil
+  // Touch Bar
+
+  var touchBarSupport: TouchBarSupport!
 
   /// `true` if this Mac is _known to_ have a  [Touch Bar](https://support.apple.com/guide/mac-help/use-the-touch-bar-mchlbfd5b039/mac).
   ///
@@ -133,28 +152,9 @@ class PlayerCore: NSObject {
   /// Touch Bar is asleep.
   var needsTouchBar = false
 
-  /// A dispatch queue for auto load feature.
-  static let backgroundQueue = DispatchQueue.newDQ(label: "IINAPlayerCoreTask", qos: .background)
-  static let playlistQueue = DispatchQueue.newDQ(label: "IINAPlaylistTask", qos: .utility)
-  static let thumbnailQueue = DispatchQueue.newDQ(label: "IINAPlayerCoreThumbnailTask", qos: .utility)
-
-  /**
-   This ticket will be increased each time before a new task being submitted to `backgroundQueue`.
-
-   Each task holds a copy of ticket value at creation, so that a previous task will perceive and
-   quit early if new tasks is awaiting.
-
-   **See also**:
-
-   `autoLoadFilesInCurrentFolder(ticket:)`
-   */
-  @Atomic var backgroundQueueTicket = 0
-  @Atomic var thumbnailQueueTicket = 0
-  
   // Window & views
 
   var windowController: PlayerWindowController!
-
   var window: PlayerWindow { windowController.window as! PlayerWindow }
 
   var mpv: MPVController!
@@ -167,34 +167,21 @@ class PlayerCore: NSObject {
   // Playlist
 
   var displayedPlaylist: [PlaybackID] {
-    get {
-      windowController.playlistView.displayedPlaylist
-    }
-    set {
-      windowController.playlistView.displayedPlaylist = newValue
-    }
+    get { windowController.playlistView.displayedPlaylist }
+    set { windowController.playlistView.displayedPlaylist = newValue }
   }
 
   let playlistTableSelectNextRowAfterDelete = false
-
   let playlistTableChangeNotificationName: NSNotification.Name
 
   var isPlaylistVisible: Bool {
     isInMiniPlayer ? windowController.miniPlayer.isPlaylistVisible : windowController.isOpening(sidebarTab: .playlist)
   }
 
-  // Plugins
-
-  var plugins: [JavascriptPluginInstance] = []
-  private var pluginMap: [String: JavascriptPluginInstance] = [:]
-  var events = EventController()
-
   // Player lifecycle state
 
   var state: LifecycleState = .notYetStarted {
-    didSet {
-      log.verbose("Δ lifecycleState ≔ \(state)")
-    }
+    didSet { log.verbose("Δ lifecycleState ≔ \(state)") }
   }
 
   var isActive: Bool { state.isAtLeast(.started) && state.isNotYet(.stopping) }
@@ -214,6 +201,9 @@ class PlayerCore: NSObject {
 
   // Music mode
 
+  /// For explicit request via command line
+  var startInMusicModeRequested = false
+
   var isInMiniPlayer: Bool { windowController.isInMiniPlayer }
   var isShowVideoPendingInMiniPlayer: Bool = false
   /// Calls `self.showVideoViewAfterVidChange`
@@ -224,9 +214,7 @@ class PlayerCore: NSObject {
   var info: PlaybackInfo
 
   var isUsingMpvOSD = false {
-    didSet {
-      log.verbose("Δ isUsingMpvOSD ≔ \(isUsingMpvOSD.yn)")
-    }
+    didSet { log.verbose("Δ isUsingMpvOSD ≔ \(isUsingMpvOSD.yn)") }
   }
 
   var receivedEndFileWhileLoading: Bool = false
