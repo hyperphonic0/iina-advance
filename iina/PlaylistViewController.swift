@@ -292,7 +292,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     if playlist {
       playlistTableReloadDebouncer.run { [self] in
-        DispatchQueue.main.async { [self] in
+        player.mpv.queue.async { [self] in
           reloadPlaylistTable(animate: animate)
         }
       }
@@ -306,8 +306,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   /// If `animate` is false, does a full reload instantly.
   private func reloadPlaylistTable(animate: Bool) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
+    // Be sure to access playlist data only from within mpv queue
+    assert(DispatchQueue.isExecutingIn(player.mpv.queue))
     let oldPlaylistRows = displayedPlaylist
     let newPlaylistRows = player.info.playlist
     displayedPlaylist = newPlaylistRows
@@ -326,9 +326,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       player.log.verbose{"Updating playlist table via diff"}
       playlistTableView.post(tableUIChange)
     } else {
-      player.log.trace{"Updating playlist table via reloadData"}
-      playlistTableView.reloadData()
-      doAfterReload()
+      DispatchQueue.main.async { [self] in
+        player.log.trace{"Updating playlist table via reloadData"}
+        playlistTableView.reloadData()
+        doAfterReload()
+      }
     }
   }
 
@@ -480,7 +482,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   private func copyPlaylistRowsToPasteboard(_ rowIndexes: IndexSet, to pboard: NSPasteboard) {
-    player.log.verbose{"Copying playlist rows to pasteboard: \(rowIndexes)"}
+    player.log.verbose{"Copying playlist rows to pasteboard: \(rowIndexes.toArray())"}
     do {
       let indexesData = try NSKeyedArchiver.archivedData(withRootObject: rowIndexes, requiringSecureCoding: true)
       let playlist = displayedPlaylist
@@ -520,7 +522,13 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard !playlistItems.isEmpty else {
       return false
     }
-    player.insertPlaylistRows(playlistItems, .registerUndoRedo)
+    let insertIndex: Int
+    if let lastSelectedRowIndex = playlistTableView.selectedRowIndexes.last {
+      insertIndex = lastSelectedRowIndex + 1
+    } else {
+      insertIndex = playlistTableView.numberOfRows
+    }
+    player.insertPlaylistRows(playlistItems, at: insertIndex, .registerUndoRedo)
     return true
   }
 
