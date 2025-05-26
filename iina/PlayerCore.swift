@@ -1972,12 +1972,40 @@ class PlayerCore: NSObject {
 
   }
 
-  // FIXME: there is a bug here
-  func movePlaylistRows(from rowIndexes: IndexSet, to targetRowIndex: Int, _ undoOption: UndoOption) {
-    let (tableUIChange, allItemsNew) = TableUIChange.builder.buildMove(rowIndexes, to: targetRowIndex, in: displayedPlaylist)
-    let allItemsOld = displayedPlaylist                                          // save in case of undo
-    let moveIndexPairs = tableUIChange.toMove!
-    log.verbose{"Moving playlist rows=\(rowIndexes.toArray()) → \(targetRowIndex); movePairs=\(moveIndexPairs)"}
+  /// The arguments for mpv's `playlist-move` command are slightly different than Cocoa's
+  /// `NSTableView.moveRow` command. If row's source index is above the insert index, Cocoa requires an
+  /// extra -1 subtracted from its destination index, whereas mpv does not.
+  private func buildMpvMoveIndexPairs(from rowIndexes: IndexSet, to insertIndex: Int) -> [(Int, Int)] {
+    var moveIndexPairs: [(Int, Int)] = []
+    var moveFromOffset = 0
+    var moveToOffset = 0
+    for origIndex in rowIndexes {
+      if origIndex < insertIndex {
+        moveIndexPairs.append((origIndex + moveFromOffset, insertIndex))
+        moveFromOffset -= 1
+      } else {
+        moveIndexPairs.append((origIndex, insertIndex + moveToOffset))
+        moveToOffset += 1
+      }
+    }
+    return moveIndexPairs
+  }
+
+  func buildInvertedMpvMoveIndexPairs(from moveIndexPairs: [(Int, Int)]) -> [(Int, Int)] {
+    var movePairsInverted: [(Int, Int)] = []
+
+    for (fromIndex, toIndex) in moveIndexPairs {
+      movePairsInverted.append((toIndex, fromIndex))
+    }
+    return movePairsInverted
+  }
+
+  func movePlaylistRows(from rowIndexes: IndexSet, to insertIndex: Int, _ undoOption: UndoOption) {
+    let (tableUIChange, allItemsNew) = TableUIChange.builder.buildMove(rowIndexes, to: insertIndex, in: displayedPlaylist)
+    let allItemsOld = displayedPlaylist  // save in case of undo
+
+    let moveIndexPairs = buildMpvMoveIndexPairs(from: rowIndexes, to: insertIndex)
+    log.verbose{"Moving playlist rows=\(rowIndexes.toArray()) → \(insertIndex); movePairs=\(moveIndexPairs)"}
 
     playlistMoveIndexPairs(moveIndexPairs, allItemsOld, onSuccess: { [self] in
       guard syncAndValidatePlaylist(expectedPlaylist: allItemsNew) else { return }
@@ -1999,9 +2027,10 @@ class PlayerCore: NSObject {
           // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
           // can be at non-contiguous indexes in the playlist.
           let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
-          let undoMoveIndexPairs = tableUIChangeUndo.toMove!
+          // FIXME: there is a bug here
+          let undoMoveIndexPairs = buildInvertedMpvMoveIndexPairs(from: moveIndexPairs)
 
-          log.verbose{"Undo move of playlist rows=\(rowIndexes.toArray()) → \(targetRowIndex); undoMoveIndexPairs=\(undoMoveIndexPairs)"}
+          log.verbose{"Undo move of playlist rows=\(rowIndexes.toArray()) → \(insertIndex); undoMoveIndexPairs=\(undoMoveIndexPairs)"}
           playlistMoveIndexPairs(undoMoveIndexPairs, allItemsNew, onSuccess: { [self] in
             guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld) else { return }
 
@@ -2014,7 +2043,7 @@ class PlayerCore: NSObject {
             guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld) else { return }
 
             DispatchQueue.main.async { [self] in
-              movePlaylistRows(from: rowIndexes, to: targetRowIndex, .ignoreUndoRedo)
+              movePlaylistRows(from: rowIndexes, to: insertIndex, .ignoreUndoRedo)
             }
           }
         })

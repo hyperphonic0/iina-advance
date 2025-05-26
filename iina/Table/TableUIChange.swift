@@ -151,7 +151,7 @@ class TableUIChange {
     // Operations such as "remove" may have a flash animation which takes some time, so subtract from this animation to compensate
     let duration = max(0.0, Constants.AnimationDuration.tableUIChange - (CGFloat(flashCount) * Constants.AnimationDuration.tableUIFlash))
     animationTasks.append(.init(duration: duration) { [self] in
-      self.executeRowUpdates(on: tableView)
+      executeRowUpdates(on: tableView)
 
       if let newSelectedRowIndexes {
         log.verbose{"TableUIChange: changing row selection (\(newSelectedRowIndexes.count) rows)"}
