@@ -344,7 +344,7 @@
 		D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* InputBinding.swift */; };
 		D188CB2628D9E95500F166FD /* BindingTableState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* BindingTableState.swift */; };
 		D191EE152ACE763A00FEF801 /* PWin_LayoutTxSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = D191EE142ACE763A00FEF801 /* PWin_LayoutTxSteps.swift */; };
-		D19247FD2BC634D3003BEEE8 /* PlayerCrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19247FC2BC634D3003BEEE8 /* PlayerCrop.swift */; };
+		D19247FD2BC634D3003BEEE8 /* Player_Crop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19247FC2BC634D3003BEEE8 /* Player_Crop.swift */; };
 		D19690CC2B56770F002B0458 /* MPVLogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19690CB2B56770F002B0458 /* MPVLogLevel.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */; };
 		D19CF7162AB846D300511F80 /* MusicModeGeo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CF7152AB846D300511F80 /* MusicModeGeo.swift */; };
@@ -357,6 +357,7 @@
 		D1A8878C29D16452000D1AE4 /* RotGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */; };
 		D1A8878E29D1696C000D1AE4 /* PWin_Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */; };
 		D1AC43942DE1BADC00189782 /* VideoGeo_Sync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AC43932DE1BACA00189782 /* VideoGeo_Sync.swift */; };
+		D1AC43962DE523FB00189782 /* Player_PlaylistOps.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AC43952DE523EE00189782 /* Player_PlaylistOps.swift */; };
 		D1ACFDC92D93637F00F45712 /* MetalVideoLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDC82D93637A00F45712 /* MetalVideoLayer.swift */; };
 		D1ACFDCB2D9675DD00F45712 /* MPV_Init.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */; };
 		D1ACFDCD2D967FAD00F45712 /* MPV_EventHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDCC2D967FA700F45712 /* MPV_EventHandling.swift */; };
@@ -1889,7 +1890,7 @@
 		D188CB2128D6DE1900F166FD /* InputBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBinding.swift; sourceTree = "<group>"; };
 		D188CB2528D9E95500F166FD /* BindingTableState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingTableState.swift; sourceTree = "<group>"; };
 		D191EE142ACE763A00FEF801 /* PWin_LayoutTxSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_LayoutTxSteps.swift; sourceTree = "<group>"; };
-		D19247FC2BC634D3003BEEE8 /* PlayerCrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerCrop.swift; sourceTree = "<group>"; };
+		D19247FC2BC634D3003BEEE8 /* Player_Crop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player_Crop.swift; sourceTree = "<group>"; };
 		D19690CB2B56770F002B0458 /* MPVLogLevel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MPVLogLevel.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfFileCache.swift; sourceTree = "<group>"; };
 		D19CF7152AB846D300511F80 /* MusicModeGeo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicModeGeo.swift; sourceTree = "<group>"; };
@@ -1902,6 +1903,7 @@
 		D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotGestureHandler.swift; sourceTree = "<group>"; };
 		D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Sidebar.swift; sourceTree = "<group>"; };
 		D1AC43932DE1BACA00189782 /* VideoGeo_Sync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGeo_Sync.swift; sourceTree = "<group>"; };
+		D1AC43952DE523EE00189782 /* Player_PlaylistOps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player_PlaylistOps.swift; sourceTree = "<group>"; };
 		D1ACFDC82D93637A00F45712 /* MetalVideoLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalVideoLayer.swift; sourceTree = "<group>"; };
 		D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPV_Init.swift; sourceTree = "<group>"; };
 		D1ACFDCC2D967FA700F45712 /* MPV_EventHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPV_EventHandling.swift; sourceTree = "<group>"; };
@@ -2981,7 +2983,8 @@
 			isa = PBXGroup;
 			children = (
 				84A0BA961D2FA1CE00BC8DA1 /* PlayerCore.swift */,
-				D19247FC2BC634D3003BEEE8 /* PlayerCrop.swift */,
+				D1AC43952DE523EE00189782 /* Player_PlaylistOps.swift */,
+				D19247FC2BC634D3003BEEE8 /* Player_Crop.swift */,
 				84A0BA981D2FAAA700BC8DA1 /* MPVController.swift */,
 				D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */,
 				D1ACFDCC2D967FA700F45712 /* MPV_EventHandling.swift */,
@@ -3461,6 +3464,7 @@
 				84E48D4E1E0F1090002C7A3F /* FilterWindowController.swift in Sources */,
 				D191EE152ACE763A00FEF801 /* PWin_LayoutTxSteps.swift in Sources */,
 				D1BE7BCF2D4B7CE90085539F /* TwoRowBarOSCView.swift in Sources */,
+				D1AC43962DE523FB00189782 /* Player_PlaylistOps.swift in Sources */,
 				D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */,
 				D13BEC552D476E6800BF1071 /* SpacerView.swift in Sources */,
 				E3839C5924FFF817007D0AB4 /* JavascriptAPIStandaloneWindow.swift in Sources */,
@@ -3579,7 +3583,7 @@
 				84A0BAA11D2FAE7600BC8DA1 /* VideoView.swift in Sources */,
 				E395858A253314400096811F /* JavascriptAPISidebarView.swift in Sources */,
 				E33BA5C4204315740069A0F6 /* AssrtSubtitle.swift in Sources */,
-				D19247FD2BC634D3003BEEE8 /* PlayerCrop.swift in Sources */,
+				D19247FD2BC634D3003BEEE8 /* Player_Crop.swift in Sources */,
 				D1B106682D42444C009D58F5 /* Debouncer.swift in Sources */,
 				E32693F924BA138000BF7ADC /* JavascriptPluginSubtitleItem.swift in Sources */,
 				34FD798E291C76A600963EDE /* LogWindowController.swift in Sources */,
