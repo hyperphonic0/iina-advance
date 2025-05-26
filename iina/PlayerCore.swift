@@ -1736,6 +1736,20 @@ class PlayerCore: NSObject {
 
   // MARK: - mpv: Playlist Operations
 
+  enum UndoOption {
+    /// Executes the associated operation but do not register a new undo. Use this for the initial operation, or if undo / redo
+    /// is being handled elsewhere.
+    case ignoreUndoRedo
+
+    /// After executing the associated operation, calls the `registerUndo` method of the window's `UndoManager` to make it undoable within the window.
+    /// The undo operation will also be set to call `UndoManager.registerUndo`, so that it is redoable.
+    case registerUndoRedo
+
+    /// Clear the undo stack of the window's `UndoManager`. Use this if the operation cannot be undone, e.g. if hard-deleting a file,
+    /// or if an error occurred which left the undo stack in an uncertain state.
+    case clearUndoStack
+  }
+
   // Playlist: Insert
 
   /// Moves the given items so that they are immediately following the now-playing item
@@ -1743,7 +1757,7 @@ class PlayerCore: NSObject {
   func playNextInPlaylist(_ playlistItemIndexes: IndexSet) {
     mpv.queue.async { [self] in
       let current = mpv.getInt(MPVProperty.playlistPos)
-      movePlaylistRows(from: playlistItemIndexes, to: current + 1, registerUndoRedo: true)
+      movePlaylistRows(from: playlistItemIndexes, to: current + 1, .registerUndoRedo)
     }
   }
 
@@ -1788,6 +1802,7 @@ class PlayerCore: NSObject {
 
     _playlistInsert(itemsAtIndexes: itemsAtInsertIndexes, info.playlist, onSuccess: { [self] in
       _reloadPlaylist(savePlayerState: false)  // will send notification
+      // FIXME: scroll playlist to current item
       displayedPlaylist = info.playlist
       return true
     })
@@ -1800,25 +1815,25 @@ class PlayerCore: NSObject {
 
   func appendToPlaylist(_ paths: [String],
                         onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
-    addToPlaylist(paths: paths, onSuccess: onSuccess, onError: onError, registerUndoRedo: true)
+    addToPlaylist(paths: paths, onSuccess: onSuccess, onError: onError, .registerUndoRedo)
   }
 
   func appendToPlaylist(urls: any Collection<URL>,
                         onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil) {
     let paths = urls.map({PlaybackID.path(from: $0)})
-    addToPlaylist(paths: paths, onSuccess: onSuccess, onError: onError, registerUndoRedo: true)
+    addToPlaylist(paths: paths, onSuccess: onSuccess, onError: onError, .registerUndoRedo)
   }
 
   func addToPlaylist(paths: [String], at targetRowIndex: Int? = nil,
                      onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil,
-                     registerUndoRedo: Bool) {
+                     _ undoOption: UndoOption) {
 
     let rowList = paths.compactMap{PlaybackID(path: $0)}
-    insertPlaylistRows(rowList, registerUndoRedo: registerUndoRedo)
+    insertPlaylistRows(rowList, undoOption)
   }
 
   /// All playlist "insert" operations should ultimately call this method.
-  func insertPlaylistRows(_ desiredRowList: [PlaybackID], at targetRowIndex: Int? = nil, registerUndoRedo: Bool) {
+  func insertPlaylistRows(_ desiredRowList: [PlaybackID], at targetRowIndex: Int? = nil, _ undoOption: UndoOption) {
     let playableFiles = getPlayableFiles(in: desiredRowList.map{ $0.url })
     guard playableFiles.count > 0 else { return }
     let rowList = playableFiles.map { PlaybackID($0) }
@@ -1844,7 +1859,13 @@ class PlayerCore: NSObject {
         sendOSD(.addToPlaylist(paths.count))
 
         // Register undo/redo for this action?
-        if registerUndoRedo {
+        switch undoOption {
+        case .ignoreUndoRedo:
+          break
+        case .clearUndoStack:
+          Logger.log.debug{"Clearing undo stack for playlist after insert"}
+          undoHelper.clearUndoes()
+        case .registerUndoRedo:
           let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
           undoHelper.register(actionName, undo: { [self] in
             guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
@@ -1854,9 +1875,9 @@ class PlayerCore: NSObject {
             let rmStartIndex = tableUIChange.toInsert!.first!
             let rmEndIndex = rmStartIndex + rowList.count
             let rowIndexesToRemove = IndexSet(rmStartIndex..<rmEndIndex)
-            removePlaylistRows(rowIndexesToRemove, registerUndoRedo: false, clearUndoStack: false)
+            removePlaylistRows(rowIndexesToRemove, .ignoreUndoRedo)
           }, redo: { [self] in
-            insertPlaylistRows(rowList, at: targetRowIndex, registerUndoRedo: false)
+            insertPlaylistRows(rowList, at: targetRowIndex, .ignoreUndoRedo)
           })
         }
 
@@ -1930,7 +1951,7 @@ class PlayerCore: NSObject {
   // Playlist: Move
 
   func playlistMove(_ fromIndex: Int, to targetRowIndex: Int) {
-    movePlaylistRows(from: IndexSet(integer: fromIndex), to: targetRowIndex, registerUndoRedo: true)
+    movePlaylistRows(from: IndexSet(integer: fromIndex), to: targetRowIndex, .registerUndoRedo)
   }
 
   /// Drag & drop within `playlistTableView`
@@ -1955,7 +1976,7 @@ class PlayerCore: NSObject {
   }
 
   // FIXME: there is a bug here
-  func movePlaylistRows(from rowIndexes: IndexSet, to targetRowIndex: Int, registerUndoRedo: Bool) {
+  func movePlaylistRows(from rowIndexes: IndexSet, to targetRowIndex: Int, _ undoOption: UndoOption) {
     let (tableUIChange, allItemsNew) = TableUIChange.builder.buildMove(rowIndexes, to: targetRowIndex, in: displayedPlaylist)
     let allItemsOld = displayedPlaylist                                          // save in case of undo
     let moveIndexPairs = tableUIChange.toMove!
@@ -1966,30 +1987,38 @@ class PlayerCore: NSObject {
 //      tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // notify UI
       _reloadPlaylist()
 
-      guard registerUndoRedo else { return true }
-      return undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
-        guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
-          Logger.log.error{"Cannot undo move of \(rowIndexes.count) playlist items: playlist is in unexpected state!"}
-          Logger.log.debug{"Clearing undo stack for playlist due to remove error"}
-          undoHelper.clearUndoes()
-          return
-        }
-        // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
-        // can be at non-contiguous indexes in the playlist.
-        let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
-        let undoMoveIndexPairs = tableUIChangeUndo.toMove!
+      switch undoOption {
+      case .ignoreUndoRedo:
+        break
+      case .clearUndoStack:
+        Logger.log.debug{"Clearing undo stack for playlist after 'move'"}
+        undoHelper.clearUndoes()
+      case .registerUndoRedo:
+        return undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
+          guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
+            Logger.log.error{"Cannot undo move of \(rowIndexes.count) playlist items: playlist is in unexpected state!"}
+            Logger.log.debug{"Clearing undo stack for playlist due to remove error"}
+            undoHelper.clearUndoes()
+            return
+          }
+          // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
+          // can be at non-contiguous indexes in the playlist.
+          let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
+          let undoMoveIndexPairs = tableUIChangeUndo.toMove!
 
-        Logger.log.verbose{"Moving playlist rows: \(rowIndexes) → \(targetRowIndex); movePairs: \(moveIndexPairs)"}
-        playlistMoveIndexPairs(undoMoveIndexPairs, onSuccess: { [self] in
-//          displayedPlaylist = allItemsOld                                                // update cached data
-//          tableUIChangeUndo.postNotification(name: playlistTableChangeNotificationName)  // notify UI
-          _reloadPlaylist()
-          return true
+          Logger.log.verbose{"Moving playlist rows: \(rowIndexes) → \(targetRowIndex); movePairs: \(moveIndexPairs)"}
+          playlistMoveIndexPairs(undoMoveIndexPairs, onSuccess: { [self] in
+            //          displayedPlaylist = allItemsOld                                                // update cached data
+            //          tableUIChangeUndo.postNotification(name: playlistTableChangeNotificationName)  // notify UI
+            _reloadPlaylist()
+            return true
+          })
+        }, redo: { [self] in
+          movePlaylistRows(from: rowIndexes, to: targetRowIndex, .ignoreUndoRedo)
         })
-      }, redo: { [self] in
-        movePlaylistRows(from: rowIndexes, to: targetRowIndex, registerUndoRedo: false)
-      })
+      }
 
+      return true
     }, onError: { [self] errorString in
       Logger.log.debug{"Clearing undo stack for playlist due to move error (\(errorString))"}
       undoHelper.clearUndoes()
@@ -1999,17 +2028,17 @@ class PlayerCore: NSObject {
 
   // Playlist: Remove
 
-  func playlistRemove(_ index: Int, registerUndoRedo: Bool, clearUndoStack: Bool) {
-    playlistRemove(IndexSet(integer: index), registerUndoRedo: registerUndoRedo, clearUndoStack: clearUndoStack)
+  func playlistRemove(_ index: Int, _ undoOption: UndoOption) {
+    playlistRemove(IndexSet(integer: index), undoOption)
   }
 
   func playlistRemove(_ indexSet: IndexSet,
                       onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil,
-                      registerUndoRedo: Bool, clearUndoStack: Bool) {
-    removePlaylistRows(indexSet, registerUndoRedo: registerUndoRedo, clearUndoStack: clearUndoStack)
+                      _ undoOption: UndoOption) {
+    removePlaylistRows(indexSet, undoOption)
   }
 
-  func removePlaylistRows(_ rowIndexes: IndexSet, registerUndoRedo: Bool, clearUndoStack: Bool) {
+  func removePlaylistRows(_ rowIndexes: IndexSet, _ undoOption: UndoOption) {
     guard !rowIndexes.isEmpty else { return }
 
     Logger.log.verbose{"Removing rows from Playlist table: \(rowIndexes)"}
@@ -2033,11 +2062,6 @@ class PlayerCore: NSObject {
         countRemoved += 1
       }
 
-      if clearUndoStack {
-        Logger.log.verbose{"Clearing undo stack for playlist after remove due to clearUndoStack=Y"}
-        undoHelper.clearUndoes()
-      }
-
       displayedPlaylist = allItemsNew                                            // update cached data
       tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // update UI
                                                                                  // finally do this to make sure player's playlist is up to date
@@ -2045,33 +2069,40 @@ class PlayerCore: NSObject {
       sendOSD(.removeFromPlaylist(countRemoved))
 
       // Register undo/redo?
-      guard registerUndoRedo else { return }
-      undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
-        guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
-          Logger.log.error{"Cannot undo remove of playlist items: playlist is in unexpected state!"}
-          return
-        }
-        // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
-        // can be at non-contiguous indexes in the playlist.
-        let indexedInsertItems = rowIndexes.enumerated().map{ ($0.element - $0.offset, allItemsOld[$0.element].path) }
-        assert(indexedInsertItems.map(\.0).sorted(by: { $0 < $1 }).elementsEqual(indexedInsertItems.map(\.0)),
-               "itemsAtIndexes must be sorted in ascending order, but found: \(indexedInsertItems.map(\.0))")
-        let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
-        mpv.queue.async { [self] in
-          _playlistInsert(itemsAtIndexes: indexedInsertItems, onSuccess: { [self] in
-            displayedPlaylist = allItemsOld                                                // update cached data
-            tableUIChangeUndo.postNotification(name: playlistTableChangeNotificationName)  // update UI
-            sendOSD(.addToPlaylist(indexedInsertItems.count))
-            return true
-          }, onError: { [self] errorString in
-            Logger.log.debug{"Clearing undo stack for playlist due to insert error"}
-            undoHelper.clearUndoes()
-          })
-        }
-      }, redo: { [self] in
-        // Almost the same code as above. But don't want to re-register an undo action
-        removePlaylistRows(rowIndexes, registerUndoRedo: false, clearUndoStack: clearUndoStack)
-      })
+      switch undoOption {
+      case .ignoreUndoRedo:
+        break
+      case .clearUndoStack:
+        Logger.log.debug{"Clearing undo stack for playlist after 'remove'"}
+        undoHelper.clearUndoes()
+      case .registerUndoRedo:
+        undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
+          guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
+            Logger.log.error{"Cannot undo remove of playlist items: playlist is in unexpected state!"}
+            return
+          }
+          // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
+          // can be at non-contiguous indexes in the playlist.
+          let indexedInsertItems = rowIndexes.enumerated().map{ ($0.element - $0.offset, allItemsOld[$0.element].path) }
+          assert(indexedInsertItems.map(\.0).sorted(by: { $0 < $1 }).elementsEqual(indexedInsertItems.map(\.0)),
+                 "itemsAtIndexes must be sorted in ascending order, but found: \(indexedInsertItems.map(\.0))")
+          let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
+          mpv.queue.async { [self] in
+            _playlistInsert(itemsAtIndexes: indexedInsertItems, onSuccess: { [self] in
+              displayedPlaylist = allItemsOld                                                // update cached data
+              tableUIChangeUndo.postNotification(name: playlistTableChangeNotificationName)  // update UI
+              sendOSD(.addToPlaylist(indexedInsertItems.count))
+              return true
+            }, onError: { [self] errorString in
+              Logger.log.debug{"Clearing undo stack for playlist due to insert error"}
+              undoHelper.clearUndoes()
+            })
+          }
+        }, redo: { [self] in
+          // Almost the same code as above. But don't want to re-register an undo action
+          removePlaylistRows(rowIndexes, .ignoreUndoRedo)
+        })
+      }
     }
   }
 

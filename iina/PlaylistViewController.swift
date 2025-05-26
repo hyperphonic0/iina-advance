@@ -145,9 +145,17 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
                                                          tableChangeNotificationName: player.playlistTableChangeNotificationName,
                                                          getFromPasteboardFunc: readPlaylistItemsFromPasteboard,
                                                          getAllCurentFunc: { self.displayedPlaylist },
-                                                         moveFunc: movePlaylistRows,
-                                                         insertFunc: insertPlaylistRows,
-                                                         removeFunc: removePlaylistRows)
+                                                         moveFunc: { [self] rowIndexes, targetRowIndex in
+      /// Drag & drop within `playlistTableView`
+      player.movePlaylistRows(from: rowIndexes, to: targetRowIndex, .registerUndoRedo)
+
+    }, insertFunc: { [self] desiredRowList, targetRowIndex in
+      player.insertPlaylistRows(desiredRowList, at: targetRowIndex, .registerUndoRedo)
+    },
+                                                         removeFunc: { [self] rowIndexes in
+      player.removePlaylistRows(rowIndexes, .registerUndoRedo)
+    }
+)
 
 
     [deleteBtn, loopBtn, shuffleBtn].forEach {
@@ -466,19 +474,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   // MARK: - Playlist Table CRUD
 
-  func insertPlaylistRows(_ desiredRowList: [PlaybackID], at targetRowIndex: Int? = nil) {
-    player.insertPlaylistRows(desiredRowList, at: targetRowIndex, registerUndoRedo: true)
-  }
-
-  /// Drag & drop within `playlistTableView`
-  func movePlaylistRows(from rowIndexes: IndexSet, to targetRowIndex: Int) {
-    player.movePlaylistRows(from: rowIndexes, to: targetRowIndex, registerUndoRedo: true)
-  }
-
-  func removePlaylistRows(_ rowIndexes: IndexSet) {
-    player.removePlaylistRows(rowIndexes, registerUndoRedo: true, clearUndoStack: false)
-  }
-
   private func validateItemsAreEqual(_ current: [PlaybackID], _ expected: [PlaybackID]) -> Bool {
     let currentPlaylistPaths = current.map{ $0.path }
     return (currentPlaylistPaths.count == expected.count) && expected.map({$0.path}).elementsEqual(currentPlaylistPaths)
@@ -525,7 +520,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard !playlistItems.isEmpty else {
       return false
     }
-    insertPlaylistRows(playlistItems)
+    player.insertPlaylistRows(playlistItems, .registerUndoRedo)
     return true
   }
 
@@ -552,13 +547,13 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @IBAction func removeBtnAction(_ sender: NSButton) {
-    removePlaylistRows(playlistTableView.selectedRowIndexes)
+    player.removePlaylistRows(playlistTableView.selectedRowIndexes, .registerUndoRedo)
   }
 
   @IBAction func addFileAction(_ sender: AnyObject) {
     Utility.quickMultipleOpenPanel(title: "Add to playlist", canChooseDir: true) { [self] urls in
       let rows = urls.map{ PlaybackID($0) }
-      insertPlaylistRows(rows, at: displayedPlaylist.count)
+      player.insertPlaylistRows(rows, at: displayedPlaylist.count, .registerUndoRedo)
     }
   }
 
@@ -937,7 +932,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   @IBAction func contextMenuRemove(_ sender: ContextMenuItem) {
     player.log.verbose{"User chose to remove rows \(sender.targetRows.map{$0}) from playlist"}
-    removePlaylistRows(sender.targetRows)
+    player.removePlaylistRows(sender.targetRows, .registerUndoRedo)
   }
 
   @IBAction func contextMenuDeleteFile(_ sender: ContextMenuItem) {
@@ -958,7 +953,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       }
     }
     if !successes.isEmpty {
-      player.removePlaylistRows(successes, registerUndoRedo: false, clearUndoStack: true)
+      player.removePlaylistRows(successes, .clearUndoStack)
     }
   }
 
@@ -1222,7 +1217,7 @@ extension PlaylistViewController: EditableTableViewDelegate {
   }
 
   func doEditMenuDelete() {
-    player.removePlaylistRows(playlistTableView.selectedRowIndexes, registerUndoRedo: true, clearUndoStack: false)
+    player.removePlaylistRows(playlistTableView.selectedRowIndexes, .registerUndoRedo)
   }
 
   private func hasSelectionInPlaylistTable() -> Bool {
