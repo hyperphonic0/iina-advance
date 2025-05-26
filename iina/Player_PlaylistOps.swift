@@ -409,6 +409,57 @@ extension PlayerCore {
     }
   }
 
+  // MARK: - Reload
+
+  /// Reloads playlist from mpv, then enqueues state save & sends `iinaPlaylistChanged` notification.
+  func reloadPlaylist(thenPostNotification: Bool = true, savePlayerState: Bool = true) {
+    mpv.queue.async { [self] in
+      _reloadPlaylist(thenPostNotification: thenPostNotification, savePlayerState: savePlayerState)
+    }
+  }
+
+  func _reloadPlaylist(thenPostNotification: Bool = true, savePlayerState: Bool = true) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard !isStopping else { return }
+
+    guard _reloadPlaylistAndReturn() != nil else { return }
+
+    if thenPostNotification {
+      postNotification(.iinaPlaylistChanged)
+    }
+
+    if savePlayerState {
+      saveState()  // save playlist URLs to prefs
+    }
+  }
+
+  /// 1. Gets the up-to-date playlist & `playlist-pos` (now playing item index) from mpv.
+  /// 2. Updates `info.playlist` & `info.currentPlayback?.playlistPos`.
+  /// 3. Returns the up-to-date playlist (or `nil` on error or incorrect state).
+  func _reloadPlaylistAndReturn() -> [PlaybackID]? {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard !isStopping else { return nil }
+
+    var newPlaylist: [PlaybackID] = []
+    let playlistCount = mpv.getInt(MPVProperty.playlistCount)
+    log.verbose{"Reloading playlist with \(playlistCount) items"}
+    for index in 0..<playlistCount {
+      let urlPath = mpv.getString(MPVProperty.playlistNFilename(index))!
+      guard let playlistItem = PlaybackID(path: urlPath) else {
+        log.error{"Playlist item has invalid path; skipping: \(urlPath.pii.quoted)"}
+        continue
+      }
+      newPlaylist.append(playlistItem)
+    }
+
+    let mpvPlaylistPos = mpv.getInt(MPVProperty.playlistPos)
+    info.currentPlayback?.playlistPos = mpvPlaylistPos
+    info.playlist = newPlaylist
+    log.verbose{"After reloading playlist: playlistPos is: \(mpvPlaylistPos)"}
+
+    return newPlaylist
+  }
+
   // MARK: - Other playlist ops
 
   func clearPlaylist() {

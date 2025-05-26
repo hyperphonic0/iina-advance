@@ -38,11 +38,11 @@ class PlayerCore: NSObject {
     case shutDown
 
     func isAtLeast(_ minState: LifecycleState) -> Bool {
-      return rawValue >= minState.rawValue
+      rawValue >= minState.rawValue
     }
 
     func isNotYet(_ state: LifecycleState) -> Bool {
-      return rawValue < state.rawValue
+      rawValue < state.rawValue
     }
   }
 
@@ -151,18 +151,20 @@ class PlayerCore: NSObject {
   @Atomic var backgroundQueueTicket = 0
   @Atomic var thumbnailQueueTicket = 0
   
-  // Windows
+  // Window & views
 
   var windowController: PlayerWindowController!
 
-  var window: PlayerWindow {
-    return windowController.window as! PlayerWindow
-  }
+  var window: PlayerWindow { windowController.window as! PlayerWindow }
 
   var mpv: MPVController!
   var videoView: VideoView!
 
   var keyBindingContext: PlayerInputContext!
+
+  var syncUITimer: Timer?
+
+  // Playlist
 
   var displayedPlaylist: [PlaybackID] {
     get {
@@ -172,26 +174,22 @@ class PlayerCore: NSObject {
       windowController.playlistView.displayedPlaylist = newValue
     }
   }
+
   let playlistTableSelectNextRowAfterDelete = false
+
+  let playlistTableChangeNotificationName: NSNotification.Name
+
+  var isPlaylistVisible: Bool {
+    isInMiniPlayer ? windowController.miniPlayer.isPlaylistVisible : windowController.isOpening(sidebarTab: .playlist)
+  }
+
+  // Plugins
 
   var plugins: [JavascriptPluginInstance] = []
   private var pluginMap: [String: JavascriptPluginInstance] = [:]
   var events = EventController()
 
-  var info: PlaybackInfo
-
-  /// Convenience accessor. Also exists to avoid refactoring legacy code
-  var videoGeo: VideoGeometry {
-    return windowController.geo.video
-  }
-
-  var syncUITimer: Timer?
-
-  var isUsingMpvOSD = false {
-    didSet {
-      log.verbose("Δ isUsingMpvOSD ≔ \(isUsingMpvOSD.yn)")
-    }
-  }
+  // Player lifecycle state
 
   var state: LifecycleState = .notYetStarted {
     didSet {
@@ -199,40 +197,36 @@ class PlayerCore: NSObject {
     }
   }
 
-  var isActive: Bool {
-    return state.isAtLeast(.started) && state.isNotYet(.stopping)
-  }
+  var isActive: Bool { state.isAtLeast(.started) && state.isNotYet(.stopping) }
+  var isShuttingDown: Bool { state.isAtLeast(.shuttingDown) }
+  var isShutDown: Bool { state.isAtLeast(.shutDown) }
+  var isStopping: Bool { state.isAtLeast(.stopping) }
+  var isIdle: Bool { state == .idle }
 
-  var isShuttingDown: Bool {
-    state.isAtLeast(.shuttingDown)
-  }
+  // Window controller convenience
 
-  var isShutDown: Bool {
-    state.isAtLeast(.shutDown)
-  }
+  var isRestoring: Bool { windowController.sessionState.isRestoring }
+  var isFullScreen: Bool { windowController.isFullScreen }
+  var isInInteractiveMode: Bool { windowController.isInInteractiveMode }
 
-  var isStopping: Bool {
-    state.isAtLeast(.stopping)
-  }
+  /// Exists to avoid refactoring legacy code
+  var videoGeo: VideoGeometry { windowController.geo.video }
 
-  var isIdle: Bool {
-    state == .idle
-  }
+  // Music mode
 
-  var isRestoring: Bool {
-    return windowController.sessionState.isRestoring
-  }
+  var isInMiniPlayer: Bool { windowController.isInMiniPlayer }
+  var isShowVideoPendingInMiniPlayer: Bool = false
+  /// Calls `self.showVideoViewAfterVidChange`
+  let miniPlayerShowVideoTimer = TimeoutTimer(timeout: Constants.TimeInterval.musicModeChangeTrackTimeout)
 
-  var isInMiniPlayer: Bool {
-    return windowController.isInMiniPlayer
-  }
+  // Other state
 
-  var isFullScreen: Bool {
-    return windowController.isFullScreen
-  }
+  var info: PlaybackInfo
 
-  var isInInteractiveMode: Bool {
-    return windowController.isInInteractiveMode
+  var isUsingMpvOSD = false {
+    didSet {
+      log.verbose("Δ isUsingMpvOSD ≔ \(isUsingMpvOSD.yn)")
+    }
   }
 
   var receivedEndFileWhileLoading: Bool = false
@@ -251,26 +245,9 @@ class PlayerCore: NSObject {
   /// For supporting mpv `--shuffle` arg, to shuffle playlist when launching from command line
   @Atomic private var shufflePending = false
 
-  var isShowVideoPendingInMiniPlayer: Bool = false
-  /// Calls `self.showVideoViewAfterVidChange`
-  let miniPlayerShowVideoTimer = TimeoutTimer(timeout: Constants.TimeInterval.musicModeChangeTrackTimeout)
-
   // test seeking
   var triedUsingExactSeekForCurrentFile: Bool = false
   var useExactSeekForCurrentFile: Bool = true
-
-  var isPlaylistVisible: Bool {
-    isInMiniPlayer ? windowController.miniPlayer.isPlaylistVisible : windowController.isOpening(sidebarTab: .playlist)
-  }
-
-  var isOnlyOpenPlayer: Bool {
-    for player in PlayerManager.shared.playerCores {
-      if player != self && player.windowController.isOpen {
-        return false
-      }
-    }
-    return true
-  }
 
   var canSkipBackward: Bool {
     isActive && (info.isPlaying || (info.playbackPositionSec ?? 0.0) > 0.0)
@@ -341,7 +318,6 @@ class PlayerCore: NSObject {
     abLoopA != 0 && abLoopB != 0 && mpv.getString(MPVOption.PlaybackControl.abLoopCount) != "0"
   }
 
-  let playlistTableChangeNotificationName: NSNotification.Name
 
   init(_ label: String, isDemoPlayer: Bool = false, commandLineArgs: [(String, String)] = []) {
     let log = Logger.subsystem(forPlayerID: label)
@@ -3513,55 +3489,6 @@ class PlayerCore: NSObject {
     vidChanged(silent: silent)
     sidChanged(silent: silent)
     secondarySidChanged(silent: silent)
-  }
-
-  /// Reloads playlist from mpv, then enqueues state save & sends `iinaPlaylistChanged` notification.
-  func reloadPlaylist(thenPostNotification: Bool = true, savePlayerState: Bool = true) {
-    mpv.queue.async { [self] in
-      _reloadPlaylist(thenPostNotification: thenPostNotification, savePlayerState: savePlayerState)
-    }
-  }
-
-  func _reloadPlaylist(thenPostNotification: Bool = true, savePlayerState: Bool = true) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isStopping else { return }
-
-    guard _reloadPlaylistAndReturn() != nil else { return }
-
-    if thenPostNotification {
-      postNotification(.iinaPlaylistChanged)
-    }
-
-    if savePlayerState {
-      saveState()  // save playlist URLs to prefs
-    }
-  }
-
-  /// 1. Gets the up-to-date playlist & `playlist-pos` (now playing item index) from mpv.
-  /// 2. Updates `info.playlist` & `info.currentPlayback?.playlistPos`.
-  /// 3. Returns the up-to-date playlist (or `nil` on error or incorrect state).
-  func _reloadPlaylistAndReturn() -> [PlaybackID]? {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isStopping else { return nil }
-
-    var newPlaylist: [PlaybackID] = []
-    let playlistCount = mpv.getInt(MPVProperty.playlistCount)
-    log.verbose{"Reloading playlist with \(playlistCount) items"}
-    for index in 0..<playlistCount {
-      let urlPath = mpv.getString(MPVProperty.playlistNFilename(index))!
-      guard let playlistItem = PlaybackID(path: urlPath) else {
-        log.error{"Playlist item has invalid path; skipping: \(urlPath.pii.quoted)"}
-        continue
-      }
-      newPlaylist.append(playlistItem)
-    }
-
-    let mpvPlaylistPos = mpv.getInt(MPVProperty.playlistPos)
-    info.currentPlayback?.playlistPos = mpvPlaylistPos
-    info.playlist = newPlaylist
-    log.verbose{"After reloading playlist: playlistPos is: \(mpvPlaylistPos)"}
-
-    return newPlaylist
   }
 
   func reloadChapters() {
