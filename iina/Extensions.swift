@@ -1663,11 +1663,11 @@ extension NSScreen {
     if let screen = forDisplayID(displayID) {
       // TODO: better matching logic. There is no guarantee that displayId will be consistent for the same screen across launches
       if screen.screenID != screenID {
-        Logger.log("NSScreen with displayID \(displayID) is not exact match! Search target was \(screenID.quoted), but found \(screen.screenID.quoted). It is possible the wrong screen is being returned", level: .error)
+        Logger.log.error{"NSScreen with displayID \(displayID) is not exact match! Search target was \(screenID.quoted), but found \(screen.screenID.quoted). It is possible the wrong screen is being returned"}
       }
       return screen
     }
-    Logger.log("Failed to find an NSScreen for screenID \(screenID.quoted). Returning nil", level: .error)
+    Logger.log.error{"Failed to find an NSScreen for screenID \(screenID.quoted); returning nil"}
     return nil
   }
 
@@ -1685,7 +1685,7 @@ extension NSScreen {
       return screen
     }
 
-    Logger.log("Failed to find an NSScreen for screenID \(screenID.quoted). Returning default screen", level: .debug)
+    Logger.log.debug{"Failed to find an NSScreen for screenID \(screenID.quoted); returning default screen"}
     return NSScreen.screens[0]
   }
 
@@ -1726,7 +1726,7 @@ extension NSScreen {
   var nativeResolution: CGSize? {
     // if there's a native resolution found in this method, that's more accurate than above
     guard let displayModes = CGDisplayCopyAllDisplayModes(displayId, nil) as? [CGDisplayMode] else {
-      Logger.log("Failed to get CGDisplayModes for displayID \(displayId)! Returning nil", level: .warning)
+      Logger.log.warn{"Failed to get CGDisplayModes for displayID \(displayId)! Returning nil"}
       return nil
     }
     for mode in displayModes {
@@ -1806,7 +1806,7 @@ extension NSWindow {
         return false
       }
     }
-    Logger.log("Window is the only window currently open: \(savedStateName.quoted)", level: .verbose)
+    Logger.log.verbose{"Window is the only window currently open: \(savedStateName.quoted)"}
     return true
   }
 
@@ -1834,7 +1834,7 @@ extension NSScrollView {
   func restoreVerticalScroll(key: Preference.Key) -> Bool {
     if UIState.shared.isRestoreEnabled {
       if let offsetY: Double = Preference.value(for: key) as? Double {
-        Logger.log("Restoring vertical scroll to: \(offsetY)", level: .verbose)
+        Logger.log.verbose{"Restoring vertical scroll to: \(offsetY)"}
         // Note: *MUST* use scroll(to:), not scroll(_)! Weird that the latter doesn't always work
         self.contentView.scroll(to: NSPoint(x: 0, y: offsetY))
         return true
@@ -1859,7 +1859,7 @@ extension NSScrollView {
   // Combines the previous 2 functions into one
   func restoreAndObserveVerticalScroll(key: Preference.Key, defaultScrollAction: () -> Void) -> NSObjectProtocol {
     if !restoreVerticalScroll(key: key) {
-      Logger.log("Did not restore scroll (key: \(key.rawValue.quoted), isRestoreEnabled: \(UIState.shared.isRestoreEnabled)); will use default scroll action", level: .verbose)
+      Logger.log.verbose{"Did not restore scroll (key: \(key.rawValue.quoted), isRestoreEnabled: \(UIState.shared.isRestoreEnabled)); will use default scroll action"}
       defaultScrollAction()
     }
     return addVerticalScrollObserver(key: key)
