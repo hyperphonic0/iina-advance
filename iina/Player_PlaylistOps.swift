@@ -48,7 +48,7 @@ extension PlayerCore {
     guard _reloadPlaylistAndReturn() != nil else { return }
 
     if info.playlist.count != 1 {
-      log.debug{"Found \(info.playlist.count) items instead of exactly 1 before bulk-loading the playlist. Some items may be out of order afterwards"}
+      log.debug{"[Playlist] Expected exactly 1 item in playlist before bulk-add, but found \(info.playlist.count). Some items may be out of order afterwards"}
     }
 
     let currentItem: Int
@@ -62,7 +62,7 @@ extension PlayerCore {
       // but older versions of IINA did not support duplicates in the playlist, so shouldn't be an issue.
       currentItem = firstMatchingIndex
     } else {
-      log.warn{"Failed to find currently playing item in playlist of size \(info.playlist.count)!"}
+      log.warn{"[Playlist] Failed to find currently playing item among \(info.playlist.count) items"}
       assert(false, "should never get here if used properly!")
       currentItem = -1
     }
@@ -110,40 +110,38 @@ extension PlayerCore {
     let playableFiles = getPlayableFiles(in: desiredRowList.map{ $0.url })
     guard playableFiles.count > 0 else { return }
     let rowList = playableFiles.map { PlaybackID($0) }
-    log.verbose{"Inserting \(rowList.count) rows into playlist at index \(targetRowIndex?.description ?? "nil"): \(rowList.map{$0.path.pii})"}
-
+    log.verbose{"[Playlist] Inserting \(rowList.count) rows at index \(targetRowIndex?.description ?? "nil"): \(rowList.map{$0.path.pii})"}
+    let expectedCurrentPlaylist = displayedPlaylist  // make sure user is moving what they expect!
 
     let (tableUIChange, allItemsNew) = windowController.playlistView.isViewLoaded
-    ? windowController.playlistView.playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: displayedPlaylist)
-    : TableUIChange.builder.buildInsert(of: rowList, at: targetRowIndex ?? displayedPlaylist.count, in: displayedPlaylist)
+    ? windowController.playlistView.playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: expectedCurrentPlaylist)
+    : TableUIChange.builder.buildInsert(of: rowList, at: targetRowIndex ?? displayedPlaylist.count, in: expectedCurrentPlaylist)
 
-    let playlistSize = info.playlist.count
+    let playlistSize = expectedCurrentPlaylist.count
     var insertStartIndex = targetRowIndex ?? playlistSize
     insertStartIndex = (insertStartIndex >= 0 && insertStartIndex <= playlistSize) ? insertStartIndex : playlistSize
     let paths = rowList.map { $0.path }
     let itemsAtIndexes = paths.map ({ path in (insertStartIndex, path)} )
 
-    let expectedCurrentPlaylist = displayedPlaylist  // make sure user is moving what they expect!
     mpv.queue.async { [self] in
       _playlistInsert(itemsAtIndexes: itemsAtIndexes, expectedCurrentPlaylist, onSuccess: { [self] in
         displayedPlaylist = info.playlist                                          // update cached data
         tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // update UI
         sendOSD(.addToPlaylist(paths.count))
-        saveState()
 
         // Register undo/redo for this action?
         switch undoOption {
         case .ignoreUndoRedo:
           break
         case .clearUndoStack:
-          log.debug{"Clearing undo stack for playlist after insert"}
+          log.debug{"[Playlist] Clearing undo stack for playlist after 'insert'"}
           undoHelper.clearUndoes()
         case .registerUndoRedo:
           let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
           undoHelper.register(actionName, undo: { [self] in
             mpv.queue.async { [self] in
               guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
-                log.error{"Cannot undo insert of playlist items: playlist is in unexpected state! Clearing undo stack."}
+                log.error{"[Playlist] Cannot undo insert: playlist is in unexpected state! Clearing undo stack & aborting."}
                 playlistErrorDidOccur()
                 return
               }
@@ -171,7 +169,7 @@ extension PlayerCore {
                        _ expectedCurrentPlaylist: [PlaybackID]? = nil,
                        onSuccess: OnSuccessCallback? = nil) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    log.verbose{"Requested to insert \(itemsAtIndexes.count) mpv playlist items at indexes: \(itemsAtIndexes.map(\.0))"}
+    log.verbose{"[Playlist] Insert requested: \(itemsAtIndexes.count) total items @ mpvIndexes=\(itemsAtIndexes.map(\.0))"}
 
     // Verify playlist state first before changing anything
     let expectedPlaylistBeforeInsert = expectedCurrentPlaylist ?? info.playlist
@@ -180,7 +178,7 @@ extension PlayerCore {
     // Insert at playlist.count => append
     for (itemsAtIndexIndex, itemsAtIndex) in itemsAtIndexes.enumerated() {
       guard (itemsAtIndex.0 >= 0) && (itemsAtIndex.0 <= info.playlist.count + itemsAtIndexIndex) else {
-        log.error{"Cannot insert playlist items; 1 or more indexes are out of bounds: \(itemsAtIndexes.map(\.0)) (playlist size=\(info.playlist.count))"}
+        log.error{"[Playlist] Cannot insert items: 1 or more indexes are out of bounds! Indexes=\(itemsAtIndexes.map(\.0)) PlaylistSize=\(info.playlist.count)"}
         playlistErrorDidOccur()
         return
       }
@@ -195,7 +193,7 @@ extension PlayerCore {
         return
       }
       guard let playbackInserted = PlaybackID(path: itemToInsertPath) else {
-        log.error("Failed to create PlaybackID from playlist item path! Will cancel remaining item inserts (path=\(itemToInsertPath))")
+        log.error("[Playlist] Failed to create PlaybackID from item path (will cancel remaining inserts): path=\(itemToInsertPath)")
         playlistErrorDidOccur()
         return
       }
@@ -206,6 +204,7 @@ extension PlayerCore {
     // Now verify playlist state again to ensure changes were correct
     guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistAfterInsert) else { return }
 
+    saveState()
     if let onSuccess {
       _ = onSuccess()
     }
@@ -217,18 +216,65 @@ extension PlayerCore {
     movePlaylistRows(from: IndexSet(integer: fromIndex), to: targetRowIndex, .registerUndoRedo)
   }
 
+  func movePlaylistRows(from rowIndexes: IndexSet, to insertIndex: Int, _ undoOption: UndoOption) {
+    let (tableUIChange, allItemsNew) = TableUIChange.builder.buildMove(rowIndexes, to: insertIndex, in: displayedPlaylist)
+    let allItemsOld = displayedPlaylist  // save in case of undo
+
+    let moveIndexPairs = buildMpvMoveIndexPairs(from: rowIndexes, to: insertIndex)
+    log.verbose{"[Playlist] Moving rows=\(rowIndexes.toArray()) → \(insertIndex); movePairs=\(moveIndexPairs)"}
+
+    playlistMoveIndexPairs(moveIndexPairs, expectedPlaylistBefore: allItemsOld, expectedPlaylistAfter: allItemsNew,
+                           onSuccess: { [self] in
+      displayedPlaylist = info.playlist                                          // Update cached data
+      tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // notify UI
+
+      switch undoOption {
+      case .ignoreUndoRedo:
+        break
+      case .clearUndoStack:
+        log.debug{"[Playlist] Clearing undo stack after 'move'"}
+        undoHelper.clearUndoes()
+      case .registerUndoRedo:
+        undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
+          log.verbose{"[Playlist] Requested: undo move of \(rowIndexes.count) items"}
+
+          // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
+          // can be at non-contiguous indexes in the playlist.
+          let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
+          // FIXME: there is a bug here
+          let undoMoveIndexPairs = buildInvertedMpvMoveIndexPairs(from: rowIndexes, to: insertIndex)
+
+          log.verbose{"[Playlist] Undo move (original op: move rows=\(rowIndexes.toArray()) → \(insertIndex); undoMoveIndexPairs=\(undoMoveIndexPairs))"}
+          playlistMoveIndexPairs(undoMoveIndexPairs, expectedPlaylistBefore: allItemsNew, expectedPlaylistAfter: allItemsOld,
+                                 onSuccess: { [self] in
+            displayedPlaylist = info.playlist                                          // Update cached data
+            tableUIChangeUndo.postNotification(name: playlistTableChangeNotificationName)  // notify UI
+          })
+        }, redo: { [self] in
+          mpv.queue.async { [self] in
+            // Make sure this is an exact same redo! Need to run this in mpv queue to avoid races
+            guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld) else { return }
+
+            DispatchQueue.main.async { [self] in
+              movePlaylistRows(from: rowIndexes, to: insertIndex, .ignoreUndoRedo)
+            }
+          }
+        })
+      }
+
+    })
+  }
+
   /// Drag & drop within `playlistTableView`. Should be called only by `movePlaylistRows`.
   private func playlistMoveIndexPairs(_ indexPairs: [(Int, Int)],
-                                      _ expectedCurrentPlaylist: [PlaybackID]? = nil,
-                                      onSuccess: OnSuccessCallback? = nil) {
+                                      expectedPlaylistBefore: [PlaybackID],
+                                      expectedPlaylistAfter: [PlaybackID],
+                                      onSuccess: @escaping OnSuccessCallback) {
     mpv.queue.async { [self] in
-      log.debug{"Playlist move index pairs: \(indexPairs)"}
+      log.debug{"[Playlist] Executing move of (src,dst) indexPairs=\(indexPairs)"}
 
-      // Verify playlist state first before changing anything
-      let expectedPlaylistBeforeInsert = expectedCurrentPlaylist ?? info.playlist
-      guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistBeforeInsert) else {
-        return
-      }
+      // Verify playlist state first before changing anything. This will take proper steps on failure, so just return in that case.
+      guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistBefore) else { return }
 
       for (srcIndex, dstIndex) in indexPairs {
         let returnCode = mpv.command(.playlistMove, args: ["\(srcIndex)", "\(dstIndex)"], checkError: false, level: .verbose)
@@ -237,11 +283,22 @@ extension PlayerCore {
         }
       }
 
-      if let onSuccess {
-        _ = onSuccess()
-      } else {
-        _reloadPlaylist()
+      guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistAfter) else {
+        if log.isVerboseEnabled {
+          let tableChangeExpected = TableUIChange.builder.buildDiff(oldRows: expectedPlaylistBefore,
+                                                                    newRows: expectedPlaylistAfter)
+          let tableChangeActual = TableUIChange.builder.buildDiff(oldRows: expectedPlaylistBefore,
+                                                                  newRows: info.playlist)
+          let expStr: String = tableChangeExpected.toMove?.compactMap{"\($0.0) → \($0.1)"}.joined(separator: "\n") ?? "nil"
+          let actStr: String = tableChangeActual.toMove?.compactMap{"\($0.0) → \($0.1)"}.joined(separator: "\n") ?? "nil"
+          log.debug{"[Playlist] Mismatch:\nEXPECTED:\n\(expStr)\n\nACTUAL:\n\(actStr)"}
+        }
+        return
       }
+
+      // Success!
+      saveState()
+      onSuccess()
     }
 
   }
@@ -265,7 +322,7 @@ extension PlayerCore {
     return moveIndexPairs
   }
 
-  func buildInvertedMpvMoveIndexPairs(from rowIndexes: IndexSet, to insertIndex: Int) -> [(Int, Int)] {
+  private func buildInvertedMpvMoveIndexPairs(from rowIndexes: IndexSet, to insertIndex: Int) -> [(Int, Int)] {
     var movePairsInverted: [(Int, Int)] = []
 
     var moveFromOffset = 0
@@ -275,65 +332,13 @@ extension PlayerCore {
         movePairsInverted.append((insertIndex, origIndex + moveFromOffset))
         moveFromOffset -= 1
       } else {
-        movePairsInverted.append((insertIndex + moveToOffset - 1, origIndex))
+        movePairsInverted.append((insertIndex + moveToOffset, origIndex))
         moveToOffset += 1
       }
     }
     return movePairsInverted.reversed()
   }
 
-  func movePlaylistRows(from rowIndexes: IndexSet, to insertIndex: Int, _ undoOption: UndoOption) {
-    let (tableUIChange, allItemsNew) = TableUIChange.builder.buildMove(rowIndexes, to: insertIndex, in: displayedPlaylist)
-    let allItemsOld = displayedPlaylist  // save in case of undo
-
-    let moveIndexPairs = buildMpvMoveIndexPairs(from: rowIndexes, to: insertIndex)
-    log.verbose{"Moving playlist rows=\(rowIndexes.toArray()) → \(insertIndex); movePairs=\(moveIndexPairs)"}
-
-    playlistMoveIndexPairs(moveIndexPairs, allItemsOld, onSuccess: { [self] in
-      guard syncAndValidatePlaylist(expectedPlaylist: allItemsNew) else { return }
-
-      displayedPlaylist = info.playlist                                          // update cached data
-      tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // notify UI
-      saveState()
-
-      switch undoOption {
-      case .ignoreUndoRedo:
-        break
-      case .clearUndoStack:
-        log.debug{"Clearing undo stack for playlist after 'move'"}
-        undoHelper.clearUndoes()
-      case .registerUndoRedo:
-        undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
-          log.verbose{"Requested: undo move of \(rowIndexes.count) playlist items"}
-
-          // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
-          // can be at non-contiguous indexes in the playlist.
-          let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
-          // FIXME: there is a bug here
-          let undoMoveIndexPairs = buildInvertedMpvMoveIndexPairs(from: rowIndexes, to: insertIndex)
-
-          log.verbose{"Undo move of playlist rows=\(rowIndexes.toArray()) → \(insertIndex); undoMoveIndexPairs=\(undoMoveIndexPairs)"}
-          playlistMoveIndexPairs(undoMoveIndexPairs, allItemsNew, onSuccess: { [self] in
-            guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld) else { return }
-
-            displayedPlaylist = info.playlist                                              // update cached data
-            tableUIChangeUndo.postNotification(name: playlistTableChangeNotificationName)  // notify UI
-            saveState()
-          })
-        }, redo: { [self] in
-          mpv.queue.async { [self] in
-            guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld) else { return }
-
-            DispatchQueue.main.async { [self] in
-              movePlaylistRows(from: rowIndexes, to: insertIndex, .ignoreUndoRedo)
-            }
-          }
-        })
-      }
-
-    })
-
-  }
 
   // MARK: - Remove
 
@@ -353,7 +358,7 @@ extension PlayerCore {
     let allItemsOld = displayedPlaylist     // save in case of undo
 
     mpv.queue.async { [self] in
-      log.verbose{"Requested to remove rows \(rowIndexes.map{$0}) from playlist"}
+      log.verbose{"[Playlist] Remove requested: mpvIndexes=\(rowIndexes.map{$0})"}
 
       guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld) else { return }
 
@@ -362,7 +367,7 @@ extension PlayerCore {
       var countRemoved = 0
       for origIndex in rowIndexes {
         let index = origIndex - countRemoved
-        log.verbose("Removing row \(index) from playlist")
+        log.verbose("[Playlist] Sending mpv remove cmd for row \(index)")
         let returnCode = mpv.command(.playlistRemove, args: [index.description], checkError: false)
         // If error occurred, report using callback, reload state, and do not continue
         guard returnCode == 0 else {
@@ -375,19 +380,18 @@ extension PlayerCore {
       displayedPlaylist = info.playlist                                          // update cached data
       tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // update UI
       sendOSD(.removeFromPlaylist(countRemoved))
+      saveState()
 
       // Register undo/redo?
       switch undoOption {
       case .ignoreUndoRedo:
         break
       case .clearUndoStack:
-        log.debug{"Clearing undo stack for playlist after 'remove'"}
+        log.debug{"[Playlist] Clearing undo stack after 'remove'"}
         undoHelper.clearUndoes()
       case .registerUndoRedo:
         undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
           mpv.queue.async { [self] in
-            guard syncAndValidatePlaylist(expectedPlaylist: allItemsNew) else { return }
-
             // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
             // can be at non-contiguous indexes in the playlist.
             let indexedInsertItems = rowIndexes.enumerated().map{ ($0.element - $0.offset, allItemsOld[$0.element].path) }
@@ -395,7 +399,7 @@ extension PlayerCore {
                    "itemsAtIndexes must be sorted in ascending order, but found: \(indexedInsertItems.map(\.0))")
             let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
 
-            _playlistInsert(itemsAtIndexes: indexedInsertItems, onSuccess: { [self] in
+            _playlistInsert(itemsAtIndexes: indexedInsertItems, allItemsNew, onSuccess: { [self] in
               displayedPlaylist = info.playlist                                              // update cached data
               tableUIChangeUndo.postNotification(name: playlistTableChangeNotificationName)  // update UI
               sendOSD(.addToPlaylist(indexedInsertItems.count))
@@ -442,11 +446,11 @@ extension PlayerCore {
 
     var newPlaylist: [PlaybackID] = []
     let playlistCount = mpv.getInt(MPVProperty.playlistCount)
-    log.verbose{"Reloading playlist with \(playlistCount) items"}
+    log.verbose{"[Playlist] Reloading with \(playlistCount) items"}
     for index in 0..<playlistCount {
       let urlPath = mpv.getString(MPVProperty.playlistNFilename(index))!
       guard let playlistItem = PlaybackID(path: urlPath) else {
-        log.error{"Playlist item has invalid path; skipping: \(urlPath.pii.quoted)"}
+        log.error{"[Playlist] Item has invalid path, skipping: \(urlPath.pii.quoted)"}
         continue
       }
       newPlaylist.append(playlistItem)
@@ -455,7 +459,7 @@ extension PlayerCore {
     let mpvPlaylistPos = mpv.getInt(MPVProperty.playlistPos)
     info.currentPlayback?.playlistPos = mpvPlaylistPos
     info.playlist = newPlaylist
-    log.verbose{"After reloading playlist: playlistPos is: \(mpvPlaylistPos)"}
+    log.verbose{"[Playlist] After reloading: playlistPos is: \(mpvPlaylistPos)"}
 
     return newPlaylist
   }
@@ -464,10 +468,10 @@ extension PlayerCore {
 
   func clearPlaylist() {
     mpv.queue.async { [self] in
-      log.verbose("Sending 'playlist-clear' cmd to mpv")
+      log.verbose("[Playlist] Sending 'playlist-clear' cmd to mpv")
       mpv.command(.playlistClear, checkError: false)
       _reloadPlaylist()
-      log.verbose("Clearing undo stack after 'playlist-clear' cmd")
+      log.verbose("[Playlist] Clearing undo stack after 'playlist-clear' cmd")
       undoHelper.clearUndoes()
     }
   }
@@ -486,7 +490,7 @@ extension PlayerCore {
 
   func playFileInPlaylist(_ pos: Int) {
     mpv.queue.async { [self] in
-      log.verbose{"Changing mpv playlist-pos to \(pos)"}
+      log.verbose{"[Playlist] Changing mpv playlist-pos to \(pos)"}
       mpv.setInt(MPVProperty.playlistPos, pos)
     }
   }
@@ -510,9 +514,10 @@ extension PlayerCore {
     }
 
     if validateItemsAreEqual(actualPlaylist, expectedPlaylist) {
+      log.trace{"[Playlist] Playlist validation passed"}
       return true
     } else {
-      log.error{"Playlist is in unexpected state! Clearing undo stack to prevent further issues."}
+      log.error{"[Playlist] Playlist mismatch! Will clear undo stack to prevent further issues"}
       playlistErrorDidOccur()
       return false
     }
@@ -520,7 +525,7 @@ extension PlayerCore {
 
   private func playlistErrorDidOccur(_ returnCode: Int32, opDesc: String) {
     let errorString = String(cString: mpv_error_string(returnCode))
-    log.error{"Failed to \(opDesc) (will clear undo stack): \(errorString)"}
+    log.error{"[Playlist] Failed to \(opDesc) (will clear undo stack): \(errorString)"}
     playlistErrorDidOccur()
   }
 

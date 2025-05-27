@@ -480,7 +480,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   private func copyPlaylistRowsToPasteboard(_ rowIndexes: IndexSet, to pboard: NSPasteboard) {
-    player.log.verbose{"Copying playlist rows to pasteboard: \(rowIndexes.toArray())"}
+    player.log.verbose{"Copying playlist indexes to pasteboard: \(rowIndexes.toArray())"}
     do {
       let indexesData = try NSKeyedArchiver.archivedData(withRootObject: rowIndexes, requiringSecureCoding: true)
       let playlist = displayedPlaylist
