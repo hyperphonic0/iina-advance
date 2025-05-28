@@ -385,62 +385,15 @@ class PlayerCore: NSObject {
     return false
   }
 
-
-  // MARK: - Plugins
-
-  static func reloadPluginForAll(_ plugin: JavascriptPlugin, forced: Bool = false) {
-    PlayerManager.shared.playerCores.forEach { $0.reloadPlugin(plugin, forced: forced) }
-    AppDelegate.shared.menuController?.updatePluginMenu()
+  func saveState() {
+    PlayerSaveState.save(self)
   }
 
-  func clearPlugins() {
-    log.verbose{"Clearing plugins"}
-    pluginMap.removeAll()
-    plugins.removeAll()
-
-    windowController.pluginView.updatePluginTabs()
+  func clearSavedState() {
+    UIState.shared.clearPlayerSaveState(forPlayerID: label)
   }
 
-  func loadPlugins() {
-    guard AppDelegate.iinaPluginSystemEnabled else {
-      log.verbose{"Plugin system disabled; skipping load of plugins"}
-      return
-    }
-    log.verbose{"Loading plugins"}
-    pluginMap.removeAll()
-    plugins = JavascriptPlugin.plugins.compactMap { plugin in
-      guard plugin.enabled else { return nil }
-      let instance = JavascriptPluginInstance(player: self, plugin: plugin)
-      pluginMap[plugin.identifier] = instance
-      return instance
-    }
-
-    windowController.pluginView.updatePluginTabs()
-  }
-
-  func reloadPlugin(_ plugin: JavascriptPlugin, forced: Bool = false) {
-    guard AppDelegate.iinaPluginSystemEnabled else { return }
-
-    let id = plugin.identifier
-    log.verbose{"Reloading plugin: \(id.quoted)"}
-    if let _ = pluginMap[id] {
-      if plugin.enabled {
-        // no need to reload, unless forced
-        guard forced else { return }
-        pluginMap[id] = JavascriptPluginInstance(player: self, plugin: plugin)
-      } else {
-        pluginMap.removeValue(forKey: id)
-      }
-    } else {
-      guard plugin.enabled else { return }
-      pluginMap[id] = JavascriptPluginInstance(player: self, plugin: plugin)
-    }
-
-    plugins = JavascriptPlugin.plugins.compactMap { pluginMap[$0.identifier] }
-    windowController.pluginView.updatePluginTabs()
-  }
-
-  // MARK: - Control
+  // MARK: - Opening Media
 
   /**
    Open a list of urls. If there are more than one urls, add the remaining ones to
@@ -627,6 +580,8 @@ class PlayerCore: NSObject {
     }
   }
 
+  // MARK: - Startup / Shutdown
+
   // Does nothing if already started
   func start() {
     assert(DispatchQueue.isExecutingIn(.main))
@@ -673,14 +628,6 @@ class PlayerCore: NSObject {
       log.verbose("Defaulting mpv audioDevice to 'auto'")
       setAudioDevice("auto")
     }
-  }
-
-  func saveState() {
-    PlayerSaveState.save(self)
-  }
-
-  func clearSavedState() {
-    UIState.shared.clearPlayerSaveState(forPlayerID: label)
   }
 
   /// Initiate shutdown of this player.
@@ -772,6 +719,60 @@ class PlayerCore: NSObject {
     windowController.updateTitle()
 
     events.emit(.musicModeChanged, data: false)
+  }
+
+  // MARK: - Plugins
+
+  static func reloadPluginForAll(_ plugin: JavascriptPlugin, forced: Bool = false) {
+    PlayerManager.shared.playerCores.forEach { $0.reloadPlugin(plugin, forced: forced) }
+    AppDelegate.shared.menuController?.updatePluginMenu()
+  }
+
+  func clearPlugins() {
+    log.verbose{"Clearing plugins"}
+    pluginMap.removeAll()
+    plugins.removeAll()
+
+    windowController.pluginView.updatePluginTabs()
+  }
+
+  func loadPlugins() {
+    guard AppDelegate.iinaPluginSystemEnabled else {
+      log.verbose{"Plugin system disabled; skipping load of plugins"}
+      return
+    }
+    log.verbose{"Loading plugins"}
+    pluginMap.removeAll()
+    plugins = JavascriptPlugin.plugins.compactMap { plugin in
+      guard plugin.enabled else { return nil }
+      let instance = JavascriptPluginInstance(player: self, plugin: plugin)
+      pluginMap[plugin.identifier] = instance
+      return instance
+    }
+
+    windowController.pluginView.updatePluginTabs()
+  }
+
+  func reloadPlugin(_ plugin: JavascriptPlugin, forced: Bool = false) {
+    guard AppDelegate.iinaPluginSystemEnabled else { return }
+
+    let id = plugin.identifier
+    log.verbose{"Reloading plugin: \(id.quoted)"}
+    if let _ = pluginMap[id] {
+      if plugin.enabled {
+        // no need to reload, unless forced
+        guard forced else { return }
+        pluginMap[id] = JavascriptPluginInstance(player: self, plugin: plugin)
+      } else {
+        pluginMap.removeValue(forKey: id)
+      }
+    } else {
+      guard plugin.enabled else { return }
+      pluginMap[id] = JavascriptPluginInstance(player: self, plugin: plugin)
+    }
+
+    plugins = JavascriptPlugin.plugins.compactMap { pluginMap[$0.identifier] }
+    windowController.pluginView.updatePluginTabs()
   }
 
   // MARK: - MPV commands
@@ -1612,79 +1613,9 @@ class PlayerCore: NSObject {
     }
   }
 
-  func toggleSubVisibility(_ set: Bool? = nil) {
-    mpv.queue.async { [self] in
-      let newState = set ?? !info.isSubVisible
-      mpv.setFlag(MPVOption.Subtitles.subVisibility, newState)
-    }
-  }
-
-  func toggleSecondSubVisibility(_ set: Bool? = nil) {
-    mpv.queue.async { [self] in
-      let newState = set ?? !info.isSecondSubVisible
-      mpv.setFlag(MPVOption.Subtitles.secondarySubVisibility, newState)
-    }
-  }
-
-  func loadExternalSubFile(_ url: URL, delay: Bool = false) {
-    mpv.queue.async { [self] in
-      guard isActive else { return }
-      if let track = info.findExternalSubTrack(withURL: url) {
-        mpv.command(.subReload, args: [String(track.id)], checkError: false)
-        return
-      }
-
-      /// Use `auto` flag to override the default:
-      /// ```<select>  Select the subtitle immediately (default).
-      ///    <auto>    Don't select the subtitle. (Or in some special situations, let the default stream
-      ///              selection mechanism decide.)```
-      let urlPath = PlaybackID.path(from: url)
-      let code = mpv.command(.subAdd, args: [urlPath, "auto"], checkError: false)
-      if code < 0 {
-        let errorDesc = mpv.errorString(code)
-        log.error("Failed to load sub (error \(code): \(errorDesc)) \(urlPath.pii.quoted)")
-        // if another modal panel is shown, popping up an alert now will cause some infinite loop.
-        if delay {
-          DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
-            Utility.showAlert("unsupported_sub")
-          }
-        } else {
-          DispatchQueue.main.async {
-            Utility.showAlert("unsupported_sub")
-          }
-        }
-      }
-    }
-  }
-
-  func reloadAllSubs() {
-    mpv.queue.async { [self] in
-      guard isActive else { return }
-      let currentSubName = info.currentTrack(.sub)?.externalFilename
-      for subTrack in info.subTracks {
-        mpv.command(.subReload, args: ["\(subTrack.id)"], checkError: false)
-      }
-      guard reloadTrackInfo() else { return }
-      if let currentSub = info.subTracks.first(where: {$0.externalFilename == currentSubName}) {
-        setTrack(currentSub.id, forType: .sub)
-      }
-
-      DispatchQueue.main.async { [self] in
-        windowController?.quickSettingView.reload()
-      }
-    }
-  }
-
   func setAudioDelay(_ delay: Double) {
     mpv.queue.async { [self] in
       mpv.setDouble(MPVOption.Audio.audioDelay, delay)
-    }
-  }
-
-  func setSubDelay(_ delay: Double, forPrimary: Bool = true) {
-    mpv.queue.async { [self] in
-      let option = forPrimary ? MPVOption.Subtitles.subDelay : MPVOption.Subtitles.secondarySubDelay
-      mpv.setDouble(option, delay)
     }
   }
 
@@ -1721,81 +1652,6 @@ class PlayerCore: NSObject {
     mpv.queue.async { [self] in
       log.verbose{"Seting mpv audioDevice to \(name.pii.quoted)"}
       mpv.setString(MPVProperty.audioDevice, name)
-    }
-  }
-
-  /** Scale is a double value in (0, 100] */
-  func setSubScale(_ scale: Double) {
-    assert(scale > 0.0, "Invalid sub scale: \(scale)")
-    mpv.queue.async { [self] in
-      Preference.set(scale, for: .subScale)
-      mpv.setDouble(MPVOption.Subtitles.subScale, scale)
-    }
-  }
-
-  func setSubPos(_ pos: Int, forPrimary: Bool = true) {
-    mpv.queue.async { [self] in
-      if forPrimary {
-        Preference.set(pos, for: .subPos)
-      }
-      let option = forPrimary ? MPVOption.Subtitles.subPos : MPVOption.Subtitles.secondarySubPos
-      mpv.setInt(option, pos)
-    }
-  }
-
-  func setSubTextColor(_ colorString: String) {
-    mpv.queue.async { [self] in
-      Preference.set(colorString, for: .subTextColorString)
-      mpv.setString("options/" + MPVOption.Subtitles.subColor, colorString)
-    }
-  }
-
-  func setSubFont(_ font: String) {
-    mpv.queue.async { [self] in
-      Preference.set(font, for: .subTextFont)
-      mpv.setString(MPVOption.Subtitles.subFont, font)
-    }
-  }
-
-  func setSubTextSize(_ fontSize: Double) {
-    mpv.queue.async { [self] in
-      Preference.set(fontSize, for: .subTextSize)
-      mpv.setDouble("options/" + MPVOption.Subtitles.subFontSize, fontSize)
-    }
-  }
-
-  func setSubTextBold(_ isBold: Bool) {
-    mpv.queue.async { [self] in
-      Preference.set(isBold, for: .subBold)
-      mpv.setFlag("options/" + MPVOption.Subtitles.subBold, isBold)
-    }
-  }
-
-  func setSubTextBorderColor(_ colorString: String) {
-    mpv.queue.async { [self] in
-      Preference.set(colorString, for: .subBorderColorString)
-      mpv.setString("options/" + MPVOption.Subtitles.subBorderColor, colorString)
-    }
-  }
-
-  func setSubTextBorderSize(_ size: Double) {
-    mpv.queue.async { [self] in
-      Preference.set(size, for: .subBorderSize)
-      mpv.setDouble("options/" + MPVOption.Subtitles.subBorderSize, size)
-    }
-  }
-
-  func setSubTextBgColor(_ colorString: String) {
-    mpv.queue.async { [self] in
-      Preference.set(colorString, for: .subBgColorString)
-      mpv.setString("options/" + MPVOption.Subtitles.subBackColor, colorString)
-    }
-  }
-
-  func setSubEncoding(_ encoding: String) {
-    mpv.queue.async { [self] in
-      mpv.setString(MPVOption.Subtitles.subCodepage, encoding)
-      info.subEncoding = encoding
     }
   }
 
@@ -2312,6 +2168,151 @@ class PlayerCore: NSObject {
   }
 
   // MARK: - Subtitles
+
+  func toggleSubVisibility(_ set: Bool? = nil) {
+    mpv.queue.async { [self] in
+      let newState = set ?? !info.isSubVisible
+      mpv.setFlag(MPVOption.Subtitles.subVisibility, newState)
+    }
+  }
+
+  func toggleSecondSubVisibility(_ set: Bool? = nil) {
+    mpv.queue.async { [self] in
+      let newState = set ?? !info.isSecondSubVisible
+      mpv.setFlag(MPVOption.Subtitles.secondarySubVisibility, newState)
+    }
+  }
+
+  func loadExternalSubFile(_ url: URL, delay: Bool = false) {
+    mpv.queue.async { [self] in
+      guard isActive else { return }
+      if let track = info.findExternalSubTrack(withURL: url) {
+        mpv.command(.subReload, args: [String(track.id)], checkError: false)
+        return
+      }
+
+      /// Use `auto` flag to override the default:
+      /// ```<select>  Select the subtitle immediately (default).
+      ///    <auto>    Don't select the subtitle. (Or in some special situations, let the default stream
+      ///              selection mechanism decide.)```
+      let urlPath = PlaybackID.path(from: url)
+      let code = mpv.command(.subAdd, args: [urlPath, "auto"], checkError: false)
+      if code < 0 {
+        let errorDesc = mpv.errorString(code)
+        log.error("Failed to load sub (error \(code): \(errorDesc)) \(urlPath.pii.quoted)")
+        // if another modal panel is shown, popping up an alert now will cause some infinite loop.
+        if delay {
+          DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
+            Utility.showAlert("unsupported_sub")
+          }
+        } else {
+          DispatchQueue.main.async {
+            Utility.showAlert("unsupported_sub")
+          }
+        }
+      }
+    }
+  }
+
+  func reloadAllSubs() {
+    mpv.queue.async { [self] in
+      guard isActive else { return }
+      let currentSubName = info.currentTrack(.sub)?.externalFilename
+      for subTrack in info.subTracks {
+        mpv.command(.subReload, args: ["\(subTrack.id)"], checkError: false)
+      }
+      guard reloadTrackInfo() else { return }
+      if let currentSub = info.subTracks.first(where: {$0.externalFilename == currentSubName}) {
+        setTrack(currentSub.id, forType: .sub)
+      }
+
+      DispatchQueue.main.async { [self] in
+        windowController?.quickSettingView.reload()
+      }
+    }
+  }
+
+  func setSubDelay(_ delay: Double, forPrimary: Bool = true) {
+    mpv.queue.async { [self] in
+      let option = forPrimary ? MPVOption.Subtitles.subDelay : MPVOption.Subtitles.secondarySubDelay
+      mpv.setDouble(option, delay)
+    }
+  }
+
+  /** Scale is a double value in (0, 100] */
+  func setSubScale(_ scale: Double) {
+    assert(scale > 0.0, "Invalid sub scale: \(scale)")
+    mpv.queue.async { [self] in
+      Preference.set(scale, for: .subScale)
+      mpv.setDouble(MPVOption.Subtitles.subScale, scale)
+    }
+  }
+
+  func setSubPos(_ pos: Int, forPrimary: Bool = true) {
+    mpv.queue.async { [self] in
+      if forPrimary {
+        Preference.set(pos, for: .subPos)
+      }
+      let option = forPrimary ? MPVOption.Subtitles.subPos : MPVOption.Subtitles.secondarySubPos
+      mpv.setInt(option, pos)
+    }
+  }
+
+  func setSubTextColor(_ colorString: String) {
+    mpv.queue.async { [self] in
+      Preference.set(colorString, for: .subTextColorString)
+      mpv.setString("options/" + MPVOption.Subtitles.subColor, colorString)
+    }
+  }
+
+  func setSubFont(_ font: String) {
+    mpv.queue.async { [self] in
+      Preference.set(font, for: .subTextFont)
+      mpv.setString(MPVOption.Subtitles.subFont, font)
+    }
+  }
+
+  func setSubTextSize(_ fontSize: Double) {
+    mpv.queue.async { [self] in
+      Preference.set(fontSize, for: .subTextSize)
+      mpv.setDouble("options/" + MPVOption.Subtitles.subFontSize, fontSize)
+    }
+  }
+
+  func setSubTextBold(_ isBold: Bool) {
+    mpv.queue.async { [self] in
+      Preference.set(isBold, for: .subBold)
+      mpv.setFlag("options/" + MPVOption.Subtitles.subBold, isBold)
+    }
+  }
+
+  func setSubTextBorderColor(_ colorString: String) {
+    mpv.queue.async { [self] in
+      Preference.set(colorString, for: .subBorderColorString)
+      mpv.setString("options/" + MPVOption.Subtitles.subBorderColor, colorString)
+    }
+  }
+
+  func setSubTextBorderSize(_ size: Double) {
+    mpv.queue.async { [self] in
+      Preference.set(size, for: .subBorderSize)
+      mpv.setDouble("options/" + MPVOption.Subtitles.subBorderSize, size)
+    }
+  }
+
+  func setSubTextBgColor(_ colorString: String) {
+    mpv.queue.async { [self] in
+      Preference.set(colorString, for: .subBgColorString)
+      mpv.setString("options/" + MPVOption.Subtitles.subBackColor, colorString)
+    }
+  }
+
+  func setSubEncoding(_ encoding: String) {
+    mpv.queue.async { [self] in
+      mpv.setString(MPVOption.Subtitles.subCodepage, encoding)
+      info.subEncoding = encoding
+    }
+  }
 
   func sidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
