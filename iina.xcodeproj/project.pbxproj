@@ -358,6 +358,7 @@
 		D1A8878E29D1696C000D1AE4 /* PWin_Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */; };
 		D1AC43942DE1BADC00189782 /* VideoGeo_Sync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AC43932DE1BACA00189782 /* VideoGeo_Sync.swift */; };
 		D1AC43962DE523FB00189782 /* Player_PlaylistOps.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AC43952DE523EE00189782 /* Player_PlaylistOps.swift */; };
+		D1AC43982DE7C9C100189782 /* Player_Filters.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AC43972DE7C9BD00189782 /* Player_Filters.swift */; };
 		D1ACFDC92D93637F00F45712 /* MetalVideoLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDC82D93637A00F45712 /* MetalVideoLayer.swift */; };
 		D1ACFDCB2D9675DD00F45712 /* MPV_Init.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */; };
 		D1ACFDCD2D967FAD00F45712 /* MPV_EventHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1ACFDCC2D967FA700F45712 /* MPV_EventHandling.swift */; };
@@ -1904,6 +1905,7 @@
 		D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Sidebar.swift; sourceTree = "<group>"; };
 		D1AC43932DE1BACA00189782 /* VideoGeo_Sync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGeo_Sync.swift; sourceTree = "<group>"; };
 		D1AC43952DE523EE00189782 /* Player_PlaylistOps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player_PlaylistOps.swift; sourceTree = "<group>"; };
+		D1AC43972DE7C9BD00189782 /* Player_Filters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player_Filters.swift; sourceTree = "<group>"; };
 		D1ACFDC82D93637A00F45712 /* MetalVideoLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalVideoLayer.swift; sourceTree = "<group>"; };
 		D1ACFDCA2D9675D900F45712 /* MPV_Init.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPV_Init.swift; sourceTree = "<group>"; };
 		D1ACFDCC2D967FA700F45712 /* MPV_EventHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPV_EventHandling.swift; sourceTree = "<group>"; };
@@ -2983,6 +2985,7 @@
 			isa = PBXGroup;
 			children = (
 				84A0BA961D2FA1CE00BC8DA1 /* PlayerCore.swift */,
+				D1AC43972DE7C9BD00189782 /* Player_Filters.swift */,
 				D1AC43952DE523EE00189782 /* Player_PlaylistOps.swift */,
 				D19247FC2BC634D3003BEEE8 /* Player_Crop.swift */,
 				84A0BA981D2FAAA700BC8DA1 /* MPVController.swift */,
@@ -3613,6 +3616,7 @@
 				84F7258F1D486185000DEF1B /* MPVProperty.swift in Sources */,
 				E35306FC214813B7008FE492 /* JavascriptPluginInstance.swift in Sources */,
 				84A0BA971D2FA1CE00BC8DA1 /* PlayerCore.swift in Sources */,
+				D1AC43982DE7C9C100189782 /* Player_Filters.swift in Sources */,
 				D1B787DB29AF883800DABC9C /* PWinPreviewImgBuilder.swift in Sources */,
 				84D377671D737F58007F7396 /* MPVChapter.swift in Sources */,
 				3412DB8E2C2FC64C00BBC142 /* Equalizations.swift in Sources */,

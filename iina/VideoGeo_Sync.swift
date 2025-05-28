@@ -135,7 +135,7 @@ extension GeometryTransform.Context {
     let dwidth = videoOutParams.dw
     let dheight = videoOutParams.dh
     if dwidth <= 0 || dheight <= 0 {
-      player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-A failed: dw or dh is nil in video-out-params! VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect)"}
+      player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-A failed: dw (\(dwidth)) or dh (\(dheight)) is 0 in video-out-params! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect)"}
       return videoGeo
     } else {
       let videoSizeDisplay: CGSize

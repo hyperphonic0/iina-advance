@@ -1319,32 +1319,6 @@ class PlayerCore: NSObject {
     }
   }
 
-  func _setTrack(_ index: Int, forType trackType: MPVTrack.TrackType, silent: Bool = false) {
-    log.verbose{"Setting \(trackType) track to \(index)"}
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard isActive else { return }
-
-    let name: String
-    switch trackType {
-    case .audio:
-      name = MPVOption.TrackSelection.aid
-    case .video:
-      name = MPVOption.TrackSelection.vid
-    case .sub:
-      name = MPVOption.TrackSelection.sid
-    case .secondSub:
-      name = MPVOption.Subtitles.secondarySid
-    }
-    mpv.setInt(name, index)
-    reloadSelectedTracks(silent: silent)
-  }
-
-  func setTrack(_ index: Int, forType: MPVTrack.TrackType, silent: Bool = false) {
-    mpv.queue.async { [self] in
-      _setTrack(index, forType: forType, silent: silent)
-    }
-  }
-
   /// Set playback speed.
   /// If `forceResume` is `true`, then always resume if paused; if `false`, never resume if paused;
   /// if `nil`, then resume if paused based on pref setting.
@@ -1730,262 +1704,6 @@ class PlayerCore: NSObject {
       _resume()
     }
     return chapter
-  }
-
-  // MARK: - mpv: Filter Operations
-
-  func setAudioEq(fromGains gains: [Double]) {
-    let freqList = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
-    let paramString = freqList.enumerated().map { (index, freq) in
-      "equalizer=f=\(freq):t=h:width=\(Double(freq) / 1.224744871):g=\(gains[index])"
-    }.joined(separator: ",")
-    let filter = MPVFilter(name: "lavfi", label: Constants.FilterLabel.audioEq, paramString: "[\(paramString)]")
-    addAudioFilter(filter)
-    info.audioEqFilter = filter
-  }
-
-  func removeAudioEqFilter() {
-    if let filter = info.audioEqFilter {
-      removeAudioFilter(filter)
-      info.audioEqFilter = nil
-    }
-  }
-
-  /// Add a video filter given as a `MPVFilter` object.
-  ///
-  /// This method will prompt the user to change IINA's video preferences if hardware decoding is set to `auto`.
-  /// - Parameter filter: The filter to add.
-  /// - Returns: `true` if the filter was successfully added, `false` otherwise.
-  /// Can run on either mpv or main DispatchQueue.
-  // TODO: refactor to execute mpv commands only on mpv queue
-  func addVideoFilter(_ filter: MPVFilter) -> Bool {
-    let success = addVideoFilter(filter.stringFormat)
-    if !success {
-      log.verbose{"Video filter \(filter.stringFormat) was not added"}
-    }
-    return success
-  }
-
-  /// Add a video filter given as a string.
-  ///
-  /// This method will prompt the user to change IINA's video preferences if hardware decoding is set to `auto`.
-  /// - Parameter filter: The filter to add.
-  /// - Returns: `true` if the filter was successfully added, `false` otherwise.
-  func addVideoFilter(_ filter: String) -> Bool {
-    log.debug{"Adding video filter \(filter.quoted)..."}
-
-    // check hwdec
-    let hwdec = mpv.getString(MPVProperty.hwdec)
-    if hwdec == "auto" {
-      let askHwdec: (() -> Bool) = { [self] in
-        let panel = NSAlert()
-        panel.messageText = NSLocalizedString("alert.title_warning", comment: "Warning")
-        panel.informativeText = NSLocalizedString("alert.filter_hwdec.message", comment: "")
-        panel.addButton(withTitle: NSLocalizedString("alert.filter_hwdec.turn_off", comment: "Turn off hardware decoding"))
-        panel.addButton(withTitle: NSLocalizedString("alert.filter_hwdec.use_copy", comment: "Switch to Auto(Copy)"))
-        panel.addButton(withTitle: NSLocalizedString("alert.filter_hwdec.abort", comment: "Abort"))
-        switch panel.runModal() {
-        case .alertFirstButtonReturn:  // turn off
-          mpv.setString(MPVProperty.hwdec, "no")
-          Preference.set(Preference.HardwareDecoderOption.disabled.rawValue, for: .hardwareDecoder)
-          return true
-        case .alertSecondButtonReturn:
-          mpv.setString(MPVProperty.hwdec, "auto-copy")
-          Preference.set(Preference.HardwareDecoderOption.autoCopy.rawValue, for: .hardwareDecoder)
-          return true
-        default:
-          return false
-        }
-      }
-
-      // if not on main thread, post the alert in main thread
-      if Thread.isMainThread {
-        if !askHwdec() { return false }
-      } else {
-        var result = false
-        DispatchQueue.main.sync {
-          result = askHwdec()
-        }
-        if !result { return false }
-      }
-    }
-
-    // try apply filter
-    var didSucceed = true
-    didSucceed = mpv.command(.vf, args: ["add", filter], checkError: false) >= 0
-    log.debug{"Add filter: \(didSucceed ? "Succeeded" : "Failed")"}
-
-    return didSucceed
-  }
-
-  private func logRemoveFilter(type: String, result: Bool, name: String) {
-    if !result {
-      log.warn{"Failed to remove \(type) filter \(name)"}
-    } else {
-      log.debug{"Successfully removed \(type) filter \(name)"}
-    }
-  }
-
-  /// Remove a video filter based on its position in the list of filters.
-  ///
-  /// Removing a filter based on its position within the filter list is the preferred way to do it as per discussion with the mpv project.
-  /// - Parameter filter: The filter to be removed, required only for logging.
-  /// - Parameter index: The index of the filter to be removed.
-  /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
-  func removeVideoFilter(_ filter: MPVFilter, _ index: Int) -> Bool {
-    return removeVideoFilter(filter.stringFormat, index)
-  }
-
-  /// Remove a video filter based on its position in the list of filters.
-  ///
-  /// Removing a filter based on its position within the filter list is the preferred way to do it as per discussion with the mpv project.
-  /// - Parameter filter: The filter to be removed, required only for logging.
-  /// - Parameter index: The index of the filter to be removed.
-  /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
-  func removeVideoFilter(_ filter: String, _ index: Int) -> Bool {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    log.debug{"Removing video filter \(filter)..."}
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    let result = mpv.removeFilter(MPVProperty.vf, index)
-    logRemoveFilter(type: "video", result: result, name: filter)
-    return result
-  }
-
-  /// Remove a video filter given as a `MPVFilter` object.
-  ///
-  /// If the filter is not labeled then removing using a `MPVFilter` object can be problematic if the filter has multiple parameters.
-  /// Filters that support multiple parameters have more than one valid string representation due to there being no requirement on the
-  /// order in which those parameters are given in a filter. If the order of parameters in the string representation of the filter IINA uses in
-  /// the command sent to mpv does not match the order mpv expects the remove command will not find the filter to be removed. For
-  /// this reason the remove methods that identify the filter to be removed based on its position in the filter list are the preferred way to
-  /// remove a filter.
-  /// - Parameter filter: The filter to remove.
-  /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
-  @discardableResult
-  func removeVideoFilter(_ filter: MPVFilter, verify: Bool = true, notify: Bool = true) -> Bool {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    
-    let filterString: String
-    if let label = filter.label {
-      // Has label: we care most about these
-      // The vf remove command will return 0 even if the filter didn't exist in mpv. So need to do this check ourselves.
-      let filterExists = mpv.getFilters(MPVProperty.vf).compactMap({$0.label}).contains(label)
-      guard filterExists else {
-        log.debug("Cannot remove video filter: could not find filter with label \(label.quoted) in mpv list")
-        return false
-      }
-      
-      log.debug("Removing video filter \(label.quoted) (\(filter.stringFormat.quoted))...")
-      filterString = "@" + label
-    } else {
-      log.debug("Removing video filter (\(filter.stringFormat.quoted))...")
-      filterString = filter.stringFormat
-    }
-
-    guard removeVideoFilter(filterString) else {
-      return false
-    }
-
-    let updatedFilterList = updateVideoFiltersFromMpv()
-    /// `updateVideoFiltersFromMpv` will ensure various filter caches will stay up to date
-    let didRemoveSuccessfully = !updatedFilterList.compactMap({$0.label}).contains(label)
-    guard !verify || didRemoveSuccessfully else {
-      log.error("Failed to remove video filter \(label.quoted): filter still present after vf remove!")
-      return false
-    }
-    if notify {
-      postNotification(.iinaVFChanged)
-    }
-    return true
-  }
-
-  /// Remove a video filter given as a string.
-  ///
-  /// If the filter is not labeled then removing using a string can be problematic if the filter has multiple parameters. Filters that support
-  /// multiple parameters have more than one valid string representation due to there being no requirement on the order in which those
-  /// parameters are given in a filter. If the order of parameters in the string representation of the filter IINA uses in the command sent to
-  /// mpv does not match the order mpv expects the remove command will not find the filter to be removed. For this reason the remove
-  /// methods that identify the filter to be removed based on its position in the filter list are the preferred way to remove a filter.
-  /// - Parameter filter: The filter to remove.
-  /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
-  func removeVideoFilter(_ filterString: String) -> Bool {
-    // Just pretend it succeeded if no error
-    let didError = mpv.command(.vf, args: ["remove", filterString], checkError: false) != 0
-    log.debug(didError ? "Error executing vf-remove" : "No error returned by vf-remove")
-    return !didError
-  }
-
-  /// Add an audio filter given as a `MPVFilter` object.
-  /// - Parameter filter: The filter to add.
-  /// - Returns: `true` if the filter was successfully added, `false` otherwise.
-  @discardableResult
-  func addAudioFilter(_ filter: MPVFilter) -> Bool { addAudioFilter(filter.stringFormat) }
-
-  /// Add an audio filter given as a string.
-  /// - Parameter filter: The filter to add.
-  /// - Returns: `true` if the filter was successfully added, `false` otherwise.
-  @discardableResult
-  func addAudioFilter(_ filter: String) -> Bool {
-    log.debug{"Adding audio filter \(filter)…"}
-    var result = true
-    result = mpv.command(.af, args: ["add", filter], checkError: false) >= 0
-    log.debug{result ? "Succeeded" : "Failed"}
-    return result
-  }
-
-  /// Remove an audio filter based on its position in the list of filters.
-  ///
-  /// Removing a filter based on its position within the filter list is the preferred way to do it as per discussion with the mpv project.
-  /// - Parameter filter: The filter to be removed, required only for logging.
-  /// - Parameter index: The index of the filter to be removed.
-  /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
-  func removeAudioFilter(_ filter: MPVFilter, _ index: Int) -> Bool {
-    removeAudioFilter(filter.stringFormat, index)
-  }
-
-  /// Remove an audio filter based on its position in the list of filters.
-  ///
-  /// Removing a filter based on its position within the filter list is the preferred way to do it as per discussion with the mpv project.
-  /// - Parameter filter: The filter to be removed, required only for logging.
-  /// - Parameter index: The index of the filter to be removed.
-  /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
-  func removeAudioFilter(_ filter: String, _ index: Int) -> Bool {
-    log.debug{"Removing audio filter \(filter)…"}
-    let result = mpv.removeFilter(MPVProperty.af, index)
-    logRemoveFilter(type: "audio", result: result, name: filter)
-    return result
-  }
-
-  /// Remove an audio filter given as a `MPVFilter` object.
-  ///
-  /// If the filter is not labeled then removing using a `MPVFilter` object can be problematic if the filter has multiple parameters.
-  /// Filters that support multiple parameters have more than one valid string representation due to there being no requirement on the
-  /// order in which those parameters are given in a filter. If the order of parameters in the string representation of the filter IINA uses in
-  /// the command sent to mpv does not match the order mpv expects the remove command will not find the filter to be removed. For
-  /// this reason the remove methods that identify the filter to be removed based on its position in the filter list are the preferred way to
-  /// remove a filter.
-  /// - Parameter filter: The filter to remove.
-  /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
-  @discardableResult
-  func removeAudioFilter(_ filter: MPVFilter) -> Bool {
-    removeAudioFilter(filter.stringFormat)
-  }
-
-  /// Remove an audio filter given as a string.
-  ///
-  /// If the filter is not labeled then removing using a string can be problematic if the filter has multiple parameters. Filters that support
-  /// multiple parameters have more than one valid string representation due to there being no requirement on the order in which those
-  /// parameters are given in a filter. If the order of parameters in the string representation of the filter IINA uses in the command sent to
-  /// mpv does not match the order mpv expects the remove command will not find the filter to be removed. For this reason the remove
-  /// methods that identify the filter to be removed based on its position in the filter list are the preferred way to remove a filter.
-  /// - Parameter filter: The filter to remove.
-  /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
-  @discardableResult
-  func removeAudioFilter(_ filter: String) -> Bool {
-    log.debug{"Removing audio filter \(filter)…"}
-    let returnCode = mpv.command(.af, args: ["remove", filter], checkError: false) >= 0
-    log.debug{returnCode ? "Succeeded" : "Failed"}
-    return returnCode
   }
 
   // MARK: - Other mpv Operations
@@ -2445,38 +2163,6 @@ class PlayerCore: NSObject {
     }
   }
 
-  func afChanged() {
-    guard !isStopping else { return }
-    _ = updateAudioFiltersFromMpv()
-    saveState()
-    reloadQuickSettingsView()
-    postNotification(.iinaAFChanged)
-  }
-
-  func aidChanged(silent: Bool = false) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isRestoring, !isStopping else { return }
-    let aid = Int(mpv.getInt(MPVOption.TrackSelection.aid))
-    guard aid != info.aid else { return }
-    guard info.isFileLoaded else {
-      log.verbose{"Audio track changed to \(aid) but file is not loaded; ignoring"}
-      return
-    }
-    info.aid = aid
-
-    log.verbose{"Audio track changed to: \(aid)"}
-    syncUI(.volume)
-    postNotification(.iinaAIDChanged)
-    if !silent {
-      if let audioTrack = info.currentTrack(.audio) {
-        sendOSD(.audioTrack(audioTrack, info.volume))
-      } else {
-        // Do not show volume if no audio track:
-        sendOSD(.track(.noneAudioTrack))
-      }
-    }
-  }
-
   func chapterChanged() {
     guard isActive else { return }
     let chapter = Int(mpv.getInt(MPVProperty.chapter))
@@ -2577,8 +2263,7 @@ class PlayerCore: NSObject {
       windowController.updateUI()
 
       // When playback is paused the display link may be shutdown in order to not waste energy.
-      // The display link will be restarted while seeking. If playback is paused shut it down
-      // again.
+      // The display link will be restarted while seeking. If playback is paused shut it down again.
       if info.isPaused {
         videoView.displayIdle()
       }
@@ -2590,6 +2275,34 @@ class PlayerCore: NSObject {
     saveState()
   }
 
+  func windowScaleChanged() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard windowController.loaded else { return }
+    // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
+    guard !windowController.isMagnifying else { return }
+    let isAlreadySized = info.currentPlayback?.state.isAtLeast(.loaded) ?? false
+    guard isAlreadySized else { return }
+
+    let cachedVideoScale: CGFloat
+    if windowController.currentLayout.mode == .musicMode {
+      cachedVideoScale = windowController.musicModeGeo.toPWinGeometry().mpvVideoScale()
+    } else {
+      cachedVideoScale = windowController.windowedModeGeo.mpvVideoScale()
+    }
+    let newVideoScale = mpv.getVideoScale()
+    let needsUpdate = abs(newVideoScale - cachedVideoScale) > 10e-10
+    guard needsUpdate else {
+      log.verbose{"Δ mpv prop: 'window-scale'; videoScale \(newVideoScale) not changed"}
+      return
+    }
+
+    log.verbose{"Δ mpv prop: 'window-scale', \(cachedVideoScale) → \(newVideoScale)"}
+    DispatchQueue.main.async { [self] in
+      log.verbose{"Calling setVideoScale → \(newVideoScale)x"}
+      windowController.changeVideoScale(to: newVideoScale)
+    }
+  }
+
   func refreshEdrMode() {
     DispatchQueue.main.async { [self] in
       guard isActive else { return }
@@ -2597,6 +2310,8 @@ class PlayerCore: NSObject {
       videoView.refreshEdrMode()
     }
   }
+
+  // MARK: - Subtitles
 
   func sidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
@@ -2699,245 +2414,12 @@ class PlayerCore: NSObject {
     reloadQuickSettingsView()
   }
 
-  func trackListChanged() {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    // No need to process track list changes if playback is being stopped. Must not process track
-    // list changes if mpv is terminating as accessing mpv once shutdown has been initiated can
-    // trigger a crash.
-    guard !isStopping else { return }
-    guard info.isFileLoaded else { return }
-    log.debug("Track list changed")
-    guard reloadTrackInfo() else { return }
-    reloadSelectedTracks()
-    log.verbose{"Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) sid=\(String(info.sid))"}
-    postNotification(.iinaTracklistChanged)
-  }
-
-  func vfChanged() {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isStopping else { return }
-    let vf = updateVideoFiltersFromMpv()
-    log.verbose{"Δ mpv prop: `vf = \(vf)"}
-    postNotification(.iinaVFChanged)
-
-    saveState()
-    reloadQuickSettingsView()
-  }
-
-  func vidChanged(silent: Bool = false) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isRestoring, !isStopping else { return }
-    let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
-    guard let currentPlayback = info.currentPlayback else { return }
-    let didChange = vid != info.vid
-    // sometimes still need to show videoView when no actual vid change occurred (if use has vid=0 or no vid tracks exist)
-    guard didChange || isShowVideoPendingInMiniPlayer else { return }
-    guard info.isFileLoaded else {
-      log.verbose{"Video track changed to \(vid) but file is not loaded; ignoring"}
-      return
-    }
-
-#if DEBUG
-    if vid == 0 {
-      log.verbose("Video track is 0!")
-    }
-#endif
-
-    info.vid = vid
-    // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
-    if !silent && (!isInMiniPlayer || (windowController.miniPlayer.isVideoVisible && !isShowVideoPendingInMiniPlayer)) {
-      sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
-    }
-    if vid != 0, isActive, !isRestoring {
-      reloadThumbnails()
-    }
-    postNotification(.iinaVIDChanged)
-
-    log.verbose{"Calling transformGeometry for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(windowController.sessionState)"}
-
-    let stateChangeFunc: (GeometryTransform.Context) -> PWinSessionState? = { [self] cxt -> PWinSessionState? in
-      log.verbose{"[GeoTF:\(cxt.name)] Changing sessionState for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(cxt.sessionState), showVideoPending=\(isShowVideoPendingInMiniPlayer.yn)"}
-      if case .existingSession_continuing = cxt.sessionState {
-        if currentPlayback.state.isAtLeast(.loadedAndSized) && currentPlayback.vidTrackLastSized != vid {
-          return .existingSession_videoTrackChangedForSamePlayback
-        } else {
-          return cxt.sessionState
-        }
-      }
-      if isShowVideoPendingInMiniPlayer {
-        return cxt.sessionState
-      }
-      return nil  // abort
-    }
-
-    let musicModeTransform: MusicModeGeometry.Transform = { [self] ctx -> MusicModeGeometry? in
-      let oldMusicModeGeo = ctx.oldGeo.musicMode
-      // Vid changed, but not from toggling music mode? Then no extra changes needed to musicMode geo.
-      guard isShowVideoPendingInMiniPlayer else { return nil }
-      log.verbose{"MusicMode: Showing video (visibleNow=\(oldMusicModeGeo.isVideoVisible.yesno))"}
-      /// Must change `isShowVideoPendingInMiniPlayer` in main queue only to avoid race!
-      isShowVideoPendingInMiniPlayer = false
-      miniPlayerShowVideoTimer.cancel()
-      guard isInMiniPlayer && !oldMusicModeGeo.isVideoVisible else { return nil }
-      /// `showDefaultArt` should already have been handled by `transformGeometry` so do not change here
-      let newGeo = oldMusicModeGeo.withVideoViewVisible(true)
-      return newGeo
-    }
-
-    let tf = GeometryTransform("VidTrackChanged", self,
-                               state: stateChangeFunc,
-                               video: GeometryTransform.vidTrackChanged,
-                               musicMode: musicModeTransform)
-    windowController.animationPipeline.submit(tf)
-
-  }
-
-  /// In music mode, when toggling album art on, we wait for `vidChanged` to get called before showing the art.
-  /// But it will not be called if there is no change (i.e. there are no video tracks at all).
-  /// We can bridge the gap by setting a timer which will call `vidChanged`.
-  private func showVideoViewAfterVidChange() {
-    guard isShowVideoPendingInMiniPlayer else { return }
-    mpv.queue.async { [self] in
-      log.verbose("Forcing vidChanged() to show videoView")
-      vidChanged(silent: true)
-    }
-  }
-
-  ///  Sets `vid=1` via mpv (if track exists), then if `showMiniPlayerVideo==true` and in music mode, shows `videoView`.
-  ///  Does nothing if already in the target state (idempotent).
-  ///
-  ///  See also: `setVideoTrackDisabled`
-  func setVideoTrackEnabled(thenShowMiniPlayerVideo showMiniPlayerVideo: Bool = false) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
-    if showMiniPlayerVideo {
-      isShowVideoPendingInMiniPlayer = true
-      // In most cases, mpv will async'ly notify when the video track is done changing. But it is not guaranteed in all cases.
-      // Give it a chance to load but use a timer as fallback to guarantee the videoView will open.
-      log.verbose{"Will show music mode video after enabling video track, timeout=\(miniPlayerShowVideoTimer.timeout)s"}
-      miniPlayerShowVideoTimer.restart()
-    }
-
-    mpv.queue.async { [self] in
-      guard isActive else {
-        log.verbose("Skipping enable video track: player is not active")
-        return
-      }
-
-      guard reloadTrackInfo() else { return }
-      let vidTrackCount = info.videoTracks.count
-      let hasVidTrack = vidTrackCount > 0
-      let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
-      let vidToSet: Int
-      if let vidOld = info.vidDisabled {
-        info.vidDisabled = nil
-        if vidOld < vidTrackCount {
-          vidToSet = vidOld
-        } else {
-          // vidDisabled is invalid. Can happen if media changed while disabled.
-          // Just fall back to 1:
-          vidToSet = 1
-        }
-      } else {
-        vidToSet = 1
-      }
-      log.verbose{"Enabling video track: vidTrackCount=\(vidTrackCount) vidNow=\(vidNow) vidToSet=\(vidToSet) showMiniPlayerVideo=\(showMiniPlayerVideo.yn)"}
-      guard (hasVidTrack && vidNow != vidToSet) else {
-        info.vidDisabled = nil  // clear saved track
-        if showMiniPlayerVideo {
-          // If no vid track selected, don't need to change tracks if a track is already selected. But may still need to show videoView.
-          // If no tracks, will not get a response from mpv if requesting to chamging tracks. But change geometry to set default album art.
-          miniPlayerShowVideoTimer.restart()
-          log.verbose("Enabling video track: skipping, but forcing vidChanged() to show videoView")
-          vidChanged(silent: true)
-        }
-        return
-      }
-
-      _setTrack(vidToSet, forType: .video, silent: true)
-    }
-  }
-
-  ///  Sets `vid=0` via mpv. Does nothing if already in the target state (idempotent).
-  ///
-  ///  See also: `setVideoTrackEnabled`
-  func setVideoTrackDisabled() {
-    assert(DispatchQueue.isExecutingIn(.main))
-
-    mpv.queue.async { [self] in
-      _setVideoTrackDisabled()
-    }
-  }
-
-  func _setVideoTrackDisabled() {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-
-    // Change video track to None
-    let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
-
-    if info.vidDisabled == nil {
-      log.verbose{"Disabling video track: setting vidDisabled to \(vidNow) before setting vid=0"}
-      info.vidDisabled = vidNow
-    }
-    guard vidNow != 0 else {
-      log.verbose("Disabling video track: vid=0 already, skipping")
-      return
-    }
-    log.verbose("Setting vid=0")
-    _setTrack(0, forType: .video, silent: true)
-  }
-
-  func windowScaleChanged() {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard windowController.loaded else { return }
-    // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
-    guard !windowController.isMagnifying else { return }
-    let isAlreadySized = info.currentPlayback?.state.isAtLeast(.loaded) ?? false
-    guard isAlreadySized else { return }
-
-    let cachedVideoScale: CGFloat
-    if windowController.currentLayout.mode == .musicMode {
-      cachedVideoScale = windowController.musicModeGeo.toPWinGeometry().mpvVideoScale()
-    } else {
-      cachedVideoScale = windowController.windowedModeGeo.mpvVideoScale()
-    }
-    let newVideoScale = mpv.getVideoScale()
-    let needsUpdate = abs(newVideoScale - cachedVideoScale) > 10e-10
-    guard needsUpdate else {
-      log.verbose{"Δ mpv prop: 'window-scale'; videoScale \(newVideoScale) not changed"}
-      return
-    }
-
-    log.verbose{"Δ mpv prop: 'window-scale', \(cachedVideoScale) → \(newVideoScale)"}
-    DispatchQueue.main.async { [self] in
-      log.verbose{"Calling setVideoScale → \(newVideoScale)x"}
-      windowController.changeVideoScale(to: newVideoScale)
-    }
-  }
-
   private func autoSearchOnlineSub() {
     if Preference.bool(for: .autoSearchOnlineSub) &&
       !info.isNetworkResource && info.subTracks.isEmpty &&
       (info.playbackDurationSec ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
       windowController.menuFindOnlineSub(windowController)
     }
-  }
-
-  /**
-   Add files in the same folder to playlist.
-   It basically follows the following steps:
-   - Get all files in current folder. Group and sort videos and audios, and add them to playlist.
-   - Scan subtitles from search paths, combined with subs got in previous step.
-   - Try match videos and subs by series and filename.
-   - For unmatched videos and subs, perform fuzzy (but slow, O(n^2)) match for them.
-
-   **Remark**:
-
-   This method is expected to be executed in `backgroundQueue` (see `backgroundQueueTicket`).
-   Therefore accesses to `self.info` and mpv playlist must be guarded.
-   */
-  private func autoLoadFilesInCurrentFolder(ticket: Int) {
-    AutoFileMatcher(player: self, ticket: ticket).startMatching()
   }
 
   private func startWatchingSubFile() {
@@ -2972,10 +2454,27 @@ class PlayerCore: NSObject {
   }
 
   /**
-   Checks unsynchronized window options, such as those set via mpv before window loaded.
+   Add files in the same folder to playlist.
+   It basically follows the following steps:
+   - Get all files in current folder. Group and sort videos and audios, and add them to playlist.
+   - Scan subtitles from search paths, combined with subs got in previous step.
+   - Try match videos and subs by series and filename.
+   - For unmatched videos and subs, perform fuzzy (but slow, O(n^2)) match for them.
 
-   These options currently include fullscreen and ontop.
+   **Remark**:
+
+   This method is expected to be executed in `backgroundQueue` (see `backgroundQueueTicket`).
+   Therefore accesses to `self.info` and mpv playlist must be guarded.
    */
+  private func autoLoadFilesInCurrentFolder(ticket: Int) {
+    AutoFileMatcher(player: self, ticket: ticket).startMatching()
+  }
+
+  // MARK: - Sync UI with Playback State
+
+  /// Checks unsynchronized window options, such as those set via mpv before window loaded.
+  ///
+  /// These options currently include fullscreen and ontop.
   private func checkUnsyncedWindowOptions() {
     guard windowController.loaded else { return }
 
@@ -3009,8 +2508,6 @@ class PlayerCore: NSObject {
       }
     }
   }
-
-  // MARK: - Sync with UI in PlayerWindow
 
   var lastTimerSummary = ""  // for reducing log volume
 
@@ -3428,73 +2925,6 @@ class PlayerCore: NSObject {
     }
   }
 
-  // MARK: - Getting info
-
-  func reloadTrackInfo() -> Bool {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    log.trace("Reloading tracklist from mpv")
-
-    let trackCount = mpv.getInt(MPVProperty.trackListCount)
-    guard trackCount > 0 else {
-      log.warn("No tracks returned by mpv's trackListCount; ignoring")
-      return false
-    }
-
-    var audioTracks: [MPVTrack] = []
-    var videoTracks: [MPVTrack] = []
-    var subTracks: [MPVTrack] = []
-
-    for index in 0..<trackCount {
-      // get info for each track
-      guard let trackType = mpv.getString(MPVProperty.trackListNType(index)) else { continue }
-      let track = MPVTrack(id: mpv.getInt(MPVProperty.trackListNId(index)),
-                           type: MPVTrack.TrackType(rawValue: trackType)!,
-                           isDefault: mpv.getFlag(MPVProperty.trackListNDefault(index)),
-                           isForced: mpv.getFlag(MPVProperty.trackListNForced(index)),
-                           isSelected: mpv.getFlag(MPVProperty.trackListNSelected(index)),
-                           isExternal: mpv.getFlag(MPVProperty.trackListNExternal(index)))
-      track.srcId = mpv.getInt(MPVProperty.trackListNSrcId(index))
-      track.title = mpv.getString(MPVProperty.trackListNTitle(index))
-      track.lang = mpv.getString(MPVProperty.trackListNLang(index))
-      track.codec = mpv.getString(MPVProperty.trackListNCodec(index))
-      track.externalFilename = mpv.getString(MPVProperty.trackListNExternalFilename(index))
-      track.isAlbumart = mpv.getString(MPVProperty.trackListNAlbumart(index)) == "yes"
-      track.decoderDesc = mpv.getString(MPVProperty.trackListNDecoderDesc(index))
-      track.demuxW = mpv.getInt(MPVProperty.trackListNDemuxW(index))
-      track.demuxH = mpv.getInt(MPVProperty.trackListNDemuxH(index))
-      track.demuxFps = mpv.getDouble(MPVProperty.trackListNDemuxFps(index))
-      track.demuxChannelCount = mpv.getInt(MPVProperty.trackListNDemuxChannelCount(index))
-      track.demuxChannels = mpv.getString(MPVProperty.trackListNDemuxChannels(index))
-      track.demuxSamplerate = mpv.getInt(MPVProperty.trackListNDemuxSamplerate(index))
-
-      // add to lists
-      switch track.type {
-      case .audio:
-        audioTracks.append(track)
-      case .video:
-        videoTracks.append(track)
-      case .sub:
-        subTracks.append(track)
-      default:
-        break
-      }
-    }
-
-    info.replaceTracks(audio: audioTracks, video: videoTracks, sub: subTracks)
-    log.debug{"Reloaded tracklist from mpv (\(trackCount) tracks)"}
-    return true
-  }
-
-  private func reloadSelectedTracks(silent: Bool = false) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    log.verbose("Reloading selected tracks")
-
-    aidChanged(silent: silent)
-    vidChanged(silent: silent)
-    sidChanged(silent: silent)
-    secondarySidChanged(silent: silent)
-  }
-
   func reloadChapters() {
     mpv.queue.async { [self] in
       _reloadChapters()
@@ -3597,80 +3027,6 @@ class PlayerCore: NSObject {
     }
   }
 
-  /** Check if there are IINA filters saved in watch_later file. */
-  func reloadSavedIINAfilters() {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-
-    let videoFilters = updateVideoFiltersFromMpv()
-    postNotification(.iinaVFChanged)
-    let audioFilters = updateAudioFiltersFromMpv()
-    postNotification(.iinaAFChanged)
-    log.verbose{"Total filters from mpv: \(videoFilters.count) vf, \(audioFilters.count) af"}
-  }
-
-  /// `vf`: gets up-to-date list of video filters AND updates associated state in the process
-  func updateVideoFiltersFromMpv() -> [MPVFilter] {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    // Clear cached filters first:
-    info.flipFilter = nil
-    info.mirrorFilter = nil
-    info.delogoFilter = nil
-    let videoFilters = mpv.getFilters(MPVProperty.vf)
-    var foundCropFilter = false
-    for filter in videoFilters {
-      log.verbose{"Got mpv vf: name=\(filter.name.quoted) label=\(filter.label?.quoted ?? "nil") params=\(filter.params ?? [:])"}
-      if filter.label == Constants.FilterLabel.crop {
-        foundCropFilter = true
-      }
-
-      switch filter.label {
-      case Constants.FilterLabel.flip:
-        info.flipFilter = filter
-      case Constants.FilterLabel.mirror:
-        info.mirrorFilter = filter
-      case Constants.FilterLabel.delogo:
-        info.delogoFilter = filter
-
-      case Constants.FilterLabel.crop:  // CROP
-        if let cropLabel = deriveCropLabel(from: filter) {
-          updateSelectedCrop(to: cropLabel)  // Known aspect-based crop
-        } else {
-          // Cannot parse IINA crop filter? Remove crop
-          log.error{"Could not determine crop from filter \(filter.label?.debugDescription.quoted ?? "nil"). Will remove filter"}
-          mpv.queue.async { [self] in
-            // Call with updateFiltersListFirst=NO because we already have a fresh list, and to prevent infinite loop:
-            if removeCrop(updateFiltersListFirst: false) {
-              // Call again to update state
-              _ = updateVideoFiltersFromMpv()
-            }
-          }
-        }
-      default:
-        break
-      }
-    }
-
-    if videoGeo.hasCrop && !foundCropFilter {
-      log.warn("VideoGeometry specifies a crop, but no crop filter found in mpv video filters. Will try to clean up by removing crop")
-      updateSelectedCrop(to: AppData.noneCropIdentifier)
-    }
-
-    return videoFilters
-  }
-
-  /// `af`: gets up-to-date list of audio filters AND updates associated state in the process
-  func updateAudioFiltersFromMpv() -> [MPVFilter] {
-    let audioFilters = mpv.getFilters(MPVProperty.af)
-    for filter in audioFilters {
-      log.verbose{"Got mpv af, name: \(filter.name.quoted), label: \(filter.label?.quoted ?? "nil"), params: \(filter.params ?? [:])"}
-      guard let label = filter.label else { continue }
-      if label.hasPrefix(Constants.FilterLabel.audioEq) {
-        info.audioEqFilter = filter
-      }
-    }
-    return audioFilters
-  }
-
   static func checkStatusForSleep() {
     guard Preference.bool(for: .preventScreenSaver) else {
       SleepPreventer.allowSleep()
@@ -3696,4 +3052,299 @@ class PlayerCore: NSObject {
     // No players are actively playing.
     SleepPreventer.allowSleep()
   }
+
+  // MARK: - Tracks
+
+  func reloadTrackInfo() -> Bool {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    log.trace("Reloading tracklist from mpv")
+
+    let trackCount = mpv.getInt(MPVProperty.trackListCount)
+    guard trackCount > 0 else {
+      log.warn("No tracks returned by mpv's trackListCount; ignoring")
+      return false
+    }
+
+    var audioTracks: [MPVTrack] = []
+    var videoTracks: [MPVTrack] = []
+    var subTracks: [MPVTrack] = []
+
+    for index in 0..<trackCount {
+      // get info for each track
+      guard let trackType = mpv.getString(MPVProperty.trackListNType(index)) else { continue }
+      let track = MPVTrack(id: mpv.getInt(MPVProperty.trackListNId(index)),
+                           type: MPVTrack.TrackType(rawValue: trackType)!,
+                           isDefault: mpv.getFlag(MPVProperty.trackListNDefault(index)),
+                           isForced: mpv.getFlag(MPVProperty.trackListNForced(index)),
+                           isSelected: mpv.getFlag(MPVProperty.trackListNSelected(index)),
+                           isExternal: mpv.getFlag(MPVProperty.trackListNExternal(index)))
+      track.srcId = mpv.getInt(MPVProperty.trackListNSrcId(index))
+      track.title = mpv.getString(MPVProperty.trackListNTitle(index))
+      track.lang = mpv.getString(MPVProperty.trackListNLang(index))
+      track.codec = mpv.getString(MPVProperty.trackListNCodec(index))
+      track.externalFilename = mpv.getString(MPVProperty.trackListNExternalFilename(index))
+      track.isAlbumart = mpv.getString(MPVProperty.trackListNAlbumart(index)) == "yes"
+      track.decoderDesc = mpv.getString(MPVProperty.trackListNDecoderDesc(index))
+      track.demuxW = mpv.getInt(MPVProperty.trackListNDemuxW(index))
+      track.demuxH = mpv.getInt(MPVProperty.trackListNDemuxH(index))
+      track.demuxFps = mpv.getDouble(MPVProperty.trackListNDemuxFps(index))
+      track.demuxChannelCount = mpv.getInt(MPVProperty.trackListNDemuxChannelCount(index))
+      track.demuxChannels = mpv.getString(MPVProperty.trackListNDemuxChannels(index))
+      track.demuxSamplerate = mpv.getInt(MPVProperty.trackListNDemuxSamplerate(index))
+
+      // add to lists
+      switch track.type {
+      case .audio:
+        audioTracks.append(track)
+      case .video:
+        videoTracks.append(track)
+      case .sub:
+        subTracks.append(track)
+      default:
+        break
+      }
+    }
+
+    info.replaceTracks(audio: audioTracks, video: videoTracks, sub: subTracks)
+    log.debug{"Reloaded tracklist from mpv (\(trackCount) tracks)"}
+    return true
+  }
+
+  private func reloadSelectedTracks(silent: Bool = false) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    log.verbose("Reloading selected tracks")
+
+    aidChanged(silent: silent)
+    vidChanged(silent: silent)
+    sidChanged(silent: silent)
+    secondarySidChanged(silent: silent)
+  }
+
+  func trackListChanged() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    // No need to process track list changes if playback is being stopped. Must not process track
+    // list changes if mpv is terminating as accessing mpv once shutdown has been initiated can
+    // trigger a crash.
+    guard !isStopping else { return }
+    guard info.isFileLoaded else { return }
+    log.debug("Track list changed")
+    guard reloadTrackInfo() else { return }
+    reloadSelectedTracks()
+    log.verbose{"Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) sid=\(String(info.sid))"}
+    postNotification(.iinaTracklistChanged)
+  }
+
+  func aidChanged(silent: Bool = false) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard !isRestoring, !isStopping else { return }
+    let aid = Int(mpv.getInt(MPVOption.TrackSelection.aid))
+    guard aid != info.aid else { return }
+    guard info.isFileLoaded else {
+      log.verbose{"Audio track changed to \(aid) but file is not loaded; ignoring"}
+      return
+    }
+    info.aid = aid
+
+    log.verbose{"Audio track changed to: \(aid)"}
+    syncUI(.volume)
+    postNotification(.iinaAIDChanged)
+    if !silent {
+      if let audioTrack = info.currentTrack(.audio) {
+        sendOSD(.audioTrack(audioTrack, info.volume))
+      } else {
+        // Do not show volume if no audio track:
+        sendOSD(.track(.noneAudioTrack))
+      }
+    }
+  }
+
+  func vidChanged(silent: Bool = false) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard !isRestoring, !isStopping else { return }
+    let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
+    guard let currentPlayback = info.currentPlayback else { return }
+    let didChange = vid != info.vid
+    // sometimes still need to show videoView when no actual vid change occurred (if use has vid=0 or no vid tracks exist)
+    guard didChange || isShowVideoPendingInMiniPlayer else { return }
+    guard info.isFileLoaded else {
+      log.verbose{"Video track changed to \(vid) but file is not loaded; ignoring"}
+      return
+    }
+
+#if DEBUG
+    if vid == 0 {
+      log.verbose("Video track is 0!")
+    }
+#endif
+
+    info.vid = vid
+    // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
+    if !silent && (!isInMiniPlayer || (windowController.miniPlayer.isVideoVisible && !isShowVideoPendingInMiniPlayer)) {
+      sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
+    }
+    if vid != 0, isActive, !isRestoring {
+      reloadThumbnails()
+    }
+    postNotification(.iinaVIDChanged)
+
+    log.verbose{"Calling transformGeometry for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(windowController.sessionState)"}
+
+    let stateChangeFunc: (GeometryTransform.Context) -> PWinSessionState? = { [self] cxt -> PWinSessionState? in
+      log.verbose{"[GeoTF:\(cxt.name)] Changing sessionState for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(cxt.sessionState), showVideoPending=\(isShowVideoPendingInMiniPlayer.yn)"}
+      if case .existingSession_continuing = cxt.sessionState {
+        if currentPlayback.state.isAtLeast(.loadedAndSized) && currentPlayback.vidTrackLastSized != vid {
+          return .existingSession_videoTrackChangedForSamePlayback
+        } else {
+          return cxt.sessionState
+        }
+      }
+      if isShowVideoPendingInMiniPlayer {
+        return cxt.sessionState
+      }
+      return nil  // abort
+    }
+
+    let musicModeTransform: MusicModeGeometry.Transform = { [self] ctx -> MusicModeGeometry? in
+      let oldMusicModeGeo = ctx.oldGeo.musicMode
+      // Vid changed, but not from toggling music mode? Then no extra changes needed to musicMode geo.
+      guard isShowVideoPendingInMiniPlayer else { return nil }
+      log.verbose{"MusicMode: Showing video (visibleNow=\(oldMusicModeGeo.isVideoVisible.yesno))"}
+      /// Must change `isShowVideoPendingInMiniPlayer` in main queue only to avoid race!
+      isShowVideoPendingInMiniPlayer = false
+      miniPlayerShowVideoTimer.cancel()
+      guard isInMiniPlayer && !oldMusicModeGeo.isVideoVisible else { return nil }
+      /// `showDefaultArt` should already have been handled by `transformGeometry` so do not change here
+      let newGeo = oldMusicModeGeo.withVideoViewVisible(true)
+      return newGeo
+    }
+
+    let tf = GeometryTransform("VidTrackChanged", self,
+                               state: stateChangeFunc,
+                               video: GeometryTransform.vidTrackChanged,
+                               musicMode: musicModeTransform)
+    windowController.animationPipeline.submit(tf)
+
+  }
+
+  /// In music mode, when toggling album art on, we wait for `vidChanged` to get called before showing the art.
+  /// But it will not be called if there is no change (i.e. there are no video tracks at all).
+  /// We can bridge the gap by setting a timer which will call `vidChanged`.
+  private func showVideoViewAfterVidChange() {
+    guard isShowVideoPendingInMiniPlayer else { return }
+    mpv.queue.async { [self] in
+      log.verbose("Forcing vidChanged() to show videoView")
+      vidChanged(silent: true)
+    }
+  }
+
+  ///  Sets `vid=1` via mpv (if track exists), then if `showMiniPlayerVideo==true` and in music mode, shows `videoView`.
+  ///  Does nothing if already in the target state (idempotent).
+  ///
+  ///  See also: `setVideoTrackDisabled`
+  func setVideoTrackEnabled(thenShowMiniPlayerVideo showMiniPlayerVideo: Bool = false) {
+    assert(DispatchQueue.isExecutingIn(.main))
+
+    if showMiniPlayerVideo {
+      isShowVideoPendingInMiniPlayer = true
+      // In most cases, mpv will async'ly notify when the video track is done changing. But it is not guaranteed in all cases.
+      // Give it a chance to load but use a timer as fallback to guarantee the videoView will open.
+      log.verbose{"Will show music mode video after enabling video track, timeout=\(miniPlayerShowVideoTimer.timeout)s"}
+      miniPlayerShowVideoTimer.restart()
+    }
+
+    mpv.queue.async { [self] in
+      guard isActive else {
+        log.verbose("Skipping enable video track: player is not active")
+        return
+      }
+
+      guard reloadTrackInfo() else { return }
+      let vidTrackCount = info.videoTracks.count
+      let hasVidTrack = vidTrackCount > 0
+      let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
+      let vidToSet: Int
+      if let vidOld = info.vidDisabled {
+        info.vidDisabled = nil
+        if vidOld < vidTrackCount {
+          vidToSet = vidOld
+        } else {
+          // vidDisabled is invalid. Can happen if media changed while disabled.
+          // Just fall back to 1:
+          vidToSet = 1
+        }
+      } else {
+        vidToSet = 1
+      }
+      log.verbose{"Enabling video track: vidTrackCount=\(vidTrackCount) vidNow=\(vidNow) vidToSet=\(vidToSet) showMiniPlayerVideo=\(showMiniPlayerVideo.yn)"}
+      guard (hasVidTrack && vidNow != vidToSet) else {
+        info.vidDisabled = nil  // clear saved track
+        if showMiniPlayerVideo {
+          // If no vid track selected, don't need to change tracks if a track is already selected. But may still need to show videoView.
+          // If no tracks, will not get a response from mpv if requesting to chamging tracks. But change geometry to set default album art.
+          miniPlayerShowVideoTimer.restart()
+          log.verbose("Enabling video track: skipping, but forcing vidChanged() to show videoView")
+          vidChanged(silent: true)
+        }
+        return
+      }
+
+      _setTrack(vidToSet, forType: .video, silent: true)
+    }
+  }
+
+  ///  Sets `vid=0` via mpv. Does nothing if already in the target state (idempotent).
+  ///
+  ///  See also: `setVideoTrackEnabled`
+  func setVideoTrackDisabled() {
+    assert(DispatchQueue.isExecutingIn(.main))
+
+    mpv.queue.async { [self] in
+      _setVideoTrackDisabled()
+    }
+  }
+
+  func _setVideoTrackDisabled() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+
+    // Change video track to None
+    let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
+
+    if info.vidDisabled == nil {
+      log.verbose{"Disabling video track: setting vidDisabled to \(vidNow) before setting vid=0"}
+      info.vidDisabled = vidNow
+    }
+    guard vidNow != 0 else {
+      log.verbose("Disabling video track: vid=0 already, skipping")
+      return
+    }
+    log.verbose("Setting vid=0")
+    _setTrack(0, forType: .video, silent: true)
+  }
+
+  func setTrack(_ index: Int, forType: MPVTrack.TrackType, silent: Bool = false) {
+    mpv.queue.async { [self] in
+      _setTrack(index, forType: forType, silent: silent)
+    }
+  }
+
+  func _setTrack(_ index: Int, forType trackType: MPVTrack.TrackType, silent: Bool = false) {
+    log.verbose{"Setting \(trackType) track to \(index)"}
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard isActive else { return }
+
+    let name: String
+    switch trackType {
+    case .audio:
+      name = MPVOption.TrackSelection.aid
+    case .video:
+      name = MPVOption.TrackSelection.vid
+    case .sub:
+      name = MPVOption.TrackSelection.sid
+    case .secondSub:
+      name = MPVOption.Subtitles.secondarySid
+    }
+    mpv.setInt(name, index)
+    reloadSelectedTracks(silent: silent)
+  }
+
 }

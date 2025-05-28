@@ -288,7 +288,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: - Protocol conformance
 
   var description: String {
-    return "VidGeo(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil") aspect:\(decodedAspectLabel.quoted)→\(userAspectLabel.quoted) rot:…+\(userRotation)=\(totalRotation)° raw:\(videoSizeRaw) CA:\(videoSizeCA) CAR:\(videoSizeCAR)|\(videoAspectCAR) VidDisp=\(videoSizeDisplayOverride?.description ?? "␀"))"
+    return "VidGeo(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil") aspect:\(decodedAspectLabel.quoted)→\(userAspectLabel.quoted) rot:…+\(userRotation)=\(totalRotation)° raw:\(videoSizeRaw) CA:\(videoSizeCA) CAR:\(videoSizeCAR)|\(videoAspectCAR) Disp=\(videoSizeDisplayOverride?.description ?? "␀"))"
   }
 
   static func == (lhs: VideoGeometry, rhs: VideoGeometry) -> Bool {
