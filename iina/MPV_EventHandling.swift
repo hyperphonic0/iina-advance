@@ -25,6 +25,8 @@ extension MPVController {
     MPVOption.Video.deinterlace: MPV_FORMAT_FLAG,
     MPVOption.Video.hwdec: MPV_FORMAT_STRING,
     MPVOption.Video.videoRotate: MPV_FORMAT_INT64,
+    MPVProperty.dwidth: MPV_FORMAT_INT64,
+    MPVProperty.dheight: MPV_FORMAT_INT64,
     MPVOption.Audio.mute: MPV_FORMAT_FLAG,
     MPVOption.Audio.volume: MPV_FORMAT_DOUBLE,
     MPVOption.Audio.audioDelay: MPV_FORMAT_DOUBLE,
@@ -198,7 +200,7 @@ extension MPVController {
       if reply == MPVController.UserData.screenshot {
         let code = event.pointee.error
         guard code >= 0 else {
-          let error = String(cString: mpv_error_string(code))
+          let error = errorString(code)
           player.log.error("Cannot take a screenshot, mpv API error: \(error), returnCalue: \(code)")
           // Unfortunately the mpv API does not provide any details on the failure. The error
           // code returned maps to "error running command", so all the alert can report is
@@ -212,7 +214,7 @@ extension MPVController {
       } else if reply == MPVController.UserData.screenshotRaw {
         let code = event.pointee.error
         guard code >= 0 else {
-          let error = String(cString: mpv_error_string(code))
+          let error = errorString(code)
           player.log.error("Cannot take a screenshot, mpv API error: \(error), returnCalue: \(code)")
           // Unfortunately the mpv API does not provide any details on the failure. The error
           // code returned maps to "error running command", so all the alert can report is
@@ -280,6 +282,18 @@ extension MPVController {
       player.log.verbose("Δ mpv prop: 'video-rotate' ≔ \(userRotation)")
 
       player.userRotationDidChange(to: userRotation)
+
+    case MPVProperty.dwidth:
+      guard player.windowController.loaded else { break }
+      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
+      let dwidth = Int(data)
+      player.log.verbose("Δ mpv prop: 'dwidth' ≔ \(dwidth)")
+
+    case MPVProperty.dheight:
+      guard player.windowController.loaded else { break }
+      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
+      let dheight = Int(data)
+      player.log.verbose("Δ mpv prop: 'dheight' ≔ \(dheight)")
 
     case MPVProperty.videoParamsPrimaries:
       fallthrough

@@ -21,6 +21,7 @@ import Foundation
 ///         ➤ `videoSizeCA`
 ///           ➤ apply `totalRotation` (== `userRotation` + `streamRotation`)
 ///             ➤ `videoSizeCAR`
+///               ➤ `videoSizeDisplayOverride` (if non-nil)
 struct VideoGeometry: Equatable, CustomStringConvertible {
   typealias Transform = (GeometryTransform.Context) -> VideoGeometry?
 
@@ -31,6 +32,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
                          decodedAspectLabel: Constants.DefaultVideoSize.aspectLabel, userAspectLabel: "",
                          streamRotation: 0, userRotation: 0,
                          selectedCropLabel: AppData.noneCropIdentifier,
+                         videoSizeDisplayOverride: nil,
                          log: log)
   }
 
@@ -41,6 +43,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
                          decodedAspectLabel: "1:1", userAspectLabel: "",
                          streamRotation: 0, userRotation: 0,
                          selectedCropLabel: AppData.noneCropIdentifier,
+                         videoSizeDisplayOverride: nil,
                          log: log)
   }
 
@@ -50,7 +53,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
        decodedAspectLabel: String, userAspectLabel: String,
        streamRotation: Int, userRotation: Int,
        selectedCropLabel: String,
-       videoSizeDisplay: CGSize? = nil,
+       videoSizeDisplayOverride: CGSize?,
        log: Logger.Subsystem) {
     self.rawWidth = rawWidth
     self.rawHeight = rawHeight
@@ -70,7 +73,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     } else {
       self.cropRectNormalized = nil
     }
-    self._videoSizeDisplay = videoSizeDisplay
+    self.videoSizeDisplayOverride = videoSizeDisplayOverride
     self.log = log
   }
 
@@ -93,13 +96,14 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
 
   // MARK: - Substitution convenience functions
 
-  /// Any fields omitted here will use values from self - except for `videoSizeDisplay`, which will be reset to `nil` if omitted.
+  /// Any fields omitted here will use values from self - except for `videoSizeDisplay`, which is required, even if `nil`,
+  /// to prevent ambiguity.
   func clone(rawWidth: Int? = nil, rawHeight: Int? = nil,
              decodedAspectLabel: String? = nil,
              userAspectLabel: String? = nil,
              streamRotation: Int? = nil, userRotation: Int? = nil,
              selectedCropLabel: String? = nil,
-             videoSizeDisplay: CGSize? = nil,
+             videoSizeDisplayOverride: CGSize?,
              _ log: Logger.Subsystem? = nil) -> VideoGeometry {
     return VideoGeometry(rawWidth: rawWidth ?? self.rawWidth, rawHeight: rawHeight ?? self.rawHeight,
                          decodedAspectLabel: decodedAspectLabel ?? self.decodedAspectLabel,
@@ -107,14 +111,8 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
                          streamRotation: streamRotation ?? self.streamRotation,
                          userRotation: userRotation ?? self.userRotation,
                          selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel,
-                         videoSizeDisplay: videoSizeDisplay ?? self.videoSizeDisplay,
+                         videoSizeDisplayOverride: videoSizeDisplayOverride ?? self.videoSizeDisplayOverride,
                          log: log ?? self.log)
-  }
-
-  func substituting(_ videoMeta: VideoMeta, _ log: Logger.Subsystem? = nil) -> VideoGeometry {
-    return clone(rawWidth: videoMeta.rawWidth, rawHeight: videoMeta.rawHeight,
-                 decodedAspectLabel: videoMeta.decodedAspectLabel,
-                 streamRotation: videoMeta.streamRotation, log)
   }
 
   // MARK: - TRANSFORMATION 1: Crop
@@ -273,13 +271,13 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     return videoSizeCAR.mpvAspect
   }
 
-  private var _videoSizeDisplay: CGSize? = nil
+  var videoSizeDisplayOverride: CGSize? = nil
   var videoSizeDisplay: CGSize {
     get {
-      _videoSizeDisplay ?? videoSizeCAR
+      videoSizeDisplayOverride ?? videoSizeCAR
     }
     set {
-      _videoSizeDisplay = newValue
+      videoSizeDisplayOverride = newValue
     }
   }
 
@@ -290,7 +288,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: - Protocol conformance
 
   var description: String {
-    return "VidGeo(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil") aspect:\(decodedAspectLabel.quoted)→\(userAspectLabel.quoted) rot:…+\(userRotation)=\(totalRotation)° raw:\(videoSizeRaw) CA:\(videoSizeCA) CAR:\(videoSizeCAR)|\(videoAspectCAR))"
+    return "VidGeo(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil") aspect:\(decodedAspectLabel.quoted)→\(userAspectLabel.quoted) rot:…+\(userRotation)=\(totalRotation)° raw:\(videoSizeRaw) CA:\(videoSizeCA) CAR:\(videoSizeCAR)|\(videoAspectCAR) VidDisp=\(videoSizeDisplayOverride?.description ?? "␀"))"
   }
 
   static func == (lhs: VideoGeometry, rhs: VideoGeometry) -> Bool {

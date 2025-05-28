@@ -44,42 +44,51 @@ extension PlayerCore {
   }
 
   func setCrop(fromLabel newCropLabel: String) {
-    guard let vf = videoGeo.buildCropFilter(from: newCropLabel) else {
-      removeCrop()
-      return
-    }
+    let videoGeo = videoGeo
 
     mpv.queue.async { [self] in
-      /// Do not call `updateSelectedCrop` - it will be called in response to `vf` property change event
+      guard let vf = videoGeo.buildCropFilter(from: newCropLabel) else {
+        removeCrop()
+        return
+      }
+
+      /// Do not call `updateSelectedCrop` - it will be called in response to `vf` property change event.
+      /// Let mpv change it first.
       let addSucceeded = addVideoFilter(vf)
       if !addSucceeded {
         log.error{"Failed to add crop filter \(newCropLabel.quoted); setting crop to None"}
         removeCrop()
       }
     }
-
   }
 
-  func removeCrop() {
-    let tf = GeometryTransform("RemoveCrop", self, video: { [self] cxt in
-      // special kludge when removing crop while entering interactive mode
-      guard !info.videoFiltersDisabled.keys.contains(Constants.FilterLabel.crop) else {
-        log.verbose("Ignoring request to remove crop because looks like we are transitioning to interactive mode")
-        return nil
-      }
+  /// Returns `true` if successful.
+  @discardableResult
+  func removeCrop(updateFiltersListFirst: Bool = true) -> Bool {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    // special kludge when removing crop while entering interactive mode
+    guard !info.videoFiltersDisabled.keys.contains(Constants.FilterLabel.crop) else {
+      log.verbose("Ignoring request to remove crop because looks like we are transitioning to interactive mode")
+      return false
+    }
 
-      let oldVideoGeo = cxt.oldGeo.video
-      guard let cropFilter = oldVideoGeo.cropFilter else { return nil }
-      guard oldVideoGeo.selectedCropLabel != AppData.noneCropIdentifier else { return nil }
+    if updateFiltersListFirst {
+      // Ensure our state is up-to-date with mpv.
+      // If no crop filter found, this will clean up the state for us & we will not need to do anything after.
+      _ = updateVideoFiltersFromMpv()
+    }
 
-      log.verbose{"[GeoTF:\(cxt.name)] Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter"}
-
-      removeVideoFilter(cropFilter, verify: false, notify: false)
-      return oldVideoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
-    })
-    windowController.animationPipeline.submit(tf)
+    // If VideoGeometry specifies a crop, remove the crop filter.
+    // At this point, we know a crop filter is enabled, so removeVideoFilter will remove it & then clean up the state.
+    let oldVideoGeo = windowController.geo.video
+    guard let cropFilter = oldVideoGeo.cropFilter else { return false }
+    guard oldVideoGeo.selectedCropLabel != AppData.noneCropIdentifier else { return false }
+    log.verbose{"Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter"}
+    return removeVideoFilter(cropFilter, verify: false, notify: false)
   }
 
+  /// Call this after confirming the given crop has been added to mpv. Sets the window & video geometry & other state
+  /// based on the given crop.
   func updateSelectedCrop(to newCropLabel: String) {
     guard !isRestoring else { return }
 
@@ -97,10 +106,22 @@ extension PlayerCore {
       let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
       sendOSD(.crop(osdLabel))
 
-      guard let updatedVidGeo = cxt.syncVideoParamsFromMpv() else { return nil }
-      return updatedVidGeo.clone(selectedCropLabel: newCropLabel)
+      let newVideoGeo = oldVideoGeo.clone(selectedCropLabel: newCropLabel, videoSizeDisplayOverride: nil)
+      guard let newVideoGeo = cxt.syncVideoParamsFromMpv(startingWith: newVideoGeo) else { return nil }
+      return newVideoGeo
     })
     windowController.animationPipeline.submit(tf)
   }
+
+  func getCropFilter() -> MPVFilter? {
+    let videoFilters = mpv.getFilters(MPVProperty.vf)
+    for filter in videoFilters {
+      if filter.label == Constants.FilterLabel.crop {
+        return filter
+      }
+    }
+    return nil
+  }
+
 }
 

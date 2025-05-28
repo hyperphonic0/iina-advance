@@ -43,7 +43,7 @@ extension GeometryTransform.Context {
 
 
   /// Sync VideoGeometry from mpv `video-dec-params` & `video-out-params`
-  func syncVideoParamsFromMpv() -> VideoGeometry? {
+  func syncVideoParamsFromMpv(startingWith videoGeo: VideoGeometry? = nil) -> VideoGeometry? {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
     log.verbose{"[GeoTF:\(name)] Starting transform of \(currentPlayback.url.lastPathComponent.pii.quoted), vid=\(String(vidTrackID))|\(currentMediaAudioStatus), sessionState=\(sessionState)"}
     let vid = Int(player.mpv.getInt(MPVOption.TrackSelection.vid))
@@ -76,6 +76,8 @@ extension GeometryTransform.Context {
       return nil
     }
 
+    let oldVideoGeo = videoGeo ?? oldGeo.video
+
     /// `codecAspect` should match the product `par * sar`
     let codecAspect = String(videoDecParams.aspect)
 
@@ -83,25 +85,22 @@ extension GeometryTransform.Context {
     var userAspectLabelDerived = ""
     if let mpvVideoAspectOverride = player.mpv.getString(MPVOption.Video.videoAspectOverride) {
       userAspectLabelDerived = Aspect.bestLabelFor(mpvVideoAspectOverride)
-      if userAspectLabelDerived != oldGeo.video.userAspectLabel {
+      if userAspectLabelDerived != oldVideoGeo.userAspectLabel {
         // Not necessarily an error? Need to improve aspect name matching logic
-        log.debug{"[GeoTF:\(name)] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(oldGeo.video.userAspectLabel.quoted))"}
+        log.debug{"[GeoTF:\(name)] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(oldVideoGeo.userAspectLabel.quoted))"}
       }
     }
 
     // Sync video's raw dimensions from mpv. This is especially important for streaming videos, which won't have cached videoMeta.
-    // Fortunately the number don't seem to change between videoDecParams & videoOutParams.
+    // Use video-dec-params for this, as video-out-params sometimes changes.
     let rawWidth: Int?
     let rawHeight: Int?
-    if videoOutParams.w > 0, videoOutParams.h > 0 {
-      rawWidth = videoOutParams.w
-      rawHeight = videoOutParams.h
-    } else if videoDecParams.w > 0, videoDecParams.h > 0 {
+    if videoDecParams.w > 0, videoDecParams.h > 0 {
       rawWidth = videoDecParams.w
       rawHeight = videoDecParams.h
     } else {
       assert(vidTrackID != 0, "[GeoTF:\(name)]: vidTrackID is 0, but we expected it to be non-zero")
-      log.warn{"[GeoTF:\(name)]: mpv returned 0 for w or h. Using cached size instead"}
+      log.warn{"[GeoTF:\(name)]: mpv \(MPVProperty.videoDecParams) has 0 for w or h. Using cached size instead"}
       rawWidth = nil
       rawHeight = nil
     }
@@ -115,52 +114,52 @@ extension GeometryTransform.Context {
 #if DEBUG
     // TODO: clean up these checks after doing more research
     if streamRotation != videoDecParams.rotate {
-      player.log.error{"Mismatch: streamRotation (\(streamRotation)) != videoDecParams.rotate (\(videoDecParams.rotate))"}
+      player.log.error{"[\(name)] ❌ Mismatch: streamRotation (\(streamRotation)) != videoDecParams.rotate (\(videoDecParams.rotate))"}
     }
     if streamRotation != videoOutParams.rotate {
-      player.log.error{"Mismatch: streamRotation (\(streamRotation)) != videoOutParams.rotate (\(videoOutParams.rotate))"}
+      player.log.error{"[\(name)] ❌ Mismatch: streamRotation (\(streamRotation)) != videoOutParams.rotate (\(videoOutParams.rotate))"}
     }
 #endif
 
     // If opening window, videoGeo may still have the global (default) log. Update it
-    var videoGeo = oldGeo.video.clone(rawWidth: rawWidth, rawHeight: rawHeight,
-                                      decodedAspectLabel: codecAspect,
-                                      userAspectLabel: userAspectLabelDerived,
-                                      streamRotation: streamRotation,
-                                      userRotation: userRotation)
+    var newVideoGeo = oldVideoGeo.clone(rawWidth: rawWidth, rawHeight: rawHeight,
+                                        decodedAspectLabel: codecAspect,
+                                        userAspectLabel: userAspectLabelDerived,
+                                        streamRotation: streamRotation,
+                                        userRotation: userRotation,
+                                        videoSizeDisplayOverride: nil)
 
     // FIXME: audioStatus==notAudio for playlist which auto-plays audio
 
     assert(!currentMediaAudioStatus.isAudio && (vidTrackID != 0), "Unexpected currentMediaAudioStatus=\(currentMediaAudioStatus) for vidTrackID=\(vidTrackID)")
-    if videoOutParams.dw <= 0 || videoOutParams.dh <= 0 {
-      player.log.errorDebugAlert{"[\(name)] ❌ Sanity check for VideoGeometry failed: dw or dh is nil in video-out-params! VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect)"}
+    let dwidth = videoOutParams.dw
+    let dheight = videoOutParams.dh
+    if dwidth <= 0 || dheight <= 0 {
+      player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-A failed: dw or dh is nil in video-out-params! VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect)"}
       return videoGeo
     } else {
-      let dwidth = videoOutParams.dw
-      let dheight = videoOutParams.dh
-      
       let videoSizeDisplay: CGSize
-      if videoGeo.isWidthSwappedWithHeightByTotalRotation {
+      if newVideoGeo.isWidthSwappedWithHeightByTotalRotation {
         videoSizeDisplay = CGSize(width: dheight, height: dwidth)
       } else {
         videoSizeDisplay = CGSize(width: dwidth, height: dheight)
       }
       
-      let ours = videoGeo.videoSizeCAR
+      let ours = newVideoGeo.videoSizeCAR
       // Apparently mpv can sometimes add a pixel. Not our fault...
       if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
-        player.log.errorDebugAlert{"[\(name)] ❌ Sanity check for VideoGeometry failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours)). VidTrack=\(vidTrackID) \(currentMediaAudioStatus) vidAspect=\(codecAspect)"}
+        player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-B failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours))! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect) videoSizeD=\(videoSizeDisplay) dispAspect=\(videoSizeDisplay.mpvAspect)"}
       }
       
-      videoGeo = videoGeo.clone(videoSizeDisplay: videoSizeDisplay)
-      
+      newVideoGeo = newVideoGeo.clone(videoSizeDisplayOverride: videoSizeDisplay)
+
       if !currentPlayback.isNetworkResource {
         // Update cache with latest video params
-        MediaMetaCache.shared.updateCachedVideoMeta(id: currentPlayback.id, videoGeo, log)
+        MediaMetaCache.shared.updateCachedVideoMeta(id: currentPlayback.id, newVideoGeo, log)
       }
     }
-    log.debug{"[GeoTF:\(name)] Derived videoGeo from mpv video-params: \(videoGeo)"}
-    return videoGeo
+    log.debug{"[GeoTF:\(name)] Derived videoGeo from mpv video-params: \(newVideoGeo)"}
+    return newVideoGeo
   }
 
   /// Gets the given property from the given player's mpv core, retrying as needed.

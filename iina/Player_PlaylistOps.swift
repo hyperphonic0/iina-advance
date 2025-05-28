@@ -537,7 +537,7 @@ extension PlayerCore {
   }
 
   private func playlistErrorDidOccur(_ returnCode: Int32, opDesc: String) {
-    let errorString = String(cString: mpv_error_string(returnCode))
+    let errorString = mpv.errorString(returnCode)
     log.error{"[Playlist] Failed to \(opDesc) (will clear undo stack): \(errorString)"}
     playlistErrorDidOccur()
   }

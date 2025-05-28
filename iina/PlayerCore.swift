@@ -1429,7 +1429,20 @@ class PlayerCore: NSObject {
       log.verbose{"[GeoTF:\(cxt.name)] Applying rotation: \(userRotation)"}
       // Update window geometry
       sendOSD(.rotation(userRotation))
-      return videoGeo.clone(userRotation: userRotation)
+      let oldVideoGeo = cxt.oldGeo.video
+
+      let videoSizeDisplayOverride: CGSize?
+      if let oldVideoSizeDisplayOverride = oldVideoGeo.videoSizeDisplayOverride {
+        let orientationWillChange = ((oldVideoGeo.userRotation - userRotation) %% 180) != 0
+        if orientationWillChange {
+          videoSizeDisplayOverride = CGSize(width: oldVideoSizeDisplayOverride.height, height: oldVideoSizeDisplayOverride.width)
+        } else {
+          videoSizeDisplayOverride = oldVideoSizeDisplayOverride
+        }
+      } else {
+        videoSizeDisplayOverride = nil
+      }
+      return oldVideoGeo.clone(userRotation: userRotation, videoSizeDisplayOverride: videoSizeDisplayOverride)
     })
     windowController.animationPipeline.submit(tf)
   }
@@ -1475,7 +1488,10 @@ class PlayerCore: NSObject {
 
       // Change video size:
       log.verbose{"[GeoTF:\(cxt.name)] Changing userAspectLabel: \(oldVideoGeo.userAspectLabel.quoted) → \(aspectLabel.quoted)"}
-      return oldVideoGeo.clone(userAspectLabel: aspectLabel)
+
+      let newVideoGeo = oldVideoGeo.clone(userAspectLabel: aspectLabel, videoSizeDisplayOverride: nil)
+      guard let newVideoGeo = cxt.syncVideoParamsFromMpv(startingWith: newVideoGeo) else { return nil }
+      return newVideoGeo
     })
     windowController.animationPipeline.submit(tf)
   }
@@ -1651,7 +1667,7 @@ class PlayerCore: NSObject {
       let urlPath = PlaybackID.path(from: url)
       let code = mpv.command(.subAdd, args: [urlPath, "auto"], checkError: false)
       if code < 0 {
-        let errorDesc = String(cString: mpv_error_string(code))
+        let errorDesc = mpv.errorString(code)
         log.error("Failed to load sub (error \(code): \(errorDesc)) \(urlPath.pii.quoted)")
         // if another modal panel is shown, popping up an alert now will cause some infinite loop.
         if delay {
@@ -3581,30 +3597,6 @@ class PlayerCore: NSObject {
     }
   }
 
-  private func setPlaybackInfoFilter(_ filter: MPVFilter) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-
-    switch filter.label {
-    case Constants.FilterLabel.crop:
-      // CROP
-      if let cropLabel = deriveCropLabel(from: filter) {
-        updateSelectedCrop(to: cropLabel)  // Known aspect-based crop
-      } else {
-        // Cannot parse IINA crop filter? Remove crop
-        log.error{"Could not determine crop from filter \(filter.label?.debugDescription.quoted ?? "nil"). Removing filter"}
-        updateSelectedCrop(to: AppData.noneCropIdentifier)
-      }
-    case Constants.FilterLabel.flip:
-      info.flipFilter = filter
-    case Constants.FilterLabel.mirror:
-      info.mirrorFilter = filter
-    case Constants.FilterLabel.delogo:
-      info.delogoFilter = filter
-    default:
-      return
-    }
-  }
-
   /** Check if there are IINA filters saved in watch_later file. */
   func reloadSavedIINAfilters() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
@@ -3618,6 +3610,7 @@ class PlayerCore: NSObject {
 
   /// `vf`: gets up-to-date list of video filters AND updates associated state in the process
   func updateVideoFiltersFromMpv() -> [MPVFilter] {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     // Clear cached filters first:
     info.flipFilter = nil
     info.mirrorFilter = nil
@@ -3629,23 +3622,40 @@ class PlayerCore: NSObject {
       if filter.label == Constants.FilterLabel.crop {
         foundCropFilter = true
       }
-      setPlaybackInfoFilter(filter)
-    }
-    if !foundCropFilter, videoGeo.hasCrop {
-      log.debug("No crop filter found in mpv video filters. Removing crop")
-      updateSelectedCrop(to: AppData.noneCropIdentifier)
-    }
-    return videoFilters
-  }
 
-  func getCropFilter() -> MPVFilter? {
-    let videoFilters = mpv.getFilters(MPVProperty.vf)
-    for filter in videoFilters {
-      if filter.label == Constants.FilterLabel.crop {
-        return filter
+      switch filter.label {
+      case Constants.FilterLabel.flip:
+        info.flipFilter = filter
+      case Constants.FilterLabel.mirror:
+        info.mirrorFilter = filter
+      case Constants.FilterLabel.delogo:
+        info.delogoFilter = filter
+
+      case Constants.FilterLabel.crop:  // CROP
+        if let cropLabel = deriveCropLabel(from: filter) {
+          updateSelectedCrop(to: cropLabel)  // Known aspect-based crop
+        } else {
+          // Cannot parse IINA crop filter? Remove crop
+          log.error{"Could not determine crop from filter \(filter.label?.debugDescription.quoted ?? "nil"). Will remove filter"}
+          mpv.queue.async { [self] in
+            // Call with updateFiltersListFirst=NO because we already have a fresh list, and to prevent infinite loop:
+            if removeCrop(updateFiltersListFirst: false) {
+              // Call again to update state
+              _ = updateVideoFiltersFromMpv()
+            }
+          }
+        }
+      default:
+        break
       }
     }
-    return nil
+
+    if videoGeo.hasCrop && !foundCropFilter {
+      log.warn("VideoGeometry specifies a crop, but no crop filter found in mpv video filters. Will try to clean up by removing crop")
+      updateSelectedCrop(to: AppData.noneCropIdentifier)
+    }
+
+    return videoFilters
   }
 
   /// `af`: gets up-to-date list of audio filters AND updates associated state in the process

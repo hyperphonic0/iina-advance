@@ -1314,7 +1314,7 @@ extension PlayerWindowController {
           /// verify them against (C) mpv's internal video size calculations. Those are checked in `PWin_Resize.swift`
           /// (search for another instance of the UTF "X" like the one below).
           let wrong = "ⓧ"
-          let lines = ["[\(transition.name)] ❌ Sanity check failed!",
+          let lines = ["[\(transition.name)] ❌ SanityCheck-C failed!",
                        "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect) Constraint=\(videoView.aspectMultiplier?.logStr ?? "nil")",
                        "  VideoSize: Expect=\(enableVidCheck ? vidSizeE.description : "NA") Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
                        "  Viewport:  Expect=\(viewportSizeE) Actual=\(viewportSizeA)",

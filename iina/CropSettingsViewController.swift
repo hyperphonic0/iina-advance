@@ -126,7 +126,7 @@ class CropSettingsViewController: CropBoxViewController {
           player.log.error("Could not generate crop label from the newly created filter!")
           return
         }
-        let newVidGeo = player.videoGeo.clone(selectedCropLabel: newCropLabel)
+        let newVidGeo = player.videoGeo.clone(selectedCropLabel: newCropLabel, videoSizeDisplayOverride: nil)
         DispatchQueue.main.async { [self] in
           windowController.exitInteractiveMode(newVidGeo: newVidGeo)
         }

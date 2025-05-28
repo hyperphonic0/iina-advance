@@ -525,12 +525,14 @@ struct PlayerSaveState: CustomStringConvertible {
       let totalRotation = PlayerSaveState.int(for: .totalRotation, props)
       let userRotation = PlayerSaveState.int(for: .videoRotation, props)
       let streamRotation = (totalRotation ?? 0) - (userRotation ?? 0)
+      let selectedCropLabel = PlayerSaveState.string(for: .cropLabel, props)
       videoGeo = defaultGeo.clone(rawWidth: PlayerSaveState.int(for: .videoRawWidth, props),
                                   rawHeight: PlayerSaveState.int(for: .videoRawHeight, props),
                                   userAspectLabel: PlayerSaveState.string(for: .videoAspectLabel, props),
                                   streamRotation: streamRotation,
                                   userRotation: userRotation,
-                                  selectedCropLabel: PlayerSaveState.string(for: .cropLabel, props))
+                                  selectedCropLabel: selectedCropLabel,
+                                  videoSizeDisplayOverride: nil)
     }
 
     let windowedCSV = PlayerSaveState.string(for: .windowedModeGeo, props)
@@ -980,7 +982,7 @@ extension VideoGeometry {
       return VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
                            decodedAspectLabel: decodedAspectLabel, userAspectLabel: userAspectLabel,
                            streamRotation: streamRotation, userRotation: userRotation,
-                           selectedCropLabel: selectedCropLabel, log: log)
+                           selectedCropLabel: selectedCropLabel, videoSizeDisplayOverride: nil, log: log)
     }) {
       return vidGeoV2
     }
@@ -1008,7 +1010,7 @@ extension VideoGeometry {
       return VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
                            decodedAspectLabel: decodedAspectLabel, userAspectLabel: userAspectLabel,
                            streamRotation: streamRotation, userRotation: userRotation,
-                           selectedCropLabel: selectedCropLabel, log: log)
+                           selectedCropLabel: selectedCropLabel, videoSizeDisplayOverride: nil, log: log)
     }
   }
 
@@ -1069,7 +1071,7 @@ extension MusicModeGeometry {
     // Try v2 first.
     let mmGeo: MusicModeGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: MusicModeGeometry.expectedCSVTokenCount,
                                                              expectedVersion: PlayerSaveState.musicModeGeoPrefStringVersion,
-                                                             targetObjName: "MusicModeGeometry(v2)") { errPreamble, iter in
+                                                             targetObjName: "MusicModeGeometry v2") { errPreamble, iter in
 
       guard let winOriginX = Double(iter.next()!),
             let winOriginY = Double(iter.next()!),
@@ -1104,7 +1106,7 @@ extension MusicModeGeometry {
     // Fall back to v1
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 10,
                                     expectedVersion: "1",
-                                    targetObjName: "MusicModeGeometry(v1)") { errPreamble, iter in
+                                    targetObjName: "MusicModeGeometry v1") { errPreamble, iter in
 
       guard let winOriginX = Double(iter.next()!),
             let winOriginY = Double(iter.next()!),
@@ -1193,7 +1195,7 @@ extension PWinGeometry {
   /// `videoGeoFallback` is only used if CSV is legacy version
   static func fromCSV(_ csv: String?, videoGeoFallback: VideoGeometry? = nil, _ log: Logger.Subsystem) -> PWinGeometry? {
     guard let csv, !csv.isEmpty else {
-      Logger.log.debug("CSV is empty; returning nil for geometry")
+      log.debug("CSV is empty; returning nil for geometry")
       return nil
     }
 
@@ -1201,7 +1203,7 @@ extension PWinGeometry {
     /// Version 2 removes `videoAspect` field and adds 6 `videoGeometry` fields.
     let pwinGeo: PWinGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: PWinGeometry.expectedCSVTokenCount,
                                                           expectedVersion: PlayerSaveState.windowGeometryPrefStringVersion,
-                                                          targetObjName: "PWinGeometry(v2)") { errPreamble, iter ->  PWinGeometry? in
+                                                          targetObjName: "PWinGeometry v2") { errPreamble, iter ->  PWinGeometry? in
 
       guard let topMarginHeight = Double(iter.next()!),
             let outsideTopBarHeight = Double(iter.next()!),
@@ -1225,18 +1227,18 @@ extension PWinGeometry {
             let modeRawValue = Int(iter.next()!),
             let videoGeoEmbeddedCSV = iter.next()
       else {
-        Logger.log.error("\(errPreamble) could not parse one or more tokens")
+        log.error("\(errPreamble) could not parse one or more tokens")
         /// NOTE: if Xcode shows a weird error here, it means that the wrong args are being supplied
         /// to the`PWinGeometry` constructor below, or the constructor of any object passed to it.
         return nil
       }
 
       guard let mode = PlayerWindowMode(rawValue: modeRawValue) else {
-        Logger.log.error("\(errPreamble) unrecognized PlayerWindowMode: \(modeRawValue)")
+        log.error("\(errPreamble) unrecognized PlayerWindowMode: \(modeRawValue)")
         return nil
       }
       guard let screenFit = ScreenFit(rawValue: fitOptionRawValue) else {
-        Logger.log.error("\(errPreamble) unrecognized ScreenFit: \(fitOptionRawValue)")
+        log.error("\(errPreamble) unrecognized ScreenFit: \(fitOptionRawValue)")
         return nil
       }
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
@@ -1248,7 +1250,7 @@ extension PWinGeometry {
                                   bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
 
       guard let videoGeo = VideoGeometry.fromEmbeddedCSV(videoGeoEmbeddedCSV, log) else {
-        Logger.log.error("\(errPreamble) could not parse VideoGeometry")
+        log.error("\(errPreamble) could not parse VideoGeometry")
         return nil
       }
 
@@ -1263,7 +1265,7 @@ extension PWinGeometry {
     // Fall back to v1, which did not include embedded VideoGeometry CSV.
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 22,
                                     expectedVersion: "1",
-                                    targetObjName: "PWinGeometry(v1)") { errPreamble, iter -> PWinGeometry? in
+                                    targetObjName: "PWinGeometry v1") { errPreamble, iter -> PWinGeometry? in
 
       guard let topMarginHeight = Double(iter.next()!),
             let outsideTopBarHeight = Double(iter.next()!),
@@ -1287,18 +1289,18 @@ extension PWinGeometry {
             let screenID = iter.next(),
             let modeRawValue = Int(iter.next()!)
       else {
-        Logger.log.error("\(errPreamble) could not parse one or more tokens")
+        log.error("\(errPreamble) could not parse one or more tokens")
         /// NOTE: if Xcode shows a weird error here, it means that the wrong args are being supplied
         /// to the`PWinGeometry` constructor below, or the constructor of any object passed to it.
         return nil
       }
 
       guard let mode = PlayerWindowMode(rawValue: modeRawValue) else {
-        Logger.log.error("\(errPreamble) unrecognized PlayerWindowMode: \(modeRawValue)")
+        log.error("\(errPreamble) unrecognized PlayerWindowMode: \(modeRawValue)")
         return nil
       }
       guard let screenFit = ScreenFit(rawValue: fitOptionRawValue) else {
-        Logger.log.error("\(errPreamble) unrecognized ScreenFit: \(fitOptionRawValue)")
+        log.error("\(errPreamble) unrecognized ScreenFit: \(fitOptionRawValue)")
         return nil
       }
       let windowFrame = NSRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
@@ -1314,11 +1316,11 @@ extension PWinGeometry {
         video = videoGeoFallback
       } else {
         // we will do our best but our best may not be good enough
-        Logger.log.error("VideoGeometry for legacy PWinGeometry is nil! Will try to derive it")
+        log.error("VideoGeometry for legacy PWinGeometry is nil! Will try to derive it")
         let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
         let videoSize = viewportSize - viewportMargins.totalSize
         let defaultVideoGeo: VideoGeometry = VideoGeometry.defaultGeometry(log)
-        video = defaultVideoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
+        video = defaultVideoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height), videoSizeDisplayOverride: nil)
       }
 
       let pwinGeo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, screenFit: screenFit, mode: mode, topMarginHeight: topMarginHeight,

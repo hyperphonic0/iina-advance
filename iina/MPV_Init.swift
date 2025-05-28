@@ -368,7 +368,7 @@ extension MPVController {
       for op in userOptions {
         let status = setOptionString(op.0, op.1)
         if status < 0 {
-          let errorString = String(cString: mpv_error_string(status))
+          let errorString = errorString(status)
           // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
           DispatchQueue.main.async {
             Utility.showAlert("extra_option.error", arguments: [op.0, op.1, status, errorString])

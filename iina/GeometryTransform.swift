@@ -169,12 +169,12 @@ struct GeometryTransform {
             } else if cxt.currentMediaAudioStatus.isAudio && !layout.isMusicMode && !layout.isFullScreen {
               log.debug{"[GeoTF:\(name)] Opened media is audio: auto-switching to music mode"}
               let geo = pwc.buildGeoSet(video: cxt.outputVidGeo, from: layout)
-              let enterMusicModeTransitionTasks = pwc.buildTransitionTasksToEnterMusicMode(automatically: true, from: layout, geo)
+              let enterMusicModeTransitionTasks = pwc.buildTasksToEnterMusicMode(automatically: true, from: layout, geo)
               immediateTasks += enterMusicModeTransitionTasks
             } else if cxt.currentMediaAudioStatus == .notAudio && layout.isMusicMode {
               log.debug{"[GeoTF:\(name)] Opened media is not audio: auto-switching to normal window"}
               let geo = pwc.buildGeoSet(video: cxt.outputVidGeo, from: layout)
-              let enterMusicModeTransitionTasks = pwc.buildTransitionTasksToExitMusicMode(automatically: true, from: layout, geo)
+              let enterMusicModeTransitionTasks = pwc.buildTasksToExitMusicMode(automatically: true, from: layout, geo)
               immediateTasks += enterMusicModeTransitionTasks
             }
           }

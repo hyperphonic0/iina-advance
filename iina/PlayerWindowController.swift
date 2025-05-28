@@ -1113,7 +1113,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     if modeToSetAfterExitingFullScreen == .musicMode {
       let windowedLayout = LayoutState.buildFrom(windowedLayoutSpec)
       let geo = geo.clone(windowed: exitFSTransition.outputGeometry)
-      let enterMusicModeTransitionTasks = buildTransitionTasksToEnterMusicMode(from: windowedLayout, geo)
+      let enterMusicModeTransitionTasks = buildTasksToEnterMusicMode(from: windowedLayout, geo)
       animationPipeline.submit(exitFSTransition.tasks + enterMusicModeTransitionTasks)
       modeToSetAfterExitingFullScreen = nil
     } else {
@@ -1694,7 +1694,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         // so that a new crop can be chosen. But keep info from the old filter in case the user cancels.
         // Change this pre-emptively so that removeVideoFilter doesn't trigger a window geometry change
         player.info.videoFiltersDisabled[vf.label!] = vf
-        newVideoGeo = videoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
+        newVideoGeo = videoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier, videoSizeDisplayOverride: nil)
         if !player.removeVideoFilter(vf) {
           log.error{"Failed to remove prev crop filter: (\(vf.stringFormat.quoted)) for some reason. Will ignore and try to proceed anyway"}
         }
@@ -1767,14 +1767,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
             // supply an override for windowedModeGeo here, because it won't be set until the animation above executes
             let geoOverride = geo.clone(windowed: uncroppedClosedBarsGeo)
-            tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
+            tasks.append(contentsOf: buildTasksToEnterInteractiveMode(.crop, geoOverride))
 
           default:
             assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
             return
           }
         } else {
-          tasks = buildTransitionToEnterInteractiveMode(mode)
+          tasks = buildTasksToEnterInteractiveMode(mode)
         }
 
         animationPipeline.submit(tasks)
@@ -1782,7 +1782,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  func buildTransitionToEnterInteractiveMode(_ mode: InteractiveMode, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
+  private func buildTasksToEnterInteractiveMode(_ mode: InteractiveMode, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
     let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenNormal ? .fullScreenInteractive : .windowedInteractive
     let interactiveModeLayout = currentLayout.spec.clone(mode: newMode, interactiveMode: mode)
     let startDuration = Constants.AnimationDuration.cropAnimation * 0.5
@@ -1793,7 +1793,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   /// Use `immediately: true` to exit without animation.
-  /// This method can be run safely even if not in interactive mode
+  /// • If there is to be an active crop, `newVidGeo` must be present and must contain it. Otherwise crop of "None" will be applied.
+  /// • This method can be run safely even if not in interactive mode.
   func exitInteractiveMode(immediately: Bool = false, newVidGeo: VideoGeometry? = nil,  then doAfter: (() -> Void)? = nil) {
     animationPipeline.submitInstantTask({ [self] in
       let currentLayout = currentLayout
@@ -1802,7 +1803,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       if currentLayout.isInteractiveMode {
         // This alters state in addtion to (maybe) generating a task
-        tasks = exitInteractiveMode(immediately: immediately, newVidGeo: newVidGeo)
+        tasks = buildTasksToExitInteractiveMode(immediately: immediately, newVidGeo: newVidGeo)
       }
 
       if let doAfter {
@@ -1815,8 +1816,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     })
   }
 
-  // Exits interactive mode, using animations.
-  private func exitInteractiveMode(immediately: Bool, newVidGeo: VideoGeometry? = nil) -> [IINAAnimation.Task] {
+  /// Exits interactive mode, using animations.
+  private func buildTasksToExitInteractiveMode(immediately: Bool, newVidGeo: VideoGeometry? = nil) -> [IINAAnimation.Task] {
     var tasks: [IINAAnimation.Task] = []
     var geoSet: GeometrySet? = nil
 
@@ -1895,15 +1896,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         modeToSetAfterExitingFullScreen = .musicMode
         exitFullScreen()
       } else {
-        let transitionTasks = buildTransitionTasksToEnterMusicMode(automatically: automatically, from: oldLayout, geo)
+        let transitionTasks = buildTasksToEnterMusicMode(automatically: automatically, from: oldLayout, geo)
         animationPipeline.submit(transitionTasks)
       }
     })
   }
 
   /// `automatically` == via auto-switch to music mode
-  func buildTransitionTasksToEnterMusicMode(automatically: Bool = false,
-                                            from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
+  func buildTasksToEnterMusicMode(automatically: Bool = false,
+                                  from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
     let miniPlayerLayout = oldLayout.spec.clone(mode: .musicMode)
     var transitionTasks = buildLayoutTransition(named: "EnterMusicMode", from: oldLayout, to: miniPlayerLayout, geo).tasks
 
@@ -1922,13 +1923,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       /// Start by hiding OSC and/or "outside" panels, which aren't needed and might mess up the layout.
       /// We can do this by creating a `LayoutSpec`, then using it to build a `LayoutTransition` and executing its animation.
       let oldLayout = oldLayout ?? currentLayout
-      let tasks = buildTransitionTasksToExitMusicMode(automatically: automatically, from: oldLayout, geo)
+      let tasks = buildTasksToExitMusicMode(automatically: automatically, from: oldLayout, geo)
       animationPipeline.submit(tasks)
     }
   }
 
-  func buildTransitionTasksToExitMusicMode(automatically: Bool = false,
-                                            from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
+  func buildTasksToExitMusicMode(automatically: Bool = false,
+                                 from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
     let windowedLayout = LayoutSpec.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutSpec)
     var transitionTasks = buildLayoutTransition(named: "ExitMusicMode", from: oldLayout, to: windowedLayout, geo).tasks
     if !automatically {
@@ -1941,6 +1942,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
     return transitionTasks
   }
+
+  // MARK: - Misc window stuff
 
   func blackOutOtherMonitors() {
     removeBlackWindows()

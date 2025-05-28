@@ -10,10 +10,6 @@ import Cocoa
 import JavaScriptCore
 import VideoToolbox
 
-fileprivate func errorString(_ code: Int32) -> String {
-  return String(cString: mpv_error_string(code))
-}
-
 extension mpv_event_id: CustomStringConvertible {
   // Generated code from mpv is objc and does not have Swift's built-in enum name introspection.
   // We provide that here using mpv_event_name()
@@ -44,7 +40,8 @@ extension mpv_event_end_file {
       reasonString = "???"
     }
     if reason == MPV_END_FILE_REASON_ERROR {
-      reasonString += " \(error) (\(errorString(error)))"
+      let errStr = String(cString: mpv_error_string(error))
+      reasonString += " \(error) (\(errStr))"
     }
     return reasonString
   }
@@ -167,6 +164,10 @@ class MPVController: NSObject {
   }
 
   // MARK: - Command & property
+
+  func errorString(_ code: Int32) -> String {
+    return String(cString: mpv_error_string(code))
+  }
 
   private func makeCArgs(_ command: MPVCommand, _ args: [String?]) -> [String?] {
     if args.count > 0 && args.last == nil {
@@ -892,9 +893,9 @@ class MPVController: NSObject {
   /**
    Utility function for checking mpv api error
    */
-  func chkErr(_ status: Int32!) {
-    guard status < 0 else { return }
-    let message = "mpv API error: \"\(String(cString: mpv_error_string(status)))\", Return value: \(status!)."
+  func chkErr(_ returnCode: Int32!) {
+    guard returnCode < 0 else { return }
+    let message = "mpv API error: \"\(errorString(returnCode))\", Return value: \(returnCode!)."
     player.log.error{message}
 
     DispatchQueue.main.async { [self] in
@@ -905,11 +906,11 @@ class MPVController: NSObject {
   }
 
   @discardableResult
-  func logError(_ errorCode: Int32) -> Int32 {
-    guard errorCode < 0 else { return errorCode }
-    guard player.log.isErrorEnabled else { return errorCode }
-    player.log.error{"mpv API error: \"\(String(cString: mpv_error_string(errorCode)))\", Return value: \(errorCode)"}
-    return errorCode
+  func logError(_ returnCode: Int32) -> Int32 {
+    guard returnCode < 0 else { return returnCode }
+    guard player.log.isErrorEnabled else { return returnCode }
+    player.log.error{"mpv API error: \"\(errorString(returnCode))\", Return value: \(returnCode)"}
+    return returnCode
   }
 
   /// Convert the given mpv color string containing color components specified in hex to floating point.

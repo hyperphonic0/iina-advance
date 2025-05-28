@@ -321,6 +321,8 @@ extension VideoView {
       aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
     }
 
+    log.verbose("VideoView: updating constraints: aspect=\(aspectMultiplier) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize)")
+
     let topSpacer = player.windowController.viewportTopSpacer
     let bottomSpacer = player.windowController.viewportBottomSpacer
     let leadingSpacer = player.windowController.viewportLeadingSpacer
