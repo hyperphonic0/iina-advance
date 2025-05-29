@@ -108,8 +108,6 @@ class CropSettingsViewController: CropBoxViewController {
     player.mpv.queue.async { [self] in
       if isAllSelected || isNoSelection {
         player.log.verbose("Interactive mode submit: isAllSelected=\(isAllSelected.yn) isNoSelection=\(isNoSelection.yn) → setting crop to none")
-        // if no crop, remove the crop filter
-        player.removeCrop()
         windowController.exitInteractiveMode()
       } else {
         let newCropFilter: MPVFilter

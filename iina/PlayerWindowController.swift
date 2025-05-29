@@ -1842,46 +1842,57 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     var tasks: [IINAAnimation.Task] = []
     var geoSet: GeometrySet? = nil
 
-    // If these params are present and valid, then need to apply a crop
-    if let cropController = cropSettingsView, let newVidGeo, let cropRect = newVidGeo.cropRect {
-      log.verbose{"Cropping video from videoSizeRaw: \(newVidGeo.videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(cropRect)"}
+    if let cropController = cropSettingsView {
+      // We were in interactive crop
+      if let newVidGeo, let cropRect = newVidGeo.cropRect {
+        // If newVidGeo contains a crop, we must apply it
+        log.verbose{"Cropping video from videoSizeRaw: \(newVidGeo.videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(cropRect)"}
 
-      /// Must update `windowedModeGeo` outside of animation task!
-      // this works for full screen modes too
-      assert(currentLayout.isInteractiveMode, "CurrentLayout is not in interactive mode: \(currentLayout)")
-      let winGeoUpdated = windowedGeoForCurrentFrame()  // not even needed if in full screen
-      let currentIMGeo = currentLayout.buildGeometry(windowFrame: winGeoUpdated.windowFrame,
-                                                     screenID: winGeoUpdated.screenID,
-                                                     video: geo.video)
-      let newIMGeo = currentIMGeo.cropVideo(using: newVidGeo)
-      if currentLayout.mode == .windowedInteractive {
-        geoSet = buildGeoSet(windowed: newIMGeo, from: currentLayout)
-      }
+        /// Must update `windowedModeGeo` outside of animation task!
+        // this works for full screen modes too
+        assert(currentLayout.isInteractiveMode, "CurrentLayout is not in interactive mode: \(currentLayout)")
+        let winGeoUpdated = windowedGeoForCurrentFrame()  // not even needed if in full screen
+        let currentIMGeo = currentLayout.buildGeometry(windowFrame: winGeoUpdated.windowFrame,
+                                                       screenID: winGeoUpdated.screenID,
+                                                       video: geo.video)
+        let newIMGeo = currentIMGeo.cropVideo(using: newVidGeo)
+        if currentLayout.mode == .windowedInteractive {
+          geoSet = buildGeoSet(windowed: newIMGeo, from: currentLayout)
+        }
 
-      // Animate the crop to highlight the piece being cut out.
-      // Remember: this does not run if there is no crop (i.e. cropRect is nil) - see above
-      let cropAnimationDuration = immediately ? 0 : Constants.AnimationDuration.cropAnimation * 0.005
-      tasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .default) { [self] in
-        log.verbose{"Start exiting interactive mode: animating crop using: \(newIMGeo)"}
-        player.window.setFrameImmediately(newIMGeo)
-        // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
-        videoView.videoViewConstraints?.updateSpacerMin(to: newIMGeo.viewportMargins, spacerMin_Priority: .init(496))
+        // Animate the crop to highlight the piece being cut out.
+        // Remember: this does not run if there is no crop (i.e. cropRect is nil) - see above
+        let cropAnimationDuration = immediately ? 0 : Constants.AnimationDuration.cropAnimation * 0.005
+        tasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .default) { [self] in
+          log.verbose{"Start exiting interactive mode: animating crop using: \(newIMGeo)"}
+          isAnimatingLayoutTransition = true  // Prevent window listeners from interfering
+          player.window.setFrameImmediately(newIMGeo)
+          // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
+          videoView.videoViewConstraints?.updateSpacerMin(to: newIMGeo.viewportMargins, spacerMin_Priority: .init(496))
 
-        // Add the crop filter now, if applying crop. The timing should mostly add up and look like it cut out a piece of the whole.
-        // It's not perfect but better than before
-        if let cropController = cropSettingsView {
+          // Add the crop filter now, if applying crop. The timing should mostly add up and look like it cut out a piece of the whole.
+          // It's not perfect but better than before
           let newCropFilter = MPVFilter.crop(w: cropController.cropw, h: cropController.croph, x: cropController.cropx, y: cropController.cropy)
           /// Set the filter. This will result in `transformGeometry` getting called, which will trigger an exit from interactive mode.
           /// But that task can only happen once we return and relinquish the main queue.
           player.mpv.queue.async { [self] in
             _ = player.addVideoFilter(newCropFilter)
           }
-        }
 
-        // Fade out cropBox selection rect
-        cropController.cropBoxView.isHidden = true
-        cropController.cropBoxView.alphaValue = 0
-      })
+          // Fade out cropBox selection rect
+          cropController.cropBoxView.isHidden = true
+          cropController.cropBoxView.alphaValue = 0
+        })
+
+      } else {
+        // If no crop, remove any existing crop filter
+        tasks.append(.instantTask{ [self] in
+          isAnimatingLayoutTransition = true  // Prevent window listeners from interfering
+          player.mpv.queue.async { [self] in
+            player.removeCrop()
+          }
+        })
+      }
     }
 
 
