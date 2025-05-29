@@ -132,7 +132,7 @@ struct GeometryTransform {
       }
 
       pwc.animationPipeline.submitInstantTask { [self] in
-        log.verbose{"[GeoTF:\(name)] Starting main thread work"}
+        log.trace{"[GeoTF:\(name)] Starting main thread work"}
 
         // Cache this inside animation task to ensure serial access
         cxt.inputLayout = pwc.currentLayout
@@ -542,7 +542,7 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard cxt.sessionState.isStartingSession, let window = window else {
-      log.verbose("[GeoTF:\(cxt.name)] No initial layout tasks needed, sessState=\(cxt.sessionState)")
+      log.verbose("[GeoTF:\(cxt.name)] No initial layout tasks needed: sessState=\(cxt.sessionState)")
       return []
     }
 

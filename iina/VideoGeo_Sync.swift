@@ -14,12 +14,13 @@ extension GeometryTransform.Context {
   /// - `video-dec-params`
   /// - `video-out-params`.
   fileprivate struct MpvVideoParams: Decodable {
-    let aspect: Double
-    let par: Double
     let w: Int
     let h: Int
     let dw: Int
     let dh: Int
+    let par: Double
+    let sar: Double
+    let aspect: Double
     let rotate: Int
     let crop_x: Int
     let crop_y: Int
@@ -44,14 +45,13 @@ extension GeometryTransform.Context {
         return nil
       }
     }
-
   }  // end struct MpvVideoParams
 
 
   /// Sync VideoGeometry from mpv `video-dec-params` & `video-out-params`
   func syncVideoParamsFromMpv(startingWith videoGeo: VideoGeometry? = nil) -> VideoGeometry? {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-    log.verbose{"[GeoTF:\(name)] Starting transform of \(currentPlayback.url.lastPathComponent.pii.quoted), vid=\(String(vidTrackID))|\(currentMediaAudioStatus), sessionState=\(sessionState)"}
+    log.verbose{"[GeoTF:\(name)] Syncing videoGeo from mpv for \(currentPlayback.url.lastPathComponent.pii.quoted) vid=\(String(vidTrackID))|\(currentMediaAudioStatus) sessState=\(sessionState)"}
     let vid = Int(player.mpv.getInt(MPVOption.TrackSelection.vid))
     guard vidTrackID == vid else {
       log.debug{"[GeoTF:\(name)] Aborting transform, vid=\(String(vidTrackID)) != actual vid \(vidTrackID)"}
@@ -143,15 +143,17 @@ extension GeometryTransform.Context {
       } else {
         videoSizeDisplay = CGSize(width: dwidth, height: dheight)
       }
-      
-      let ours = newVideoGeo.videoSizeCA
-      // Allow for almost 1% variance from mpv due to rounding or error margin
-      let wDiff = abs(1 - (ours.width / CGFloat(dwidth)))
-      let hDiff = abs(1 - (ours.height / CGFloat(dheight)))
-      if wDiff >= 0.01 || hDiff >= 0.01 {
-        player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-B failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours))! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect) videoSizeD=\(videoSizeDisplay) dispAspect=\(videoSizeDisplay.mpvAspect)"}
+
+      if Logger.isErrorEnabled {
+        let ours = newVideoGeo.videoSizeCA
+        // Allow for almost 1% variance from mpv due to rounding or error margin
+        let wDiff = abs(1 - (ours.width / CGFloat(dwidth)))
+        let hDiff = abs(1 - (ours.height / CGFloat(dheight)))
+        if wDiff >= 0.01 || hDiff >= 0.01 {
+          player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-B failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours))! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect) videoSizeD=\(videoSizeDisplay)|\(videoSizeDisplay.mpvAspect)"}
+        }
       }
-      
+
       newVideoGeo = newVideoGeo.clone(videoSizeDisplayOverride: videoSizeDisplay)
 
       if !currentPlayback.isNetworkResource {
@@ -200,7 +202,7 @@ extension GeometryTransform.Context {
 
       if let json = mpv.getString(mpvPropertyName) {
         if Logger.isVerboseEnabled {
-          log.verbose{"[GeoTF:\(name)] Vid \(vidTrackID) has mpv \(mpvPropertyName)=\(json)"}
+          log.verbose{"[GeoTF:\(name)] VidTrack-\(vidTrackID) mpv \(mpvPropertyName): \(json)"}
         }
         let videoParams = MpvVideoParams.fromJSON(json, mpvPropertyName, log)
         return videoParams
@@ -208,7 +210,7 @@ extension GeometryTransform.Context {
 
       retryNum += 1
       guard retryNum <= retriesMax else {
-        log.verbose{"[GeoTF:\(name)] Vid \(vidTrackID) has mpv \(mpvPropertyName)=nil"}
+        log.verbose{"[GeoTF:\(name)] Vid \(vidTrackID) has mpv \(mpvPropertyName): nil"}
         return nil
       }
       let pauseDuration = Constants.TimeInterval.videoParamsRetryInterval

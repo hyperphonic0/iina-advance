@@ -1465,7 +1465,7 @@ class PlayerCore: NSObject {
       return
     }
 
-    let tf = GeometryTransform("DSizeUpdate", self, video: { cxt -> VideoGeometry? in
+    let tf = GeometryTransform("DSize", self, video: { cxt -> VideoGeometry? in
       let newVideoGeo = cxt.syncVideoParamsFromMpv()
 //      guard cxt.oldGeo.video.videoSizeDisplay != newVideoGeo?.videoSizeDisplay else {
 //        return nil
