@@ -629,7 +629,11 @@ extension PlayerWindowController {
     hideSeekPreviewImmediately()
     quickSettingView.reload()
     updateTitle()
-    playlistView.scrollPlaylistToCurrentItem()
+    if currentLayout.isPlaylistVisible {
+      playlistView.scrollPlaylistToCurrentItem()
+    } else {
+      playlistView.needsScrollToCurrentItem = true  // reset flag for when it does open
+    }
 
     // FIXME: here be race conditions
     if case .newReplacingExisting = sessionState {

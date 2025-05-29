@@ -35,6 +35,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   /// Currently displayed playlist rows. Should always be updated from `player.info.playlist`
   var displayedPlaylist: [PlaybackID] = []
 
+  /// Cannot reliably scroll to current item until after the table finishes loading. So set this flag first.
+  /// It will cause `scrollPlaylistToCurrentItem` to be called when done loading.
+  var needsScrollToCurrentItem: Bool = true
+
   weak var player: PlayerCore!
   weak var windowController: PlayerWindowController! {
     didSet {
@@ -279,7 +283,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   func scrollPlaylistToCurrentItem() {
     guard let playlistTableView else { return }
     if let entryIndex = player.info.currentPlayback?.playlistPos {
-      player.log.trace{"Scrolling playlist table to row \(entryIndex)"}
+      player.log.verbose{"Scrolling playlist table to index \(entryIndex)"}
       playlistTableView.scrollRowToVisible(entryIndex)
     }
   }
@@ -314,6 +318,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       refreshNowPlayingIndex()
       updateCachesForAllItems()
       removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
+      if needsScrollToCurrentItem {
+        needsScrollToCurrentItem = false
+        scrollPlaylistToCurrentItem()
+      }
     }
 
     if animate {
