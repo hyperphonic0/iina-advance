@@ -1398,26 +1398,8 @@ class PlayerCore: NSObject {
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    let tf = GeometryTransform("UserRotation", self,
-                               video: { [self] cxt -> VideoGeometry? in
-      guard userRotation != cxt.oldGeo.video.userRotation else { return nil }
-      log.verbose{"[GeoTF:\(cxt.name)] Applying rotation: \(userRotation)"}
-      // Update window geometry
-      sendOSD(.rotation(userRotation))
-      let oldVideoGeo = cxt.oldGeo.video
-
-      let videoSizeDisplayOverride: CGSize?
-      if let oldVideoSizeDisplayOverride = oldVideoGeo.videoSizeDisplayOverride {
-        let orientationWillChange = ((oldVideoGeo.userRotation - userRotation) %% 180) != 0
-        if orientationWillChange {
-          videoSizeDisplayOverride = CGSize(width: oldVideoSizeDisplayOverride.height, height: oldVideoSizeDisplayOverride.width)
-        } else {
-          videoSizeDisplayOverride = oldVideoSizeDisplayOverride
-        }
-      } else {
-        videoSizeDisplayOverride = nil
-      }
-      return oldVideoGeo.clone(userRotation: userRotation, videoSizeDisplayOverride: videoSizeDisplayOverride)
+    let tf = GeometryTransform("UserRotation", self, video: { cxt -> VideoGeometry? in
+      cxt.syncVideoParamsFromMpv()
     })
     windowController.animationPipeline.submit(tf)
   }

@@ -15,7 +15,7 @@ class MediaPlayerIntegration {
   private let remoteCommand = MPRemoteCommandCenter.shared()
 
   func update() {
-    DispatchQueue.execSyncOrAsyncIfNotIn(.main) { [self] in
+    DispatchQueue.main.execOrAsync{ [self] in
       guard !AppDelegate.shared.isTerminating else { return }
       let newEnablement = Preference.bool(for: .useMediaKeys)
       updateEnablement(to: newEnablement)

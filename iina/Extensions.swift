@@ -2209,11 +2209,21 @@ extension DispatchQueue {
     return isExpected
   }
 
-  public static func execSyncOrAsyncIfNotIn(_ dq: DispatchQueue, execute work: @escaping @Sendable @convention(block) () -> Void) {
+  public static func execOrAsyncIfNotIn(_ dq: DispatchQueue, execute work: @escaping @Sendable @convention(block) () -> Void) {
     if DispatchQueue.isExecutingIn(dq, logError: false) {
       work()
     } else {
       dq.async {
+        work()
+      }
+    }
+  }
+
+  public func execOrAsync(execute work: @escaping @Sendable @convention(block) () -> Void) {
+    if DispatchQueue.isExecutingIn(self, logError: false) {
+      work()
+    } else {
+      async {
         work()
       }
     }

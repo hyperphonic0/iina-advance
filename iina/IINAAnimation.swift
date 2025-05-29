@@ -166,12 +166,8 @@ extension IINAAnimation {
     /// Will execute without animation if motion reduction is enabled, or if wrapped in a call to `IINAAnimation.disableAnimation()`.
     /// If animating, it uses either the supplied `duration` for duration, or if that is not provided, uses `Constants.AnimationDuration.standard`.
     func submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
-      if DispatchQueue.isExecutingIn(.main, logError: false) {
+      DispatchQueue.main.execOrAsync { [self] in
         _submit(tasks, then: doAfter)
-      } else {
-        DispatchQueue.main.async { [self] in
-          _submit(tasks, then: doAfter)
-        }
       }
     }
 

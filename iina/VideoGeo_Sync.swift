@@ -173,6 +173,10 @@ extension GeometryTransform.Context {
       log.verbose{"[GeoTF:\(name)] Changing selectedCropLabel: \(oldVideoGeo.selectedCropLabel.quoted) → \(cropLabel.quoted)"}
       let osdLabel = cropLabel.isEmpty ? AppData.customCropIdentifier : cropLabel
       player.sendOSD(.crop(osdLabel))
+    } else if userRotation != oldVideoGeo.userRotation {
+      log.verbose{"[GeoTF:\(name)] Changing rotation: \(userRotation)"}
+      // Update window geometry
+      player.sendOSD(.rotation(userRotation))
     }
 
     log.debug{"[GeoTF:\(name)] Derived videoGeo from mpv video-params: \(newVideoGeo)"}
