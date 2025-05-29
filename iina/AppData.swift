@@ -273,16 +273,16 @@ struct Constants {
     static let historyTableCompleteFileStatusReload = 600.0
   }
   struct AnimationDuration {
-    static var standard: CGFloat = CGFloat(Preference.float(for: .animationDurationDefault))
+    static var standard: CGFloat = Preference.double(for: .animationDurationDefault)
     static var tableUIChange: CGFloat = standard
     static var tableUIFlash: CGFloat = 0.2
     static var videoReconfig: CGFloat = standard * 0.5
     static var initialVideoReconfig: CGFloat = standard
-    static var fullScreenTransition: CGFloat = CGFloat(Preference.float(for: .animationDurationFullScreen))
+    static var fullScreenTransition: CGFloat = Preference.double(for: .animationDurationFullScreen)
     static var nativeFullScreenTransition: CGFloat = 0.5
     static var btnLayoutChange: CGFloat = standard * 0.25
-    static var osdAnimation: CGFloat = CGFloat(Preference.float(for: .animationDurationOSD))
-    static var cropAnimation: CGFloat = CGFloat(Preference.float(for: .animationDurationCrop))
+    static var osdAnimation: CGFloat = Preference.double(for: .animationDurationOSD)
+    static var cropAnimation: CGFloat = Preference.double(for: .animationDurationCrop)
     static var musicModeShowButtons: CGFloat = 0.2
     static var hideSeekPreview: CGFloat = osdAnimation * 0.5
   }
@@ -313,7 +313,6 @@ struct Constants {
   }
   struct Sidebar {
     static let anyPluginID = "..anyPlugin.."
-    static let animationDuration: CGFloat = 0.2
 
     // How close the cursor has to be horizontally to the edge of the sidebar in order to trigger its resize:
     static let resizeActivationRadius: CGFloat = 10.0
