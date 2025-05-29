@@ -328,12 +328,6 @@ class MPVController: NSObject {
     return ""
   }
 
-  /// Start listening for the given property
-  func observe(property: String, format: mpv_format = MPV_FORMAT_DOUBLE) {
-    player.log.verbose("Adding mpv observer for prop \(property.quoted)")
-    mpv_observe_property(mpv, 0, property, format)
-  }
-
   // MARK: - Filters
 
   /// Get filter. only "af" or "vf" is supported for name

@@ -1447,25 +1447,29 @@ class PlayerCore: NSObject {
     guard !isRestoring else { return }
 
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
+    guard videoGeo.userAspectLabel != aspectLabel else { return }
 
-    let tf = GeometryTransform("AspectOverride", self,
-                               video: { [self] cxt -> VideoGeometry? in
-      let oldVideoGeo = cxt.oldGeo.video
-      guard oldVideoGeo.userAspectLabel != aspectLabel else { return nil }
+    // Send update to mpv
+    let mpvValue = Aspect.mpvVideoAspectOverride(fromAspectLabel: aspectLabel)
+    log.verbose{"Setting mpv video-aspect-override ≔ \(mpvValue.quoted)"}
+    mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
+  }
 
-      // Send update to mpv
-      let mpvValue = Aspect.mpvVideoAspectOverride(fromAspectLabel: aspectLabel)
-      log.verbose{"[GeoTF:\(cxt.name)] Setting mpv video-aspect-override to: \(mpvValue.quoted)"}
-      mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
+  func displaySizeDidChange() {
+    guard !isRestoring else { return }
+    // This is a very important check when entering interactive mode. Its transition first removes
+    // the crop filter, which triggers a dw/dh update change event which brings us here.
+    // But the interactive mode transition should handle everything. Do not step on it.
+    guard !windowController.isAnimatingLayoutTransition else {
+      log.verbose{"Ignoring dw or dh update: isAnimatingLayoutTransition=Y"}
+      return
+    }
 
-      // FIXME: Default aspect needs i18n
-      sendOSD(.aspect(aspectLabel))
-
-      // Change video size:
-      log.verbose{"[GeoTF:\(cxt.name)] Changing userAspectLabel: \(oldVideoGeo.userAspectLabel.quoted) → \(aspectLabel.quoted)"}
-
-      let newVideoGeo = oldVideoGeo.clone(userAspectLabel: aspectLabel, videoSizeDisplayOverride: nil)
-      guard let newVideoGeo = cxt.syncVideoParamsFromMpv(startingWith: newVideoGeo) else { return nil }
+    let tf = GeometryTransform("DSizeUpdate", self, video: { cxt -> VideoGeometry? in
+      let newVideoGeo = cxt.syncVideoParamsFromMpv()
+//      guard cxt.oldGeo.video.videoSizeDisplay != newVideoGeo?.videoSizeDisplay else {
+//        return nil
+//      }
       return newVideoGeo
     })
     windowController.animationPipeline.submit(tf)

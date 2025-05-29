@@ -21,18 +21,24 @@ extension GeometryTransform.Context {
     let dw: Int
     let dh: Int
     let rotate: Int
+    let crop_x: Int
+    let crop_y: Int
+    let crop_w: Int
+    let crop_h: Int
 
     static func fromJSON(_ json: String?, _ objName: String, _ log: Logger.Subsystem) -> MpvVideoParams? {
       guard let json else {
         log.error{"Failed to parse \(objName): obj is nil"}
         return nil
       }
-      guard let jsonData = json.data(using: .utf8) else {
+      let jsonModified = json.replacingOccurrences(of: "crop-", with: "crop_")  // make palatable for decoder default strategy
+      guard let jsonData = jsonModified.data(using: .utf8) else {
         log.error{"Failed create JSON data for \(objName)"}
         return nil
       }
       do {
-        return try JSONDecoder().decode(MpvVideoParams.self, from: jsonData)
+        let decoder = JSONDecoder()
+        return try decoder.decode(MpvVideoParams.self, from: jsonData)
       } catch {
         log.error{"Failed to get or parse \(objName) from mpv: \(error)"}
         return nil
@@ -81,14 +87,12 @@ extension GeometryTransform.Context {
     /// `codecAspect` should match the product `par * sar`
     let codecAspect = String(videoDecParams.aspect)
 
-    // Sync video-aspect-override. This does get synced from an mpv notification, but there is a noticeable delay
-    var userAspectLabelDerived = ""
+    // Sync video-aspect-override
+    let userAspectLabel: String
     if let mpvVideoAspectOverride = player.mpv.getString(MPVOption.Video.videoAspectOverride) {
-      userAspectLabelDerived = Aspect.bestLabelFor(mpvVideoAspectOverride)
-      if userAspectLabelDerived != oldVideoGeo.userAspectLabel {
-        // Not necessarily an error? Need to improve aspect name matching logic
-        log.debug{"[GeoTF:\(name)] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(oldVideoGeo.userAspectLabel.quoted))"}
-      }
+      userAspectLabel = Aspect.bestLabelFor(mpvVideoAspectOverride)
+    } else {
+      userAspectLabel = ""
     }
 
     // Sync video's raw dimensions from mpv. This is especially important for streaming videos, which won't have cached videoMeta.
@@ -105,28 +109,23 @@ extension GeometryTransform.Context {
       rawHeight = nil
     }
 
-    // TODO: sync video-crop (actually, add support for video-crop...)
+    let hasCrop = !(videoOutParams.crop_x == 0 && videoOutParams.crop_y == 0 &&
+                    videoOutParams.crop_w == rawWidth && videoOutParams.crop_h == rawHeight)
+    // Derive crop label from video-out-params (is none if full-sized)
+    let cropLabel = hasCrop ? player.deriveCropLabel(x: videoOutParams.crop_x, y: videoOutParams.crop_y,
+                                                     w: videoOutParams.crop_w, h: videoOutParams.crop_h)! : AppData.noneCropIdentifier
 
-    let streamRotation = player.mpv.getInt(MPVProperty.videoParamsRotate)
+    let streamRotation = videoDecParams.rotate
     // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
     let userRotation = player.mpv.getInt(MPVOption.Video.videoRotate)
-
-#if DEBUG
-    // TODO: clean up these checks after doing more research
-    if streamRotation != videoDecParams.rotate {
-      player.log.error{"[\(name)] ❌ Mismatch: streamRotation (\(streamRotation)) != videoDecParams.rotate (\(videoDecParams.rotate))"}
-    }
-    if streamRotation != videoOutParams.rotate {
-      player.log.error{"[\(name)] ❌ Mismatch: streamRotation (\(streamRotation)) != videoOutParams.rotate (\(videoOutParams.rotate))"}
-    }
-#endif
 
     // If opening window, videoGeo may still have the global (default) log. Update it
     var newVideoGeo = oldVideoGeo.clone(rawWidth: rawWidth, rawHeight: rawHeight,
                                         decodedAspectLabel: codecAspect,
-                                        userAspectLabel: userAspectLabelDerived,
+                                        userAspectLabel: userAspectLabel,
                                         streamRotation: streamRotation,
                                         userRotation: userRotation,
+                                        selectedCropLabel: cropLabel,
                                         videoSizeDisplayOverride: nil)
 
     // FIXME: audioStatus==notAudio for playlist which auto-plays audio
@@ -145,9 +144,11 @@ extension GeometryTransform.Context {
         videoSizeDisplay = CGSize(width: dwidth, height: dheight)
       }
       
-      let ours = newVideoGeo.videoSizeCAR
-      // Apparently mpv can sometimes add a pixel. Not our fault...
-      if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
+      let ours = newVideoGeo.videoSizeCA
+      // Allow for almost 1% variance from mpv due to rounding or error margin
+      let wDiff = abs(1 - (ours.width / CGFloat(dwidth)))
+      let hDiff = abs(1 - (ours.height / CGFloat(dheight)))
+      if wDiff >= 0.01 || hDiff >= 0.01 {
         player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-B failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours))! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect) videoSizeD=\(videoSizeDisplay) dispAspect=\(videoSizeDisplay.mpvAspect)"}
       }
       
@@ -158,6 +159,20 @@ extension GeometryTransform.Context {
         MediaMetaCache.shared.updateCachedVideoMeta(id: currentPlayback.id, newVideoGeo, log)
       }
     }
+
+    // Compare aspects by numbers for simplicity
+    let oldCustomAspectValue = Aspect(string: oldVideoGeo.userAspectLabel)?.value ?? 0.0
+    let newCustomAspectValue = Aspect(string: userAspectLabel)?.value ?? 0.0
+    if oldCustomAspectValue != newCustomAspectValue {
+      // FIXME: Default aspect needs i18n
+      log.verbose{"[GeoTF:\(name)] Changing userAspectLabel: \(oldVideoGeo.userAspectLabel.quoted) → \(userAspectLabel.quoted)"}
+      player.sendOSD(.aspect(userAspectLabel))
+    } else if oldVideoGeo.selectedCropLabel != cropLabel {
+      log.verbose{"[GeoTF:\(name)] Changing selectedCropLabel: \(oldVideoGeo.selectedCropLabel.quoted) → \(cropLabel.quoted)"}
+      let osdLabel = cropLabel.isEmpty ? AppData.customCropIdentifier : cropLabel
+      player.sendOSD(.crop(osdLabel))
+    }
+
     log.debug{"[GeoTF:\(name)] Derived videoGeo from mpv video-params: \(newVideoGeo)"}
     return newVideoGeo
   }

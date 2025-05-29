@@ -132,13 +132,13 @@ struct GeometryTransform {
       }
 
       pwc.animationPipeline.submitInstantTask { [self] in
+        log.verbose{"[GeoTF:\(name)] Starting main thread work"}
+
         // Cache this inside animation task to ensure serial access
         cxt.inputLayout = pwc.currentLayout
 
         // Update context's geo with current window frame
         cxt.oldGeo = pwc.buildGeoSet(from: cxt.outputLayout, baseGeoSet: cxt.oldGeo, forceWinFrameUpdate: true)
-
-        log.verbose{"[GeoTF:\(name)] Building transition tasks"}
 
         /// 3. (Optional) Transition window to initial layout. Must exexcute before `buildApplyTransformTasks`.
         /// Will return` []` if not applicable.
@@ -371,8 +371,10 @@ struct GeometryTransform {
         tasks = pwc.buildApplyMusicModeGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo,
                                                 duration: duration, showDefaultArt: showDefaultArt)
       default:
-        log.error{"[GeoTF:\(name)] INVALID MODE: \(outputLayout.mode)"}
+        // Interactive mode. Should be handled by its special code. Don't step on it.
+        log.debug{"[GeoTF:\(name)] Invalid mode for TF: \(outputLayout.mode)"}
         tasks = []
+        // Fall through and add post-work task
       }
 
       // Task: post-transform work
@@ -540,6 +542,7 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard cxt.sessionState.isStartingSession, let window = window else {
+      log.verbose("[GeoTF:\(cxt.name)] No initial layout tasks needed, sessState=\(cxt.sessionState)")
       return []
     }
 
@@ -661,7 +664,7 @@ extension PlayerWindowController {
     isAnimatingLayoutTransition = true
 
     // Send GeometrySet object to builder so that it doesn't default to current window frame
-    log.verbose{"Setting initial \(cxt.outputLayout.spec), windowedModeGeo=\(outputGeoSet.windowed), musicModeGeo=\(outputGeoSet.musicMode)"}
+    log.verbose{"[GeoTF:\(cxt.name)] Setting initial \(cxt.outputLayout.spec), windowedModeGeo=\(outputGeoSet.windowed), musicModeGeo=\(outputGeoSet.musicMode)"}
 
     let isRestoring = cxt.sessionState.isRestoring
     let transitionName = "\(isRestoring ? "Restore" : "Set")InitialLayout"
@@ -678,7 +681,7 @@ extension PlayerWindowController {
           try task.runFunc()
         }
       } catch {
-        log.error{"Failed to run initial layout tasks: \(error)"}
+        log.error{"[GeoTF:\(cxt.name)] Failed to run initial layout tasks: \(error)"}
       }
 
       if !isRestoring {
@@ -690,13 +693,13 @@ extension PlayerWindowController {
         }
 
         if !cxt.outputLayout.isFullScreen, Preference.bool(for: .alwaysFloatOnTop) && !player.info.isPaused {
-          log.verbose("Setting window OnTop=Y per app pref")
+          log.verbose("[GeoTF:\(cxt.name)] Setting window OnTop=Y per app pref")
           setWindowFloatingOnTop(true, from: cxt.outputLayout)
         }
       }
 
       /// Note: `isAnimatingLayoutTransition` should be `false` now
-      log.verbose("Done with transition to initial layout")
+      log.verbose("[GeoTF:\(cxt.name)] Done with transition to initial layout")
     })
 
     if cxt.needsNativeFullScreen {
@@ -711,7 +714,7 @@ extension PlayerWindowController {
       /// To check this, build another `LayoutSpec` from the global prefs, then compare it to the player's.
       let prefsSpec = LayoutSpec.fromPreferences(fillingInFrom: cxt.outputLayout.spec)
       if cxt.outputLayout.spec.hasSamePrefsValues(as: prefsSpec) {
-        log.verbose{"Saved layout is consistent with IINA global prefs"}
+        log.verbose{"[GeoTF:\(cxt.name)] Saved layout is consistent with IINA global prefs"}
       } else {
         // Not consistent. But we already have the correct spec, so just build a layout from it and transition to correct layout
 #if DEBUG
@@ -719,7 +722,7 @@ extension PlayerWindowController {
 #else
         log.warn{"Player's saved layout does not match IINA app prefs. Will fix & apply corrected layout"}
 #endif
-        log.debug{"SavedSpec: \(currentLayout.spec). PrefsSpec: \(prefsSpec)"}
+        log.debug{"[GeoTF:\(cxt.name)] SavedSpec: \(currentLayout.spec). PrefsSpec: \(prefsSpec)"}
         let transition = buildLayoutTransition(named: "FixInvalidInitialLayout",
                                                from: initialTransition.outputLayout, to: prefsSpec)
 
@@ -732,8 +735,6 @@ extension PlayerWindowController {
 
   private func buildTasksToRestoreLayout(_ priorState: PlayerSaveState,
                                          _ cxt: inout GeometryTransform.Context) -> [IINAAnimation.Task] {
-    log.verbose{"Setting geometries from prior state, windowed=\(priorState.geoSet.windowed), musicMode=\(priorState.geoSet.musicMode)"}
-
     if let priorLayoutSpec = priorState.layoutSpec {
       log.verbose("[GeoTF:\(cxt.name)] Transitioning to initial layout from prior window state")
 
@@ -759,7 +760,7 @@ extension PlayerWindowController {
     // Clean up windowedModeGeo if serious errors found with it
     let priorWindowedModeGeo = priorState.geoSet.windowed
     if !priorWindowedModeGeo.mode.isWindowed || priorWindowedModeGeo.screenFit.isFullScreen {
-      log.error{"While transitioning to initial layout: windowedModeGeo from prior state has invalid mode (\(priorWindowedModeGeo.mode)) or screenFit (\(priorWindowedModeGeo.screenFit)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead"}
+      log.error{"[GeoTF:\(cxt.name)] Initial layout: windowedModeGeo from prior state has invalid mode (\(priorWindowedModeGeo.mode)) or screenFit (\(priorWindowedModeGeo.screenFit)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead"}
       let lastClosedGeo = PlayerWindowController.windowedModeGeoLastClosed
       let windowed: PWinGeometry
       if lastClosedGeo.mode.isWindowed && !lastClosedGeo.screenFit.isFullScreen {
@@ -837,7 +838,7 @@ extension PlayerWindowController {
       let initialGeo = cxt.outputLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, video: cxt.outputVidGeo).refitted(using: .stayInside)
       let windowSize = initialGeo.windowFrame.size
       let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
-      log.verbose{"Initial layout: starting with tiny window, videoAspect=\(cxt.outputVidGeo.videoAspectCAR), windowSize=\(windowSize)"}
+      log.verbose{"[GeoTF:\(cxt.name)] Initial layout: starting with tiny window, videoAspect=\(cxt.outputVidGeo.videoAspectCAR), windowSize=\(windowSize)"}
       windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refitted(using: .stayInside)
     }
 

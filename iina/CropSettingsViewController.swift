@@ -105,13 +105,13 @@ class CropSettingsViewController: CropBoxViewController {
     let isAllSelected = cropx <= 0 && cropy <= 0 && cropw >= Int(videoSizeRaw.width) && croph >= Int(videoSizeRaw.height)
     let isNoSelection = cropw <= 0 || croph <= 0
 
-    if isAllSelected || isNoSelection {
-      player.log.verbose("Interactive mode submit: isAllSelected=\(isAllSelected.yn) isNoSelection=\(isNoSelection.yn) → setting crop to none")
-      // if no crop, remove the crop filter
-      player.removeCrop()
-      windowController.exitInteractiveMode()
-    } else {
-      player.mpv.queue.async { [self] in
+    player.mpv.queue.async { [self] in
+      if isAllSelected || isNoSelection {
+        player.log.verbose("Interactive mode submit: isAllSelected=\(isAllSelected.yn) isNoSelection=\(isNoSelection.yn) → setting crop to none")
+        // if no crop, remove the crop filter
+        player.removeCrop()
+        windowController.exitInteractiveMode()
+      } else {
         let newCropFilter: MPVFilter
         if player.videoGeo.streamRotation == 0 {
           newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)

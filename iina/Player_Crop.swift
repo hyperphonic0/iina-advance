@@ -21,7 +21,7 @@ extension PlayerCore {
       log.verbose{"Determined aspect=\(selectedAspect.value) from: x=\(x) y=\(y) w=\(w) h=\(h)"}
       // Probably a selection from the Quick Settings panel. See if there are any matches.
       if let knownAspectLabel = Aspect.findLabelForAspectRatio(selectedAspect.value, isCrop: true, strict: false) {
-        log.verbose{"Found known aspect label \(knownAspectLabel.quoted) for: x=\(x) y=\(y) w=\(w) h=\(h)"}
+        log.verbose{"Found known aspect label \(knownAspectLabel.quoted) from: x=\(x) y=\(y) w=\(w) h=\(h)"}
         return knownAspectLabel  // Known aspect-based crop
       }
       let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: NSSize(width: w, height: h))
@@ -112,25 +112,7 @@ extension PlayerCore {
   func updateSelectedCrop(to newCropLabel: String) {
     guard !isRestoring else { return }
 
-    let tf = GeometryTransform("SetCrop", self, video: { [self] cxt -> VideoGeometry? in
-      assert(DispatchQueue.isExecutingIn(mpv.queue))
-
-      let oldVideoGeo = cxt.oldGeo.video
-      guard oldVideoGeo.selectedCropLabel != newCropLabel else {
-        log.verbose{"[GeoTF:\(cxt.name)] No change to selectedCropLabel (\(newCropLabel.quoted))"}
-        return nil
-      }
-
-      log.verbose{"[GeoTF:\(cxt.name)] Changing selectedCropLabel: \(oldVideoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)"}
-
-      let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
-      sendOSD(.crop(osdLabel))
-
-      let newVideoGeo = oldVideoGeo.clone(selectedCropLabel: newCropLabel, videoSizeDisplayOverride: nil)
-      guard let newVideoGeo = cxt.syncVideoParamsFromMpv(startingWith: newVideoGeo) else { return nil }
-      return newVideoGeo
-    })
-    windowController.animationPipeline.submit(tf)
+    // TODO: remove this
   }
 
   func getCropFilter() -> MPVFilter? {

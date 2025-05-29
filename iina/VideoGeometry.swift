@@ -307,7 +307,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: Static util functions
 
   static func makeCropRect(fromCropLabel cropLabel: String, rawWidth: Int, rawHeight: Int) -> CGRect? {
-    if cropLabel == AppData.noneCropIdentifier {
+    if cropLabel.isEmpty || cropLabel == AppData.noneCropIdentifier {
       return nil
     }
 

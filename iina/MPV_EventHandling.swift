@@ -74,6 +74,12 @@ extension MPVController {
     }
   }
 
+  /// Start listening for the given property
+  func observe(property: String, format: mpv_format = MPV_FORMAT_DOUBLE) {
+    player.log.verbose("Adding mpv observer for prop \(property.quoted)")
+    mpv_observe_property(mpv, 0, property, format)
+  }
+
 
   /// As events arrive, read one at a time & handle it async
   func readEvents() {
@@ -288,13 +294,14 @@ extension MPVController {
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
       let dwidth = Int(data)
       player.log.verbose("Δ mpv prop: 'dwidth' ≔ \(dwidth)")
+      player.displaySizeDidChange()
 
     case MPVProperty.dheight:
       guard player.windowController.loaded else { break }
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
       let dheight = Int(data)
       player.log.verbose("Δ mpv prop: 'dheight' ≔ \(dheight)")
-
+      player.displaySizeDidChange()
     case MPVProperty.videoParamsPrimaries:
       fallthrough
 
