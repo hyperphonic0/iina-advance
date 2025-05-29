@@ -163,11 +163,7 @@ class MPVController: NSObject {
     mpv = nil
   }
 
-  // MARK: - Command & property
-
-  func errorString(_ code: Int32) -> String {
-    return String(cString: mpv_error_string(code))
-  }
+  // MARK: - Commands
 
   private func makeCArgs(_ command: MPVCommand, _ args: [String?]) -> [String?] {
     if args.count > 0 && args.last == nil {
@@ -237,12 +233,10 @@ class MPVController: NSObject {
     }
   }
 
-  func observe(property: String, format: mpv_format = MPV_FORMAT_DOUBLE) {
-    player.log.verbose("Adding mpv observer for prop \(property.quoted)")
-    mpv_observe_property(mpv, 0, property, format)
-  }
+  // MARK: - Properties (generic)
 
-  // Set property
+  // Property setters
+
   func setFlag(_ name: String, _ flag: Bool, level: Logger.Level = .debug) {
     log.log("Set property: \(name)=\(flag.yesno)", level: level)
     var data: Int = flag ? 1 : 0
@@ -273,6 +267,8 @@ class MPVController: NSObject {
     guard mpv != nil else { log.warn("Aborting setProperty: mpv is nil"); return -1 }
     return mpv_set_property_string(mpv, name, value)
   }
+
+  // Property getters
 
   func getEnum<T: MPVOptionValue>(_ name: String) -> T {
     guard let value = getString(name) else {
@@ -306,60 +302,41 @@ class MPVController: NSObject {
     return str
   }
 
-  /// Call this only after player is done loading
-  func updateLoggingLevels() {
-    mpvLogScanner.updateMpvEventLogLevel()
+  func getNode(_ name: String) -> Any? {
+    guard mpv != nil else { log.warn("Aborting mpv_get_property: mpv is nil"); return nil }
+    var node = mpv_node()
+    mpv_get_property(mpv, name, MPV_FORMAT_NODE, &node)
+    let parsed = try? MPVNode.parse(node)
+    mpv_free_node_contents(&node)
+    return parsed
+  }
 
-    player.mpv.queue.async { [self] in
-      guard player.isActive else { return }
-      player.mpv.setMpvEventLogSubscription()
+  func setNode(_ name: String, _ value: Any) {
+    guard var node = try? MPVNode.create(value) else {
+      log.error{"setNode: cannot encode value for \(name)"}
+      return
     }
+    log.debug{"Set property: \(name)=<a mpv node>"}
+    mpv_set_property(mpv, name, MPV_FORMAT_NODE, &node)
+    MPVNode.free(node)
   }
 
-  func setMpvEventLogSubscription() {
-    // Must still subscribe to min level or above, even if not logging
-    let subscriptionLevel = mpvLogScanner.mpvEventLogLevel.shouldLog(severity: Constants.minMpvEventLogLevel.rawValue) ? mpvLogScanner.mpvEventLogLevel : Constants.minMpvEventLogLevel
-
-    // Receive MPV_EVENT_LOG messages at given level of verbosity.
-    log.verbose{"Updating mpv log event subscription level to \(subscriptionLevel.string.quoted)"}
-    chkErr(mpv_request_log_messages(mpv, subscriptionLevel.string))
-  }
-
-  func getInputBindings(filterCommandsBy filter: ((Substring) -> Bool)? = nil) -> [KeyMapping] {
-    player.log.verbose{"Requesting from mpv: \(MPVProperty.inputBindings)"}
-    let parsed = getNode(MPVProperty.inputBindings)
-    return toKeyMappings(parsed)
-  }
-
-  func getInputKeyList() -> [String] {
-    player.log.verbose{"Requesting from mpv: \(MPVProperty.inputKeyList)"}
-    if let csv = getString(MPVProperty.inputKeyList) {
-      return csv.split(separator: ",").map{String($0)}
+  private func getFromMap(_ key: String, _ map: [String: Any?]) -> String {
+    if let keyOpt = map[key] as? Optional<String> {
+      return keyOpt!
     }
-    return []
+    return ""
   }
 
-  func toKeyMappings(_ inputBindingArray: Any?, filterCommandsBy filter: ((Substring) -> Bool)? = nil) -> [KeyMapping] {
-    var keyMappingList: [KeyMapping] = []
-    if let mapList = inputBindingArray as? [Any?] {
-      for mapRaw in mapList {
-        if let map = mapRaw as? [String: Any?] {
-          let key = getFromMap("key", map)
-          let cmd = getFromMap("cmd", map)
-          let comment = getFromMap("comment", map)
-          let cmdTokens = cmd.split(separator: " ")
-          if filter == nil || filter!(cmdTokens[0]) {
-            keyMappingList.append(KeyMapping(rawKey: key, rawAction: cmd, isIINACommand: false, comment: comment))
-          }
-        }
-      }
-    } else {
-      player.log.error("Failed to parse mpv input bindings!")
-    }
-    return keyMappingList
+  /// Start listening for the given property
+  func observe(property: String, format: mpv_format = MPV_FORMAT_DOUBLE) {
+    player.log.verbose("Adding mpv observer for prop \(property.quoted)")
+    mpv_observe_property(mpv, 0, property, format)
   }
 
-  /** Get filter. only "af" or "vf" is supported for name */
+  // MARK: - Filters
+
+  /// Get filter. only "af" or "vf" is supported for name
   func getFilters(_ name: String) -> [MPVFilter] {
     Logger.ensure(name == MPVProperty.vf || name == MPVProperty.af, "getFilters() do not support \(name)!")
 
@@ -495,6 +472,61 @@ class MPVController: NSObject {
     }
   }
 
+  // MARK: - Other
+
+  /// Call this only after player is done loading
+  func updateLoggingLevels() {
+    mpvLogScanner.updateMpvEventLogLevel()
+
+    player.mpv.queue.async { [self] in
+      guard player.isActive else { return }
+      player.mpv.setMpvEventLogSubscription()
+    }
+  }
+
+  func setMpvEventLogSubscription() {
+    // Must still subscribe to min level or above, even if not logging
+    let subscriptionLevel = mpvLogScanner.mpvEventLogLevel.shouldLog(severity: Constants.minMpvEventLogLevel.rawValue) ? mpvLogScanner.mpvEventLogLevel : Constants.minMpvEventLogLevel
+
+    // Receive MPV_EVENT_LOG messages at given level of verbosity.
+    log.verbose{"Updating mpv log event subscription level to \(subscriptionLevel.string.quoted)"}
+    chkErr(mpv_request_log_messages(mpv, subscriptionLevel.string))
+  }
+
+  func getInputBindings(filterCommandsBy filter: ((Substring) -> Bool)? = nil) -> [KeyMapping] {
+    player.log.verbose{"Requesting from mpv: \(MPVProperty.inputBindings)"}
+    let parsed = getNode(MPVProperty.inputBindings)
+    return toKeyMappings(parsed)
+  }
+
+  func getInputKeyList() -> [String] {
+    player.log.verbose{"Requesting from mpv: \(MPVProperty.inputKeyList)"}
+    if let csv = getString(MPVProperty.inputKeyList) {
+      return csv.split(separator: ",").map{String($0)}
+    }
+    return []
+  }
+
+  func toKeyMappings(_ inputBindingArray: Any?, filterCommandsBy filter: ((Substring) -> Bool)? = nil) -> [KeyMapping] {
+    var keyMappingList: [KeyMapping] = []
+    if let mapList = inputBindingArray as? [Any?] {
+      for mapRaw in mapList {
+        if let map = mapRaw as? [String: Any?] {
+          let key = getFromMap("key", map)
+          let cmd = getFromMap("cmd", map)
+          let comment = getFromMap("comment", map)
+          let cmdTokens = cmd.split(separator: " ")
+          if filter == nil || filter!(cmdTokens[0]) {
+            keyMappingList.append(KeyMapping(rawKey: key, rawAction: cmd, isIINACommand: false, comment: comment))
+          }
+        }
+      }
+    } else {
+      player.log.error("Failed to parse mpv input bindings!")
+    }
+    return keyMappingList
+  }
+
   func sendScriptMessage(to scriptName: String, args: [LosslessStringConvertible]) {
     guard mpv != nil else { log.warn("Aborting mpv_command_node: mpv is nil"); return }
     var resultNode = mpv_node()
@@ -508,32 +540,6 @@ class MPVController: NSObject {
     }
     log.verbose("Sending to script: \(stringArgs)")
     mpv_command_node(mpv, &argsNode, &resultNode)
-  }
-
-  func getNode(_ name: String) -> Any? {
-    guard mpv != nil else { log.warn("Aborting mpv_get_property: mpv is nil"); return nil }
-    var node = mpv_node()
-    mpv_get_property(mpv, name, MPV_FORMAT_NODE, &node)
-    let parsed = try? MPVNode.parse(node)
-    mpv_free_node_contents(&node)
-    return parsed
-  }
-
-  func setNode(_ name: String, _ value: Any) {
-    guard var node = try? MPVNode.create(value) else {
-      log.error{"setNode: cannot encode value for \(name)"}
-      return
-    }
-    log.debug{"Set property: \(name)=<a mpv node>"}
-    mpv_set_property(mpv, name, MPV_FORMAT_NODE, &node)
-    MPVNode.free(node)
-  }
-
-  private func getFromMap(_ key: String, _ map: [String: Any?]) -> String {
-    if let keyOpt = map[key] as? Optional<String> {
-      return keyOpt!
-    }
-    return ""
   }
 
   /// For mpv, window size is always the same as video size, but this is not always true with IINA due to exterior panels.
@@ -889,6 +895,10 @@ class MPVController: NSObject {
   }
 
   // MARK: - Utils
+
+  func errorString(_ code: Int32) -> String {
+    return String(cString: mpv_error_string(code))
+  }
 
   /**
    Utility function for checking mpv api error
