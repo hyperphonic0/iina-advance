@@ -1317,7 +1317,7 @@ extension PWinGeometry {
       } else {
         // we will do our best but our best may not be good enough
         log.error("VideoGeometry for legacy PWinGeometry is nil! Will try to derive it")
-        let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
+        let viewportSize = GeoUtil.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
         let videoSize = viewportSize - viewportMargins.totalSize
         let defaultVideoGeo: VideoGeometry = VideoGeometry.defaultGeometry(log)
         video = defaultVideoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height), videoSizeDisplayOverride: nil)

@@ -2873,7 +2873,7 @@ class PlayerCore: NSObject {
           if !oldThumbs.isCancelled, oldThumbs.mediaFilePath == currentPlayback.url.path,
              oldThumbs.videoTrackID == videoTrackID,
              thumbnailWidth == oldThumbs.thumbnailWidth {
-            log.debug{"Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for vid\(videoTrackID) (\(thumbnailWidth)px). Nothing to do"}
+            log.debug{"Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for vid\(videoTrackID) @ \(thumbnailWidth)px; nothing to do"}
             return
           } else {
             clearExistingThumbnails(for: currentPlayback)

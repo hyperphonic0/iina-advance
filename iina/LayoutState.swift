@@ -297,6 +297,10 @@ struct LayoutSpec {
   var oscBackgroundIsClear: Bool {
     return effectiveOSCColorScheme == .clearGradient
   }
+
+  var isAnySidebarVisible: Bool {
+    leadingSidebar.isVisible || trailingSidebar.isVisible
+  }
 }
 
 /// `LayoutState`: data structure which contains all the variables which describe a single layout configuration of the `PlayerWindow`.
@@ -527,6 +531,10 @@ struct LayoutState {
     case .trailingSidebar:
       return trailingSidebar
     }
+  }
+
+  var isAnySidebarVisible: Bool {
+    spec.isAnySidebarVisible
   }
 
   var isPlaylistVisible: Bool {

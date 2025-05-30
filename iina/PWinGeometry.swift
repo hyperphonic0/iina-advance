@@ -151,57 +151,19 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     self.insideBars = insideBars
     self.video = video
 
-    let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
-#if DEBUG
-    assert(windowFrame.width >= outsideBars.totalWidth + insideBars.totalWidth,
-           "Window width (\(windowFrame.width)) is too small to contain sidebars (inside=\(insideBars), outside=\(outsideBars))")
-    assert(windowFrame.height >= outsideBars.totalHeight + insideBars.totalHeight,
-           "Window height (\(windowFrame.width)) is too small to contain top + bottom bars (inside=\(insideBars.totalHeight), outside=\(outsideBars.totalHeight))")
-    assert(viewportSize.width >= 0 && viewportSize.height >= 0,
-           "Expected W ≥ 0 & H ≥ 0 for viewportSize, found \(viewportSize)")
-    assert(viewportSize.width.isInteger && viewportSize.height.isInteger,
-           "Expected integer W & H for viewportSize, found \(viewportSize)")
-#endif
+    let viewportSize = GeoUtil.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
 
     let targetVideoAspect = video.videoAspectDisplay
-    let videoSize = PWinGeometry.computeVideoSize(withAspectRatio: targetVideoAspect, toFillIn: viewportSize,
+    let videoSize = GeoUtil.computeVideoSize(withAspectRatio: targetVideoAspect, toFillIn: viewportSize,
                                                   minViewportMargins: viewportMargins, mode: mode)
     self.videoSize = videoSize
 
     if let viewportMargins {
       self.viewportMargins = viewportMargins
     } else {
-      self.viewportMargins = PWinGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize,
+      self.viewportMargins = GeoUtil.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize,
                                                                      insideBars: insideBars, mode: mode)
     }
-
-#if DEBUG
-    if false {
-      assert(topMarginHeight >= 0, "Expected topMarginHeight ≥ 0, found \(topMarginHeight)")
-
-      assert(outsideBars.top >= 0, "Expected outsideBars.top ≥ 0, found \(outsideBars.top)")
-      assert(outsideBars.trailing >= 0, "Expected outsideBars.trailing ≥ 0, found \(outsideBars.trailing)")
-      assert(outsideBars.bottom >= 0, "Expected outsideBars.bottom ≥ 0, found \(outsideBars.bottom)")
-      assert(outsideBars.leading >= 0, "Expected outsideBars.leading ≥ 0, found \(outsideBars.leading)")
-
-      assert(insideBars.top >= 0, "Expected insideBars.top ≥ 0, found \(insideBars.top)")
-      assert(insideBars.trailing >= 0, "Expected insideBars.trailing ≥ 0, found \(insideBars.trailing)")
-      assert(insideBars.bottom >= 0, "Expected insideBars.bottom ≥ 0, found \(insideBars.bottom)")
-      assert(insideBars.leading >= 0, "Expected insideBars.leading ≥ 0, found \(insideBars.leading)")
-
-      let sumViewportSize = CGSize(width: self.viewportMargins.totalWidth + self.videoSize.width,
-                                   height: self.viewportMargins.totalHeight + self.videoSize.height)
-      assert(((sumViewportSize.width == 0 || sumViewportSize.width == 0) &&
-              (viewportSize.width == 0 || viewportSize.height == 0)) ||
-             ((sumViewportSize.width == viewportSize.width) && (sumViewportSize.height == viewportSize.height)),
-             "videoSize \(self.videoSize) + margins \(self.viewportMargins) → sum: \(sumViewportSize) ≠ viewportSize \(viewportSize)")
-
-      let sumWindowSize = CGSize(width: sumViewportSize.width + outsideBars.totalWidth,
-                                 height: sumViewportSize.height + outsideBars.totalHeight + topMarginHeight)
-      assert(sumWindowSize.width == windowFrame.width && sumWindowSize.height == windowFrame.height,
-             "windowSize sum \(sumWindowSize) ≠ windowFrame.size \(windowFrame.size)")
-    }
-#endif
   }
 
   static func fullScreenWindowFrame(in screen: NSScreen, legacy: Bool) -> NSRect {
@@ -302,7 +264,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// This will be equal to `videoSize`, unless IINA is configured to allow the window to expand beyond
   /// the bounds of the video for a letterbox/pillarbox effect (separate from anything mpv includes)
   var viewportSize: NSSize {
-    return PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
+    return GeoUtil.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
   }
 
   var viewportFrameInScreenCoords: NSRect {
@@ -335,68 +297,23 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return topMarginHeight > 0
   }
 
-  // MARK: - "Minimum" calculations
-
-  static func minViewportMargins(forMode mode: PlayerWindowMode) -> MarginQuad {
-    switch mode {
-    case .windowedInteractive, .fullScreenInteractive:
-      return Constants.InteractiveMode.viewportMargins
-    default:
-      return MarginQuad.zero
-    }
-  }
+  // MARK: - Calculation Utils
 
   /// Finds minimum video size of the current geometry, assuming bars, mode, video aspect stay constant
   func minVideoSize() -> CGSize {
-    return PWinGeometry.minViewportSize(mode: mode, videoAspect: video.videoAspectCAR, insideBars: insideBars)
+    return GeoUtil.minViewportSize(mode: mode, videoAspect: video.videoAspectCAR, insideBars: insideBars)
   }
 
   // This also accounts for videoAspect, and space needed by inside sidebars, if any
   func minViewportSize(mode: PlayerWindowMode? = nil) -> NSSize {
     let mode = mode ?? self.mode
-    return PWinGeometry.minViewportSize(mode: mode, videoAspect: video.videoAspectCAR, insideBars: insideBars)
-  }
-
-  func minWindowWidth(mode: PlayerWindowMode? = nil) -> CGFloat {
-    return minWindowSize(mode: mode).width
-  }
-
-  func minWindowHeight(mode: PlayerWindowMode? = nil) -> CGFloat {
-    return minWindowSize(mode: mode).height
+    return GeoUtil.minViewportSize(mode: mode, videoAspect: video.videoAspectCAR, insideBars: insideBars)
   }
 
   func minWindowSize(mode: PlayerWindowMode? = nil) -> NSSize {
     let mode = mode ?? self.mode
-    return PWinGeometry.minWindowSize(mode: mode, videoAspect: video.videoAspectCAR, outsideBars: outsideBars, insideBars: insideBars)
+    return GeoUtil.minWindowSize(mode: mode, videoAspect: video.videoAspectCAR, outsideBars: outsideBars, insideBars: insideBars)
   }
-
-  static func minViewportSize(mode: PlayerWindowMode, videoAspect: CGFloat, insideBars: MarginQuad) -> NSSize {
-    var viewportMinW: CGFloat
-    switch mode {
-    case .windowedNormal, .fullScreenNormal:
-      viewportMinW = Constants.Window.minViewportSize.width
-      // Take sidebars into account:
-      viewportMinW = max(viewportMinW, insideBars.totalWidth + Constants.Sidebar.minWidthBetweenInsideSidebars)
-      return NSSize(width: viewportMinW, height: Constants.Window.minViewportSize.height)
-    case .windowedInteractive, .fullScreenInteractive:
-      viewportMinW = Constants.InteractiveMode.minWindowWidth
-      // assume viewport aspect is same as video for now
-      return NSSize(width: viewportMinW, height: Constants.Window.minViewportSize.height)
-    case .musicMode:
-      // note that a viewport height of zero would be ok if video was disabled in music mode
-      return NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: 0)
-    }
-  }
-
-  static func minWindowSize(mode: PlayerWindowMode, videoAspect: CGFloat, outsideBars: MarginQuad, insideBars: MarginQuad) -> NSSize {
-    let minViewportSize = minViewportSize(mode: mode, videoAspect: videoAspect, insideBars: insideBars)
-
-    let minWinWidth = minViewportSize.width + outsideBars.totalWidth
-    let minWinHeight = minViewportSize.height + outsideBars.totalHeight
-    return NSSize(width: minWinWidth, height: minWinHeight)
-  }
-
-  // MARK: - "Maximum" calculations
 
   fileprivate func computeMaxViewportSize(in containerSize: NSSize) -> NSSize {
     // Resize only the video. Panels outside the video do not change size.
@@ -405,247 +322,14 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                   height: containerSize.height - outsideBars.totalHeight - topMarginHeight)
   }
 
-  // Computes & returns the max video size with proper aspect ratio which can fit in the given container,
-  // after subtracting outside bars
-  fileprivate func computeMaxVideoSize(in containerSize: NSSize) -> NSSize {
-    let maxViewportSize = computeMaxViewportSize(in: containerSize)
-    return PWinGeometry.computeVideoSize(withAspectRatio: video.videoAspectCAR, toFillIn: maxViewportSize, mode: mode)
-  }
-
-  // MARK: - Static Functions
-
-  static func areEqual(windowFrame1: NSRect? = nil, windowFrame2: NSRect? = nil, videoSize1: NSSize? = nil, videoSize2: NSSize? = nil) -> Bool {
-    if let windowFrame1, let windowFrame2 {
-      if !windowFrame1.equalTo(windowFrame2) {
-        return false
-      }
-    }
-    if let videoSize1, let videoSize2 {
-      if !(videoSize1.width == videoSize2.width && videoSize1.height == videoSize2.height) {
-        return false
-      }
-    }
-    return true
-  }
-
-  /// Returns the limiting frame for the given `screenFit`, inside which the player window must fit.
-  /// If no fit needed, returns `nil`.
-  static func getContainerFrame(forScreenID screenID: String, screenFit: ScreenFit) -> NSRect? {
-    let screen = NSScreen.getScreenOrDefault(screenID: screenID)
-
-    switch screenFit {
-    case .noConstraints:
-      return nil
-    case .stayInside, .centerInside:
-      return screen.visibleFrame
-    case .legacyFullScreen:
-      return screen.frame
-    case .nativeFullScreen:
-      return screen.frameWithoutCameraHousing
-    }
-  }
-
-  static func deriveViewportSize(from windowFrame: NSRect, topMarginHeight: CGFloat, outsideBars: MarginQuad) -> NSSize {
-    return NSSize(width: windowFrame.width - outsideBars.trailing - outsideBars.leading,
-                  height: windowFrame.height - outsideBars.top - outsideBars.bottom - topMarginHeight)
-  }
-
-  /// Snap `value` to `otherValue` if they are less than or equal to 1 px apart. If it can't snap, the number is
-  /// rounded to the nearest integer.
-  ///
-  /// This helps smooth out division imprecision. The goal is to end up with whole numbers in calculation results
-  /// without having to distort things. Fractional values will be interpreted differently by mpv, Core Graphics,
-  /// AppKit, which can ultimately result in jarring visual glitches during Core animations.
-  ///
-  /// It is the requestor's responsibility to ensure that `otherValue` is already a whole number.
-  static func snap(_ value: CGFloat, to otherValue: CGFloat) -> CGFloat {
-    if abs(value - otherValue) <= 1 {
-      return otherValue
-    } else {
-      return round(value)
-    }
-  }
-
-  static func computeVideoSize(withAspectRatio videoAspect: CGFloat, toFillIn viewportSize: NSSize,
-                               minViewportMargins: MarginQuad? = nil, mode: PlayerWindowMode) -> NSSize {
-    if viewportSize.width == 0 || viewportSize.height == 0 {
-      return NSSize.zero
-    }
-
-    let minMargins = minViewportMargins ?? self.minViewportMargins(forMode: mode)
-    let usableViewportSize = NSSize(width: viewportSize.width - minMargins.totalWidth,
-                                    height: viewportSize.height - minMargins.totalHeight)
-    let videoSize: NSSize
-    /// Compute `videoSize` to fit within `viewportSize` while maintaining `videoAspect`:
-    let videoWidth = snap(usableViewportSize.height * videoAspect, to: usableViewportSize.width)
-    if videoWidth <= usableViewportSize.width {  // video aspect is taller than viewport: shrink its width
-      videoSize = NSSize(width: videoWidth, height: usableViewportSize.height)
-    } else {  // video is wider, shrink to meet width
-      // Make sure to end up with whole numbers here! Decimal values can be interpreted differently by
-      // mpv, Core Graphics, AppKit, which will cause animation glitches
-      let videoHeight = snap(usableViewportSize.width / videoAspect, to: usableViewportSize.height)
-      videoSize = NSSize(width: usableViewportSize.width, height: videoHeight)
-    }
-
-#if DEBUG
-    let sumViewportSize = CGSize(width: minMargins.totalWidth + videoSize.width,
-                                 height: minMargins.totalHeight + videoSize.height)
-    assert(((sumViewportSize.width == 0 || sumViewportSize.width == 0) && (viewportSize.width == 0 || viewportSize.height == 0)) ||
-           ((sumViewportSize.width <= viewportSize.width) && (sumViewportSize.height <= viewportSize.height)),
-           "videoSize \(videoSize) + minMargins \(minMargins) → sum: \(sumViewportSize) > viewportSize \(viewportSize)")
-
-    assert((usableViewportSize.width - videoSize.width >= 0) && (usableViewportSize.height - videoSize.height >= 0),
-           "Derived videoSize \(videoSize) > usableViewportSize \(usableViewportSize)! (videoAspect: \(videoAspect), viewportSize: \(viewportSize), minViewportMargins: \(minMargins))")
-
-    assert(videoSize.width >= 0 && videoSize.height >= 0, "Expected W ≥ 0 & H ≥ 0 for videoSize, found \(videoSize)")
-    assert(videoSize.width.isInteger && videoSize.height.isInteger, "Expected integer W & H for videoSize, found \(videoSize)")
-#endif
-    return videoSize
-  }
-
-  static func computeBestViewportMargins(viewportSize: NSSize, videoSize: NSSize, insideBars: MarginQuad, mode: PlayerWindowMode) -> MarginQuad {
-    guard viewportSize.width > 0 && viewportSize.height > 0 else {
-      return MarginQuad.zero
-    }
-    if mode == .musicMode {
-      // Viewport size is always equal to video size in music mode
-      return MarginQuad.zero
-    }
-    var leadingMargin: CGFloat = 0
-    var trailingMargin: CGFloat = 0
-
-    var unusedWidth = max(0, viewportSize.width - videoSize.width)
-    if unusedWidth > 0 {
-
-      if mode == .fullScreenNormal {
-        leadingMargin += (unusedWidth * 0.5)
-        trailingMargin += (unusedWidth * 0.5)
-      } else {
-        let leadingSidebarWidth = insideBars.leading
-        let trailingSidebarWidth = insideBars.trailing
-
-        let viewportMidpointX = viewportSize.width * 0.5
-        let leadingVideoIdealX = viewportMidpointX - (videoSize.width * 0.5)
-        let trailingVideoIdealX = viewportMidpointX + (videoSize.width * 0.5)
-
-        let leadingSidebarClearance = leadingVideoIdealX - leadingSidebarWidth
-        let trailingSidebarClearance = viewportSize.width - trailingVideoIdealX - trailingSidebarWidth
-        let freeViewportWidthTotal = viewportSize.width - videoSize.width - leadingSidebarWidth - trailingSidebarWidth
-
-        if leadingSidebarClearance >= 0 && trailingSidebarClearance >= 0 {
-          /*
-           Ideal case: there is enough width to center video in viewport while clearing both inside sidebars.
-           Just center the video in the viewport. L==T (+/- 1pt)
-
-           Leading margin (L)           Window Center          Trailing margin (T)
-           |◄────────────────────►|             |             |◄────────────────────►|
-           ┌───────────┬────────────────────────|─────────────────┬──────────────────┐
-           │           │                        |                 │                  │
-           │           │          ┌─────────────|─────────────┐   │                  │
-           │Leading    │          │                           │   │ Trailing         │
-           │ InsideBar │          │         VideoView         │   │  InsideBar       │
-           │           │          │    (centered in window)   │   │                  │
-           │           │          │                           │   │                  │
-           │           │          │                           │   │                  │
-           │           │          └─────────────|─────────────┘   │                  │
-           │           │                        |                 │                  │
-           └───────────┴────────────────────────|─────────────────┴──────────────────┘
-           |◄─────────────────────────────Viewport─width────────────────────────────►|
-
-           */
-          leadingMargin += (unusedWidth * 0.5)
-          trailingMargin += (unusedWidth * 0.5)
-        } else if freeViewportWidthTotal >= 0 {
-          // We have enough space to realign video to fit within sidebars
-          leadingMargin += leadingSidebarWidth
-          trailingMargin += trailingSidebarWidth
-          unusedWidth = unusedWidth - (leadingSidebarWidth + trailingSidebarWidth)
-          let differenceBetweenLeadingAndTrailing = leadingSidebarWidth - trailingSidebarWidth
-          if differenceBetweenLeadingAndTrailing > 0 {
-            // Leading is wider. Give extra width to trailing to ideally even them out
-            let extraForTrailing = min(unusedWidth, differenceBetweenLeadingAndTrailing)
-            trailingMargin += extraForTrailing
-            unusedWidth -= extraForTrailing
-          } else if differenceBetweenLeadingAndTrailing < 0 {
-            // Trailing is wider. Give extra width to leading to ideally even them out
-            let extraForLeading = min(unusedWidth, -differenceBetweenLeadingAndTrailing)
-            leadingMargin += extraForLeading
-            unusedWidth -= extraForLeading
-          }
-          // If sidebars are equal widths, then margins are equal. Now just distribute remaining space equally to keep video centered.
-          leadingMargin += (unusedWidth * 0.5)
-          trailingMargin += (unusedWidth * 0.5)
-
-        } else if leadingSidebarWidth == 0 {
-          // Not enough margin to fit both sidebar and video, & only trailing sidebar visible.
-          // Allocate all margin to trailing sidebar
-          trailingMargin += unusedWidth
-        } else if trailingSidebarWidth == 0 {
-          // Not enough margin to fit both sidebar and video, & only leading sidebar visible.
-          // Allocate all margin to leading sidebar
-          leadingMargin += unusedWidth
-        } else {
-          // Not enough space for everything. Just center video between sidebars
-          let leadingSidebarTrailingX = leadingSidebarWidth
-          let trailingSidebarLeadingX = viewportSize.width - trailingSidebarWidth
-          let midpointBetweenSidebarsX = ((trailingSidebarLeadingX - leadingSidebarTrailingX) * 0.5) + leadingSidebarTrailingX
-          var leadingMarginNeededToCenter = midpointBetweenSidebarsX - (videoSize.width * 0.5)
-          var trailingMarginNeededToCenter = viewportSize.width - (midpointBetweenSidebarsX + (videoSize.width * 0.5))
-          // Do not allow negative margins. They would cause the video to move outside the viewport bounds
-          if leadingMarginNeededToCenter < 0 {
-            // Give the margin back to the other sidebar
-            trailingMarginNeededToCenter -= leadingMarginNeededToCenter
-            leadingMarginNeededToCenter = 0
-          }
-          if trailingMarginNeededToCenter < 0 {
-            leadingMarginNeededToCenter -= trailingMarginNeededToCenter
-            trailingMarginNeededToCenter = 0
-          }
-          // Allocate the scarce amount of unusedWidth proportionately to the demand:
-          let allocationFactor = unusedWidth / (leadingMarginNeededToCenter + trailingMarginNeededToCenter)
-
-          leadingMargin += leadingMarginNeededToCenter * allocationFactor
-          trailingMargin += trailingMarginNeededToCenter * allocationFactor
-        }
-      }
-
-      // Round to integers for a smoother animation
-      let leadingMarginRounded = leadingMargin.rounded(.down)
-      let trailingMarginRounded = trailingMargin.rounded()
-      let excessWidth = leadingMarginRounded + trailingMarginRounded - leadingMargin - trailingMargin
-      assert(excessWidth <= 1.0, "Excess width (\(excessWidth)) cardinality <= 1.0! LeadingMargin=\(leadingMargin) TrailingMargin=\(trailingMargin)")
-      leadingMargin = leadingMarginRounded
-      trailingMargin = trailingMarginRounded
-      trailingMargin -= excessWidth
-    }
-
-    Logger.log.trace {
-      let remainingWidthForVideo = viewportSize.width - (leadingMargin + trailingMargin)
-      return "[geo] Viewport width=\(viewportSize.width): Sidebars=[lead:\(insideBars.leading) trail:\(insideBars.trailing)] Margins=[lead:\(leadingMargin) trail:\(trailingMargin)] remainingWidthForVideo: \(remainingWidthForVideo), videoWidth: \(videoSize.width)"
-    }
-    let unusedHeight = viewportSize.height - videoSize.height
-    var topMargin = (unusedHeight * 0.5).rounded()
-    let btmMargin = topMargin
-    let excessHeight = topMargin + btmMargin - unusedHeight
-    if excessHeight != 0 {
-      topMargin -= excessHeight
-    }
-    let computedMargins = MarginQuad(top: topMargin, trailing: trailingMargin,
-                                  bottom: btmMargin, leading: leadingMargin)
-    assert(videoSize.height + computedMargins.totalHeight == viewportSize.height, "Bad VP margin height! V-Size=\(videoSize) + VP-width(computed)=\(computedMargins) != VP-width(actual)=\(viewportSize.height)")
-    assert(videoSize.width + computedMargins.totalWidth == viewportSize.width,
-           "Bad VP margin width! V-width=\(videoSize.width) + VP-Margins[leading=\(computedMargins.leading), trailing=\(computedMargins.trailing)] → VP-width(computed)=\(videoSize.width + computedMargins.totalWidth) != VP-width(actual)=\(viewportSize.width)")
-    return computedMargins
-  }
-
-  // MARK: - Instance Functions
+  // MARK: - Other Util Functions
 
   func hasEqual(windowFrame windowFrame2: NSRect? = nil, videoSize videoSize2: NSSize? = nil) -> Bool {
-    return PWinGeometry.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
+    return GeoUtil.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
   }
 
   func getContainerFrame(screenFit: ScreenFit? = nil) -> NSRect? {
-    return PWinGeometry.getContainerFrame(forScreenID: screenID, screenFit: screenFit ?? self.screenFit)
+    return GeoUtil.getContainerFrame(forScreenID: screenID, screenFit: screenFit ?? self.screenFit)
   }
 
   /// Adjusts the window origin for given `newWindowSize` such that the window's center does not move.
@@ -657,6 +341,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                             y: windowFrame.origin.y - deltaY)
     return newOrigin
   }
+
+  // MARK: - Fitted Resize Functions
+  // All of these call scalingViewport() to produce a PWinGeometry with consistent dimensions.
 
   /// Encapsulates logic for `windowWillResize`, but specfically for windowed modes.
   func resizingWindow(to requestedSize: NSSize,
@@ -694,10 +381,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return chosenGeo
   }
 
-  func refitted(using newFit: ScreenFit? = nil, lockViewportToVideoSize: Bool? = nil) -> PWinGeometry {
-    return scalingViewport(screenFit: newFit, lockViewportToVideoSize: lockViewportToVideoSize)
-  }
-
   /// Computes a new `PWinGeometry`, attempting to attain the given window size.
   func scalingWindow(to desiredWindowSize: NSSize? = nil,
                      screenID: String? = nil,
@@ -713,7 +396,14 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return scalingViewport(to: requestedViewportSize, screenID: screenID, screenFit: screenFit)
   }
 
-  /// Computes a new `PWinGeometry` from this one:
+  func refitted(using newFit: ScreenFit? = nil, lockViewportToVideoSize: Bool? = nil) -> PWinGeometry {
+    return scalingViewport(screenFit: newFit, lockViewportToVideoSize: lockViewportToVideoSize)
+  }
+
+  /// Computes a new, valid `PWinGeometry` from this one, resized appropriately using the given params.
+  ///
+  /// This is the central nexus for all scaling operations - all should call this one.
+  ///
   /// • If `desiredSize` is given, the `windowFrame` will be shrunk or grown as needed, as will the `videoSize` which will
   /// be resized to fit in the new `viewportSize` based on `videoAspect`.
   /// • If `mode` is provided, it will be applied to the resulting `PWinGeometry`.
@@ -740,7 +430,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let newFitOption = screenFit ?? (self.screenFit == .centerInside ? .stayInside : self.screenFit)
     let outsideBarsSize = outsideBars.totalSize
     let newScreenID = screenID ?? self.screenID
-    let containerFrame: NSRect? = PWinGeometry.getContainerFrame(forScreenID: newScreenID, screenFit: newFitOption)
+    let containerFrame: NSRect? = GeoUtil.getContainerFrame(forScreenID: newScreenID, screenFit: newFitOption)
     let maxViewportSize: NSSize?
     if let containerFrame {
       maxViewportSize = computeMaxViewportSize(in: containerFrame.size)
@@ -769,9 +459,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       }
 
       /// Compute `videoSize` to fit within `viewportSize` (minus `viewportMargins`) while maintaining `videoAspect`:
-      let newVideoSize = PWinGeometry.computeVideoSize(withAspectRatio: video.videoAspectCAR, toFillIn: newViewportSize, mode: mode)
+      let newVideoSize = GeoUtil.computeVideoSize(withAspectRatio: video.videoAspectCAR, toFillIn: newViewportSize, mode: mode)
       // Add min margins back in (needed for Interactive Mode)
-      let minViewportMargins = PWinGeometry.minViewportMargins(forMode: mode)
+      let minViewportMargins = GeoUtil.minViewportMargins(forMode: mode)
       newViewportSize = NSSize(width: newVideoSize.width + minViewportMargins.totalWidth,
                                height: newVideoSize.height + minViewportMargins.totalHeight)
     }
@@ -781,8 +471,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                              height: max(minViewportSize.height, newViewportSize.height))
 
     let oldViewportSize = viewportSize
-    newViewportSize = NSSize(width: PWinGeometry.snap(newViewportSize.width, to: oldViewportSize.width),
-                             height: PWinGeometry.snap(newViewportSize.height, to: oldViewportSize.height))
+    newViewportSize = NSSize(width: GeoUtil.snap(newViewportSize.width, to: oldViewportSize.width),
+                             height: GeoUtil.snap(newViewportSize.height, to: oldViewportSize.height))
 
     // Enforce this AFTER snapping to old size so that we don't snap to increased size!
     if let maxViewportSize {
@@ -807,14 +497,52 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       log.trace{"[geo] ScaleViewport: → windowFrame=\(newWindowFrame)"}
     }
 
-    return self.clone(windowFrame: newWindowFrame, screenID: newScreenID, screenFit: newFitOption, mode: mode)
+    let refittedGeo = self.clone(windowFrame: newWindowFrame, screenID: newScreenID, screenFit: newFitOption, mode: mode)
+
+#if DEBUG
+    if DebugConfig.validatePWinGeometry {
+      assert(windowFrame.width >= outsideBars.totalWidth + insideBars.totalWidth,
+             "Window width (\(windowFrame.width)) is too small to contain sidebars (inside=\(insideBars), outside=\(outsideBars))")
+      assert(windowFrame.height >= outsideBars.totalHeight + insideBars.totalHeight,
+             "Window height (\(windowFrame.width)) is too small to contain top + bottom bars (inside=\(insideBars.totalHeight), outside=\(outsideBars.totalHeight))")
+      assert(viewportSize.width >= 0 && viewportSize.height >= 0,
+             "Expected W ≥ 0 & H ≥ 0 for viewportSize, found \(viewportSize)")
+      assert(viewportSize.width.isInteger && viewportSize.height.isInteger,
+             "Expected integer W & H for viewportSize, found \(viewportSize)")
+
+      assert(topMarginHeight >= 0, "Expected topMarginHeight ≥ 0, found \(topMarginHeight)")
+
+      assert(outsideBars.top >= 0, "Expected outsideBars.top ≥ 0, found \(outsideBars.top)")
+      assert(outsideBars.trailing >= 0, "Expected outsideBars.trailing ≥ 0, found \(outsideBars.trailing)")
+      assert(outsideBars.bottom >= 0, "Expected outsideBars.bottom ≥ 0, found \(outsideBars.bottom)")
+      assert(outsideBars.leading >= 0, "Expected outsideBars.leading ≥ 0, found \(outsideBars.leading)")
+
+      assert(insideBars.top >= 0, "Expected insideBars.top ≥ 0, found \(insideBars.top)")
+      assert(insideBars.trailing >= 0, "Expected insideBars.trailing ≥ 0, found \(insideBars.trailing)")
+      assert(insideBars.bottom >= 0, "Expected insideBars.bottom ≥ 0, found \(insideBars.bottom)")
+      assert(insideBars.leading >= 0, "Expected insideBars.leading ≥ 0, found \(insideBars.leading)")
+
+      let sumViewportSize = CGSize(width: self.viewportMargins.totalWidth + self.videoSize.width,
+                                   height: self.viewportMargins.totalHeight + self.videoSize.height)
+      assert(((sumViewportSize.width == 0 || sumViewportSize.width == 0) &&
+              (viewportSize.width == 0 || viewportSize.height == 0)) ||
+             ((sumViewportSize.width == viewportSize.width) && (sumViewportSize.height == viewportSize.height)),
+             "videoSize \(self.videoSize) + margins \(self.viewportMargins) → sum: \(sumViewportSize) ≠ viewportSize \(viewportSize)")
+
+      let sumWindowSize = CGSize(width: sumViewportSize.width + outsideBars.totalWidth,
+                                 height: sumViewportSize.height + outsideBars.totalHeight + topMarginHeight)
+      assert(sumWindowSize.width == windowFrame.width && sumWindowSize.height == windowFrame.height,
+             "windowSize sum \(sumWindowSize) ≠ windowFrame.size \(windowFrame.size)")
+    }
+#endif
+    return refittedGeo
   }
 
   func scalingVideo(to desiredVideoSize: NSSize,
-                  screenID: String? = nil,
-                  screenFit: ScreenFit? = nil,
-                  lockViewportToVideoSize: Bool? = nil,
-                  mode: PlayerWindowMode? = nil) -> PWinGeometry {
+                    screenID: String? = nil,
+                    screenFit: ScreenFit? = nil,
+                    lockViewportToVideoSize: Bool? = nil,
+                    mode: PlayerWindowMode? = nil) -> PWinGeometry {
 
     let mode = mode ?? self.mode
     let lockViewportToVideoSize = lockViewportToVideoSize ?? Preference.bool(for: .lockViewportToVideoSize) || mode.alwaysLockViewportToVideoSize
@@ -835,7 +563,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     /// Enforce `videoView` aspectRatio: Recalculate height using width
     newVideoSize = NSSize(width: newWidth, height: round(newWidth / video.videoAspectCAR))
 
-    let containerFrame: NSRect? = PWinGeometry.getContainerFrame(forScreenID: screenID ?? self.screenID, screenFit: newFitOption)
+    let containerFrame: NSRect? = GeoUtil.getContainerFrame(forScreenID: screenID ?? self.screenID, screenFit: newFitOption)
     if let containerFrame {
       // Scale down to fit in bounds of container
       if newVideoSize.width > containerFrame.width {
@@ -847,7 +575,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       }
     }
 
-    let minViewportMargins = PWinGeometry.minViewportMargins(forMode: mode)
+    let minViewportMargins = GeoUtil.minViewportMargins(forMode: mode)
     let newViewportSize: NSSize
     if lockViewportToVideoSize {
       /// Use `videoSize` for `desiredViewportSize`:
@@ -891,6 +619,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     log.verbose("[geo] Minimal resize: applying desiredViewportSize \(desiredViewportSize)")
     return clone(video: newVidGeo).scalingViewport(to: desiredViewportSize)
   }
+
+  // MARK: - Naive Resize Functions
+  // These do not call scalingViewport, and can produce an invalid PWinGeometry if given an invalid one.
 
   /// Resizes the window appropriately to add or subtract from outside bar sizes (a bar in its "closed" state == 0).
   /// Adjusts window origin to prevent the viewport from moving (but clamps each dimension's size to the container/screen, if any).
@@ -1125,7 +856,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return self.clone(windowFrame: newWindowFrame)
   }
 
-  // MARK: Interactive mode
+  // MARK: - Interactive mode
 
   static func buildInteractiveModeWindow(windowFrame: NSRect, screenID: String, video: VideoGeometry) -> PWinGeometry {
     let outsideBars = MarginQuad(top: Constants.InteractiveMode.outsideTopBarHeight, trailing: 0,
@@ -1196,7 +927,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     // This will use .mpvAspect - need to be consistent with rounding!
     let croppedVideoAspect = newVidGeo.videoAspectC
-    let croppedVideoViewSize = PWinGeometry.computeVideoSize(withAspectRatio: croppedVideoAspect,
+    let croppedVideoViewSize = GeoUtil.computeVideoSize(withAspectRatio: croppedVideoAspect,
                                                              toFillIn: cropRectScaledToWindow.size,
                                                              minViewportMargins: .zero, mode: mode)
 

@@ -186,6 +186,7 @@ extension PlayerWindowController {
     viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("Viewport-Btm_OffsetFrom-CV-Btm-Constraint")
     viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
 
+    closeButtonView.leadingAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 4).isActive = true
   }
 
   private func initAlbumArtView() {
@@ -433,11 +434,11 @@ extension PlayerWindowController {
     bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = false
     bottomBarBtmOffsetFromContentViewBtmConstraint.identifier = .init("bottomBar-Btm_OffsetFrom-ContentView-Btm_Constraint")
 
-    bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: 0)
+    bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
     bottomBarLeadingSpaceConstraint.isActive = true
     bottomBarLeadingSpaceConstraint.identifier = .init("bottomBarLeadingSpaceConstraint")
 
-    bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0)
+    bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
     bottomBarTrailingSpaceConstraint.isActive = true
     bottomBarTrailingSpaceConstraint.identifier = .init("bottomBarTrailingSpaceConstraint")
 
@@ -450,7 +451,6 @@ extension PlayerWindowController {
 
   /// Prerequisites:
   /// 1. `viewportView` added to `contentView`.
-  /// 2. `closeButtonView` added to `contentView`.
   private func initSidebars(in contentView: NSView) {
     let sidebarWidth = Constants.Sidebar.settingsWidth
 
@@ -475,11 +475,15 @@ extension PlayerWindowController {
     leadingSidebarTrailingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
     leadingSidebarTrailingBorder.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: -0.5).isActive = true
 
+    // Add constraints to hide the sidebars initially, using reasonable values
+    setLeadingSidebarHorizontalConstraints(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
+
     leadingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor).isActive = true
     viewportView.bottomAnchor.constraint(equalTo: leadingSidebarView.bottomAnchor).isActive = true
 
-    // Add constraints to hide the sidebars initially, using reasonable values
-    setLeadingSidebarHorizontalConstraints(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
+    osdVisualEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingSidebarView.trailingAnchor, constant: 8).isActive = true
+
+    additionalInfoView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingSidebarView.trailingAnchor, constant: 8).isActive = true
 
     // - Trailing sidebar
 
@@ -502,14 +506,15 @@ extension PlayerWindowController {
     trailingSidebarLeadingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
     trailingSidebarLeadingBorder.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0.5).isActive = true
 
-    trailingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor).isActive = true
-    viewportView.bottomAnchor.constraint(equalTo: trailingSidebarView.bottomAnchor).isActive = true
-
     // Add constraints to hide the sidebars initially, using reasonable values
     setTrailingSidebarHorizontalConstraints(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
 
+    trailingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor).isActive = true
+    viewportView.bottomAnchor.constraint(equalTo: trailingSidebarView.bottomAnchor).isActive = true
 
-    closeButtonView.leadingAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 4).isActive = true
+    trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: osdVisualEffectView.trailingAnchor, constant: 8).isActive = true
+
+    trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: additionalInfoView.trailingAnchor, constant: 8).isActive = true
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews
@@ -766,9 +771,6 @@ extension PlayerWindowController {
     osdAccessoryProgress.usesThreadedAnimation = false
     osdVisualEffectView.roundCorners()
 
-    osdVisualEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingSidebarView.trailingAnchor, constant: 8).isActive = true
-    trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: osdVisualEffectView.trailingAnchor, constant: 8).isActive = true
-
     let osdMinWidthConstraint = osdVisualEffectView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
     osdMinWidthConstraint.priority = .init(900)
     osdMinWidthConstraint.isActive = true
@@ -795,11 +797,6 @@ extension PlayerWindowController {
     additionalInfoTitle.idString = "AddlInfo-TitleLabel"
     additionalInfoTitle.font = .systemFont(ofSize: 18)
     additionalInfoTitle.textColor = .labelColor
-
-    additionalInfoView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingSidebarView.trailingAnchor, constant: 8).isActive = true
-
-    trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: additionalInfoView.trailingAnchor, constant: 8).isActive = true
-
   }
 
   func initCustomWindowBorder(in contentView: NSView) {

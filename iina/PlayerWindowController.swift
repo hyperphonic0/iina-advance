@@ -1748,7 +1748,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let minViewportSizeWindowed = CGSize.computeMinSize(withAspect: newVideoAspect,
                                                           minWidth: minViewportSizeIM.width,
                                                           minHeight: minViewportSizeIM.height)
-      let minViewportMarginsIM = PWinGeometry.minViewportMargins(forMode: .windowedInteractive)
+      let minViewportMarginsIM = GeoUtil.minViewportMargins(forMode: .windowedInteractive)
       newViewportSize = NSSize(width: max(newViewportSize.width + minViewportMarginsIM.totalWidth, minViewportSizeWindowed.width),
                                height: max(newViewportSize.height + minViewportMarginsIM.totalHeight, minViewportSizeWindowed.height))
 

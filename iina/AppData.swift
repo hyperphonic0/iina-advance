@@ -643,6 +643,8 @@ struct DebugConfig {
   static var logBindingsRebuild: Bool { Preference.bool(for: .logKeyBindingsRebuild) }
 
 #if DEBUG
+  static let validatePWinGeometry = true
+
   /// Skip the Approve Restore prompt and retry restore if a failed previous restore was detected.
   static let alwaysApproveRestore = true
   static let enableScrollWheelDebug = false

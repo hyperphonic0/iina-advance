@@ -142,7 +142,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   }
 
   func hasEqual(windowFrame windowFrame2: NSRect? = nil, videoSize videoSize2: NSSize? = nil) -> Bool {
-    return PWinGeometry.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
+    return GeoUtil.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
   }
 
   func withVideoViewVisible(_ visible: Bool) -> MusicModeGeometry {
@@ -167,7 +167,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   /// Must also ensure that window stays within the bounds of the screen it is in. Almost all of the time the window  will be
   /// height-bounded instead of width-bounded.
   func refitted() -> MusicModeGeometry {
-    let containerFrame = PWinGeometry.getContainerFrame(forScreenID: screenID, screenFit: .stayInside)!
+    let containerFrame = GeoUtil.getContainerFrame(forScreenID: screenID, screenFit: .stayInside)!
 
     /// When the window's width changes, the video scales to match while keeping its aspect ratio,
     /// and the control bar (`musicModeControlBarView`) and playlist are pushed down.
@@ -221,7 +221,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     log.verbose("Scaling MusicMode video to desiredWidth \(newVideoWidth)")
 
     let newScreenID = screenID ?? self.screenID
-    let containerFrame: NSRect = PWinGeometry.getContainerFrame(forScreenID: newScreenID, screenFit: .stayInside)!
+    let containerFrame: NSRect = GeoUtil.getContainerFrame(forScreenID: newScreenID, screenFit: .stayInside)!
 
     // Constrain desired width within min and max allowed, then recalculate height from new value
     newVideoWidth = max(newVideoWidth, Constants.Distance.MusicMode.minWindowWidth)
