@@ -532,9 +532,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   let seekPreview = SeekPreview()
 
   @IBOutlet weak var leadingSidebarView: NSVisualEffectView!
-  @IBOutlet weak var leadingSidebarTrailingBorder: NSBox!  // shown if leading sidebar is "outside"
+  var leadingSidebarTrailingBorder = NSBox()  // shown if leading sidebar is "outside"
   @IBOutlet weak var trailingSidebarView: NSVisualEffectView!
-  @IBOutlet weak var trailingSidebarLeadingBorder: NSBox!  // shown if trailing sidebar is "outside"
+  var trailingSidebarLeadingBorder = NSBox()  // shown if trailing sidebar is "outside"
 
   @IBOutlet weak var bufferIndicatorView: NSVisualEffectView!
   @IBOutlet weak var bufferProgressLabel: NSTextField!

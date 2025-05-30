@@ -91,6 +91,7 @@ extension PlayerWindowController {
       initTopBarView(in: contentView)
       initBottomBarTopBorder()
       rebuildBottomBarView(in: contentView, style: .visualEffectView)
+      initSidebars(in: contentView)
       initPlaybackBtnsView()
       initPlaySliderAndTimeLabelsView()
       addSubviewsToPlaySliderAndTimeLabelsView(currentLayout.controlBarGeo)
@@ -445,6 +446,30 @@ extension PlayerWindowController {
     bottomBarTopBorder.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0.5).isActive = true
 
     self.bottomBarView = bottomBarView
+  }
+
+  private func initSidebars(in contentView: NSView) {
+    leadingSidebarView.addSubview(leadingSidebarTrailingBorder)
+    leadingSidebarTrailingBorder.idString = "LeadingSidebaTrailingBorder"
+    leadingSidebarTrailingBorder.boxType = .custom
+    leadingSidebarTrailingBorder.titlePosition = .noTitle
+    leadingSidebarTrailingBorder.borderWidth = 0
+    leadingSidebarTrailingBorder.borderColor = .clear
+    leadingSidebarTrailingBorder.fillColor = .quaternaryLabelColor
+    leadingSidebarTrailingBorder.translatesAutoresizingMaskIntoConstraints = false
+    leadingSidebarTrailingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
+    leadingSidebarTrailingBorder.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: -0.5).isActive = true
+
+    trailingSidebarView.addSubview(trailingSidebarLeadingBorder)
+    trailingSidebarLeadingBorder.idString = "TrailingSidebaLeadingBorder"
+    trailingSidebarLeadingBorder.boxType = .custom
+    trailingSidebarLeadingBorder.titlePosition = .noTitle
+    trailingSidebarLeadingBorder.borderWidth = 0
+    trailingSidebarLeadingBorder.borderColor = .clear
+    trailingSidebarLeadingBorder.fillColor = .quaternaryLabelColor
+    trailingSidebarLeadingBorder.translatesAutoresizingMaskIntoConstraints = false
+    trailingSidebarLeadingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+    trailingSidebarLeadingBorder.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0.5).isActive = true
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews

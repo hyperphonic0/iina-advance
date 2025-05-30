@@ -25,7 +25,6 @@
                 <outlet property="closeButtonVE" destination="4bB-aE-jrk" id="IZK-7t-1IL"/>
                 <outlet property="closeButtonView" destination="88M-Ln-4mc" id="Ucp-D3-qpe"/>
                 <outlet property="leadingSidebarToOSDSpaceConstraint" destination="LBY-By-mfi" id="bna-VC-p0r"/>
-                <outlet property="leadingSidebarTrailingBorder" destination="b0r-Lt-vGM" id="XL3-cZ-Idp"/>
                 <outlet property="leadingSidebarView" destination="XBs-34-TIm" id="Jqt-cB-r2i"/>
                 <outlet property="osdAccessoryProgress" destination="i10-rt-9cb" id="ZdR-ZV-uoQ"/>
                 <outlet property="osdAccessoryText" destination="lb1-5R-hR3" id="A7o-3l-NYe"/>
@@ -41,7 +40,6 @@
                 <outlet property="osdTrailingMarginConstraint" destination="20A-Y9-xnl" id="oM9-TJ-0KE"/>
                 <outlet property="osdVStackView" destination="g0j-zS-jKv" id="aoo-Tm-yhj"/>
                 <outlet property="osdVisualEffectView" destination="g0O-v5-RQj" id="V4X-8K-6O1"/>
-                <outlet property="trailingSidebarLeadingBorder" destination="exJ-CB-MoS" id="jY1-pX-sXL"/>
                 <outlet property="trailingSidebarToOSDSpaceConstraint" destination="zbm-D9-epN" id="TdE-wQ-5Me"/>
                 <outlet property="trailingSidebarView" destination="epo-S6-QVB" id="efz-TR-rAa"/>
                 <outlet property="viewportLeadingOffsetFromContentViewLeadingConstraint" destination="vZs-ut-z4j" id="E4F-6L-B6v"/>
@@ -61,7 +59,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" autoresizesSubviews="NO" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -193,38 +191,12 @@
                     </visualEffectView>
                     <visualEffectView identifier="Leading-Sidebar-View" autoresizesSubviews="NO" wantsLayer="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="XBs-34-TIm" userLabel="Leading-Sidebar View">
                         <rect key="frame" x="-360" y="0.0" width="360" height="400"/>
-                        <subviews>
-                            <box identifier="LeadingSidebaTrailingBorder" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" boxType="custom" borderType="line" borderWidth="0.0" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="b0r-Lt-vGM" userLabel="Leading-Sidebar-Trailing-Border Box">
-                                <rect key="frame" x="360" y="0.0" width="0.0" height="400"/>
-                                <color key="borderColor" red="0.48627450979999998" green="0.48627450979999998" blue="0.48627450979999998" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
-                                <color key="fillColor" name="quaternaryLabelColor" catalog="System" colorSpace="catalog"/>
-                            </box>
-                        </subviews>
-                        <constraints>
-                            <constraint firstItem="b0r-Lt-vGM" firstAttribute="top" secondItem="XBs-34-TIm" secondAttribute="top" id="0t5-Ws-sUl"/>
-                            <constraint firstItem="b0r-Lt-vGM" firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="-0.5" id="kK2-09-Tdi"/>
-                            <constraint firstItem="b0r-Lt-vGM" firstAttribute="bottom" secondItem="XBs-34-TIm" secondAttribute="bottom" id="vgH-Cz-bFf"/>
-                            <constraint firstItem="b0r-Lt-vGM" firstAttribute="trailing" secondItem="XBs-34-TIm" secondAttribute="trailing" id="wW0-Ry-p6J"/>
-                        </constraints>
                         <shadow key="shadow" blurRadius="12">
                             <color key="color" white="0.0" alpha="0.5" colorSpace="calibratedWhite"/>
                         </shadow>
                     </visualEffectView>
                     <visualEffectView identifier="Trailing-Sidebar-View" autoresizesSubviews="NO" wantsLayer="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="epo-S6-QVB" userLabel="Trailing-Sidebar View">
                         <rect key="frame" x="640" y="0.0" width="360" height="400"/>
-                        <subviews>
-                            <box identifier="TrailingSidebarLeadingBorder" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" boxType="custom" borderType="line" borderWidth="0.0" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="exJ-CB-MoS" userLabel="Trailing-Sidebar-Leading-Border Box">
-                                <rect key="frame" x="0.0" y="0.0" width="1" height="400"/>
-                                <color key="borderColor" red="0.48627450979999998" green="0.48627450979999998" blue="0.48627450979999998" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
-                                <color key="fillColor" name="quaternaryLabelColor" catalog="System" colorSpace="catalog"/>
-                            </box>
-                        </subviews>
-                        <constraints>
-                            <constraint firstItem="exJ-CB-MoS" firstAttribute="top" secondItem="epo-S6-QVB" secondAttribute="top" id="Wmi-nN-kAu"/>
-                            <constraint firstItem="exJ-CB-MoS" firstAttribute="leading" secondItem="epo-S6-QVB" secondAttribute="leading" id="jCv-Ul-U1b"/>
-                            <constraint firstItem="exJ-CB-MoS" firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="leading" constant="0.5" id="q7k-kg-0md"/>
-                            <constraint firstAttribute="bottom" secondItem="exJ-CB-MoS" secondAttribute="bottom" id="szs-cQ-8Cu"/>
-                        </constraints>
                         <shadow key="shadow" blurRadius="12">
                             <color key="color" white="0.0" alpha="0.5" colorSpace="calibratedWhite"/>
                         </shadow>
