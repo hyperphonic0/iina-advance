@@ -153,6 +153,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
 #if DEBUG
+    assert(windowFrame.width >= outsideBars.totalWidth + insideBars.totalWidth,
+           "Window width (\(windowFrame.width)) is too small to contain sidebars (inside=\(insideBars), outside=\(outsideBars))")
+    assert(windowFrame.height >= outsideBars.totalHeight + insideBars.totalHeight,
+           "Window height (\(windowFrame.width)) is too small to contain top + bottom bars (inside=\(insideBars.totalHeight), outside=\(outsideBars.totalHeight))")
     assert(viewportSize.width >= 0 && viewportSize.height >= 0,
            "Expected W ≥ 0 & H ≥ 0 for viewportSize, found \(viewportSize)")
     assert(viewportSize.width.isInteger && viewportSize.height.isInteger,

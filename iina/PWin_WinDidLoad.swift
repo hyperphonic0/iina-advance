@@ -463,9 +463,6 @@ extension PlayerWindowController {
     leadingSidebarView.translatesAutoresizingMaskIntoConstraints = false
     leadingSidebarView.autoresizesSubviews = false
 
-    leadingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor).isActive = true
-    viewportView.bottomAnchor.constraint(equalTo: leadingSidebarView.bottomAnchor).isActive = true
-
     // border
     leadingSidebarView.addSubview(leadingSidebarTrailingBorder)
     leadingSidebarTrailingBorder.idString = "LeadingSidebarTrailingBorder"
@@ -477,6 +474,9 @@ extension PlayerWindowController {
     leadingSidebarTrailingBorder.translatesAutoresizingMaskIntoConstraints = false
     leadingSidebarTrailingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
     leadingSidebarTrailingBorder.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: -0.5).isActive = true
+
+    leadingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor).isActive = true
+    viewportView.bottomAnchor.constraint(equalTo: leadingSidebarView.bottomAnchor).isActive = true
 
     // Add constraints to hide the sidebars initially, using reasonable values
     setLeadingSidebarHorizontalConstraints(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
@@ -502,12 +502,14 @@ extension PlayerWindowController {
     trailingSidebarLeadingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
     trailingSidebarLeadingBorder.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0.5).isActive = true
 
+    trailingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor).isActive = true
+    viewportView.bottomAnchor.constraint(equalTo: trailingSidebarView.bottomAnchor).isActive = true
+
+    // Add constraints to hide the sidebars initially, using reasonable values
     setTrailingSidebarHorizontalConstraints(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
 
-    // - Constraints between sidebars
 
-    trailingSidebarView.topAnchor.constraint(equalTo: leadingSidebarView.topAnchor).isActive = true
-    trailingSidebarView.bottomAnchor.constraint(equalTo: leadingSidebarView.bottomAnchor).isActive = true
+    closeButtonView.leadingAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 4).isActive = true
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews

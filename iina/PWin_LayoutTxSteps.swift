@@ -1701,7 +1701,6 @@ extension PlayerWindowController {
   /// • Inside top & inside bottom bars do not cast shadows over `viewportView`.
   private func updateDepthOrderOfBars(_ layout: LayoutState) {
     guard let window = window, let contentView = window.contentView else { return }
-    let topBar = layout.topBarPlacement
     let bottomBar = layout.bottomBarPlacement
     let leadingSidebar = layout.leadingSidebarPlacement
     let trailingSidebar = layout.trailingSidebarPlacement
@@ -1757,23 +1756,32 @@ extension PlayerWindowController {
   }
 
   private func updatePanelBlendingModes(to outputLayout: LayoutState) {
-    // Full screen + "behindWindow" doesn't blend properly and looks ugly
-    if outputLayout.topBarPlacement == .insideViewport || outputLayout.isFullScreen {
-      topBarView.blendingMode = .withinWindow
-    } else {
-      topBarView.blendingMode = .behindWindow
-    }
-
-    if let bottomBarView = bottomBarView as? NSVisualEffectView {
+    if outputLayout.topBarHeight > 0 {
       // Full screen + "behindWindow" doesn't blend properly and looks ugly
-      if outputLayout.bottomBarPlacement == .insideViewport || outputLayout.isFullScreen {
-        bottomBarView.blendingMode = .withinWindow
+      if outputLayout.topBarPlacement == .insideViewport || outputLayout.isFullScreen {
+        topBarView.blendingMode = .withinWindow
       } else {
-        bottomBarView.blendingMode = .behindWindow
+        topBarView.blendingMode = .behindWindow
       }
     }
 
-    updateSidebarBlendingMode(.leadingSidebar, layout: outputLayout)
-    updateSidebarBlendingMode(.trailingSidebar, layout: outputLayout)
+    if outputLayout.bottomBarHeight > 0 {
+      if let bottomBarView = bottomBarView as? NSVisualEffectView {
+        // Full screen + "behindWindow" doesn't blend properly and looks ugly
+        if outputLayout.bottomBarPlacement == .insideViewport || outputLayout.isFullScreen {
+          bottomBarView.blendingMode = .withinWindow
+        } else {
+          bottomBarView.blendingMode = .behindWindow
+        }
+      }
+    }
+
+    if outputLayout.leadingSidebar.isVisible {
+      updateSidebarBlendingMode(.leadingSidebar, layout: outputLayout)
+    }
+
+    if outputLayout.trailingSidebar.isVisible {
+      updateSidebarBlendingMode(.trailingSidebar, layout: outputLayout)
+    }
   }
 }

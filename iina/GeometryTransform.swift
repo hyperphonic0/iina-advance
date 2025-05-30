@@ -138,7 +138,7 @@ struct GeometryTransform {
         cxt.inputLayout = pwc.currentLayout
 
         // Update context's geo with current window frame
-        cxt.oldGeo = pwc.buildGeoSet(from: cxt.outputLayout, baseGeoSet: cxt.oldGeo, forceWinFrameUpdate: true)
+        cxt.oldGeo = pwc.buildGeoSet(from: cxt.outputLayout, baseGeoSet: cxt.oldGeo, forceWinFrameUpdate: !player.isRestoring)
 
         /// 3. (Optional) Transition window to initial layout. Must exexcute before `buildApplyTransformTasks`.
         /// Will return` []` if not applicable.
@@ -762,23 +762,33 @@ extension PlayerWindowController {
     }
 
     // Clean up windowedModeGeo if serious errors found with it
-    let priorWindowedModeGeo = priorState.geoSet.windowed
-    if !priorWindowedModeGeo.mode.isWindowed || priorWindowedModeGeo.screenFit.isFullScreen {
-      log.error{"[GeoTF:\(cxt.name)] Initial layout: windowedModeGeo from prior state has invalid mode (\(priorWindowedModeGeo.mode)) or screenFit (\(priorWindowedModeGeo.screenFit)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead"}
+    var geoSet = priorState.geoSet
+
+    if !geoSet.windowed.mode.isWindowed || geoSet.windowed.screenFit.isFullScreen {
+      log.error{"[GeoTF:\(cxt.name)] Initial layout: windowedModeGeo from prior state has invalid mode (\(geoSet.windowed.mode)) or screenFit (\(geoSet.windowed.screenFit)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead"}
+
       let lastClosedGeo = PlayerWindowController.windowedModeGeoLastClosed
       let windowed: PWinGeometry
       if lastClosedGeo.mode.isWindowed && !lastClosedGeo.screenFit.isFullScreen {
         windowed = cxt.outputLayout.convertWindowedModeGeometry(from: lastClosedGeo, video: priorState.geoSet.video,
-                                                                pinWidthOrHeightIfAtMax: false,
-                                                                pinToAnySideOfScreen: false, log)
+                                                                pinWidthOrHeightIfAtMax: false, pinToAnySideOfScreen: false, log)
       } else {
         windowed = cxt.outputLayout.buildDefaultInitialGeometry(screen: bestScreen, video: priorState.geoSet.video)
       }
-      let initialGeoSet = priorState.geoSet.clone(windowed: windowed)
-      return buildTransitionTasksToInitialLayout(cxt, initialGeoSet)
-    } else {
-      return buildTransitionTasksToInitialLayout(cxt, priorState.geoSet)
+      geoSet = geoSet.clone(windowed: windowed)
+
+    } else if geoSet.windowed.outsideBars.totalWidth + geoSet.windowed.insideBars.totalWidth > geoSet.windowed.windowFrame.width {
+      log.error{"[GeoTF:\(cxt.name)] Initial layout: windowedModeGeo from prior state has window size (\(geoSet.windowed.windowFrame.size)) which is too small to accomodate bars (outside=\(geoSet.windowed.outsideBars), inside=\(geoSet.windowed.insideBars)). Will close sidebars."}
+
+      cxt.outputLayout = LayoutState.buildFrom(cxt.outputLayout.spec.withSidebarsHidden())
+      let outsideNew = geoSet.windowed.outsideBars.clone(trailing: 0, leading: 0)
+      let insideNew = geoSet.windowed.insideBars.clone(trailing: 0, leading: 0)
+      let windowed = geoSet.windowed.clone(outsideBars: outsideNew, insideBars: insideNew)
+
+      geoSet = priorState.geoSet.clone(windowed: windowed)
     }
+
+    return buildTransitionTasksToInitialLayout(cxt, geoSet)
   }
 
   /// Creates IINAAnimation tasks for the case of `PWinSessionState.creatingNew`.

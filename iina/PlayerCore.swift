@@ -2820,7 +2820,7 @@ class PlayerCore: NSObject {
         return
       }
       guard let currentPlayback = info.currentPlayback else {
-        log.debug("Thumbnails reload stopped because no current playback")
+        log.debug("Thumbnails reload stopped ∵ no current playback")
         touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
         return
       }
@@ -2831,22 +2831,22 @@ class PlayerCore: NSObject {
         return
       }
       guard !currentPlayback.isNetworkResource else {
-        log.verbose("Thumbnails reload stopped current media is network")
+        log.verbose("Thumbnails reload stopped: current media is network")
         clearExistingThumbnails(for: currentPlayback)
         return
       }
       guard Preference.bool(for: .enableThumbnailPreview) else {
-        log.verbose("Thumbnails reload stopped because thumbnails are disabled by user")
+        log.verbose("Thumbnails reload stopped ∵ thumbnails are disabled by user")
         clearExistingThumbnails(for: currentPlayback)
         return
       }
       if !Preference.bool(for: .enableThumbnailForRemoteFiles) && info.isMediaOnRemoteDrive {
-        log.debug("Thumbnails reload stopped because file is on a mounted remote drive")
+        log.debug("Thumbnails reload stopped ∵ file is on a mounted remote drive")
         clearExistingThumbnails(for: currentPlayback)
         return
       }
       if isInMiniPlayer && !Preference.bool(for: .enableThumbnailForMusicMode) {
-        log.verbose("Thumbnails reload stopped because user has not enabled for music mode")
+        log.verbose("Thumbnails reload stopped ∵ user has disabled for music mode")
         clearExistingThumbnails(for: currentPlayback)
         return
       }
