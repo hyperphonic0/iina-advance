@@ -51,7 +51,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" autoresizesSubviews="NO" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -244,7 +244,6 @@
                             <constraint firstAttribute="trailing" secondItem="irz-R1-ajt" secondAttribute="trailing" constant="8" identifier="osdTrailingMarginConstraint" id="20A-Y9-xnl"/>
                             <constraint firstAttribute="bottom" secondItem="irz-R1-ajt" secondAttribute="bottom" constant="8" identifier="osdBottomMarginConstraint" id="8zf-O4-vae"/>
                             <constraint firstItem="irz-R1-ajt" firstAttribute="leading" secondItem="g0O-v5-RQj" secondAttribute="leading" constant="8" identifier="osdLeadingMarginConstraint" id="F2r-Um-cea"/>
-                            <constraint firstAttribute="width" relation="greaterThanOrEqual" priority="900" constant="50" identifier="osdMinWidthConstraint" id="PAq-Ca-D8I"/>
                             <constraint firstItem="irz-R1-ajt" firstAttribute="top" secondItem="g0O-v5-RQj" secondAttribute="top" constant="8" identifier="osdTopMarginConstraint" id="rAU-zU-HxD"/>
                         </constraints>
                     </visualEffectView>
@@ -350,7 +349,6 @@
                     </customView>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="g0O-v5-RQj" secondAttribute="bottom" constant="8" identifier="viewportBtm_GE_osdBtm_Constraint" id="0pt-vB-Ycm"/>
                     <constraint firstAttribute="bottom" secondItem="3nL-Ky-Hfa" secondAttribute="bottom" placeholder="YES" identifier="replacedWithCode-1" id="4gm-o8-h98"/>
                     <constraint firstItem="88M-Ln-4mc" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="4" id="C4g-bz-uwS"/>
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="36" placeholder="YES" id="M0c-rX-4vh"/>

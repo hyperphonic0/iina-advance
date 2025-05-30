@@ -766,7 +766,10 @@ extension PlayerWindowController {
 
     osdVisualEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingSidebarView.trailingAnchor, constant: 8).isActive = true
     trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: osdVisualEffectView.trailingAnchor, constant: 8).isActive = true
-    
+
+    let osdMinWidthConstraint = osdVisualEffectView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
+    osdMinWidthConstraint.priority = .init(900)
+    osdMinWidthConstraint.isActive = true
   }
 
   /// Prerequisites:

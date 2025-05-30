@@ -32,6 +32,7 @@ class PlayerWindow: NSWindow {
   }
 
   private var isFullScreen: Bool { pwc?.isFullScreen ?? true }
+  private var isMusicMode: Bool { pwc?.isInMiniPlayer ?? true }
 
   // MARK: setFrame
 
@@ -252,7 +253,7 @@ class PlayerWindow: NSWindow {
     if let selectorString = item.action?.description {
       if selectorString.starts(with: "_zoom") {
         // Catch-all for above actions. Disallow in full screen:
-        return !isFullScreen
+        return !isFullScreen && !isMusicMode
       }
       /// Also disable `_moveToDisplay:` which is a Sidecar feature:
       if selectorString.starts(with: "_move") {
@@ -268,11 +269,13 @@ class PlayerWindow: NSWindow {
     switch item.action {
     case #selector(self.performClose(_:)):
       return true
-    case #selector(self.performMiniaturize(_:)), #selector(self.performZoom(_:)), #selector(self.zoom(_:)):
-      /// `zoom:` is an item in the Zoom button (green traffic light)'s context menu.
-      /// `performZoom:` is the equivalent item in the `Window` menu
+    case #selector(self.performMiniaturize(_:)):
       // Do not allow when in legacy full screen
       return !isFullScreen
+    case #selector(self.performZoom(_:)), #selector(self.zoom(_:)):
+      /// `zoom:` is an item in the Zoom button (green traffic light)'s context menu.
+      /// `performZoom:` is the equivalent item in the `Window` menu
+      return !isFullScreen && !isMusicMode
     default:
       // See if PlayerWindowController recognizes it and can respond
       if let pwc, let pwcResponse = pwc.validateUserInterfaceItem(item) {

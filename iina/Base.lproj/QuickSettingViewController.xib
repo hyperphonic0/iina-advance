@@ -96,7 +96,7 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customView autoresizesSubviews="NO" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Hz6-mo-xeY" userLabel="QuickSettings View">
+        <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Hz6-mo-xeY" userLabel="QuickSettings View">
             <rect key="frame" x="0.0" y="0.0" width="362" height="912"/>
             <subviews>
                 <stackView distribution="fillEqually" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="200" verticalStackHuggingPriority="250" horizontalHuggingPriority="200" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="dNi-Ib-2vd" userLabel="TabButtons Stack View">
@@ -591,7 +591,7 @@
                                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                         </textFieldCell>
                                                                     </textField>
-                                                                    <switch horizontalHuggingPriority="750" verticalHuggingPriority="750" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="AbD-ap-nO5" userLabel="HWDecoding Switch">
+                                                                    <switch focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="AbD-ap-nO5" userLabel="HWDecoding Switch">
                                                                         <rect key="frame" x="262" y="94" width="42" height="25"/>
                                                                         <connections>
                                                                             <action selector="hardwareDecodingAction:" target="-2" id="3g0-8A-vqL"/>
@@ -2189,13 +2189,13 @@
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
                                                                 </textField>
-                                                                <switch horizontalHuggingPriority="750" verticalHuggingPriority="750" controlSize="small" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="9f0-0q-rg2">
+                                                                <switch focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" controlSize="small" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="9f0-0q-rg2">
                                                                     <rect key="frame" x="308" y="821" width="36" height="21"/>
                                                                     <connections>
                                                                         <action selector="hideSubAction:" target="-2" id="I9P-h7-1Vv"/>
                                                                     </connections>
                                                                 </switch>
-                                                                <switch horizontalHuggingPriority="750" verticalHuggingPriority="750" controlSize="small" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="Ji9-kR-VBA">
+                                                                <switch focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" controlSize="small" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="Ji9-kR-VBA">
                                                                     <rect key="frame" x="308" y="702" width="36" height="21"/>
                                                                     <connections>
                                                                         <action selector="hideSecSubAction:" target="-2" id="QOg-07-Szj"/>
