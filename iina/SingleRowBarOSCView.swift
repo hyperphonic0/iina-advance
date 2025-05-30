@@ -12,9 +12,6 @@ class SingleRowBarOSCView: ClickThroughStackView {
 
   init() {
     super.init(frame: .zero)
-    identifier = .init(SingleRowBarOSCView.id)
-
-    /// `oscOneRowView`
     idString = SingleRowBarOSCView.id
     orientation = .horizontal
     alignment = .centerY

@@ -15,8 +15,12 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
   private static let preferredBarWidth: CGFloat = 440
   private static let margin: CGFloat = CGFloat(max(0, Preference.integer(for: .floatingControlBarMargin)))
 
-  @IBOutlet weak var xConstraint: NSLayoutConstraint!  // this is X CENTER of OSC
-  @IBOutlet weak var yConstraint: NSLayoutConstraint!  // Bottom of OSC
+  let topRowView = ClickThroughStackView()
+  let bottomRowView = ClickThroughStackView()
+  let playButtonsContainerView = ClickThroughStackView()
+
+  var xConstraint: NSLayoutConstraint!  // this is X CENTER of OSC
+  var yConstraint: NSLayoutConstraint!  // Bottom of OSC
 
   weak var leadingMarginConstraint: NSLayoutConstraint!
   weak var trailingMarginConstraint: NSLayoutConstraint!
@@ -40,11 +44,60 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
     return playerWindowController?.viewportView
   }
 
-  override func awakeFromNib() {
-    self.roundCorners()
-    self.translatesAutoresizingMaskIntoConstraints = false
+  init() {
+    super.init(frame: .zero)
+    idString = "OSC-Floating"
+    blendingMode = .withinWindow
+    material = .popover
+    state = .active
+
+    roundCorners()
+
+    subviews = [topRowView, bottomRowView]
+
+    for stackView in [topRowView, bottomRowView, playButtonsContainerView] {
+      stackView.orientation = .horizontal
+      stackView.alignment = .centerY
+      stackView.distribution = .gravityAreas
+      stackView.spacing = 0
+      stackView.detachesHiddenViews = false
+      stackView.translatesAutoresizingMaskIntoConstraints = false
+    }
+
+    topRowView.addConstraintsToFillSuperview(top: 4, leading: 10, trailing: 10)
+    topRowView.idString = "OSC-Floating-TopRow"
+
+    bottomRowView.addConstraintsToFillSuperview(bottom: 1, leading: 10, trailing: 10)
+    bottomRowView.setHuggingPriority(.required, for: .vertical)
+    bottomRowView.idString = "OSC-Floating-BottomRow"
+
+    // playButtonsContainerView
+    topRowView.addView(playButtonsContainerView, in: .center)
+    playButtonsContainerView.setClippingResistancePriority(.init(500), for: .horizontal)
+    playButtonsContainerView.setHuggingPriority(.init(500), for: .vertical)
+    playButtonsContainerView.idString = "OSC-Floating-PlayBtnsContainer"
+
+    let rowsEqHeightCon = topRowView.heightAnchor.constraint(equalTo: bottomRowView.heightAnchor, multiplier: 1)
+    rowsEqHeightCon.isActive = true
+
+    let rowsVertAlignCon = bottomRowView.topAnchor.constraint(equalTo: topRowView.bottomAnchor, constant: -10)
+    rowsVertAlignCon.isActive = true
+
+    translatesAutoresizingMaskIntoConstraints = false
+    let heightEqCon = heightAnchor.constraint(equalToConstant: FloatingControlBarView.barHeight)
+    heightEqCon.isActive = true
+    let widthEqCon = widthAnchor.constraint(equalToConstant: 440)
+    widthEqCon.priority = .init(300)
+    widthEqCon.isActive = true
+    let widthGT = widthAnchor.constraint(greaterThanOrEqualToConstant: 200)
+    widthGT.isActive = true
+  }
+  
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
   }
 
+  /// Adds margin constraints if missing
   func addMarginConstraints() {
     guard let pwc = playerWindowController, let contentView = pwc.window?.contentView else { return }
     if leadingMarginConstraint == nil || !leadingMarginConstraint.isActive {
@@ -64,18 +117,26 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
   func removeMarginConstraints() {
     if let leadingMarginConstraint {
       leadingMarginConstraint.isActive = false
+      self.leadingMarginConstraint = nil
     }
     if let trailingMarginConstraint {
       trailingMarginConstraint.isActive = false
+      self.trailingMarginConstraint = nil
     }
     if let bottomMarginConstraint {
       bottomMarginConstraint.isActive = false
+      self.bottomMarginConstraint = nil
     }
   }
 
   // MARK: - Positioning
 
-  func moveTo(centerRatioH ratioH: CGFloat, originRatioV ratioV: CGFloat, layout: LayoutState, viewportSize: CGSize) {
+  func moveToLocationRatio(layout: LayoutState, viewportSize: CGSize) {
+    guard superview != nil, let xConstraint, let yConstraint else { return }
+
+    let ratioH = Preference.double(for: .controlBarPositionHorizontal)
+    let ratioV = Preference.double(for: .controlBarPositionVertical)
+
     guard ratioH >= 0 && ratioH <= 1 else {
       if let playerWindowController {
         playerWindowController.log.error("FloatingOSC: cannot update position; centerRatioH is invalid: \(ratioH)")
@@ -97,11 +158,11 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
 //    Logger.log("Setting xConstraint to: \(xConst), from \(geometry.minCenterX) + ((\(availableWidth) - \(geometry.barWidth)) * \(ratioH))", level: .verbose)
     xConstraint.animateToConstant(xConst)
     yConstraint.animateToConstant(yConst)
+    updateRatios(xConst: xConst, yConst: yConst, geometry)
   }
 
   /// Converts the relative offsets of `xConst` and `yConst` into ratios into available space in the range [0...1]
   private func updateRatios(xConst: CGFloat, yConst: CGFloat, _ geometry: FloatingControlBarGeometry) {
-    guard let playerWindowController else { return }
     let minCenterX = geometry.minCenterX
 
     // save final position
@@ -110,9 +171,6 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
     let ratioV = (yConst - minOriginY) / (geometry.maxOriginY - minOriginY)
     //    Logger.log("Drag: Setting ratioH to: (\(xConst) - \(minCenterX)) / (\(geometry.availableWidth) - \(geometry.barWidth)) = \(ratioH)", level: .verbose)
 
-    // Save in window for use when resizing, etc.
-    playerWindowController.floatingOSCCenterRatioH = ratioH
-    playerWindowController.floatingOSCOriginRatioV = ratioV
     // Save to prefs as future default
     Preference.set(ratioH, for: .controlBarPositionHorizontal)
     Preference.set(ratioV, for: .controlBarPositionVertical)
@@ -150,6 +208,7 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
           let viewportView = pwc.viewportView else {
       return
     }
+    assert(xConstraint != nil && yConstraint != nil, "xConstraint or yConstraint is nil!")
 
     if !minDragDistanceMet {
       let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)

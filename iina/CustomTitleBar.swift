@@ -43,6 +43,8 @@ class CustomTitleBarViewController: NSViewController {
 
   /// Use `loadView` instead of `viewDidLoad` because controller is not using storyboard
   override func loadView() {
+    super.loadView()
+    
     view = NSView()
     view.identifier = .init("CustomTitleBarView")
     view.wantsLayer = true

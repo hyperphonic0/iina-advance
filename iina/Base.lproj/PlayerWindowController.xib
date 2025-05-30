@@ -24,13 +24,9 @@
                 <outlet property="closeButtonBox" destination="jjM-U1-8eB" id="B1D-eJ-ySs"/>
                 <outlet property="closeButtonVE" destination="4bB-aE-jrk" id="IZK-7t-1IL"/>
                 <outlet property="closeButtonView" destination="88M-Ln-4mc" id="Ucp-D3-qpe"/>
-                <outlet property="controlBarFloating" destination="OiF-pA-8Sd" id="7C1-6a-ZK6"/>
                 <outlet property="leadingSidebarToOSDSpaceConstraint" destination="LBY-By-mfi" id="bna-VC-p0r"/>
                 <outlet property="leadingSidebarTrailingBorder" destination="b0r-Lt-vGM" id="XL3-cZ-Idp"/>
                 <outlet property="leadingSidebarView" destination="XBs-34-TIm" id="Jqt-cB-r2i"/>
-                <outlet property="oscFloatingLowerView" destination="hb6-oe-rHm" id="ZKe-zm-evE"/>
-                <outlet property="oscFloatingPlayButtonsContainerView" destination="hDm-KI-3o4" id="ITm-fa-cWL"/>
-                <outlet property="oscFloatingUpperView" destination="Unr-Y6-JoM" id="URb-3v-Gzc"/>
                 <outlet property="osdAccessoryProgress" destination="i10-rt-9cb" id="ZdR-ZV-uoQ"/>
                 <outlet property="osdAccessoryText" destination="lb1-5R-hR3" id="A7o-3l-NYe"/>
                 <outlet property="osdBottomMarginConstraint" destination="8zf-O4-vae" id="p15-L7-fXn"/>
@@ -72,7 +68,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" autoresizesSubviews="NO" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -87,7 +83,7 @@
                                         <rect key="frame" x="277" y="166" width="87" height="68"/>
                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="playing-in-pip" id="0QW-Vy-zmW"/>
                                     </imageView>
-                                    <textField wantsLayer="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pxV-jX-kfL">
+                                    <textField wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pxV-jX-kfL">
                                         <rect key="frame" x="194" y="142" width="253" height="16"/>
                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="This video is playing in Picture-in-Picture" id="gdE-b5-kod">
                                             <font key="font" metaFont="system"/>
@@ -120,7 +116,7 @@
                                     <customView identifier="Additional-Info-Label-Container" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="P1S-9b-Nzw" userLabel="Additional-Info-Label-Container View">
                                         <rect key="frame" x="0.0" y="0.0" width="55" height="30"/>
                                         <subviews>
-                                            <textField identifier="Additional-Info-Label" wantsLayer="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="4mb-jy-Y1w">
+                                            <textField identifier="Additional-Info-Label" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="4mb-jy-Y1w">
                                                 <rect key="frame" x="4" y="6" width="53" height="21"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="99:99" id="IyU-0H-hyV">
                                                     <font key="font" metaFont="system" size="18"/>
@@ -145,7 +141,7 @@
                                     <customView identifier="Additional-Info-Battery-View" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ybl-06-ksj" userLabel="Additional-Info-Battery View">
                                         <rect key="frame" x="72" y="0.0" width="56" height="30"/>
                                         <subviews>
-                                            <textField identifier="Additional-Info-Battery-Text" wantsLayer="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1XY-X2-FcE">
+                                            <textField identifier="Additional-Info-Battery-Text" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1XY-X2-FcE">
                                                 <rect key="frame" x="5" y="8" width="46" height="16"/>
                                                 <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" title="100%" id="va1-P5-3b0">
                                                     <font key="font" metaFont="systemBold"/>
@@ -203,7 +199,7 @@
                                     <constraint firstAttribute="width" constant="48" id="7BK-Wc-K9S"/>
                                 </constraints>
                             </progressIndicator>
-                            <textField wantsLayer="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2gH-wF-EpI">
+                            <textField wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2gH-wF-EpI">
                                 <rect key="frame" x="24" y="19" width="113" height="16"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="Buffering... 100%" id="3fe-fP-yMB">
                                     <font key="font" metaFont="system"/>
@@ -211,7 +207,7 @@
                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <textField wantsLayer="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hlZ-5D-Wag" userLabel="Buffer-Detail Label">
+                            <textField wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hlZ-5D-Wag" userLabel="Buffer-Detail Label">
                                 <rect key="frame" x="64" y="8" width="32" height="11"/>
                                 <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="Label" id="WOE-SX-krh">
                                     <font key="font" metaFont="menu" size="9"/>
@@ -232,45 +228,6 @@
                             <constraint firstItem="2gH-wF-EpI" firstAttribute="top" secondItem="uZe-PA-1Id" secondAttribute="bottom" constant="4" id="swz-Rz-9Hv"/>
                             <constraint firstItem="2gH-wF-EpI" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="oX4-0N-but" secondAttribute="leading" id="ufO-Jb-vdH"/>
                         </constraints>
-                    </visualEffectView>
-                    <visualEffectView identifier="OSC-Floating-View" hidden="YES" autoresizesSubviews="NO" wantsLayer="YES" horizontalCompressionResistancePriority="100" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="OiF-pA-8Sd" userLabel="ControlBarFloating View" customClass="FloatingControlBarView" customModule="IINA_Advance" customModuleProvider="target">
-                        <rect key="frame" x="110" y="60" width="440" height="67"/>
-                        <subviews>
-                            <stackView identifier="OSC-Floating-TopHalf-View" wantsLayer="YES" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" horizontalCompressionResistancePriority="100" translatesAutoresizingMaskIntoConstraints="NO" id="Unr-Y6-JoM" userLabel="OSC-Floating-UpperHalf View" customClass="ClickThroughStackView" customModule="IINA_Advance" customModuleProvider="target">
-                                <rect key="frame" x="10" y="26" width="420" height="37"/>
-                                <middleViews>
-                                    <stackView identifier="OSC-Fragment-Control-View" wantsLayer="YES" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" horizontalClippingResistancePriority="500" horizontalCompressionResistancePriority="100" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hDm-KI-3o4" userLabel="OSC-Floating-PlayButtons-Container Stack View" customClass="ClickThroughStackView" customModule="IINA_Advance" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="420" height="37"/>
-                                    </stackView>
-                                </middleViews>
-                                <visibilityPriorities>
-                                    <integer value="1000"/>
-                                </visibilityPriorities>
-                                <customSpacing>
-                                    <real value="3.4028234663852886e+38"/>
-                                </customSpacing>
-                            </stackView>
-                            <stackView identifier="OSC-Floating-BottomHalf-View" wantsLayer="YES" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="1000" horizontalCompressionResistancePriority="100" translatesAutoresizingMaskIntoConstraints="NO" id="hb6-oe-rHm" userLabel="OSC-Floating-LowerHalf View" customClass="ClickThroughStackView" customModule="IINA_Advance" customModuleProvider="target">
-                                <rect key="frame" x="10" y="-1" width="420" height="37"/>
-                            </stackView>
-                        </subviews>
-                        <constraints>
-                            <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="3yd-Pv-Hhe"/>
-                            <constraint firstAttribute="bottom" secondItem="hb6-oe-rHm" secondAttribute="bottom" constant="-1" id="BX8-BF-zpJ"/>
-                            <constraint firstAttribute="trailing" secondItem="hb6-oe-rHm" secondAttribute="trailing" constant="10" id="Fdb-QI-Ew7"/>
-                            <constraint firstItem="Unr-Y6-JoM" firstAttribute="leading" secondItem="OiF-pA-8Sd" secondAttribute="leading" constant="10" id="PoI-cy-R6t"/>
-                            <constraint firstItem="hb6-oe-rHm" firstAttribute="height" secondItem="Unr-Y6-JoM" secondAttribute="height" id="QJj-eQ-u9z"/>
-                            <constraint firstItem="Unr-Y6-JoM" firstAttribute="top" secondItem="OiF-pA-8Sd" secondAttribute="top" constant="4" id="YVl-fg-zzl"/>
-                            <constraint firstAttribute="trailing" secondItem="Unr-Y6-JoM" secondAttribute="trailing" constant="10" id="c0X-tF-D2k"/>
-                            <constraint firstAttribute="width" priority="300" constant="440" id="g1S-BA-95v"/>
-                            <constraint firstAttribute="height" constant="67" id="g84-xP-093"/>
-                            <constraint firstItem="hb6-oe-rHm" firstAttribute="leading" secondItem="OiF-pA-8Sd" secondAttribute="leading" constant="10" id="h8j-ny-dSf"/>
-                            <constraint firstItem="hb6-oe-rHm" firstAttribute="top" secondItem="Unr-Y6-JoM" secondAttribute="bottom" constant="-10" id="hmP-6A-a3W"/>
-                        </constraints>
-                        <connections>
-                            <outlet property="xConstraint" destination="9z2-rX-b7C" id="y3R-d7-oTm"/>
-                            <outlet property="yConstraint" destination="cRP-R4-zYY" id="kxT-61-1SZ"/>
-                        </connections>
                     </visualEffectView>
                     <visualEffectView identifier="Leading-Sidebar-View" autoresizesSubviews="NO" wantsLayer="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="XBs-34-TIm" userLabel="Leading-Sidebar View">
                         <rect key="frame" x="-360" y="0.0" width="360" height="400"/>
@@ -327,7 +284,7 @@
                                     <stackView identifier="OSD-Vertical-Stack-View" wantsLayer="YES" orientation="vertical" alignment="leading" spacing="2" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="g0j-zS-jKv" userLabel="OSD Vertical Stack View">
                                         <rect key="frame" x="49" y="0.0" width="104" height="45"/>
                                         <middleViews>
-                                            <textField identifier="OSD-Label" wantsLayer="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="499" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ofw-1d-N4T" userLabel="OSDLabel">
+                                            <textField identifier="OSD-Label" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="499" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ofw-1d-N4T" userLabel="OSDLabel">
                                                 <rect key="frame" x="-2" y="30" width="108" height="15"/>
                                                 <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="left" title="On Screen Display" usesSingleLineMode="YES" id="JAn-Yu-XA2">
                                                     <font key="font" metaFont="cellTitle"/>
@@ -335,7 +292,7 @@
                                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                 </textFieldCell>
                                             </textField>
-                                            <textField identifier="OSD-Accessory-Text" wantsLayer="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="499" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="lb1-5R-hR3" userLabel="OSDAccessoryText Label">
+                                            <textField identifier="OSD-Accessory-Text" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="499" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="lb1-5R-hR3" userLabel="OSDAccessoryText Label">
                                                 <rect key="frame" x="-2" y="14" width="33" height="14"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="justified" title="Label" id="7aL-lH-m8i">
                                                     <font key="font" metaFont="message" size="11"/>
@@ -486,7 +443,6 @@
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="g0O-v5-RQj" secondAttribute="bottom" constant="8" identifier="viewportBtm_GE_osdBtm_Constraint" id="0pt-vB-Ycm"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="bottom" constant="-28" identifier="TopOfViewport-BottomOfTopBar-Constraint" id="1Ut-pz-GFg"/>
                     <constraint firstAttribute="bottom" secondItem="3nL-Ky-Hfa" secondAttribute="bottom" placeholder="YES" identifier="replacedWithCode-1" id="4gm-o8-h98"/>
-                    <constraint firstItem="OiF-pA-8Sd" firstAttribute="centerX" secondItem="3nL-Ky-Hfa" secondAttribute="leading" priority="400" constant="330" identifier="floatingOSC-CenterX-Constraint" id="9z2-rX-b7C"/>
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="8" id="Agb-na-g88"/>
                     <constraint firstItem="88M-Ln-4mc" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="4" id="C4g-bz-uwS"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="top" identifier="TopOfViewport-TopOfTopBar-Constraint" id="Drc-3Y-nhs"/>
@@ -499,7 +455,6 @@
                     <constraint firstItem="oX4-0N-but" firstAttribute="centerY" secondItem="3nL-Ky-Hfa" secondAttribute="centerY" id="XlV-7n-jPb"/>
                     <constraint firstAttribute="width" constant="640" placeholder="YES" id="YCx-Hk-4OW"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" identifier="viewportlViewTop-ContentViewTop-Constraint" id="Zqm-9J-g9b"/>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" secondItem="OiF-pA-8Sd" secondAttribute="bottom" priority="750" constant="60" identifier="ControlBarFloating_Y-Constraint" id="cRP-R4-zYY"/>
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="88M-Ln-4mc" secondAttribute="trailing" priority="250" constant="4" identifier="osdLeadingToMiniPlayerButtonsTrailingConstraint" id="eTB-OD-mwZ"/>
                     <constraint firstItem="epo-S6-QVB" firstAttribute="bottom" secondItem="XBs-34-TIm" secondAttribute="bottom" id="f5L-Kv-wdv"/>
                     <constraint firstItem="88M-Ln-4mc" firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="4" id="fJp-4W-b6q"/>

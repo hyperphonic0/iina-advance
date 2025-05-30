@@ -257,10 +257,6 @@ extension PlayerWindowController {
       hideOSD()
     }
 
-    if !outputLayout.hasFloatingOSC {
-      controlBarFloating.removeMarginConstraints()
-    }
-
     if outputLayout.mode == .fullScreenInteractive {
       fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
     }
@@ -394,8 +390,7 @@ extension PlayerWindowController {
       updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement, mode: middleGeo.mode)
 
       if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
-        controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH, originRatioV: floatingOSCOriginRatioV,
-                                  layout: transition.outputLayout, viewportSize: middleGeo.viewportSize)
+        controlBarFloating.moveToLocationRatio(layout: transition.outputLayout, viewportSize: middleGeo.viewportSize)
       }
 
       // Sidebars (if closing)
@@ -732,9 +727,35 @@ extension PlayerWindowController {
 
       case .floating:
         currentControlBar = controlBarFloating
-        if !oscFloatingUpperView.views.contains(fragToolbarView) {
-          oscFloatingUpperView.addView(fragToolbarView, in: .trailing)
-          oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
+        let contentView = window.contentView!
+        if !contentView.containsSubview(controlBarFloating) {
+          log.verbose{"[\(transition.name)] Adding controlBarFloating to contentView"}
+          contentView.addSubview(controlBarFloating, positioned: .below, relativeTo: leadingSidebarView)
+          controlBarFloating.addMarginConstraints()
+
+          controlBarFloating.xConstraint?.isActive = false
+          controlBarFloating.yConstraint?.isActive = false
+
+          let newY = viewportView.bottomAnchor.constraint(equalTo: controlBarFloating.bottomAnchor, constant: 60)
+          newY.identifier = "FloatingOSC-BtmY-Con"
+          newY.priority = .defaultHigh
+          controlBarFloating.yConstraint = newY
+
+          let newX = controlBarFloating.centerXAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 330)
+          newX.identifier = "FloatingOSC-CenterX-Con"
+          newX.priority = .init(400)
+          controlBarFloating.xConstraint = newX
+
+          adjustFloatingControllerOrigin(for: transition.outputGeometry)
+
+          newY.isActive = true
+          newX.isActive = true
+        }
+
+        let floatingUpperView = controlBarFloating.topRowView
+        if !floatingUpperView.views.contains(fragToolbarView) {
+          floatingUpperView.addView(fragToolbarView, in: .trailing)
+          floatingUpperView.setVisibilityPriority(.detachEarlier, for: fragToolbarView)
           fragToolbarView.isHidden = false
         }
       }
@@ -748,6 +769,11 @@ extension PlayerWindowController {
 
     } else {  // No OSC & not music mode
       currentControlBar = nil
+    }
+
+    if !outputLayout.hasFloatingOSC {
+      controlBarFloating.removeMarginConstraints()
+      controlBarFloating.removeFromSuperview()
     }
 
     if outputLayout.hasControlBar {
@@ -983,31 +1009,29 @@ extension PlayerWindowController {
 
       // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs
 
+      let topRowView = controlBarFloating.topRowView
       if transition.isWindowInitialLayout || !transition.inputLayout.hasFloatingOSC {
-        oscFloatingPlayButtonsContainerView.addView(fragPlaybackBtnsView, in: .center)
+        controlBarFloating.playButtonsContainerView.addView(fragPlaybackBtnsView, in: .center)
         // There sweems to be a race condition when adding to these StackViews.
         // Sometimes it still contains the old view, and then trying to add again will cause a crash.
         // Must check if it already contains the view before adding.
-        if !oscFloatingUpperView.views(in: .leading).contains(fragVolumeView) {
-          oscFloatingUpperView.addView(fragVolumeView, in: .leading)
+        if !topRowView.views(in: .leading).contains(fragVolumeView) {
+          topRowView.addView(fragVolumeView, in: .leading)
           fragVolumeView.isHidden = false
         }
-        oscFloatingUpperView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
+        topRowView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
 
-        oscFloatingUpperView.setClippingResistancePriority(.defaultLow, for: .horizontal)
+        topRowView.setClippingResistancePriority(.defaultLow, for: .horizontal)
 
         addSubviewsToPlaySliderAndTimeLabelsView(transition.outputLayout.controlBarGeo)
-        oscFloatingLowerView.addSubview(playSliderAndTimeLabelsView)
+        controlBarFloating.bottomRowView.addSubview(playSliderAndTimeLabelsView)
         playSliderAndTimeLabelsView.isHidden = false
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
-
-        controlBarFloating.addMarginConstraints()
       }
       updateSpeedLabelFont(for: transition)
 
       // Update floating control bar position
-      controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH, originRatioV: floatingOSCOriginRatioV,
-                                layout: transition.outputLayout, viewportSize: transition.outputGeometry.viewportSize)
+      controlBarFloating.moveToLocationRatio(layout: transition.outputLayout, viewportSize: transition.outputGeometry.viewportSize)
     }
 
     switch transition.outputLayout.mode {

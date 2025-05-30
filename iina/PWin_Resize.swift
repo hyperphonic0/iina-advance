@@ -373,14 +373,14 @@ extension PlayerWindowController {
     }
   }
 
-  private func adjustFloatingControllerOrigin(for newGeometry: PWinGeometry? = nil) {
+  func adjustFloatingControllerOrigin(for newGeometry: PWinGeometry? = nil) {
     guard let window = window, currentLayout.hasFloatingOSC else { return }
+    guard controlBarFloating.superview != nil else { return }
 
     let newViewportSize = newGeometry?.viewportSize ?? viewportView.frame.size
-    controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH,
-                              originRatioV: floatingOSCOriginRatioV, layout: currentLayout, viewportSize: newViewportSize)
+    controlBarFloating.moveToLocationRatio(layout: currentLayout, viewportSize: newViewportSize)
 
-    // Detach the views in oscFloatingUpperView manually on macOS 11 only; as it will cause freeze
+    // Detach the views in topRowView manually on macOS 11 only; as it will cause freeze
     if #available(macOS 11.0, *) {
       if #unavailable(macOS 12.0) {
         guard let maxWidth = [fragVolumeView, fragToolbarView].compactMap({ $0?.frame.width }).max() else {
@@ -388,27 +388,28 @@ extension PlayerWindowController {
         }
 
         // window - 10 - controlBarFloating
-        // controlBarFloating - 12 - oscFloatingUpperView
+        // controlBarFloating - 12 - topRowView
         let margin: CGFloat = (10 + 12) * 2
         let hide = (window.frame.width
-                    - oscFloatingPlayButtonsContainerView.frame.width
+                    - controlBarFloating.playButtonsContainerView.frame.width
                     - maxWidth*2
                     - margin) < 0
 
-        let views = oscFloatingUpperView.views
+        let upper = controlBarFloating.topRowView
+        let views = upper.views
         if hide {
           if views.contains(fragVolumeView) {
-            oscFloatingUpperView.removeView(fragVolumeView)
+            upper.removeView(fragVolumeView)
           }
           if views.contains(fragToolbarView) {
-            oscFloatingUpperView.removeView(fragToolbarView)
+            upper.removeView(fragToolbarView)
           }
         } else {
           if !views.contains(fragVolumeView) {
-            oscFloatingUpperView.addView(fragVolumeView, in: .leading)
+            upper.addView(fragVolumeView, in: .leading)
           }
           if !views.contains(fragToolbarView) {
-            oscFloatingUpperView.addView(fragToolbarView, in: .trailing)
+            upper.addView(fragToolbarView, in: .trailing)
           }
         }
       }
@@ -424,8 +425,7 @@ extension PlayerWindowController {
     let currentLayout = currentLayout
 
     if currentLayout.hasFloatingOSC {
-      controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH, originRatioV: floatingOSCOriginRatioV,
-                                layout: currentLayout, viewportSize: geometry.viewportSize)
+      controlBarFloating.moveToLocationRatio(layout: currentLayout, viewportSize: geometry.viewportSize)
     }
 
     updateOSDTopBarOffset(geometry, isLegacyFullScreen: true)

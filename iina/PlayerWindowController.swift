@@ -175,9 +175,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var isPausedPriorToInteractiveMode: Bool = false
   // TODO: also `player.pendingResumeWhenShowingWindow`
 
-  var floatingOSCCenterRatioH = CGFloat(Preference.float(for: .controlBarPositionHorizontal))
-  var floatingOSCOriginRatioV = CGFloat(Preference.float(for: .controlBarPositionVertical))
-
   // - Mouse: see PWin_Input.swift
 
   /// When the speed arrow buttons were last clicked.
@@ -516,10 +513,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   let controlBarTop = ClickThroughView()
 
   /// Floating OSC
-  @IBOutlet weak var controlBarFloating: FloatingControlBarView!
-  @IBOutlet weak var oscFloatingPlayButtonsContainerView: NSStackView!
-  @IBOutlet weak var oscFloatingUpperView: NSStackView!
-  @IBOutlet weak var oscFloatingLowerView: NSStackView!
+  var controlBarFloating = FloatingControlBarView()
 
   /// Current OSC container view. May be top, bottom, floating, or inside music mode window,
   /// depending on user pref and current configuration.

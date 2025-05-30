@@ -1570,6 +1570,7 @@ extension NSVisualEffectView {
   }
 
   func roundCorners() {
+    wantsLayer = true
     let radius = suggestedRoundedCornerRadius()
     roundCorners(withRadius: radius)
   }
