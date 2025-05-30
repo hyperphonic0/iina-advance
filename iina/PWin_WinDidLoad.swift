@@ -335,10 +335,6 @@ extension PlayerWindowController {
     topBarView.addSubviewAndConstraints(controlBarTop,
                                         bottom: 0, leading: 0, trailing: 0)
 
-//    topOSCHeightConstraint = topBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
-//    topOSCHeightConstraint.identifier = .init("TopOSC-HeightConstraint")
-//    topOSCHeightConstraint.isActive = true
-
     /// `titleBarView`
     titleBarView.translatesAutoresizingMaskIntoConstraints = false
     topBarView.addSubview(titleBarView)

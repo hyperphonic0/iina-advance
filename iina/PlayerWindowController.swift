@@ -439,8 +439,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   var playSliderHeightConstraint: NSLayoutConstraint!
 
-//  var topOSCHeightConstraint: NSLayoutConstraint!
-
   var volumeIconHeightConstraint: NSLayoutConstraint!
   var volumeIconAspectConstraint: NSLayoutConstraint!
   var volumeSliderWidthConstraint: NSLayoutConstraint!

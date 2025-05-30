@@ -349,10 +349,6 @@ extension PlayerWindowController {
       titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
     }
 
-//    if transition.inputLayout.topOSCHeight > outputLayout.topOSCHeight {
-//      topOSCHeightConstraint.animateToConstant(outputLayout.topOSCHeight)
-//    }
-
     if transition.inputLayout.controlBarGeo.playSliderHeight > outputLayout.controlBarGeo.playSliderHeight {
       playSliderHeightConstraint.animateToConstant(outputLayout.controlBarGeo.playSliderHeight)
     }
@@ -950,7 +946,6 @@ extension PlayerWindowController {
     }
 
     // Update heights to their final values:
-//    topOSCHeightConstraint.animateToConstant(outputLayout.topOSCHeight)
     titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
 
     updateOSDTopBarOffset(transition.outputGeometry, isLegacyFullScreen: transition.outputLayout.isLegacyFullScreen)
