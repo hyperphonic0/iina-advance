@@ -24,8 +24,6 @@
                 <outlet property="closeButtonBox" destination="jjM-U1-8eB" id="B1D-eJ-ySs"/>
                 <outlet property="closeButtonVE" destination="4bB-aE-jrk" id="IZK-7t-1IL"/>
                 <outlet property="closeButtonView" destination="88M-Ln-4mc" id="Ucp-D3-qpe"/>
-                <outlet property="leadingSidebarToOSDSpaceConstraint" destination="LBY-By-mfi" id="bna-VC-p0r"/>
-                <outlet property="leadingSidebarView" destination="XBs-34-TIm" id="Jqt-cB-r2i"/>
                 <outlet property="osdAccessoryProgress" destination="i10-rt-9cb" id="ZdR-ZV-uoQ"/>
                 <outlet property="osdAccessoryText" destination="lb1-5R-hR3" id="A7o-3l-NYe"/>
                 <outlet property="osdBottomMarginConstraint" destination="8zf-O4-vae" id="p15-L7-fXn"/>
@@ -40,15 +38,9 @@
                 <outlet property="osdTrailingMarginConstraint" destination="20A-Y9-xnl" id="oM9-TJ-0KE"/>
                 <outlet property="osdVStackView" destination="g0j-zS-jKv" id="aoo-Tm-yhj"/>
                 <outlet property="osdVisualEffectView" destination="g0O-v5-RQj" id="V4X-8K-6O1"/>
-                <outlet property="trailingSidebarToOSDSpaceConstraint" destination="zbm-D9-epN" id="TdE-wQ-5Me"/>
-                <outlet property="trailingSidebarView" destination="epo-S6-QVB" id="efz-TR-rAa"/>
                 <outlet property="viewportLeadingOffsetFromContentViewLeadingConstraint" destination="vZs-ut-z4j" id="E4F-6L-B6v"/>
-                <outlet property="viewportLeadingOffsetFromLeadingSidebarLeadingConstraint" destination="PMP-ks-GY2" id="SCL-aE-ECP"/>
-                <outlet property="viewportLeadingOffsetFromLeadingSidebarTrailingConstraint" destination="Uue-Qa-4ao" id="aE6-Zn-qlY"/>
                 <outlet property="viewportTopOffsetFromContentViewTopConstraint" destination="Zqm-9J-g9b" id="tfe-U8-Eeb"/>
                 <outlet property="viewportTrailingOffsetFromContentViewTrailingConstraint" destination="v5S-lZ-agU" id="szX-Kq-zSS"/>
-                <outlet property="viewportTrailingOffsetFromTrailingSidebarLeadingConstraint" destination="0m3-Bq-3N0" id="k7t-qz-rG9"/>
-                <outlet property="viewportTrailingOffsetFromTrailingSidebarTrailingConstraint" destination="PAj-s6-32e" id="UEo-Zg-pJq"/>
                 <outlet property="viewportView" destination="3nL-Ky-Hfa" id="6AP-iX-kPv"/>
                 <outlet property="window" destination="F0z-JX-Cv5" id="gIp-Ho-8D9"/>
             </connections>
@@ -67,7 +59,7 @@
                     <customView identifier="Viewport-View" autoresizesSubviews="NO" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3nL-Ky-Hfa" userLabel="Viewport View" customClass="ViewportView" customModule="IINA_Advance" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                     </customView>
-                    <visualEffectView identifier="Additional-Info-View" hidden="YES" wantsLayer="YES" horizontalCompressionResistancePriority="250" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Qbi-jx-9pO" userLabel="Additional-Info View" customClass="MouseIgnoringVisualEffectView" customModule="IINA_Advance" customModuleProvider="target">
+                    <visualEffectView identifier="Additional-Info-View" hidden="YES" wantsLayer="YES" horizontalCompressionResistancePriority="250" ambiguous="YES" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Qbi-jx-9pO" userLabel="Additional-Info View" customClass="MouseIgnoringVisualEffectView" customModule="IINA_Advance" customModuleProvider="target">
                         <rect key="frame" x="472" y="297" width="160" height="67"/>
                         <subviews>
                             <stackView identifier="Additional-Info-Horizontal-Stack-View" wantsLayer="YES" distribution="fill" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HJv-RK-JT8" userLabel="Additional-Info Horizontal Stack View">
@@ -189,19 +181,7 @@
                             <constraint firstItem="2gH-wF-EpI" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="oX4-0N-but" secondAttribute="leading" id="ufO-Jb-vdH"/>
                         </constraints>
                     </visualEffectView>
-                    <visualEffectView identifier="Leading-Sidebar-View" autoresizesSubviews="NO" wantsLayer="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="XBs-34-TIm" userLabel="Leading-Sidebar View">
-                        <rect key="frame" x="-360" y="0.0" width="360" height="400"/>
-                        <shadow key="shadow" blurRadius="12">
-                            <color key="color" white="0.0" alpha="0.5" colorSpace="calibratedWhite"/>
-                        </shadow>
-                    </visualEffectView>
-                    <visualEffectView identifier="Trailing-Sidebar-View" autoresizesSubviews="NO" wantsLayer="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="epo-S6-QVB" userLabel="Trailing-Sidebar View">
-                        <rect key="frame" x="640" y="0.0" width="360" height="400"/>
-                        <shadow key="shadow" blurRadius="12">
-                            <color key="color" white="0.0" alpha="0.5" colorSpace="calibratedWhite"/>
-                        </shadow>
-                    </visualEffectView>
-                    <visualEffectView identifier="OSD-View" hidden="YES" wantsLayer="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="g0O-v5-RQj" userLabel="OSD Visual Effect View">
+                    <visualEffectView identifier="OSD-View" hidden="YES" wantsLayer="YES" ambiguous="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="g0O-v5-RQj" userLabel="OSD Visual Effect View">
                         <rect key="frame" x="8" y="303" width="169" height="61"/>
                         <subviews>
                             <stackView wantsLayer="YES" distribution="fill" orientation="horizontal" alignment="centerY" spacing="4" horizontalStackHuggingPriority="902" verticalStackHuggingPriority="902" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="irz-R1-ajt" userLabel="OSD Horizontal Stack View">
@@ -268,7 +248,7 @@
                             <constraint firstItem="irz-R1-ajt" firstAttribute="top" secondItem="g0O-v5-RQj" secondAttribute="top" constant="8" identifier="osdTopMarginConstraint" id="rAU-zU-HxD"/>
                         </constraints>
                     </visualEffectView>
-                    <customView hidden="YES" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="88M-Ln-4mc" userLabel="MiniPlayerButtons View">
+                    <customView hidden="YES" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="88M-Ln-4mc" userLabel="MiniPlayerButtons View">
                         <rect key="frame" x="4" y="362" width="19" height="34"/>
                         <subviews>
                             <visualEffectView hidden="YES" wantsLayer="YES" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="wK7-3m-Uo2" userLabel="CloseButtonBackgroundVE View">
@@ -370,34 +350,18 @@
                     </customView>
                 </subviews>
                 <constraints>
-                    <constraint firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="leading" identifier="viewportTrailingOffsetFromTrailingSidebarLeadingConstraint" id="0m3-Bq-3N0"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="g0O-v5-RQj" secondAttribute="bottom" constant="8" identifier="viewportBtm_GE_osdBtm_Constraint" id="0pt-vB-Ycm"/>
                     <constraint firstAttribute="bottom" secondItem="3nL-Ky-Hfa" secondAttribute="bottom" placeholder="YES" identifier="replacedWithCode-1" id="4gm-o8-h98"/>
-                    <constraint firstItem="g0O-v5-RQj" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="8" id="Agb-na-g88"/>
                     <constraint firstItem="88M-Ln-4mc" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="4" id="C4g-bz-uwS"/>
-                    <constraint firstItem="epo-S6-QVB" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Qbi-jx-9pO" secondAttribute="trailing" constant="8" id="Ja8-8A-W6L"/>
-                    <constraint firstItem="XBs-34-TIm" firstAttribute="trailing" secondItem="g0O-v5-RQj" secondAttribute="leading" priority="750" constant="-8" identifier="leadingSidebarToOSDSpaceConstraint" id="LBY-By-mfi"/>
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="36" placeholder="YES" id="M0c-rX-4vh"/>
-                    <constraint firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="trailing" constant="-360" identifier="viewportTrailingOffsetFromTrailingSidebarTrailingConstraint" id="PAj-s6-32e"/>
-                    <constraint firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="leading" constant="360" identifier="viewportLeadingOffsetFromLeadingSidebarLeadingConstraint" id="PMP-ks-GY2"/>
-                    <constraint firstItem="Qbi-jx-9pO" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="8" id="RUl-l8-s3i"/>
-                    <constraint firstItem="XBs-34-TIm" firstAttribute="trailing" secondItem="se5-gp-TjO" secondAttribute="leading" identifier="viewportLeadingOffsetFromLeadingSidebarTrailingConstraint_" id="Uue-Qa-4ao"/>
                     <constraint firstItem="oX4-0N-but" firstAttribute="centerY" secondItem="3nL-Ky-Hfa" secondAttribute="centerY" id="XlV-7n-jPb"/>
                     <constraint firstAttribute="width" constant="640" placeholder="YES" id="YCx-Hk-4OW"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" identifier="viewportlViewTop-ContentViewTop-Constraint" id="Zqm-9J-g9b"/>
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="88M-Ln-4mc" secondAttribute="trailing" priority="250" constant="4" identifier="osdLeadingToMiniPlayerButtonsTrailingConstraint" id="eTB-OD-mwZ"/>
-                    <constraint firstItem="epo-S6-QVB" firstAttribute="bottom" secondItem="XBs-34-TIm" secondAttribute="bottom" id="f5L-Kv-wdv"/>
-                    <constraint firstItem="88M-Ln-4mc" firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="4" id="fJp-4W-b6q"/>
                     <constraint firstItem="oX4-0N-but" firstAttribute="centerX" secondItem="3nL-Ky-Hfa" secondAttribute="centerX" id="kfR-hG-8ee"/>
-                    <constraint firstItem="epo-S6-QVB" firstAttribute="top" secondItem="3nL-Ky-Hfa" secondAttribute="top" id="n2d-ys-qVW"/>
-                    <constraint firstItem="Qbi-jx-9pO" firstAttribute="top" secondItem="g0O-v5-RQj" secondAttribute="top" priority="900" id="r5V-EL-YbE"/>
-                    <constraint firstItem="g0O-v5-RQj" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="epo-S6-QVB" secondAttribute="leading" constant="-8" id="rQT-Vg-6uB"/>
-                    <constraint firstItem="epo-S6-QVB" firstAttribute="top" secondItem="XBs-34-TIm" secondAttribute="top" id="tWp-dA-I4y"/>
                     <constraint firstAttribute="trailing" secondItem="3nL-Ky-Hfa" secondAttribute="trailing" identifier="viewportlViewTrailing-ContentViewTrailing-Constraint" id="v5S-lZ-agU"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" identifier="viewportlViewLeading-ContentViewLeading-Constraint" id="vZs-ut-z4j"/>
                     <constraint firstAttribute="height" constant="400" placeholder="YES" id="y8z-8P-VRp"/>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" secondItem="epo-S6-QVB" secondAttribute="bottom" identifier="viewportBtmToTrailingSidebarBtmConstraint" id="zBx-AY-VlK"/>
-                    <constraint firstItem="epo-S6-QVB" firstAttribute="leading" secondItem="Qbi-jx-9pO" secondAttribute="trailing" constant="8" identifier="trailingSidebarToOSDSpaceConstraint" id="zbm-D9-epN"/>
                 </constraints>
             </view>
             <connections>

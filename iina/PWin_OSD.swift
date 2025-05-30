@@ -72,9 +72,14 @@ extension PlayerWindowController {
 
   /// Enforces `Preference.Key.osdPosition` pref which allows OSD to be on either left or right
   func updateOSDPosition() {
+    log.verbose{"Updating OSD position"}
     guard let contentView = window?.contentView else { return }
-    contentView.removeConstraint(leadingSidebarToOSDSpaceConstraint)
-    contentView.removeConstraint(trailingSidebarToOSDSpaceConstraint)
+    if let con = leadingSidebarToOSDSpaceConstraint {
+      contentView.removeConstraint(con)
+    }
+    if let con = trailingSidebarToOSDSpaceConstraint {
+      contentView.removeConstraint(con)
+    }
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
     switch osdPosition {
     case .topLeading:
@@ -86,9 +91,11 @@ extension PlayerWindowController {
       leadingSidebarToOSDSpaceConstraint = leadingSidebarView.trailingAnchor.constraint(equalTo: additionalInfoView.leadingAnchor, constant: -8.0)
       trailingSidebarToOSDSpaceConstraint = trailingSidebarView.leadingAnchor.constraint(equalTo: osdVisualEffectView.trailingAnchor, constant: 8.0)
     }
-    
+
+    leadingSidebarToOSDSpaceConstraint.identifier = "LeadingSidebar-OSDSpace"
     leadingSidebarToOSDSpaceConstraint.priority = .defaultHigh
     leadingSidebarToOSDSpaceConstraint.isActive = true
+    trailingSidebarToOSDSpaceConstraint.identifier = "TrailingSidebar-OSDSpace"
     trailingSidebarToOSDSpaceConstraint.isActive = true
     contentView.layoutSubtreeIfNeeded()
   }

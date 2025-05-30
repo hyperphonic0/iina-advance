@@ -498,7 +498,7 @@ extension PlayerWindowController {
                        viewportLeadingOffsetFromLeadingSidebarLeadingConstraint,
                        viewportLeadingToLeadingSidebarClipTrailingConstraint] {
       if let constraint = constraint {
-        window.contentView?.removeConstraint(constraint)
+        contentView.removeConstraint(constraint)
       }
     }
 
@@ -511,14 +511,24 @@ extension PlayerWindowController {
 
     // - Add new:
     let sidebarWidth = tabToShow.group.width(using: parentLayout.spec.moreSidebarState)
+    let tabContainerView: NSView = setLeadingSidebarHorizontalConstraints(leadingSidebar.placement,
+                                                                          sidebarWidth: sidebarWidth, ΔWindowWidth: ΔWindowWidth)
+
+
+    prepareRemainingLayoutForOpening(sidebar: leadingSidebar, sidebarView: leadingSidebarView, tabContainerView: tabContainerView, tab: tabToShow)
+  }
+
+  @discardableResult
+  func setLeadingSidebarHorizontalConstraints(_ placement: Preference.PanelPlacement, sidebarWidth: CGFloat, ΔWindowWidth: CGFloat) -> NSView {
+    // - Add new:
     let tabContainerView: NSView
     let boundaryView: NSView
 
-    if leadingSidebar.placement == .insideViewport {
+    if placement == .insideViewport {
       tabContainerView = leadingSidebarView
-      boundaryView = contentView
+      boundaryView = window!.contentView!
     } else {
-      assert(leadingSidebar.placement == .outsideViewport)
+      assert(placement == .outsideViewport)
       // To provide a smooth "slide" animation for the panel which moves into the viewport but doesn't spill out the other side
       // (or end up forcing the window to enlarge!) it is easiest to use its superview as a clip view. We don't know which tab
       // group view will be stored in the sidebar at this point and would rather not add complexity there, so just use a dedicated
@@ -534,20 +544,23 @@ extension PlayerWindowController {
       // extra constraint for clipView:
       viewportLeadingToLeadingSidebarClipTrailingConstraint = boundaryView.leadingAnchor.constraint(
         equalTo: leadingSidebarView.trailingAnchor, constant: 0)
+      viewportLeadingToLeadingSidebarClipTrailingConstraint.identifier = "ViewportLeading-LeadingSidebar-ClipTrailing"
       viewportLeadingToLeadingSidebarClipTrailingConstraint.isActive = true
     }
 
-    let coefficients = getLeadingSidebarWidthCoefficients(visible: false, leadingSidebar.placement, ΔWindowWidth: ΔWindowWidth)
+    let coefficients = getLeadingSidebarWidthCoefficients(visible: false, placement, ΔWindowWidth: ΔWindowWidth)
 
     viewportLeadingOffsetFromLeadingSidebarLeadingConstraint = boundaryView.leadingAnchor.constraint(
       equalTo: tabContainerView.leadingAnchor, constant: coefficients.0 * sidebarWidth)
+    viewportLeadingOffsetFromLeadingSidebarLeadingConstraint.identifier = "ViewportLeading-LeadingSidebar-Leading"
     viewportLeadingOffsetFromLeadingSidebarLeadingConstraint.isActive = true
 
     viewportLeadingOffsetFromLeadingSidebarTrailingConstraint = tabContainerView.trailingAnchor.constraint(
       equalTo: boundaryView.leadingAnchor, constant: coefficients.1 * sidebarWidth)
+    viewportLeadingOffsetFromLeadingSidebarLeadingConstraint.identifier = "ViewportLeading-LeadingSidebar-Trailing"
     viewportLeadingOffsetFromLeadingSidebarTrailingConstraint.isActive = true
 
-    prepareRemainingLayoutForOpening(sidebar: leadingSidebar, sidebarView: leadingSidebarView, tabContainerView: tabContainerView, tab: tabToShow)
+    return tabContainerView
   }
 
   /**
@@ -580,7 +593,7 @@ extension PlayerWindowController {
   }
 
   private func updateLeadingSidebarWidthConstraints(to newWidth: CGFloat, visible: Bool, _ placement: Preference.PanelPlacement,
-                                         ΔWindowWidth: CGFloat) {
+                                                    ΔWindowWidth: CGFloat) {
     log.verbose{"Updating leadingSidebar constraints for \(visible ? "OPEN" : "CLOSED"), width=\(newWidth), \(placement), ΔWindowWidth=\(ΔWindowWidth)"}
     let coefficients = getLeadingSidebarWidthCoefficients(visible: visible, placement, ΔWindowWidth: ΔWindowWidth)
 
@@ -602,7 +615,7 @@ extension PlayerWindowController {
                        viewportTrailingOffsetFromTrailingSidebarTrailingConstraint,
                        viewportTrailingToTrailingSidebarClipLeadingConstraint] {
       if let constraint = constraint {
-        window.contentView?.removeConstraint(constraint)
+        contentView.removeConstraint(constraint)
       }
     }
 
@@ -615,14 +628,21 @@ extension PlayerWindowController {
 
     // - Add new:
     let sidebarWidth = tabToShow.group.width(using: parentLayout.spec.moreSidebarState)
+    let tabContainerView: NSView = setTrailingSidebarHorizontalConstraints(trailingSidebar.placement,
+                                                                           sidebarWidth: sidebarWidth, ΔWindowWidth: ΔWindowWidth)
+
+    prepareRemainingLayoutForOpening(sidebar: trailingSidebar, sidebarView: trailingSidebarView, tabContainerView: tabContainerView, tab: tabToShow)
+  }
+
+  @discardableResult
+  func setTrailingSidebarHorizontalConstraints(_ placement: Preference.PanelPlacement, sidebarWidth: CGFloat, ΔWindowWidth: CGFloat) -> NSView {
     let tabContainerView: NSView
     let boundaryView: NSView
-
-    if trailingSidebar.placement == .insideViewport {
+    if placement == .insideViewport {
       tabContainerView = trailingSidebarView
-      boundaryView = contentView
+      boundaryView = window!.contentView!
     } else {
-      assert(trailingSidebar.placement == .outsideViewport)
+      assert(placement == .outsideViewport)
       let clipView = NSView()
       clipView.identifier = .init("trailingSidebarClipView")
       trailingSidebarView.addSubview(clipView, positioned: .below, relativeTo: trailingSidebarLeadingBorder)
@@ -634,20 +654,23 @@ extension PlayerWindowController {
       // extra constraint for clipView:
       viewportTrailingToTrailingSidebarClipLeadingConstraint = boundaryView.trailingAnchor.constraint(
         equalTo: trailingSidebarView.leadingAnchor, constant: 0)
+      viewportTrailingToTrailingSidebarClipLeadingConstraint.identifier = "ViewportTrailing-TrailingSidebar-ClipLeading"
       viewportTrailingToTrailingSidebarClipLeadingConstraint.isActive = true
     }
 
-    let coefficients = getTrailingSidebarWidthCoefficients(visible: false, trailingSidebar.placement, ΔWindowWidth: ΔWindowWidth)
+    let coefficients = getTrailingSidebarWidthCoefficients(visible: false, placement, ΔWindowWidth: ΔWindowWidth)
 
     viewportTrailingOffsetFromTrailingSidebarLeadingConstraint = boundaryView.trailingAnchor.constraint(
       equalTo: tabContainerView.leadingAnchor, constant: coefficients.0 * sidebarWidth)
+    viewportTrailingOffsetFromTrailingSidebarLeadingConstraint.identifier = "ViewportTrailing-TrailingSidebar-Leading"
     viewportTrailingOffsetFromTrailingSidebarLeadingConstraint.isActive = true
 
     viewportTrailingOffsetFromTrailingSidebarTrailingConstraint = tabContainerView.trailingAnchor.constraint(
       equalTo: boundaryView.trailingAnchor, constant: coefficients.1 * sidebarWidth)
+    viewportTrailingOffsetFromTrailingSidebarLeadingConstraint.identifier = "ViewportTrailing-TrailingSidebar-Trailing"
     viewportTrailingOffsetFromTrailingSidebarTrailingConstraint.isActive = true
 
-    prepareRemainingLayoutForOpening(sidebar: trailingSidebar, sidebarView: trailingSidebarView, tabContainerView: tabContainerView, tab: tabToShow)
+    return tabContainerView
   }
 
   /**

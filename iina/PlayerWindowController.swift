@@ -390,15 +390,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // - Leading sidebar constraints
   @IBOutlet weak var viewportLeadingOffsetFromContentViewLeadingConstraint: NSLayoutConstraint!
-  @IBOutlet weak var viewportLeadingOffsetFromLeadingSidebarLeadingConstraint: NSLayoutConstraint!
-  @IBOutlet weak var viewportLeadingOffsetFromLeadingSidebarTrailingConstraint: NSLayoutConstraint!
+  var viewportLeadingOffsetFromLeadingSidebarLeadingConstraint: NSLayoutConstraint!
+  var viewportLeadingOffsetFromLeadingSidebarTrailingConstraint: NSLayoutConstraint!
 
   var viewportLeadingToLeadingSidebarClipTrailingConstraint: NSLayoutConstraint!
 
   // - Trailing sidebar constraints
   @IBOutlet weak var viewportTrailingOffsetFromContentViewTrailingConstraint: NSLayoutConstraint!
-  @IBOutlet weak var viewportTrailingOffsetFromTrailingSidebarLeadingConstraint: NSLayoutConstraint!
-  @IBOutlet weak var viewportTrailingOffsetFromTrailingSidebarTrailingConstraint: NSLayoutConstraint!
+  var viewportTrailingOffsetFromTrailingSidebarLeadingConstraint: NSLayoutConstraint!
+  var viewportTrailingOffsetFromTrailingSidebarTrailingConstraint: NSLayoutConstraint!
 
   var viewportTrailingToTrailingSidebarClipLeadingConstraint: NSLayoutConstraint!
 
@@ -411,9 +411,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
    │   └────┘  └───────┘   │
    └───────────────────────┘
    */
-  @IBOutlet weak var leadingSidebarToOSDSpaceConstraint: NSLayoutConstraint!
-  @IBOutlet weak var trailingSidebarToOSDSpaceConstraint: NSLayoutConstraint!
-  @IBOutlet weak var osdTopToTopBarConstraint: NSLayoutConstraint!
+  var leadingSidebarToOSDSpaceConstraint: NSLayoutConstraint!
+  var trailingSidebarToOSDSpaceConstraint: NSLayoutConstraint!
+  var osdTopToTopBarConstraint: NSLayoutConstraint!
   @IBOutlet var osdLeadingToMiniPlayerButtonsTrailingConstraint: NSLayoutConstraint!
   @IBOutlet weak var osdIconWidthConstraint: NSLayoutConstraint!
   @IBOutlet weak var osdIconHeightConstraint: NSLayoutConstraint!
@@ -439,7 +439,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   var playSliderHeightConstraint: NSLayoutConstraint!
 
-  var topOSCHeightConstraint: NSLayoutConstraint!
+//  var topOSCHeightConstraint: NSLayoutConstraint!
 
   var volumeIconHeightConstraint: NSLayoutConstraint!
   var volumeIconAspectConstraint: NSLayoutConstraint!
@@ -531,9 +531,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   let oscTwoRowView = TwoRowBarOSCView()
   let seekPreview = SeekPreview()
 
-  @IBOutlet weak var leadingSidebarView: NSVisualEffectView!
+  var leadingSidebarView = ClickThroughVisualEffectView()
   var leadingSidebarTrailingBorder = NSBox()  // shown if leading sidebar is "outside"
-  @IBOutlet weak var trailingSidebarView: NSVisualEffectView!
+  var trailingSidebarView = ClickThroughVisualEffectView()
   var trailingSidebarLeadingBorder = NSBox()  // shown if trailing sidebar is "outside"
 
   @IBOutlet weak var bufferIndicatorView: NSVisualEffectView!
@@ -832,13 +832,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
 
     resetCollectionBehavior()
-    updateBufferIndicatorView()
-    updateOSDPosition()
 
     addAllObservers()
 
     /// Enqueue this in case `windowDidLoad` is not yet done
     animationPipeline.submitInstantTask{ [self] in
+      updateBufferIndicatorView()
+      updateOSDPosition()
+
       if case .restoring(let priorState) = sessionState {
         restoreFromMiscWindowBools(priorState)
       } else {

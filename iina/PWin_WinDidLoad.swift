@@ -83,6 +83,9 @@ extension PlayerWindowController {
       setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
 
       window.preservesContentDuringLiveResize = false
+      contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: bufferIndicatorView)
+      contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: leadingSidebarView)
+
       initViewportView(in: contentView)
       initAlbumArtView()
       initSeekPreview(in: contentView)
@@ -325,11 +328,6 @@ extension PlayerWindowController {
     viewportTopOffsetFromTopBarBottomConstraint.identifier = "ViewportTopOffsetFromTopBarBottomConstraint"
     viewportTopOffsetFromTopBarBottomConstraint.isActive = true
 
-    osdTopToTopBarConstraint = osdVisualEffectView.topAnchor.constraint(equalTo: topBarView.bottomAnchor, constant: 8)
-    osdTopToTopBarConstraint.identifier = "OSDTopToTopBarConstraint"
-    osdTopToTopBarConstraint.priority = .init(900)
-    osdTopToTopBarConstraint.isActive = true
-
     /// `controlBarTop`
     controlBarTop.translatesAutoresizingMaskIntoConstraints = false
     controlBarTop.clipsToBounds = true  // for better animations when toggling OSC position/placement
@@ -337,9 +335,9 @@ extension PlayerWindowController {
     topBarView.addSubviewAndConstraints(controlBarTop,
                                         bottom: 0, leading: 0, trailing: 0)
 
-    topOSCHeightConstraint = topBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
-    topOSCHeightConstraint.identifier = .init("TopOSC-HeightConstraint")
-    topOSCHeightConstraint.isActive = true
+//    topOSCHeightConstraint = topBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
+//    topOSCHeightConstraint.identifier = .init("TopOSC-HeightConstraint")
+//    topOSCHeightConstraint.isActive = true
 
     /// `titleBarView`
     titleBarView.translatesAutoresizingMaskIntoConstraints = false
@@ -375,6 +373,12 @@ extension PlayerWindowController {
     topBarBottomBorder_HeightConstraint.priority = .defaultHigh
     topBarBottomBorder_HeightConstraint.isActive = true
 
+    // Relation to OSD
+
+    osdTopToTopBarConstraint = osdVisualEffectView.topAnchor.constraint(equalTo: topBarView.bottomAnchor, constant: 8)
+    osdTopToTopBarConstraint.identifier = "OSDTopToTopBarConstraint"
+    osdTopToTopBarConstraint.priority = .init(900)
+    osdTopToTopBarConstraint.isActive = true
   }
 
   func initBottomBarTopBorder() {
@@ -448,9 +452,27 @@ extension PlayerWindowController {
     self.bottomBarView = bottomBarView
   }
 
+  /// Prerequisites:
+  /// 1. `viewportView` added to `contentView`.
+  /// 2. `closeButtonView` added to `contentView`.
   private func initSidebars(in contentView: NSView) {
+    let sidebarWidth = Constants.Sidebar.settingsWidth
+
+    // - Leading sidebar
+
+    leadingSidebarView.idString = "LeadingSidebarView"
+    leadingSidebarView.blendingMode = .withinWindow
+    leadingSidebarView.material = .toolTip
+    leadingSidebarView.state = .active
+    leadingSidebarView.translatesAutoresizingMaskIntoConstraints = false
+    leadingSidebarView.autoresizesSubviews = false
+
+    leadingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor).isActive = true
+    viewportView.bottomAnchor.constraint(equalTo: leadingSidebarView.bottomAnchor).isActive = true
+
+    // border
     leadingSidebarView.addSubview(leadingSidebarTrailingBorder)
-    leadingSidebarTrailingBorder.idString = "LeadingSidebaTrailingBorder"
+    leadingSidebarTrailingBorder.idString = "LeadingSidebarTrailingBorder"
     leadingSidebarTrailingBorder.boxType = .custom
     leadingSidebarTrailingBorder.titlePosition = .noTitle
     leadingSidebarTrailingBorder.borderWidth = 0
@@ -460,8 +482,21 @@ extension PlayerWindowController {
     leadingSidebarTrailingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
     leadingSidebarTrailingBorder.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: -0.5).isActive = true
 
+    // Add constraints to hide the sidebars initially, using reasonable values
+    setLeadingSidebarHorizontalConstraints(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
+
+    // - Trailing sidebar
+
+    trailingSidebarView.idString = "TrailingSidebarView"
+    trailingSidebarView.blendingMode = .withinWindow
+    trailingSidebarView.material = .toolTip
+    trailingSidebarView.state = .active
+    trailingSidebarView.translatesAutoresizingMaskIntoConstraints = false
+    trailingSidebarView.autoresizesSubviews = false
+
+    // border
     trailingSidebarView.addSubview(trailingSidebarLeadingBorder)
-    trailingSidebarLeadingBorder.idString = "TrailingSidebaLeadingBorder"
+    trailingSidebarLeadingBorder.idString = "TrailingSidebarLeadingBorder"
     trailingSidebarLeadingBorder.boxType = .custom
     trailingSidebarLeadingBorder.titlePosition = .noTitle
     trailingSidebarLeadingBorder.borderWidth = 0
@@ -470,6 +505,13 @@ extension PlayerWindowController {
     trailingSidebarLeadingBorder.translatesAutoresizingMaskIntoConstraints = false
     trailingSidebarLeadingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
     trailingSidebarLeadingBorder.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0.5).isActive = true
+
+    setTrailingSidebarHorizontalConstraints(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
+
+    // - Constraints between sidebars
+
+    trailingSidebarView.topAnchor.constraint(equalTo: leadingSidebarView.topAnchor).isActive = true
+    trailingSidebarView.bottomAnchor.constraint(equalTo: leadingSidebarView.bottomAnchor).isActive = true
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews
@@ -725,16 +767,22 @@ extension PlayerWindowController {
     // other initialization
     osdAccessoryProgress.usesThreadedAnimation = false
     osdVisualEffectView.roundCorners()
+
+    osdVisualEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingSidebarView.trailingAnchor, constant: 8).isActive = true
+    trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: osdVisualEffectView.trailingAnchor, constant: 8).isActive = true
+    
   }
 
+  /// Prerequisites:
+  /// 1. `osdVisualEffectView` added to `contentView`.
   func initAdditionalInfoView() {
     additionalInfoView.roundCorners()
     additionalInfoTitle.translatesAutoresizingMaskIntoConstraints = false
     additionalInfoTitle.setContentCompressionResistancePriority(.init(250), for: .horizontal)
     additionalInfoTitle.setContentHuggingPriority(.init(900), for: .horizontal)
     additionalInfoView.addSubview(additionalInfoTitle)
-    let topConstraint = additionalInfoTitle.topAnchor.constraint(equalTo: osdVisualEffectView.topAnchor, constant: 8)
-    topConstraint.priority = .init(rawValue: 900)
+    let topConstraint = additionalInfoTitle.topAnchor.constraint(equalTo: osdVisualEffectView.topAnchor)
+//    topConstraint.priority = .init(rawValue: 900)
     topConstraint.isActive = true
 
     let btmConstraint = additionalInfoStackView.topAnchor.constraint(equalTo: additionalInfoTitle.bottomAnchor, constant: 4)
@@ -746,6 +794,11 @@ extension PlayerWindowController {
     additionalInfoTitle.idString = "AddlInfo-TitleLabel"
     additionalInfoTitle.font = .systemFont(ofSize: 18)
     additionalInfoTitle.textColor = .labelColor
+
+    additionalInfoView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingSidebarView.trailingAnchor, constant: 8).isActive = true
+
+    trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: additionalInfoView.trailingAnchor, constant: 8).isActive = true
+
   }
 
   func initCustomWindowBorder(in contentView: NSView) {
