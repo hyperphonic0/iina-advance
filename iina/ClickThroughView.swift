@@ -21,6 +21,10 @@ class ClickThroughTextField: NSTextField {
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
+class ClickThroughVisualEffectView: NSVisualEffectView {
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
+
 class MouseIgnoringVisualEffectView: NSVisualEffectView {
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }

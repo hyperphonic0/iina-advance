@@ -503,7 +503,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Sidebar at top of window. May be `insideViewport` or `outsideViewport`. May contain `titleBarView` and/or `controlBarTop`
   /// depending on configuration.
-  @IBOutlet weak var topBarView: NSVisualEffectView!
+  var topBarView = ClickThroughVisualEffectView()
   /// Bottom border of `topBarView`.
   let topBarBottomBorder = NSBox()
   /// Reserves space for the title bar components. Can contain CustomTitleBarView *only* if using legacy

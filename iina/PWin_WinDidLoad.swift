@@ -82,11 +82,6 @@ extension PlayerWindowController {
       /// bleed through during their show/hide animations.
       setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
 
-      // Titlebar accessories
-
-      // Update this here to reduce animation jitter on older versions of MacOS:
-      viewportTopOffsetFromTopBarTopConstraint.constant = Constants.Distance.standardTitleBarHeight
-
       window.preservesContentDuringLiveResize = false
       initViewportView(in: contentView)
       initAlbumArtView()
@@ -306,9 +301,33 @@ extension PlayerWindowController {
   }
 
   func initTopBarView(in contentView: NSView) {
+    topBarView.idString = "TopBarView"
+    topBarView.blendingMode = .withinWindow
+    topBarView.material = .titlebar
+    topBarView.state = .followsWindowActiveState
     // Needed to try to clip half of topBarBottomBorder, to achieve 0.5px ideally. See below
     topBarView.clipsToBounds = true
+    contentView.addSubview(topBarView, positioned: .above, relativeTo: osdVisualEffectView)
     topBarView.translatesAutoresizingMaskIntoConstraints = false
+    topBarLeadingSpaceConstraint = topBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+    topBarLeadingSpaceConstraint.identifier = "TopBarLeadingSpaceConstraint"
+    topBarLeadingSpaceConstraint.isActive = true
+    topBarTrailingSpaceConstraint = topBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
+    topBarTrailingSpaceConstraint.identifier = "TopBarTrailingSpaceConstraint"
+    topBarTrailingSpaceConstraint.isActive = true
+
+    viewportTopOffsetFromTopBarTopConstraint = viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: Constants.Distance.standardTitleBarHeight)
+    viewportTopOffsetFromTopBarTopConstraint.identifier = "ViewportTopOffsetFromTopBarTopConstraint"
+    viewportTopOffsetFromTopBarTopConstraint.isActive = true
+
+    viewportTopOffsetFromTopBarBottomConstraint = viewportView.topAnchor.constraint(equalTo: topBarView.bottomAnchor, constant: -Constants.Distance.standardTitleBarHeight)
+    viewportTopOffsetFromTopBarBottomConstraint.identifier = "ViewportTopOffsetFromTopBarBottomConstraint"
+    viewportTopOffsetFromTopBarBottomConstraint.isActive = true
+
+    osdTopToTopBarConstraint = osdVisualEffectView.topAnchor.constraint(equalTo: topBarView.bottomAnchor, constant: 8)
+    osdTopToTopBarConstraint.identifier = "OSDTopToTopBarConstraint"
+    osdTopToTopBarConstraint.priority = .init(900)
+    osdTopToTopBarConstraint.isActive = true
 
     /// `controlBarTop`
     controlBarTop.translatesAutoresizingMaskIntoConstraints = false
