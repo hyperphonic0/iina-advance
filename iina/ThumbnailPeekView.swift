@@ -19,8 +19,7 @@ class ThumbnailPeekView: NSImageView {
   var heightConstraint: NSLayoutConstraint!
 
   init() {
-    let dummyFrame = NSRect(origin: .zero, size: CGSize(width: 160, height: 90))
-    super.init(frame: dummyFrame)
+    super.init(frame: .zero)
     wantsLayer = true
     layer?.masksToBounds = true
     imageScaling = .scaleNone
@@ -29,9 +28,9 @@ class ThumbnailPeekView: NSImageView {
     updateColors()
 
     translatesAutoresizingMaskIntoConstraints = false
-    widthConstraint = widthAnchor.constraint(equalToConstant: dummyFrame.width)
+    widthConstraint = widthAnchor.constraint(equalToConstant: 0)
     widthConstraint.isActive = true
-    heightConstraint = heightAnchor.constraint(equalToConstant: dummyFrame.height)
+    heightConstraint = heightAnchor.constraint(equalToConstant: 0)
     heightConstraint.isActive = true
   }
 

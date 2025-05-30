@@ -557,7 +557,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var osdAccessoryText: NSTextField!
   @IBOutlet weak var osdAccessoryProgress: NSProgressIndicator!
 
-  @IBOutlet weak var pipOverlayView: NSVisualEffectView!
   @IBOutlet weak var viewportView: ViewportView!
   let viewportTopSpacer = SpacerView(id: "ViewportTopSpacer")
   let viewportBottomSpacer = SpacerView(id: "ViewportBottomSpacer")
@@ -1552,8 +1551,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         isPausedDueToMiniaturization = false
       }
       if Preference.bool(for: .togglePipByMinimizingWindow) &&
-          (!Preference.bool(for: .togglePipByMinimizingWindowForVideoOnly) ||  player.info.currentMediaAudioStatus == .notAudio)
-          && !isWindowMiniaturizedDueToPip {
+          (!Preference.bool(for: .togglePipByMinimizingWindowForVideoOnly) ||  player.info.currentMediaAudioStatus == .notAudio) {
         exitPIP()
       }
       player.events.emit(.windowDeminiaturized)

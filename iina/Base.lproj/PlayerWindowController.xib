@@ -41,7 +41,6 @@
                 <outlet property="osdTrailingMarginConstraint" destination="20A-Y9-xnl" id="oM9-TJ-0KE"/>
                 <outlet property="osdVStackView" destination="g0j-zS-jKv" id="aoo-Tm-yhj"/>
                 <outlet property="osdVisualEffectView" destination="g0O-v5-RQj" id="V4X-8K-6O1"/>
-                <outlet property="pipOverlayView" destination="Nrz-jZ-Luf" id="EU7-oY-Bwp"/>
                 <outlet property="trailingSidebarLeadingBorder" destination="exJ-CB-MoS" id="jY1-pX-sXL"/>
                 <outlet property="trailingSidebarToOSDSpaceConstraint" destination="zbm-D9-epN" id="TdE-wQ-5Me"/>
                 <outlet property="trailingSidebarView" destination="epo-S6-QVB" id="efz-TR-rAa"/>
@@ -62,44 +61,13 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" autoresizesSubviews="NO" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                 <subviews>
                     <customView identifier="Viewport-View" autoresizesSubviews="NO" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3nL-Ky-Hfa" userLabel="Viewport View" customClass="ViewportView" customModule="IINA_Advance" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
-                        <subviews>
-                            <visualEffectView identifier="PiP-Overlay-View" hidden="YES" wantsLayer="YES" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Nrz-jZ-Luf" userLabel="PIP-Overlay View">
-                                <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
-                                <subviews>
-                                    <imageView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="YkI-ii-zaW" userLabel="PiP Image View">
-                                        <rect key="frame" x="277" y="166" width="87" height="68"/>
-                                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="playing-in-pip" id="0QW-Vy-zmW"/>
-                                    </imageView>
-                                    <textField wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pxV-jX-kfL">
-                                        <rect key="frame" x="194" y="142" width="253" height="16"/>
-                                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="This video is playing in Picture-in-Picture" id="gdE-b5-kod">
-                                            <font key="font" metaFont="system"/>
-                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                        </textFieldCell>
-                                    </textField>
-                                </subviews>
-                                <constraints>
-                                    <constraint firstItem="pxV-jX-kfL" firstAttribute="centerX" secondItem="Nrz-jZ-Luf" secondAttribute="centerX" id="1zk-hi-hE0"/>
-                                    <constraint firstItem="YkI-ii-zaW" firstAttribute="centerX" secondItem="Nrz-jZ-Luf" secondAttribute="centerX" id="JAE-TE-I2W"/>
-                                    <constraint firstItem="pxV-jX-kfL" firstAttribute="top" secondItem="YkI-ii-zaW" secondAttribute="bottom" constant="8" id="VX9-W1-IMy"/>
-                                    <constraint firstItem="YkI-ii-zaW" firstAttribute="centerY" secondItem="Nrz-jZ-Luf" secondAttribute="centerY" id="hhc-1u-xpc"/>
-                                </constraints>
-                            </visualEffectView>
-                        </subviews>
-                        <constraints>
-                            <constraint firstAttribute="bottom" secondItem="Nrz-jZ-Luf" secondAttribute="bottom" id="8s9-Ml-Vxk"/>
-                            <constraint firstItem="Nrz-jZ-Luf" firstAttribute="leading" secondItem="3nL-Ky-Hfa" secondAttribute="leading" id="ffs-jZ-Hhy"/>
-                            <constraint firstItem="Nrz-jZ-Luf" firstAttribute="top" secondItem="3nL-Ky-Hfa" secondAttribute="top" id="sXt-DP-0t5"/>
-                            <constraint firstAttribute="trailing" secondItem="Nrz-jZ-Luf" secondAttribute="trailing" id="zBT-XH-hl3"/>
-                        </constraints>
                     </customView>
                     <visualEffectView identifier="Additional-Info-View" hidden="YES" wantsLayer="YES" horizontalCompressionResistancePriority="250" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Qbi-jx-9pO" userLabel="Additional-Info View" customClass="MouseIgnoringVisualEffectView" customModule="IINA_Advance" customModuleProvider="target">
                         <rect key="frame" x="472" y="297" width="160" height="67"/>
@@ -470,7 +438,6 @@
         <image name="backward" width="11" height="11"/>
         <image name="battery" width="57" height="30"/>
         <image name="close" width="11" height="11"/>
-        <image name="playing-in-pip" width="87" height="68"/>
         <image name="▶️" width="128" height="128"/>
     </resources>
 </document>

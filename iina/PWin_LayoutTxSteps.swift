@@ -608,7 +608,7 @@ extension PlayerWindowController {
     // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
     if transition.isWindowInitialLayout || transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
-      showOrHidePipOverlayView()
+      pip.showOrHidePipOverlayView()
 
       if transition.outputLayout.isMusicMode {
         log.verbose{"[\(transition.name)] Entering music mode: adding views to bottomBarView"}

@@ -356,6 +356,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         return
       }
       Logger.log.verbose{"Window did minimize; adding to minimized windows list: \(savedStateName.quoted)"}
+      if !AppDelegate.shared.startupHandler.isDoneLaunching, let wc = window.windowController as? WindowController,
+         AppDelegate.shared.startupHandler.wcsToRestore.contains(wc) {
+        Logger.log.verbose{"Marking window as done with restore: \(savedStateName.quoted)"}
+        AppDelegate.shared.startupHandler.wcsDoneWithRestore.insert(wc)
+        AppDelegate.shared.startupHandler.showWindowsIfReady()
+      }
       UIState.shared.windowsOpen.remove(savedStateName)
       UIState.shared.windowsMinimized.insert(savedStateName)
       UIState.shared.saveCurrentOpenWindowList()

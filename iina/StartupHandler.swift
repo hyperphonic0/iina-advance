@@ -340,6 +340,8 @@ class StartupHandler {
 
 
   private func addWindowToRestore(_ savedWindow: SavedWindow, _ wc: WindowController) {
+    Logger.Subsystem.restore.verbose{"Adding window to restore: \(savedWindow.saveName.string.quoted), minimized=\(savedWindow.isMinimized.yn)"}
+
     // Rebuild UIState window sets as we go:
     if savedWindow.isMinimized {
       // No need to worry about partial show, so skip wcsToRestore

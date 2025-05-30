@@ -17,10 +17,47 @@ enum PIPStatus {
 /// Picture in Picture handling for a single player window
 extension PlayerWindowController {
 
+  class PIPOverlayView: ClickThroughVisualEffectView {
+    let pipImageView = NSImageView()
+    let label = NSTextField(labelWithString: "This video is playing in Picture-in-Picture")
+
+    init() {
+      super.init(frame: .zero)
+      idString = "PIPOverlay"
+      blendingMode = .behindWindow
+      material = .underWindowBackground
+      state = .active
+      translatesAutoresizingMaskIntoConstraints = false
+
+      subviews = [pipImageView, label]
+
+      pipImageView.imageScaling = .scaleProportionallyDown
+      pipImageView.imageFrameStyle = .none
+      pipImageView.refusesFirstResponder = true
+      pipImageView.image = NSImage(named: "playing-in-pip")
+      pipImageView.animates = true
+      pipImageView.alignment = .center
+      pipImageView.translatesAutoresizingMaskIntoConstraints = false
+      pipImageView.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+      pipImageView.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
+
+      label.idString = "PIPOverlayLabel"
+      label.translatesAutoresizingMaskIntoConstraints = false
+      label.setContentHuggingPriority(.required, for: .horizontal)
+      label.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+      label.topAnchor.constraint(equalTo: pipImageView.bottomAnchor, constant: 8).isActive = true
+    }
+    
+    @MainActor required init?(coder: NSCoder) {
+      fatalError("init(coder:) has not been implemented")
+    }
+  }
+
   /// `PIPState`: Encapsulates all state for PiP.
   class PIPState {
     unowned var player: PlayerCore
     var log: Logger.Subsystem { player.log }
+    var pwc: PlayerWindowController { player.windowController }
 
     var status = PIPStatus.notInPIP {
       didSet {
@@ -31,16 +68,41 @@ extension PlayerWindowController {
     /// Needs to be retained during PiP, but cannot be reused
     var videoController: NSViewController!
 
+    let overlayView = PIPOverlayView()
+
     var controller: PIPViewController { _pip }
     lazy var _pip: PIPViewController = {
       let pip = VideoPIPViewController()
-      pip.delegate = player.windowController
+      pip.delegate = pwc
       return pip
     }()
 
     init(_ player: PlayerCore) {
       self.player = player
     }
+
+    func hideOverlayView() {
+      // Hide PiP overlay (if in PiP) during animation
+      overlayView.removeFromSuperview()
+    }
+
+    func showOrHidePipOverlayView() {
+      let mustHide: Bool
+      if status == .inPIP {
+        mustHide = pwc.isInMiniPlayer && !pwc.musicModeGeo.isVideoVisible
+      } else {
+        mustHide = true
+      }
+      log.verbose{"\(mustHide ? "Hiding" : "Showing") PiP overlay"}
+      if mustHide {
+        hideOverlayView()
+      } else {
+        guard !pwc.viewportView.containsSubview(overlayView) else { return }
+        pwc.viewportView.addSubview(overlayView, positioned: .above, relativeTo: pwc.viewportTrailingSpacer)
+        overlayView.addAllConstraintsToFillSuperview()
+      }
+    }
+
   }
 }
 
@@ -78,17 +140,6 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     })
   }
 
-  func showOrHidePipOverlayView() {
-    let mustHide: Bool
-    if pip.status == .inPIP {
-      mustHide = isInMiniPlayer && !musicModeGeo.isVideoVisible
-    } else {
-      mustHide = true
-    }
-    log.verbose("\(mustHide ? "Hiding" : "Showing") PiP overlay")
-    pipOverlayView.isHidden = mustHide
-  }
-
   private func doPIPEntry(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil,
                           then doAfter: (() -> Void)? = nil) {
     guard let window else { return }
@@ -106,7 +157,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       pip.controller.title = window.title
 
       pip.controller.presentAsPicture(inPicture: pip.videoController)
-      showOrHidePipOverlayView()
+      pip.showOrHidePipOverlayView()
 
       let aspectRatioSize = player.videoGeo.videoSizeCAR
       log.verbose("Setting PiP aspect to \(aspectRatioSize.aspect)")
@@ -123,6 +174,10 @@ extension PlayerWindowController: PIPViewControllerDelegate {
         isWindowHidden = true
         window.orderOut(self)
         log.verbose("PIP entered; adding player to hidden windows list: \(window.savedStateName.quoted)")
+        if player.isRestoring, AppDelegate.shared.startupHandler.wcsToRestore.contains(self) {
+          // patch logic hole here
+          AppDelegate.shared.startupHandler.wcsDoneWithRestore.insert(self)
+        }
         break
       case .minimize:
         isWindowMiniaturizedDueToPip = true
@@ -163,7 +218,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     // Hide the overlay view preemptively, to prevent any issues where it does
     // not hide in time and ends up covering the video view (which will be added
     // to the window under everything else, including the overlay).
-    showOrHidePipOverlayView()
+    pip.showOrHidePipOverlayView()
 
     if AppDelegate.shared.isTerminating {
       // Don't bother restoring window state past this point

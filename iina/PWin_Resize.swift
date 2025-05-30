@@ -539,8 +539,7 @@ extension PlayerWindowController {
       if isTogglingVideoView {
         // Hide OSD during animation
         hideOSD(immediately: true)
-        // Hide PiP overlay (if in PiP) during animation
-        pipOverlayView.isHidden = true
+        pip.hideOverlayView()
 
         /// Temporarily hide window buttons. Using `isHidden` will conveniently override its alpha value
         closeButtonView.isHidden = true
@@ -561,7 +560,7 @@ extension PlayerWindowController {
         /// Allow it to show again
         closeButtonView.isHidden = false
 
-        showOrHidePipOverlayView()
+        pip.showOrHidePipOverlayView()
 
         // Need to force draw if window was restored while paused + video hidden
         if outputGeo.isVideoVisible {
