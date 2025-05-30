@@ -913,8 +913,7 @@ extension PlayerWindowController {
       }
     }
 
-    updateDepthOrderOfBars(topBar: outputLayout.topBarPlacement, bottomBar: outputLayout.bottomBarPlacement,
-                           leadingSidebar: outputLayout.leadingSidebarPlacement, trailingSidebar: outputLayout.trailingSidebarPlacement)
+    updateDepthOrderOfBars(outputLayout)
 
     prepareDepthOrderOfOutsideSidebarsForToggle(transition)
 
@@ -1001,9 +1000,7 @@ extension PlayerWindowController {
     updateSidebarVerticalConstraints(tabHeight: outputLayout.sidebarTabHeight, downshift: outputLayout.sidebarDownshift)
 
     if outputLayout.hasFloatingOSC {
-
       // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs
-
       let topRowView = controlBarFloating.topRowView
       if transition.isWindowInitialLayout || !transition.inputLayout.hasFloatingOSC {
         controlBarFloating.playButtonsContainerView.addView(fragPlaybackBtnsView, in: .center)
@@ -1702,9 +1699,12 @@ extension PlayerWindowController {
   /// • Outside bars never cast shadows or have shadows cast on them.
   /// • Inside sidebars cast shadows over inside top bar & inside bottom bar, and over `viewportView`.
   /// • Inside top & inside bottom bars do not cast shadows over `viewportView`.
-  private func updateDepthOrderOfBars(topBar: Preference.PanelPlacement, bottomBar: Preference.PanelPlacement,
-                                      leadingSidebar: Preference.PanelPlacement, trailingSidebar: Preference.PanelPlacement) {
+  private func updateDepthOrderOfBars(_ layout: LayoutState) {
     guard let window = window, let contentView = window.contentView else { return }
+    let topBar = layout.topBarPlacement
+    let bottomBar = layout.bottomBarPlacement
+    let leadingSidebar = layout.leadingSidebarPlacement
+    let trailingSidebar = layout.trailingSidebarPlacement
 
     // If a sidebar is "outsideViewport", need to put it behind the video because:
     // (1) Don't want sidebar to cast a shadow on the video
@@ -1735,7 +1735,9 @@ extension PlayerWindowController {
       }
     }
 
-    contentView.addSubview(controlBarFloating, positioned: .below, relativeTo: bottomBarView)
+    if layout.hasFloatingOSC {
+      contentView.addSubview(controlBarFloating, positioned: .below, relativeTo: bottomBarView)
+    }
   }
 
   /// This fixes an edge case when both sidebars are shown and are `.outsideViewport`. When one is toggled, and width of
