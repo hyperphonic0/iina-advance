@@ -1467,6 +1467,7 @@ class PlayerCore: NSObject {
         log.verbose("UpdateMPVWindowScale: desiredVideoScale is 0; aborting")
         return
       }
+      guard isActive else { return }
       let currentVideoScale = mpv.getVideoScale()
 
       if desiredVideoScale != currentVideoScale {
@@ -1488,6 +1489,7 @@ class PlayerCore: NSObject {
         return
       }
 
+      guard isActive else { return }
       log.verbose("Setting videoRotate to: \(userRotation)°")
       mpv.setInt(MPVOption.Video.videoRotate, userRotation)
     }
@@ -1496,6 +1498,7 @@ class PlayerCore: NSObject {
   /// Vertical flip
   func setFlip(_ enable: Bool) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       log.verbose("Setting flip to: \(enable)°")
       if enable {
         guard info.flipFilter == nil else {
@@ -1518,6 +1521,7 @@ class PlayerCore: NSObject {
   /// Horizontal flip
   func setMirror(_ enable: Bool) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       log.verbose("Setting mirror to: \(enable)°")
       if enable {
         guard info.mirrorFilter == nil else {
@@ -1539,6 +1543,7 @@ class PlayerCore: NSObject {
 
   func toggleDeinterlace(_ enable: Bool) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       mpv.setFlag(MPVOption.Video.deinterlace, enable)
     }
   }
@@ -1546,6 +1551,7 @@ class PlayerCore: NSObject {
   func toggleHardwareDecoding(_ enable: Bool) {
     let value = Preference.HardwareDecoderOption(rawValue: Preference.integer(for: .hardwareDecoder))?.mpvString ?? "auto"
     mpv.queue.async { [self] in
+      guard isActive else { return }
       mpv.setString(MPVOption.Video.hwdec, enable ? value : "no")
     }
   }
@@ -1575,6 +1581,7 @@ class PlayerCore: NSObject {
 
   func loadExternalVideoFile(_ url: URL) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       let urlPath = PlaybackID.path(from: url)
       let code = mpv.command(.videoAdd, args: [urlPath], checkError: false)
       if code < 0 {
@@ -1588,6 +1595,7 @@ class PlayerCore: NSObject {
 
   func loadExternalAudioFile(_ url: URL) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       let urlPath = PlaybackID.path(from: url)
       let code = mpv.command(.audioAdd, args: [urlPath], checkError: false)
       if code < 0 {
@@ -1601,6 +1609,7 @@ class PlayerCore: NSObject {
 
   func setAudioDelay(_ delay: Double) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       mpv.setDouble(MPVOption.Audio.audioDelay, delay)
     }
   }
@@ -1617,6 +1626,7 @@ class PlayerCore: NSObject {
       // Update playbackPositionSec preemptively, so UI doesn't flash
       // to prev chapter and back
       info.playbackPositionSec = chapter.startTime
+      guard isActive else { return }
       mpv.command(.seek, args: ["\(chapter.startTime)", "absolute"])
       _resume()
     }
@@ -1636,6 +1646,7 @@ class PlayerCore: NSObject {
 
   func setAudioDevice(_ name: String) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       log.verbose{"Seting mpv audioDevice to \(name.pii.quoted)"}
       mpv.setString(MPVProperty.audioDevice, name)
     }
@@ -1714,10 +1725,11 @@ class PlayerCore: NSObject {
   /// A [MPV_EVENT_START_FILE](https://mpv.io/manual/stable/#command-interface-mpv-event-start-file) was received.
   func fileStarted(path: String, playlistPos: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard !isStopping else { return }
+
     if isIdle {
       state = .started
     }
-    guard !isStopping else { return }
 
     guard let playbackFromPath = Playback(urlPath: path, playlistPos: playlistPos, state: .started) else {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
@@ -2157,6 +2169,7 @@ class PlayerCore: NSObject {
 
   func toggleSubVisibility(_ set: Bool? = nil) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       let newState = set ?? !info.isSubVisible
       mpv.setFlag(MPVOption.Subtitles.subVisibility, newState)
     }
@@ -2164,6 +2177,7 @@ class PlayerCore: NSObject {
 
   func toggleSecondSubVisibility(_ set: Bool? = nil) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       let newState = set ?? !info.isSecondSubVisible
       mpv.setFlag(MPVOption.Subtitles.secondarySubVisibility, newState)
     }
@@ -2220,6 +2234,7 @@ class PlayerCore: NSObject {
 
   func setSubDelay(_ delay: Double, forPrimary: Bool = true) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       let option = forPrimary ? MPVOption.Subtitles.subDelay : MPVOption.Subtitles.secondarySubDelay
       mpv.setDouble(option, delay)
     }
@@ -2229,6 +2244,7 @@ class PlayerCore: NSObject {
   func setSubScale(_ scale: Double) {
     assert(scale > 0.0, "Invalid sub scale: \(scale)")
     mpv.queue.async { [self] in
+      guard isActive else { return }
       Preference.set(scale, for: .subScale)
       mpv.setDouble(MPVOption.Subtitles.subScale, scale)
     }
@@ -2236,6 +2252,7 @@ class PlayerCore: NSObject {
 
   func setSubPos(_ pos: Int, forPrimary: Bool = true) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       if forPrimary {
         Preference.set(pos, for: .subPos)
       }
@@ -2246,6 +2263,7 @@ class PlayerCore: NSObject {
 
   func setSubTextColor(_ colorString: String) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       Preference.set(colorString, for: .subTextColorString)
       mpv.setString("options/" + MPVOption.Subtitles.subColor, colorString)
     }
@@ -2253,6 +2271,7 @@ class PlayerCore: NSObject {
 
   func setSubFont(_ font: String) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       Preference.set(font, for: .subTextFont)
       mpv.setString(MPVOption.Subtitles.subFont, font)
     }
@@ -2260,6 +2279,7 @@ class PlayerCore: NSObject {
 
   func setSubTextSize(_ fontSize: Double) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       Preference.set(fontSize, for: .subTextSize)
       mpv.setDouble("options/" + MPVOption.Subtitles.subFontSize, fontSize)
     }
@@ -2267,6 +2287,7 @@ class PlayerCore: NSObject {
 
   func setSubTextBold(_ isBold: Bool) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       Preference.set(isBold, for: .subBold)
       mpv.setFlag("options/" + MPVOption.Subtitles.subBold, isBold)
     }
@@ -2274,6 +2295,7 @@ class PlayerCore: NSObject {
 
   func setSubTextBorderColor(_ colorString: String) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       Preference.set(colorString, for: .subBorderColorString)
       mpv.setString("options/" + MPVOption.Subtitles.subBorderColor, colorString)
     }
@@ -2288,6 +2310,7 @@ class PlayerCore: NSObject {
 
   func setSubTextBgColor(_ colorString: String) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       Preference.set(colorString, for: .subBgColorString)
       mpv.setString("options/" + MPVOption.Subtitles.subBackColor, colorString)
     }
@@ -2295,8 +2318,9 @@ class PlayerCore: NSObject {
 
   func setSubEncoding(_ encoding: String) {
     mpv.queue.async { [self] in
-      mpv.setString(MPVOption.Subtitles.subCodepage, encoding)
+      guard isActive else { return }
       info.subEncoding = encoding
+      mpv.setString(MPVOption.Subtitles.subCodepage, encoding)
     }
   }
 
@@ -2463,6 +2487,7 @@ class PlayerCore: NSObject {
   ///
   /// These options currently include fullscreen and ontop.
   private func checkUnsyncedWindowOptions() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard windowController.loaded else { return }
 
     syncFullScreenState()
@@ -2476,7 +2501,9 @@ class PlayerCore: NSObject {
   }
 
   func syncFullScreenState() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard windowController.loaded else { return }
+    
     let mpvFS = mpv.getFlag(MPVOption.Window.fullscreen)
     let iinaFS = windowController.isFullScreen
     log.verbose{"IINA FullScreen state: \(iinaFS.yn), mpv: \(mpvFS.yn)"}

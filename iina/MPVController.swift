@@ -180,6 +180,7 @@ class MPVController: NSObject {
   @discardableResult
   func command(_ command: MPVCommand, args: [String?] = [], checkError: Bool = true,
                level: Logger.Level = .debug) -> Int32 {
+    guard player.isActive else { return MPV_ERROR_GENERIC.rawValue }
     if Logger.isEnabled(.verbose) {
       if command == .loadfile, let filename = args[0] {
         _ = Logger.getOrCreatePII(for: filename)
