@@ -396,18 +396,20 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     willSet {
       // - Remove old constraints:
       if let old = leadingSidebarConstraints {
+        log.verbose{"Disabling old leading sidebar constraints"}
         old.setAll(active: false)
       }
       if let newCons = newValue {
+        log.verbose{"Enabling new leading sidebar constraints"}
         newCons.setAll(active: true)
       }
     }
   }
-  
+
   struct LeadingSidebarConstraints {
-    let viewportLeadingOffsetFromLeadingSidebarLeadingConstraint: NSLayoutConstraint
-    let viewportLeadingOffsetFromLeadingSidebarTrailingConstraint: NSLayoutConstraint
-    let viewportLeadingToLeadingSidebarClipTrailingConstraint: NSLayoutConstraint?
+    let viewportLeadingOffsetFromLeading: NSLayoutConstraint
+    let viewportLeadingOffsetFromTrailing: NSLayoutConstraint
+    let viewportLeadingClipTrailing: NSLayoutConstraint?
 
     let top: NSLayoutConstraint
     let bottom: NSLayoutConstraint
@@ -415,9 +417,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let additionalInfo: NSLayoutConstraint
 
     func setAll(active: Bool) {
-      viewportLeadingOffsetFromLeadingSidebarTrailingConstraint.isActive = active
-      viewportLeadingOffsetFromLeadingSidebarLeadingConstraint.isActive = active
-      viewportLeadingToLeadingSidebarClipTrailingConstraint?.isActive = active
+      viewportLeadingOffsetFromTrailing.isActive = active
+      viewportLeadingOffsetFromLeading.isActive = active
+      viewportLeadingClipTrailing?.isActive = active
       top.isActive = active
       bottom.isActive = active
       osd.isActive = active
@@ -434,18 +436,20 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     willSet {
       // - Remove old constraints:
       if let old = trailingSidebarConstraints {
+        log.verbose{"Disabling old trailing sidebar constraints"}
         old.setAll(active: false)
       }
       if let newCons = newValue {
+        log.verbose{"Enabling new trailing sidebar constraints"}
         newCons.setAll(active: true)
       }
     }
   }
 
   struct TrailingSidebarConstraints {
-    let viewportTrailingOffsetFromTrailingSidebarLeadingConstraint: NSLayoutConstraint
-    let viewportTrailingOffsetFromTrailingSidebarTrailingConstraint: NSLayoutConstraint
-    let viewportTrailingToTrailingSidebarClipLeadingConstraint: NSLayoutConstraint?
+    let viewportTrailingOffsetFromLeading: NSLayoutConstraint
+    let viewportTrailingOffsetFromTrailing: NSLayoutConstraint
+    let viewportTrailingClipLeading: NSLayoutConstraint?
 
     let top: NSLayoutConstraint
     let bottom: NSLayoutConstraint
@@ -453,9 +457,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let additionalInfo: NSLayoutConstraint
 
     func setAll(active: Bool) {
-      viewportTrailingOffsetFromTrailingSidebarLeadingConstraint.isActive = active
-      viewportTrailingOffsetFromTrailingSidebarTrailingConstraint.isActive = active
-      viewportTrailingToTrailingSidebarClipLeadingConstraint?.isActive = active
+      viewportTrailingOffsetFromLeading.isActive = active
+      viewportTrailingOffsetFromTrailing.isActive = active
+      viewportTrailingClipLeading?.isActive = active
       top.isActive = active
       bottom.isActive = active
       osd.isActive = active
@@ -468,13 +472,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
    OSD: shown here in "upper-left" configuration.
    For "upper-right" config: swap OSD & AdditionalInfo anchors in A & B, and invert all the params of B.
    ┌───────────────────────┐
-   │ A ┌────┐  ┌───────┐ B │  A: leadingSidebarToOSDSpaceConstraint
-   │◄─►│ OSD│  │ AddNfo│◄─►│  B: trailingSidebarToOSDSpaceConstraint
+   │ A ┌────┐  ┌───────┐ B │  A: leadingSidebarConstraints.osd
+   │◄─►│ OSD│  │ AddNfo│◄─►│  B: trailingSidebarConstraints.osd
    │   └────┘  └───────┘   │
    └───────────────────────┘
    */
-  var leadingSidebarToOSDSpaceConstraint: NSLayoutConstraint!
-  var trailingSidebarToOSDSpaceConstraint: NSLayoutConstraint!
   var osdTopToTopBarConstraint: NSLayoutConstraint!
   @IBOutlet var osdLeadingToMiniPlayerButtonsTrailingConstraint: NSLayoutConstraint!
   @IBOutlet weak var osdIconWidthConstraint: NSLayoutConstraint!
@@ -898,7 +900,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     /// Enqueue this in case `windowDidLoad` is not yet done
     animationPipeline.submitInstantTask{ [self] in
       updateBufferIndicatorView()
-      updateOSDPosition()
+      let layout = currentLayout
+      updateOSDPositionConstraints(leadingSidebarIsOpen: layout.leadingSidebar.isVisible, trailingSidebarIsOpen: layout.trailingSidebar.isVisible)
 
       if case .restoring(let priorState) = sessionState {
         restoreFromMiscWindowBools(priorState)

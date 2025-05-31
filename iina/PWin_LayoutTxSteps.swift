@@ -563,6 +563,22 @@ extension PlayerWindowController {
       removeSidebarTabGroupView(group: tabToHide.group)
     }
 
+    if transition.isOpeningOrClosingAnySidebar {
+      let leadingSidebarWillBeOpen = outputLayout.leadingSidebar.isVisible
+      let trailingSidebarWillBeOpen = outputLayout.trailingSidebar.isVisible
+      updateOSDPositionConstraints(leadingSidebarIsOpen: leadingSidebarWillBeOpen,
+                                   trailingSidebarIsOpen: trailingSidebarWillBeOpen)
+
+      if !leadingSidebarWillBeOpen {
+        leadingSidebarConstraints = nil
+        leadingSidebarView.removeFromSuperview()
+      }
+      if !trailingSidebarWillBeOpen {
+        trailingSidebarConstraints = nil
+        trailingSidebarView.removeFromSuperview()
+      }
+    }
+
     // - Leading Sidebar
     if transition.isOpeningLeadingSidebar {
       // Opening sidebar from closed state

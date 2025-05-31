@@ -473,9 +473,6 @@ extension PlayerWindowController {
     leadingSidebarTrailingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
     leadingSidebarTrailingBorder.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: -0.5).isActive = true
 
-    // Add constraints to hide the sidebars initially, using reasonable values
-    setLeadingSidebarHorizontalConstraintsForClosed(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
-
     // - Trailing sidebar
 
     trailingSidebarView.idString = "TrailingSidebarView"
@@ -497,8 +494,7 @@ extension PlayerWindowController {
     trailingSidebarLeadingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
     trailingSidebarLeadingBorder.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0.5).isActive = true
 
-    // Add constraints to hide the sidebars initially, using reasonable values
-    setTrailingSidebarHorizontalConstraintsForClosed(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
+    updateOSDPositionConstraints(leadingSidebarIsOpen: false, trailingSidebarIsOpen: false)
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews
