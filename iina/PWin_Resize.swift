@@ -579,6 +579,7 @@ extension PlayerWindowController {
           player.mpv.queue.async { [self] in
             player._setVideoTrackDisabled()
             DispatchQueue.main.async { [self] in
+              videoView.apply(nil)  // remove constraints
               videoView.removeFromSuperview()
             }
           }
@@ -642,7 +643,11 @@ extension PlayerWindowController {
     if setFrame {
       player.window.setFrameImmediately(convertedGeo)
     } else {
-      videoView.apply(convertedGeo)
+      if geometry.isVideoVisible {
+        videoView.apply(convertedGeo)
+      } else {
+        videoView.apply(nil)
+      }
     }
 
     /// For the case where video is hidden but playlist is shown, AppKit won't allow the window's height to be changed by the user

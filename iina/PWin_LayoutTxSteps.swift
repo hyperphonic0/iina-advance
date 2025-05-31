@@ -1774,9 +1774,9 @@ extension PlayerWindowController {
           transition.outputLayout.trailingSidebar.placement == .outsideViewport else { return }
     guard let contentView = window?.contentView else { return }
 
-    if transition.isOpeningLeadingSidebar || transition.isClosingLeadingSidebar {
+    if transition.isOpeningLeadingSidebar {
       contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: trailingSidebarView)
-    } else if transition.isOpeningTrailingSidebar || transition.isClosingTrailingSidebar {
+    } else if transition.isOpeningTrailingSidebar {
       contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: leadingSidebarView)
     }
   }

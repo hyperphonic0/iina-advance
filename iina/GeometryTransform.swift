@@ -344,13 +344,15 @@ struct GeometryTransform {
       case .musicMode:
         if case .creatingNew = sessionState {
           log.verbose{"[GeoTF:\(name)] Music mode already handled for opened window: \(oldGeo.musicMode)"}
-          return []
+          tasks = []
+          break
         }
         let oldMusicModeGeo = oldGeo.musicMode  // has updated windowFrame
         let newMusicModeGeo: MusicModeGeometry
         if let musicModeTransform = tf.musicModeTransform {
           guard let transformedGeo = musicModeTransform(self) else {
-            return []
+            tasks = []
+            break
           }
           newMusicModeGeo = transformedGeo
         } else {

@@ -450,8 +450,6 @@ extension PlayerWindowController {
   /// Prerequisites:
   /// 1. `viewportView` added to `contentView`.
   private func initSidebars(in contentView: NSView) {
-    let sidebarWidth = Constants.Sidebar.settingsWidth
-
     // - Leading sidebar
 
     leadingSidebarView.idString = "LeadingSidebarView"
