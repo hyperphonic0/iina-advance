@@ -1367,6 +1367,9 @@ class ChapterTableCellView: NSTableCellView {
 }
 
 class PlaylistView: NSView, DraggableObject {
+  override func mouseDragged(with event: NSEvent) {
+    // Do nothing. Prevent infinite recursion
+  }
 
   func cancelDrag() {
     guard let pwc, let sidebar = pwc.getConfiguredSidebar(forTabGroup: .playlist) else { return }

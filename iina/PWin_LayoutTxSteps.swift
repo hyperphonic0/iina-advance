@@ -563,22 +563,6 @@ extension PlayerWindowController {
       removeSidebarTabGroupView(group: tabToHide.group)
     }
 
-    if transition.isOpeningOrClosingAnySidebar {
-      let leadingSidebarWillBeOpen = outputLayout.leadingSidebar.isVisible
-      let trailingSidebarWillBeOpen = outputLayout.trailingSidebar.isVisible
-      updateOSDPositionConstraints(leadingSidebarIsOpen: leadingSidebarWillBeOpen,
-                                   trailingSidebarIsOpen: trailingSidebarWillBeOpen)
-
-      if !leadingSidebarWillBeOpen {
-        leadingSidebarConstraints = nil
-        leadingSidebarView.removeFromSuperview()
-      }
-      if !trailingSidebarWillBeOpen {
-        trailingSidebarConstraints = nil
-        trailingSidebarView.removeFromSuperview()
-      }
-    }
-
     // - Leading Sidebar
     if transition.isOpeningLeadingSidebar {
       // Opening sidebar from closed state
@@ -601,6 +585,24 @@ extension PlayerWindowController {
               transition.inputLayout.trailingSidebar.visibleTabGroup == transition.outputLayout.trailingSidebar.visibleTabGroup {
       // Tab group is already showing, but just need to switch tab
       switchToTabInTabGroup(tab: tabToShow)
+    }
+
+    if transition.isOpeningOrClosingAnySidebar {
+      let leadingSidebarWillBeOpen = outputLayout.leadingSidebar.isVisible
+      let trailingSidebarWillBeOpen = outputLayout.trailingSidebar.isVisible
+      log.verbose{"[\(transition.name)] LeadingSidebar will be open: \(leadingSidebarWillBeOpen.yn); TrailingSidebar: \(trailingSidebarWillBeOpen.yn)"}
+      // Make sure to call this after prepareLayoutForOpening()
+      updateOSDPositionConstraints(leadingSidebarIsOpen: leadingSidebarWillBeOpen,
+                                   trailingSidebarIsOpen: trailingSidebarWillBeOpen)
+
+      if !leadingSidebarWillBeOpen {
+        leadingSidebarConstraints = nil  // disables constraints
+        leadingSidebarView.removeFromSuperview()
+      }
+      if !trailingSidebarWillBeOpen {
+        trailingSidebarConstraints = nil  // disables constraints
+        trailingSidebarView.removeFromSuperview()
+      }
     }
 
     if outputLayout.leadingSidebarPlacement == .insideViewport {
@@ -1716,6 +1718,11 @@ extension PlayerWindowController {
   /// • Inside top & inside bottom bars do not cast shadows over `viewportView`.
   private func updateDepthOrderOfBars(_ layout: LayoutState) {
     guard let window = window, let contentView = window.contentView else { return }
+    let isTopBarOpen = layout.topBarHeight > 0
+    let isBottomBarOpen = layout.bottomBarHeight > 0
+    let isLeadingSidebarOpen = layout.leadingSidebar.isVisible
+    let isTrailingSidebarOpen = layout.leadingSidebar.isVisible
+
     let bottomBar = layout.bottomBarPlacement
     let leadingSidebar = layout.leadingSidebarPlacement
     let trailingSidebar = layout.trailingSidebarPlacement
@@ -1723,28 +1730,32 @@ extension PlayerWindowController {
     // If a sidebar is "outsideViewport", need to put it behind the video because:
     // (1) Don't want sidebar to cast a shadow on the video
     // (2) Animate sidebar open/close with "slide in" / "slide out" from behind the video
-    if leadingSidebar == .outsideViewport {
+    if isLeadingSidebarOpen, leadingSidebar == .outsideViewport {
       contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: viewportView)
     }
-    if trailingSidebar == .outsideViewport {
+    if isTrailingSidebarOpen, trailingSidebar == .outsideViewport {
       contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: viewportView)
     }
 
-    contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
-    contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
+    if isTopBarOpen {
+      contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
+    }
+    if isBottomBarOpen {
+      contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
+    }
 
-    if leadingSidebar == .insideViewport {
+    if isLeadingSidebarOpen, leadingSidebar == .insideViewport {
       contentView.addSubview(leadingSidebarView, positioned: .above, relativeTo: viewportView)
 
-      if bottomBar == .insideViewport {
+      if isBottomBarOpen, bottomBar == .insideViewport {
         contentView.addSubview(bottomBarView, positioned: .below, relativeTo: leadingSidebarView)
       }
     }
 
-    if trailingSidebar == .insideViewport {
+    if isTrailingSidebarOpen, trailingSidebar == .insideViewport {
       contentView.addSubview(trailingSidebarView, positioned: .above, relativeTo: viewportView)
 
-      if bottomBar == .insideViewport {
+      if isBottomBarOpen, bottomBar == .insideViewport {
         contentView.addSubview(bottomBarView, positioned: .below, relativeTo: trailingSidebarView)
       }
     }

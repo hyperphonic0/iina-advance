@@ -502,7 +502,6 @@ extension PlayerWindowController {
     let sidebarWidth = tabToShow.group.width(using: parentLayout.spec.moreSidebarState)
     let tabContainerView: NSView = setLeadingSidebarHorizontalConstraintsForPreOpen(leadingSidebar.placement,
                                                                                    sidebarWidth: sidebarWidth, ΔWindowWidth: ΔWindowWidth)
-    updateOSDPositionConstraints(leadingSidebarIsOpen: true, trailingSidebarIsOpen: parentLayout.trailingSidebar.isVisible)
 
     prepareRemainingLayoutForOpening(sidebar: leadingSidebar, sidebarView: leadingSidebarView, tabContainerView: tabContainerView, tab: tabToShow)
   }
@@ -544,8 +543,7 @@ extension PlayerWindowController {
       boundaryView = viewportView
 
       // extra constraint for clipView:
-      let clipConstraint = boundaryView.leadingAnchor.constraint(
-        equalTo: leadingSidebarView.trailingAnchor, constant: 0)
+      let clipConstraint = boundaryView.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: 0)
       clipConstraint.identifier = "ViewportLeading-LeadingSidebar-ClipTrailing"
       viewportLeadingClipTrailing = clipConstraint
     }
@@ -635,7 +633,6 @@ extension PlayerWindowController {
     let sidebarWidth = tabToShow.group.width(using: parentLayout.spec.moreSidebarState)
     let tabContainerView: NSView = setTrailingSidebarHorizontalConstraintsForPreOpen(trailingSidebar.placement,
                                                                                     sidebarWidth: sidebarWidth, ΔWindowWidth: ΔWindowWidth)
-    updateOSDPositionConstraints(leadingSidebarIsOpen: parentLayout.leadingSidebar.isVisible, trailingSidebarIsOpen: true)
 
     prepareRemainingLayoutForOpening(sidebar: trailingSidebar, sidebarView: trailingSidebarView, tabContainerView: tabContainerView, tab: tabToShow)
   }
@@ -664,7 +661,7 @@ extension PlayerWindowController {
     } else {
       assert(placement == .outsideViewport)
       let clipView = NSView()
-      clipView.identifier = .init("trailingSidebarClipView")
+      clipView.identifier = .init("TrailingSidebarClipView")
       trailingSidebarView.addSubview(clipView, positioned: .below, relativeTo: trailingSidebarLeadingBorder)
       clipView.translatesAutoresizingMaskIntoConstraints = false
       clipView.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
@@ -672,8 +669,7 @@ extension PlayerWindowController {
       boundaryView = viewportView
 
       // extra constraint for clipView:
-      let con = boundaryView.trailingAnchor.constraint(
-        equalTo: trailingSidebarView.leadingAnchor, constant: 0)
+      let con = boundaryView.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0)
       con.identifier = "ViewportTrailing-TrailingSidebar-ClipLeading"
       viewportTrailingClipLeading = con
     }
