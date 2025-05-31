@@ -721,6 +721,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// to this window. Will do nothing if it's already there.
   func addVideoViewToWindow(using geo: MusicModeGeometry? = nil) {
     guard let window else { return }
+
+    guard pip.status == .notInPIP else {
+      log.debug{"Aborting add of videoView to window: PiP status=\(pip.status)"}
+      return
+    }
     let isViewportDoneWithInit = loaded
     do {
       let hasOpenGL = videoView.lockAndSetOpenGLContext()

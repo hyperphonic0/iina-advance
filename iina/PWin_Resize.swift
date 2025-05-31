@@ -527,7 +527,7 @@ extension PlayerWindowController {
     tasks.append(.instantTask { [self] in
       isAnimatingLayoutTransition = true  /// do not trigger various listeners if possible
       if isShowingVideoView {
-        if pip.status != .inPIP {
+        if pip.status == .inPIP {
           // We are about to steal its video; close it:
           exitPIP()
         }
