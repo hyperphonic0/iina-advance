@@ -372,7 +372,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // - Top bar (title bar and/or top OSC) constraints
   @IBOutlet weak var viewportTopOffsetFromTopBarBottomConstraint: NSLayoutConstraint!
   @IBOutlet weak var viewportTopOffsetFromTopBarTopConstraint: NSLayoutConstraint!
-  @IBOutlet weak var viewportTopOffsetFromContentViewTopConstraint: NSLayoutConstraint!
+  var viewportTopOffsetFromContentViewTopConstraint: NSLayoutConstraint!
   // Needs to be changed to align with either sidepanel or leading edge of window:
   @IBOutlet weak var topBarLeadingSpaceConstraint: NSLayoutConstraint!
   // Needs to be changed to align with either sidepanel or trailing edge of window:
@@ -387,9 +387,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var bottomBarLeadingSpaceConstraint: NSLayoutConstraint!
   // Needs to be changed to align with either sidepanel or trailing edge of window:
   var bottomBarTrailingSpaceConstraint: NSLayoutConstraint!
-
+  
   // - Leading sidebar constraints
-  @IBOutlet weak var viewportLeadingOffsetFromContentViewLeadingConstraint: NSLayoutConstraint!
+  var viewportLeadingOffsetFromContentViewLeadingConstraint: NSLayoutConstraint!
   /// If non-nil, activates all constraints in the new object reference.
   /// Any constraints in the old reference will be deactivated.
   var leadingSidebarConstraints: LeadingSidebarConstraints? = nil {
@@ -619,7 +619,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var osdAccessoryText: NSTextField!
   @IBOutlet weak var osdAccessoryProgress: NSProgressIndicator!
 
-  @IBOutlet weak var viewportView: ViewportView!
+  let viewportView = ViewportView()
   let viewportTopSpacer = SpacerView(id: "ViewportTopSpacer")
   let viewportBottomSpacer = SpacerView(id: "ViewportBottomSpacer")
   let viewportLeadingSpacer = SpacerView(id: "ViewportLeadingSpacer")

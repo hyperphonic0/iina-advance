@@ -98,6 +98,8 @@ extension PlayerWindowController {
       playSlider.target = self
       playSlider.action = #selector(playSliderAction(_:))
 
+      closeButtonView.leadingAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 4).isActive = true
+
       initOSDView(in: contentView)
       initAdditionalInfoView(in: contentView)
       initBufferIndicatorView(in: contentView)
@@ -145,17 +147,30 @@ extension PlayerWindowController {
   // MARK: - Building Components
 
   private func initViewportView(in contentView: NSView) {
+    viewportView.idString = "ViewportView"
+    contentView.addSubview(viewportView, positioned: .below, relativeTo: nil)
     viewportView.clipsToBounds = true
     viewportView.translatesAutoresizingMaskIntoConstraints = false
+    viewportView.autoresizesSubviews = false
     // These don't seem to matter. But set to reasonable values:
     viewportView.setContentHugging(h: 250, v: 250)
     viewportView.setCCResistance(h: 250, v: 250)
 
+    viewportTopOffsetFromContentViewTopConstraint = viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 0)
+    viewportTopOffsetFromContentViewTopConstraint.identifier = .init("Viewport-Top_OffsetFrom-CV-Top-Constraint")
+    viewportTopOffsetFromContentViewTopConstraint.isActive = true
+
     viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
-    viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("Viewport-Btm_OffsetFrom-CV-Btm-Constraint")
+    viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("CV-Btm_OffsetFrom-Viewport-Btm-Constraint")
     viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
 
-    closeButtonView.leadingAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 4).isActive = true
+    viewportLeadingOffsetFromContentViewLeadingConstraint = viewportView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+    viewportLeadingOffsetFromContentViewLeadingConstraint.identifier = .init("Viewport-Leading_OffsetFrom-CV-Leading-Constraint")
+    viewportLeadingOffsetFromContentViewLeadingConstraint.isActive = true
+
+    viewportTrailingOffsetFromContentViewTrailingConstraint = contentView.trailingAnchor.constraint(equalTo: viewportView.trailingAnchor, constant: 0)
+    viewportTrailingOffsetFromContentViewTrailingConstraint.identifier = .init("CV-Trailing_OffsetFrom-Viewport-Trailing-Constraint")
+    viewportTrailingOffsetFromContentViewTrailingConstraint.isActive = true
 
     // These don't seem to matter. But set to reasonable values:
     let ch: Float = 250

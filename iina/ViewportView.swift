@@ -11,13 +11,17 @@ import Foundation
 class ViewportView: NSView {
   unowned var player: PlayerCore!
 
-  required init?(coder: NSCoder) {
-    super.init(coder: coder)
+  init() {
+    super.init(frame: .zero)
     registerForDraggedTypes([.nsFilenames, .nsURL, .string])
     setContentCompressionResistancePriority(.required, for: .horizontal)
     setContentCompressionResistancePriority(.required, for: .vertical)
     setContentHuggingPriority(.required, for: .horizontal)
     setContentHuggingPriority(.required, for: .vertical)
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
   }
 
   private var playerWindowController: PlayerWindowController? {
