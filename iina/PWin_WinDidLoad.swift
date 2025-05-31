@@ -98,9 +98,9 @@ extension PlayerWindowController {
       playSlider.target = self
       playSlider.action = #selector(playSliderAction(_:))
 
-      initOSDView()
-      bufferIndicatorView.roundCorners()
-      initAdditionalInfoView()
+      initOSDView(in: contentView)
+      initAdditionalInfoView(in: contentView)
+      initBufferIndicatorView(in: contentView)
       initCustomWindowBorder(in: contentView)
 
       log.verbose{"Configuring for CoreAnimation: window"}
@@ -751,7 +751,7 @@ extension PlayerWindowController {
     volumeSlider.action = #selector(volumeSliderAction(_:))
   }
 
-  func initOSDView() {
+  func initOSDView(in contentView: NSView) {
     // other initialization
     osdAccessoryProgress.usesThreadedAnimation = false
     osdVisualEffectView.roundCorners()
@@ -763,7 +763,7 @@ extension PlayerWindowController {
 
   /// Prerequisites:
   /// 1. `osdVisualEffectView` added to `contentView`.
-  func initAdditionalInfoView() {
+  func initAdditionalInfoView(in contentView: NSView) {
     additionalInfoView.roundCorners()
     additionalInfoTitle.translatesAutoresizingMaskIntoConstraints = false
     additionalInfoTitle.setContentCompressionResistancePriority(.init(250), for: .horizontal)
@@ -782,6 +782,17 @@ extension PlayerWindowController {
     additionalInfoTitle.idString = "AddlInfo-TitleLabel"
     additionalInfoTitle.font = .systemFont(ofSize: 18)
     additionalInfoTitle.textColor = .labelColor
+  }
+
+  func initBufferIndicatorView(in contentView: NSView) {
+    bufferIndicatorView.roundCorners()
+    let bufIndicatorWidthCon = bufferIndicatorView.widthAnchor.constraint(equalToConstant: 160)
+    bufIndicatorWidthCon.priority = .defaultLow
+    bufIndicatorWidthCon.isActive = true
+
+    // Center in viewport
+    bufferIndicatorView.centerXAnchor.constraint(equalTo: viewportView.centerXAnchor).isActive = true
+    bufferIndicatorView.centerYAnchor.constraint(equalTo: viewportView.centerYAnchor).isActive = true
   }
 
   func initCustomWindowBorder(in contentView: NSView) {

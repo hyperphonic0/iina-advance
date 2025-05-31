@@ -598,7 +598,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var trailingSidebarView = ClickThroughVisualEffectView()
   var trailingSidebarLeadingBorder = NSBox()  // shown if trailing sidebar is "outside"
 
-  @IBOutlet weak var bufferIndicatorView: NSVisualEffectView!
+  @IBOutlet weak var bufferIndicatorView: MouseIgnoringVisualEffectView!
   @IBOutlet weak var bufferProgressLabel: NSTextField!
   @IBOutlet weak var bufferSpin: NSProgressIndicator!
   @IBOutlet weak var bufferDetailLabel: NSTextField!
@@ -721,12 +721,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// to this window. Will do nothing if it's already there.
   func addVideoViewToWindow(using geo: MusicModeGeometry? = nil) {
     guard let window else { return }
+    assert(loaded, "Must not be called if not done loading the window!")
 
     guard pip.status == .notInPIP else {
       log.debug{"Aborting add of videoView to window: PiP status=\(pip.status)"}
       return
     }
-    let isViewportDoneWithInit = loaded
     do {
       let hasOpenGL = videoView.lockAndSetOpenGLContext()
       defer {
@@ -746,11 +746,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     videoView.refreshAllVideoDisplayState()
     /// Add constraints. These get removed each time `videoView` changes superviews.
     videoView.translatesAutoresizingMaskIntoConstraints = false
-    // this can mess up music mode restore. Also will crash if viewport does not have spacers yet
-    if !sessionState.isRestoring && isViewportDoneWithInit {
-      let geo = currentLayout.mode == .musicMode ? (geo ?? musicModeGeo).toPWinGeometry() : windowedModeGeo
-      videoView.apply(geo)
-    }
+    let geo = currentLayout.mode == .musicMode ? (geo ?? musicModeGeo).toPWinGeometry() : windowedModeGeo
+    videoView.apply(geo)
     // Reset this in case it was changed for PiP. (Need to use optional to support initial load)
     videoView.layer?.autoresizingMask = []
   }
