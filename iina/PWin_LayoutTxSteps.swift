@@ -439,8 +439,10 @@ extension PlayerWindowController {
       }
     }
 
-    // If exiting music mode, need to restore views early in this step
-    if transition.isExitingMusicMode {
+    if transition.isWindowInitialLayout && transition.outputGeometry.isVideoVisible {
+      addVideoViewToWindow()
+    } else if transition.isExitingMusicMode {
+      // If exiting music mode, need to restore views early in this step
       log.verbose{"[\(transition.name)] Cleaning up for music mode exit"}
       miniPlayer.view.removeFromSuperview()
 

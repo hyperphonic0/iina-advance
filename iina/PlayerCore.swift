@@ -2779,8 +2779,8 @@ class PlayerCore: NSObject {
     if !windowController.loaded || !Preference.bool(for: .enableOSD) || isUsingMpvOSD || isRestoring || isInInteractiveMode {
       return false
     }
-    if isInMiniPlayer && !Preference.bool(for: .enableOSDInMusicMode) {
-      return false
+    if isInMiniPlayer {
+      return windowController.musicModeGeo.isVideoVisible && Preference.bool(for: .enableOSDInMusicMode)
     }
 
     return true
