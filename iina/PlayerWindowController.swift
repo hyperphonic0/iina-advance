@@ -390,17 +390,79 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // - Leading sidebar constraints
   @IBOutlet weak var viewportLeadingOffsetFromContentViewLeadingConstraint: NSLayoutConstraint!
-  var viewportLeadingOffsetFromLeadingSidebarLeadingConstraint: NSLayoutConstraint!
-  var viewportLeadingOffsetFromLeadingSidebarTrailingConstraint: NSLayoutConstraint!
+  /// If non-nil, activates all constraints in the new object reference.
+  /// Any constraints in the old reference will be deactivated.
+  var leadingSidebarConstraints: LeadingSidebarConstraints? = nil {
+    willSet {
+      // - Remove old constraints:
+      if let old = leadingSidebarConstraints {
+        old.setAll(active: false)
+      }
+      if let newCons = newValue {
+        newCons.setAll(active: true)
+      }
+    }
+  }
+  
+  struct LeadingSidebarConstraints {
+    let viewportLeadingOffsetFromLeadingSidebarLeadingConstraint: NSLayoutConstraint
+    let viewportLeadingOffsetFromLeadingSidebarTrailingConstraint: NSLayoutConstraint
+    let viewportLeadingToLeadingSidebarClipTrailingConstraint: NSLayoutConstraint?
 
-  var viewportLeadingToLeadingSidebarClipTrailingConstraint: NSLayoutConstraint!
+    let top: NSLayoutConstraint
+    let bottom: NSLayoutConstraint
+    let osd: NSLayoutConstraint
+    let additionalInfo: NSLayoutConstraint
+
+    func setAll(active: Bool) {
+      viewportLeadingOffsetFromLeadingSidebarTrailingConstraint.isActive = active
+      viewportLeadingOffsetFromLeadingSidebarLeadingConstraint.isActive = active
+      viewportLeadingToLeadingSidebarClipTrailingConstraint?.isActive = active
+      top.isActive = active
+      bottom.isActive = active
+      osd.isActive = active
+      additionalInfo.isActive = active
+    }
+  }
+
 
   // - Trailing sidebar constraints
   @IBOutlet weak var viewportTrailingOffsetFromContentViewTrailingConstraint: NSLayoutConstraint!
-  var viewportTrailingOffsetFromTrailingSidebarLeadingConstraint: NSLayoutConstraint!
-  var viewportTrailingOffsetFromTrailingSidebarTrailingConstraint: NSLayoutConstraint!
+  /// If non-nil, activates all constraints in the new object reference.
+  /// Any constraints in the old reference will be deactivated.
+  var trailingSidebarConstraints: TrailingSidebarConstraints? = nil {
+    willSet {
+      // - Remove old constraints:
+      if let old = trailingSidebarConstraints {
+        old.setAll(active: false)
+      }
+      if let newCons = newValue {
+        newCons.setAll(active: true)
+      }
+    }
+  }
 
-  var viewportTrailingToTrailingSidebarClipLeadingConstraint: NSLayoutConstraint!
+  struct TrailingSidebarConstraints {
+    let viewportTrailingOffsetFromTrailingSidebarLeadingConstraint: NSLayoutConstraint
+    let viewportTrailingOffsetFromTrailingSidebarTrailingConstraint: NSLayoutConstraint
+    let viewportTrailingToTrailingSidebarClipLeadingConstraint: NSLayoutConstraint?
+
+    let top: NSLayoutConstraint
+    let bottom: NSLayoutConstraint
+    let osd: NSLayoutConstraint
+    let additionalInfo: NSLayoutConstraint
+
+    func setAll(active: Bool) {
+      viewportTrailingOffsetFromTrailingSidebarLeadingConstraint.isActive = active
+      viewportTrailingOffsetFromTrailingSidebarTrailingConstraint.isActive = active
+      viewportTrailingToTrailingSidebarClipLeadingConstraint?.isActive = active
+      top.isActive = active
+      bottom.isActive = active
+      osd.isActive = active
+      additionalInfo.isActive = active
+    }
+  }
+
 
   /**
    OSD: shown here in "upper-left" configuration.

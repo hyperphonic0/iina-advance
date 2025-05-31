@@ -83,8 +83,6 @@ extension PlayerWindowController {
       setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
 
       window.preservesContentDuringLiveResize = false
-      contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: bufferIndicatorView)
-      contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: leadingSidebarView)
 
       initViewportView(in: contentView)
       initAlbumArtView()
@@ -476,14 +474,7 @@ extension PlayerWindowController {
     leadingSidebarTrailingBorder.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: -0.5).isActive = true
 
     // Add constraints to hide the sidebars initially, using reasonable values
-    setLeadingSidebarHorizontalConstraints(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
-
-    leadingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor).isActive = true
-    viewportView.bottomAnchor.constraint(equalTo: leadingSidebarView.bottomAnchor).isActive = true
-
-    osdVisualEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingSidebarView.trailingAnchor, constant: 8).isActive = true
-
-    additionalInfoView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingSidebarView.trailingAnchor, constant: 8).isActive = true
+    setLeadingSidebarHorizontalConstraintsForClosed(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
 
     // - Trailing sidebar
 
@@ -507,14 +498,7 @@ extension PlayerWindowController {
     trailingSidebarLeadingBorder.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0.5).isActive = true
 
     // Add constraints to hide the sidebars initially, using reasonable values
-    setTrailingSidebarHorizontalConstraints(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
-
-    trailingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor).isActive = true
-    viewportView.bottomAnchor.constraint(equalTo: trailingSidebarView.bottomAnchor).isActive = true
-
-    trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: osdVisualEffectView.trailingAnchor, constant: 8).isActive = true
-
-    trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: additionalInfoView.trailingAnchor, constant: 8).isActive = true
+    setTrailingSidebarHorizontalConstraintsForClosed(.insideViewport, sidebarWidth: sidebarWidth, ΔWindowWidth: 0)
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews
