@@ -581,6 +581,7 @@ extension PlayerWindowController {
             DispatchQueue.main.async { [self] in
               videoView.apply(nil)  // remove constraints
               videoView.removeFromSuperview()
+              removeVideoViewSpacers()
             }
           }
         }

@@ -153,6 +153,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       pip.videoController = NSViewController()
       pip.videoController.view = videoView
       videoView.prepareForPIPEntry()
+      removeVideoViewSpacers()
       pip.controller.playing = player.info.isPlaying
       pip.controller.title = window.title
 

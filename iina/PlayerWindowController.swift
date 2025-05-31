@@ -731,6 +731,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
       videoView.$isUninited.withLock() { isUninited in
         guard !viewportView.subviews.contains(videoView) else { return }
+        addVideoViewSpacers()
         log.verbose{"Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)"}
         /// Make sure `defaultAlbumArtView` stays above `videoView`
         viewportView.addSubview(videoView, positioned: .below, relativeTo: defaultAlbumArtView)

@@ -151,6 +151,27 @@ extension PlayerWindowController {
     viewportView.setContentHugging(h: 250, v: 250)
     viewportView.setCCResistance(h: 250, v: 250)
 
+    viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
+    viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("Viewport-Btm_OffsetFrom-CV-Btm-Constraint")
+    viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
+
+    closeButtonView.leadingAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 4).isActive = true
+
+    // These don't seem to matter. But set to reasonable values:
+    let ch: Float = 250
+    viewportTrailingSpacer.setContentHugging(h: ch, v: ch)
+    viewportLeadingSpacer.setContentHugging(h: ch, v: ch)
+    viewportTopSpacer.setContentHugging(h: ch, v: ch)
+    viewportBottomSpacer.setContentHugging(h: ch, v: ch)
+    let ccr: Float = 250
+    viewportTrailingSpacer.setCCResistance(h: ccr, v: ccr)
+    viewportLeadingSpacer.setCCResistance(h: ccr, v: ccr)
+    viewportTopSpacer.setCCResistance(h: ccr, v: ccr)
+    viewportBottomSpacer.setCCResistance(h: ccr, v: ccr)
+  }
+
+  func addVideoViewSpacers() {
+    log.verbose{"Adding videoView spacers to viewportView"}
     viewportView.addSubview(viewportTopSpacer)
     viewportView.addSubview(viewportBottomSpacer)
     viewportView.addSubview(viewportLeadingSpacer)
@@ -164,23 +185,13 @@ extension PlayerWindowController {
     viewportBottomSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
     viewportLeadingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
     viewportTrailingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
-    // These don't seem to matter. But set to reasonable values:
-    let ch: Float = 250
-    viewportTrailingSpacer.setContentHugging(h: ch, v: ch)
-    viewportLeadingSpacer.setContentHugging(h: ch, v: ch)
-    viewportTopSpacer.setContentHugging(h: ch, v: ch)
-    viewportBottomSpacer.setContentHugging(h: ch, v: ch)
-    let ccr: Float = 250
-    viewportTrailingSpacer.setCCResistance(h: ccr, v: ccr)
-    viewportLeadingSpacer.setCCResistance(h: ccr, v: ccr)
-    viewportTopSpacer.setCCResistance(h: ccr, v: ccr)
-    viewportBottomSpacer.setCCResistance(h: ccr, v: ccr)
+  }
 
-    viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
-    viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("Viewport-Btm_OffsetFrom-CV-Btm-Constraint")
-    viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
-
-    closeButtonView.leadingAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 4).isActive = true
+  func removeVideoViewSpacers() {
+    viewportTopSpacer.removeFromSuperview()
+    viewportBottomSpacer.removeFromSuperview()
+    viewportLeadingSpacer.removeFromSuperview()
+    viewportTrailingSpacer.removeFromSuperview()
   }
 
   private func initAlbumArtView() {
