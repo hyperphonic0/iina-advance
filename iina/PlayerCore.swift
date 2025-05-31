@@ -2014,7 +2014,11 @@ class PlayerCore: NSObject {
     // auto load matched subtitles
     if let matchedSubs = self.info.getMatchedSubs(currentPlayback.path) {
       log.debug{"Found \(matchedSubs.count) external subs for current file"}
+      var loadedSubs = Set<URL>()
       for sub in matchedSubs {
+        // filter duplicated matched subtitles, see https://github.com/iina/iina/issues/5399
+        guard !loadedSubs.contains(sub) else { continue }
+        loadedSubs.insert(sub)
         guard currentTicket == self.backgroundQueueTicket else { return }
         self.loadExternalSubFile(sub)
       }
