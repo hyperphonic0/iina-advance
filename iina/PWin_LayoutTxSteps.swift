@@ -887,11 +887,7 @@ extension PlayerWindowController {
 
       if transition.isEnteringInteractiveMode {
         // Entering interactive mode
-        if #available(macOS 10.14, *) {
-          setEmptySpaceColor(to: Constants.Color.interactiveModeBackground)
-        } else {
-          setEmptySpaceColor(to: NSColor(calibratedWhite: 0.1, alpha: 1).cgColor)
-        }
+        setEmptySpaceColor(to: Constants.Color.interactiveModeBackground)
 
         // Add crop settings at bottom
         let cropController = self.cropSettingsView ?? transition.outputLayout.spec.interactiveMode!.viewController()

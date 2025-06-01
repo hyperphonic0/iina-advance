@@ -1746,14 +1746,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // TODO: use key binding interceptor to support ESC and ENTER keys for interactive mode
 
       let cropFilter: MPVFilter?
-      let newVideoGeo: VideoGeometry
+      let uncroppedVideoGeo: VideoGeometry
       if mode == .crop, let vf = oldVideoGeo.cropFilter {
-        log.debug{"Crop mode requested, but found an existing crop filter (\(vf.stringFormat.quoted)). Will disable it before entering"}
+        log.debug{"Crop mode requested. Will remove existing crop filter: \(vf.stringFormat.quoted)"}
         cropFilter = vf
-        newVideoGeo = oldVideoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier, videoSizeDisplayOverride: nil)
+        uncroppedVideoGeo = oldVideoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier, videoSizeDisplayOverride: nil)
       } else {
         cropFilter = nil
-        newVideoGeo = oldVideoGeo
+        uncroppedVideoGeo = oldVideoGeo
       }
 
       // Save disabled crop video filter
@@ -1766,7 +1766,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           switch currentLayout.mode {
           case .windowedNormal, .fullScreenNormal:
             uncropThenEnterInteractiveMode(cropFilter: cropFilter, mode: currentLayout.mode,
-                                           oldVideoGeo: oldVideoGeo, newVideoGeo: newVideoGeo)
+                                           oldVideoGeo: oldVideoGeo, uncroppedVideoGeo: uncroppedVideoGeo)
           default:
             assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
             return
@@ -1783,7 +1783,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Not yet in interactive mode, but the active crop was just disabled prior to entering it,
   /// so that full video can be seen during interactive mode.
   private func uncropThenEnterInteractiveMode(cropFilter: MPVFilter, mode: PlayerWindowMode,
-                                              oldVideoGeo: VideoGeometry, newVideoGeo: VideoGeometry) {
+                                              oldVideoGeo: VideoGeometry, uncroppedVideoGeo: VideoGeometry) {
 
     var tasks: [IINAAnimation.Task] = []
 
@@ -1793,7 +1793,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // FIXME: need to un-rotate while in interactive mode
     let videoSizeRaw = oldVideoGeo.videoSizeRaw
     let prevCropBox = cropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-    log.verbose{"EnterInteractiveMode: Uncropping video from cropRectRaw: \(prevCropBox) to videoSizeRaw: \(videoSizeRaw)"}
+    log.verbose{"EnterInteractiveMode: Uncropping video from cropRect \(prevCropBox) to videoSizeRaw: \(videoSizeRaw)"}
     let newVideoAspect = videoSizeRaw.mpvAspect
 
     let oldVideoAspect = prevCropBox.size.mpvAspect
@@ -1804,9 +1804,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                        outsideBottom: 0, outsideLeading: 0,
                        insideTop: 0, insideTrailing: 0,
                        insideBottom: 0, insideLeading: 0,
-                       video: newVideoGeo,
+                       video: uncroppedVideoGeo,
                        pinWidthOrHeightIfAtMax: !lockViewportToVideoSize,
-                       pinToAnySideOfScreen: !lockViewportToVideoSize)
+                       pinToAnySideOfScreen: !lockViewportToVideoSize).refitted()
 
     let uncroppedClosedBarsGeo: PWinGeometry
     if lockViewportToVideoSize {

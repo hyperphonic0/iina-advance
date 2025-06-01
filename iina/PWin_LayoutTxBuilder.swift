@@ -362,27 +362,15 @@ extension PlayerWindowController {
 
       let outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight >= transition.outputLayout.topBarHeight ? transition.outputLayout.outsideTopBarHeight : 0
 
-      if transition.isEnteringInteractiveMode {
-        let pinToSides = !Preference.bool(for: .lockViewportToVideoSize)
-        return transition.outputGeometry.withResizedBars(outsideTop: 0, outsideTrailing: 0,
-                                                         outsideBottom: 0, outsideLeading: 0,
-                                                         insideTop: 0, insideTrailing: 0,
-                                                         insideBottom: 0, insideLeading: 0,
-                                                         pinWidthOrHeightIfAtMax: pinToSides,
-                                                         pinToAnySideOfScreen: pinToSides)
-
-      } else if transition.isExitingInteractiveMode {
-        let videoFrame = transition.outputGeometry.videoFrameInScreenCoords
-        let extraWidthNeeded = max(0, Constants.InteractiveMode.minWindowWidth - videoFrame.width)
-        let newWindowFrame = NSRect(origin: NSPoint(x: videoFrame.origin.x - (extraWidthNeeded * 0.5), y: videoFrame.origin.y),
-                                    size: CGSize(width: videoFrame.width + extraWidthNeeded, height: videoFrame.height + outsideTopBarHeight))
-        let resizedGeo = PWinGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID,
-                                      screenFit: transition.outputGeometry.screenFit, mode: .windowedNormal, topMarginHeight: 0,
-                                      outsideBars: MarginQuad(top: outsideTopBarHeight),
-                                      insideBars: MarginQuad.zero,
-                                      video: transition.outputGeometry.video)
-        return resizedGeo
-      }
+      let videoFrame = transition.outputGeometry.videoFrameInScreenCoords
+      let extraWidthNeeded = max(0, Constants.InteractiveMode.minWindowWidth - videoFrame.width)
+      let newWindowFrame = NSRect(origin: NSPoint(x: videoFrame.origin.x - (extraWidthNeeded * 0.5), y: videoFrame.origin.y),
+                                  size: CGSize(width: videoFrame.width + extraWidthNeeded, height: videoFrame.height + outsideTopBarHeight))
+      let resizedGeo = PWinGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID,
+                                    screenFit: transition.outputGeometry.screenFit, mode: .windowedNormal, topMarginHeight: 0,
+                                    outsideBars: MarginQuad(top: outsideTopBarHeight), insideBars: MarginQuad.zero,
+                                    video: transition.outputGeometry.video)
+      return resizedGeo
 
     } else if transition.isEnteringMusicMode {
       let baseGeo: PWinGeometry
