@@ -1813,7 +1813,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let viewportSize = closedBarsGeo.viewportSize
       let aspectChangeFactor = newVideoAspect / oldVideoAspect
       let viewportSizeMultiplier = (aspectChangeFactor < 0) ? (1.0 / aspectChangeFactor) : aspectChangeFactor
-      var newViewportSize = viewportSize * viewportSizeMultiplier
+      var newViewportSize = viewportSize * viewportSizeMultiplier  // not rounded. Need to round below.
 
       // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
       let minViewportSizeIM = closedBarsGeo.minViewportSize(mode: .windowedInteractive)

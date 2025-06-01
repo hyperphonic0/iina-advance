@@ -686,7 +686,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
 
     let newWindowFrame = CGRect(x: newX, y: newY, width: newWindowWidth, height: newWindowHeight)
-    let newScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: newWindowFrame)
+    // If new windowFrame is slightly off screen, so fall back to current screenID.
+    // Also fall back to default screen if current screenID is defunct:
+    let newScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: newWindowFrame, fallbackScreenID: screenID)
     let newOutsideBars = MarginQuad(top: top ?? outsideBars.top,
                                     trailing: trailing ?? outsideBars.trailing,
                                     bottom: bottom ?? outsideBars.bottom,

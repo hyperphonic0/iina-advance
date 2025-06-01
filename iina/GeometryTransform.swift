@@ -850,8 +850,9 @@ extension PlayerWindowController {
       /// behavior and is less jarring than popping out of the periphery. It will move while zooming to its final location, which remains
       /// well-defined based on current user prefs and/or last closed window.
       let mouseLoc = PlayerCore.mouseLocationAtLastOpen ?? NSEvent.mouseLocation
-      let mouseLocScreenID = NSScreen.getOwnerOrDefaultScreenID(forPoint: mouseLoc)
-      let initialGeo = cxt.outputLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, video: cxt.outputVidGeo).refitted(using: .stayInside)
+      let mouseLocScreenID = NSScreen.getOwnerOrDefaultScreenID(forPoint: mouseLoc, fallbackScreenID: cxt.oldGeo.windowed.screenID)
+      let initialGeo = cxt.outputLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, video: cxt.outputVidGeo)
+        .refitted(using: .stayInside)
       let windowSize = initialGeo.windowFrame.size
       let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
       log.verbose{"[GeoTF:\(cxt.name)] Initial layout: starting with tiny window, videoAspect=\(cxt.outputVidGeo.videoAspectCAR), windowSize=\(windowSize)"}

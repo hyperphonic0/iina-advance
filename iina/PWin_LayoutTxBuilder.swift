@@ -47,7 +47,8 @@ extension PlayerWindowController {
     // - Build GeometrySet
 
     // InputGeometry
-    let inputGeometry: PWinGeometry = buildInputGeometry(from: inputLayout, transitionName: transitionName, geo, windowedModeScreen: windowedModeScreen)
+    let inputGeometry: PWinGeometry = buildInputGeometry(from: inputLayout, transitionName: transitionName,
+                                                         geo, windowedModeScreen: windowedModeScreen)
     log.verbose("[\(transitionName)] INPUT: \(inputGeometry)")
 
     // OutputGeometry
@@ -331,9 +332,11 @@ extension PlayerWindowController {
                                                        video: geo.windowed.video)
       } else if inputGeometry.mode == .fullScreenInteractive {
         if geo.windowed.mode == .windowedInteractive {
+          log.verbose("Converting windowedModeGeo with mode=windowedInteractive to fullScreenInteractive")
           return PWinGeometry.buildInteractiveModeWindow(windowFrame: geo.windowed.windowFrame, screenID: geo.windowed.screenID,
                                                          video: inputGeometry.video)
         }
+        log.verbose("Converting windowedModeGeo to fullScreenInteractive")
         return geo.windowed.clone(video: inputGeometry.video).toInteractiveMode()
       }
       /// Entering interactive mode: convert from `windowed` to `windowedInteractive`

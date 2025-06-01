@@ -41,7 +41,8 @@ extension PlayerWindowController {
       break  // Not applicable
     case .musicMode:
       // TODO: extend musicModeGeo from PWinGeometry and then use outputGeo instead of musicModeGeo reference
-      let screenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: transition.outputGeometry.windowFrame)
+      let screenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: transition.outputGeometry.windowFrame,
+                                                        fallbackScreenID: musicModeGeo.screenID)
       musicModeGeo = musicModeGeo.clone(windowFrame: transition.outputGeometry.windowFrame, screenID: screenID,
                                         video: transition.outputGeometry.video)
     }

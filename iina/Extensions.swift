@@ -1646,16 +1646,28 @@ extension NSScreen {
       x = viewRect.maxX
       ownerScreenID = getOwnerScreenID(forPoint: NSPoint(x: x, y: y))
     }
-    Logger.log("ViewRect=\(viewRect) → point=(\(x), \(y)) → owner screen is \(ownerScreenID?.debugDescription ?? "nil")", level: .verbose)
+    Logger.log.verbose{"ViewRect=\(viewRect) → point=(\(x), \(y)) → owner screen is \(ownerScreenID?.debugDescription ?? "nil")"}
     return ownerScreenID
   }
 
-  static func getOwnerOrDefaultScreenID(forViewRect viewRect: NSRect) -> String {
-    return getOwnerScreenID(forViewRect: viewRect) ?? screens[0].screenID
+  static func getOwnerOrDefaultScreenID(forViewRect viewRect: NSRect, fallbackScreenID: String) -> String {
+    if let ownerScreenID = getOwnerScreenID(forViewRect: viewRect) {
+      return ownerScreenID
+    }
+    if screens.contains(where: {$0.screenID == fallbackScreenID}) {
+      return fallbackScreenID
+    }
+    return screens[0].screenID
   }
 
-  static func getOwnerOrDefaultScreenID(forPoint point: NSPoint) -> String {
-    return getOwnerScreenID(forPoint: point) ?? screens[0].screenID
+  static func getOwnerOrDefaultScreenID(forPoint point: NSPoint, fallbackScreenID: String) -> String {
+    if let ownerScreenID = getOwnerScreenID(forPoint: point) {
+      return ownerScreenID
+    }
+    if screens.contains(where: {$0.screenID == fallbackScreenID}) {
+      return fallbackScreenID
+    }
+    return screens[0].screenID
   }
 
   static func forScreenID(_ screenID: String) -> NSScreen? {
