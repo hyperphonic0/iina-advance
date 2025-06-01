@@ -895,7 +895,7 @@ extension PlayerWindowController {
 
         // Add crop settings at bottom
         let cropController = self.cropSettingsView ?? transition.outputLayout.spec.interactiveMode!.viewController()
-        cropController.windowController = self
+        cropController.pwc = self
         self.cropSettingsView = cropController
         bottomBarView.addSubview(cropController.view, positioned: .below, relativeTo: bottomBarTopBorder)
         cropController.view.addAllConstraintsToFillSuperview()
@@ -910,10 +910,10 @@ extension PlayerWindowController {
           case .crop:
             if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
               selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-              log.verbose{"[\(transition.name)] Setting crop box selection from prevFilter: \(selectedRect)"}
+              log.verbose{"[\(transition.name)] Setting crop box selectedRect from prevFilter: \(selectedRect)"}
             } else {
               selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
-              log.verbose{"[\(transition.name)] Setting crop box selection to default whole videoSize: \(selectedRect)"}
+              log.verbose{"[\(transition.name)] Setting crop box selectedRect to default whole videoSize: \(selectedRect)"}
             }
           case .freeSelecting, .none:
             selectedRect = .zero

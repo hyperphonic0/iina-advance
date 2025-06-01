@@ -109,11 +109,39 @@ extension GeometryTransform.Context {
       rawHeight = nil
     }
 
-    let hasCrop = !(videoOutParams.crop_x == 0 && videoOutParams.crop_y == 0 &&
-                    videoOutParams.crop_w == rawWidth && videoOutParams.crop_h == rawHeight)
     // Derive crop label from video-out-params (is none if full-sized)
-    let cropLabel = hasCrop ? player.deriveCropLabel(x: videoOutParams.crop_x, y: videoOutParams.crop_y,
-                                                     w: videoOutParams.crop_w, h: videoOutParams.crop_h)! : AppData.noneCropIdentifier
+    let isNotCropped = videoOutParams.crop_x == 0 && videoOutParams.crop_y == 0 &&
+                    videoOutParams.crop_w == rawWidth && videoOutParams.crop_h == rawHeight
+
+    let cropLabel: String
+    if isNotCropped {
+      cropLabel = AppData.noneCropIdentifier
+    } else {
+      // First check for IINA crop filter. Derive selected crop label directly from the filter, because x & y values are ambiguous
+      // in mpv's video-params APIs (nil & 0 both show as 0)
+      if let vfCrop = player.getIINACropFilter(),
+         let cropLabelFromIINACrop = player.deriveCropLabel(from: vfCrop, rawVideoSize: player.windowController.geo.video.videoSizeRaw) {
+        cropLabel = cropLabelFromIINACrop
+      } else {
+        // If no IINA crop filter, the crop must have come from somewhere else.
+        // Try to calculate the label from the raw values, working backwards.
+        let rawVideoSize: CGSize
+        if let rawWidth, let rawHeight, rawWidth > 0, rawHeight > 0 {
+          rawVideoSize = CGSize(width: rawWidth, height: rawHeight)
+        } else {
+          rawVideoSize = oldVideoGeo.videoSizeRaw
+        }
+
+        if let cropLabelFromVideoParams = player.deriveCropLabel(x: videoOutParams.crop_x, y: videoOutParams.crop_y,
+                                                                 w: videoOutParams.crop_w, h: videoOutParams.crop_h,
+                                                                 rawVideoSize: rawVideoSize) {
+          cropLabel = cropLabelFromVideoParams
+        } else {
+          cropLabel = AppData.noneCropIdentifier
+        }
+      }
+    }
+    log.warn{"[GeoTF:\(name)]: Determined crop label from mpv params: \(cropLabel.quoted)"}
 
     let streamRotation = videoDecParams.rotate
     // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.

@@ -11,7 +11,7 @@ import Cocoa
 /** The base class view controller of `CropBoxView`. */
 class CropBoxViewController: NSViewController {
 
-  weak var windowController: PlayerWindowController!
+  weak var pwc: PlayerWindowController!
 
   var cropx: Int = 0
   var cropy: Int = 0  // in flipped coord (mpv)
@@ -32,11 +32,12 @@ class CropBoxViewController: NSViewController {
   }()
 
   func selectedRectUpdated() {
-    guard windowController.isInInteractiveMode else { return }
+    guard pwc.isInInteractiveMode else { return }
     updateCropValues(from: cropBoxView.selectedRect)
   }
 
   private func updateCropValues(from selectedRect: NSRect) {
+    pwc.log.verbose{"Updating crop values from selectedRect=\(selectedRect)"}
     var maxHeight = cropBoxView.actualSize.height
     if !maxHeight.isNormal {
       maxHeight = 0
@@ -52,6 +53,6 @@ class CropBoxViewController: NSViewController {
   }
 
   func handleKeyDown(mpvKeyCode: String) {
-    Logger.log("CropBoxViewController.handleKeyDown not overriden in subclass", level: .warning)
+    pwc.log.warn("CropBoxViewController.handleKeyDown not overriden in subclass")
   }
 }

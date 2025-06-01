@@ -153,7 +153,8 @@ extension PlayerCore {
     reloadQuickSettingsView()
   }
 
-  /// `vf`: gets up-to-date list of video filters AND updates associated state in the process
+  /// `vf`: gets up-to-date list of video filters
+  /// AND updates associated state in the process
   func updateVideoFiltersFromMpv() -> [MPVFilter] {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     // Clear cached filters first:
@@ -162,12 +163,8 @@ extension PlayerCore {
     info.delogoFilter = nil
     let videoFilters = mpv.getFilters(MPVProperty.vf)
     log.verbose{"Found \(videoFilters.count) VFs"}
-    var foundCropFilter = false
     for (filterIndex, filter) in videoFilters.enumerated() {
       log.verbose{"VF-\(filterIndex): name=\(filter.name.quoted) label=\(filter.label?.quoted ?? "nil") params=\(filter.params ?? [:])"}
-      if filter.label == Constants.FilterLabel.crop {
-        foundCropFilter = true
-      }
 
       switch filter.label {
       case Constants.FilterLabel.flip:
@@ -176,29 +173,9 @@ extension PlayerCore {
         info.mirrorFilter = filter
       case Constants.FilterLabel.delogo:
         info.delogoFilter = filter
-
-      case Constants.FilterLabel.crop:  // CROP
-        if let cropLabel = deriveCropLabel(from: filter) {
-          updateSelectedCrop(to: cropLabel)  // Known aspect-based crop
-        } else {
-          // Cannot parse IINA crop filter? Remove crop
-          log.error{"Could not determine crop from filter \(filter.label?.debugDescription.quoted ?? "nil"). Will remove filter"}
-          mpv.queue.async { [self] in
-            // Call with updateFiltersListFirst=NO because we already have a fresh list, and to prevent infinite loop:
-            if removeCrop(updateFiltersListFirst: false) {
-              // Call again to update state
-              _ = updateVideoFiltersFromMpv()
-            }
-          }
-        }
       default:
         break
       }
-    }
-
-    if videoGeo.hasCrop && !foundCropFilter {
-      log.debug("VideoGeometry specifies a crop, but no crop filter found in mpv video filters. Will update state to no crop")
-      updateSelectedCrop(to: AppData.noneCropIdentifier)
     }
 
     return videoFilters

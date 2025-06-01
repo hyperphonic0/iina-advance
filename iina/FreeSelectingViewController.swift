@@ -12,9 +12,9 @@ import Cocoa
 class FreeSelectingViewController: CropBoxViewController {
 
   @IBAction func doneBtnAction(_ sender: AnyObject) {
-    let player = windowController.player
+    let player = pwc.player
 
-    windowController.exitInteractiveMode {
+    pwc.exitInteractiveMode {
       let filter = MPVFilter.init(lavfiName: "delogo", label: Constants.FilterLabel.delogo, paramDict: [
         "x": String(self.cropx),
         "y": String(self.cropy),
@@ -35,7 +35,7 @@ class FreeSelectingViewController: CropBoxViewController {
   }
 
   @IBAction func cancelBtnAction(_ sender: AnyObject) {
-    windowController.exitInteractiveMode()
+    pwc.exitInteractiveMode()
   }
 
   override func handleKeyDown(mpvKeyCode: String) {

@@ -463,8 +463,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
     // Derive selected crop label directly from the filter. Do not use videoGeo as it could be stale.
     let cropLabel: String?
-    if let vfCrop = player.getCropFilter() {
-      cropLabel = player.deriveCropLabel(from: vfCrop)
+    if let vfCrop = player.getIINACropFilter() {
+      cropLabel = player.deriveCropLabel(from: vfCrop, rawVideoSize: player.windowController.geo.video.videoSizeRaw)
     } else {
       cropLabel = nil
     }

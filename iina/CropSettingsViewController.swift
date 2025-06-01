@@ -96,7 +96,7 @@ class CropSettingsViewController: CropBoxViewController {
       return
     }
 
-    let player = windowController.player
+    let player = pwc.player
     // Remove saved crop (if any)
     player.info.videoFiltersDisabled.removeValue(forKey: Constants.FilterLabel.crop)
 
@@ -108,7 +108,7 @@ class CropSettingsViewController: CropBoxViewController {
     player.mpv.queue.async { [self] in
       if isAllSelected || isNoSelection {
         player.log.verbose("Interactive mode submit: isAllSelected=\(isAllSelected.yn) isNoSelection=\(isNoSelection.yn) → setting crop to none")
-        windowController.exitInteractiveMode()
+        pwc.exitInteractiveMode()
       } else {
         let newCropFilter: MPVFilter
         if player.videoGeo.streamRotation == 0 {
@@ -120,26 +120,26 @@ class CropSettingsViewController: CropBoxViewController {
           player.log.verbose("Submitting from interactive mode with new crop: (\(self.cropx), \(self.cropy)), \(self.cropw) x \(self.croph)")
         }
 
-        guard let newCropLabel = player.deriveCropLabel(from: newCropFilter) else {
+        guard let newCropLabel = player.deriveCropLabel(from: newCropFilter, rawVideoSize: videoSizeRaw) else {
           player.log.error("Could not generate crop label from the newly created filter!")
           return
         }
         let newVidGeo = player.videoGeo.clone(selectedCropLabel: newCropLabel, videoSizeDisplayOverride: nil)
         DispatchQueue.main.async { [self] in
-          windowController.exitInteractiveMode(newVidGeo: newVidGeo)
+          pwc.exitInteractiveMode(newVidGeo: newVidGeo)
         }
       }
     }
   }
 
   @IBAction func doneBtnAction(_ sender: AnyObject) {
-    windowController.player.log.verbose("Interactive mode: user chose Done button")
+    pwc.player.log.verbose("Interactive mode: user chose Done button")
 
     submitCrop()
   }
 
   @IBAction func cancelBtnAction(_ sender: AnyObject) {
-    let player = windowController.player
+    let player = pwc.player
     if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
       /// Prev filter exists. Re-apply it
       player.log.verbose("User chose Cancel button from interactive mode: restoring prev crop and exiting interactive mode")
