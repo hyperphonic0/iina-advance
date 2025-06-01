@@ -141,10 +141,7 @@ extension PlayerWindowController {
       isPausedPriorToInteractiveMode = player.info.isPaused
       player.pause()
 
-      videoView.layer?.shadowColor = .black
-      videoView.layer?.shadowOffset = .zero
-      videoView.layer?.shadowOpacity = 1
-      videoView.layer?.shadowRadius = 3
+      videoView.addShadowForInteractiveMode()
     }
 
     // Music mode
@@ -441,6 +438,10 @@ extension PlayerWindowController {
 
     if transition.isWindowInitialLayout && transition.outputGeometry.isVideoVisible {
       addVideoViewToWindow()
+      if transition.isEnteringInteractiveMode {
+        // Need videoView to have superview before adding shadow
+        videoView.addShadowForInteractiveMode()
+      }
     } else if transition.isExitingMusicMode {
       // If exiting music mode, need to restore views early in this step
       log.verbose{"[\(transition.name)] Cleaning up for music mode exit"}

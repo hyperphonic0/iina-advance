@@ -223,6 +223,14 @@ class VideoView: NSView {
     layer?.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
   }
 
+  func addShadowForInteractiveMode() {
+    guard let videoLayer = layer else { return }
+    videoLayer.shadowColor = .black
+    videoLayer.shadowOffset = .zero
+    videoLayer.shadowOpacity = 1
+    videoLayer.shadowRadius = 3
+  }
+
   func enterAsynchronousMode() {
     glLayer?.enterAsynchronousMode()
   }
