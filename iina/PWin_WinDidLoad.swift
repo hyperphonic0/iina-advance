@@ -332,22 +332,9 @@ extension PlayerWindowController {
     topBarView.state = .followsWindowActiveState
     // Needed to try to clip half of topBarBottomBorder, to achieve 0.5px ideally. See below
     topBarView.clipsToBounds = true
-    contentView.addSubview(topBarView, positioned: .above, relativeTo: osdVisualEffectView)
     topBarView.translatesAutoresizingMaskIntoConstraints = false
-    topBarLeadingSpaceConstraint = topBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
-    topBarLeadingSpaceConstraint.identifier = "TopBarLeadingSpaceConstraint"
-    topBarLeadingSpaceConstraint.isActive = true
-    topBarTrailingSpaceConstraint = topBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
-    topBarTrailingSpaceConstraint.identifier = "TopBarTrailingSpaceConstraint"
-    topBarTrailingSpaceConstraint.isActive = true
 
-    viewportTopOffsetFromTopBarTopConstraint = viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: Constants.Distance.standardTitleBarHeight)
-    viewportTopOffsetFromTopBarTopConstraint.identifier = "ViewportTopOffsetFromTopBarTopConstraint"
-    viewportTopOffsetFromTopBarTopConstraint.isActive = true
-
-    viewportTopOffsetFromTopBarBottomConstraint = viewportView.topAnchor.constraint(equalTo: topBarView.bottomAnchor, constant: -Constants.Distance.standardTitleBarHeight)
-    viewportTopOffsetFromTopBarBottomConstraint.identifier = "ViewportTopOffsetFromTopBarBottomConstraint"
-    viewportTopOffsetFromTopBarBottomConstraint.isActive = true
+    addTopBarAndConstraintsIfMissing(in: contentView)
 
     /// `controlBarTop`
     controlBarTop.translatesAutoresizingMaskIntoConstraints = false
@@ -389,13 +376,40 @@ extension PlayerWindowController {
     topBarBottomBorder_HeightConstraint.identifier = .init("TopBarBottomBorder-HeightConstraint")
     topBarBottomBorder_HeightConstraint.priority = .defaultHigh
     topBarBottomBorder_HeightConstraint.isActive = true
+  }
 
-    // Relation to OSD
+  func addTopBarAndConstraintsIfMissing(in contentView: NSView) {
+    if !contentView.containsSubview(topBarView) {
+      contentView.addSubview(topBarView, positioned: .above, relativeTo: osdVisualEffectView)
+    }
 
-    osdTopToTopBarConstraint = osdVisualEffectView.topAnchor.constraint(equalTo: topBarView.bottomAnchor, constant: 8)
-    osdTopToTopBarConstraint.identifier = "OSDTopToTopBarConstraint"
-    osdTopToTopBarConstraint.priority = .init(900)
-    osdTopToTopBarConstraint.isActive = true
+    if let con = topBarLeadingSpaceConstraint, con.isActive {
+    } else {
+      topBarLeadingSpaceConstraint = topBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+      topBarLeadingSpaceConstraint.identifier = "TopBarLeadingSpaceConstraint"
+      topBarLeadingSpaceConstraint.isActive = true
+    }
+
+    if let con = topBarTrailingSpaceConstraint, con.isActive {
+    } else {
+      topBarTrailingSpaceConstraint = topBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
+      topBarTrailingSpaceConstraint.identifier = "TopBarTrailingSpaceConstraint"
+      topBarTrailingSpaceConstraint.isActive = true
+    }
+
+    if let con = viewportTopOffsetFromTopBarTopConstraint, con.isActive {
+    } else {
+      viewportTopOffsetFromTopBarTopConstraint = viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: 0)
+      viewportTopOffsetFromTopBarTopConstraint.identifier = "ViewportTopOffsetFromTopBarTopConstraint"
+      viewportTopOffsetFromTopBarTopConstraint.isActive = true
+    }
+
+    if let con = topBarBottomOffsetFromViewportTopConstraint, con.isActive {
+    } else {
+      topBarBottomOffsetFromViewportTopConstraint = topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: 0)
+      topBarBottomOffsetFromViewportTopConstraint.identifier = "TopBarBottomOffsetFromViewportTopConstraint"
+      topBarBottomOffsetFromViewportTopConstraint.isActive = true
+    }
   }
 
   func initBottomBarTopBorder() {
@@ -767,13 +781,20 @@ extension PlayerWindowController {
   }
 
   func initOSDView(in contentView: NSView) {
-    // other initialization
+    // Subview init
     osdAccessoryProgress.usesThreadedAnimation = false
     osdVisualEffectView.roundCorners()
 
+    // Min width
     let osdMinWidthConstraint = osdVisualEffectView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
     osdMinWidthConstraint.priority = .init(900)
     osdMinWidthConstraint.isActive = true
+
+    // Offset from top bar
+    osdTopToTopBarConstraint = osdVisualEffectView.topAnchor.constraint(equalTo: topBarView.bottomAnchor, constant: 8)
+    osdTopToTopBarConstraint.identifier = "OSDTopToTopBarConstraint"
+    osdTopToTopBarConstraint.priority = .init(900)
+    osdTopToTopBarConstraint.isActive = true
   }
 
   /// Prerequisites:

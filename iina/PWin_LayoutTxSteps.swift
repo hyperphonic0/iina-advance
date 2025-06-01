@@ -437,6 +437,14 @@ extension PlayerWindowController {
       }
     }
 
+    if transition.outputLayout.topBarHeight > 0 {
+      addTopBarAndConstraintsIfMissing(in: window.contentView!)
+    } else {
+      topBarBottomOffsetFromViewportTopConstraint?.isActive = false
+      viewportTopOffsetFromTopBarTopConstraint?.isActive = false
+      topBarView.removeFromSuperview()
+    }
+
     if transition.isWindowInitialLayout && transition.outputGeometry.isVideoVisible {
       addVideoViewToWindow()
       if transition.isEnteringInteractiveMode {
@@ -1199,7 +1207,11 @@ extension PlayerWindowController {
 
     fadeableViews.animationState = .shown
     fadeableViews.topBarAnimationState = .shown
-    fadeableViews.hideTimer.restart()
+
+    // Invalidate all old fadeable views actions as they are probably stale.
+    fadeableViews.$showHideTicketCount.withLock { $0 += 1 }
+    fadeableViews.hideTimer.restart()  // start new fadeable countdown
+
     log.verbose{
       let fadeableIDs = fadeableViews.fadeables.map{$0.idString}
       let fadeablesTopBarIDs = fadeableViews.fadeablesInTopBar.map{$0.idString}
@@ -1387,11 +1399,11 @@ extension PlayerWindowController {
 
     switch topBarPlacement {
     case .insideViewport:
-      viewportTopOffsetFromTopBarBottomConstraint.animateToConstant(-topBarHeight)
+      topBarBottomOffsetFromViewportTopConstraint.animateToConstant(topBarHeight)
       viewportTopOffsetFromTopBarTopConstraint.animateToConstant(0)
       viewportTopOffsetFromContentViewTopConstraint.animateToConstant(0 + cameraHousingOffset)
     case .outsideViewport:
-      viewportTopOffsetFromTopBarBottomConstraint.animateToConstant(0)
+      topBarBottomOffsetFromViewportTopConstraint.animateToConstant(0)
       viewportTopOffsetFromTopBarTopConstraint.animateToConstant(topBarHeight)
       viewportTopOffsetFromContentViewTopConstraint.animateToConstant(topBarHeight + cameraHousingOffset)
     }
@@ -1724,7 +1736,7 @@ extension PlayerWindowController {
     let isTopBarOpen = layout.topBarHeight > 0
     let isBottomBarOpen = layout.bottomBarHeight > 0
     let isLeadingSidebarOpen = layout.leadingSidebar.isVisible
-    let isTrailingSidebarOpen = layout.leadingSidebar.isVisible
+    let isTrailingSidebarOpen = layout.trailingSidebar.isVisible
 
     let bottomBar = layout.bottomBarPlacement
     let leadingSidebar = layout.leadingSidebarPlacement

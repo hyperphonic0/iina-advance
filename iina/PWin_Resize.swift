@@ -633,9 +633,6 @@ extension PlayerWindowController {
       return geometry
     }
 
-    /// Make sure to call `apply` AFTER `updateVideoViewHeightConstraint`!
-    miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: geometry.isVideoVisible)
-
     miniPlayer.resetScrollingLabels()
 
     updateBottomBarHeight(to: geometry.bottomBarHeight, bottomBarPlacement: .outsideViewport, mode: .musicMode)
@@ -645,9 +642,13 @@ extension PlayerWindowController {
       player.window.setFrameImmediately(convertedGeo)
     } else {
       if geometry.isVideoVisible {
+        /// Make sure to call `apply` AFTER `updateVideoViewHeightConstraint` if video shown
+        miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: geometry.isVideoVisible)
         videoView.apply(convertedGeo)
       } else {
         videoView.apply(nil)
+        /// Make sure to call `apply` BEFORE `updateVideoViewHeightConstraint` if video hidden
+        miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: geometry.isVideoVisible)
       }
     }
 

@@ -228,8 +228,8 @@ extension PlayerWindowController {
     // Seek time & thumbnail can only be shown if the OSC is visible.
     // Need to hide them because the OSC is being hidden:
     let mustHideSeekPreview = !currentLayout.hasPermanentControlBar
-    let fadeables = fadeableViews.fadeables
-    let fadeablesInTopBar = fadeableViews.fadeablesInTopBar
+    var fadeables: Set<NSView> = []
+    var fadeablesInTopBar: Set<NSView> = []
 
     let tasks: [IINAAnimation.Task] = [
       .instantTask { [self] in
@@ -254,6 +254,10 @@ extension PlayerWindowController {
         fadeableViews.animationState = .willHide
         fadeableViews.topBarAnimationState = .willHide
         player.refreshSyncUITimer(logMsg: "Hiding fadeable views ")
+
+        // Wait until here to build set! To avoid race
+        fadeables = fadeableViews.fadeables
+        fadeablesInTopBar = fadeableViews.fadeablesInTopBar
 
         for v in fadeables {
           v.animator().alphaValue = 0

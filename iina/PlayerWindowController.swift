@@ -370,7 +370,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var viewportViewHeightContraint: NSLayoutConstraint? = nil
 
   // - Top bar (title bar and/or top OSC) constraints
-  var viewportTopOffsetFromTopBarBottomConstraint: NSLayoutConstraint!
+  var topBarBottomOffsetFromViewportTopConstraint: NSLayoutConstraint!
   var viewportTopOffsetFromTopBarTopConstraint: NSLayoutConstraint!
   var viewportTopOffsetFromContentViewTopConstraint: NSLayoutConstraint!
   // Needs to be changed to align with either sidepanel or leading edge of window:
