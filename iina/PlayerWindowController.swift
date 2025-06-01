@@ -1765,8 +1765,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         if let cropFilter {
           switch currentLayout.mode {
           case .windowedNormal, .fullScreenNormal:
-            uncropThenEnterInteractiveMode(cropFilter: cropFilter, mode: currentLayout.mode,
-                                           oldVideoGeo: oldVideoGeo, uncroppedVideoGeo: uncroppedVideoGeo)
+            uncropThenEnterInteractiveMode(cropFilter: cropFilter, mode: currentLayout.mode, uncroppedVideoGeo: uncroppedVideoGeo)
           default:
             assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
             return
@@ -1782,8 +1781,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Not yet in interactive mode, but the active crop was just disabled prior to entering it,
   /// so that full video can be seen during interactive mode.
-  private func uncropThenEnterInteractiveMode(cropFilter: MPVFilter, mode: PlayerWindowMode,
-                                              oldVideoGeo: VideoGeometry, uncroppedVideoGeo: VideoGeometry) {
+  private func uncropThenEnterInteractiveMode(cropFilter: MPVFilter, mode: PlayerWindowMode, uncroppedVideoGeo: VideoGeometry) {
 
     var tasks: [IINAAnimation.Task] = []
 
@@ -1791,7 +1789,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     isAnimatingLayoutTransition = true
 
     // FIXME: need to un-rotate while in interactive mode
-    let videoSizeRaw = oldVideoGeo.videoSizeRaw
+    let videoSizeRaw = uncroppedVideoGeo.videoSizeRaw
     let prevCropBox = cropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
     log.verbose{"EnterInteractiveMode: Uncropping video from cropRect \(prevCropBox) to videoSizeRaw: \(videoSizeRaw)"}
     let newVideoAspect = videoSizeRaw.mpvAspect
@@ -1823,8 +1821,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                                                           minWidth: minViewportSizeIM.width,
                                                           minHeight: minViewportSizeIM.height)
       let minViewportMarginsIM = GeoUtil.minViewportMargins(forMode: .windowedInteractive)
-      newViewportSize = NSSize(width: max(newViewportSize.width + minViewportMarginsIM.totalWidth, minViewportSizeWindowed.width),
-                               height: max(newViewportSize.height + minViewportMarginsIM.totalHeight, minViewportSizeWindowed.height))
+      newViewportSize = NSSize(width: max(newViewportSize.width + minViewportMarginsIM.totalWidth, minViewportSizeWindowed.width).rounded(),
+                               height: max(newViewportSize.height + minViewportMarginsIM.totalHeight, minViewportSizeWindowed.height).rounded())
 
       log.verbose{"EnterInteractiveMode: aspectChangeFactor:\(aspectChangeFactor), viewportSizeMultiplier: \(viewportSizeMultiplier), newViewportSize:\(newViewportSize)"}
       uncroppedClosedBarsGeo = closedBarsGeo.scalingViewport(to: newViewportSize)
