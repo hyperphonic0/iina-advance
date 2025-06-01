@@ -928,8 +928,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     // This will use .mpvAspect - need to be consistent with rounding!
     let croppedVideoAspect = newVidGeo.videoAspectC
     let croppedVideoViewSize = GeoUtil.computeVideoSize(withAspectRatio: croppedVideoAspect,
-                                                             toFillIn: cropRectScaledToWindow.size,
-                                                             minViewportMargins: .zero, mode: mode)
+                                                        toFillIn: cropRectScaledToWindow.size,
+                                                        minViewportMargins: .zero, mode: mode)
 
 
     /// Note that size of `cropRectScaledToWindow` can differ from `croppedVideoViewSize` due to being rounded

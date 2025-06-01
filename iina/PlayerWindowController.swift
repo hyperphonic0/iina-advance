@@ -370,13 +370,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var viewportViewHeightContraint: NSLayoutConstraint? = nil
 
   // - Top bar (title bar and/or top OSC) constraints
-  @IBOutlet weak var viewportTopOffsetFromTopBarBottomConstraint: NSLayoutConstraint!
-  @IBOutlet weak var viewportTopOffsetFromTopBarTopConstraint: NSLayoutConstraint!
+  var viewportTopOffsetFromTopBarBottomConstraint: NSLayoutConstraint!
+  var viewportTopOffsetFromTopBarTopConstraint: NSLayoutConstraint!
   var viewportTopOffsetFromContentViewTopConstraint: NSLayoutConstraint!
   // Needs to be changed to align with either sidepanel or leading edge of window:
-  @IBOutlet weak var topBarLeadingSpaceConstraint: NSLayoutConstraint!
+  var topBarLeadingSpaceConstraint: NSLayoutConstraint!
   // Needs to be changed to align with either sidepanel or trailing edge of window:
-  @IBOutlet weak var topBarTrailingSpaceConstraint: NSLayoutConstraint!
+  var topBarTrailingSpaceConstraint: NSLayoutConstraint!
 
   // - Bottom OSC constraints
   var viewportBtmOffsetFromContentViewBtmConstraint: NSLayoutConstraint!
@@ -1883,7 +1883,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       if currentLayout.isInteractiveMode {
         // This alters state in addtion to (maybe) generating a task
-        tasks = buildTasksToExitInteractiveMode(immediately: immediately, newVidGeo: newVidGeo)
+        tasks = buildTasksToExitInteractiveMode(immediately: immediately, currentLayout: currentLayout, newVidGeo: newVidGeo)
       }
 
       if let doAfter {
@@ -1897,7 +1897,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   /// Exits interactive mode, using animations.
-  private func buildTasksToExitInteractiveMode(immediately: Bool, newVidGeo: VideoGeometry? = nil) -> [IINAAnimation.Task] {
+  private func buildTasksToExitInteractiveMode(immediately: Bool, currentLayout: LayoutState,
+                                               newVidGeo: VideoGeometry? = nil) -> [IINAAnimation.Task] {
     var tasks: [IINAAnimation.Task] = []
     var geoSet: GeometrySet? = nil
 
