@@ -598,10 +598,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var trailingSidebarView = ClickThroughVisualEffectView()
   var trailingSidebarLeadingBorder = NSBox()  // shown if trailing sidebar is "outside"
 
-  @IBOutlet weak var bufferIndicatorView: MouseIgnoringVisualEffectView!
-  @IBOutlet weak var bufferProgressLabel: NSTextField!
-  @IBOutlet weak var bufferSpin: NSProgressIndicator!
-  @IBOutlet weak var bufferDetailLabel: NSTextField!
+  var bufferIndicatorView = BufferIndicatorView()
 
   @IBOutlet weak var additionalInfoView: NSVisualEffectView!
   let additionalInfoTitle = ResizableTextView(lineBreakMode: .byTruncatingMiddle)
@@ -667,7 +664,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard let window = window, let cv = window.contentView else { return nil }
     let view = NSView(frame: .zero)
     view.translatesAutoresizingMaskIntoConstraints = false
-    cv.addSubview(view, positioned: .below, relativeTo: bufferIndicatorView)
+    cv.addSubview(view, positioned: .above, relativeTo: viewportView)
     Utility.quickConstraints(["H:|[v]|", "V:|[v]|"], ["v": view])
     return view
   }()
@@ -902,7 +899,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     /// Enqueue this in case `windowDidLoad` is not yet done
     animationPipeline.submitInstantTask{ [self] in
-      updateBufferIndicatorView()
+      if player.info.isNetworkResource {
+        log.verbose("Showing bufferIndicatorView for network stream")
+        let progressLabel = NSLocalizedString("main.opening_stream", comment:"Opening stream…")
+        showBufferIndicator(animate: true, progressLabel: progressLabel, detailLabel: "")
+      } else {
+        log.verbose("Hiding bufferIndicatorView: not a network stream")
+        hideBufferIndicator()
+      }
+
       let layout = currentLayout
       updateOSDPositionConstraints(leadingSidebarIsOpen: layout.leadingSidebar.isVisible, trailingSidebarIsOpen: layout.trailingSidebar.isVisible)
 
@@ -2323,35 +2328,38 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  func updateBufferIndicatorView() {
+  func showBufferIndicator(animate: Bool, progressLabel: String, detailLabel: String) {
     guard loaded else { return }
 
-    if player.info.isNetworkResource {
-      if bufferIndicatorView.isHidden {
-        log.verbose("Showing bufferIndicatorView for network stream")
-      }
-      bufferIndicatorView.isHidden = false
-      bufferSpin.startAnimation(self)
-      bufferProgressLabel.stringValue = NSLocalizedString("main.opening_stream", comment:"Opening stream…")
-      bufferDetailLabel.stringValue = ""
-    } else {
-      if !bufferIndicatorView.isHidden {
-        log.verbose("Hiding bufferIndicatorView: not a network stream")
-      }
-      bufferIndicatorView.isHidden = true
+    if bufferIndicatorView.superview == nil {
+      viewportView.addSubview(bufferIndicatorView, positioned: .above, relativeTo: defaultAlbumArtView)
+
+      // Center in viewport
+      bufferIndicatorView.centerXAnchor.constraint(equalTo: viewportView.centerXAnchor).isActive = true
+      bufferIndicatorView.centerYAnchor.constraint(equalTo: viewportView.centerYAnchor).isActive = true
     }
+
+    bufferIndicatorView.bufferSpin.startAnimation(self)
+    bufferIndicatorView.bufferProgressLabel.stringValue = progressLabel
+    bufferIndicatorView.bufferDetailLabel.stringValue = detailLabel
+  }
+
+  func hideBufferIndicator() {
+    guard loaded else { return }
+    bufferIndicatorView.removeFromSuperview()
+    bufferIndicatorView.bufferSpin.stopAnimation(self)
   }
 
   func updateNetworkState() {
     let isNotYetLoaded = (player.info.currentPlayback?.state.isNotYet(.loaded) ?? false)
     // Indicator should only be shown for network resources (AKA streaming media).
     // When media is not yet loaded, mpv does not indicate it is paused for cache. Assume it is.
-    let needShowIndicator = player.info.isNetworkResource && (player.info.pausedForCache || isNotYetLoaded)
+    let showIndicator = player.info.isNetworkResource && (player.info.pausedForCache || isNotYetLoaded)
 
     // Hide videoView so that prev media (if any) is not seen while loading current media
-    videoView.isHidden = needShowIndicator && isNotYetLoaded
+    videoView.isHidden = showIndicator && isNotYetLoaded
 
-    if needShowIndicator {
+    if showIndicator {
       let usedStr = FloatingPointByteCountFormatter.string(fromByteCount: player.info.cacheUsed, prefixedBy: .ki)
       let speedStr = FloatingPointByteCountFormatter.string(fromByteCount: player.info.cacheSpeed)
       let bufferingState = player.info.bufferingState
@@ -2359,17 +2367,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let showNumbers = bufferingState > 0
       let bufStateString = showNumbers ? "\(bufferingState)%" : ""
       log.trace{"Showing bufferIndicatorView (\(bufferingState)%, \(usedStr)B, \(speedStr)/s)"}
-      bufferIndicatorView.isHidden = false
-      bufferProgressLabel.stringValue = String(format: NSLocalizedString("main.buffering_indicator", comment:"Buffering... %@"), bufStateString)
-      bufferDetailLabel.stringValue = showNumbers ? "\(usedStr)B (\(speedStr)/s)" : ""
-      if !isNotYetLoaded && player.info.cacheSpeed == 0 {
-        bufferSpin.stopAnimation(self)
-      } else {
-        bufferSpin.startAnimation(self)
-      }
+      let progressLabel = String(format: NSLocalizedString("main.buffering_indicator", comment:"Buffering... %@"), bufStateString)
+      let detailLabel = showNumbers ? "\(usedStr)B (\(speedStr)/s)" : ""
+      let animate = !(!isNotYetLoaded && player.info.cacheSpeed == 0)
+      showBufferIndicator(animate: animate, progressLabel: progressLabel, detailLabel: detailLabel)
     } else {
-      bufferSpin.stopAnimation(self)
-      bufferIndicatorView.isHidden = true
+      hideBufferIndicator()
     }
   }
 

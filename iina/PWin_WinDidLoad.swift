@@ -830,10 +830,6 @@ extension PlayerWindowController {
     let bufIndicatorWidthCon = bufferIndicatorView.widthAnchor.constraint(equalToConstant: 160)
     bufIndicatorWidthCon.priority = .defaultLow
     bufIndicatorWidthCon.isActive = true
-
-    // Center in viewport
-    bufferIndicatorView.centerXAnchor.constraint(equalTo: viewportView.centerXAnchor).isActive = true
-    bufferIndicatorView.centerYAnchor.constraint(equalTo: viewportView.centerYAnchor).isActive = true
   }
 
   func initCustomWindowBorder(in contentView: NSView) {

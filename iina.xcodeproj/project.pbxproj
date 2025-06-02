@@ -367,6 +367,7 @@
 		D1AE04CE2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */; };
 		D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */; };
 		D1AF71442DEA6979000FA9B8 /* GeoUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AF71432DEA6977000FA9B8 /* GeoUtil.swift */; };
+		D1AF71462DED707F000FA9B8 /* BufferIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AF71452DED7079000FA9B8 /* BufferIndicatorView.swift */; };
 		D1B106682D42444C009D58F5 /* Debouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B106672D424448009D58F5 /* Debouncer.swift */; };
 		D1B492E62AA0BB9A00212E9C /* MagGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */; };
 		D1B787DB29AF883800DABC9C /* PWinPreviewImgBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */; };
@@ -1915,6 +1916,7 @@
 		D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_LayoutTxBuilder.swift; sourceTree = "<group>"; };
 		D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellEditTracker.swift; sourceTree = "<group>"; };
 		D1AF71432DEA6977000FA9B8 /* GeoUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoUtil.swift; sourceTree = "<group>"; };
+		D1AF71452DED7079000FA9B8 /* BufferIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BufferIndicatorView.swift; sourceTree = "<group>"; };
 		D1B106672D424448009D58F5 /* Debouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debouncer.swift; sourceTree = "<group>"; };
 		D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagGestureHandler.swift; sourceTree = "<group>"; };
 		D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinPreviewImgBuilder.swift; sourceTree = "<group>"; };
@@ -2953,6 +2955,7 @@
 				D1C741112CB6503100522FA7 /* PWin_Enums.swift */,
 				D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */,
 				D101635C2C197D4D00D1D663 /* PWin_OSD.swift */,
+				D1AF71452DED7079000FA9B8 /* BufferIndicatorView.swift */,
 				D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */,
 				D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */,
 				D13E807D2C026A2700537954 /* PWin_GeoSet.swift */,
@@ -3635,6 +3638,7 @@
 				51DE55C92A6646710050AD06 /* Sysctl.swift in Sources */,
 				D1D4C7422B0F3219003B09C2 /* MPVHookValue.swift in Sources */,
 				845FB0C71D39462E00C011E0 /* FloatingControlBarView.swift in Sources */,
+				D1AF71462DED707F000FA9B8 /* BufferIndicatorView.swift in Sources */,
 				D188CB2628D9E95500F166FD /* BindingTableState.swift in Sources */,
 				D1AD325A2ACC078600F86EE8 /* LayoutState.swift in Sources */,
 				D1A8878C29D16452000D1AE4 /* RotGestureHandler.swift in Sources */,
