@@ -89,7 +89,7 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
     let widthEqCon = widthAnchor.constraint(equalToConstant: 440)
     widthEqCon.priority = .init(300)
     widthEqCon.isActive = true
-    let widthGT = widthAnchor.constraint(greaterThanOrEqualToConstant: 200)
+    let widthGT = widthAnchor.constraint(greaterThanOrEqualToConstant: FloatingControlBarView.minBarWidth)
     widthGT.isActive = true
   }
   
@@ -98,14 +98,21 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
   }
 
   /// Adds margin constraints if missing
-  func addMarginConstraints() {
+  func addOrUpdateMarginConstraints(for layout: LayoutState) {
     guard let pwc = playerWindowController, let contentView = pwc.window?.contentView else { return }
-    if leadingMarginConstraint == nil || !leadingMarginConstraint.isActive {
-      leadingMarginConstraint = self.leadingAnchor.constraint(greaterThanOrEqualTo: pwc.leadingSidebarView.trailingAnchor, constant: FloatingControlBarView.margin)
+    pwc.log.verbose{"Updating floating OSC constraints: leadingSidebarVisible=\(layout.leadingSidebar.isVisible.yn) traillingSidebarVisible=\(layout.leadingSidebar.isVisible.yn)"}
+
+    let leadingConstraintSecondAnchor = layout.trailingSidebar.isVisible ? pwc.trailingSidebarView.trailingAnchor : contentView.leadingAnchor
+    if leadingMarginConstraint == nil || !leadingMarginConstraint.isActive || (leadingMarginConstraint?.secondAnchor != leadingConstraintSecondAnchor) {
+      leadingMarginConstraint?.isActive = false
+      leadingMarginConstraint = self.leadingAnchor.constraint(greaterThanOrEqualTo: leadingConstraintSecondAnchor, constant: FloatingControlBarView.margin)
       leadingMarginConstraint.isActive = true
     }
-    if trailingMarginConstraint == nil || !trailingMarginConstraint.isActive {
-      trailingMarginConstraint = pwc.trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: self.trailingAnchor, constant: FloatingControlBarView.margin)
+
+    let traillingConstraintFirstAnchor = layout.trailingSidebar.isVisible ? pwc.trailingSidebarView.leadingAnchor : contentView.trailingAnchor
+    if trailingMarginConstraint == nil || !trailingMarginConstraint.isActive || (trailingMarginConstraint?.firstAnchor != traillingConstraintFirstAnchor) {
+      trailingMarginConstraint?.isActive = false
+      trailingMarginConstraint = traillingConstraintFirstAnchor.constraint(greaterThanOrEqualTo: self.trailingAnchor, constant: FloatingControlBarView.margin)
       trailingMarginConstraint.isActive = true
     }
     if bottomMarginConstraint == nil || !bottomMarginConstraint.isActive {

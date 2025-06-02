@@ -321,7 +321,6 @@ extension PlayerWindowController {
     fragToolbarView.idString = "OSC-ToolbarView"
     fragToolbarView.translatesAutoresizingMaskIntoConstraints = false
     fragToolbarView.orientation = .horizontal
-//    fragToolbarView.alignment = .centerY
     fragToolbarView.distribution = .fill
   }
 
@@ -795,6 +794,12 @@ extension PlayerWindowController {
     osdTopToTopBarConstraint.identifier = "OSDTopToTopBarConstraint"
     osdTopToTopBarConstraint.priority = .init(900)
     osdTopToTopBarConstraint.isActive = true
+
+    osdLeadingToMiniPlayerButtonsTrailingConstraint = osdVisualEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: closeButtonView.trailingAnchor, constant: 4)
+    osdLeadingToMiniPlayerButtonsTrailingConstraint.priority = .defaultLow
+    osdLeadingToMiniPlayerButtonsTrailingConstraint.isActive = true
+
+    closeButtonView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4).isActive = true
   }
 
   /// Prerequisites:

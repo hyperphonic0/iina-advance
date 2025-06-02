@@ -602,7 +602,7 @@ extension PlayerWindowController {
     if transition.isOpeningOrClosingAnySidebar {
       let leadingSidebarWillBeOpen = outputLayout.leadingSidebar.isVisible
       let trailingSidebarWillBeOpen = outputLayout.trailingSidebar.isVisible
-      log.verbose{"[\(transition.name)] LeadingSidebar will be open: \(leadingSidebarWillBeOpen.yn); TrailingSidebar: \(trailingSidebarWillBeOpen.yn)"}
+      log.verbose{"[\(transition.name)] Sidebars will be open: LeadingSidebar=\(leadingSidebarWillBeOpen.yn) TrailingSidebar=\(trailingSidebarWillBeOpen.yn)"}
       // Make sure to call this after prepareLayoutForOpening()
       updateOSDPositionConstraints(leadingSidebarIsOpen: leadingSidebarWillBeOpen,
                                    trailingSidebarIsOpen: trailingSidebarWillBeOpen)
@@ -756,8 +756,7 @@ extension PlayerWindowController {
         let contentView = window.contentView!
         if !contentView.containsSubview(controlBarFloating) {
           log.verbose{"[\(transition.name)] Adding controlBarFloating to contentView"}
-          contentView.addSubview(controlBarFloating, positioned: .below, relativeTo: leadingSidebarView)
-          controlBarFloating.addMarginConstraints()
+          contentView.addSubview(controlBarFloating, positioned: .above, relativeTo: viewportView)
 
           controlBarFloating.xConstraint?.isActive = false
           controlBarFloating.yConstraint?.isActive = false
@@ -777,6 +776,8 @@ extension PlayerWindowController {
           newY.isActive = true
           newX.isActive = true
         }
+
+        controlBarFloating.addOrUpdateMarginConstraints(for: transition.outputLayout)
 
         let floatingUpperView = controlBarFloating.topRowView
         if !floatingUpperView.views.contains(fragToolbarView) {

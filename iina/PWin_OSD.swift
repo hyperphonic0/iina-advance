@@ -36,8 +36,8 @@ class OSDState {
     return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.25
   }
 
-  var leadingSidebarOffsetConstraint: NSLayoutConstraint? = nil
-  var trailingSidebarOffsetConstraint: NSLayoutConstraint? = nil
+  fileprivate var leadingOffsetConstraint: NSLayoutConstraint? = nil
+  fileprivate var trailingOffsetConstraint: NSLayoutConstraint? = nil
 
   // Need to keep a reference to NSViewController here in order for its Objective-C selectors to work
   var context: NSViewController? = nil {
@@ -78,38 +78,38 @@ extension PlayerWindowController {
   func updateOSDPositionConstraints(leadingSidebarIsOpen: Bool, trailingSidebarIsOpen: Bool) {
     log.verbose{"Updating OSD position"}
     guard let contentView = window?.contentView else { return }
-    if let con = osd.leadingSidebarOffsetConstraint {
+    if let con = osd.leadingOffsetConstraint {
       con.isActive = false
     }
-    if let con = osd.trailingSidebarOffsetConstraint {
+    if let con = osd.trailingOffsetConstraint {
       con.isActive = false
     }
 
     let otherAnchorLeading = leadingSidebarIsOpen ? leadingSidebarView.trailingAnchor : viewportView.leadingAnchor
     let otherAnchorTrailing = trailingSidebarIsOpen ? trailingSidebarView.leadingAnchor : viewportView.trailingAnchor
 
-    let leadingSidebarOffsetConstraint: NSLayoutConstraint
-    let trailingSidebarOffsetConstraint: NSLayoutConstraint
+    let leadingOffsetConstraint: NSLayoutConstraint
+    let trailingOffsetConstraint: NSLayoutConstraint
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
     switch osdPosition {
     case .topLeading:
       // OSD on left, AdditionalInfo on right
-      leadingSidebarOffsetConstraint = otherAnchorLeading.constraint(equalTo: osdVisualEffectView.leadingAnchor, constant: -8.0)
-      trailingSidebarOffsetConstraint = otherAnchorTrailing.constraint(equalTo: additionalInfoView.trailingAnchor, constant: 8.0)
+      leadingOffsetConstraint = otherAnchorLeading.constraint(equalTo: osdVisualEffectView.leadingAnchor, constant: -8.0)
+      trailingOffsetConstraint = otherAnchorTrailing.constraint(equalTo: additionalInfoView.trailingAnchor, constant: 8.0)
     case .topTrailing:
       // AdditionalInfo on left, OSD on right
-      leadingSidebarOffsetConstraint = otherAnchorLeading.constraint(equalTo: additionalInfoView.leadingAnchor, constant: -8.0)
-      trailingSidebarOffsetConstraint = otherAnchorTrailing.constraint(equalTo: osdVisualEffectView.trailingAnchor, constant: 8.0)
+      leadingOffsetConstraint = otherAnchorLeading.constraint(equalTo: additionalInfoView.leadingAnchor, constant: -8.0)
+      trailingOffsetConstraint = otherAnchorTrailing.constraint(equalTo: osdVisualEffectView.trailingAnchor, constant: 8.0)
     }
 
-    leadingSidebarOffsetConstraint.identifier = "LeadingSidebar-OSDSpace"
-    leadingSidebarOffsetConstraint.priority = .defaultHigh
-    leadingSidebarOffsetConstraint.isActive = true
-    osd.leadingSidebarOffsetConstraint = leadingSidebarOffsetConstraint
+    leadingOffsetConstraint.identifier = "OSD_LeadingOffsetConstraint"
+    leadingOffsetConstraint.priority = .defaultHigh
+    leadingOffsetConstraint.isActive = true
+    osd.leadingOffsetConstraint = leadingOffsetConstraint
 
-    trailingSidebarOffsetConstraint.identifier = "TrailingSidebar-OSDSpace"
-    trailingSidebarOffsetConstraint.isActive = true
-    osd.trailingSidebarOffsetConstraint = trailingSidebarOffsetConstraint
+    trailingOffsetConstraint.identifier = "OSD_TrailingOffsetConstraint"
+    trailingOffsetConstraint.isActive = true
+    osd.trailingOffsetConstraint = trailingOffsetConstraint
     contentView.layoutSubtreeIfNeeded()
   }
 

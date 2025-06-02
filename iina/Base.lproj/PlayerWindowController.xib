@@ -33,7 +33,6 @@
                 <outlet property="osdIconWidthConstraint" destination="Aat-kB-459" id="9xu-s8-dl1"/>
                 <outlet property="osdLabel" destination="Ofw-1d-N4T" id="9ei-8o-aYw"/>
                 <outlet property="osdLeadingMarginConstraint" destination="F2r-Um-cea" id="zge-q9-BQb"/>
-                <outlet property="osdLeadingToMiniPlayerButtonsTrailingConstraint" destination="eTB-OD-mwZ" id="HuF-hG-NZ6"/>
                 <outlet property="osdTopMarginConstraint" destination="rAU-zU-HxD" id="4x4-rH-buK"/>
                 <outlet property="osdTrailingMarginConstraint" destination="20A-Y9-xnl" id="oM9-TJ-0KE"/>
                 <outlet property="osdVStackView" destination="g0j-zS-jKv" id="aoo-Tm-yhj"/>
@@ -47,7 +46,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" autoresizesSubviews="NO" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -341,10 +340,7 @@
                     </customView>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="88M-Ln-4mc" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="4" id="C4g-bz-uwS"/>
-                    <constraint firstItem="g0O-v5-RQj" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="36" placeholder="YES" id="M0c-rX-4vh"/>
                     <constraint firstAttribute="width" constant="640" placeholder="YES" id="YCx-Hk-4OW"/>
-                    <constraint firstItem="g0O-v5-RQj" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="88M-Ln-4mc" secondAttribute="trailing" priority="250" constant="4" identifier="osdLeadingToMiniPlayerButtonsTrailingConstraint" id="eTB-OD-mwZ"/>
                     <constraint firstAttribute="height" constant="400" placeholder="YES" id="y8z-8P-VRp"/>
                 </constraints>
             </view>

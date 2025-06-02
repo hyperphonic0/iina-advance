@@ -478,7 +478,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
    └───────────────────────┘
    */
   var osdTopToTopBarConstraint: NSLayoutConstraint!
-  @IBOutlet var osdLeadingToMiniPlayerButtonsTrailingConstraint: NSLayoutConstraint!
+  var osdLeadingToMiniPlayerButtonsTrailingConstraint: NSLayoutConstraint!
   @IBOutlet weak var osdIconWidthConstraint: NSLayoutConstraint!
   @IBOutlet weak var osdIconHeightConstraint: NSLayoutConstraint!
   @IBOutlet weak var osdTopMarginConstraint: NSLayoutConstraint!
