@@ -355,7 +355,15 @@ struct LayoutState {
     self.titleBarHeight + self.topOSCHeight
   }
 
+  var hasTopBar: Bool {
+    topBarHeight > 0
+  }
+
   let bottomBarHeight: CGFloat
+
+  var hasBottomBar: Bool {
+    bottomBarHeight > 0
+  }
 
   /// - Bar widths/heights IF `.outsideViewport`
 
@@ -419,6 +427,10 @@ struct LayoutState {
 
   var isFullScreen: Bool {
     return spec.isFullScreen
+  }
+
+  var hasAdditionalInfo: Bool {
+    isFullScreen && Preference.bool(for: .displayTimeAndBatteryInFullScreen)
   }
 
   var isWindowed: Bool {

@@ -8,11 +8,6 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="PlayerWindowController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
-                <outlet property="additionalInfoBattery" destination="1XY-X2-FcE" id="8dX-mC-W51"/>
-                <outlet property="additionalInfoBatteryView" destination="Ybl-06-ksj" id="NdR-gs-P1p"/>
-                <outlet property="additionalInfoLabel" destination="4mb-jy-Y1w" id="rgV-hQ-MH2"/>
-                <outlet property="additionalInfoStackView" destination="HJv-RK-JT8" id="T3L-fd-A60"/>
-                <outlet property="additionalInfoView" destination="Qbi-jx-9pO" id="bdV-ZH-SkC"/>
                 <outlet property="backButtonBox" destination="6vJ-s6-gdD" id="CK1-B8-Kga"/>
                 <outlet property="backButtonVE" destination="NWr-qI-ocU" id="qqc-Fd-kAb"/>
                 <outlet property="closeButtonBackgroundViewBox" destination="DSj-5w-Wrw" id="CYg-qC-xTh"/>
@@ -47,88 +42,6 @@
             <view key="contentView" autoresizesSubviews="NO" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                 <subviews>
-                    <visualEffectView identifier="Additional-Info-View" hidden="YES" wantsLayer="YES" horizontalCompressionResistancePriority="250" ambiguous="YES" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Qbi-jx-9pO" userLabel="Additional-Info View" customClass="MouseIgnoringVisualEffectView" customModule="IINA_Advance" customModuleProvider="target">
-                        <rect key="frame" x="472" y="297" width="160" height="67"/>
-                        <subviews>
-                            <stackView identifier="Additional-Info-Horizontal-Stack-View" wantsLayer="YES" distribution="fill" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HJv-RK-JT8" userLabel="Additional-Info Horizontal Stack View">
-                                <rect key="frame" x="16" y="4" width="128" height="30"/>
-                                <subviews>
-                                    <customView identifier="Additional-Info-Label-Container" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="P1S-9b-Nzw" userLabel="Additional-Info-Label-Container View">
-                                        <rect key="frame" x="0.0" y="0.0" width="55" height="30"/>
-                                        <subviews>
-                                            <textField identifier="Additional-Info-Label" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="4mb-jy-Y1w">
-                                                <rect key="frame" x="4" y="6" width="53" height="21"/>
-                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="99:99" id="IyU-0H-hyV">
-                                                    <font key="font" metaFont="system" size="18"/>
-                                                    <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
-                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                </textFieldCell>
-                                            </textField>
-                                        </subviews>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="30" id="5DG-K5-hY5"/>
-                                            <constraint firstItem="4mb-jy-Y1w" firstAttribute="leading" secondItem="P1S-9b-Nzw" secondAttribute="leading" constant="6" id="uIG-HT-ytR"/>
-                                            <constraint firstItem="4mb-jy-Y1w" firstAttribute="centerY" secondItem="P1S-9b-Nzw" secondAttribute="centerY" constant="-1" id="upo-MA-6Us"/>
-                                            <constraint firstAttribute="trailing" secondItem="4mb-jy-Y1w" secondAttribute="trailing" id="zV1-95-4CW"/>
-                                        </constraints>
-                                    </customView>
-                                    <box wantsLayer="YES" horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="2BS-K2-xJO">
-                                        <rect key="frame" x="61" y="9" width="5" height="12"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="12" id="2HL-LZ-uj7"/>
-                                        </constraints>
-                                    </box>
-                                    <customView identifier="Additional-Info-Battery-View" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ybl-06-ksj" userLabel="Additional-Info-Battery View">
-                                        <rect key="frame" x="72" y="0.0" width="56" height="30"/>
-                                        <subviews>
-                                            <textField identifier="Additional-Info-Battery-Text" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1XY-X2-FcE">
-                                                <rect key="frame" x="5" y="8" width="46" height="16"/>
-                                                <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" title="100%" id="va1-P5-3b0">
-                                                    <font key="font" metaFont="systemBold"/>
-                                                    <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
-                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                </textFieldCell>
-                                            </textField>
-                                            <imageView identifier="Additional-Info-Battery-Image" wantsLayer="YES" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="EpK-FB-bM0" userLabel="Additional-Info-Battery Image View">
-                                                <rect key="frame" x="0.0" y="0.0" width="56" height="30"/>
-                                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" image="battery" id="5rw-Sh-BRR"/>
-                                            </imageView>
-                                        </subviews>
-                                        <constraints>
-                                            <constraint firstAttribute="trailing" secondItem="EpK-FB-bM0" secondAttribute="trailing" id="Ab1-a3-Ap7"/>
-                                            <constraint firstItem="1XY-X2-FcE" firstAttribute="centerX" secondItem="Ybl-06-ksj" secondAttribute="centerX" id="Adp-7U-tTV"/>
-                                            <constraint firstItem="EpK-FB-bM0" firstAttribute="leading" secondItem="Ybl-06-ksj" secondAttribute="leading" id="ICp-l0-UOF"/>
-                                            <constraint firstAttribute="width" constant="56" id="YE3-Bj-TCo"/>
-                                            <constraint firstAttribute="bottom" secondItem="EpK-FB-bM0" secondAttribute="bottom" id="lce-Dz-NZo"/>
-                                            <constraint firstItem="1XY-X2-FcE" firstAttribute="centerY" secondItem="Ybl-06-ksj" secondAttribute="centerY" constant="-0.5" id="sV7-2T-Ljb"/>
-                                            <constraint firstAttribute="height" constant="30" id="skg-xR-yU1"/>
-                                            <constraint firstItem="EpK-FB-bM0" firstAttribute="top" secondItem="Ybl-06-ksj" secondAttribute="top" id="xfk-HM-qEp"/>
-                                        </constraints>
-                                    </customView>
-                                </subviews>
-                                <constraints>
-                                    <constraint firstItem="P1S-9b-Nzw" firstAttribute="leading" relation="lessThanOrEqual" secondItem="HJv-RK-JT8" secondAttribute="leading" id="e1s-yk-YP6"/>
-                                </constraints>
-                                <visibilityPriorities>
-                                    <integer value="1000"/>
-                                    <integer value="1000"/>
-                                    <integer value="1000"/>
-                                </visibilityPriorities>
-                                <customSpacing>
-                                    <real value="3.4028234663852886e+38"/>
-                                    <real value="3.4028234663852886e+38"/>
-                                    <real value="3.4028234663852886e+38"/>
-                                </customSpacing>
-                            </stackView>
-                        </subviews>
-                        <constraints>
-                            <constraint firstItem="HJv-RK-JT8" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Qbi-jx-9pO" secondAttribute="leading" constant="16" id="4JZ-kz-GjJ"/>
-                            <constraint firstItem="HJv-RK-JT8" firstAttribute="leading" secondItem="Qbi-jx-9pO" secondAttribute="leading" constant="16" placeholder="YES" identifier="Placeholder2" id="Gm2-PP-0ay"/>
-                            <constraint firstItem="HJv-RK-JT8" firstAttribute="top" secondItem="Qbi-jx-9pO" secondAttribute="top" constant="33" placeholder="YES" identifier="Placeholder1" id="dpY-Cd-Plf"/>
-                            <constraint firstAttribute="bottom" secondItem="HJv-RK-JT8" secondAttribute="bottom" constant="4" id="lUv-4l-9RZ"/>
-                            <constraint firstAttribute="trailing" secondItem="HJv-RK-JT8" secondAttribute="trailing" constant="16" id="m0K-bE-aKW"/>
-                        </constraints>
-                    </visualEffectView>
                     <visualEffectView identifier="OSD-View" hidden="YES" wantsLayer="YES" ambiguous="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="g0O-v5-RQj" userLabel="OSD Visual Effect View">
                         <rect key="frame" x="8" y="303" width="169" height="61"/>
                         <subviews>
@@ -309,7 +222,6 @@
     </objects>
     <resources>
         <image name="backward" width="11" height="11"/>
-        <image name="battery" width="57" height="30"/>
         <image name="close" width="11" height="11"/>
         <image name="▶️" width="128" height="128"/>
     </resources>

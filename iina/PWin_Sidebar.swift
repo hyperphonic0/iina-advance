@@ -560,8 +560,6 @@ extension PlayerWindowController {
 
     let topConstraint = leadingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor)
     let bottomConstraint = viewportView.bottomAnchor.constraint(equalTo: leadingSidebarView.bottomAnchor)
-    let osdConstraint = osdVisualEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingSidebarView.trailingAnchor, constant: 8)
-    let additionalInfoConstraint = additionalInfoView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingSidebarView.trailingAnchor, constant: 8)
 
     assert(coefficients.2 * sidebarWidth == 0,
            "viewportLeadingOffsetFromContentViewLeadingConstraint should be zero: \(coefficients.2 * sidebarWidth)")
@@ -571,7 +569,7 @@ extension PlayerWindowController {
     leadingSidebarConstraints = LeadingSidebarConstraints(viewportLeadingOffsetFromLeading: viewportLeadingOffsetFromLeading,
                                                           viewportLeadingOffsetFromTrailing: viewportLeadingOffsetFromTrailing,
                                                           viewportLeadingClipTrailing: viewportLeadingClipTrailing,
-                                                          top: topConstraint, bottom: bottomConstraint, osd: osdConstraint, additionalInfo: additionalInfoConstraint)
+                                                          top: topConstraint, bottom: bottomConstraint)
     return tabContainerView
   }
 
@@ -686,13 +684,14 @@ extension PlayerWindowController {
 
     let top = trailingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor)
     let bottom = viewportView.bottomAnchor.constraint(equalTo: trailingSidebarView.bottomAnchor)
-    let osd = trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: osdVisualEffectView.trailingAnchor, constant: 8)
-    let additionalInfo = trailingSidebarView.leadingAnchor.constraint(greaterThanOrEqualTo: additionalInfoView.trailingAnchor, constant: 8)
 
     viewportTrailingOffsetFromContentViewTrailingConstraint.animateToConstant(coefficients.2 * sidebarWidth)
 
     // Will remove old constraints & add new ones
-    trailingSidebarConstraints = TrailingSidebarConstraints(viewportTrailingOffsetFromLeading: viewportTrailingOffsetFromLeading, viewportTrailingOffsetFromTrailing: viewportTrailingOffsetFromTrailing, viewportTrailingClipLeading: viewportTrailingClipLeading, top: top, bottom: bottom, osd: osd, additionalInfo: additionalInfo)
+    trailingSidebarConstraints = TrailingSidebarConstraints(viewportTrailingOffsetFromLeading: viewportTrailingOffsetFromLeading,
+                                                            viewportTrailingOffsetFromTrailing: viewportTrailingOffsetFromTrailing,
+                                                            viewportTrailingClipLeading: viewportTrailingClipLeading,
+                                                            top: top, bottom: bottom)
 
     return tabContainerView
   }

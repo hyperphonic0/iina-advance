@@ -19,11 +19,7 @@ struct AppData {
     let tolerance: TimeInterval
   }
   static let syncTimerConfig = SyncTimerConfig(interval: 0.05, tolerance: 0.02)
-//  static let syncTimerPreciseConfig = SyncTimerConfig(interval: 0.04, tolerance: 0.01)
 
-  /** speed values when clicking left / right arrow button */
-
-//  static let availableSpeedValues: [Double] = [-32, -16, -8, -4, -2, -1, 1, 2, 4, 8, 16, 32]
   // Stopgap for https://github.com/mpv-player/mpv/issues/4000
   static let availableSpeedValues: [Double] = [0.03125, 0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32]
 

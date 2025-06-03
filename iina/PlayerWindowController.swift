@@ -397,11 +397,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // - Remove old constraints:
       if let old = leadingSidebarConstraints {
         log.verbose{"Disabling old leading sidebar constraints"}
-        old.setAll(active: false)
+        old.setActive(active: false)
       }
       if let newCons = newValue {
         log.verbose{"Enabling new leading sidebar constraints"}
-        newCons.setAll(active: true)
+        updateActiveStatusOfLeadingSidebarConstraints(newCons)
       }
     }
   }
@@ -413,23 +413,23 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let top: NSLayoutConstraint
     let bottom: NSLayoutConstraint
-    let osd: NSLayoutConstraint
-    let additionalInfo: NSLayoutConstraint
 
-    func setAll(active: Bool) {
+    func setActive(active: Bool) {
       viewportLeadingOffsetFromTrailing.isActive = active
       viewportLeadingOffsetFromLeading.isActive = active
       viewportLeadingClipTrailing?.isActive = active
       top.isActive = active
       bottom.isActive = active
-      osd.isActive = active
-      additionalInfo.isActive = active
     }
+  }
+
+  func updateActiveStatusOfLeadingSidebarConstraints(_ cons: LeadingSidebarConstraints) {
+    cons.setActive(active: true)
   }
 
 
   // - Trailing sidebar constraints
-  @IBOutlet weak var viewportTrailingOffsetFromContentViewTrailingConstraint: NSLayoutConstraint!
+  var viewportTrailingOffsetFromContentViewTrailingConstraint: NSLayoutConstraint!
   /// If non-nil, activates all constraints in the new object reference.
   /// Any constraints in the old reference will be deactivated.
   var trailingSidebarConstraints: TrailingSidebarConstraints? = nil {
@@ -437,11 +437,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // - Remove old constraints:
       if let old = trailingSidebarConstraints {
         log.verbose{"Disabling old trailing sidebar constraints"}
-        old.setAll(active: false)
+        old.setActive(active: false)
       }
       if let newCons = newValue {
         log.verbose{"Enabling new trailing sidebar constraints"}
-        newCons.setAll(active: true)
+        newCons.setActive(active: true)
       }
     }
   }
@@ -453,20 +453,19 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let top: NSLayoutConstraint
     let bottom: NSLayoutConstraint
-    let osd: NSLayoutConstraint
-    let additionalInfo: NSLayoutConstraint
 
-    func setAll(active: Bool) {
+    func setActive(active: Bool) {
       viewportTrailingOffsetFromLeading.isActive = active
       viewportTrailingOffsetFromTrailing.isActive = active
       viewportTrailingClipLeading?.isActive = active
       top.isActive = active
       bottom.isActive = active
-      osd.isActive = active
-      additionalInfo.isActive = active
     }
   }
 
+  func updateActiveStatusOfTrailingSidebarConstraints(_ cons: TrailingSidebarConstraints) {
+    cons.setActive(active: true)
+  }
 
   /**
    OSD: shown here in "upper-left" configuration.
@@ -565,7 +564,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Sidebar at top of window. May be `insideViewport` or `outsideViewport`. May contain `titleBarView` and/or `controlBarTop`
   /// depending on configuration.
-  var topBarView = ClickThroughVisualEffectView()
+  let topBarView = ClickThroughVisualEffectView()
   /// Bottom border of `topBarView`.
   let topBarBottomBorder = NSBox()
   /// Reserves space for the title bar components. Can contain CustomTitleBarView *only* if using legacy
@@ -575,7 +574,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   let controlBarTop = ClickThroughView()
 
   /// Floating OSC
-  var controlBarFloating = FloatingControlBarView()
+  let controlBarFloating = FloatingControlBarView()
 
   /// Current OSC container view. May be top, bottom, floating, or inside music mode window,
   /// depending on user pref and current configuration.
@@ -587,25 +586,19 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Top border of `bottomBarView`.
   let bottomBarTopBorder = NSBox()
 
-
   /// Layout options for how to layout controls inside `currentControlBar`.
   let oscOneRowView = SingleRowBarOSCView()
   let oscTwoRowView = TwoRowBarOSCView()
   let seekPreview = SeekPreview()
 
-  var leadingSidebarView = ClickThroughVisualEffectView()
-  var leadingSidebarTrailingBorder = NSBox()  // shown if leading sidebar is "outside"
-  var trailingSidebarView = ClickThroughVisualEffectView()
-  var trailingSidebarLeadingBorder = NSBox()  // shown if trailing sidebar is "outside"
+  let leadingSidebarView = ClickThroughVisualEffectView()
+  let leadingSidebarTrailingBorder = NSBox()  // shown if leading sidebar is "outside"
+  let trailingSidebarView = ClickThroughVisualEffectView()
+  let trailingSidebarLeadingBorder = NSBox()  // shown if trailing sidebar is "outside"
 
-  var bufferIndicatorView = BufferIndicatorView()
+  let bufferIndicatorView = BufferIndicatorView()
 
-  @IBOutlet weak var additionalInfoView: NSVisualEffectView!
-  let additionalInfoTitle = ResizableTextView(lineBreakMode: .byTruncatingMiddle)
-  @IBOutlet weak var additionalInfoStackView: NSStackView!
-  @IBOutlet weak var additionalInfoLabel: NSTextField!
-  @IBOutlet weak var additionalInfoBatteryView: NSView!
-  @IBOutlet weak var additionalInfoBattery: NSTextField!
+  let additionalInfoView = AdditionalInfoView()
 
   // OSD
   @IBOutlet weak var osdVisualEffectView: NSVisualEffectView!
@@ -907,9 +900,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         log.verbose("Hiding bufferIndicatorView: not a network stream")
         hideBufferIndicator()
       }
-
-      let layout = currentLayout
-      updateOSDPositionConstraints(leadingSidebarIsOpen: layout.leadingSidebar.isVisible, trailingSidebarIsOpen: layout.trailingSidebar.isVisible)
 
       if case .restoring(let priorState) = sessionState {
         restoreFromMiscWindowBools(priorState)
@@ -1327,12 +1317,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func windowDidChangeScreen(_ notification: Notification) {
     guard let window = window, let screen = window.screen else { return }
     let displayId = screen.displayId
-
-    if videoView.currentDisplay == displayId {
+    guard videoView.currentDisplay != displayId else {
       log.trace{"WindowDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged"}
       return
     }
-    log.verbose("WindowDidChangeScreen received: \(videoView.currentDisplay?.description ?? "nil") → \(screen.displayId)")
+
+    log.trace{"WindowDidChangeScreen received: \(videoView.currentDisplay?.description ?? "nil") → \(screen.displayId)"}
     if videoView.currentDisplay != nil {  // Don't need for first update
       restartWindowResizeDenialPeriod("windowDidChangeScreen")
       pendingResizeForScreenChange = true
@@ -1341,17 +1331,17 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by debouncing
     screenChangedDebouncer.run { [self] in
       guard !isClosing else { return }
-      if videoView.currentDisplay == displayId {
+      guard videoView.currentDisplay != displayId else {
         log.trace{"WindowDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged"}
         return
-      } else {
-        animationPipeline.submitInstantTask({ [self] in
-          log.verbose("WindowDidChangeScreen wnd=\(window.windowNumber): frame=\(window.frame) screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
-          applyThemeMaterial(window, screen)  // scaleFactor may have changed
-          videoView.refreshAllVideoDisplayState()
-          player.events.emit(.windowScreenChanged)
-        })
       }
+
+      animationPipeline.submitInstantTask({ [self] in
+        log.verbose{"WindowDidChangeScreen wNum=\(window.windowNumber): frame=\(window.frame) screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)"}
+        applyThemeMaterial(window, screen)  // scaleFactor may have changed
+        videoView.refreshAllVideoDisplayState()
+        player.events.emit(.windowScreenChanged)
+      })
 
       let blackWindows = self.blackWindows
       if isFullScreen && Preference.bool(for: .blackOutMonitor) && blackWindows.compactMap({$0.screen?.displayId}).contains(displayId) {
@@ -2132,7 +2122,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     updatePlayButtonAndSpeedUI()
     updatePlaybackTimeUI()
-    updateAdditionalInfo()
+    if currentLayout.hasAdditionalInfo {
+      updateAdditionalInfo()
+    }
 
     if isInMiniPlayer {
       miniPlayer.updateScrollingLabels()
@@ -2307,24 +2299,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       return position == 0 ? 0 : seconds / position * 100
     } else {
       return 0
-    }
-  }
-
-  func updateAdditionalInfo() {
-    guard isFullScreen && Preference.bool(for: .displayTimeAndBatteryInFullScreen) else {
-      return
-    }
-
-    additionalInfoLabel.stringValue = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
-    let title = window?.representedURL?.lastPathComponent ?? window?.title ?? ""
-    additionalInfoTitle.string = title
-    additionalInfoTitle.sizeToFit()
-    additionalInfoTitle.invalidateIntrinsicContentSize()
-    if let capacity = PowerSource.getList().filter({ $0.type == "InternalBattery" }).first?.currentCapacity {
-      additionalInfoBattery.stringValue = "\(capacity)%"
-      additionalInfoStackView.setVisibilityPriority(.mustHold, for: additionalInfoBatteryView)
-    } else {
-      additionalInfoStackView.setVisibilityPriority(.notVisible, for: additionalInfoBatteryView)
     }
   }
 

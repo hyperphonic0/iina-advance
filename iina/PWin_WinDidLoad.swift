@@ -101,7 +101,6 @@ extension PlayerWindowController {
       closeButtonView.leadingAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 4).isActive = true
 
       initOSDView(in: contentView)
-      initAdditionalInfoView(in: contentView)
       initBufferIndicatorView(in: contentView)
       initCustomWindowBorder(in: contentView)
 
@@ -242,7 +241,7 @@ extension PlayerWindowController {
 
   private func initSeekPreview(in contentView: NSView) {
     seekPreview.player = player
-    contentView.addSubview(seekPreview.timeLabel, positioned: .below, relativeTo: osdVisualEffectView)
+    contentView.addSubview(seekPreview.timeLabel, positioned: .above, relativeTo: viewportView)
     contentView.addSubview(seekPreview.thumbnailPeekView, positioned: .below, relativeTo: seekPreview.timeLabel)
     // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
     seekPreview.timeLabel.nextResponder = playSlider
@@ -339,8 +338,7 @@ extension PlayerWindowController {
     controlBarTop.translatesAutoresizingMaskIntoConstraints = false
     controlBarTop.clipsToBounds = true  // for better animations when toggling OSC position/placement
     controlBarTop.identifier = .init("ControlBarTopView")
-    topBarView.addSubviewAndConstraints(controlBarTop,
-                                        bottom: 0, leading: 0, trailing: 0)
+    topBarView.addSubviewAndConstraints(controlBarTop, bottom: 0, leading: 0, trailing: 0)
 
     /// `titleBarView`
     titleBarView.translatesAutoresizingMaskIntoConstraints = false
@@ -379,7 +377,7 @@ extension PlayerWindowController {
 
   func addTopBarAndConstraintsIfMissing(in contentView: NSView) {
     if !contentView.containsSubview(topBarView) {
-      contentView.addSubview(topBarView, positioned: .above, relativeTo: osdVisualEffectView)
+      contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
     }
 
     if let con = topBarLeadingSpaceConstraint, con.isActive {
@@ -526,8 +524,6 @@ extension PlayerWindowController {
     trailingSidebarLeadingBorder.translatesAutoresizingMaskIntoConstraints = false
     trailingSidebarLeadingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
     trailingSidebarLeadingBorder.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0.5).isActive = true
-
-    updateOSDPositionConstraints(leadingSidebarIsOpen: false, trailingSidebarIsOpen: false)
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews
@@ -777,52 +773,6 @@ extension PlayerWindowController {
     volumeSlider.superview!.trailingAnchor.constraint(equalTo: volumeSlider.trailingAnchor).isActive = true
     volumeSlider.target = self
     volumeSlider.action = #selector(volumeSliderAction(_:))
-  }
-
-  func initOSDView(in contentView: NSView) {
-    // Subview init
-    osdAccessoryProgress.usesThreadedAnimation = false
-    osdVisualEffectView.roundCorners()
-
-    // Min width
-    let osdMinWidthConstraint = osdVisualEffectView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
-    osdMinWidthConstraint.priority = .init(900)
-    osdMinWidthConstraint.isActive = true
-
-    // Offset from top bar
-    osdTopToTopBarConstraint = osdVisualEffectView.topAnchor.constraint(equalTo: topBarView.bottomAnchor, constant: 8)
-    osdTopToTopBarConstraint.identifier = "OSDTopToTopBarConstraint"
-    osdTopToTopBarConstraint.priority = .init(900)
-    osdTopToTopBarConstraint.isActive = true
-
-    osdLeadingToMiniPlayerButtonsTrailingConstraint = osdVisualEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: closeButtonView.trailingAnchor, constant: 4)
-    osdLeadingToMiniPlayerButtonsTrailingConstraint.priority = .defaultLow
-    osdLeadingToMiniPlayerButtonsTrailingConstraint.isActive = true
-
-    closeButtonView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4).isActive = true
-  }
-
-  /// Prerequisites:
-  /// 1. `osdVisualEffectView` added to `contentView`.
-  func initAdditionalInfoView(in contentView: NSView) {
-    additionalInfoView.roundCorners()
-    additionalInfoTitle.translatesAutoresizingMaskIntoConstraints = false
-    additionalInfoTitle.setContentCompressionResistancePriority(.init(250), for: .horizontal)
-    additionalInfoTitle.setContentHuggingPriority(.init(900), for: .horizontal)
-    additionalInfoView.addSubview(additionalInfoTitle)
-    let topConstraint = additionalInfoTitle.topAnchor.constraint(equalTo: osdVisualEffectView.topAnchor)
-//    topConstraint.priority = .init(rawValue: 900)
-    topConstraint.isActive = true
-
-    let btmConstraint = additionalInfoStackView.topAnchor.constraint(equalTo: additionalInfoTitle.bottomAnchor, constant: 4)
-    btmConstraint.isActive = true
-    let trailingConstraint = additionalInfoView.trailingAnchor.constraint(equalTo: additionalInfoTitle.trailingAnchor, constant: 16)
-    trailingConstraint.isActive = true
-    let leadingConstraint = additionalInfoTitle.leadingAnchor.constraint(equalTo: additionalInfoView.leadingAnchor, constant: 16)
-    leadingConstraint.isActive = true
-    additionalInfoTitle.idString = "AddlInfo-TitleLabel"
-    additionalInfoTitle.font = .systemFont(ofSize: 18)
-    additionalInfoTitle.textColor = .labelColor
   }
 
   func initBufferIndicatorView(in contentView: NSView) {

@@ -36,6 +36,10 @@ class OSDState {
     return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.25
   }
 
+  fileprivate var topOffsetConstraint: NSLayoutConstraint? = nil
+  fileprivate var additionalInfoTopOffsetConstraint: NSLayoutConstraint? = nil
+  fileprivate var bottomOffsetConstraint: NSLayoutConstraint? = nil
+  fileprivate var additionalInfoBottomOffsetConstraint: NSLayoutConstraint? = nil
   fileprivate var leadingOffsetConstraint: NSLayoutConstraint? = nil
   fileprivate var trailingOffsetConstraint: NSLayoutConstraint? = nil
 
@@ -71,47 +75,248 @@ class OSDState {
 
 }
 
+/// The Additional Info view displays a battery time indicator & the media title when in full screen.
+class AdditionalInfoView: MouseIgnoringVisualEffectView {
+  let additionalInfoTitle = ResizableTextView(lineBreakMode: .byTruncatingMiddle)
+  let additionalInfoStackView = NSStackView()
+  let additionalInfoLabel = NSTextField(labelWithString: "99:99")
+  let additionalInfoBatteryView = NSView()
+  let additionalInfoBattery = NSTextField(labelWithString: "100%")
+
+  init() {
+    super.init(frame: .zero)
+    blendingMode = .withinWindow
+    material = .popover
+    state = .active
+    idString = "AdditionalInfoView"
+    translatesAutoresizingMaskIntoConstraints = false
+
+    subviews = [additionalInfoTitle, additionalInfoStackView]
+
+    additionalInfoTitle.setContentHuggingPriority(.init(900), for: .horizontal)
+    additionalInfoTitle.idString = "AdditionalInfo-Title"
+    additionalInfoTitle.font = NSFont.systemFont(ofSize: 18, weight: .medium)
+    additionalInfoTitle.alignment = .right
+    additionalInfoTitle.setContentCompressionResistancePriority(.init(499), for: .horizontal)
+    additionalInfoTitle.translatesAutoresizingMaskIntoConstraints = false
+    additionalInfoTitle.topAnchor.constraint(equalTo: topAnchor, constant: 8).isActive = true
+    additionalInfoTitle.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
+    trailingAnchor.constraint(equalTo: additionalInfoTitle.trailingAnchor, constant: 16).isActive = true
+
+    let labelContainerView = NSView()
+    labelContainerView.translatesAutoresizingMaskIntoConstraints = false
+    labelContainerView.heightAnchor.constraint(equalToConstant: 30).isActive = true
+    labelContainerView.subviews = [additionalInfoLabel]
+
+    additionalInfoLabel.font = NSFont.systemFont(ofSize: 18, weight: .regular)
+    additionalInfoLabel.textColor = .secondaryLabelColor
+    additionalInfoLabel.backgroundColor = .textBackgroundColor
+    additionalInfoLabel.idString = "AdditionalInfo-Label"
+    additionalInfoLabel.translatesAutoresizingMaskIntoConstraints = false
+    additionalInfoLabel.leadingAnchor.constraint(equalTo: labelContainerView.leadingAnchor, constant: 6).isActive = true
+    labelContainerView.trailingAnchor.constraint(equalTo: additionalInfoLabel.trailingAnchor).isActive = true
+    additionalInfoLabel.centerYAnchor.constraint(equalTo: labelContainerView.centerYAnchor, constant: -1).isActive = true
+
+    let verticalLine = NSBox()
+    verticalLine.boxType = .separator
+    verticalLine.translatesAutoresizingMaskIntoConstraints = false
+    verticalLine.heightAnchor.constraint(equalToConstant: 12).isActive = true
+
+    additionalInfoStackView.idString = "AdditionalInfo-HStackView"
+    additionalInfoStackView.orientation = .horizontal
+    additionalInfoStackView.alignment = .centerY
+    additionalInfoStackView.distribution = .fill
+    additionalInfoStackView.spacing = 8
+    additionalInfoStackView.wantsLayer = true
+    additionalInfoStackView.detachesHiddenViews = true
+    additionalInfoStackView.translatesAutoresizingMaskIntoConstraints = false
+
+    additionalInfoStackView.topAnchor.constraint(equalTo: additionalInfoTitle.bottomAnchor, constant: 4).isActive = true
+    additionalInfoStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
+    trailingAnchor.constraint(equalTo: additionalInfoStackView.trailingAnchor, constant: 16).isActive = true
+    bottomAnchor.constraint(equalTo: additionalInfoStackView.bottomAnchor, constant: 4).isActive = true
+
+    // - Battery
+
+    additionalInfoBatteryView.idString = "AdditionalInfoBatteryView"
+    additionalInfoBatteryView.wantsLayer = true
+    additionalInfoBatteryView.translatesAutoresizingMaskIntoConstraints = false
+    additionalInfoBatteryView.heightAnchor.constraint(equalToConstant: 30).isActive = true
+    additionalInfoBatteryView.widthAnchor.constraint(equalToConstant: 56).isActive = true
+
+    additionalInfoBattery.idString = "AdditionalInfoBattery-Text"
+    additionalInfoBattery.font = NSFont.systemFont(ofSize: 13, weight: .bold)
+    additionalInfoBattery.textColor = .secondaryLabelColor
+    additionalInfoBattery.backgroundColor = .textBackgroundColor
+    additionalInfoBattery.setContentHuggingPriority(.init(251), for: .horizontal)
+    additionalInfoBattery.translatesAutoresizingMaskIntoConstraints = false
+
+    let batteryImage = NSImage(named: "battery")!
+    let batteryImageView = NSImageView(image: batteryImage)
+    batteryImageView.imageScaling = .scaleProportionallyUpOrDown
+    batteryImageView.wantsLayer = true
+    batteryImageView.setContentHugging(h: 251, v: 251)
+    batteryImageView.translatesAutoresizingMaskIntoConstraints = false
+
+    additionalInfoBatteryView.subviews = [additionalInfoBattery, batteryImageView]
+    batteryImageView.addAllConstraintsToFillSuperview()
+    additionalInfoBattery.centerXAnchor.constraint(equalTo: additionalInfoBatteryView.centerXAnchor).isActive = true
+    additionalInfoBattery.centerYAnchor.constraint(equalTo: additionalInfoBatteryView.centerYAnchor, constant: -0.5).isActive = true
+
+
+    for subview in [labelContainerView, verticalLine, additionalInfoBatteryView] {
+      additionalInfoStackView.addView(subview, in: .trailing)
+    }
+
+  }
+  
+  @MainActor required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+}
+
 // PlayerWindow UI: OSD
 extension PlayerWindowController {
 
+  func initOSDView(in contentView: NSView) {
+    // Subview init
+    osdAccessoryProgress.usesThreadedAnimation = false
+
+    // Min width
+    let osdMinWidthConstraint = osdVisualEffectView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
+    osdMinWidthConstraint.priority = .init(900)
+    osdMinWidthConstraint.isActive = true
+
+    // Offset from top bar
+    osdTopToTopBarConstraint = osdVisualEffectView.topAnchor.constraint(equalTo: topBarView.bottomAnchor, constant: 8)
+    osdTopToTopBarConstraint.identifier = "OSDTopToTopBarConstraint"
+    osdTopToTopBarConstraint.priority = .init(900)
+    osdTopToTopBarConstraint.isActive = true
+
+    osdLeadingToMiniPlayerButtonsTrailingConstraint = osdVisualEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: closeButtonView.trailingAnchor, constant: 4)
+    osdLeadingToMiniPlayerButtonsTrailingConstraint.priority = .defaultLow
+    osdLeadingToMiniPlayerButtonsTrailingConstraint.isActive = true
+
+    closeButtonView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4).isActive = true
+  }
+
   /// Enforces `Preference.Key.osdPosition` pref which allows OSD to be on either left or right
-  func updateOSDPositionConstraints(leadingSidebarIsOpen: Bool, trailingSidebarIsOpen: Bool) {
-    log.verbose{"Updating OSD position"}
+  func updateOSDConstraints(hasOSD: Bool, hasAdditionalInfo: Bool,
+                            leadingSidebarIsOpen: Bool, trailingSidebarIsOpen: Bool, hasTopBar: Bool) {
+    log.verbose{"Updating OSD constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSidebar=\(leadingSidebarIsOpen.yn) trailingSidebar=\(trailingSidebarIsOpen.yn) hasTopBar=\(hasTopBar.yn)"}
     guard let contentView = window?.contentView else { return }
-    if let con = osd.leadingOffsetConstraint {
-      con.isActive = false
-    }
-    if let con = osd.trailingOffsetConstraint {
-      con.isActive = false
-    }
+    osd.leadingOffsetConstraint?.isActive = false
+    osd.trailingOffsetConstraint?.isActive = false
+    osd.topOffsetConstraint?.isActive = false
+    osd.additionalInfoTopOffsetConstraint?.isActive = false
+    osd.bottomOffsetConstraint?.isActive = false
+    osd.additionalInfoBottomOffsetConstraint?.isActive = false
 
     let otherAnchorLeading = leadingSidebarIsOpen ? leadingSidebarView.trailingAnchor : viewportView.leadingAnchor
     let otherAnchorTrailing = trailingSidebarIsOpen ? trailingSidebarView.leadingAnchor : viewportView.trailingAnchor
 
-    let leadingOffsetConstraint: NSLayoutConstraint
-    let trailingOffsetConstraint: NSLayoutConstraint
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
-    switch osdPosition {
-    case .topLeading:
-      // OSD on left, AdditionalInfo on right
-      leadingOffsetConstraint = otherAnchorLeading.constraint(equalTo: osdVisualEffectView.leadingAnchor, constant: -8.0)
-      trailingOffsetConstraint = otherAnchorTrailing.constraint(equalTo: additionalInfoView.trailingAnchor, constant: 8.0)
-    case .topTrailing:
-      // AdditionalInfo on left, OSD on right
-      leadingOffsetConstraint = otherAnchorLeading.constraint(equalTo: additionalInfoView.leadingAnchor, constant: -8.0)
-      trailingOffsetConstraint = otherAnchorTrailing.constraint(equalTo: osdVisualEffectView.trailingAnchor, constant: 8.0)
+    if hasOSD {
+      switch osdPosition {
+      case .topLeading:  // OSD on left, AdditionalInfo on right
+        let leadingOffsetConstraint = otherAnchorLeading.constraint(equalTo: osdVisualEffectView.leadingAnchor, constant: -8)
+        updateOSDLoadingOffsetConstraint(to: leadingOffsetConstraint)
+      case .topTrailing:  // AdditionalInfo on left, OSD on right
+        let trailingOffsetConstraint = otherAnchorTrailing.constraint(equalTo: osdVisualEffectView.trailingAnchor, constant: 8)
+        updateOSDTrailingOffsetConstraint(to: trailingOffsetConstraint)
+      }
+
+      // Y coordinate for top & bottom constraints seems to be flipped. Not sure why
+      let topConstraint: NSLayoutConstraint
+      if hasTopBar {
+        topConstraint = topBarView.bottomAnchor.constraint(equalTo: osdVisualEffectView.topAnchor, constant: -8)
+      } else {
+        topConstraint = viewportView.topAnchor.constraint(equalTo: osdVisualEffectView.topAnchor, constant: -8)
+      }
+      updateOSDTopOffsetConstraint(to: topConstraint)
+
+      let btmConstraint = viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: osdVisualEffectView.bottomAnchor, constant: 8)
+      btmConstraint.identifier = "OSD_BtmOffsetConstraint"
+      btmConstraint.isActive = true
+      osd.bottomOffsetConstraint = btmConstraint
     }
 
-    leadingOffsetConstraint.identifier = "OSD_LeadingOffsetConstraint"
-    leadingOffsetConstraint.priority = .defaultHigh
-    leadingOffsetConstraint.isActive = true
-    osd.leadingOffsetConstraint = leadingOffsetConstraint
+    if hasAdditionalInfo {
+      switch osdPosition {
+      case .topLeading:  // OSD on left, AdditionalInfo on right
+        let trailingOffsetConstraint = otherAnchorTrailing.constraint(equalTo: additionalInfoView.trailingAnchor, constant: 8)
+        updateOSDTrailingOffsetConstraint(to: trailingOffsetConstraint)
+      case .topTrailing:  // AdditionalInfo on left, OSD on right
+        let leadingOffsetConstraint = otherAnchorLeading.constraint(equalTo: additionalInfoView.leadingAnchor, constant: -8)
+        updateOSDLoadingOffsetConstraint(to: leadingOffsetConstraint)
+      }
 
-    trailingOffsetConstraint.identifier = "OSD_TrailingOffsetConstraint"
-    trailingOffsetConstraint.isActive = true
-    osd.trailingOffsetConstraint = trailingOffsetConstraint
+      // Y coordinate for top & bottom constraints seems to be flipped. Not sure why
+      let topConstraint: NSLayoutConstraint
+      if hasTopBar {
+        topConstraint = topBarView.bottomAnchor.constraint(equalTo: additionalInfoView.topAnchor, constant: -8)
+      } else {
+        topConstraint = viewportView.topAnchor.constraint(equalTo: additionalInfoView.topAnchor, constant: -8)
+      }
+      updateAdditionalInfoTopOffsetConstraint(to: topConstraint)
+
+      let btmConstraint = viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: additionalInfoView.bottomAnchor, constant: 8)
+      btmConstraint.identifier = "AddlInfo_BtmOffsetConstraint"
+      btmConstraint.isActive = true
+      osd.additionalInfoBottomOffsetConstraint = btmConstraint
+
+      updateAdditionalInfo()  // update content
+    } else {
+      additionalInfoView.removeFromSuperview()
+    }
+
     contentView.layoutSubtreeIfNeeded()
   }
+
+  private func updateOSDLoadingOffsetConstraint(to constraint: NSLayoutConstraint) {
+    constraint.identifier = "OSD_LeadingOffsetConstraint"
+    constraint.priority = .defaultHigh  // why?
+    constraint.isActive = true
+    osd.leadingOffsetConstraint = constraint
+  }
+
+  private func updateOSDTrailingOffsetConstraint(to constraint: NSLayoutConstraint) {
+    constraint.identifier = "OSD_TrailingOffsetConstraint"
+    constraint.isActive = true
+    osd.trailingOffsetConstraint = constraint
+  }
+
+  private func updateOSDTopOffsetConstraint(to constraint: NSLayoutConstraint) {
+    constraint.identifier = "OSD_TopOffsetConstraint"
+    constraint.isActive = true
+    osd.topOffsetConstraint = constraint
+  }
+
+  private func updateAdditionalInfoTopOffsetConstraint(to constraint: NSLayoutConstraint) {
+    constraint.identifier = "AddlInfo_TopOffsetConstraint"
+    constraint.isActive = true
+    osd.additionalInfoTopOffsetConstraint = constraint
+  }
+
+  // MARK: - Additional Info Content Updates
+
+  func updateAdditionalInfo() {
+    // Update content
+    let title = window?.representedURL?.lastPathComponent ?? window?.title ?? ""
+    additionalInfoView.additionalInfoTitle.string = title
+    additionalInfoView.additionalInfoTitle.sizeToFit()
+    additionalInfoView.additionalInfoTitle.invalidateIntrinsicContentSize()
+
+    if let capacity = PowerSource.getList().filter({ $0.type == "InternalBattery" }).first?.currentCapacity {
+      additionalInfoView.additionalInfoBattery.stringValue = "\(capacity)%"
+      additionalInfoView.additionalInfoStackView.setVisibilityPriority(.mustHold, for: additionalInfoView.additionalInfoBatteryView)
+    } else {
+      additionalInfoView.additionalInfoStackView.setVisibilityPriority(.notVisible, for: additionalInfoView.additionalInfoBatteryView)
+    }
+    additionalInfoView.additionalInfoLabel.stringValue = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
+  }
+
+  // MARK: - OSD Content Updates
 
   /// If `newMessage` is provided, the OSD will be updated to display it. Otherwise if the OSD is
   /// already shown and is displaying one of the message types which requires live updates, it will be updated.
@@ -519,7 +724,6 @@ extension PlayerWindowController {
 
     let osdAccessoryTextSize = (osdTextSize * 0.75).clamped(to: 11...25)
     osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
-    osdVisualEffectView.roundCorners()
 
     let marginScaled = 8 + (osdTextSize * 0.06)
     osdTopMarginConstraint.animateToConstant(marginScaled)

@@ -562,6 +562,21 @@ extension PlayerWindowController {
     let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscHasClearBG)
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
+    let leadingSidebarWillBeOpen = outputLayout.leadingSidebar.isVisible
+    let trailingSidebarWillBeOpen = outputLayout.trailingSidebar.isVisible
+    let hasOSD = Preference.bool(for: .enableOSD)
+    let hasAddlInfo = outputLayout.hasAdditionalInfo
+
+    // Need to add additionalInfo, OSD before changing sidebars
+    if hasOSD, !viewportView.subviews.contains(osdVisualEffectView) {
+      viewportView.addSubview(osdVisualEffectView, positioned: .above, relativeTo: videoView)
+      osdVisualEffectView.roundCorners()
+    }
+    if hasAddlInfo, !viewportView.subviews.contains(additionalInfoView) {
+      viewportView.addSubview(additionalInfoView, positioned: .above, relativeTo: videoView)
+      additionalInfoView.roundCorners()
+    }
+
     // Sidebars
 
     /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
@@ -599,13 +614,13 @@ extension PlayerWindowController {
       switchToTabInTabGroup(tab: tabToShow)
     }
 
+    // Make sure to call this after prepareLayoutForOpening()
+    updateOSDConstraints(hasOSD: hasOSD, hasAdditionalInfo: hasAddlInfo,
+                         leadingSidebarIsOpen: leadingSidebarWillBeOpen, trailingSidebarIsOpen: trailingSidebarWillBeOpen,
+                         hasTopBar: outputLayout.hasTopBar)
+
     if transition.isOpeningOrClosingAnySidebar {
-      let leadingSidebarWillBeOpen = outputLayout.leadingSidebar.isVisible
-      let trailingSidebarWillBeOpen = outputLayout.trailingSidebar.isVisible
       log.verbose{"[\(transition.name)] Sidebars will be open: LeadingSidebar=\(leadingSidebarWillBeOpen.yn) TrailingSidebar=\(trailingSidebarWillBeOpen.yn)"}
-      // Make sure to call this after prepareLayoutForOpening()
-      updateOSDPositionConstraints(leadingSidebarIsOpen: leadingSidebarWillBeOpen,
-                                   trailingSidebarIsOpen: trailingSidebarWillBeOpen)
 
       if !leadingSidebarWillBeOpen {
         leadingSidebarConstraints = nil  // disables constraints
@@ -950,8 +965,6 @@ extension PlayerWindowController {
     }
 
     // Other misc views
-
-    updateAdditionalInfo()
     updateVolumeUI()
     playSlider.needsDisplay = true
 

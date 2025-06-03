@@ -354,7 +354,10 @@ extension PlayerWindowController {
       // If OSD is showing, it will move over as a neat animation:
       animationPipeline.submitInstantTask { [self] in
         let layout = currentLayout
-        updateOSDPositionConstraints(leadingSidebarIsOpen: layout.leadingSidebar.isVisible, trailingSidebarIsOpen: layout.trailingSidebar.isVisible)
+        updateOSDConstraints(hasOSD: Preference.bool(for: .enableOSD), hasAdditionalInfo: false,
+                                     leadingSidebarIsOpen: layout.leadingSidebar.isVisible,
+                                     trailingSidebarIsOpen: layout.trailingSidebar.isVisible,
+                                     hasTopBar: layout.hasTopBar)
       }
     case .osdTextSize:
       animationPipeline.submitInstantTask { [self] in
