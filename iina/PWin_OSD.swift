@@ -40,8 +40,10 @@ class OSDState {
   fileprivate var additionalInfoTopOffsetConstraint: NSLayoutConstraint? = nil
   fileprivate var bottomOffsetConstraint: NSLayoutConstraint? = nil
   fileprivate var additionalInfoBottomOffsetConstraint: NSLayoutConstraint? = nil
-  fileprivate var leadingOffsetConstraint: NSLayoutConstraint? = nil
-  fileprivate var trailingOffsetConstraint: NSLayoutConstraint? = nil
+  fileprivate var leadingSide_LeadingConstraint: NSLayoutConstraint? = nil
+  fileprivate var leadingSide_TrailingConstraint: NSLayoutConstraint? = nil
+  fileprivate var trailingSide_LeadingConstraint: NSLayoutConstraint? = nil
+  fileprivate var trailingSide_TrailingConstraint: NSLayoutConstraint? = nil
 
   // Need to keep a reference to NSViewController here in order for its Objective-C selectors to work
   var context: NSViewController? = nil {
@@ -163,10 +165,14 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
     additionalInfoBattery.centerXAnchor.constraint(equalTo: additionalInfoBatteryView.centerXAnchor).isActive = true
     additionalInfoBattery.centerYAnchor.constraint(equalTo: additionalInfoBatteryView.centerYAnchor, constant: -0.5).isActive = true
 
-
     for subview in [labelContainerView, verticalLine, additionalInfoBatteryView] {
       additionalInfoStackView.addView(subview, in: .trailing)
+      subview.autoresizesSubviews = false
     }
+    additionalInfoBatteryView.autoresizesSubviews = false
+    additionalInfoBattery.autoresizesSubviews = false
+    batteryImageView.autoresizesSubviews = false
+    additionalInfoTitle.autoresizesSubviews = false
 
   }
   
@@ -205,8 +211,10 @@ extension PlayerWindowController {
                             leadingSidebarIsOpen: Bool, trailingSidebarIsOpen: Bool, hasTopBar: Bool) {
     log.verbose{"Updating OSD constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSidebar=\(leadingSidebarIsOpen.yn) trailingSidebar=\(trailingSidebarIsOpen.yn) hasTopBar=\(hasTopBar.yn)"}
     guard let contentView = window?.contentView else { return }
-    osd.leadingOffsetConstraint?.isActive = false
-    osd.trailingOffsetConstraint?.isActive = false
+    osd.leadingSide_LeadingConstraint?.isActive = false
+    osd.leadingSide_TrailingConstraint?.isActive = false
+    osd.trailingSide_LeadingConstraint?.isActive = false
+    osd.trailingSide_TrailingConstraint?.isActive = false
     osd.topOffsetConstraint?.isActive = false
     osd.additionalInfoTopOffsetConstraint?.isActive = false
     osd.bottomOffsetConstraint?.isActive = false
@@ -219,11 +227,17 @@ extension PlayerWindowController {
     if hasOSD {
       switch osdPosition {
       case .topLeading:  // OSD on left, AdditionalInfo on right
-        let leadingOffsetConstraint = otherAnchorLeading.constraint(equalTo: osdVisualEffectView.leadingAnchor, constant: -8)
-        updateOSDLoadingOffsetConstraint(to: leadingOffsetConstraint)
+        let leadingSide_LeadingConstraint = otherAnchorLeading.constraint(equalTo: osdVisualEffectView.leadingAnchor, constant: -8)
+        updateOSDLeadingSide_LeadingConstraint(to: leadingSide_LeadingConstraint)
+
+        let leadingSide_TrailingConstraint = osdVisualEffectView.trailingAnchor.constraint(lessThanOrEqualTo: otherAnchorTrailing, constant: -8)
+        updateOSDLeadingSide_TrailingConstraint(to: leadingSide_TrailingConstraint)
       case .topTrailing:  // AdditionalInfo on left, OSD on right
-        let trailingOffsetConstraint = otherAnchorTrailing.constraint(equalTo: osdVisualEffectView.trailingAnchor, constant: 8)
-        updateOSDTrailingOffsetConstraint(to: trailingOffsetConstraint)
+        let trailingSide_TrailingConstraint = otherAnchorTrailing.constraint(equalTo: osdVisualEffectView.trailingAnchor, constant: 8)
+        updateOSDTrailingSide_TrailingConstraint(to: trailingSide_TrailingConstraint)
+
+        let trailingSide_LeadingConstraint = osdVisualEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: otherAnchorLeading, constant: -8)
+        updateOSDTrailingSide_LeadingConstraint(to: trailingSide_LeadingConstraint)
       }
 
       // Y coordinate for top & bottom constraints seems to be flipped. Not sure why
@@ -244,11 +258,17 @@ extension PlayerWindowController {
     if hasAdditionalInfo {
       switch osdPosition {
       case .topLeading:  // OSD on left, AdditionalInfo on right
-        let trailingOffsetConstraint = otherAnchorTrailing.constraint(equalTo: additionalInfoView.trailingAnchor, constant: 8)
-        updateOSDTrailingOffsetConstraint(to: trailingOffsetConstraint)
+        let trailingSide_TrailingConstraint = otherAnchorTrailing.constraint(equalTo: additionalInfoView.trailingAnchor, constant: 8)
+        updateOSDTrailingSide_TrailingConstraint(to: trailingSide_TrailingConstraint)
+
+        let trailingSide_LeadingConstraint = additionalInfoView.leadingAnchor.constraint(greaterThanOrEqualTo: otherAnchorLeading, constant: -8)
+        updateOSDTrailingSide_LeadingConstraint(to: trailingSide_LeadingConstraint)
       case .topTrailing:  // AdditionalInfo on left, OSD on right
-        let leadingOffsetConstraint = otherAnchorLeading.constraint(equalTo: additionalInfoView.leadingAnchor, constant: -8)
-        updateOSDLoadingOffsetConstraint(to: leadingOffsetConstraint)
+        let leadingSide_LeadingConstraint = otherAnchorLeading.constraint(equalTo: additionalInfoView.leadingAnchor, constant: -8)
+        updateOSDLeadingSide_LeadingConstraint(to: leadingSide_LeadingConstraint)
+
+        let leadingSide_TrailingConstraint = additionalInfoView.trailingAnchor.constraint(lessThanOrEqualTo: otherAnchorTrailing, constant: -8)
+        updateOSDLeadingSide_TrailingConstraint(to: leadingSide_TrailingConstraint)
       }
 
       // Y coordinate for top & bottom constraints seems to be flipped. Not sure why
@@ -273,17 +293,31 @@ extension PlayerWindowController {
     contentView.layoutSubtreeIfNeeded()
   }
 
-  private func updateOSDLoadingOffsetConstraint(to constraint: NSLayoutConstraint) {
-    constraint.identifier = "OSD_LeadingOffsetConstraint"
+  private func updateOSDLeadingSide_LeadingConstraint(to constraint: NSLayoutConstraint) {
+    constraint.identifier = "OSD_leadingSide_LeadingConstraint"
     constraint.priority = .defaultHigh  // why?
     constraint.isActive = true
-    osd.leadingOffsetConstraint = constraint
+    osd.leadingSide_LeadingConstraint = constraint
   }
 
-  private func updateOSDTrailingOffsetConstraint(to constraint: NSLayoutConstraint) {
-    constraint.identifier = "OSD_TrailingOffsetConstraint"
+  private func updateOSDLeadingSide_TrailingConstraint(to constraint: NSLayoutConstraint) {
+    constraint.identifier = "OSD_LeadingSide_TrailingConstraint"
+    constraint.priority = .defaultHigh  // why?
     constraint.isActive = true
-    osd.trailingOffsetConstraint = constraint
+    osd.leadingSide_TrailingConstraint = constraint
+  }
+
+  private func updateOSDTrailingSide_LeadingConstraint(to constraint: NSLayoutConstraint) {
+    constraint.identifier = "OSD_TrailingSide_LeadingConstraint"
+    constraint.priority = .defaultHigh  // why?
+    constraint.isActive = true
+    osd.trailingSide_LeadingConstraint = constraint
+  }
+
+  private func updateOSDTrailingSide_TrailingConstraint(to constraint: NSLayoutConstraint) {
+    constraint.identifier = "OSD_trailingSide_TrailingConstraint"
+    constraint.isActive = true
+    osd.trailingSide_TrailingConstraint = constraint
   }
 
   private func updateOSDTopOffsetConstraint(to constraint: NSLayoutConstraint) {
