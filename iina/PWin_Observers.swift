@@ -45,7 +45,6 @@ extension PlayerWindowController {
       .enableControlBarAutoHide,
       .osdAutoHideTimeout,
       .osdTextSize,
-      .osdPosition,
       .enableOSC,
       .oscForceSingleRow,
       .controlBarAutoHideTimeout,
@@ -74,6 +73,8 @@ extension PlayerWindowController {
       .arrowButtonAction,
       .blackOutMonitor,
       .useLegacyFullScreen,
+      .enableOSD,
+      .osdPosition,
       .displayTimeAndBatteryInFullScreen,
       .alwaysShowOnTopIcon,
       .alwaysFloatOnTop,
@@ -309,19 +310,6 @@ extension PlayerWindowController {
       }
     case .useLegacyFullScreen:
       updateUseLegacyFullScreen()
-    case .displayTimeAndBatteryInFullScreen:
-      if let newValue = newValue as? Bool {
-        if newValue {
-          animationPipeline.submitTask{ [self] in
-            if isFullScreen {
-              fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
-              updateAdditionalInfoContent()
-            }
-          }
-        } else {
-          fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
-        }
-      }
     case .alwaysShowOnTopIcon,
         .alwaysFloatOnTop:
       guard loaded else { return }
@@ -350,14 +338,19 @@ extension PlayerWindowController {
         // Reschedule timer to prevent prev long timeout from lingering
         osd.hideOSDTimer.restart(withNewTimeout: OSDState.osdTimeoutFromPrefs())
       }
-    case .osdPosition:
+    case .enableOSD, .osdPosition, .displayTimeAndBatteryInFullScreen:
       // If OSD is showing, it will move over as a neat animation:
       animationPipeline.submitInstantTask { [self] in
         guard let window else { return }
         let layout = currentLayout
-
         let (windowFrame, screenID) = getLatestWindowFrameAndScreenID() ?? (window.frame, bestScreen.screenID)
         let currentGeo = layout.buildGeometry(windowFrame: windowFrame, screenID: screenID, video: geo.video)
+
+        if Preference.bool(for: .displayTimeAndBatteryInFullScreen), layout.isFullScreen {
+          fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
+        } else {
+          fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
+        }
         updateOSDConstraints(layout, currentGeo)
       }
     case .osdTextSize:

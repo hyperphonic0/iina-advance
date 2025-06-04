@@ -219,11 +219,11 @@ class OSDView: ClickThroughVisualEffectView {
 
 /// The Additional Info view displays a battery time indicator & the media title when in full screen.
 class AdditionalInfoView: MouseIgnoringVisualEffectView {
-  let additionalInfoTitle = ResizableTextView(lineBreakMode: .byTruncatingMiddle)
-  let additionalInfoStackView = NSStackView()
-  let additionalInfoLabel = NSTextField(labelWithString: "99:99")
-  let additionalInfoBatteryView = NSView()
-  let additionalInfoBattery = NSTextField(labelWithString: "100%")
+  fileprivate let titleLabel = ResizableTextView(lineBreakMode: .byTruncatingMiddle)
+  fileprivate let hStackView = NSStackView()
+  fileprivate let currentTimeLabel = NSTextField(labelWithString: "99:99")
+  fileprivate let batteryView = NSView()
+  fileprivate let batteryLabel = NSTextField(labelWithString: "100%")
 
   init() {
     super.init(frame: .zero)
@@ -232,66 +232,68 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
     state = .active
     idString = "AdditionalInfoView"
     translatesAutoresizingMaskIntoConstraints = false
+    let batteryOffsetX: CGFloat = -4
 
-    subviews = [additionalInfoTitle, additionalInfoStackView]
+    subviews = [titleLabel, hStackView]
 
-    additionalInfoTitle.setContentHuggingPriority(.init(900), for: .horizontal)
-    additionalInfoTitle.idString = "AdditionalInfo-Title"
-    additionalInfoTitle.font = NSFont.systemFont(ofSize: 18, weight: .medium)
-    additionalInfoTitle.alignment = .right
-    additionalInfoTitle.setContentCompressionResistancePriority(.init(499), for: .horizontal)
-    additionalInfoTitle.translatesAutoresizingMaskIntoConstraints = false
-    additionalInfoTitle.topAnchor.constraint(equalTo: topAnchor, constant: 8).isActive = true
-    additionalInfoTitle.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
-    trailingAnchor.constraint(equalTo: additionalInfoTitle.trailingAnchor, constant: 16).isActive = true
+    titleLabel.setContentHuggingPriority(.init(900), for: .horizontal)
+    titleLabel.idString = "AdditionalInfo-Title"
+    titleLabel.font = NSFont.systemFont(ofSize: 18, weight: .medium)
+    titleLabel.alignment = .right
+    titleLabel.setContentCompressionResistancePriority(.init(499), for: .horizontal)
+    titleLabel.translatesAutoresizingMaskIntoConstraints = false
+    titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 8).isActive = true
+    titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4).isActive = true
+    trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 8).isActive = true
 
     let labelContainerView = NSView()
     labelContainerView.translatesAutoresizingMaskIntoConstraints = false
     labelContainerView.heightAnchor.constraint(equalToConstant: 30).isActive = true
-    labelContainerView.subviews = [additionalInfoLabel]
+    labelContainerView.subviews = [currentTimeLabel]
 
-    additionalInfoLabel.font = NSFont.systemFont(ofSize: 18, weight: .regular)
-    additionalInfoLabel.textColor = .secondaryLabelColor
-    additionalInfoLabel.backgroundColor = .textBackgroundColor
-    additionalInfoLabel.idString = "AdditionalInfo-Label"
-    additionalInfoLabel.translatesAutoresizingMaskIntoConstraints = false
-    additionalInfoLabel.leadingAnchor.constraint(equalTo: labelContainerView.leadingAnchor, constant: 6).isActive = true
-    labelContainerView.trailingAnchor.constraint(equalTo: additionalInfoLabel.trailingAnchor).isActive = true
-    additionalInfoLabel.centerYAnchor.constraint(equalTo: labelContainerView.centerYAnchor, constant: -1).isActive = true
+    currentTimeLabel.font = NSFont.systemFont(ofSize: 18, weight: .regular)
+    currentTimeLabel.alignment = .right
+    currentTimeLabel.textColor = .secondaryLabelColor
+    currentTimeLabel.backgroundColor = .textBackgroundColor
+    currentTimeLabel.idString = "AdditionalInfo-Label"
+    currentTimeLabel.translatesAutoresizingMaskIntoConstraints = false
+    currentTimeLabel.leadingAnchor.constraint(equalTo: labelContainerView.leadingAnchor, constant: 6).isActive = true
+    labelContainerView.trailingAnchor.constraint(equalTo: currentTimeLabel.trailingAnchor).isActive = true
+    currentTimeLabel.centerYAnchor.constraint(equalTo: labelContainerView.centerYAnchor, constant: -1).isActive = true
 
     let verticalLine = NSBox()
     verticalLine.boxType = .separator
     verticalLine.translatesAutoresizingMaskIntoConstraints = false
     verticalLine.heightAnchor.constraint(equalToConstant: 12).isActive = true
 
-    additionalInfoStackView.idString = "AdditionalInfo-HStackView"
-    additionalInfoStackView.orientation = .horizontal
-    additionalInfoStackView.alignment = .centerY
-    additionalInfoStackView.distribution = .fill
-    additionalInfoStackView.spacing = 8
-    additionalInfoStackView.wantsLayer = true
-    additionalInfoStackView.detachesHiddenViews = true
-    additionalInfoStackView.translatesAutoresizingMaskIntoConstraints = false
+    hStackView.idString = "AdditionalInfo-HStackView"
+    hStackView.orientation = .horizontal
+    hStackView.alignment = .centerY
+    hStackView.distribution = .fill
+    hStackView.spacing = 6
+    hStackView.wantsLayer = true
+    hStackView.detachesHiddenViews = true
+    hStackView.translatesAutoresizingMaskIntoConstraints = false
 
-    additionalInfoStackView.topAnchor.constraint(equalTo: additionalInfoTitle.bottomAnchor, constant: 4).isActive = true
-    additionalInfoStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
-    trailingAnchor.constraint(equalTo: additionalInfoStackView.trailingAnchor, constant: 16).isActive = true
-    bottomAnchor.constraint(equalTo: additionalInfoStackView.bottomAnchor, constant: 4).isActive = true
+    hStackView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4).isActive = true
+    hStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4).isActive = true
+    trailingAnchor.constraint(equalTo: hStackView.trailingAnchor, constant: 8).isActive = true
+    bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: 4).isActive = true
 
     // - Battery
 
-    additionalInfoBatteryView.idString = "AdditionalInfoBatteryView"
-    additionalInfoBatteryView.wantsLayer = true
-    additionalInfoBatteryView.translatesAutoresizingMaskIntoConstraints = false
-    additionalInfoBatteryView.heightAnchor.constraint(equalToConstant: 30).isActive = true
-    additionalInfoBatteryView.widthAnchor.constraint(equalToConstant: 56).isActive = true
+    batteryView.idString = "AdditionalInfoBatteryView"
+    batteryView.wantsLayer = true
+    batteryView.translatesAutoresizingMaskIntoConstraints = false
+    batteryView.heightAnchor.constraint(equalToConstant: 30).isActive = true
+    batteryView.widthAnchor.constraint(equalToConstant: 56).isActive = true
 
-    additionalInfoBattery.idString = "AdditionalInfoBattery-Text"
-    additionalInfoBattery.font = NSFont.systemFont(ofSize: 13, weight: .bold)
-    additionalInfoBattery.textColor = .secondaryLabelColor
-    additionalInfoBattery.backgroundColor = .textBackgroundColor
-    additionalInfoBattery.setContentHuggingPriority(.init(251), for: .horizontal)
-    additionalInfoBattery.translatesAutoresizingMaskIntoConstraints = false
+    batteryLabel.idString = "AdditionalInfoBattery-Text"
+    batteryLabel.font = NSFont.systemFont(ofSize: 13, weight: .bold)
+    batteryLabel.textColor = .secondaryLabelColor
+    batteryLabel.backgroundColor = .textBackgroundColor
+    batteryLabel.setContentHuggingPriority(.init(251), for: .horizontal)
+    batteryLabel.translatesAutoresizingMaskIntoConstraints = false
 
     let batteryImage = NSImage(named: "battery")!
     let batteryImageView = NSImageView(image: batteryImage)
@@ -300,19 +302,19 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
     batteryImageView.setContentHugging(h: 251, v: 251)
     batteryImageView.translatesAutoresizingMaskIntoConstraints = false
 
-    additionalInfoBatteryView.subviews = [additionalInfoBattery, batteryImageView]
-    batteryImageView.addAllConstraintsToFillSuperview()
-    additionalInfoBattery.centerXAnchor.constraint(equalTo: additionalInfoBatteryView.centerXAnchor).isActive = true
-    additionalInfoBattery.centerYAnchor.constraint(equalTo: additionalInfoBatteryView.centerYAnchor, constant: -0.5).isActive = true
+    batteryView.subviews = [batteryLabel, batteryImageView]
+    batteryImageView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: batteryOffsetX, trailing: -batteryOffsetX)
+    batteryLabel.centerXAnchor.constraint(equalTo: batteryView.centerXAnchor, constant: batteryOffsetX).isActive = true
+    batteryLabel.centerYAnchor.constraint(equalTo: batteryView.centerYAnchor, constant: -0.5).isActive = true
 
-    for subview in [labelContainerView, verticalLine, additionalInfoBatteryView] {
-      additionalInfoStackView.addView(subview, in: .trailing)
+    for subview in [labelContainerView, verticalLine, batteryView] {
+      hStackView.addView(subview, in: .trailing)
       subview.autoresizesSubviews = false
     }
-    additionalInfoBatteryView.autoresizesSubviews = false
-    additionalInfoBattery.autoresizesSubviews = false
+    batteryView.autoresizesSubviews = false
+    batteryLabel.autoresizesSubviews = false
     batteryImageView.autoresizesSubviews = false
-    additionalInfoTitle.autoresizesSubviews = false
+    titleLabel.autoresizesSubviews = false
   }
   
   @MainActor required init?(coder: NSCoder) {
@@ -478,17 +480,17 @@ extension PlayerWindowController {
   func updateAdditionalInfoContent() {
     // Update content
     let title = window?.representedURL?.lastPathComponent ?? window?.title ?? ""
-    additionalInfoView.additionalInfoTitle.string = title
-    additionalInfoView.additionalInfoTitle.sizeToFit()
-    additionalInfoView.additionalInfoTitle.invalidateIntrinsicContentSize()
+    additionalInfoView.titleLabel.string = title
+    additionalInfoView.titleLabel.sizeToFit()
+    additionalInfoView.titleLabel.invalidateIntrinsicContentSize()
 
     if let capacity = PowerSource.getList().filter({ $0.type == "InternalBattery" }).first?.currentCapacity {
-      additionalInfoView.additionalInfoBattery.stringValue = "\(capacity)%"
-      additionalInfoView.additionalInfoStackView.setVisibilityPriority(.mustHold, for: additionalInfoView.additionalInfoBatteryView)
+      additionalInfoView.batteryLabel.stringValue = "\(capacity)%"
+      additionalInfoView.hStackView.setVisibilityPriority(.mustHold, for: additionalInfoView.batteryView)
     } else {
-      additionalInfoView.additionalInfoStackView.setVisibilityPriority(.notVisible, for: additionalInfoView.additionalInfoBatteryView)
+      additionalInfoView.hStackView.setVisibilityPriority(.notVisible, for: additionalInfoView.batteryView)
     }
-    additionalInfoView.additionalInfoLabel.stringValue = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
+    additionalInfoView.currentTimeLabel.stringValue = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
   }
 
   // MARK: - OSD Content Updates
