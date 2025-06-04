@@ -99,8 +99,8 @@ extension PlayerWindowController {
       playSlider.action = #selector(playSliderAction(_:))
 
       closeButtonView.leadingAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 4).isActive = true
+      closeButtonView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4).isActive = true
 
-      initOSDView(in: contentView)
       initBufferIndicatorView(in: contentView)
       initCustomWindowBorder(in: contentView)
 

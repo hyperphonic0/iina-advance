@@ -147,7 +147,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   // Shows OSC controls, hides media info
   private func showControl() {
     windowController.animationPipeline.submitTask(duration: Constants.AnimationDuration.musicModeShowButtons, { [self] in
-      windowController.osdLeadingToMiniPlayerButtonsTrailingConstraint.priority = .required
+      windowController.osd.osdLeadingToMiniPlayerButtonsTrailingConstraint?.priority = .required
       windowController.closeButtonView.isHidden = false
       windowController.closeButtonView.animator().alphaValue = 1
       controllerButtonsPanelView.animator().alphaValue = 1
@@ -165,7 +165,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   /// Hides media info, shows OSC controls (synchronous version)
   func hideControllerButtons() {
-    windowController.osdLeadingToMiniPlayerButtonsTrailingConstraint.priority = .defaultLow
+    windowController.osd.osdLeadingToMiniPlayerButtonsTrailingConstraint?.priority = .defaultLow
 
     windowController.closeButtonView.animator().alphaValue = 0
     controllerButtonsPanelView.animator().alphaValue = 0

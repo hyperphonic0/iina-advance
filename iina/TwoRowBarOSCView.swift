@@ -157,8 +157,8 @@ class TwoRowBarOSCView: ClickThroughView {
     hStackView_HeightConstraint.priority = .init(900)
 
     pwc.fragToolbarView.updateConstraints()
-    pwc.osdHStackView.updateConstraints()
-    pwc.osdHStackView.layout()
+    pwc.osd.osdHStackView.updateConstraints()
+    pwc.osd.osdHStackView.layout()
   }
 
   func relaxConstraints() {

@@ -13,6 +13,23 @@ import Mustache
 class OSDState {
   let log: Logger.Subsystem
 
+  let osdView = OSDView()
+  let osdHStackView = ClickThroughStackView()
+  let osdVStackView = ClickThroughStackView()
+  let osdIconImageView = NSImageView()
+  let osdLabel = NSTextField(labelWithString: "")
+  let osdAccessoryText = NSTextField()
+  let osdAccessoryProgress = NSProgressIndicator()
+
+  var osdLeadingToMiniPlayerButtonsTrailingConstraint: NSLayoutConstraint? = nil
+  var osdIconWidthConstraint: NSLayoutConstraint!
+  var osdIconHeightConstraint: NSLayoutConstraint!
+  var osdTopMarginConstraint: NSLayoutConstraint!
+  var osdTrailingMarginConstraint: NSLayoutConstraint!
+  var osdLeadingMarginConstraint: NSLayoutConstraint!
+  var osdBottomMarginConstraint: NSLayoutConstraint!
+
+
   /// Whether current OSD needs user interaction to be dismissed.
   var isShowingPersistentOSD = false
   var animationState: PlayerWindowController.UIAnimationState = .hidden
@@ -36,10 +53,20 @@ class OSDState {
     return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.25
   }
 
-  fileprivate var topOffsetConstraint: NSLayoutConstraint? = nil
+  fileprivate var osdTopOffsetConstraint: NSLayoutConstraint? = nil
   fileprivate var additionalInfoTopOffsetConstraint: NSLayoutConstraint? = nil
   fileprivate var bottomOffsetConstraint: NSLayoutConstraint? = nil
   fileprivate var additionalInfoBottomOffsetConstraint: NSLayoutConstraint? = nil
+
+  /*
+   OSD: shown here in "upper-left" configuration.
+   For "upper-right" config: swap OSD & AdditionalInfo anchors in A & B, and invert all the params of B.
+   ┌───────────────────────┐
+   │ A ┌────┐  ┌───────┐ B │  A: leadingSide_LeadingConstraint
+   │◄─►│ OSD│  │ AddNfo│◄─►│  B: trailingSide_TrailingConstraint
+   │   └────┘  └───────┘   │
+   └───────────────────────┘
+   */
   fileprivate var leadingSide_LeadingConstraint: NSLayoutConstraint? = nil
   fileprivate var leadingSide_TrailingConstraint: NSLayoutConstraint? = nil
   fileprivate var trailingSide_LeadingConstraint: NSLayoutConstraint? = nil
@@ -68,6 +95,98 @@ class OSDState {
 
   init(log: Logger.Subsystem) {
     self.log = log
+
+    log.verbose{"Init OSD"}
+    osdHStackView.idString = "OSD-HStackView"
+    osdHStackView.wantsLayer = true
+    osdHStackView.orientation = .horizontal
+    osdHStackView.alignment = .centerY
+    osdHStackView.spacing = 4
+    osdHStackView.detachesHiddenViews = true
+    osdHStackView.setHuggingPriority(.init(902), for: .horizontal)
+    osdHStackView.setHuggingPriority(.init(902), for: .vertical)
+    osdHStackView.translatesAutoresizingMaskIntoConstraints = false
+
+    osdIconImageView.idString = "OSDIconImageView"
+    osdIconImageView.imageScaling = .scaleProportionallyUpOrDown
+    osdIconImageView.imageAlignment = .alignCenter
+    osdIconImageView.translatesAutoresizingMaskIntoConstraints = false
+    osdIconImageView.refusesFirstResponder = true
+    osdIconImageView.setContentHugging(h: 1000, v: 1000)
+    osdIconImageView.setCCResistance(h: 1000, v: 1000)
+
+    osdIconWidthConstraint = osdIconImageView.widthAnchor.constraint(equalToConstant: 45)
+    osdIconWidthConstraint.identifier = "OSDIconImageViewWidthConstraint"
+    osdIconWidthConstraint.isActive = true
+    osdIconHeightConstraint = osdIconImageView.heightAnchor.constraint(equalToConstant: 45)
+    osdIconHeightConstraint.identifier = "OSDIconHeightConstraint"
+    osdIconHeightConstraint.isActive = true
+
+    osdLabel.idString = "OSD-Label"
+    osdLabel.translatesAutoresizingMaskIntoConstraints = false
+    osdLabel.setContentHuggingPriority(.init(251), for: .horizontal)
+    osdLabel.setContentCompressionResistancePriority(.init(499), for: .horizontal)
+    osdLabel.focusRingType = .none
+    osdLabel.lineBreakMode = .byTruncatingTail
+    osdLabel.alignment = .left
+    osdLabel.usesSingleLineMode = true
+    osdLabel.wantsLayer = true
+
+    osdAccessoryText.idString = "OSD-AccText"
+    osdAccessoryText.wantsLayer = true
+    osdAccessoryText.translatesAutoresizingMaskIntoConstraints = false
+    osdAccessoryText.setContentHuggingPriority(.init(251), for: .horizontal)
+    osdAccessoryText.setContentHuggingPriority(.init(750), for: .vertical)
+    osdAccessoryText.setContentCompressionResistancePriority(.init(499), for: .horizontal)
+    osdAccessoryText.focusRingType = .none
+    osdAccessoryText.lineBreakMode = .byClipping
+    osdAccessoryText.alignment = .justified
+    osdAccessoryText.wantsLayer = true
+    osdAccessoryText.font = .messageFont(ofSize: 11)
+    osdAccessoryText.textColor = .disabledControlTextColor
+    osdAccessoryText.backgroundColor = .controlColor
+
+    osdAccessoryProgress.idString = "OSD-ProgressBar"
+    osdAccessoryProgress.translatesAutoresizingMaskIntoConstraints = false
+    osdAccessoryProgress.usesThreadedAnimation = false
+    osdAccessoryProgress.isIndeterminate = false
+    osdAccessoryProgress.wantsLayer = true
+    osdAccessoryProgress.setContentHuggingPriority(.init(270), for: .horizontal)
+    osdAccessoryProgress.style = .bar
+    osdAccessoryProgress.minValue = 0
+    osdAccessoryProgress.maxValue = 1
+    osdAccessoryProgress.isDisplayedWhenStopped = true
+
+    osdView.subviews = [osdHStackView]
+    osdHStackView.addView(osdIconImageView, in: .leading)
+    osdHStackView.addView(osdVStackView, in: .leading)
+
+    osdVStackView.idString = "OSD-VStackView"
+    osdVStackView.wantsLayer = true
+    osdVStackView.orientation = .vertical
+    osdVStackView.alignment = .leading
+    osdVStackView.spacing = 2
+    osdVStackView.detachesHiddenViews = true
+    osdVStackView.setHuggingPriority(.init(250), for: .horizontal)
+    osdVStackView.setHuggingPriority(.init(500), for: .vertical)
+    osdVStackView.translatesAutoresizingMaskIntoConstraints = false
+
+    osdVStackView.addView(osdLabel, in: .leading)
+    osdVStackView.addView(osdAccessoryText, in: .leading)
+    osdVStackView.addView(osdAccessoryProgress, in: .leading)
+
+    osdTopMarginConstraint = osdHStackView.topAnchor.constraint(equalTo: osdView.topAnchor, constant: 8)
+    osdTopMarginConstraint.identifier = "OSDView-TopMarginConstraint"
+    osdTopMarginConstraint.isActive = true
+    osdBottomMarginConstraint = osdView.bottomAnchor.constraint(equalTo: osdHStackView.bottomAnchor, constant: 8)
+    osdBottomMarginConstraint.identifier = "OSDView-BottomMarginConstraint"
+    osdBottomMarginConstraint.isActive = true
+    osdTrailingMarginConstraint = osdView.trailingAnchor.constraint(equalTo: osdHStackView.trailingAnchor, constant: 8)
+    osdTrailingMarginConstraint.identifier = "OSDView-TrailingMarginConstraint"
+    osdTrailingMarginConstraint.isActive = true
+    osdLeadingMarginConstraint = osdHStackView.leadingAnchor.constraint(equalTo: osdView.leadingAnchor, constant: 8)
+    osdLeadingMarginConstraint.identifier = "OSDView-LeadingMarginConstraint"
+    osdLeadingMarginConstraint.isActive = true
   }
 
   static func osdTimeoutFromPrefs() -> Double {
@@ -75,6 +194,27 @@ class OSDState {
     return max(Constants.TimeInterval.osdTimeoutMin, Double(Preference.float(for: .osdAutoHideTimeout)))
   }
 
+}
+
+class OSDView: ClickThroughVisualEffectView {
+  init() {
+    super.init(frame: .zero)
+    blendingMode = .withinWindow
+    material = .toolTip
+    state = .active
+    idString = "OSDView"
+    translatesAutoresizingMaskIntoConstraints = false
+
+    // Min width
+    let osdMinWidthConstraint = widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
+    osdMinWidthConstraint.identifier = "OSDView-MinWidthConstraint"
+    osdMinWidthConstraint.priority = .init(900)
+    osdMinWidthConstraint.isActive = true
+  }
+  
+  @MainActor required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
 }
 
 /// The Additional Info view displays a battery time indicator & the media title when in full screen.
@@ -173,7 +313,6 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
     additionalInfoBattery.autoresizesSubviews = false
     batteryImageView.autoresizesSubviews = false
     additionalInfoTitle.autoresizesSubviews = false
-
   }
   
   @MainActor required init?(coder: NSCoder) {
@@ -184,75 +323,65 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
 // PlayerWindow UI: OSD
 extension PlayerWindowController {
 
-  func initOSDView(in contentView: NSView) {
-    // Subview init
-    osdAccessoryProgress.usesThreadedAnimation = false
-
-    // Min width
-    let osdMinWidthConstraint = osdVisualEffectView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
-    osdMinWidthConstraint.priority = .init(900)
-    osdMinWidthConstraint.isActive = true
-
-    // Offset from top bar
-    osdTopToTopBarConstraint = osdVisualEffectView.topAnchor.constraint(equalTo: topBarView.bottomAnchor, constant: 8)
-    osdTopToTopBarConstraint.identifier = "OSDTopToTopBarConstraint"
-    osdTopToTopBarConstraint.priority = .init(900)
-    osdTopToTopBarConstraint.isActive = true
-
-    osdLeadingToMiniPlayerButtonsTrailingConstraint = osdVisualEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: closeButtonView.trailingAnchor, constant: 4)
-    osdLeadingToMiniPlayerButtonsTrailingConstraint.priority = .defaultLow
-    osdLeadingToMiniPlayerButtonsTrailingConstraint.isActive = true
-
-    closeButtonView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4).isActive = true
-  }
-
   /// Enforces `Preference.Key.osdPosition` pref which allows OSD to be on either left or right
-  func updateOSDConstraints(hasOSD: Bool, hasAdditionalInfo: Bool,
-                            leadingSidebarIsOpen: Bool, trailingSidebarIsOpen: Bool, hasTopBar: Bool) {
+  func updateOSDConstraints(_ layout: LayoutState, _ geo: PWinGeometry) {
+    let hasOSD = Preference.bool(for: .enableOSD)
+    let hasAdditionalInfo = layout.hasAdditionalInfo
+    let leadingSidebarIsOpen = layout.leadingSidebar.isVisible
+    let trailingSidebarIsOpen = layout.trailingSidebar.isVisible
+    let hasTopBar = layout.hasTopBar
     log.verbose{"Updating OSD constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSidebar=\(leadingSidebarIsOpen.yn) trailingSidebar=\(trailingSidebarIsOpen.yn) hasTopBar=\(hasTopBar.yn)"}
     guard let contentView = window?.contentView else { return }
     osd.leadingSide_LeadingConstraint?.isActive = false
     osd.leadingSide_TrailingConstraint?.isActive = false
     osd.trailingSide_LeadingConstraint?.isActive = false
     osd.trailingSide_TrailingConstraint?.isActive = false
-    osd.topOffsetConstraint?.isActive = false
     osd.additionalInfoTopOffsetConstraint?.isActive = false
     osd.bottomOffsetConstraint?.isActive = false
     osd.additionalInfoBottomOffsetConstraint?.isActive = false
 
+    let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
     let otherAnchorLeading = leadingSidebarIsOpen ? leadingSidebarView.trailingAnchor : viewportView.leadingAnchor
     let otherAnchorTrailing = trailingSidebarIsOpen ? trailingSidebarView.leadingAnchor : viewportView.trailingAnchor
 
-    let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
     if hasOSD {
       switch osdPosition {
       case .topLeading:  // OSD on left, AdditionalInfo on right
-        let leadingSide_LeadingConstraint = otherAnchorLeading.constraint(equalTo: osdVisualEffectView.leadingAnchor, constant: -8)
+        let leadingSide_LeadingConstraint = otherAnchorLeading.constraint(equalTo: osd.osdView.leadingAnchor, constant: -8)
         updateOSDLeadingSide_LeadingConstraint(to: leadingSide_LeadingConstraint)
 
-        let leadingSide_TrailingConstraint = osdVisualEffectView.trailingAnchor.constraint(lessThanOrEqualTo: otherAnchorTrailing, constant: -8)
+        let leadingSide_TrailingConstraint = osd.osdView.trailingAnchor.constraint(lessThanOrEqualTo: otherAnchorTrailing, constant: -8)
         updateOSDLeadingSide_TrailingConstraint(to: leadingSide_TrailingConstraint)
       case .topTrailing:  // AdditionalInfo on left, OSD on right
-        let trailingSide_TrailingConstraint = otherAnchorTrailing.constraint(equalTo: osdVisualEffectView.trailingAnchor, constant: 8)
+        let trailingSide_TrailingConstraint = otherAnchorTrailing.constraint(equalTo: osd.osdView.trailingAnchor, constant: 8)
         updateOSDTrailingSide_TrailingConstraint(to: trailingSide_TrailingConstraint)
 
-        let trailingSide_LeadingConstraint = osdVisualEffectView.leadingAnchor.constraint(greaterThanOrEqualTo: otherAnchorLeading, constant: -8)
+        let trailingSide_LeadingConstraint = osd.osdView.leadingAnchor.constraint(greaterThanOrEqualTo: otherAnchorLeading, constant: -8)
         updateOSDTrailingSide_LeadingConstraint(to: trailingSide_LeadingConstraint)
       }
 
-      // Y coordinate for top & bottom constraints seems to be flipped. Not sure why
-      let topConstraint: NSLayoutConstraint
-      if hasTopBar {
-        topConstraint = topBarView.bottomAnchor.constraint(equalTo: osdVisualEffectView.topAnchor, constant: -8)
-      } else {
-        topConstraint = viewportView.topAnchor.constraint(equalTo: osdVisualEffectView.topAnchor, constant: -8)
+      if !isActive(osd.osdTopOffsetConstraint) {
+        let topConstraint = osd.osdView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: 8)
+        topConstraint.identifier = "OSD_TopOffsetConstraint"
+        osd.osdTopOffsetConstraint = topConstraint
       }
-      updateOSDTopOffsetConstraint(to: topConstraint)
+      updateOSDTopOffsetConstraint(geo, isLegacyFullScreen: layout.isLegacyFullScreen)
+      osd.osdTopOffsetConstraint?.isActive = true
 
-      let btmConstraint = viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: osdVisualEffectView.bottomAnchor, constant: 8)
+      let btmConstraint = viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: osd.osdView.bottomAnchor, constant: 8)
       btmConstraint.identifier = "OSD_BtmOffsetConstraint"
       btmConstraint.isActive = true
       osd.bottomOffsetConstraint = btmConstraint
+
+      if !isActive(osd.osdLeadingToMiniPlayerButtonsTrailingConstraint) {
+        let constraint = osd.osdView.leadingAnchor.constraint(greaterThanOrEqualTo: closeButtonView.trailingAnchor, constant: 4)
+        constraint.priority = .defaultLow
+        constraint.isActive = true
+        osd.osdLeadingToMiniPlayerButtonsTrailingConstraint = constraint
+      }
+    } else {
+      osd.osdLeadingToMiniPlayerButtonsTrailingConstraint?.isActive = false
+      osd.osdLeadingToMiniPlayerButtonsTrailingConstraint = nil
     }
 
     if hasAdditionalInfo {
@@ -271,21 +400,20 @@ extension PlayerWindowController {
         updateOSDLeadingSide_TrailingConstraint(to: leadingSide_TrailingConstraint)
       }
 
-      // Y coordinate for top & bottom constraints seems to be flipped. Not sure why
-      let topConstraint: NSLayoutConstraint
-      if hasTopBar {
-        topConstraint = topBarView.bottomAnchor.constraint(equalTo: additionalInfoView.topAnchor, constant: -8)
-      } else {
-        topConstraint = viewportView.topAnchor.constraint(equalTo: additionalInfoView.topAnchor, constant: -8)
+      if !isActive(osd.additionalInfoTopOffsetConstraint) {
+        let topConstraint = additionalInfoView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: 8)
+        topConstraint.identifier = "OSD_AddlInfoOffsetConstraint"
+        osd.additionalInfoTopOffsetConstraint = topConstraint
       }
-      updateAdditionalInfoTopOffsetConstraint(to: topConstraint)
+      updateOSDTopOffsetConstraint(geo, isLegacyFullScreen: layout.isLegacyFullScreen)
+      osd.additionalInfoTopOffsetConstraint?.isActive = true
 
       let btmConstraint = viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: additionalInfoView.bottomAnchor, constant: 8)
       btmConstraint.identifier = "AddlInfo_BtmOffsetConstraint"
       btmConstraint.isActive = true
       osd.additionalInfoBottomOffsetConstraint = btmConstraint
 
-      updateAdditionalInfo()  // update content
+      updateAdditionalInfoContent()  // update content
     } else {
       additionalInfoView.removeFromSuperview()
     }
@@ -320,21 +448,34 @@ extension PlayerWindowController {
     osd.trailingSide_TrailingConstraint = constraint
   }
 
-  private func updateOSDTopOffsetConstraint(to constraint: NSLayoutConstraint) {
-    constraint.identifier = "OSD_TopOffsetConstraint"
-    constraint.isActive = true
-    osd.topOffsetConstraint = constraint
-  }
+  // Update OSD (& Additional Info) views have correct offset from top of screen
+  func updateOSDTopOffsetConstraint(_ geometry: PWinGeometry, isLegacyFullScreen: Bool) {
+    var newOffsetFromTop: CGFloat = geometry.insideBars.top + 8  // offset from top of viewportView
+    if isLegacyFullScreen {
+      let screen = NSScreen.forScreenID(geometry.screenID)!
+      // OSD & Additional Info must never overlap camera housing, even if video does
+      let cameraHousingHeight = screen.cameraHousingHeight ?? 0
+      let usedSpaceAbove = geometry.outsideBars.top + geometry.insideBars.top
 
-  private func updateAdditionalInfoTopOffsetConstraint(to constraint: NSLayoutConstraint) {
-    constraint.identifier = "AddlInfo_TopOffsetConstraint"
-    constraint.isActive = true
-    osd.additionalInfoTopOffsetConstraint = constraint
+      if usedSpaceAbove < cameraHousingHeight {
+        let windowGapForCameraHousing = screen.frame.height - geometry.windowFrame.height
+        newOffsetFromTop -= windowGapForCameraHousing
+
+        let videoFillsEntireScreen = !geometry.hasTopPaddingForCameraHousing
+        if videoFillsEntireScreen {
+          newOffsetFromTop += cameraHousingHeight
+        }
+      }
+    }
+
+    log.verbose{"Updating OSD top constraint to: \(newOffsetFromTop)"}
+    osd.osdTopOffsetConstraint?.animateToConstant(newOffsetFromTop)
+    osd.additionalInfoTopOffsetConstraint?.animateToConstant(newOffsetFromTop)
   }
 
   // MARK: - Additional Info Content Updates
 
-  func updateAdditionalInfo() {
+  func updateAdditionalInfoContent() {
     // Update content
     let title = window?.representedURL?.lastPathComponent ?? window?.title ?? ""
     additionalInfoView.additionalInfoTitle.string = title
@@ -384,45 +525,45 @@ extension PlayerWindowController {
       // Often this method was called in response to a layout change.
       // For some reason the text wrap of the following is not recomputed or the text may be smashed/stretched,
       // so mark it expclitly as needing redisplay here:
-      osdLabel.needsDisplay = true
-      osdAccessoryText.needsDisplay = true
+      osd.osdLabel.needsDisplay = true
+      osd.osdAccessoryText.needsDisplay = true
       return
     }
 
     defer {
-      osdVisualEffectView.layout()
+      osd.osdView.layout()
     }
 
     updateOSDIcon(from: message)
 
     let (osdText, osdType) = message.details()
-    osdLabel.stringValue = osdText
+    osd.osdLabel.stringValue = osdText
 
     // Most OSD messages are displayed based on the configured language direction.
-    osdAccessoryProgress.userInterfaceLayoutDirection = osdVStackView.userInterfaceLayoutDirection
-    osdAccessoryText.baseWritingDirection = .natural
-    osdLabel.baseWritingDirection = .natural
+    osd.osdAccessoryProgress.userInterfaceLayoutDirection = osd.osdVStackView.userInterfaceLayoutDirection
+    osd.osdAccessoryText.baseWritingDirection = .natural
+    osd.osdLabel.baseWritingDirection = .natural
     switch osdType {
     case .normal:
-      osdVStackView.setVisibilityPriority(.notVisible, for: osdAccessoryText)
-      osdVStackView.setVisibilityPriority(.notVisible, for: osdAccessoryProgress)
+      osd.osdVStackView.setVisibilityPriority(.notVisible, for: osd.osdAccessoryText)
+      osd.osdVStackView.setVisibilityPriority(.notVisible, for: osd.osdAccessoryProgress)
     case .withLeftToRightProgress(let value):
       // OSD messages displaying the playback position must always be displayed left to right.
-      osdAccessoryProgress.userInterfaceLayoutDirection = .leftToRight
-      osdLabel.baseWritingDirection = .leftToRight
+      osd.osdAccessoryProgress.userInterfaceLayoutDirection = .leftToRight
+      osd.osdLabel.baseWritingDirection = .leftToRight
       fallthrough
     case .withProgress(let value):
-      osdVStackView.setVisibilityPriority(.notVisible, for: osdAccessoryText)
-      osdVStackView.setVisibilityPriority(.mustHold, for: osdAccessoryProgress)
-      osdAccessoryProgress.doubleValue = value
+      osd.osdVStackView.setVisibilityPriority(.notVisible, for: osd.osdAccessoryText)
+      osd.osdVStackView.setVisibilityPriority(.mustHold, for: osd.osdAccessoryProgress)
+      osd.osdAccessoryProgress.doubleValue = value
     case .withLeftToRightText(let text):
       // OSD messages displaying the playback position must always be displayed left to right.
-      osdAccessoryText.baseWritingDirection = .leftToRight
+      osd.osdAccessoryText.baseWritingDirection = .leftToRight
       fallthrough
     case .withText(let text):
       guard !player.isStopping else { return }  /// prevent crash when `mpv.getInt()` is used below
-      osdVStackView.setVisibilityPriority(.mustHold, for: osdAccessoryText)
-      osdVStackView.setVisibilityPriority(.notVisible, for: osdAccessoryProgress)
+      osd.osdVStackView.setVisibilityPriority(.mustHold, for: osd.osdAccessoryText)
+      osd.osdVStackView.setVisibilityPriority(.notVisible, for: osd.osdAccessoryProgress)
 
       // data for mustache rendering
       let osdData: [String: String] = [
@@ -431,7 +572,7 @@ extension PlayerWindowController {
         "currChapter": (player.mpv.getInt(MPVProperty.chapter) + 1).description,
         "chapterCount": player.info.chapters.count.description
       ]
-      osdAccessoryText.stringValue = try! (try! Template(string: text)).render(osdData)
+      osd.osdAccessoryText.stringValue = try! (try! Template(string: text)).render(osdData)
     }
   }
 
@@ -470,16 +611,16 @@ extension PlayerWindowController {
     }
 
     if let icon {
-      let finalheight = osdIconHeightConstraint.constant
+      let finalheight = osd.osdIconHeightConstraint.constant
       let finalWidth = round(icon.size.aspect * finalheight)
-      osdIconWidthConstraint.constant = finalWidth
+      osd.osdIconWidthConstraint.constant = finalWidth
 
-      osdIconImageView.image =  icon
-      osdIconImageView.contentTintColor = isIconGrayedOut ? .disabledControlTextColor : .controlTextColor
+      osd.osdIconImageView.image =  icon
+      osd.osdIconImageView.contentTintColor = isIconGrayedOut ? .disabledControlTextColor : .controlTextColor
     }
     let isIconVisible = icon != nil
     // Need this only for OSD messages which use the icon
-    osdIconImageView.isHidden = !isIconVisible
+    osd.osdIconImageView.isHidden = !isIconVisible
     log.trace{"OSD icon=\(isIconVisible.yn) for msg: \(message)"}
   }
 
@@ -665,10 +806,10 @@ extension PlayerWindowController {
     updateOSDTextSize()
     setOSDViews(fromMessage: msg)
 
-    let existingAccessoryViews = osdVStackView.views(in: .bottom)
+    let existingAccessoryViews = osd.osdVStackView.views(in: .bottom)
     if !existingAccessoryViews.isEmpty {
-      for subview in osdVStackView.views(in: .bottom) {
-        osdVStackView.removeView(subview)
+      for subview in osd.osdVStackView.views(in: .bottom) {
+        osd.osdVStackView.removeView(subview)
       }
     }
     if let accessoryViewController {  // e.g., ScreenshootOSDView
@@ -676,12 +817,12 @@ extension PlayerWindowController {
       osd.context = accessoryViewController
       osd.isShowingPersistentOSD = true
 
-      osdVStackView.addView(accessoryView, in: .bottom)
+      osd.osdVStackView.addView(accessoryView, in: .bottom)
     }
 
-    osdVisualEffectView.layoutSubtreeIfNeeded()
-    osdVisualEffectView.alphaValue = 1
-    osdVisualEffectView.isHidden = false
+    osd.osdView.layoutSubtreeIfNeeded()
+    osd.osdView.alphaValue = 1
+    osd.osdView.isHidden = false
   }
 
   @objc
@@ -701,13 +842,15 @@ extension PlayerWindowController {
     }
 
     IINAAnimation.runAsync(IINAAnimation.Task(duration: immediately ? 0 : Constants.AnimationDuration.osdAnimation, { [self] in
-      osdVisualEffectView.alphaValue = 0
+      osd.osdView.alphaValue = 0
 
     }), then: { [self] in
       if osd.animationState == .willHide {
         osd.animationState = .hidden
-        osdVisualEffectView.isHidden = true
-        osdVStackView.views(in: .bottom).forEach { self.osdVStackView.removeView($0) }
+        osd.osdView.isHidden = true
+        for subview in osd.osdVStackView.views(in: .bottom) {
+          osd.osdVStackView.removeView(subview)
+        }
       }
     })
   }
@@ -757,23 +900,23 @@ extension PlayerWindowController {
     log.verbose("Changing OSD textSize: \(osd.textSizeLast) → \(osdTextSize)")
 
     let osdAccessoryTextSize = (osdTextSize * 0.75).clamped(to: 11...25)
-    osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
+    osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
 
     let marginScaled = 8 + (osdTextSize * 0.06)
-    osdTopMarginConstraint.animateToConstant(marginScaled)
-    osdBottomMarginConstraint.animateToConstant(marginScaled)
-    osdTrailingMarginConstraint.animateToConstant(marginScaled)
-    osdLeadingMarginConstraint.animateToConstant(marginScaled)
+    osd.osdTopMarginConstraint.animateToConstant(marginScaled)
+    osd.osdBottomMarginConstraint.animateToConstant(marginScaled)
+    osd.osdTrailingMarginConstraint.animateToConstant(marginScaled)
+    osd.osdLeadingMarginConstraint.animateToConstant(marginScaled)
 
     let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
-    osdLabel.font = osdLabelFont
+    osd.osdLabel.font = osdLabelFont
 
     if #available(macOS 11.0, *) {
       switch osdTextSize {
       case 32...:
-        osdAccessoryProgress.controlSize = .regular
+        osd.osdAccessoryProgress.controlSize = .regular
       default:
-        osdAccessoryProgress.controlSize = .small
+        osd.osdAccessoryProgress.controlSize = .small
       }
     }
 
@@ -784,13 +927,18 @@ extension PlayerWindowController {
       let attachment = NSTextAttachment()
       attachment.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "")!
       let iconString = NSMutableAttributedString(attachment: attachment)
-      let osdIconTextSize = osdTextSize + (osdAccessoryProgress.fittingSize.height)
+      let osdIconTextSize = osdTextSize + (osd.osdAccessoryProgress.fittingSize.height)
       let osdIconFont = NSFont.monospacedDigitSystemFont(ofSize: osdIconTextSize, weight: .regular)
       iconString.addAttribute(.font, value: osdIconFont, range: NSRange(location: 0, length: iconString.length))
       let iconHeight = iconString.size().height
 
-      osdIconHeightConstraint.constant = iconHeight
+      osd.osdIconHeightConstraint.constant = iconHeight
     }
     osd.textSizeLast = osdTextSize
   }
+}
+
+private func isActive(_ constraint: NSLayoutConstraint?) -> Bool {
+  guard let constraint else { return false }
+  return constraint.isActive
 }

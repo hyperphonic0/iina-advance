@@ -1178,15 +1178,15 @@ class PlayerCore: NSObject {
     }
 
     DispatchQueue.main.async { [self] in
-      let osdViewController = ScreenshootOSDView()
+      let screenshotViewController = ScreenshootOSDView()
       // Shrink to some fraction of the currently displayed video
       let relativeSize = windowController.videoView.frame.size * 0.3
       let previewImageSize = screenshotImage.size.shrink(toSize: relativeSize)
-      osdViewController.setImage(screenshotImage,
-                       size: previewImageSize,
-                       fileURL: saveToFile ? lastScreenshotURL : nil)
+      screenshotViewController.setImage(screenshotImage,
+                                        size: previewImageSize,
+                                        fileURL: saveToFile ? lastScreenshotURL : nil)
 
-      sendOSD(.screenshot, forcedTimeout: 5, accessoryViewController: osdViewController)
+      sendOSD(.screenshot, forcedTimeout: 5, accessoryViewController: screenshotViewController)
     }
   }
 

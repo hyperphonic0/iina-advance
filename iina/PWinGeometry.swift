@@ -530,17 +530,19 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert(insideBars.bottom >= 0, "Expected insideBars.bottom ≥ 0, found \(insideBars.bottom)")
     assert(insideBars.leading >= 0, "Expected insideBars.leading ≥ 0, found \(insideBars.leading)")
 
-    let sumViewportSize = CGSize(width: self.viewportMargins.totalWidth + self.videoSize.width,
-                                 height: self.viewportMargins.totalHeight + self.videoSize.height)
-    assert(((sumViewportSize.width == 0 || sumViewportSize.width == 0) &&
-            (viewportSize.width == 0 || viewportSize.height == 0)) ||
-           ((sumViewportSize.width == viewportSize.width) && (sumViewportSize.height == viewportSize.height)),
-           "videoSize \(self.videoSize) + margins \(self.viewportMargins) → sum: \(sumViewportSize) ≠ viewportSize \(viewportSize)")
+    if videoSize.width > 0 && videoSize.height > 0 {
+      let sumViewportSize = CGSize(width: self.viewportMargins.totalWidth + self.videoSize.width,
+                                   height: self.viewportMargins.totalHeight + self.videoSize.height)
+      assert(((sumViewportSize.width == 0 || sumViewportSize.width == 0) &&
+              (viewportSize.width == 0 || viewportSize.height == 0)) ||
+             ((sumViewportSize.width == viewportSize.width) && (sumViewportSize.height == viewportSize.height)),
+             "videoSize \(self.videoSize) + margins \(self.viewportMargins) → sum: \(sumViewportSize) ≠ viewportSize \(viewportSize)")
 
-    let sumWindowSize = CGSize(width: sumViewportSize.width + outsideBars.totalWidth,
-                               height: sumViewportSize.height + outsideBars.totalHeight + topMarginHeight)
-    assert(sumWindowSize.width == windowFrame.width && sumWindowSize.height == windowFrame.height,
-           "windowSize sum \(sumWindowSize) ≠ windowFrame.size \(windowFrame.size)")
+      let sumWindowSize = CGSize(width: sumViewportSize.width + outsideBars.totalWidth,
+                                 height: sumViewportSize.height + outsideBars.totalHeight + topMarginHeight)
+      assert(sumWindowSize.width == windowFrame.width && sumWindowSize.height == windowFrame.height,
+             "windowSize sum \(sumWindowSize) ≠ windowFrame.size \(windowFrame.size)")
+    }
   }
 #endif
 

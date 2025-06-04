@@ -561,18 +561,20 @@ extension PlayerWindowController {
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
     let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscHasClearBG)
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
-
+    
     let leadingSidebarWillBeOpen = outputLayout.leadingSidebar.isVisible
     let trailingSidebarWillBeOpen = outputLayout.trailingSidebar.isVisible
     let hasOSD = Preference.bool(for: .enableOSD)
     let hasAddlInfo = outputLayout.hasAdditionalInfo
 
     // Need to add additionalInfo, OSD before changing sidebars
-    if hasOSD, !viewportView.subviews.contains(osdVisualEffectView) {
-      viewportView.addSubview(osdVisualEffectView, positioned: .above, relativeTo: videoView)
-      osdVisualEffectView.roundCorners()
+    if hasOSD, !viewportView.subviews.contains(osd.osdView) {
+      log.verbose{"[\(transition.name)] Adding osdView to viewportView"}
+      viewportView.addSubview(osd.osdView, positioned: .above, relativeTo: videoView)
+      osd.osdView.roundCorners()
     }
     if hasAddlInfo, !viewportView.subviews.contains(additionalInfoView) {
+      log.verbose{"[\(transition.name)] Adding additionalInfoView to viewportView"}
       viewportView.addSubview(additionalInfoView, positioned: .above, relativeTo: videoView)
       additionalInfoView.roundCorners()
     }
@@ -615,9 +617,7 @@ extension PlayerWindowController {
     }
 
     // Make sure to call this after prepareLayoutForOpening()
-    updateOSDConstraints(hasOSD: hasOSD, hasAdditionalInfo: hasAddlInfo,
-                         leadingSidebarIsOpen: leadingSidebarWillBeOpen, trailingSidebarIsOpen: trailingSidebarWillBeOpen,
-                         hasTopBar: outputLayout.hasTopBar)
+    updateOSDConstraints(transition.outputLayout, transition.outputGeometry)
 
     if transition.isOpeningOrClosingAnySidebar {
       log.verbose{"[\(transition.name)] Sidebars will be open: LeadingSidebar=\(leadingSidebarWillBeOpen.yn) TrailingSidebar=\(trailingSidebarWillBeOpen.yn)"}
@@ -987,7 +987,7 @@ extension PlayerWindowController {
     // Update heights to their final values:
     titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
 
-    updateOSDTopBarOffset(transition.outputGeometry, isLegacyFullScreen: transition.outputLayout.isLegacyFullScreen)
+    updateOSDTopOffsetConstraint(transition.outputGeometry, isLegacyFullScreen: transition.outputLayout.isLegacyFullScreen)
 
     // Update heights of top & bottom bars:
     updateTopBarHeight(to: outputLayout.topBarHeight, topBarPlacement: transition.outputLayout.topBarPlacement, cameraHousingOffset: transition.outputGeometry.topMarginHeight)
@@ -1421,29 +1421,6 @@ extension PlayerWindowController {
       viewportTopOffsetFromTopBarTopConstraint.animateToConstant(topBarHeight)
       viewportTopOffsetFromContentViewTopConstraint.animateToConstant(topBarHeight + cameraHousingOffset)
     }
-  }
-
-  // Update OSD (& Additional Info) views have correct offset from top of screen
-  func updateOSDTopBarOffset(_ geometry: PWinGeometry, isLegacyFullScreen: Bool) {
-    var newOffsetFromTop: CGFloat = 8
-    if isLegacyFullScreen {
-      let screen = NSScreen.forScreenID(geometry.screenID)!
-      // OSD & Additional Info must never overlap camera housing, even if video does
-      let cameraHousingHeight = screen.cameraHousingHeight ?? 0
-      let usedSpaceAbove = geometry.outsideBars.top + geometry.insideBars.top
-
-      if usedSpaceAbove < cameraHousingHeight {
-        let windowGapForCameraHousing = screen.frame.height - geometry.windowFrame.height
-        newOffsetFromTop -= windowGapForCameraHousing
-
-        let videoFillsEntireScreen = !geometry.hasTopPaddingForCameraHousing
-        if videoFillsEntireScreen {
-          newOffsetFromTop += cameraHousingHeight
-        }
-      }
-    }
-    log.trace{"Updating osdTopToTopBarConstraint to: \(newOffsetFromTop)"}
-    osdTopToTopBarConstraint.animateToConstant(newOffsetFromTop)
   }
 
   // - Bottom bar

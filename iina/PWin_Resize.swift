@@ -428,7 +428,7 @@ extension PlayerWindowController {
       controlBarFloating.moveToLocationRatio(layout: currentLayout, viewportSize: geometry.viewportSize)
     }
 
-    updateOSDTopBarOffset(geometry, isLegacyFullScreen: true)
+    updateOSDTopOffsetConstraint(geometry, isLegacyFullScreen: true)
     let topBarHeight = currentLayout.topBarPlacement == .insideViewport ? geometry.insideBars.top : geometry.outsideBars.top
     updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
 

@@ -467,24 +467,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     cons.setActive(active: true)
   }
 
-  /**
-   OSD: shown here in "upper-left" configuration.
-   For "upper-right" config: swap OSD & AdditionalInfo anchors in A & B, and invert all the params of B.
-   ┌───────────────────────┐
-   │ A ┌────┐  ┌───────┐ B │  A: leadingSidebarConstraints.osd
-   │◄─►│ OSD│  │ AddNfo│◄─►│  B: trailingSidebarConstraints.osd
-   │   └────┘  └───────┘   │
-   └───────────────────────┘
-   */
-  var osdTopToTopBarConstraint: NSLayoutConstraint!
-  var osdLeadingToMiniPlayerButtonsTrailingConstraint: NSLayoutConstraint!
-  @IBOutlet weak var osdIconWidthConstraint: NSLayoutConstraint!
-  @IBOutlet weak var osdIconHeightConstraint: NSLayoutConstraint!
-  @IBOutlet weak var osdTopMarginConstraint: NSLayoutConstraint!
-  @IBOutlet weak var osdTrailingMarginConstraint: NSLayoutConstraint!
-  @IBOutlet weak var osdLeadingMarginConstraint: NSLayoutConstraint!
-  @IBOutlet weak var osdBottomMarginConstraint: NSLayoutConstraint!
-
   /// Sets the size of the spacer view in the top overlay which reserves space for a title bar.
   var titleBarHeightConstraint: NSLayoutConstraint!
 
@@ -598,16 +580,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   let bufferIndicatorView = BufferIndicatorView()
 
-  let additionalInfoView = AdditionalInfoView()
-
   // OSD
-  @IBOutlet weak var osdVisualEffectView: NSVisualEffectView!
-  @IBOutlet weak var osdHStackView: NSStackView!
-  @IBOutlet weak var osdVStackView: NSStackView!
-  @IBOutlet weak var osdIconImageView: NSImageView!
-  @IBOutlet weak var osdLabel: NSTextField!
-  @IBOutlet weak var osdAccessoryText: NSTextField!
-  @IBOutlet weak var osdAccessoryProgress: NSProgressIndicator!
+  let additionalInfoView = AdditionalInfoView()
 
   let viewportView = ViewportView()
   let viewportTopSpacer = SpacerView(id: "ViewportTopSpacer")
@@ -2123,7 +2097,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     updatePlayButtonAndSpeedUI()
     updatePlaybackTimeUI()
     if currentLayout.hasAdditionalInfo {
-      updateAdditionalInfo()
+      updateAdditionalInfoContent()
     }
 
     if isInMiniPlayer {
