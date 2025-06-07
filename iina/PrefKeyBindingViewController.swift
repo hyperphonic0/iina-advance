@@ -8,9 +8,6 @@
 
 import Cocoa
 
-fileprivate let fm = FileManager.default
-fileprivate typealias KC = PrefKeyBindingViewController
-
 /// Root view for all `Settings` > `Key Bindings` UI.
 ///
 /// For the Configuration ("Conf") table, see `ConfTableViewController`.

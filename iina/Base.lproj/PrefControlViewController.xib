@@ -45,8 +45,9 @@
                         <font key="font" metaFont="message"/>
                         <menu key="menu" id="Dar-xZ-hAs">
                             <items>
-                                <menuItem title="Adjust volume" state="on" id="SYg-hW-b6r"/>
                                 <menuItem title="Seek" tag="1" id="RCe-3m-q9N"/>
+                                <menuItem title="Adjust volume" tag="0" state="on" id="SYg-hW-b6r"/>
+                                <menuItem title="Adjust playback speed" tag="4" id="XXq-G1-9sl"/>
                                 <menuItem title="Do nothing" tag="2" id="NjV-fH-YgN"/>
                             </items>
                         </menu>
@@ -74,6 +75,8 @@
                         <menu key="menu" id="aEA-Qe-wDM">
                             <items>
                                 <menuItem title="Seek" state="on" tag="1" id="wcS-tP-wav"/>
+                                <menuItem title="Adjust volume" tag="0" id="CXf-Ca-OhE"/>
+                                <menuItem title="Adjust playback speed" tag="4" id="nJZ-9M-DHk"/>
                                 <menuItem title="Do nothing" tag="2" id="guu-dK-YfL"/>
                             </items>
                         </menu>
@@ -235,11 +238,13 @@
                         <font key="font" metaFont="message"/>
                         <menu key="menu" id="qI8-W1-aYW">
                             <items>
-                                <menuItem title="Toggle full screen" state="on" tag="1" id="6F4-gm-oBg">
+                                <menuItem title="Enter/Exit full screen" state="on" tag="1" id="6F4-gm-oBg">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
-                                <menuItem title="Pause / resume" tag="2" id="Dm7-JG-fLd"/>
-                                <menuItem title="Toggle Picture-in-Picture" tag="4" id="rvS-xA-7bv"/>
+                                <menuItem title="Pause/Resume" tag="2" id="Dm7-JG-fLd"/>
+                                <menuItem title="Enter/Exit picture-in-picture" tag="4" id="rvS-xA-7bv"/>
+                                <menuItem title="A-B loop" tag="5" id="GHK-4G-DAj"/>
+                                <menuItem title="Reset speed" tag="6" id="Zbp-ok-mMJ"/>
                                 <menuItem title="Do nothing" id="wkV-Gq-B0T"/>
                             </items>
                         </menu>
@@ -266,8 +271,10 @@
                                 <menuItem title="Hide Controller" state="on" tag="3" id="OOM-jo-N4V">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
-                                <menuItem title="Pause / resume" tag="2" id="mOX-Fi-oTv"/>
-                                <menuItem title="Toggle Picture-in-Picture" tag="4" id="ibM-4r-SQA"/>
+                                <menuItem title="Pause/Resume" tag="2" id="mOX-Fi-oTv"/>
+                                <menuItem title="Enter/Exit picture-in-picture" tag="4" id="ibM-4r-SQA"/>
+                                <menuItem title="A-B loop" tag="5" id="65z-Gm-oZu"/>
+                                <menuItem title="Reset speed" tag="6" id="ig1-kk-RZu"/>
                                 <menuItem title="Do nothing" id="oOk-y6-lek"/>
                             </items>
                         </menu>
@@ -294,8 +301,8 @@
                                 <menuItem title="Hide Controller" state="on" tag="3" id="iFF-Gq-tVx">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
-                                <menuItem title="Pause / resume" tag="2" id="uqM-UM-Xvb"/>
-                                <menuItem title="Toggle fullscreen" tag="1" id="7wy-xt-c8Z">
+                                <menuItem title="Pause/Resume" tag="2" id="uqM-UM-Xvb"/>
+                                <menuItem title="Enter/Exit full screen" tag="1" id="7wy-xt-c8Z">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
                                 <menuItem title="Toggle Picture-in-Picture" tag="4" id="3Pm-nn-HpB"/>
@@ -525,8 +532,8 @@
                                 <menuItem title="Hide Controller" state="on" tag="3" id="M6K-ME-cve">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
-                                <menuItem title="Pause / resume" tag="2" id="Ba4-eT-rTv"/>
-                                <menuItem title="Toggle full screen" tag="1" id="hDh-Lk-FJe">
+                                <menuItem title="Pause/Resume" tag="2" id="Ba4-eT-rTv"/>
+                                <menuItem title="Enter/Exit full screen" tag="1" id="hDh-Lk-FJe">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                 </menuItem>
                                 <menuItem title="Do nothing" id="jnR-2I-4x4"/>

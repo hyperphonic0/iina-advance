@@ -599,6 +599,10 @@ extension PlayerWindowController {
       hideFadeableViewsAndCursor()
     case .togglePIP:
       menuTogglePIP(self)
+    case .abLoop:
+      player.abLoop()
+    case .resetSpeed:
+      player.setSpeed(1.0)
     case .contextMenu:
       showContextMenu()
     default:
