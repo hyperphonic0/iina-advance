@@ -3088,6 +3088,7 @@ class PlayerCore: NSObject {
                            type: MPVTrack.TrackType(rawValue: trackType)!,
                            isDefault: mpv.getFlag(MPVProperty.trackListNDefault(index)),
                            isForced: mpv.getFlag(MPVProperty.trackListNForced(index)),
+                           isImage: mpv.getFlag(MPVProperty.trackListNImage(index)),
                            isSelected: mpv.getFlag(MPVProperty.trackListNSelected(index)),
                            isExternal: mpv.getFlag(MPVProperty.trackListNExternal(index)))
       track.srcId = mpv.getInt(MPVProperty.trackListNSrcId(index))

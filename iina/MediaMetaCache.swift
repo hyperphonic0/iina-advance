@@ -198,7 +198,7 @@ class MediaMetaCache {
 
       if reloadFromFFmpeg {
         triedFFmpeg = true
-        if let dict = FFmpegController.probeStringMetaAndDuration(forFile: id.path) {
+        if let dict = FFmpegController.probeVideoInfo(forFile: id.path) {
 
           duration = dict["@iina_duration"] as? Double
 

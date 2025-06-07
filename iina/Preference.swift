@@ -606,6 +606,10 @@ struct Preference {
     /// To confirm this the workaround is being disabled by default using this preference. Should all go well this workaround will be
     /// removed in the future.
     static let enableHdrWorkaround = Key("enableHdrWorkaround")
+
+    /// Internal setting to allow disabling the new feature that shows cover artwork in the Now Playing module in case a serious
+    /// problem is encountered.
+    static let enableNowPlayingArtwork = Key("enableNowPlayingArtwork")
   }
 
   // MARK: - Enums
@@ -1599,7 +1603,8 @@ struct Preference {
     .killNonInteractiveLaunchesAtReopen: true,
     .killRequest: 0,
     .enableFFmpegImageDecoder: true,
-    .enableHdrWorkaround: false
+    .enableHdrWorkaround: false,
+    .enableNowPlayingArtwork: true
   ]
 
 
