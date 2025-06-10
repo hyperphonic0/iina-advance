@@ -17,8 +17,9 @@ class OSDState {
   let osdHStackView = ClickThroughStackView()
   let osdVStackView = ClickThroughStackView()
   let osdIconImageView = NSImageView()
+  /// Use label constructor (even with empty string) to ensure proper styling
   let osdLabel = NSTextField(labelWithString: "")
-  let osdAccessoryText = NSTextField()
+  let osdAccessoryText = NSTextField(labelWithString: "")
   let osdAccessoryProgress = NSProgressIndicator()
 
   var osdLeadingToMiniPlayerButtonsTrailingConstraint: NSLayoutConstraint? = nil

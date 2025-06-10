@@ -417,7 +417,8 @@ class StartupHandler {
     let countTotal = "\(wcsToRestore.count)"
     let namesStalledString = namesStalled.joined(separator: "\n")
     let msgArgs = [countStalled, countTotal, namesStalledString]
-    let askPanel = Utility.buildThreeButtonAskPanel("restore_timeout", msgArgs: msgArgs, alertStyle: .critical)
+    let askPanel = Utility.buildThreeButtonAskPanel("restore_timeout", msgArgs: msgArgs, middleBtnArgs: [countStalled],
+                                                    alertStyle: .critical)
     restoreTimeoutAlertPanel = askPanel
     let userResponse = askPanel.runModal()  // this will block for an indeterminate time
 

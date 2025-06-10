@@ -150,24 +150,39 @@ class Utility {
   }
 
   /// `key` == localization key
-  static func buildThreeButtonAskPanel(_ key: String, msgArgs: [String], alertStyle: NSAlert.Style? = nil) -> NSAlert {
+  static func buildThreeButtonAskPanel(_ key: String, titleArgs: [String] = [], msgArgs: [String],
+                                       okBtnArgs: [String] = [], middleBtnArgs: [String] = [],
+                                       cancelBtnArgs: [String] = [],
+                                       alertStyle: NSAlert.Style? = nil) -> NSAlert {
     let panel = NSAlert()
+
+    // Dialog title
     let titleKey = "alert.\(key).title"
-    let messageKey = "alert.\(key).message"
     let titleFormat = NSLocalizedString(titleKey, comment: titleKey)
-    let messageFormat = NSLocalizedString(messageKey, comment: messageKey)
     panel.messageText = String(format: titleFormat)
+
+    // Dialog body text
+    let messageKey = "alert.\(key).message"
+    let messageFormat = NSLocalizedString(messageKey, comment: messageKey)
     panel.informativeText = String(format: messageFormat, arguments: msgArgs)
+
     if let alertStyle {
       panel.alertStyle = alertStyle
     }
 
-    let okBtnTitle = NSLocalizedString("alert.\(key).ok", comment: "OK")
-    panel.addButton(withTitle: okBtnTitle)
-    let middleBtnTitle = NSLocalizedString("alert.\(key).middle", comment: "Middle")
-    panel.addButton(withTitle: middleBtnTitle)
-    let cancelBtnTitle = NSLocalizedString("alert.\(key).cancel", comment: "Cancel")
-    panel.addButton(withTitle: cancelBtnTitle)
+    // Dialog body text
+    let okKey = "alert.\(key).ok"
+    let okFormat = NSLocalizedString(okKey, comment: okKey)
+    let okString = String(format: okFormat, arguments: okBtnArgs)
+    panel.addButton(withTitle: okString)
+
+    let middleBtnFormat = NSLocalizedString("alert.\(key).middle", comment: "Middle")
+    let middleBtnString = String(format: middleBtnFormat, arguments: middleBtnArgs)
+    panel.addButton(withTitle: middleBtnString)
+
+    let cancelBtnFormat = NSLocalizedString("alert.\(key).cancel", comment: "Cancel")
+    let cancelBtnString = String(format: cancelBtnFormat, arguments: cancelBtnArgs)
+    panel.addButton(withTitle: cancelBtnString)
 
     return panel
   }
