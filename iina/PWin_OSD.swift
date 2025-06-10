@@ -221,7 +221,7 @@ class OSDView: ClickThroughVisualEffectView {
 class AdditionalInfoView: MouseIgnoringVisualEffectView {
   fileprivate let titleLabel = ResizableTextView(lineBreakMode: .byTruncatingMiddle)
   fileprivate let hStackView = NSStackView()
-  fileprivate let currentTimeLabel = NSTextField(labelWithString: "99:99")
+  fileprivate let clockTimeLabel = NSTextField(labelWithString: "99:99")
   fileprivate let batteryView = NSView()
   fileprivate let batteryLabel = NSTextField(labelWithString: "100%")
 
@@ -249,17 +249,17 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
     let labelContainerView = NSView()
     labelContainerView.translatesAutoresizingMaskIntoConstraints = false
     labelContainerView.heightAnchor.constraint(equalToConstant: 30).isActive = true
-    labelContainerView.subviews = [currentTimeLabel]
+    labelContainerView.subviews = [clockTimeLabel]
 
-    currentTimeLabel.font = NSFont.systemFont(ofSize: 18, weight: .regular)
-    currentTimeLabel.alignment = .right
-    currentTimeLabel.textColor = .secondaryLabelColor
-    currentTimeLabel.backgroundColor = .textBackgroundColor
-    currentTimeLabel.idString = "AdditionalInfo-Label"
-    currentTimeLabel.translatesAutoresizingMaskIntoConstraints = false
-    currentTimeLabel.leadingAnchor.constraint(equalTo: labelContainerView.leadingAnchor, constant: 6).isActive = true
-    labelContainerView.trailingAnchor.constraint(equalTo: currentTimeLabel.trailingAnchor).isActive = true
-    currentTimeLabel.centerYAnchor.constraint(equalTo: labelContainerView.centerYAnchor, constant: -1).isActive = true
+    clockTimeLabel.font = NSFont.systemFont(ofSize: 18, weight: .regular)
+    clockTimeLabel.alignment = .right
+    clockTimeLabel.textColor = .secondaryLabelColor
+    clockTimeLabel.backgroundColor = .textBackgroundColor
+    clockTimeLabel.idString = "AdditionalInfo-Label"
+    clockTimeLabel.translatesAutoresizingMaskIntoConstraints = false
+    clockTimeLabel.leadingAnchor.constraint(equalTo: labelContainerView.leadingAnchor, constant: 6).isActive = true
+    labelContainerView.trailingAnchor.constraint(equalTo: clockTimeLabel.trailingAnchor).isActive = true
+    clockTimeLabel.centerYAnchor.constraint(equalTo: labelContainerView.centerYAnchor, constant: -1).isActive = true
 
     let verticalLine = NSBox()
     verticalLine.boxType = .separator
@@ -490,7 +490,7 @@ extension PlayerWindowController {
     } else {
       additionalInfoView.hStackView.setVisibilityPriority(.notVisible, for: additionalInfoView.batteryView)
     }
-    additionalInfoView.currentTimeLabel.stringValue = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
+    additionalInfoView.clockTimeLabel.stringValue = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
   }
 
   // MARK: - OSD Content Updates

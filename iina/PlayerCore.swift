@@ -896,10 +896,6 @@ class PlayerCore: NSObject {
 
       stopWatchingSubFile()
 
-      DispatchQueue.main.async { [self] in
-        videoView.stopDisplayLink()
-      }
-
       thumbReloadDebouncer.invalidate()
       // If the user immediately closes the player window it is possible the background task may still
       // be working to load subtitles. Invalidate the ticket to get that task to abandon the work.
@@ -913,18 +909,19 @@ class PlayerCore: NSObject {
 
       info.$matchedSubs.withLock { $0.removeAll() }
 
+      // Do not enqueue after window is closed (and info.currentPlayback is nil)
+      sendOSD(.stop)
+      DispatchQueue.main.async { [self] in
+        refreshSyncUITimer()
+        videoView.stopDisplayLink()
+      }
+
       // Do not send a stop command to mpv if it is already stopped. This happens when quitting is
       // initiated directly through mpv.
       guard state != .idle else { return }
       log.debug("Stopping playback")
 
-      // Do not enqueue after window is closed (and info.currentPlayback is nil)
-      sendOSD(.stop)
-      DispatchQueue.main.async { [self] in
-        refreshSyncUITimer()
-      }
-      
-      mpv.command(.stop, level: .verbose)
+      mpv.command(.stop, checkActive: false)
     }
   }
 

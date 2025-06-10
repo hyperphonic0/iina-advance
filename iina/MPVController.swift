@@ -150,7 +150,7 @@ class MPVController: NSObject {
     removeObservers()
     // Start mpv quitting. Even though this command is being sent using the synchronous command API
     // the quit command is special and will be executed by mpv asynchronously.
-    command(.quit, level: .verbose, checkActive: false)
+    command(.quit, checkActive: false, level: .verbose)
   }
 
   func mpvDestroy() {
@@ -179,7 +179,7 @@ class MPVController: NSObject {
   /// Warning: if `checkError: false` is not given, and an error occurs, this mpv core will go into shutdown!
   @discardableResult
   func command(_ command: MPVCommand, args: [String?] = [], checkError: Bool = true,
-               level: Logger.Level = .debug, checkActive: Bool = true) -> Int32 {
+               checkActive: Bool = true, level: Logger.Level = .debug) -> Int32 {
     if checkActive {
       guard player.isActive else {
         log.log("Skipping cmd (player is inactive): \(command.rawValue) \(args.compactMap{$0}.joined(separator: " "))", level: level)
