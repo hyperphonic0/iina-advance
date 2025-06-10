@@ -333,7 +333,7 @@ extension PlayerWindowController {
     let leadingSidebarIsOpen = layout.leadingSidebar.isVisible
     let trailingSidebarIsOpen = layout.trailingSidebar.isVisible
     let hasTopBar = layout.hasTopBar
-    log.verbose{"Updating OSD constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSidebar=\(leadingSidebarIsOpen.yn) trailingSidebar=\(trailingSidebarIsOpen.yn) hasTopBar=\(hasTopBar.yn)"}
+    log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSidebar=\(leadingSidebarIsOpen.yn) trailingSidebar=\(trailingSidebarIsOpen.yn) hasTopBar=\(hasTopBar.yn)"}
     guard let contentView = window?.contentView else { return }
     osd.leadingSide_LeadingConstraint?.isActive = false
     osd.leadingSide_TrailingConstraint?.isActive = false
@@ -471,7 +471,7 @@ extension PlayerWindowController {
       }
     }
 
-    log.verbose{"Updating OSD top constraint to: \(newOffsetFromTop)"}
+    log.verbose{"[OSD] Updating top constraint to: \(newOffsetFromTop)"}
     osd.osdTopOffsetConstraint?.animateToConstant(newOffsetFromTop)
     osd.additionalInfoTopOffsetConstraint?.animateToConstant(newOffsetFromTop)
   }
@@ -624,7 +624,7 @@ extension PlayerWindowController {
     let isIconVisible = icon != nil
     // Need this only for OSD messages which use the icon
     osd.osdIconImageView.isHidden = !isIconVisible
-    log.trace{"OSD icon=\(isIconVisible.yn) for msg: \(message)"}
+    log.trace{"[OSD] Icon=\(isIconVisible.yn) for msg: \(message)"}
   }
 
   /// If `position` and `duration` are different than their previously cached values, overwrites the cached values and
@@ -634,7 +634,7 @@ extension PlayerWindowController {
   /// a `seek` OSD. To prevent duplicate OSDs, call this method to compare against the previous seek position.
   private func compareAndSetIfNewPlaybackTime(position: Double?, duration: Double?) -> Bool {
     guard let position, let duration else {
-      log.verbose("Ignoring request for OSD seek: position or duration is missing")
+      log.verbose("[OSD] Ignoring request for Seek: position or duration is missing")
       return false
     }
     // There seem to be precision errors which break equality when comparing values beyond 6 decimal places.
@@ -644,7 +644,7 @@ extension PlayerWindowController {
     let oldPosRounded = round((osd.lastPlaybackPosition ?? -1) * AppData.osdSeekSubSecPrecisionComparison)
     let oldDurRounded = round((osd.lastPlaybackDuration ?? -1) * AppData.osdSeekSubSecPrecisionComparison)
     guard newPosRounded != oldPosRounded || newDurRounded != oldDurRounded else {
-      log.verbose("Ignoring request for OSD seek; position/duration has not changed")
+      log.verbose("[OSD] Ignoring request for Seek; position/duration has not changed")
       return false
     }
     osd.lastPlaybackPosition = position
@@ -695,7 +695,7 @@ extension PlayerWindowController {
     if case .debug = osd.currentlyDisplayedMsg {
       if case .debug = msg {
       } else {
-        log.verbose("Discarding OSD '\(msg)' because a debug msg is visible")
+        log.verbose{"[OSD] Discarding '\(msg)' because a debug msg is visible"}
         return
       }
     }
@@ -729,7 +729,7 @@ extension PlayerWindowController {
       osd.lastPlaybackDuration = player.info.playbackDurationSec
     case .crop(let newCropLabel):
       if newCropLabel == AppData.noneCropIdentifier && !isInInteractiveMode && player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
-        log.verbose("Ignoring request to show OSD crop 'None': looks like user starting to edit an existing crop")
+        log.verbose("[OSD] Ignoring request for Crop 'None': looks like user starting to edit an existing crop")
         return
       }
     case .resumeFromWatchLater:
@@ -748,13 +748,12 @@ extension PlayerWindowController {
     osd.lastDisplayedMsg = msg
 
     if #available(macOS 11.0, *) {
-
       /// The pseudo-OSDMessage `seekRelative`, if present, contains the step time for a relative seek.
       /// But because it needs to be parsed from the mpv log, it is sent as a separate msg which arrives immediately
       /// prior to the `seek` msg. With some smart logic, the info from the two messages can be combined to display
       /// the most appropriate "jump" icon in the OSD in addition to the time display & progress bar.
       if case .seekRelative(let stepString) = msg, let step = Double(stepString) {
-        log.verbose("Got OSD '\(msg)'")
+        log.verbose{"[OSD] Showing '\(msg)'"}
 
         let isBackward = step < 0
         let accDescription = "Relative Seek \(isBackward ? "Backward" : "Forward")"
@@ -800,10 +799,10 @@ extension PlayerWindowController {
 
     if autoHide {
       let timeout: Double = forcedTimeout ?? OSDState.osdTimeoutFromPrefs()
-      log.verbose{"Showing OSD '\(msg)' timeout=\(timeout)\(forcedTimeout != nil ? " (forced)" : "")"}
+      log.verbose{"[OSD] Showing '\(msg)' timeout=\(timeout)\(forcedTimeout != nil ? " (forced)" : "")"}
       osd.hideOSDTimer.restart(withNewTimeout: timeout)
     } else {
-      log.verbose("Showing OSD '\(msg)', no timeout")
+      log.verbose{"[OSD] Showing '\(msg)', no timeout"}
     }
 
     updateOSDTextSize()
@@ -833,7 +832,7 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
     guard loaded else { return }
     if osd.animationState != .hidden {
-      log.trace("Hiding OSD")
+      log.trace("[OSD] Will hide")
     }
     osd.animationState = .willHide
     osd.isShowingPersistentOSD = false
@@ -900,7 +899,7 @@ extension PlayerWindowController {
 
     guard osdTextSize != osd.textSizeLast else { return }
 
-    log.verbose("Changing OSD textSize: \(osd.textSizeLast) → \(osdTextSize)")
+    log.verbose("[OSD] Δ textSize: \(osd.textSizeLast) → \(osdTextSize)")
 
     let osdAccessoryTextSize = (osdTextSize * 0.75).clamped(to: 11...25)
     osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)

@@ -2637,11 +2637,11 @@ class PlayerCore: NSObject {
 
   func updatePlaybackTimeInfo() {
     guard videoView.useOpenGL || DispatchQueue.isExecutingIn(mpv.queue, logError: false) else {
-      log.warn("FIXME: skipping sync of playback time info for gpu-next")
+      log.warn("FIXME: SyncUI: skipping sync of playback time info for gpu-next")
       return
     }
     guard state.isAtLeast(.started), state.isNotYet(.stopping) else {
-      log.verbose("updatePlaybackTimeInfo: not syncing")
+      log.verbose("SyncUI: not syncing")
       return
     }
     
@@ -2673,7 +2673,7 @@ class PlayerCore: NSObject {
       let now = Date().timeIntervalSince1970
       let secSinceLastSave = now - lastStateSaveTime
       if secSinceLastSave >= Constants.TimeInterval.playTimeSaveStateFrequency {
-        log.trace{"Another \(Constants.TimeInterval.playTimeSaveStateFrequency)s has passed: saving player state"}
+        log.trace{"SyncUI: another \(Constants.TimeInterval.playTimeSaveStateFrequency)s has passed: saving player state"}
         saveState()
         lastStateSaveTime = now
       }
@@ -2686,11 +2686,11 @@ class PlayerCore: NSObject {
     if let demuxerCacheState = mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any] {
       if let underrun = demuxerCacheState["underrun"] as? Bool, underrun {
         if !info.isBufferUnderrun {
-          log.verbose("Dexumer now reports buffer underrun")
+          log.verbose("SyncUI: demuxer buffer underrun started")
           info.isBufferUnderrun = true
         }
       } else if info.isBufferUnderrun {
-        log.verbose("Dexumer buffer underrun cleared")
+        log.verbose("SyncUI: demuxer buffer underrun cleared")
         info.isBufferUnderrun = false
       }
       if let seekableRanges = demuxerCacheState["seekable-ranges"] as? [[String: Any]] {

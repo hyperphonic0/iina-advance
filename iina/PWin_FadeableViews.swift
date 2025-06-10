@@ -9,7 +9,7 @@
 import Foundation
 
 /// This file encapsulates logic to:
-/// - Show/hide fadeable views
+/// - Show/hide fadeable views (AKA "fadeables", AKA "inside panels").
 /// - Show/hide default album art
 extension PlayerWindowController {
 
@@ -32,45 +32,45 @@ extension PlayerWindowController {
     /// Need to carry an extra bit of info for this
     fileprivate var pendingShowTopPanel: Bool = false
 
-    func applyVisibility(_ visibility: VisibilityMode, to view: NSView) {
+    func applyVisibility(_ visibility: VisibilityMode, to fadeableView: NSView) {
       switch visibility {
       case .hidden:
-        view.alphaValue = 0
-        view.isHidden = true
-        fadeables.remove(view)
-        fadeablesInTopBar.remove(view)
+        fadeableView.alphaValue = 0
+        fadeableView.isHidden = true
+        fadeables.remove(fadeableView)
+        fadeablesInTopBar.remove(fadeableView)
       case .showAlways:
-        view.alphaValue = 1
-        view.isHidden = false
-        fadeables.remove(view)
-        fadeablesInTopBar.remove(view)
+        fadeableView.alphaValue = 1
+        fadeableView.isHidden = false
+        fadeables.remove(fadeableView)
+        fadeablesInTopBar.remove(fadeableView)
       case .showFadeableTopBar:
-        view.alphaValue = 1
-        view.isHidden = false
-        fadeablesInTopBar.insert(view)
+        fadeableView.alphaValue = 1
+        fadeableView.isHidden = false
+        fadeablesInTopBar.insert(fadeableView)
       case .showFadeableNonTopBar:
-        view.alphaValue = 1
-        view.isHidden = false
-        fadeables.insert(view)
+        fadeableView.alphaValue = 1
+        fadeableView.isHidden = false
+        fadeables.insert(fadeableView)
       }
     }
 
     func applyVisibility(_ visibility: VisibilityMode, _ views: NSView?...) {
-      for view in views {
-        if let view = view {
-          applyVisibility(visibility, to: view)
+      for fadeableView in views {
+        if let fadeableView {
+          applyVisibility(visibility, to: fadeableView)
         }
       }
     }
 
-    func applyOnlyIfHidden(_ visibility: VisibilityMode, to view: NSView, isTopBar: Bool = true) {
+    func applyOnlyIfHidden(_ visibility: VisibilityMode, to fadeableView: NSView, isTopBar: Bool = true) {
       guard visibility == .hidden else { return }
-      applyVisibility(visibility, view)
+      applyVisibility(visibility, fadeableView)
     }
 
-    func applyOnlyIfShowable(_ visibility: VisibilityMode, to view: NSView, isTopBar: Bool = true) {
+    func applyOnlyIfShowable(_ visibility: VisibilityMode, to fadeableView: NSView, isTopBar: Bool = true) {
       guard visibility != .hidden else { return }
-      applyVisibility(visibility, view)
+      applyVisibility(visibility, fadeableView)
     }
 
   }  // end class FadeableViewsHandler
@@ -78,7 +78,7 @@ extension PlayerWindowController {
 
   // MARK: - PlayerWindowController
 
-  // Shows fadeables and titlebar via fade
+  /// Shows fadeables via fade-in animation
   func showFadeableViews(thenRestartFadeTimer restartFadeTimer: Bool = true,
                          duration: CGFloat = Constants.AnimationDuration.standard,
                          forceShowTopBar: Bool = false) {

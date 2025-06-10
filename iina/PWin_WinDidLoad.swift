@@ -12,7 +12,7 @@ extension PlayerWindowController {
 
   /// Called when window is initially loaded. Add all subviews here.
   override func windowDidLoad() {
-    log.verbose("PlayerWindow windowDidLoad starting")
+    log.verbose("[Load] PWin_WinDidLoad starting")
     super.windowDidLoad()
 
     guard let window else { return }
@@ -104,7 +104,7 @@ extension PlayerWindowController {
       initBufferIndicatorView(in: contentView)
       initCustomWindowBorder(in: contentView)
 
-      log.verbose{"Configuring for CoreAnimation: window"}
+      log.verbose("[Load] Configuring window for CoreAnimation")
       contentView.configureSubtreeForCoreAnimation()
 
       // Make sure to set this inside the animation task! See note above
@@ -138,7 +138,7 @@ extension PlayerWindowController {
       // Must wait until *after* loaded==true to load plugins!
       player.loadPlugins()
 
-      log.verbose("PlayerWindow windowDidLoad done")
+      log.verbose("[Load] PWin_WinDidLoad done")
       player.events.emit(.windowLoaded)
     }
   }
@@ -185,7 +185,7 @@ extension PlayerWindowController {
   }
 
   func addVideoViewSpacers() {
-    log.verbose{"Adding videoView spacers to viewportView"}
+    log.verbose("[Load] Adding videoView spacers to viewportView")
     viewportView.addSubview(viewportTopSpacer)
     viewportView.addSubview(viewportBottomSpacer)
     viewportView.addSubview(viewportLeadingSpacer)
@@ -420,7 +420,7 @@ extension PlayerWindowController {
   }
 
   func rebuildBottomBarView(in contentView: NSView, style: Preference.OSCColorScheme) {
-    log.verbose{"Rebuilding bottomBarView: style=\(style)"}
+    log.verbose{"[Load] Rebuilding bottomBarView: style=\(style)"}
     bottomBarView.removeAllSubviews()
     bottomBarView.removeFromSuperview()
 
@@ -586,7 +586,7 @@ extension PlayerWindowController {
 
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
 
-    log.verbose{"Init fragPlaybackBtnsHeightConstraint = 0"}
+    log.verbose{"[Load] Init fragPlaybackBtnsHeightConstraint ≔ 0"}
     fragPlaybackBtnsHeightConstraint = fragPlaybackBtnsView.heightAnchor.constraint(equalToConstant: 0)
     fragPlaybackBtnsHeightConstraint.identifier = "fragPlaybackBtns-HeightConstraint"
     fragPlaybackBtnsHeightConstraint.isActive = true
