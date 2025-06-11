@@ -57,8 +57,7 @@ class Playback: CustomStringConvertible {
 
   let id: PlaybackID
 
-  /// Can be `nil` if not loaded yet
-  var playlistPos: Int?
+  var playlistPos: Int
 
   var parentPlaylist: String = ""
 
@@ -80,19 +79,19 @@ class Playback: CustomStringConvertible {
     return "Playback(plPos:\(String(playlistPos)) status:\(state) path:\(path.pii.quoted))"
   }
 
-  init(_ id: PlaybackID, playlistPos: Int? = nil, state: LifecycleState = .notYetStarted) {
+  init(_ id: PlaybackID, playlistPos: Int, state: LifecycleState = .notYetStarted) {
     self.id = id
     self.playlistPos = playlistPos
     self.state = state
   }
 
   /// if `url` is `nil`, assumed to be `stdin`
-  convenience init(url: URL?, playlistPos: Int? = nil, state: LifecycleState = .notYetStarted) {
+  convenience init(url: URL?, playlistPos: Int, state: LifecycleState = .notYetStarted) {
     let id = PlaybackID(url)
     self.init(id, playlistPos: playlistPos, state: state)
   }
 
-  convenience init?(urlPath: String, playlistPos: Int? = nil, state: LifecycleState = .notYetStarted) {
+  convenience init?(urlPath: String, playlistPos: Int, state: LifecycleState = .notYetStarted) {
     guard let id = PlaybackID(path: urlPath) else { return nil }
     self.init(id, playlistPos: playlistPos, state: state)
   }

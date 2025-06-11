@@ -637,8 +637,6 @@ struct PlayerSaveState: CustomStringConvertible {
       return
     }
 
-    let playback = Playback(url: url)
-
     if Logger.isEnabled(.verbose) {
       // Log properties
       log.verbose("Restoring from prior launch: \(self)")
@@ -735,7 +733,8 @@ struct PlayerSaveState: CustomStringConvertible {
 
     // IINA restore supercedes mpv watch-later.
     // Need to delete the watch-later file before mpv loads it or else things get very buggy
-    let watchLaterFileURL = Utility.watchLaterURL.appendingPathComponent(playback.mpvMD5).path
+    let mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
+    let watchLaterFileURL = Utility.watchLaterURL.appendingPathComponent(mpvMD5).path
     if FileManager.default.fileExists(atPath: watchLaterFileURL) {
       player.log.debug("Found mpv watch-later file. Deleting it because we are using IINA restore...")
       try? FileManager.default.removeItem(atPath: watchLaterFileURL)

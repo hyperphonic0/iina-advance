@@ -249,13 +249,13 @@ class PlayerCore: NSObject {
 
   var canPlayPrevTrack: Bool {
     guard isActive, let currentPlayback = info.currentPlayback else { return false }
-    return (currentPlayback.playlistPos ?? 0) > 1
+    return currentPlayback.playlistPos > 1
   }
 
   var canPlayNextTrack: Bool {
     guard isActive, let currentPlayback = info.currentPlayback, currentPlayback.state.isAtLeast(.loaded) else { return false }
     let playlistCount = info.playlist.count
-    return (currentPlayback.playlistPos ?? 0) < playlistCount - 1
+    return currentPlayback.playlistPos < playlistCount - 1
   }
 
   /// The A loop point established by the [mpv](https://mpv.io/manual/stable/) A-B loop command.
@@ -498,7 +498,7 @@ class PlayerCore: NSObject {
       log.fatalError("Cannot open player window: empty url list!")
     }
 
-    let playback = Playback(url: urls[0])
+    let playback = Playback(url: urls[0], playlistPos: 0)
 
     if isInteractivePlayer && playback.isNetworkResource {
       windowController.close()
