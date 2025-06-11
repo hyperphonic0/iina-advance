@@ -596,7 +596,7 @@ class StartupHandler {
       initAppUI()
 
       let didRestoreSomething = !wcsToRestore.isEmpty || restoreOpenFileWindow
-      let didShowSomething = didRestoreSomething || wcsForOpenFiles != nil
+      let didShowSomething = didRestoreSomething || (wcsForOpenFiles != nil)
       if !isCommandLine && !didShowSomething {
         // Fall back to default action:
         AppDelegate.shared.doLaunchOrReopenAction()

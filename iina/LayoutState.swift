@@ -298,6 +298,14 @@ struct LayoutSpec {
     return effectiveOSCColorScheme == .clearGradient
   }
 
+  var isLeadingSidebarVisible: Bool {
+    leadingSidebar.isVisible
+  }
+
+  var isTrailingSidebarVisible: Bool {
+    trailingSidebar.isVisible
+  }
+
   var isAnySidebarVisible: Bool {
     leadingSidebar.isVisible || trailingSidebar.isVisible
   }
@@ -543,6 +551,14 @@ struct LayoutState {
     case .trailingSidebar:
       return trailingSidebar
     }
+  }
+
+  var isLeadingSidebarVisible: Bool {
+    spec.isLeadingSidebarVisible
+  }
+
+  var isTrailingSidebarVisible: Bool {
+    spec.isTrailingSidebarVisible
   }
 
   var isAnySidebarVisible: Bool {

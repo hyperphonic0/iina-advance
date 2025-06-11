@@ -2049,10 +2049,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     window?.level = onTop ? .iinaFloating : .normal
     if updateOnTopStatus {
       self.isOnTop = onTop
-      // FIXME: put this in the mpv queue
-      player.mpv.setFlag(MPVOption.Window.ontop, onTop)
-      updateOnTopButton(from: layout, showIfFadeable: true)
-      player.saveState()
+      player.mpv.queue.async { [self] in
+        // TODO: does this hang if videoView is not in window?
+        player.mpv.setFlag(MPVOption.Window.ontop, onTop)
+        DispatchQueue.main.async { [self] in
+          updateOnTopButton(from: layout, showIfFadeable: true)
+          player.saveState()
+        }
+      }
     }
     resetCollectionBehavior()
   }

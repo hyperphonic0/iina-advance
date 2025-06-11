@@ -471,9 +471,10 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging {
+    // - Bottom Bar
+    let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging
+    if needsBottomBarUpdate {
       rebuildBottomBarView(in: window.contentView!, style: transition.outputLayout.effectiveOSCColorScheme)
-      updateBottomBarPlacement(forLayout: outputLayout)
     }
 
     // Title bar views
@@ -616,10 +617,16 @@ extension PlayerWindowController {
       switchToTabInTabGroup(tab: tabToShow)
     }
 
+    // Update bottom bar constraints *after* sidebars are added
+    let isOpeningOrClosingAnySidebar = transition.isOpeningOrClosingAnySidebar
+    if needsBottomBarUpdate || isOpeningOrClosingAnySidebar {
+      updateBottomBarPlacement(forLayout: outputLayout)
+    }
+
     // Make sure to call this after prepareLayoutForOpening()
     updateOSDConstraints(transition.outputLayout, transition.outputGeometry)
 
-    if transition.isOpeningOrClosingAnySidebar {
+    if isOpeningOrClosingAnySidebar {
       log.verbose{"[\(transition.name)] Sidebars will be open: LeadingSidebar=\(leadingSidebarWillBeOpen.yn) TrailingSidebar=\(trailingSidebarWillBeOpen.yn)"}
 
       if !leadingSidebarWillBeOpen {
@@ -762,7 +769,8 @@ extension PlayerWindowController {
         if !bottomBarView.subviews.contains(oscContentView) {
           bottomBarView.addSubview(oscContentView, positioned: .below, relativeTo: bottomBarTopBorder)
           // Match leading/trailing spacing of title bar icons above
-          oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing,
+          oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0,
+                                                       leading: Constants.Distance.titleBarIconHSpacing,
                                                        trailing: Constants.Distance.titleBarIconHSpacing)
         }
 
@@ -1426,20 +1434,27 @@ extension PlayerWindowController {
   // - Bottom bar
 
   private func updateBottomBarPlacement(forLayout layout: LayoutState) {
-    log.trace{"Updating bottomBar placement to: \(layout.bottomBarPlacement)"}
+    log.verbose{"Updating bottomBar placement to: \(layout.bottomBarPlacement)"}
     guard let window = window, let contentView = window.contentView else { return }
-    contentView.removeConstraint(bottomBarLeadingSpaceConstraint)
-    contentView.removeConstraint(bottomBarTrailingSpaceConstraint)
+    bottomBarLeadingSpaceConstraint.isActive = false
+    bottomBarTrailingSpaceConstraint.isActive = false
 
-    if layout.bottomBarPlacement == .insideViewport && layout.isAnySidebarVisible {
+    if layout.bottomBarPlacement == .insideViewport && layout.isLeadingSidebarVisible {
       // Align left & right sides with sidebars (top bar will squeeze to make space for sidebars)
+      assert(leadingSidebarView.superview != nil)
       bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: 0)
-      bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0)
     } else {
       // Align left & right sides with window (sidebars go below top bar)
       bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+    }
+
+    if layout.bottomBarPlacement == .insideViewport && layout.isTrailingSidebarVisible {
+      assert(trailingSidebarView.superview != nil)
+      bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0)
+    } else {
       bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
     }
+
     bottomBarLeadingSpaceConstraint.isActive = true
     bottomBarTrailingSpaceConstraint.isActive = true
   }

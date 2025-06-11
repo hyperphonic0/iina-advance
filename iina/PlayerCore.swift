@@ -1435,7 +1435,10 @@ class PlayerCore: NSObject {
   }
 
   func displaySizeDidChange() {
-    guard !isRestoring else { return }
+    guard !isRestoring else {
+      log.trace{"Ignoring dw or dh update: isRestoring=Y"}
+      return
+    }
     // This is a very important check when entering interactive mode. Its transition first removes
     // the crop filter, which triggers a dw/dh update change event which brings us here.
     // But the interactive mode transition should handle everything. Do not step on it.

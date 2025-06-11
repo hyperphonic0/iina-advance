@@ -453,25 +453,35 @@ extension PlayerWindowController {
 
     contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
 
-    viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0)
-    viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = .init("Viewport-Btm_OffsetFrom-BottomBar-Top_Constraint")
-    viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
+    if !isActive(viewportBtmOffsetFromTopOfBottomBarConstraint) {
+      viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0)
+      viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = .init("Viewport-Btm_OffsetFrom-BottomBar-Top_Constraint")
+      viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
+    }
 
-    viewportBtmOffsetFromBtmOfBottomBarConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
-    viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
-    viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = .init("Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint")
+    if !isActive(viewportBtmOffsetFromBtmOfBottomBarConstraint) {
+      viewportBtmOffsetFromBtmOfBottomBarConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
+      viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
+      viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = .init("Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint")
+    }
 
-    bottomBarBtmOffsetFromContentViewBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
-    bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = false
-    bottomBarBtmOffsetFromContentViewBtmConstraint.identifier = .init("bottomBar-Btm_OffsetFrom-ContentView-Btm_Constraint")
+    if !isActive(bottomBarBtmOffsetFromContentViewBtmConstraint) {
+      bottomBarBtmOffsetFromContentViewBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
+      bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = false
+      bottomBarBtmOffsetFromContentViewBtmConstraint.identifier = .init("bottomBar-Btm_OffsetFrom-ContentView-Btm_Constraint")
+    }
 
-    bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
-    bottomBarLeadingSpaceConstraint.isActive = true
-    bottomBarLeadingSpaceConstraint.identifier = .init("bottomBarLeadingSpaceConstraint")
+    if !isActive(bottomBarLeadingSpaceConstraint) {
+      bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+      bottomBarLeadingSpaceConstraint.isActive = true
+      bottomBarLeadingSpaceConstraint.identifier = .init("bottomBarLeadingSpaceConstraint")
+    }
 
-    bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
-    bottomBarTrailingSpaceConstraint.isActive = true
-    bottomBarTrailingSpaceConstraint.identifier = .init("bottomBarTrailingSpaceConstraint")
+    if !isActive(bottomBarTrailingSpaceConstraint) {
+      bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
+      bottomBarTrailingSpaceConstraint.isActive = true
+      bottomBarTrailingSpaceConstraint.identifier = .init("bottomBarTrailingSpaceConstraint")
+    }
 
     bottomBarView.addSubview(bottomBarTopBorder)
     bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
@@ -480,9 +490,18 @@ extension PlayerWindowController {
     self.bottomBarView = bottomBarView
   }
 
+  func isActive(_ con: NSLayoutConstraint?) -> Bool {
+    if let con {
+      return con.isActive
+    }
+    return false
+  }
+
   /// Prerequisites:
   /// 1. `viewportView` added to `contentView`.
   private func initSidebars(in contentView: NSView) {
+    log.verbose{"[Load] Init sidebars"}
+
     // - Leading sidebar
 
     leadingSidebarView.idString = "LeadingSidebarView"
@@ -528,6 +547,7 @@ extension PlayerWindowController {
 
   /// Init `fragPlaybackBtnsView` & its subviews
   private func initPlaybackBtnsView() {
+    log.verbose{"[Load] Init playback buttons"}
     let oscGeo = currentLayout.controlBarGeo
 
     // Play button
@@ -586,7 +606,6 @@ extension PlayerWindowController {
 
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
 
-    log.verbose{"[Load] Init fragPlaybackBtnsHeightConstraint ≔ 0"}
     fragPlaybackBtnsHeightConstraint = fragPlaybackBtnsView.heightAnchor.constraint(equalToConstant: 0)
     fragPlaybackBtnsHeightConstraint.identifier = "fragPlaybackBtns-HeightConstraint"
     fragPlaybackBtnsHeightConstraint.isActive = true
