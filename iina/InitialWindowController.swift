@@ -171,7 +171,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     recentFilesTableView.editableDelegate = self
     recentFilesTableView.dataSource = self
     recentFilesTableView.action = #selector(self.onTableClicked)
-    addTrackingAreasIfMissing()
+    updateTrackingAreas()
     setMaterial()
 
     observedPrefKeys.forEach { key in
@@ -187,11 +187,16 @@ class InitialWindowController: WindowController, NSWindowDelegate {
   }
 
   func windowDidBecomeKey(_ notification: Notification) {
-    addTrackingAreasIfMissing()
+    updateTrackingAreas()
   }
 
   func windowWillClose(_ notification: Notification) {
     removeTrackingAreasIfPresent()
+  }
+
+  private func updateTrackingAreas() {
+    removeTrackingAreasIfPresent()
+    addTrackingAreasIfMissing()
   }
 
   private func addTrackingAreasIfMissing() {

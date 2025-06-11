@@ -228,7 +228,7 @@ class PlayerWindow: NSWindow {
     didSet {
       // An AppKit bug introduced in MacOS Sequoia causes tracking areas to stop responding after changing window level.
       // Standard workaround for Apple bugs: toggle off and then on again.
-      pwc?.updateWindowTrackingAreas()
+      pwc?.updateTrackingAreas()
     }
   }
 

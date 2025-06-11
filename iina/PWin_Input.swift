@@ -175,7 +175,7 @@ extension PlayerWindowController {
   // MARK: - Mouse / Trackpad event handling
 
   /// Called at window open. Set up mouse tracking areas
-  func updateWindowTrackingAreas() {
+  func updateTrackingAreas() {
     guard let window = self.window, let cv = window.contentView else { return }
 
     removeTrackingAreas()

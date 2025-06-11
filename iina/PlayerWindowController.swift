@@ -851,7 +851,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     refreshWindowOpenCloseAnimation()
 
     /// See `PWin_Input.swift` for handling of tracking area events.
-    updateWindowTrackingAreas()
+    updateTrackingAreas()
 
     // truncate middle for title
     if let attrTitle = titleTextField?.attributedStringValue.mutableCopy() as? NSMutableAttributedString, attrTitle.length > 0 {
