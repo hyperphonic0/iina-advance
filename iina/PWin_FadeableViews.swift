@@ -362,8 +362,7 @@ extension PlayerWindowController {
     return isPoint(pointInWindow, inAnyOf: fadeableViews.fadeables) || isPoint(pointInWindow, inAnyOf: fadeableViews.fadeablesInTopBar)
   }
 
-  /// Executed when `fadeableViews.hideTimer` fires
-  @objc func hideFadeableViewsAndCursor() {
+  func hideFadeableViewsAndCursor() {
     // don't hide UI when dragging control bar
     if currentDragObject != nil {
       log.trace{"Aborting hide of fadeable views: dragObject != nil"}
@@ -371,6 +370,12 @@ extension PlayerWindowController {
     }
 
     hideFadeableViews(hideCursorToo: true)
+  }
+
+  /// Executed when `fadeableViews.hideTimer` fires
+  @objc func hideTimeoutAction() {
+    guard !isMouseInsideFadeableView(mouseLocationInWindow) else { return }
+    hideFadeableViewsAndCursor()
   }
 
   // MARK: - Default album art visibility
