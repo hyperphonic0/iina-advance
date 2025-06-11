@@ -78,6 +78,32 @@ extension PlayerWindowController {
 
   // MARK: - PlayerWindowController
 
+  func showFadeableViewsForMouseLocation(_ pointInWindow: NSPoint) {
+    let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
+    let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(pointInWindow) && fadeableViews.topBarAnimationState == .hidden
+    // Check whether mouse is in OSC
+    let shouldRestartFadeTimer = !(isPoint(pointInWindow, inAnyOf: fadeableViews.fadeables) || isPoint(pointInWindow, inAnyOf: fadeableViews.fadeablesInTopBar))
+    if log.isTraceEnabled {
+      log.trace("ShouldRestartFadeTimer=\(shouldRestartFadeTimer.yesno) forceShowTopBar=\(forceShowTopBar.yesno)")
+    }
+    showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
+  }
+
+  // assumes mouse is in window
+  private func isMouseInTopBarArea(_ mouseLocInWindow: NSPoint) -> Bool {
+    guard currentLayout.topBarView.isShowable else {
+      // e.g. music mode
+      return false
+    }
+    guard let window = window, let contentView = window.contentView else { return false }
+    let heightThreshold = contentView.frame.height - currentLayout.topBarHeight
+    let isAboveThreshold = mouseLocInWindow.y >= heightThreshold
+    if log.isTraceEnabled {
+      log.trace{"Is mouse in top bar? mouseHeight=\(mouseLocInWindow.y) heightThreshold=\(heightThreshold) → \(isAboveThreshold.yn)"}
+    }
+    return isAboveThreshold
+  }
+
   /// Shows fadeables via fade-in animation
   func showFadeableViews(thenRestartFadeTimer restartFadeTimer: Bool = true,
                          duration: CGFloat = Constants.AnimationDuration.standard,
@@ -240,16 +266,20 @@ extension PlayerWindowController {
       guard currentTicket == fadeableViews.showHideTicketCount else {
         throw IINAError.cancelAnimationTransaction
       }
-      guard fadeableViews.animationState == .shown else { return }
+      guard fadeableViews.animationState == .shown else {
+        throw IINAError.cancelAnimationTransaction
+      }
 
       // Do not allow more tasks to be enqueued between now & the first task execution:
       fadeableViews.hideTimer.cancel()
+
+      if isMouseInsideFadeableView(mouseLocationInWindow) {
+        log.trace{"HIDE fadeables: cancelling; mouse is still in fadeable view"}
+        throw IINAError.cancelAnimationTransaction
+      }
     }
 
     let fadeTask = IINAAnimation.Task(duration: Constants.AnimationDuration.standard) { [self] in
-      if hideCursorToo {
-        hideCursor()
-      }
       fadeableViews.animationState = .willHide
       fadeableViews.topBarAnimationState = .willHide
       player.refreshSyncUITimer(logMsg: "Hiding fadeable views ")
@@ -314,9 +344,21 @@ extension PlayerWindowController {
         log.trace("Hiding SeekPreview from fadeable views timeout")
         hideSeekPreviewImmediately()
       }
+
+      let pointInWindow = mouseLocationInWindow
+      if isMouseInsideFadeableView(pointInWindow) {
+        log.verbose{"After hiding fadeables: mouse is still in fadeable view; showing again"}
+        showFadeableViewsForMouseLocation(pointInWindow)
+      } else if hideCursorToo {
+        hideCursor()
+      }
     }
 
     animationPipeline.submit([preTask, fadeTask, postTask])
+  }
+
+  func isMouseInsideFadeableView(_ pointInWindow: NSPoint) -> Bool {
+    return isPoint(pointInWindow, inAnyOf: fadeableViews.fadeables) || isPoint(pointInWindow, inAnyOf: fadeableViews.fadeablesInTopBar)
   }
 
   /// Executed when `fadeableViews.hideTimer` fires

@@ -1583,8 +1583,9 @@ extension PlayerWindowController {
       fadeableViews.applyVisibility(onTopButtonVisibility, to: button)
     }
 
+    // Indicate button change
     if showIfFadeable, onTopButtonVisibility == .showFadeableTopBar {
-      showFadeableViews()
+      showFadeableViews(forceShowTopBar: true)
     }
   }
 

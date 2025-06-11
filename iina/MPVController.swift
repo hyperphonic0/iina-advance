@@ -182,7 +182,7 @@ class MPVController: NSObject {
                checkActive: Bool = true, level: Logger.Level = .debug) -> Int32 {
     if checkActive {
       guard player.isActive else {
-        log.log("Skipping cmd (player is inactive): \(command.rawValue) \(args.compactMap{$0}.joined(separator: " "))", level: level)
+        log.log("Skipping cmd (player state=\(player.state) is not active): \(command.rawValue) \(args.compactMap{$0}.joined(separator: " "))", level: level)
         return MPV_ERROR_GENERIC.rawValue
       }
     }

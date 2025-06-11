@@ -254,11 +254,17 @@ extension PlayerWindowController {
     ] as [String : Any]]
   }
 
-  func isMouseEvent(_ event: NSEvent, inAnyOf views: [NSView?]) -> Bool {
+  func isMouseEvent(_ event: NSEvent, inAnyOf views: any Collection<NSView?>) -> Bool {
     return isPoint(event.locationInWindow, inAnyOf: views)
   }
 
-  func isPoint(_ pointInWindow: NSPoint, inAnyOf views: [NSView?]) -> Bool {
+  func isPoint(_ pointInWindow: NSPoint, inAnyOf views: any Collection<NSView>) -> Bool {
+    return views.reduce(false, { (result, view) in
+      return result || view.isMousePoint(view.convert(pointInWindow, from: nil), in: view.bounds)
+    })
+  }
+
+  func isPoint(_ pointInWindow: NSPoint, inAnyOf views: any Collection<NSView?>) -> Bool {
     return views.filter { $0 != nil }.reduce(false, { (result, view) in
       return result || view!.isMousePoint(view!.convert(pointInWindow, from: nil), in: view!.bounds)
     })
@@ -569,7 +575,7 @@ extension PlayerWindowController {
 
     switch area {
     case .playerWindow:
-      showFadeableViews(duration: 0)
+      showFadeableViewsForMouseLocation(mouseLocationInWindow)
     default:
       break
     }
@@ -644,14 +650,7 @@ extension PlayerWindowController {
     // Check if hovering over volume slider, and add/remove its hover effect
     volumeSliderCell.refreshVolumeSliderHoverEffect()
 
-    let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
-    let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(pointInWindow) && fadeableViews.topBarAnimationState == .hidden
-    // Check whether mouse is in OSC
-    let shouldRestartFadeTimer = !isPoint(pointInWindow, inAnyOf: [currentControlBar, titleBarView])
-    if log.isTraceEnabled {
-      log.trace("ShouldRestartFadeTimer=\(shouldRestartFadeTimer.yesno) forceShowTopBar=\(forceShowTopBar.yesno)")
-    }
-    showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
+    showFadeableViewsForMouseLocation(pointInWindow)
   }
 
   // Do not show hover cursor if over a button or other view which overlaps PlaySlider.
@@ -703,21 +702,6 @@ extension PlayerWindowController {
 
   func isMouseActuallyInside(view: NSView) -> Bool {
     return isPoint(mouseLocationInWindow, inAnyOf: [view])
-  }
-
-  // assumes mouse is in window
-  private func isMouseInTopBarArea(_ mouseLocInWindow: NSPoint) -> Bool {
-    guard currentLayout.topBarView.isShowable else {
-      // e.g. music mode
-      return false
-    }
-    guard let window = window, let contentView = window.contentView else { return false }
-    let heightThreshold = contentView.frame.height - currentLayout.topBarHeight
-    let isAboveThreshold = mouseLocInWindow.y >= heightThreshold
-    if log.isTraceEnabled {
-      log.trace{"Is mouse in top bar? mouseHeight=\(mouseLocInWindow.y) heightThreshold=\(heightThreshold) → \(isAboveThreshold.yn)"}
-    }
-    return isAboveThreshold
   }
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {

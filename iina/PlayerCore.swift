@@ -538,7 +538,7 @@ class PlayerCore: NSObject {
 
         mpv.queue.async { [self] in
           // Send load file command
-          mpv.command(.loadfile, args: [path])
+          mpv.command(.loadfile, args: [path], checkActive: false)
 
           if case .restoring(let priorState) = windowController.sessionState {
             priorState.restoreMpvProperties(to: self)

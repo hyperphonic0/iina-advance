@@ -767,10 +767,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func restoreFromMiscWindowBools(_ priorState: PlayerSaveState) {
+    let window = window!
     let isOnTop = priorState.bool(for: .isOnTop) ?? false
     setWindowFloatingOnTop(isOnTop, from: currentLayout, updateOnTopStatus: true)
 
-    guard let stateString = priorState.string(for: .miscWindowBools) else { return }
+    guard let stateString = priorState.string(for: .miscWindowBools) else {
+      log.error{"Failed to restore from miscWindowBools: pref not found! Will default to visible window."}
+      window.orderOut(self)  // order out until load is complete
+      return
+    }
 
     let splitted: [String] = stateString.split(separator: ",").map{String($0)}
     guard splitted.count >= 5,
@@ -779,14 +784,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
        let isInPip = Bool.yn(splitted[2]),
        let isWindowMiniaturizedDueToPip = Bool.yn(splitted[3]),
           let isPausedPriorToInteractiveMode = Bool.yn(splitted[4]) else {
-      log.error{"Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)"}
+      log.error{"Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)! Will default to visible window."}
+      window.orderOut(self)
       return
     }
 
     if !isMiniaturized && !isWindowMiniaturizedDueToPip {
       // Hide window during init. When done, showWindow will be called
       log.verbose("Ordering out window while restoring")
-      window!.orderOut(self)
+      window.orderOut(self)
     }
 
     // Process PIP options first, to make sure it's not miniturized due to PIP
@@ -806,8 +812,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     } else if isMiniaturized {
       // Not in PIP, but miniturized
       // Run in queue to avert race condition with window load
-      animationPipeline.submitInstantTask({ [self] in
-        window?.miniaturize(nil)
+      animationPipeline.submitInstantTask({
+        window.miniaturize(nil)
       })
     }
     if isPausedPriorToInteractiveMode {
@@ -2038,7 +2044,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       log.verbose{"Ignoring request to set onTop=\(onTop.yn): currently in full screen"}
       return
     }
-    log.verbose{"Setting window onTop=\((!onTop).yn) → \(onTop.yn), updateStatus=\(updateOnTopStatus.yn)"}
+    log.verbose{"Setting window onTop ≔ \(onTop.yn), updateStatus=\(updateOnTopStatus.yn)"}
 
     window?.level = onTop ? .iinaFloating : .normal
     if updateOnTopStatus {
