@@ -62,7 +62,9 @@ extension PlayerWindowController {
     windowScrollWheel = PWinScrollWheel(self)
 
     playlistView.windowController = self
+    playlistView.view.idString = "PlaylistView"
     pluginView.windowController = self
+    pluginView.view.idString = "PluginView"
     quickSettingView.windowController = self
 
     /// This will init mpv, but we will not add `videoView` until setting the initial layout (see updateHiddenViewsAndConstraints)

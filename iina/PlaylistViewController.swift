@@ -1368,7 +1368,8 @@ class ChapterTableCellView: NSTableCellView {
 
 class PlaylistView: NSView, DraggableObject {
   override func mouseDragged(with event: NSEvent) {
-    // Do nothing. Prevent infinite recursion
+    // Send to view controller (above)
+    nextResponder?.mouseDragged(with: event)
   }
 
   func cancelDrag() {

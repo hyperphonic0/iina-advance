@@ -86,6 +86,7 @@ extension PlayerWindowController {
     if log.isTraceEnabled {
       log.trace("ShouldRestartFadeTimer=\(shouldRestartFadeTimer.yesno) forceShowTopBar=\(forceShowTopBar.yesno)")
     }
+    hideCursorTimer.cancel()
     showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
   }
 
