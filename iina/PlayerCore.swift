@@ -1428,8 +1428,18 @@ class PlayerCore: NSObject {
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
     guard videoGeo.userAspectLabel != aspectLabel else { return }
 
-    // Send update to mpv
-    let mpvValue = Aspect.mpvVideoAspectOverride(fromAspectLabel: aspectLabel)
+    sendVideoAspectOverrideToMpv(aspectLabel: aspectLabel)
+  }
+
+  func sendVideoAspectOverrideToMpv(aspectLabel: String) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    var mpvValue = Aspect.mpvVideoAspectOverride(fromAspectLabel: aspectLabel)
+    if mpvValue == Constants.String.mpvNo {
+      /// mpv doc says that `-1` means: `strictly prefer the container aspect ratio`.
+      // Note that the mpv doc says this value is deprecated, and that "no" should be used instead,
+      // but that does not work properly for some videos.
+      mpvValue = "-1.0"
+    }
     log.verbose{"Setting mpv video-aspect-override ≔ \(mpvValue.quoted)"}
     mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
   }

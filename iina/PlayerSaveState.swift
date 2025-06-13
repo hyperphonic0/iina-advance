@@ -775,8 +775,7 @@ struct PlayerSaveState: CustomStringConvertible {
     mpv.setInt(MPVOption.Video.videoRotate, self.geoSet.video.userRotation)
 
     let userAspectLabel = self.geoSet.video.userAspectLabel
-    let mpvValue = Aspect.mpvVideoAspectOverride(fromAspectLabel: userAspectLabel)
-    mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
+    player.sendVideoAspectOverrideToMpv(aspectLabel: userAspectLabel)
 
     if let brightness = int(for: .brightness) {
       mpv.setInt(MPVOption.Equalizer.brightness, brightness)

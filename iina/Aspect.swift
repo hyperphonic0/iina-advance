@@ -126,9 +126,13 @@ class Aspect: NSObject {
   /// First use: `let aspectLabel = bestLabelFor(aspectString)`
   static func mpvVideoAspectOverride(fromAspectLabel aspectLabel: String) -> String {
     switch aspectLabel {
-    case defaultIdentifier:
+    case defaultIdentifier, "":
       return Constants.String.mpvNo
     default:
+      if let doubleValue = Double(aspectLabel), (doubleValue == 0.0 || doubleValue == -1.0) {
+        // Legacy values. Normalize to "no"
+        return Constants.String.mpvNo
+      }
       return aspectLabel
     }
   }

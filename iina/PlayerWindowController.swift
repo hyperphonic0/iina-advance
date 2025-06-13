@@ -1712,7 +1712,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     player.mpv.queue.async { [self] in
       let oldVideoGeo = geo.video
-      log.verbose("Entering interactive mode: \(mode)")
+      log.verbose{"Entering interactive mode: \(mode)"}
 
       if oldVideoGeo.streamRotation != 0 {
         log.warn("FIXME: Video codec rotation is not yet supported in interactive mode! Any selection chosen will be completely wrong!")
