@@ -21,6 +21,7 @@
                 <outlet property="playlistTableView" destination="xIa-sI-0Xn" id="JVO-9u-NdG"/>
                 <outlet property="removeBtn" destination="xKm-J1-NZs" id="cgl-XX-dEK"/>
                 <outlet property="shuffleBtn" destination="xhU-qn-3aa" id="Zof-fw-Jg4"/>
+                <outlet property="sortBtn" destination="Z8a-Hz-sYr" id="gZ8-PB-SvR"/>
                 <outlet property="subPopover" destination="nSf-Kp-eDQ" id="PUs-AK-r1c"/>
                 <outlet property="tabHeightConstraint" destination="So5-Pf-aJb" id="EFJ-yr-PVa"/>
                 <outlet property="tabView" destination="Yym-Zw-Hd8" id="xXL-Ne-hHh"/>
@@ -349,24 +350,40 @@
                                                     <action selector="addToPlaylistBtnAction:" target="-2" id="glx-Rv-Iri"/>
                                                 </connections>
                                             </button>
+                                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Z8a-Hz-sYr">
+                                                <rect key="frame" x="50" y="0.0" width="24" height="24"/>
+                                                <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrow.up.arrow.down" catalog="system" imagePosition="only" alignment="center" lineBreakMode="truncatingTail" imageScaling="proportionallyDown" inset="2" id="0v5-1t-SKp">
+                                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                    <font key="font" metaFont="system"/>
+                                                </buttonCell>
+                                                <constraints>
+                                                    <constraint firstAttribute="width" constant="24" id="ypv-WK-kxb"/>
+                                                </constraints>
+                                                <connections>
+                                                    <action selector="sortingBtnAction:" target="-2" id="ONE-Qm-wg2"/>
+                                                </connections>
+                                            </button>
                                         </subviews>
                                         <constraints>
                                             <constraint firstAttribute="trailing" secondItem="7my-AM-8Ts" secondAttribute="trailing" constant="2" id="1Sc-nK-8IE"/>
                                             <constraint firstItem="icQ-T6-fV9" firstAttribute="centerY" secondItem="X2W-MY-vYB" secondAttribute="centerY" id="6Cx-Tb-fT5"/>
+                                            <constraint firstAttribute="bottom" secondItem="Z8a-Hz-sYr" secondAttribute="bottom" id="7S5-a0-pVn"/>
                                             <constraint firstAttribute="bottom" secondItem="7my-AM-8Ts" secondAttribute="bottom" id="C8I-ns-vw9"/>
                                             <constraint firstAttribute="bottom" secondItem="W9C-Z7-hiI" secondAttribute="bottom" id="DTj-rn-hhY"/>
                                             <constraint firstItem="W9C-Z7-hiI" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="icQ-T6-fV9" secondAttribute="trailing" constant="4" id="EMO-ZA-wUc"/>
                                             <constraint firstItem="xhU-qn-3aa" firstAttribute="top" secondItem="X2W-MY-vYB" secondAttribute="top" id="Enh-zP-tlw"/>
+                                            <constraint firstItem="Z8a-Hz-sYr" firstAttribute="top" secondItem="X2W-MY-vYB" secondAttribute="top" id="IMh-yl-Fnm"/>
                                             <constraint firstAttribute="bottom" secondItem="xKm-J1-NZs" secondAttribute="bottom" id="L7x-2J-yyG"/>
                                             <constraint firstItem="7my-AM-8Ts" firstAttribute="top" secondItem="X2W-MY-vYB" secondAttribute="top" id="LE8-YD-ghx"/>
                                             <constraint firstItem="icQ-T6-fV9" firstAttribute="centerX" secondItem="X2W-MY-vYB" secondAttribute="centerX" id="LSa-Bd-2wQ"/>
+                                            <constraint firstItem="icQ-T6-fV9" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Z8a-Hz-sYr" secondAttribute="trailing" constant="4" id="QUU-80-mbD"/>
                                             <constraint firstItem="IHI-5g-OMg" firstAttribute="top" secondItem="X2W-MY-vYB" secondAttribute="top" id="VVG-ZO-opa"/>
-                                            <constraint firstItem="xhU-qn-3aa" firstAttribute="leading" secondItem="IHI-5g-OMg" secondAttribute="trailing" id="eao-Tj-yAh"/>
+                                            <constraint firstItem="Z8a-Hz-sYr" firstAttribute="leading" secondItem="xhU-qn-3aa" secondAttribute="trailing" id="XFm-aZ-9xb"/>
+                                            <constraint firstItem="xhU-qn-3aa" firstAttribute="leading" secondItem="IHI-5g-OMg" secondAttribute="trailing" id="beQ-YD-Oxf"/>
                                             <constraint firstItem="xKm-J1-NZs" firstAttribute="leading" secondItem="W9C-Z7-hiI" secondAttribute="trailing" id="lwV-Uv-v1i"/>
                                             <constraint firstAttribute="bottom" secondItem="xhU-qn-3aa" secondAttribute="bottom" id="mPm-LR-ZkL"/>
                                             <constraint firstItem="7my-AM-8Ts" firstAttribute="leading" secondItem="xKm-J1-NZs" secondAttribute="trailing" id="pEm-Ne-DNg"/>
                                             <constraint firstItem="xKm-J1-NZs" firstAttribute="top" secondItem="X2W-MY-vYB" secondAttribute="top" id="q0k-4V-oj8"/>
-                                            <constraint firstItem="icQ-T6-fV9" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="xhU-qn-3aa" secondAttribute="trailing" constant="4" id="qGM-Ip-dO0"/>
                                             <constraint firstItem="W9C-Z7-hiI" firstAttribute="top" secondItem="X2W-MY-vYB" secondAttribute="top" id="qUl-cf-d3q"/>
                                             <constraint firstItem="IHI-5g-OMg" firstAttribute="leading" secondItem="X2W-MY-vYB" secondAttribute="leading" constant="2" id="shV-bB-ELD"/>
                                             <constraint firstAttribute="bottom" secondItem="IHI-5g-OMg" secondAttribute="bottom" id="uNy-QA-naW"/>
@@ -654,6 +671,7 @@
         </menu>
     </objects>
     <resources>
+        <image name="arrow.up.arrow.down" catalog="system" width="18" height="15"/>
         <image name="loop" width="15" height="15"/>
         <image name="loop_dark" width="15" height="15"/>
         <image name="minus" width="14" height="14"/>

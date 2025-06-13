@@ -3026,7 +3026,7 @@ class PlayerCore: NSObject {
     refreshSyncUITimer()
   }
 
-  // MARK: - Utils
+  // MARK: - Track Meta
 
   func getMediaTitle(withExtension: Bool = true) -> String {
     if let mediaTitle = mpv.getString(MPVProperty.mediaTitle) {

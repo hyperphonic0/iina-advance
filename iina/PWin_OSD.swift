@@ -950,8 +950,3 @@ extension PlayerWindowController {
     osd.textSizeLast = osdTextSize
   }
 }
-
-private func isActive(_ constraint: NSLayoutConstraint?) -> Bool {
-  guard let constraint else { return false }
-  return constraint.isActive
-}

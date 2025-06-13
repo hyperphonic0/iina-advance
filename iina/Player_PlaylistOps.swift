@@ -196,7 +196,7 @@ extension PlayerCore {
     var prevInsertCount = 0
     for (itemToInsertIndex, itemToInsertPath) in itemsAtIndexes {
       let insertIndex = itemToInsertIndex + prevInsertCount
-      let returnCode = mpv.command(.loadfile, args: [itemToInsertPath, "insert-at", "\(insertIndex)"], checkError: false)
+      let returnCode = mpv.playlistInsert(itemToInsertPath, index: insertIndex)
       guard returnCode == 0 else {
         playlistErrorDidOccur(returnCode, opDesc: "insert playlist item \(prevInsertCount) / \(itemsAtIndexes.count)")
         return
@@ -288,7 +288,7 @@ extension PlayerCore {
       guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistBefore) else { return }
 
       for (srcIndex, dstIndex) in indexPairs {
-        let returnCode = mpv.command(.playlistMove, args: ["\(srcIndex)", "\(dstIndex)"], checkError: false, level: .verbose)
+        let returnCode = mpv.playlistMove(srcIndex, to: dstIndex)
         guard returnCode == 0 else {
           return playlistErrorDidOccur(returnCode, opDesc: "move playlist item \(srcIndex) → \(dstIndex)")
         }
@@ -386,7 +386,7 @@ extension PlayerCore {
       for origIndex in rowIndexes {
         let index = origIndex - countRemoved
         log.verbose("[Playlist] Sending mpv remove cmd for row \(index)")
-        let returnCode = mpv.command(.playlistRemove, args: [index.description], checkError: false)
+        let returnCode = mpv.playlistRemove(index)
         // If error occurred, report using callback, reload state, and do not continue
         guard returnCode == 0 else {
           return playlistErrorDidOccur(returnCode, opDesc: "remove playlist item \(countRemoved) / \(rowIndexes.count)")
@@ -427,6 +427,75 @@ extension PlayerCore {
           }, redo: { [self] in
             // Almost the same code as above. But don't want to re-register an undo action
             removePlaylistRows(rowIndexes, .ignoreUndoRedo)
+          })
+        }
+      }
+    }
+  }
+
+  func playlistReorder(newPlaylist newPlaylistRows: [PlaybackID], _ undoOption: UndoOption = .registerUndoRedo) {
+    let oldPlaylistRows = info.playlist
+
+    guard Set(oldPlaylistRows) == Set(newPlaylistRows) else { return }
+    if oldPlaylistRows == newPlaylistRows { return }
+
+    let tableUIChange = TableUIChange.builder.buildDiff(oldRows: oldPlaylistRows, newRows: newPlaylistRows)
+
+    mpv.queue.async { [self] in
+      guard syncAndValidatePlaylist(expectedPlaylist: oldPlaylistRows) else { return }
+      log.verbose("[Playlist] Reorder playlist requested")
+
+      let clearRC = mpv.command(.playlistClear)
+      guard clearRC == 0 else {
+        return playlistErrorDidOccur(clearRC, opDesc: "clear playlist to reorder")
+      }
+
+      guard let currentURL = info.currentPlayback?.url, let currentPlaying = newPlaylistRows.firstIndex(where: { $0.url == currentURL } ) else {
+        for item in newPlaylistRows {
+          let returnCode = mpv.playlistAppend(item.path)
+          guard returnCode == 0 else {
+            return playlistErrorDidOccur(returnCode, opDesc: "reorder playlist (with no currentURL)")
+          }
+        }
+        return
+      }
+
+      for i in (0..<currentPlaying).reversed() {
+        let returnCode = mpv.playlistInsert(newPlaylistRows[i].path, index: 0)
+        guard returnCode == 0 else {
+          return playlistErrorDidOccur(returnCode, opDesc: "insert to reorder playlist")
+        }
+      }
+      for i in currentPlaying + 1..<newPlaylistRows.count {
+        let returnCode = mpv.playlistAppend(newPlaylistRows[i].path)
+        guard returnCode == 0 else {
+          return playlistErrorDidOccur(returnCode, opDesc: "append to reorder playlist")
+        }
+      }
+
+      guard syncAndValidatePlaylist(expectedPlaylist: newPlaylistRows) else { return }
+
+      displayedPlaylist = info.playlist                                          // update cached data
+      tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // update UI
+      postNotification(.iinaPlaylistChanged)
+      saveState()
+
+      // Register undo/redo?
+      switch undoOption {
+      case .ignoreUndoRedo:
+        break
+      case .clearUndoStack:
+        log.debug{"[Playlist] Clearing undo stack after 'remove'"}
+        undoHelper.clearUndoes()
+      case .registerUndoRedo:
+        DispatchQueue.main.async { [self] in  // Must reference UndoManager only in main(?)
+          undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
+            mpv.queue.async { [self] in
+              playlistReorder(newPlaylist: oldPlaylistRows, .ignoreUndoRedo)
+            }
+          }, redo: { [self] in
+            // Don't want to re-register an undo action
+            playlistReorder(newPlaylist: newPlaylistRows, .ignoreUndoRedo)
           })
         }
       }
