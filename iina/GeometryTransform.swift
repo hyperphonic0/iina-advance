@@ -138,7 +138,7 @@ struct GeometryTransform {
         cxt.inputLayout = pwc.currentLayout
 
         // Update context's geo with current window frame
-        cxt.oldGeo = pwc.buildGeoSet(from: cxt.outputLayout, baseGeoSet: cxt.oldGeo, forceWinFrameUpdate: !player.isRestoring)
+        cxt.oldGeo = pwc.buildGeoSet(from: cxt.outputLayout, baseGeoSet: cxt.oldGeo, forceWinFrameUpdate: !cxt.sessionState.isStartingSession)
 
         /// 3. (Optional) Transition window to initial layout. Must exexcute before `buildApplyTransformTasks`.
         /// Will return` []` if not applicable.

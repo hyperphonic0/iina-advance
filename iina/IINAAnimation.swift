@@ -9,7 +9,7 @@
 import Foundation
 
 class IINAAnimation {
-  static let disableActionsWorkaround = true
+  static let disableActionsWorkaround = false
   typealias TaskFunc = (() throws -> Void)
 
   // MARK: Misc static stuff

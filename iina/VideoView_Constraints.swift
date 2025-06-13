@@ -284,24 +284,24 @@ extension VideoView {
     }
 
     guard let geometry, geometry.isVideoVisible else {
-      log.verbose("VideoView: no geometry or video not visible; will remove constraints")
+      log.verbose{"VideoView: \(geometry == nil ? "no geometry" : "video not visible"); will remove constraints"}
       removeVideoConstraints()
       return
     }
 
-    if player.windowController.pip.status == .inPIP {
-      log.verbose("VideoView: currently in PiP. Updating aspectRatio in PiP controller to: \(geometry.video.videoSizeCAR)")
-      player.windowController.pip.controller.aspectRatio = geometry.video.videoSizeCAR
-      return
-    }
     guard player.windowController.pip.status == .notInPIP else {
-      log.verbose("VideoView: currently in PiP; skipping constraints")
+      if player.windowController.pip.status == .inPIP {
+        log.verbose("VideoView: currently in PiP. Skipping constraints update & setting aspectRatio in PiP controller ≔ \(geometry.video.videoSizeCAR)")
+        player.windowController.pip.controller.aspectRatio = geometry.video.videoSizeCAR
+      } else {
+        log.debug("VideoView: currently in PiP; skipping constraints update")
+      }
       return
     }
 
     guard let superview else {
       // Can happen when in music mode with video disabled
-      log.verbose("VideoView: not adding constraints: no superview")
+      log.verbose("VideoView: no superview; skipping constraints update")
       return
     }
 
