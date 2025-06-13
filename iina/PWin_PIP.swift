@@ -144,7 +144,6 @@ extension PlayerWindowController: PIPViewControllerDelegate {
                           then doAfter: (() -> Void)? = nil) {
     guard let window else { return }
     pip.status = .inPIP
-//    showFadeableViews()
 
     do {
       videoView.lockAndSetOpenGLContext()

@@ -1859,7 +1859,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
 
       if let doAfter {
-        tasks.append(IINAAnimation.Task({
+        tasks.append(.instantTask({
           doAfter()
         }))
       }

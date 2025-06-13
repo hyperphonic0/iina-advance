@@ -520,6 +520,7 @@ struct GeometryTransform {
     fileprivate func vidTrackChanged() -> VideoGeometry? {
       assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
+      /// See `VideoGeo_Sync.swift`
       guard let videoGeo = syncVideoParamsFromMpv() else { return nil }
       log.debug{"[GeoTF:\(name)] Derived videoGeo \(videoGeo)"}
       return videoGeo

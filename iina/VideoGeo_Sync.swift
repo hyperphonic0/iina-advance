@@ -88,12 +88,8 @@ extension GeometryTransform.Context {
     let codecAspect = String(videoDecParams.aspect)
 
     // Sync video-aspect-override
-    let userAspectLabel: String
-    if let mpvVideoAspectOverride = player.mpv.getString(MPVOption.Video.videoAspectOverride) {
-      userAspectLabel = Aspect.bestLabelFor(mpvVideoAspectOverride)
-    } else {
-      userAspectLabel = ""
-    }
+    let mpvVideoAspectOverride = player.mpv.getString(MPVOption.Video.videoAspectOverride) ?? Aspect.defaultIdentifier
+    let userAspectLabel = Aspect.bestLabelFor(mpvVideoAspectOverride)
 
     // Sync video's raw dimensions from mpv. This is especially important for streaming videos, which won't have cached videoMeta.
     // Use video-dec-params for this, as video-out-params sometimes changes.
@@ -157,37 +153,48 @@ extension GeometryTransform.Context {
                                         videoSizeDisplayOverride: nil)
 
     // FIXME: audioStatus==notAudio for playlist which auto-plays audio
+    assert(!currentMediaAudioStatus.isAudio && (vidTrackID != 0),
+           "Unexpected currentMediaAudioStatus=\(currentMediaAudioStatus) for vidTrackID=\(vidTrackID)")
 
-    assert(!currentMediaAudioStatus.isAudio && (vidTrackID != 0), "Unexpected currentMediaAudioStatus=\(currentMediaAudioStatus) for vidTrackID=\(vidTrackID)")
-    let dwidth = videoOutParams.dw
-    let dheight = videoOutParams.dh
-    if dwidth <= 0 || dheight <= 0 {
-      player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-A failed: dw (\(dwidth)) or dh (\(dheight)) is 0 in video-out-params! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect)"}
-      return videoGeo
+    // dw, dh: the actual displayed dimensions. Usually we can grab these from video-out-params, but sometimes it can be wrong,
+    // so then try to infer from video-dec-params.
+    let dwidth: Int
+    let dheight: Int
+    let mpvHasAspectOverride = videoDecParams.aspect != videoOutParams.aspect
+    let useDSizeFromDecParams = isNotCropped && mpvHasAspectOverride && (userAspectLabel == Aspect.defaultIdentifier)
+    if useDSizeFromDecParams {
+      dwidth = videoDecParams.dw
+      dheight = videoDecParams.dh
     } else {
-      let videoSizeDisplay: CGSize
-      if newVideoGeo.isWidthSwappedWithHeightByTotalRotation {
-        videoSizeDisplay = CGSize(width: dheight, height: dwidth)
-      } else {
-        videoSizeDisplay = CGSize(width: dwidth, height: dheight)
-      }
+      dwidth = videoOutParams.dw
+      dheight = videoOutParams.dh
+    }
+    guard dwidth > 0, dheight > 0 else {
+      player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-A failed: dw (\(dwidth)) or dh (\(dheight)) is 0 in \(useDSizeFromDecParams ? "video-dec-params" : "video-out-params")! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect)"}
+      return videoGeo
+    }
+    let videoSizeDisplay: CGSize
+    if newVideoGeo.isWidthSwappedWithHeightByTotalRotation {
+      videoSizeDisplay = CGSize(width: dheight, height: dwidth)
+    } else {
+      videoSizeDisplay = CGSize(width: dwidth, height: dheight)
+    }
 
-      if Logger.isErrorEnabled {
-        let ours = newVideoGeo.videoSizeCA
-        // Allow for almost 1% variance from mpv due to rounding or error margin
-        let wDiff = abs(1 - (ours.width / CGFloat(dwidth)))
-        let hDiff = abs(1 - (ours.height / CGFloat(dheight)))
-        if wDiff >= 0.01 || hDiff >= 0.01 {
-          player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-B failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours))! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect) videoSizeD=\(videoSizeDisplay)|\(videoSizeDisplay.mpvAspect)"}
-        }
+    if Logger.isErrorEnabled {
+      let ours = newVideoGeo.videoSizeCA
+      // Allow for almost 1% variance from mpv due to rounding or error margin
+      let wDiff = abs(1 - (ours.width / CGFloat(dwidth)))
+      let hDiff = abs(1 - (ours.height / CGFloat(dheight)))
+      if wDiff >= 0.01 || hDiff >= 0.01 {
+        player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-B failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours))! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect) videoSizeD=\(videoSizeDisplay)|\(videoSizeDisplay.mpvAspect) (from \(useDSizeFromDecParams ? "dec-params" : "out-params"))"}
       }
+    }
 
-      newVideoGeo = newVideoGeo.clone(videoSizeDisplayOverride: videoSizeDisplay)
+    newVideoGeo = newVideoGeo.clone(videoSizeDisplayOverride: videoSizeDisplay)
 
-      if !currentPlayback.isNetworkResource {
-        // Update cache with latest video params
-        MediaMetaCache.shared.updateCachedVideoMeta(id: currentPlayback.id, newVideoGeo, log)
-      }
+    if !currentPlayback.isNetworkResource {
+      // Update cache with latest video params
+      MediaMetaCache.shared.updateCachedVideoMeta(id: currentPlayback.id, newVideoGeo, log)
     }
 
     // Compare aspects by numbers for simplicity
