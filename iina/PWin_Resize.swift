@@ -93,8 +93,6 @@ extension PlayerWindowController {
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
     log.verbose{"[WinWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)"}
 
-    videoView.enterAsynchronousMode()
-
     if lockViewportToVideoSize && inLiveResize {
       /// Notes on the trickiness of live window resize:
       /// 1. We need to decide whether to (A) keep the width fixed, and resize the height, or (B) keep the height fixed, and resize the width.
@@ -152,7 +150,8 @@ extension PlayerWindowController {
 
       let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
       newWindowSize = newGeometry.windowFrame.size
-      videoView.apply(newGeometry)
+
+      resizeWindowSubviews(using: newGeometry, updateVideoView: true)
       // fall through
 
     case .musicMode:
@@ -171,6 +170,58 @@ extension PlayerWindowController {
 
     log.verbose{"[WinWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)"}
     return newWindowSize
+  }
+
+  /**
+   By default, `setFrame()` has its own implicit animation, and this can create an undesirable effect when combined with other animations.
+   This function uses a `0` duration animation via the `animationResizeTime` callback to effectively remove the implicit
+   default animation.
+   • Also resizes window subviews.
+   • It will still animate if used inside an `NSAnimationContext` or `IINAAnimation.Task` with non-zero duration.
+   • If `notify` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
+   */
+  func updateWindowFrameAndSubviews(using geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
+    let window = (window as? PlayerWindow)!
+    resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
+
+    guard !window.frame.equalTo(geometry.windowFrame) else {
+      log.verbose("[PWin.setFrame] No change to windowFrame; returning")
+      return
+    }
+
+    log.verbose{"[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)"}
+    window.useZeroDurationForNextResize = true
+    window.setFrame(geometry.windowFrame, display: true, animate: notify)
+  }
+
+  /// Resizes *only* the subviews in the window, not the window frame. Updates other state needed when resizing window.
+  func resizeWindowSubviews(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
+    videoView.enterAsynchronousMode()
+    if updateVideoView {
+      // Not sure if this helps fix the aspect constraint transition
+      videoView.apply(newGeometry)
+    }
+
+    // Update floating control bar position if applicable
+    adjustFloatingControllerOrigin(for: newGeometry)
+
+    if newGeometry.mode == .musicMode {
+      miniPlayer.loadIfNeeded()
+      // Re-evaluate space requirements for labels. May need to start scrolling.
+      // Do not save musicModeGeo here! Pinch gesture will handle itself. Drag-to-resize will be handled elsewhere.
+      miniPlayer.resetScrollingLabels()
+    } else if newGeometry.mode.isInteractiveMode {
+      // Update interactive mode selectable box size. Origin is relative to viewport origin
+      let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
+      cropSettingsView?.cropBoxView.resized(with: newVideoRect)
+    }
+
+    if osd.animationState == .shown {
+      updateOSDTextSize(from: newGeometry)
+      if player.info.isFileLoadedAndSized {
+        setOSDViews()
+      }
+    }
   }
 
   /// NSWindowDelegate: start live resize
@@ -224,7 +275,7 @@ extension PlayerWindowController {
       resizeWindowSubviews(using: geo)
     } else {
       /// This will also update `videoView`
-      player.window.setFrameImmediately(geo, notify: false)
+      updateWindowFrameAndSubviews(using: geo, notify: false)
     }
 
     if !isFullScreen && !isTransientResize {
@@ -236,36 +287,6 @@ extension PlayerWindowController {
     }
 
     player.events.emit(.windowResized, data: window.frame)
-  }
-
-  /// Resizes *only* the subviews in the window, not the window frame. Updates other state needed when resizing window.
-  func resizeWindowSubviews(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
-    videoView.enterAsynchronousMode()
-    if updateVideoView {
-      // Not sure if this helps fix the aspect constraint transition
-      videoView.apply(newGeometry)
-    }
-    
-    // Update floating control bar position if applicable
-    adjustFloatingControllerOrigin(for: newGeometry)
-    
-    if newGeometry.mode == .musicMode {
-      miniPlayer.loadIfNeeded()
-      // Re-evaluate space requirements for labels. May need to start scrolling.
-      // Do not save musicModeGeo here! Pinch gesture will handle itself. Drag-to-resize will be handled elsewhere.
-      miniPlayer.resetScrollingLabels()
-    } else if newGeometry.mode.isInteractiveMode {
-      // Update interactive mode selectable box size. Origin is relative to viewport origin
-      let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
-      cropSettingsView?.cropBoxView.resized(with: newVideoRect)
-    }
-    
-    if osd.animationState == .shown {
-      updateOSDTextSize(from: newGeometry)
-      if player.info.isFileLoadedAndSized {
-        setOSDViews()
-      }
-    }
   }
 
   // MARK: - Other window geometry functions
@@ -433,7 +454,7 @@ extension PlayerWindowController {
     updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
 
     log.verbose{"Calling setFrame for legacyFullScreen, to \(geometry)"}
-    player.window.setFrameImmediately(geometry)
+    updateWindowFrameAndSubviews(using: geometry)
   }
 
    func buildApplyFullScreenGeoTasks(fsGeo: PWinGeometry, newWindowedGeo: PWinGeometry,
@@ -484,7 +505,7 @@ extension PlayerWindowController {
 
         /// Make sure this is up-to-date. Do this before `setFrame`
         if !isWindowHidden {
-          player.window.setFrameImmediately(newGeometry)
+          updateWindowFrameAndSubviews(using: newGeometry)
         } else {
           videoView.apply(newGeometry)
         }
@@ -639,7 +660,7 @@ extension PlayerWindowController {
     let convertedGeo = geometry.toPWinGeometry()
 
     if setFrame {
-      player.window.setFrameImmediately(convertedGeo)
+      updateWindowFrameAndSubviews(using: convertedGeo)
     } else {
       if geometry.isVideoVisible {
         /// Make sure to call `apply` AFTER `updateVideoViewHeightConstraint` if video shown

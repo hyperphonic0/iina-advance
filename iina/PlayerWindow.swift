@@ -9,7 +9,7 @@
 import Cocoa
 
 class PlayerWindow: NSWindow {
-  private var useZeroDurationForNextResize = false
+  var useZeroDurationForNextResize = false
   private var keyDownCount: Int = 0
   private var keyUpCount: Int = 0
 
@@ -35,26 +35,6 @@ class PlayerWindow: NSWindow {
   private var isMusicMode: Bool { pwc?.isInMiniPlayer ?? true }
 
   // MARK: setFrame
-
-  /**
-   By default, `setFrame()` has its own implicit animation, and this can create an undesirable effect when combined with other animations.
-   This function uses a `0` duration animation to effectively remove the implicit default animation.
-   It will still animate if used inside an `NSAnimationContext` or `IINAAnimation.Task` with non-zero duration.
-
-   Note: if `notify` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
-   */
-  func setFrameImmediately(_ geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
-    pwc?.resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
-
-    guard !frame.equalTo(geometry.windowFrame) else {
-      log.verbose("[PWin.setFrame] No change to windowFrame; returning")
-      return
-    }
-
-    log.verbose{"[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)"}
-    useZeroDurationForNextResize = true
-    setFrame(geometry.windowFrame, display: true, animate: notify)
-  }
 
   override func animationResizeTime(_ newFrame: NSRect) -> TimeInterval {
     let time: TimeInterval

@@ -203,7 +203,7 @@ extension PlayerWindowController {
         let intermediateGeo = transition.outputGeometry.clone(windowFrame: intermediateWindowFrame,
                                                               topMarginHeight: 0,
                                                               outsideBars: MarginQuad.zero, insideBars: MarginQuad.zero)
-        player.window.setFrameImmediately(intermediateGeo)
+        updateWindowFrameAndSubviews(using: intermediateGeo)
         if transition.isEnteringMusicMode && !transition.outputGeometry.isVideoVisible {
           // Entering music mode when album art is hidden
           miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: false)

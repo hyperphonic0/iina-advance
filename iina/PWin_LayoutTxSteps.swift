@@ -399,7 +399,7 @@ extension PlayerWindowController {
       // animation has zero duration.
       if !transition.isWindowInitialLayout && (transition.isTogglingMusicMode || !transition.isTogglingFullScreen) {
         log.debug{"[\(transition.name)] CloseOldPanels: applying middleGeo windowFrame=\(middleGeo.windowFrame)"}
-        player.window.setFrameImmediately(middleGeo)
+        updateWindowFrameAndSubviews(using: middleGeo)
       }
     }
 
@@ -1079,7 +1079,7 @@ extension PlayerWindowController {
       if transition.outputLayout.isNativeFullScreen {
         // Native Full Screen: set frame not including camera housing because it looks better with the native animation
         log.verbose{"[\(transition.name)] Calling setFrame to animate into nativeFS, to: \(transition.outputGeometry.windowFrame)"}
-        player.window.setFrameImmediately(transition.outputGeometry)
+        updateWindowFrameAndSubviews(using: transition.outputGeometry)
       } else if transition.outputLayout.isLegacyFullScreen {
         let screen = NSScreen.getScreenOrDefault(screenID: transition.outputGeometry.screenID)
         let newGeo: PWinGeometry
@@ -1114,7 +1114,7 @@ extension PlayerWindowController {
       applyMusicModeGeo(musicModeGeo, updateCache: false)
     case .windowedNormal, .windowedInteractive:
       log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with output windowFrame=\(transition.outputGeometry.windowFrame)")
-      player.window.setFrameImmediately(transition.outputGeometry)
+      updateWindowFrameAndSubviews(using: transition.outputGeometry)
     }
 
     if transition.outputGeometry.mode.isInteractiveMode {

@@ -1363,7 +1363,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                 let newGeo = windowedModeGeo.clone(windowFrame: newWindowFrame, screenID: screenID).refitted()
                 log.verbose{"WindowDidChangeScreen: updating windowFrame to fit screen: \(oldWindowFrame) → \(newGeo.windowFrame)"}
                 windowedModeGeo = newGeo
-                player.window.setFrameImmediately(newGeo)
+                updateWindowFrameAndSubviews(using: newGeo)
               }
             }
           }
@@ -1413,7 +1413,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
             return
           }
           log.verbose{"WndDidChangeScreenParams: calling setFrame with wf=\(newGeo.windowFrame) vidSize=\(newGeo.videoSize)"}
-          player.window.setFrameImmediately(newGeo)
+          updateWindowFrameAndSubviews(using: newGeo)
         }
       })
     }
@@ -1822,7 +1822,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // TODO: integrate this task into LayoutTransition build
       let uncropDuration = Constants.AnimationDuration.cropAnimation * 0.1
       tasks.append(.init(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
-        player.window.setFrameImmediately(uncroppedClosedBarsGeo)
+        updateWindowFrameAndSubviews(using: uncroppedClosedBarsGeo)
       })
     }
 
@@ -1898,7 +1898,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         tasks.append(.init(duration: cropAnimationDuration, timing: .default) { [self] in
           log.verbose{"Start exiting interactive mode: animating crop using: \(newIMGeo)"}
           isAnimatingLayoutTransition = true  // Prevent window listeners from interfering
-          player.window.setFrameImmediately(newIMGeo)
+          updateWindowFrameAndSubviews(using: newIMGeo)
           // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
           videoView.videoViewConstraints?.updateSpacerMin(to: newIMGeo.viewportMargins, spacerMin_Priority: .init(496))
 
