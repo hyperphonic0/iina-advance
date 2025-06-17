@@ -224,6 +224,9 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       // or else it will immediately show as an empty list.
       if HistoryController.shared.historyListVersion > 0 {
         reloadHistoryData()
+      } else {
+        // Load history if not started already:
+        HistoryController.shared.start()
       }
     }
 
@@ -280,6 +283,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     assert(DispatchQueue.isExecutingIn(backgroundQueue))
 
     let isInitialLoad = !isInitialLoadDone
+    log.trace("History window: reloading History data, tkt=\(ticket)")
     // reconstruct data
     let sw = Utility.Stopwatch()
     let unfilteredHistory = HistoryController.shared.history

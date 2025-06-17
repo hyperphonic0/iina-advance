@@ -26,7 +26,7 @@
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="IINA" systemMenu="apple" id="uQy-DD-JDr">
                         <items>
-                            <menuItem title="About IINA" id="5kV-Vb-QxS">
+                            <menuItem title="About IINA Advance" id="5kV-Vb-QxS">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="showAboutWindow:" target="Voe-Tx-rLC" id="HGv-E1-lQH"/>

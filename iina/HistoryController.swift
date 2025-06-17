@@ -20,6 +20,8 @@ class HistoryController {
     AppDelegate.isInteractiveLaunch
   }
 
+  var started = false
+
   let plistURL: URL
 
   let log = Logger.Subsystem(rawValue: "history")
@@ -100,6 +102,10 @@ class HistoryController {
         log.trace("History was disabled; aborting history start")
         return
       }
+      guard !started else { return }
+      started = true
+      log.verbose("Starting History")
+
       // Make sure to start listening before reload, to avoid creating race condition
       log.debug("Starting monitoring of watch-later dir")
       folderMonitor.folderDidChange = self.watchLaterDirDidChange
