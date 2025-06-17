@@ -2076,10 +2076,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     /// because it can mislead us into thinking that the user has deselected the audio track.
     let hasAudio = player.info.isAudioTrackSelected
 
-    volumeSlider.isEnabled = hasAudio
+    volumeSlider.isHidden = !hasAudio
     volumeSlider.maxValue = Double(Preference.integer(for: .maxVolume))
     volumeSlider.doubleValue = volume
-    muteButton.isEnabled = hasAudio
+    muteButton.isHidden = !hasAudio
 
     let volumeImage = volumeIcon(volume: volume, isMuted: isMuted)
     if let volumeImage, volumeImage != muteButton.image {
