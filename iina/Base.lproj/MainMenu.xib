@@ -815,8 +815,14 @@ CA
                         <action selector="openFile:" target="Voe-Tx-rLC" id="Zlo-gp-oIk"/>
                     </connections>
                 </menuItem>
+                <menuItem title="Open URL…" id="Qwb-26-zjX">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <connections>
+                        <action selector="openURL:" target="Voe-Tx-rLC" id="vSz-YP-8UA"/>
+                    </connections>
+                </menuItem>
             </items>
-            <point key="canvasLocation" x="18.5" y="678.5"/>
+            <point key="canvasLocation" x="18" y="689.5"/>
         </menu>
         <customObject id="wTK-gz-aTs" customClass="SPUStandardUpdaterController">
             <connections>
