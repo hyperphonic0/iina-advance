@@ -3126,7 +3126,7 @@
 				84E745DA1DFDE9C600588DED /* Copy Configs */,
 				8461BA631E423423008BB852 /* Copy Executables */,
 				E3E720A12CD7073D003470BF /* Copy Default Plugins */,
-				4954298A216C34960058F680 /* Embed App Extensions */,
+				4954298A216C34960058F680 /* Embed Foundation Extensions */,
 				51728768291B6F30009E6EC1 /* Write Info.h */,
 			);
 			buildRules = (
@@ -3376,6 +3376,7 @@
 		};
 		E3E720A12CD7073D003470BF /* Copy Default Plugins */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
