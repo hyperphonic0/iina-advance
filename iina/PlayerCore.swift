@@ -184,7 +184,7 @@ class PlayerCore: NSObject {
     didSet {
       log.verbose("Δ lifecycleState ≔ \(state)")
       if state == .idle {
-        PlayerCore.checkStatusForSleep()
+        SleepPreventer.updateSleepPrevention()
       }
     }
   }
@@ -897,6 +897,7 @@ class PlayerCore: NSObject {
       /// call this BEFORE setting state to `.stopping`
       savePlaybackMetaBeforePlayerWillStop() // Save state to mpv watch-later (if enabled)
 
+      assert(state != .idle, "stop() should not be called when state==idle")
       state = .stopping
 
       stopWatchingSubFile()
@@ -2068,9 +2069,11 @@ class PlayerCore: NSObject {
       // Check for stopping status also. Sometimes libmpv doesn't post stop message.
       closeWindow()
     }
-    if state.isAtLeast(.started) {
+    receivedEndFileWhileLoading = false
+    // Make sure current playback is taken into account before changing state to `idle`.
+    // Idle player is one which is closed but can be reused. Do not set to idle when changing media or other small intervals
+    if (state.isAtLeast(.started) && state.isNotYet(.shuttingDown)), (eofWhileLoading || info.currentPlayback == nil) {
       state = .idle
-      receivedEndFileWhileLoading = false
     }
   }
 
@@ -3054,32 +3057,6 @@ class PlayerCore: NSObject {
       }
       return meta
     }
-  }
-
-  static func checkStatusForSleep() {
-    guard Preference.bool(for: .preventScreenSaver) else {
-      SleepPreventer.allowSleep()
-      return
-    }
-    let playing = PlayerManager.shared.getNonIdle()
-    // Look for players actively playing that are not in music mode and are not just playing audio.
-    for player in playing {
-      guard player.info.isPlaying,
-            !player.info.currentMediaAudioStatus.isAudio && !player.isInMiniPlayer else { continue }
-      SleepPreventer.preventSleep()
-      return
-    }
-    // Now look for players in music mode or playing audio.
-    for player in playing {
-      guard player.info.isPlaying,
-            player.info.currentMediaAudioStatus.isAudio || player.isInMiniPlayer else { continue }
-      // Either prevent the screen saver from activating or prevent system from sleeping depending
-      // upon user setting.
-      SleepPreventer.preventSleep(allowScreenSaver: Preference.bool(for: .allowScreenSaverForAudio))
-      return
-    }
-    // No players are actively playing.
-    SleepPreventer.allowSleep()
   }
 
   // MARK: - Tracks

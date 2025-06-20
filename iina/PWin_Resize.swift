@@ -486,43 +486,43 @@ extension PlayerWindowController {
                                 thenRun: Bool = false) -> [IINAAnimation.Task] {
 
     log.verbose{"ApplyWindowGeo: dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) \(newGeometry)"}
+    
+    var tasks: [IINAAnimation.Task] = []
 
-    let tasks: [IINAAnimation.Task] = [
-      .instantTask{ [self] in
-        isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
-        videoView.enterAsynchronousMode()
+    tasks.append(.instantTask{ [self] in
+      isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
+      videoView.enterAsynchronousMode()
 
-        assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
+      assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
 
-        hideSeekPreviewImmediately()
-        updateDefaultArtVisibility(to: showDefaultArt)
-        resetRotationPreview()
-      },
+      hideSeekPreviewImmediately()
+      updateDefaultArtVisibility(to: showDefaultArt)
+      resetRotationPreview()
+    })
 
-      .init(duration: duration, timing: timing, { [self] in
-        // This is only needed to achieve "fade-in" effect when opening window:
-        updateWindowBorderAndOpacity()
+    tasks.append(.init(duration: duration, timing: timing, { [self] in
+      // This is only needed to achieve "fade-in" effect when opening window:
+      updateWindowBorderAndOpacity()
 
-        /// Make sure this is up-to-date. Do this before `setFrame`
-        if !isWindowHidden {
-          updateWindowFrameAndSubviews(using: newGeometry)
-        } else {
-          videoView.apply(newGeometry)
-        }
-        windowedModeGeo = newGeometry
-
-        log.verbose{"ApplyWindowGeo: Calling updateMPVWindowScale, videoSize=\(newGeometry.videoSize)"}
-        player.updateMPVWindowScale(using: newGeometry)
-        player.saveState()
-      }),
-
-      .instantTask{ [self] in
-        isAnimatingLayoutTransition = false
-        // OSD messages may have been supressed because file was not done loading. Display now if needed:
-        updateUI(pullUpdatesFromMpv: true)
-        player.events.emit(.windowSizeAdjusted, data: newGeometry.windowFrame)
+      /// Make sure this is up-to-date. Do this before `setFrame`
+      if !isWindowHidden {
+        updateWindowFrameAndSubviews(using: newGeometry)
+      } else {
+        videoView.apply(newGeometry)
       }
-    ]
+      windowedModeGeo = newGeometry
+
+      log.verbose{"ApplyWindowGeo: Calling updateMPVWindowScale, videoSize=\(newGeometry.videoSize)"}
+      player.updateMPVWindowScale(using: newGeometry)
+      player.saveState()
+    }))
+
+    tasks.append(.instantTask{ [self] in
+      isAnimatingLayoutTransition = false
+      // OSD messages may have been supressed because file was not done loading. Display now if needed:
+      updateUI(pullUpdatesFromMpv: true)
+      player.events.emit(.windowSizeAdjusted, data: newGeometry.windowFrame)
+    })
 
     if thenRun {
       animationPipeline.submit(tasks)

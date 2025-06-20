@@ -34,10 +34,10 @@ class PlaybackInfo {
   // -- PERSISTENT PROPERTIES BEGIN --
 
   var isPaused: Bool = false {
-    willSet {
-      if isPaused != newValue {
-        log.verbose{"Playback is \(newValue ? "PAUSED" : "PLAYING")"}
-        PlayerCore.checkStatusForSleep()
+    didSet {
+      if oldValue != isPaused {
+        log.verbose{"Playback is \(isPaused ? "PAUSED" : "PLAYING")"}
+        SleepPreventer.updateSleepPrevention()
       }
     }
   }

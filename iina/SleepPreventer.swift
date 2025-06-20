@@ -40,11 +40,15 @@ class SleepPreventer: NSObject {
   /// To see the power management assertion created by the activity run the command `pmset -g assertions` in  terminal.
   /// - Parameter allowScreenSaver: If `true` the screen saver will be allowed to start but the system will be prevented from
   ///     sleeping.
-  static func preventSleep(allowScreenSaver: Bool = false) {
+  static private func preventSleep(allowScreenSaver: Bool = false) {
     if activityToken != nil {
-      guard self.allowScreenSaver != allowScreenSaver else { return }
+      guard self.allowScreenSaver != allowScreenSaver else {
+        Logger.log.verbose{"[sleep] Skipping preventSleep; activity token exists & no change to allowScreenSaver=\(allowScreenSaver.yn)"}
+        return
+      }
       // The outstanding activity does not match what is requested. End the current activity and
       // create a new one.
+      Logger.log.verbose{"[sleep] Found existing activity token via preventSleep. Calling allowSleep to end it before creating new one"}
       allowSleep()
     }
     SleepPreventer.allowScreenSaver = allowScreenSaver
@@ -53,16 +57,45 @@ class SleepPreventer: NSObject {
     activityToken = ProcessInfo.processInfo.beginActivity(options: options,
                                                           reason: "IINA playback is in progress")
 
-    let logMessage = allowScreenSaver ? "Preventing system from sleeping" : "Preventing screen saver from starting"
-    Logger.log(logMessage, level: .verbose)
+    Logger.log.verbose{
+      let msg = allowScreenSaver ? "Preventing system from sleeping" : "Preventing screen saver from starting"
+      return "[sleep] \(msg)"
+    }
   }
 
-  static func allowSleep() {
-    guard let activityToken = activityToken else { return }
+  static private func allowSleep() {
+    guard let activityToken else {
+      Logger.log.verbose{"[sleep] Skipping allowSleep; no activity token"}
+      return
+    }
+    Logger.log.verbose{
+      let msg = allowScreenSaver ? "Allowing system to sleep when inactive" : "Allowing screen saver to start when inactive"
+      return "[sleep] \(msg)"
+    }
+
     ProcessInfo.processInfo.endActivity(activityToken)
     SleepPreventer.activityToken = nil
-    
-    let logMessage = allowScreenSaver ? "Allowing system to sleep when inactive" : "Allowing screen saver to start when inactive"
-    Logger.log(logMessage, level: .verbose)
   }
+
+  static func updateSleepPrevention() {
+    DispatchQueue.main.async {
+      if Preference.bool(for: .preventScreenSaver) {
+        let activePlayers = PlayerManager.shared.getNonIdle()
+        for player in activePlayers {
+          if player.info.isPlaying {
+            // Either prevent the screen saver from activating or prevent system from sleeping depending
+            // upon user setting.
+            let allowScreenSaver = Preference.bool(for: .allowScreenSaverForAudio) && (player.info.currentMediaAudioStatus.isAudio || player.isInMiniPlayer)
+            SleepPreventer.preventSleep(allowScreenSaver: allowScreenSaver)
+            return
+          }
+        }
+        Logger.log.verbose{"[sleep] None of the \(activePlayers.count) active players are playing"}
+      } else {
+        Logger.log.trace{"[sleep] Skipping: pref preventScreenSaver=N"}
+      }
+      SleepPreventer.allowSleep()
+    }
+  }
+
 }
