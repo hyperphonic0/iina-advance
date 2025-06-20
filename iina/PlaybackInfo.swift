@@ -37,6 +37,7 @@ class PlaybackInfo {
     willSet {
       if isPaused != newValue {
         log.verbose{"Playback is \(newValue ? "PAUSED" : "PLAYING")"}
+        PlayerCore.checkStatusForSleep()
       }
     }
   }

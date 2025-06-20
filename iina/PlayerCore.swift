@@ -181,7 +181,12 @@ class PlayerCore: NSObject {
   // Player lifecycle state
 
   var state: LifecycleState = .notYetStarted {
-    didSet { log.verbose("Δ lifecycleState ≔ \(state)") }
+    didSet {
+      log.verbose("Δ lifecycleState ≔ \(state)")
+      if state == .idle {
+        PlayerCore.checkStatusForSleep()
+      }
+    }
   }
 
   var isActive: Bool { state.isAtLeast(.started) && state.isNotYet(.stopping) }
