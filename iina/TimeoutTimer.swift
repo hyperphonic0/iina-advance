@@ -9,17 +9,20 @@
 class TimeoutTimer {
   private var scheduledTimer: Timer? = nil
   var timeout: TimeInterval
+
   /// nillable because sometimes this needs to be set after the containing class has finished init
   var action: (() -> Void)?
+
   /// If not nil, is executed before starting or restarting the timer.
   /// If it returns false, the timer will not be started.
-  var startFunction: ((TimeoutTimer) -> Bool)?
+  /// Can also be used to execute extra logic before each timer restart.
+  var startCondition: ((_ thisTimer: TimeoutTimer) -> Bool)?
 
   init(timeout: TimeInterval,
-       startFunction: ((TimeoutTimer) -> Bool)? = nil,
+       startCondition: ((TimeoutTimer) -> Bool)? = nil,
        action: (() -> Void)? = nil) {
     self.timeout = timeout
-    self.startFunction = startFunction
+    self.startCondition = startCondition
     self.action = action
   }
 
@@ -30,8 +33,8 @@ class TimeoutTimer {
       timeout = newTimeout
     }
 
-    if let startFunction {
-      let canProceed = startFunction(self)
+    if let startCondition {
+      let canProceed = startCondition(self)
       guard canProceed else {
         return
       }
@@ -50,6 +53,13 @@ class TimeoutTimer {
 
   func cancel() {
     scheduledTimer?.invalidate()
+  }
+
+  /// Convenience method to excute `startCondition` without its boilerplate args.
+  func runStartCondition() {
+    if let startCondition {
+      _ = startCondition(self)
+    }
   }
 
   @objc private func timeoutReached() {

@@ -28,9 +28,15 @@ extension PlayerWindowController {
     notiHandler = buildObservers()
 
     // The fade timer is only used if auto-hide is enabled
-    fadeableViews.hideTimer.startFunction = { _ in Preference.bool(for: .enableControlBarAutoHide) }
     fadeableViews.hideTimer.action = hideTimeoutAction
+    fadeableViews.hideTimer.startCondition = { _ in Preference.bool(for: .enableControlBarAutoHide) }
+
     hideCursorTimer.action = hideCursor
+    hideCursorTimer.startCondition = { timer in
+      guard Preference.bool(for: .enableCursorAutoHide) else { return false }
+      timer.timeout = max(Constants.TimeInterval.hideCursorMinTimeout, Preference.double(for: .cursorAutoHideTimeout))
+      return true
+    }
 
     /// Set base options for `collectionBehavior` here, and then insert/remove full screen options
     /// using `resetCollectionBehavior`. Do not mess with the base options again because doing so seems

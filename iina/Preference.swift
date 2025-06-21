@@ -145,8 +145,9 @@ struct Preference {
     /// Same as `playlistShowMetadata` but "only in music mode"
     static let playlistShowMetadataInMusicMode = Key("playlistShowMetadataInMusicMode")
 
-    // MARK: - Keys: UI
+    // MARK: - UI Keys
 
+    static let enableCursorAutoHide = Key("enableCursorAutoHide")
     static let cursorAutoHideTimeout = Key("cursorAutoHideTimeout")
 
     // - Title bar & OSC
@@ -1265,6 +1266,7 @@ struct Preference {
     .recordPlaybackHistory: true,
     .recordRecentFiles: true,
     .trackAllFilesInRecentOpenMenu: true,
+    .enableCursorAutoHide: true,
     .cursorAutoHideTimeout: Float(2.0),
     .floatingControlBarMargin: 5,
     .controlBarPositionHorizontal: Float(0.5),

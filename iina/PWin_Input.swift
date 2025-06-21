@@ -719,6 +719,7 @@ extension PlayerWindowController {
     switch newCursorType {
     case .normalCursor:
       if customCursor != .normalCursor {
+        log.verbose{"Setting cursor back to normal"}
         NSCursor.current.pop()
         customCursor = .normalCursor
       }
@@ -753,11 +754,13 @@ extension PlayerWindowController {
     // This solution works for any non-main window while the app is frontmost, and works for regular dead NSViews for main window.
     // Combined, using cursorUpdate works for sliders when window is main, and this method picks up the work for them when non-main.
     if customCursor == .normalCursor {
+      log.verbose{"Pushing cursor to \(newCursorType)"}
       newCursor.push()
     } else if (customCursor != newCursorType) || (NSCursor.current != newCursor) {
       // There seems to be a race condition in Apple's code which causes push() or set()
       // to get ignored, so we cannot assume they succeeded.
       // Partial workaround: add the extra check against NSCursor.current above.
+      log.verbose{"Setting cursor to \(newCursorType)"}
       newCursor.set()
     }
     customCursor = newCursorType
@@ -769,6 +772,7 @@ extension PlayerWindowController {
         isPoint(event.locationInWindow, inAnyOf: [volumeSlider]) else {
       return
     }
+    log.verbose("cursorUpdate")
     applyCustomCursor(.hoveringInSlider)
   }
 
@@ -788,8 +792,13 @@ extension PlayerWindowController {
     case .musicMode, .windowedInteractive, .fullScreenInteractive:
       return
     }
-    log.trace("Hiding cursor")
-    NSCursor.setHiddenUntilMouseMoves(true)
+    // IMPORTANT: We *must* ensure that NSCursor.setHiddenUntilMouseMoves is called inside an animation task!
+    // Otherwise it will sometimes fail to hide the cursor. (Speculation: a race condition inside its private
+    // code may cause any NSCursor API call to fail if overlapping with any other).
+    animationPipeline.submitInstantTask{ [self] in
+      log.trace("Hiding cursor")
+      NSCursor.setHiddenUntilMouseMoves(true)
+    }
   }
 
 }

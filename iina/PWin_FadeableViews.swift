@@ -83,10 +83,7 @@ extension PlayerWindowController {
     let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(pointInWindow) && fadeableViews.topBarAnimationState == .hidden
     // Check whether mouse is in OSC
     let shouldRestartFadeTimer = !(isPoint(pointInWindow, inAnyOf: fadeableViews.fadeables) || isPoint(pointInWindow, inAnyOf: fadeableViews.fadeablesInTopBar))
-    if log.isTraceEnabled {
-      log.trace("ShouldRestartFadeTimer=\(shouldRestartFadeTimer.yesno) forceShowTopBar=\(forceShowTopBar.yesno)")
-    }
-    hideCursorTimer.cancel()
+    log.trace{"ShouldRestartFadeTimer=\(shouldRestartFadeTimer.yesno) forceShowTopBar=\(forceShowTopBar.yesno)"}
     showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
   }
 
@@ -99,9 +96,7 @@ extension PlayerWindowController {
     guard let window = window, let contentView = window.contentView else { return false }
     let heightThreshold = contentView.frame.height - currentLayout.topBarHeight
     let isAboveThreshold = mouseLocInWindow.y >= heightThreshold
-    if log.isTraceEnabled {
-      log.trace{"Is mouse in top bar? mouseHeight=\(mouseLocInWindow.y) heightThreshold=\(heightThreshold) → \(isAboveThreshold.yn)"}
-    }
+    log.trace{"Is mouse in top bar? mouseHeight=\(mouseLocInWindow.y) heightThreshold=\(heightThreshold) → \(isAboveThreshold.yn)"}
     return isAboveThreshold
   }
 
@@ -116,6 +111,7 @@ extension PlayerWindowController {
 
     guard wantsTopBarVisible || fadeableViews.animationState == .hidden else {
       if restartFadeTimer {
+        hideCursorTimer.restart()
         fadeableViews.hideTimer.restart()
       } else {
         fadeableViews.hideTimer.cancel()
@@ -208,6 +204,7 @@ extension PlayerWindowController {
         }
 
         if restartFadeTimer {
+          hideCursorTimer.restart()
           fadeableViews.hideTimer.restart()
         }
 

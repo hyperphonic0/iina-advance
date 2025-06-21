@@ -1232,6 +1232,7 @@ extension PlayerWindowController {
 
     // Invalidate all old fadeable views actions as they are probably stale.
     fadeableViews.$showHideTicketCount.withLock { $0 += 1 }
+    hideCursorTimer.restart()
     fadeableViews.hideTimer.restart()  // start new fadeable countdown
 
     log.verbose{
@@ -1244,8 +1245,6 @@ extension PlayerWindowController {
 
     if transition.isEnteringFullScreen {
       // Entered FS
-
-      hideCursorTimer.restart()
 
       if transition.outputLayout.isNativeFullScreen {
         /// Special case: need to wait until now to call `trafficLightButtons.isHidden = false` due to their quirks

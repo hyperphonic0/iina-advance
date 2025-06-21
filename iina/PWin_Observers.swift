@@ -47,6 +47,8 @@ extension PlayerWindowController {
       .osdTextSize,
       .enableOSC,
       .oscForceSingleRow,
+      .enableCursorAutoHide,
+      .cursorAutoHideTimeout,
       .controlBarAutoHideTimeout,
       .oscPosition,
       .oscColorScheme,
@@ -272,6 +274,8 @@ extension PlayerWindowController {
     case .alwaysShowSliderKnob:
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true
+    case .enableCursorAutoHide, .cursorAutoHideTimeout:
+      hideCursorTimer.restart()
     case .controlBarAutoHideTimeout:
       fadeableViews.hideTimer.timeout = max(Constants.AnimationDuration.standard, Double(Preference.float(for: .controlBarAutoHideTimeout)))
       fadeableViews.hideTimer.restart()
