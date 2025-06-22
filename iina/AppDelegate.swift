@@ -9,6 +9,20 @@
 import Cocoa
 import Sparkle
 
+extension AppDelegate {
+  /// Catch and handle SIGINT gracefully
+  /// EXPERIMNENTAL: unclear if this actually does anything
+  /// Source: https://prodisup.com/posts/2022/10/signal-capture-and-graceful-shutdown-in-swift/
+  func handleSigint(handler: @escaping DispatchSourceProtocol.DispatchSourceHandler) -> DispatchSourceSignal {
+    Darwin.signal(SIGINT, SIG_IGN)
+    let signal = DispatchSource.makeSignalSource(signal: SIGINT, queue: signalDQ)
+
+    signal.setEventHandler(handler: handler)
+    signal.resume()
+    return signal
+  }
+}
+
 /** Tags for "Open File/URL" menu item when "Always open file in new windows" is off. Vice versa. */
 fileprivate let NormalMenuItemTag = 0
 /** Tags for "Open File/URL in New Window" when "Always open URL" when "Open file in new windows" is off. Vice versa. */
@@ -21,6 +35,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   static var shared: AppDelegate { NSApp.delegate as! AppDelegate }
 
   // MARK: Properties
+
+  private var signal: DispatchSourceSignal?
+  let signalDQ = DispatchQueue(label: "com.iina_advance.signalQueue")
 
   @IBOutlet var menuController: MenuController!
 
@@ -187,6 +204,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if let cli = startupHandler.commandLineState {
       Logger.log.debug{"Parsed IINA CLI args: stdin=\(cli.isStdin.yn) separateWindows=\(cli.openSeparateWindows?.yn ?? "-") musicMode=\(cli.enterMusicMode.yn) pip=\(cli.enterPIP.yn). Filenames from arguments: \(cli.filenames.map{$0.pii})"}
       Logger.log.debug{"Derived mpv properties from args: \(cli.mpvArguments)"}
+    }
+
+    // Catch SIGINT signal and stop subprocess gracefully
+    self.signal = handleSigint {
+      NSApp.terminate(self)
     }
 
     // Start asynchronously gathering and caching information about the hardware decoding

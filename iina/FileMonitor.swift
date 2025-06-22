@@ -9,7 +9,7 @@ public class FileMonitor {
   /// A file descriptor for the monitored file.
   private var monitoredFileFD: CInt = -1
   /// A dispatch queue used for sending file changes in the file.
-  private let fileMonitorQueue = DispatchQueue(label: "fileMonitorQueue", attributes: .concurrent)
+  private let fileMonitorQueue = DispatchQueue(label: "com.iina_advance.FileMonitorQueue", attributes: .concurrent)
   /// A dispatch source to monitor a file descriptor created from the file.
   private var monitorSource: DispatchSourceFileSystemObject?
   /// URL for the file being monitored.

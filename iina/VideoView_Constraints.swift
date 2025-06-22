@@ -8,6 +8,66 @@
 
 fileprivate let musicMode = false // TODO: improvements for music mode (search for this)
 
+fileprivate struct Constraint: CustomStringConvertible {
+  let active: Bool
+  let priority: NSLayoutConstraint.Priority
+
+  init(active: Bool, priority: NSLayoutConstraint.Priority) {
+    self.active = active
+    self.priority = priority
+  }
+
+  init(active: Bool, priority priorityInt: Int) {
+    self.init(active: active, priority: .init(rawValue: Float(priorityInt)))
+  }
+
+  var description: String {
+    return "\(active ? "EN" : "Dis"):@\(priority.rawValue)"
+  }
+}
+
+fileprivate struct AspectConstraint: CustomStringConvertible {
+  let active: Bool
+  let priority: NSLayoutConstraint.Priority
+  let multiplier: CGFloat
+
+  init(active: Bool, priority: NSLayoutConstraint.Priority, multiplier: CGFloat) {
+    self.active = active
+    self.priority = priority
+    self.multiplier = multiplier
+  }
+
+  init(active: Bool, priority priorityInt: Int, multiplier: CGFloat) {
+    self.init(active: active, priority: .init(rawValue: Float(priorityInt)), multiplier: multiplier)
+  }
+
+  var description: String {
+    return "\(active ? "EN" : "Dis"):\(multiplier)x@\(priority.rawValue)"
+  }
+}
+
+fileprivate struct QuadConstraint: CustomStringConvertible {
+  let active: Bool
+  let priority: NSLayoutConstraint.Priority
+  let values: MarginQuad?
+
+  init(active: Bool, priority: NSLayoutConstraint.Priority, _ values: MarginQuad?) {
+    self.active = active
+    self.priority = priority
+    self.values = values
+  }
+
+  init(active: Bool, priority priorityInt: Int, _ values: MarginQuad?) {
+    self.init(active: active, priority: .init(rawValue: Float(priorityInt)), values)
+  }
+
+  var description: String {
+    return "\(active ? "EN" : "Dis"):\(values?.description ?? "nil")x@\(priority.rawValue)"
+  }
+}
+
+
+
 extension VideoView {
 
   /// Only called once, at VideoView init
@@ -83,16 +143,15 @@ extension VideoView {
 #endif
 
     /// UPDATE FUNC
-    fileprivate func update(connectSpacers_Active: Bool, connectSpacers_Priority: NSLayoutConstraint.Priority,
-                            aspectMultiplier: CGFloat, aspect_Priority: NSLayoutConstraint.Priority,
+    fileprivate func update(connectSpacers: Constraint,
+                            aspect: AspectConstraint,
                             wMax: CGFloat? = nil, hMax: CGFloat? = nil, whMax_Priority: NSLayoutConstraint.Priority,
-                            spacerMax_Active: Bool, spacerMax_Priority: NSLayoutConstraint.Priority,
-                            spacerMin: MarginQuad?, spacerMin_Priority: NSLayoutConstraint.Priority,
-                            spacerPreferred: MarginQuad?, spacerPreferred_Priority: NSLayoutConstraint.Priority,
-                            center_Active: Bool, center_Priority: NSLayoutConstraint.Priority) {
+                            spacerMax: Constraint,
+                            spacerMin: QuadConstraint,
+                            spacerPreferred: QuadConstraint,
+                            center: Constraint) {
 
-      let aspect_Active = aspectMultiplier > 0.0
-      log.verbose{"Δ VideoView constraints ≔ maxSize: {w=\(wMax?.description ?? "nil") from super.w, h=\(hMax?.description ?? "nil") from super.h}@\(whMax_Priority.rawValue) spacers:{max=\(spacerMax_Active.yn)@\(spacerMax_Priority.rawValue) min=\(spacerMin?.description ?? "nil")@\(spacerMin_Priority.rawValue) pref=\(spacerPreferred?.description ?? "nil")@\(spacerPreferred_Priority.rawValue)} aspect=\(aspect_Active.yn)|\(aspectRatio.multiplier)@\(aspect_Priority.rawValue)"}
+      log.verbose{"Δ VideoView constraints ≔ maxSize: {w=\(wMax?.description ?? "nil") from super.w, h=\(hMax?.description ?? "nil") from super.h}@\(whMax_Priority.rawValue) spacers:{max=\(spacerMax) min=\(spacerMin) pref=\(spacerPreferred) center=\(center)} aspect=\(aspect)"}
 
 #if TEST_VIDEO_CONSTRAINTS
       // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
@@ -138,29 +197,28 @@ extension VideoView {
 #endif
       // - Priorities, Constants
 
-      topSpacerConnection.priority = connectSpacers_Priority
-      bottomSpacerConnection.priority = connectSpacers_Priority
-      leadingSpacerConnection.priority = connectSpacers_Priority
-      trailingSpacerConnection.priority = connectSpacers_Priority
+      topSpacerConnection.priority = connectSpacers.priority
+      bottomSpacerConnection.priority = connectSpacers.priority
+      leadingSpacerConnection.priority = connectSpacers.priority
+      trailingSpacerConnection.priority = connectSpacers.priority
 
-      aspectRatio.priority = aspect_Priority
+      aspectRatio.priority = aspect.priority
 
-      topSpacerMax.priority = spacerMax_Priority
-      trailingSpacerMax.priority = spacerMax_Priority
-      bottomSpacerMax.priority = spacerMax_Priority
-      leadingSpacerMax.priority = spacerMax_Priority
+      topSpacerMax.priority = spacerMax.priority
+      trailingSpacerMax.priority = spacerMax.priority
+      bottomSpacerMax.priority = spacerMax.priority
+      leadingSpacerMax.priority = spacerMax.priority
 
-      if let spacerPreferred {
-        topSpacerPreferred.animateToConstant(spacerPreferred.top)
-        bottomSpacerPreferred.animateToConstant(spacerPreferred.bottom)
-        leadingSpacerPreferred.animateToConstant(spacerPreferred.leading)
-        trailingSpacerPreferred.animateToConstant(spacerPreferred.trailing)
-
-        topSpacerPreferred.priority = spacerPreferred_Priority
-        bottomSpacerPreferred.priority = spacerPreferred_Priority
-        trailingSpacerPreferred.priority = spacerPreferred_Priority
-        leadingSpacerPreferred.priority = spacerPreferred_Priority
+      if let spacerPreferredQuad = spacerPreferred.values {
+        topSpacerPreferred.animateToConstant(spacerPreferredQuad.top)
+        bottomSpacerPreferred.animateToConstant(spacerPreferredQuad.bottom)
+        leadingSpacerPreferred.animateToConstant(spacerPreferredQuad.leading)
+        trailingSpacerPreferred.animateToConstant(spacerPreferredQuad.trailing)
       }
+      topSpacerPreferred.priority = spacerPreferred.priority
+      bottomSpacerPreferred.priority = spacerPreferred.priority
+      trailingSpacerPreferred.priority = spacerPreferred.priority
+      leadingSpacerPreferred.priority = spacerPreferred.priority
 
       if let wMax {
         widthMax.animateToConstant(wMax)
@@ -171,57 +229,55 @@ extension VideoView {
         heightMax.priority = whMax_Priority //+ (aspectMultiplier > 1 ? 0 : 1)
       }
 
-      centerX.priority = center_Priority
-      centerY.priority = center_Priority
+      centerX.priority = center.priority
+      centerY.priority = center.priority
 
       // - Enablement
 
-      topSpacerConnection.isActive = connectSpacers_Active
-      bottomSpacerConnection.isActive = connectSpacers_Active
-      leadingSpacerConnection.isActive = connectSpacers_Active
-      trailingSpacerConnection.isActive = connectSpacers_Active
+      topSpacerConnection.isActive = connectSpacers.active
+      bottomSpacerConnection.isActive = connectSpacers.active
+      leadingSpacerConnection.isActive = connectSpacers.active
+      trailingSpacerConnection.isActive = connectSpacers.active
 
-      aspectRatio.isActive = aspect_Active
+      aspectRatio.isActive = aspect.active
 
-      topSpacerMax.isActive = spacerMax_Active
-      trailingSpacerMax.isActive = spacerMax_Active
-      bottomSpacerMax.isActive = spacerMax_Active
-      leadingSpacerMax.isActive = spacerMax_Active
+      topSpacerMax.isActive = spacerMax.active
+      trailingSpacerMax.isActive = spacerMax.active
+      bottomSpacerMax.isActive = spacerMax.active
+      leadingSpacerMax.isActive = spacerMax.active
 
-      let spacerPreferred_Active = spacerPreferred != nil
-      topSpacerPreferred.isActive = spacerPreferred_Active
-      bottomSpacerPreferred.isActive = spacerPreferred_Active
-      trailingSpacerPreferred.isActive = spacerPreferred_Active
-      leadingSpacerPreferred.isActive = spacerPreferred_Active
+      topSpacerPreferred.isActive = spacerPreferred.active
+      bottomSpacerPreferred.isActive = spacerPreferred.active
+      trailingSpacerPreferred.isActive = spacerPreferred.active
+      leadingSpacerPreferred.isActive = spacerPreferred.active
 
       // TODO: improvements for music mode
       widthMax.isActive = wMax != nil
       heightMax.isActive = hMax != nil
 
-      centerX.isActive = center_Active
-      centerY.isActive = center_Active
+      centerX.isActive = center.active
+      centerY.isActive = center.active
 
-      updateSpacerMin(to: spacerMin, spacerMin_Priority: spacerMin_Priority)
+      updateSpacerMin(to: spacerMin.values, spacerMin.priority, active: spacerMin.active)
     }
 
-    func updateSpacerMin(to spacerMin: MarginQuad?, spacerMin_Priority: NSLayoutConstraint.Priority) {
-      if let spacerMin {
-        topSpacerMin.animateToConstant(spacerMin.top)
-        bottomSpacerMin.animateToConstant(spacerMin.bottom)
-        leadingSpacerMin.animateToConstant(spacerMin.leading)
-        trailingSpacerMin.animateToConstant(spacerMin.trailing)
+    func updateSpacerMin(to quad: MarginQuad?, _ priority: NSLayoutConstraint.Priority, active: Bool = true) {
+      if let quad {
+        topSpacerMin.animateToConstant(quad.top)
+        bottomSpacerMin.animateToConstant(quad.bottom)
+        leadingSpacerMin.animateToConstant(quad.leading)
+        trailingSpacerMin.animateToConstant(quad.trailing)
 
-        topSpacerMin.priority = spacerMin_Priority
-        bottomSpacerMin.priority = spacerMin_Priority
-        trailingSpacerMin.priority = spacerMin_Priority
-        leadingSpacerMin.priority = spacerMin_Priority
+        topSpacerMin.priority = priority
+        bottomSpacerMin.priority = priority
+        trailingSpacerMin.priority = priority
+        leadingSpacerMin.priority = priority
       }
 
-      let spacerMin_Active = spacerMin != nil
-      topSpacerMin.isActive = spacerMin_Active
-      bottomSpacerMin.isActive = spacerMin_Active
-      trailingSpacerMin.isActive = spacerMin_Active
-      leadingSpacerMin.isActive = spacerMin_Active
+      topSpacerMin.isActive = active
+      bottomSpacerMin.isActive = active
+      trailingSpacerMin.isActive = active
+      leadingSpacerMin.isActive = active
     }
 
     func disableAll() {
@@ -389,35 +445,31 @@ extension VideoView {
 
     let interactiveMode = geometry.mode.isInteractiveMode
 
-    let spacerMin: MarginQuad = interactiveMode ? Constants.InteractiveMode.viewportMargins : .zero
+    let spacerMinValues: MarginQuad = interactiveMode ? Constants.InteractiveMode.viewportMargins : .zero
 
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
     let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
 
     // Need to keep priorities under 500 or the window will not resize!
-    cons.update(connectSpacers_Active: true, connectSpacers_Priority: .required,
+    cons.update(connectSpacers: Constraint(active: true, priority: 1000),
                 // The desired aspect must always be honored. All constraints are secondary to this.
-                aspectMultiplier: aspectMultiplier,
-                aspect_Priority: musicMode ? .init(499) : .required,
+                aspect: AspectConstraint(active: true, priority: musicMode ? 499 : 1000, multiplier: aspectMultiplier),
 
                 /// For interactive mode, max width should equal superview's width minus minMargins
-                wMax: -spacerMin.totalWidth,
-                hMax: -spacerMin.totalHeight,
+                wMax: -spacerMinValues.totalWidth,
+                hMax: -spacerMinValues.totalHeight,
                 whMax_Priority: musicMode ? .required : .init(495),
 
-                spacerMax_Active: !musicMode && !interactiveMode,
-                spacerMax_Priority: .init(490),
+                spacerMax: Constraint(active: !musicMode && !interactiveMode, priority: 490),
 
                 // For interactive mode, these need to be higher priority than video max
-                spacerMin: spacerMin,
-                spacerMin_Priority: .init(496),
+                spacerMin: QuadConstraint(active: true, priority: 496, spacerMinValues),
 
-                spacerPreferred: keepVideoAwayFromBars ? geometry.insideBars : nil,
-                spacerPreferred_Priority: .init(481),
+                spacerPreferred: QuadConstraint(active: true, priority: 481, keepVideoAwayFromBars ? geometry.insideBars : nil),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-                center_Active: !musicMode,
-                center_Priority: .init(480))
+                center: Constraint(active: !musicMode, priority: 480)
+                )
 
 
     videoViewConstraints = cons

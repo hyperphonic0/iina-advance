@@ -100,7 +100,7 @@ struct PlayerSaveState: CustomStringConvertible {
   static fileprivate let musicModeGeoPrefStringVersion = "2"
   static fileprivate let playlistVideosCSVVersion = "1"
 
-  static let saveQueue = DispatchQueue(label: "IINAPlayerSaveQueue", qos: .background)
+  static let saveQueue = DispatchQueue(label: "com.iina_advance.PlayerSaveQueue", qos: .background)
 
   /// IINA general log
   static let log = Logger.log

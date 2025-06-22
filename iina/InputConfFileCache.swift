@@ -12,7 +12,7 @@ import Foundation
 // a bunch of tricky failure points for undo/redo, as well as unexpected behavior when the files are
 // changed outside of IINA.
 class InputConfFileCache {
-  static let fileDQ = DispatchQueue(label: "InputConfFile-FileSystemQueue", qos: .utility)
+  static let fileDQ = DispatchQueue(label: "com.iina_advance.InputConfFile-FileSystemQueue", qos: .utility)
 
   private var storage: [String: InputConfFile] = [:]
   private let storageLock = Lock()

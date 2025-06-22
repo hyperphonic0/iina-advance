@@ -472,6 +472,13 @@ class StartupHandler {
       log.debug("User chose button 3: quit")
       NSApp.terminate(nil)
 
+    case .abort:
+      log.debug("Restore timeout alert aborted; terminating")
+      NSApp.terminate(nil)
+    case .stop:
+      log.debug("Restore timeout alert stopped; terminating")
+      NSApp.terminate(nil)
+
     default:
       log.fatalError("User responded to Restore Timeout alert with unrecognized choice!")
     }

@@ -44,7 +44,7 @@ class JavascriptPluginInstance {
   let input = PluginInputManager()
 
   lazy var queue: DispatchQueue = {
-    DispatchQueue(label: "com.colliderli.iina.plugin.\(plugin.identifier)", qos: .background)
+    DispatchQueue(label: "com.iina_advance.plugin.\(plugin.identifier)", qos: .background)
   }()
 
   lazy var subsystem = Logger.makeSubsystem("\(isGlobal ? "global" : "player\(player.label)") - \(plugin.name)")

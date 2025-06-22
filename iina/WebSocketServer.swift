@@ -26,7 +26,7 @@ class WebSocketServer {
   var connections: [String: NWConnection] = [:]
   var timer: Timer?
 
-  lazy var serverQueue = DispatchQueue(label: "IINAWebSocketServer.\(self.label)")
+  lazy var serverQueue = DispatchQueue(label: "com.iina_advance.WebSocketServer.\(self.label)")
   let subsystem: Logger.Subsystem
 
   init?(port: UInt16, label: String, logger: Logger.Subsystem? = nil) {

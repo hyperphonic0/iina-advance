@@ -90,7 +90,9 @@ class Utility {
     if let sheetWindow = sheetWindow {
       alert.beginSheetModal(for: sheetWindow)
     } else {
-      alert.runModal()
+      let response = alert.runModal()
+      Logger.log.verbose{"Alert response: \(response)"}
+
     }
     if disableMenus {
       AppDelegate.shared.menuController.enableAllMenus()
@@ -115,7 +117,9 @@ class Utility {
    - Returns: Whether user dismissed the panel by clicking OK, discardable when using sheet.
    */
   @discardableResult
-  static func quickAskPanel(_ key: String, titleComment: String? = nil, messageComment: String? = nil, titleArgs: [CVarArg]? = nil, messageArgs: [CVarArg]? = nil, alertStyle: NSAlert.Style? = nil, useCustomButtons: Bool = false, sheetWindow: NSWindow? = nil, callback: ((NSApplication.ModalResponse) -> Void)? = nil) -> Bool {
+  static func quickAskPanel(_ key: String, titleComment: String? = nil, messageComment: String? = nil, titleArgs: [CVarArg]? = nil, messageArgs: [CVarArg]? = nil,
+                            alertStyle: NSAlert.Style? = nil, useCustomButtons: Bool = false, sheetWindow: NSWindow? = nil,
+                            callback: ((NSApplication.ModalResponse) -> Void)? = nil) -> Bool {
     let panel = NSAlert()
     let titleKey = "alert." + key + ".title"
     let messageKey = "alert." + key + ".message"
@@ -145,7 +149,9 @@ class Utility {
       panel.beginSheetModal(for: sheetWindow, completionHandler: callback)
       return false
     } else {
-      return panel.runModal() == .alertFirstButtonReturn
+      let response = panel.runModal()
+      Logger.log.verbose{"Ask panel response: \(response)"}
+      return response == .alertFirstButtonReturn
     }
   }
 

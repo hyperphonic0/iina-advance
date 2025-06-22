@@ -83,7 +83,7 @@ class PrefPluginViewController: PreferenceViewController, PreferenceWindowEmbedd
   var pluginPreferencesViewController: PrefPluginPreferencesViewController!
 
   private var defaultPluginsData: [[String: Any]] = []
-  private var queue = DispatchQueue(label: "com.collider.iina.plugin-install", qos: .userInteractive)
+  private var queue = DispatchQueue(label: "com.iina_advance.plugin-install", qos: .userInteractive)
 
   override func viewDidLoad() {
     super.viewDidLoad()
