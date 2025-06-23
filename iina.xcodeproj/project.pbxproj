@@ -408,7 +408,6 @@
 		D1F2B09B2CFF07D500F995B3 /* AppDetailsLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2B09A2CFF07CC00F995B3 /* AppDetailsLogging.swift */; };
 		D1F2B09D2CFF272100F995B3 /* MediaPlayerIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2B09C2CFF271900F995B3 /* MediaPlayerIntegration.swift */; };
 		D1F64E902B2A655C0030E07E /* PWin_Resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */; };
-		D1F68E752C6ABC22003D1208 /* movist-v2-default-input.conf in Resources */ = {isa = PBXBuildFile; fileRef = D1F68E742C6ABC22003D1208 /* movist-v2-default-input.conf */; };
 		D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */; };
 		D1FA42E528E5E54700DF49DD /* AppInputConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */; };
 		D1FD2DD828521AD500CF7B35 /* MPVLogScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */; };
@@ -3302,7 +3301,6 @@
 			files = (
 				8400D5E71E1AB337006785F5 /* PrefKeyBindingViewController.xib in Resources */,
 				E3DBD23F218EF4F100B3AFBF /* AboutWindowContributorAvatarItem.xib in Resources */,
-				D1F68E752C6ABC22003D1208 /* movist-v2-default-input.conf in Resources */,
 				C789872F1E34EF170005769F /* InfoPlist.strings in Resources */,
 				D114C7B12BEDEF3E0002D077 /* PrefDataViewController.xib in Resources */,
 				E32712B224F2B8CA00359DAB /* ScreenshootOSDView.xib in Resources */,
