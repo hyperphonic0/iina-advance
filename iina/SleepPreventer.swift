@@ -77,6 +77,13 @@ class SleepPreventer: NSObject {
     SleepPreventer.activityToken = nil
   }
 
+  /// Re-evaluates whether sleep should be prevented by examining the states of all players, then applies any necessary changes.
+  ///
+  /// This method is safe to call repeatedly but should always be called on the main thread to prevent race conditions.
+  /// After this method returns, exactly one of the following states will be in effect:
+  /// 1. Prevent both display sleep & screen saver from starting (`ProcessInfo.ActivityOptions.idleDisplaySleepDisabled`)
+  /// 2. Prevent display sleep but allow screen saver to start (`ProcessInfo.ActivityOptions.idleSystemSleepDisabled`)
+  /// 3. Do not prevent display sleep or screen saver from starting.
   static func updateSleepPrevention() {
     DispatchQueue.main.async {
       if Preference.bool(for: .preventScreenSaver) {
