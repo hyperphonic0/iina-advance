@@ -493,7 +493,12 @@ extension PlayerWindowController {
 
     bottomBarView.addSubview(bottomBarTopBorder)
     bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
-    bottomBarTopBorder.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0.5).isActive = true
+    // Want to make a 0.5px border. But it seems that in some display modes, that is not only not possible,
+    // but it will trigger an auto-layout constraint error. So use defaultHigh and be prepared to accept a 1px border.
+    let bottomBarTopBorder_HeightConstraint = bottomBarTopBorder.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0.5)
+    bottomBarTopBorder_HeightConstraint.identifier = .init("BottomBarTopBorder-HeightConstraint")
+    bottomBarTopBorder_HeightConstraint.priority = .defaultHigh
+    bottomBarTopBorder_HeightConstraint.isActive = true
 
     self.bottomBarView = bottomBarView
   }
@@ -529,7 +534,11 @@ extension PlayerWindowController {
     leadingSidebarTrailingBorder.fillColor = .quaternaryLabelColor
     leadingSidebarTrailingBorder.translatesAutoresizingMaskIntoConstraints = false
     leadingSidebarTrailingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
-    leadingSidebarTrailingBorder.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: -0.5).isActive = true
+    // Avoid constraint error by setting priority = .defaultHigh (see similar notes for bottomBarTopBorder_HeightConstraint, et al.)
+    let leadingSidebarTrailingBorder_WidthConstraint = leadingSidebarTrailingBorder.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: -0.5)
+    leadingSidebarTrailingBorder_WidthConstraint.identifier = .init("LeadingSidebarTrailingBorder-WidthConstraint")
+    leadingSidebarTrailingBorder_WidthConstraint.priority = .defaultHigh
+    leadingSidebarTrailingBorder_WidthConstraint.isActive = true
 
     // - Trailing sidebar
 
@@ -550,7 +559,11 @@ extension PlayerWindowController {
     trailingSidebarLeadingBorder.fillColor = .quaternaryLabelColor
     trailingSidebarLeadingBorder.translatesAutoresizingMaskIntoConstraints = false
     trailingSidebarLeadingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
-    trailingSidebarLeadingBorder.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0.5).isActive = true
+    // Avoid constraint error by setting priority = .defaultHigh (see similar notes for bottomBarTopBorder_HeightConstraint, et al.)
+    let trailingSidebarLeadingBorder_WidthConstraint = trailingSidebarLeadingBorder.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0.5)
+    trailingSidebarLeadingBorder_WidthConstraint.identifier = .init("TrailingSidebarLeadingBorder-WidthConstraint")
+    trailingSidebarLeadingBorder_WidthConstraint.priority = .defaultHigh
+    trailingSidebarLeadingBorder_WidthConstraint.isActive = true
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews
