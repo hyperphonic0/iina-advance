@@ -334,11 +334,6 @@ extension VideoView {
   func apply(_ geometry: PWinGeometry?) {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    // TODO: implement a custom animation for change to aspect constraint
-    if IINAAnimation.disableActionsWorkaround {
-      CATransaction.setDisableActions(true)
-    }
-
     guard let geometry, geometry.isVideoVisible else {
       log.verbose{"VideoView: \(geometry == nil ? "no geometry" : "video not visible"); will remove constraints"}
       removeVideoConstraints()
@@ -452,7 +447,7 @@ extension VideoView {
     let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
 
     // Need to keep priorities under 500 or the window will not resize!
-    cons.update(connectSpacers: Constraint(active: false, priority: 1000),
+    cons.update(connectSpacers: Constraint(active: true, priority: 1000),
                 // The desired aspect must always be honored. All constraints are secondary to this.
                 aspect: AspectConstraint(active: false, priority: musicMode ? 499 : 1000, multiplier: aspectMultiplier),
 
@@ -461,15 +456,15 @@ extension VideoView {
                 hMax: -spacerMinValues.totalHeight,
                 whMax_Priority: musicMode ? .required : .init(495),
 
-                spacerMax: Constraint(active: false, priority: 490),
+                spacerMax: Constraint(active: true, priority: 490),
 
                 // For interactive mode, these need to be higher priority than video max
-                spacerMin: QuadConstraint(active: false, priority: 496, spacerMinValues),
+                spacerMin: QuadConstraint(active: true, priority: 496, spacerMinValues),
 
-                spacerPreferred: QuadConstraint(active: false, priority: 481, keepVideoAwayFromBars ? geometry.insideBars : nil),
+                spacerPreferred: QuadConstraint(active: true, priority: 481, keepVideoAwayFromBars ? geometry.insideBars : nil),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-                center: Constraint(active: false, priority: 480)
+                center: Constraint(active: true, priority: 480)
                 )
 
 

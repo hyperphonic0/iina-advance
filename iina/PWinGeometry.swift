@@ -267,17 +267,17 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return GeoUtil.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
   }
 
-  var viewportFrameInScreenCoords: NSRect {
-    let origin = CGPoint(x: windowFrame.origin.x + outsideBars.leading,
-                         y: windowFrame.origin.y + outsideBars.bottom)
+  var viewportFrameInWindowCoords: NSRect {
+    let origin = CGPoint(x: outsideBars.leading,
+                         y: outsideBars.bottom)
     return NSRect(origin: origin, size: viewportSize)
   }
 
-  var videoFrameInScreenCoords: NSRect {
-    let videoFrameInWindowCoords = videoFrameInWindowCoords
-    let origin = CGPoint(x: windowFrame.origin.x + videoFrameInWindowCoords.origin.x,
-                         y: windowFrame.origin.y + videoFrameInWindowCoords.origin.y)
-    return NSRect(origin: origin, size: videoSize)
+  var viewportFrameInScreenCoords: NSRect {
+    let viewportFrameInWindowCoords = viewportFrameInWindowCoords
+    let origin = CGPoint(x: windowFrame.origin.x + viewportFrameInWindowCoords.origin.x,
+                         y: windowFrame.origin.y + viewportFrameInWindowCoords.origin.y)
+    return NSRect(origin: origin, size: viewportSize)
   }
 
   var videoFrameInWindowCoords: NSRect {
@@ -286,6 +286,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
            "viewportSize \(viewportSize) is smaller than videoSize \(videoSize)")
     let origin = CGPoint(x: outsideBars.leading + viewportMargins.leading,
                          y: outsideBars.bottom + viewportMargins.bottom)
+    return NSRect(origin: origin, size: videoSize)
+  }
+
+  var videoFrameInScreenCoords: NSRect {
+    let videoFrameInWindowCoords = videoFrameInWindowCoords
+    let origin = CGPoint(x: windowFrame.origin.x + videoFrameInWindowCoords.origin.x,
+                         y: windowFrame.origin.y + videoFrameInWindowCoords.origin.y)
     return NSRect(origin: origin, size: videoSize)
   }
 
