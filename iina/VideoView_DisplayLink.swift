@@ -213,5 +213,8 @@ func displayLinkCallback(
       guard !isUninited else { return }
       glVideoLayer.mpvReportSwap()
     }
+    if glVideoLayer.isAsynchronous && glVideoLayer.videoView.needsForcedRedraws() {
+      glVideoLayer.drawAsync(forced: true)
+    }
     return kCVReturnSuccess
   }

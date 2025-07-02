@@ -203,14 +203,22 @@ class VideoView: NSView {
 
   // MARK: - Misc
 
+  func needsForcedRedraws() -> Bool {
+    guard let currentVideoTrack = player.info.currentTrack(.video), currentVideoTrack.id != 0 else { return false }
+    guard player.windowController.loaded, player.isActive, player.info.isPaused || currentVideoTrack.isAlbumart else { return false }
+    guard !Preference.bool(for: .isRestoreInProgress) else { return false }
+    return true
+  }
+
+  func activateForceRedraws(force: Bool = false) {
+    guard force || needsForcedRedraws() else { return }
+    enterAsynchronousMode()
+    displayActive(temporary: player.info.isPaused)
+  }
+
   func forceDraw() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard let currentVideoTrack = player.info.currentTrack(.video), currentVideoTrack.id != 0 else {
-      log.verbose("Skipping force video redraw: no video track selected")
-      return
-    }
-    guard player.windowController.loaded, player.isActive, player.info.isPaused || currentVideoTrack.isAlbumart else { return }
-    guard !Preference.bool(for: .isRestoreInProgress) else { return }
+    guard needsForcedRedraws() else { return }
     log.trace("Forcing video redraw")
     // Does nothing if already active. Will restart idle timer if paused
     displayActive(temporary: player.info.isPaused)

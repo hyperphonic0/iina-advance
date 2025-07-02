@@ -447,28 +447,29 @@ extension VideoView {
 
     let spacerMinValues: MarginQuad = interactiveMode ? Constants.InteractiveMode.viewportMargins : .zero
 
+    // FIXME: keepVideoAwayFromBars is broken with keepaspect-window=no
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
     let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
 
     // Need to keep priorities under 500 or the window will not resize!
-    cons.update(connectSpacers: Constraint(active: true, priority: 1000),
+    cons.update(connectSpacers: Constraint(active: false, priority: 1000),
                 // The desired aspect must always be honored. All constraints are secondary to this.
-                aspect: AspectConstraint(active: true, priority: musicMode ? 499 : 1000, multiplier: aspectMultiplier),
+                aspect: AspectConstraint(active: false, priority: musicMode ? 499 : 1000, multiplier: aspectMultiplier),
 
                 /// For interactive mode, max width should equal superview's width minus minMargins
                 wMax: -spacerMinValues.totalWidth,
                 hMax: -spacerMinValues.totalHeight,
                 whMax_Priority: musicMode ? .required : .init(495),
 
-                spacerMax: Constraint(active: !musicMode && !interactiveMode, priority: 490),
+                spacerMax: Constraint(active: false, priority: 490),
 
                 // For interactive mode, these need to be higher priority than video max
-                spacerMin: QuadConstraint(active: true, priority: 496, spacerMinValues),
+                spacerMin: QuadConstraint(active: false, priority: 496, spacerMinValues),
 
-                spacerPreferred: QuadConstraint(active: true, priority: 481, keepVideoAwayFromBars ? geometry.insideBars : nil),
+                spacerPreferred: QuadConstraint(active: false, priority: 481, keepVideoAwayFromBars ? geometry.insideBars : nil),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-                center: Constraint(active: !musicMode, priority: 480)
+                center: Constraint(active: false, priority: 480)
                 )
 
 

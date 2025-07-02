@@ -32,6 +32,9 @@ extension PlayerWindowController {
   /// Do not use because it interferes with animations in progress.
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
+    // Trigger forced draws
+    videoView.activateForceRedraws(force: true)
+
     guard !isInWindowResizeDenialPeriod() else {
       log.verbose{"[WinWillResize] Denying request=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)"}
       pendingResizeForScreenChange = false  // should be safe to reset this now
@@ -83,10 +86,6 @@ extension PlayerWindowController {
   }
 
   func resizeWindowSubviews(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
-    defer {
-      videoView.forceDraw()  // needed if scaling to get a clearer image
-    }
-
     let currentLayout = currentLayout
     let inLiveResize = window.inLiveResize
 
@@ -201,6 +200,7 @@ extension PlayerWindowController {
       // Not sure if this helps fix the aspect constraint transition
       videoView.apply(newGeometry)
     }
+    player.updateMPVWindowScale(using: newGeometry)
 
     // Update floating control bar position if applicable
     adjustFloatingControllerOrigin(for: newGeometry)
@@ -245,19 +245,7 @@ extension PlayerWindowController {
   /// Can be used in windowed or full screen modes.
   /// Can be used in music mode only if playlist is hidden.
   func resizeWindowImmediately(using newGeometry: PWinGeometry? = nil) {
-    videoView.enterAsynchronousMode()
-
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-    CATransaction.setAnimationDuration(0)  // need immediate effect. No lag!
-    defer {
-      CATransaction.commit()
-    }
-
-    resizeWindowInstantlyNoTransaction(using: newGeometry)
-  }
-
-  func resizeWindowInstantlyNoTransaction(using newGeometry: PWinGeometry? = nil) {
+    videoView.activateForceRedraws(force: true)
     guard let window else { return }
 
     let layout = currentLayout
@@ -290,6 +278,12 @@ extension PlayerWindowController {
   }
 
   // MARK: - Other window geometry functions
+
+  func windowDidResize(_ notification: Notification) {
+    // Plug loophole for window resize when not covered by windowWillResize.
+    // Trigger forced draws
+    videoView.activateForceRedraws(force: true)
+  }
 
   func changeVideoScale(to desiredVideoScale: Double) {
     assert(DispatchQueue.isExecutingIn(.main))

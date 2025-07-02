@@ -19,6 +19,8 @@ extension PlayerWindowController {
   func doPreTransitionWork(_ transition: LayoutTransition) {
     log.verbose{"[\(transition.name)] DoPreTransitionWork"}
     isAnimatingLayoutTransition = true
+    // Trigger forced draws
+    videoView.activateForceRedraws(force: true)
 
     /// Some methods where reference `currentLayout` get called as a side effect of the transition animations.
     /// To avoid possible bugs as a result, let's update this at the very beginning.
@@ -48,8 +50,6 @@ extension PlayerWindowController {
     }
 
     guard let window = window else { return }
-
-    videoView.enterAsynchronousMode()
 
     if transition.outputLayout.isInteractiveMode || transition.outputLayout.isFullScreen {
       // Disable; can cause problems in interactive mode. Set this ASAP because there is sometimes a small delay
@@ -158,10 +158,6 @@ extension PlayerWindowController {
     if transition.isWindowInitialLayout {
       // Reset other views to initial minimums:
       speedLabelBtmConstraint.isActive = false
-    }
-
-    if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
-      videoView.forceDraw()
     }
   }
 
@@ -401,10 +397,6 @@ extension PlayerWindowController {
         log.debug{"[\(transition.name)] CloseOldPanels: applying middleGeo windowFrame=\(middleGeo.windowFrame)"}
         updateWindowFrameAndSubviews(using: middleGeo)
       }
-    }
-
-    if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
-      videoView.forceDraw()
     }
   }
 
@@ -976,9 +968,6 @@ extension PlayerWindowController {
     updateVolumeUI()
     playSlider.needsDisplay = true
 
-    if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
-      videoView.forceDraw()
-    }
   }  /// end `updateHiddenViewsAndConstraints`
 
   /// -------------------------------------------------
@@ -1143,9 +1132,6 @@ extension PlayerWindowController {
       log.verbose{"[\(transition.name)] Skipped applyThemeMaterial due to missing window or screen"}
     }
 
-    if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
-      videoView.forceDraw()
-    }
   }
 
   /// -------------------------------------------------
@@ -1358,7 +1344,6 @@ extension PlayerWindowController {
 
     if !transition.isWindowInitialLayout {
       window.layoutIfNeeded()
-      videoView.forceDraw()
 
       // Do not run sanity checks for initial layout, because in that case all task funcs combined into a single
       // animation task, which means that frames will not be updated yet & can't be measured correctly

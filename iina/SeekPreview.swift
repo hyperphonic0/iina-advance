@@ -333,6 +333,8 @@ extension PlayerWindowController {
           // Experiment with Thumbfast Lua script as an alternative (https://github.com/po5/thumbfast)
           guard player.isActive else { return }
           let osdWidth = player.mpv.getDouble(MPVProperty.osdWidth)
+
+          let keepAspect = player.mpv.getFlag(MPVOption.Window.keepaspect)
           // Thumbfast expects X,Y to represent top-left corner of thumbnail
           let scaleRatio = osdWidth / currentGeo.videoSize.width
           let thumbOriginX = (((posInWindowX - currentGeo.viewportMargins.leading) * scaleRatio).rounded() - (thumbWidth * 0.5)).clamped(to: 0...(max(0, osdWidth - thumbWidth)))

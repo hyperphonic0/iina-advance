@@ -365,13 +365,20 @@ extension MPVController {
     let userOptions = player.userOptions
     if !userOptions.isEmpty {
       log.debug{"Setting \(userOptions.count) user-configured mpv options"}
-      for op in userOptions {
-        let status = setOptionString(op.0, op.1)
+      for (opName, opValue) in userOptions {
+        // Ignore these options if specified; they are hard-coded above & will result in visual bugs if overridden
+        guard opName != MPVOption.Window.keepaspect,
+              opName != MPVOption.Window.keepaspectWindow else {
+          log.debug{"Ignoring user option: \(opName.quoted)"}
+          continue
+        }
+
+        let status = setOptionString(opName, opValue)
         if status < 0 {
           let errorString = errorString(status)
           // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
           DispatchQueue.main.async {
-            Utility.showAlert("extra_option.error", arguments: [op.0, op.1, status, errorString])
+            Utility.showAlert("extra_option.error", arguments: [opName, opValue, status, errorString])
           }
         }
       }
@@ -440,6 +447,9 @@ extension MPVController {
     if !player.isPresentInUserOptions(MPVEncoding.o) {
       applyHardwareAccelerationWorkaround()
 
+      chkErr(setString(MPVOption.Window.keepaspect, yes, level: .verbose))
+      chkErr(setString(MPVOption.Window.keepaspectWindow, no, level: .verbose))
+
       if player.videoView.useOpenGL {
         if !player.isPresentInUserOptions(MPVOption.Video.vo) {
           log.verbose("Using legacy libmpv + OpenGEL rendering")
@@ -447,6 +457,7 @@ extension MPVController {
           // so we put them here.
           chkErr(setString(MPVOption.Video.vo, "libmpv", level: .debug))
         }
+
       } else {
         log.verbose("Using gpu-next + Vulkan rendering")
         let widPtr = UnsafeMutablePointer<Int64>.allocate(capacity: 1)
@@ -462,9 +473,6 @@ extension MPVController {
         if !player.isPresentInUserOptions(MPVOption.Video.hwdec) {
           chkErr(setString(MPVOption.Video.hwdec, "vulkan", level: .debug))
         }
-      }
-      if !player.isPresentInUserOptions(MPVOption.Window.keepaspect) {
-        chkErr(setString(MPVOption.Window.keepaspect, no, level: .verbose))
       }
       if !player.isPresentInUserOptions(MPVOption.Video.gpuHwdecInterop) {
         chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))

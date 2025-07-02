@@ -181,32 +181,32 @@ extension PlayerWindowController {
 
     // These don't seem to matter. But set to reasonable values:
     let ch: Float = 250
-    viewportTrailingSpacer.setContentHugging(h: ch, v: ch)
-    viewportLeadingSpacer.setContentHugging(h: ch, v: ch)
-    viewportTopSpacer.setContentHugging(h: ch, v: ch)
-    viewportBottomSpacer.setContentHugging(h: ch, v: ch)
-    let ccr: Float = 250
-    viewportTrailingSpacer.setCCResistance(h: ccr, v: ccr)
-    viewportLeadingSpacer.setCCResistance(h: ccr, v: ccr)
-    viewportTopSpacer.setCCResistance(h: ccr, v: ccr)
-    viewportBottomSpacer.setCCResistance(h: ccr, v: ccr)
+//    viewportTrailingSpacer.setContentHugging(h: ch, v: ch)
+//    viewportLeadingSpacer.setContentHugging(h: ch, v: ch)
+//    viewportTopSpacer.setContentHugging(h: ch, v: ch)
+//    viewportBottomSpacer.setContentHugging(h: ch, v: ch)
+//    let ccr: Float = 250
+//    viewportTrailingSpacer.setCCResistance(h: ccr, v: ccr)
+//    viewportLeadingSpacer.setCCResistance(h: ccr, v: ccr)
+//    viewportTopSpacer.setCCResistance(h: ccr, v: ccr)
+//    viewportBottomSpacer.setCCResistance(h: ccr, v: ccr)
   }
 
   func addVideoViewSpacers() {
     log.verbose("[Load] Adding videoView spacers to viewportView")
-    viewportView.addSubview(viewportTopSpacer)
-    viewportView.addSubview(viewportBottomSpacer)
-    viewportView.addSubview(viewportLeadingSpacer)
-    viewportView.addSubview(viewportTrailingSpacer)
-    viewportTopSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
-    viewportBottomSpacer.addConstraintsToFillSuperview(bottom: 0, trailing: 0)
-    viewportLeadingSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
-    viewportTrailingSpacer.addConstraintsToFillSuperview(top: 0, trailing: 0)
-    // Reduce the unused dimension of each spacer to keep it well-defined
-    viewportTopSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
-    viewportBottomSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
-    viewportLeadingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
-    viewportTrailingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
+//    viewportView.addSubview(viewportTopSpacer)
+//    viewportView.addSubview(viewportBottomSpacer)
+//    viewportView.addSubview(viewportLeadingSpacer)
+//    viewportView.addSubview(viewportTrailingSpacer)
+//    viewportTopSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
+//    viewportBottomSpacer.addConstraintsToFillSuperview(bottom: 0, trailing: 0)
+//    viewportLeadingSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
+//    viewportTrailingSpacer.addConstraintsToFillSuperview(top: 0, trailing: 0)
+//    // Reduce the unused dimension of each spacer to keep it well-defined
+//    viewportTopSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
+//    viewportBottomSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
+//    viewportLeadingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
+//    viewportTrailingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
   }
 
   func removeVideoViewSpacers() {
