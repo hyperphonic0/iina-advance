@@ -1133,9 +1133,6 @@ extension CGImage {
   }
 
   func cropped(normalizedCropRect nRect: CGRect) -> CGImage {
-    assert((nRect.width.clamped(to: 0.0...1.0) == nRect.width) && (nRect.height.clamped(to: 0.0...1.0) == nRect.height)
-           && (nRect.origin.x.clamped(to: 0.0...1.0) == nRect.origin.x) && (nRect.origin.y.clamped(to: 0.0...1.0) == nRect.origin.y),
-           "normalizedCropRect must be between 0 and 1 in all dimensions (found \(nRect))")
     // Scale cropRect to handle images larger than shown-on-screen size
     let w = Double(width)
     let h = Double(height)

@@ -61,11 +61,7 @@ class OpenURLWindowController: WindowController, NSWindowDelegate, NSTextFieldDe
     overlayView.isHidden = false
     self.playerCore = playerCore
     loadingURL = playerCore.info.currentPlayback?.path
-    if #available(macOS 14, *) {
-      NSApp.activate()
-    } else {
-      NSApp.activate(ignoringOtherApps: true)
-    }
+    NSApp.activate(ignoringOtherApps: true)
     showWindow(self)
   }
 

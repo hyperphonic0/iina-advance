@@ -446,25 +446,28 @@ extension VideoView {
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
     let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
 
+    let useInteractiveMode = false  // TODO
+
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers: Constraint(active: true, priority: 1000),
                 // The desired aspect must always be honored. All constraints are secondary to this.
-                aspect: AspectConstraint(active: false, priority: musicMode ? 499 : 1000, multiplier: aspectMultiplier),
+                aspect: AspectConstraint(active: useInteractiveMode, priority: musicMode ? 499 : 1000, multiplier: aspectMultiplier),
 
                 /// For interactive mode, max width should equal superview's width minus minMargins
                 wMax: -spacerMinValues.totalWidth,
                 hMax: -spacerMinValues.totalHeight,
                 whMax_Priority: musicMode ? .required : .init(495),
 
-                spacerMax: Constraint(active: true, priority: 490),
+                spacerMax: Constraint(active: useInteractiveMode, priority: 490),
 
                 // For interactive mode, these need to be higher priority than video max
-                spacerMin: QuadConstraint(active: true, priority: 496, spacerMinValues),
+                spacerMin: QuadConstraint(active: useInteractiveMode, priority: 496, spacerMinValues),
 
-                spacerPreferred: QuadConstraint(active: true, priority: 481, keepVideoAwayFromBars ? geometry.insideBars : nil),
+                // TODO: split into vertical & horizontal components. Enable only when aspect goes above/below certain value
+                spacerPreferred: QuadConstraint(active: true, priority: 497, keepVideoAwayFromBars ? geometry.insideBars : nil),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-                center: Constraint(active: true, priority: 480)
+                center: Constraint(active: useInteractiveMode, priority: 480)
                 )
 
 

@@ -339,8 +339,8 @@ extension PlayerWindowController {
           let scaleRatio = osdWidth / viewportSize.width
           let thumbOriginX = ((posInWindowX * scaleRatio).rounded() - (thumbWidth * 0.5)).clamped(to: 0...(max(0, osdWidth - thumbWidth)))
           let viewportFrameInWindowCoords = currentGeo.viewportFrameInWindowCoords
-          let thumbOriginInVideoY = thumbOriginY - viewportFrameInWindowCoords.minY
-          var yConverted = ((viewportSize.height - thumbOriginInVideoY) * scaleRatio) - thumbHeight
+          let thumbOriginInViewportY = thumbOriginY - viewportFrameInWindowCoords.minY
+          var yConverted = ((viewportSize.height - thumbOriginInViewportY) * scaleRatio) - thumbHeight
           if !showAbove {
             yConverted -= thumbHeight
           }

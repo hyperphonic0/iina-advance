@@ -558,11 +558,7 @@ class StartupHandler {
 
       // Bring this app to the front, possibly annoying the user who got bored waiting & is now doing something else.
       Logger.log.debug("Activating app")
-      if #available(macOS 14.0, *) {
-        NSApp.activate()
-      } else {
-        NSApp.activate(ignoringOtherApps: true)
-      }
+      NSApp.activate(ignoringOtherApps: true)
 
       var prevWindowNumber: Int? = nil
       for wc in wcsToRestore {

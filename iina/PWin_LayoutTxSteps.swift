@@ -783,7 +783,7 @@ extension PlayerWindowController {
 
           let newX = controlBarFloating.centerXAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 330)
           newX.identifier = "FloatingOSC-CenterX-Con"
-          newX.priority = .init(400)
+          newX.priority = .init(450)
           controlBarFloating.xConstraint = newX
 
           adjustFloatingControllerOrigin(for: transition.outputGeometry)

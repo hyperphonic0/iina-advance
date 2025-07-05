@@ -102,23 +102,24 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
     guard let pwc = playerWindowController, let contentView = pwc.window?.contentView else { return }
     pwc.log.verbose{"Updating floating OSC constraints: leadingSidebarVisible=\(layout.leadingSidebar.isVisible.yn) traillingSidebarVisible=\(layout.leadingSidebar.isVisible.yn)"}
 
-    let leadingConstraintSecondAnchor = layout.trailingSidebar.isVisible ? pwc.trailingSidebarView.trailingAnchor : contentView.leadingAnchor
+    let leadingConstraintSecondAnchor = layout.leadingSidebar.isVisible ? pwc.leadingSidebarView.trailingAnchor : contentView.leadingAnchor
     if leadingMarginConstraint == nil || !leadingMarginConstraint.isActive || (leadingMarginConstraint?.secondAnchor != leadingConstraintSecondAnchor) {
       leadingMarginConstraint?.isActive = false
       leadingMarginConstraint = self.leadingAnchor.constraint(greaterThanOrEqualTo: leadingConstraintSecondAnchor, constant: FloatingControlBarView.margin)
-      leadingMarginConstraint.isActive = true
     }
 
     let traillingConstraintFirstAnchor = layout.trailingSidebar.isVisible ? pwc.trailingSidebarView.leadingAnchor : contentView.trailingAnchor
     if trailingMarginConstraint == nil || !trailingMarginConstraint.isActive || (trailingMarginConstraint?.firstAnchor != traillingConstraintFirstAnchor) {
       trailingMarginConstraint?.isActive = false
       trailingMarginConstraint = traillingConstraintFirstAnchor.constraint(greaterThanOrEqualTo: self.trailingAnchor, constant: FloatingControlBarView.margin)
-      trailingMarginConstraint.isActive = true
     }
     if bottomMarginConstraint == nil || !bottomMarginConstraint.isActive {
+      bottomMarginConstraint?.isActive = false
       bottomMarginConstraint = self.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: FloatingControlBarView.margin)
-      bottomMarginConstraint.isActive = true
     }
+    bottomMarginConstraint.isActive = true
+    leadingMarginConstraint.isActive = true
+    trailingMarginConstraint.isActive = true
   }
 
   func removeMarginConstraints() {
