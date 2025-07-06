@@ -613,7 +613,7 @@ class StartupHandler {
 
       let didRestoreSomething = !wcsToRestore.isEmpty || restoreOpenFileWindow
       let didShowSomething = didRestoreSomething || (wcsForOpenFiles != nil)
-      if !isCommandLine && !didShowSomething {
+      if !isCommandLine, !didShowSomething, AppDelegate.isInteractiveLaunch {
         // Fall back to default action:
         AppDelegate.shared.doLaunchOrReopenAction()
       }

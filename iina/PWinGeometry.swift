@@ -647,8 +647,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// This should be more intuitive to the user which is expecting "near" full screen behavior when maximized.
   func withResizedOutsideBars(top: CGFloat? = nil, trailing: CGFloat? = nil,
                               bottom: CGFloat? = nil, leading: CGFloat? = nil,
-                              pinWidthOrHeightIfAtMax: Bool,
-                              pinToAnySideOfScreen: Bool) -> PWinGeometry {
+                              pinWidthOrHeightIfAtMax: Bool) -> PWinGeometry {
     assert((top ?? 0) >= 0)
     assert((trailing ?? 0) >= 0)
     assert((bottom ?? 0) >= 0)
@@ -676,7 +675,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       if newWindowWidth > screenFrame.width || (pinWidthOrHeightIfAtMax && (abs(screenFrame.width - windowFrame.width) <= 1)) {
         newWindowWidth = screenFrame.width
         newX = screenFrame.origin.x  // Move to fit in screen
-      } else if pinToAnySideOfScreen {
+      } else if pinWidthOrHeightIfAtMax {
         if abs(screenFrame.minX - windowFrame.minX) <= 1 {
           // Was aligned to screen's LEADING edge
           newX = screenFrame.minX
@@ -689,7 +688,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       if newWindowHeight > screenFrame.height || (pinWidthOrHeightIfAtMax && (abs(screenFrame.height - windowFrame.height) <= 1)) {
         newWindowHeight = screenFrame.height
         newY = screenFrame.origin.y  // Move to fit in screen
-      } else if pinToAnySideOfScreen {
+      } else if pinWidthOrHeightIfAtMax {
         if abs(screenFrame.minY - windowFrame.minY) <= 1 {
           // Was aligned to screen's BOTTOM edge
           newY = screenFrame.minY
@@ -710,7 +709,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                     leading: leading ?? outsideBars.leading)
 
     let resizedBarsGeo = clone(windowFrame: newWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars)
-    log.verbose{"[ResizeBars] ΔW=\(ΔW.logStr) ΔH=\(ΔH.logStr) pinMax=\(pinWidthOrHeightIfAtMax.yn) pinSides=\(pinToAnySideOfScreen.yn) moveToKeepInScreen:\(resizedBarsGeo.screenFit.shouldMoveWindowToKeepInContainer.yesno)"}
+    log.verbose{"[ResizeBars] ΔW=\(ΔW.logStr) ΔH=\(ΔH.logStr) pinMax=\(pinWidthOrHeightIfAtMax.yn) moveToKeepInScreen:\(resizedBarsGeo.screenFit.shouldMoveWindowToKeepInContainer.yesno)"}
     return resizedBarsGeo
   }
 
@@ -721,8 +720,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                        insideTop: CGFloat? = nil, insideTrailing: CGFloat? = nil,
                        insideBottom: CGFloat? = nil, insideLeading: CGFloat? = nil,
                        video: VideoGeometry? = nil,
-                       pinWidthOrHeightIfAtMax: Bool = false,
-                       pinToAnySideOfScreen: Bool = false) -> PWinGeometry {
+                       pinWidthOrHeightIfAtMax: Bool = false) -> PWinGeometry {
 
     // Inside bars
     let newInsideBars = MarginQuad(top: insideTop ?? insideBars.top,
@@ -736,8 +734,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                                        trailing: outsideTrailing,
                                                        bottom: outsideBottom,
                                                        leading: outsideLeading,
-                                                       pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax,
-                                                       pinToAnySideOfScreen: pinToAnySideOfScreen)
+                                                       pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax)
   }
 
   /// Calculate the window frame from a parsed struct of mpv's `geometry` option.
@@ -890,7 +887,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert(screenFit != .legacyFullScreen && screenFit != .nativeFullScreen)
     assert(mode == .windowedNormal)
     // TODO: preserve window size better when lockViewportToVideoSize==false
-    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
     /// Close the sidebars. Top and bottom bars are resized for interactive mode controls.
     let resizedGeo = withResizedBars(mode: .windowedInteractive,
                                      outsideTop: Constants.InteractiveMode.outsideTopBarHeight,
@@ -899,8 +895,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                      outsideLeading: 0,
                                      insideTop: 0, insideTrailing: 0,
                                      insideBottom: 0, insideLeading: 0,
-                                     pinWidthOrHeightIfAtMax: !lockViewportToVideoSize,
-                                     pinToAnySideOfScreen: !lockViewportToVideoSize)
+                                     pinWidthOrHeightIfAtMax: true)
     return resizedGeo.refitted()
   }
 
@@ -915,8 +910,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                      outsideBottom: 0, outsideLeading: 0,
                                      insideTop: 0, insideTrailing: 0,
                                      insideBottom: 0, insideLeading: 0,
-                                     pinWidthOrHeightIfAtMax: true,
-                                     pinToAnySideOfScreen: true)
+                                     pinWidthOrHeightIfAtMax: true)
     return resizedGeo
   }
 

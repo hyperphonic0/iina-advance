@@ -321,10 +321,9 @@ extension PlayerWindowController {
       } else {
         prevWindowedGeo = geo.windowed
       }
-      let pinToAnySideOfScreen = !isWindowInitialLayout && !Preference.bool(for: .lockViewportToVideoSize)
+      let pinWidthOrHeightIfAtMax = !isWindowInitialLayout
       return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, video: inputGeometry.video,
-                                                      pinWidthOrHeightIfAtMax: !isWindowInitialLayout,
-                                                      pinToAnySideOfScreen: pinToAnySideOfScreen, log)
+                                                      pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax, log)
 
     case .windowedInteractive:
       if inputGeometry.mode == .windowedInteractive {
@@ -395,7 +394,7 @@ extension PlayerWindowController {
         return nil
       }
       // Only bottom bar needs to be closed. No need to constrain in screen
-      return transition.inputGeometry.withResizedBars(outsideBottom: 0, pinWidthOrHeightIfAtMax: false, pinToAnySideOfScreen: false)
+      return transition.inputGeometry.withResizedBars(outsideBottom: 0, pinWidthOrHeightIfAtMax: false)
     }
 
     // TOP
@@ -473,7 +472,6 @@ extension PlayerWindowController {
                                         allowVideoToOverlapCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
     }
 
-    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
     let resizedBarsGeo = transition.outputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
                                                                    outsideTrailing: outsideTrailingBarWidth,
                                                                    outsideBottom: outsideBottomBarHeight,
@@ -482,8 +480,7 @@ extension PlayerWindowController {
                                                                    insideTrailing: insideTrailingBarWidth,
                                                                    insideBottom: insideBottomBarHeight,
                                                                    insideLeading: insideLeadingBarWidth,
-                                                                   pinWidthOrHeightIfAtMax: true,
-                                                                   pinToAnySideOfScreen: !lockViewportToVideoSize)
+                                                                   pinWidthOrHeightIfAtMax: true)
     return resizedBarsGeo.refitted()
   }
 

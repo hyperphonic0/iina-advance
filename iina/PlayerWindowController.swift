@@ -1775,8 +1775,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                        insideTop: 0, insideTrailing: 0,
                        insideBottom: 0, insideLeading: 0,
                        video: uncroppedVideoGeo,
-                       pinWidthOrHeightIfAtMax: !lockViewportToVideoSize,
-                       pinToAnySideOfScreen: !lockViewportToVideoSize).refitted()
+                       pinWidthOrHeightIfAtMax: !lockViewportToVideoSize).refitted()
 
     let uncroppedClosedBarsGeo: PWinGeometry
     if lockViewportToVideoSize {

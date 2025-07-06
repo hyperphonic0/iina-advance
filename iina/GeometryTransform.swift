@@ -454,7 +454,6 @@ struct GeometryTransform {
         return outputLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
                                                         video: outputVidGeo,
                                                         pinWidthOrHeightIfAtMax: true,
-                                                        pinToAnySideOfScreen: true,
                                                         applyOffsetIndex: player.openedWindowsSetIndex, log)
       }
 
@@ -471,7 +470,6 @@ struct GeometryTransform {
             return outputLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
                                                             video: outputVidGeo,
                                                             pinWidthOrHeightIfAtMax: true,
-                                                            pinToAnySideOfScreen: true,
                                                             applyOffsetIndex: player.openedWindowsSetIndex, log)
           } else {
             log.debug{"[GeoTF:\(name)] No mpv geometry found. Will fall back to minimal resize"}
@@ -774,7 +772,7 @@ extension PlayerWindowController {
       let windowed: PWinGeometry
       if lastClosedGeo.mode.isWindowed && !lastClosedGeo.screenFit.isFullScreen {
         windowed = cxt.outputLayout.convertWindowedModeGeometry(from: lastClosedGeo, video: priorState.geoSet.video,
-                                                                pinWidthOrHeightIfAtMax: false, pinToAnySideOfScreen: false, log)
+                                                                pinWidthOrHeightIfAtMax: false, log)
       } else {
         windowed = cxt.outputLayout.buildDefaultInitialGeometry(screen: bestScreen, video: priorState.geoSet.video)
       }

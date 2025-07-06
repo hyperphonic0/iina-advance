@@ -775,6 +775,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // reopening once termination has started.
     guard !isTerminating else { return false }
     guard startupHandler.state == .doneOpening else { return false }
+    guard AppDelegate.isInteractiveLaunch else {
+      Logger.log.verbose("HandleReopen: is non-interactive launch; ignoring")
+      return false
+    }
 
     // OpenFile is an NSPanel, which AppKit considers not to be a window. Need to account for this ourselves.
     guard !hasVisibleWindows && !isShowingOpenFileWindow else {
