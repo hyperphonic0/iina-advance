@@ -2238,6 +2238,16 @@ extension DispatchQueue {
       }
     }
   }
+
+  public func execOrSync(execute work: @Sendable @convention(block) () -> Void) {
+    if DispatchQueue.isExecutingIn(self, logError: false) {
+      work()
+    } else {
+      sync {
+        work()
+      }
+    }
+  }
 }
 
 

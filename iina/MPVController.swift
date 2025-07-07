@@ -547,7 +547,7 @@ class MPVController: NSObject {
   /// screen's actual scale factor and is at best an oversimplification which is less wrong on average. It is like assuming
   /// "all men have a shoe size of 10 and all women have a shoe size of 8", which is only slightly better than "all humans have a shoe size of 9".
   func getWindowScale() -> Double {
-    let mpvVideoScale = getDouble(MPVOption.Window.windowScale)
+    let mpvVideoScale = getDouble(MPVProperty.windowScale)
     // Use 6 decimals to be consistent with both mpv & IINA calculations
     return mpvVideoScale.roundedTo6()
   }

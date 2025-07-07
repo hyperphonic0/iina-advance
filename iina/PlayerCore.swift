@@ -1474,29 +1474,26 @@ class PlayerCore: NSObject {
   }
 
   func updateMPVWindowScale(using windowGeo: PWinGeometry) {
-    // FIXME: this is broken with keepaspect-window=no
-//    guard windowGeo.mode == .windowedNormal || (windowGeo.mode == .musicMode && windowGeo.videoSize.height > 0) else {
-//      return
-//    }
-//    mpv.queue.async { [self] in
-//      let desiredVideoScale = windowGeo.mpvVideoScale()
-//      guard desiredVideoScale > 0.0 else {
-//        log.verbose("UpdateMPVWindowScale: desiredVideoScale is 0; aborting")
-//        return
-//      }
-//      guard isActive else { return }
-//      let currentVideoScale = mpv.getWindowScale()
-//
-//      if desiredVideoScale != currentVideoScale {
-//        // Setting the window-scale property seems to result in a small hiccup during playback.
-//        // Not sure if this is an mpv limitation
-//        log.verbose{"Updating mpv window-scale from videoSize=\(windowGeo.videoSize): \(currentVideoScale) → \(desiredVideoScale)"}
-//        mpv.setDouble(MPVProperty.windowScale, desiredVideoScale)
-//
-//      } else {
-//        log.verbose{"Skipping update to mpv window-scale: no change from existing (\(currentVideoScale))"}
-//      }
-//    }
+    guard windowGeo.mode == .windowedNormal || (windowGeo.mode == .musicMode && windowGeo.videoSize.height > 0) else {
+      return
+    }
+    mpv.queue.async { [self] in
+      let desiredMpvWindowScale = windowGeo.mpvWindowScale()
+      guard desiredMpvWindowScale > 0.0 else {
+        log.verbose("UpdateMPVWindowScale: desiredMpvWindowScale is 0; aborting")
+        return
+      }
+      guard isActive else { return }
+      let currentMpvWindowScale = mpv.getWindowScale()
+
+      if desiredMpvWindowScale != currentMpvWindowScale {
+        log.verbose{"Updating mpv window-scale from viewportSize=\(windowGeo.viewportSize): \(currentMpvWindowScale) → \(desiredMpvWindowScale)"}
+        mpv.setDouble(MPVProperty.windowScale, desiredMpvWindowScale)
+
+      } else {
+        log.verbose{"Skipping update to mpv window-scale: no change from existing (\(currentMpvWindowScale))"}
+      }
+    }
   }
 
   func setVideoRotate(_ userRotation: Int) {
@@ -2150,29 +2147,9 @@ class PlayerCore: NSObject {
 
   func windowScaleChanged() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard windowController.loaded else { return }
-    // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
-    guard !windowController.isMagnifying else { return }
-    let isAlreadySized = info.currentPlayback?.state.isAtLeast(.loaded) ?? false
-    guard isAlreadySized else { return }
-
-    let cachedVideoScale: CGFloat
-    if windowController.currentLayout.mode == .musicMode {
-      cachedVideoScale = windowController.musicModeGeo.toPWinGeometry().mpvVideoScale()
-    } else {
-      cachedVideoScale = windowController.windowedModeGeo.mpvVideoScale()
-    }
-    let newVideoScale = mpv.getWindowScale()
-    let needsUpdate = abs(newVideoScale - cachedVideoScale) > 10e-10
-    guard needsUpdate else {
-      log.verbose{"Δ mpv prop: 'window-scale'; videoScale \(newVideoScale) not changed"}
-      return
-    }
-
-    log.verbose{"Δ mpv prop: 'window-scale', \(cachedVideoScale) → \(newVideoScale)"}
     DispatchQueue.main.async { [self] in
-      log.verbose{"Calling setVideoScale → \(newVideoScale)x"}
-      windowController.changeVideoScale(to: newVideoScale)
+      log.verbose{"Calling updateMpvWindowScale"}
+      windowController.updateMpvWindowScale()
     }
   }
 

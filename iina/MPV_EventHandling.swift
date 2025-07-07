@@ -52,7 +52,8 @@ extension MPVController {
     MPVOption.Equalizer.saturation: MPV_FORMAT_INT64,
     MPVOption.Window.fullscreen: MPV_FORMAT_FLAG,
     MPVOption.Window.ontop: MPV_FORMAT_FLAG,
-    MPVOption.Window.windowScale: MPV_FORMAT_DOUBLE,
+    /// As of mpv 0.38, cannot listen for `MPVProperty.currentWindowScale`
+    MPVProperty.windowScale: MPV_FORMAT_DOUBLE,
     MPVProperty.mediaTitle: MPV_FORMAT_STRING,
     MPVProperty.videoParamsRotate: MPV_FORMAT_INT64,
     MPVProperty.videoParamsPrimaries: MPV_FORMAT_STRING,
@@ -592,7 +593,7 @@ extension MPVController {
     case MPVOption.Window.ontop:
       player.ontopChanged()
 
-    case MPVOption.Window.windowScale:
+    case MPVProperty.windowScale:
       player.windowScaleChanged()
 
     case MPVProperty.mediaTitle:

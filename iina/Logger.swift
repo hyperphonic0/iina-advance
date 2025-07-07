@@ -564,9 +564,14 @@ class Logger: NSObject {
   }
 
   private static func showAlertAndExit(_ message: String, _ cleanup: () -> Void = {}) -> Never {
-    // Set logAlert to false to avoid recursion
-    Utility.showAlert("fatal_error", arguments: [message], logAlert: false)
-    cleanup()
+    // Ensure we are on the main thread so that we display the alert instead of crashing
+    DispatchQueue.main.execOrSync {
+      // Set logAlert to false to avoid recursion
+      Utility.showAlert("fatal_error", arguments: [message], logAlert: false)
+      cleanup()
+      exit(1)
+    }
+    // execOrSync above will always call exit() synchronously, but need this anyway to keep compiler happy:
     exit(1)
   }
 }

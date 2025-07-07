@@ -244,15 +244,19 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   let videoSize: NSSize
 
-  /// `MPVProperty.windowScale`:
-  func mpvVideoScale() -> CGFloat {
+  /// `MPVProperty.currentWindowScale`
+  func mpvWindowScale() -> CGFloat {
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
     let backingScaleFactor = screen.backingScaleFactor
-    let videoWidthScaled = (videoSize.width * backingScaleFactor).roundedTo6()
+    let viewportSize = viewportSize
+    let viewportWidthScaled = (viewportSize.width * backingScaleFactor).roundedTo6()
+    let viewportHeightScaled = (viewportSize.height * backingScaleFactor).roundedTo6()
     let videoSizeCAR = video.videoSizeCAR
-    let videoScale = (videoWidthScaled / videoSizeCAR.width).roundedTo6()
-    log.verbose("[geo] Derived videoScale from cached vidGeo. GeoVideoSize=\(videoSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeCAR) → \(videoScale)")
-    return videoScale
+    let wScaleFactor = (viewportWidthScaled / videoSizeCAR.width).roundedTo6()
+    let hScaleFactor = (viewportHeightScaled / videoSizeCAR.height).roundedTo6()
+    let mpvWindScale = ((wScaleFactor + hScaleFactor) / 2).roundedTo6()
+    log.verbose("[geo] Derived mpv window-scale from cached vidGeo: ViewportSize=\(viewportSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeCAR) → \(mpvWindScale)")
+    return mpvWindScale
   }
 
   /// Like `videoSizeCAR`, but after applying `scale`.
@@ -970,7 +974,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                         bottom: viewportMargins.bottom + bottomHeightOutsideCropBox,
                                         leading: viewportMargins.leading + leadingWidthOutsideCropBox)
 
-    log.debug("[geo] Cropping from cropRect \(cropRect) x windowScale (\(scaleRatio)), windowSize=\(windowFrame.size), → newVideoSize:\(cropRectScaledToWindow.size), newVideoAspect:\(croppedVideoAspect), newViewportMargins:\(newViewportMargins)")
+    log.debug("[geo] Cropping from cropRect \(cropRect) x videoScale (\(scaleRatio)), windowSize=\(windowFrame.size), → newVideoSize:\(cropRectScaledToWindow.size), newVideoAspect:\(croppedVideoAspect), newViewportMargins:\(newViewportMargins)")
     let newFitOption = self.screenFit == .centerInside ? .stayInside : self.screenFit
     log.debug("[geo] Cropped to new cropLabel: \(newVidGeo.selectedCropLabel.quoted), screenID: \(screenID), screenFit: \(newFitOption)")
     return self.clone(screenFit: newFitOption, viewportMargins: newViewportMargins, video: newVidGeo)

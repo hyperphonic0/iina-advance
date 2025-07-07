@@ -91,7 +91,7 @@ class Utility {
       alert.beginSheetModal(for: sheetWindow)
     } else {
       let response = alert.runModal()
-      Logger.log.verbose{"Alert response: \(response)"}
+      Logger.log.verbose{"Alert response: \(response.rawValue)"}
 
     }
     if disableMenus {

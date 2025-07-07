@@ -217,6 +217,7 @@ struct GeometryTransform {
     var outputVidGeo: VideoGeometry {
       get {
         guard let _outputVidGeo else {
+          // Developer error!
           Logger.fatal("Context.outputVidGeo cannot be accessed until after `videoTransform` is called")
         }
         return _outputVidGeo
@@ -230,7 +231,8 @@ struct GeometryTransform {
     var inputLayout: LayoutState {
       get {
         guard let _inputLayout else {
-          Logger.fatal("Context.inputLayout cannot be accessed until after `stateTransition` is called")
+          // Developer error!
+          Logger.fatal("Context.inputLayout must not be accessed until after `stateTransition` is called")
         }
         return _inputLayout
       }
@@ -246,7 +248,8 @@ struct GeometryTransform {
     var outputLayout: LayoutState {
       get {
         guard let _outputLayout else {
-          Logger.fatal("Context.outputLayout cannot be accessed until after `stateTransition` is called")
+          // Developer error!
+          Logger.fatal("Context.outputLayout must not be accessed until after `stateTransition` is called")
         }
         return _outputLayout
       }

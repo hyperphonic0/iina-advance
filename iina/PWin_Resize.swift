@@ -285,6 +285,9 @@ extension PlayerWindowController {
     videoView.activateForceRedraws(force: true)
   }
 
+  /// Changes video scale to `desiredVideoScale`, where a value of `1.0` is the video's native scale.
+  ///
+  /// To change window scale instead, see `updateMpvWindowScale`.
   func changeVideoScale(to desiredVideoScale: Double) {
     assert(DispatchQueue.isExecutingIn(.main))
     // Not supported in music mode at this time. Need to resolve backing scale bugs
@@ -310,6 +313,68 @@ extension PlayerWindowController {
       let videoSizeCAR = oldWindowedGeo.video.videoSizeCAR
       let videoSizeScaled = (videoSizeCAR * adjustedVideoScale).rounded()
       log.verbose{"SetVideoScale: desired=\(desiredVideoScale) adjusted=\(adjustedVideoScale) videoCAR=\(videoSizeCAR) → videoScaled=\(videoSizeScaled)"}
+      let newGeoUnconstrained = oldWindowedGeo.scalingVideo(to: videoSizeScaled, screenFit: .noConstraints)
+      player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
+      return newGeoUnconstrained.refitted(using: .stayInside)
+    })
+    animationPipeline.submit(tf)
+  }
+
+  /// Scales the viewport to the given `desiredMpvWindowScale`.
+  ///
+  /// This method is really only useful for calling or responding to mpv's `window-scale` property,
+  /// because this property is meaningless to a casual user due to the way it is calculated; they should normally care about
+  /// the video scale instead. To change the video scale, call `changeVideoScale`.
+  ///
+  /// Not supported in music mode at this time. Need to resolve backing scale bugs.
+  ///
+  /// See also: `PWinGeometry.mpvWindowScale`.
+  func updateMpvWindowScale() {
+    assert(DispatchQueue.isExecutingIn(.main))
+    // Not supported in music mode at this time. Need to resolve backing scale bugs
+    guard currentLayout.mode == .windowedNormal else {
+      log.error{"SetVideoScale: skipping; mode is unsupported: \(currentLayout.mode)"}
+      return
+    }
+    guard let window else { return }
+    // Do not call while resizing the window, as doing so has race conditions.
+    guard !isAnimatingLayoutTransition, !window.inLiveResize else { return }
+
+    var newWindowScale: CGFloat = 0.0
+
+    let tf = GeometryTransform("SetVideoScale", player,
+                               video: { [self] cxt -> VideoGeometry? in
+      // Kludge: use VideoGeometry transform only to execute on the mpv queue, soas to call mpv.getWindowScale safely.
+      assert(DispatchQueue.isExecutingIn(player.mpv.queue))
+      guard loaded else { return nil }
+      // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
+      guard !isMagnifying else { return nil }
+      let isAlreadySized = cxt.currentPlayback.state.isAtLeast(.loaded)
+      guard isAlreadySized else { return nil }
+      newWindowScale = cxt.player.mpv.getWindowScale()
+      guard newWindowScale > 0.0 else { return nil }
+      return cxt.inputVidGeo
+    },
+                               windowed: { [self] cxt -> PWinGeometry? in
+      let cachedWindowScale: CGFloat = cxt.oldGeo.windowed.mpvWindowScale()
+      let needsUpdate = abs(newWindowScale - cachedWindowScale) > 10e-10
+      guard needsUpdate else {
+        log.verbose{"Δ mpv prop: 'window-scale'; videoScale \(newWindowScale) not changed"}
+        return nil
+      }
+
+      log.verbose{"Δ mpv prop: 'window-scale', \(cachedWindowScale) → \(newWindowScale)"}
+      let oldWindowedGeo = cxt.oldGeo.windowed
+      // TODO: if Preference.bool(for: .usePhysicalResolution) {}
+
+      /// This logic needs to match the function `mp_property_current_window_scale` in mpv's `player.command.c`
+      let screen = NSScreen.getScreenOrDefault(screenID: oldWindowedGeo.screenID)
+      let backingScaleFactor = screen.backingScaleFactor
+      let adjustedVideoScale = newWindowScale / backingScaleFactor
+      // mpv uses viewport size for calculation when keepaspect-window=no, which we always use in our operation.
+      let viewportSize = oldWindowedGeo.viewportSize
+      let videoSizeScaled = (viewportSize * adjustedVideoScale).rounded()
+      log.verbose{"SetVideoScale: desired=\(newWindowScale) adjusted=\(adjustedVideoScale) viewportSize=\(viewportSize) → videoScaled=\(videoSizeScaled)"}
       let newGeoUnconstrained = oldWindowedGeo.scalingVideo(to: videoSizeScaled, screenFit: .noConstraints)
       player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
       return newGeoUnconstrained.refitted(using: .stayInside)
@@ -506,7 +571,7 @@ extension PlayerWindowController {
       }
       windowedModeGeo = newGeometry
 
-      log.verbose{"ApplyWindowGeo: Calling updateMPVWindowScale, videoSize=\(newGeometry.videoSize)"}
+      log.verbose{"ApplyWindowGeo: Calling updateMPVWindowScale, viewportSize=\(newGeometry.viewportSize)"}
       player.updateMPVWindowScale(using: newGeometry)
       player.saveState()
     }))
