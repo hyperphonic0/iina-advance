@@ -202,6 +202,8 @@ struct Constants {
     /// Seeks are expensive; limit them to this frequency. (note that 1/60 == 0.017 fps)
     static let sliderSeekThrottlingInterval = 0.01
 
+    static let windowScaleUpdateThrottlingInterval = 0.01
+
     /// Time in seconds to wait before regenerating thumbnails.
     /// Each character the user types into the thumbnailWidth text field triggers a new thumb regen request.
     /// This should help cut down on unnecessary requests.

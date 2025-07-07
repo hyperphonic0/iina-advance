@@ -117,6 +117,7 @@ class PlayerCore: NSObject {
   let saveUIStateDebouncer = Debouncer(delay: Constants.TimeInterval.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
   let thumbReloadDebouncer = Debouncer(delay: Constants.TimeInterval.thumbnailRegenerationDelay, queue: PlayerCore.thumbnailQueue)
   let sliderSeekDebouncer = Debouncer(delay: Constants.TimeInterval.sliderSeekThrottlingInterval)
+  let windowScaleDebouncer = Debouncer(delay: Constants.TimeInterval.windowScaleUpdateThrottlingInterval)
 
   // Plugins
 
@@ -2147,8 +2148,7 @@ class PlayerCore: NSObject {
 
   func windowScaleChanged() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    DispatchQueue.main.async { [self] in
-      log.verbose{"Calling updateMpvWindowScale"}
+    windowScaleDebouncer.run { [self] in
       windowController.updateMpvWindowScale()
     }
   }

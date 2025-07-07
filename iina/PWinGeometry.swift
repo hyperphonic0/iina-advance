@@ -454,6 +454,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     log.trace{"[geo] ScaleViewport start, newViewportSize=\(newViewportSize), lockViewport=\(lockViewportToVideoSize.yn)"}
 
     // -- Viewport size calculation
+    // FIXME: need to ensure window height will fit top & bottom bars!
 
     if lockViewportToVideoSize {
       /// Make sure viewport size is at least as large as min.
@@ -523,7 +524,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert(windowFrame.width >= outsideBars.totalWidth + insideBars.totalWidth,
            "Window width (\(windowFrame.width)) is too small to contain sidebars (inside=\(insideBars), outside=\(outsideBars))")
     assert(windowFrame.height >= outsideBars.totalHeight + insideBars.totalHeight,
-           "Window height (\(windowFrame.width)) is too small to contain top + bottom bars (inside=\(insideBars.totalHeight), outside=\(outsideBars.totalHeight))")
+           "Window height (\(windowFrame.height)) is too small to contain top + bottom bars (inside=\(insideBars.totalHeight), outside=\(outsideBars.totalHeight))")
     assert(viewportSize.width >= 0 && viewportSize.height >= 0,
            "Expected W ≥ 0 & H ≥ 0 for viewportSize, found \(viewportSize)")
     assert(viewportSize.width.isInteger && viewportSize.height.isInteger,
