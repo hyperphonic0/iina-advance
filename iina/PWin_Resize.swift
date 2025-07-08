@@ -200,7 +200,7 @@ extension PlayerWindowController {
       // Not sure if this helps fix the aspect constraint transition
       videoView.apply(newGeometry)
     }
-    player.updateMPVWindowScale(using: newGeometry)
+    player.updateMpvWindowScale(using: newGeometry)
 
     // Update floating control bar position if applicable
     adjustFloatingControllerOrigin(for: newGeometry)
@@ -269,8 +269,8 @@ extension PlayerWindowController {
     if !isFullScreen && !isTransientResize {
       player.saveState()
       if layout.mode == .windowedNormal {
-        log.verbose{"[ResizeWindInstantly] calling updateMPVWindowScale"}
-        player.updateMPVWindowScale(using: windowedModeGeo)
+        log.verbose{"[ResizeWindInstantly] calling updateMpvWindowScale"}
+        player.updateMpvWindowScale(using: windowedModeGeo)
       }
     }
 
@@ -342,7 +342,7 @@ extension PlayerWindowController {
 
     var newWindowScale: CGFloat = 0.0
 
-    let tf = GeometryTransform("SetVideoScale", player,
+    let tf = GeometryTransform("SetWindowScale", player,
                                video: { [self] cxt -> VideoGeometry? in
       // Kludge: use VideoGeometry transform only to execute on the mpv queue, soas to call mpv.getWindowScale safely.
       assert(DispatchQueue.isExecutingIn(player.mpv.queue))
@@ -528,7 +528,6 @@ extension PlayerWindowController {
       resetRotationPreview()
       hideSeekPreviewImmediately()
       updateDefaultArtVisibility(to: showDefaultArt)
-      player.updateMPVWindowScale(using: fsGeo)
       updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyWindowGeoTasks`
     })
     return [task]
@@ -571,8 +570,8 @@ extension PlayerWindowController {
       }
       windowedModeGeo = newGeometry
 
-      log.verbose{"ApplyWindowGeo: Calling updateMPVWindowScale, viewportSize=\(newGeometry.viewportSize)"}
-      player.updateMPVWindowScale(using: newGeometry)
+      log.verbose{"ApplyWindowGeo: Calling updateMpvWindowScale, viewportSize=\(newGeometry.viewportSize)"}
+      player.updateMpvWindowScale(using: newGeometry)
       player.saveState()
     }))
 

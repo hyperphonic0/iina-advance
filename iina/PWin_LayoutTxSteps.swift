@@ -1321,7 +1321,7 @@ extension PlayerWindowController {
       if transition.outputLayout.isMusicMode && !musicModeGeo.isVideoVisible && pip.status == .notInPIP {
         player.setVideoTrackDisabled()
       } else {
-        player.updateMPVWindowScale(using: transition.outputGeometry)
+        player.updateMpvWindowScale(using: transition.outputGeometry)
       }
     }
 
@@ -1383,7 +1383,7 @@ extension PlayerWindowController {
     }
 
     if transition.outputLayout.isWindowed {
-      player.updateMPVWindowScale(using: windowedModeGeo)
+      player.updateMpvWindowScale(using: windowedModeGeo)
     }
 
     log.verbose("[\(transition.name)] Done with transition. IsFullScreen:\(transition.outputLayout.isFullScreen.yn), IsLegacy:\(transition.outputLayout.spec.isLegacyStyle.yn), Mode:\(currentLayout.mode)")

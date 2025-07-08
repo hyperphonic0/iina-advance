@@ -1474,29 +1474,6 @@ class PlayerCore: NSObject {
     windowController.animationPipeline.submit(tf)
   }
 
-  func updateMPVWindowScale(using windowGeo: PWinGeometry) {
-    guard windowGeo.mode == .windowedNormal || (windowGeo.mode == .musicMode && windowGeo.videoSize.height > 0) else {
-      return
-    }
-    mpv.queue.async { [self] in
-      let desiredMpvWindowScale = windowGeo.mpvWindowScale()
-      guard desiredMpvWindowScale > 0.0 else {
-        log.verbose("UpdateMPVWindowScale: desiredMpvWindowScale is 0; aborting")
-        return
-      }
-      guard isActive else { return }
-      let currentMpvWindowScale = mpv.getWindowScale()
-
-      if desiredMpvWindowScale != currentMpvWindowScale {
-        log.verbose{"Updating mpv window-scale from viewportSize=\(windowGeo.viewportSize): \(currentMpvWindowScale) → \(desiredMpvWindowScale)"}
-        mpv.setDouble(MPVProperty.windowScale, desiredMpvWindowScale)
-
-      } else {
-        log.verbose{"Skipping update to mpv window-scale: no change from existing (\(currentMpvWindowScale))"}
-      }
-    }
-  }
-
   func setVideoRotate(_ userRotation: Int) {
     mpv.queue.async { [self] in
       guard AppData.rotations.firstIndex(of: userRotation)! >= 0 else {
@@ -2150,6 +2127,34 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     windowScaleDebouncer.run { [self] in
       windowController.updateMpvWindowScale()
+    }
+  }
+
+  func updateMpvWindowScale(using windowGeo: PWinGeometry) {
+    guard windowGeo.mode == .windowedNormal || (windowGeo.mode == .musicMode && windowGeo.videoSize.height > 0) else {
+      return
+    }
+    // Do not call while resizing the window, as doing so has race conditions.
+    guard !windowController.isAnimatingLayoutTransition, !window.inLiveResize else { return }
+
+    windowScaleDebouncer.run { [self] in
+      mpv.queue.async { [self] in
+        let desiredMpvWindowScale = windowGeo.mpvWindowScale()
+        guard desiredMpvWindowScale > 0.0 else {
+          log.verbose("UpdateMPVWindowScale: desiredMpvWindowScale is 0; aborting")
+          return
+        }
+        guard isActive else { return }
+        let currentMpvWindowScale = mpv.getWindowScale()
+        
+        if desiredMpvWindowScale != currentMpvWindowScale {
+          log.verbose{"Updating mpv window-scale from viewportSize=\(windowGeo.viewportSize): \(currentMpvWindowScale) → \(desiredMpvWindowScale)"}
+          mpv.setDouble(MPVProperty.windowScale, desiredMpvWindowScale)
+          
+        } else {
+          log.verbose{"Skipping update to mpv window-scale: no change from existing (\(currentMpvWindowScale))"}
+        }
+      }
     }
   }
 
