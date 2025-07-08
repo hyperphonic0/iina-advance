@@ -454,7 +454,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     log.trace{"[geo] ScaleViewport start, newViewportSize=\(newViewportSize), lockViewport=\(lockViewportToVideoSize.yn)"}
 
     // -- Viewport size calculation
-    // FIXME: need to ensure window height will fit top & bottom bars!
 
     if lockViewportToVideoSize {
       /// Make sure viewport size is at least as large as min.

@@ -320,9 +320,6 @@ struct Constants {
     static let maxPlaylistWidth: CGFloat = 800
     static let settingsWidth: CGFloat = 360
 
-    /// This needs to fit floating OSC + the margin around it
-    static let minWidthBetweenInsideSidebars: CGFloat = 220
-
     /// Tab buttons downshift
     static let defaultDownshift: CGFloat = 0
     /// Tab buttons height
@@ -342,6 +339,10 @@ struct Constants {
     static let minWindowSize = CGSize(width: 285, height: 160)
     // The minimum distance that the user must drag before their click or tap gesture is interpreted as a drag gesture:
     static let minInitialDragThreshold: CGFloat = 1.0
+
+    /// This needs to fit floating OSC + the margin around it
+    static let minWidthBetweenInsideSidebars: CGFloat = 220
+    static let minHeightBetweenInsideSidebars: CGFloat = 40
   }
   struct InteractiveMode {
     // Need enough space to display all the buttons and field at the bottom:

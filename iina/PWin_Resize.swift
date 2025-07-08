@@ -200,7 +200,6 @@ extension PlayerWindowController {
       // Not sure if this helps fix the aspect constraint transition
       videoView.apply(newGeometry)
     }
-    player.updateMpvWindowScale(using: newGeometry)
 
     // Update floating control bar position if applicable
     adjustFloatingControllerOrigin(for: newGeometry)

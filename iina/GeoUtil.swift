@@ -24,10 +24,10 @@ struct GeoUtil {
     var viewportMinW: CGFloat
     switch mode {
     case .windowedNormal, .fullScreenNormal:
-      viewportMinW = Constants.Window.minViewportSize.width
       // Take sidebars into account:
-      viewportMinW = max(viewportMinW, insideBars.totalWidth + Constants.Sidebar.minWidthBetweenInsideSidebars)
-      return NSSize(width: viewportMinW, height: Constants.Window.minViewportSize.height)
+      viewportMinW = max(Constants.Window.minViewportSize.width, insideBars.totalWidth + Constants.Window.minWidthBetweenInsideSidebars)
+      let viewportMinH = max(Constants.Window.minViewportSize.height, insideBars.totalHeight + Constants.Window.minHeightBetweenInsideSidebars)
+      return NSSize(width: viewportMinW, height: viewportMinH)
     case .windowedInteractive, .fullScreenInteractive:
       viewportMinW = Constants.InteractiveMode.minWindowWidth
       // assume viewport aspect is same as video for now
