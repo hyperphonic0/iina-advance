@@ -36,7 +36,7 @@ extension PlayerWindowController {
     videoView.activateForceRedraws(force: true)
 
     guard !isInWindowResizeDenialPeriod() else {
-      log.verbose{"[WinWillResize] Denying request=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)"}
+      log.verbose{"[WinWillResize] Denying request=\(requestedSize): still inside denial period; will stay at \(window.frame.size)"}
       pendingResizeForScreenChange = false  // should be safe to reset this now
       return window.frame.size
     }
@@ -47,7 +47,8 @@ extension PlayerWindowController {
     }
 
     guard !isAnimatingLayoutTransition else {
-      return requestedSize
+      log.verbose{"[WinWillResize] Denying request=\(requestedSize): isAnimatingLayoutTransition=Y; will stay at \(window.frame.size)"}
+      return window.frame.size
     }
 
     // Tweak to improve responsiveness in music mode. Doesn't seem to affect normal windowed mode.
