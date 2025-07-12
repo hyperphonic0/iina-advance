@@ -52,6 +52,8 @@ extension MPVController {
     MPVOption.Equalizer.saturation: MPV_FORMAT_INT64,
     MPVOption.Window.fullscreen: MPV_FORMAT_FLAG,
     MPVOption.Window.ontop: MPV_FORMAT_FLAG,
+    MPVOption.Window.cursorAutohide: MPV_FORMAT_STRING,
+    MPVOption.Window.cursorAutohideFsOnly: MPV_FORMAT_FLAG,
     /// As of mpv 0.38, cannot listen for `MPVProperty.currentWindowScale`
     MPVProperty.windowScale: MPV_FORMAT_DOUBLE,
     MPVProperty.mediaTitle: MPV_FORMAT_STRING,
@@ -593,8 +595,29 @@ extension MPVController {
     case MPVOption.Window.ontop:
       player.ontopChanged()
 
+    case MPVOption.Window.cursorAutohide:
+      guard let cursorAutohide = getString(MPVOption.Window.cursorAutohide) else { break }
+      log.verbose{"Δ mpv prop: 'cursor-autohide' ≔ \(cursorAutohide)"}
+      player.updateCursorAutohideState()
+      player.windowController.hideCursorTimer.restart()
+
+    case MPVOption.Window.cursorAutohideFsOnly:
+      let cursorAutohideFS = getFlag(MPVOption.Window.cursorAutohideFsOnly)
+      log.verbose{"Δ mpv prop: 'cursor-autohide-fs-only' ≔ \(cursorAutohideFS.yn)"}
+      player.updateCursorAutohideState()
+      player.windowController.hideCursorTimer.restart()
+
     case MPVProperty.windowScale:
-      player.windowScaleChanged()
+      guard let windowScale = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
+        logPropertyValueError(MPVProperty.windowScale, property.format)
+        break
+      }
+
+      log.verbose{"Δ mpv prop: 'window-scale' ≔ \(windowScale)"}
+#if DEBUG  // TODO: remove when fixed
+      player.sendOSD(.debug("window-scale", "\(windowScale)"))
+#endif
+      player.mpvWindowScaleDidUpdate(to: windowScale)
 
     case MPVProperty.mediaTitle:
       player.mediaTitleChanged()
@@ -617,7 +640,7 @@ extension MPVController {
           "\t\(String(format: "%03d", index))   \(mapping.confFileFormat)"
         }.joined(separator: "\n")
 
-        player.log.verbose("Δ mpv prop: \(MPVProperty.inputBindings.quoted)≔\n\(mappingListStr)")
+        player.log.verbose("Δ mpv prop: \(MPVProperty.inputBindings.quoted) ≔\n\(mappingListStr)")
       } catch {
         player.log.error("Failed to parse property data for \(MPVProperty.inputBindings.quoted)!")
       }

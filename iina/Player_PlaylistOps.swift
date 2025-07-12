@@ -75,9 +75,11 @@ extension PlayerCore {
     }
 
     _playlistInsert(itemsAtIndexes: itemsAtInsertIndexes, info.playlist, onSuccess: { [self] in
-      // FIXME: scroll playlist to current item
-      displayedPlaylist = info.playlist
+      log.verbose{"[Playlist] Done adding \(pathList.count) items. Playlist count is now \(info.playlist.count)"}
       _reloadPlaylist(savePlayerState: false)  // will send notification
+      DispatchQueue.main.async { [self] in
+        windowController.playlistView.scrollPlaylistToCurrentItem()
+      }
     })
   }
 

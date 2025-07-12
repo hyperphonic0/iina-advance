@@ -216,13 +216,10 @@ class VideoView: NSView {
     displayActive(temporary: player.info.isPaused)
   }
 
+  /// Deprecated! Use `activateForceRedraws` instead.
   func forceDraw() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard needsForcedRedraws() else { return }
-    log.trace("Forcing video redraw")
-    // Does nothing if already active. Will restart idle timer if paused
-    displayActive(temporary: player.info.isPaused)
-    glLayer?.drawAsync(forced: true)
+    activateForceRedraws(force: true)
   }
 
   func prepareForPIPEntry() {

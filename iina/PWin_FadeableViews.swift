@@ -111,7 +111,6 @@ extension PlayerWindowController {
 
     guard wantsTopBarVisible || fadeableViews.animationState == .hidden else {
       if restartFadeTimer {
-        hideCursorTimer.restart()
         fadeableViews.hideTimer.restart()
       } else {
         fadeableViews.hideTimer.cancel()
@@ -204,7 +203,6 @@ extension PlayerWindowController {
         }
 
         if restartFadeTimer {
-          hideCursorTimer.restart()
           fadeableViews.hideTimer.restart()
         }
 

@@ -1451,6 +1451,33 @@ class PlayerCore: NSObject {
     mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
   }
 
+  var shouldAlwaysHideCursor: Bool {
+    if info.cursorAutoHideFullScreenOnly && !isFullScreen {
+      return false
+    }
+    return info.cursorAutoHideTimeoutMs == 0
+  }
+
+  var canHideCursor: Bool {
+    if info.cursorAutoHideFullScreenOnly && !isFullScreen {
+      return false
+    }
+    return info.enableCursorAutoHide
+  }
+
+  func updateCursorAutohideState() {
+    if let autoHide = mpv.getString(MPVOption.Window.cursorAutohide) {
+      if autoHide == "always" {
+        info.cursorAutoHideTimeoutMs = 0
+      } else if autoHide == "no" {
+        info.cursorAutoHideTimeoutMs = -1000
+      } else if let autoHideMs = Int(autoHide) {
+        info.cursorAutoHideTimeoutMs = autoHideMs
+      }
+    }
+    info.cursorAutoHideFullScreenOnly = mpv.getFlag(MPVOption.Window.cursorAutohideFsOnly)
+  }
+
   func displaySizeDidChange() {
     guard !isRestoring else {
       log.trace{"Ignoring dw or dh update: isRestoring=Y"}
@@ -2123,14 +2150,15 @@ class PlayerCore: NSObject {
     saveState()
   }
 
-  func windowScaleChanged() {
+  func mpvWindowScaleDidUpdate(to newWindowScale: CGFloat) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     windowScaleDebouncer.run { [self] in
-      windowController.updateMpvWindowScale()
+      windowController.mpvWindowScaleDidUpdate(to: newWindowScale)
     }
   }
 
-  func updateMpvWindowScale(using windowGeo: PWinGeometry) {
+  func setMpvWindowScale(from windowGeo: PWinGeometry) {
+    guard false else { return } // FIXME: uncomment when code below is fixed
     windowScaleDebouncer.run { [self] in
       guard windowGeo.mode == .windowedNormal || (windowGeo.mode == .musicMode && windowGeo.videoSize.height > 0) else {
         return
@@ -2507,7 +2535,7 @@ class PlayerCore: NSObject {
     
     let mpvFS = mpv.getFlag(MPVOption.Window.fullscreen)
     let iinaFS = windowController.isFullScreen
-    log.verbose{"IINA FullScreen state: \(iinaFS.yn), mpv: \(mpvFS.yn)"}
+    log.verbose{"FullScreen state: IINA=\(iinaFS.yn) mpv=\(mpvFS.yn)"}
     if mpvFS != iinaFS {
       if mpvFS && didEnterFullScreenViaUserToggle {
         didEnterFullScreenViaUserToggle = false

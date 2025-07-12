@@ -1218,7 +1218,7 @@ extension PlayerWindowController {
 
     // Invalidate all old fadeable views actions as they are probably stale.
     fadeableViews.$showHideTicketCount.withLock { $0 += 1 }
-    hideCursorTimer.restart()
+    hideCursorTimer.restart()  // may need to re-evaluate
     fadeableViews.hideTimer.restart()  // start new fadeable countdown
 
     log.verbose{
@@ -1321,7 +1321,7 @@ extension PlayerWindowController {
       if transition.outputLayout.isMusicMode && !musicModeGeo.isVideoVisible && pip.status == .notInPIP {
         player.setVideoTrackDisabled()
       } else {
-        player.updateMpvWindowScale(using: transition.outputGeometry)
+        player.setMpvWindowScale(from: transition.outputGeometry)
       }
     }
 
@@ -1383,7 +1383,7 @@ extension PlayerWindowController {
     }
 
     if transition.outputLayout.isWindowed {
-      player.updateMpvWindowScale(using: windowedModeGeo)
+      player.setMpvWindowScale(from: windowedModeGeo)
     }
 
     log.verbose("[\(transition.name)] Done with transition. IsFullScreen:\(transition.outputLayout.isFullScreen.yn), IsLegacy:\(transition.outputLayout.spec.isLegacyStyle.yn), Mode:\(currentLayout.mode)")

@@ -479,6 +479,8 @@ extension MPVController {
       }
     }
 
+    player.updateCursorAutohideState()
+
     // get version
     mpvVersion = getString(MPVProperty.mpvVersion)
 

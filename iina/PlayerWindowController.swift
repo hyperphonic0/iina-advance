@@ -189,7 +189,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Responder chain is a mess. Use this to prevent duplicate event processing
   var lastMouseDownEventID: Int = -1
+  /// In global coords
+  var mouseDownLocation: CGPoint?
   var mouseDownLocationInWindow: CGPoint?
+
+#if ENABLE_CUSTOM_WINDOW_DRAG
+  var windowFrameAtMouseDown: CGRect?
+#endif
 
   var lastKeyWindowStatus = false
   /// Special state needed to prevent hideOSC from happening on first mouse
@@ -249,7 +255,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var fadeableViews = FadeableViewsHandler()
 
   // Other visibility
-  var hideCursorTimer = TimeoutTimer(timeout: Constants.TimeInterval.hideCursorMinTimeout)
+  var hideCursorTimer = TimeoutTimer(timeout: Constants.TimeInterval.hideCursorMinTimeoutMS)
 
   // - OSD
 
@@ -1542,6 +1548,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         }
       }
     }
+  }
+
+  func windowWillMove(_ notification: Notification) {
+    log.verbose("windowWillMove")
   }
 
   // Don't really care if window is main in IINA Advance; we care only if window is key,

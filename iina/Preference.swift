@@ -147,9 +147,6 @@ struct Preference {
 
     // MARK: - UI Keys
 
-    static let enableCursorAutoHide = Key("enableCursorAutoHide")
-    static let cursorAutoHideTimeout = Key("cursorAutoHideTimeout")
-
     // - Title bar & OSC
 
     static let titleBarBtnsGlow = Key("activeTitleBarBtnsGlow")
@@ -1266,8 +1263,6 @@ struct Preference {
     .recordPlaybackHistory: true,
     .recordRecentFiles: true,
     .trackAllFilesInRecentOpenMenu: true,
-    .enableCursorAutoHide: true,
-    .cursorAutoHideTimeout: Float(2.0),
     .floatingControlBarMargin: 5,
     .controlBarPositionHorizontal: Float(0.5),
     .controlBarPositionVertical: Float(0.1),

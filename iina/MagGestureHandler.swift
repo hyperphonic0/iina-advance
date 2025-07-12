@@ -128,9 +128,9 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         let musicModeGeo = pwc.musicModeGeo.clone(windowFrame: finalGeo.windowFrame)
         pwc.applyMusicModeGeo(musicModeGeo, setFrame: false, updateCache: true)
       } else {
-        pwc.log.verbose{"Updating windowedModeGeo & calling updateMpvWindowScale from mag gesture state \(recognizer.state.rawValue)"}
+        pwc.log.verbose{"Updating windowedModeGeo & calling syncMpvWindowScale from mag gesture state \(recognizer.state.rawValue)"}
         pwc.windowedModeGeo = finalGeo
-        pwc.player.updateMpvWindowScale(using: finalGeo)
+        pwc.player.setMpvWindowScale(from: finalGeo)
         pwc.player.info.intendedViewportSize = finalGeo.viewportSize
         pwc.player.saveState()
       }

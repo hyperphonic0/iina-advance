@@ -244,7 +244,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   let videoSize: NSSize
 
-  /// `MPVProperty.currentWindowScale`
+  /// `MPVProperty.currentWindowScale`: see `mp_property_current_window_scale()` in mpv's `player/command.c`
   func mpvWindowScale() -> CGFloat {
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
     let backingScaleFactor = screen.backingScaleFactor

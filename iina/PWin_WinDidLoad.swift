@@ -31,10 +31,16 @@ extension PlayerWindowController {
     fadeableViews.hideTimer.action = hideTimeoutAction
     fadeableViews.hideTimer.startCondition = { _ in Preference.bool(for: .enableControlBarAutoHide) }
 
+    // Cursor hide timer
     hideCursorTimer.action = hideCursor
-    hideCursorTimer.startCondition = { timer in
-      guard Preference.bool(for: .enableCursorAutoHide) else { return false }
-      timer.timeout = max(Constants.TimeInterval.hideCursorMinTimeout, Preference.double(for: .cursorAutoHideTimeout))
+    hideCursorTimer.startCondition = { [self] timer in
+      guard player.canHideCursor else {
+        log.trace("HideCursorTimer: aborting start (cannot hide cursor)")
+        return false
+      }
+      let newTimeout = max(Constants.TimeInterval.hideCursorMinTimeoutMS, Double(player.info.cursorAutoHideTimeoutMs))
+      timer.timeout = newTimeout / 1000.0
+      log.trace("HideCursorTimer: [re-]starting timeout=\(timer.timeout)s")
       return true
     }
 

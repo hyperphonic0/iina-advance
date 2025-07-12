@@ -334,6 +334,29 @@ class PlaybackInfo {
 
   func getMatchedSubs(_ file: String) -> [URL]? { $matchedSubs.withLock { $0[file] } }
 
+  /// * If `0`, corresoponds to mpv's `cursor-autohide=always`.
+  /// * If `> 0`, corresoponds to mpv's `cursor-autohide={number}`.
+  /// * If `< 0`, corresoponds to mpv's `cursor-autohide=never`.
+  ///
+  /// ```
+  /// --cursor-autohide=<number|no|always>
+  /// Make mouse cursor automatically hide after given number of milliseconds (default: 1000 ms).
+  /// no will disable cursor autohide. always means the cursor will stay hidden.
+  /// ```
+  var cursorAutoHideTimeoutMs: Int = 0
+  /// If true, corresoponds to mpv's `cursor-autohide-fs-only=yes`.
+  ///
+  /// ```
+  /// --cursor-autohide-fs-only:
+  /// If this option is given, the cursor is always visible in windowed mode. In fullscreen mode, the cursor is shown
+  /// or hidden according to --cursor-autohide.
+  /// ```
+  var cursorAutoHideFullScreenOnly: Bool = false
+  /// Use these instead: `player.canHideCursor`, `player.shouldAlwaysHideCursor`
+  var enableCursorAutoHide: Bool {
+    return cursorAutoHideTimeoutMs >= 0
+  }
+
   // MARK: - Cache
 
   var pausedForCache: Bool = false

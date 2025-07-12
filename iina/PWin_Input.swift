@@ -320,7 +320,11 @@ extension PlayerWindowController {
     log.verbose{"PWin MouseDown @ \(event.locationInWindow) clickCount=\(event.clickCount) eventNum=\(event.eventNumber)"}
 
     wasKeyWindowAtMouseDown = lastKeyWindowStatus
+    mouseDownLocation = NSEvent.mouseLocation
     mouseDownLocationInWindow = event.locationInWindow
+#if ENABLE_CUSTOM_WINDOW_DRAG  // see `performWindowDrag` in PWin_Input.swift
+    windowFrameAtMouseDown = window!.frame
+#endif
 
     if let currentDragObject {
       // Window will not receive mouseUp events from outside of window, so previous drag may not have finished.
@@ -360,20 +364,49 @@ extension PlayerWindowController {
   }
 
   private func dragWindowIfQualifying(from event: NSEvent) {
-    if !isFullScreen, let mouseDownLocationInWindow {
-      if !isDragging {
-        /// Require that the user must drag the cursor at least a small distance for it to start a "drag" (`isDragging==true`)
-        /// The user's action will only be counted as a click if `isDragging==false` when `mouseUp` is called.
-        /// (Apple's trackpad in particular is very sensitive and tends to call `mouseDragged()` if there is even the slightest
-        /// roll of the finger during a click, and the distance of the "drag" may be less than `minimumInitialDragDistance`)
-        let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
-        guard dragDistance > Constants.Window.minInitialDragThreshold else { return }
+    guard !isFullScreen else { return }
+    if !isDragging, let mouseDownLocationInWindow {
+      /// Require that the user must drag the cursor at least a small distance for it to start a "drag" (`isDragging==true`)
+      /// The user's action will only be counted as a click if `isDragging==false` when `mouseUp` is called.
+      /// (Apple's trackpad in particular is very sensitive and tends to call `mouseDragged()` if there is even the slightest
+      /// roll of the finger during a click, and the distance of the "drag" may be less than `minimumInitialDragDistance`)
+      let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
+      guard dragDistance > Constants.Window.minInitialDragThreshold else { return }
 
-        log.verbose{"PWin MouseDrag: minimum dragging distance was met (\(dragDistance))"}
-        isDragging = true
-      }
+      log.verbose{"PWin MouseDrag: minimum dragging distance was met (\(dragDistance))"}
+      isDragging = true
     }
-    window?.performDrag(with: event)
+
+    performWindowDrag(with: event)
+  }
+
+  private func performWindowDrag(with event: NSEvent) {
+    guard let window else { return }
+
+#if ENABLE_CUSTOM_WINDOW_DRAG
+    // TODO: this mostly works except for some corner cases when dragging from one screen to another.
+    // TODO: Expand on this to add ability to keep video entirely on screen at all times.
+    guard let mouseDownLocation, let windowFrameAtMouseDown else { return }
+
+    let currentLocation = NSEvent.mouseLocation
+    // Adapted from: https://stackoverflow.com/a/1946223
+    let dX = (currentLocation.x - mouseDownLocation.x)
+    let dY = (currentLocation.y - mouseDownLocation.y)
+    log.verbose{"PWin MouseDrag: \(dX), \(dY)"}
+    var newOrigin = NSPoint(x: windowFrameAtMouseDown.origin.x + dX,
+                            y: windowFrameAtMouseDown.origin.y + dY)
+
+    // Don't let window get dragged up under the menu bar
+    let windowFrame = window.frame
+    let windowScreen = window.screen
+    if let screenFrame = windowScreen?.visibleFrame, newOrigin.y+windowFrame.size.height > screenFrame.origin.y+screenFrame.size.height {
+      newOrigin.y = screenFrame.origin.y + (screenFrame.size.height - windowFrame.size.height)
+    }
+    window.setFrameOrigin(newOrigin)
+#else
+    window.performDrag(with: event)
+#endif
+
     informPluginMouseDragged(with: event)
   }
 
@@ -396,7 +429,6 @@ extension PlayerWindowController {
 
     // Always do these:
     hideCursorTimer.restart()
-    mouseDownLocationInWindow = nil
 
     // If WindowDidChangeScreen during window drag, the resize event won't appear until after mouseUp, which can
     // be an arbitrary amount of time after the screen change. So make sure to deny it now, with some fuzz depending on
@@ -585,9 +617,15 @@ extension PlayerWindowController {
     guard !isValidDragInProgress() else { return }
     guard !isInInteractiveMode else { return }
 
-    // Call this out of an abundance of caution. Custom cursors are set via mouseMoved, which only fires while
-    // actually inside the window! May need to reset the cursor if mouse exited the window too quickly.
-    mouseDidMoveInWindow()
+    // Show cursor if not already shown
+    // FIXME: only if mouse is not inside any window
+    animationPipeline.submitInstantTask{ [self] in
+      log.verbose("MouseExited: showing cursor")
+      hideCursorTimer.cancel()
+      applyCustomCursor(.normalCursor)
+//      NSCursor.unhide()
+      NSCursor.setHiddenUntilMouseMoves(false)
+    }
 
     guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
       log.warn("MouseExited: no data for tracking area!")
@@ -619,14 +657,14 @@ extension PlayerWindowController {
 
   func mouseDidMoveInWindow() {
     guard !isScrollingOrDraggingPlaySlider, !isScrollingOrDraggingVolumeSlider else { return }
-    assert(!isValidDragInProgress(),
-           "Must check isValidDragInProgress() before calling mouseDidMoveInWindow()!")
+    assert(!isValidDragInProgress(), "Must check isValidDragInProgress() before calling mouseDidMoveInWindow()!")
     // Do not use `event.locationInWindow`: it can be very stale
     let pointInWindow = mouseLocationInWindow
 
     log.trace{"MouseDidMoveInWindow @ \(pointInWindow)"}
 
     // Update mouse cursor
+    // FIXME: need to use global logic
     if isInInteractiveMode {
       return
     } else if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
@@ -639,10 +677,19 @@ extension PlayerWindowController {
     } else if isPointInPlaySliderAndNotOtherViews(pointInWindow: pointInWindow) {
       applyCustomCursor(.hoveringInSlider)
     } else {
-      applyCustomCursor(.normalCursor)
+      animationPipeline.submitInstantTask{ [self] in
+//        if player.shouldAlwaysHideCursor {
+//          log.verbose("Hiding cursor")
+//          hideCursorTimer.cancel()
+//          NSCursor.hide()
+//        } else {
+          applyCustomCursor(.normalCursor)
+          NSCursor.setHiddenUntilMouseMoves(false) // show if not shown
+                                                   // Always hide after timeout even if OSD fade time is longer
+          hideCursorTimer.restart()
+//        }
+      }
     }
-    // Always hide after timeout even if OSD fade time is longer
-    hideCursorTimer.restart()
 
     // Show Seek Preview on mouse hover. The check at the start of this func will return if in an "active seek"
     // preview to ensure that the "hover" preview here will not activate:
@@ -779,7 +826,6 @@ extension PlayerWindowController {
   /// Only hides cursor if in full screen or windowed (non-interactive) modes, and only if mouse is within
   /// bounds of the window's real estate.
   @objc func hideCursor() {
-    hideCursorTimer.cancel()
     guard let window else { return }
 
     switch currentLayout.mode {
@@ -795,9 +841,16 @@ extension PlayerWindowController {
     // IMPORTANT: We *must* ensure that NSCursor.setHiddenUntilMouseMoves is called inside an animation task!
     // Otherwise it will sometimes fail to hide the cursor. (Speculation: a race condition inside its private
     // code may cause any NSCursor API call to fail if overlapping with any other).
+    // FIXME: this still isn't reliable in full screen when OSC auto-hide is disabled
     animationPipeline.submitInstantTask{ [self] in
-      log.trace("Hiding cursor")
+      guard player.canHideCursor else {
+        log.verbose("Not hiding cursor")
+        return
+      }
+
+      log.verbose("Hiding cursor until mouse moves")
       NSCursor.setHiddenUntilMouseMoves(true)
+      videoView.layout()
     }
   }
 
