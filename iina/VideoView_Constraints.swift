@@ -8,6 +8,8 @@
 
 fileprivate let musicMode = false // TODO: improvements for music mode (search for this)
 
+// MARK: - Constraints structs
+
 fileprivate struct Constraint: CustomStringConvertible {
   let active: Bool
   let priority: NSLayoutConstraint.Priority
@@ -66,12 +68,267 @@ fileprivate struct QuadConstraint: CustomStringConvertible {
   }
 }
 
+/// struct VideoViewConstraints
+struct VideoViewConstraints {
+  let log: Logger.Subsystem
+
+  let topSpacerConnection: NSLayoutConstraint
+  let bottomSpacerConnection: NSLayoutConstraint
+  let leadingSpacerConnection: NSLayoutConstraint
+  let trailingSpacerConnection: NSLayoutConstraint
+
+  let topSpacerMax: NSLayoutConstraint
+  let trailingSpacerMax: NSLayoutConstraint
+  let bottomSpacerMax: NSLayoutConstraint
+  let leadingSpacerMax: NSLayoutConstraint
+
+  // these allow for minimum or required margins
+  let topSpacerMin: NSLayoutConstraint
+  let trailingSpacerMin: NSLayoutConstraint
+  let bottomSpacerMin: NSLayoutConstraint
+  let leadingSpacerMin: NSLayoutConstraint
+
+  // these are weaker than the above, and can be used to suggest video avoids sidebars
+  let topSpacerPreferred: NSLayoutConstraint
+  let trailingSpacerPreferred: NSLayoutConstraint
+  let bottomSpacerPreferred: NSLayoutConstraint
+  let leadingSpacerPreferred: NSLayoutConstraint
+
+  let widthMax: NSLayoutConstraint
+  let heightMax: NSLayoutConstraint
+
+  // Use aspect ratio constraint + weak center constraints to improve the video resize animation when
+  // tiling the window while lockViewportToVideoSize is enabled.
+  // Previously the video would get squeezed during resize. This became more noticable with the introduction
+  // of MacOS Sequoia 15.0.
+  // These can be adjusted to keep VideoView away from "inside" bars.
+  let centerX: NSLayoutConstraint
+  let centerY: NSLayoutConstraint
+
+  let aspectRatio: NSLayoutConstraint
+
+#if TEST_VIDEO_CONSTRAINTS
+  // Margins should most want to equal 0:
+  let eqOffsetTop: NSLayoutConstraint
+  let eqOffsetTrailing: NSLayoutConstraint
+  let eqOffsetBottom: NSLayoutConstraint
+  let eqOffsetLeading: NSLayoutConstraint
+
+  let ltOffsetTop: NSLayoutConstraint
+  let ltOffsetTrailing: NSLayoutConstraint
+  let ltOffsetBottom: NSLayoutConstraint
+  let ltOffsetLeading: NSLayoutConstraint
+
+  let centerX2: NSLayoutConstraint
+  let centerY2: NSLayoutConstraint
+
+  let widthMin: NSLayoutConstraint
+  let heightMin: NSLayoutConstraint
+#endif
+
+  /// UPDATE FUNC
+  fileprivate func update(connectSpacers: Constraint,
+                          aspect: AspectConstraint,
+                          wMax: CGFloat? = nil, hMax: CGFloat? = nil, whMax_Priority: NSLayoutConstraint.Priority,
+                          spacerMax: Constraint,
+                          spacerMin: QuadConstraint,
+                          spacerPreferred: QuadConstraint,
+                          center: Constraint) {
+
+    log.verbose{"Δ VideoView constraints ≔ maxSize: {w=\(wMax?.description ?? "nil") from super.w, h=\(hMax?.description ?? "nil") from super.h}@\(whMax_Priority.rawValue) spacers:{max=\(spacerMax) min=\(spacerMin) pref=\(spacerPreferred) center=\(center)} aspect=\(aspect)"}
+
+#if TEST_VIDEO_CONSTRAINTS
+    // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
+    let eqPriority: NSLayoutConstraint.Priority = .init(8)
+    let eqIsActive = false
+
+    let center2Priority: NSLayoutConstraint.Priority = .init(481)
+    let center2Active = true
+
+    let marginLT_Priority: NSLayoutConstraint.Priority = .init(311)
+    let marginLT_Active = false
+
+    let whMin_Priority: NSLayoutConstraint.Priority = .init(499)
+    let whMinActive = false
+
+    widthMin.priority = whMin_Priority
+    heightMin.priority = whMin_Priority
+    widthMin.isActive = whMinActive
+    heightMin.isActive = whMinActive
+
+    eqOffsetTop.priority = eqPriority
+    eqOffsetTrailing.priority = eqPriority
+    eqOffsetBottom.priority = eqPriority
+    eqOffsetLeading.priority = eqPriority
+    eqOffsetTop.isActive = eqIsActive
+    eqOffsetTrailing.isActive = eqIsActive
+    eqOffsetBottom.isActive = eqIsActive
+    eqOffsetLeading.isActive = eqIsActive
+
+    ltOffsetTop.priority = marginLT_Priority
+    ltOffsetTrailing.priority = marginLT_Priority
+    ltOffsetBottom.priority = marginLT_Priority
+    ltOffsetLeading.priority = marginLT_Priority
+    ltOffsetTop.isActive = marginLT_Active
+    ltOffsetTrailing.isActive = marginLT_Active
+    ltOffsetBottom.isActive = marginLT_Active
+    ltOffsetLeading.isActive = marginLT_Active
+
+    centerX2.priority = center2Priority
+    centerY2.priority = center2Priority
+    centerX2.isActive = center2Active
+    centerY2.isActive = center2Active
+#endif
+    // - Priorities, Constants
+
+    topSpacerConnection.priority = connectSpacers.priority
+    bottomSpacerConnection.priority = connectSpacers.priority
+    leadingSpacerConnection.priority = connectSpacers.priority
+    trailingSpacerConnection.priority = connectSpacers.priority
+
+    aspectRatio.priority = aspect.priority
+
+    topSpacerMax.priority = spacerMax.priority
+    trailingSpacerMax.priority = spacerMax.priority
+    bottomSpacerMax.priority = spacerMax.priority
+    leadingSpacerMax.priority = spacerMax.priority
+
+    if let spacerPreferredQuad = spacerPreferred.values {
+      topSpacerPreferred.animateToConstant(spacerPreferredQuad.top)
+      bottomSpacerPreferred.animateToConstant(spacerPreferredQuad.bottom)
+      leadingSpacerPreferred.animateToConstant(spacerPreferredQuad.leading)
+      trailingSpacerPreferred.animateToConstant(spacerPreferredQuad.trailing)
+    }
+    topSpacerPreferred.priority = spacerPreferred.priority
+    bottomSpacerPreferred.priority = spacerPreferred.priority
+    trailingSpacerPreferred.priority = spacerPreferred.priority
+    leadingSpacerPreferred.priority = spacerPreferred.priority
+
+    if let wMax {
+      widthMax.animateToConstant(wMax)
+      widthMax.priority = whMax_Priority //+ (aspectMultiplier > 1 ? 1 : 0)
+    }
+    if let hMax {
+      heightMax.animateToConstant(hMax)
+      heightMax.priority = whMax_Priority //+ (aspectMultiplier > 1 ? 0 : 1)
+    }
+
+    centerX.priority = center.priority
+    centerY.priority = center.priority
+
+    // - Enablement
+
+    topSpacerConnection.isActive = connectSpacers.active
+    bottomSpacerConnection.isActive = connectSpacers.active
+    leadingSpacerConnection.isActive = connectSpacers.active
+    trailingSpacerConnection.isActive = connectSpacers.active
+
+    aspectRatio.isActive = aspect.active
+
+    topSpacerMax.isActive = spacerMax.active
+    trailingSpacerMax.isActive = spacerMax.active
+    bottomSpacerMax.isActive = spacerMax.active
+    leadingSpacerMax.isActive = spacerMax.active
+
+    topSpacerPreferred.isActive = spacerPreferred.active
+    bottomSpacerPreferred.isActive = spacerPreferred.active
+    trailingSpacerPreferred.isActive = spacerPreferred.active
+    leadingSpacerPreferred.isActive = spacerPreferred.active
+
+    // TODO: improvements for music mode
+    widthMax.isActive = wMax != nil
+    heightMax.isActive = hMax != nil
+
+    centerX.isActive = center.active
+    centerY.isActive = center.active
+
+    updateSpacerMin(to: spacerMin.values, spacerMin.priority, active: spacerMin.active)
+  }
+
+  func updateSpacerMin(to quad: MarginQuad?, _ priority: NSLayoutConstraint.Priority, active: Bool = true) {
+    if let quad {
+      topSpacerMin.animateToConstant(quad.top)
+      bottomSpacerMin.animateToConstant(quad.bottom)
+      leadingSpacerMin.animateToConstant(quad.leading)
+      trailingSpacerMin.animateToConstant(quad.trailing)
+
+      topSpacerMin.priority = priority
+      bottomSpacerMin.priority = priority
+      trailingSpacerMin.priority = priority
+      leadingSpacerMin.priority = priority
+    }
+
+    topSpacerMin.isActive = active
+    bottomSpacerMin.isActive = active
+    trailingSpacerMin.isActive = active
+    leadingSpacerMin.isActive = active
+  }
+
+  func disableAll() {
+    topSpacerConnection.isActive = false
+    bottomSpacerConnection.isActive = false
+    leadingSpacerConnection.isActive = false
+    trailingSpacerConnection.isActive = false
+
+    topSpacerMin.isActive = false
+    trailingSpacerMin.isActive = false
+    bottomSpacerMin.isActive = false
+    leadingSpacerMin.isActive = false
+
+    topSpacerMax.isActive = false
+    trailingSpacerMax.isActive = false
+    bottomSpacerMax.isActive = false
+    leadingSpacerMax.isActive = false
+
+    topSpacerPreferred.isActive = false
+    trailingSpacerPreferred.isActive = false
+    bottomSpacerPreferred.isActive = false
+    leadingSpacerPreferred.isActive = false
+
+    widthMax.isActive = false
+    heightMax.isActive = false
+
+    centerX.isActive = false
+    centerY.isActive = false
+
+    aspectRatio.isActive = false
+
+#if TEST_VIDEO_CONSTRAINTS
+    eqOffsetTop.isActive = false
+    eqOffsetTrailing.isActive = false
+    eqOffsetBottom.isActive = false
+    eqOffsetLeading.isActive = false
+
+    ltOffsetTop.isActive = false
+    ltOffsetTrailing.isActive = false
+    ltOffsetBottom.isActive = false
+    ltOffsetLeading.isActive = false
+
+    widthMin.isActive = false
+    heightMin.isActive = false
+
+    centerX2.isActive = false
+    centerY2.isActive = false
+#endif
+  }
+
+}  // end struct VideoViewConstraints
 
 
 extension VideoView {
+  /// Convenience property
+  var aspectMultiplier: CGFloat? {  videoViewConstraints?.aspectRatio.multiplier }
 
-  /// Only called once, at VideoView init
-  func initConstraints() {
+  // MARK: - PiP
+
+  func prepareForPIPEntry() {
+    // Remove remaining constraints. The PiP superview will manage videoView's layout.
+    removeVideoConstraints()
+    layer?.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+  }
+
+  /// INIT constraints: Only called once, at VideoView init
+  func initVideoConstraints() {
     translatesAutoresizingMaskIntoConstraints = false
     setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     setContentCompressionResistancePriority(.defaultLow, for: .vertical)
@@ -79,258 +336,19 @@ extension VideoView {
     setContentHuggingPriority(.defaultLow, for: .vertical)
   }
 
-  /// Convenience property
-  var aspectMultiplier: CGFloat? {  videoViewConstraints?.aspectRatio.multiplier }
-
-
-  // MARK: - VideoViewConstraints
-
-  struct VideoViewConstraints {
-    let log: Logger.Subsystem
-
-    let topSpacerConnection: NSLayoutConstraint
-    let bottomSpacerConnection: NSLayoutConstraint
-    let leadingSpacerConnection: NSLayoutConstraint
-    let trailingSpacerConnection: NSLayoutConstraint
-
-    let topSpacerMax: NSLayoutConstraint
-    let trailingSpacerMax: NSLayoutConstraint
-    let bottomSpacerMax: NSLayoutConstraint
-    let leadingSpacerMax: NSLayoutConstraint
-
-    // these allow for minimum or required margins
-    let topSpacerMin: NSLayoutConstraint
-    let trailingSpacerMin: NSLayoutConstraint
-    let bottomSpacerMin: NSLayoutConstraint
-    let leadingSpacerMin: NSLayoutConstraint
-
-    // these are weaker than the above, and can be used to suggest video avoids sidebars
-    let topSpacerPreferred: NSLayoutConstraint
-    let trailingSpacerPreferred: NSLayoutConstraint
-    let bottomSpacerPreferred: NSLayoutConstraint
-    let leadingSpacerPreferred: NSLayoutConstraint
-
-    let widthMax: NSLayoutConstraint
-    let heightMax: NSLayoutConstraint
-
-    // Use aspect ratio constraint + weak center constraints to improve the video resize animation when
-    // tiling the window while lockViewportToVideoSize is enabled.
-    // Previously the video would get squeezed during resize. This became more noticable with the introduction
-    // of MacOS Sequoia 15.0.
-    // These can be adjusted to keep VideoView away from "inside" bars.
-    let centerX: NSLayoutConstraint
-    let centerY: NSLayoutConstraint
-
-    let aspectRatio: NSLayoutConstraint
-
-#if TEST_VIDEO_CONSTRAINTS
-    // Margins should most want to equal 0:
-    let eqOffsetTop: NSLayoutConstraint
-    let eqOffsetTrailing: NSLayoutConstraint
-    let eqOffsetBottom: NSLayoutConstraint
-    let eqOffsetLeading: NSLayoutConstraint
-
-    let ltOffsetTop: NSLayoutConstraint
-    let ltOffsetTrailing: NSLayoutConstraint
-    let ltOffsetBottom: NSLayoutConstraint
-    let ltOffsetLeading: NSLayoutConstraint
-
-    let centerX2: NSLayoutConstraint
-    let centerY2: NSLayoutConstraint
-
-    let widthMin: NSLayoutConstraint
-    let heightMin: NSLayoutConstraint
-#endif
-
-    /// UPDATE FUNC
-    fileprivate func update(connectSpacers: Constraint,
-                            aspect: AspectConstraint,
-                            wMax: CGFloat? = nil, hMax: CGFloat? = nil, whMax_Priority: NSLayoutConstraint.Priority,
-                            spacerMax: Constraint,
-                            spacerMin: QuadConstraint,
-                            spacerPreferred: QuadConstraint,
-                            center: Constraint) {
-
-      log.verbose{"Δ VideoView constraints ≔ maxSize: {w=\(wMax?.description ?? "nil") from super.w, h=\(hMax?.description ?? "nil") from super.h}@\(whMax_Priority.rawValue) spacers:{max=\(spacerMax) min=\(spacerMin) pref=\(spacerPreferred) center=\(center)} aspect=\(aspect)"}
-
-#if TEST_VIDEO_CONSTRAINTS
-      // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
-      let eqPriority: NSLayoutConstraint.Priority = .init(8)
-      let eqIsActive = false
-
-      let center2Priority: NSLayoutConstraint.Priority = .init(481)
-      let center2Active = true
-
-      let marginLT_Priority: NSLayoutConstraint.Priority = .init(311)
-      let marginLT_Active = false
-
-      let whMin_Priority: NSLayoutConstraint.Priority = .init(499)
-      let whMinActive = false
-
-      widthMin.priority = whMin_Priority
-      heightMin.priority = whMin_Priority
-      widthMin.isActive = whMinActive
-      heightMin.isActive = whMinActive
-
-      eqOffsetTop.priority = eqPriority
-      eqOffsetTrailing.priority = eqPriority
-      eqOffsetBottom.priority = eqPriority
-      eqOffsetLeading.priority = eqPriority
-      eqOffsetTop.isActive = eqIsActive
-      eqOffsetTrailing.isActive = eqIsActive
-      eqOffsetBottom.isActive = eqIsActive
-      eqOffsetLeading.isActive = eqIsActive
-
-      ltOffsetTop.priority = marginLT_Priority
-      ltOffsetTrailing.priority = marginLT_Priority
-      ltOffsetBottom.priority = marginLT_Priority
-      ltOffsetLeading.priority = marginLT_Priority
-      ltOffsetTop.isActive = marginLT_Active
-      ltOffsetTrailing.isActive = marginLT_Active
-      ltOffsetBottom.isActive = marginLT_Active
-      ltOffsetLeading.isActive = marginLT_Active
-
-      centerX2.priority = center2Priority
-      centerY2.priority = center2Priority
-      centerX2.isActive = center2Active
-      centerY2.isActive = center2Active
-#endif
-      // - Priorities, Constants
-
-      topSpacerConnection.priority = connectSpacers.priority
-      bottomSpacerConnection.priority = connectSpacers.priority
-      leadingSpacerConnection.priority = connectSpacers.priority
-      trailingSpacerConnection.priority = connectSpacers.priority
-
-      aspectRatio.priority = aspect.priority
-
-      topSpacerMax.priority = spacerMax.priority
-      trailingSpacerMax.priority = spacerMax.priority
-      bottomSpacerMax.priority = spacerMax.priority
-      leadingSpacerMax.priority = spacerMax.priority
-
-      if let spacerPreferredQuad = spacerPreferred.values {
-        topSpacerPreferred.animateToConstant(spacerPreferredQuad.top)
-        bottomSpacerPreferred.animateToConstant(spacerPreferredQuad.bottom)
-        leadingSpacerPreferred.animateToConstant(spacerPreferredQuad.leading)
-        trailingSpacerPreferred.animateToConstant(spacerPreferredQuad.trailing)
-      }
-      topSpacerPreferred.priority = spacerPreferred.priority
-      bottomSpacerPreferred.priority = spacerPreferred.priority
-      trailingSpacerPreferred.priority = spacerPreferred.priority
-      leadingSpacerPreferred.priority = spacerPreferred.priority
-
-      if let wMax {
-        widthMax.animateToConstant(wMax)
-        widthMax.priority = whMax_Priority //+ (aspectMultiplier > 1 ? 1 : 0)
-      }
-      if let hMax {
-        heightMax.animateToConstant(hMax)
-        heightMax.priority = whMax_Priority //+ (aspectMultiplier > 1 ? 0 : 1)
-      }
-
-      centerX.priority = center.priority
-      centerY.priority = center.priority
-
-      // - Enablement
-
-      topSpacerConnection.isActive = connectSpacers.active
-      bottomSpacerConnection.isActive = connectSpacers.active
-      leadingSpacerConnection.isActive = connectSpacers.active
-      trailingSpacerConnection.isActive = connectSpacers.active
-
-      aspectRatio.isActive = aspect.active
-
-      topSpacerMax.isActive = spacerMax.active
-      trailingSpacerMax.isActive = spacerMax.active
-      bottomSpacerMax.isActive = spacerMax.active
-      leadingSpacerMax.isActive = spacerMax.active
-
-      topSpacerPreferred.isActive = spacerPreferred.active
-      bottomSpacerPreferred.isActive = spacerPreferred.active
-      trailingSpacerPreferred.isActive = spacerPreferred.active
-      leadingSpacerPreferred.isActive = spacerPreferred.active
-
-      // TODO: improvements for music mode
-      widthMax.isActive = wMax != nil
-      heightMax.isActive = hMax != nil
-
-      centerX.isActive = center.active
-      centerY.isActive = center.active
-
-      updateSpacerMin(to: spacerMin.values, spacerMin.priority, active: spacerMin.active)
+  /// REMOVE constraints: Need to remove all constraints when in PiP: it will do layout based on the layer's `autoresizingMask`.
+  private func removeVideoConstraints() {
+    guard let cons = videoViewConstraints else {
+      log.verbose("VideoView: all video constraints already removed")
+      return
     }
 
-    func updateSpacerMin(to quad: MarginQuad?, _ priority: NSLayoutConstraint.Priority, active: Bool = true) {
-      if let quad {
-        topSpacerMin.animateToConstant(quad.top)
-        bottomSpacerMin.animateToConstant(quad.bottom)
-        leadingSpacerMin.animateToConstant(quad.leading)
-        trailingSpacerMin.animateToConstant(quad.trailing)
+    log.verbose("VideoView: removing all video constraints")
+    cons.disableAll()
+    videoViewConstraints = nil
+  }
 
-        topSpacerMin.priority = priority
-        bottomSpacerMin.priority = priority
-        trailingSpacerMin.priority = priority
-        leadingSpacerMin.priority = priority
-      }
-
-      topSpacerMin.isActive = active
-      bottomSpacerMin.isActive = active
-      trailingSpacerMin.isActive = active
-      leadingSpacerMin.isActive = active
-    }
-
-    func disableAll() {
-      topSpacerConnection.isActive = false
-      bottomSpacerConnection.isActive = false
-      leadingSpacerConnection.isActive = false
-      trailingSpacerConnection.isActive = false
-
-      topSpacerMin.isActive = false
-      trailingSpacerMin.isActive = false
-      bottomSpacerMin.isActive = false
-      leadingSpacerMin.isActive = false
-
-      topSpacerMax.isActive = false
-      trailingSpacerMax.isActive = false
-      bottomSpacerMax.isActive = false
-      leadingSpacerMax.isActive = false
-
-      topSpacerPreferred.isActive = false
-      trailingSpacerPreferred.isActive = false
-      bottomSpacerPreferred.isActive = false
-      leadingSpacerPreferred.isActive = false
-
-      widthMax.isActive = false
-      heightMax.isActive = false
-
-      centerX.isActive = false
-      centerY.isActive = false
-
-      aspectRatio.isActive = false
-
-#if TEST_VIDEO_CONSTRAINTS
-      eqOffsetTop.isActive = false
-      eqOffsetTrailing.isActive = false
-      eqOffsetBottom.isActive = false
-      eqOffsetLeading.isActive = false
-
-      ltOffsetTop.isActive = false
-      ltOffsetTrailing.isActive = false
-      ltOffsetBottom.isActive = false
-      ltOffsetLeading.isActive = false
-
-      widthMin.isActive = false
-      heightMin.isActive = false
-
-      centerX2.isActive = false
-      centerY2.isActive = false
-#endif
-    }
-
-  }  // end struct VideoViewConstraints
-
-  /// Add, update, or remove all constraints, based on the given geometry (or lack thereof).
+  /// APPLY constraints: Add, update, or remove all constraints, based on the given geometry (or lack thereof).
   func apply(_ geometry: PWinGeometry?) {
     assert(DispatchQueue.isExecutingIn(.main))
 
@@ -474,18 +492,6 @@ extension VideoView {
     videoViewConstraints = cons
     needsUpdateConstraints = true
     superview.layout()
-  }
-
-  /// Need to remove all constraints when in PiP: it will do layout based on the layer's `autoresizingMask`.
-  func removeVideoConstraints() {
-    guard let cons = videoViewConstraints else {
-      log.verbose("VideoView: all video constraints already removed")
-      return
-    }
-
-    log.verbose("VideoView: removing all video constraints")
-    cons.disableAll()
-    videoViewConstraints = nil
   }
 
 #if TEST_VIDEO_CONSTRAINTS

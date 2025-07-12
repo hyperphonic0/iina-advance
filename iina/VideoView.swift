@@ -59,7 +59,7 @@ class VideoView: NSView {
 
     displayIdleTimer.action = displayIdleDidTimeout
 
-    initConstraints()
+    initVideoConstraints()
 
     // dragging init
     registerForDraggedTypes([.nsFilenames, .nsURL, .string])
@@ -220,12 +220,6 @@ class VideoView: NSView {
   func forceDraw() {
     assert(DispatchQueue.isExecutingIn(.main))
     activateForceRedraws(force: true)
-  }
-
-  func prepareForPIPEntry() {
-    // Remove remaining constraints. The PiP superview will manage videoView's layout.
-    removeVideoConstraints()
-    layer?.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
   }
 
   func addShadowForInteractiveMode() {
