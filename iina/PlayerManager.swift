@@ -126,11 +126,12 @@ class PlayerManager {
     return getIdleOrCreateNew()
   }
 
+  /// Finds a player core which was already created but is not in use (idle or not started), or nil if none
   private func _findIdlePlayerCore() -> PlayerCore? {
     var firstIdlePlayer: PlayerCore? = nil
     for p in _playerCores {
-      let isPlayerIdle = p.isIdle
-      Logger.log("Player-\(p.label): idle:\(p.isIdle.yn) fileLoaded:\(p.info.isFileLoaded.yn) → IDLE=\(isPlayerIdle.yesno)")
+      let isPlayerIdle = p.isIdleOrNotStarted
+      Logger.log("Player-\(p.label): fileLoaded:\(p.info.isFileLoaded.yn) IDLE:\(p.isIdleOrNotStarted.yn)")
       if firstIdlePlayer == nil && isPlayerIdle {
         firstIdlePlayer = p
       }

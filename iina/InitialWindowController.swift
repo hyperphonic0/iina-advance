@@ -35,6 +35,9 @@ fileprivate class GrayHighlightRowView: NSTableRowView {
   }
 }
 
+// MARK: Cursor
+
+// TODO: make global
 fileprivate var customCursor: NSCursor? = nil
 
 fileprivate func setCustomCursor(to newCursor: NSCursor?) {
@@ -69,6 +72,8 @@ class InitialWindowController: WindowController, NSWindowDelegate {
   }
 
   var isFirstLoad = true
+
+  let reloadDebouncer = Debouncer()
 
   @IBOutlet weak var recentFilesTableView: EditableTableView!
   @IBOutlet weak var appIcon: NSImageView!
@@ -125,7 +130,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
         DispatchQueue.main.async {
           guard !AppDelegate.shared.isTerminating else { return }
           let sw = Utility.Stopwatch()
-          self.reloadData()
+          self.refreshUI()  // async!
           Logger.log.verbose{"Total time for WelcomeWindow initial reload: \(sw) ms. Showing window"}
           super.openWindow(sender)
           // Do this after super.openWindow, to ensure zoom animation is activated
@@ -180,7 +185,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
 
     NotificationCenter.default.addObserver(forName: .recentDocumentsDidChange, object: nil, queue: .main) { [self] _ in
       Logger.log("WelcomeWindow received recentDocumentsDidChange; will reload data")
-      reloadData()
+      refreshUI()
     }
 
     Logger.log.verbose("WelcomeWindow windowDidLoad done")
@@ -276,44 +281,46 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     return lastFile
   }
 
-  func reloadData() {
-    assert(DispatchQueue.isExecutingIn(.main))
-    guard isWindowLoaded else { return }
+  fileprivate func refreshUI() {
+    reloadDebouncer.run { [self] in
+      assert(DispatchQueue.isExecutingIn(.main))
+      guard isWindowLoaded else { return }
 
-    // Reload data:
+      // Reload data:
 
-    let sw = Utility.Stopwatch()
-    let recentsUnfiltered = Preference.bool(for: .enableRecentDocumentsWorkaround) ? HistoryController.shared.cachedRecentDocumentURLs : NSDocumentController.shared.recentDocumentURLs
-    /// Make sure to resolve symlinks in `lastPlaybackURL`
-    lastPlaybackURL = getLastPlaybackIfValid()?.resolvingSymlinksInPath() ?? nil
-    if let lastURL = lastPlaybackURL {
+      let sw = Utility.Stopwatch()
+      let recentsUnfiltered = Preference.bool(for: .enableRecentDocumentsWorkaround) ? HistoryController.shared.cachedRecentDocumentURLs : NSDocumentController.shared.recentDocumentURLs
+      /// Make sure to resolve symlinks in `lastPlaybackURL`
+      lastPlaybackURL = getLastPlaybackIfValid()?.resolvingSymlinksInPath() ?? nil
+      if let lastURL = lastPlaybackURL {
 
-      // Need to call resolvingSymlinksInPath() on both sides, because it changes "/private/var" to "/var" as a special case,
-      // even though "/var" points to "/private/var" (i.e. it changes it the opposite direction from what is expected).
-      // This is probably a kludge on Apple's part to avoid breaking legacy FreeBSD code.
-      recentDocuments = recentsUnfiltered.filter { $0.resolvingSymlinksInPath() != lastURL }
-    } else {
-      recentDocuments = recentsUnfiltered
-    }
+        // Need to call resolvingSymlinksInPath() on both sides, because it changes "/private/var" to "/var" as a special case,
+        // even though "/var" points to "/private/var" (i.e. it changes it the opposite direction from what is expected).
+        // This is probably a kludge on Apple's part to avoid breaking legacy FreeBSD code.
+        recentDocuments = recentsUnfiltered.filter { $0.resolvingSymlinksInPath() != lastURL }
+      } else {
+        recentDocuments = recentsUnfiltered
+      }
 
-    Logger.log.verbose{"[ReloadWelcomeWindow] Finished resolving \(self.recentDocuments.count) recentDocuments in \(sw) ms"}
+      Logger.log.verbose{"[ReloadWelcomeWindow] Resolved \(self.recentDocuments.count) recentDocuments in \(sw) ms"}
 
-    // Refresh UI:
+      // Refresh UI:
 
-    refreshLastFileDisplay()
-    recentFilesTableView.reloadData()
+      refreshLastFileDisplay()
+      recentFilesTableView.reloadData()
 
-    if lastFileContainerView.isHidden && recentFilesTableView.numberOfRows > 0 {
-      recentFilesTableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
-    }
+      if lastFileContainerView.isHidden && recentFilesTableView.numberOfRows > 0 {
+        recentFilesTableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+      }
 
-    // Debug logging:
-    if Logger.isEnabled(.verbose) {
-      let last = lastPlaybackURL?.path.pii.quoted ?? "nil"
-      Logger.log.verbose{"[ReloadWelcomeWindow] Recents displayed: \(recentDocuments.count) of \(recentsUnfiltered.count); lastPlaybackURL=\(last)"}
+      // Debug logging:
+      if Logger.isEnabled(.verbose) {
+        let last = lastPlaybackURL?.path.pii.quoted ?? "nil"
+        Logger.log.verbose{"[ReloadWelcomeWindow] Recents displayed=\(recentDocuments.count)/\(recentsUnfiltered.count) lastPlaybackURL=\(last)"}
 
-      for (index, url) in recentDocuments.enumerated() {
-        Logger.log.verbose{"Recents[\(index)]: \(url.path.pii.quoted)"}
+        for (index, url) in recentDocuments.enumerated() {
+          Logger.log.verbose{"Recents[\(index)]: \(url.path.pii.quoted)"}
+        }
       }
     }
   }

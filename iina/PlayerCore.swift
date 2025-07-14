@@ -194,7 +194,7 @@ class PlayerCore: NSObject {
   var isShuttingDown: Bool { state.isAtLeast(.shuttingDown) }
   var isShutDown: Bool { state.isAtLeast(.shutDown) }
   var isStopping: Bool { state.isAtLeast(.stopping) }
-  var isIdle: Bool { state == .idle }
+  var isIdleOrNotStarted: Bool { state == .notYetStarted || state == .idle }
 
   // Window controller convenience
 
@@ -680,7 +680,7 @@ class PlayerCore: NSObject {
   ///     can.
   func mpvHasShutdown() {
     assert(DispatchQueue.isExecutingIn(.main))
-    let isMPVInitiated = state.isNotYet(.shuttingDown)
+    let isMPVInitiated = state.isAtLeast(.started) && state.isNotYet(.shuttingDown)
     let suffix = isMPVInitiated ? " (initiated by mpv)" : ""
     log.debug{"Player has shut down\(suffix)"}
     // If mpv shutdown was initiated by mpv then the player state has not been saved.
@@ -1746,7 +1746,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
 
-    if isIdle {
+    if isIdleOrNotStarted {
       state = .started
     }
 

@@ -346,7 +346,7 @@ extension PlayerWindowController {
         log.verbose{"After hiding fadeables: mouse is still in fadeable view; showing again"}
         showFadeableViewsForMouseLocation(pointInWindow)
       } else if hideCursorToo {
-        hideCursor()
+        hideCursorAsConfigured()
       }
     }
 

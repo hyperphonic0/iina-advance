@@ -315,7 +315,7 @@ fileprivate class StatusAPI: JavascriptAPI, CoreSubAPIExportable {
     case "paused":
       return player!.info.isPaused
     case "idle":
-      return player!.isIdle
+      return player!.isIdleOrNotStarted
     case "position":
       return player!.info.playbackPositionSec ?? NSNull()
     case "duration":

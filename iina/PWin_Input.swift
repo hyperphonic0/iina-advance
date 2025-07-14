@@ -825,7 +825,7 @@ extension PlayerWindowController {
 
   /// Only hides cursor if in full screen or windowed (non-interactive) modes, and only if mouse is within
   /// bounds of the window's real estate.
-  @objc func hideCursor() {
+  @objc func hideCursorAsConfigured() {
     guard let window else { return }
 
     switch currentLayout.mode {

@@ -32,7 +32,7 @@ extension PlayerWindowController {
     fadeableViews.hideTimer.startCondition = { _ in Preference.bool(for: .enableControlBarAutoHide) }
 
     // Cursor hide timer
-    hideCursorTimer.action = hideCursor
+    hideCursorTimer.action = hideCursorAsConfigured
     hideCursorTimer.startCondition = { [self] timer in
       guard player.canHideCursor else {
         log.trace("HideCursorTimer: aborting start (cannot hide cursor)")
