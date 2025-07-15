@@ -475,11 +475,11 @@ extension PlayerWindowController {
     log.verbose("Video menu > Change video size, option=\(size)")
     switch size {
     case 0:  //  0: half
-      changeVideoScale(to: 0.5)
+      setVideoScale(to: 0.5)
     case 1:  //  1: normal
-      changeVideoScale(to: 1)
+      setVideoScale(to: 1)
     case 2:  //  2: double
-      changeVideoScale(to: 2)
+      setVideoScale(to: 2)
     case 3:  // fit screen
       animationPipeline.submitInstantTask{ [self] in
         resizeViewport(to: bestScreen.visibleFrame.size, centerOnScreen: true)

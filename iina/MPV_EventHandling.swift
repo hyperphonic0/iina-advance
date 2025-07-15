@@ -614,10 +614,7 @@ extension MPVController {
       }
 
       log.verbose{"Δ mpv prop: 'window-scale' ≔ \(windowScale)"}
-#if DEBUG  // TODO: remove when fixed
-      player.sendOSD(.debug("window-scale", "\(windowScale)"))
-#endif
-      player.mpvWindowScaleDidUpdate(to: windowScale)
+      player.setMpvWindowScale(to: windowScale)
 
     case MPVProperty.mediaTitle:
       player.mediaTitleChanged()

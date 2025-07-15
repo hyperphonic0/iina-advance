@@ -2150,15 +2150,13 @@ class PlayerCore: NSObject {
     saveState()
   }
 
-  func mpvWindowScaleDidUpdate(to newWindowScale: CGFloat) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
+  func setMpvWindowScale(to newWindowScale: CGFloat) {
     windowScaleDebouncer.run { [self] in
-      windowController.mpvWindowScaleDidUpdate(to: newWindowScale)
+      windowController.setMpvWindowScale(to: newWindowScale)
     }
   }
 
   func setMpvWindowScale(from windowGeo: PWinGeometry) {
-    guard false else { return } // FIXME: uncomment when code below is fixed
     windowScaleDebouncer.run { [self] in
       guard windowGeo.mode == .windowedNormal || (windowGeo.mode == .musicMode && windowGeo.videoSize.height > 0) else {
         return

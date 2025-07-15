@@ -249,13 +249,14 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
     let backingScaleFactor = screen.backingScaleFactor
     let viewportSize = viewportSize
-    let viewportWidthScaled = (viewportSize.width * backingScaleFactor).roundedTo6()
-    let viewportHeightScaled = (viewportSize.height * backingScaleFactor).roundedTo6()
+    let viewportWidthScaled = (viewportSize.width * backingScaleFactor)
+    let viewportHeightScaled = (viewportSize.height * backingScaleFactor)
     let videoSizeCAR = video.videoSizeCAR
-    let wScaleFactor = (viewportWidthScaled / videoSizeCAR.width).roundedTo6()
-    let hScaleFactor = (viewportHeightScaled / videoSizeCAR.height).roundedTo6()
+    let wScaleFactor = (viewportWidthScaled / videoSizeCAR.width)
+    let hScaleFactor = (viewportHeightScaled / videoSizeCAR.height)
+    
     let mpvWindScale = ((wScaleFactor + hScaleFactor) / 2).roundedTo6()
-    log.verbose("[geo] Derived mpv window-scale from cached vidGeo: ViewportSize=\(viewportSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeCAR) → \(mpvWindScale)")
+    log.verbose("[geo] Derived mpv window-scale from cached vidGeo: Viewport=\(viewportSize) * [screen=\(screen.displayId)] BSF=\(backingScaleFactor) / VidSizeACR=\(videoSizeCAR) → \(mpvWindScale)")
     return mpvWindScale
   }
 
