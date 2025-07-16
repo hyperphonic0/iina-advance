@@ -73,6 +73,12 @@ extension PlayerCore {
     let videoGeo = videoGeo
 
     mpv.queue.async { [self] in
+      if newCropLabel == AppData.noneCropIdentifier {
+        log.verbose{"Setting crop to None"}
+        removeCrop()
+        return
+      }
+
       guard let vf = videoGeo.buildCropFilter(from: newCropLabel) else {
         log.error{"Failed build crop filter from \(newCropLabel.quoted); setting crop to None"}
         removeCrop()
@@ -98,11 +104,11 @@ extension PlayerCore {
       return false
     }
 
-    // If VideoGeometry specifies a crop, remove the crop filter.
-    // At this point, we know a crop filter is enabled, so removeVideoFilter will remove it & then clean up the state.
-    let oldVideoGeo = windowController.geo.video
-    guard let cropFilter = oldVideoGeo.cropFilter else { return false }
-    guard oldVideoGeo.selectedCropLabel != AppData.noneCropIdentifier else { return false }
+    // Don't care about state of videoGeo. Need to remove the crop filter if there is one.
+    guard let cropFilter = getIINACropFilter() else {
+      log.debug("Ignoring request to remove crop: no filter found with label \(Constants.FilterLabel.crop.quoted)")
+      return false
+    }
     log.verbose{"Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter"}
     return removeVideoFilter(cropFilter, verify: false, notify: false)
   }

@@ -143,6 +143,7 @@ extension PlayerCore {
 
   // MARK: - Video Filters
 
+  /// Reloads filter list from mpv & uses it to update local state, then reload UI.
   func vfChanged() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
@@ -294,7 +295,10 @@ extension PlayerCore {
       // The vf remove command will return 0 even if the filter didn't exist in mpv. So need to do this check ourselves.
       let filterExists = mpv.getFilters(MPVProperty.vf).compactMap({$0.label}).contains(label)
       guard filterExists else {
-        log.debug("Cannot remove video filter: could not find filter with label \(label.quoted) in mpv list")
+        log.debug("Cannot remove video filter: could not find filter with label \(label.quoted) in mpv list. Will try refreshing filters & resyncing video params…")
+        // Something fell out of date. Try refreshing
+        vfChanged()
+        syncVideoParamsFromMpv()
         return false
       }
 

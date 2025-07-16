@@ -1403,7 +1403,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     let tf = GeometryTransform("UserRotation", self, video: { cxt -> VideoGeometry? in
-      cxt.syncVideoParamsFromMpv()
+      return cxt.syncVideoParamsFromMpv()
     })
     windowController.animationPipeline.submit(tf)
   }
@@ -1479,23 +1479,27 @@ class PlayerCore: NSObject {
   }
 
   func displaySizeDidChange() {
+    syncVideoParamsFromMpv()
+  }
+
+  func syncVideoParamsFromMpv() {
     guard !isRestoring else {
-      log.trace{"Ignoring dw or dh update: isRestoring=Y"}
+      log.trace{"Ignoring SyncVidGeo request: isRestoring=Y"}
       return
     }
     // This is a very important check when entering interactive mode. Its transition first removes
     // the crop filter, which triggers a dw/dh update change event which brings us here.
     // But the interactive mode transition should handle everything. Do not step on it.
     guard !windowController.isAnimatingLayoutTransition else {
-      log.verbose{"Ignoring dw or dh update: isAnimatingLayoutTransition=Y"}
+      // FIXME: this can cause necessary dw/dh updates from being applied!
+      // FIXME: consider enqueuing a `syncVideoParamsFromMpv` instead... also for window-scale...
+      log.verbose{"Ignoring SyncVidGeo request: isAnimatingLayoutTransition=Y"}
       return
     }
 
-    let tf = GeometryTransform("DSize", self, video: { cxt -> VideoGeometry? in
+    log.verbose{"Enqueuing SyncVidGeo transform"}
+    let tf = GeometryTransform("SyncVidGeo", self, video: { cxt -> VideoGeometry? in
       let newVideoGeo = cxt.syncVideoParamsFromMpv()
-//      guard cxt.oldGeo.video.videoSizeDisplay != newVideoGeo?.videoSizeDisplay else {
-//        return nil
-//      }
       return newVideoGeo
     })
     windowController.animationPipeline.submit(tf)
