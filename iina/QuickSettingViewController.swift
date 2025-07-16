@@ -462,10 +462,19 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   private func updateCropControls(using videoGeo: VideoGeometry) {
     guard isViewLoaded else { return }
 
-    let cropLabel: String? = videoGeo.selectedCropLabel
+    // First try getting selected crop label directly from the filter. This avoids an unpleasant timing issue
+    // where during the gap between a user click on cropPresetsSegment and the time when videoGeo is actually updated,
+    // videoGeo.selectedCropLabel will be out-of-date and would cause the old button to be briefly selected.
+    let cropLabel: String?
+    if let vfCrop = player.getIINACropFilter() {
+      player.log.verbose{"Will update crop preset using IINA crop filter"}
+      cropLabel = player.deriveCropLabel(from: vfCrop, rawVideoSize: player.windowController.geo.video.videoSizeRaw)
+    } else {
+      cropLabel = videoGeo.selectedCropLabel
+    }
 
     guard let cropLabel else {
-      player.log.verbose{"Selecting crop segment: None"}
+      player.log.verbose{"Selecting crop preset segment: None"}
       cropPresetsSegment.selectSegment(withTag: 0)
       customCropTextField.isHidden = true
       return
@@ -473,9 +482,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
     cropPresetsSegment.selectSegment(withLabel: cropLabel)
     let isCropInPanel = cropPresetsSegment.selectedSegment >= 0
-    player.log.verbose{"Selected crop preset segment: \(cropLabel.quoted)"}
-    if !isCropInPanel {
-      player.log.verbose{"Selecting Custom crop segment for \(cropLabel.quoted)"}
+    if isCropInPanel {
+      player.log.verbose{"Selected crop preset segment matching label \(cropLabel.quoted)"}
+    } else {
+      player.log.verbose{"Selecting crop preset segment: Custom (for mpvLabel \(cropLabel.quoted))"}
       cropPresetsSegment.selectSegment(withTag: cropPresetsSegment.segmentCount - 1)
       if let cropRect = videoGeo.cropRect {
         let customCropString = MPVFilter.makeCropBoxDisplayString(from: cropRect)
@@ -643,6 +653,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   /// Reload Quick Settings controls for the current tab
   func reload() {
     guard isViewLoaded else { return }
+    player.log.verbose{"QuickSettingsViewController: reloading tab \(currentTab)"}
     switch currentTab {
     case .audio:
       audioTableView.reloadData()

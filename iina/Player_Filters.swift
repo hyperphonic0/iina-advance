@@ -147,8 +147,8 @@ extension PlayerCore {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
     _ = updateVideoFiltersFromMpv()
-    postNotification(.iinaVFChanged)
 
+    postNotification(.iinaVFChanged)
     saveState()
     reloadQuickSettingsView()
   }
@@ -157,12 +157,13 @@ extension PlayerCore {
   /// AND updates associated state in the process
   func updateVideoFiltersFromMpv() -> [MPVFilter] {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    let videoFilters = mpv.getFilters(MPVProperty.vf)
+    log.verbose{"Found \(videoFilters.count) VFs"}
+
     // Clear cached filters first:
     info.flipFilter = nil
     info.mirrorFilter = nil
     info.delogoFilter = nil
-    let videoFilters = mpv.getFilters(MPVProperty.vf)
-    log.verbose{"Found \(videoFilters.count) VFs"}
     for (filterIndex, filter) in videoFilters.enumerated() {
       log.verbose{"VF-\(filterIndex): name=\(filter.name.quoted) label=\(filter.label?.quoted ?? "nil") params=\(filter.params ?? [:])"}
 
