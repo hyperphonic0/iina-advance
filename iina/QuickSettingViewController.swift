@@ -464,27 +464,28 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
     let cropLabel: String? = videoGeo.selectedCropLabel
 
-    if let cropLabel {
-      cropPresetsSegment.selectSegment(withLabel: cropLabel)
-      let isCropInPanel = cropPresetsSegment.selectedSegment >= 0
-      player.log.verbose{"Selected crop preset segment: \(cropLabel.quoted)"}
-      if !isCropInPanel {
-        player.log.verbose{"Selecting custom crop segment for \(cropLabel.quoted)"}
-        cropPresetsSegment.selectSegment(withTag: cropPresetsSegment.segmentCount - 1)
-        if let cropRect = videoGeo.cropRect {
-          let customCropString = MPVFilter.makeCropBoxDisplayString(from: cropRect)
-          player.log.verbose{"Setting custom crop label string: \(customCropString.quoted)"}
-          customCropTextField.stringValue = customCropString
-          customCropTextField.isHidden = false
-        } else {
-          customCropTextField.isHidden = true
-        }
-      }
-    } else {
+    guard let cropLabel else {
       player.log.verbose{"Selecting crop segment: None"}
       cropPresetsSegment.selectSegment(withTag: 0)
       customCropTextField.isHidden = true
+      return
     }
+
+    cropPresetsSegment.selectSegment(withLabel: cropLabel)
+    let isCropInPanel = cropPresetsSegment.selectedSegment >= 0
+    player.log.verbose{"Selected crop preset segment: \(cropLabel.quoted)"}
+    if !isCropInPanel {
+      player.log.verbose{"Selecting Custom crop segment for \(cropLabel.quoted)"}
+      cropPresetsSegment.selectSegment(withTag: cropPresetsSegment.segmentCount - 1)
+      if let cropRect = videoGeo.cropRect {
+        let customCropString = MPVFilter.makeCropBoxDisplayString(from: cropRect)
+        player.log.verbose{"Setting custom crop label string: \(customCropString.quoted)"}
+        customCropTextField.stringValue = customCropString
+        customCropTextField.isHidden = false
+        return
+      }
+    }
+    customCropTextField.isHidden = true
   }
 
   /// Reload `Video` tab

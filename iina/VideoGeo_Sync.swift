@@ -121,6 +121,7 @@ extension GeometryTransform.Context {
       } else {
         // If no IINA crop filter, the crop must have come from somewhere else.
         // Try to calculate the label from the raw values, working backwards.
+        // FIXME: this generates false positives from non-right-angled video rotations. Need a better solution!
         let rawVideoSize: CGSize
         if let rawWidth, let rawHeight, rawWidth > 0, rawHeight > 0 {
           rawVideoSize = CGSize(width: rawWidth, height: rawHeight)
