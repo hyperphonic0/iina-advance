@@ -387,7 +387,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   override func viewDidAppear() {
     super.viewDidAppear()
-    updateSegmentLabels()
+    let videoGeo = player.videoGeo
+    updateSegmentLabels(using: videoGeo)
     updateControlsState()
   }
 
@@ -417,7 +418,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     log(speed / AppData.minSpeed) / log(AppData.maxSpeed / AppData.minSpeed) * sliderSteps
   }
 
-  func updateSegmentLabels() {
+  func updateSegmentLabels(using videoGeo: VideoGeometry) {
     guard isViewLoaded else { return }
 
     if let segmentLabels = Preference.csvStringArray(for: .aspectRatioPanelPresets) {
@@ -428,7 +429,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
           aspectPresetsSegment.setLabel(newLabel, forSegment: segmentIndex)
         }
       }
-      updateAspectControls()
+      updateAspectControls(using: videoGeo)
     }
 
     if let segmentLabels = Preference.csvStringArray(for: .cropPanelPresets) {
@@ -443,31 +444,25 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
         }
       }
       cropPresetsSegment.setLabel(customLabel, forSegment: cropPresetsSegment.segmentCount - 1)
-      updateCropControls()
+      updateCropControls(using: videoGeo)
     }
   }
 
   /// Reload Aspect settings controls
-  private func updateAspectControls() {
+  private func updateAspectControls(using videoGeo: VideoGeometry) {
     guard isViewLoaded else { return }
 
-    let userAspectLabel = player.videoGeo.userAspectLabel
+    let userAspectLabel = videoGeo.userAspectLabel
     aspectPresetsSegment.selectSegment(withLabel: userAspectLabel)
     let isAspectInPanel = aspectPresetsSegment.selectedSegment >= 0
     customAspectTextField.stringValue = isAspectInPanel ? "" : userAspectLabel
   }
 
   /// Reload Crop settings controls
-  private func updateCropControls() {
+  private func updateCropControls(using videoGeo: VideoGeometry) {
     guard isViewLoaded else { return }
 
-    // Derive selected crop label directly from the filter. Do not use videoGeo as it could be stale.
-    let cropLabel: String?
-    if let vfCrop = player.getIINACropFilter() {
-      cropLabel = player.deriveCropLabel(from: vfCrop, rawVideoSize: player.windowController.geo.video.videoSizeRaw)
-    } else {
-      cropLabel = nil
-    }
+    let cropLabel: String? = videoGeo.selectedCropLabel
 
     if let cropLabel {
       cropPresetsSegment.selectSegment(withLabel: cropLabel)
@@ -476,8 +471,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       if !isCropInPanel {
         player.log.verbose{"Selecting custom crop segment for \(cropLabel.quoted)"}
         cropPresetsSegment.selectSegment(withTag: cropPresetsSegment.segmentCount - 1)
-        if Preference.bool(for: .enableAdvancedSettings), let cropRect = player.videoGeo.cropRect {
-          customCropTextField.stringValue = MPVFilter.makeCropBoxDisplayString(from: cropRect)
+        if let cropRect = videoGeo.cropRect {
+          let customCropString = MPVFilter.makeCropBoxDisplayString(from: cropRect)
+          player.log.verbose{"Setting custom crop label string: \(customCropString.quoted)"}
+          customCropTextField.stringValue = customCropString
           customCropTextField.isHidden = false
         } else {
           customCropTextField.isHidden = true
@@ -492,10 +489,16 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   /// Reload `Video` tab
   private func updateVideoTabControls() {
-    updateAspectControls()
-    updateCropControls()
+    let videoGeo = player.videoGeo
+    updateAspectControls(using: videoGeo)
+    updateCropControls(using: videoGeo)
 
-    rotateSegment.selectSegment(withTag: AppData.rotations.firstIndex(of: player.videoGeo.userRotation) ?? -1)
+    if let knownRotationIndex = AppData.rotations.firstIndex(of: videoGeo.userRotation) {
+      rotateSegment.selectSegment(withTag: knownRotationIndex)
+    } else {
+      // Not a right-angle rotation: deselect all segments
+      rotateSegment.selectSegment(withLabel: "")
+    }
 
     hardwareDecodingSwitch.state = player.info.hwdecEnabled ? .on : .off
     deinterlaceSwitch.state = player.info.deinterlace ? .on : .off

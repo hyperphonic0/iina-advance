@@ -358,7 +358,8 @@ extension PlayerWindowController {
         setOSDViews()
       }
     case .aspectRatioPanelPresets, .cropPanelPresets:
-      quickSettingView.updateSegmentLabels()
+      let videoGeo = player.videoGeo
+      quickSettingView.updateSegmentLabels(using: videoGeo)
     default:
       return
     }

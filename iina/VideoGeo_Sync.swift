@@ -137,7 +137,7 @@ extension GeometryTransform.Context {
         }
       }
     }
-    log.warn{"[GeoTF:\(name)]: Determined crop label from mpv params: \(cropLabel.quoted)"}
+    log.warn{"[GeoTF:\(name)] Determined crop label from mpv params: \(cropLabel.quoted)"}
 
     let streamRotation = videoDecParams.rotate
     // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
@@ -204,14 +204,14 @@ extension GeometryTransform.Context {
       // FIXME: Default aspect needs i18n
       log.verbose{"[GeoTF:\(name)] Changing userAspectLabel: \(oldVideoGeo.userAspectLabel.quoted) → \(userAspectLabel.quoted)"}
       player.sendOSD(.aspect(userAspectLabel))
+    } else if userRotation != oldVideoGeo.userRotation {
+      // Favor rotation OSD message over crop, because rotation increments < 90° will also trigger crop
+      log.verbose{"[GeoTF:\(name)] Changing rotation: \(userRotation)"}
+      player.sendOSD(.rotation(userRotation))
     } else if oldVideoGeo.selectedCropLabel != cropLabel {
       log.verbose{"[GeoTF:\(name)] Changing selectedCropLabel: \(oldVideoGeo.selectedCropLabel.quoted) → \(cropLabel.quoted)"}
       let osdLabel = cropLabel.isEmpty ? AppData.customCropIdentifier : cropLabel
       player.sendOSD(.crop(osdLabel))
-    } else if userRotation != oldVideoGeo.userRotation {
-      log.verbose{"[GeoTF:\(name)] Changing rotation: \(userRotation)"}
-      // Update window geometry
-      player.sendOSD(.rotation(userRotation))
     }
 
     log.debug{"[GeoTF:\(name)] Derived videoGeo from mpv video-params: \(newVideoGeo)"}

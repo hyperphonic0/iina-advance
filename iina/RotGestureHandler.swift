@@ -12,11 +12,12 @@ class RotationGestureHandler {
 
   // Current rotation of videoView
   private var cgCurrentRotationDegrees: CGFloat = 0
-  private var videoGeo: VideoGeometry? = nil
+  /// The `videoGeo.userRotation` at start of rotation
+  private var mpvRotationAtStart: CGFloat? = nil
 
-  unowned var windowController: PlayerWindowController! = nil
-  private var player: PlayerCore { windowController.player }
-  private var videoView: VideoView { windowController.videoView }
+  unowned var pwc: PlayerWindowController! = nil
+  private var player: PlayerCore { pwc.player }
+  private var videoView: VideoView { pwc.videoView }
   private var log: Logger.Subsystem { player.log }
 
   lazy var rotationGestureRecognizer: NSRotationGestureRecognizer = {
@@ -28,7 +29,10 @@ class RotationGestureHandler {
 
     switch recognizer.state {
     case .began, .changed:
-      self.videoGeo = player.videoGeo
+      // The NSView will always start with a CoreGraphics rotation of 0° and will be rotated by `recognizer.rotationInDegrees`.
+      // This is independent of mpv's internal rotation, even when userRotation is something unusual, such as 45°.
+      let existingRotation = CGFloat(player.videoGeo.userRotation)
+      mpvRotationAtStart = existingRotation
       let cgNewRotationDegrees = recognizer.rotationInDegrees
       IINAAnimation.disableAnimation {
         rotateVideoView(toDegrees: cgNewRotationDegrees)
@@ -40,33 +44,38 @@ class RotationGestureHandler {
       }
       break
     case .ended:
-      // mpv and CoreGraphics rotate in opposite directions
-      let mpvNormalizedRotationDegrees = normalizeRotation(Int(-recognizer.rotationInDegrees))
+      guard let mpvRotationAtStart else {
+        player.log.error("Cannot rotate video for 'ended': mpvRotationAtStart is nil!")
+        return
+      }
+      // mpv and CoreGraphics rotate in opposite directions: negate to convert
+      let mpvNormalizedRotationDegrees = normalizeRotation(Int(mpvRotationAtStart - recognizer.rotationInDegrees))
       let mpvClosestQuarterRotation = findClosestQuarterRotation(mpvNormalizedRotationDegrees)
-      guard mpvClosestQuarterRotation != 0 else {
+      guard mpvClosestQuarterRotation != Int(mpvRotationAtStart) else {
         // Zero degree rotation: no change.
         // Don't "unwind" if more than 360° rotated; just take shortest partial circle back to origin
         cgCurrentRotationDegrees -= completeCircleDegrees(of: cgCurrentRotationDegrees)
         log.verbose{"Rotation gesture of \(recognizer.rotationInDegrees)° will not change video rotation. Snapping back from: \(cgCurrentRotationDegrees)°"}
         rotateVideoView(toDegrees: 0)
-        self.videoGeo = nil
-        return
-      }
-
-      guard let videoGeo = self.videoGeo else {
-        player.log.error("Cannot rotate video. No videoGeo!")
+        self.mpvRotationAtStart = nil
         return
       }
 
       // Snap to one of the 4 quarter circle rotations
-      let mpvNewRotation = (videoGeo.userRotation + mpvClosestQuarterRotation) %% 360
-      log.verbose{"User's gesture of \(recognizer.rotationInDegrees)° is equivalent to mpv \(mpvNormalizedRotationDegrees)°, which is closest to \(mpvClosestQuarterRotation)°. Adding it to current mpv rotation (\(videoGeo.userRotation)°) → new rotation will be \(mpvNewRotation)°"}
+      let mpvNewRotation = mpvClosestQuarterRotation %% 360
       // Need to convert snap-to location back to CG, to feed to animation
       let cgSnapToDegrees = findNearestCGQuarterRotation(forCGRotation: recognizer.rotationInDegrees,
-                                                         equalToMpvRotation: mpvClosestQuarterRotation)
-      rotateVideoView(toDegrees: cgSnapToDegrees)
-      player.setVideoRotate(mpvNewRotation)
-
+                                                         equalToMpvRotation: mpvClosestQuarterRotation - Int(mpvRotationAtStart))
+      log.verbose{"User's gesture of \(recognizer.rotationInDegrees)° is equivalent to mpv \(mpvNormalizedRotationDegrees)°, which is closest to \(mpvClosestQuarterRotation)°. Changing mpv rotation (\(mpvRotationAtStart)°) → \(mpvNewRotation)° (cgSnapToDegrees=\(cgSnapToDegrees))"}
+      let tasks: [IINAAnimation.Task] = [
+        .init({ [self] in
+          player.setVideoRotate(Int(mpvNewRotation))
+        }),
+        .init({ [self] in
+          rotateVideoView(toDegrees: cgSnapToDegrees)
+        }),
+      ]
+      pwc.animationPipeline.submit(tasks)
     default:
       return
     }
@@ -77,7 +86,8 @@ class RotationGestureHandler {
     CGFloat(Int(rotationDegrees / 360) * 360)
   }
 
-  // Reduces the given rotation to one which is a positive number between 0 and 360 degrees and has the same resulting orientation.
+  /// Reduces the given rotation to one which is a positive number between 0 and 360 degrees and has the same resulting
+  /// orientation. Works for both clockwise or counter-clockwise rotations.
   private func normalizeRotation(_ rotationDegrees: Int) -> Int {
     // Take out all full rotations so we end up with number between -360 and 360
     let simplifiedRotation = rotationDegrees %% 360

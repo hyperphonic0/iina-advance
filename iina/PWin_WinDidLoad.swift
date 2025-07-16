@@ -63,7 +63,7 @@ extension PlayerWindowController {
     rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 
     // gesture recognizers
-    rotationHandler.windowController = self
+    rotationHandler.pwc = self
     magnificationHandler.pwc = self
     contentView.addGestureRecognizer(magnificationHandler.magnificationGestureRecognizer)
     contentView.addGestureRecognizer(rotationHandler.rotationGestureRecognizer)
