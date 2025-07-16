@@ -333,6 +333,8 @@ extension PlayerWindowController {
   ///
   /// See also: `PWinGeometry.mpvWindowScale`.
   func setMpvWindowScale(to desiredWindowScale: CGFloat) {
+    guard false else { return }  // FIXME: fix the code below!
+
     assert(DispatchQueue.isExecutingIn(.main))
     // Not supported in music mode at this time. Need to resolve backing scale bugs
     guard currentLayout.mode == .windowedNormal else {

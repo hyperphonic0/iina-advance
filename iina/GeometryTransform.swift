@@ -631,7 +631,7 @@ extension PlayerWindowController {
     }
 
     hideSeekPreviewImmediately()
-    quickSettingView.reload()
+    player.reloadQuickSettingsView()
     updateTitle()
     if currentLayout.isPlaylistVisible {
       playlistView.scrollPlaylistToCurrentItem()

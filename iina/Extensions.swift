@@ -2229,7 +2229,7 @@ extension DispatchQueue {
     }
   }
 
-  public func execOrAsync(execute work: @escaping @Sendable @convention(block) () -> Void) {
+  public func execOrAsync(execute work: @escaping @convention(block) () -> Void) {
     if DispatchQueue.isExecutingIn(self, logError: false) {
       work()
     } else {
@@ -2239,7 +2239,7 @@ extension DispatchQueue {
     }
   }
 
-  public func execOrSync(execute work: @Sendable @convention(block) () -> Void) {
+  public func execOrSync(execute work: @convention(block) () -> Void) {
     if DispatchQueue.isExecutingIn(self, logError: false) {
       work()
     } else {

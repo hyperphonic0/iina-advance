@@ -650,7 +650,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     updateTabActiveStatus(for: subTabBtn, isActive: currentTab == .sub)
   }
 
-  /// Reload Quick Settings controls for the current tab
+  /// Reload Quick Settings controls for the current tab.
+  ///
+  /// Do not call this directly. Call `player.reloadQuickSettingsView()` instead.
   func reload() {
     guard isViewLoaded else { return }
     player.log.verbose{"QuickSettingsViewController: reloading tab \(currentTab)"}

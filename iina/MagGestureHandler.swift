@@ -130,7 +130,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       } else {
         pwc.log.verbose{"Updating windowedModeGeo & calling syncMpvWindowScale from mag gesture state \(recognizer.state.rawValue)"}
         pwc.windowedModeGeo = finalGeo
-        pwc.player.setMpvWindowScale(to: finalGeo.mpvWindowScale())
+        pwc.player.setMpvWindowScale(from: finalGeo)
         pwc.player.info.intendedViewportSize = finalGeo.viewportSize
         pwc.player.saveState()
       }

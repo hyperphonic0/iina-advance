@@ -185,7 +185,7 @@ extension PlayerWindowController {
         updateTitleBarAndOSC()
         updateWindowBorderAndOpacity()
         // may need to hide cropbox label and other advanced stuff
-        quickSettingView.reload()
+        player.reloadQuickSettingsView()
         seekPreview.refreshThumbfastFromPrefs()
       })
     case .mpvEventLogLevel:

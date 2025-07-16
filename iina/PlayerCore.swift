@@ -1482,19 +1482,21 @@ class PlayerCore: NSObject {
     syncVideoParamsFromMpv()
   }
 
-  func syncVideoParamsFromMpv() {
-    guard !isRestoring else {
-      log.trace{"Ignoring SyncVidGeo request: isRestoring=Y"}
-      return
-    }
-    // This is a very important check when entering interactive mode. Its transition first removes
-    // the crop filter, which triggers a dw/dh update change event which brings us here.
-    // But the interactive mode transition should handle everything. Do not step on it.
-    guard !windowController.isAnimatingLayoutTransition else {
-      // FIXME: this can cause necessary dw/dh updates from being applied!
-      // FIXME: consider enqueuing a `syncVideoParamsFromMpv` instead... also for window-scale...
-      log.verbose{"Ignoring SyncVidGeo request: isAnimatingLayoutTransition=Y"}
-      return
+  func syncVideoParamsFromMpv(force: Bool = false) {
+    if !force {
+      guard !isRestoring else {
+        log.trace{"Ignoring SyncVidGeo request: isRestoring=Y"}
+        return
+      }
+      // This is a very important check when entering interactive mode. Its transition first removes
+      // the crop filter, which triggers a dw/dh update change event which brings us here.
+      // But the interactive mode transition should handle everything. Do not step on it.
+      guard !windowController.isAnimatingLayoutTransition else {
+        // FIXME: this can cause necessary dw/dh updates from being applied!
+        // FIXME: consider enqueuing a `syncVideoParamsFromMpv` instead... also for window-scale...
+        log.verbose{"Ignoring SyncVidGeo request: isAnimatingLayoutTransition=Y"}
+        return
+      }
     }
 
     log.verbose{"Enqueuing SyncVidGeo transform"}
@@ -2094,12 +2096,14 @@ class PlayerCore: NSObject {
   }
 
   func reloadQuickSettingsView() {
-    DispatchQueue.main.async { [self] in
+    DispatchQueue.main.execOrAsync { [self] in
       guard windowController.loaded else { return }
       guard !isStopping else { return }
 
       // Easiest place to put this - need to call it when setting equalizers
       videoView.displayActive(temporary: info.isPaused)
+      // FIXME: QuickSettings reload should be downstream of video params for cleanest UI updates
+//      syncVideoParamsFromMpv(force: true)
       windowController.quickSettingView.reload()
     }
   }
@@ -2258,7 +2262,7 @@ class PlayerCore: NSObject {
       }
 
       DispatchQueue.main.async { [self] in
-        windowController?.quickSettingView.reload()
+        reloadQuickSettingsView()
       }
     }
   }

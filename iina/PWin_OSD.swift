@@ -50,6 +50,7 @@ class OSDState {
   var currentlyDisplayedMsg: OSDMessage? {
     return animationState == .shown ? lastDisplayedMsg : nil
   }
+  /// "Recently" here is defined as: having been shown in the last 0.25 sec.
   func didShowLastMsgRecently() -> Bool {
     return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.25
   }
@@ -731,6 +732,10 @@ extension PlayerWindowController {
       if newCropLabel == AppData.noneCropIdentifier && !isInInteractiveMode && player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
         log.verbose("[OSD] Ignoring request for Crop 'None': looks like user starting to edit an existing crop")
         return
+      }
+      if osd.didShowLastMsgRecently() {
+        // As of v1.4, partial rotations can trigger "crop" messages as a side effect. Show rotation msg only.
+        if case .rotation = osd.lastDisplayedMsg { return }
       }
     case .resumeFromWatchLater:
       if case .fileStart(let filename, _) = osd.lastDisplayedMsg {
