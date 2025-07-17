@@ -320,7 +320,7 @@ extension PlayerWindowController {
       player.setMpvWindowScale(from: newGeo)
       return newGeo
     })
-    animationPipeline.submitGTF(gtf)
+    animationPipeline.submit(gtf: gtf)
   }
 
   /// Scales the viewport (which is equivalent to mpv's concept of a window) to the given `desiredMpvWindowScale`.
@@ -374,7 +374,7 @@ extension PlayerWindowController {
       player.setMpvWindowScale(from: newGeo)
       return newGeo
     })
-    animationPipeline.submitGTF(gtf)
+    animationPipeline.submit(gtf: gtf)
   }
 
   /**
@@ -433,7 +433,7 @@ extension PlayerWindowController {
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
         return newGeoUnconstrained.refitted(using: .stayInside)
       }
-      animationPipeline.submitGTF(GeometryTransform("ScaleVideoBy\(widthStep)px", player, windowed: windowedTransform))
+      animationPipeline.submit(gtf: GeometryTransform("ScaleVideoBy\(widthStep)px", player, windowed: windowedTransform))
 
     case .musicMode:
       let musicModeTransform: (GeometryTransform.Context) -> MusicModeGeometry? = { [self] cxt -> MusicModeGeometry? in
@@ -442,7 +442,7 @@ extension PlayerWindowController {
         log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
         return cxt.oldGeo.musicMode.scalingViewport(to: desiredViewportSize)
       }
-      animationPipeline.submitGTF(GeometryTransform("ScaleVideoBy\(widthStep)px", player, musicMode: musicModeTransform))
+      animationPipeline.submit(gtf: GeometryTransform("ScaleVideoBy\(widthStep)px", player, musicMode: musicModeTransform))
     default:
       return
     }

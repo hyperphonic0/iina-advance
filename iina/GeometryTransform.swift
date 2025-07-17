@@ -63,6 +63,10 @@ struct GeometryTransform {
     self.onSuccess = onSuccess
   }
 
+  func submit() {
+    pwc.animationPipeline.submit(gtf: self)
+  }
+
   /// Aborts the transform (`animationPipeline` must always be notified for either success or failure).
   private func abort(_ reasonDebugMsg: String) {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
@@ -181,14 +185,6 @@ struct GeometryTransform {
     }
   }
 
-
-  /// Standard `VideoGeometry.Transform` for use in response to a `vid` property change event from mpv.
-  /// If current media is file, this should be called after it is done loading.
-  /// If current media is network resource, should be called immediately & show buffering msg.
-  /// If current media's vid track changed, may need to apply new geometry
-  static func vidTrackChanged(_ context: Context) -> VideoGeometry? {
-    context.vidTrackChanged()
-  }
 
   // MARK: - Context
 
@@ -505,21 +501,6 @@ struct GeometryTransform {
     var isVideoRotating: Bool {
       inputVidGeo.userRotation != outputVidGeo.userRotation
     }
-
-    /// Standard `VideoGeometry.Transform` for use in response to a `vid` property change event from mpv.
-    /// If current media is file, this should be called after it is done loading.
-    /// If current media is network resource, should be called immediately & show buffering msg.
-    /// If current media's vid track changed, may need to apply new geometry
-    ///
-    /// See: `GeometryTransform.vidTrackChanged`
-    fileprivate func vidTrackChanged() -> VideoGeometry? {
-      assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-
-      /// See `VideoGeo_Sync.swift`
-      guard let videoGeo = syncVideoParamsFromMpv() else { return nil }
-      log.debug{"[GeoTF:\(name)] Result videoGeo: \(videoGeo)"}
-      return videoGeo
-    }  // end of transform block
 
   }  // end struct GeometryTransform.Context
 }

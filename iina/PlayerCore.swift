@@ -1402,10 +1402,8 @@ class PlayerCore: NSObject {
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    let gtf = GeometryTransform("UserRotation", self, video: { cxt -> VideoGeometry? in
-      return cxt.syncVideoParamsFromMpv()
-    })
-    windowController.animationPipeline.submitGTF(gtf)
+    let gtf = GeometryTransform("UserRotation", self, video: GeometryTransform.syncVideoParamsFromMpv)
+    gtf.submit()
   }
 
   /// Set video's aspect ratio override. The `aspect` param is a string which may be one of the following formats:
@@ -1500,7 +1498,7 @@ class PlayerCore: NSObject {
     }
 
     log.verbose{"Enqueuing SyncVidGeo transform"}
-    windowController.animationPipeline.submitGTF(GeometryTransform("SyncVidGeo", self, video: { cxt -> VideoGeometry? in
+    windowController.animationPipeline.submit(gtf: GeometryTransform("SyncVidGeo", self, video: { cxt -> VideoGeometry? in
       let newVideoGeo = cxt.syncVideoParamsFromMpv()
       return newVideoGeo
     }))
@@ -1955,8 +1953,8 @@ class PlayerCore: NSObject {
           return nil
         }
       }
-    }, video: GeometryTransform.vidTrackChanged)
-    windowController.animationPipeline.submitGTF(gtf)
+    }, video: GeometryTransform.syncVideoParamsFromMpv)
+    windowController.animationPipeline.submit(gtf: gtf)
 
     // Launch auto-load tasks on background thread
     let shouldAutoLoadFiles = info.shouldAutoLoadFiles
@@ -3238,10 +3236,11 @@ class PlayerCore: NSObject {
       return newGeo
     }
 
-    windowController.animationPipeline.submitGTF(GeometryTransform("VidTrackChanged", self,
-                                                                   state: stateChangeFunc,
-                                                                   video: GeometryTransform.vidTrackChanged,
-                                                                   musicMode: musicModeTransform))
+    let gtf = GeometryTransform("VidTrackChanged", self,
+                                state: stateChangeFunc,
+                                video: GeometryTransform.syncVideoParamsFromMpv,
+                                musicMode: musicModeTransform)
+    gtf.submit()
 
   }
 

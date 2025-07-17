@@ -6,6 +6,18 @@
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
+extension GeometryTransform {
+
+  /// Standard `VideoGeometry.Transform` for use in response to a `vid` property change event from mpv.
+  /// If current media is file, this should be called after it is done loading.
+  /// If current media is network resource, should be called immediately & show buffering msg.
+  /// If current media's vid track changed, may need to apply new geometry
+  static func syncVideoParamsFromMpv(_ context: Context) -> VideoGeometry? {
+    context.syncVideoParamsFromMpv()
+  }
+
+}
+
 extension GeometryTransform.Context {
 
   /// An instance of this struct holds a subset of the parsed metadata for one of the following mpv properties

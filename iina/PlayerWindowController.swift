@@ -905,8 +905,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     player.mpv.queue.async { [self] in
       if let currentPlayback = player.info.currentPlayback, currentPlayback.isNetworkResource {
         log.verbose("Current playback is network resource: calling transformGeometry now")
-        animationPipeline.submitGTF(GeometryTransform("OpenNetStreamWindow", player,
-                                                      video: GeometryTransform.vidTrackChanged))
+        let gtf = GeometryTransform("OpenNetStreamWindow", player, video: GeometryTransform.syncVideoParamsFromMpv)
+        gtf.submit()
       }
     }
   }
