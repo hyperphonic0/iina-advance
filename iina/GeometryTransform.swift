@@ -63,6 +63,7 @@ struct GeometryTransform {
     self.onSuccess = onSuccess
   }
 
+  /// Convenience method which enqueues this GeometryTransform for execution.
   func submit() {
     pwc.animationPipeline.submit(gtf: self)
   }
@@ -306,6 +307,11 @@ struct GeometryTransform {
 
           case .newReplacingExisting, .existingSession_startingNewPlayback:
             resizedGeo = applyResizePrefsForNewPlaybackInWindowedMode()
+            if let resizedGeo, resizedGeo.windowFrame != oldGeo.windowed.windowFrame {
+            } else {
+              // No need for animation if window's frame didn't change. Video param transitions are not animated by mpv
+              duration = 0.0
+            }
 
           case .existingSession_videoTrackChangedForSamePlayback,
               .existingSession_continuing:

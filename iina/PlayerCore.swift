@@ -1420,13 +1420,7 @@ class PlayerCore: NSObject {
   /// 3. Quick Settings controls & menu item checkmarks
   ///
   /// To hopefully avoid precision problems, `mpvAspectString` is used for comparisons across data sources.
-  func setVideoAspectOverride(_ aspect: String) {
-    mpv.queue.async { [self] in
-      _setVideoAspectOverride(aspect)
-    }
-  }
-
-  func _setVideoAspectOverride(_ aspectString: String) {
+  func setVideoAspectOverride(_ aspectString: String) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isRestoring else { return }
 
@@ -1434,6 +1428,7 @@ class PlayerCore: NSObject {
     guard videoGeo.userAspectLabel != aspectLabel else { return }
 
     sendVideoAspectOverrideToMpv(aspectLabel: aspectLabel)
+    syncVideoParamsFromMpv(force: true)
   }
 
   func sendVideoAspectOverrideToMpv(aspectLabel: String) {
@@ -2093,14 +2088,13 @@ class PlayerCore: NSObject {
   }
 
   func reloadQuickSettingsView() {
-    windowController.animationPipeline.submitInstantTask{ [self] in
+    windowController.animationPipeline.doAfterGTFs{ [self] in
       guard windowController.loaded else { return }
       guard !isStopping else { return }
+      log.verbose("Reloading QuickSettigsView")
 
       // Easiest place to put this - need to call it when setting equalizers
       videoView.displayActive(temporary: info.isPaused)
-      // FIXME: QuickSettings reload should be downstream of video params for cleanest UI updates
-//      syncVideoParamsFromMpv(force: true)
       windowController.quickSettingView.reload()
     }
   }

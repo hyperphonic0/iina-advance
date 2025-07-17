@@ -117,40 +117,34 @@ extension GeometryTransform.Context {
       rawHeight = nil
     }
 
-    // Derive crop label from video-out-params (is none if full-sized)
-    let isNotCropped = videoOutParams.crop_x == 0 && videoOutParams.crop_y == 0 &&
-                    videoOutParams.crop_w == rawWidth && videoOutParams.crop_h == rawHeight
+    // No crop if full-sized. There may be an IINA filter though and we should favor that for status
+    let isNotCropped = videoOutParams.crop_x == 0 && videoOutParams.crop_y == 0 && videoOutParams.crop_w == rawWidth && videoOutParams.crop_h == rawHeight
 
     let cropLabel: String
-    if isNotCropped {
+    // First check for IINA crop filter. Derive selected crop label directly from the filter, because x & y values are ambiguous
+    // in mpv's video-params APIs (nil & 0 both show as 0)
+    if let vfCrop = player.getIINACropFilter(),
+       let cropLabelFromIINACrop = player.deriveCropLabel(from: vfCrop, rawVideoSize: player.windowController.geo.video.videoSizeRaw) {
+      cropLabel = cropLabelFromIINACrop
+      log.verbose{"[GeoTF:\(name)] Determined crop label from iina_crop filter: \(cropLabel.quoted)"}
+    } else if isNotCropped {
       cropLabel = AppData.noneCropIdentifier
+      log.verbose{"[GeoTF:\(name)] Looks like video is not cropped"}
     } else {
-      // First check for IINA crop filter. Derive selected crop label directly from the filter, because x & y values are ambiguous
-      // in mpv's video-params APIs (nil & 0 both show as 0)
-      if let vfCrop = player.getIINACropFilter(),
-         let cropLabelFromIINACrop = player.deriveCropLabel(from: vfCrop, rawVideoSize: player.windowController.geo.video.videoSizeRaw) {
-        cropLabel = cropLabelFromIINACrop
+      // Check for other sources of crop.
+      // Try to calculate the label from the raw values, working backwards.
+      let rawVideoSize: CGSize
+      if let rawWidth, let rawHeight, rawWidth > 0, rawHeight > 0 {
+        rawVideoSize = CGSize(width: rawWidth, height: rawHeight)
       } else {
-        // If no IINA crop filter, the crop must have come from somewhere else.
-        // Try to calculate the label from the raw values, working backwards.
-        // FIXME: this generates false positives from non-right-angled video rotations. Need a better solution!
-        let rawVideoSize: CGSize
-        if let rawWidth, let rawHeight, rawWidth > 0, rawHeight > 0 {
-          rawVideoSize = CGSize(width: rawWidth, height: rawHeight)
-        } else {
-          rawVideoSize = oldVideoGeo.videoSizeRaw
-        }
-
-        if let cropLabelFromVideoParams = player.deriveCropLabel(x: videoOutParams.crop_x, y: videoOutParams.crop_y,
-                                                                 w: videoOutParams.crop_w, h: videoOutParams.crop_h,
-                                                                 rawVideoSize: rawVideoSize) {
-          cropLabel = cropLabelFromVideoParams
-        } else {
-          cropLabel = AppData.noneCropIdentifier
-        }
+        rawVideoSize = oldVideoGeo.videoSizeRaw
       }
+
+      cropLabel = player.deriveCropLabel(x: videoOutParams.crop_x, y: videoOutParams.crop_y,
+                                         w: videoOutParams.crop_w, h: videoOutParams.crop_h,
+                                         rawVideoSize: rawVideoSize)!
+      log.verbose{"[GeoTF:\(name)] Determined crop label from mpv params: \(cropLabel.quoted)"}
     }
-    log.warn{"[GeoTF:\(name)] Determined crop label from mpv params: \(cropLabel.quoted)"}
 
     let streamRotation = videoDecParams.rotate
     // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
@@ -199,7 +193,7 @@ extension GeometryTransform.Context {
       let wDiff = abs(1 - (ours.width / CGFloat(dwidth)))
       let hDiff = abs(1 - (ours.height / CGFloat(dheight)))
       if wDiff >= 0.01 || hDiff >= 0.01 {
-        player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-B failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours))! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect) videoSizeD=\(videoSizeDisplay)|\(videoSizeDisplay.mpvAspect) (from \(useDSizeFromDecParams ? "dec-params" : "out-params"))"}
+        player.log.error{"[\(name)] ❌ SanityCheck-B failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours))! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect) videoSizeD=\(videoSizeDisplay)|\(videoSizeDisplay.mpvAspect) (from \(useDSizeFromDecParams ? "dec-params" : "out-params"))"}
       }
     }
 

@@ -462,24 +462,14 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   private func updateCropControls(using videoGeo: VideoGeometry) {
     guard isViewLoaded else { return }
 
-    // First try getting selected crop label directly from the filter. This avoids an unpleasant timing issue
-    // where during the gap between a user click on cropPresetsSegment and the time when videoGeo is actually updated,
-    // videoGeo.selectedCropLabel will be out-of-date and would cause the old button to be briefly selected.
-    let cropLabel: String?
-    if let vfCrop = player.getIINACropFilter() {
-      player.log.verbose{"Will update crop preset using IINA crop filter"}
-      cropLabel = player.deriveCropLabel(from: vfCrop, rawVideoSize: player.windowController.geo.video.videoSizeRaw)
-    } else {
-      cropLabel = videoGeo.selectedCropLabel
-    }
-
-    guard let cropLabel else {
+    guard videoGeo.hasCrop else {
       player.log.verbose{"Selecting crop preset segment: None"}
       cropPresetsSegment.selectSegment(withTag: 0)
       customCropTextField.isHidden = true
       return
     }
 
+    let cropLabel: String = videoGeo.selectedCropLabel
     cropPresetsSegment.selectSegment(withLabel: cropLabel)
     let isCropInPanel = cropPresetsSegment.selectedSegment >= 0
     if isCropInPanel {
@@ -621,7 +611,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
            "switchToTab should not be called when settings TabGroup is not shown")
     guard currentTab != tab else { return }
     guard tab.group == .settings else {
-      player.log.error{"QuickSettingsViewController: cannot switch to tab: \(tab)"}
+      player.log.error{"QuickSettings: cannot switch to tab: \(tab)"}
       return
     }
 
@@ -635,7 +625,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     case .sub:
       buttonTag = 2
     default:
-      Logger.fatal("QuickSettingsViewController: Invalid tab: \(tab)")
+      Logger.fatal("QuickSettings: Invalid tab: \(tab)")
     }
     currentTab = tab
     tabView.selectTabViewItem(at: buttonTag)
@@ -655,7 +645,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   /// Do not call this directly. Call `player.reloadQuickSettingsView()` instead.
   func reload() {
     guard isViewLoaded else { return }
-    player.log.verbose{"QuickSettingsViewController: reloading tab \(currentTab)"}
+    player.log.verbose{"QuickSettings: reloading tab \(currentTab)"}
     switch currentTab {
     case .audio:
       audioTableView.reloadData()
@@ -670,7 +660,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       secSubTableView.reloadData()
       updateSubTabControls()
     default:
-      player.log.error{"QuickSettingsViewController.reload(): currentTab is invalid: \(currentTab)"}
+      player.log.error{"QuickSettings.reload(): currentTab is invalid: \(currentTab)"}
     }
   }
 
@@ -947,7 +937,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     case 2:
       tab = .sub
     default:
-      player.log.error("Invalid button tag: \(sender.tag)")
+      player.log.error("QuickSettings: Invalid button tag: \(sender.tag)")
       return
     }
     switchToTab(tab)
@@ -961,10 +951,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       return
     }
     player.log.verbose{"Setting aspect from segmented control: \(aspect.quoted)"}
-    player.setVideoAspectOverride(aspect)
+    player.mpv.queue.async { [self] in
+      player.setVideoAspectOverride(aspect)
+    }
   }
 
   @IBAction func cropChangedAction(_ sender: NSSegmentedControl) {
+    player.log.verbose{"QuickSettings cropChangedAction entered"}
     if sender.selectedSegment == sender.segmentCount - 1 {
       // User clicked on "Custom...": show custom crop UI
       windowController.enterInteractiveMode(.crop)
@@ -988,7 +981,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     let aspectString = customAspectTextField.stringValue
     player.log.verbose{"Setting aspect from text field: \(aspectString.quoted)"}
     if aspectString != "" {
-      player.setVideoAspectOverride(aspectString)
+      player.mpv.queue.async { [self] in
+        player.setVideoAspectOverride(aspectString)
+      }
     }
   }
 

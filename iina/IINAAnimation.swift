@@ -289,10 +289,35 @@ extension IINAAnimation {
 
     // MARK: - GeometryTransform
 
-    func popNextReadyGTF() -> GeometryTransform? {
+    /// Returns true if no GTFs are running and none are enqueued.
+    private var isDoneWithAllGTFs: Bool {
+      let lastIsDone = gtfLastStartedID == gtfLastDoneID
+      return lastIsDone && gtfQueue.isEmpty
+    }
+
+    private var pendingWorkAfterGTFs: TaskFunc? = nil
+
+    func doAfterGTFs(_ work: @escaping TaskFunc) {
+      let canRunNow = gtfLock.withLock{ [self] in
+        if isDoneWithAllGTFs {
+          pendingWorkAfterGTFs = nil  // do not allow duplicates
+          return true
+        } else {
+          pendingWorkAfterGTFs = work
+          return false
+        }
+      }
+
+      log.verbose{"[AnimPipeline] Can run ReloadQuickSettings: \(canRunNow.yn)"}
+      if canRunNow {
+        submitInstantTask(work)
+      }
+    }
+
+    private func popNextReadyGTF() -> GeometryTransform? {
       gtfLock.withLock{ [self] in
-        let prevIsDone = gtfLastStartedID == gtfLastDoneID
-        guard prevIsDone, let nextGTF = gtfQueue.removeFirst() else {
+        let lastIsDone = gtfLastStartedID == gtfLastDoneID
+        guard lastIsDone, let nextGTF = gtfQueue.removeFirst() else {
           return nil
         }
         gtfLastStartedID += 1
@@ -309,14 +334,26 @@ extension IINAAnimation {
       gtfLock.withLock{ [self] in
         gtfLastEnqueuedID += 1
         gtfQueue.append(gtf)
-        log.verbose{"[AnimPipeline] GTF \(gtfLastEnqueuedID)/\(gtfLastEnqueuedID) \(gtf.name.quoted): enqueued. (lastDone=\(gtfLastDoneID))"}
+        log.verbose{"[AnimPipeline] new GTF enqueued: \(gtfLastEnqueuedID) \(gtf.name.quoted). QueueState: \(gtfLastDoneID)/\(gtfLastEnqueuedID)"}
       }
     }
 
     func geoTransformDidFinish(_ gtf: GeometryTransform, success: Bool) {
-      gtfLock.withLock{ [self] in
+      let postWork: TaskFunc? = gtfLock.withLock{ [self] in
         gtfLastDoneID += 1
-        log.verbose{"[AnimPipeline] GTF \(gtfLastStartedID)/\(gtfLastEnqueuedID) \(gtf.name.quoted): done"}
+        log.verbose{"[AnimPipeline] GTF \(gtfLastDoneID)/\(gtfLastEnqueuedID) \(gtf.name.quoted): done"}
+
+        if let workFunc = pendingWorkAfterGTFs, isDoneWithAllGTFs {
+          pendingWorkAfterGTFs = nil
+          log.verbose{"[AnimPipeline] Running pending post-GTF work…"}
+          return workFunc
+        } else {
+          return nil
+        }
+      }
+
+      if let postWork {
+        submitInstantTask(postWork)
       }
     }
 
