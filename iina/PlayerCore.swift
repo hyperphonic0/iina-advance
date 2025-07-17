@@ -1402,10 +1402,10 @@ class PlayerCore: NSObject {
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    let tf = GeometryTransform("UserRotation", self, video: { cxt -> VideoGeometry? in
+    let gtf = GeometryTransform("UserRotation", self, video: { cxt -> VideoGeometry? in
       return cxt.syncVideoParamsFromMpv()
     })
-    windowController.animationPipeline.submit(tf)
+    windowController.animationPipeline.submitGTF(gtf)
   }
 
   /// Set video's aspect ratio override. The `aspect` param is a string which may be one of the following formats:
@@ -1500,11 +1500,10 @@ class PlayerCore: NSObject {
     }
 
     log.verbose{"Enqueuing SyncVidGeo transform"}
-    let tf = GeometryTransform("SyncVidGeo", self, video: { cxt -> VideoGeometry? in
+    windowController.animationPipeline.submitGTF(GeometryTransform("SyncVidGeo", self, video: { cxt -> VideoGeometry? in
       let newVideoGeo = cxt.syncVideoParamsFromMpv()
       return newVideoGeo
-    })
-    windowController.animationPipeline.submit(tf)
+    }))
   }
 
   func setVideoRotate(_ userRotation: Int) {
@@ -1939,7 +1938,7 @@ class PlayerCore: NSObject {
     syncAbLoop()
     // Done syncing tracks
 
-    let tf = GeometryTransform("FileLoaded", self,
+    let gtf = GeometryTransform("FileLoaded", self,
                                state: { [self] cxt in
       guard cxt.currentPlayback.state == .loaded else {
         log.verbose{"[GeoTF:\(cxt.name)] Expected currentPlayback.state == .loaded, but found: \(cxt.currentPlayback.state)"}
@@ -1957,7 +1956,7 @@ class PlayerCore: NSObject {
         }
       }
     }, video: GeometryTransform.vidTrackChanged)
-    windowController.animationPipeline.submit(tf)
+    windowController.animationPipeline.submitGTF(gtf)
 
     // Launch auto-load tasks on background thread
     let shouldAutoLoadFiles = info.shouldAutoLoadFiles
@@ -2096,7 +2095,7 @@ class PlayerCore: NSObject {
   }
 
   func reloadQuickSettingsView() {
-    DispatchQueue.main.execOrAsync { [self] in
+    windowController.animationPipeline.submitInstantTask{ [self] in
       guard windowController.loaded else { return }
       guard !isStopping else { return }
 
@@ -2261,9 +2260,7 @@ class PlayerCore: NSObject {
         setTrack(currentSub.id, forType: .sub)
       }
 
-      DispatchQueue.main.async { [self] in
-        reloadQuickSettingsView()
-      }
+      reloadQuickSettingsView()
     }
   }
 
@@ -3241,11 +3238,10 @@ class PlayerCore: NSObject {
       return newGeo
     }
 
-    let tf = GeometryTransform("VidTrackChanged", self,
-                               state: stateChangeFunc,
-                               video: GeometryTransform.vidTrackChanged,
-                               musicMode: musicModeTransform)
-    windowController.animationPipeline.submit(tf)
+    windowController.animationPipeline.submitGTF(GeometryTransform("VidTrackChanged", self,
+                                                                   state: stateChangeFunc,
+                                                                   video: GeometryTransform.vidTrackChanged,
+                                                                   musicMode: musicModeTransform))
 
   }
 

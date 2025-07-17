@@ -33,7 +33,7 @@ extension PlayerWindowController {
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     // Trigger forced draws
-    videoView.activateForceRedraws(force: true)
+    videoView.activateForcedRedraws(force: true)
 
     guard !isInWindowResizeDenialPeriod() else {
       log.verbose{"[WinWillResize] Denying request=\(requestedSize): still inside denial period; will stay at \(window.frame.size)"}
@@ -246,7 +246,7 @@ extension PlayerWindowController {
   /// Can be used in windowed or full screen modes.
   /// Can be used in music mode only if playlist is hidden.
   func resizeWindowImmediately(using newGeometry: PWinGeometry? = nil) {
-    videoView.activateForceRedraws(force: true)
+    videoView.activateForcedRedraws(force: true)
     guard let window else { return }
 
     let layout = currentLayout
@@ -283,7 +283,7 @@ extension PlayerWindowController {
   func windowDidResize(_ notification: Notification) {
     // Plug loophole for window resize when not covered by windowWillResize.
     // Trigger forced draws
-    videoView.activateForceRedraws(force: true)
+    videoView.activateForcedRedraws(force: true)
   }
 
   /// Changes video scale to `desiredVideoScale`, where a value of `1.0` is the video's native scale.
@@ -301,7 +301,7 @@ extension PlayerWindowController {
       return
     }
 
-    let tf = GeometryTransform("SetVideoScale", player, windowed: { [self] cxt -> PWinGeometry? in
+    let gtf = GeometryTransform("SetVideoScale", player, windowed: { [self] cxt -> PWinGeometry? in
       let oldWindowedGeo = cxt.oldGeo.windowed
       // TODO: if Preference.bool(for: .usePhysicalResolution) {}
       // Not supported in music mode at this time. Need to resolve backing scale bugs
@@ -320,7 +320,7 @@ extension PlayerWindowController {
       player.setMpvWindowScale(from: newGeo)
       return newGeo
     })
-    animationPipeline.submit(tf)
+    animationPipeline.submitGTF(gtf)
   }
 
   /// Scales the viewport (which is equivalent to mpv's concept of a window) to the given `desiredMpvWindowScale`.
@@ -345,7 +345,7 @@ extension PlayerWindowController {
     // Do not call while resizing the window, as doing so has race conditions.
     guard !isAnimatingLayoutTransition, !window.inLiveResize else { return }
 
-    let tf = GeometryTransform("SetWindowScale", player,
+    let gtf = GeometryTransform("SetWindowScale", player,
                                windowed: { [self] cxt -> PWinGeometry? in
       guard loaded else { return nil }
       // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
@@ -374,7 +374,7 @@ extension PlayerWindowController {
       player.setMpvWindowScale(from: newGeo)
       return newGeo
     })
-    animationPipeline.submit(tf)
+    animationPipeline.submitGTF(gtf)
   }
 
   /**
@@ -433,7 +433,7 @@ extension PlayerWindowController {
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
         return newGeoUnconstrained.refitted(using: .stayInside)
       }
-      animationPipeline.submit(GeometryTransform("ScaleVideoBy\(widthStep)px", player, windowed: windowedTransform))
+      animationPipeline.submitGTF(GeometryTransform("ScaleVideoBy\(widthStep)px", player, windowed: windowedTransform))
 
     case .musicMode:
       let musicModeTransform: (GeometryTransform.Context) -> MusicModeGeometry? = { [self] cxt -> MusicModeGeometry? in
@@ -442,7 +442,7 @@ extension PlayerWindowController {
         log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
         return cxt.oldGeo.musicMode.scalingViewport(to: desiredViewportSize)
       }
-      animationPipeline.submit(GeometryTransform("ScaleVideoBy\(widthStep)px", player, musicMode: musicModeTransform))
+      animationPipeline.submitGTF(GeometryTransform("ScaleVideoBy\(widthStep)px", player, musicMode: musicModeTransform))
     default:
       return
     }

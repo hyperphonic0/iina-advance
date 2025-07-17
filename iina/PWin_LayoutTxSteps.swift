@@ -20,7 +20,7 @@ extension PlayerWindowController {
     log.verbose{"[\(transition.name)] DoPreTransitionWork"}
     isAnimatingLayoutTransition = true
     // Trigger forced draws
-    videoView.activateForceRedraws(force: true)
+    videoView.activateForcedRedraws(force: true)
 
     /// Some methods where reference `currentLayout` get called as a side effect of the transition animations.
     /// To avoid possible bugs as a result, let's update this at the very beginning.

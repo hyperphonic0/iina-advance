@@ -92,7 +92,7 @@ extension VideoView {
 
   /// Starts the display link if it has been stopped in order to save energy.
   func displayActive(temporary: Bool = false) {
-    log.trace("VideoView displayActive")
+    log.trace("VideoView displayActive temp=\(temporary.yn)")
     assert(DispatchQueue.isExecutingIn(.main))
     if !temporary {
       displayIdleTimer.cancel()

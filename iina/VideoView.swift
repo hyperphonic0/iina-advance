@@ -210,16 +210,16 @@ class VideoView: NSView {
     return true
   }
 
-  func activateForceRedraws(force: Bool = false) {
+  func activateForcedRedraws(force: Bool = false) {
     guard force || needsForcedRedraws() else { return }
     enterAsynchronousMode()
     displayActive(temporary: player.info.isPaused)
   }
 
-  /// Deprecated! Use `activateForceRedraws` instead.
+  /// Deprecated! Use `activateForcedRedraws` instead.
   func forceDraw() {
     assert(DispatchQueue.isExecutingIn(.main))
-    activateForceRedraws(force: true)
+    activateForcedRedraws(force: true)
   }
 
   func addShadowForInteractiveMode() {

@@ -33,6 +33,7 @@ struct GeometryTransform {
   let name: String
 
   let player: PlayerCore
+  var pwc: PlayerWindowController { player.windowController! }
 
   var log: Logger.Subsystem { player.log }
 
@@ -62,11 +63,17 @@ struct GeometryTransform {
     self.onSuccess = onSuccess
   }
 
+  /// Aborts the transform (`animationPipeline` must always be notified for either success or failure).
+  private func abort(_ reasonDebugMsg: String) {
+    assert(DispatchQueue.isExecutingIn(player.mpv.queue))
+    log.verbose{"[GeoTF:\(name)] Aborting TF: \(reasonDebugMsg)"}
+    pwc.animationPipeline.geoTransformDidFinish(self, success: false)
+  }
+
   /// Do not call directly. Should only be called from an animation pipeline.
   /// Use `IINAAnimation.Pipeline.submit` to execute a `GeometryTransform`.
   func execute() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard let pwc = player.windowController else { return }
 
     // Get a copy of geo inside animationPipeline to ensure serial access.
     // This is reused asynchronously down below, so some parts of it may fall out of date, but
@@ -76,19 +83,8 @@ struct GeometryTransform {
     // Need to be inside mpv queue to ensuren serial access to sessionState et al
     player.mpv.queue.async { [self] in
 
-      /// Make sure `doAfter` is always executed
-      func abort(_ reasonDebugMsg: String) {
-        log.verbose{"[GeoTF:\(name)] Aborting TF: \(reasonDebugMsg)"}
-        pwc.animationPipeline.geoTransformDidFinish(self)
-      }
-
-      guard !player.isStopping else {
-        return abort("player stopping (status=\(player.state))")
-      }
-
-      guard let currentPlayback = player.info.currentPlayback else {
-        return abort("currentPlayback is nil")
-      }
+      guard !player.isStopping else { return abort("player stopping (status=\(player.state))") }
+      guard let currentPlayback = player.info.currentPlayback else { return abort("currentPlayback is nil") }
 
       let sessionState = pwc.sessionState
 
@@ -383,16 +379,14 @@ struct GeometryTransform {
       }
 
       // Task: post-transform work
-      tasks.append(.instantTask{ [self] in
-        doPostTransformWork()
-      })
+      tasks.append(.instantTask(doPostTransformWork))
 
       return tasks
     }
 
-    /// Cleanup, update `sessionState` & UI.
+    /// Conforms to `IINAnimation.TaskFunc`. Does cleanup, updates state vars & UI.
     fileprivate func doPostTransformWork() {
-      log.verbose{"[GeoTF:\(name)] Running doPostTransformWork task for sessionState=\(sessionState) vid=\(vidTrackID)"}
+      log.verbose{"[GeoTF:\(name)] Running post-TF task, sess=\(sessionState) vid=\(vidTrackID)"}
       let pwc = player.windowController!
       if sessionState.isChangingVideoTrack {
         // Set to prevent future duplicate calls from continuing
@@ -404,7 +398,7 @@ struct GeometryTransform {
         // The OSD can have weird stretching glitches if displayed while zooming open...
         if currentPlayback.state == .loaded {
           // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do this for all cases now.
-          log.debug{"[GeoTF:\(name)] Updating playback.state = .loadedAndSized, vidTrackLastSized=\(vidTrackID), will emit fileLoaded notifications"}
+          log.debug{"[GeoTF:\(name)] Updating playback.state = .loadedAndSized; will emit fileLoaded"}
           currentPlayback.state = .loadedAndSized
           // Should refresh EDR each time switching files
           pwc.videoView.refreshAllVideoDisplayState()
@@ -432,7 +426,7 @@ struct GeometryTransform {
         onSuccess()
       }
 
-      pwc.animationPipeline.geoTransformDidFinish(tf)
+      pwc.animationPipeline.geoTransformDidFinish(tf, success: true)
     }
 
     /// Applies the prefs `.resizeWindowTiming` & `resizeWindowScheme`, if applicable.
@@ -523,7 +517,7 @@ struct GeometryTransform {
 
       /// See `VideoGeo_Sync.swift`
       guard let videoGeo = syncVideoParamsFromMpv() else { return nil }
-      log.debug{"[GeoTF:\(name)] Derived videoGeo \(videoGeo)"}
+      log.debug{"[GeoTF:\(name)] Result videoGeo: \(videoGeo)"}
       return videoGeo
     }  // end of transform block
 
@@ -573,7 +567,7 @@ extension PlayerWindowController {
                                                                                            screenID: bestScreen.screenID,
                                                                                            video: cxt.outputVidGeo)
       }
-      // No additional layout needed
+      // No initial layout tasks needed. Fall through to add post-layout task
       tasks = []
 
     case .creatingNew:
@@ -631,13 +625,8 @@ extension PlayerWindowController {
     }
 
     hideSeekPreviewImmediately()
-    player.reloadQuickSettingsView()
     updateTitle()
-    if currentLayout.isPlaylistVisible {
-      playlistView.scrollPlaylistToCurrentItem()
-    } else {
-      playlistView.needsScrollToCurrentItem = true  // reset flag for when it does open
-    }
+    playlistView.needsScrollToCurrentItem = true  // reset flag for when it does open
 
     // FIXME: here be race conditions
     if case .newReplacingExisting = sessionState {

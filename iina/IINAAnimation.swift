@@ -136,9 +136,13 @@ extension IINAAnimation {
 
     private(set) var isRunning = false
     private var taskQueue = LinkedList<(Int, Task)>()
-    private var geoTransformQueue = LinkedList<GeometryTransform>()
-    private var lastStartedGeoTransformID: Int = 0
-    private var lastCompletedGeoTransformID: Int = 0
+
+    // GeometryTransform queue
+    private var gtfQueue = LinkedList<GeometryTransform>()
+    private let gtfLock = Lock()
+    private var gtfLastEnqueuedID: Int = 0
+    private var gtfLastStartedID: Int = 0
+    private var gtfLastDoneID: Int = 0
 
     var log = Logger.log
 
@@ -248,14 +252,10 @@ extension IINAAnimation {
     private func runTasks() {
       let nextTask: Task
 
-      // First check for enqueued GeometryTransforms.
-      if !geoTransformQueue.isEmpty, lastStartedGeoTransformID == lastCompletedGeoTransformID, let tf = geoTransformQueue.removeFirst() {
-        lastStartedGeoTransformID += 1
-
-        nextTask = Task.instantTask { [self] in
-          log.verbose{"[AnimPipeline] Starting GeoTF \(tf.name.quoted), id=\(lastStartedGeoTransformID)"}
-          tf.execute()
-        }
+      // First check if there is an enqueued GeometryTransform and it ready to run.
+      if let nextGTF = popNextReadyGTF() {
+        // Kick-start the GTF via a Task
+        nextTask = Task.instantTask(nextGTF.execute)
       } else {
         guard let task = popNextValidTask() else { return }
         nextTask = task
@@ -287,28 +287,36 @@ extension IINAAnimation {
       })
     }
 
+    // MARK: - GeometryTransform
+
+    func popNextReadyGTF() -> GeometryTransform? {
+      gtfLock.withLock{ [self] in
+        let prevIsDone = gtfLastStartedID == gtfLastDoneID
+        guard prevIsDone, let nextGTF = gtfQueue.removeFirst() else {
+          return nil
+        }
+        gtfLastStartedID += 1
+        log.verbose{"[AnimPipeline] GTF \(gtfLastStartedID)/\(gtfLastEnqueuedID) \(nextGTF.name.quoted): starting"}
+        return nextGTF
+      }
+    }
+
     /// Uses a queue if necessary to ensure that only one `GeometryTransform` is ever running at a time.
     /// This is a safety feature. The transform's work takes place asynchronously via multiple tasks across
     /// multiple `DispatchQueue`s, while drawing from disparate state variables, so if they overlapped they
     /// could interfere with each other in difficult-to-predict ways.
-    func submit(_ tf: GeometryTransform) {
-      submitInstantTask{ [self] in
-        if lastStartedGeoTransformID == lastCompletedGeoTransformID {
-          lastStartedGeoTransformID += 1
-          log.verbose{"[AnimPipeline] Starting GeoTF \(tf.name.quoted), id=\(lastStartedGeoTransformID)"}
-          tf.execute()
-        } else {
-          log.verbose{"[AnimPipeline] Enqueuing GeoTF: \(tf.name.quoted). Queue status: \(lastCompletedGeoTransformID) / \(lastStartedGeoTransformID)"}
-          geoTransformQueue.append(tf)
-        }
+    func submitGTF(_ gtf: GeometryTransform) {
+      gtfLock.withLock{ [self] in
+        gtfLastEnqueuedID += 1
+        gtfQueue.append(gtf)
+        log.verbose{"[AnimPipeline] GTF \(gtfLastEnqueuedID)/\(gtfLastEnqueuedID) \(gtf.name.quoted): enqueued. (lastDone=\(gtfLastDoneID))"}
       }
     }
 
-    /// Can be called in any DispatchQueue.
-    func geoTransformDidFinish(_ tf: GeometryTransform) {
-      submitInstantTask{ [self] in
-        log.verbose{"[AnimPipeline] Done: GeoTF \(tf.name.quoted), id=\(lastStartedGeoTransformID)"}
-        lastCompletedGeoTransformID += 1
+    func geoTransformDidFinish(_ gtf: GeometryTransform, success: Bool) {
+      gtfLock.withLock{ [self] in
+        gtfLastDoneID += 1
+        log.verbose{"[AnimPipeline] GTF \(gtfLastStartedID)/\(gtfLastEnqueuedID) \(gtf.name.quoted): done"}
       }
     }
 
