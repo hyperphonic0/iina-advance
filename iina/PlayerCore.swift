@@ -1471,10 +1471,6 @@ class PlayerCore: NSObject {
     info.cursorAutoHideFullScreenOnly = mpv.getFlag(MPVOption.Window.cursorAutohideFsOnly)
   }
 
-  func displaySizeDidChange() {
-    syncVideoParamsFromMpv()
-  }
-
   func syncVideoParamsFromMpv(force: Bool = false) {
     if !force {
       guard !isRestoring else {

@@ -297,14 +297,14 @@ extension MPVController {
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
       let dwidth = Int(data)
       player.log.verbose("Δ mpv prop: 'dwidth' ≔ \(dwidth)")
-      player.displaySizeDidChange()
+      player.syncVideoParamsFromMpv()
 
     case MPVProperty.dheight:
       guard player.windowController.loaded else { break }
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
       let dheight = Int(data)
       player.log.verbose("Δ mpv prop: 'dheight' ≔ \(dheight)")
-      player.displaySizeDidChange()
+      player.syncVideoParamsFromMpv()
     case MPVProperty.videoParamsPrimaries:
       fallthrough
 

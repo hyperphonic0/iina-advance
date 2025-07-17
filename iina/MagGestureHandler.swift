@@ -20,6 +20,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
     guard !pwc.isInInteractiveMode else { return }
     guard !pwc.isInMiniPlayer || pwc.miniPlayer.isVideoVisible else { return }
+
     let pinchAction: Preference.PinchAction = Preference.enum(for: .pinchAction)
     guard pinchAction != .none else { return }
 
@@ -51,7 +52,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         if pwc.isFullScreen, scale < 1.0 {
           /// Change `windowedModeGeo` so that the window still fills the screen after leaving full screen, rather than whatever size it was
           pwc.windowedModeGeo = pwc.windowedModeGeo.clone(windowFrame: screen.visibleFrame, screenID: screen.screenID)
-          // Set this to disable window resize listeners immediately instead of waiting for the transitionn to set it
+          // Set this immediately instead of waiting for the transitionn to set it (to disable window resize listeners).
           // (seems to prevent hiccups in the animation):
           pwc.isAnimatingLayoutTransition = true
           // Exit FS:

@@ -8,10 +8,13 @@
 
 extension GeometryTransform {
 
-  /// Standard `VideoGeometry.Transform` for use in response to a `vid` property change event from mpv.
-  /// If current media is file, this should be called after it is done loading.
-  /// If current media is network resource, should be called immediately & show buffering msg.
-  /// If current media's vid track changed, may need to apply new geometry
+  /// General-use `VideoGeometry.Transform` to synchronize between (1) mpv's internal state, (2) IINA's internal state,
+  /// (3) IINA window layout, & (4) status elements in the UI such as Quick Settings buttons/fields; and hopefully perform
+  /// this smoothly and robustly.
+  ///
+  /// This which should be submitted as soon as possible *after* sending any updates
+  /// to mpv for video params relating to VideoGeometry data (though *after* confirming that the update completed), but
+  /// *before* performing any UI updates. Regar
   static func syncVideoParamsFromMpv(_ context: Context) -> VideoGeometry? {
     context.syncVideoParamsFromMpv()
   }

@@ -1767,7 +1767,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     var tasks: [IINAAnimation.Task] = []
 
-    /// Tell window resize listeners to do nothing. Also prevent `displaySizeDidChange` from reacting.
+    /// Tell window resize listeners to do nothing. Also prevent `syncVideoParamsFromMpv` from reacting.
     isAnimatingLayoutTransition = true
 
     // FIXME: need to un-rotate while in interactive mode
