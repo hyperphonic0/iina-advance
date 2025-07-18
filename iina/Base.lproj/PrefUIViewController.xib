@@ -3451,9 +3451,9 @@ For smoothest results, also enable custom full screen.</string>
                                 <binding destination="lH7-Vv-0M1" name="value" keyPath="values.enableThumbnailPreview" id="hw8-mb-tD1"/>
                             </connections>
                         </button>
-                        <button translatesAutoresizingMaskIntoConstraints="NO" id="5Om-Um-kQ4" userLabel="Enable for remote files Checkbox">
+                        <button translatesAutoresizingMaskIntoConstraints="NO" id="RLs-63-ujb" userLabel="Include files on a mounted remote drive Checkbox">
                             <rect key="frame" x="20" y="260" width="159" height="18"/>
-                            <buttonCell key="cell" type="check" title="Enable for remote files" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="1NF-4u-sGn">
+                            <buttonCell key="cell" type="check" title="Include files on a mounted remote drive" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="kCe-Ck-dUJ">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
@@ -4025,12 +4025,12 @@ For smoothest results, also enable custom full screen.</string>
                         <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="VjJ-JN-yzX" secondAttribute="trailing" id="AJp-52-gJk"/>
                         <constraint firstItem="n4r-UT-AYn" firstAttribute="leading" secondItem="5gS-c3-0dD" secondAttribute="leading" id="DRZ-bd-w5K"/>
                         <constraint firstItem="4GJ-sd-vQm" firstAttribute="height" secondItem="mvX-qm-iUh" secondAttribute="height" id="FGf-sh-Uqa"/>
-                        <constraint firstItem="5Om-Um-kQ4" firstAttribute="height" secondItem="mvX-qm-iUh" secondAttribute="height" id="LNx-54-ctt"/>
+                        <constraint firstItem="RLs-63-ujb" firstAttribute="height" secondItem="mvX-qm-iUh" secondAttribute="height" id="LNx-54-ctt"/>
                         <constraint firstItem="QSd-B9-68V" firstAttribute="leading" secondItem="OQ8-ow-oAR" secondAttribute="leading" id="PIz-MV-74A"/>
                         <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="Qwh-Zf-0ZE" secondAttribute="trailing" id="Qxe-Or-h2F"/>
                         <constraint firstItem="4GJ-sd-vQm" firstAttribute="leading" secondItem="47i-yB-uyE" secondAttribute="leading" constant="20" id="Rdx-5K-lA0"/>
                         <constraint firstItem="VjJ-JN-yzX" firstAttribute="leading" secondItem="47i-yB-uyE" secondAttribute="leading" constant="20" id="TMV-jx-969"/>
-                        <constraint firstItem="5Om-Um-kQ4" firstAttribute="leading" secondItem="47i-yB-uyE" secondAttribute="leading" constant="20" id="ff0-DQ-nzW"/>
+                        <constraint firstItem="RLs-63-ujb" firstAttribute="leading" secondItem="47i-yB-uyE" secondAttribute="leading" constant="20" id="ff0-DQ-nzW"/>
                         <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="qe6-RF-ITI" secondAttribute="trailing" id="iFE-S4-eTi"/>
                         <constraint firstItem="Qwh-Zf-0ZE" firstAttribute="leading" secondItem="47i-yB-uyE" secondAttribute="leading" id="jgr-09-wpB"/>
                         <constraint firstItem="qe6-RF-ITI" firstAttribute="leading" secondItem="47i-yB-uyE" secondAttribute="leading" constant="20" id="oS5-Pz-i8u"/>
