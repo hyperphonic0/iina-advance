@@ -1043,19 +1043,19 @@
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                 <subviews>
                     <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" userLabel="AudioTab Flipped View" customClass="FlippedView" customModule="IINA_Advance" customModuleProvider="target">
-                        <rect key="frame" x="0.0" y="9" width="360" height="527"/>
+                        <rect key="frame" x="0.0" y="7" width="360" height="529"/>
                         <subviews>
                             <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="my2-5o-bNb" userLabel="AudioTab CONTENT VIEW">
-                                <rect key="frame" x="0.0" y="0.0" width="360" height="527"/>
+                                <rect key="frame" x="0.0" y="0.0" width="360" height="529"/>
                                 <subviews>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="TA9-9G-tIE" userLabel="PANEL EDGE INSETS">
-                                        <rect key="frame" x="20" y="527" width="320" height="0.0"/>
+                                        <rect key="frame" x="20" y="529" width="320" height="0.0"/>
                                         <constraints>
                                             <constraint firstAttribute="height" id="jt3-qe-0KY"/>
                                         </constraints>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="E4v-kh-61H">
-                                        <rect key="frame" x="18" y="503" width="324" height="16"/>
+                                        <rect key="frame" x="18" y="505" width="324" height="16"/>
                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Audio track:" id="x39-62-7KC">
                                             <font key="font" metaFont="systemBold"/>
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1063,7 +1063,7 @@
                                         </textFieldCell>
                                     </textField>
                                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Qal-0X-4kS" userLabel="AudioTrackTable Scroll View">
-                                        <rect key="frame" x="0.0" y="420" width="360" height="75"/>
+                                        <rect key="frame" x="0.0" y="422" width="360" height="75"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="vgF-KN-yHf" userLabel="AudioTrackTable Clip View">
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="75"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -1216,7 +1216,7 @@
                                         </scroller>
                                     </scrollView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kvu-fg-olx">
-                                        <rect key="frame" x="18" y="384" width="324" height="16"/>
+                                        <rect key="frame" x="18" y="386" width="324" height="16"/>
                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="External audio:" id="Lnu-kz-cql">
                                             <font key="font" metaFont="systemBold"/>
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1224,7 +1224,7 @@
                                         </textFieldCell>
                                     </textField>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XdF-fV-DCz">
-                                        <rect key="frame" x="20" y="350" width="320" height="24"/>
+                                        <rect key="frame" x="20" y="352" width="320" height="24"/>
                                         <buttonCell key="cell" type="push" title="Load External Audio Track…" bezelStyle="rounded" alignment="center" refusesFirstResponder="YES" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="8Ax-5X-osl">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
@@ -1237,7 +1237,7 @@
                                         </connections>
                                     </button>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZPW-fz-5Oi">
-                                        <rect key="frame" x="18" y="314" width="316" height="16"/>
+                                        <rect key="frame" x="18" y="316" width="316" height="16"/>
                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Audio delay:" id="AKs-VQ-fKF">
                                             <font key="font" metaFont="systemBold"/>
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1245,7 +1245,7 @@
                                         </textFieldCell>
                                     </textField>
                                     <button translatesAutoresizingMaskIntoConstraints="NO" id="vl8-xk-OxH" userLabel="AudioDelayReset Button">
-                                        <rect key="frame" x="324" y="311.5" width="16" height="21"/>
+                                        <rect key="frame" x="324" y="313.5" width="16" height="21"/>
                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="only" alignment="center" controlSize="small" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="K9E-Uh-zQ7">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="message" size="11"/>
@@ -1259,20 +1259,20 @@
                                         </connections>
                                     </button>
                                     <customView autoresizesSubviews="NO" horizontalHuggingPriority="200" horizontalCompressionResistancePriority="700" translatesAutoresizingMaskIntoConstraints="NO" id="j85-rj-toQ" userLabel="AudioDelaySlider Container View">
-                                        <rect key="frame" x="19" y="268" width="321" height="42"/>
+                                        <rect key="frame" x="19" y="268" width="321" height="44"/>
                                         <subviews>
                                             <slider verticalHuggingPriority="700" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="700" translatesAutoresizingMaskIntoConstraints="NO" id="gJr-l6-WQ2" userLabel="AudioDelaySlider Horizontal Tick Slider">
-                                                <rect key="frame" x="1" y="12" width="246" height="16"/>
+                                                <rect key="frame" x="1" y="12" width="246" height="18"/>
                                                 <constraints>
-                                                    <constraint firstAttribute="width" constant="246" id="Azt-jo-8zP"/>
+                                                    <constraint firstAttribute="width" constant="246" id="ejX-Xl-ifY"/>
                                                 </constraints>
-                                                <sliderCell key="cell" controlSize="mini" continuous="YES" refusesFirstResponder="YES" state="on" alignment="left" minValue="-3" maxValue="3" tickMarkPosition="below" numberOfTickMarks="121" sliderType="linear" id="Xty-CC-H0Z"/>
+                                                <sliderCell key="cell" controlSize="small" continuous="YES" refusesFirstResponder="YES" state="on" alignment="left" minValue="-5" maxValue="5" tickMarkPosition="below" numberOfTickMarks="21" sliderType="linear" id="Xty-CC-H0Z"/>
                                                 <connections>
                                                     <action selector="audioDelayChangedAction:" target="-2" id="Rqw-fj-519"/>
                                                 </connections>
                                             </slider>
                                             <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="giU-Mo-tN9" userLabel="AudioDelaySliderIndicator Text Field">
-                                                <rect key="frame" x="109" y="29" width="24" height="13"/>
+                                                <rect key="frame" x="109" y="31" width="24" height="13"/>
                                                 <constraints>
                                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="20" id="F50-i5-7bi"/>
                                                 </constraints>
@@ -1307,7 +1307,7 @@
                                                 </textFieldCell>
                                             </textField>
                                             <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Qiz-tS-aWT" userLabel="CustomAudioDelay Text Field">
-                                                <rect key="frame" x="255" y="8" width="55" height="24"/>
+                                                <rect key="frame" x="255" y="9" width="55" height="24"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="24" id="jIE-ME-foV"/>
                                                 </constraints>
@@ -1322,7 +1322,7 @@
                                                 </connections>
                                             </textField>
                                             <textField focusRingType="none" verticalHuggingPriority="750" setsMaxLayoutWidthAtFirstLayout="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ImH-jg-Agp" userLabel="s">
-                                                <rect key="frame" x="308" y="12" width="15" height="16"/>
+                                                <rect key="frame" x="308" y="13" width="15" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="s" id="1VY-EN-1mi">
                                                     <font key="font" metaFont="system"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
