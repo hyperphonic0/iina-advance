@@ -40,7 +40,7 @@ enum OSDMessage {
   case seek(playbackPositionSec: Double, playbackDurationSec: Double)
   case frameStep
   case frameStepBack
-  case volume(Int)
+  case volume(Double)
   case speed(Double)
   case aspect(String)
   case crop(String)
@@ -190,10 +190,8 @@ enum OSDMessage {
       return (step, .normal)
 
     case .volume(let value):
-      return (
-        String(format: NSLocalizedString("osd.volume", comment: "Volume: %i"), value),
-        .withProgress(Double(value) / Double(Preference.integer(for: .maxVolume)))
-      )
+      let text = String(format: NSLocalizedString("osd.volume", comment: "Volume: %@"), value.stringMaxFrac2)
+      return (text, .withProgress(value / Preference.double(for: .maxVolume)))
 
     case .speed(let value):
       return (
@@ -243,64 +241,58 @@ enum OSDMessage {
           NSLocalizedString("osd.audio_delay.nodelay", comment: "Audio Delay: No Delay"),
           .withProgress(0.5)
         )
-      }
-
-      let delayString = abs(value).groupedStringUpTo6Decimals
-      let str: String
-      if value > 0.0 {
-        str = String(format: NSLocalizedString("osd.audio_delay.later", comment: "Audio Delay: %@s Later"),
-                     delayString)
       } else {
-        str = String(format: NSLocalizedString("osd.audio_delay.earlier", comment: "Audio Delay: %@s Earlier"),
-                     delayString)
+        let valueStr = abs(value).groupedStringUpTo6Decimals
+        let text: String
+        if value > 0 {
+          text = String(format: NSLocalizedString("osd.audio_delay.later", comment: "Audio Delay: %@s Later"), valueStr)
+        } else {
+          text = String(format: NSLocalizedString("osd.audio_delay.earlier", comment: "Audio Delay: %@s Earlier"), valueStr)
+        }
+        return (text, .withProgress(toPercent(value, 10)))
       }
-      return (str, .withProgress(toPercent(value, 10)))
 
     case .secondSubDelay(let value):
       if value == 0 {
-        return (NSLocalizedString("osd.sub_second_delay.nodelay", comment: "Secondary Subtitle Delay: No Delay"),
-          .withProgress(0.5))
-      }
-
-      let delayString = abs(value).groupedStringUpTo6Decimals
-      let str: String
-      if value > 0.0 {
-        str = String(format: NSLocalizedString("osd.sub_second_delay.later", comment: "Secondary Subtitle Delay: %@s Later"),
-                     delayString)
+        return (
+          NSLocalizedString("osd.sub_second_delay.nodelay", comment: "Secondary Subtitle Delay: No Delay"),
+          .withProgress(0.5)
+        )
       } else {
-        str = String(format: NSLocalizedString("osd.sub_second_delay.earlier", comment: "Secondary Subtitle Delay: %@s Earlier"),
-                     delayString)
+        let valueStr = abs(value).groupedStringUpTo6Decimals
+        let text: String
+        if value > 0 {
+          text = String(format: NSLocalizedString("osd.sub_second_delay.later", comment: "Secondary Subtitle Delay: %@s Later"), valueStr)
+        } else {
+          text = String(format: NSLocalizedString("osd.sub_second_delay.earlier", comment: "Secondary Subtitle Delay: %@s Earlier"), valueStr)
+        }
+        return (text, .withProgress(toPercent(value, 10)))
       }
-      return (str, .withProgress(toPercent(value, 10)))
 
     case .secondSubPos(let value):
-      return (
-        String(format: NSLocalizedString("osd.sub_second_pos", comment: "Secondary Subtitle Position: %f"), value),
-        .withProgress(value / 100)
-      )
+      let text = String(format: NSLocalizedString("osd.sub_second_pos", comment: "Secondary Subtitle Position: %@"), value.groupedStringUpTo6Decimals)
+      return (text, .withProgress(value / 100))
 
     case .subDelay(let value):
       if value == 0 {
-        return (NSLocalizedString("osd.sub_delay.nodelay", comment: "Subtitle Delay: No Delay"),
-                .withProgress(0.5))
-      }
-
-      let delayString = abs(value).groupedStringUpTo6Decimals
-      let str: String
-      if value > 0.0 {
-        str = String(format: NSLocalizedString("osd.sub_delay.later", comment: "Subtitle Delay: %@s Later"),
-                     delayString)
+        return (
+          NSLocalizedString("osd.sub_delay.nodelay", comment: "Subtitle Delay: No Delay"),
+          .withProgress(0.5)
+        )
       } else {
-        str = String(format: NSLocalizedString("osd.sub_delay.earlier", comment: "Subtitle Delay: %@s Earlier"),
-                     delayString)
+        let valueStr = abs(value).groupedStringUpTo6Decimals
+        let text: String
+        if value > 0 {
+          text = String(format: NSLocalizedString("osd.sub_delay.later", comment: "Subtitle Delay: %@s Later"), valueStr)
+        } else {
+          text = String(format: NSLocalizedString("osd.sub_delay.earlier", comment: "Subtitle Delay: %@s Earlier"), valueStr)
+        }
+        return (text, .withProgress(toPercent(value, 10)))
       }
-      return (str, .withProgress(toPercent(value, 10)))
 
     case .subPos(let value):
-      return (
-        String(format: NSLocalizedString("osd.subtitle_pos", comment: "Subtitle Position: %f"), value),
-        .withProgress(value / 100)
-      )
+      let text = String(format: NSLocalizedString("osd.subtitle_pos", comment: "Subtitle Position: %@"), value.groupedStringUpTo6Decimals)
+      return (text, .withProgress(value / 100))
 
     case .subHidden:
       return (NSLocalizedString("osd.sub_hidden", comment: "Subtitles Hidden"), .normal)
@@ -381,10 +373,8 @@ enum OSDMessage {
       return (trackTypeStr + ": " + track.readableTitle, .normal)
 
     case .subScale(let value):
-      return (
-        String(format: NSLocalizedString("osd.subtitle_scale", comment: "Subtitle Scale: %.2fx"), value),
-        .normal
-      )
+      let text = String(format: NSLocalizedString("osd.subtitle_scale", comment: "Subtitle Scale: %@x"), value.groupedStringUpTo6Decimals)
+      return (text, .normal)
 
     case .addToPlaylist(let count):
       return (

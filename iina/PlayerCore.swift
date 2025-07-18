@@ -1360,7 +1360,7 @@ class PlayerCore: NSObject {
       let constrainedVolume = volume.clamped(to: 0...Preference.double(for: .maxVolume))
       info.volume = constrainedVolume
       // Always show OSD to acknowledge input, even if volume did not change:
-      sendOSD(.volume(Int(constrainedVolume)))
+      sendOSD(.volume(constrainedVolume))
       mpv.setDouble(MPVOption.Audio.volume, constrainedVolume)
       // Save default for future players:
       Preference.set(constrainedVolume, for: .softVolume)

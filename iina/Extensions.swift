@@ -761,11 +761,13 @@ extension FloatingPoint {
     return max(self, minRange.lowerBound)
   }
 
+#if DEBUG
   /// Formats as String, rounding the number to 2 digits after the decimal.
   /// Always displays 2 digits after the decimal.
   var string2FractionDigits: String {
     return fmtStdDecimal.truncate_exactFracDigits[2].string(for: self)!
   }
+#endif
 
   /// Formats as String, truncating the number to 2 digits after the decimal
   var stringTrunc2f: String {

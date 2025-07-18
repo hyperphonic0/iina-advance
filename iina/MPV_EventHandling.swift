@@ -410,7 +410,7 @@ extension MPVController {
       guard player.info.volume != volume else { break }
       player.info.volume = volume
       player.syncUI(.volume)
-      player.sendOSD(.volume(Int(volume)))
+      player.sendOSD(.volume(volume))
 
     case MPVOption.Audio.audioDelay:
       guard let delayUnrounded = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
