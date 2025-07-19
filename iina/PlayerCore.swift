@@ -2717,7 +2717,12 @@ class PlayerCore: NSObject {
       }
     }
   }
-
+  
+  /// - Important: The mpv
+  ///     [cache-buffering-state](https://mpv.io/manual/stable/#command-interface-cache-buffering-state)
+  ///     property is only valid when
+  ///     [paused-for-cache](https://mpv.io/manual/stable/#command-interface-paused-for-cache) is `true`
+  ///     and can not be used to provide an indication of progress when seeking.
   func updateCacheInfo() {
     var cachedRanges: [(Double, Double)] = []
     info.pausedForCache = mpv.getFlag(MPVProperty.pausedForCache)
@@ -2738,9 +2743,7 @@ class PlayerCore: NSObject {
           }
         }
       }
-      if let cacheUsed = demuxerCacheState["fw-bytes"] as? Int {
-        info.cacheUsed = cacheUsed
-      }
+      info.cacheUsed = Int(demuxerCacheState["fw-bytes"] as? Int64 ?? 0)
       // Not guaranteed to be sorted. Sort them
       cachedRanges = cachedRanges.sorted(by: { $0.0 < $1.0 })
       let oldRanges = info.cachedRanges
@@ -2753,8 +2756,8 @@ class PlayerCore: NSObject {
           pwc.playSlider.needsDisplay = true
         }
       }
+      info.cacheSpeed = Int(demuxerCacheState["raw-input-rate"] as? Int64 ?? 0)
     }
-    info.cacheSpeed = mpv.getInt(MPVProperty.cacheSpeed)
     info.bufferingState = mpv.getInt(MPVProperty.cacheBufferingState)
   }
 
