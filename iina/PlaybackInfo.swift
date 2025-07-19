@@ -154,6 +154,10 @@ class PlaybackInfo {
 
   var playbackPositionSec: Double?
   var playbackDurationSec: Double?
+  /// Remaining playback time.
+  ///
+  /// This will or will not reflect the speed at which playback is occurring depending upon whether the `scaleRemainingTime` setting is enabled or not.
+  var playbackRemainingSec: Double?
   var isAtEOF: Bool {
     if let mediaPosition = playbackPositionSec, let mediaDuration = playbackDurationSec, mediaPosition == mediaDuration {
       return true

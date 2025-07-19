@@ -1891,6 +1891,11 @@ class PlayerCore: NSObject {
     let playbackPosition = mpv.getDouble(MPVProperty.timePos)
     info.playbackPositionSec = playbackPosition
 
+    let remaining = Preference.bool(for: .scaleRemainingTime) ?
+    mpv.getDouble(MPVProperty.playtimeRemainingFull) :
+    mpv.getDouble(MPVProperty.timeRemainingFull)
+    info.playbackRemainingSec = remaining
+
     triedUsingExactSeekForCurrentFile = false
     // Playback will move directly from stopped to loading when transitioning to the next file in
     // the playlist.
@@ -2690,6 +2695,12 @@ class PlayerCore: NSObject {
     info.playbackPositionSec = playbackPositionSec
 
     info.constrainVideoPosition()
+
+    let remaining = Preference.bool(for: .scaleRemainingTime) ?
+    mpv.getDouble(MPVProperty.playtimeRemainingFull) :
+    mpv.getDouble(MPVProperty.timeRemainingFull)
+    info.playbackRemainingSec = remaining
+
     if isNetworkStream || Preference.bool(for: .showCachedRangesInSlider) {
       updateCacheInfo()
     }

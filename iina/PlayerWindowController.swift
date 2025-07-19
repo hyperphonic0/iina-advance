@@ -2047,21 +2047,22 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // The mpv documentation for the duration property indicates mpv is not always able to determine
     // the video duration in which case the property is not available.
     guard let duration = player.info.playbackDurationSec,
-          let position = player.info.playbackPositionSec else { return }
+          let position = player.info.playbackPositionSec,
+          let remaining = player.info.playbackRemainingSec else { return }
 
     // If the OSD is visible and is showing playback position, keep its displayed time up to date:
     setOSDViews()
 
     // Update playback position slider in OSC:
     for label in [leftTimeLabel, rightTimeLabel] {
-      label.updateText(with: duration, given: position)
+      label.updateText(with: duration, given: position, and: remaining)
     }
     let percentage = (position / duration) * 100
     playSlider.doubleValue = percentage
 
     // Touch bar
     player.touchBarSupport.touchBarPlaySlider?.setDoubleValueSafely(percentage)
-    player.touchBarSupport.touchBarPosLabels.forEach { $0.updateText(with: duration, given: position) }
+    player.touchBarSupport.touchBarPosLabels.forEach { $0.updateText(with: duration, given: position, and: remaining) }
   }
 
   func updateVolumeUI() {

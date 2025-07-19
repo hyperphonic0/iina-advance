@@ -19,6 +19,7 @@ class DurationDisplayTextField: ClickThroughTextField {
   var mode: DisplayMode = .duration { didSet { updateText() } }
   var duration: Double = 0
   var current: Double = 0
+  var remaining: Double = 0
 
   override init(frame frameRect: NSRect) {
     super.init(frame: frameRect)
@@ -28,9 +29,11 @@ class DurationDisplayTextField: ClickThroughTextField {
     super.init(coder: coder)
   }
 
-  func updateText(with duration: Double, given current: Double) {
+  func updateText(with duration: Double, given current: Double,
+                  and remaining: Double) {
     self.duration = duration
     self.current = current
+    self.remaining = remaining
     updateText()
   }
   
@@ -43,10 +46,6 @@ class DurationDisplayTextField: ClickThroughTextField {
     case .duration:
       stringValue = VideoTime.string(from: duration, precision: precision)
     case .remaining:
-      var remaining = (duration - current)
-      if remaining < 0 {
-        remaining = 0
-      }
       stringValue = "-\(VideoTime.string(from: remaining, precision: precision))"
     }
     baseWritingDirection = .leftToRight
