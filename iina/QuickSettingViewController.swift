@@ -187,6 +187,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   private lazy var eqSliders: [NSSlider] = [audioEqSlider1, audioEqSlider2, audioEqSlider3, audioEqSlider4, audioEqSlider5,
                                             audioEqSlider6, audioEqSlider7, audioEqSlider8, audioEqSlider9, audioEqSlider10]
+  private lazy var colorWells: [NSColorWell] = [subTextColorWell, subTextBgColorWell, subTextBorderColorWell]
 
   private var lastUsedProfileName: String = ""
   private var inputString: String = ""
@@ -250,6 +251,12 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     switchHorizontalLine2.layer?.opacity = 0.5
 
     speedResetBtn.toolTip = NSLocalizedString("quicksetting.reset_speed", comment: "Reset speed to 1x")
+    
+    if #available(macOS 13.0, *) {
+      colorWells.forEach {
+        $0.colorWellStyle = .minimal
+      }
+    }
 
     // Localize decimal format of numbers
     speedSlider0_25xLabel.stringValue = "\(0.25.groupedStringUpTo6Decimals)x"
