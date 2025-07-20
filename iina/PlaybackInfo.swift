@@ -46,6 +46,8 @@ class PlaybackInfo {
   }
   var pauseStateWasChangedLocally = false
 
+  var isSeeking: Bool = false
+
   var currentPlayback: Playback? = nil {
     didSet {
       log.verbose{"Updated currentPlayback to \(currentPlayback?.description ?? "nil")"}

@@ -2141,6 +2141,7 @@ class PlayerCore: NSObject {
   func seeking() {
     log.trace("Seeking")
     DispatchQueue.main.async { [self] in
+      info.isSeeking = true
       // When playback is paused the display link may be shutdown in order to not waste energy.
       // It must be running when seeking to avoid slowdowns caused by mpv waiting for IINA to call
       // mpv_render_report_swap.
@@ -2170,6 +2171,7 @@ class PlayerCore: NSObject {
     reloadSavedIINAfilters()
 
     DispatchQueue.main.async { [self] in
+      info.isSeeking = false
       // Important to synchronize the time as mpv may slightly alter the playback position during a
       // restart even while paused. See issue #5337.
       updatePlaybackTimeInfo()  // prepare for updateUI()
@@ -2717,7 +2719,7 @@ class PlayerCore: NSObject {
       }
     }
   }
-  
+
   /// - Important: The mpv
   ///     [cache-buffering-state](https://mpv.io/manual/stable/#command-interface-cache-buffering-state)
   ///     property is only valid when
