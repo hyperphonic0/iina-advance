@@ -331,6 +331,7 @@
 		D15CABE62B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */; };
 		D160783B2D140DEE00105001 /* BarFactoryUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = D160783A2D140DDB00105001 /* BarFactoryUtil.swift */; };
 		D16A434D2CDDB75B0012D66F /* BarFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16A434C2CDDB7570012D66F /* BarFactory.swift */; };
+		D16E1F152E302C6800F8F208 /* DefaultAlbumArtView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16E1F142E302C5D00F8F208 /* DefaultAlbumArtView.swift */; };
 		D1724A692BF80C9A00BCE335 /* FolderMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */; };
 		D17504A629167ACF005C3DD0 /* CascadingMenuItemBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17504A529167ACF005C3DD0 /* CascadingMenuItemBuilder.swift */; };
 		D17504A82918F13E005C3DD0 /* OSCToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17504A72918F13E005C3DD0 /* OSCToolbarButton.swift */; };
@@ -1881,6 +1882,7 @@
 		D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleMediaThumbnailsLoader.swift; sourceTree = "<group>"; };
 		D160783A2D140DDB00105001 /* BarFactoryUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarFactoryUtil.swift; sourceTree = "<group>"; };
 		D16A434C2CDDB7570012D66F /* BarFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarFactory.swift; sourceTree = "<group>"; };
+		D16E1F142E302C5D00F8F208 /* DefaultAlbumArtView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultAlbumArtView.swift; sourceTree = "<group>"; };
 		D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderMonitor.swift; sourceTree = "<group>"; };
 		D17504A529167ACF005C3DD0 /* CascadingMenuItemBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CascadingMenuItemBuilder.swift; sourceTree = "<group>"; };
 		D17504A72918F13E005C3DD0 /* OSCToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSCToolbarButton.swift; sourceTree = "<group>"; };
@@ -2980,6 +2982,7 @@
 				845FB0C61D39462E00C011E0 /* FloatingControlBarView.swift */,
 				D1BE7BD12D4B7E000085539F /* SingleRowBarOSCView.swift */,
 				D1BE7BCE2D4B7CD20085539F /* TwoRowBarOSCView.swift */,
+				D16E1F142E302C5D00F8F208 /* DefaultAlbumArtView.swift */,
 				D1491F872CEF543900DB0A06 /* SeekPreview.swift */,
 				846352571EEEE11A0043F0CC /* ThumbnailPeekView.swift */,
 				D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */,
@@ -3558,6 +3561,7 @@
 				D13D9EE62DB921EA00A94C60 /* CommandLineState.swift in Sources */,
 				D13A7F0C2D39E5E900840277 /* TimeoutTimer.swift in Sources */,
 				E38BA1C0253E54F2000B551D /* JavascriptAPIGlobal.swift in Sources */,
+				D16E1F152E302C6800F8F208 /* DefaultAlbumArtView.swift in Sources */,
 				E39A11FD240F176E00A67F9F /* StringEncodingName.swift in Sources */,
 				D1C741102CB6476900522FA7 /* PWin_PIP.swift in Sources */,
 				D1FF15792A7FA6A300C0CE86 /* PlayerSaveState.swift in Sources */,

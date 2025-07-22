@@ -651,8 +651,6 @@ extension PlayerWindowController {
             // We are about to steal its video; close it:
             exitPIP()
           }
-          // Show/hide art before showing videoView
-          updateDefaultArtVisibility(to: showDefaultArt)
           addVideoViewToWindow(using: outputGeo)
         } else {  // hiding video
           // Remove OSD constraints *before* reducing viewportView height to 0
@@ -668,6 +666,11 @@ extension PlayerWindowController {
 
         hideSeekPreviewImmediately()
       }
+      // Show art if videoView is already visible, or before it needs to be shown:
+      if outputGeo.isVideoVisible {
+        updateDefaultArtVisibility(to: showDefaultArt)
+      }
+
       resetRotationPreview()
     })
 
@@ -678,7 +681,7 @@ extension PlayerWindowController {
 
     // TASK 2A (if toggling video view visibility)
     if isTogglingVideoView {
-      tasks.append(IINAAnimation.Task{ [self] in
+      tasks.append(.instantTask{ [self] in
         /// Allow it to show again
         closeButtonView.isHidden = false
 
@@ -695,18 +698,11 @@ extension PlayerWindowController {
 
     // TASK 3: Background cleanup
     tasks.append(.instantTask { [self] in
-      // Make sure to update art after videoView has settled
-      updateDefaultArtVisibility(to: showDefaultArt)
-
       if isHidingVideo, pip.status == .notInPIP {
         videoView.apply(nil)  // remove constraints
         videoView.removeFromSuperview()
         removeVideoViewSpacers()
-        player.mpv.queue.async { [self] in
-          player._setVideoTrackDisabled()
-//          DispatchQueue.main.async { [self] in
-//          }
-        }
+        player.setVideoTrackDisabled()
 
         let shouldDisableConstraint = outputGeo.isPlaylistVisible
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.

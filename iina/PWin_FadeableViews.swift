@@ -373,15 +373,4 @@ extension PlayerWindowController {
     hideFadeableViewsAndCursor()
   }
 
-  // MARK: - Default album art visibility
-
-  func updateDefaultArtVisibility(to showDefaultArt: Bool?) {
-    assert(DispatchQueue.isExecutingIn(.main))
-    guard let showDefaultArt else { return }
-
-    log.verbose{"\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt, playback.state=\(player.info.currentPlayback?.state.description ?? "nil"), vid=\(player.info.currentTrack(.video)?.id ?? 0)"}
-    // Update default album art visibility:
-    defaultAlbumArtView.isHidden = !showDefaultArt
-  }
-
 }

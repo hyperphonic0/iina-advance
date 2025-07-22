@@ -77,7 +77,7 @@ struct GeometryTransform {
   /// Aborts the transform (`animationPipeline` must always be notified for either success or failure).
   private func abort(_ reasonDebugMsg: String) {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-    log.verbose{"[GTF:\(name)] Aborting TF: \(reasonDebugMsg)"}
+    log.verbose{"[GTF:\(name)] Aborting GTF: \(reasonDebugMsg)"}
     pwc.animationPipeline.geoTransformDidFinish(self, success: false)
   }
 
@@ -106,7 +106,8 @@ struct GeometryTransform {
         return abort("playbackState=\(currentPlayback.state) restoring=\(sessionState.isRestoring.yn) network=\(currentPlayback.isNetworkResource.yn)")
       }
 
-      let vidTrackID = player.info.vid ?? 0
+      // Get the freshest value of vid track from mpv
+      let vidTrackID = Int(player.mpv.getInt(MPVOption.TrackSelection.vid))
 
       var cxt = GeometryTransform.Context(tf: self, currentPlayback: currentPlayback, vidTrackID: vidTrackID,
                                           currentMediaAudioStatus: player.info.currentMediaAudioStatus,
@@ -127,14 +128,14 @@ struct GeometryTransform {
       /// 2: Apply `videoTransform` if present.
       /// This needs to be on the mpv queue, because some transforms make mpv calls.
       if let videoTransform {
-        log.verbose{"[GTF:\(name)] Calling videoTransform"}
+        log.verbose{"[GTF:\(name)] Calling videoTF"}
         guard let transformedGeo = videoTransform(cxt) else {
-          return abort("videoTransform returned nil")
+          return abort("videoTF returned nil")
         }
-        log.verbose{"[GTF:\(name)] Result of videoTransform: \(transformedGeo)"}
+        log.verbose{"[GTF:\(name)] Result of videoTF: \(transformedGeo)"}
         cxt.outputVidGeo = transformedGeo
       } else {
-        log.verbose{"[GTF:\(name)] No videoTransform given, skipping"}
+        log.verbose{"[GTF:\(name)] No videoTF given, skipping"}
         cxt.outputVidGeo = cxt.oldGeo.video
       }
 
@@ -282,7 +283,7 @@ struct GeometryTransform {
 
     /// Default album art: to avoid race conditions, use the context's state instead of player.info
     /// If `showDefaultArt == nil`, don't change existing visibility.
-    fileprivate var changeToDefaultArt: Bool? {
+    fileprivate var shouldChangeDefaultArt: Bool? {
       // Don't show art if currently loading
       if currentPlayback.state.isAtLeast(.loaded) {
         // Show art if no video track is selected (i.e., vid=0)
@@ -343,7 +344,7 @@ struct GeometryTransform {
         let intendedViewportSize: CGSize? = sessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
         let newGeo = resizedGeo ?? oldGeo.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
                                                                    intendedViewportSize: intendedViewportSize)
-        let showDefaultArt: Bool? = changeToDefaultArt
+        let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose{"[GTF:\(name)] Building windowed tasks: newSess=\(sessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newGeo)"}
         tasks = pwc.buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
@@ -353,7 +354,7 @@ struct GeometryTransform {
         let newWinGeo = oldGeo.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
                                                         intendedViewportSize: intendedViewportSize)
         let fsGeo = outputLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: outputVidGeo)
-        let showDefaultArt: Bool? = changeToDefaultArt
+        let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose{"[GTF:\(name)] Building FS tasks: defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(fsGeo)"}
         tasks = pwc.buildApplyFullScreenGeoTasks(fsGeo: fsGeo, newWindowedGeo: newWinGeo, duration: duration, showDefaultArt: showDefaultArt)
@@ -383,7 +384,7 @@ struct GeometryTransform {
           duration = Constants.AnimationDuration.standard
         }
 
-        let showDefaultArt: Bool? = changeToDefaultArt
+        let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose{"[GTF:\(name)] Building musicMode tasks: sess=\(sessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newMusicModeGeo)"}
         tasks = pwc.buildApplyMusicModeGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo, duration: duration, showDefaultArt: showDefaultArt)
@@ -604,8 +605,8 @@ extension PlayerWindowController {
     player.refreshSyncUITimer()
     player.touchBarSupport.setupTouchBarUI()
 
-    let shouldDecideDefaultArtStatus = !cxt.outputLayout.isMusicMode || (musicModeGeo.isVideoVisible)
-    let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? player.info.shouldShowDefaultArt : nil
+    let shouldDecideDefaultArtStatus = !cxt.outputLayout.isMusicMode || musicModeGeo.isVideoVisible
+    let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? cxt.shouldChangeDefaultArt : nil
     if let showDefaultArt {
       // May need to set this while restoring a network audio stream
       updateDefaultArtVisibility(to: showDefaultArt)

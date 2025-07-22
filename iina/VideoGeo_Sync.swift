@@ -14,7 +14,7 @@ extension GeometryTransform {
   ///
   /// This which should be submitted as soon as possible *after* sending any updates
   /// to mpv for video params relating to VideoGeometry data (though *after* confirming that the update completed), but
-  /// *before* performing any UI updates. Regar
+  /// *before* performing any UI updates.
   static func syncVideoParamsFromMpv(_ context: Context) -> VideoGeometry? {
     context.syncVideoParamsFromMpv()
   }
@@ -67,11 +67,6 @@ extension GeometryTransform.Context {
   func syncVideoParamsFromMpv(startingWith videoGeo: VideoGeometry? = nil) -> VideoGeometry? {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
     log.verbose{"[GTF:\(name)] Syncing videoGeo from mpv for \(currentPlayback.url.lastPathComponent.pii.quoted) vid=\(String(vidTrackID))|\(currentMediaAudioStatus) sessState=\(sessionState)"}
-    let vid = Int(player.mpv.getInt(MPVOption.TrackSelection.vid))
-    guard vidTrackID == vid else {
-      log.debug{"[GTF:\(name)] Aborting transform, vid=\(String(vidTrackID)) != actual vid \(vidTrackID)"}
-      return nil
-    }
 
     if currentMediaAudioStatus.isAudio || vidTrackID == 0 {
       // Square album art

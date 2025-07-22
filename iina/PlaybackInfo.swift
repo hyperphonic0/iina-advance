@@ -202,6 +202,7 @@ class PlaybackInfo {
   var shouldShowDefaultArt: Bool? {
     if let currentPlayback {
       // Don't show art if currently loading
+      log.verbose{"shouldShowDefaultArt: loaded=\(currentPlayback.state.isAtLeast(.loaded).yn) vidSelected=\(isVideoTrackSelected.yn) vid=\(vid?.description ?? "nil")"}
       if currentPlayback.state.isAtLeast(.loaded) {
         return !isVideoTrackSelected
       }

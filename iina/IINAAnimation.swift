@@ -348,8 +348,11 @@ extension IINAAnimation {
         }
       }
 
-      if let postWork {
-        submitInstantTask(postWork)
+      // Always run this task, even if empty, to give the pipeline a kick and run its next loop, so that the next GTF will run immediately
+      submitInstantTask{ [self] in
+        if let postWork {
+          submitInstantTask(postWork)
+        }
       }
     }
 

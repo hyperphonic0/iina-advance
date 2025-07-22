@@ -458,7 +458,7 @@ extension PlayerWindowController {
       additionalInfoView.removeFromSuperview()
     }
 
-//    contentView.layoutSubtreeIfNeeded()
+    contentView.layoutSubtreeIfNeeded()
   }
 
   private func updateOSDLeadingSide_LeadingConstraint(to constraint: NSLayoutConstraint) {

@@ -594,7 +594,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   let viewportLeadingSpacer = SpacerView(id: "ViewportLeadingSpacer")
   let viewportTrailingSpacer = SpacerView(id: "ViewportTrailingSpacer")
 
-  let defaultAlbumArtView = ClickThroughView()
+  let defaultAlbumArtView = DefaultAlbumArtView()
 
   /// Container for volume slider & mute button
   var fragVolumeView = ClickThroughView()

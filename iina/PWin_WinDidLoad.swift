@@ -95,7 +95,7 @@ extension PlayerWindowController {
       window.preservesContentDuringLiveResize = false
 
       initViewportView(in: contentView)
-      initAlbumArtView()
+      defaultAlbumArtView.addLayout(inside: viewportView)
       initSeekPreview(in: contentView)
       initTitleBar()
       initOSCToolbar()
@@ -220,37 +220,6 @@ extension PlayerWindowController {
     viewportBottomSpacer.removeFromSuperview()
     viewportLeadingSpacer.removeFromSuperview()
     viewportTrailingSpacer.removeFromSuperview()
-  }
-
-  private func initAlbumArtView() {
-    defaultAlbumArtView.idString = "DefaultAlbumArtView"
-    defaultAlbumArtView.wantsLayer = true
-    defaultAlbumArtView.layer?.contents = #imageLiteral(resourceName: "default-album-art")
-    defaultAlbumArtView.isHidden = true
-    viewportView.addSubview(defaultAlbumArtView)
-
-    defaultAlbumArtView.translatesAutoresizingMaskIntoConstraints = false
-
-    // Add 1:1 aspect ratio constraint
-    let aspectConstraint = defaultAlbumArtView.widthAnchor.constraint(equalTo: defaultAlbumArtView.heightAnchor, multiplier: 1)
-    aspectConstraint.priority = .defaultHigh
-    aspectConstraint.isActive = true
-    // Always fill superview
-    let widthGE = defaultAlbumArtView.widthAnchor.constraint(greaterThanOrEqualTo: viewportView.widthAnchor)
-    widthGE.priority = .defaultHigh
-    widthGE.isActive = true
-    let heightGE = defaultAlbumArtView.heightAnchor.constraint(greaterThanOrEqualTo: viewportView.heightAnchor)
-    heightGE.priority = .defaultHigh
-    heightGE.isActive = true
-    let widthEq = defaultAlbumArtView.widthAnchor.constraint(equalTo: viewportView.widthAnchor)
-    widthEq.priority = .defaultLow
-    widthEq.isActive = true
-    let heightEq = defaultAlbumArtView.heightAnchor.constraint(equalTo: viewportView.heightAnchor)
-    heightEq.priority = .defaultLow
-    heightEq.isActive = true
-    // Center in superview
-    defaultAlbumArtView.centerXAnchor.constraint(equalTo: viewportView.centerXAnchor).isActive = true
-    defaultAlbumArtView.centerYAnchor.constraint(equalTo: viewportView.centerYAnchor).isActive = true
   }
 
   private func initSeekPreview(in contentView: NSView) {
