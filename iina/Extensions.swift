@@ -612,6 +612,13 @@ extension CGFloat {
     return Double(self).groupedStringUpTo6Decimals
   }
 
+  func roundedTo6() -> Double {
+    let scaledUp = self * 1e6
+    let scaledUpRounded = scaledUp.rounded(.toNearestOrAwayFromZero)
+    let finalVal = scaledUpRounded / 1e6
+    return finalVal
+  }
+
   /// Formats the decimal for logging. Omits trailing zeroes & grouping separator.
   var logStr: String {
     return Double(self).logStr

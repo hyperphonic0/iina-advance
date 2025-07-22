@@ -117,7 +117,6 @@ class PlayerCore: NSObject {
   let saveUIStateDebouncer = Debouncer(delay: Constants.TimeInterval.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
   let thumbReloadDebouncer = Debouncer(delay: Constants.TimeInterval.thumbnailRegenerationDelay, queue: PlayerCore.thumbnailQueue)
   let sliderSeekDebouncer = Debouncer(delay: Constants.TimeInterval.sliderSeekThrottlingInterval)
-  let windowScaleDebouncer = Debouncer(delay: Constants.TimeInterval.windowScaleUpdateThrottlingInterval)
 
   // Plugins
 
@@ -190,11 +189,13 @@ class PlayerCore: NSObject {
     }
   }
 
+
   var isActive: Bool { state.isAtLeast(.started) && state.isNotYet(.stopping) }
   var isShuttingDown: Bool { state.isAtLeast(.shuttingDown) }
   var isShutDown: Bool { state.isAtLeast(.shutDown) }
   var isStopping: Bool { state.isAtLeast(.stopping) }
-  var isIdleOrNotStarted: Bool { state == .notYetStarted || state == .idle }
+  /// An unused player is one which does not have a playback (`!hasPlayback`)
+  var isIdleOrUnused: Bool { state == .idle || (state == .notYetStarted && !hasPlayback) }
 
   // Window controller convenience
 
@@ -242,6 +243,8 @@ class PlayerCore: NSObject {
   // test seeking
   var triedUsingExactSeekForCurrentFile: Bool = false
   var useExactSeekForCurrentFile: Bool = true
+
+  var hasPlayback: Bool { info.currentPlayback != nil }
 
   var canSkipBackward: Bool {
     isActive && (info.isPlaying || (info.playbackPositionSec ?? 0.0) > 0.0)
@@ -1740,7 +1743,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
 
-    if isIdleOrNotStarted {
+    if isIdleOrUnused {
       state = .started
     }
 
@@ -1930,7 +1933,7 @@ class PlayerCore: NSObject {
     let gtf = GeometryTransform("FileLoaded", self,
                                state: { [self] cxt in
       guard cxt.currentPlayback.state == .loaded else {
-        log.verbose{"[GeoTF:\(cxt.name)] Expected currentPlayback.state == .loaded, but found: \(cxt.currentPlayback.state)"}
+        log.verbose{"[GTF:\(cxt.name)] Expected currentPlayback.state == .loaded, but found: \(cxt.currentPlayback.state)"}
         return nil
       }
       switch cxt.sessionState {
@@ -1940,7 +1943,7 @@ class PlayerCore: NSObject {
         if cxt.sessionState.isStartingNewPlayback {
           return cxt.sessionState
         } else {
-          log.verbose("[GeoTF:\(cxt.name)] Not the right sessionState; will let another handler take this")
+          log.verbose("[GTF:\(cxt.name)] Not the right sessionState; will let another handler take this")
           return nil
         }
       }
@@ -2143,40 +2146,6 @@ class PlayerCore: NSObject {
     }
 
     saveState()
-  }
-
-  func setMpvWindowScale(to newWindowScale: CGFloat) {
-    windowScaleDebouncer.run { [self] in
-      windowController.setMpvWindowScale(to: newWindowScale)
-    }
-  }
-
-  func setMpvWindowScale(from windowGeo: PWinGeometry) {
-    windowScaleDebouncer.run { [self] in
-      guard windowGeo.mode == .windowedNormal || (windowGeo.mode == .musicMode && windowGeo.videoSize.height > 0) else {
-        return
-      }
-      // Do not call while resizing the window, as doing so has race conditions.
-      guard !windowController.isAnimatingLayoutTransition, !window.inLiveResize else { return }
-
-      mpv.queue.async { [self] in
-        let desiredMpvWindowScale = windowGeo.mpvWindowScale()
-        guard desiredMpvWindowScale > 0.0 else {
-          log.verbose("UpdateMPVWindowScale: desiredMpvWindowScale is 0; aborting")
-          return
-        }
-        guard isActive else { return }
-        let currentMpvWindowScale = mpv.getWindowScale()
-
-        if desiredMpvWindowScale != currentMpvWindowScale {
-          log.verbose{"Updating mpv window-scale from viewportSize=\(windowGeo.viewportSize): \(currentMpvWindowScale) → \(desiredMpvWindowScale)"}
-          mpv.setDouble(MPVProperty.windowScale, desiredMpvWindowScale)
-
-        } else {
-          log.verbose{"Skipping update to mpv window-scale: no change from existing (\(currentMpvWindowScale))"}
-        }
-      }
-    }
   }
 
   func refreshEdrMode() {
@@ -3198,7 +3167,7 @@ class PlayerCore: NSObject {
     log.verbose{"Calling transformGeometry for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(windowController.sessionState)"}
 
     let stateChangeFunc: (GeometryTransform.Context) -> PWinSessionState? = { [self] cxt -> PWinSessionState? in
-      log.verbose{"[GeoTF:\(cxt.name)] Changing sessionState for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(cxt.sessionState), showVideoPending=\(isShowVideoPendingInMiniPlayer.yn)"}
+      log.verbose{"[GTF:\(cxt.name)] Changing sessionState for vid change: vidLastSized=\(String(currentPlayback.vidTrackLastSized)), vidNew=\(vid), sessionState=\(cxt.sessionState), showVideoPending=\(isShowVideoPendingInMiniPlayer.yn)"}
       if case .existingSession_continuing = cxt.sessionState {
         if currentPlayback.state.isAtLeast(.loadedAndSized) && currentPlayback.vidTrackLastSized != vid {
           return .existingSession_videoTrackChangedForSamePlayback

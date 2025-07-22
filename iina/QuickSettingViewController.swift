@@ -754,6 +754,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
     if (tableView == subTableView || tableView == secSubTableView) {
+      // Subtitles / Secondary Subtitles tables
 
       let pb = info.draggingPasteboard
       if pb.pasteboardItems?.count != 1 { // multiple items are not supported
@@ -790,6 +791,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       }
 
     } else if (tableView == audioTableView) {
+      // Audio table
 
       let pb = info.draggingPasteboard
       if pb.pasteboardItems?.count != 1 { // multiple items are not supported

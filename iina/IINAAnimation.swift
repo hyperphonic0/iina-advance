@@ -84,9 +84,9 @@ class IINAAnimation {
       do {
         try task.runFunc()
       } catch IINAError.cancelAnimationTransaction {
-        Logger.log.debug("[AnimPipeline] Async task was cancelled")
+        Logger.log.debug("[Pipeline] Async task was cancelled")
       } catch {
-        Logger.log.error("[AnimPipeline] Unexpected error thrown by async task: \(error)")
+        Logger.log.error("[Pipeline] Unexpected error thrown by async task: \(error)")
       }
     }, completionHandler: {
       runSequentially(taskIterator)
@@ -139,10 +139,9 @@ extension IINAAnimation {
 
     // GeometryTransform queue
     private var gtfQueue = LinkedList<GeometryTransform>()
-    private let gtfLock = Lock()
-    private var gtfLastEnqueuedID: Int = 0
-    private var gtfLastStartedID: Int = 0
-    private var gtfLastDoneID: Int = 0
+    let gtfLock = Lock()
+    var gtfCurrentlyRunningID: Int? = nil
+    var lastGeneratedID: Int = 0
 
     var log = Logger.log
 
@@ -215,12 +214,12 @@ extension IINAAnimation {
           }
           if canDisable || (submittedTasks >= lastLoggedTaskCount + 20) {
             lastLoggedTaskCount = submittedTasks
-            log.verbose{"[AnimPipeline] TaskQueue size: \(taskQueueSize), totalSubmits: \(submittedTasks)"}
+            log.verbose{"[Pipeline] TaskQueue size: \(taskQueueSize), totalSubmits: \(submittedTasks)"}
           }
         } else if taskQueue.count >= IINAAnimation.Pipeline.alarmStartWatermark {
           alarmActivated = true
           lastLoggedTaskCount = submitCounter
-          log.verbose{"[AnimPipeline] TaskQueue is falling behind! Size: \(taskQueueSize), submitCount: \(submitCounter)"}
+          log.verbose{"[Pipeline] TaskQueue is falling behind! Size: \(taskQueueSize), submitCount: \(submitCounter)"}
         }
       }
 
@@ -241,7 +240,7 @@ extension IINAAnimation {
         }
 
         guard taskTxID >= currentTxID else {
-          log.debug("[AnimPipeline] Skipping task with txID \(taskTxID) (next valid txID: \(currentTxID))")
+          log.debug("[Pipeline] Skipping task with txID \(taskTxID) (next valid txID: \(currentTxID))")
           continue
         }
         currentTxID = taskTxID
@@ -277,10 +276,10 @@ extension IINAAnimation {
           try nextTask.runFunc()
         } catch IINAError.cancelAnimationTransaction {
           if log.isTraceEnabled {
-            log.trace("[AnimPipeline] Task was cancelled")
+            log.trace("[Pipeline] Task was cancelled")
           }
         } catch {
-          log.error("[AnimPipeline] Unexpected error thrown by task: \(error)")
+          log.error("[Pipeline] Unexpected error thrown by task: \(error)")
         }
       }, completionHandler: {
         self.runTasks()
@@ -291,8 +290,7 @@ extension IINAAnimation {
 
     /// Returns true if no GTFs are running and none are enqueued.
     private var isDoneWithAllGTFs: Bool {
-      let lastIsDone = gtfLastStartedID == gtfLastDoneID
-      return lastIsDone && gtfQueue.isEmpty
+      return gtfCurrentlyRunningID == nil && gtfQueue.isEmpty
     }
 
     private var pendingWorkAfterGTFs: TaskFunc? = nil
@@ -308,7 +306,7 @@ extension IINAAnimation {
         }
       }
 
-      log.verbose{"[AnimPipeline] Can run ReloadQuickSettings: \(canRunNow.yn)"}
+      log.verbose{"[Pipeline] Can run ReloadQuickSettings: \(canRunNow.yn)"}
       if canRunNow {
         submitInstantTask(work)
       }
@@ -316,12 +314,11 @@ extension IINAAnimation {
 
     private func popNextReadyGTF() -> GeometryTransform? {
       gtfLock.withLock{ [self] in
-        let lastIsDone = gtfLastStartedID == gtfLastDoneID
-        guard lastIsDone, let nextGTF = gtfQueue.removeFirst() else {
+        guard gtfCurrentlyRunningID == nil, let nextGTF = gtfQueue.removeFirst() else {
           return nil
         }
-        gtfLastStartedID += 1
-        log.verbose{"[AnimPipeline] GTF \(gtfLastStartedID)/\(gtfLastEnqueuedID) \(nextGTF.name.quoted): starting"}
+        gtfCurrentlyRunningID = nextGTF.id
+        log.verbose{"[Pipeline] Starting GTF: \(nextGTF.name.quoted); queue size: \(gtfQueue.count)"}
         return nextGTF
       }
     }
@@ -332,20 +329,19 @@ extension IINAAnimation {
     /// could interfere with each other in difficult-to-predict ways.
     func submit(gtf: GeometryTransform) {
       gtfLock.withLock{ [self] in
-        gtfLastEnqueuedID += 1
         gtfQueue.append(gtf)
-        log.verbose{"[AnimPipeline] new GTF enqueued: \(gtfLastEnqueuedID) \(gtf.name.quoted). QueueState: \(gtfLastDoneID)/\(gtfLastEnqueuedID)"}
+        log.verbose{"[Pipeline] Enqueued GTF: \(gtf.name.quoted); queue size: \(gtfQueue.count)"}
       }
     }
 
     func geoTransformDidFinish(_ gtf: GeometryTransform, success: Bool) {
       let postWork: TaskFunc? = gtfLock.withLock{ [self] in
-        gtfLastDoneID += 1
-        log.verbose{"[AnimPipeline] GTF \(gtfLastDoneID)/\(gtfLastEnqueuedID) \(gtf.name.quoted): done"}
+        gtfCurrentlyRunningID =  nil
+        log.verbose{"[Pipeline] GTF done: \(gtf.name.quoted); queue size: \(gtfQueue.count)"}
 
         if let workFunc = pendingWorkAfterGTFs, isDoneWithAllGTFs {
           pendingWorkAfterGTFs = nil
-          log.verbose{"[AnimPipeline] Running pending post-GTF work…"}
+          log.verbose{"[Pipeline] Running pending post-GTF work…"}
           return workFunc
         } else {
           return nil

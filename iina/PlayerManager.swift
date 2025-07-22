@@ -130,9 +130,9 @@ class PlayerManager {
   private func _findIdlePlayerCore() -> PlayerCore? {
     var firstIdlePlayer: PlayerCore? = nil
     for p in _playerCores {
-      let isPlayerIdle = p.isIdleOrNotStarted
-      Logger.log("Player-\(p.label): fileLoaded:\(p.info.isFileLoaded.yn) IDLE:\(p.isIdleOrNotStarted.yn)")
-      if firstIdlePlayer == nil && isPlayerIdle {
+      let isPlayerIdleOrUnused = p.isIdleOrUnused
+      Logger.log.verbose("Player-\(p.label): hasPlayback=\(p.hasPlayback.yn) idle=\(p.state == .idle) → UNUSED=\(isPlayerIdleOrUnused.yn)")
+      if firstIdlePlayer == nil && isPlayerIdleOrUnused {
         firstIdlePlayer = p
       }
     }

@@ -85,6 +85,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var barFactory: BarFactory?
   let knobFactory = KnobFactory()
 
+  var cachedMpvWindowScale: CGFloat = 1.0
+
   // MARK: - Vars: State
 
   var isAnimating: Bool {

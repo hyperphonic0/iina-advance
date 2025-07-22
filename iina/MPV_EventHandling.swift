@@ -614,7 +614,9 @@ extension MPVController {
       }
 
       log.verbose{"Δ mpv prop: 'window-scale' ≔ \(windowScale)"}
-      player.setMpvWindowScale(to: windowScale)
+      DispatchQueue.main.async { [self] in
+        player.windowController.mpvWindowScaleDidUpdate(to: windowScale.roundedTo6())
+      }
 
     case MPVProperty.mediaTitle:
       player.mediaTitleChanged()

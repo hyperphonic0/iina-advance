@@ -42,7 +42,7 @@ extension PlayerCore {
   ///   items are present in the playlist, they will get pushed to the top or to the bottom of the playlist.
   /// • This inserts around the currently playing item is in the list, so that it may end up at `indexOfCurrentItem`
   ///   (if provided), which may be in the middle of the playlist.
-  func _addAllToPlaylist(pathListIncludingCurrent pathList: [String], indexOfCurrentItem: Int? = nil) {
+  func _addAllToPlaylist(pathListIncludingCurrent pathList: [String], indexOfCurrentItem currentItemExplicitIndex: Int? = nil) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     // This checks for !isStopping, so we don't have to
     guard _reloadPlaylistAndReturn() != nil else { return }
@@ -52,18 +52,22 @@ extension PlayerCore {
     }
 
     let currentItem: Int
-    if let indexOfCurrentItem {
+    if let currentItemExplicitIndex {
       // Newer versions should include this info
-      currentItem = indexOfCurrentItem
-    } else if let currentPath = info.currentPlayback?.path,
-              let firstMatchingIndex = pathList.firstIndex(of: currentPath) {
-      // Try to derive current item index.
-      // Use index of first match found. If there are duplicate paths in the playlist, this will be wrong,
-      // but older versions of IINA did not support duplicates in the playlist, so shouldn't be an issue.
-      currentItem = firstMatchingIndex
+      currentItem = currentItemExplicitIndex
+    } else if let currentPath = info.currentPlayback?.path {
+      if let firstMatchingIndex = pathList.firstIndex(of: currentPath) {
+        // Try to derive current item index.
+        // Use index of first match found. If there are duplicate paths in the playlist, this will be wrong,
+        // but older versions of IINA did not support duplicates in the playlist, so shouldn't be an issue.
+        currentItem = firstMatchingIndex
+      } else {
+        log.warn{"[Playlist] Playlist (count=\(info.playlist.count) items) does not contain currently playing item (\(currentPath.pii.quoted))"}
+        currentItem = -1
+      }
     } else {
-      log.warn{"[Playlist] Failed to find currently playing item among \(info.playlist.count) items"}
-      assert(false, "should never get here if used properly!")
+      log.warn{"[Playlist] Cannot determine current item index: currentPlayback is nil!"}
+      assert(false, "currentPlayback should never be nil if used properly!")
       currentItem = -1
     }
 

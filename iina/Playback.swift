@@ -15,7 +15,7 @@ class Playback: CustomStringConvertible {
 
   /// State of the individual playack
   enum LifecycleState: Int, StateEnum, CustomStringConvertible {
-    case notYetStarted = 1    /// set before mpv is aware of it
+    case notYetStarted = 1    /// set as soon as we are aware of file, but before mpv is aware of it
     case started              /// set after mpv sends `fileStarted` notification
     case loaded               /// set after mpv sends `fileLoaded` notification & IINA has processed it
     case loadedAndSized       /// see `vidTrackLastSized`

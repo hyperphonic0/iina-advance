@@ -129,7 +129,7 @@ class StartupHandler {
 
     let uniqueURLs = urls.filter{ url in
       // skip if url is already open in some player
-      let activePlayerCores = PlayerManager.shared.playerCores.filter { !$0.isIdleOrNotStarted }
+      let activePlayerCores = PlayerManager.shared.playerCores.filter { !$0.isIdleOrUnused }
       let relevantActivePlayerCore = activePlayerCores.first { $0.info.currentURL == url }
 
       if let relevantActivePlayerCore {

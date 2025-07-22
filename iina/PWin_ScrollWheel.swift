@@ -118,7 +118,7 @@ class PWinScrollWheel: VirtualScrollWheel {
   /// so this is one of a few tweaks to try to tame it.
   override func scrollSessionShouldBegin(_ session: ScrollSession) -> Bool {
     if wc.isInWindowScrollDenialPeriod() {
-      log.verbose{"Scroll session cannot start: still in windowScroll denial period"}
+      log.trace{"Scroll session cannot start: still in windowScroll denial period"}
       return false
     }
 
@@ -132,7 +132,7 @@ class PWinScrollWheel: VirtualScrollWheel {
     let distX = deltaX.magnitude
     let distY = deltaY.magnitude
     if distX <= 0.1 && distY <= 0.1 {
-      log.verbose{"Not enough movement to begin session. ΔX: \(distX), ΔY: \(distY)"}
+      log.trace{"Not enough movement to begin session. ΔX: \(distX), ΔY: \(distY)"}
       return false
     }
 
