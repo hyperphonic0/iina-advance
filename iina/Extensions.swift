@@ -1892,7 +1892,7 @@ extension NSViewController {
 }
 
 extension NSLayoutConstraint {
-  var intPriority: Int {
+  var priorityInt: Int {
     get {
       return Int(priority.rawValue)
     }

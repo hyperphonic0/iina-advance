@@ -557,20 +557,9 @@ extension PlayerWindowController {
     
     let leadingSidebarWillBeOpen = outputLayout.leadingSidebar.isVisible
     let trailingSidebarWillBeOpen = outputLayout.trailingSidebar.isVisible
-    let hasOSD = Preference.bool(for: .enableOSD)
-    let hasAddlInfo = outputLayout.hasAdditionalInfo
 
     // Need to add additionalInfo, OSD before changing sidebars
-    if hasOSD, !viewportView.subviews.contains(osd.osdView) {
-      log.verbose{"[\(transition.name)] Adding osdView to viewportView"}
-      viewportView.addSubview(osd.osdView, positioned: .above, relativeTo: videoView)
-      osd.osdView.roundCorners()
-    }
-    if hasAddlInfo, !viewportView.subviews.contains(additionalInfoView) {
-      log.verbose{"[\(transition.name)] Adding additionalInfoView to viewportView"}
-      viewportView.addSubview(additionalInfoView, positioned: .above, relativeTo: videoView)
-      additionalInfoView.roundCorners()
-    }
+    updateOSDConstraints(outputLayout, transition.outputGeometry, skipAddConstraints: true)
 
     // Sidebars
 
@@ -615,7 +604,7 @@ extension PlayerWindowController {
       updateBottomBarPlacement(forLayout: outputLayout)
     }
 
-    // Make sure to call this after prepareLayoutForOpening()
+    // Make sure to call this after calls to prepareLayoutForOpening(*Sidebar)
     updateOSDConstraints(transition.outputLayout, transition.outputGeometry)
 
     if isOpeningOrClosingAnySidebar {
@@ -679,7 +668,7 @@ extension PlayerWindowController {
         if shouldDisableConstraint {
           // Don't set this too low, or it may compete with VideoView's constraints and cause video to squeeze or stretch
           log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = 499"}
-          viewportBtmOffsetFromContentViewBtmConstraint.intPriority = 499
+          viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
         }
 
         if !miniPlayer.volumeSliderView.subviews.contains(fragVolumeView) {
@@ -984,7 +973,7 @@ extension PlayerWindowController {
     // Update heights to their final values:
     titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
 
-    updateOSDTopOffsetConstraint(transition.outputGeometry, isLegacyFullScreen: transition.outputLayout.isLegacyFullScreen)
+    updateTopOffsetConstraints(for: transition.outputGeometry, isLegacyFullScreen: transition.outputLayout.isLegacyFullScreen)
 
     // Update heights of top & bottom bars:
     updateTopBarHeight(to: outputLayout.topBarHeight, topBarPlacement: transition.outputLayout.topBarPlacement, cameraHousingOffset: transition.outputGeometry.topMarginHeight)

@@ -3256,8 +3256,8 @@ class PlayerCore: NSObject {
       guard (hasVidTrack && vidNow != vidToSet) else {
         info.vidDisabled = nil  // clear saved track
         if showMiniPlayerVideo {
-          // If no vid track selected, don't need to change tracks if a track is already selected. But may still need to show videoView.
-          // If no tracks, will not get a response from mpv if requesting to chamging tracks. But change geometry to set default album art.
+          // Don't need to change tracks if a track is already selected. But may still need to show videoView.
+          // If no tracks, will not get a response from mpv if requesting to change tracks. But change geometry to set default album art.
           miniPlayerShowVideoTimer.restart()
           log.verbose("Enabling video track: skipping, but forcing vidChanged() to show videoView")
           vidChanged(silent: true)

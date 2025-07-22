@@ -280,9 +280,20 @@ struct GeometryTransform {
       self.oldGeo = oldGeo
     }
 
+    /// Default album art: to avoid race conditions, use the context's state instead of player.info
+    /// If `showDefaultArt == nil`, don't change existing visibility.
+    fileprivate var changeToDefaultArt: Bool? {
+      // Don't show art if currently loading
+      if currentPlayback.state.isAtLeast(.loaded) {
+        // Show art if no video track is selected (i.e., vid=0)
+        return vidTrackID == 0
+      }
+      return nil
+    }
+
     /// Only `transformGeometry` should call this.
     fileprivate func buildApplyTransformTasks() -> [IINAAnimation.Task] {
-      log.verbose{"[GTF:\(name)] Building transform tasks, mode=\(outputLayout.mode)"}
+      log.verbose{"[GTF:\(name)] Building transform tasks, mode=\(outputLayout.mode), vidTrackID=\(vidTrackID)"}
 
       // There's no good animation for rotation (yet), so just do as little animation as possible in this case
       var duration: CGFloat = Constants.AnimationDuration.videoReconfig
@@ -331,9 +342,8 @@ struct GeometryTransform {
 
         let intendedViewportSize: CGSize? = sessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
         let newGeo = resizedGeo ?? oldGeo.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
-                                                                       intendedViewportSize: intendedViewportSize)
-
-        let showDefaultArt: Bool? = player.info.shouldShowDefaultArt
+                                                                   intendedViewportSize: intendedViewportSize)
+        let showDefaultArt: Bool? = changeToDefaultArt
 
         log.verbose{"[GTF:\(name)] Building windowed tasks: newSess=\(sessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newGeo)"}
         tasks = pwc.buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
@@ -341,11 +351,11 @@ struct GeometryTransform {
       case .fullScreenNormal:
         let intendedViewportSize: CGSize? = sessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
         let newWinGeo = oldGeo.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
-                                                            intendedViewportSize: intendedViewportSize)
+                                                        intendedViewportSize: intendedViewportSize)
         let fsGeo = outputLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: outputVidGeo)
-        let showDefaultArt: Bool? = player.info.shouldShowDefaultArt
-        log.verbose{"[GTF:\(name)] Building FS tasks: defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(fsGeo)"}
+        let showDefaultArt: Bool? = changeToDefaultArt
 
+        log.verbose{"[GTF:\(name)] Building FS tasks: defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(fsGeo)"}
         tasks = pwc.buildApplyFullScreenGeoTasks(fsGeo: fsGeo, newWindowedGeo: newWinGeo, duration: duration, showDefaultArt: showDefaultArt)
 
       case .musicMode:
@@ -372,13 +382,11 @@ struct GeometryTransform {
           // Toggling videoView visiblity: use longer duration for nicety
           duration = Constants.AnimationDuration.standard
         }
-        /// Default album art: check state before doing anything so that we don't duplicate work. Don't change in miniPlayer if videoView not visible.
-        /// If `showDefaultArt == nil`, don't change existing visibility.
-        let shouldDecideDefaultArtStatus = oldMusicModeGeo.isVideoVisible || newMusicModeGeo.isVideoVisible
-        let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? player.info.shouldShowDefaultArt : nil
+
+        let showDefaultArt: Bool? = changeToDefaultArt
+
         log.verbose{"[GTF:\(name)] Building musicMode tasks: sess=\(sessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newMusicModeGeo)"}
-        tasks = pwc.buildApplyMusicModeGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo,
-                                                duration: duration, showDefaultArt: showDefaultArt)
+        tasks = pwc.buildApplyMusicModeGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo, duration: duration, showDefaultArt: showDefaultArt)
       default:
         // Interactive mode. Should be handled by its special code. Don't step on it.
         log.debug{"[GTF:\(name)] Invalid mode for TF: \(outputLayout.mode)"}

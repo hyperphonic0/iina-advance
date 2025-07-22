@@ -545,7 +545,7 @@ extension PlayerWindowController {
       controlBarFloating.moveToLocationRatio(layout: currentLayout, viewportSize: geometry.viewportSize)
     }
 
-    updateOSDTopOffsetConstraint(geometry, isLegacyFullScreen: true)
+    updateTopOffsetConstraints(for: geometry, isLegacyFullScreen: true)
     let topBarHeight = currentLayout.topBarPlacement == .insideViewport ? geometry.insideBars.top : geometry.outsideBars.top
     updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
 
@@ -580,8 +580,8 @@ extension PlayerWindowController {
                                 showDefaultArt: Bool? = nil,
                                 thenRun: Bool = false) -> [IINAAnimation.Task] {
 
-    log.verbose{"ApplyWindowGeo: dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) \(newGeometry)"}
-    
+    log.verbose{"ApplyWindowGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) \(newGeometry)"}
+
     var tasks: [IINAAnimation.Task] = []
 
     tasks.append(.instantTask{ [self] in
@@ -637,22 +637,28 @@ extension PlayerWindowController {
     var tasks: [IINAAnimation.Task] = []
 
     let isTogglingVideoView = (inputGeo.isVideoVisible != outputGeo.isVideoVisible)
-    let isShowingVideoView = isTogglingVideoView && outputGeo.isVideoVisible
+    let isShowingVideo = isTogglingVideoView && outputGeo.isVideoVisible
+    let isHidingVideo = isTogglingVideoView && !outputGeo.isVideoVisible
+    log.verbose{"ApplyMusicModeGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") togglingVideo=\(isTogglingVideoView.yn) run=\(thenRun.yn) \(outputGeo)"}
 
     // TASK 1: Background prep
     tasks.append(.instantTask { [self] in
       isAnimatingLayoutTransition = true  /// do not trigger various listeners if possible
-      if isShowingVideoView {
-        if pip.status == .inPIP {
-          // We are about to steal its video; close it:
-          exitPIP()
-        }
-        // Show/hide art before showing videoView
-        updateDefaultArtVisibility(to: showDefaultArt)
-        addVideoViewToWindow(using: outputGeo)
-      }
 
       if isTogglingVideoView {
+        if isShowingVideo {
+          if pip.status == .inPIP {
+            // We are about to steal its video; close it:
+            exitPIP()
+          }
+          // Show/hide art before showing videoView
+          updateDefaultArtVisibility(to: showDefaultArt)
+          addVideoViewToWindow(using: outputGeo)
+        } else {  // hiding video
+          // Remove OSD constraints *before* reducing viewportView height to 0
+          updateOSDConstraintsForMusicMode(outputGeo.toPWinGeometry())
+        }
+
         // Hide OSD during animation
         hideOSD(immediately: true)
         pip.hideOverlayView()
@@ -679,7 +685,9 @@ extension PlayerWindowController {
         pip.showOrHidePipOverlayView()
 
         // Need to force draw if window was restored while paused + video hidden
-        if outputGeo.isVideoVisible {
+        if isShowingVideo {
+          // Add OSD constraints if needed *after* expanding viewportView height because some constraints assume H > 16
+          updateOSDConstraintsForMusicMode(outputGeo.toPWinGeometry())
           videoView.forceDraw()
         }
       })
@@ -690,16 +698,14 @@ extension PlayerWindowController {
       // Make sure to update art after videoView has settled
       updateDefaultArtVisibility(to: showDefaultArt)
 
-      if isTogglingVideoView && !outputGeo.isVideoVisible {  // Hiding video
-        if pip.status == .notInPIP {
-          player.mpv.queue.async { [self] in
-            player._setVideoTrackDisabled()
-            DispatchQueue.main.async { [self] in
-              videoView.apply(nil)  // remove constraints
-              videoView.removeFromSuperview()
-              removeVideoViewSpacers()
-            }
-          }
+      if isHidingVideo, pip.status == .notInPIP {
+        videoView.apply(nil)  // remove constraints
+        videoView.removeFromSuperview()
+        removeVideoViewSpacers()
+        player.mpv.queue.async { [self] in
+          player._setVideoTrackDisabled()
+//          DispatchQueue.main.async { [self] in
+//          }
         }
 
         let shouldDisableConstraint = outputGeo.isPlaylistVisible
@@ -707,7 +713,7 @@ extension PlayerWindowController {
         /// (See note in `applyMusicModeGeo`)
         if shouldDisableConstraint {
           log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = 499"}
-          viewportBtmOffsetFromContentViewBtmConstraint.intPriority = 499
+          viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
         }
       }
 
@@ -738,7 +744,7 @@ extension PlayerWindowController {
 
     /// Try to detect & remove unnecessary constraint updates - `updateBottomBarHeight()` may cause animation glitches if called twice
     var hasChange: Bool = !geometry.windowFrame.equalTo(window!.frame)
-    if geometry.isVideoVisible != !(viewportViewHeightContraint?.isActive ?? false) {
+    if geometry.isVideoVisible != musicModeGeo.isVideoVisible {
       hasChange = true
     } else if let newVideoSize = geometry.videoSize, let oldVideoSize = musicModeGeo.videoSize, !oldVideoSize.equalTo(newVideoSize) {
       hasChange = true

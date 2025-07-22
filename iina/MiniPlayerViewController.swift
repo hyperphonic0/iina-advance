@@ -308,7 +308,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
                                     musicMode: { [self] ctx in
           let oldGeo = ctx.oldGeo.musicMode
           let newGeo = oldGeo.withVideoViewVisible(false)
-          log.verbose{"MusicMode: changing videoView visibility: \(oldGeo.isVideoVisible.yesno) → NO, H=\(newGeo.videoHeight)"}
+          log.verbose{"MusicMode: changing videoView visibility: \(oldGeo.isVideoVisible.yesno) → \(newGeo.isVideoVisible.yesno), H=\(newGeo.videoHeight)"}
           return newGeo
         })
         gtf.submit()

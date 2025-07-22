@@ -819,7 +819,7 @@ extension PlayerWindowController {
         isPoint(event.locationInWindow, inAnyOf: [volumeSlider]) else {
       return
     }
-    log.verbose("cursorUpdate")
+    log.trace("CursorUpdate: applying .hoveringInSlider")
     applyCustomCursor(.hoveringInSlider)
   }
 
