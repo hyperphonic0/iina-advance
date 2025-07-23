@@ -615,17 +615,8 @@ extension PlayerWindowController {
 
   override func mouseExited(with event: NSEvent) {
     guard !isValidDragInProgress() else { return }
-    guard !isInInteractiveMode else { return }
-
-    // Show cursor if not already shown
-    // FIXME: only if mouse is not inside any window
-    animationPipeline.submitInstantTask{ [self] in
-      log.verbose("MouseExited: showing cursor")
-      hideCursorTimer.cancel()
-      applyCustomCursor(.normalCursor)
-//      NSCursor.unhide()
-      NSCursor.setHiddenUntilMouseMoves(false)
-    }
+    // Currently, the same modes are able to show fadeable views as being able to hide the cursor
+    guard !currentLayout.mode.mustShowCursorAlways else { return }
 
     guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
       log.warn("MouseExited: no data for tracking area!")
@@ -634,9 +625,13 @@ extension PlayerWindowController {
 
     switch area {
     case .playerWindow:
+      // Show cursor if not already shown
+      // FIXME: only if mouse is not inside any window
+      log.trace("MouseExited from playerWindow: showing (normal) cursor")
+      setCursorToNormalAlwaysShown()
 
       if Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
-        log.verbose("Mouse moved out of window: hiding fadeableViews")
+        log.verbose("MouseExited from playerWindow: hiding fadeableViews")
         hideFadeableViews()
       } else {
         // Closes loophole in case cursor hovered over OSC before exiting (in which case timer was destroyed)
@@ -663,39 +658,40 @@ extension PlayerWindowController {
 
     log.trace{"MouseDidMoveInWindow @ \(pointInWindow)"}
 
+    // Update hover effect(s)
+    if !isInInteractiveMode {
+      // Show Seek Preview on mouse hover. The check at the start of this func will return if in an "active seek"
+      // preview to ensure that the "hover" preview here will not activate:
+      refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
+      // Check if hovering over volume slider, and add/remove its hover effect
+      volumeSliderCell.refreshVolumeSliderHoverEffect()
+    }
+
     // Update mouse cursor
-    // FIXME: need to use global logic
-    if isInInteractiveMode {
-      return
-    } else if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
+    guard  !currentLayout.mode.mustShowCursorAlways else { return }
+
+    // FIXME: need to use global logic instead
+    if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
         isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: pointInWindow) {
       /// Hovering within area which can resize a sidebar? Set or unset the cursor to `resizeLeftRight`
       applyCustomCursor(.resizing_BothDirections)
-
     } else if isPoint(pointInWindow, inAnyOf: [volumeSlider]) {
       applyCustomCursor(.hoveringInSlider)
     } else if isPointInPlaySliderAndNotOtherViews(pointInWindow: pointInWindow) {
       applyCustomCursor(.hoveringInSlider)
     } else {
-      animationPipeline.submitInstantTask{ [self] in
-//        if player.shouldAlwaysHideCursor {
-//          log.verbose("Hiding cursor")
-//          hideCursorTimer.cancel()
-//          NSCursor.hide()
-//        } else {
-          applyCustomCursor(.normalCursor)
-          NSCursor.setHiddenUntilMouseMoves(false) // show if not shown
-                                                   // Always hide after timeout even if OSD fade time is longer
-          hideCursorTimer.restart()
-//        }
-      }
+      // TODO: finish implementing hide cursor
+      /*if player.shouldAlwaysHideCursor {
+        log.verbose("Hiding cursor")
+        hideCursorTimer.cancel()
+        NSCursor.hide()
+      } else {*/
+        applyCustomCursor(.normalCursor)
+        NSCursor.setHiddenUntilMouseMoves(false) // show if not shown
+                                                 // Always hide after timeout even if OSD fade time is longer
+        hideCursorTimer.restart()
+//      }
     }
-
-    // Show Seek Preview on mouse hover. The check at the start of this func will return if in an "active seek"
-    // preview to ensure that the "hover" preview here will not activate:
-    refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
-    // Check if hovering over volume slider, and add/remove its hover effect
-    volumeSliderCell.refreshVolumeSliderHoverEffect()
 
     showFadeableViewsForMouseLocation(pointInWindow)
   }
@@ -761,6 +757,12 @@ extension PlayerWindowController {
 
   // MARK: - Cursor
 
+  func setCursorToNormalAlwaysShown() {
+    hideCursorTimer.cancel()  // Always hide after timeout even if OSD fade time is longer
+    applyCustomCursor(.normalCursor)
+    NSCursor.setHiddenUntilMouseMoves(false) // show if not shown
+  }
+
   func applyCustomCursor(_ newCursorType: CursorType) {
     let newCursor: NSCursor
     switch newCursorType {
@@ -823,10 +825,11 @@ extension PlayerWindowController {
     applyCustomCursor(.hoveringInSlider)
   }
 
-  /// Only hides cursor if in full screen or windowed (non-interactive) modes, and only if mouse is within
+  /// Only hides cursor if in full screen or windowed (non-interactive, non-music) modes, and only if mouse is within
   /// bounds of the window's real estate.
   @objc func hideCursorAsConfigured() {
     guard let window else { return }
+    guard !currentLayout.mode.mustShowCursorAlways else { return }
 
     switch currentLayout.mode {
     case .windowedNormal:
@@ -836,6 +839,8 @@ extension PlayerWindowController {
       let isCursorInScreen = NSPointInRect(NSEvent.mouseLocation, bestScreen.visibleFrame)
       guard isCursorInScreen else { return }
     case .musicMode, .windowedInteractive, .fullScreenInteractive:
+      // see guard above
+      assert(false, "Mode \(currentLayout.mode) must always show cursor! Should not see this.")
       return
     }
     // IMPORTANT: We *must* ensure that NSCursor.setHiddenUntilMouseMoves is called inside an animation task!

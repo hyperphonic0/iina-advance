@@ -409,6 +409,20 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose{"[\(transition.name)] UpdateHiddenViewsAndConstraints"}
 
+    switch transition.outputLayout.mode {
+    case .fullScreenInteractive, .windowedInteractive:
+      // Show cursor always in these modes
+      setCursorToNormalAlwaysShown()
+    case .windowedNormal, .fullScreenNormal, .musicMode:
+      // TODO: hide cursor now if configured to always hide
+      break
+    }
+
+    let outputMpvKeepaspectWindow = transition.outputLayout.mode.needsMpvKeepaspectWindow
+    if transition.isWindowInitialLayout || (outputMpvKeepaspectWindow != transition.inputLayout.mode.needsMpvKeepaspectWindow) {
+      player.setMpvKeepaspectWindow(to: outputMpvKeepaspectWindow)  // executes async in mpv queue
+    }
+
     if transition.outputLayout.spec.isLegacyStyle {
       // Set legacy style
       setWindowStyleToLegacy()
@@ -422,8 +436,7 @@ extension PlayerWindowController {
       /// if `isTogglingLegacyStyle==true && isExitingFullScreen==true`, we are toggling out of legacy FS
       /// -> don't change `styleMask` to `.titled` here - it will look bad if screen has camera housing. Change at end of animation
     } else {
-      // Not legacy style
-
+      // Native style
       if !transition.isEnteringFullScreen {
         setWindowStyleToNative()
       }
@@ -443,7 +456,9 @@ extension PlayerWindowController {
         // Need videoView to have superview before adding shadow
         videoView.addShadowForInteractiveMode()
       }
-    } else if transition.isExitingMusicMode {
+    }
+
+    if transition.isExitingMusicMode {
       // If exiting music mode, need to restore views early in this step
       log.verbose{"[\(transition.name)] Cleaning up for music mode exit"}
       miniPlayer.view.removeFromSuperview()
@@ -632,15 +647,15 @@ extension PlayerWindowController {
       trailingSidebarView.material = .toolTip
     }
 
-    // Music mode
+    // - Music mode (entering or already in)
 
     // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
     if transition.isWindowInitialLayout || transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
       pip.showOrHidePipOverlayView()
 
-      if transition.outputLayout.isMusicMode {
-        log.verbose{"[\(transition.name)] Entering music mode: adding views to bottomBarView"}
+      if transition.isEnteringMusicMode {
+        log.verbose{"[\(transition.name)] Entering music mode: adding miniPlayer view to bottomBarView"}
         bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
         miniPlayer.view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
 
@@ -689,10 +704,10 @@ extension PlayerWindowController {
 
     if transition.outputLayout.isMusicMode {
       // move playback position slider & time labels
-      let wasThere = miniPlayer.positionSliderWrapperView.subviews.contains(playSliderAndTimeLabelsView)
+      let wasAlreadyPresent = miniPlayer.positionSliderWrapperView.subviews.contains(playSliderAndTimeLabelsView)
       miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
       addSubviewsToPlaySliderAndTimeLabelsView(transition.outputLayout.controlBarGeo)
-      if !wasThere {
+      if !wasAlreadyPresent {
         playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0, trailing: 0)
         playSliderAndTimeLabelsView.isHidden = false
       }

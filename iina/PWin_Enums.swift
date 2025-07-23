@@ -247,6 +247,25 @@ enum PlayerWindowMode: Int {
     return self == .windowedNormal || self == .fullScreenNormal
   }
 
+  /// Currently, the modes which always must show the cursor are the same modes which have no fadeable views,
+  /// so this flag can be used as a test for both.
+  var mustShowCursorAlways: Bool {
+    switch self {
+    case .windowedNormal, .fullScreenNormal:
+      return false
+    case .musicMode, .windowedInteractive, .fullScreenInteractive:
+      return true
+    }
+  }
+
+  var needsMpvKeepaspectWindow: Bool {
+    switch self {
+    case .windowedNormal, .fullScreenNormal:
+      return true  // tell mpv to show black bars around video if necessary
+    case .windowedInteractive, .fullScreenInteractive, .musicMode:
+      return false  // tell mpv to stretch or shrink video to size of window
+    }
+  }
 }
 
 
