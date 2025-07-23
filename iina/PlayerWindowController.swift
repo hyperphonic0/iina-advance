@@ -1386,12 +1386,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func windowDidChangeScreenParameters() {
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
     screenParamsChangedDebouncer.run { [self] in
-      guard !isClosing else { return }
-      if UIState.shared.isSaveEnabled {
-        UIState.shared.updateCachedScreens()
-      }
-      log.verbose{"WndDidChangeScreenParams: Rebuilt cached screen meta: \(UIState.shared.cachedScreens.values)"}
-      videoView.refreshAllVideoDisplayState()
 
       guard !sessionState.isRestoring, !isAnimatingLayoutTransition else { return }
 
@@ -1401,6 +1395,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // frame.
       // Use very short duration. This usually gets triggered at the end when entering fullscreen, when the dock and/or menu bar are hidden.
       animationPipeline.submitTask(duration: Constants.AnimationDuration.videoReconfig, { [self] in
+        guard !isClosing else { return }
+        if UIState.shared.isSaveEnabled {
+          UIState.shared.updateCachedScreens()
+        }
+        log.verbose{"WndDidChangeScreenParams: Rebuilt cached screen meta: \(UIState.shared.cachedScreens.values)"}
+        // Put this inside a Task. It will cause hiccups in other animations if run outside
+        videoView.refreshAllVideoDisplayState()
+
         let layout = currentLayout
         if layout.isLegacyFullScreen {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation

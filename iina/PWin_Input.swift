@@ -630,7 +630,7 @@ extension PlayerWindowController {
       log.trace("MouseExited from playerWindow: showing (normal) cursor")
       setCursorToNormalAlwaysShown()
 
-      if Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
+      if !isAnimatingLayoutTransition, Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
         log.verbose("MouseExited from playerWindow: hiding fadeableViews")
         hideFadeableViews()
       } else {

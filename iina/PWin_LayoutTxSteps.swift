@@ -19,7 +19,8 @@ extension PlayerWindowController {
   func doPreTransitionWork(_ transition: LayoutTransition) {
     log.verbose{"[\(transition.name)] DoPreTransitionWork"}
     isAnimatingLayoutTransition = true
-    // Trigger forced draws
+    // When playback is paused the display link is stopped in order to avoid wasting energy on
+    // needless processing. It must be running while transitioning to/from full screen mode.
     videoView.activateForcedRedraws(force: true)
 
     /// Some methods where reference `currentLayout` get called as a side effect of the transition animations.
@@ -109,12 +110,8 @@ extension PlayerWindowController {
         player.didEnterFullScreenViaUserToggle = true
       }
 
-      resetViewsForModeTransition()
-
     } else if transition.isExitingFullScreen {
       // Exiting Full Screen
-
-      resetViewsForModeTransition()
       fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
 
       if transition.inputLayout.isNativeFullScreen {
@@ -137,8 +134,6 @@ extension PlayerWindowController {
 
     // Interactive mode
     if transition.isEnteringInteractiveMode {
-      resetViewsForModeTransition()
-
       isPausedPriorToInteractiveMode = player.info.isPaused
       player.pause()
 
@@ -147,7 +142,6 @@ extension PlayerWindowController {
 
     // Music mode
     if transition.isTogglingMusicMode {
-      resetViewsForModeTransition()
 
       if transition.isExitingMusicMode {
         // Make sure to restore video
@@ -157,8 +151,8 @@ extension PlayerWindowController {
         } else {
           if viewportBtmOffsetFromContentViewBtmConstraint.priority != .required {
             log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = required"}
+            viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
           }
-          viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
         }
       }
     }
@@ -271,7 +265,10 @@ extension PlayerWindowController {
       cropController.cropBoxView.alphaValue = 0
     }
 
-    if transition.isTopBarPlacementOrStyleChanging || transition.isBottomBarPlacementOrStyleChanging || transition.isOpeningOrClosingAnySidebar {
+    // Hide seek preview for mode transitions or large animations
+    let isChangingMode = transition.outputLayout.mode != transition.inputLayout.mode
+    if isChangingMode || transition.isTopBarPlacementOrStyleChanging ||
+        transition.isBottomBarPlacementOrStyleChanging || transition.isOpeningOrClosingAnySidebar {
       hideSeekPreviewImmediately()
     }
   }
@@ -686,7 +683,7 @@ extension PlayerWindowController {
         let shouldDisableConstraint = musicModeGeo.isPlaylistVisible  // musicModeGeo==transition.outputGeo
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
         /// (See note in `applyMusicModeGeo`)
-        if shouldDisableConstraint {
+        if shouldDisableConstraint && viewportBtmOffsetFromContentViewBtmConstraint.priorityInt != 499 {
           // Don't set this too low, or it may compete with VideoView's constraints and cause video to squeeze or stretch
           log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = 499"}
           viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
@@ -1718,14 +1715,6 @@ extension PlayerWindowController {
       viewController = pluginView
     }
     viewController.view.removeFromSuperview()
-  }
-
-  private func resetViewsForModeTransition() {
-    // When playback is paused the display link is stopped in order to avoid wasting energy on
-    // needless processing. It must be running while transitioning to/from full screen mode.
-    videoView.displayActive()
-
-    hideSeekPreviewImmediately()
   }
 
   /// After bars are shown or hidden, or their placement changes, this ensures that their shadows appear in the correct places.

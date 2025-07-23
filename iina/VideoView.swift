@@ -213,7 +213,7 @@ class VideoView: NSView {
   func activateForcedRedraws(force: Bool = false) {
     guard force || needsForcedRedraws() else { return }
     enterAsynchronousMode()
-    displayActive(temporary: player.info.isPaused)
+    displayActive()
   }
 
   /// Deprecated! Use `activateForcedRedraws` instead.

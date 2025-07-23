@@ -2099,9 +2099,9 @@ class PlayerCore: NSObject {
         guard windowController.loaded else { return }
         guard !isStopping else { return }
         log.verbose("Reloading QuickSettigsView")
-        
+
         // Easiest place to put this - need to call it when setting equalizers
-        videoView.displayActive(temporary: info.isPaused)
+        videoView.displayActive()
         windowController.quickSettingView.reload()
       }
     }

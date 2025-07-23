@@ -45,12 +45,6 @@ extension PlayerWindowController {
       log.verbose{"[WinWillResize] Denying request=\(requestedSize): left mouseBtn down, but not resizing"}
       return window.frame.size
     }
-/* TODO: why did I think this was a good idea? Probably should just remove this block.
-    guard !isAnimatingLayoutTransition else {
-      log.verbose{"[WinWillResize] Denying request=\(requestedSize): isAnimatingLayoutTransition=Y; will stay at \(window.frame.size)"}
-      return window.frame.size
-    }
- */
     // Tweak to improve responsiveness in music mode. Doesn't seem to affect normal windowed mode.
     // FIXME: this still doesn't look great. Maybe tweak VideoView constraints in music mode
     CATransaction.setAnimationDuration(0)
@@ -728,7 +722,7 @@ extension PlayerWindowController {
     let shouldDisableConstraint = isPlaylistVisible
     /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
     /// (See note in `applyMusicModeGeo`)
-    if shouldDisableConstraint {
+    if shouldDisableConstraint && viewportBtmOffsetFromContentViewBtmConstraint.priorityInt != 499 {
       log.verbose{"Hiding video, but playlist is shown. Setting viewportBtmOffsetFromContentViewBtmConstraint priority = 499"}
       viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
     }
@@ -779,7 +773,7 @@ extension PlayerWindowController {
     /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
     /// Need to execute this in its own task so that other animations are not affected.
     let shouldDisableConstraint = !geometry.isVideoVisible && geometry.isPlaylistVisible
-    if !shouldDisableConstraint {
+    if !shouldDisableConstraint && viewportBtmOffsetFromContentViewBtmConstraint.priority != .required {
       log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = required"}
       viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
     }

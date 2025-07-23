@@ -91,14 +91,15 @@ extension VideoView {
   // MARK: - Reducing Energy Use
 
   /// Starts the display link if it has been stopped in order to save energy.
-  func displayActive(temporary: Bool = false) {
-    log.trace("VideoView displayActive temp=\(temporary.yn)")
+  func displayActive() {
+    let hasTimeout = player.info.isPaused
+    log.trace("VideoView displayActive willTimeout=\(hasTimeout.yn)")
     assert(DispatchQueue.isExecutingIn(.main))
-    if !temporary {
+    if !hasTimeout {
       displayIdleTimer.cancel()
     }
     startDisplayLink()
-    if temporary {
+    if hasTimeout {
       displayIdle()
     }
   }

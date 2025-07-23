@@ -279,7 +279,9 @@ struct Constants {
     static var tableUIFlash: CGFloat = 0.2
     static var videoReconfig: CGFloat = standard * 0.5
     static var initialVideoReconfig: CGFloat = standard
+    /// The total duration of the custom full screen toggle. animation.
     static var fullScreenTransition: CGFloat = Preference.double(for: .animationDurationFullScreen)
+    /// As of MacOS 15.5, the native full screen duration is set by the system and cannot be changed.
     static var nativeFullScreenTransition: CGFloat = 0.5
     static var btnLayoutChange: CGFloat = standard * 0.25
     static var osdAnimation: CGFloat = Preference.double(for: .animationDurationOSD)
