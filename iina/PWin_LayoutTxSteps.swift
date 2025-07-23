@@ -149,9 +149,17 @@ extension PlayerWindowController {
     if transition.isTogglingMusicMode {
       resetViewsForModeTransition()
 
-      if transition.isExitingMusicMode && !miniPlayer.isVideoVisible {
-        // Video was disabled in music mode, but need to restore it now
-        player.setVideoTrackEnabled()
+      if transition.isExitingMusicMode {
+        // Make sure to restore video
+        if !miniPlayer.isVideoVisible {
+          // Video was disabled in music mode, but need to restore it now
+          player.setVideoTrackEnabled()
+        } else {
+          if viewportBtmOffsetFromContentViewBtmConstraint.priority != .required {
+            log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = required"}
+          }
+          viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
+        }
       }
     }
 
@@ -277,6 +285,11 @@ extension PlayerWindowController {
     let isClosingBarOSC = transition.isClosingBarOSC
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
     log.verbose{"[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)"}
+
+    if transition.isExitingMusicMode {
+      // Remove kludge for hiding video
+      miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: true)
+    }
 
     // TODO: incorporate this into middleGeometry for cleaner code
     // This check is true for isWindowInitialLayout, but currently `closeOldPanels` is not executed for that.
@@ -462,13 +475,6 @@ extension PlayerWindowController {
       // If exiting music mode, need to restore views early in this step
       log.verbose{"[\(transition.name)] Cleaning up for music mode exit"}
       miniPlayer.view.removeFromSuperview()
-
-      // Make sure to restore video
-      miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: true)
-      if viewportBtmOffsetFromContentViewBtmConstraint.priority != .required {
-        log.verbose{"[\(transition.name)] Setting viewportBtmOffsetFromContentViewBtmConstraint priority = required"}
-      }
-      viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
 
       // Make sure to reset constraints for OSD
       miniPlayer.hideControllerButtons()
@@ -1323,7 +1329,7 @@ extension PlayerWindowController {
 
     if transition.isTogglingFullScreen || transition.isTogglingMusicMode {
       if transition.outputLayout.isMusicMode && !musicModeGeo.isVideoVisible && pip.status == .notInPIP {
-        player.setVideoTrackDisabled()
+        updateWindowLayoutForVideoViewHidden(isPlaylistVisible: musicModeGeo.isPlaylistVisible)
       } else {
         sendWindowScaleToMPV(transition.outputGeometry.mpvWindowScale())
       }

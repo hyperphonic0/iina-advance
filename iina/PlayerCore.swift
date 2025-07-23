@@ -117,6 +117,7 @@ class PlayerCore: NSObject {
   let saveUIStateDebouncer = Debouncer(delay: Constants.TimeInterval.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
   let thumbReloadDebouncer = Debouncer(delay: Constants.TimeInterval.thumbnailRegenerationDelay, queue: PlayerCore.thumbnailQueue)
   let sliderSeekDebouncer = Debouncer(delay: Constants.TimeInterval.sliderSeekThrottlingInterval)
+  let quickSettingsReloadDebouncer = Debouncer(delay: Constants.TimeInterval.quickSettingsReloadInterval)
 
   // Plugins
 
@@ -2093,14 +2094,16 @@ class PlayerCore: NSObject {
   }
 
   func reloadQuickSettingsView() {
-    windowController.animationPipeline.doAfterGTFs{ [self] in
-      guard windowController.loaded else { return }
-      guard !isStopping else { return }
-      log.verbose("Reloading QuickSettigsView")
-
-      // Easiest place to put this - need to call it when setting equalizers
-      videoView.displayActive(temporary: info.isPaused)
-      windowController.quickSettingView.reload()
+    quickSettingsReloadDebouncer.run { [self] in
+      windowController.animationPipeline.doAfterGTFs{ [self] in
+        guard windowController.loaded else { return }
+        guard !isStopping else { return }
+        log.verbose("Reloading QuickSettigsView")
+        
+        // Easiest place to put this - need to call it when setting equalizers
+        videoView.displayActive(temporary: info.isPaused)
+        windowController.quickSettingView.reload()
+      }
     }
   }
 
@@ -3280,10 +3283,13 @@ class PlayerCore: NSObject {
   ///  Sets `vid=0` via mpv. Does nothing if already in the target state (idempotent).
   ///
   ///  See also: `setVideoTrackEnabled`
-  func setVideoTrackDisabled() {
+  func setVideoTrackDisabled(showDefaultAlbumArt: Bool = true) {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    windowController.updateDefaultArtVisibility(to: true)  // Show *before* disabling in mpv, to avoid black flicker
+    if showDefaultAlbumArt {
+      // Show *before* disabling in mpv, to avoid a moment of empty black window. Do not show if in music mode & video is hidden.
+      windowController.updateDefaultArtVisibility(to: true)
+    }
 
     mpv.queue.async { [self] in
       // Change video track to None

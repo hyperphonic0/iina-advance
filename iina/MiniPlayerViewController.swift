@@ -329,15 +329,12 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   // MARK: - Window size & layout
 
   func updateVideoViewHeightConstraint(isVideoVisible: Bool) {
-    log.verbose{"Updating ViewportView-HeightContraint using visible=\(isVideoVisible.yn)"}
-
     if isVideoVisible {
+      log.verbose{"Deactivating ViewportView-HeightContraint for video=SHOWN"}
       // Remove zero-height constraint
-      if let heightContraint = windowController.viewportViewHeightContraint {
-        heightContraint.isActive = false
-        windowController.viewportViewHeightContraint = nil
-      }
+      windowController.viewportViewHeightContraint?.isActive = false
     } else {
+      log.verbose{"Activating ViewportView-HeightContraint for video=HIDDEN"}
       // Add or reactivate zero-height constraint
       if let heightConstraint = windowController.viewportViewHeightContraint {
         heightConstraint.isActive = true
@@ -348,6 +345,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
         windowController.viewportViewHeightContraint = heightConstraint
       }
     }
+    windowController.viewportView.needsUpdateConstraints = true
+    windowController.viewportView.layout()
   }
 
   static func buildMusicModeGeometryFromPrefs(screen: NSScreen, video: VideoGeometry) -> MusicModeGeometry {

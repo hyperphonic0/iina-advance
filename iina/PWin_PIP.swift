@@ -276,7 +276,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       if isInMiniPlayer {
         miniPlayer.loadIfNeeded()
         if !miniPlayer.isVideoVisible {
-          player.setVideoTrackDisabled()
+          player.setVideoTrackDisabled(showDefaultAlbumArt: false)
         } else {
           player.setVideoTrackEnabled()
         }

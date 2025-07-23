@@ -707,7 +707,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         guard !viewportView.subviews.contains(videoView) else { return }
         addVideoViewSpacers()
         log.verbose{"Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)"}
-        addToViewportViewThenSortSubviews(videoView)
+        viewportView.addSubview(videoView)
+        sortViewportViewSubviews()
       }
     }
     // Screen may have changed. Refresh. Do not keep the OpenGL lock because it is locked in here
@@ -2297,7 +2298,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard loaded else { return }
 
     if bufferIndicatorView.superview == nil {
-      addToViewportViewThenSortSubviews(bufferIndicatorView)
+      viewportView.addSubview(bufferIndicatorView)
+      sortViewportViewSubviews()
 
       // Center in viewport
       bufferIndicatorView.centerXAnchor.constraint(equalTo: viewportView.centerXAnchor).isActive = true

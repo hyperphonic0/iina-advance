@@ -79,7 +79,7 @@ extension PlayerWindowController {
     if let windowed {
       windowedNew = windowed
     } else if inputLayout.mode.isWindowed {
-      if geo.windowed.mode == inputLayout.mode {
+      if geo.windowed.mode != inputLayout.mode {
         // If this message is seen, could be a corrupted pref key, or a code bug
         log.error("buildGeoSet: geo.windowed.mode (\(geo.windowed.mode)) != inputLayout.mode (\(inputLayout.mode))! Will change mode to match the latter; hope it doesn't break anything...")
       }
