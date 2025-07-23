@@ -149,6 +149,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 //        }
 //      }
 
+    case .animationDurationFullScreen:
+      if let newValue = newValue as? Double {
+        Constants.AnimationDuration.fullScreenTransition = newValue
+      }
+    case .animationDurationOSD:
+      if let newValue = newValue as? Double {
+        Constants.AnimationDuration.osdAnimation = newValue
+      }
+    case .animationDurationDefault:
+      if let newValue = newValue as? Double {
+        Constants.AnimationDuration.standard = newValue
+      }
+      
     default:
       break
     }
@@ -251,6 +264,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       .resumeLastPosition,
       .useMediaKeys,
       //    .hideWindowsWhenInactive, // TODO: #1, see below
+      .animationDurationFullScreen,
+      .animationDurationOSD,
+      .animationDurationDefault,
     ]
 
     /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
