@@ -165,7 +165,7 @@ extension PlayerWindowController {
       newWindowSize = newGeometry.windowFrame.size
 
       /// This call is needed to update any necessary constraints & resize internal views
-      _ = applyMusicModeGeo(newGeometry, setFrame: false, updateCache: false)
+      applyMusicModeGeo(newGeometry, setFrame: false, save: false)
     }
 
     log.verbose{"[WinWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)"}
@@ -636,7 +636,7 @@ extension PlayerWindowController {
   @discardableResult
   func buildApplyMusicModeGeoTasks(from inputGeo: MusicModeGeometry, to outputGeo: MusicModeGeometry,
                                    duration: CGFloat = Constants.AnimationDuration.standard,
-                                   setFrame: Bool = true, updateCache: Bool = true,
+                                   setFrame: Bool = true, save: Bool = true,
                                    showDefaultArt: Bool? = nil,
                                    thenRun: Bool = false) -> [IINAAnimation.Task] {
     var tasks: [IINAAnimation.Task] = []
@@ -681,7 +681,7 @@ extension PlayerWindowController {
 
     // TASK 2: Apply animation
     tasks.append(IINAAnimation.Task(duration: duration, timing: .easeInEaseOut, { [self] in
-      applyMusicModeGeo(outputGeo, setFrame: true, updateCache: updateCache)
+      applyMusicModeGeo(outputGeo, setFrame: true, save: save)
     }))
 
     // TASK 2A (if toggling video view visibility)
@@ -735,12 +735,10 @@ extension PlayerWindowController {
   }
 
   /// Updates the current window and its subviews to match the given `MusicModeGeometry`.
-  /// If `updateCache` is true, updates `musicModeGeo` and saves player state.
-  @discardableResult
-  func applyMusicModeGeo(_ geometry: MusicModeGeometry, setFrame: Bool = true, 
-                         updateCache: Bool = true) -> MusicModeGeometry {
+  /// If `save` is true, updates `musicModeGeo`, prefs and saves player state.
+  func applyMusicModeGeo(_ geometry: MusicModeGeometry, setFrame: Bool = true, save: Bool = true) {
     let geometry = geometry.refitted()  // enforces internal constraints, and constrains to screen
-    log.verbose{"Applying \(geometry), setFrame=\(setFrame.yn) updateCache=\(updateCache.yn)"}
+    log.verbose{"Applying \(geometry), setFrame=\(setFrame.yn) save=\(save.yn)"}
 
     videoView.enterAsynchronousMode()
 
@@ -759,7 +757,7 @@ extension PlayerWindowController {
 
     guard hasChange else {
       log.verbose("No changes needed for music mode windowFrame or constraints")
-      return geometry
+      return
     }
 
     miniPlayer.resetScrollingLabels()
@@ -777,7 +775,6 @@ extension PlayerWindowController {
       videoView.apply(convertedGeo)
     }
 
-
     /// For the case where video is hidden but playlist is shown, AppKit won't allow the window's height to be changed by the user
     /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
     /// Need to execute this in its own task so that other animations are not affected.
@@ -787,16 +784,14 @@ extension PlayerWindowController {
       viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
     }
 
-    // Update defaults:
-    Preference.set(geometry.isVideoVisible, for: .musicModeShowAlbumArt)
-    Preference.set(geometry.isPlaylistVisible, for: .musicModeShowPlaylist)
+    if save {
+      // Update defaults:
+      Preference.set(geometry.isVideoVisible, for: .musicModeShowAlbumArt)
+      Preference.set(geometry.isPlaylistVisible, for: .musicModeShowPlaylist)
 
-    if updateCache {
       musicModeGeo = geometry
       player.saveState()
     }
-
-    return geometry
   }
 
 }

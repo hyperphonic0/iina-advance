@@ -1110,7 +1110,7 @@ extension PlayerWindowController {
       }
     case .musicMode:
       // Especially needed when applying initial layout:
-      applyMusicModeGeo(musicModeGeo, updateCache: false)
+      applyMusicModeGeo(musicModeGeo)
     case .windowedNormal, .windowedInteractive:
       log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with output windowFrame=\(transition.outputGeometry.windowFrame)")
       updateWindowFrameAndSubviews(using: transition.outputGeometry)

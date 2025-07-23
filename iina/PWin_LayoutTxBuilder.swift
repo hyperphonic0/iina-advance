@@ -173,7 +173,7 @@ extension PlayerWindowController {
 
     // StartingAnimation 2: Fade out views which no longer will be shown but aren't enclosed in a panel.
     if transition.needsFadeOutOldViews {
-      transition.tasks.append(IINAAnimation.Task(duration: fadeOutOldViewsDuration, { [self] in
+      transition.tasks.append(.init(duration: fadeOutOldViewsDuration, { [self] in
         fadeOutOldViews(transition)
       }))
     }
@@ -181,7 +181,7 @@ extension PlayerWindowController {
     // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies middleGeometry if it exists.
     // Not enabled for full screen transitions.
     if transition.needsCloseOldPanels {
-      transition.tasks.append(IINAAnimation.Task(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
+      transition.tasks.append(.init(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
         closeOldPanels(transition)
       }))
     }
@@ -196,7 +196,7 @@ extension PlayerWindowController {
 
     // Extra task when entering or exiting music mode: move & resize video frame
     if transition.isTogglingMusicMode && !transition.isWindowInitialLayout {
-      transition.tasks.append(IINAAnimation.Task(duration: closeOldPanelsDuration, timing: .easeInEaseOut) { [self] in
+      transition.tasks.append(.init(duration: closeOldPanelsDuration, timing: .easeInEaseOut) { [self] in
         let intermediateWindowFrame = transition.outputGeometry.videoFrameInScreenCoords
         log.verbose{"[\(transition.name)] Moving & resizing window to intermediate windowFrame=\(intermediateWindowFrame)"}
 
@@ -214,7 +214,7 @@ extension PlayerWindowController {
       let cameraToTotalFrameRatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
 
-      transition.tasks.append(IINAAnimation.Task(duration: duration, timing: .easeIn) { [self] in
+      transition.tasks.append(.init(duration: duration, timing: .easeIn) { [self] in
         let newGeo: PWinGeometry
         if transition.inputGeometry.hasTopPaddingForCameraHousing {
           /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
@@ -236,7 +236,7 @@ extension PlayerWindowController {
     }
 
     // EndingAnimation: Open new panels
-    transition.tasks.append(IINAAnimation.Task(duration: openFinalPanelsDuration, timing: openFinalPanelsTiming, { [self] in
+    transition.tasks.append(.init(duration: openFinalPanelsDuration, timing: openFinalPanelsTiming, { [self] in
       // If toggling fullscreen, this also changes the window frame:
       openNewPanelsAndFinalizeOffsets(transition)
     }))
@@ -244,7 +244,7 @@ extension PlayerWindowController {
     // EndingAnimation: Fade in new views
     // If exiting FS, this task is skipped. It needs to run in a separate CATransaction so it is run down below.
     if transition.isWindowInitialLayout || transition.needsFadeInNewViews {
-      transition.tasks.append(IINAAnimation.Task(duration: fadeInNewViewsDuration, timing: fadeInNewViewsTiming) { [self] in
+      transition.tasks.append(.init(duration: fadeInNewViewsDuration, timing: fadeInNewViewsTiming) { [self] in
         fadeInNewViews(transition)
       })
     }
@@ -253,7 +253,7 @@ extension PlayerWindowController {
     if useExtraAnimationForEnteringLegacyFullScreen {
       let cameraToTotalFrameRatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
-      transition.tasks.append(IINAAnimation.Task(duration: duration, timing: .easeIn) { [self] in
+      transition.tasks.append(.init(duration: duration, timing: .easeIn) { [self] in
         let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : windowedModeScreen.cameraHousingHeight ?? 0
         let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame, 
                                                      screenID: windowedModeScreen.screenID, topMarginHeight: topBlackBarHeight)
