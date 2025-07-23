@@ -3286,26 +3286,20 @@ class PlayerCore: NSObject {
     windowController.updateDefaultArtVisibility(to: true)  // Show *before* disabling in mpv, to avoid black flicker
 
     mpv.queue.async { [self] in
-      _setVideoTrackDisabled()
-    }
-  }
+      // Change video track to None
+      let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
 
-  func _setVideoTrackDisabled() {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-
-    // Change video track to None
-    let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
-
-    if info.vidDisabled == nil {
-      log.verbose{"Disabling video track: setting vidDisabled to \(vidNow) before setting vid=0"}
-      info.vidDisabled = vidNow
+      if info.vidDisabled == nil {
+        log.verbose{"Disabling video track: setting vidDisabled to \(vidNow) before setting vid=0"}
+        info.vidDisabled = vidNow
+      }
+      guard vidNow != 0 else {
+        log.verbose("Disabling video track: vid=0 already, skipping")
+        return
+      }
+      log.verbose("Disabling video: setting vid=0")
+      _setTrack(0, forType: .video, silent: true)
     }
-    guard vidNow != 0 else {
-      log.verbose("Disabling video track: vid=0 already, skipping")
-      return
-    }
-    log.verbose("Disabling video: setting vid=0")
-    _setTrack(0, forType: .video, silent: true)
   }
 
   func setTrack(_ index: Int, forType: MPVTrack.TrackType, silent: Bool = false) {

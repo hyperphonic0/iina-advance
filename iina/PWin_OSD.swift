@@ -369,7 +369,7 @@ extension PlayerWindowController {
     if hasOSD {
       if !viewportView.subviews.contains(osd.osdView) {
         log.verbose{"[OSD] Adding osdView to viewportView"}
-        viewportView.addSubview(osd.osdView, positioned: .above, relativeTo: videoView)
+        viewportView.addSubview(osd.osdView)  // will sort below
         osd.osdView.roundCorners()
       }
 
@@ -416,7 +416,7 @@ extension PlayerWindowController {
     if hasAdditionalInfo {
       if !viewportView.subviews.contains(additionalInfoView) {
         log.verbose{"[OSD] Adding additionalInfoView to viewportView"}
-        viewportView.addSubview(additionalInfoView, positioned: .above, relativeTo: videoView)
+        viewportView.addSubview(additionalInfoView)  // will sort below
         additionalInfoView.roundCorners()
       }
 
@@ -456,6 +456,10 @@ extension PlayerWindowController {
     } else {
       log.verbose{"[OSD] Removing additionalInfoView from superview"}
       additionalInfoView.removeFromSuperview()
+    }
+
+    if (hasOSD || hasAdditionalInfo) && !skipAddConstraints {
+      sortViewportViewSubviews()
     }
 
     contentView.layoutSubtreeIfNeeded()

@@ -555,19 +555,22 @@ extension PlayerWindowController {
 
    func buildApplyFullScreenGeoTasks(fsGeo: PWinGeometry, newWindowedGeo: PWinGeometry,
                                      duration: CGFloat, showDefaultArt: Bool?) -> [IINAAnimation.Task] {
-    let task = IINAAnimation.Task(duration: duration, { [self] in
-      // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
-      log.verbose{"Applying full screen geometry: updating videoView, videoSize=\(fsGeo.videoSize)"}
-      videoView.apply(fsGeo)
-      /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
-      windowedModeGeo = newWindowedGeo
+     let tasks: [IINAAnimation.Task] = [
+      .init(duration: duration, { [self] in
+        // Make sure video constraints are up to date, even in full screen.
+        // Also remember that FS & windowed mode share the same screen.
+        log.verbose{"ApplyFullScreenGeo: updating videoView, videoSize=\(fsGeo.videoSize)"}
+        videoView.apply(fsGeo)
+        /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
+        windowedModeGeo = newWindowedGeo
 
-      resetRotationPreview()
-      hideSeekPreviewImmediately()
-      updateDefaultArtVisibility(to: showDefaultArt)
-      updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyWindowGeoTasks`
-    })
-    return [task]
+        resetRotationPreview()
+        hideSeekPreviewImmediately()
+        updateDefaultArtVisibility(to: showDefaultArt)
+        updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyWindowGeoTasks`
+      })
+     ]
+     return tasks
   }
 
   /// Updates/redraws current `window.frame` and its internal views from `newGeometry`. Animated. Windowed mode only!

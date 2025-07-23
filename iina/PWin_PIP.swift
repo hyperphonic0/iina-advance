@@ -98,8 +98,9 @@ extension PlayerWindowController {
         hideOverlayView()
       } else {
         guard !pwc.viewportView.containsSubview(overlayView) else { return }
-        pwc.viewportView.addSubview(overlayView, positioned: .above, relativeTo: pwc.viewportTrailingSpacer)
+        pwc.viewportView.addSubview(overlayView)
         overlayView.addAllConstraintsToFillSuperview()
+        pwc.sortViewportViewSubviews()
       }
     }
 

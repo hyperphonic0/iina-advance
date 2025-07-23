@@ -707,8 +707,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         guard !viewportView.subviews.contains(videoView) else { return }
         addVideoViewSpacers()
         log.verbose{"Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)"}
-        /// Make sure `defaultAlbumArtView` stays above `videoView`
-        viewportView.addSubview(videoView, positioned: .below, relativeTo: defaultAlbumArtView)
+        addToViewportViewThenSortSubviews(videoView)
       }
     }
     // Screen may have changed. Refresh. Do not keep the OpenGL lock because it is locked in here
@@ -2298,7 +2297,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard loaded else { return }
 
     if bufferIndicatorView.superview == nil {
-      viewportView.addSubview(bufferIndicatorView, positioned: .above, relativeTo: defaultAlbumArtView)
+      addToViewportViewThenSortSubviews(bufferIndicatorView)
 
       // Center in viewport
       bufferIndicatorView.centerXAnchor.constraint(equalTo: viewportView.centerXAnchor).isActive = true

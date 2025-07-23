@@ -95,7 +95,6 @@ extension PlayerWindowController {
       window.preservesContentDuringLiveResize = false
 
       initViewportView(in: contentView)
-      defaultAlbumArtView.addLayout(inside: viewportView)
       initSeekPreview(in: contentView)
       initTitleBar()
       initOSCToolbar()
@@ -144,7 +143,7 @@ extension PlayerWindowController {
           }
         }
 
-        defaultAlbumArtView.isHidden = player.info.isVideoTrackSelected
+        updateDefaultArtVisibility(to: player.info.isVideoTrackSelected)
       }
 
       if player.disableUI { hideFadeableViews() }

@@ -14,7 +14,6 @@ class DefaultAlbumArtView: ClickThroughView {
     idString = DefaultAlbumArtView.id
     wantsLayer = true
     layer?.contents = #imageLiteral(resourceName: "default-album-art")
-    isHidden = true
     translatesAutoresizingMaskIntoConstraints = false
   }
 
@@ -22,7 +21,11 @@ class DefaultAlbumArtView: ClickThroughView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func addLayout(inside viewportView: ViewportView) {
+  /// Akin to hiding the `DefaultAlbumArtView`.
+  ///
+  /// Can be run successive times without failing, but is not reentrant.
+  fileprivate func addToThenLayout(inside viewportView: ViewportView) {
+    removeFromLayout()
     viewportView.addSubview(self)
 
     // Add 1:1 aspect ratio constraint
@@ -47,19 +50,35 @@ class DefaultAlbumArtView: ClickThroughView {
     centerYAnchor.constraint(equalTo: viewportView.centerYAnchor).isActive = true
   }
 
+  /// Akin to showing the `DefaultAlbumArtView`.
+  fileprivate func removeFromLayout() {
+    guard superview != nil else { return }
+    NSLayoutConstraint.deactivate(constraints)
+    removeFromSuperview()
+  }
+
 }
 
 extension PlayerWindowController {
 
   // MARK: - Default album art visibility
 
+  /// Update default album art visibility to the given value, or do nothing if `nil`.
+  ///
+  /// This actually adds or removes `defaultAlbumArtView` from `viewportView`, along with the associated constraints, rather than changing `defaultAlbumArtView.isHidden`,
+  /// which should always be false.
   func updateDefaultArtVisibility(to showDefaultArt: Bool?) {
-    assert(DispatchQueue.isExecutingIn(.main))
+    assert(DispatchQueue.isExecutingIn(.main))  // Should actually be inside of an IINAAnimation.Task
     guard let showDefaultArt else { return }
 
-    log.verbose{"\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt"}
-    // Update default album art visibility:
-    defaultAlbumArtView.isHidden = !showDefaultArt
+    if showDefaultArt {
+      log.verbose{"Showing defaultAlbumArt"}
+      defaultAlbumArtView.addToThenLayout(inside: viewportView)
+      sortViewportViewSubviews()
+    } else {
+      log.verbose{"Hiding defaultAlbumArt"}
+      defaultAlbumArtView.removeFromLayout()
+    }
   }
 
 }

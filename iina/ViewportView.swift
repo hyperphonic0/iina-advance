@@ -84,3 +84,24 @@ class ViewportView: NSView {
   }
 }
 
+extension PlayerWindowController {
+  /// Need to call this after adding a new subview to `viewportView` to ensure ordering of subviews is correct.
+  func sortViewportViewSubviews() {
+    for possibleSubview in [viewportTopSpacer, viewportBottomSpacer, viewportLeadingSpacer, viewportTrailingSpacer,
+                            pip.overlayView,
+                            videoView,
+                            defaultAlbumArtView,
+                            additionalInfoView,
+                            osd.osdView] {
+      if viewportView.containsSubview(possibleSubview) {
+        viewportView.addSubview(possibleSubview, positioned: .above, relativeTo: nil)
+      }
+    }
+  }
+
+  func addToViewportViewThenSortSubviews(_ newSubview: NSView) {
+    viewportView.addSubview(newSubview)
+    sortViewportViewSubviews()
+  }
+
+}
