@@ -91,8 +91,9 @@ struct GeometryTransform {
     // shouldn't be the parts we need for now...
     let oldGeo = pwc.geo
 
-    // Need to be inside mpv queue to ensuren serial access to sessionState et al
+    // -- mpv queue -------------------------------------------------------------------------
     player.mpv.queue.async { [self] in
+      // Need to be inside mpv queue to ensuren serial access to sessionState et al
 
       guard !player.isStopping else { return abort("player stopping (status=\(player.state))") }
       guard let currentPlayback = player.info.currentPlayback else { return abort("currentPlayback is nil") }
@@ -139,6 +140,7 @@ struct GeometryTransform {
         cxt.outputVidGeo = cxt.oldGeo.video
       }
 
+      // -- main queue -------------------------------------------------------------------------
       pwc.animationPipeline.submitInstantTask { [self] in
         log.trace{"[GTF:\(name)] Starting main thread work"}
 
@@ -313,9 +315,7 @@ struct GeometryTransform {
           case .restoring(_):
             log.verbose{"[GTF:\(name)] Restore is in progress: no transform needed"}
             // still need post-transition task
-            return [.instantTask{ [self] in
-              doPostTransformWork()
-            }]
+            return [.instantTask(doPostTransformWork)]
 
           case .creatingNew:
             // Just opened new window. Use a longer duration for this one, because the window starts small and will zoom into place.
@@ -331,8 +331,7 @@ struct GeometryTransform {
               duration = 0.0
             }
 
-          case .existingSession_videoTrackChangedForSamePlayback,
-              .existingSession_continuing:
+          case .existingSession_videoTrackChangedForSamePlayback, .existingSession_continuing:
             // Not a new file. Some other change to a video geo property. Fall through and resize minimally
             resizedGeo = nil
 
@@ -346,7 +345,7 @@ struct GeometryTransform {
                                                                    intendedViewportSize: intendedViewportSize)
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
-        log.verbose{"[GTF:\(name)] Building windowed tasks: newSess=\(sessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newGeo)"}
+        log.verbose{"[GTF:\(name)] Building windowed tasks: sess=\(sessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newGeo)"}
         tasks = pwc.buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
       case .fullScreenNormal:

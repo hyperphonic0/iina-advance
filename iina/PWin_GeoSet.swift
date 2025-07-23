@@ -45,8 +45,7 @@ extension PlayerWindowController {
     guard let window else { return nil }
     if !force {
       // Need to check state of current playback to avoid race conditions
-      guard loaded, player.isActive, player.info.isFileLoaded,
-            window.isOpen else {
+      guard loaded, player.isActive, player.info.isFileLoaded, window.isOpen else {
         log.trace{"Will use cached windowFrame/screenID instead of latest: playerActive=\(player.isActive) fileLoaded=\(player.info.isFileLoaded) wndOpen=\(window.isOpen.yn)"}
         return nil
       }
@@ -80,7 +79,12 @@ extension PlayerWindowController {
     if let windowed {
       windowedNew = windowed
     } else if inputLayout.mode.isWindowed {
-      windowedNew = geo.windowed.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: video)
+      if geo.windowed.mode == inputLayout.mode {
+        // If this message is seen, could be a corrupted pref key, or a code bug
+        log.error("buildGeoSet: geo.windowed.mode (\(geo.windowed.mode)) != inputLayout.mode (\(inputLayout.mode))! Will change mode to match the latter; hope it doesn't break anything...")
+      }
+      windowedNew = geo.windowed.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, mode: inputLayout.mode, video: video)
+
     } else if inputLayout.mode.isFullScreen {
       // may have changed screen while in FS
       windowedNew = geo.windowed.clone(screenID: latestScreenID, video: video)
