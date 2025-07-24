@@ -389,7 +389,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     super.viewDidAppear()
     let videoGeo = player.videoGeo
     updateSegmentLabels(using: videoGeo)
-    updateControlsState()
+    updateControlsState(using: videoGeo)
   }
 
   deinit {
@@ -401,10 +401,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     observers = []
   }
 
-  private func updateControlsState() {
+  private func updateControlsState(using videoGeo: VideoGeometry) {
     guard isViewLoaded else { return }
 
-    updateVideoTabControls()
+    updateVideoTabControls(using: videoGeo)
     updateAudioTabControls()
     updateSubTabControls()
     updateVideoEqState()
@@ -489,8 +489,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   /// Reload `Video` tab
-  private func updateVideoTabControls() {
-    let videoGeo = player.videoGeo
+  private func updateVideoTabControls(using videoGeo: VideoGeometry) {
     updateAspectControls(using: videoGeo)
     updateCropControls(using: videoGeo)
 
@@ -653,7 +652,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       updateAudioEqState()
     case .video:
       videoTableView.reloadData()
-      updateVideoTabControls()
+      updateVideoTabControls(using: player.videoGeo)
       updateVideoEqState()
     case .sub:
       subTableView.reloadData()
@@ -662,6 +661,15 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     default:
       player.log.error{"QuickSettings.reload(): currentTab is invalid: \(currentTab)"}
     }
+  }
+
+  func reloadVideoTabIfShown(using videoGeo: VideoGeometry) {
+    guard isViewLoaded else { return }
+    guard currentTab == .video else { return }
+    player.log.verbose{"QuickSettings: reloading video tab"}
+    videoTableView.reloadData()
+    updateVideoTabControls(using: videoGeo)
+    updateVideoEqState()
   }
 
   func setHdrAvailability(to available: Bool) {
@@ -908,7 +916,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       }
     }
     // Revalidate layout and controls
-    updateControlsState()
+    updateControlsState(using: player.videoGeo)
   }
 
   private func withAllTableViews(_ block: (NSTableView, MPVTrack.TrackType) -> Void) {

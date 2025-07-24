@@ -221,6 +221,10 @@ extension GeometryTransform.Context {
     }
 
     log.debug{"[GTF:\(name)] Derived videoGeo from mpv video-params: \(newVideoGeo)"}
+    DispatchQueue.main.async { [self] in
+      // Proactively reload the UI here to increase snappiness
+      player.windowController.quickSettingView.reloadVideoTabIfShown(using: newVideoGeo)
+    }
     return newVideoGeo
   }
 
