@@ -1416,7 +1416,7 @@ class PlayerCore: NSObject {
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    let gtf = GeometryTransform("UserRotation", self, video: GeometryTransform.syncVideoParamsFromMpv)
+    let gtf = GeometryTransform("UserRotation", self)
     gtf.submit()
   }
 
@@ -1502,11 +1502,7 @@ class PlayerCore: NSObject {
       }
     }
 
-    log.verbose{"Enqueuing SyncVidGeo transform"}
-    windowController.animationPipeline.submit(gtf: GeometryTransform("SyncVidGeo", self, video: { ctx -> VideoGeometry? in
-      let newVideoGeo = ctx.syncVideoParamsFromMpv()
-      return newVideoGeo
-    }))
+    windowController.animationPipeline.enqueueSyncTaskIfNeeded(self)
   }
 
   func setVideoRotate(_ userRotation: Int) {
@@ -1958,7 +1954,7 @@ class PlayerCore: NSObject {
           return nil
         }
       }
-    }, video: GeometryTransform.syncVideoParamsFromMpv)
+    })
     windowController.animationPipeline.submit(gtf: gtf)
 
     // Launch auto-load tasks on background thread
@@ -3210,6 +3206,7 @@ class PlayerCore: NSObject {
     }
 
     let gtf = GeometryTransform("VidTrackChanged", self,
+                                syncVideoParams: false,   // does the syncing itself
                                 state: stateChangeFunc,
                                 video: videoGeoTF,
                                 musicMode: musicModeTF)
@@ -3329,6 +3326,16 @@ class PlayerCore: NSObject {
       name = MPVOption.TrackSelection.aid
     case .video:
       name = MPVOption.TrackSelection.vid
+
+      if index == 0 {
+        log.verbose("Will set video track to 0; launching task to show defaultAlbumArt")
+        // Show *before* waiting for mpv confirmation, to avoid a moment of empty black window.
+        windowController.animationPipeline.submit(.init{ [self] in
+          // Do not show if in music mode & video is hidden.
+          guard !windowController.currentLayout.isMusicMode || windowController.musicModeGeo.isVideoVisible else { return }
+          windowController.updateDefaultArtVisibility(to: true)
+        })
+      }
     case .sub:
       name = MPVOption.TrackSelection.sid
     case .secondSub:

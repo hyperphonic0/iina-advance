@@ -323,6 +323,11 @@ extension IINAAnimation {
       }
     }
 
+    func nextID_NoLock() -> Int {
+      lastGeneratedID += 1
+      return lastGeneratedID
+    }
+
     /// Uses a queue if necessary to ensure that only one `GeometryTransform` is ever running at a time.
     /// This is a safety feature. The transform's work takes place asynchronously via multiple tasks across
     /// multiple `DispatchQueue`s, while drawing from disparate state variables, so if they overlapped they
@@ -334,10 +339,26 @@ extension IINAAnimation {
       }
     }
 
+    func enqueueSyncTaskIfNeeded(_ player: PlayerCore) {
+      gtfLock.withLock{ [self] in
+        guard gtfQueue.isEmpty else {
+          log.verbose{"[Pipeline] No need to add SyncVidGeo; queue not empty"}
+          return
+        }
+        log.verbose{"Enqueuing SyncVidGeo transform"}
+
+        let newID = nextID_NoLock()
+        let gtf = GeometryTransform("SyncVidGeo", id: newID, player, syncVideoParams: true)
+        gtfQueue.append(gtf)
+      }
+    }
+    
     func geoTransformDidFinish(_ gtf: GeometryTransform, success: Bool) {
       let postWork: TaskFunc? = gtfLock.withLock{ [self] in
         gtfCurrentlyRunningID =  nil
-        log.verbose{"[Pipeline] GTF done: \(gtf.name.quoted); queue size: \(gtfQueue.count)"}
+        if success {
+          log.verbose{"[Pipeline] GTF done: \(gtf.name.quoted); queue size: \(gtfQueue.count)"}
+        }
 
         if let workFunc = pendingWorkAfterGTFs, isDoneWithAllGTFs {
           pendingWorkAfterGTFs = nil

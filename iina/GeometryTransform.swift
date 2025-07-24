@@ -31,6 +31,9 @@ struct GeometryTransform {
   /// Name of the transform
   let name: String
   let id: Int
+  /// If `true`, then prior to executing `videoTransform`, call `GeometryTransform.Context.syncVideoParamsFromMpv` to update
+  /// `cxt.oldGeo` with the latest video geometry from mpv (or abort if it returns `nil`).
+  let syncVideoParams: Bool
 
   let player: PlayerCore
   var pwc: PlayerWindowController { player.windowController! }
@@ -48,20 +51,21 @@ struct GeometryTransform {
   let onSuccess: (() -> Void)?
 
   init(_ name: String,
+       id pregeneratedID: Int? = nil,
        _ player: PlayerCore,
+       syncVideoParams: Bool = true,
        state: ((Context) -> PWinSessionState?)? = nil,
        video: ((Context) -> VideoGeometry?)? = nil,
        windowed: ((Context) -> PWinGeometry?)? = nil,
        musicMode: ((Context) -> MusicModeGeometry?)? = nil,
        onSuccess: (() -> Void)? = nil) {
     let pipeline = player.windowController.animationPipeline
-    let id = pipeline.gtfLock.withLock {
-      pipeline.lastGeneratedID += 1
-      return pipeline.lastGeneratedID
+    self.id = pregeneratedID ?? pipeline.gtfLock.withLock {
+      pipeline.nextID_NoLock()
     }
-    self.id = id
     self.name = "\(name)-\(id)"
     self.player = player
+    self.syncVideoParams = syncVideoParams
     self.stateTransition = state
     self.videoTransform = video
     self.windowedTransform = windowed
@@ -126,17 +130,28 @@ struct GeometryTransform {
         log.verbose{"[GTF:\(name)] No sessionStateChange func, will stay at: \(sessionState)"}
       }
 
-      /// 2: Apply `videoTransform` if present.
+      /// 2a: Sync video params from mpv, if `syncVideoParamsFromMPV` is true.
+      if syncVideoParams {
+        log.verbose{"[GTF:\(name)] Calling syncVideoParamsFromMpv as configured"}
+        guard let syncedVideoGeo = cxt.syncVideoParamsFromMpv() else {
+          return abort("syncVideoParamsFromMpv returned nil")
+        }
+        log.verbose{"[GTF:\(name)] Result of sync: \(syncedVideoGeo)"}
+        /// Update `oldGeo` with the result. Note that the window/musicMode geometries will still be out of date.
+        cxt.oldGeo = cxt.oldGeo.clone(video: syncedVideoGeo)
+      }
+
+      /// 2b: Apply `videoTransform` if present.
       /// This needs to be on the mpv queue, because some transforms make mpv calls.
       if let videoTransform {
         log.verbose{"[GTF:\(name)] Calling videoTF"}
-        guard let transformedGeo = videoTransform(cxt) else {
+        guard let transformedVidGeo = videoTransform(cxt) else {
           return abort("videoTF returned nil")
         }
-        log.verbose{"[GTF:\(name)] Result of videoTF: \(transformedGeo)"}
-        cxt.outputVidGeo = transformedGeo
+        log.verbose{"[GTF:\(name)] Result of videoTF: \(transformedVidGeo)"}
+        cxt.outputVidGeo = transformedVidGeo
       } else {
-        log.verbose{"[GTF:\(name)] No videoTF given, skipping"}
+        log.verbose{"[GTF:\(name)] No videoTF given, skipping. Using oldGeo.video: \(cxt.oldGeo.video)"}
         cxt.outputVidGeo = cxt.oldGeo.video
       }
 
@@ -148,7 +163,7 @@ struct GeometryTransform {
         cxt.inputLayout = pwc.currentLayout
 
         // Update context's geo with current window frame
-        cxt.oldGeo = pwc.buildGeoSet(from: cxt.outputLayout, baseGeoSet: cxt.oldGeo, forceWinFrameUpdate: !cxt.sessionState.isStartingSession)
+        cxt.oldGeo = pwc.buildGeoSet(video: cxt.oldGeo.video, from: cxt.outputLayout, baseGeoSet: cxt.oldGeo,                                     forceWinFrameUpdate: !cxt.sessionState.isStartingSession)
 
         /// 3. (Optional) Transition window to initial layout. Must exexcute before `buildApplyTransformTasks`.
         /// Will return` []` if not applicable.
@@ -214,6 +229,7 @@ struct GeometryTransform {
     /// on top of. (The `PlayerWindowController`'s `geo` field should not be referenced).
     var oldGeo: GeometrySet
 
+    /// Gets the `VideoGeometry` from `oldGeo`.
     var inputVidGeo: VideoGeometry { oldGeo.video }
     /// The transformed `VideoGeometry`.
     var outputVidGeo: VideoGeometry {

@@ -296,8 +296,9 @@ extension PlayerWindowController {
       return
     }
 
-    let gtf = GeometryTransform("SetVideoScale", player, windowed: { [self] cxt -> PWinGeometry? in
-      let oldWindowedGeo = cxt.oldGeo.windowed
+    let gtf = GeometryTransform("SetVideoScale", player,
+                                windowed: { [self] cxt -> PWinGeometry? in
+      let oldWindowedGeo = cxt.oldGeo.windowed.clone(video: cxt.inputVidGeo)  // may need to sub from syncVideoParams
       // TODO: if Preference.bool(for: .usePhysicalResolution) {}
       // Not supported in music mode at this time. Need to resolve backing scale bugs
       // FIXME: regression: viewport keeps expanding when video runs into screen boundary
@@ -346,7 +347,7 @@ extension PlayerWindowController {
     cachedMpvWindowScale = desiredMpvWindowScale
 
     let mpvKeepAspect = currentLayout.mode.needsMpvKeepaspectWindow
-    
+
     log.verbose{"Sending window-scale to mpv: \(currentMpvWindowScale) → \(desiredMpvWindowScale)"}
     player.mpv.queue.async { [self] in
       guard player.isActive, player.info.isFileLoaded else {
@@ -474,7 +475,8 @@ extension PlayerWindowController {
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
         return newGeoUnconstrained.refitted(using: .stayInside)
       }
-      animationPipeline.submit(gtf: GeometryTransform("ScaleVideoBy\(widthStep)px", player, windowed: windowedTransform))
+      animationPipeline.submit(gtf: GeometryTransform("ScaleVideoBy\(widthStep)px", player,
+                                                      windowed: windowedTransform))
 
     case .musicMode:
       let musicModeTransform: (GeometryTransform.Context) -> MusicModeGeometry? = { [self] cxt -> MusicModeGeometry? in
@@ -483,7 +485,8 @@ extension PlayerWindowController {
         log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
         return cxt.oldGeo.musicMode.scalingViewport(to: desiredViewportSize)
       }
-      animationPipeline.submit(gtf: GeometryTransform("ScaleVideoBy\(widthStep)px", player, musicMode: musicModeTransform))
+      animationPipeline.submit(gtf: GeometryTransform("ScaleVideoBy\(widthStep)px", player,
+                                                      musicMode: musicModeTransform))
     default:
       return
     }

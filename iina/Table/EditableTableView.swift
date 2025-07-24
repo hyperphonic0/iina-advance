@@ -34,6 +34,7 @@ class EditableTableView: NSTableView {
 
   override var isEnabled: Bool {
     didSet {
+      guard oldValue != isEnabled else { return }
       log.verbose{"Table isEnabled changed to \(isEnabled.yesno); reloading data"}
       // Need to reload rows in order to redraw them as grayed out
       reloadData()

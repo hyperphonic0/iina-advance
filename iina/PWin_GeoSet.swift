@@ -25,14 +25,20 @@ struct GeometrySet {
 
   /// Makes a copy of this `GeometrySet` but uses the given `windowed` geometry, and uses its `VideoGeometry`
   /// as the new current video settings.
-  func clone(windowed: PWinGeometry) -> GeometrySet {
-    return GeometrySet(windowed: windowed, musicMode: self.musicMode, video: windowed.video)
+  func clone(windowed windowedNew: PWinGeometry) -> GeometrySet {
+    return GeometrySet(windowed: windowedNew, musicMode: musicMode, video: windowedNew.video)
   }
 
   /// Makes a copy of this `GeometrySet` but uses the given `musicMode` geometry, and uses its `VideoGeometry`
   /// as the new current video settings.
-  func clone(musicMode: MusicModeGeometry) -> GeometrySet {
-    return GeometrySet(windowed: self.windowed, musicMode: musicMode, video: musicMode.video)
+  func clone(musicMode musicModeNew: MusicModeGeometry) -> GeometrySet {
+    return GeometrySet(windowed: windowed, musicMode: musicModeNew, video: musicModeNew.video)
+  }
+
+  /// Makes a copy of this `GeometrySet` but uses the given `VideoGeometry`.
+  /// Note: the `PWinGeometry` and `MusicModeGeometry` will contain the old `VideoGeometry`.
+  func clone(video videoNew: VideoGeometry) -> GeometrySet {
+    return GeometrySet(windowed: windowed, musicMode: musicMode, video: videoNew)
   }
 }
 
@@ -65,6 +71,8 @@ extension PlayerWindowController {
                    video: VideoGeometry? = nil, from inputLayout: LayoutState,
                    baseGeoSet: GeometrySet? = nil, forceWinFrameUpdate: Bool = false) -> GeometrySet {
     let geo = baseGeoSet ?? geo
+    // need to make sure latest video gets propogated to *both* windowed and musicMode geos
+    let video = video ?? geo.video
 
     guard inputLayout.mode == currentLayout.mode else {
       log.debug{"Mode has changed (current=\(currentLayout.mode), provided=\(inputLayout.mode)): will reuse existing GeometrySet instead of updating"}
@@ -100,7 +108,7 @@ extension PlayerWindowController {
       musicModeNew = geo.musicMode
     }
 
-    return GeometrySet(windowed: windowedNew, musicMode: musicModeNew, video: video ?? geo.video)
+    return GeometrySet(windowed: windowedNew, musicMode: musicModeNew, video: video)
   }
 
   /// If `force=true`, then skip validation checks for latest frame & always use current frame
