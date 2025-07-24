@@ -33,7 +33,7 @@ extension PlayerWindowController {
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     // Trigger forced draws
-    videoView.activateForcedRedraws(force: true)
+    videoView.activateForcedRedraws()
 
     guard !isInWindowResizeDenialPeriod() else {
       log.verbose{"[WinWillResize] Denying request=\(requestedSize): still inside denial period; will stay at \(window.frame.size)"}
@@ -242,7 +242,7 @@ extension PlayerWindowController {
   /// Can be used in windowed or full screen modes.
   /// Can be used in music mode only if playlist is hidden.
   func resizeWindowImmediately(using newGeometry: PWinGeometry? = nil) {
-    videoView.activateForcedRedraws(force: true)
+    videoView.activateForcedRedraws()
     guard let window else { return }
 
     let layout = currentLayout
@@ -280,7 +280,7 @@ extension PlayerWindowController {
   func windowDidResize(_ notification: Notification) {
     // Plug loophole for window resize when not covered by windowWillResize.
     // Trigger forced draws
-    videoView.activateForcedRedraws(force: true)
+    videoView.activateForcedRedraws()
   }
 
   /// Changes video scale to `desiredVideoScale`, where a value of `1.0` is the video's native scale.

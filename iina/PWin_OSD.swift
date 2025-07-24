@@ -366,6 +366,8 @@ extension PlayerWindowController {
     let otherAnchorLeading = hasLeadingSidebar ? leadingSidebarView.trailingAnchor : viewportView.leadingAnchor
     let otherAnchorTrailing = hasTrailingSidebar ? trailingSidebarView.leadingAnchor : viewportView.trailingAnchor
 
+    let offsetFromTop = computeOffsetFromTop(for: geo, isLegacyFullScreen: isLegacyFullScreen)
+
     if hasOSD {
       if !viewportView.subviews.contains(osd.osdView) {
         log.verbose{"[OSD] Adding osdView to viewportView"}
@@ -389,11 +391,10 @@ extension PlayerWindowController {
           updateOSDTrailingSide_LeadingConstraint(to: trailingSide_LeadingConstraint)
         }
 
-        let topConstraint = osd.osdView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: 8)
+        let topConstraint = osd.osdView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: offsetFromTop)
         topConstraint.identifier = "OSD_TopOffsetConstraint"
         topConstraint.priorityInt = 900   // avoid constraint violations
         osd.osdTopOffsetConstraint = topConstraint
-        updateTopOffsetConstraints(for: geo, isLegacyFullScreen: isLegacyFullScreen)
         topConstraint.isActive = true
 
         let btmConstraint = viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: osd.osdView.bottomAnchor, constant: 8)
@@ -437,11 +438,10 @@ extension PlayerWindowController {
           updateOSDLeadingSide_TrailingConstraint(to: leadingSide_TrailingConstraint)
         }
 
-        let topConstraint = additionalInfoView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: 8)
+        let topConstraint = additionalInfoView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: offsetFromTop)
         topConstraint.identifier = "OSD_AddlInfoOffsetConstraint"
         topConstraint.priorityInt = 900   // avoid constraint violations
         osd.additionalInfoTopOffsetConstraint = topConstraint
-        updateTopOffsetConstraints(for: geo, isLegacyFullScreen: isLegacyFullScreen)
         osd.additionalInfoTopOffsetConstraint?.isActive = true
 
         let btmConstraint = viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: additionalInfoView.bottomAnchor,
@@ -493,9 +493,8 @@ extension PlayerWindowController {
     osd.trailingSide_TrailingConstraint = constraint
   }
 
-  // Update OSD (& Additional Info) views have correct offset from top of screen
-  func updateTopOffsetConstraints(for geometry: PWinGeometry, isLegacyFullScreen: Bool) {
-    var newOffsetFromTop: CGFloat = geometry.insideBars.top + 8  // offset from top of viewportView
+  func computeOffsetFromTop(for geometry: PWinGeometry, isLegacyFullScreen: Bool) -> CGFloat {
+    var offsetFromTop: CGFloat = geometry.insideBars.top + 8  // offset from top of viewportView
     if isLegacyFullScreen {
       let screen = NSScreen.forScreenID(geometry.screenID)!
       // OSD & Additional Info must never overlap camera housing, even if video does
@@ -504,14 +503,20 @@ extension PlayerWindowController {
 
       if usedSpaceAbove < cameraHousingHeight {
         let windowGapForCameraHousing = screen.frame.height - geometry.windowFrame.height
-        newOffsetFromTop -= windowGapForCameraHousing
+        offsetFromTop -= windowGapForCameraHousing
 
         let videoFillsEntireScreen = !geometry.hasTopPaddingForCameraHousing
         if videoFillsEntireScreen {
-          newOffsetFromTop += cameraHousingHeight
+          offsetFromTop += cameraHousingHeight
         }
       }
     }
+    return offsetFromTop
+  }
+
+  // Update OSD (& Additional Info) views have correct offset from top of screen
+  func updateTopOffsetConstraints(for geometry: PWinGeometry, isLegacyFullScreen: Bool) {
+    let newOffsetFromTop = computeOffsetFromTop(for: geometry, isLegacyFullScreen: isLegacyFullScreen)
 
     log.verbose{"[OSD] Updating top constraint to: \(newOffsetFromTop)"}
     osd.osdTopOffsetConstraint?.animateToConstant(newOffsetFromTop)

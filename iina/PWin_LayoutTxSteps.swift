@@ -21,7 +21,8 @@ extension PlayerWindowController {
     isAnimatingLayoutTransition = true
     // When playback is paused the display link is stopped in order to avoid wasting energy on
     // needless processing. It must be running while transitioning to/from full screen mode.
-    videoView.activateForcedRedraws(force: true)
+    videoView.enterAsynchronousMode()
+    videoView.displayActive()
 
     /// Some methods where reference `currentLayout` get called as a side effect of the transition animations.
     /// To avoid possible bugs as a result, let's update this at the very beginning.
@@ -990,8 +991,6 @@ extension PlayerWindowController {
 
     // Update heights to their final values:
     titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
-
-    updateTopOffsetConstraints(for: transition.outputGeometry, isLegacyFullScreen: transition.outputLayout.isLegacyFullScreen)
 
     // Update heights of top & bottom bars:
     updateTopBarHeight(to: outputLayout.topBarHeight, topBarPlacement: transition.outputLayout.topBarPlacement, cameraHousingOffset: transition.outputGeometry.topMarginHeight)
