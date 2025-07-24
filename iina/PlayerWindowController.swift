@@ -654,12 +654,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     self.player = player
     self.osd = OSDState(log: player.log)
     self.pip = PIPState(player)
-    animationPipeline.log = player.log
     player.log.verbose{"PlayerWindowController init: using lastClosed geometries for now"}
     self.geo = GeometrySet(windowed: PlayerWindowController.windowedModeGeoLastClosed,
                            musicMode: PlayerWindowController.musicModeGeoLastClosed,
                            video: VideoGeometry.defaultGeometry(player.log))
     super.init(window: nil)
+    animationPipeline.pwc = self
+    animationPipeline.log = player.log
     osd.hideOSDTimer.action = { self.hideOSD() }
     log.verbose("PlayerWindowController init: done")
   }

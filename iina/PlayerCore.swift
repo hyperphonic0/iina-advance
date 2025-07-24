@@ -1486,19 +1486,15 @@ class PlayerCore: NSObject {
   }
 
   func syncVideoParamsFromMpv(force: Bool = false) {
-    if !force {
-      guard !isRestoring else {
-        log.trace{"Ignoring SyncVidGeo request: isRestoring=Y"}
-        return
-      }
-      // This is a very important check when entering interactive mode. Its transition first removes
-      // the crop filter, which triggers a dw/dh update change event which brings us here.
-      // But the interactive mode transition should handle everything. Do not step on it.
-      guard !windowController.isAnimatingLayoutTransition else {
-        // FIXME: this can prevent necessary dw/dh updates from being applied! Consider blocking GTFs until after layout TXs
-        log.verbose{"Ignoring SyncVidGeo request: isAnimatingLayoutTransition=Y"}
-        return
-      }
+    guard !force else {
+      let gtf = GeometryTransform("SyncVidGeo", self)
+      gtf.submit()
+      return
+    }
+
+    guard !isRestoring else {
+      log.trace{"Ignoring SyncVidGeo request: isRestoring=Y"}
+      return
     }
 
     windowController.animationPipeline.enqueueVideoSyncTaskIfNeeded(self)

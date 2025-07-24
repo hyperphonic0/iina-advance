@@ -143,6 +143,7 @@ extension IINAAnimation {
     var gtfCurrentlyRunningID: Int? = nil
     var lastGeneratedID: Int = 0
 
+    var pwc: PlayerWindowController? = nil
     var log = Logger.log
 
     // Convenience function. Run the task with no animation / zero duration.
@@ -240,7 +241,7 @@ extension IINAAnimation {
         }
 
         guard taskTxID >= currentTxID else {
-          log.debug("[Pipeline] Skipping task with txID \(taskTxID) (next valid txID: \(currentTxID))")
+          log.debug("[Pipeline] Skipping task with cancelled txID \(taskTxID) (next valid txID: \(currentTxID))")
           continue
         }
         currentTxID = taskTxID
@@ -251,8 +252,14 @@ extension IINAAnimation {
     private func runTasks() {
       let nextTask: Task
 
-      // First check if there is an enqueued GeometryTransform and it ready to run.
-      if let nextGTF = popNextReadyGTF() {
+      // Favor executing GeometryTransforms before regular Tasks - unless isAnimatingLayoutTransition is true.
+      if let pwc, pwc.isAnimatingLayoutTransition {
+        // This is very important in certain places (e.g. when entering interactive mode) where we cannot
+        // submit tasks all in one block because the work is split up between asynchronous blocks, but we
+        // do not want to allow other tasks to execute in between.
+        guard let task = popNextValidTask() else { return }
+        nextTask = task
+      } else if let nextGTF = popNextReadyGTF() {
         // Kick-start the GTF via a Task
         nextTask = Task.instantTask(nextGTF.execute)
       } else {
@@ -312,6 +319,8 @@ extension IINAAnimation {
       }
     }
 
+    /// Checks that the last GeometryTransform is done, and if there is an enqueued GeometryTransform waiting.
+    /// If so, pops & returns it.
     private func popNextReadyGTF() -> GeometryTransform? {
       gtfLock.withLock{ [self] in
         guard gtfCurrentlyRunningID == nil, let nextGTF = gtfQueue.removeFirst() else {
@@ -348,7 +357,7 @@ extension IINAAnimation {
         log.verbose{"Enqueuing SyncVidGeo transform"}
 
         let newID = nextID_NoLock()
-        let gtf = GeometryTransform("SyncVidGeo", id: newID, player, syncVideoParams: true)
+        let gtf = GeometryTransform("SyncVidGeo", id: newID, player)
         gtfQueue.append(gtf)
       }
     }

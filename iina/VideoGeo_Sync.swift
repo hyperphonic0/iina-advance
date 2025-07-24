@@ -115,14 +115,15 @@ extension GeometryTransform.Context {
       rawHeight = nil
     }
 
-    // No crop if full-sized. There may be an IINA filter though and we should favor that for status
-    let isNotCropped = videoOutParams.crop_x == 0 && videoOutParams.crop_y == 0 && videoOutParams.crop_w == rawWidth && videoOutParams.crop_h == rawHeight
+    // No crop if full-sized. There may be an IINA filter though and we should favor that for status.
+    // Make sure to use videoOutParams for all params in this comparion, as some dimensions will differ from videoDecParams.
+    let isNotCropped = videoOutParams.crop_x == 0 && videoOutParams.crop_y == 0 && videoOutParams.crop_w == videoOutParams.w && videoOutParams.crop_h == videoOutParams.h
 
     let cropLabel: String
     // First check for IINA crop filter. Derive selected crop label directly from the filter, because x & y values are ambiguous
     // in mpv's video-params APIs (nil & 0 both show as 0)
     if let vfCrop = player.getIINACropFilter(),
-       let cropLabelFromIINACrop = player.deriveCropLabel(from: vfCrop, rawVideoSize: player.windowController.geo.video.videoSizeRaw) {
+       let cropLabelFromIINACrop = player.deriveCropLabel(from: vfCrop, rawVideoSize: oldVideoGeo.videoSizeRaw) {
       cropLabel = cropLabelFromIINACrop
       log.verbose{"[GTF:\(name)] Determined crop label from iina_crop filter: \(cropLabel.quoted)"}
     } else if isNotCropped {
