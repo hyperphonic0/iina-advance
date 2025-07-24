@@ -789,8 +789,12 @@ class PlayerCore: NSObject {
 
   func setMpvKeepaspectWindow(to enable: Bool) {
     mpv.queue.async { [self] in
-      mpv.setFlag(MPVOption.Window.keepaspect, enable, level: .verbose)
+      _setMpvKeepaspectWindow(to: enable)
     }
+  }
+
+  func _setMpvKeepaspectWindow(to enable: Bool) {
+    mpv.setFlag(MPVOption.Window.keepaspect, enable, level: .verbose)
   }
 
   func togglePause() {

@@ -258,12 +258,15 @@ enum PlayerWindowMode: Int {
     }
   }
 
+  /// If `true`: tell mpv to show black bars around video if necessary.
+  /// If `false`: tell mpv to stretch or shrink video to size of window.
   var needsMpvKeepaspectWindow: Bool {
     switch self {
     case .windowedNormal, .fullScreenNormal:
-      return true  // tell mpv to show black bars around video if necessary
+      let keepAspect = !Preference.bool(for: .lockViewportToVideoSize)
+      return keepAspect
     case .windowedInteractive, .fullScreenInteractive, .musicMode:
-      return false  // tell mpv to stretch or shrink video to size of window
+      return false
     }
   }
 }
