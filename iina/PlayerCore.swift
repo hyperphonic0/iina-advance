@@ -1495,14 +1495,13 @@ class PlayerCore: NSObject {
       // the crop filter, which triggers a dw/dh update change event which brings us here.
       // But the interactive mode transition should handle everything. Do not step on it.
       guard !windowController.isAnimatingLayoutTransition else {
-        // FIXME: this can cause necessary dw/dh updates from being applied!
-        // FIXME: consider enqueuing a `syncVideoParamsFromMpv` instead... also for window-scale...
+        // FIXME: this can prevent necessary dw/dh updates from being applied! Consider blocking GTFs until after layout TXs
         log.verbose{"Ignoring SyncVidGeo request: isAnimatingLayoutTransition=Y"}
         return
       }
     }
 
-    windowController.animationPipeline.enqueueSyncTaskIfNeeded(self)
+    windowController.animationPipeline.enqueueVideoSyncTaskIfNeeded(self)
   }
 
   func setVideoRotate(_ userRotation: Int) {

@@ -15,14 +15,14 @@ private func clampPlaylistWidth(_ width: CGFloat) -> CGFloat {
 // Sidebar layout state
 struct Sidebar {
   enum Visibility {
-    case show(tabToShow: Sidebar.Tab)
-    case hide
+    case open(tabToShow: Sidebar.Tab)
+    case closed
 
     var visibleTab: Sidebar.Tab? {
       switch self {
-      case .show(let tab):
+      case .open(let tab):
         return tab
-      case .hide:
+      case .closed:
         return nil
       }
     }
@@ -179,7 +179,7 @@ struct Sidebar {
     var newVisibility = visibility ?? self.visibility
     if let newVisibleTab = newVisibility.visibleTab, !newTabGroups.contains(newVisibleTab.group) {
       Logger.log.verbose{"Can no longer show visible tab \(newVisibleTab.name) in \(self.locationID). The sidebar will close."}
-      newVisibility = .hide
+      newVisibility = .closed
     }
 
     return Sidebar(self.locationID,
@@ -389,7 +389,7 @@ extension PlayerWindowController {
     guard !isInInteractiveMode, currentLayout.canShowSidebars else { return }
     log.verbose("Changing visibility of sidebar for tab \(tab.name.quoted) to: \(shouldShow ? "SHOW" : "HIDE")")
 
-    let newVisibilty: Sidebar.Visibility = shouldShow ? .show(tabToShow: tab) : .hide
+    let newVisibilty: Sidebar.Visibility = shouldShow ? .open(tabToShow: tab) : .closed
     let oldLayout = currentLayout
 
     var leadingSidebar: Sidebar
@@ -458,10 +458,10 @@ extension PlayerWindowController {
       var shouldShow = false
       let sidebarWidth: CGFloat
       switch goal {
-      case .show(let tabToShow):
+      case .open(let tabToShow):
         sidebarWidth = tabToShow.group.width(using: layout.spec.moreSidebarState)
         shouldShow = true
-      case .hide:
+      case .closed:
         if let lastVisibleTab = leadingSidebar.lastVisibleTab {
           sidebarWidth = lastVisibleTab.group.width(using: layout.spec.moreSidebarState)
         } else {
@@ -481,10 +481,10 @@ extension PlayerWindowController {
       var shouldShow = false
       let sidebarWidth: CGFloat
       switch goal {
-      case .show(let tabToShow):
+      case .open(let tabToShow):
         sidebarWidth = tabToShow.group.width(using: layout.spec.moreSidebarState)
         shouldShow = true
-      case .hide:
+      case .closed:
         if let lastVisibleTab = trailingSidebar.lastVisibleTab {
           sidebarWidth = lastVisibleTab.group.width(using: layout.spec.moreSidebarState)
         } else {
@@ -822,7 +822,7 @@ extension PlayerWindowController {
 
     // Try to avoid race conditions if possible
     animationPipeline.submitInstantTask { [self] in
-      let newVisibility = Sidebar.Visibility.show(tabToShow: tab)
+      let newVisibility = Sidebar.Visibility.open(tabToShow: tab)
       let layout = currentLayout
       var leadingSidebar: Sidebar? = nil
       var trailingSidebar: Sidebar? = nil
@@ -867,7 +867,7 @@ extension PlayerWindowController {
         newLeadingTabGroups.insert(tabGroup)
         newTrailingTabGroups.remove(tabGroup)
         if trailingSidebar.visibleTabGroup == tabGroup && !leadingSidebar.isVisible {
-          newTraillingSidebarVisibility = .hide
+          newTraillingSidebarVisibility = .closed
           newLeadingSidebarVisibility = trailingSidebar.visibility
         }
       }
@@ -876,7 +876,7 @@ extension PlayerWindowController {
         newTrailingTabGroups.insert(tabGroup)
         newLeadingTabGroups.remove(tabGroup)
         if leadingSidebar.visibleTabGroup == tabGroup && !trailingSidebar.isVisible {
-          newLeadingSidebarVisibility = .hide
+          newLeadingSidebarVisibility = .closed
           newTraillingSidebarVisibility = leadingSidebar.visibility
         }
       }
@@ -1182,8 +1182,8 @@ extension PlayerWindowController {
 
     if hideLeading || hideTrailing {
       animationPipeline.submitInstantTask { [self] in
-        let newLayoutSpec = oldLayout.spec.clone(leadingSidebar: hideLeading ? oldLayout.leadingSidebar.clone(visibility: .hide) : nil,
-                                                 trailingSidebar: hideTrailing ? oldLayout.trailingSidebar.clone(visibility: .hide) : nil)
+        let newLayoutSpec = oldLayout.spec.clone(leadingSidebar: hideLeading ? oldLayout.leadingSidebar.clone(visibility: .closed) : nil,
+                                                 trailingSidebar: hideTrailing ? oldLayout.trailingSidebar.clone(visibility: .closed) : nil)
         buildLayoutTransition(named: "HideSidebarsOnClick", from: oldLayout, to: newLayoutSpec, totalEndingDuration: 0, thenRun: true)
       }
       return true

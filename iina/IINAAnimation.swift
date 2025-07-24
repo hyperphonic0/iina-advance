@@ -339,7 +339,7 @@ extension IINAAnimation {
       }
     }
 
-    func enqueueSyncTaskIfNeeded(_ player: PlayerCore) {
+    func enqueueVideoSyncTaskIfNeeded(_ player: PlayerCore) {
       gtfLock.withLock{ [self] in
         guard gtfQueue.isEmpty else {
           log.verbose{"[Pipeline] No need to add SyncVidGeo; queue not empty"}

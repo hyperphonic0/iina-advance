@@ -1443,7 +1443,7 @@ extension LayoutSpec {
       let interactiveMode = InteractiveMode(rawValue: interactModeInt ?? 0) ?? nil  /// `0` === `nil` value
 
       var leadingTabGroups = Sidebar.TabGroup.fromPrefs(for: .leadingSidebar)
-      let leadVis: Sidebar.Visibility = leadingSidebarTab == nil ? .hide : .show(tabToShow: leadingSidebarTab!)
+      let leadVis: Sidebar.Visibility = leadingSidebarTab == nil ? .closed : .open(tabToShow: leadingSidebarTab!)
       // If the tab groups prefs changed somehow since the last run, just add it for now so that the geometry can be restored.
       // Will correct this at the end of restore.
       if let visibleTab = leadVis.visibleTab, !leadingTabGroups.contains(visibleTab.group) {
@@ -1453,7 +1453,7 @@ extension LayoutSpec {
       let leadingSidebar = Sidebar(.leadingSidebar, tabGroups: leadingTabGroups, placement: leadingSidebarPlacement, visibility: leadVis)
 
       var trailingTabGroups = Sidebar.TabGroup.fromPrefs(for: .trailingSidebar)
-      let trailVis: Sidebar.Visibility = traillingSidebarTab == nil ? .hide : .show(tabToShow: traillingSidebarTab!)
+      let trailVis: Sidebar.Visibility = traillingSidebarTab == nil ? .closed : .open(tabToShow: traillingSidebarTab!)
       // Account for invalid visible tab (see note above)
       if let visibleTab = trailVis.visibleTab, !trailingTabGroups.contains(visibleTab.group) {
         Logger.log.error("Restore state is invalid: trailingSidebar has visibleTab \(visibleTab.name) which is outside its configured tab groups")

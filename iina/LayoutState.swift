@@ -67,8 +67,8 @@ struct LayoutSpec {
 
     case .musicMode, .windowedInteractive, .fullScreenInteractive:
       // Override most properties for music mode & interactive mode
-      self.leadingSidebar = leadingSidebar.clone(visibility: .hide)
-      self.trailingSidebar = trailingSidebar.clone(visibility: .hide)
+      self.leadingSidebar = leadingSidebar.clone(visibility: .closed)
+      self.trailingSidebar = trailingSidebar.clone(visibility: .closed)
       self.topBarPlacement = mode == .windowedInteractive ? .outsideViewport : .insideViewport
       self.bottomBarPlacement = .outsideViewport
       self.enableOSC = false
@@ -98,12 +98,12 @@ struct LayoutSpec {
     let leadingSidebar =  Sidebar(.leadingSidebar,
                                   tabGroups: Sidebar.TabGroup.fromPrefs(for: .leadingSidebar),
                                   placement: Preference.enum(for: .leadingSidebarPlacement),
-                                  visibility: oldLeadingSidebar?.visibility ?? .hide,
+                                  visibility: oldLeadingSidebar?.visibility ?? .closed,
                                   lastVisibleTab: oldLeadingSidebar?.lastVisibleTab)
     let trailingSidebar = Sidebar(.trailingSidebar,
                                   tabGroups: Sidebar.TabGroup.fromPrefs(for: .trailingSidebar),
                                   placement: Preference.enum(for: .trailingSidebarPlacement),
-                                  visibility: oldTrailingSidebar?.visibility ?? .hide,
+                                  visibility: oldTrailingSidebar?.visibility ?? .closed,
                                   lastVisibleTab: oldTrailingSidebar?.lastVisibleTab)
     let mode = newMode ?? oldSpec?.mode ?? .windowedNormal
     // Tricky need for parantheses here! Would be great as an interview question
@@ -162,8 +162,8 @@ struct LayoutSpec {
   }
 
   func withSidebarsHidden() -> LayoutSpec {
-    return clone(leadingSidebar: leadingSidebar.clone(visibility: .hide),
-                 trailingSidebar: trailingSidebar.clone(visibility: .hide))
+    return clone(leadingSidebar: leadingSidebar.clone(visibility: .closed),
+                 trailingSidebar: trailingSidebar.clone(visibility: .closed))
   }
 
   var insideLeadingBarWidth: CGFloat {

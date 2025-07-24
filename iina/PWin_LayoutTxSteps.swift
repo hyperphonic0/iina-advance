@@ -396,8 +396,8 @@ extension PlayerWindowController {
       // Sidebars (if closing)
       let ΔWindowWidth = middleGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
       animateShowOrHideSidebars(transition: transition, layout: transition.inputLayout,
-                                setLeadingTo: transition.isClosingLeadingSidebar ? .hide : nil,
-                                setTrailingTo: transition.isClosingTrailingSidebar ? .hide : nil,
+                                setLeadingTo: transition.isClosingLeadingSidebar ? .closed : nil,
+                                setTrailingTo: transition.isClosingTrailingSidebar ? .closed : nil,
                                 ΔWindowWidth: ΔWindowWidth)
 
       // Do not do this when first opening the window though, because it will cause the window location restore to be incorrect.
