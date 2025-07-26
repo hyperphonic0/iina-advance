@@ -162,7 +162,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       self.viewportMargins = viewportMargins
     } else {
       self.viewportMargins = GeoUtil.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize,
-                                                                     insideBars: insideBars, mode: mode)
+                                                                insideBars: insideBars, mode: mode)
     }
   }
 

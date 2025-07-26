@@ -390,7 +390,7 @@ extension VideoView {
       aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
     }
 
-    log.verbose("VideoView updating constraints: aspect=\(aspectMultiplier) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize)")
+    log.verbose("VideoView updating constraints: aspect=\(aspectMultiplier) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) mode=\(geometry.mode)")
 
     let topSpacer = player.windowController.viewportTopSpacer
     let bottomSpacer = player.windowController.viewportBottomSpacer
@@ -458,13 +458,13 @@ extension VideoView {
 
     let interactiveMode = geometry.mode.isInteractiveMode
 
-    let spacerMinValues: MarginQuad = interactiveMode ? Constants.InteractiveMode.viewportMargins : .zero
+    let spacerMinValues: MarginQuad = interactiveMode ? geometry.viewportMargins : .zero
 
     // FIXME: keepVideoAwayFromBars is broken with keepaspect-window=no
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
     let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
 
-    let useInteractiveMode = false  // TODO
+    let useInteractiveMode = geometry.mode.isInteractiveMode
 
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers: Constraint(active: true, priority: 1000),

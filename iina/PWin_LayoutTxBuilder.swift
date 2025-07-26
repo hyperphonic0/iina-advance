@@ -354,6 +354,8 @@ extension PlayerWindowController {
   // Currently there are 4 bars. Each can be either inside or outside, exclusively.
   func buildMiddleGeometry(forTransition transition: LayoutTransition, _ geo: GeometrySet) -> PWinGeometry? {
     if transition.isTogglingInteractiveMode {
+      // - Interactive Mode
+
       if transition.inputLayout.isFullScreen {
         // Need to hide sidebars when entering interactive mode in full screen
         return transition.outputGeometry
@@ -365,13 +367,22 @@ extension PlayerWindowController {
       let extraWidthNeeded = max(0, Constants.InteractiveMode.minWindowWidth - videoFrame.width)
       let newWindowFrame = NSRect(origin: NSPoint(x: videoFrame.origin.x - (extraWidthNeeded * 0.5), y: videoFrame.origin.y),
                                   size: CGSize(width: videoFrame.width + extraWidthNeeded, height: videoFrame.height + outsideTopBarHeight))
+
+      // Need to supply explicit viewportMargins when exiting interactive mode, to ensure they are zero.
+      // Otherwise they will be implicitly set to the standard interactive mode margins, which won't work for our animation.
+      let viewportMargins: MarginQuad = .zero
       let resizedGeo = PWinGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID,
-                                    screenFit: transition.outputGeometry.screenFit, mode: .windowedNormal, topMarginHeight: 0,
+                                    screenFit: transition.outputGeometry.screenFit,
+                                    mode: transition.inputLayout.mode,
+                                    topMarginHeight: 0,
                                     outsideBars: MarginQuad(top: outsideTopBarHeight), insideBars: MarginQuad.zero,
+                                    viewportMargins: viewportMargins,
                                     video: transition.outputGeometry.video)
       return resizedGeo
 
     } else if transition.isEnteringMusicMode {
+      // - Music Mode: Enter
+
       let baseGeo: PWinGeometry
       if transition.inputLayout.isFullScreen {
         // Need middle geo so that sidebars get closed
@@ -386,6 +397,7 @@ extension PlayerWindowController {
                           outsideBars: MarginQuad.zero, insideBars: MarginQuad.zero,
                           video: baseGeo.video)
     } else if transition.isExitingMusicMode {
+      // - Music Mode: Exit
       if transition.isEnteringFullScreen {
         return nil
       }

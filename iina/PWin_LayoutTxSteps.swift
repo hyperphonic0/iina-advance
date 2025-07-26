@@ -358,17 +358,15 @@ extension PlayerWindowController {
       playSliderHeightConstraint.animateToConstant(outputLayout.controlBarGeo.playSliderHeight)
     }
 
-    if transition.isEnteringInteractiveMode {
-      // Animate the close of viewport margins:
-      videoView.apply(transition.outputGeometry)
-    } else if transition.isExitingInteractiveMode {
-      if transition.outputLayout.isFullScreen {
-        videoView.apply(transition.outputGeometry)
-      }
-    }
-
     // Update heights of top & bottom bars
     if let middleGeo = transition.middleGeometry {
+      if transition.isEnteringInteractiveMode {
+        // Animate the close of viewport margins:
+        videoView.apply(middleGeo)
+      } else if transition.isExitingInteractiveMode {
+        videoView.apply(middleGeo)
+      }
+
       let topBarHeight = transition.inputLayout.topBarPlacement == .insideViewport ? middleGeo.insideBars.top : middleGeo.outsideBars.top
       let cameraOffset: CGFloat
       if transition.isExitingLegacyFullScreen {
