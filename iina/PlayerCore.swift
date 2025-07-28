@@ -1938,14 +1938,15 @@ class PlayerCore: NSObject {
         log.verbose{"[GTF:\(ctx.name)] Expected currentPlayback.state == .loaded, but found: \(ctx.currentPlayback.state)"}
         return nil
       }
-      switch ctx.sessionState {
+
+      switch ctx.oldSessionState {
       case .existingSession_continuing:
         return .existingSession_startingNewPlayback
       default:
-        if ctx.sessionState.isStartingNewPlayback {
-          return ctx.sessionState
+        if ctx.oldSessionState.isStartingNewPlayback {
+          return ctx.oldSessionState
         } else {
-          log.verbose("[GTF:\(ctx.name)] Not the right sessionState; will let another handler take this")
+          log.verbose("[GTF:\(ctx.name)] Not the right sessionState (\(ctx.oldSessionState)); will let another handler take this")
           return nil
         }
       }
@@ -3148,16 +3149,16 @@ class PlayerCore: NSObject {
     isShowVideoPendingInMiniPlayer = false
 
     let stateChangeFunc: (GeometryTransform.Context) -> PWinSessionState? = { [self] ctx -> PWinSessionState? in
-      log.verbose{"[GTF:\(ctx.name)] Changing sessionState for vid change: vidLastSized=\(String(ctx.currentPlayback.vidTrackLastSized)), vidNew=\(ctx.vidTrackID), sessionState=\(ctx.sessionState), showVideoPending=\(isShowVideoPendingInMiniPlayer.yn)"}
-      if case .existingSession_continuing = ctx.sessionState {
+      log.verbose{"[GTF:\(ctx.name)] Changing sessionState for vid change: vidLastSized=\(String(ctx.currentPlayback.vidTrackLastSized)), vidNew=\(ctx.vidTrackID), sessionState=\(ctx.oldSessionState), showVideoPending=\(isShowVideoPendingInMiniPlayerCached.yn)"}
+      if case .existingSession_continuing = ctx.oldSessionState {
         if ctx.currentPlayback.state.isAtLeast(.loadedAndSized) && ctx.currentPlayback.vidTrackLastSized != ctx.vidTrackID {
           return .existingSession_videoTrackChangedForSamePlayback
         } else {
-          return ctx.sessionState
+          return ctx.oldSessionState
         }
       }
       if isShowVideoPendingInMiniPlayerCached {
-        return ctx.sessionState
+        return ctx.oldSessionState
       }
       return nil  // abort
     }
@@ -3174,7 +3175,11 @@ class PlayerCore: NSObject {
         return nil
       }
 
-      guard let vidGeo = ctx.syncVideoParamsFromMpv() else { return nil }
+      var vidGeo = ctx.syncVideoParamsFromMpv()
+      if vidGeo == nil && isShowVideoPendingInMiniPlayerCached {
+        log.verbose{"[GTF:\(ctx.name)] syncVideoParams returned nil but pending miniplayer show video; assuming no video track, continuing"}
+        vidGeo = ctx.inputVidGeo
+      }
 
       info.vid = vid
       // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
@@ -3263,10 +3268,9 @@ class PlayerCore: NSObject {
       guard hasVidTrack else {
         info.vidDisabled = nil  // clear saved track
         if showMiniPlayerVideo {
-          // Don't need to change tracks if a track is already selected. But may still need to show videoView.
-          // If no tracks, will not get a response from mpv if requesting to change tracks. But change geometry to set default album art.
-          isShowVideoPendingInMiniPlayer = false
-          log.verbose("Enabling video track: skipping, but forcing vidChanged() to show videoView")
+          // If no tracks, will not get a response from mpv if requesting to change tracks.
+          // Or if a track is already selected, don't need to change tracks. But still need to show videoView.
+          log.verbose("Enabling video track: skipping, but forcing call to vidChanged to show videoView")
           vidChanged(silent: true)
         }
         return

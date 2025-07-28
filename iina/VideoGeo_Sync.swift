@@ -66,7 +66,7 @@ extension GeometryTransform.Context {
   /// Sync VideoGeometry from mpv `video-dec-params` & `video-out-params`
   func syncVideoParamsFromMpv(startingWith videoGeo: VideoGeometry? = nil) -> VideoGeometry? {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-    log.verbose{"[GTF:\(name)] Syncing videoGeo from mpv for \(currentPlayback.url.lastPathComponent.pii.quoted) vid=\(String(vidTrackID))|\(currentMediaAudioStatus) sessState=\(sessionState)"}
+    log.verbose{"[GTF:\(name)] Syncing videoGeo from mpv for \(currentPlayback.url.lastPathComponent.pii.quoted) vid=\(String(vidTrackID))|\(currentMediaAudioStatus) sessState=\(oldSessionState)"}
 
     if currentMediaAudioStatus.isAudio || vidTrackID == 0 {
       // Square album art

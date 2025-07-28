@@ -1772,18 +1772,18 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     var tasks: [IINAAnimation.Task] = []
 
-    /// Tell window resize listeners to do nothing. Also prevent `syncVideoParamsFromMpv` from reacting.
-    isAnimatingLayoutTransition = true
-
     // FIXME: need to un-rotate while in interactive mode
     let videoSizeRaw = uncroppedVideoGeo.videoSizeRaw
     let prevCropBox = cropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
     log.verbose{"EnterInteractiveMode: Uncropping video from cropRect \(prevCropBox) to videoSizeRaw: \(videoSizeRaw)"}
     let newVideoAspect = videoSizeRaw.mpvAspect
-
     let oldVideoAspect = prevCropBox.size.mpvAspect
     // Scale viewport to roughly match window size
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
+
+    /// Tell window resize listeners to do nothing. Also prevent `syncVideoParamsFromMpv` from reacting.
+    isAnimatingLayoutTransition = true
+
     let closedBarsGeo = windowedGeoForCurrentFrame()
       .withResizedBars(outsideTop: 0, outsideTrailing: 0,
                        outsideBottom: 0, outsideLeading: 0,
@@ -2008,7 +2008,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let windowedLayout = LayoutSpec.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutSpec)
     var transitionTasks = buildLayoutTransition(named: "ExitMusicMode", from: oldLayout, to: windowedLayout, geo).tasks
     if !automatically {
-      transitionTasks.append(IINAAnimation.Task.instantTask { [self] in
+      transitionTasks.append(.instantTask { [self] in
         if !automatically {
           player.overrideAutoMusicMode = !player.overrideAutoMusicMode
           log.verbose{"Changed overrideAutoMusicMode to \(player.overrideAutoMusicMode.yesno)"}
