@@ -274,7 +274,8 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   var videoSizeDisplayOverride: CGSize? = nil
   var videoSizeDisplay: CGSize {
     get {
-      videoSizeDisplayOverride ?? videoSizeCAR
+      // If crop enabled, use that instead of display override, which is based on dw/dh, which doesn't take crop into account
+      hasCrop ? videoSizeCAR : (videoSizeDisplayOverride ?? videoSizeCAR)
     }
     set {
       videoSizeDisplayOverride = newValue
@@ -288,7 +289,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: - Protocol conformance
 
   var description: String {
-    return "VidGeo(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil") aspect:\(decodedAspectLabel.quoted)→\(userAspectLabel.quoted) rot:…+\(userRotation)=\(totalRotation)° raw:\(videoSizeRaw) CA:\(videoSizeCA) CAR:\(videoSizeCAR)|\(videoAspectCAR) Disp=\(videoSizeDisplayOverride?.description ?? "␀"))"
+    "VidGeo(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil") aspect:\(decodedAspectLabel.quoted)→\(userAspectLabel.quoted) rot:…+\(userRotation)=\(totalRotation)° raw:\(videoSizeRaw) CA:\(videoSizeCA) CAR:\(videoSizeCAR)|\(videoAspectCAR) Disp=\(videoSizeDisplayOverride?.description ?? "␀"))"
   }
 
   static func == (lhs: VideoGeometry, rhs: VideoGeometry) -> Bool {

@@ -155,7 +155,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     let targetVideoAspect = video.videoAspectDisplay
     let videoSize = GeoUtil.computeVideoSize(withAspectRatio: targetVideoAspect, toFillIn: viewportSize,
-                                                  minViewportMargins: viewportMargins, mode: mode)
+                                             minViewportMargins: viewportMargins, mode: mode)
     self.videoSize = videoSize
 
     if let viewportMargins {
