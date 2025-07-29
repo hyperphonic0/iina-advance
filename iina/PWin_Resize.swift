@@ -133,7 +133,8 @@ extension PlayerWindowController {
       /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
       /// within the same animation transaction as the code below. But the existing `VideoView` constraints should ensure
       /// that everything resizes properly.
-      resizeWindowSubviews(using: newGeometry, updateVideoView: false)
+      /// Update: need to update `VideoView` layout to ensure that cropbox in interactive mode is resized properly!
+      resizeWindowSubviews(using: newGeometry, updateVideoView: true)
       // fall through
 
     case .fullScreenNormal, .fullScreenInteractive:

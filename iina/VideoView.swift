@@ -56,6 +56,7 @@ class VideoView: NSView {
     self.logHDR = Logger.makeSubsystem("hdr-\(player.label)")
     self.player = player
     super.init(frame: frame)
+    self.idString = "VideoView"
 
     displayIdleTimer.action = displayIdleDidTimeout
 
