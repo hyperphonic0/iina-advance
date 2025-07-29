@@ -6,8 +6,6 @@
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
-fileprivate let musicMode = false // TODO: improvements for music mode (search for this)
-
 // MARK: - Constraints structs
 
 fileprivate struct Constraint: CustomStringConvertible {
@@ -458,21 +456,22 @@ extension VideoView {
 
     let interactiveMode = geometry.mode.isInteractiveMode
 
-    let spacerMinValues: MarginQuad = interactiveMode ? geometry.viewportMargins : .zero
+    let spacerMinValues: MarginQuad = (interactiveMode && !geometry.isMiddleTransition) ? Constants.InteractiveMode.viewportMargins : .zero
 
     // FIXME: keepVideoAwayFromBars is broken with keepaspect-window=no
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
     let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
 
+//    let musicMode = geometry.mode == .musicMode // TODO: improvements for music mode (search for this)
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers: Constraint(active: true, priority: 1000),
                 // The desired aspect must always be honored. All constraints are secondary to this.
-                aspect: AspectConstraint(active: interactiveMode, priority: musicMode ? 499 : 1000, multiplier: aspectMultiplier),
+                aspect: AspectConstraint(active: interactiveMode, priority: 1000, multiplier: aspectMultiplier),
 
                 /// For interactive mode, max width should equal superview's width minus minMargins
                 wMax: -spacerMinValues.totalWidth,
                 hMax: -spacerMinValues.totalHeight,
-                whMax_Priority: musicMode ? .required : .init(495),
+                whMax_Priority: .init(495),
 
                 spacerMax: Constraint(active: interactiveMode, priority: 490),
 

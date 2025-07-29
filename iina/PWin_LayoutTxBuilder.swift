@@ -49,7 +49,6 @@ extension PlayerWindowController {
     // InputGeometry
     let inputGeometry: PWinGeometry = buildInputGeometry(from: inputLayout, transitionName: transitionName,
                                                          geo, windowedModeScreen: windowedModeScreen)
-    log.verbose("[\(transitionName)] INPUT: \(inputGeometry)")
 
     // OutputGeometry
     let outputGeometry: PWinGeometry = buildOutputGeometry(inputLayout: inputLayout, inputGeometry: inputGeometry,
@@ -61,13 +60,12 @@ extension PlayerWindowController {
                                       isWindowInitialLayout: isWindowInitialLayout)
 
     // MiddleGeometry if needed (is applied after ClosePanels step)
-    transition.middleGeometry = buildMiddleGeometry(forTransition: transition, geo)
-    if let middleGeometry = transition.middleGeometry {
-      log.verbose("[\(transitionName)] MIDDLE: \(middleGeometry)")
-    } else {
-      log.verbose("[\(transitionName)] MIDDLE: nil")
+    if let middleGeo = buildMiddleGeometry(forTransition: transition, geo) {
+      transition.middleGeometry = middleGeo.clone(isMiddleTransition: true)
     }
 
+    log.verbose("[\(transitionName)] INPUT:  \(inputGeometry)")
+    log.verbose("[\(transitionName)] MIDDLE: \(transition.middleGeometry?.description ?? "nil")")
     log.verbose("[\(transitionName)] OUTPUT: \(outputGeometry)")
 
     let closeOldPanelsTiming: CAMediaTimingFunctionName

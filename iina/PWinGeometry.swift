@@ -106,6 +106,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   // MARK: Stored properties
 
+  let isMiddleTransition: Bool
+
   // - Screen:
   // The ID of the screen on which this window is displayed
   let screenID: String
@@ -140,7 +142,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   init(windowFrame: NSRect, screenID: String, screenFit: ScreenFit,
        mode: PlayerWindowMode, topMarginHeight: CGFloat,
        outsideBars: MarginQuad, insideBars: MarginQuad,
-       viewportMargins: MarginQuad? = nil, video: VideoGeometry) {
+       viewportMargins: MarginQuad? = nil, video: VideoGeometry,
+       isMiddleTransition: Bool = false) {
 
     self.windowFrame = windowFrame
     self.screenID = screenID
@@ -150,6 +153,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     self.outsideBars = outsideBars
     self.insideBars = insideBars
     self.video = video
+    self.isMiddleTransition = isMiddleTransition
 
     let viewportSize = GeoUtil.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
 
@@ -199,7 +203,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
              mode: PlayerWindowMode? = nil, topMarginHeight: CGFloat? = nil,
              outsideBars: MarginQuad? = nil, insideBars: MarginQuad? = nil,
              viewportMargins: MarginQuad? = nil,
-             video: VideoGeometry? = nil) -> PWinGeometry {
+             video: VideoGeometry? = nil,
+             isMiddleTransition: Bool? = nil) -> PWinGeometry {
 
     let windowFrame = windowFrame ?? self.windowFrame
     let screenFit = screenFit ?? self.screenFit
@@ -212,7 +217,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                               outsideBars: outsideBars ?? self.outsideBars,
                               insideBars: insideBars ?? self.insideBars,
                               viewportMargins: viewportMargins,
-                              video: video ?? self.video)
+                              video: video ?? self.video,
+                              isMiddleTransition: isMiddleTransition ?? self.isMiddleTransition)
     return newGeo
   }
 
