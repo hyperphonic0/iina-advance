@@ -62,6 +62,7 @@ extension PlayerWindowController {
       if isTogglingFullScreen { return false }
       return isTogglingLegacyStyle || isTopBarPlacementOrStyleChanging
       || (inputLayout.mode != outputLayout.mode)
+      || (outputLayout.mode.isInteractiveMode)  // Needed to fade in cropBoxView again after layout update
       || (outputLayout.bottomBarPlacement == .insideViewport && isBottomBarPlacementOrStyleChanging) // fade IN
       || (inputLayout.enableOSC != outputLayout.enableOSC)
       || (outputLayout.enableOSC && (inputLayout.oscPosition != outputLayout.oscPosition))
