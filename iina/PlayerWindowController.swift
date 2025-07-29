@@ -726,7 +726,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Make sure this is running inside an animation task too!
   func applyThemeMaterial(using layoutSpec: LayoutSpec? = nil, _ window: NSWindow, _ screen: NSScreen) {
     assert(DispatchQueue.isExecutingIn(.main))
-    log.verbose{"Apply theme material for screen \(screen.screenID.pii.quoted)"}
+    log.verbose{"Applying theme material for screen \(screen.screenID.pii.quoted)"}
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance:
     let newAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
@@ -1983,13 +1983,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let miniPlayerLayout = oldLayout.spec.clone(mode: .musicMode)
     var transitionTasks = buildLayoutTransition(named: "EnterMusicMode", from: oldLayout, to: miniPlayerLayout, geo).tasks
 
-    if !automatically {
-      transitionTasks.append(IINAAnimation.Task.instantTask { [self] in
+    transitionTasks.append(.instantTask { [self] in
+      if !automatically {
         // Toggle manual override
         player.overrideAutoMusicMode = !player.overrideAutoMusicMode
         log.verbose{"Changed overrideAutoMusicMode to \(player.overrideAutoMusicMode.yesno)"}
-      })
-    }
+      }
+
+      player.events.emit(.musicModeChanged, data: true)
+    })
     return transitionTasks
   }
 
@@ -1998,7 +2000,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       /// Start by hiding OSC and/or "outside" panels, which aren't needed and might mess up the layout.
       /// We can do this by creating a `LayoutSpec`, then using it to build a `LayoutTransition` and executing its animation.
       let oldLayout = oldLayout ?? currentLayout
-      let tasks = buildTasksToExitMusicMode(automatically: automatically, from: oldLayout, geo)
+      var tasks = buildTasksToExitMusicMode(automatically: automatically, from: oldLayout, geo)
+      
+      tasks.append(.instantTask { [self] in
+        updateTitle()
+        player.events.emit(.musicModeChanged, data: false)
+      })
+
       animationPipeline.submit(tasks)
     }
   }
@@ -2397,10 +2405,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // MARK: - IBActions
 
   @objc func menuSwitchToMiniPlayer(_ sender: NSMenuItem) {
-    if isInMiniPlayer {
-      player.exitMusicMode()
-    } else {
-      player.enterMusicMode()
+    animationPipeline.submitInstantTask{ [self] in
+      if isInMiniPlayer {
+        player.exitMusicMode()
+      } else {
+        player.enterMusicMode()
+      }
     }
   }
 

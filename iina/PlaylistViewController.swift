@@ -281,10 +281,13 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   func scrollPlaylistToCurrentItem() {
-    guard let playlistTableView else { return }
-    if let entryIndex = player.info.currentPlayback?.playlistPos {
-      player.log.verbose{"Scrolling playlist table to index \(entryIndex)"}
-      playlistTableView.scrollRowToVisible(entryIndex)
+    // Execute in pipeline task to prevent hiccups if running other animations
+    player.windowController.animationPipeline.submitInstantTask{ [self] in
+      guard let playlistTableView else { return }
+      if let entryIndex = player.info.currentPlayback?.playlistPos {
+        player.log.verbose{"Scrolling playlist table to index \(entryIndex)"}
+        playlistTableView.scrollRowToVisible(entryIndex)
+      }
     }
   }
 

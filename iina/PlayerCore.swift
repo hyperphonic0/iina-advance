@@ -715,20 +715,12 @@ class PlayerCore: NSObject {
 
   func enterMusicMode(automatically: Bool = false, withNewVidGeo newVidGeo: VideoGeometry? =  nil) {
     log.debug{"Switch to music mode, automatically=\(automatically.yesno)"}
-    let oldLayout = windowController.currentLayout
-    let geo = windowController.buildGeoSet(video: newVidGeo, from: oldLayout)
-    windowController.enterMusicMode(automatically: automatically, from: oldLayout, geo)
-    events.emit(.musicModeChanged, data: true)
+    windowController.enterMusicMode(automatically: automatically)
   }
 
   func exitMusicMode(automatically: Bool = false, withNewVidGeo newVidGeo: VideoGeometry? =  nil) {
     log.debug{"Switch to normal window from music mode, automatically=\(automatically.yesno)"}
-    let oldLayout = windowController.currentLayout
-    let geo = windowController.buildGeoSet(video: newVidGeo, from: oldLayout)
-    windowController.exitMusicMode(automatically: automatically, from: oldLayout, geo)
-    windowController.updateTitle()
-
-    events.emit(.musicModeChanged, data: false)
+    windowController.exitMusicMode(automatically: automatically)
   }
 
   // MARK: - Plugins
