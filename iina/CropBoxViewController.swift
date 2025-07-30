@@ -37,6 +37,7 @@ class CropBoxViewController: NSViewController {
   }
 
   private func updateCropValues(from selectedRect: NSRect) {
+    if selectedRect.width.isNaN { return }
     pwc.log.verbose{"Updating crop values from selectedRect=\(selectedRect)"}
     var maxHeight = cropBoxView.actualSize.height
     if !maxHeight.isNormal {

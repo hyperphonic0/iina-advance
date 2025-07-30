@@ -14,12 +14,8 @@ class CropSettingsViewController: CropBoxViewController {
   @IBOutlet weak var aspectPresetsSegment: NSSegmentedControl!
   @IBOutlet weak var aspectEntryTextField: NSTextField!
 
-  override func viewDidLoad() {
-    super.viewDidLoad()
-  }
-
   override func viewDidAppear() {
-    aspectPresetsSegment.selectedSegment = -1
+    super.viewDidAppear()
     updateSegmentLabels()
   }
 
@@ -37,11 +33,14 @@ class CropSettingsViewController: CropBoxViewController {
 
   override func selectedRectUpdated() {
     super.selectedRectUpdated()
+    guard view.superview != nil else { return }
+
     cropRectLabel.stringValue = readableCropString
 
     let actualSize = cropBoxView.actualSize
-    if cropx == 0, cropy == 0, cropw == Int(actualSize.width), croph == Int(actualSize.height) {
-      // no crop
+    if cropx == 0, cropy == 0, (cropw == 0 && croph == 0) || (cropw == actualSize.widthInt && croph == actualSize.heightInt) {
+      // No crop
+      pwc.log.verbose("Selecting crop preset segment 0 (no crop)")
       aspectPresetsSegment.selectedSegment = 0
       aspectEntryTextField.stringValue = ""
       return
@@ -53,12 +52,15 @@ class CropSettingsViewController: CropBoxViewController {
       guard let aspect = Aspect(string: segmentLabel) else { continue }
 
       if isCropRectMatchedWithAsepct(aspect) {
+        pwc.log.verbose("Selecting crop preset segment \(segmentIndex)")
         aspectPresetsSegment.selectedSegment = segmentIndex
         aspectEntryTextField.stringValue = ""
         return
       }
     }
+
     // Freeform selection or text entry
+    pwc.log.verbose("Selecting crop preset segment: N/A (freeform or text entry)")
     aspectPresetsSegment.selectedSegment = -1
 
     let textEntryString = aspectEntryTextField.stringValue

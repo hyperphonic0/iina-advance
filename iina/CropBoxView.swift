@@ -13,13 +13,13 @@ class CropBoxView: NSView, DraggableObject {
   weak var settingsViewController: CropBoxViewController!
 
   /** Original video size. */
-  var actualSize: NSSize = NSSize()
+  var actualSize: NSSize = NSZeroSize
   /** VideoView's frame. */
-  var videoRect: NSRect = NSRect()
+  var videoRect: NSRect = NSZeroRect
   /** Crop box's frame. */
-  var boxRect: NSRect = NSRect()
+  var boxRect: NSRect = NSZeroRect
 
-  var selectedRect: NSRect = NSRect()
+  var selectedRect: NSRect = NSZeroRect
 
   // Is dragging to resize existing selection
   var isDraggingToResize = false
@@ -34,10 +34,10 @@ class CropBoxView: NSView, DraggableObject {
   }
 
   // top and bottom are related to view's coordinate
-  private var rectTop: NSRect!
-  private var rectBottom: NSRect!
-  private var rectLeft: NSRect!
-  private var rectRight: NSRect!
+  private var rectTop: NSRect = NSZeroRect
+  private var rectBottom: NSRect = NSZeroRect
+  private var rectLeft: NSRect = NSZeroRect
+  private var rectRight: NSRect = NSZeroRect
 
   // MARK: - Rect size settings
 
@@ -46,6 +46,7 @@ class CropBoxView: NSView, DraggableObject {
     self.videoRect = videoRect
     updateBoxRect()
     updateCursorRects()
+    updateSelectedRect()
     needsDisplay = true
   }
 
@@ -70,6 +71,7 @@ class CropBoxView: NSView, DraggableObject {
 
   // update selectedRect from (boxRect in videoRect)
   private func updateSelectedRect() {
+    guard videoRect.width > 0, videoRect.height > 0 else { return }
     let xScale = actualSize.width / videoRect.width
     let yScale = actualSize.height / videoRect.height
 
@@ -90,6 +92,8 @@ class CropBoxView: NSView, DraggableObject {
 
   // update boxRect from (videoRect * selectedRect)
   private func updateBoxRect() {
+    guard actualSize.width > 0, actualSize.height > 0 else { return }  // avoid NaN values!
+
     let xScale =  videoRect.width / actualSize.width
     let yScale =  videoRect.height / actualSize.height
 

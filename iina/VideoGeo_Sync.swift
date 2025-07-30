@@ -214,7 +214,9 @@ extension GeometryTransform.Context {
       // Favor rotation OSD message over crop, because rotation increments < 90° will also trigger crop
       log.verbose{"[GTF:\(name)] Changing rotation: \(userRotation)"}
       player.sendOSD(.rotation(userRotation))
-    } else if oldVideoGeo.selectedCropLabel != cropLabel {
+    } else if oldVideoGeo.selectedCropLabel != cropLabel,
+              !player.windowController.isAnimatingLayoutTransition {
+      // Don't show crop OSD when disabling it for entering interactive mode (layout transition)
       log.verbose{"[GTF:\(name)] Changing selectedCropLabel: \(oldVideoGeo.selectedCropLabel.quoted) → \(cropLabel.quoted)"}
       let osdLabel = cropLabel.isEmpty ? AppData.customCropIdentifier : cropLabel
       player.sendOSD(.crop(osdLabel))
