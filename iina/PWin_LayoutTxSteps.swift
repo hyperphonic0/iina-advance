@@ -361,9 +361,7 @@ extension PlayerWindowController {
     // Update heights of top & bottom bars
     if let middleGeo = transition.middleGeometry {
       if transition.isEnteringInteractiveMode {
-        // Animate the close of viewport margins:
-        videoView.apply(middleGeo)
-      } else if transition.isExitingInteractiveMode {
+        // Animate the open/close of viewport margins:
         videoView.apply(middleGeo)
       }
 
@@ -417,6 +415,15 @@ extension PlayerWindowController {
     guard let window = window else { return }
     let outputLayout = transition.outputLayout
     log.verbose{"[\(transition.name)] UpdateHiddenViewsAndConstraints"}
+
+    // Remove aspect constraint between animations (for some mode changes):
+    if transition.isEnteringMusicMode {
+      videoView.apply(transition.outputGeometry)
+    } else if transition.isExitingInteractiveMode {
+      if let middleGeo = transition.middleGeometry {
+        videoView.apply(middleGeo)
+      }
+    }
 
     switch transition.outputLayout.mode {
     case .fullScreenInteractive, .windowedInteractive:
@@ -1374,7 +1381,7 @@ extension PlayerWindowController {
           /// (search for another instance of the UTF "X" like the one below).
           let wrong = "ⓧ"
           let lines = ["[\(transition.name)] ❌ SanityCheck-C failed!",
-                       "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect) Constraint=\(videoView.aspectMultiplier?.logStr ?? "nil")",
+                       "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect) Constraint=\(videoView.videoViewAspect?.logStr ?? "nil")",
                        "  VideoSize: Expect=\(enableVidCheck ? vidSizeE.description : "NA") Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
                        "  Viewport:  Expect=\(viewportSizeE) Actual=\(viewportSizeA)",
                        "  WinFrame:  Expect=\(transition.outputGeometry.windowFrame) Actual=\(window.frame)  \(isWrongWinSize ? wrong : "")",

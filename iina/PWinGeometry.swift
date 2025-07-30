@@ -245,10 +245,14 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// of the final `videoSize`. Very limited utility. In most cases `video.videoAspectDisplay` should be used, as it is the target.
   var videoViewAspect: CGFloat {
     // Just use videoAspectDisplay for now because it's a consistent value
-    return video.videoAspectDisplay
+    return videoSize.mpvAspect
   }
 
   let videoSize: NSSize
+
+  var videoSizeIdeal: NSSize {
+    return NSSize(width: videoSize.width, height: (videoSize.width / videoViewAspect).rounded())
+  }
 
   /// `MPVProperty.currentWindowScale`: see `mp_property_current_window_scale()` in mpv's `player/command.c`
   func mpvWindowScale() -> CGFloat {

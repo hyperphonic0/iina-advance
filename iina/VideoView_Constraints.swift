@@ -204,11 +204,11 @@ struct VideoViewConstraints {
 
     if let wMax {
       widthMax.animateToConstant(wMax)
-      widthMax.priority = whMax_Priority //+ (aspectMultiplier > 1 ? 1 : 0)
+      widthMax.priority = whMax_Priority //+ (videoViewAspect > 1 ? 1 : 0)
     }
     if let hMax {
       heightMax.animateToConstant(hMax)
-      heightMax.priority = whMax_Priority //+ (aspectMultiplier > 1 ? 0 : 1)
+      heightMax.priority = whMax_Priority //+ (videoViewAspect > 1 ? 0 : 1)
     }
 
     centerX.priority = center.priority
@@ -315,7 +315,7 @@ struct VideoViewConstraints {
 
 extension VideoView {
   /// Convenience property
-  var aspectMultiplier: CGFloat? {  videoViewConstraints?.aspectRatio.multiplier }
+  var videoViewAspect: CGFloat? {  videoViewConstraints?.aspectRatio.multiplier }
 
   // MARK: - PiP
 
@@ -373,22 +373,22 @@ extension VideoView {
     }
 
     let existing = videoViewConstraints
-    let aspectMultiplier = geometry.videoViewAspect
+    let videoViewAspect = geometry.videoViewAspect
 
     let aspect: NSLayoutConstraint
     if let existing {
-      if aspectMultiplier != existing.aspectRatio.multiplier {
+      if videoViewAspect != existing.aspectRatio.multiplier {
         // cannot reuse aspect constraint
         existing.aspectRatio.isActive = false
-        aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
+        aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: videoViewAspect, constant: 0)
       } else {
         aspect = existing.aspectRatio
       }
     } else {
-      aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
+      aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: videoViewAspect, constant: 0)
     }
 
-    log.verbose("VideoView updating constraints: aspect=\(aspectMultiplier) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) mode=\(geometry.mode)")
+    log.verbose("VideoView updating constraints: aspect=\(videoViewAspect) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) mode=\(geometry.mode)")
 
     let topSpacer = player.windowController.viewportTopSpacer
     let bottomSpacer = player.windowController.viewportBottomSpacer
@@ -462,13 +462,14 @@ extension VideoView {
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
     let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
 
+    Logger.log("GEO: aspect=\(videoViewAspect) videoSize=\(geometry.videoSize) videoSizeIdeal=\(geometry.videoSizeIdeal)")
     let musicMode = geometry.mode == .musicMode && geometry.isVideoVisible // TODO: improvements for music mode (search for this)
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers: Constraint(active: true, priority: 1000),
                 // The desired aspect must always be honored. All constraints are secondary to this.
                 aspect: AspectConstraint(active: (interactiveMode || musicMode) && !geometry.isMiddleTransition,
                                          priority: .required,
-                                         multiplier: aspectMultiplier),
+                                         multiplier: videoViewAspect),
 
                 /// For interactive mode, max width should equal superview's width minus minMargins
                 wMax: -spacerMinValues.totalWidth,
@@ -498,7 +499,7 @@ extension VideoView {
     guard let cons = videoViewConstraints else { return }
 
     cons.update(connectSpacers_Active: true, connectSpacers_Priority: .init(100),
-                aspectMultiplier: cons.aspectRatio.multiplier, aspect_Priority: .init(50),
+                videoViewAspect: cons.aspectRatio.multiplier, aspect_Priority: .init(50),
                 wMax: 0, hMax: 0, whMax_Priority: .init(99),
                 spacerMax_Active: true, spacerMax_Priority: .init(98),
                 spacerMin: nil, spacerMin_Priority: .init(97),

@@ -109,20 +109,20 @@ struct GeoUtil {
                                     height: viewportSize.height - minMargins.totalHeight)
     let videoSize: NSSize
     /// Compute `videoSize` to fit within `viewportSize` while maintaining `videoAspect`:
-    let videoWidth = snap(usableViewportSize.height * videoAspect, to: usableViewportSize.width)
-    if videoWidth <= usableViewportSize.width {  // video aspect is taller than viewport: shrink its width
-      videoSize = NSSize(width: videoWidth, height: usableViewportSize.height)
+    let videoWidthNew = (usableViewportSize.height * videoAspect).rounded()
+    if videoWidthNew <= usableViewportSize.width {  // video aspect is taller than viewport: shrink its width
+      videoSize = NSSize(width: videoWidthNew, height: usableViewportSize.height)
     } else {  // video is wider, shrink to meet width
               // Make sure to end up with whole numbers here! Decimal values can be interpreted differently by
               // mpv, Core Graphics, AppKit, which will cause animation glitches
-      let videoHeight = snap(usableViewportSize.width / videoAspect, to: usableViewportSize.height)
+      let videoHeight = (usableViewportSize.width / videoAspect).rounded()
       videoSize = NSSize(width: usableViewportSize.width, height: videoHeight)
     }
 
 #if DEBUG
     let sumViewportSize = CGSize(width: minMargins.totalWidth + videoSize.width,
                                  height: minMargins.totalHeight + videoSize.height)
-    assert(((sumViewportSize.width == 0 || sumViewportSize.width == 0) && (viewportSize.width == 0 || viewportSize.height == 0)) ||
+    assert(((sumViewportSize.width == 0 || sumViewportSize.height == 0) && (viewportSize.width == 0 || viewportSize.height == 0)) ||
            ((sumViewportSize.width <= viewportSize.width) && (sumViewportSize.height <= viewportSize.height)),
            "videoSize \(videoSize) + minMargins \(minMargins) → sum: \(sumViewportSize) > viewportSize \(viewportSize)")
 
