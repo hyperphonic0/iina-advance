@@ -1884,58 +1884,58 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                                                newVidGeo: VideoGeometry? = nil) -> [IINAAnimation.Task] {
     var tasks: [IINAAnimation.Task] = []
     var geoSet: GeometrySet? = nil
+    let cropAnimationDuration = immediately ? 0 : Constants.AnimationDuration.cropAnimation * 0.005
 
     if let cropController = cropSettingsView {
       // We were in interactive crop
-      if let newVidGeo, let cropRect = newVidGeo.cropRect {
-        // If newVidGeo contains a crop, we must apply it
-        log.verbose{"Cropping video from videoSizeRaw: \(newVidGeo.videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(cropRect)"}
+      // this works for full screen modes too
+      assert(currentLayout.isInteractiveMode, "CurrentLayout is not in interactive mode: \(currentLayout)")
 
-        /// Must update `windowedModeGeo` outside of animation task!
-        // this works for full screen modes too
-        assert(currentLayout.isInteractiveMode, "CurrentLayout is not in interactive mode: \(currentLayout)")
-        let winGeoUpdated = windowedGeoForCurrentFrame()  // not even needed if in full screen
-        let currentIMGeo = currentLayout.buildGeometry(windowFrame: winGeoUpdated.windowFrame,
-                                                       screenID: winGeoUpdated.screenID,
-                                                       video: geo.video)
-        let newIMGeo = currentIMGeo.cropVideo(using: newVidGeo)
-        if currentLayout.mode == .windowedInteractive {
-          geoSet = buildGeoSet(windowed: newIMGeo, from: currentLayout)
-        }
+      // Add the crop filter now, if applying crop. The timing should mostly add up and look like it cut out a piece of the whole.
+      // It's not perfect but better than before
+      tasks.append(.instantTask{ [self] in
+        isAnimatingLayoutTransition = true  // Prevent window listeners from interfering
 
-        // Animate the crop to highlight the piece being cut out.
-        // Remember: this does not run if there is no crop (i.e. cropRect is nil) - see above
-        let cropAnimationDuration = immediately ? 0 : Constants.AnimationDuration.cropAnimation * 0.005
-        tasks.append(.init(duration: cropAnimationDuration, timing: .default) { [self] in
-          log.verbose{"Start exiting interactive mode: animating crop using: \(newIMGeo)"}
-          isAnimatingLayoutTransition = true  // Prevent window listeners from interfering
-          updateWindowFrameAndSubviews(using: newIMGeo)
-          // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
-          videoView.videoViewConstraints?.updateSpacerMin(to: newIMGeo.viewportMargins, .init(496))
+        player.mpv.queue.async { [self] in
+          if let newVidGeo, let newCropFilter = newVidGeo.cropFilter {
+            // If newVidGeo contains a crop, we must apply it
+            log.verbose{"Cropping video from videoSizeRaw: \(newVidGeo.videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(newVidGeo.cropRect?.description ?? "nil")"}
 
-          // Add the crop filter now, if applying crop. The timing should mostly add up and look like it cut out a piece of the whole.
-          // It's not perfect but better than before
-          let newCropFilter = MPVFilter.crop(w: cropController.cropw, h: cropController.croph, x: cropController.cropx, y: cropController.cropy)
-          /// Set the filter. This will result in `transformGeometry` getting called, which will trigger an exit from interactive mode.
-          /// But that task can only happen once we return and relinquish the main queue.
-          player.mpv.queue.async { [self] in
+            /// Set the filter. This will result in `transformGeometry` getting called, which will trigger an exit from interactive mode.
+            /// But that task can only happen once we return and relinquish the main queue.
             _ = player.addVideoFilter(newCropFilter)
+          } else {
+            // If no crop, remove any existing crop filter
+            log.verbose{"Start exiting interactive mode: crop changing to none; removing crop filter"}
+            if !player.removeCrop() {
+              // Still may need to bring UI up to date
+              player.reloadQuickSettingsView()
+            }
           }
+        }
+      })
 
-          // Fade out cropBox selection rect
-          cropController.cropBoxView.isHidden = true
-          cropController.cropBoxView.alphaValue = 0
-        })
-
-      } else {
-        // If no crop, remove any existing crop filter
-        tasks.append(.instantTask{ [self] in
-          isAnimatingLayoutTransition = true  // Prevent window listeners from interfering
-          player.mpv.queue.async { [self] in
-            player.removeCrop()
-          }
-        })
+      let winGeoUpdated = windowedGeoForCurrentFrame()  // not even needed if in full screen
+      let currentIMGeo = currentLayout.buildGeometry(windowFrame: winGeoUpdated.windowFrame,
+                                                     screenID: winGeoUpdated.screenID,
+                                                     video: geo.video)
+      let newIMGeo = currentIMGeo.cropVideo(using: newVidGeo ?? geo.video.clone(selectedCropLabel: AppData.noneCropIdentifier, videoSizeDisplayOverride: nil))
+      if currentLayout.mode == .windowedInteractive {
+        geoSet = buildGeoSet(windowed: newIMGeo, from: currentLayout)
       }
+
+      // Animate the crop to highlight the piece being cut out.
+      tasks.append(.init(duration: cropAnimationDuration, timing: .default) { [self] in
+        log.verbose{"Start exiting interactive mode: animating crop using: \(newIMGeo)"}
+        updateWindowFrameAndSubviews(using: newIMGeo)
+        // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
+        videoView.videoViewConstraints?.updateSpacerMin(to: newIMGeo.viewportMargins, .init(496))
+
+        // Fade out cropBox selection rect
+        cropController.cropBoxView.isHidden = true
+        cropController.cropBoxView.alphaValue = 0
+      })
+
     }
 
 

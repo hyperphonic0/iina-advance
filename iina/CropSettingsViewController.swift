@@ -91,9 +91,9 @@ class CropSettingsViewController: CropBoxViewController {
   }
 
   func submitCrop() {
-    // If crop is too tall, the aspect will round to zero, which won't work
-    let cropBoxSize = CGSize(width: self.cropw, height: self.croph)
-    guard cropBoxSize.mpvAspect > 0 else {
+    let cropBox = NSRect(x: cropx, y: cropy, width: cropw, height: croph)
+    // If crop is too tall, the aspect will round to zero, which won't work=
+    guard cropBox.size.mpvAspect > 0 else {
       Utility.showAlert("crop_too_extreme")
       return
     }
@@ -104,33 +104,26 @@ class CropSettingsViewController: CropBoxViewController {
 
     let videoSizeRaw = cropBoxView.actualSize
     // Use <=, >= to account for imprecision
-    let isAllSelected = cropx <= 0 && cropy <= 0 && cropw >= Int(videoSizeRaw.width) && croph >= Int(videoSizeRaw.height)
-    let isNoSelection = cropw <= 0 || croph <= 0
+    let isAllSelected = cropBox.origin.x <= 0 && cropBox.origin.y <= 0 && cropBox.width >= videoSizeRaw.width && cropBox.height >= videoSizeRaw.height
+    let isNoSelection = cropBox.width <= 0 || cropBox.height <= 0
 
     player.mpv.queue.async { [self] in
+      let newVidGeo: VideoGeometry
       if isAllSelected || isNoSelection {
-        player.log.verbose("Interactive mode submit: isAllSelected=\(isAllSelected.yn) isNoSelection=\(isNoSelection.yn) → setting crop to none")
-        pwc.exitInteractiveMode()
+        player.log.verbose("Interactive mode submit: isAllSelected=\(isAllSelected.yn) isNoSelection=\(isNoSelection.yn) → setting crop to None")
+        newVidGeo = player.videoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier, videoSizeDisplayOverride: nil)
       } else {
-        let newCropFilter: MPVFilter
-        if player.videoGeo.streamRotation == 0 {
-          newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)
-          player.log.verbose("Submitting from interactive mode with new crop: (\(self.cropx), \(self.cropy)), \(self.cropw) x \(self.croph)")
-        } else {
-          // FIXME: account for codec rotation
-          newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)
-          player.log.verbose("Submitting from interactive mode with new crop: (\(self.cropx), \(self.cropy)), \(self.cropw) x \(self.croph)")
-        }
+        // FIXME: account for codec rotation
+        let newCropFilter = MPVFilter.crop(w: cropBox.widthInt, h: cropBox.heightInt, x: cropBox.xInt, y: cropBox.yInt)
+        player.log.verbose("Submitting from interactive mode with new crop: (\(cropBox)")
 
         guard let newCropLabel = player.deriveCropLabel(from: newCropFilter, rawVideoSize: videoSizeRaw) else {
           player.log.error("Could not generate crop label from the newly created filter!")
           return
         }
-        let newVidGeo = player.videoGeo.clone(selectedCropLabel: newCropLabel, videoSizeDisplayOverride: nil)
-        DispatchQueue.main.async { [self] in
-          pwc.exitInteractiveMode(newVidGeo: newVidGeo)
-        }
+        newVidGeo = player.videoGeo.clone(selectedCropLabel: newCropLabel, videoSizeDisplayOverride: nil)
       }
+      pwc.exitInteractiveMode(newVidGeo: newVidGeo)
     }
   }
 

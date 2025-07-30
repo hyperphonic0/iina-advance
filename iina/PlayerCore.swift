@@ -1434,7 +1434,7 @@ class PlayerCore: NSObject {
     guard videoGeo.userAspectLabel != aspectLabel else { return }
 
     sendVideoAspectOverrideToMpv(aspectLabel: aspectLabel)
-    syncVideoParamsFromMpv(force: true)
+    syncVideoParamsFromMpv()
   }
 
   func sendVideoAspectOverrideToMpv(aspectLabel: String) {
@@ -1477,13 +1477,7 @@ class PlayerCore: NSObject {
     info.cursorAutoHideFullScreenOnly = mpv.getFlag(MPVOption.Window.cursorAutohideFsOnly)
   }
 
-  func syncVideoParamsFromMpv(force: Bool = false) {
-    guard !force else {
-      let gtf = GeometryTransform("SyncVidGeo", self)
-      gtf.submit()
-      return
-    }
-
+  func syncVideoParamsFromMpv() {
     guard !isRestoring else {
       log.trace{"Ignoring SyncVidGeo request: isRestoring=Y"}
       return

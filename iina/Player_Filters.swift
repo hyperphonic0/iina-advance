@@ -249,7 +249,7 @@ extension PlayerCore {
 
     if didSucceed {
       // Bring UI up to date ASAP
-      syncVideoParamsFromMpv(force: true)
+      syncVideoParamsFromMpv()
     }
     return didSucceed
   }

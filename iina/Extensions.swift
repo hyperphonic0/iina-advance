@@ -430,6 +430,11 @@ extension NSRect {
     return NSRect(origin: self.origin, size: newSize)
   }
 
+  var xInt: Int { Int(origin.x) }
+  var yInt: Int { Int(origin.y) }
+  var widthInt: Int { Int(width) }
+  var heightInt: Int { Int(height) }
+
   func addingTo( top: CGFloat = 0,  trailing: CGFloat = 0, bottom: CGFloat = 0,  leading: CGFloat = 0) -> NSRect {
     return NSRect(x: origin.x - leading, y: origin.y - bottom, width: width + leading + trailing, height: height + top + bottom)
   }
