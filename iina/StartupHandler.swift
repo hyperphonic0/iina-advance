@@ -348,6 +348,7 @@ class StartupHandler {
 
     addWindowToRestore(savedWindow, wc)
 
+    player.start()
     savedState.restoreTo(player)
   }
 

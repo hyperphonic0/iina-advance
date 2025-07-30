@@ -335,7 +335,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       player.log.verbose{"Updating playlist table via diff"}
       playlistTableView.post(tableUIChange)
     } else {
-      DispatchQueue.main.async { [self] in
+      windowController.animationPipeline.submitInstantTask { [self] in
         player.log.trace{"Updating playlist table via reloadData"}
         playlistTableView.reloadData()
         doAfterReload()
@@ -363,18 +363,17 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   private func refreshTotalLength() {
+    assert(DispatchQueue.isExecutingIn(PlayerCore.playlistQueue))
+
     if let totalDuration = player.info.calculateTotalDuration() {
       player.log.trace{"Playlist: recalculated total duration: \(totalDuration)"}
       playlistTotalLengthIsReady = true
       playlistTotalLength = totalDuration
-      DispatchQueue.main.async {
-        self.showTotalLength()
-      }
     } else {
       player.log.verbose{"Playlist: failed to recaculate total duration; hiding length label"}
-      DispatchQueue.main.async {
-        self.hideTotalLength()
-      }
+    }
+    windowController.animationPipeline.submitInstantTask {
+      self.showTotalLength()
     }
   }
 
@@ -382,7 +381,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard isViewLoaded else { return }
     player.mpv.queue.async { [self] in
       let loopMode = player.getLoopMode()
-      DispatchQueue.main.async { [self] in
+      windowController.animationPipeline.submitInstantTask { [self] in
         switch loopMode {
         case .off:  loopBtn.state = .off
         case .file: loopBtn.state = .on
@@ -854,7 +853,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
               refreshTotalLength()
             }
           }
-          DispatchQueue.main.async { [self] in
+          windowController.animationPipeline.submitInstantTask { [self] in
             /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
             reloadPlaylistRow(rowIndex)
           }
@@ -897,7 +896,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           // Get watch-later form file system; get other meta from ffmpeg:
           MediaMetaCache.shared.updateCachedMeta(item, mpvTitle: updatedTitle)
           // Refresh each row as it gets updated. May take a while to refresh all
-          DispatchQueue.main.async { [self] in
+          windowController.animationPipeline.submitInstantTask { [self] in
             /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
             reloadPlaylistRow(rowIndex)
           }

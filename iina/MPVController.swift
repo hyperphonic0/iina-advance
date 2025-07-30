@@ -201,7 +201,7 @@ class MPVController: NSObject {
       }
     }
     guard let mpv else {
-      log.debug("Aborting cmd: mpv is nil! Returning error")
+      log.error("Aborting cmd: mpv is nil! Returning error")
       return MPV_ERROR_GENERIC.rawValue
     }
     let returnValue = mpv_command(mpv, &cargs)
