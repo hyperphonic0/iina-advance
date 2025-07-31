@@ -150,9 +150,9 @@ extension PlayerWindowController {
           // Video was disabled in music mode, but need to restore it now
           player.setVideoTrackEnabled()
         } else {
-          if viewportBtmOffsetFromContentViewBtmConstraint.priority != .required {
-            log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = required"}
-            viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
+          if !viewportBtmOffsetFromContentViewBtmConstraint.isActive {
+            log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
+            viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
           }
         }
       }
@@ -686,13 +686,13 @@ extension PlayerWindowController {
           miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
         }
 
-        let shouldDisableConstraint = musicModeGeo.isPlaylistVisible  // musicModeGeo==transition.outputGeo
+        // musicModeGeo==transition.outputGeo
+        let shouldDisableVideoView = !musicModeGeo.isVideoVisible && musicModeGeo.isPlaylistVisible
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
         /// (See note in `applyMusicModeGeo`)
-        if shouldDisableConstraint && viewportBtmOffsetFromContentViewBtmConstraint.priorityInt != 499 {
-          // Don't set this too low, or it may compete with VideoView's constraints and cause video to squeeze or stretch
-          log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = 499"}
-          viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
+        if shouldDisableVideoView && viewportBtmOffsetFromContentViewBtmConstraint.isActive {
+          log.verbose{"Hiding video, but playlist is shown. Setting viewportBtmOffsetFromContentViewBtmConstraint inactive"}
+          viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
         }
 
         if !miniPlayer.volumeSliderView.subviews.contains(fragVolumeView) {

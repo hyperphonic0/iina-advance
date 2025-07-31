@@ -726,12 +726,11 @@ extension PlayerWindowController {
     
     player.setVideoTrackDisabled(showDefaultAlbumArt: false)
 
-    let shouldDisableConstraint = isPlaylistVisible
     /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
     /// (See note in `applyMusicModeGeo`)
-    if shouldDisableConstraint && viewportBtmOffsetFromContentViewBtmConstraint.priorityInt != 499 {
-      log.verbose{"Hiding video, but playlist is shown. Setting viewportBtmOffsetFromContentViewBtmConstraint priority = 499"}
-      viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
+    if isPlaylistVisible {
+      log.verbose{"Hiding video, but playlist is shown. Setting viewportBtmOffsetFromContentViewBtmConstraint inactive"}
+      viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
     }
   }
 
@@ -779,10 +778,10 @@ extension PlayerWindowController {
     /// For the case where video is hidden but playlist is shown, AppKit won't allow the window's height to be changed by the user
     /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
     /// Need to execute this in its own task so that other animations are not affected.
-    let shouldDisableConstraint = !geometry.isVideoVisible && geometry.isPlaylistVisible
-    if !shouldDisableConstraint && viewportBtmOffsetFromContentViewBtmConstraint.priority != .required {
-      log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint priority = required"}
-      viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
+    let shouldDisableVideoView = !geometry.isVideoVisible && geometry.isPlaylistVisible
+    if !shouldDisableVideoView {
+      log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
+      viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
     }
 
     if save {

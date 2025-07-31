@@ -392,7 +392,7 @@ extension PlayerWindowController {
   }
 
   func initBottomBarTopBorder() {
-    bottomBarTopBorder.identifier = .init("BottomBar-TopBorder")  // helps with debug logging
+    bottomBarTopBorder.idString = "BottomBar-TopBorder"  // helps with debug logging
     bottomBarTopBorder.boxType = .custom
     bottomBarTopBorder.titlePosition = .noTitle
     bottomBarTopBorder.borderWidth = 0
@@ -429,7 +429,7 @@ extension PlayerWindowController {
       bottomBarView.material = .sidebar
       bottomBarView.state = .active
     }
-    bottomBarView.identifier = .init("BottomBarView")  // helps with debug logging
+    bottomBarView.idString = "BottomBarView"  // helps with debug logging
     bottomBarView.isHidden = true
     bottomBarView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -437,32 +437,32 @@ extension PlayerWindowController {
 
     if !isActive(viewportBtmOffsetFromTopOfBottomBarConstraint) {
       viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0)
-      viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = .init("Viewport-Btm_OffsetFrom-BottomBar-Top_Constraint")
+      viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Top_Constraint"
       viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
     }
 
     if !isActive(viewportBtmOffsetFromBtmOfBottomBarConstraint) {
       viewportBtmOffsetFromBtmOfBottomBarConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
       viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
-      viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = .init("Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint")
+      viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint"
     }
 
     if !isActive(bottomBarBtmOffsetFromContentViewBtmConstraint) {
       bottomBarBtmOffsetFromContentViewBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
       bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = false
-      bottomBarBtmOffsetFromContentViewBtmConstraint.identifier = .init("bottomBar-Btm_OffsetFrom-ContentView-Btm_Constraint")
+      bottomBarBtmOffsetFromContentViewBtmConstraint.identifier = "bottomBar-Btm_OffsetFrom-ContentView-Btm_Constraint"
     }
 
     if !isActive(bottomBarLeadingSpaceConstraint) {
       bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
       bottomBarLeadingSpaceConstraint.isActive = true
-      bottomBarLeadingSpaceConstraint.identifier = .init("bottomBarLeadingSpaceConstraint")
+      bottomBarLeadingSpaceConstraint.identifier = "bottomBarLeadingSpaceConstraint"
     }
 
     if !isActive(bottomBarTrailingSpaceConstraint) {
       bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
       bottomBarTrailingSpaceConstraint.isActive = true
-      bottomBarTrailingSpaceConstraint.identifier = .init("bottomBarTrailingSpaceConstraint")
+      bottomBarTrailingSpaceConstraint.identifier = "bottomBarTrailingSpaceConstraint"
     }
 
     bottomBarView.addSubview(bottomBarTopBorder)
@@ -470,7 +470,7 @@ extension PlayerWindowController {
     // Want to make a 0.5px border. But it seems that in some display modes, that is not only not possible,
     // but it will trigger an auto-layout constraint error. So use defaultHigh and be prepared to accept a 1px border.
     let bottomBarTopBorder_HeightConstraint = bottomBarTopBorder.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0.5)
-    bottomBarTopBorder_HeightConstraint.identifier = .init("BottomBarTopBorder-HeightConstraint")
+    bottomBarTopBorder_HeightConstraint.identifier = "BottomBarTopBorder-HeightConstraint"
     bottomBarTopBorder_HeightConstraint.priority = .defaultHigh
     bottomBarTopBorder_HeightConstraint.isActive = true
 
