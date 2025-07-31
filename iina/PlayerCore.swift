@@ -515,6 +515,8 @@ class PlayerCore: NSObject {
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
 
+    start()
+
     /// Need to use `sync` so that:
     /// 1. Prev use of mpv core can finish stopping / drain queue
     /// 2. `currentPlayback` is guaranteed to update before returning, so that `PlayerCore.activeOrNew` does not return same player
@@ -633,11 +635,6 @@ class PlayerCore: NSObject {
 
     mpv.mpvInit()
     events.emit(.mpvInitialized)
-
-    if !getAudioDevices().contains(where: { $0["name"] == Preference.string(for: .audioDevice)! }) {
-      log.verbose("Defaulting mpv audioDevice to 'auto'")
-      setAudioDevice("auto")
-    }
   }
 
   /// Initiate shutdown of this player.
@@ -1651,7 +1648,6 @@ class PlayerCore: NSObject {
   func setAudioDevice(_ name: String) {
     mpv.queue.async { [self] in
       guard isActive else { return }
-      log.verbose{"Seting mpv audioDevice to \(name.pii.quoted)"}
       mpv.setString(MPVProperty.audioDevice, name)
     }
   }

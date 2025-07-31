@@ -479,6 +479,11 @@ extension MPVController {
       }
     }
 
+    if !player.getAudioDevices().contains(where: { $0["name"] == Preference.string(for: .audioDevice)! }) {
+      log.verbose("Defaulting mpv audioDevice to 'auto'")
+      setString(MPVProperty.audioDevice, "auto")
+    }
+
     player.updateCursorAutohideState()
 
     // get version
