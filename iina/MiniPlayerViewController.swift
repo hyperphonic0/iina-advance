@@ -54,7 +54,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   var isPlaylistVisible: Bool {
-    windowController.musicModeGeo.isPlaylistVisible
+    windowController.musicModeGeo.isMusicModePlaylistVisible
   }
 
   var isVideoVisible: Bool {

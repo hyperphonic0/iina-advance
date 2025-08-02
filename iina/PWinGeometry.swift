@@ -347,6 +347,21 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                   height: containerSize.height - outsideBars.totalHeight - topMarginHeight)
   }
 
+  /// Indicates height of video / album art when it is visible, or what the height should be even if
+  /// it is not visible.
+  /// Derived from other properties.
+  var videoHeightWhenVisible: CGFloat {
+    guard mode == .musicMode else {
+      return videoSize.height
+    }
+    return PWinGeometry.MusicMode.videoHeightWhenVisible(windowFrame: windowFrame, video: video)
+  }
+
+  /// Derived from other properties.
+  var videoHeight: CGFloat {
+    return isVideoVisible ? videoHeightWhenVisible : 0
+  }
+
   // MARK: - Other Util Functions
 
   func hasEqual(windowFrame windowFrame2: NSRect? = nil, videoSize videoSize2: NSSize? = nil) -> Bool {

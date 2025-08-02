@@ -317,14 +317,6 @@ extension VideoView {
   /// Convenience property
   var videoViewAspect: CGFloat? {  videoViewConstraints?.aspectRatio.multiplier }
 
-  // MARK: - PiP
-
-  func prepareForPIPEntry() {
-    // Remove remaining constraints. The PiP superview will manage videoView's layout.
-    removeVideoConstraints()
-    layer?.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
-  }
-
   /// INIT constraints: Only called once, at VideoView init
   func initVideoConstraints() {
     translatesAutoresizingMaskIntoConstraints = false

@@ -1192,7 +1192,7 @@ extension MusicModeGeometry {
                self.windowFrame.width.stringMaxFrac2,
                self.windowFrame.height.stringMaxFrac2,
                self.isVideoVisible.yn,
-               self.isPlaylistVisible.yn,
+               self.isMusicModePlaylistVisible.yn,
                self.screenID.replacingOccurrences(of: ",", with: ";"),  // ensure it's CSV-compatible
                self.video.toEmbeddedCSV()
     ].joined(separator: ",")

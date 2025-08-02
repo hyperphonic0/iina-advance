@@ -685,7 +685,7 @@ extension PlayerWindowController {
         }
 
         // musicModeGeo==transition.outputGeo
-        let shouldDisableVideoView = !musicModeGeo.isVideoVisible && musicModeGeo.isPlaylistVisible
+        let shouldDisableVideoView = !musicModeGeo.isVideoVisible && musicModeGeo.isMusicModePlaylistVisible
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
         /// (See note in `applyMusicModeGeo`)
         if shouldDisableVideoView {
@@ -1328,7 +1328,7 @@ extension PlayerWindowController {
 
     if transition.isTogglingFullScreen || transition.isTogglingMusicMode {
       if transition.outputLayout.isMusicMode && !musicModeGeo.isVideoVisible && pip.status == .notInPIP {
-        updateWindowLayoutForVideoViewHidden(isPlaylistVisible: musicModeGeo.isPlaylistVisible)
+        updateWindowLayoutForVideoViewHidden(isPlaylistVisible: musicModeGeo.isMusicModePlaylistVisible)
       } else {
         sendWindowScaleToMPV(transition.outputGeometry.mpvWindowScale())
       }

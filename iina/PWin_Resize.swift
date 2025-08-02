@@ -705,7 +705,7 @@ extension PlayerWindowController {
     // TASK 3: Background cleanup
     tasks.append(.instantTask { [self] in
       if isHidingVideo, pip.status == .notInPIP {
-        updateWindowLayoutForVideoViewHidden(isPlaylistVisible: outputGeo.isPlaylistVisible)
+        updateWindowLayoutForVideoViewHidden(isPlaylistVisible: outputGeo.isMusicModePlaylistVisible)
       }
 
       isAnimatingLayoutTransition = false
@@ -751,7 +751,7 @@ extension PlayerWindowController {
     var hasChange: Bool = !geometry.windowFrame.equalTo(window!.frame)
     if geometry.isVideoVisible != musicModeGeo.isVideoVisible {
       hasChange = true
-    } else if let newVideoSize = geometry.videoSize, let oldVideoSize = musicModeGeo.videoSize, !oldVideoSize.equalTo(newVideoSize) {
+    } else if musicModeGeo.videoHeight != geometry.videoHeight {
       hasChange = true
     }
 
@@ -778,7 +778,7 @@ extension PlayerWindowController {
     /// For the case where video is hidden but playlist is shown, AppKit won't allow the window's height to be changed by the user
     /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
     /// Need to execute this in its own task so that other animations are not affected.
-    let shouldDisableVideoView = !geometry.isVideoVisible && geometry.isPlaylistVisible
+    let shouldDisableVideoView = !geometry.isVideoVisible && geometry.isMusicModePlaylistVisible
     if !shouldDisableVideoView {
       log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
       viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
@@ -787,7 +787,7 @@ extension PlayerWindowController {
     if save {
       // Update defaults:
       Preference.set(geometry.isVideoVisible, for: .musicModeShowAlbumArt)
-      Preference.set(geometry.isPlaylistVisible, for: .musicModeShowPlaylist)
+      Preference.set(geometry.isMusicModePlaylistVisible, for: .musicModeShowPlaylist)
 
       musicModeGeo = geometry
       player.saveState()

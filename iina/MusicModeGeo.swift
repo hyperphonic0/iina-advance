@@ -29,14 +29,14 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   let video: VideoGeometry
 
   /// indicates if playlist is currently visible
-  var isPlaylistVisible: Bool {
-    return playlistHeight > 0
+  var isMusicModePlaylistVisible: Bool {
+    return musicModePlaylistHeight > 0
   }
 
   /// If playlist if visible, indicates playlist height.
   /// Will be 0 if playlist is not visible.
   /// Derived from other properties.
-  var playlistHeight: CGFloat {
+  var musicModePlaylistHeight: CGFloat {
     return round(windowFrame.height - Constants.Distance.MusicMode.oscHeight - videoHeight)
   }
 
@@ -52,17 +52,9 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     return isVideoVisible ? videoHeightWhenVisible : 0
   }
 
-  var videoSize: NSSize? {
-    guard isVideoVisible else { return nil }
+  var videoSize: NSSize {
+    guard isVideoVisible else { return NSZeroSize }
     return NSSize(width: windowFrame.width, height: videoHeightWhenVisible)
-  }
-
-  var videoAspect: CGFloat {
-    return video.videoAspectCAR
-  }
-
-  var videoScale: Double {
-    return windowFrame.width / video.videoSizeCAR.width
   }
 
   var viewportSize: NSSize? {
@@ -81,7 +73,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     var windowFrame = NSRect(origin: windowFrame.origin, size:
                               CGSize(width: windowFrame.width.rounded(), height: windowFrame.height.rounded()))
     let videoHeight = PWinGeometry.MusicMode.videoHeight(windowFrame: windowFrame, video: video, isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
-    let playlistHeight = windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
+    let musicModePlaylistHeight = windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
     let log = video.log
 
     let extraWidthNeeded = Constants.Distance.MusicMode.minWindowWidth - windowFrame.width
@@ -93,14 +85,14 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     }
 
     if isPlaylistVisible {
-      let extraHeightNeeded = Constants.Distance.MusicMode.minPlaylistHeight - playlistHeight
+      let extraHeightNeeded = Constants.Distance.MusicMode.minPlaylistHeight - musicModePlaylistHeight
       if extraHeightNeeded > 0 {
         log.trace{"MusicModeGeoInit: height too small for playlist; adding: \(extraHeightNeeded)"}
         windowFrame = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - extraHeightNeeded,
                              width: windowFrame.width, height: windowFrame.height + extraHeightNeeded)
       }
     } else {
-      let extraHeightNeeded = -playlistHeight
+      let extraHeightNeeded = -musicModePlaylistHeight
       if extraHeightNeeded != 0 {
         log.trace{"MusicModeGeoInit: height is invalid; adding: \(extraHeightNeeded)"}
         windowFrame = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - extraHeightNeeded,
@@ -113,8 +105,8 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     self.screenID = screenID
     self.isVideoVisible = isVideoVisible
     self.video = video
-    assert(isPlaylistVisible ? (self.playlistHeight >= Constants.Distance.MusicMode.minPlaylistHeight) : (self.playlistHeight == 0),
-           "Playlist height invalid: isPlaylistVisible==\(isPlaylistVisible.yn) but playlistHeight==\(self.playlistHeight) < min (\(Constants.Distance.MusicMode.minPlaylistHeight))")
+    assert(isPlaylistVisible ? (self.musicModePlaylistHeight >= Constants.Distance.MusicMode.minPlaylistHeight) : (self.musicModePlaylistHeight == 0),
+           "Playlist height invalid: isPlaylistVisible==\(isPlaylistVisible.yn) but playlistHeight==\(self.musicModePlaylistHeight) < min (\(Constants.Distance.MusicMode.minPlaylistHeight))")
   }
 
   func clone(windowFrame: NSRect? = nil, screenID: String? = nil, video: VideoGeometry? = nil,
@@ -123,7 +115,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
                              screenID: screenID ?? self.screenID,
                              video: video ?? self.video,
                              isVideoVisible: isVideoVisible ?? self.isVideoVisible,
-                             isPlaylistVisible: isPlaylistVisible ?? self.isPlaylistVisible)
+                             isPlaylistVisible: isPlaylistVisible ?? self.isMusicModePlaylistVisible)
   }
 
   /// Converts this `MusicModeGeometry` to an equivalent `PWinGeometry` object.
@@ -133,7 +125,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
                               screenFit: .stayInside,
                               mode: .musicMode,
                               topMarginHeight: 0,
-                              outsideBars: MarginQuad(bottom: Constants.Distance.MusicMode.oscHeight + playlistHeight),
+                              outsideBars: MarginQuad(bottom: Constants.Distance.MusicMode.oscHeight + musicModePlaylistHeight),
                               insideBars: MarginQuad.zero,
                               video: video)
 
@@ -172,7 +164,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     /// When the window's width changes, the video scales to match while keeping its aspect ratio,
     /// and the control bar (`musicModeControlBarView`) and playlist are pushed down.
     /// Calculate the maximum width/height the art can grow to so that `musicModeControlBarView` is not pushed off the screen.
-    let minPlaylistHeight = isPlaylistVisible ? Constants.Distance.MusicMode.minPlaylistHeight : 0
+    let minPlaylistHeight = isMusicModePlaylistVisible ? Constants.Distance.MusicMode.minPlaylistHeight : 0
     let videoAspect = video.videoAspectCAR
 
     var maxWinWidth: CGFloat
@@ -197,7 +189,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     let minWindowHeight = videoHeight + Constants.Distance.MusicMode.oscHeight + minPlaylistHeight
     // Make sure height is within acceptable values
     var newHeight = max(requestedSize.height, minWindowHeight)
-    let maxHeight = isPlaylistVisible ? containerFrame.height : minWindowHeight
+    let maxHeight = isMusicModePlaylistVisible ? containerFrame.height : minWindowHeight
     newHeight = min(round(newHeight), maxHeight)
     let newWindowSize = NSSize(width: newWidth, height: newHeight)
 
@@ -237,7 +229,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
       newVideoHeight = (newVideoWidth / videoAspect).rounded()
 
       let maxVideoHeight: CGFloat
-      if isPlaylistVisible {
+      if isMusicModePlaylistVisible {
         // If playlist is visible, keep the window height fixed.
         // The video will only be able to expand until the playlist is at its min height
         maxVideoHeight = windowHeight - Constants.Distance.MusicMode.oscHeight - Constants.Distance.MusicMode.minPlaylistHeight
@@ -284,7 +276,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   func resizingWindow(to requestedSize: NSSize, inLiveResize: Bool, isLiveResizingWidth: Bool) -> MusicModeGeometry {
     var newGeo: MusicModeGeometry
 
-    if inLiveResize, isVideoVisible && !isPlaylistVisible {
+    if inLiveResize, isVideoVisible && !isMusicModePlaylistVisible {
       // Special case when scaling only video: need to treat similar to windowed mode
       let nonViewportAreaSize = windowFrame.size - viewportSize!
       let requestedViewportSize = requestedSize - nonViewportAreaSize
@@ -323,7 +315,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   }
 
   var description: String {
-    return "MusicModeGeo(\(screenID.quoted) \(isVideoVisible ? "videoH:\(videoHeight.logStr)" : "video=NO") aspect:\(Double(videoAspect).mpvAspectString) \(isPlaylistVisible ? "pListH:\(playlistHeight.logStr)" : "pListHidden") btmBarH:\(bottomBarHeight.logStr) windowFrame:\(windowFrame))"
+    return "MusicModeGeo(\(screenID.quoted) \(isVideoVisible ? "videoH:\(videoHeight.logStr)" : "video=NO") \(isMusicModePlaylistVisible ? "pListH:\(musicModePlaylistHeight.logStr)" : "pListHidden") btmBarH:\(bottomBarHeight.logStr) windowFrame:\(windowFrame))"
   }
 
 }
