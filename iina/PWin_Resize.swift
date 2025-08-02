@@ -721,7 +721,7 @@ extension PlayerWindowController {
   func updateWindowLayoutForVideoViewHidden(isPlaylistVisible: Bool) {
     videoView.apply(nil)  // remove constraints
     videoView.removeFromSuperview()
-    removeVideoViewSpacers()
+    viewportView.removeSpacers()
     updateDefaultArtVisibility(to: false)  // hide defaultAlbumArt
     
     player.setVideoTrackDisabled(showDefaultAlbumArt: false)
@@ -730,7 +730,7 @@ extension PlayerWindowController {
     /// (See note in `applyMusicModeGeo`)
     if isPlaylistVisible {
       log.verbose{"Hiding video, but playlist is shown. Setting viewportBtmOffsetFromContentViewBtmConstraint inactive"}
-      viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
+      viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
     }
   }
 
@@ -781,7 +781,7 @@ extension PlayerWindowController {
     let shouldDisableVideoView = !geometry.isVideoVisible && geometry.isPlaylistVisible
     if !shouldDisableVideoView {
       log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
-      viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
+      viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
     }
 
     if save {

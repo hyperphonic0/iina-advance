@@ -589,10 +589,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   let additionalInfoView = AdditionalInfoView()
 
   let viewportView = ViewportView()
-  let viewportTopSpacer = SpacerView(id: "ViewportTopSpacer")
-  let viewportBottomSpacer = SpacerView(id: "ViewportBottomSpacer")
-  let viewportLeadingSpacer = SpacerView(id: "ViewportLeadingSpacer")
-  let viewportTrailingSpacer = SpacerView(id: "ViewportTrailingSpacer")
 
   let defaultAlbumArtView = DefaultAlbumArtView()
 
@@ -706,7 +702,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
       videoView.$isUninited.withLock() { isUninited in
         guard !viewportView.subviews.contains(videoView) else { return }
-        addVideoViewSpacers()
+        viewportView.addSpacers()
         log.verbose{"Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)"}
         viewportView.addSubview(videoView)
         sortViewportViewSubviews()

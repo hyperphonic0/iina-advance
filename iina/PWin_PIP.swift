@@ -152,8 +152,12 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
       pip.videoController = NSViewController()
       pip.videoController.view = videoView
-      videoView.prepareForPIPEntry()
-      removeVideoViewSpacers()
+
+      // Remove remaining constraints. The PiP superview will manage videoView's layout.
+      videoView.removeVideoConstraints()
+      videoView.layer?.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+      viewportView.removeSpacers()
+
       pip.controller.playing = player.info.isPlaying
       pip.controller.title = window.title
 

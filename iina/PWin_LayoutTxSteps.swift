@@ -150,10 +150,8 @@ extension PlayerWindowController {
           // Video was disabled in music mode, but need to restore it now
           player.setVideoTrackEnabled()
         } else {
-          if !viewportBtmOffsetFromContentViewBtmConstraint.isActive {
             log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
-            viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
-          }
+            viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
         }
       }
     }
@@ -690,9 +688,9 @@ extension PlayerWindowController {
         let shouldDisableVideoView = !musicModeGeo.isVideoVisible && musicModeGeo.isPlaylistVisible
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
         /// (See note in `applyMusicModeGeo`)
-        if shouldDisableVideoView && viewportBtmOffsetFromContentViewBtmConstraint.isActive {
+        if shouldDisableVideoView {
           log.verbose{"Hiding video, but playlist is shown. Setting viewportBtmOffsetFromContentViewBtmConstraint inactive"}
-          viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
+          viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
         }
 
         if !miniPlayer.volumeSliderView.subviews.contains(fragVolumeView) {

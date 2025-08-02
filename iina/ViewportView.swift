@@ -11,13 +11,20 @@ import Foundation
 class ViewportView: NSView {
   unowned var player: PlayerCore!
 
+  let topSpacer = SpacerView(id: "ViewportTopSpacer")
+  let bottomSpacer = SpacerView(id: "ViewportBottomSpacer")
+  let leadingSpacer = SpacerView(id: "ViewportLeadingSpacer")
+  let trailingSpacer = SpacerView(id: "ViewportTrailingSpacer")
+
   init() {
     super.init(frame: .zero)
+    idString = "ViewportView"
     registerForDraggedTypes([.nsFilenames, .nsURL, .string])
     setContentCompressionResistancePriority(.required, for: .horizontal)
     setContentCompressionResistancePriority(.required, for: .vertical)
     setContentHuggingPriority(.required, for: .horizontal)
     setContentHuggingPriority(.required, for: .vertical)
+    initVideoViewSpacers()
   }
 
   required init?(coder: NSCoder) {
@@ -82,18 +89,68 @@ class ViewportView: NSView {
   override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
     return player.openFromPasteboard(sender)
   }
+
+  // MARK: - Spacers
+
+  func initVideoViewSpacers() {
+    // These don't seem to matter. But set to reasonable values:
+    let ch: Float = 250
+    trailingSpacer.setContentHugging(h: ch, v: ch)
+    leadingSpacer.setContentHugging(h: ch, v: ch)
+    topSpacer.setContentHugging(h: ch, v: ch)
+    bottomSpacer.setContentHugging(h: ch, v: ch)
+    let ccr: Float = 250
+    trailingSpacer.setCCResistance(h: ccr, v: ccr)
+    leadingSpacer.setCCResistance(h: ccr, v: ccr)
+    topSpacer.setCCResistance(h: ccr, v: ccr)
+    bottomSpacer.setCCResistance(h: ccr, v: ccr)
+    
+    // Reduce the unused dimension of each spacer to keep it well-defined
+    topSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
+    bottomSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
+    leadingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
+    trailingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
+  }
+
+  func addSpacers() {
+    player.log.verbose("[Load] Adding videoView spacers to viewportView")
+    if !subviews.contains(topSpacer) {
+      addSubview(topSpacer)
+      topSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
+    }
+    if !subviews.contains(bottomSpacer) {
+      addSubview(bottomSpacer)
+      bottomSpacer.addConstraintsToFillSuperview(bottom: 0, trailing: 0)
+    }
+    if !subviews.contains(leadingSpacer) {
+      addSubview(leadingSpacer)
+      leadingSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
+    }
+    if !subviews.contains(trailingSpacer) {
+      addSubview(trailingSpacer)
+      trailingSpacer.addConstraintsToFillSuperview(top: 0, trailing: 0)
+    }
+  }
+
+  func removeSpacers() {
+    topSpacer.removeFromSuperview()
+    bottomSpacer.removeFromSuperview()
+    leadingSpacer.removeFromSuperview()
+    trailingSpacer.removeFromSuperview()
+  }
+
 }
 
 extension PlayerWindowController {
-  
+
   /// Need to call this after adding a new subview to `viewportView` to ensure ordering of subviews is correct.
   func sortViewportViewSubviews() {
-    let possibleSubviews = [viewportTopSpacer, viewportBottomSpacer, viewportLeadingSpacer, viewportTrailingSpacer,
-     pip.overlayView,
-     videoView,
-     defaultAlbumArtView,
-     additionalInfoView,
-     osd.osdView]
+    let possibleSubviews = [viewportView.topSpacer, viewportView.bottomSpacer, viewportView.leadingSpacer, viewportView.trailingSpacer,
+                            pip.overlayView,
+                            videoView,
+                            defaultAlbumArtView,
+                            additionalInfoView,
+                            osd.osdView]
     let correctOrderedSubviews = possibleSubviews.filter { viewportView.containsSubview($0) }
     for subview in correctOrderedSubviews {
       viewportView.addSubview(subview, positioned: .above, relativeTo: nil)

@@ -335,7 +335,7 @@ extension VideoView {
   }
 
   /// REMOVE constraints: Need to remove all constraints when in PiP: it will do layout based on the layer's `autoresizingMask`.
-  private func removeVideoConstraints() {
+  func removeVideoConstraints() {
     guard let cons = videoViewConstraints else {
       log.verbose("VideoView: all video constraints already removed")
       return
@@ -390,10 +390,10 @@ extension VideoView {
 
     log.verbose("VideoView updating constraints: aspect=\(videoViewAspect) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) mode=\(geometry.mode)")
 
-    let topSpacer = player.windowController.viewportTopSpacer
-    let bottomSpacer = player.windowController.viewportBottomSpacer
-    let leadingSpacer = player.windowController.viewportLeadingSpacer
-    let trailingSpacer = player.windowController.viewportTrailingSpacer
+    let topSpacer = player.windowController.viewportView.topSpacer
+    let bottomSpacer = player.windowController.viewportView.bottomSpacer
+    let leadingSpacer = player.windowController.viewportView.leadingSpacer
+    let trailingSpacer = player.windowController.viewportView.trailingSpacer
 
     let cons = VideoViewConstraints(
       log: log,
