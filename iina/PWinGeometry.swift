@@ -241,6 +241,14 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return playlistHeight > 0
   }
 
+  /// If in music mode & playlist is visible, indicates playlist height.
+  /// Will be 0 if not in music mode or playlist is not visible.
+  /// Derived from other properties.
+  var musicModePlaylistHeight: CGFloat {
+    guard mode == .musicMode else { return 0 }
+    return round(windowFrame.height - Constants.Distance.MusicMode.oscHeight - videoSize.height)
+  }
+
   /// Final aspect ratio of `videoView`. Very close to `video.videoAspectCAR`, except it is calculated from the actual pixels
   /// of the final `videoSize`. Very limited utility. In most cases `video.videoAspectDisplay` should be used, as it is the target.
   var videoViewAspect: CGFloat {
@@ -985,4 +993,28 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     log.debug("[geo] Cropped to new cropLabel: \(newVidGeo.selectedCropLabel.quoted), screenID: \(screenID), screenFit: \(newFitOption)")
     return self.clone(screenFit: newFitOption, viewportMargins: newViewportMargins, video: newVidGeo)
   }
+
+  struct MusicMode {
+    static func playlistHeight(windowFrame: CGRect, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) -> CGFloat {
+      guard isPlaylistVisible else {
+        return 0
+      }
+      let videoHeight = videoHeight(windowFrame: windowFrame, video: video, isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
+      return windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
+    }
+
+    static func videoHeight(windowFrame: CGRect, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) -> CGFloat {
+      guard isVideoVisible else {
+        return 0
+      }
+      let vidHeight = videoHeightWhenVisible(windowFrame: windowFrame, video: video)
+      return vidHeight
+    }
+
+    static func videoHeightWhenVisible(windowFrame: CGRect, video: VideoGeometry) -> CGFloat {
+      return (windowFrame.width / video.videoAspectCAR).rounded()
+    }
+
+  }  // end struct MusicMode
+
 }

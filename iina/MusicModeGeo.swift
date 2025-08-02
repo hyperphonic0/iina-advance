@@ -44,7 +44,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   /// it is not visible.
   /// Derived from other properties.
   var videoHeightWhenVisible: CGFloat {
-    return MusicModeGeometry.videoHeightWhenVisible(windowFrame: windowFrame, video: video)
+    return PWinGeometry.MusicMode.videoHeightWhenVisible(windowFrame: windowFrame, video: video)
   }
 
   /// Derived from other properties.
@@ -80,7 +80,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   init(windowFrame: NSRect, screenID: String, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) {
     var windowFrame = NSRect(origin: windowFrame.origin, size:
                               CGSize(width: windowFrame.width.rounded(), height: windowFrame.height.rounded()))
-    let videoHeight = MusicModeGeometry.videoHeight(windowFrame: windowFrame, video: video, isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
+    let videoHeight = PWinGeometry.MusicMode.videoHeight(windowFrame: windowFrame, video: video, isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
     let playlistHeight = windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
     let log = video.log
 
@@ -324,28 +324,6 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
 
   var description: String {
     return "MusicModeGeo(\(screenID.quoted) \(isVideoVisible ? "videoH:\(videoHeight.logStr)" : "video=NO") aspect:\(Double(videoAspect).mpvAspectString) \(isPlaylistVisible ? "pListH:\(playlistHeight.logStr)" : "pListHidden") btmBarH:\(bottomBarHeight.logStr) windowFrame:\(windowFrame))"
-  }
-
-  static func playlistHeight(windowFrame: CGRect, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) -> CGFloat {
-    guard isPlaylistVisible else {
-      return 0
-    }
-    let videoHeight = videoHeight(windowFrame: windowFrame, video: video, isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
-    return windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
-  }
-
-  static func videoHeight(windowFrame: CGRect, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) -> CGFloat {
-    guard isVideoVisible else {
-      return 0
-    }
-    let vidHeight = (windowFrame.width / video.videoAspectCAR).rounded()
-//    windowFrame.height - vidHeight - Constants.Distance.MusicMode.oscHeight - (isPlaylistVisible ? Constants.Distance.MusicMode.minPlaylistHeight : 0
-//    assert(windowFrame.height - vidHeight - Constants.Distance.MusicMode.oscHeight - Constants.Distance.MusicMode.minPlaylistHeight >= 0)
-    return vidHeight
-  }
-
-  static func videoHeightWhenVisible(windowFrame: CGRect, video: VideoGeometry) -> CGFloat {
-    return round(windowFrame.width / video.videoAspectCAR)
   }
 
 }
