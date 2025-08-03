@@ -299,8 +299,8 @@ extension PlayerWindowController {
     }
 
     let gtf = GeometryTransform("SetVideoScale", player,
-                                windowed: { [self] cxt -> PWinGeometry? in
-      let oldWindowedGeo = cxt.oldGeo.windowed.clone(video: cxt.inputVidGeo)  // may need to sub from syncVideoParams
+                                windowed: { [self] ctx -> PWinGeometry? in
+      let oldWindowedGeo = ctx.oldGeo.windowed.clone(video: ctx.inputVidGeo)  // may need to sub from syncVideoParams
       // TODO: if Preference.bool(for: .usePhysicalResolution) {}
       // Not supported in music mode at this time. Need to resolve backing scale bugs
       // FIXME: regression: viewport keeps expanding when video runs into screen boundary
@@ -396,8 +396,8 @@ extension PlayerWindowController {
     log.verbose{"Got updated window-scale from mpv: \(currentMpvWindowScale) → \(newMpvWindowScale)"}
 
     let gtf = GeometryTransform("SetWindowScaleFromMPV", player,
-                                windowed: { [self] cxt -> PWinGeometry? in
-      let oldWindowedGeo = cxt.oldGeo.windowed
+                                windowed: { [self] ctx -> PWinGeometry? in
+      let oldWindowedGeo = ctx.oldGeo.windowed
       // TODO: if Preference.bool(for: .usePhysicalResolution) {}
 
       /// This logic needs to match the function `mp_property_current_window_scale` in mpv's `player.command.c`
@@ -469,18 +469,18 @@ extension PlayerWindowController {
     switch currentLayout.mode {
     case .windowedNormal, .windowedInteractive, .musicMode:
 
-      let windowedTransform: (GeometryTransform.Context) -> PWinGeometry? = { [self] cxt -> PWinGeometry? in
-        switch cxt.outputLayout.mode {
+      let windowedTransform: (GeometryTransform.Context) -> PWinGeometry? = { [self] ctx -> PWinGeometry? in
+        switch ctx.outputLayout.mode {
         case .fullScreenInteractive, .fullScreenNormal:
           return nil
         case .musicMode:
-          let oldViewportSize = cxt.oldGeo.musicMode.viewportSize
-          guard cxt.oldGeo.musicMode.isVideoVisible else { return nil }
+          let oldViewportSize = ctx.oldGeo.musicMode.viewportSize
+          guard ctx.oldGeo.musicMode.isVideoVisible else { return nil }
           let desiredViewportSize = scale(oldViewportSize, widthStep: widthStep)
           log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
-          return cxt.oldGeo.musicMode.scalingViewport(to: desiredViewportSize)
+          return ctx.oldGeo.musicMode.scalingViewport(to: desiredViewportSize)
         case .windowedNormal, .windowedInteractive:
-          let oldWindowedGeo = cxt.oldGeo.windowed
+          let oldWindowedGeo = ctx.oldGeo.windowed
           let desiredViewportSize = scale(oldWindowedGeo.viewportSize, widthStep: widthStep)
           log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
           let newGeoUnconstrained = oldWindowedGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
