@@ -468,8 +468,11 @@ extension PlayerWindowController {
 
     switch currentLayout.mode {
     case .windowedNormal, .windowedInteractive, .musicMode:
+
       let windowedTransform: (GeometryTransform.Context) -> PWinGeometry? = { [self] cxt -> PWinGeometry? in
         switch cxt.outputLayout.mode {
+        case .fullScreenInteractive, .fullScreenNormal:
+          return nil
         case .musicMode:
           let oldViewportSize = cxt.oldGeo.musicMode.viewportSize
           guard cxt.oldGeo.musicMode.isVideoVisible else { return nil }
@@ -484,8 +487,6 @@ extension PlayerWindowController {
           // User has actively resized the video. Assume this is the new preferred resolution
           player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
           return newGeoUnconstrained.refitted(using: .stayInside)
-        case .fullScreenInteractive, .fullScreenNormal:
-          return nil
         }
       }
       animationPipeline.submit(gtf: GeometryTransform("ScaleVideoBy\(widthStep)px", player,

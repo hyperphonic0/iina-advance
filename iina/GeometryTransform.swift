@@ -150,6 +150,13 @@ struct GeometryTransform {
 
       // -- main queue -------------------------------------------------------------------------
       pwc.animationPipeline.submitInstantTask { [self] in
+        // Cache this inside animation task to ensure serial access
+        cxt.inputLayout = pwc.currentLayout
+
+        // Update context's geo with current window frame
+        cxt.oldGeo = pwc.buildGeoSet(video: cxt.oldGeo.video, from: cxt.outputLayout, baseGeoSet: cxt.oldGeo,
+                                     forceWinFrameUpdate: !cxt.oldSessionState.isStartingSession)
+
         doMainQueueWork(&cxt)
       }
     }
@@ -158,21 +165,59 @@ struct GeometryTransform {
   private func doMainQueueWork(_ cxt: inout GeometryTransform.Context) {
     log.trace{"[GTF:\(name)] Starting main thread work"}
 
-    // Cache this inside animation task to ensure serial access
-    cxt.inputLayout = pwc.currentLayout
-
-    // Update context's geo with current window frame
-    cxt.oldGeo = pwc.buildGeoSet(video: cxt.oldGeo.video, from: cxt.outputLayout, baseGeoSet: cxt.oldGeo,
-                                 forceWinFrameUpdate: !cxt.oldSessionState.isStartingSession)
-
     /// 3. (Optional) Transition window to initial layout. Must exexcute before `buildApplyTransformTasks`.
     /// Will return` []` if not applicable.
-    var immediateTasks = pwc.buildWindowInitialLayoutTasks(using: &cxt)
+    var immediateTasks: [IINAAnimation.Task]
 
     /// 4. Apply `windowedTransform` / `musicModeTransform`
     let transformTasks = cxt.buildApplyTransformTasks()
 
     if cxt.oldSessionState.isStartingSession {
+      let window = cxt.pwc.window!
+
+      // Build tasks to transition the window to its "initial" layout.
+      switch cxt.oldSessionState {
+
+      case .restoring(let priorState):
+        /// Restoring from prior launch  (`PWinSessionState.restoring`)
+        immediateTasks = cxt.pwc.buildTasksToRestoreLayout(priorState, &cxt)
+
+      case .newReplacingExisting:
+        /// Reusing existing window for new file (`PWinSessionState.newReplacingExisting`)
+        log.verbose("[GTF:\(cxt.name)] Opening a new file in an already open window, mode=\(cxt.inputLayout.mode)")
+
+        /// `windowFrame` may be slightly off; update it
+        if cxt.inputLayout.mode == .windowedNormal {
+          /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
+          /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
+          PlayerWindowController.windowedModeGeoLastClosed = cxt.inputLayout.buildGeometry(windowFrame: window.frame,
+                                                                                           screenID: cxt.pwc.bestScreen.screenID,
+                                                                                           video: cxt.outputVidGeo)
+        } else if cxt.inputLayout.mode == .musicMode {
+          /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
+          PlayerWindowController.musicModeGeoLastClosed = cxt.oldGeo.musicMode.clone(windowFrame: window.frame,
+                                                                                     screenID: cxt.pwc.bestScreen.screenID,
+                                                                                     video: cxt.outputVidGeo)
+        }
+        // No initial layout tasks needed. Fall through to add post-layout task
+        immediateTasks = []
+
+      case .creatingNew:
+        /// Opening window for new file (`PWinSessionState.creatingNew`)
+        log.verbose{"[GTF:\(cxt.name)] Window is opening: building initial layout tasks"}
+
+        immediateTasks = cxt.pwc.buildTasksForNewWindow(&cxt)
+
+      default:
+        Logger.fatal("Invalid PWinSessionState for initial layout: \(cxt.oldSessionState)")
+      }
+
+      // Post-layout task: do other needed config
+      let cxtSnapshot = cxt
+      immediateTasks.append(.instantTask{
+        cxtSnapshot.pwc.doPostInitialLayoutTask(cxtSnapshot, windowIsMinimized: window.isMiniaturized)
+      })
+
       let isRestoringMinimizedWindow = cxt.oldSessionState.isRestoring && UIState.shared.windowsMinimized.contains(pwc.window!.savedStateName)
       if isRestoringMinimizedWindow {
         // Minimized: can't rely on showWindow() being called, but window changes won't be seen anyway. Just run end task now.
@@ -180,11 +225,12 @@ struct GeometryTransform {
         immediateTasks += transformTasks
       } else {
         /// These tasks should not execute until *after* `super.showWindow` is called.
+        log.verbose{"[GTF:\(name)] Adding pending tasks: count=\(transformTasks.count) timeTotal=\(transformTasks.reduce(0) { $0 + $1.duration })"}
         pwc.pendingVideoGeoUpdateTasks = transformTasks
       }
 
     } else {
-      immediateTasks += transformTasks
+      immediateTasks = transformTasks
 
       /// 5. Need to switch to music mode? Append to above tasks
       if case .existingSession_startingNewPlayback = cxt.newSessionState, Preference.bool(for: .autoSwitchToMusicMode) {
@@ -205,6 +251,7 @@ struct GeometryTransform {
       }
     }
 
+    log.verbose{"[GTF:\(name)] Submitting immediate tasks: count=\(immediateTasks.count) timeTotal=\(immediateTasks.reduce(0) { $0 + $1.duration })"}
     pwc.animationPipeline.submit(immediateTasks)
   }
 
@@ -538,67 +585,7 @@ struct GeometryTransform {
 
 extension PlayerWindowController {
 
-  /// Builds tasks to transition the window to its "initial" layout.
-  ///
-  /// Sets the window layout when one of the following is happening:
-  /// 1. Restoring from prior launch  (`PWinSessionState.restoring`)
-  /// 2. Reusing existing window for new file (`PWinSessionState.newReplacingExisting`)
-  /// 3. Opening window for new file (`PWinSessionState.creatingNew`)
-  ///
-  /// See `PWinSessionState`.
-  fileprivate func buildWindowInitialLayoutTasks(using cxt: inout GeometryTransform.Context) -> [IINAAnimation.Task] {
-    assert(DispatchQueue.isExecutingIn(.main))
-
-    guard cxt.oldSessionState.isStartingSession, let window = window else {
-      log.verbose("[GTF:\(cxt.name)] No initial layout tasks needed: sessState=\(cxt.oldSessionState)")
-      return []
-    }
-
-    var tasks: [IINAAnimation.Task]
-
-    switch cxt.oldSessionState {
-
-    case .restoring(let priorState):
-      tasks = buildTasksToRestoreLayout(priorState, &cxt)
-
-    case .newReplacingExisting:
-      log.verbose("[GTF:\(cxt.name)] Opening a new file in an already open window, mode=\(cxt.inputLayout.mode)")
-
-      /// `windowFrame` may be slightly off; update it
-      if cxt.inputLayout.mode == .windowedNormal {
-        /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
-        /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
-        PlayerWindowController.windowedModeGeoLastClosed = cxt.inputLayout.buildGeometry(windowFrame: window.frame,
-                                                                                             screenID: bestScreen.screenID,
-                                                                                             video: cxt.outputVidGeo)
-      } else if cxt.inputLayout.mode == .musicMode {
-        /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
-        PlayerWindowController.musicModeGeoLastClosed = cxt.oldGeo.musicMode.clone(windowFrame: window.frame,
-                                                                                           screenID: bestScreen.screenID,
-                                                                                           video: cxt.outputVidGeo)
-      }
-      // No initial layout tasks needed. Fall through to add post-layout task
-      tasks = []
-
-    case .creatingNew:
-      log.verbose{"[GTF:\(cxt.name)] Window is opening: building initial layout tasks"}
-
-      tasks = buildTasksForNewWindow(&cxt)
-
-    default:
-      Logger.fatal("Invalid PWinSessionState for initial layout: \(cxt.oldSessionState)")
-    }
-
-    // Post-layout task: do other needed config
-    let cxtSnapshot = cxt
-    tasks.append(.instantTask{ [self] in
-      doPostInitialLayoutTask(cxtSnapshot, windowIsMinimized: window.isMiniaturized)
-    })
-
-    return tasks
-  }
-
-  private func doPostInitialLayoutTask(_ cxt: GeometryTransform.Context, windowIsMinimized: Bool) {
+  fileprivate func doPostInitialLayoutTask(_ cxt: GeometryTransform.Context, windowIsMinimized: Bool) {
     defer {
       if cxt.oldSessionState.isRestoring, windowIsMinimized {
         log.verbose("Restoring minimized window; skipping windowIsReadyToShow")
@@ -740,7 +727,7 @@ extension PlayerWindowController {
     return tasks
   }
 
-  private func buildTasksToRestoreLayout(_ priorState: PlayerSaveState,
+  fileprivate func buildTasksToRestoreLayout(_ priorState: PlayerSaveState,
                                          _ cxt: inout GeometryTransform.Context) -> [IINAAnimation.Task] {
     if let priorLayoutSpec = priorState.layoutSpec {
       log.verbose("[GTF:\(cxt.name)] Transitioning to initial layout from prior window state")
@@ -796,7 +783,7 @@ extension PlayerWindowController {
 
   /// Creates IINAAnimation tasks for the case of `PWinSessionState.creatingNew`.
   /// Also sets `cxt.needsNativeFullScreen` & `cxt.outputLayout`.
-  private func buildTasksForNewWindow(_ cxt: inout GeometryTransform.Context) -> [IINAAnimation.Task] {
+  fileprivate func buildTasksForNewWindow(_ cxt: inout GeometryTransform.Context) -> [IINAAnimation.Task] {
     var mode: PlayerWindowMode = .windowedNormal
 
     if player.startInMusicModeRequested {
