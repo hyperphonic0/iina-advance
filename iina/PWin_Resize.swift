@@ -455,7 +455,7 @@ extension PlayerWindowController {
     }
   }
 
-  
+
   // TODO: interpolate this
   func scaleVideoByIncrement(_ widthStep: CGFloat) {
     assert(DispatchQueue.isExecutingIn(.main))
@@ -467,33 +467,34 @@ extension PlayerWindowController {
     }
 
     switch currentLayout.mode {
-    case .windowedNormal:
+    case .windowedNormal, .windowedInteractive, .musicMode:
       let windowedTransform: (GeometryTransform.Context) -> PWinGeometry? = { [self] cxt -> PWinGeometry? in
-        let oldWindowedGeo = cxt.oldGeo.windowed
-        let desiredViewportSize = scale(oldWindowedGeo.viewportSize, widthStep: widthStep)
-        log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
-        let newGeoUnconstrained = oldWindowedGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
-        // User has actively resized the video. Assume this is the new preferred resolution
-        player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
-        return newGeoUnconstrained.refitted(using: .stayInside)
+        switch cxt.outputLayout.mode {
+        case .musicMode:
+          let oldViewportSize = cxt.oldGeo.musicMode.viewportSize
+          guard cxt.oldGeo.musicMode.isVideoVisible else { return nil }
+          let desiredViewportSize = scale(oldViewportSize, widthStep: widthStep)
+          log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
+          return cxt.oldGeo.musicMode.scalingViewport(to: desiredViewportSize)
+        case .windowedNormal, .windowedInteractive:
+          let oldWindowedGeo = cxt.oldGeo.windowed
+          let desiredViewportSize = scale(oldWindowedGeo.viewportSize, widthStep: widthStep)
+          log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
+          let newGeoUnconstrained = oldWindowedGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
+          // User has actively resized the video. Assume this is the new preferred resolution
+          player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
+          return newGeoUnconstrained.refitted(using: .stayInside)
+        case .fullScreenInteractive, .fullScreenNormal:
+          return nil
+        }
       }
       animationPipeline.submit(gtf: GeometryTransform("ScaleVideoBy\(widthStep)px", player,
                                                       windowed: windowedTransform))
-
-    case .musicMode:
-      let musicModeTransform: (GeometryTransform.Context) -> PWinGeometry? = { [self] cxt -> PWinGeometry? in
-        let oldViewportSize = cxt.oldGeo.musicMode.viewportSize
-        guard cxt.oldGeo.musicMode.isVideoVisible else { return nil }
-        let desiredViewportSize = scale(oldViewportSize, widthStep: widthStep)
-        log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
-        return cxt.oldGeo.musicMode.scalingViewport(to: desiredViewportSize)
-      }
-      animationPipeline.submit(gtf: GeometryTransform("ScaleVideoBy\(widthStep)px", player,
-                                                      musicMode: musicModeTransform))
     default:
       return
     }
   }
+
 
   func adjustFloatingControllerOrigin(for newGeometry: PWinGeometry? = nil) {
     guard let window = window, currentLayout.hasFloatingOSC else { return }

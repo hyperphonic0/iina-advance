@@ -21,10 +21,6 @@
 ///   - If non-nil, and if in music mode, this function is given the `PWinGeometry` which would otherwise be applied and is
 ///     is expected to output a ` PWinGeometry` containing further transforms which should be applied. If it returns `nil`,
 ///     the transform will ignore it and will proceed with its calculated values.
-/// - `musicModeTransform`: optional operator function which if provided, will run in the main queue.
-///   - If non-nil, and if in music mode, this function is given the `MusicModeGeometry` which would otherwise be applied and is
-///     is expected to output a ` MusicModeGeometry` containing further transforms which should be applied. If it returns `nil`,
-///     the transform will not transform the geometry.
 struct GeometryTransform {
   // MARK: - GeometryTransform Fields
 
@@ -46,7 +42,6 @@ struct GeometryTransform {
 
   let videoTransform: VideoGeometry.Transform?
   let windowedTransform: PWinGeometry.Transform?
-  let musicModeTransform: MusicModeGeometry.Transform?
 
   let onSuccess: (() -> Void)?
 
@@ -57,7 +52,6 @@ struct GeometryTransform {
        state: ((Context) -> PWinSessionState?)? = nil,
        video: ((Context) -> VideoGeometry?)? = nil,
        windowed: ((Context) -> PWinGeometry?)? = nil,
-       musicMode: ((Context) -> PWinGeometry?)? = nil,
        onSuccess: (() -> Void)? = nil) {
     let pipeline = player.windowController.animationPipeline
     self.id = pregeneratedID ?? pipeline.gtfLock.withLock {
@@ -69,7 +63,6 @@ struct GeometryTransform {
     self.stateTransition = state
     self.videoTransform = video
     self.windowedTransform = windowed
-    self.musicModeTransform = musicMode
     self.onSuccess = onSuccess
   }
 
@@ -218,8 +211,8 @@ struct GeometryTransform {
 
   // MARK: - Context
 
-  /// `struct GeometryTransform.Context`
-  /// Can be used for `VideoGeometry` transforms, `PWinGeometry` transforms, or `MusicModeGeometry` transforms.
+  /// `struct GeometryTransform.Context`:
+  /// Can be used for `VideoGeometry` transforms or `PWinGeometry` transforms.
   /// See also: `VideoGeo_Sync.swift` for syncing `VideoGeometry` from mpv.
   struct Context {
     // The transform spec (immutable)
@@ -390,7 +383,8 @@ struct GeometryTransform {
         let oldMusicModeGeo = oldGeo.musicMode  // has updated windowFrame
         let newMusicModeGeo: PWinGeometry
         /// Use transformed music mode geo if provided. Otherwise update minimally for new `VideoGeometry`:
-        if let musicModeTransform = tf.musicModeTransform, let transformedGeo = musicModeTransform(self) {
+        if let windowedTransform = tf.windowedTransform, let transformedGeo = windowedTransform(self) {
+          assert(transformedGeo.mode == .musicMode, "[GTF:\(name)] Tranform expected to return geometry with mode=.musicMode, but got: \(transformedGeo) ")
           newMusicModeGeo = transformedGeo
         } else {
           /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio

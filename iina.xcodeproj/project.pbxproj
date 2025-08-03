@@ -348,7 +348,6 @@
 		D19247FD2BC634D3003BEEE8 /* Player_Crop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19247FC2BC634D3003BEEE8 /* Player_Crop.swift */; };
 		D19690CC2B56770F002B0458 /* MPVLogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19690CB2B56770F002B0458 /* MPVLogLevel.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */; };
-		D19CF7162AB846D300511F80 /* MusicModeGeo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CF7152AB846D300511F80 /* MusicModeGeo.swift */; };
 		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
 		D1A071892D644F4600884828 /* ResizableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A071882D644F3600884828 /* ResizableTextView.swift */; };
 		D1A44D8A2A5E18D00089B283 /* PWinGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A44D892A5E18D00089B283 /* PWinGeometry.swift */; };
@@ -1898,7 +1897,6 @@
 		D19247FC2BC634D3003BEEE8 /* Player_Crop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player_Crop.swift; sourceTree = "<group>"; };
 		D19690CB2B56770F002B0458 /* MPVLogLevel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MPVLogLevel.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfFileCache.swift; sourceTree = "<group>"; };
-		D19CF7152AB846D300511F80 /* MusicModeGeo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicModeGeo.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
 		D1A071882D644F3600884828 /* ResizableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizableTextView.swift; sourceTree = "<group>"; };
 		D1A44D892A5E18D00089B283 /* PWinGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinGeometry.swift; sourceTree = "<group>"; };
@@ -2962,7 +2960,6 @@
 				D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */,
 				D13E807D2C026A2700537954 /* PWin_GeoSet.swift */,
 				D1A44D892A5E18D00089B283 /* PWinGeometry.swift */,
-				D19CF7152AB846D300511F80 /* MusicModeGeo.swift */,
 				D1AF71432DEA6977000FA9B8 /* GeoUtil.swift */,
 				D13350942D06B7E200201623 /* GeometryTransform.swift */,
 				D1AC43932DE1BACA00189782 /* VideoGeo_Sync.swift */,
@@ -3534,7 +3531,6 @@
 				84EB1EDA1D2F51D3004FA5A1 /* AppDelegate.swift in Sources */,
 				E353070521496CE4008FE492 /* PrefPluginViewController.swift in Sources */,
 				D1DC673128ED682100C419CB /* RemainingRemovalTracker.swift in Sources */,
-				D19CF7162AB846D300511F80 /* MusicModeGeo.swift in Sources */,
 				840820111ECF6C1800361416 /* FileGroup.swift in Sources */,
 				E374160C20F138A900B4F7F9 /* CollapseView.swift in Sources */,
 				D1D4C7442B10B7D2003B09C2 /* ViewportView.swift in Sources */,

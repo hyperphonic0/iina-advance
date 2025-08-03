@@ -304,17 +304,19 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       } else {
         // Hiding video.
 
-        let musicModeTF: MusicModeGeometry.Transform = { [self] ctx in
-          let oldGeo = ctx.oldGeo.musicMode
-          let newGeo = oldGeo.withVideoViewVisible(false)
-          log.verbose{"MusicMode: changing videoView visibility: \(oldGeo.isVideoVisible.yesno) → \(newGeo.isVideoVisible.yesno), H=\(newGeo.videoHeight)"}
-          return newGeo
+        let musicModeTF: PWinGeometry.Transform = { [self] ctx -> PWinGeometry? in
+          // music mode only. Other modes should fall back to default
+          guard ctx.outputLayout.mode == .musicMode else { return nil }
+
+          let oldMusicModeGeo = ctx.oldGeo.musicMode
+          let newMusicModeGeo = oldMusicModeGeo.withVideoViewVisible(false)
+          log.verbose{"MusicMode: changing videoView visibility: \(oldMusicModeGeo.isVideoVisible.yesno) → \(newMusicModeGeo.isVideoVisible.yesno), H=\(newMusicModeGeo.videoHeight)"}
+          return newMusicModeGeo
         }
 
         /// This will call `applyMusicModeGeo`, which will call `setVideoTrackDisabled`. We want to wait until the animation is done before disabling video.
         // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
-        let gtf = GeometryTransform("HideVideoView", player, syncVideoParams: true,
-                                    musicMode: musicModeTF)
+        let gtf = GeometryTransform("HideVideoView", player, windowed: musicModeTF)
         gtf.submit()
       }
     })

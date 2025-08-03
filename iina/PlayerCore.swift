@@ -3176,7 +3176,9 @@ class PlayerCore: NSObject {
       return vidGeo
     }
 
-    let musicModeTF: MusicModeGeometry.Transform = { [self] ctx -> PWinGeometry? in
+    let musicModeTF: PWinGeometry.Transform = { [self] ctx -> PWinGeometry? in
+      guard ctx.outputLayout.isMusicMode else { return nil }
+
       let oldMusicModeGeo = ctx.oldGeo.musicMode
       // Vid changed, but not from toggling music mode? Then no extra changes needed to musicMode geo.
       guard isShowVideoPendingInMiniPlayerCached else { return nil }
@@ -3191,7 +3193,7 @@ class PlayerCore: NSObject {
                                 syncVideoParams: false,   // does the syncing itself
                                 state: stateChangeFunc,
                                 video: videoGeoTF,
-                                musicMode: musicModeTF)
+                                windowed: musicModeTF)
     gtf.submit()
 
   }
