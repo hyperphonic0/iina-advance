@@ -159,14 +159,14 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         return nil
       }
       let newWidth = round(pwc.musicModeGeo.windowFrame.width * scale)
-      let newMusicModeGeo = pwc.musicModeGeo.scalingVideo(to: newWidth)!
+      let newMusicModeGeo = pwc.musicModeGeo.scalingVideoForMusicMode(to: newWidth)
       pwc.log.verbose{"Scaling pinched video in music mode → \(newMusicModeGeo)"}
 
       IINAAnimation.disableAnimation {
         pwc.applyMusicModeGeo(newMusicModeGeo, save: false)
       }
       // Kind of clunky to convert to PWinGeometry, just to fit the function signature, then convert it back. But...could be worse.
-      return newMusicModeGeo.toPWinGeometry()
+      return newMusicModeGeo
     }
     // Else: not music mode
 

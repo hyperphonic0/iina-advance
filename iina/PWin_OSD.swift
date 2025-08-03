@@ -921,7 +921,7 @@ extension PlayerWindowController {
       case .fullScreenNormal, .fullScreenInteractive:
         pwGeo = currentLayout.buildFullScreenGeometry(inScreenID: bestScreen.screenID, video: self.geo.video)
       case .musicMode:
-        pwGeo = musicModeGeoForCurrentFrame().toPWinGeometry()
+        pwGeo = musicModeGeoForCurrentFrame()
       }
     }
 

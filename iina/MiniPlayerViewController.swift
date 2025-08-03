@@ -287,7 +287,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       newWindowFrame.origin.y = newWindowFrame.origin.y - heightDifference
 
       // Constrain window so that it doesn't expand below bottom of screen, or fall offscreen
-      let newMusicModeGeometry = currentMusicModeGeo.clone(windowFrame: newWindowFrame, isPlaylistVisible: showPlaylist)
+      let newMusicModeGeometry = currentMusicModeGeo.cloneMusicMode(windowFrame: newWindowFrame, isPlaylistVisible: showPlaylist)
       windowController.buildApplyMusicModeGeoTasks(from: currentMusicModeGeo, to: newMusicModeGeometry, thenRun: true)
     })
   }
@@ -343,7 +343,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     windowController.viewportView.layout()
   }
 
-  static func buildMusicModeGeometryFromPrefs(screen: NSScreen, video: VideoGeometry) -> MusicModeGeometry {
+  static func buildMusicModeGeometryFromPrefs(screen: NSScreen, video: VideoGeometry) -> PWinGeometry {
     // Default to left-top of screen. Try to use last-saved playlist height and visibility settings.
     let isPlaylistVisible = Preference.bool(for: .musicModeShowPlaylist)
     let isVideoVisible = Preference.bool(for: .musicModeShowAlbumArt)
@@ -356,8 +356,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     let windowSize = NSSize(width: desiredWindowWidth, height: desiredWindowHeight)
     let windowOrigin = NSPoint(x: screenFrame.origin.x, y: screenFrame.maxY - windowSize.height)
     let windowFrame = NSRect(origin: windowOrigin, size: windowSize)
-    let desiredGeo = MusicModeGeometry(windowFrame: windowFrame, screenID: screen.screenID, video: video,
-                                       isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
+    let desiredGeo = PWinGeometry.forMusicMode(windowFrame: windowFrame, screenID: screen.screenID, video: video,
+                                               isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
     // Resize as needed to fit on screen:
     return desiredGeo.refitted()
   }

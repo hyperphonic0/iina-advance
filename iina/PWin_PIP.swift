@@ -231,7 +231,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     }
 
     // Set frame to animate back to
-    let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWinGeometry() : windowedModeGeo
+    let geo = currentLayout.mode == .musicMode ? musicModeGeo : windowedModeGeo
     pipController.replacementRect = geo.videoFrameInWindowCoords
     pipController.replacementWindow = window
 

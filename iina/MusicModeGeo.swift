@@ -21,7 +21,7 @@ import Foundation
  A `MusicModeGeometry` object can be converted to a `PWinGeometry` via its `toPWinGeometry()` function.
  */
 struct MusicModeGeometry: Equatable, CustomStringConvertible {
-  typealias Transform = (GeometryTransform.Context) -> MusicModeGeometry?
+  typealias Transform = (GeometryTransform.Context) -> PWinGeometry?
 
   let windowFrame: NSRect
   let screenID: String
@@ -153,7 +153,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
 
   /// The MiniPlayerWindow's width must be between `MiniPlayerMinWidth` and `Preference.musicModeMaxWidth`.
   /// It is composed of up to 3 vertical sections:
-  /// 1. `videoWrapperView`: Visible if `isVideoVisible` is true). Scales with the aspect ratio of its video
+  /// 1. `viewportView`: Visible if `isVideoVisible` is true). Scales with the aspect ratio of its video
   /// 2. `musicModeControlBarView`: Visible always. Fixed height
   /// 3. `playlistWrapperView`: Visible if `isPlaylistVisible` is true. Height is user resizable, and must be >= `PlaylistMinHeight`
   /// Must also ensure that window stays within the bounds of the screen it is in. Almost all of the time the window  will be
@@ -206,8 +206,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     return scalingVideo(to: desiredSize?.width, screenID: screenID)
   }
 
-  func scalingVideo(to desiredWidth: CGFloat? = nil,
-                  screenID: String? = nil) -> MusicModeGeometry? {
+  func scalingVideo(to desiredWidth: CGFloat? = nil, screenID: String? = nil) -> MusicModeGeometry? {
 
     var newVideoWidth = desiredWidth ?? windowFrame.width
     log.verbose("Scaling MusicMode video to desiredWidth \(newVideoWidth)")

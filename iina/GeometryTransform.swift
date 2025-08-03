@@ -57,7 +57,7 @@ struct GeometryTransform {
        state: ((Context) -> PWinSessionState?)? = nil,
        video: ((Context) -> VideoGeometry?)? = nil,
        windowed: ((Context) -> PWinGeometry?)? = nil,
-       musicMode: ((Context) -> MusicModeGeometry?)? = nil,
+       musicMode: ((Context) -> PWinGeometry?)? = nil,
        onSuccess: (() -> Void)? = nil) {
     let pipeline = player.windowController.animationPipeline
     self.id = pregeneratedID ?? pipeline.gtfLock.withLock {
@@ -388,7 +388,7 @@ struct GeometryTransform {
           break
         }
         let oldMusicModeGeo = oldGeo.musicMode  // has updated windowFrame
-        let newMusicModeGeo: MusicModeGeometry
+        let newMusicModeGeo: PWinGeometry
         /// Use transformed music mode geo if provided. Otherwise update minimally for new `VideoGeometry`:
         if let musicModeTransform = tf.musicModeTransform, let transformedGeo = musicModeTransform(self) {
           newMusicModeGeo = transformedGeo

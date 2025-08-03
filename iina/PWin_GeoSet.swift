@@ -14,10 +14,10 @@ struct GeometrySet {
   /// Full screen geometry is not stored in a `GeometrySet`, but is expected to be derived from the properties
   /// of `windowed`
   let windowed: PWinGeometry
-  let musicMode: MusicModeGeometry
+  let musicMode: PWinGeometry
   let video: VideoGeometry
 
-  init(windowed: PWinGeometry, musicMode: MusicModeGeometry, video: VideoGeometry) {
+  init(windowed: PWinGeometry, musicMode: PWinGeometry, video: VideoGeometry) {
     self.windowed = windowed
     self.musicMode = musicMode
     self.video = video
@@ -31,7 +31,7 @@ struct GeometrySet {
 
   /// Makes a copy of this `GeometrySet` but uses the given `musicMode` geometry, and uses its `VideoGeometry`
   /// as the new current video settings.
-  func clone(musicMode musicModeNew: MusicModeGeometry) -> GeometrySet {
+  func clone(musicMode musicModeNew: PWinGeometry) -> GeometrySet {
     return GeometrySet(windowed: windowed, musicMode: musicModeNew, video: musicModeNew.video)
   }
 
@@ -67,7 +67,7 @@ extension PlayerWindowController {
     return (window.frame, bestScreen.screenID)
   }
 
-  func buildGeoSet(windowed: PWinGeometry? = nil, musicMode: MusicModeGeometry? = nil,
+  func buildGeoSet(windowed: PWinGeometry? = nil, musicMode: PWinGeometry? = nil,
                    video: VideoGeometry? = nil, from inputLayout: LayoutState,
                    baseGeoSet: GeometrySet? = nil, forceWinFrameUpdate: Bool = false) -> GeometrySet {
     let geo = baseGeoSet ?? geo
@@ -82,7 +82,7 @@ extension PlayerWindowController {
     let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: forceWinFrameUpdate) ?? (nil, nil)
 
     let windowedNew: PWinGeometry
-    let musicModeNew: MusicModeGeometry
+    let musicModeNew: PWinGeometry
 
     if let windowed {
       windowedNew = windowed
@@ -126,7 +126,7 @@ extension PlayerWindowController {
 
 
   /// See also `windowedGeoForCurrentFrame`
-  func musicModeGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil, force: Bool = false) -> MusicModeGeometry {
+  func musicModeGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil, force: Bool = false) -> PWinGeometry {
     let geo = geo
     if currentLayout.mode == .musicMode, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: force) {
       log.trace{"Cloning musicMode geometry with current windowFrame=\(latestWindowFrame), screenID=\(latestScreenID.quoted)"}

@@ -229,7 +229,7 @@ struct PlayerSaveState: CustomStringConvertible {
     props[PropName.windowedModeGeo.rawValue] = geo.windowed.toCSV()
 
     /// `musicModeGeo`: use supplied GeometrySet for most up-to-date window frame
-    props[PropName.musicModeGeo.rawValue] = geo.musicMode.toCSV()
+    props[PropName.musicModeGeo.rawValue] = geo.musicMode.toMusicModeCSV()
 
     /// `videoGeo`: use supplied GeometrySet for most up-to-date data (avoiding complex logic to derive it)
     props[PropName.videoGeo.rawValue] = geo.video.toCSV()
@@ -565,12 +565,12 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     let musicModeCSV = PlayerSaveState.string(for: .musicModeGeo, props)
-    let savedMusicModeGeo = MusicModeGeometry.fromCSV(musicModeCSV, videoGeoFallback: videoGeo, log)
-    var musicModeGeo: MusicModeGeometry
+    let savedMusicModeGeo = PWinGeometry.fromMusicModeCSV(musicModeCSV, videoGeoFallback: videoGeo, log)
+    var musicModeGeo: PWinGeometry
     if let savedMusicModeGeo {
       musicModeGeo = savedMusicModeGeo
     } else {
-      log.errorDebugAlert{"Failed to restore MusicModeGeometry from CSV! Will fall back to last closed geometry"}
+      log.errorDebugAlert{"Failed to restore music mode PWinGeometry from CSV! Will fall back to last closed geometry"}
       musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
     }
 
@@ -580,7 +580,7 @@ struct PlayerSaveState: CustomStringConvertible {
     if musicModeFrameScreenID != musicModeGeoScreenID {
       // The previous window origin is not in the previous screen, or possibly any screen.
       // Could be an external screen is no longer connected or the arrangement of the screens has changed.
-      log.warn("MusicMode geometry's frame is invalid for screen \(musicModeGeoScreenID.quoted). Will use default screen instead (\(defaultScreen.screenID.quoted))")
+      log.warn("Invalid windowFrame for music mode PWinGeometry for screen \(musicModeGeoScreenID.quoted). Will use default screen instead (\(defaultScreen.screenID.quoted))")
       if let screenMeta = screenMetas.first(where: {$0.screenID == musicModeGeoScreenID}), screenMeta.visibleFrame.contains(musicModeGeo.windowFrame.origin) {
         // TODO: preserve relative window frame inside new screen
       } else {
@@ -1018,8 +1018,8 @@ extension VideoGeometry {
             let userAspectLabel = iter.next(),
             let selectedCropLabel = iter.next()
       else {
-        /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'MusicModeGeometry'`
-        /// here, it means that the wrong args are being supplied to the`MusicModeGeometry` constructor below.
+        /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'VideoGeometry'`
+        /// here, it means that the wrong args are being supplied to the`VideoGeometry` constructor below.
         log.error("\(errPreamble) could not parse one or more tokens")
         return nil
       }
@@ -1044,8 +1044,8 @@ extension VideoGeometry {
             let userAspectLabel = iter.next(),
             let selectedCropLabel = iter.next()
       else {
-        /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'MusicModeGeometry'`
-        /// here, it means that the wrong args are being supplied to the`MusicModeGeometry` constructor below.
+        /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'VideoGeometry'`
+        /// here, it means that the wrong args are being supplied to the`VideoGeometry` constructor below.
         log.error("\(errPreamble) could not parse one or more tokens")
         return nil
       }
@@ -1100,23 +1100,24 @@ extension VideoGeometry {
   }
 }
 
-extension MusicModeGeometry {
-  static let expectedCSVTokenCount = 9
+// TODO: this is old MusicModeGeometry stuff. Consolidate into PWinGeometry!
+extension PWinGeometry {
+  static let expectedMusicModeCSVTokenCount = 9
 
-  /// v2: `String` -> `MusicModeGeometry`
-  /// v1: (`String`, `VideoGeometry`) -> `MusicModeGeometry`
-  /// Note to maintainers: if compiler is complaining with the message "nil is not compatible with closure result type MusicModeGeometry",
-  /// check the arguments to the `MusicModeGeometry` constructor. For some reason the error lands in the wrong place.
-  static func fromCSV(_ csv: String?, videoGeoFallback: VideoGeometry? = nil, _ log: Logger.Subsystem) -> MusicModeGeometry? {
+  /// v2: `String` -> `MusicModeGeometry` (In v1.4+, now builds a `PWinGeometry` with mode: `.musicMode`).
+  /// v1: (`String`, `VideoGeometry`) -> `MusicModeGeometry` (v1.4+: same note as above).
+  /// Note to maintainers: if compiler is complaining with the message "nil is not compatible with closure result type PWinGeometry",
+  /// check the arguments to the `PWinGeometry` constructor. For some reason the error lands in the wrong place.
+  static func fromMusicModeCSV(_ csv: String?, videoGeoFallback: VideoGeometry? = nil, _ log: Logger.Subsystem) -> PWinGeometry? {
     guard let csv, !csv.isEmpty else {
-      log.debug("CSV is empty; returning nil for MusicModeGeometry")
+      log.debug("CSV is empty; returning nil for music mode PWinGeometry")
       return nil
     }
 
     // Try v2 first.
-    let mmGeo: MusicModeGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: MusicModeGeometry.expectedCSVTokenCount,
-                                                             expectedVersion: PlayerSaveState.musicModeGeoPrefStringVersion,
-                                                             targetObjName: "MusicModeGeometry v2") { errPreamble, iter in
+    let mmGeo: PWinGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: PWinGeometry.expectedMusicModeCSVTokenCount,
+                                                        expectedVersion: PlayerSaveState.musicModeGeoPrefStringVersion,
+                                                        targetObjName: "PWinGeometry musicMode v2") { errPreamble, iter in
 
       guard let winOriginX = Double(iter.next()!),
             let winOriginY = Double(iter.next()!),
@@ -1127,8 +1128,8 @@ extension MusicModeGeometry {
             let screenID = iter.next(),
             let videoGeoEmbeddedCSV = iter.next()
       else {
-        /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'MusicModeGeometry'`
-        /// here, it means that the wrong args are being supplied to the`MusicModeGeometry` constructor below.
+        /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'PWinGeometry'`
+        /// here, it means that the wrong args are being supplied to the `PWinGeometry.forMusicMode` function below.
         log.error("\(errPreamble) could not parse one or more tokens")
         return nil
       }
@@ -1139,9 +1140,8 @@ extension MusicModeGeometry {
       }
 
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
-      return MusicModeGeometry(windowFrame: windowFrame,
-                               screenID: screenID, video: videoGeo,
-                               isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
+      return PWinGeometry.forMusicMode(windowFrame: windowFrame, screenID: screenID, video: videoGeo,
+                                       isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
     }
 
     if let mmGeo {
@@ -1151,7 +1151,7 @@ extension MusicModeGeometry {
     // Fall back to v1
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 10,
                                     expectedVersion: "1",
-                                    targetObjName: "MusicModeGeometry v1") { errPreamble, iter in
+                                    targetObjName: "PWinGeometry musicMode v1") { errPreamble, iter in
 
       guard let winOriginX = Double(iter.next()!),
             let winOriginY = Double(iter.next()!),
@@ -1163,8 +1163,8 @@ extension MusicModeGeometry {
             let _ = Double(iter.next()!),  /// was `videoAspect` (defunct as of 1.2)
             let screenID = iter.next()
       else {
-        /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'MusicModeGeometry'`
-        /// here, it means that the wrong args are being supplied to the`MusicModeGeometry` constructor below.
+        /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'PWinGeometry'`
+        /// here, it means that the wrong args are being supplied to the `PWinGeometry.forMusicMode` function below.
         log.error("\(errPreamble) could not parse one or more tokens")
         return nil
       }
@@ -1173,19 +1173,19 @@ extension MusicModeGeometry {
       if let videoGeoFallback {
         videoGeo = videoGeoFallback
       } else {
-        log.warn("No VideoGeometry given for legacy v1 MusicModeGeometry! Falling back to default VideoGeometry")
+        log.warn("No VideoGeometry given for legacy v1 musicMode PWinGeometry! Falling back to default VideoGeometry")
         videoGeo = VideoGeometry.defaultGeometry()
       }
 
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
-      return MusicModeGeometry(windowFrame: windowFrame,
-                               screenID: screenID, video: videoGeo,
-                               isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
+      return PWinGeometry.forMusicMode(windowFrame: windowFrame, screenID: screenID, video: videoGeo,
+                                       isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
     }
   }
 
   /// `MusicModeGeometry` -> `String`
-  func toCSV() -> String {
+  func toMusicModeCSV() -> String {
+    precondition(mode == .musicMode, "PWinGeometry.toMusicModeCSV() called on non-musicMode geometry: \(self)")
     let csv = [PlayerSaveState.musicModeGeoPrefStringVersion,
                self.windowFrame.origin.x.stringMaxFrac2,
                self.windowFrame.origin.y.stringMaxFrac2,
@@ -1196,8 +1196,8 @@ extension MusicModeGeometry {
                self.screenID.replacingOccurrences(of: ",", with: ";"),  // ensure it's CSV-compatible
                self.video.toEmbeddedCSV()
     ].joined(separator: ",")
-    assert(csv.split(separator: ",").count == MusicModeGeometry.expectedCSVTokenCount,
-           "Invalid MusicModeGeometry CSV (expected \(MusicModeGeometry.expectedCSVTokenCount) tokens: \(csv)")
+    assert(csv.split(separator: ",").count == PWinGeometry.expectedMusicModeCSVTokenCount,
+           "Invalid musicMode PWinGeometry CSV (expected \(PWinGeometry.expectedMusicModeCSVTokenCount) tokens: \(csv)")
     return csv
   }
 }

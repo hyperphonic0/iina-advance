@@ -84,7 +84,7 @@ extension PlayerWindowController {
     let currentLayout = currentLayout
     let inLiveResize = window.inLiveResize
 
-    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
+    let lockViewportToVideoSize = currentLayout.mode.alwaysLockViewportToVideoSize || Preference.bool(for: .lockViewportToVideoSize)
     log.verbose{"[WinWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)"}
 
     if lockViewportToVideoSize && inLiveResize {
@@ -156,7 +156,8 @@ extension PlayerWindowController {
       }
 
       let currentGeo = musicModeGeoForCurrentFrame()
-      let newGeometry = currentGeo.resizingWindow(to: requestedSize, inLiveResize: window.inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
+      let newGeometry = currentGeo.resizingWindowInMusicMode(to: requestedSize,
+                                                             inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
       newWindowSize = newGeometry.windowFrame.size
 
       /// This call is needed to update any necessary constraints & resize internal views
@@ -446,7 +447,7 @@ extension PlayerWindowController {
     case .musicMode:
       /// In music mode, `viewportSize==videoSize` always. Will get `nil` here if video is not visible
       let oldGeo = musicModeGeoForCurrentFrame()
-      guard let newMusicModeGeo = oldGeo.scalingViewport(to: desiredViewportSize) else { return }
+      let newMusicModeGeo = oldGeo.scalingViewport(to: desiredViewportSize)
       log.verbose{"Calling applyMusicModeGeo from resizeViewport, to: \(newMusicModeGeo.windowFrame)"}
       buildApplyMusicModeGeoTasks(from: oldGeo, to: newMusicModeGeo, thenRun: true)
     default:
@@ -480,8 +481,9 @@ extension PlayerWindowController {
                                                       windowed: windowedTransform))
 
     case .musicMode:
-      let musicModeTransform: (GeometryTransform.Context) -> MusicModeGeometry? = { [self] cxt -> MusicModeGeometry? in
-        guard let oldViewportSize = cxt.oldGeo.musicMode.viewportSize else { return nil }
+      let musicModeTransform: (GeometryTransform.Context) -> PWinGeometry? = { [self] cxt -> PWinGeometry? in
+        let oldViewportSize = cxt.oldGeo.musicMode.viewportSize
+        guard cxt.oldGeo.musicMode.isVideoVisible else { return nil }
         let desiredViewportSize = scale(oldViewportSize, widthStep: widthStep)
         log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
         return cxt.oldGeo.musicMode.scalingViewport(to: desiredViewportSize)
@@ -635,7 +637,7 @@ extension PlayerWindowController {
   // MARK: - Apply Geometry: Music Mode
 
   @discardableResult
-  func buildApplyMusicModeGeoTasks(from inputGeo: MusicModeGeometry, to outputGeo: MusicModeGeometry,
+  func buildApplyMusicModeGeoTasks(from inputGeo: PWinGeometry, to outputGeo: PWinGeometry,
                                    duration: CGFloat = Constants.AnimationDuration.standard,
                                    setFrame: Bool = true, save: Bool = true,
                                    showDefaultArt: Bool? = nil,
@@ -660,7 +662,7 @@ extension PlayerWindowController {
           addVideoViewToWindow(using: outputGeo)
         } else {  // hiding video
           // Remove OSD constraints *before* reducing viewportView height to 0
-          updateOSDConstraintsForMusicMode(outputGeo.toPWinGeometry())
+          updateOSDConstraintsForMusicMode(outputGeo)
         }
 
         // Hide OSD during animation
@@ -696,7 +698,7 @@ extension PlayerWindowController {
         // Need to force draw if window was restored while paused + video hidden
         if isShowingVideo {
           // Add OSD constraints if needed *after* expanding viewportView height because some constraints assume H > 16
-          updateOSDConstraintsForMusicMode(outputGeo.toPWinGeometry())
+          updateOSDConstraintsForMusicMode(outputGeo)
           videoView.forceDraw()
         }
       })
@@ -734,9 +736,10 @@ extension PlayerWindowController {
     }
   }
 
-  /// Updates the current window and its subviews to match the given `MusicModeGeometry`.
+  /// Updates the current window and its subviews to match the given `PWinGeometry` in music mode.
   /// If `save` is true, updates `musicModeGeo`, prefs and saves player state.
-  func applyMusicModeGeo(_ geometry: MusicModeGeometry, setFrame: Bool = true, save: Bool = true) {
+  func applyMusicModeGeo(_ geometry: PWinGeometry, setFrame: Bool = true, save: Bool = true) {
+    guard geometry.mode == .musicMode else { Logger.fatal("Expected mode=musicMode for: \(geometry)") }
     let geometry = geometry.refitted()  // enforces internal constraints, and constrains to screen
     log.verbose{"Applying \(geometry), setFrame=\(setFrame.yn) save=\(save.yn)"}
 
@@ -762,17 +765,16 @@ extension PlayerWindowController {
 
     miniPlayer.resetScrollingLabels()
 
-    updateBottomBarHeight(to: geometry.bottomBarHeight, bottomBarPlacement: .outsideViewport, mode: .musicMode)
-    let convertedGeo = geometry.toPWinGeometry()
+    updateBottomBarHeight(to: geometry.outsideBars.bottom, bottomBarPlacement: .outsideViewport, mode: .musicMode)
 
     if setFrame {
-      updateWindowFrameAndSubviews(using: convertedGeo, updateVideoView: false)
+      updateWindowFrameAndSubviews(using: geometry, updateVideoView: false)
     }
 
     if geometry.isVideoVisible {
       /// Make sure to call `apply` AFTER `updateVideoViewHeightConstraint` if video shown
       miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: geometry.isVideoVisible)
-      videoView.apply(convertedGeo)
+      videoView.apply(geometry)
     }
 
     /// For the case where video is hidden but playlist is shown, AppKit won't allow the window's height to be changed by the user

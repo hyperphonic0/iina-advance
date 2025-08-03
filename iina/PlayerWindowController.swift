@@ -311,7 +311,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  var musicModeGeo: MusicModeGeometry {
+  var musicModeGeo: PWinGeometry {
     get {
       return geo.musicMode
     } set {
@@ -350,9 +350,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // Remembers the geometry of the "last closed" music mode window, so future music mode windows will default to its layout.
   // The first "get" of this will load from saved pref. Every "set" of this will update the pref.
-  static var musicModeGeoLastClosed: MusicModeGeometry = {
+  static var musicModeGeoLastClosed: PWinGeometry = {
     let csv = Preference.string(for: .uiLastClosedMusicModeGeometry)
-    if let savedGeo = MusicModeGeometry.fromCSV(csv, Logger.log) {
+    if let savedGeo = PWinGeometry.fromMusicModeCSV(csv, Logger.log) {
       Logger.log.verbose{"Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)): \(savedGeo)"}
       return savedGeo
     }
@@ -363,7 +363,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     return defaultGeo
   }() {
     didSet {
-      Preference.set(musicModeGeoLastClosed.toCSV(), for: .uiLastClosedMusicModeGeometry)
+      Preference.set(musicModeGeoLastClosed.toMusicModeCSV(), for: .uiLastClosedMusicModeGeometry)
       Logger.log.verbose{"Updated musicModeGeoLastClosed ≔ \(musicModeGeoLastClosed)"}
     }
   }
@@ -685,7 +685,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// When entering "windowed" mode (either from initial load, PIP, or music mode), call this to add/return `videoView`
   /// to this window. Will do nothing if it's already there.
-  func addVideoViewToWindow(using geo: MusicModeGeometry? = nil) {
+  func addVideoViewToWindow(using mmGeo: PWinGeometry? = nil) {
     guard let window else { return }
     assert(loaded, "Must not be called if not done loading the window!")
 
@@ -712,8 +712,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     videoView.refreshAllVideoDisplayState()
     /// Add constraints. These get removed each time `videoView` changes superviews.
     videoView.translatesAutoresizingMaskIntoConstraints = false
-    let geo = currentLayout.mode == .musicMode ? (geo ?? musicModeGeo).toPWinGeometry() : windowedModeGeo
-    videoView.apply(geo)
+    let mmGeo = currentLayout.mode == .musicMode ? (mmGeo ?? musicModeGeo) : windowedModeGeo
+    videoView.apply(mmGeo)
     // Reset this in case it was changed for PiP. (Need to use optional to support initial load)
     videoView.layer?.autoresizingMask = []
   }
@@ -2352,10 +2352,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // These are the 2 buttons (Close & Exit) which replace the 3 traffic light title bar buttons in music mode.
   // There are 2 variants because of different styling needs depending on whether videoView is visible
-  func updateMusicModeButtonsVisibility(using geometry: MusicModeGeometry) {
+  func updateMusicModeButtonsVisibility(using musicModeGeo: PWinGeometry) {
+    precondition(musicModeGeo.mode == .musicMode,
+                 "PWinGeometry.updateMusicModeButtonsVisibility requires musicMode geo: \(musicModeGeo)")
     if isInMiniPlayer {
       // Show only in music mode when video is visible
-      let showCloseButtonOverVideo = geometry.isVideoVisible
+      let showCloseButtonOverVideo = musicModeGeo.isVideoVisible
       closeButtonBackgroundViewVE.isHidden = !showCloseButtonOverVideo
 
       // Show only in music mode when video is hidden

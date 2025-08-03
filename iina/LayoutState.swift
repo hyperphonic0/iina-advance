@@ -767,10 +767,10 @@ struct LayoutState {
                              video: video)
       return geo.scalingViewport()
     case .musicMode:
-      let musicModeGeo = MusicModeGeometry(windowFrame: windowFrame, screenID: screenID, video: video,
-                                           isVideoVisible: Preference.bool(for: .musicModeShowAlbumArt),
-                                           isPlaylistVisible: Preference.bool(for: .musicModeShowPlaylist))
-      return musicModeGeo.toPWinGeometry()
+      let geo = PWinGeometry.forMusicMode(windowFrame: windowFrame, screenID: screenID, video: video,
+                                          isVideoVisible: Preference.bool(for: .musicModeShowAlbumArt),
+                                          isPlaylistVisible: Preference.bool(for: .musicModeShowPlaylist))
+      return geo
     }
 
   }
