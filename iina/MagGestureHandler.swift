@@ -158,8 +158,8 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         pwc.log.verbose("Window is in music mode but neither video nor playlist is visible. Ignoring pinch gesture")
         return nil
       }
-      let newWidth = round(pwc.musicModeGeo.windowFrame.width * scale)
-      let newMusicModeGeo = pwc.musicModeGeo.scalingVideoForMusicMode(to: newWidth)
+      let newWidth = (pwc.musicModeGeo.windowFrame.width * scale).rounded()
+      let newMusicModeGeo = pwc.musicModeGeo.scalingVideo(toWidth: newWidth)
       pwc.log.verbose{"Scaling pinched video in music mode → \(newMusicModeGeo)"}
 
       IINAAnimation.disableAnimation {

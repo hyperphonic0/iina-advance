@@ -567,9 +567,9 @@ struct GeometryTransform {
           return windowGeo.scalingViewport(to: screenVisibleFrame.size, screenFit: .centerInside)
         } else {
           let resizeRatio = resizeWindowStrategy.ratio
-          let scaledVideoSize = outputVidGeo.videoSizeCAR * resizeRatio
-          log.verbose{"[GTF:\(name)] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(scaledVideoSize)"}
-          let centeredScaledGeo = windowGeo.scalingVideo(to: scaledVideoSize, screenFit: .centerInside, mode: outputLayout.mode)
+          let scaledVideoWidth = (outputVidGeo.videoSizeCAR.width * resizeRatio).rounded()
+          log.verbose{"[GTF:\(name)] Applied resizeRatio (\(resizeRatio)) to newVideoWidth → \(scaledVideoWidth)"}
+          let centeredScaledGeo = windowGeo.scalingVideo(toWidth: scaledVideoWidth, screenFit: .centerInside, mode: outputLayout.mode)
           // User has actively resized the video. Assume this is the new preferred resolution
           player.info.intendedViewportSize = centeredScaledGeo.viewportSize
           log.verbose{"[GTF:\(name)] After scaleVideo: \(centeredScaledGeo)"}

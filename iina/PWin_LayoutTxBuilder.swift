@@ -293,8 +293,8 @@ extension PlayerWindowController {
                                                      video: geo.windowed.video)
     case .musicMode:
       /// `musicModeGeo` should have already been deserialized and set.
-      /// But make sure we correct any size problems
-      return geo.musicMode.refittedMusicModeGeo()
+      /// But make sure we correct any size problems.
+      return geo.musicMode.refitted()
     }
   }
 

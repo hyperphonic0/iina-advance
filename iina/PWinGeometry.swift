@@ -488,126 +488,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return scalingViewport(to: requestedViewportSize, screenID: screenID, screenFit: screenFit)
   }
 
-  /// The MiniPlayerWindow's width must be between `MiniPlayerMinWidth` and `Preference.musicModeMaxWidth`.
-  /// It is composed of up to 3 vertical sections:
-  /// 1. `viewportView`: Visible if `isVideoVisible` is true. Scales with the aspect ratio of its video.
-  /// 2. `musicModeControlBarView`: Visible always. Fixed height.
-  /// 3. `playlistWrapperView`: Visible if `isPlaylistVisible` is true. Height is user resizable, and must be >= `PlaylistMinHeight`.
-  /// Must also ensure that window stays within the bounds of the screen it is in. Almost all of the time the window  will be
-  /// height-bounded instead of width-bounded.
-  func refittedMusicModeGeo() -> PWinGeometry {
-    let containerFrame = GeoUtil.getContainerFrame(forScreenID: screenID, screenFit: .stayInside)!
-
-    /// When the window's width changes, the video scales to match while keeping its aspect ratio,
-    /// and the control bar (`musicModeControlBarView`) and playlist are pushed down.
-    /// Calculate the maximum width/height the art can grow to so that `musicModeControlBarView` is not pushed off the screen.
-    let minPlaylistHeight = isMusicModePlaylistVisible ? Constants.Distance.MusicMode.minPlaylistHeight : 0
-    let videoAspect = video.videoAspectCAR
-
-    var maxWinWidth: CGFloat
-    var maxVideoHeight: CGFloat
-    if isVideoVisible {
-      maxVideoHeight = containerFrame.height - Constants.Distance.MusicMode.oscHeight - minPlaylistHeight
-      /// `maxVideoHeight` can be negative if very short screen! Fall back to height based on `MiniPlayerMinWidth` if needed
-      maxVideoHeight = max(maxVideoHeight, (Constants.Distance.MusicMode.minWindowWidth / videoAspect).rounded())
-      maxWinWidth = round(maxVideoHeight * videoAspect)
-    } else {
-      maxVideoHeight = 0
-      maxWinWidth = MiniPlayerViewController.maxWindowWidth
-    }
-    maxWinWidth = min(maxWinWidth, containerFrame.width)
-
-    // Determine width first
-    let requestedSize = windowFrame.size
-    let newWindowWidth: CGFloat = requestedSize.width.clamped(to: Constants.Distance.MusicMode.minWindowWidth...maxWinWidth)
-
-    // Now determine height. Clamp again in case rounding goes outside of bounds
-    let videoHeight = (newWindowWidth / videoAspect).rounded().clamped(to: 0...maxVideoHeight)
-    let minWindowHeight = videoHeight + Constants.Distance.MusicMode.oscHeight + minPlaylistHeight
-    // Make sure height is within acceptable values
-    var newWindowHeight = max(requestedSize.height, minWindowHeight)
-    let maxWindowHeight = isMusicModePlaylistVisible ? containerFrame.height : minWindowHeight
-    newWindowHeight = min(round(newWindowHeight), maxWindowHeight)
-    let newWindowSize = NSSize(width: newWindowWidth, height: newWindowHeight)
-
-    var newWindowFrame = NSRect(origin: windowFrame.origin, size: newWindowSize)
-    if ScreenFit.stayInside.shouldMoveWindowToKeepInContainer {
-      newWindowFrame = newWindowFrame.constrain(in: containerFrame)
-    }
-    let fittedGeo = cloneMusicMode(windowFrame: newWindowFrame)
-    log.verbose("Refitted \(fittedGeo), from reqSize=\(requestedSize)")
-    return fittedGeo
-  }
-
-  func scalingVideoForMusicMode(to desiredWidth: CGFloat? = nil, screenID: String? = nil) -> PWinGeometry {
-    var newVideoWidth = desiredWidth ?? windowFrame.width
-    log.verbose("Scaling MusicMode video to desiredWidth \(newVideoWidth)")
-
-    let newScreenID = screenID ?? self.screenID
-    let containerFrame: NSRect = GeoUtil.getContainerFrame(forScreenID: newScreenID, screenFit: .stayInside)!
-
-    // Constrain desired width within min and max allowed, then recalculate height from new value
-    newVideoWidth = max(newVideoWidth, Constants.Distance.MusicMode.minWindowWidth)
-    newVideoWidth = min(newVideoWidth, MiniPlayerViewController.maxWindowWidth)
-    newVideoWidth = min(newVideoWidth.rounded(), containerFrame.width)
-
-    // Window height should not change. Only video size should be scaled
-    let windowHeight = min(containerFrame.height, windowFrame.height)
-
-    var newVideoHeight: CGFloat = 0
-    if isVideoVisible {
-      let videoAspect = video.videoAspectCAR
-      newVideoHeight = (newVideoWidth / videoAspect).rounded()
-
-      let maxVideoHeight: CGFloat
-      if isMusicModePlaylistVisible {
-        // If playlist is visible, keep the window height fixed.
-        // The video will only be able to expand until the playlist is at its min height
-        maxVideoHeight = windowHeight - Constants.Distance.MusicMode.oscHeight - Constants.Distance.MusicMode.minPlaylistHeight
-      } else {
-        maxVideoHeight = containerFrame.height - Constants.Distance.MusicMode.oscHeight
-      }
-      /// Due to rounding errors and the fact that both `videoHeight` & `playlistHeight` are calculated
-      /// (kind of backed into a corner with this one. Oops...) need to make sure that the calculation of
-      /// `videoHeight` from `window.frame.width` & video aspect will not result in 1 too many pixels.
-      /// This only appears to show up when scaling video to fill the screen & playlist is shown.
-      /// Don't want to just distort the video for even 1 pixel to make it fit, as that will cause a
-      /// validation error in various sanity checks.
-      var trialHeight: CGFloat = newVideoHeight
-      while newVideoHeight > maxVideoHeight {
-        trialHeight = min(maxVideoHeight, trialHeight - 1)
-        newVideoWidth = (trialHeight * videoAspect).rounded()
-        newVideoHeight = (newVideoWidth / videoAspect).rounded()
-      }
-    }
-
-    var newOriginX = windowFrame.origin.x
-
-    // Determine which X direction to scale towards by checking which side of the screen it's closest to
-    let distanceToLeadingSideOfScreen = abs(abs(windowFrame.minX) - abs(containerFrame.minX))
-    let distanceToTrailingSideOfScreen = abs(abs(windowFrame.maxX) - abs(containerFrame.maxX))
-    if distanceToTrailingSideOfScreen < distanceToLeadingSideOfScreen {
-      // Closer to trailing side. Keep trailing side fixed by adjusting the window origin by the width changed
-      let widthChange = windowFrame.width - newVideoWidth
-      newOriginX += widthChange
-    }
-    // else (closer to leading side): keep leading side fixed
-
-    let newWindowOrigin = NSPoint(x: newOriginX, y: windowFrame.origin.y)
-    let newWindowSize = NSSize(width: newVideoWidth, height: windowHeight)
-    var newWindowFrame = NSRect(origin: newWindowOrigin, size: newWindowSize)
-
-    if ScreenFit.stayInside.shouldMoveWindowToKeepInContainer {
-      newWindowFrame = newWindowFrame.constrain(in: containerFrame)
-    }
-
-    return cloneMusicMode(windowFrame: newWindowFrame)
-  }
-
   func refitted(using newFit: ScreenFit? = nil, lockViewportToVideoSize: Bool? = nil) -> PWinGeometry {
-    if mode == .musicMode {
-      return refittedMusicModeGeo()
-    }
     return scalingViewport(screenFit: newFit, lockViewportToVideoSize: lockViewportToVideoSize)
   }
 
@@ -637,12 +518,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let mode = mode ?? self.mode
 
     if mode == .musicMode {
-      return scalingVideoForMusicMode(to: desiredSize?.width, screenID: screenID)
+      return scalingVideo(toWidth: desiredSize?.width ?? windowFrame.width, screenID: screenID)
     }
 
     // -- First, set up needed variables
 
-    let lockViewportToVideoSize = lockViewportToVideoSize ?? Preference.bool(for: .lockViewportToVideoSize) || mode.alwaysLockViewportToVideoSize
+    let lockViewportToVideoSize = mode.alwaysLockViewportToVideoSize || (lockViewportToVideoSize ?? Preference.bool(for: .lockViewportToVideoSize))
     // do not center in screen again unless explicitly requested
     let newFitOption = screenFit ?? (self.screenFit == .centerInside ? .stayInside : self.screenFit)
     let outsideBarsSize = outsideBars.totalSize
@@ -763,15 +644,91 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 #endif
 
-  func scalingVideo(to desiredVideoSize: NSSize,
+  /// Recalculates the layout for the current player window by attempting to scale its video proportionately to the given width.
+  /// (Only the desired width is required. The video height will be calculated from the width and the video's known aspect ratio).
+  func scalingVideo(toWidth desiredVideoWidth: CGFloat,
                     screenID: String? = nil,
                     screenFit: ScreenFit? = nil,
                     lockViewportToVideoSize: Bool? = nil,
                     mode: PlayerWindowMode? = nil) -> PWinGeometry {
 
     let mode = mode ?? self.mode
+
+    if mode == .musicMode {
+      /// Separate logic for music mode window.
+      /// The MiniPlayerWindow's width must be between `MiniPlayerMinWidth` and `Preference.musicModeMaxWidth`.
+      /// It is composed of up to 3 vertical sections:
+      /// 1. `viewportView`: Visible if `isVideoVisible` is true. Scales with the aspect ratio of its video.
+      /// 2. `musicModeControlBarView`: Visible always. Fixed height.
+      /// 3. `playlistWrapperView`: Visible if `isPlaylistVisible` is true. Height is user resizable, and must be >= `PlaylistMinHeight`.
+      /// Must also ensure that window stays within the bounds of the screen it is in. Almost all of the time the window  will be
+      /// height-bounded instead of width-bounded.
+      var newVideoWidth = desiredVideoWidth
+      log.verbose("Scaling MusicMode video to desiredWidth \(newVideoWidth)")
+
+      let newScreenID = screenID ?? self.screenID
+      let containerFrame: NSRect = GeoUtil.getContainerFrame(forScreenID: newScreenID, screenFit: .stayInside)!
+
+      // Constrain desired width within min and max allowed, then recalculate height from new value
+      newVideoWidth = max(newVideoWidth, Constants.Distance.MusicMode.minWindowWidth)
+      newVideoWidth = min(newVideoWidth, MiniPlayerViewController.maxWindowWidth)
+      newVideoWidth = min(newVideoWidth.rounded(), containerFrame.width)
+
+      // Window height should not change. Only video size should be scaled
+      let windowHeight = min(containerFrame.height, windowFrame.height)
+
+      var newVideoHeight: CGFloat = 0
+      if isVideoVisible {
+        let videoAspect = video.videoAspectCAR
+        newVideoHeight = (newVideoWidth / videoAspect).rounded()
+
+        let maxVideoHeight: CGFloat
+        if isMusicModePlaylistVisible {
+          // If playlist is visible, keep the window height fixed.
+          // The video will only be able to expand until the playlist is at its min height
+          maxVideoHeight = windowHeight - Constants.Distance.MusicMode.oscHeight - Constants.Distance.MusicMode.minPlaylistHeight
+        } else {
+          maxVideoHeight = containerFrame.height - Constants.Distance.MusicMode.oscHeight
+        }
+        /// Due to rounding errors and the fact that both `videoHeight` & `playlistHeight` are calculated
+        /// (kind of backed into a corner with this one. Oops...) need to make sure that the calculation of
+        /// `videoHeight` from `window.frame.width` & video aspect will not result in 1 too many pixels.
+        /// This only appears to show up when scaling video to fill the screen & playlist is shown.
+        /// Don't want to just distort the video for even 1 pixel to make it fit, as that will cause a
+        /// validation error in various sanity checks.
+        var trialHeight: CGFloat = newVideoHeight
+        while newVideoHeight > maxVideoHeight {
+          trialHeight = min(maxVideoHeight, trialHeight - 1)
+          newVideoWidth = (trialHeight * videoAspect).rounded()
+          newVideoHeight = (newVideoWidth / videoAspect).rounded()
+        }
+      }
+
+      var newOriginX = windowFrame.origin.x
+
+      // Determine which X direction to scale towards by checking which side of the screen it's closest to
+      let distanceToLeadingSideOfScreen = abs(abs(windowFrame.minX) - abs(containerFrame.minX))
+      let distanceToTrailingSideOfScreen = abs(abs(windowFrame.maxX) - abs(containerFrame.maxX))
+      if distanceToTrailingSideOfScreen < distanceToLeadingSideOfScreen {
+        // Closer to trailing side. Keep trailing side fixed by adjusting the window origin by the width changed
+        let widthChange = windowFrame.width - newVideoWidth
+        newOriginX += widthChange
+      }
+      // else (closer to leading side): keep leading side fixed
+
+      let newWindowOrigin = NSPoint(x: newOriginX, y: windowFrame.origin.y)
+      let newWindowSize = NSSize(width: newVideoWidth, height: windowHeight)
+      var newWindowFrame = NSRect(origin: newWindowOrigin, size: newWindowSize)
+
+      if ScreenFit.stayInside.shouldMoveWindowToKeepInContainer {
+        newWindowFrame = newWindowFrame.constrain(in: containerFrame)
+      }
+
+      return cloneMusicMode(windowFrame: newWindowFrame)
+    }  // end music mode logic
+
     let lockViewportToVideoSize = lockViewportToVideoSize ?? Preference.bool(for: .lockViewportToVideoSize) || mode.alwaysLockViewportToVideoSize
-    log.trace{"[geo] ScaleVideo start, desiredVideoSize: \(desiredVideoSize), videoAspectCAR: \(video.videoAspectCAR), lockViewportToVideoSize: \(lockViewportToVideoSize)"}
+    log.trace{"[geo] ScaleVideo start, desiredVideoWidth: \(desiredVideoWidth), videoAspectCAR: \(video.videoAspectCAR), lockViewportToVideoSize: \(lockViewportToVideoSize)"}
 
     // do not center in screen again unless explicitly requested
     var newFitOption = screenFit ?? (self.screenFit == .centerInside ? .stayInside : self.screenFit)
@@ -781,12 +738,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       newFitOption = .noConstraints
     }
 
-    var newVideoSize = desiredVideoSize
-
     let minVideoSize = minVideoSize()
-    let newWidth = max(minVideoSize.width, desiredVideoSize.width)
+    let newWidth = max(minVideoSize.width, desiredVideoWidth)
     /// Enforce `videoView` aspectRatio: Recalculate height using width
-    newVideoSize = NSSize(width: newWidth, height: round(newWidth / video.videoAspectCAR))
+    var newVideoSize = NSSize(width: newWidth, height: round(newWidth / video.videoAspectCAR))
 
     let containerFrame: NSRect? = GeoUtil.getContainerFrame(forScreenID: screenID ?? self.screenID, screenFit: newFitOption)
     if let containerFrame {
@@ -1262,6 +1217,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                      isPlaylistVisible: isPlaylistVisible ?? self.isMusicModePlaylistVisible)
   }
 
+  /// Music mode only!
   func withVideoViewVisible(_ visible: Bool) -> PWinGeometry {
     guard mode == .musicMode else {
       log.error("Cannot call PWinGeometry.withVideoViewVisible when mode ≠ music mode: \(self)")

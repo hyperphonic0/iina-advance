@@ -352,8 +352,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // The first "get" of this will load from saved pref. Every "set" of this will update the pref.
   static var musicModeGeoLastClosed: PWinGeometry = {
     let csv = Preference.string(for: .uiLastClosedMusicModeGeometry)
-    if let savedGeo = PWinGeometry.fromMusicModeCSV(csv, Logger.log) {
+    // Try to parse as modern CSV first. If it fails, try legacy music mode CSV
+    if let savedGeo = PWinGeometry.fromCSV(csv, Logger.log) {
       Logger.log.verbose{"Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)): \(savedGeo)"}
+      return savedGeo
+    } else if let savedGeo = PWinGeometry.fromMusicModeCSV(csv, Logger.log) {
+      Logger.log.verbose{"Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) from legacy music mode CSV: \(savedGeo)"}
       return savedGeo
     }
     Logger.log.debug{"Pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty or could not be parsed. Falling back to default music mode geometry"}
@@ -363,7 +367,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     return defaultGeo
   }() {
     didSet {
-      Preference.set(musicModeGeoLastClosed.toMusicModeCSV(), for: .uiLastClosedMusicModeGeometry)
+      Preference.set(musicModeGeoLastClosed.toCSV(), for: .uiLastClosedMusicModeGeometry)
       Logger.log.verbose{"Updated musicModeGeoLastClosed ≔ \(musicModeGeoLastClosed)"}
     }
   }

@@ -229,7 +229,7 @@ struct PlayerSaveState: CustomStringConvertible {
     props[PropName.windowedModeGeo.rawValue] = geo.windowed.toCSV()
 
     /// `musicModeGeo`: use supplied GeometrySet for most up-to-date window frame
-    props[PropName.musicModeGeo.rawValue] = geo.musicMode.toMusicModeCSV()
+    props[PropName.musicModeGeo.rawValue] = geo.musicMode.toCSV()
 
     /// `videoGeo`: use supplied GeometrySet for most up-to-date data (avoiding complex logic to derive it)
     props[PropName.videoGeo.rawValue] = geo.video.toCSV()
@@ -565,10 +565,13 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     let musicModeCSV = PlayerSaveState.string(for: .musicModeGeo, props)
-    let savedMusicModeGeo = PWinGeometry.fromMusicModeCSV(musicModeCSV, videoGeoFallback: videoGeo, log)
+
     var musicModeGeo: PWinGeometry
-    if let savedMusicModeGeo {
+    if let savedMusicModeGeo = PWinGeometry.fromCSV(musicModeCSV, videoGeoFallback: videoGeo, log) {
       musicModeGeo = savedMusicModeGeo
+    } else if let savedLegacyMusicModeGeo = PWinGeometry.fromMusicModeCSV(musicModeCSV, videoGeoFallback: videoGeo, log) {
+      // v1.3 and earlier
+      musicModeGeo = savedLegacyMusicModeGeo
     } else {
       log.errorDebugAlert{"Failed to restore music mode PWinGeometry from CSV! Will fall back to last closed geometry"}
       musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
@@ -1104,6 +1107,7 @@ extension VideoGeometry {
 extension PWinGeometry {
   static let expectedMusicModeCSVTokenCount = 9
 
+  /// (Deprecated in v1.4 - use `fromCSV()` instead)
   /// v2: `String` -> `MusicModeGeometry` (In v1.4+, now builds a `PWinGeometry` with mode: `.musicMode`).
   /// v1: (`String`, `VideoGeometry`) -> `MusicModeGeometry` (v1.4+: same note as above).
   /// Note to maintainers: if compiler is complaining with the message "nil is not compatible with closure result type PWinGeometry",
@@ -1184,6 +1188,7 @@ extension PWinGeometry {
   }
 
   /// `MusicModeGeometry` -> `String`
+  /// Deprecated: use `toCSV()`
   func toMusicModeCSV() -> String {
     precondition(mode == .musicMode, "PWinGeometry.toMusicModeCSV() called on non-musicMode geometry: \(self)")
     let csv = [PlayerSaveState.musicModeGeoPrefStringVersion,

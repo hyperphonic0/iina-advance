@@ -309,12 +309,12 @@ extension PlayerWindowController {
       let backingScaleFactor = screen.backingScaleFactor
       let adjustedVideoScale = desiredVideoScale
       let videoSizeCAR = oldWindowedGeo.video.videoSizeCAR
-      let videoSizeScaled = (videoSizeCAR * adjustedVideoScale).rounded()
+      let videoWidthScaled = (videoSizeCAR.width * adjustedVideoScale).rounded()
 
-      let newGeoUnconstrained = oldWindowedGeo.scalingVideo(to: videoSizeScaled, screenFit: .noConstraints)
+      let newGeoUnconstrained = oldWindowedGeo.scalingVideo(toWidth: videoWidthScaled, screenFit: .noConstraints)
       player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
       let newGeo = newGeoUnconstrained.refitted(using: .stayInside)
-      log.verbose{"SetVideoScale: desired=\(desiredVideoScale) adjusted=\(adjustedVideoScale) videoCAR=\(videoSizeCAR) → videoScaled=\(videoSizeScaled) → windowScale=\(newGeo.mpvWindowScale())"}
+      log.verbose{"SetVideoScale: desired=\(desiredVideoScale) adjusted=\(adjustedVideoScale) videoCAR=\(videoSizeCAR) → videoWidthScaled=\(videoWidthScaled) → windowScale=\(newGeo.mpvWindowScale())"}
       sendWindowScaleToMPV(newGeo.mpvWindowScale())
       return newGeo
     })
