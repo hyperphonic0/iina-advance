@@ -565,7 +565,7 @@ struct LayoutState {
     spec.isAnySidebarVisible
   }
 
-  var isPlaylistVisible: Bool {
+  var playlistShown: Bool {
     if isMusicMode {
       return outsideBottomBarHeight > Constants.Distance.MusicMode.oscHeight
     } else {
@@ -768,8 +768,8 @@ struct LayoutState {
       return geo.scalingViewport()
     case .musicMode:
       let geo = PWinGeometry.forMusicMode(windowFrame: windowFrame, screenID: screenID, video: video,
-                                          isVideoVisible: Preference.bool(for: .musicModeShowAlbumArt),
-                                          isPlaylistVisible: Preference.bool(for: .musicModeShowPlaylist))
+                                          videoShown: Preference.bool(for: .musicModeShowAlbumArt),
+                                          playlistShown: Preference.bool(for: .musicModeShowPlaylist))
       return geo
     }
 

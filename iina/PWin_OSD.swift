@@ -349,7 +349,7 @@ extension PlayerWindowController {
   /// - Setting `skipAddConstraints` to `true` is a kludge for special use during layout transitions
   func updateOSDConstraints(hasAdditionalInfo: Bool, hasLeadingSidebar: Bool, hasTrailingSidebar: Bool,
                             isLegacyFullScreen: Bool,_ geo: PWinGeometry, skipAddConstraints: Bool = false) {
-    let hasOSD = Preference.bool(for: .enableOSD) && geo.isVideoVisible
+    let hasOSD = Preference.bool(for: .enableOSD) && geo.videoShown
     log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) legacyFS=\(isLegacyFullScreen.yn)"}
     guard let contentView = window?.contentView else { return }
     osd.leadingSide_LeadingConstraint?.isActive = false

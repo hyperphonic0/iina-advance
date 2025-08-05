@@ -215,7 +215,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     // Set up notification observers last
     playlistChangeObserver = NotificationCenter.default.addObserver(forName: .iinaPlaylistChanged, object: player, queue: .main) { [self] _ in
-      guard player.isPlaylistVisible else {
+      guard player.playlistShown else {
         player.log.verbose{"Got iinaPlaylistChanged, but playlist is not visible. Ignoring"}
         return
       }

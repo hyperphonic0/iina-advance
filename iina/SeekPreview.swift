@@ -511,7 +511,7 @@ extension PlayerWindowController {
 
   /// Should only be called by `refreshSeekPreviewAsync`
   private func showSeekPreview(forPointInWindow pointInWindow: NSPoint, mediaDuration: CGFloat) -> Bool {
-    let notInMusicModeDisabled = !currentLayout.isMusicMode || (Preference.bool(for: .enableThumbnailForMusicMode) && musicModeGeo.isVideoVisible)
+    let notInMusicModeDisabled = !currentLayout.isMusicMode || (Preference.bool(for: .enableThumbnailForMusicMode) && musicModeGeo.videoShown)
 
     // First check if both time & thumbnail are disabled
     guard let currentControlBar, notInMusicModeDisabled else {

@@ -439,7 +439,7 @@ struct GeometryTransform {
           newMusicModeGeo = oldMusicModeGeo.clone(video: outputVidGeo)
         }
 
-        if oldMusicModeGeo.isVideoVisible != newMusicModeGeo.isVideoVisible {
+        if oldMusicModeGeo.videoShown != newMusicModeGeo.videoShown {
           // Toggling videoView visiblity: use longer duration for nicety
           duration = Constants.AnimationDuration.standard
         }
@@ -605,7 +605,7 @@ extension PlayerWindowController {
     player.refreshSyncUITimer()
     player.touchBarSupport.setupTouchBarUI()
 
-    let shouldDecideDefaultArtStatus = !ctx.outputLayout.isMusicMode || musicModeGeo.isVideoVisible
+    let shouldDecideDefaultArtStatus = !ctx.outputLayout.isMusicMode || musicModeGeo.videoShown
     let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? ctx.shouldChangeDefaultArt : nil
     if let showDefaultArt {
       // May need to set this while restoring a network audio stream

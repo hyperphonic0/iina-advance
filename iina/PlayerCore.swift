@@ -175,8 +175,8 @@ class PlayerCore: NSObject {
   let playlistTableSelectNextRowAfterDelete = false
   let playlistTableChangeNotificationName: NSNotification.Name
 
-  var isPlaylistVisible: Bool {
-    isInMiniPlayer ? windowController.miniPlayer.isPlaylistVisible : windowController.isOpen(sidebarTab: .playlist)
+  var playlistShown: Bool {
+    isInMiniPlayer ? windowController.miniPlayer.playlistShown : windowController.isOpen(sidebarTab: .playlist)
   }
 
   // Player lifecycle state
@@ -1765,7 +1765,7 @@ class PlayerCore: NSObject {
 
     DispatchQueue.main.async { [self] in
       // Check this inside main DispatchQueue
-      if isPlaylistVisible {
+      if playlistShown {
         // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
         windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos, thenScrollToVisible: true)
       }
@@ -2724,7 +2724,7 @@ class PlayerCore: NSObject {
       DispatchQueue.main.async { [self] in
         // this should avoid sending reload when table view is not ready
         if isInMiniPlayer {
-          guard windowController.miniPlayer.isPlaylistVisible else { return }
+          guard windowController.miniPlayer.playlistShown else { return }
           windowController.miniPlayer.loadIfNeeded()
         } else {
           guard windowController.isOpen(sidebarTab: .chapters) else { return }
@@ -2735,7 +2735,7 @@ class PlayerCore: NSObject {
 
     case .playlist:
       DispatchQueue.main.async {
-        if self.isPlaylistVisible {
+        if self.playlistShown {
           self.windowController.playlistView.playlistTableView.reloadData()
         }
       }
@@ -2756,7 +2756,7 @@ class PlayerCore: NSObject {
       return false
     }
     if isInMiniPlayer {
-      return windowController.musicModeGeo.isVideoVisible && Preference.bool(for: .enableOSDInMusicMode)
+      return windowController.musicModeGeo.videoShown && Preference.bool(for: .enableOSDInMusicMode)
     }
 
     return true
@@ -3165,7 +3165,7 @@ class PlayerCore: NSObject {
 
       info.vid = vid
       // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
-      if !silent, vid != 0, (!isInMiniPlayer || (windowController.miniPlayer.isVideoVisible && !isShowVideoPendingInMiniPlayerCached)) {
+      if !silent, vid != 0, (!isInMiniPlayer || (windowController.miniPlayer.videoShown && !isShowVideoPendingInMiniPlayerCached)) {
         sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
       }
       if vid != 0, isActive, !isRestoring {
@@ -3182,9 +3182,9 @@ class PlayerCore: NSObject {
       let oldMusicModeGeo = ctx.oldGeo.musicMode
       // Vid changed, but not from toggling music mode? Then no extra changes needed to musicMode geo.
       guard isShowVideoPendingInMiniPlayerCached else { return nil }
-      log.verbose{"[GTF:\(ctx.name)] Showing video in music mode (visibleNow=\(oldMusicModeGeo.isVideoVisible.yesno))"}
+      log.verbose{"[GTF:\(ctx.name)] Showing video in music mode (visibleNow=\(oldMusicModeGeo.videoShown.yesno))"}
       miniPlayerShowVideoTimer.cancel()
-      guard isInMiniPlayer && !oldMusicModeGeo.isVideoVisible else { return nil }
+      guard isInMiniPlayer && !oldMusicModeGeo.videoShown else { return nil }
       let newGeo = oldMusicModeGeo.withVideoViewVisible(true)
       return newGeo
     }
@@ -3315,7 +3315,7 @@ class PlayerCore: NSObject {
         // Show *before* waiting for mpv confirmation, to avoid a moment of empty black window.
         windowController.animationPipeline.submit(.init{ [self] in
           // Do not show if in music mode & video is hidden.
-          guard !windowController.currentLayout.isMusicMode || windowController.musicModeGeo.isVideoVisible else { return }
+          guard !windowController.currentLayout.isMusicMode || windowController.musicModeGeo.videoShown else { return }
           windowController.updateDefaultArtVisibility(to: true)
         })
       }

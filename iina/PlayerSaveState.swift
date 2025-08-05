@@ -1127,8 +1127,8 @@ extension PWinGeometry {
             let winOriginY = Double(iter.next()!),
             let winWidth = Double(iter.next()!),
             let winHeight = Double(iter.next()!),
-            let isVideoVisible = Bool.yn(iter.next()!),
-            let isPlaylistVisible = Bool.yn(iter.next()!),
+            let videoShown = Bool.yn(iter.next()!),
+            let playlistShown = Bool.yn(iter.next()!),
             let screenID = iter.next(),
             let videoGeoEmbeddedCSV = iter.next()
       else {
@@ -1145,7 +1145,7 @@ extension PWinGeometry {
 
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
       return PWinGeometry.forMusicMode(windowFrame: windowFrame, screenID: screenID, video: videoGeo,
-                                       isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
+                                       videoShown: videoShown, playlistShown: playlistShown)
     }
 
     if let mmGeo {
@@ -1162,8 +1162,8 @@ extension PWinGeometry {
             let winWidth = Double(iter.next()!),
             let winHeight = Double(iter.next()!),
             let _ = Double(iter.next()!),  /// was `playlistHeight` (defunct as of 1.1)
-            let isVideoVisible = Bool.yn(iter.next()!),
-            let isPlaylistVisible = Bool.yn(iter.next()!),
+            let videoShown = Bool.yn(iter.next()!),
+            let playlistShown = Bool.yn(iter.next()!),
             let _ = Double(iter.next()!),  /// was `videoAspect` (defunct as of 1.2)
             let screenID = iter.next()
       else {
@@ -1183,7 +1183,7 @@ extension PWinGeometry {
 
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
       return PWinGeometry.forMusicMode(windowFrame: windowFrame, screenID: screenID, video: videoGeo,
-                                       isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
+                                       videoShown: videoShown, playlistShown: playlistShown)
     }
   }
 
@@ -1196,7 +1196,7 @@ extension PWinGeometry {
                self.windowFrame.origin.y.stringMaxFrac2,
                self.windowFrame.width.stringMaxFrac2,
                self.windowFrame.height.stringMaxFrac2,
-               self.isVideoVisible.yn,
+               self.videoShown.yn,
                self.isMusicModePlaylistVisible.yn,
                self.screenID.replacingOccurrences(of: ",", with: ";"),  // ensure it's CSV-compatible
                self.video.toEmbeddedCSV()

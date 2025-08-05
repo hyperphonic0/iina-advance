@@ -146,7 +146,7 @@ extension PlayerWindowController {
 
       if transition.isExitingMusicMode {
         // Make sure to restore video
-        if !miniPlayer.isVideoVisible {
+        if !miniPlayer.videoShown {
           // Video was disabled in music mode, but need to restore it now
           player.setVideoTrackEnabled()
         } else {
@@ -284,7 +284,7 @@ extension PlayerWindowController {
 
     if transition.isExitingMusicMode {
       // Remove kludge for hiding video
-      miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: true)
+      miniPlayer.updateVideoViewHeightConstraint(videoShown: true)
     }
 
     // TODO: incorporate this into middleGeometry for cleaner code
@@ -464,7 +464,7 @@ extension PlayerWindowController {
       topBarView.removeFromSuperview()
     }
 
-    if transition.isWindowInitialLayout && transition.outputGeometry.isVideoVisible {
+    if transition.isWindowInitialLayout && transition.outputGeometry.videoShown {
       addVideoViewToWindow()
       if transition.isEnteringInteractiveMode {
         // Need videoView to have superview before adding shadow
@@ -480,7 +480,7 @@ extension PlayerWindowController {
       // Make sure to reset constraints for OSD
       miniPlayer.hideControllerButtons()
       closeButtonView.isHidden = true
-      if !transition.inputGeometry.isVideoVisible {
+      if !transition.inputGeometry.videoShown {
         addVideoViewToWindow()
       }
     }
@@ -685,7 +685,7 @@ extension PlayerWindowController {
         }
 
         // musicModeGeo==transition.outputGeo
-        let shouldDisableVideoView = !musicModeGeo.isVideoVisible && musicModeGeo.isMusicModePlaylistVisible
+        let shouldDisableVideoView = !musicModeGeo.videoShown && musicModeGeo.isMusicModePlaylistVisible
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
         /// (See note in `applyMusicModeGeo`)
         if shouldDisableVideoView {
@@ -1327,8 +1327,8 @@ extension PlayerWindowController {
     }
 
     if transition.isTogglingFullScreen || transition.isTogglingMusicMode {
-      if transition.outputLayout.isMusicMode && !musicModeGeo.isVideoVisible && pip.status == .notInPIP {
-        updateWindowLayoutForVideoViewHidden(isPlaylistVisible: musicModeGeo.isMusicModePlaylistVisible)
+      if transition.outputLayout.isMusicMode && !musicModeGeo.videoShown && pip.status == .notInPIP {
+        updateWindowLayoutForVideoViewHidden(playlistShown: musicModeGeo.isMusicModePlaylistVisible)
       } else {
         sendWindowScaleToMPV(transition.outputGeometry.mpvWindowScale())
       }
@@ -1343,7 +1343,7 @@ extension PlayerWindowController {
       } else if transition.outputLayout.isMusicMode && transition.outputGeometry.isMusicModePlaylistVisible {
         // Music mode playlist is visible: need to scroll to current item again due to size change
         playlistView.scrollPlaylistToCurrentItem()
-      } else if transition.outputLayout.isPlaylistVisible {
+      } else if transition.outputLayout.playlistShown {
         // Playlist sidebar is visible: need to scroll to current item again due to size change
         playlistView.scrollPlaylistToCurrentItem()
       }

@@ -2361,7 +2361,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                  "PWinGeometry.updateMusicModeButtonsVisibility requires musicMode geo: \(musicModeGeo)")
     if isInMiniPlayer {
       // Show only in music mode when video is visible
-      let showCloseButtonOverVideo = musicModeGeo.isVideoVisible
+      let showCloseButtonOverVideo = musicModeGeo.videoShown
       closeButtonBackgroundViewVE.isHidden = !showCloseButtonOverVideo
 
       // Show only in music mode when video is hidden

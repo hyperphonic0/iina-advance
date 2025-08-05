@@ -155,10 +155,10 @@ extension PlayerWindowController {
         return musicModeGeo.windowFrame.size
       }
 
-      // Use explicit `isVideoVisible`, `isPlaylistVisible`: these are derived from the windowFrame, but when we update from
+      // Use explicit `videoShown`, `playlistShown`: these are derived from the windowFrame, but when we update from
       // current we can end up with small imprecisions which could alter their values.
-      let currentGeo = musicModeGeoForCurrentFrame().cloneMusicMode(isVideoVisible: musicModeGeo.isVideoVisible,
-                                                                    isPlaylistVisible: musicModeGeo.isMusicModePlaylistVisible)
+      let currentGeo = musicModeGeoForCurrentFrame().cloneMusicMode(videoShown: musicModeGeo.videoShown,
+                                                                    playlistShown: musicModeGeo.isMusicModePlaylistVisible)
       let newGeometry = currentGeo.resizingWindowInMusicMode(to: requestedSize,
                                                              inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
       newWindowSize = newGeometry.windowFrame.size
@@ -196,7 +196,7 @@ extension PlayerWindowController {
   /// Resizes *only* the subviews in the window, not the window frame. Updates other state needed when resizing window.
   func resizeWindowSubviews(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
     videoView.enterAsynchronousMode()
-    if newGeometry.isVideoVisible {
+    if newGeometry.videoShown {
       if updateVideoView {
         // Not sure if this helps fix the aspect constraint transition
         videoView.apply(newGeometry)
@@ -480,7 +480,7 @@ extension PlayerWindowController {
           return nil
         case .musicMode:
           let oldViewportSize = ctx.oldGeo.musicMode.viewportSize
-          guard ctx.oldGeo.musicMode.isVideoVisible else { return nil }
+          guard ctx.oldGeo.musicMode.videoShown else { return nil }
           let desiredViewportSize = scale(oldViewportSize, widthStep: widthStep)
           log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
           return ctx.oldGeo.musicMode.scalingViewport(to: desiredViewportSize)
@@ -592,9 +592,9 @@ extension PlayerWindowController {
                                 showDefaultArt: Bool? = nil,
                                 thenRun: Bool = false) -> [IINAAnimation.Task] {
 
-    let isTogglingVideoView = (inputGeo.isVideoVisible != outputGeo.isVideoVisible)
-    let isShowingVideo = isTogglingVideoView && outputGeo.isVideoVisible
-    let isHidingVideo = isTogglingVideoView && !outputGeo.isVideoVisible
+    let isTogglingVideoView = (inputGeo.videoShown != outputGeo.videoShown)
+    let isShowingVideo = isTogglingVideoView && outputGeo.videoShown
+    let isHidingVideo = isTogglingVideoView && !outputGeo.videoShown
     log.verbose{"ApplyWindowGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) \(outputGeo)"}
 
     var tasks: [IINAAnimation.Task] = []
@@ -628,7 +628,7 @@ extension PlayerWindowController {
 
       hideSeekPreviewImmediately()
       // Show art if videoView is already visible, or before it needs to be shown:
-      if outputGeo.isVideoVisible {
+      if outputGeo.videoShown {
         updateDefaultArtVisibility(to: showDefaultArt)
       }
       resetRotationPreview()
@@ -661,7 +661,7 @@ extension PlayerWindowController {
     // TASK 3: Background cleanup
     tasks.append(.instantTask{ [self] in
       if isHidingVideo, pip.status == .notInPIP {
-        updateWindowLayoutForVideoViewHidden(isPlaylistVisible: outputGeo.isMusicModePlaylistVisible)
+        updateWindowLayoutForVideoViewHidden(playlistShown: outputGeo.isMusicModePlaylistVisible)
       }
 
       isAnimatingLayoutTransition = false
@@ -679,17 +679,17 @@ extension PlayerWindowController {
 
   // MARK: - Apply Geometry: Music Mode
 
-  func updateWindowLayoutForVideoViewHidden(isPlaylistVisible: Bool) {
+  func updateWindowLayoutForVideoViewHidden(playlistShown: Bool) {
     videoView.apply(nil)  // remove constraints
     videoView.removeFromSuperview()
     viewportView.removeSpacers()
     updateDefaultArtVisibility(to: false)  // hide defaultAlbumArt
-    
+
     player.setVideoTrackDisabled(showDefaultAlbumArt: false)
 
     /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
     /// (See note in `applyMusicModeGeo`)
-    if isPlaylistVisible {
+    if playlistShown {
       log.verbose{"Hiding video, but playlist is shown. Setting viewportBtmOffsetFromContentViewBtmConstraint inactive"}
       viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
     }
@@ -710,14 +710,9 @@ extension PlayerWindowController {
     updateMusicModeButtonsVisibility(using: geometry)
 
     /// Try to detect & remove unnecessary constraint updates - `updateBottomBarHeight()` may cause animation glitches if called twice
-    var hasChange: Bool = !geometry.windowFrame.equalTo(window!.frame)
-    if geometry.isVideoVisible != musicModeGeo.isVideoVisible {
-      hasChange = true
-    } else if musicModeGeo.videoHeight != geometry.videoHeight {
-      hasChange = true
-    }
-
-    guard hasChange else {
+    guard !geometry.windowFrame.equalTo(window!.frame)
+            || (geometry.videoShown != musicModeGeo.videoShown)
+            || (geometry.isMusicModePlaylistVisible != musicModeGeo.isMusicModePlaylistVisible) else {
       log.verbose("No changes needed for music mode windowFrame or constraints")
       return
     }
@@ -728,18 +723,20 @@ extension PlayerWindowController {
 
     if setFrame {
       updateWindowFrameAndSubviews(using: geometry, updateVideoView: false)
+    } else {
+      resizeWindowSubviews(using: geometry, updateVideoView: false)
     }
 
-    if geometry.isVideoVisible {
+    if geometry.videoShown {
       /// Make sure to call `apply` AFTER `updateVideoViewHeightConstraint` if video shown
-      miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: geometry.isVideoVisible)
+      miniPlayer.updateVideoViewHeightConstraint(videoShown: geometry.videoShown)
       videoView.apply(geometry)
     }
 
     /// For the case where video is hidden but playlist is shown, AppKit won't allow the window's height to be changed by the user
     /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
     /// Need to execute this in its own task so that other animations are not affected.
-    let shouldDisableVideoView = !geometry.isVideoVisible && geometry.isMusicModePlaylistVisible
+    let shouldDisableVideoView = !geometry.videoShown && geometry.isMusicModePlaylistVisible
     if !shouldDisableVideoView {
       log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
       viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
@@ -747,7 +744,7 @@ extension PlayerWindowController {
 
     if save {
       // Update defaults:
-      Preference.set(geometry.isVideoVisible, for: .musicModeShowAlbumArt)
+      Preference.set(geometry.videoShown, for: .musicModeShowAlbumArt)
       Preference.set(geometry.isMusicModePlaylistVisible, for: .musicModeShowPlaylist)
 
       musicModeGeo = geometry

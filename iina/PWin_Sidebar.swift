@@ -319,12 +319,12 @@ extension PlayerWindowController {
     animationPipeline.submitInstantTask { [self] in
       if currentLayout.isMusicMode && tab.group == .playlist {
         // Music mode
-        if miniPlayer.isPlaylistVisible && playlistView.currentTab == tab {
+        if miniPlayer.playlistShown && playlistView.currentTab == tab {
           if hideIfAlreadyShown {
             miniPlayer.togglePlaylist(nil)
           }
         } else {
-          if !miniPlayer.isPlaylistVisible {
+          if !miniPlayer.playlistShown {
             miniPlayer.togglePlaylist(nil)
           }
           playlistView.pleaseSwitchToTab(tab)
