@@ -1686,7 +1686,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // Interesting. The Swift preprocessor will not see this variable inside the DEBUG block if it is also named "isFilename".
     var filename = isFilename
 #if DEBUG
-    // Include player ID in window (example: "[PLR-1234c0] MyVideo.mp4")
+    // Include player ID in window (example: "[1234c0] MyVideo.mp4")
     let debugTitle = "[\(player.label)] \(titleText)"
     log.trace{"Updating window title to: \(debugTitle.pii.quoted)"}
     window.title = debugTitle

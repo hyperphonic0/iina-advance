@@ -148,7 +148,7 @@ class GLVideoLayer: CAOpenGLLayer {
       } else {
         NSLog("CAN_DRAW")
       }
-      //    printStats()
+      printStats()
 #endif
       if forceRender { return true }
       return shouldRenderUpdateFrame()
@@ -183,7 +183,7 @@ class GLVideoLayer: CAOpenGLLayer {
         drawCountTotal += 1
         printStats()
 
-        //        NSLog("DRAW fbo: \(fbo) vidTS: \(ts.videoTime) layerTime: \(t)\(ts == nil ? "" : ", hostTS: \(ts!.hostTime)")")
+        NSLog("DRAW fbo: \(fbo) vidTS: \(ts.videoTime) layerTime: \(t)\(ts == nil ? "" : ", hostTS: \(ts!.hostTime)")")
 #endif
         var data = mpv_opengl_fbo(fbo: Int32(fbo),
                                   w: Int32(dims[2]),

@@ -137,8 +137,12 @@ struct Constants {
     static let hideSecondSubtitles = NSLocalizedString("menu.sub_second_hide", comment: "Hide Second Subtitles")
     static let showSecondSubtitles = NSLocalizedString("menu.sub_second_show", comment: "Show Second Subtitles")
 
+    // Logger per-player categories
+    static let iinaPlayerCategoryFmt = "%@-plr"
+    static let iinaMpvCategoryFmt = "%@-mpv"
+    static let iinaHdrCategoryFmt = "%@-hdr"
+
     // Pref keys
-    static let iinaMpvCategoryFmt = "mpv-%@"
     static let iinaLaunchPrefix = "Launch-"
     static let openWindowListFmt = "\(iinaLaunchPrefix)%d-Windows"
     static let managePlugins = NSLocalizedString("menu.manage_plugins", comment: "Manage Plugins…")

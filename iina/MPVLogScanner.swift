@@ -53,7 +53,7 @@ class MPVLogScanner {
 
   init(player: PlayerCore) {
     self.player = player
-    mpvLogSubsystem = Logger.Subsystem(rawValue: String(format: Constants.String.iinaMpvCategoryFmt, player.label))
+    mpvLogSubsystem = Logger.makeSubsystem(player, fmt: Constants.String.iinaMpvCategoryFmt)
 
     updateMpvEventLogLevel()
   }

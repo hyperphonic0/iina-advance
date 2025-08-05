@@ -98,7 +98,8 @@ class Logger: NSObject {
       if let subsystem = playerLogs[playerID] {
         return subsystem
       }
-      let subsystem = Logger.Subsystem(rawValue: "PLR-\(playerID)")
+      let subsystem = Logger.Subsystem(rawValue: String(format: Constants.String.iinaPlayerCategoryFmt, playerID))
+
       playerLogs[playerID] = subsystem
       return subsystem
     }
@@ -303,6 +304,10 @@ class Logger: NSObject {
     }
 
   }  // end class Subsystem
+
+  static func makeSubsystem(_ player: PlayerCore, fmt: String) -> Subsystem {
+    return makeSubsystem(String(format: fmt, player.label))
+  }
 
   static func makeSubsystem(_ rawValue: String) -> Subsystem {
     $subsystems.withLock() { subsystems in
