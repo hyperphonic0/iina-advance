@@ -710,16 +710,16 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         log.verbose{"Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)"}
         viewportView.addSubview(videoView)
         sortViewportViewSubviews()
+        /// Add constraints. These get removed each time `videoView` changes superviews.
+        videoView.translatesAutoresizingMaskIntoConstraints = false
+        let mmGeo = currentLayout.mode == .musicMode ? (mmGeo ?? musicModeGeo) : windowedModeGeo
+        videoView.apply(mmGeo)
+        // Reset this in case it was changed for PiP. (Need to use optional to support initial load)
+        videoView.layer?.autoresizingMask = []
       }
     }
     // Screen may have changed. Refresh. Do not keep the OpenGL lock because it is locked in here
     videoView.refreshAllVideoDisplayState()
-    /// Add constraints. These get removed each time `videoView` changes superviews.
-    videoView.translatesAutoresizingMaskIntoConstraints = false
-    let mmGeo = currentLayout.mode == .musicMode ? (mmGeo ?? musicModeGeo) : windowedModeGeo
-    videoView.apply(mmGeo)
-    // Reset this in case it was changed for PiP. (Need to use optional to support initial load)
-    videoView.layer?.autoresizingMask = []
   }
 
   /// Set material & theme (light or dark mode) for OSC and title bar.

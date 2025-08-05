@@ -195,9 +195,9 @@ struct GeometryTransform {
                                                                                            video: ctx.outputVidGeo)
         } else if ctx.inputLayout.mode == .musicMode {
           /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
-          PlayerWindowController.musicModeGeoLastClosed = ctx.oldGeo.musicMode.clone(windowFrame: window.frame,
-                                                                                     screenID: ctx.pwc.bestScreen.screenID,
-                                                                                     video: ctx.outputVidGeo)
+          PlayerWindowController.musicModeGeoLastClosed = ctx.oldGeo.musicMode.cloneMusicMode(windowFrame: window.frame,
+                                                                                              screenID: ctx.pwc.bestScreen.screenID,
+                                                                                              video: ctx.outputVidGeo)
         }
         // No initial layout tasks needed. Fall through to add post-layout task
         immediateTasks = []
@@ -404,12 +404,12 @@ struct GeometryTransform {
         }
 
         let intendedViewportSize: CGSize? = oldSessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
-        let newGeo = resizedGeo ?? oldGeo.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
+        let outputGeo = resizedGeo ?? oldGeo.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
                                                                    intendedViewportSize: intendedViewportSize)
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
-        log.verbose{"[GTF:\(name)] Building windowed tasks: sess=\(oldSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newGeo)"}
-        tasks = pwc.buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
+        log.verbose{"[GTF:\(name)] Building windowed tasks: sess=\(oldSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(outputGeo)"}
+        tasks = pwc.buildApplyWindowGeoTasks(from: oldGeo.windowed, to: outputGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
       case .fullScreenNormal:
         let intendedViewportSize: CGSize? = oldSessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
@@ -447,7 +447,7 @@ struct GeometryTransform {
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose{"[GTF:\(name)] Building musicMode tasks: sess=\(oldSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newMusicModeGeo)"}
-        tasks = pwc.buildApplyMusicModeGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo, duration: duration, showDefaultArt: showDefaultArt)
+        tasks = pwc.buildApplyWindowGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo, duration: duration, showDefaultArt: showDefaultArt)
       default:
         // Interactive mode. Should be handled by its special code. Don't step on it.
         log.debug{"[GTF:\(name)] Invalid mode for TF: \(outputLayout.mode)"}

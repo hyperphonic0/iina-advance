@@ -288,7 +288,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
       // Constrain window so that it doesn't expand below bottom of screen, or fall offscreen
       let newMusicModeGeometry = currentMusicModeGeo.cloneMusicMode(windowFrame: newWindowFrame, isPlaylistVisible: showPlaylist)
-      windowController.buildApplyMusicModeGeoTasks(from: currentMusicModeGeo, to: newMusicModeGeometry, thenRun: true)
+      windowController.buildApplyWindowGeoTasks(from: currentMusicModeGeo, to: newMusicModeGeometry, thenRun: true)
     })
   }
 

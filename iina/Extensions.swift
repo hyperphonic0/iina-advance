@@ -456,15 +456,14 @@ extension NSRect {
     return NSRect(x: newX, y: newY, width: newSize.width, height: newSize.height)
   }
 
-  func constrain(in biggerRect: NSRect) -> NSRect {
-    // new size, keeping aspect ratio
-    var newSize = size
-    if newSize.width > biggerRect.width || newSize.height > biggerRect.height {
-      /// We should have adjusted the rect's size before getting here. Using `shrink()` is not always 100% correct.
+  /// Alters origin if necessary to keep this rect entirely inside the larger rect.
+  /// Does not alter the size of this rect. It is assumed that the developer has already done so.
+  func constrainOrigin(in biggerRect: NSRect) -> NSRect {
+    if size.width > biggerRect.width || size.height > biggerRect.height {
+      /// This indicates a programmer error.
       /// If in debug environment, fail fast. Otherwise log and continue.
-      assert(false, "Rect \(newSize) should already be <= rect in which it is being constrained (\(biggerRect))")
-      Logger.log("Rect \(newSize) is larger than rect in which it is being constrained (\(biggerRect))! Will attempt to resize but it may be imprecise.")
-      newSize = size.shrink(toSize: biggerRect.size)
+      assert(false, "Rect \(size) is not smaller than rect in which it is being constrained (\(biggerRect))")
+      Logger.log.error("Rect \(size) is not smaller than rect in which it is being constrained (\(biggerRect))")
     }
     // new origin
     var newOrigin = origin
@@ -480,7 +479,7 @@ extension NSRect {
     if newOrigin.y + height > biggerRect.origin.y + biggerRect.height {
       newOrigin.y = biggerRect.origin.y + biggerRect.height - height
     }
-    return NSRect(origin: newOrigin, size: newSize)
+    return NSRect(origin: newOrigin, size: size)
   }
 }
 

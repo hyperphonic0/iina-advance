@@ -82,6 +82,7 @@ extension PlayerCore {
       log.verbose{"[Playlist] Done adding \(pathList.count) items. Playlist count is now \(info.playlist.count)"}
       _reloadPlaylist(savePlayerState: false)  // will send notification
       DispatchQueue.main.async { [self] in
+        guard windowController.loaded else { return }
         windowController.playlistView.scrollPlaylistToCurrentItem()
       }
     })

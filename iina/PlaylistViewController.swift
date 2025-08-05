@@ -286,6 +286,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       guard let playlistTableView else { return }
       if let entryIndex = player.info.currentPlayback?.playlistPos {
         player.log.verbose{"Scrolling playlist table to index \(entryIndex)"}
+        guard isViewLoaded else {
+          player.log.verbose{"Playlist table not loaded yet, skipping scroll"}
+          return
+        }
         playlistTableView.scrollRowToVisible(entryIndex)
       }
     }

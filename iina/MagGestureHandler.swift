@@ -154,13 +154,14 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     if currentLayout.isMusicMode {
       pwc.miniPlayer.loadIfNeeded()
 
-      guard pwc.miniPlayer.isVideoVisible || pwc.miniPlayer.isPlaylistVisible else {
-        pwc.log.verbose("Window is in music mode but neither video nor playlist is visible. Ignoring pinch gesture")
+      guard pwc.miniPlayer.isVideoVisible else {
+        pwc.log.verbose("Window is in music mode but video not visible. Ignoring pinch gesture")
         return nil
       }
-      let newWidth = (pwc.musicModeGeo.windowFrame.width * scale).rounded()
-      let newMusicModeGeo = pwc.musicModeGeo.scalingVideo(toWidth: newWidth)
-      pwc.log.verbose{"Scaling pinched video in music mode → \(newMusicModeGeo)"}
+      let inputWidth = pwc.musicModeGeo.windowFrame.width
+      let desiredWidth = (inputWidth * scale).rounded()
+      let newMusicModeGeo = pwc.musicModeGeo.scalingVideo(toWidth: desiredWidth)
+      pwc.log.verbose{"Scaling pinched video in music mode, scale=\(scale) reqWidth=\(desiredWidth) → geo=\(newMusicModeGeo)"}
 
       IINAAnimation.disableAnimation {
         pwc.applyMusicModeGeo(newMusicModeGeo, save: false)

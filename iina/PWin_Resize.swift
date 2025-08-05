@@ -155,7 +155,10 @@ extension PlayerWindowController {
         return musicModeGeo.windowFrame.size
       }
 
-      let currentGeo = musicModeGeoForCurrentFrame()
+      // Use explicit `isVideoVisible`, `isPlaylistVisible`: these are derived from the windowFrame, but when we update from
+      // current we can end up with small imprecisions which could alter their values.
+      let currentGeo = musicModeGeoForCurrentFrame().cloneMusicMode(isVideoVisible: musicModeGeo.isVideoVisible,
+                                                                    isPlaylistVisible: musicModeGeo.isMusicModePlaylistVisible)
       let newGeometry = currentGeo.resizingWindowInMusicMode(to: requestedSize,
                                                              inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
       newWindowSize = newGeometry.windowFrame.size
@@ -431,28 +434,30 @@ extension PlayerWindowController {
                       duration: CGFloat = Constants.AnimationDuration.standard) {
     assert(DispatchQueue.isExecutingIn(.main))
 
+    let inputGeo: PWinGeometry
+    let outputGeo: PWinGeometry
     switch currentLayout.mode {
     case .windowedNormal, .windowedInteractive:
-      let oldGeo = windowedGeoForCurrentFrame()
-      let newGeoUnconstrained = oldGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
-      if currentLayout.mode == .windowedNormal {
+      inputGeo = windowedGeoForCurrentFrame()
+      let newGeoUnconstrained = inputGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
+      if inputGeo.mode == .windowedNormal {
         // User has actively resized the video. Assume this is the new preferred resolution
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
       }
 
       let screenFit: ScreenFit = centerOnScreen ? .centerInside : .stayInside
-      let newGeometry = newGeoUnconstrained.refitted(using: screenFit)
-      log.verbose{"Calling applyWindowGeo from resizeViewport (center=\(centerOnScreen.yn)), to: \(newGeometry.windowFrame)"}
-      buildApplyWindowGeoTasks(newGeometry, duration: duration, thenRun: true)
+      outputGeo = newGeoUnconstrained.refitted(using: screenFit)
+      log.verbose{"Calling applyWindowGeo from resizeViewport (center=\(centerOnScreen.yn)), to: \(outputGeo.windowFrame)"}
     case .musicMode:
       /// In music mode, `viewportSize==videoSize` always. Will get `nil` here if video is not visible
-      let oldGeo = musicModeGeoForCurrentFrame()
-      let newMusicModeGeo = oldGeo.scalingViewport(to: desiredViewportSize)
-      log.verbose{"Calling applyMusicModeGeo from resizeViewport, to: \(newMusicModeGeo.windowFrame)"}
-      buildApplyMusicModeGeoTasks(from: oldGeo, to: newMusicModeGeo, thenRun: true)
+      inputGeo = musicModeGeoForCurrentFrame()
+      outputGeo = inputGeo.scalingViewport(to: desiredViewportSize)
+      log.verbose{"Calling applyWindowGeo from resizeViewport, to: \(outputGeo.windowFrame)"}
     default:
       return
     }
+    // windowed or music mode
+    buildApplyWindowGeoTasks(from: inputGeo, to: outputGeo, duration: duration, thenRun: true)
   }
 
 
@@ -548,10 +553,6 @@ extension PlayerWindowController {
     assert(geometry.mode.isFullScreen, "Expected applyLegacyFSGeo to be called with full screen geometry but got \(geometry)")
     let currentLayout = currentLayout
 
-    if currentLayout.hasFloatingOSC {
-      controlBarFloating.moveToLocationRatio(layout: currentLayout, viewportSize: geometry.viewportSize)
-    }
-
     updateTopOffsetConstraints(for: geometry, isLegacyFullScreen: true)
     let topBarHeight = currentLayout.topBarPlacement == .insideViewport ? geometry.insideBars.top : geometry.outsideBars.top
     updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
@@ -584,49 +585,89 @@ extension PlayerWindowController {
   ///
   /// Also updates cached `windowedModeGeo` and saves updated state.
   @discardableResult
-  func buildApplyWindowGeoTasks(_ newGeometry: PWinGeometry,
+  func buildApplyWindowGeoTasks(from inputGeo: PWinGeometry, to outputGeo: PWinGeometry,
                                 duration: CGFloat = Constants.AnimationDuration.standard,
                                 timing: CAMediaTimingFunctionName = .easeInEaseOut,
+                                save: Bool = true,
                                 showDefaultArt: Bool? = nil,
                                 thenRun: Bool = false) -> [IINAAnimation.Task] {
 
-    log.verbose{"ApplyWindowGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) \(newGeometry)"}
+    let isTogglingVideoView = (inputGeo.isVideoVisible != outputGeo.isVideoVisible)
+    let isShowingVideo = isTogglingVideoView && outputGeo.isVideoVisible
+    let isHidingVideo = isTogglingVideoView && !outputGeo.isVideoVisible
+    log.verbose{"ApplyWindowGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) \(outputGeo)"}
 
     var tasks: [IINAAnimation.Task] = []
 
+    // TASK 1: Background prep
     tasks.append(.instantTask{ [self] in
       isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
       videoView.enterAsynchronousMode()
 
-      assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
+      assert(!currentLayout.spec.mode.isFullScreen, "applyWindowGeo called for non-windowed mode! (found: \(currentLayout.spec.mode))")
+
+      if isTogglingVideoView {
+        if isShowingVideo {
+          if pip.status == .inPIP {
+            // We are about to steal its video; close it:
+            exitPIP()
+          }
+          addVideoViewToWindow(using: outputGeo)
+        } else {  // hiding video
+                  // Remove OSD constraints *before* reducing viewportView height to 0
+          updateOSDConstraintsForMusicMode(outputGeo)
+        }
+
+        // Hide OSD during animation
+        hideOSD(immediately: true)
+        pip.hideOverlayView()
+
+        /// Temporarily hide window buttons. Using `isHidden` will conveniently override its alpha value
+        closeButtonView.isHidden = true
+      } // end isTogglingVideoView
 
       hideSeekPreviewImmediately()
-      updateDefaultArtVisibility(to: showDefaultArt)
+      // Show art if videoView is already visible, or before it needs to be shown:
+      if outputGeo.isVideoVisible {
+        updateDefaultArtVisibility(to: showDefaultArt)
+      }
       resetRotationPreview()
     })
 
+    // TASK 2: Apply animation
     tasks.append(.init(duration: duration, timing: timing, { [self] in
-      // This is only needed to achieve "fade-in" effect when opening window:
-      updateWindowBorderAndOpacity()
-
-      /// Make sure this is up-to-date. Do this before `setFrame`
-      if !isWindowHidden {
-        updateWindowFrameAndSubviews(using: newGeometry)
+      if outputGeo.mode == .musicMode {
+        applyMusicModeGeo(outputGeo, setFrame: true, save: save)
       } else {
-        videoView.apply(newGeometry)
-      }
-      windowedModeGeo = newGeometry
+        // This is only needed to achieve "fade-in" effect when opening window:
+        updateWindowBorderAndOpacity()
+        /// Make sure this is up-to-date. Do this before `setFrame`
+        if !isWindowHidden {
+          updateWindowFrameAndSubviews(using: outputGeo)
+        } else {
+          videoView.apply(outputGeo)
+        }
 
-      log.verbose{"ApplyWindowGeo: Calling sendWindowScaleToMPV, viewportSize=\(newGeometry.viewportSize)"}
-      sendWindowScaleToMPV(newGeometry.mpvWindowScale())
-      player.saveState()
+        if save {
+          windowedModeGeo = outputGeo
+          player.saveState()
+        }
+
+        log.verbose{"ApplyWindowGeo: Calling sendWindowScaleToMPV, viewportSize=\(outputGeo.viewportSize)"}
+        sendWindowScaleToMPV(outputGeo.mpvWindowScale())
+      }
     }))
 
+    // TASK 3: Background cleanup
     tasks.append(.instantTask{ [self] in
+      if isHidingVideo, pip.status == .notInPIP {
+        updateWindowLayoutForVideoViewHidden(isPlaylistVisible: outputGeo.isMusicModePlaylistVisible)
+      }
+
       isAnimatingLayoutTransition = false
       // OSD messages may have been supressed because file was not done loading. Display now if needed:
-      updateUI(pullUpdatesFromMpv: true)
-      player.events.emit(.windowSizeAdjusted, data: newGeometry.windowFrame)
+      updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyWindowGeoTasks`
+      player.events.emit(.windowSizeAdjusted, data: outputGeo.windowFrame)
     })
 
     if thenRun {
@@ -637,90 +678,6 @@ extension PlayerWindowController {
   }
 
   // MARK: - Apply Geometry: Music Mode
-
-  @discardableResult
-  func buildApplyMusicModeGeoTasks(from inputGeo: PWinGeometry, to outputGeo: PWinGeometry,
-                                   duration: CGFloat = Constants.AnimationDuration.standard,
-                                   setFrame: Bool = true, save: Bool = true,
-                                   showDefaultArt: Bool? = nil,
-                                   thenRun: Bool = false) -> [IINAAnimation.Task] {
-    var tasks: [IINAAnimation.Task] = []
-
-    let isTogglingVideoView = (inputGeo.isVideoVisible != outputGeo.isVideoVisible)
-    let isShowingVideo = isTogglingVideoView && outputGeo.isVideoVisible
-    let isHidingVideo = isTogglingVideoView && !outputGeo.isVideoVisible
-    log.verbose{"ApplyMusicModeGeo: task dur=\(duration) setWinFrame=\(setFrame.yn) showDefaultArt=\(showDefaultArt?.yn ?? "nil") togglingVideo=\(isTogglingVideoView.yn) run=\(thenRun.yn) \(outputGeo)"}
-
-    // TASK 1: Background prep
-    tasks.append(.instantTask { [self] in
-      isAnimatingLayoutTransition = true  /// do not trigger various listeners if possible
-
-      if isTogglingVideoView {
-        if isShowingVideo {
-          if pip.status == .inPIP {
-            // We are about to steal its video; close it:
-            exitPIP()
-          }
-          addVideoViewToWindow(using: outputGeo)
-        } else {  // hiding video
-          // Remove OSD constraints *before* reducing viewportView height to 0
-          updateOSDConstraintsForMusicMode(outputGeo)
-        }
-
-        // Hide OSD during animation
-        hideOSD(immediately: true)
-        pip.hideOverlayView()
-
-        /// Temporarily hide window buttons. Using `isHidden` will conveniently override its alpha value
-        closeButtonView.isHidden = true
-
-        hideSeekPreviewImmediately()
-      }
-      // Show art if videoView is already visible, or before it needs to be shown:
-      if outputGeo.isVideoVisible {
-        updateDefaultArtVisibility(to: showDefaultArt)
-      }
-
-      resetRotationPreview()
-    })
-
-    // TASK 2: Apply animation
-    tasks.append(IINAAnimation.Task(duration: duration, timing: .easeInEaseOut, { [self] in
-      applyMusicModeGeo(outputGeo, setFrame: true, save: save)
-    }))
-
-    // TASK 2A (if toggling video view visibility)
-    if isTogglingVideoView {
-      tasks.append(.instantTask{ [self] in
-        /// Allow it to show again
-        closeButtonView.isHidden = false
-
-        pip.showOrHidePipOverlayView()
-
-        // Need to force draw if window was restored while paused + video hidden
-        if isShowingVideo {
-          // Add OSD constraints if needed *after* expanding viewportView height because some constraints assume H > 16
-          updateOSDConstraintsForMusicMode(outputGeo)
-          videoView.forceDraw()
-        }
-      })
-    }
-
-    // TASK 3: Background cleanup
-    tasks.append(.instantTask { [self] in
-      if isHidingVideo, pip.status == .notInPIP {
-        updateWindowLayoutForVideoViewHidden(isPlaylistVisible: outputGeo.isMusicModePlaylistVisible)
-      }
-
-      isAnimatingLayoutTransition = false
-      updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyWindowGeoTasks`
-    })
-
-    if thenRun {
-      animationPipeline.submit(tasks)
-    }
-    return tasks
-  }
 
   func updateWindowLayoutForVideoViewHidden(isPlaylistVisible: Bool) {
     videoView.apply(nil)  // remove constraints

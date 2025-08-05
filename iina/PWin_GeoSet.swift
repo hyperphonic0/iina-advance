@@ -103,7 +103,7 @@ extension PlayerWindowController {
     if let musicMode {
       musicModeNew = musicMode
     } else if inputLayout.mode == .musicMode {
-      musicModeNew = geo.musicMode.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: video)
+      musicModeNew = geo.musicMode.cloneMusicMode(windowFrame: latestWindowFrame, screenID: latestScreenID, video: video)
     } else {
       musicModeNew = geo.musicMode
     }
@@ -130,9 +130,9 @@ extension PlayerWindowController {
     let geo = geo
     if currentLayout.mode == .musicMode, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: force) {
       log.trace{"Cloning musicMode geometry with current windowFrame=\(latestWindowFrame), screenID=\(latestScreenID.quoted)"}
-      return geo.musicMode.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: newVidGeo)
+      return geo.musicMode.cloneMusicMode(windowFrame: latestWindowFrame, screenID: latestScreenID, video: newVidGeo)
     }
-    return geo.musicMode.clone(video: newVidGeo)
+    return geo.musicMode.cloneMusicMode(video: newVidGeo)
   }
 
 }
