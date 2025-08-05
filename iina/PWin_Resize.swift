@@ -607,15 +607,20 @@ extension PlayerWindowController {
       assert(!currentLayout.spec.mode.isFullScreen, "applyWindowGeo called for non-windowed mode! (found: \(currentLayout.spec.mode))")
 
       if isTogglingVideoView {
+        // [MusicModeKludge-A] When toggling video, loosen constraints while animating to prevent occasional crash in mpv_render
+        let middleGeo = outputGeo.cloneMusicMode(isMiddleTransition: true)
         if isShowingVideo {
           if pip.status == .inPIP {
             // We are about to steal its video; close it:
             exitPIP()
           }
-          addVideoViewToWindow(using: outputGeo)
-        } else {  // hiding video
-                  // Remove OSD constraints *before* reducing viewportView height to 0
-          updateOSDConstraintsForMusicMode(outputGeo)
+          addVideoViewToWindow(using: middleGeo)
+        } else {
+          // Hiding video
+          // Remove OSD constraints *before* reducing viewportView height to 0
+          updateOSDConstraintsForMusicMode(middleGeo)
+          // [MusicModeKludge-A] Loosen constraints manually *before* the animation task below
+          videoView.videoViewConstraints?.aspectRatio.isActive = false
         }
 
         // Hide OSD during animation
@@ -637,7 +642,9 @@ extension PlayerWindowController {
     // TASK 2: Apply animation
     tasks.append(.init(duration: duration, timing: timing, { [self] in
       if outputGeo.mode == .musicMode {
-        applyMusicModeGeo(outputGeo, setFrame: true, save: save)
+        // [MusicModeKludge-A] Constraints in videoVideo are applied again here, nestled deep. Recreate middle geo for consistency
+        let geoToApply = isTogglingVideoView ? outputGeo.cloneMusicMode(isMiddleTransition: true) : outputGeo
+        applyMusicModeGeo(geoToApply, setFrame: true, save: save)
       } else {
         // This is only needed to achieve "fade-in" effect when opening window:
         updateWindowBorderAndOpacity()
@@ -660,8 +667,13 @@ extension PlayerWindowController {
 
     // TASK 3: Background cleanup
     tasks.append(.instantTask{ [self] in
-      if isHidingVideo, pip.status == .notInPIP {
-        updateWindowLayoutForVideoViewHidden(playlistShown: outputGeo.isMusicModePlaylistVisible)
+      if outputGeo.mode == .musicMode, isTogglingVideoView {
+        // [MusicModeKludge-A] Previous task used a middle transition geometry. Apply the stricter geometry now
+        applyMusicModeGeo(outputGeo, setFrame: true, save: save)
+
+        if isHidingVideo, pip.status == .notInPIP {
+          updateWindowLayoutForVideoViewHidden(playlistShown: outputGeo.isMusicModePlaylistVisible)
+        }
       }
 
       isAnimatingLayoutTransition = false

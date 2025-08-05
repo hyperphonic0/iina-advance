@@ -42,7 +42,7 @@ fileprivate struct AspectConstraint: CustomStringConvertible {
   }
 
   var description: String {
-    return "\(active ? "EN" : "Dis"):\(multiplier)x@\(priority.rawValue)"
+    return "\(active ? "Yes" : "No"):\(multiplier)x@\(priority.rawValue)"
   }
 }
 
@@ -133,7 +133,7 @@ struct VideoViewConstraints {
                           spacerPreferred: QuadConstraint,
                           center: Constraint) {
 
-    log.verbose{"Δ VideoView constraints ≔ maxSize: {w=\(wMax?.description ?? "nil") from super.w, h=\(hMax?.description ?? "nil") from super.h}@\(whMax_Priority.rawValue) spacers:{max=\(spacerMax) min=\(spacerMin) pref=\(spacerPreferred) center=\(center)} aspect=\(aspect)"}
+    log.verbose{"Δ VideoView constraints ≔ maxSize:{w=\(wMax?.description ?? "nil") from super.w, h=\(hMax?.description ?? "nil") from super.h}@\(whMax_Priority.rawValue) spacers:{max=\(spacerMax) min=\(spacerMin) pref=\(spacerPreferred) center=\(center)} aspect=\(aspect)"}
 
 #if TEST_VIDEO_CONSTRAINTS
     // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.

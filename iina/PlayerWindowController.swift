@@ -14,7 +14,6 @@ import Cocoa
 // TODO: support parent playlist
 // TODO: auto-adjust window size when Dock shown/hidden
 // TODO: investigate generating thumbnails & Now Playing art from mpv screenshot cmd via RPC
-// TODO: merge Music Mode geometry with PWin, and add .mini to OSC layout types
 class PlayerWindowController: WindowController, NSWindowDelegate {
   unowned var player: PlayerCore
   unowned var log: Logger.Subsystem {

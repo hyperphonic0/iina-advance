@@ -1192,7 +1192,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
    This function will always return a `PWinGeometry` object which has `mode: .musicMode`.
    */
   static func forMusicMode(windowFrame: NSRect, screenID: String, video: VideoGeometry,
-                           videoShown: Bool, playlistShown: Bool) -> PWinGeometry {
+                           videoShown: Bool, playlistShown: Bool, isMiddleTransition: Bool = false) -> PWinGeometry {
     let log = video.log
     var windowFrame = NSRect(origin: windowFrame.origin, size:
                               CGSize(width: windowFrame.width.rounded(), height: windowFrame.height.rounded()))
@@ -1231,7 +1231,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                               topMarginHeight: 0,
                               outsideBars: MarginQuad(bottom: Constants.Distance.MusicMode.oscHeight + musicModePlaylistHeight),
                               insideBars: MarginQuad.zero,
-                              video: video)
+                              video: video,
+                              isMiddleTransition: isMiddleTransition)
 
     let isValidHeight = playlistShown ? (musicModePlaylistHeight >= Constants.Distance.MusicMode.minPlaylistHeight) : (musicModePlaylistHeight == 0)
     if !isValidHeight {
@@ -1246,7 +1247,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   func cloneMusicMode(windowFrame: NSRect? = nil, screenID: String? = nil, video: VideoGeometry? = nil,
-                      videoShown: Bool? = nil, playlistShown: Bool? = nil) -> PWinGeometry {
+                      videoShown: Bool? = nil, playlistShown: Bool? = nil, isMiddleTransition: Bool? =  nil) -> PWinGeometry {
     guard mode == .musicMode else {
       log.error("Cannot call PWinGeometry.cloneMusicMode when mode ≠ music mode: \(self)")
       assert(false, "Cannot call PWinGeometry.cloneMusicMode when mode ≠ music mode: \(self)")  // fail fast when debugging
@@ -1259,7 +1260,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                      screenID: screenID ?? self.screenID,
                                      video: video ?? self.video,
                                      videoShown: showVideo,
-                                     playlistShown: showPlaylist)
+                                     playlistShown: showPlaylist,
+                                     isMiddleTransition: isMiddleTransition ?? self.isMiddleTransition)
   }
 
   /// Music mode only!
