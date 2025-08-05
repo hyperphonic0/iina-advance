@@ -304,6 +304,7 @@ extension PlayerWindowController {
     let gtf = GeometryTransform("SetVideoScale", player,
                                 windowed: { [self] ctx -> PWinGeometry? in
       let oldWindowedGeo = ctx.oldGeo.windowed.clone(video: ctx.inputVidGeo)  // may need to sub from syncVideoParams
+      
       // TODO: if Preference.bool(for: .usePhysicalResolution) {}
       // Not supported in music mode at this time. Need to resolve backing scale bugs
       // FIXME: regression: viewport keeps expanding when video runs into screen boundary
@@ -379,48 +380,48 @@ extension PlayerWindowController {
   func mpvWindowScaleDidUpdate(to newMpvWindowScale: CGFloat) {
     assert(DispatchQueue.isExecutingIn(.main))
     /* FIXME: this is all broken
-    // Do not call while resizing the window, as doing so has race conditions.
-    guard loaded, let window, !window.inLiveResize, !isAnimatingLayoutTransition else { return }
-    guard !isMagnifying else { return }
-    guard currentLayout.mode == .windowedNormal || currentLayout.mode == .musicMode else {
-      // Not supported in music mode at this time. Need to resolve backing scale bugs
-      log.error{"mpv→SetWindowScale: skipping; unsupported mode: \(currentLayout.mode)"}
-      return
-    }
+     // Do not call while resizing the window, as doing so has race conditions.
+     guard loaded, let window, !window.inLiveResize, !isAnimatingLayoutTransition else { return }
+     guard !isMagnifying else { return }
+     guard currentLayout.mode == .windowedNormal || currentLayout.mode == .musicMode else {
+     // Not supported in music mode at this time. Need to resolve backing scale bugs
+     log.error{"mpv→SetWindowScale: skipping; unsupported mode: \(currentLayout.mode)"}
+     return
+     }
 
-    let currentMpvWindowScale = cachedMpvWindowScale
+     let currentMpvWindowScale = cachedMpvWindowScale
 
-    guard newMpvWindowScale != currentMpvWindowScale else {
-      log.verbose("mpv→SetWindowScale: skipping; same as cached value (\(newMpvWindowScale))")
-      return
-    }
-    // Need to update this right away in case mpv sends duplicate requests
-    cachedMpvWindowScale = newMpvWindowScale
-    log.verbose{"Got updated window-scale from mpv: \(currentMpvWindowScale) → \(newMpvWindowScale)"}
+     guard newMpvWindowScale != currentMpvWindowScale else {
+     log.verbose("mpv→SetWindowScale: skipping; same as cached value (\(newMpvWindowScale))")
+     return
+     }
+     // Need to update this right away in case mpv sends duplicate requests
+     cachedMpvWindowScale = newMpvWindowScale
+     log.verbose{"Got updated window-scale from mpv: \(currentMpvWindowScale) → \(newMpvWindowScale)"}
 
-    let gtf = GeometryTransform("SetWindowScaleFromMPV", player,
-                                windowed: { [self] ctx -> PWinGeometry? in
-      let oldWindowedGeo = ctx.oldGeo.windowed
-      // TODO: if Preference.bool(for: .usePhysicalResolution) {}
+     let gtf = GeometryTransform("SetWindowScaleFromMPV", player,
+     windowed: { [self] ctx -> PWinGeometry? in
+     let oldWindowedGeo = ctx.oldGeo.windowed
+     // TODO: if Preference.bool(for: .usePhysicalResolution) {}
 
-      /// This logic needs to match the function `mp_property_current_window_scale` in mpv's `player.command.c`
-      // mpv uses viewport size for calculation when keepaspect-window=no, which we always use in our operation.
-      let videoSizeCAR = oldWindowedGeo.video.videoSizeCAR
-      let viewportSizeScaled = (fix_me * newMpvWindowScale).rounded()
-      let newGeoUnconstrained = oldWindowedGeo.scalingViewport(to: viewportSizeScaled, screenFit: .noConstraints)
-      player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
-      let newGeo = newGeoUnconstrained.refitted(using: .stayInside)
-      let finalMpvWindowScale = newGeo.mpvWindowScale()
-      if newMpvWindowScale == finalMpvWindowScale {
-        log.verbose{"mpv→SetWindowScale: cached=\(currentMpvWindowScale) → \(finalMpvWindowScale)"}
-      } else {
-        // Could not match desired value. Notify mpv of value used
-        log.verbose{"mpv→SetWindowScale: cached=\(currentMpvWindowScale) desired=\(newMpvWindowScale) → ACTUAL=\(finalMpvWindowScale)"}
-        sendWindowScaleToMPV(finalMpvWindowScale)
-      }
-      return newGeo
-    })
-    animationPipeline.submit(gtf: gtf)
+     /// This logic needs to match the function `mp_property_current_window_scale` in mpv's `player.command.c`
+     // mpv uses viewport size for calculation when keepaspect-window=no, which we always use in our operation.
+     let videoSizeCAR = oldWindowedGeo.video.videoSizeCAR
+     let viewportSizeScaled = (fix_me * newMpvWindowScale).rounded()
+     let newGeoUnconstrained = oldWindowedGeo.scalingViewport(to: viewportSizeScaled, screenFit: .noConstraints)
+     player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
+     let newGeo = newGeoUnconstrained.refitted(using: .stayInside)
+     let finalMpvWindowScale = newGeo.mpvWindowScale()
+     if newMpvWindowScale == finalMpvWindowScale {
+     log.verbose{"mpv→SetWindowScale: cached=\(currentMpvWindowScale) → \(finalMpvWindowScale)"}
+     } else {
+     // Could not match desired value. Notify mpv of value used
+     log.verbose{"mpv→SetWindowScale: cached=\(currentMpvWindowScale) desired=\(newMpvWindowScale) → ACTUAL=\(finalMpvWindowScale)"}
+     sendWindowScaleToMPV(finalMpvWindowScale)
+     }
+     return newGeo
+     })
+     animationPipeline.submit(gtf: gtf)
      */
   }
 
@@ -561,9 +562,9 @@ extension PlayerWindowController {
     updateWindowFrameAndSubviews(using: geometry)
   }
 
-   func buildApplyFullScreenGeoTasks(fsGeo: PWinGeometry, newWindowedGeo: PWinGeometry,
-                                     duration: CGFloat, showDefaultArt: Bool?) -> [IINAAnimation.Task] {
-     let tasks: [IINAAnimation.Task] = [
+  func buildApplyFullScreenGeoTasks(fsGeo: PWinGeometry, newWindowedGeo: PWinGeometry,
+                                    duration: CGFloat, showDefaultArt: Bool?) -> [IINAAnimation.Task] {
+    let tasks: [IINAAnimation.Task] = [
       .init(duration: duration, { [self] in
         // Make sure video constraints are up to date, even in full screen.
         // Also remember that FS & windowed mode share the same screen.
@@ -577,8 +578,8 @@ extension PlayerWindowController {
         updateDefaultArtVisibility(to: showDefaultArt)
         updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyWindowGeoTasks`
       })
-     ]
-     return tasks
+    ]
+    return tasks
   }
 
   /// Updates/redraws current `window.frame` and its internal views from `newGeometry`. Animated. Windowed mode only!
@@ -724,7 +725,8 @@ extension PlayerWindowController {
     /// Try to detect & remove unnecessary constraint updates - `updateBottomBarHeight()` may cause animation glitches if called twice
     guard !geometry.windowFrame.equalTo(window!.frame)
             || (geometry.videoShown != musicModeGeo.videoShown)
-            || (geometry.isMusicModePlaylistVisible != musicModeGeo.isMusicModePlaylistVisible) else {
+            || (geometry.isMusicModePlaylistVisible != musicModeGeo.isMusicModePlaylistVisible)
+            || (geometry.isMiddleTransition != musicModeGeo.isMiddleTransition) else {
       log.verbose("No changes needed for music mode windowFrame or constraints")
       return
     }
