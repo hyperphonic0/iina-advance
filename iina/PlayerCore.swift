@@ -3224,7 +3224,6 @@ class PlayerCore: NSObject {
 
       guard reloadTrackInfo() else { return }
       let vidTrackCount = info.videoTracks.count
-      let hasVidTrack = vidTrackCount > 0
       let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
       let vidToSet: Int
       if let vidPrevious = info.vidDisabled {
@@ -3249,12 +3248,21 @@ class PlayerCore: NSObject {
         }
       }
       log.verbose{"Enabling video track: changing vid from \(vidNow) → \(vidToSet) vidTrackCount=\(vidTrackCount) showMiniPlayerVideo=\(showMiniPlayerVideo.yn)"}
+      let hasVidTrack = vidTrackCount > 0
       guard hasVidTrack else {
         info.vidDisabled = nil  // clear saved track
         if showMiniPlayerVideo {
           // If no tracks, will not get a response from mpv if requesting to change tracks.
           // Or if a track is already selected, don't need to change tracks. But still need to show videoView.
           log.verbose("Enabling video track: skipping, but forcing call to vidChanged to show videoView")
+          vidChanged(silent: true)
+        }
+        return
+      }
+      guard info.vid! != vidToSet else {
+        log.verbose{"Enabling video track: no change to vid (showMiniPlayerVideo=\(showMiniPlayerVideo.yn))"}
+        if showMiniPlayerVideo {
+          // Still need to call this to show videoView
           vidChanged(silent: true)
         }
         return

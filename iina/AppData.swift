@@ -138,7 +138,7 @@ struct Constants {
     static let showSecondSubtitles = NSLocalizedString("menu.sub_second_show", comment: "Show Second Subtitles")
 
     // Logger per-player categories
-    static let iinaPlayerCategoryFmt = "%@-plr"
+    static let iinaPlayerCategoryFmt = "%@-Plr"
     static let iinaMpvCategoryFmt = "%@-mpv"
     static let iinaHdrCategoryFmt = "%@-hdr"
 

@@ -22,7 +22,7 @@ fileprivate struct Constraint: CustomStringConvertible {
   }
 
   var description: String {
-    return "\(active ? "EN" : "Dis"):@\(priority.rawValue)"
+    return "\(active ? "Yes" : "No"):@\(priority.rawValue)"
   }
 }
 
@@ -62,7 +62,7 @@ fileprivate struct QuadConstraint: CustomStringConvertible {
   }
 
   var description: String {
-    return "\(active ? "EN" : "Dis"):\(values?.description ?? "nil")x@\(priority.rawValue)"
+    return "\(active ? "Yes" : "No"):\(values?.description ?? "nil")x@\(priority.rawValue)"
   }
 }
 
@@ -380,7 +380,7 @@ extension VideoView {
       aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: videoViewAspect, constant: 0)
     }
 
-    log.verbose("VideoView updating constraints: aspect=\(videoViewAspect) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) mode=\(geometry.mode)")
+    log.trace("VideoView updating constraints: aspect=\(videoViewAspect) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) vidSizeIdeal=\(geometry.videoSizeIdeal) mode=\(geometry.mode)")
 
     let topSpacer = player.windowController.viewportView.topSpacer
     let bottomSpacer = player.windowController.viewportView.bottomSpacer
@@ -454,7 +454,6 @@ extension VideoView {
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
     let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
 
-    Logger.log("GEO: aspect=\(videoViewAspect) videoSize=\(geometry.videoSize) videoSizeIdeal=\(geometry.videoSizeIdeal)")
     let musicMode = geometry.mode == .musicMode && geometry.videoShown // TODO: improvements for music mode (search for this)
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers: Constraint(active: true, priority: 1000),
