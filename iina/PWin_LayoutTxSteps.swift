@@ -374,7 +374,7 @@ extension PlayerWindowController {
       log.trace{"[\(transition.name)] CloseOldPanels: applying middleGeo, topBarHeight=\(topBarHeight), cameraOffset=\(cameraOffset)"}
       updateTopBarHeight(to: topBarHeight, topBarPlacement: transition.inputLayout.topBarPlacement, cameraHousingOffset: cameraOffset)
 
-      if !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {  // don't do this too soon when exiting Music Mode
+      if !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {  // don't do this too soon when exiting these modes
         // Update sidebar vertical alignments to match top bar:
         let downshift = min(transition.inputLayout.sidebarDownshift, outputLayout.sidebarDownshift)
         let tabHeight = min(transition.inputLayout.sidebarTabHeight, outputLayout.sidebarTabHeight)

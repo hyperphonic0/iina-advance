@@ -120,7 +120,13 @@ struct GeometryTransform {
         log.verbose{"[GTF:\(name)] Result of sessionStateChange: \(oldSessionState) → \(newSessionState.description)"}
         ctx.newSessionState = newSessionState
       } else {
-        log.verbose{"[GTF:\(name)] No sessionStateChange func, will stay at: \(oldSessionState)"}
+        if oldSessionState.isChangingVideoTrack {
+          ctx.newSessionState = .existingSession_continuing
+          log.verbose{"[GTF:\(name)] No sessionStateChange func, will transition to: \(ctx.newSessionState)"}
+        } else {
+          ctx.newSessionState = oldSessionState
+          log.verbose{"[GTF:\(name)] No sessionStateChange func, will stay with: \(ctx.newSessionState)"}
+        }
       }
 
       /// 2a: Sync video params from mpv, if `syncVideoParamsFromMPV` is true.
@@ -465,27 +471,33 @@ struct GeometryTransform {
     fileprivate func doPostTransformWork() {
       log.verbose{"[GTF:\(name)] Running post-TF task, sess=\(oldSessionState) vid=\(vidTrackID)"}
       let pwc = player.windowController!
-      if oldSessionState.isChangingVideoTrack {
-        // Set to prevent future duplicate calls from continuing
-        currentPlayback.vidTrackLastSized = vidTrackID
-        // Return to normal status:
-        pwc.sessionState = .existingSession_continuing
 
-        // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
-        // The OSD can have weird stretching glitches if displayed while zooming open...
-        if currentPlayback.state == .loaded {
-          // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do this for all cases now.
-          log.debug{"[GTF:\(name)] Updating playback.state = .loadedAndSized; will emit fileLoaded"}
-          currentPlayback.state = .loadedAndSized
-          // Should refresh EDR each time switching files
-          pwc.videoView.refreshAllVideoDisplayState()
+      // Apply new session state (need to do this in .main):
+      pwc.sessionState = newSessionState
 
-          // If is network resource, may not be loaded yet. If file, it will be.
-          player.postNotification(.iinaFileLoaded)
-          player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
+      // Must only modify currentPlayback state inside mpv queue
+      player.mpv.queue.async {
+        if oldSessionState.isChangingVideoTrack {
+          // Set to prevent future duplicate calls from continuing
+          currentPlayback.vidTrackLastSized = vidTrackID
+          
+          // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
+          // The OSD can have weird stretching glitches if displayed while zooming open...
+          if currentPlayback.state == .loaded {
+            log.debug{"[GTF:\(name)] Updating playback.state = .loadedAndSized; will emit fileLoaded"}
+            currentPlayback.state = .loadedAndSized
+            DispatchQueue.main.async {
+              // Should refresh EDR each time switching files
+              pwc.videoView.refreshAllVideoDisplayState()
+              // If is network resource, may not be loaded yet. If file, it will be.
+              player.postNotification(.iinaFileLoaded)
+              player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
+            }
+          }
         }
       }
-
+      
+      // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do the below for all cases now.
       // Need to call here to ensure file title OSD is displayed when navigating playlist...
       player.refreshSyncUITimer()
       // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
