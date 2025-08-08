@@ -398,9 +398,14 @@ extension PlayerWindowController {
       // Do not do this when first opening the window though, because it will cause the window location restore to be incorrect.
       // Also do not apply when toggling fullscreen because it is not relevant at this stage and will look glitchy because the
       // animation has zero duration.
-      if !transition.isWindowInitialLayout && (transition.isTogglingMusicMode || !transition.isTogglingFullScreen) {
+      if !transition.isWindowInitialLayout {
         log.debug{"[\(transition.name)] CloseOldPanels: applying middleGeo windowFrame=\(middleGeo.windowFrame)"}
-        updateWindowFrameAndSubviews(using: middleGeo)
+        if transition.isTogglingMusicMode {
+          // Don't add or remove aspect constraint while animating!
+          updateWindowFrameAndSubviews(using: middleGeo, updateVideoView: false)
+        } else if !transition.isTogglingFullScreen {
+          updateWindowFrameAndSubviews(using: middleGeo, updateVideoView: true)
+        }
       }
     }
   }

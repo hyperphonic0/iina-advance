@@ -36,13 +36,13 @@ extension PlayerWindowController {
     videoView.activateForcedRedraws()
 
     guard !isInWindowResizeDenialPeriod() else {
-      log.verbose{"[WinWillResize] Denying request=\(requestedSize): still inside denial period; will stay at \(window.frame.size)"}
+      log.verbose{"[WinWillResize] Denying req=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)"}
       pendingResizeForScreenChange = false  // should be safe to reset this now
       return window.frame.size
     }
     if !window.inLiveResize && isLeftMouseButtonDown {
       // Looks like user is moving the window, but not resizing it. Prevent the system from trying to resize it..
-      log.verbose{"[WinWillResize] Denying request=\(requestedSize): left mouseBtn down, but not resizing"}
+      log.verbose{"[WinWillResize] Denying req=\(requestedSize): left mouseBtn down, but not resizing"}
       return window.frame.size
     }
     // Tweak to improve responsiveness in music mode. Doesn't seem to affect normal windowed mode.

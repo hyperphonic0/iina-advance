@@ -1555,7 +1555,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func windowWillMove(_ notification: Notification) {
-    log.verbose("windowWillMove")
+    log.verbose("PWin WillMove")
   }
 
   // Don't really care if window is main in IINA Advance; we care only if window is key,
@@ -1584,7 +1584,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func windowDidMiniaturize(_ notification: Notification) {
     animationPipeline.submitInstantTask { [self] in
-      log.verbose("Window did miniaturize")
+      log.verbose("PWin Did Miniaturize")
       isWindowMiniturized = true
       if Preference.bool(for: .togglePipByMinimizingWindow) &&
           (!Preference.bool(for: .togglePipByMinimizingWindowForVideoOnly) ||  player.info.currentMediaAudioStatus == .notAudio)
@@ -1597,7 +1597,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func windowDidDeminiaturize(_ notification: Notification) {
     animationPipeline.submitInstantTask { [self] in
-      log.verbose("Window did deminiaturize")
+      log.verbose("PWin Did Deminiaturize")
       isWindowMiniturized = false
       if Preference.bool(for: .pauseWhenMinimized) && isPausedDueToMiniaturization {
         player.resume()
@@ -1612,7 +1612,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func window(_ window: NSWindow, shouldPopUpDocumentPathMenu menu: NSMenu) -> Bool {
-    log.verbose("Window ShouldPopUpDocumentPathMenu")
+    log.verbose("PWin ShouldPopUpDocumentPathMenu")
     guard let currentPlayback = player.info.currentPlayback else { return false }
     return !currentPlayback.isNetworkResource
   }

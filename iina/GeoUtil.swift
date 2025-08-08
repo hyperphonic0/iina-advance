@@ -100,6 +100,7 @@ struct GeoUtil {
 
   static func computeVideoSize(withAspectRatio videoAspect: CGFloat, toFillIn viewportSize: NSSize,
                                minViewportMargins: MarginQuad? = nil, mode: PlayerWindowMode) -> NSSize {
+    assert(mode != .musicMode || (minViewportMargins == nil || minViewportMargins == .zero), "minViewportMargins must be nil or .zero in music mode")
     assert(viewportSize.width >= 0 && viewportSize.height >= 0, "viewportSize must not be negative! Found: \(viewportSize)")
     if viewportSize.width == 0 || viewportSize.height == 0 {
       return NSSize.zero

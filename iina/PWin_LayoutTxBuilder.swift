@@ -184,24 +184,27 @@ extension PlayerWindowController {
       }))
     }
 
-    // - Middle animations:
-
     // 0: Middle point: update style & constraints. Should have minimal visual changes
     transition.tasks.append(.instantTask{ [self] in
       // This also can change window styleMask
       updateHiddenViewsAndConstraints(transition)
     })
 
-    // Extra task when entering or exiting music mode: move & resize video frame
+    // Optional middle animation
+    // Extra animation when entering or exiting music mode: move & resize video frame
     if transition.isTogglingMusicMode && !transition.isWindowInitialLayout {
       transition.tasks.append(.init(duration: closeOldPanelsDuration, timing: .easeInEaseOut) { [self] in
         let intermediateWindowFrame = transition.outputGeometry.videoFrameInScreenCoords
         log.verbose{"[\(transition.name)] Moving & resizing window to intermediate windowFrame=\(intermediateWindowFrame)"}
 
-        let intermediateGeo = transition.outputGeometry.clone(windowFrame: intermediateWindowFrame,
-                                                              topMarginHeight: 0,
-                                                              outsideBars: MarginQuad.zero, insideBars: MarginQuad.zero)
-        updateWindowFrameAndSubviews(using: intermediateGeo)
+        // Need to have mode which is not music mode
+        let middleGeo2 = transition.outputGeometry.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
+                                                         topMarginHeight: 0,
+                                                         outsideBars: MarginQuad.zero, insideBars: MarginQuad.zero,
+                                                         isMiddleTransition: true)
+        // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
+        // It's not needed until the next step anyway.
+        updateWindowFrameAndSubviews(using: middleGeo2, updateVideoView: false)
       })
     }
 
@@ -391,16 +394,17 @@ extension PlayerWindowController {
 
       let middleWindowFrame = baseGeo.videoFrameInScreenCoords
       return PWinGeometry(windowFrame: middleWindowFrame, screenID: baseGeo.screenID,
-                          screenFit: baseGeo.screenFit, mode: .musicMode, topMarginHeight: 0,
-                          outsideBars: MarginQuad.zero, insideBars: MarginQuad.zero,
-                          video: baseGeo.video)
+                          screenFit: baseGeo.screenFit, mode: .windowedNormal, topMarginHeight: 0,
+                          outsideBars: .zero, insideBars: .zero, video: baseGeo.video)
     } else if transition.isExitingMusicMode {
       // - Music Mode: Exit
       if transition.isEnteringFullScreen {
         return nil
       }
       // Only bottom bar needs to be closed. No need to constrain in screen
-      return transition.inputGeometry.withResizedBars(outsideBottom: 0, pinWidthOrHeightIfAtMax: false)
+      return transition.inputGeometry.withResizedBars(mode: .windowedNormal,
+                                                      outsideBottom: 0,
+                                                      pinWidthOrHeightIfAtMax: false)
     }
 
     // TOP

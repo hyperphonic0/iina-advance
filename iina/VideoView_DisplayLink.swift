@@ -57,7 +57,7 @@ extension VideoView {
       log.trace{"No need to update DisplayLink; currentDisplayID (\(displayId)) is unchanged"}
       return
     }
-    log.verbose{"Updating DisplayLink for displayID \(displayId)"}
+    log.verbose{"DisplayLink: updating for displayID \(displayId)"}
     currentDisplay = displayId
 
     checkResult(CVDisplayLinkSetCurrentCGDisplay(link, displayId), "CVDisplayLinkSetCurrentCGDisplay")
@@ -83,7 +83,7 @@ extension VideoView {
     player.mpv.queue.async { [self] in
       guard !player.isStopping else { return }
       player.mpv.setDouble(MPVOption.Video.displayFpsOverride, actualFps)
-      log.verbose("Done updating DisplayLink")
+      log.verbose("DisplayLink: update done")
     }
   }
 
