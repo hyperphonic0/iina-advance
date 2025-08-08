@@ -420,7 +420,7 @@ extension PlayerWindowController {
     log.verbose{"[\(transition.name)] UpdateHiddenViewsAndConstraints"}
 
     // Remove aspect constraint between animations (for some mode changes):
-    if transition.isEnteringMusicMode {
+    if transition.isTogglingMusicMode {
       videoView.apply(transition.outputGeometry)
     } else if transition.isExitingInteractiveMode {
       if let middleGeo = transition.middleGeometry {

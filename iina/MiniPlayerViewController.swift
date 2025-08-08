@@ -304,7 +304,9 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       } else {
         // Hiding video.
 
-        let musicModeTF: PWinGeometry.Transform = { [self] ctx -> PWinGeometry? in
+        /// This will call `applyMusicModeGeo`, which will call `setVideoTrackDisabled`. We want to wait until the animation is done before disabling video.
+        // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
+        let gtf = GeometryTransform("HideVideoView", player, windowed: { [self] ctx -> PWinGeometry? in
           // music mode only. Other modes should fall back to default
           guard ctx.outputLayout.mode == .musicMode else { return nil }
 
@@ -312,11 +314,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
           let newMusicModeGeo = oldMusicModeGeo.withVideoViewVisible(false)
           log.verbose{"MusicMode: changing videoView visibility: \(oldMusicModeGeo.videoShown.yesno) → \(newMusicModeGeo.videoShown.yesno), H=\(newMusicModeGeo.videoHeight)"}
           return newMusicModeGeo
-        }
-
-        /// This will call `applyMusicModeGeo`, which will call `setVideoTrackDisabled`. We want to wait until the animation is done before disabling video.
-        // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
-        let gtf = GeometryTransform("HideVideoView", player, windowed: musicModeTF)
+        })
         gtf.submit()
       }
     })

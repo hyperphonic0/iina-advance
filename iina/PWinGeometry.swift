@@ -449,7 +449,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         } else {
           maxVideoHeight = 0
         }
-        maxWinWidth = min(MiniPlayerViewController.maxWindowWidth, containerFrame.width)
 
         // Determine width first
         let newWindowWidth: CGFloat = requestedSize.width.rounded().clamped(to: Constants.Distance.MusicMode.minWindowWidth...maxWinWidth)
