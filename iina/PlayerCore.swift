@@ -1760,6 +1760,10 @@ class PlayerCore: NSObject {
 
     playback.state = .started
 
+    if case .existingSession_continuing = windowController.sessionState {
+      windowController.sessionState = .existingSession_startingNewPlayback
+    }
+
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()
 

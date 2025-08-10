@@ -908,18 +908,18 @@ extension PlayerWindowController {
     })
   }
 
-  func updateOSDTextSize(from geo: PWinGeometry? = nil) {
+  func updateOSDTextSize(from givenGeo: PWinGeometry? = nil) {
     guard player.info.isFileLoadedAndSized else { return }
 
     let pwGeo: PWinGeometry
-    if let geo {
-      pwGeo = geo
+    if let givenGeo {
+      pwGeo = givenGeo
     } else {
       switch currentLayout.mode {
       case .windowedNormal, .windowedInteractive:
         pwGeo = windowedGeoForCurrentFrame()
       case .fullScreenNormal, .fullScreenInteractive:
-        pwGeo = currentLayout.buildFullScreenGeometry(inScreenID: bestScreen.screenID, video: self.geo.video)
+        pwGeo = currentLayout.buildFullScreenGeometry(inScreenID: bestScreen.screenID, self.geo.video)
       case .musicMode:
         pwGeo = musicModeGeoForCurrentFrame()
       }

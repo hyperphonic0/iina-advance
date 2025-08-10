@@ -160,7 +160,7 @@ struct GeometryTransform {
         ctx.inputLayout = pwc.currentLayout
 
         // Update context's geo with current window frame
-        ctx.oldGeo = pwc.buildGeoSet(video: ctx.oldGeo.video, from: ctx.outputLayout, baseGeoSet: ctx.oldGeo,
+        ctx.oldGeo = pwc.buildGeoSet(video: ctx.oldGeo.video, activeMode: ctx.outputLayout.mode, baseGeoSet: ctx.oldGeo,
                                      forceWinFrameUpdate: !ctx.oldSessionState.isStartingSession)
 
         doMainQueueWork(&ctx)
@@ -198,7 +198,7 @@ struct GeometryTransform {
           /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
           PlayerWindowController.windowedModeGeoLastClosed = ctx.inputLayout.buildGeometry(windowFrame: window.frame,
                                                                                            screenID: ctx.pwc.bestScreen.screenID,
-                                                                                           video: ctx.outputVidGeo)
+                                                                                           ctx.outputVidGeo)
         } else if ctx.inputLayout.mode == .musicMode {
           /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
           PlayerWindowController.musicModeGeoLastClosed = ctx.oldGeo.musicMode.cloneMusicMode(windowFrame: window.frame,
@@ -245,12 +245,12 @@ struct GeometryTransform {
           log.verbose{"[GTF:\(name)] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y"}
         } else if ctx.currentMediaAudioStatus.isAudio && !layout.isMusicMode && !layout.isFullScreen {
           log.debug{"[GTF:\(name)] Opened media is audio: auto-switching to music mode"}
-          let geo = pwc.buildGeoSet(video: ctx.outputVidGeo, from: layout)
+          let geo = pwc.buildGeoSet(video: ctx.outputVidGeo, activeMode: layout.mode)
           let enterMusicModeTransitionTasks = pwc.buildTasksToEnterMusicMode(automatically: true, from: layout, geo)
           immediateTasks += enterMusicModeTransitionTasks
         } else if ctx.currentMediaAudioStatus == .notAudio && layout.isMusicMode {
           log.debug{"[GTF:\(name)] Opened media is not audio: auto-switching to normal window"}
-          let geo = pwc.buildGeoSet(video: ctx.outputVidGeo, from: layout)
+          let geo = pwc.buildGeoSet(video: ctx.outputVidGeo, activeMode: layout.mode)
           let enterMusicModeTransitionTasks = pwc.buildTasksToExitMusicMode(automatically: true, from: layout, geo)
           immediateTasks += enterMusicModeTransitionTasks
         }
@@ -421,7 +421,7 @@ struct GeometryTransform {
         let intendedViewportSize: CGSize? = oldSessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
         let newWinGeo = oldGeo.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
                                                         intendedViewportSize: intendedViewportSize)
-        let fsGeo = outputLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: outputVidGeo)
+        let fsGeo = outputLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, outputVidGeo)
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose{"[GTF:\(name)] Building FS tasks: defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(fsGeo)"}
@@ -851,7 +851,7 @@ extension PlayerWindowController {
       /// well-defined based on current user prefs and/or last closed window.
       let mouseLoc = PlayerCore.mouseLocationAtLastOpen ?? NSEvent.mouseLocation
       let mouseLocScreenID = NSScreen.getOwnerOrDefaultScreenID(forPoint: mouseLoc, fallbackScreenID: ctx.oldGeo.windowed.screenID)
-      let initialGeo = ctx.outputLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, video: ctx.outputVidGeo)
+      let initialGeo = ctx.outputLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, ctx.outputVidGeo)
         .refitted(using: .stayInside)
       let windowSize = initialGeo.windowFrame.size
       let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))

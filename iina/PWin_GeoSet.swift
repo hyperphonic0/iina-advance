@@ -44,10 +44,12 @@ struct GeometrySet {
 
 extension PlayerWindowController {
   func getLatestWindowFrameAndScreenID(force: Bool = false) -> (NSRect, String)? {
-    guard DispatchQueue.isExecutingIn(.main, logError: false) else {
-      log.debug("Not executing in main queue; will use cached window frame & screenID")
-      return nil
-    }
+    assert(DispatchQueue.isExecutingIn(.main))
+    // FIXME: delete if not needed
+//      guard DispatchQueue.isExecutingIn(.main, logError: false) else {
+//        log.debug("Not executing in main queue; will use cached window frame & screenID")
+//        return nil
+//      }
     guard let window else { return nil }
     if !force {
       // Need to check state of current playback to avoid race conditions
@@ -67,52 +69,64 @@ extension PlayerWindowController {
     return (window.frame, bestScreen.screenID)
   }
 
+  /// Builds a new `GeometrySet` using this one as a base.
+  /// 1. For each of the 3 components (`windowed`, `musicMode`, & `video`: if a non-nil object is specified in the params,
+  /// it will be used in the new `GeometrySet` without being modified.
+  /// 2. For each of `windowed` & `musicMode`: if an object is not specified in the params (see 1), an updated object will be built
+  /// using the updated `video` param (if given), and possibly using the latest windowFrame. (See code below for more details, bleh).
   func buildGeoSet(windowed: PWinGeometry? = nil, musicMode: PWinGeometry? = nil,
-                   video: VideoGeometry? = nil, from inputLayout: LayoutState,
+                   video: VideoGeometry? = nil, activeMode: PlayerWindowMode,
                    baseGeoSet: GeometrySet? = nil, forceWinFrameUpdate: Bool = false) -> GeometrySet {
-    let geo = baseGeoSet ?? geo
-    // need to make sure latest video gets propogated to *both* windowed and musicMode geos
-    let video = video ?? geo.video
+    assert(DispatchQueue.isExecutingIn(.main))
 
-    guard inputLayout.mode == currentLayout.mode else {
-      log.debug{"Mode has changed (current=\(currentLayout.mode), provided=\(inputLayout.mode)): will reuse existing GeometrySet instead of updating"}
+    guard activeMode == currentLayout.mode else {
+      log.warn{"Mode has changed (current=\(currentLayout.mode), provided=\(activeMode)): will reuse existing GeometrySet instead of updating"}
       return geo
     }
+
+    let geo = baseGeoSet ?? geo
+
+    // need to make sure latest video gets propogated to *both* windowed and musicMode geos
+    let videoNew = video ?? geo.video
 
     let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: forceWinFrameUpdate) ?? (nil, nil)
 
     let windowedNew: PWinGeometry
     let musicModeNew: PWinGeometry
 
+    // Windowed, full screen
     if let windowed {
       windowedNew = windowed
-    } else if inputLayout.mode.isWindowed {
-      if geo.windowed.mode != inputLayout.mode {
+    } else if activeMode.isWindowed {
+      if geo.windowed.mode != activeMode {
         // If this message is seen, could be a corrupted pref key, or a code bug
-        log.error("buildGeoSet: geo.windowed.mode (\(geo.windowed.mode)) != inputLayout.mode (\(inputLayout.mode))! Will change mode to match the latter; hope it doesn't break anything...")
+        log.error("buildGeoSet: geo.windowed.mode (\(geo.windowed.mode)) != activeMode (\(activeMode))! Will change mode to match the latter; hope it doesn't break anything...")
       }
-      windowedNew = geo.windowed.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, mode: inputLayout.mode, video: video)
+      windowedNew = geo.windowed.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, mode: activeMode, video: videoNew)
 
-    } else if inputLayout.mode.isFullScreen {
+    } else if activeMode.isFullScreen {
       // may have changed screen while in FS
-      windowedNew = geo.windowed.clone(screenID: latestScreenID, video: video)
+      windowedNew = geo.windowed.clone(screenID: latestScreenID, video: videoNew)
     } else {
       windowedNew = geo.windowed
     }
 
+    // Music mode
     if let musicMode {
       musicModeNew = musicMode
-    } else if inputLayout.mode == .musicMode {
-      musicModeNew = geo.musicMode.cloneMusicMode(windowFrame: latestWindowFrame, screenID: latestScreenID, video: video)
+    } else if activeMode == .musicMode {
+      musicModeNew = geo.musicMode.cloneMusicMode(windowFrame: latestWindowFrame, screenID: latestScreenID, video: videoNew)
     } else {
       musicModeNew = geo.musicMode
     }
 
-    return GeometrySet(windowed: windowedNew, musicMode: musicModeNew, video: video)
+    return GeometrySet(windowed: windowedNew, musicMode: musicModeNew, video: videoNew)
   }
 
   /// If `force=true`, then skip validation checks for latest frame & always use current frame
   func windowedGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil, force: Bool = false) -> PWinGeometry {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     let geo = geo
     if currentLayout.mode.isWindowed, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: force) {
       log.trace{"Cloning windowed geometry with current windowFrame=\(latestWindowFrame), screenID=\(latestScreenID.quoted)"}
@@ -127,6 +141,8 @@ extension PlayerWindowController {
 
   /// See also `windowedGeoForCurrentFrame`
   func musicModeGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil, force: Bool = false) -> PWinGeometry {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     let geo = geo
     if currentLayout.mode == .musicMode, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: force) {
       log.trace{"Cloning musicMode geometry with current windowFrame=\(latestWindowFrame), screenID=\(latestScreenID.quoted)"}

@@ -1266,7 +1266,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func window(_ window: NSWindow, willUseFullScreenContentSize proposedSize: NSSize) -> NSSize {
-    let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
+    let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, geo.video)
     log.verbose{"Full screen content size proposed=\(proposedSize), returning=\(fsGeo.windowFrame.size)"}
     return fsGeo.windowFrame.size
   }
@@ -1340,6 +1340,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       animationPipeline.submitTask(timing: .easeInEaseOut, { [self] in
         let screenID = bestScreen.screenID
+        let currentLayout = currentLayout
 
         /// Need to recompute legacy FS's window size so it exactly fills the new screen.
         /// But looks like the OS will try to reposition the window on its own and can't be stopped...
@@ -1348,7 +1349,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           let layout = currentLayout
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
           log.verbose{"WindowDidChangeScreen: updating legacy FS window"}
-          let fsGeo = layout.buildFullScreenGeometry(inScreenID: screenID, video: geo.video)
+          let fsGeo = layout.buildFullScreenGeometry(inScreenID: screenID, geo.video)
           applyLegacyFSGeo(fsGeo)
           // Update screenID at least, so that window won't go back to other screen when exiting FS
           windowedModeGeo = windowedModeGeo.clone(screenID: screenID)
@@ -1407,7 +1408,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         if layout.isLegacyFullScreen {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
           log.verbose("WndDidChangeScreenParams: updating legacy full screen window")
-          let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, video: geo.video)
+          let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, geo.video)
           applyLegacyFSGeo(fsGeo)
         } else if layout.mode == .windowedNormal {
           /// In certain corner cases (e.g., exiting legacy full screen after changing screens while in full screen),
@@ -1449,7 +1450,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           // window management app such as Amethyst. If this happens, move the window back to its proper place:
           let screen = bestScreen
           log.verbose{"WindowDidMove: Updating legacy full screen window in response to unexpected windowDidMove to frame=\(window.frame), screen=\(screen.screenID.quoted)"}
-          let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, video: geo.video)
+          let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, geo.video)
           applyLegacyFSGeo(fsGeo)
         } else {
           player.saveState()
@@ -1916,11 +1917,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       let winGeoUpdated = windowedGeoForCurrentFrame()  // not even needed if in full screen
       let currentIMGeo = currentLayout.buildGeometry(windowFrame: winGeoUpdated.windowFrame,
-                                                     screenID: winGeoUpdated.screenID,
-                                                     video: geo.video)
+                                                     screenID: winGeoUpdated.screenID, geo.video)
       let newIMGeo = currentIMGeo.cropVideo(using: newVidGeo ?? geo.video.clone(selectedCropLabel: AppData.noneCropIdentifier, videoSizeDisplayOverride: nil))
       if currentLayout.mode == .windowedInteractive {
-        geoSet = buildGeoSet(windowed: newIMGeo, from: currentLayout)
+        geoSet = buildGeoSet(windowed: newIMGeo, activeMode: currentLayout.mode)
       }
 
       // Animate the crop to highlight the piece being cut out.

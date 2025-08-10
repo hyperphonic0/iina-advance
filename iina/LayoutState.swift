@@ -737,25 +737,34 @@ struct LayoutState {
     return geo
   }
 
-  func buildFullScreenGeometry(inScreenID screenID: String, video: VideoGeometry) -> PWinGeometry {
+  func buildFullScreenGeometry(inScreenID screenID: String, _ video: VideoGeometry) -> PWinGeometry {
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
-    return buildFullScreenGeometry(in: screen, video: video)
+    return buildFullScreenGeometry(in: screen, video)
   }
 
-  func buildFullScreenGeometry(in screen: NSScreen, video: VideoGeometry) -> PWinGeometry {
-    return PWinGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: mode,
+  /// Builds a new `PWinGeometry` from this `LayoutState` using the given params.
+  func buildFullScreenGeometry(in screen: NSScreen, _ video: VideoGeometry) -> PWinGeometry {
+    var modeToUse = mode
+    if !modeToUse.isFullScreen {
+      Logger.log.error("Cannot build full screen geometry for non-full screen mode: \(modeToUse). Will try using 'fullScreenNormal'. This message indicates a bug in the code")
+      assert(false)  // fail fast if in debug to bring attention to the error
+      modeToUse = .fullScreenNormal
+    }
+    return PWinGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: modeToUse,
                                       outsideBars: outsideBars,
                                       insideBars: insideBars,
                                       video: video,
                                       allowVideoToOverlapCameraHousing: hasTopPaddingForCameraHousing)
   }
 
+  /// Builds a new `PWinGeometry` from this `LayoutState` using the given params.
+  /// Works for all modes.
   func buildGeometry(usingMode modeOverride: PlayerWindowMode? = nil,
-                     windowFrame: NSRect, screenID: String, video: VideoGeometry) -> PWinGeometry {
+                     windowFrame: NSRect, screenID: String, _ video: VideoGeometry) -> PWinGeometry {
     let mode = modeOverride ?? mode
     switch mode {
     case .fullScreenNormal, .fullScreenInteractive:
-      return buildFullScreenGeometry(inScreenID: screenID, video: video)
+      return buildFullScreenGeometry(inScreenID: screenID, video)
     case .windowedInteractive:
       return PWinGeometry.buildInteractiveModeWindow(windowFrame: windowFrame, screenID: screenID, video: video)
     case .windowedNormal:
@@ -780,7 +789,7 @@ struct LayoutState {
     let videoGeo = video ?? VideoGeometry.defaultGeometry()
     let videoSize = videoGeo.videoSizeRaw
     let windowFrame = NSRect(origin: CGPoint.zero, size: videoSize)
-    let geo = buildGeometry(windowFrame: windowFrame, screenID: screen.screenID, video: videoGeo)
+    let geo = buildGeometry(windowFrame: windowFrame, screenID: screen.screenID, videoGeo)
     return geo.refitted(using: .centerInside)
   }
 

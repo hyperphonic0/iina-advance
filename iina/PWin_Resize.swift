@@ -143,7 +143,7 @@ extension PlayerWindowController {
         return requestedSize
       }
 
-      let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
+      let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, geo.video)
       newWindowSize = newGeometry.windowFrame.size
 
       resizeWindowSubviews(using: newGeometry, updateVideoView: true)
@@ -258,7 +258,7 @@ extension PlayerWindowController {
     // These may no longer be aligned correctly. Just hide them
     hideSeekPreviewImmediately()
 
-    let newGeo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: geo.video)
+    let newGeo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, geo.video)
 
     if isFullScreen {
       // custom FS

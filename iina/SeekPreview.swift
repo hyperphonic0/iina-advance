@@ -565,7 +565,7 @@ extension PlayerWindowController {
     playSlider.showHoverIndicator(atSliderCoordX: pointInWindowX)
 
     // This may be for music mode also!
-    let currentGeo = currentLayout.buildGeometry(windowFrame: latestWindowFrame, screenID: latestScreenID, video: geo.video)
+    let currentGeo = currentLayout.buildGeometry(windowFrame: latestWindowFrame, screenID: latestScreenID, geo.video)
 
     seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, mediaDuration: mediaDuration,
                             posInWindowX: pointInWindowCorrected.x, currentControlBar: currentControlBar, currentGeo)

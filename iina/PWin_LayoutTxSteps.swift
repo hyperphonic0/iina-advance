@@ -423,9 +423,7 @@ extension PlayerWindowController {
     if transition.isTogglingMusicMode {
       videoView.apply(transition.outputGeometry)
     } else if transition.isExitingInteractiveMode {
-      if let middleGeo = transition.middleGeometry {
-        videoView.apply(middleGeo)
-      }
+      videoView.apply(transition.outputGeometry)
     }
 
     switch transition.outputLayout.mode {
@@ -1132,8 +1130,6 @@ extension PlayerWindowController {
         // if restoring, there will be a brief delay before getting player info, which is ok
         Utility.showAlert("no_video_track")
       }
-    } else if transition.isExitingInteractiveMode && transition.outputLayout.isFullScreen {
-      videoView.apply(transition.outputGeometry)
     }
 
     // Do this here so that BarFactory regenerates close enough to mid-animation (so bar thickness changes pleasantly)

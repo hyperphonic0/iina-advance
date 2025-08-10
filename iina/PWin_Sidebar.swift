@@ -988,12 +988,13 @@ extension PlayerWindowController {
   ///
   /// Changes the mouse cursor appropriately. If in windowed mode, also updates `windowedModeGeo`.
   func continueResizingSidebar(_ id: Preference.SidebarLocation, with dragEvent: NSEvent) {
+    let currentLayout = currentLayout
     let oldGeo: PWinGeometry
     switch currentLayout.mode {
     case .windowedNormal:
       oldGeo = windowedModeGeo
     case .fullScreenNormal:
-      oldGeo = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
+      oldGeo = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, geo.video)
     case .musicMode, .windowedInteractive, .fullScreenInteractive:
       Logger.fatal("ResizeSidebar: current mode unexpected: \(currentLayout.mode)")
     }

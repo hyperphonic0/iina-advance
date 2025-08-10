@@ -213,8 +213,8 @@ struct PlayerSaveState: CustomStringConvertible {
     var props: [String: Any] = [:]
     let info = player.info
     /// Must *not* access `window`: this is not the main thread
-    let wc = player.windowController!
-    let layout = wc.currentLayout
+    let pwc = player.windowController!
+    let layout = pwc.currentLayout
 
     let buildNumber: Int = info.priorStateBuildNumber
     props[PropName.buildNumber.rawValue] = buildNumber
@@ -260,11 +260,11 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     props[PropName.miscWindowBools.rawValue] = [
-      wc.isWindowMiniturized.yn,
-      wc.isWindowHidden.yn,
-      (wc.pip.status == .inPIP).yn,
-      wc.isWindowMiniaturizedDueToPip.yn,
-      wc.isPausedPriorToInteractiveMode.yn
+      pwc.isWindowMiniturized.yn,
+      pwc.isWindowHidden.yn,
+      (pwc.pip.status == .inPIP).yn,
+      pwc.isWindowMiniaturizedDueToPip.yn,
+      pwc.isPausedPriorToInteractiveMode.yn
     ].joined(separator: ",")
 
     // - Playback State
@@ -393,14 +393,14 @@ struct PlayerSaveState: CustomStringConvertible {
       }
 
       DispatchQueue.main.async {
-        let wc = player.windowController!
-        wc.animationPipeline.submitInstantTask {
-          guard !wc.isAnimatingLayoutTransition else {
+        let pwc = player.windowController!
+        pwc.animationPipeline.submitInstantTask {
+          guard !pwc.isAnimatingLayoutTransition else {
             /// The transition itself will call `save` when it is done. Just return
             return
           }
           // Retrieve appropriate geometry values, updating to latest window frame if needed:
-          let geo = wc.buildGeoSet(from: wc.currentLayout)
+          let geo = pwc.buildGeoSet(activeMode: pwc.currentLayout.mode)
           saveQueue.async {
             guard !player.isShuttingDown else { return }
 
@@ -419,14 +419,14 @@ struct PlayerSaveState: CustomStringConvertible {
     guard player.isSaveEnabled else { return }
     assert(DispatchQueue.isExecutingIn(.main))
     player.log.debug("Saving player state synchronously")
-    let wc = player.windowController!
+    let pwc = player.windowController!
 
     // Retrieve appropriate geometry values, updating to latest window frame if needed:
     let geo: GeometrySet
-    if wc.isAnimatingLayoutTransition {
-      geo = wc.geo
+    if pwc.isAnimatingLayoutTransition {
+      geo = pwc.geo
     } else {
-      geo = wc.buildGeoSet(from: wc.currentLayout)
+      geo = pwc.buildGeoSet(activeMode: pwc.currentLayout.mode)
     }
 
     /// Using `sync` here should delay shutdown & makes sure any existing async saves aren't killed mid-write!

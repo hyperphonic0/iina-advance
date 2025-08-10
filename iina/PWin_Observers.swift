@@ -343,7 +343,7 @@ extension PlayerWindowController {
         guard let window else { return }
         let layout = currentLayout
         let (windowFrame, screenID) = getLatestWindowFrameAndScreenID() ?? (window.frame, bestScreen.screenID)
-        let currentGeo = layout.buildGeometry(windowFrame: windowFrame, screenID: screenID, video: geo.video)
+        let currentGeo = layout.buildGeometry(windowFrame: windowFrame, screenID: screenID, geo.video)
 
         if Preference.bool(for: .displayTimeAndBatteryInFullScreen), layout.isFullScreen {
           fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
