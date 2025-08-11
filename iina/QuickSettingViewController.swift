@@ -270,7 +270,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     // Do not even listen to `iinaTracklistChanged`! The following listeners are finer-grained.
     observe(.iinaVIDChanged) { [self] _ in
       guard currentTab == .video else { return }
-      videoTableView.reloadData()
+      reloadVideoTabIfShown(using: player.videoGeo)
     }
     observe(.iinaAIDChanged) { [self] _ in
       guard currentTab == .audio else { return }
@@ -401,8 +401,11 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   override func viewDidAppear() {
     super.viewDidAppear()
+
+    // TODO: should probably call this every time a change to crop label is detected
     let videoGeo = player.videoGeo
-    updateSegmentLabels(using: videoGeo)
+    updateSegmentLabelsForVideoTab(using: videoGeo)
+
     updateControlsState(using: videoGeo)
   }
 
@@ -432,7 +435,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     log(speed / AppData.minSpeed) / log(AppData.maxSpeed / AppData.minSpeed) * sliderSteps
   }
 
-  func updateSegmentLabels(using videoGeo: VideoGeometry) {
+  func updateSegmentLabelsForVideoTab(using videoGeo: VideoGeometry) {
     guard isViewLoaded else { return }
 
     if let segmentLabels = Preference.csvStringArray(for: .aspectRatioPanelPresets) {
@@ -658,17 +661,16 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   /// Do not call this directly. Call `player.reloadQuickSettingsView()` instead.
   func reloadCurrentTab() {
     guard isViewLoaded else { return }
-    player.log.verbose{"QuickSettings: reloading tab \(currentTab)"}
     switch currentTab {
     case .audio:
+      player.log.verbose{"QuickSettings: reloading tab \(currentTab.name.quoted)"}
       audioTableView.reloadData()
       updateAudioTabControls()
       updateAudioEqState()
     case .video:
-      videoTableView.reloadData()
-      updateVideoTabControls(using: player.videoGeo)
-      updateVideoEqState()
+      reloadVideoTabIfShown(using: player.videoGeo)
     case .sub:
+      player.log.verbose{"QuickSettings: reloading tab \(currentTab.name.quoted)"}
       subTableView.reloadData()
       secSubTableView.reloadData()
       updateSubTabControls()
@@ -929,12 +931,11 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
             trackID = trackList[trackIndex].id
           }
         }
+        // This should fire a callback for the relavant tab, assuming the track actually changed
         player.setTrack(trackID, forType: type)
         tableView.deselectAll(self)
       }
     }
-    // Revalidate layout and controls
-    updateControlsState(using: player.videoGeo)
   }
 
   private func withAllTableViews(_ block: (NSTableView, MPVTrack.TrackType) -> Void) {

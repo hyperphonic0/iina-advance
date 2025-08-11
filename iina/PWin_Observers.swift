@@ -360,7 +360,7 @@ extension PlayerWindowController {
       }
     case .aspectRatioPanelPresets, .cropPanelPresets:
       let videoGeo = player.videoGeo
-      quickSettingView.updateSegmentLabels(using: videoGeo)
+      quickSettingView.updateSegmentLabelsForVideoTab(using: videoGeo)
     default:
       return
     }
