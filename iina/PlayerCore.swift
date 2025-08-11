@@ -117,7 +117,6 @@ class PlayerCore: NSObject {
   let saveUIStateDebouncer = Debouncer(delay: Constants.TimeInterval.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
   let thumbReloadDebouncer = Debouncer(delay: Constants.TimeInterval.thumbnailRegenerationDelay, queue: PlayerCore.thumbnailQueue)
   let sliderSeekDebouncer = Debouncer(delay: Constants.TimeInterval.sliderSeekThrottlingInterval)
-  let quickSettingsReloadDebouncer = Debouncer(delay: Constants.TimeInterval.quickSettingsReloadInterval)
 
   // Plugins
 
@@ -2072,16 +2071,14 @@ class PlayerCore: NSObject {
   }
 
   func reloadQuickSettingsView() {
-    quickSettingsReloadDebouncer.run { [self] in
-      windowController.animationPipeline.doAfterGTFs{ [self] in
-        guard windowController.loaded else { return }
-        guard !isStopping else { return }
-        log.verbose("Reloading QuickSettigsView")
+    windowController.animationPipeline.doAfterGTFs{ [self] in
+      guard windowController.loaded else { return }
+      guard !isStopping else { return }
+      log.verbose("Reloading QuickSettigsView")
 
-        // Easiest place to put this - need to call it when setting equalizers
-        videoView.displayActive()
-        windowController.quickSettingView.reloadCurrentTab()
-      }
+      // Easiest place to put this - need to call it when setting equalizers
+      videoView.displayActive()
+      windowController.quickSettingView.reloadCurrentTab()
     }
   }
 

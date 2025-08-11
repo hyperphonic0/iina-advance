@@ -300,6 +300,8 @@ extension IINAAnimation {
       return gtfCurrentlyRunningID == nil && gtfQueue.isEmpty
     }
 
+    /// Currently this "work" is always just a reload of the current QuickSettings tab, if shown.
+    /// Flattening all requests to this single instance works as a debouncer for reload requests.
     private var pendingWorkAfterGTFs: TaskFunc? = nil
 
     func doAfterGTFs(_ work: @escaping TaskFunc) {

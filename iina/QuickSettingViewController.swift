@@ -232,17 +232,17 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     updateVerticalConstraints()
 
     if pendingSwitchRequest == nil {
-      updateTabButtons()
+      updateTabButtonSelection()
     } else {
       switchToTab(pendingSwitchRequest!)
       pendingSwitchRequest = nil
     }
 
-    speedResetBtn.toolTip = NSLocalizedString("quicksetting.reset_speed", comment: "Reset speed to 1x")
-
     subLoadSegmentedControl.image(forSegment: 1)?.isTemplate = true
     switchHorizontalLine.layer?.opacity = 0.5
     switchHorizontalLine2.layer?.opacity = 0.5
+
+    speedResetBtn.toolTip = NSLocalizedString("quicksetting.reset_speed", comment: "Reset speed to 1x")
 
     // Localize decimal format of numbers
     speedSlider0_25xLabel.stringValue = "\(0.25.groupedStringUpTo6Decimals)x"
@@ -252,6 +252,11 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     speedSlider16xLabel.stringValue = "\(16.groupedStringUpTo6Decimals)x"
 
     customSpeedTextField.formatter = speedFormatter
+
+    let videoGeo = player.videoGeo
+    updateSegmentLabelsForVideoTab(using: videoGeo)
+
+    // EQs
 
     if let data = UserDefaults.standard.data(forKey: Preference.Key.userEQPresets.rawValue),
        let dict = try? JSONDecoder().decode(Dictionary<String, EQProfile>.self, from: data) {
@@ -399,14 +404,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     super.viewWillLayout()
   }
 
-  override func viewDidAppear() {
-    super.viewDidAppear()
-
-    // TODO: should probably call this every time a change to crop label is detected
-    let videoGeo = player.videoGeo
-    updateSegmentLabelsForVideoTab(using: videoGeo)
-
-    updateControlsState(using: videoGeo)
+  override func viewWillAppear() {
+    super.viewWillAppear()
+    reloadCurrentTab()
   }
 
   deinit {
@@ -418,16 +418,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     observers = []
   }
 
-  private func updateControlsState(using videoGeo: VideoGeometry) {
-    guard isViewLoaded else { return }
-
-    updateVideoTabControls(using: videoGeo)
-    updateAudioTabControls()
-    updateSubTabControls()
-    updateVideoEqState()
-    updateAudioEqState()
-  }
-
   /// Return the slider value that represents the given playback speed.
   /// - Parameter speed: Playback speed.
   /// - Returns: Appropriate slider value.
@@ -435,6 +425,11 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     log(speed / AppData.minSpeed) / log(AppData.maxSpeed / AppData.minSpeed) * sliderSteps
   }
 
+  // TODO: should probably call this to change crop label every time a change to custom crop filter is detected
+  /// Updates the segment labels from prefs for the Video tab's presets.
+  ///
+  /// This is only needed at first load and in response to changes to the relevant pref values.
+  /// But make sure to call `updateAspectControls` & `updateCropControls` *after* this - not before!
   func updateSegmentLabelsForVideoTab(using videoGeo: VideoGeometry) {
     guard isViewLoaded else { return }
 
@@ -446,7 +441,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
           aspectPresetsSegment.setLabel(newLabel, forSegment: segmentIndex)
         }
       }
-      updateAspectControls(using: videoGeo)
     }
 
     if let segmentLabels = Preference.csvStringArray(for: .cropPanelPresets) {
@@ -461,7 +455,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
         }
       }
       cropPresetsSegment.setLabel(customLabel, forSegment: cropPresetsSegment.segmentCount - 1)
-      updateCropControls(using: videoGeo)
     }
   }
 
@@ -646,14 +639,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     currentTab = tab
     tabView.selectTabViewItem(at: buttonTag)
     windowController.didChangeTab(to: tab)
-    updateTabButtons()
+    updateTabButtonSelection()
     reloadCurrentTab()
-  }
-
-  private func updateTabButtons() {
-    updateTabActiveStatus(for: videoTabBtn, isActive: currentTab == .video)
-    updateTabActiveStatus(for: audioTabBtn, isActive: currentTab == .audio)
-    updateTabActiveStatus(for: subTabBtn, isActive: currentTab == .sub)
   }
 
   /// Reload Quick Settings controls for the current tab.
@@ -677,6 +664,14 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     default:
       player.log.error{"QuickSettings.reload(): currentTab is invalid: \(currentTab)"}
     }
+  }
+
+  /// Redraws the set of tab buttons (at top). The button corresponding to `currentTab` will
+  /// be drawn with a special tint to indicate it is the active tab.
+  private func updateTabButtonSelection() {
+    updateTabActiveStatus(for: videoTabBtn, isActive: currentTab == .video)
+    updateTabActiveStatus(for: audioTabBtn, isActive: currentTab == .audio)
+    updateTabActiveStatus(for: subTabBtn, isActive: currentTab == .sub)
   }
 
   func reloadVideoTabIfShown(using videoGeo: VideoGeometry) {

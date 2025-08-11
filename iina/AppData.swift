@@ -197,8 +197,6 @@ struct Constants {
     static let scrollingLabelOffsetPerSec: TimeInt = 15
     static let scrollingLabelInitialWaitSec: TimeInt = 1.0
 
-    static let quickSettingsReloadInterval: TimeInt = 0.1
-
     static let keyDownHandlingTimeout = 1.0
 
     /// There's a lot going on at startup, so wait a bit, to give other queues some time before fetching durations, since
