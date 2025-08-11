@@ -303,8 +303,8 @@ extension PlayerWindowController {
 
     let gtf = GeometryTransform("SetVideoScale", player,
                                 windowed: { [self] ctx -> PWinGeometry? in
-      let oldWindowedGeo = ctx.oldGeo.windowed.clone(video: ctx.inputVidGeo)  // may need to sub from syncVideoParams
-      
+      let oldWindowedGeo = ctx.inputGeoSet.windowed.clone(video: ctx.inputVidGeo)  // may need to sub from syncVideoParams
+
       // TODO: if Preference.bool(for: .usePhysicalResolution) {}
       // Not supported in music mode at this time. Need to resolve backing scale bugs
       // FIXME: regression: viewport keeps expanding when video runs into screen boundary
@@ -322,7 +322,7 @@ extension PlayerWindowController {
       sendWindowScaleToMPV(newGeo.mpvWindowScale())
       return newGeo
     })
-    animationPipeline.submit(gtf: gtf)
+    animationPipeline.submitGTF(gtf)
   }
 
   /// Scales the viewport (which is equivalent to mpv's concept of a window) to the given `desiredMpvWindowScale`.
@@ -421,7 +421,7 @@ extension PlayerWindowController {
      }
      return newGeo
      })
-     animationPipeline.submit(gtf: gtf)
+     animationPipeline.submitGTF(gtf)
      */
   }
 
@@ -474,29 +474,32 @@ extension PlayerWindowController {
 
     switch currentLayout.mode {
     case .windowedNormal, .windowedInteractive, .musicMode:
-
-      let windowedTransform: (GeometryTransform.Context) -> PWinGeometry? = { [self] ctx -> PWinGeometry? in
+      let gtf = GeometryTransform("ScaleVideoBy\(widthStep)px", player,
+                                  windowed: { [self] ctx -> PWinGeometry? in
         switch ctx.outputLayout.mode {
+
         case .fullScreenInteractive, .fullScreenNormal:
           return nil
+
         case .musicMode:
-          let oldViewportSize = ctx.oldGeo.musicMode.viewportSize
-          guard ctx.oldGeo.musicMode.videoShown else { return nil }
-          let desiredViewportSize = scale(oldViewportSize, widthStep: widthStep)
+          let inputGeo = ctx.inputGeoSet.musicMode
+          let inputViewportSize = inputGeo.viewportSize
+          guard inputGeo.videoShown else { return nil }
+          let desiredViewportSize = scale(inputViewportSize, widthStep: widthStep)
           log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
-          return ctx.oldGeo.musicMode.scalingViewport(to: desiredViewportSize)
+          return inputGeo.scalingViewport(to: desiredViewportSize)
+
         case .windowedNormal, .windowedInteractive:
-          let oldWindowedGeo = ctx.oldGeo.windowed
-          let desiredViewportSize = scale(oldWindowedGeo.viewportSize, widthStep: widthStep)
+          let inputGeo = ctx.inputGeoSet.windowed
+          let desiredViewportSize = scale(inputGeo.viewportSize, widthStep: widthStep)
           log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
-          let newGeoUnconstrained = oldWindowedGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
+          let scaledGeoUnconstrained = inputGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
           // User has actively resized the video. Assume this is the new preferred resolution
-          player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
-          return newGeoUnconstrained.refitted(using: .stayInside)
+          player.info.intendedViewportSize = scaledGeoUnconstrained.viewportSize
+          return scaledGeoUnconstrained.refitted(using: .stayInside)
         }
-      }
-      animationPipeline.submit(gtf: GeometryTransform("ScaleVideoBy\(widthStep)px", player,
-                                                      windowed: windowedTransform))
+      })
+      animationPipeline.submitGTF(gtf)
     default:
       return
     }

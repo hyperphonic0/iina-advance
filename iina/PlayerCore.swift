@@ -1915,7 +1915,7 @@ class PlayerCore: NSObject {
     // Done syncing tracks
 
     let gtf = GeometryTransform("FileLoaded", self,
-                               state: { [self] prevSessionState, ctx in
+                                sessionState: { [self] prevSessionState, ctx in
       guard ctx.currentPlayback.state == .loaded else {
         log.verbose{"[GTF:\(ctx.name)] Expected currentPlayback.state == .loaded, but found: \(ctx.currentPlayback.state)"}
         return nil
@@ -1933,7 +1933,7 @@ class PlayerCore: NSObject {
         }
       }
     })
-    windowController.animationPipeline.submit(gtf: gtf)
+    windowController.animationPipeline.submitGTF(gtf)
 
     // Launch auto-load tasks on background thread
     let shouldAutoLoadFiles = info.shouldAutoLoadFiles
@@ -3130,7 +3130,7 @@ class PlayerCore: NSObject {
     let isShowVideoPendingInMiniPlayerCached = isShowVideoPendingInMiniPlayer
     isShowVideoPendingInMiniPlayer = false
 
-    let stateChangeFunc: GeometryTransform.PWinSessionStateTF = { [self] prevSessionState, ctx -> PWinSessionState? in
+    let sessionStateTF: GeometryTransform.PWinSessionStateTF = { [self] prevSessionState, ctx -> PWinSessionState? in
       let returnValue: PWinSessionState?
       if case .existingSession_continuing = prevSessionState {
         if ctx.currentPlayback.state.isAtLeast(.loadedAndSized) && ctx.currentPlayback.vidTrackLastSized != ctx.vidTrackID {
@@ -3148,7 +3148,7 @@ class PlayerCore: NSObject {
     }
 
     let videoGeoTF: GeometryTransform.VideoGeometryTF = { [self] inputVidGeo, ctx -> VideoGeometry? in
-      let vid = Int(ctx.tf.player.mpv.getInt(MPVOption.TrackSelection.vid))
+      let vid = Int(ctx.player.mpv.getInt(MPVOption.TrackSelection.vid))
       let didChange = vid != info.vid
 
       // sometimes still need to show videoView when no actual vid change occurred (if use has vid=0 or no vid tracks exist)
@@ -3181,7 +3181,7 @@ class PlayerCore: NSObject {
     let musicModeTF: GeometryTransform.PWinGeometryTF = { [self] ctx -> PWinGeometry? in
       guard ctx.outputLayout.isMusicMode else { return nil }
 
-      let oldMusicModeGeo = ctx.oldGeo.musicMode
+      let oldMusicModeGeo = ctx.inputGeoSet.musicMode
       // Vid changed, but not from toggling music mode? Then no extra changes needed to musicMode geo.
       guard isShowVideoPendingInMiniPlayerCached else { return nil }
       log.verbose{"[GTF:\(ctx.name)] Showing video in music mode (visibleNow=\(oldMusicModeGeo.videoShown.yesno))"}
@@ -3193,7 +3193,7 @@ class PlayerCore: NSObject {
 
     let gtf = GeometryTransform("VidTrackChanged", self,
                                 syncVideoParams: false,   // does the syncing itself
-                                state: stateChangeFunc,
+                                sessionState: sessionStateTF,
                                 video: videoGeoTF,
                                 windowed: musicModeTF)
     gtf.submit()

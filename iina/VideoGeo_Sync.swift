@@ -6,7 +6,7 @@
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
-extension GeometryTransform.MPVContext {
+extension GeometryTransform.ContextStage2 {
 
   /// An instance of this struct holds a subset of the parsed metadata for one of the following mpv properties
   /// (all of which have the same structure):

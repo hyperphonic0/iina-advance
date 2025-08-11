@@ -102,7 +102,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var sessionState: PWinSessionState = .noSession {
     willSet {
       log.verbose{"Δ sessionState: \(sessionState) → \(newValue)"}
-      assert(sessionState.isRestoring || DispatchQueue.isExecutingIn(DispatchQueue.main))
+      assert(DispatchQueue.isExecutingIn(DispatchQueue.main))
     }
   }
   
@@ -1020,7 +1020,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false
     let wasSessionFinishedOpening = sessionState.hasOpenSession
-    sessionState = .noSession  // reset for reopen
+    sessionState = .noSession  // Reset this in preparation for repoen
 
     /// Use value of `sessionState.hasOpenSession` to prevent from saving when there was an error loading video
     if wasSessionFinishedOpening {
@@ -1414,9 +1414,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           /// In certain corner cases (e.g., exiting legacy full screen after changing screens while in full screen),
           /// the screen's `visibleFrame` can change after `transition.outputGeometry` was generated and won't be known until the end.
           /// By calling `refitted()` here, we can make sure the window is constrained to the up-to-date `visibleFrame`.
-          let oldGeo = windowedModeGeo
-          let newGeo = oldGeo.refitted()
-          guard !newGeo.hasEqual(windowFrame: oldGeo.windowFrame, videoSize: oldGeo.videoSize) else {
+          let oldWindowedGeo = windowedModeGeo
+          let newGeo = oldWindowedGeo.refitted()
+          guard !newGeo.hasEqual(windowFrame: oldWindowedGeo.windowFrame, videoSize: oldWindowedGeo.videoSize) else {
             log.verbose("WndDidChangeScreenParams: in windowed mode; no change to windowFrame")
             return
           }

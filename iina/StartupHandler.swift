@@ -333,6 +333,8 @@ class StartupHandler {
 
   // Attempt to exactly restore play state & UI from last run of IINA (for given player)
   private func restorePlayerWindowFromPriorLaunch(_ savedWindow: SavedWindow, playerID id: String) {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     let log = UIState.shared.log
     log.debug{"Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)"}
 

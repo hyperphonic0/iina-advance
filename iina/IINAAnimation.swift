@@ -341,7 +341,7 @@ extension IINAAnimation {
     /// This is a safety feature. The transform's work takes place asynchronously via multiple tasks across
     /// multiple `DispatchQueue`s, while drawing from disparate state variables, so if they overlapped they
     /// could interfere with each other in difficult-to-predict ways.
-    func submit(gtf: GeometryTransform) {
+    func submitGTF(_ gtf: GeometryTransform) {
       gtfLock.withLock{ [self] in
         gtfQueue.append(gtf)
         log.verbose{"[Pipeline] Enqueued GTF: \(gtf.name.quoted); queue size: \(gtfQueue.count)"}
