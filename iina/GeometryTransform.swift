@@ -653,7 +653,7 @@ struct GeometryTransform {
       }
     }
 
-    func buildToggleMusicModeTasksIfNeeded() -> [IINAAnimation.Task]? {
+    fileprivate func buildToggleMusicModeTasksIfNeeded() -> [IINAAnimation.Task]? {
       guard Preference.bool(for: .autoSwitchToMusicMode) else { return nil }
 
       switch gtfSessionState {
@@ -679,7 +679,7 @@ struct GeometryTransform {
       return nil
     }
 
-    func buildEnterFullScreenTaskIfNeeded() -> IINAAnimation.Task? {
+    fileprivate func buildEnterFullScreenTaskIfNeeded() -> IINAAnimation.Task? {
       guard case .newReplacingExisting = gtfSessionState,
             Preference.bool(for: .fullScreenWhenOpen) else { return nil }
 
@@ -780,6 +780,7 @@ extension PlayerWindowController {
     return tasks
   }
 
+  /// Creates tasks which transition to initial layout for a window which is being restored (`PWinSessionState.restoring`).
   /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
   fileprivate func buildTasksToRestoreLayout(_ priorState: PlayerSaveState,
                                              _ ctx: inout GeometryTransform.ContextStage3) -> [IINAAnimation.Task] {
@@ -839,7 +840,7 @@ extension PlayerWindowController {
     return buildTransitionTasksToInitialLayout(ctx, outputGeoSet: outputGeoSet)
   }
 
-  /// Creates IINAAnimation tasks for the case of `PWinSessionState.creatingNew`.
+  /// Creates tasks which transition to initial layout for a brand new, greenfield window (`PWinSessionState.creatingNew`).
   /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
   fileprivate func buildTasksForNewWindow(_ ctx: inout GeometryTransform.ContextStage3) -> [IINAAnimation.Task] {
     let mode: PlayerWindowMode
@@ -873,7 +874,7 @@ extension PlayerWindowController {
     return buildTransitionTasksToInitialLayout(ctx, outputGeoSet: outputGeoSet)
   }
 
-  /// Builds the initial `GeometrySet` for the case of `PWinSessionState.creatingNew` (i.e., a brand new, greenfield window).
+  /// Builds the initial `GeometrySet` for a brand new window (case `PWinSessionState.creatingNew`).
   ///
   /// - Uses `musicModeGeoLastClosed` for `musicMode`
   /// - Uses `windowedModeGeoLastClosed` for `windowedMode` if not in windowed mode, but uses a minimized window if in windowed mode

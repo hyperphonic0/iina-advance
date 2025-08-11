@@ -2080,7 +2080,7 @@ class PlayerCore: NSObject {
 
         // Easiest place to put this - need to call it when setting equalizers
         videoView.displayActive()
-        windowController.quickSettingView.reload()
+        windowController.quickSettingView.reloadCurrentTab()
       }
     }
   }
@@ -3181,13 +3181,13 @@ class PlayerCore: NSObject {
     let musicModeTF: GeometryTransform.PWinGeometryTF = { [self] ctx -> PWinGeometry? in
       guard ctx.outputLayout.isMusicMode else { return nil }
 
-      let oldMusicModeGeo = ctx.inputGeoSet.musicMode
+      let inputMusicModeGeo = ctx.inputGeoSet.musicMode
       // Vid changed, but not from toggling music mode? Then no extra changes needed to musicMode geo.
       guard isShowVideoPendingInMiniPlayerCached else { return nil }
-      log.verbose{"[GTF:\(ctx.name)] Showing video in music mode (visibleNow=\(oldMusicModeGeo.videoShown.yesno))"}
+      log.verbose{"[GTF:\(ctx.name)] Showing video in music mode (visibleNow=\(inputMusicModeGeo.videoShown.yesno))"}
       miniPlayerShowVideoTimer.cancel()
-      guard isInMiniPlayer && !oldMusicModeGeo.videoShown else { return nil }
-      let newGeo = oldMusicModeGeo.withVideoViewVisible(true)
+      guard isInMiniPlayer && !inputMusicModeGeo.videoShown else { return nil }
+      let newGeo = inputMusicModeGeo.withVideoViewVisible(true)
       return newGeo
     }
 

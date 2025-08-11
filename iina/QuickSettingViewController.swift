@@ -268,16 +268,32 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       observers.append(NotificationCenter.default.addObserver(forName: name, object: player, queue: .main, using: callback))
     }
 
-    // notifications
-    observe(.iinaTracklistChanged) { [unowned self] _ in
-      self.withAllTableViews { view, _ in view.reloadData() }
+    // - Notifications
+    // Do not even listen to `iinaTracklistChanged`! The following listeners are finer-grained.
+    observe(.iinaVIDChanged) { [self] _ in
+      guard currentTab == .video else { return }
+      videoTableView.reloadData()
     }
-    observe(.iinaVIDChanged) { _ in self.videoTableView.reloadData() }
-    observe(.iinaAIDChanged) { _ in self.audioTableView.reloadData() }
-    observe(.iinaSIDChanged) { _ in self.subTableView.reloadData() }
-    observe(.iinaSSIDChanged) { _ in self.secSubTableView.reloadData() }
-    observe(.iinaSecondSubVisibilityChanged) { [unowned self] _ in secHideSwitch.state = player.info.isSecondSubVisible ? .on : .off }
-    observe(.iinaSubVisibilityChanged) { [unowned self] _ in hideSwitch.state = player.info.isSubVisible ? .on : .off }
+    observe(.iinaAIDChanged) { [self] _ in
+      guard currentTab == .audio else { return }
+      audioTableView.reloadData()
+    }
+    observe(.iinaSIDChanged) { [self] _ in
+      guard currentTab == .sub else { return }
+      subTableView.reloadData()
+    }
+    observe(.iinaSSIDChanged) { [self] _ in
+      guard currentTab == .sub else { return }
+      secSubTableView.reloadData()
+    }
+    observe(.iinaSecondSubVisibilityChanged) { [self] _ in
+      guard currentTab == .sub else { return }
+      secHideSwitch.state = player.info.isSecondSubVisible ? .on : .off
+    }
+    observe(.iinaSubVisibilityChanged) { [self] _ in
+      guard currentTab == .sub else { return }
+      hideSwitch.state = player.info.isSubVisible ? .on : .off
+    }
 
     view.configureSubtreeForCoreAnimation()
     view.layoutSubtreeIfNeeded()
@@ -630,7 +646,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     tabView.selectTabViewItem(at: buttonTag)
     windowController.didChangeTab(to: tab)
     updateTabButtons()
-    reload()
+    reloadCurrentTab()
   }
 
   private func updateTabButtons() {
@@ -642,7 +658,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   /// Reload Quick Settings controls for the current tab.
   ///
   /// Do not call this directly. Call `player.reloadQuickSettingsView()` instead.
-  func reload() {
+  func reloadCurrentTab() {
     guard isViewLoaded else { return }
     player.log.verbose{"QuickSettings: reloading tab \(currentTab)"}
     switch currentTab {
