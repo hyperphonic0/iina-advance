@@ -232,6 +232,7 @@ extension PlayerWindowController {
       // Reload now, even if not visible. Don't nitpick.
       playlistView.playlistTableView.reloadData()
     case .autoSwitchToMusicMode:
+      // Reset this to disable manual override if it's in place
       player.overrideAutoMusicMode = false
 
     case .keepOpenOnFileEnd, .playlistAutoPlayNext:

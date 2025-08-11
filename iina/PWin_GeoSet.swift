@@ -45,11 +45,6 @@ struct GeometrySet {
 extension PlayerWindowController {
   func getLatestWindowFrameAndScreenID(force: Bool = false) -> (NSRect, String)? {
     assert(DispatchQueue.isExecutingIn(.main))
-    // FIXME: delete if not needed
-//      guard DispatchQueue.isExecutingIn(.main, logError: false) else {
-//        log.debug("Not executing in main queue; will use cached window frame & screenID")
-//        return nil
-//      }
     guard let window else { return nil }
     if !force {
       // Need to check state of current playback to avoid race conditions
