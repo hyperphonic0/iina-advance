@@ -222,14 +222,12 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    withAllTableViews { (view, _) in
-      view.delegate = self
-      view.dataSource = self
-      view.superview?.superview?.layer?.cornerRadius = 4
+    withAllTableViews { (tableView, _) in
+      tableView.delegate = self
+      tableView.dataSource = self
+      tableView.superview?.superview?.layer?.cornerRadius = 4
+      tableView.backgroundColor = NSColor.sidebarTableBackground
     }
-
-    // colors
-    withAllTableViews { tableView, _ in tableView.backgroundColor = NSColor.sidebarTableBackground }
 
     updateVerticalConstraints()
 
@@ -863,13 +861,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
         track.externalFilename == filePathURL.path
       }) {
         tableView.scrollRowToVisible(row)
-        if (tableView == subTableView) {
-          if (track.id == player.info.secondSid) {
+        if tableView == subTableView {
+          if track.id == player.info.secondSid {
             player.setTrack(0, forType: .secondSub)
           }
           player.setTrack(track.id, forType: .sub)
-        } else if (tableView == secSubTableView) {
-          if (track.id == player.info.sid) {
+        } else if tableView == secSubTableView {
+          if track.id == player.info.sid {
             player.setTrack(0, forType: .sub)
           }
           player.setTrack(track.id, forType: .secondSub)
@@ -916,19 +914,23 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   func tableViewSelectionDidChange(_ notification: Notification) {
-    withAllTableViews { (view, type) in
-      if view.numberOfSelectedRows > 0 {
+    let originatingTableView = notification.object as! NSTableView
+    withAllTableViews { (tableView, type) in
+      guard originatingTableView === tableView else { return }
+      player.log.verbose("Selection changed for table \(type.rawValue.quoted)")
+
+      if tableView.numberOfSelectedRows > 0 {
         var trackID = 0  // default
-        if view.selectedRow > 0 {
+        if tableView.selectedRow > 0 {
           // note that track ids start from 1
-          let trackIndex = view.selectedRow - 1
+          let trackIndex = tableView.selectedRow - 1
           let trackList = player.info.trackList(type)
           if trackIndex < trackList.count {
             trackID = trackList[trackIndex].id
           }
         }
-        self.player.setTrack(trackID, forType: type)
-        view.deselectAll(self)
+        player.setTrack(trackID, forType: type)
+        tableView.deselectAll(self)
       }
     }
     // Revalidate layout and controls
