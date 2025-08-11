@@ -5,10 +5,11 @@
 //  Created by Matt Svoboda on 2024-12-08.
 //
 
-/// Applies changes to window geometry, possibly animating any changes.
+/// Contains a set of transform functions, along with any initial state, which forms a recipe for making changes to
+/// a given window's geometry. Each instance must be executed via an `IINAAnimation.Pipeline` for any work to be done.
 ///
 /// # Important Fields:
-/// - `stateChange`: optional operator function for transforming `sessionState` and/or cancelling the transform.
+/// - `stateTransform`: optional operator function (functor) for transforming `sessionState` and/or cancelling the transform.
 ///   - If `nil`, the transform will proceed with the existing `sessionState`.
 ///   - If non-nil, this function will be run in the mpv queue. It is given the current window's `sessionState` & is expected
 ///     to output a new value of `sessionState` to set at the end of the transform if it succeeds.
@@ -21,12 +22,21 @@
 ///   - If non-nil, and if in music mode, this function is given the `PWinGeometry` which would otherwise be applied and is
 ///     is expected to output a ` PWinGeometry` containing further transforms which should be applied. If it returns `nil`,
 ///     the transform will ignore it and will proceed with its calculated values.
+///
+/// See also: `VideoGeo_Sync.swift` for syncing `VideoGeometry` from mpv.
 struct GeometryTransform {
+  // Transforms (functors) for different types
+  typealias PWinSessionStateTF = (PWinSessionState, MPVContext) -> PWinSessionState?
+  typealias VideoGeometryTF = (VideoGeometry, MPVContext) -> VideoGeometry?
+  typealias PWinGeometryTF = (GeometryTransform.Context) -> PWinGeometry?
+
   // MARK: - GeometryTransform Fields
 
-  /// Name of the transform
+  /// Descriptive name of the transform, and its `id` (string).
   let name: String
+  /// The unique identifier of this `GeometryTransform`.
   let id: Int
+
   /// If `true`, then prior to executing `videoTransform`, call `GeometryTransform.Context.syncVideoParamsFromMpv` to update
   /// `ctx.oldGeo` with the latest video geometry from mpv (or abort if it returns `nil`).
   let syncVideoParams: Bool
@@ -36,12 +46,11 @@ struct GeometryTransform {
 
   var log: Logger.Subsystem { player.log }
 
-  /// If `stateTransition` is `nil` (omitted), treat as no-op and continue to `videoTransform`.
-  /// If `stateTransition` returns `nil`, transition should be aborted.
-  let stateTransition: PWinSessionState.Transform?
-
-  let videoTransform: VideoGeometry.Transform?
-  let windowedTransform: PWinGeometry.Transform?
+  /// If `stateTransform` is `nil` (omitted), treat as no-op and continue to `videoTransform`.
+  /// If `stateTransform` returns `nil`, transition should be aborted.
+  let stateTransform: PWinSessionStateTF?
+  let videoTransform: VideoGeometryTF?
+  let windowedTransform: PWinGeometryTF?
 
   let onSuccess: (() -> Void)?
 
@@ -49,9 +58,9 @@ struct GeometryTransform {
        id pregeneratedID: Int? = nil,
        _ player: PlayerCore,
        syncVideoParams: Bool = true,
-       state: ((Context) -> PWinSessionState?)? = nil,
-       video: ((Context) -> VideoGeometry?)? = nil,
-       windowed: ((Context) -> PWinGeometry?)? = nil,
+       state: PWinSessionStateTF? = nil,
+       video: VideoGeometryTF? = nil,
+       windowed: PWinGeometryTF? = nil,
        onSuccess: (() -> Void)? = nil) {
     let pipeline = player.windowController.animationPipeline
     self.id = pregeneratedID ?? pipeline.gtfLock.withLock {
@@ -60,7 +69,7 @@ struct GeometryTransform {
     self.name = "\(name)-\(id)"
     self.player = player
     self.syncVideoParams = syncVideoParams
-    self.stateTransition = state
+    self.stateTransform = state
     self.videoTransform = video
     self.windowedTransform = windowed
     self.onSuccess = onSuccess
@@ -86,7 +95,7 @@ struct GeometryTransform {
     // Get a copy of geo inside animationPipeline to ensure serial access.
     // This is reused asynchronously down below, so some parts of it may fall out of date, but
     // shouldn't be the parts we need for now...
-    let oldGeo = pwc.geo
+    let inputGeoSet = pwc.geo
 
     // -- mpv queue -------------------------------------------------------------------------
     player.mpv.queue.async { [self] in
@@ -95,73 +104,79 @@ struct GeometryTransform {
       guard !player.isStopping else { return abort("player stopping (status=\(player.state))") }
       guard let currentPlayback = player.info.currentPlayback else { return abort("currentPlayback is nil") }
 
-      let oldSessionState = pwc.sessionState
+      // This var is written to in the main queue. But should be fine to read from here without races because we only do a write:
+      // 1. At program launch, before any GTFs execute.
+      // 2. In `player.openPlayerWindow`, after first ensuring that the mpv queue is emptied (including any GTFs) via use of `mpv.queue.sync`.
+      // 3. When closing player window, after which we effectively discard any pending GTFs.
+      // 4. At the end of a GTF execution. But the logic in `IINAAnimation.Pipeline` ensures that no GTFs overlap in their execution.
+      let prevSessionState = pwc.sessionState
 
       // File needs to be loaded before we can know its video geometry.
       // ...Unless we are restoring. But then we still want to wait until all windows are done loading, so we can open them all at once.
       // ...But streaming files can often fail to connect. So reopen those right away if restoring (we already have their saved geometry anyway).
-      guard currentPlayback.state.isAtLeast(.loaded) || (oldSessionState.isRestoring && currentPlayback.isNetworkResource) else {
-        return abort("playbackState=\(currentPlayback.state) restoring=\(oldSessionState.isRestoring.yn) network=\(currentPlayback.isNetworkResource.yn)")
+      guard currentPlayback.state.isAtLeast(.loaded) || (prevSessionState.isRestoring && currentPlayback.isNetworkResource) else {
+        return abort("playbackState=\(currentPlayback.state) restoring=\(prevSessionState.isRestoring.yn) network=\(currentPlayback.isNetworkResource.yn)")
       }
 
       // Get the freshest value of vid track from mpv
       let vidTrackID = Int(player.mpv.getInt(MPVOption.TrackSelection.vid))
 
-      var ctx = GeometryTransform.Context(tf: self, currentPlayback: currentPlayback, vidTrackID: vidTrackID,
-                                          currentMediaAudioStatus: player.info.currentMediaAudioStatus,
-                                          oldSessionState: oldSessionState, oldGeo: oldGeo)
+      let mpvContext = MPVContext(tf: self, currentPlayback: currentPlayback, vidTrackID: vidTrackID,
+                                  currentMediaAudioStatus: player.info.currentMediaAudioStatus)
 
+      let gtfSessionState: PWinSessionState
       /// 1: Apply `stateChange` if present
-      if let stateTransition {
-        log.verbose{"[GTF:\(name)] Calling stateTransition"}
-        guard let newSessionState = stateTransition(ctx) else {
-          return abort("state change func returned nil from oldSessionState=\(oldSessionState)")
+      if let stateTransform {
+        log.verbose{"[GTF:\(name)] Calling stateTransform"}
+        guard let updatedSessionState = stateTransform(prevSessionState, mpvContext) else {
+          return abort("state change func returned nil from prevSessionState=\(prevSessionState)")
         }
-        log.verbose{"[GTF:\(name)] Result of sessionStateChange: \(oldSessionState) → \(newSessionState.description)"}
-        ctx.newSessionState = newSessionState
+        gtfSessionState = updatedSessionState
+        log.verbose{"[GTF:\(name)] Result of sessionStateChange: \(prevSessionState) → \(gtfSessionState.description)"}
       } else {
-        if oldSessionState.isChangingVideoTrack {
-          ctx.newSessionState = .existingSession_continuing
-          log.verbose{"[GTF:\(name)] No sessionStateChange func, will transition to: \(ctx.newSessionState)"}
-        } else {
-          ctx.newSessionState = oldSessionState
-          log.verbose{"[GTF:\(name)] No sessionStateChange func, will stay with: \(ctx.newSessionState)"}
-        }
+        gtfSessionState = prevSessionState
+        log.verbose{"[GTF:\(name)] No sessionStateChange provided; using prev value: \(gtfSessionState)"}
       }
+
+      var outputVideoGeo = inputGeoSet.video
 
       /// 2a: Sync video params from mpv, if `syncVideoParamsFromMPV` is true.
       if syncVideoParams {
         log.verbose{"[GTF:\(name)] Calling syncVideoParamsFromMpv as configured"}
-        guard let syncedVideoGeo = ctx.syncVideoParamsFromMpv() else {
+        guard let syncedVideoGeo = mpvContext.syncVideoParamsFromMpv(startingWith: outputVideoGeo) else {
           return abort("syncVideoParamsFromMpv returned nil")
         }
-        log.verbose{"[GTF:\(name)] Result of sync: \(syncedVideoGeo)"}
-        /// Update `oldGeo` with the result. Note that the window/musicMode geometries will still be out of date.
-        ctx.oldGeo = ctx.oldGeo.clone(video: syncedVideoGeo)
+        log.verbose{"[GTF:\(name)] Result of video sync: \(syncedVideoGeo)"}
+        /// The result is the new `outputVideoGeo`
+        outputVideoGeo = syncedVideoGeo
       }
 
       /// 2b: Apply `videoTransform` if present.
       /// This needs to be on the mpv queue, because some transforms make mpv calls.
       if let videoTransform {
         log.verbose{"[GTF:\(name)] Calling videoTF"}
-        guard let transformedVidGeo = videoTransform(ctx) else {
+        guard let transformedVidGeo = videoTransform(outputVideoGeo, mpvContext) else {
           return abort("videoTF returned nil")
         }
         log.verbose{"[GTF:\(name)] Result of videoTF: \(transformedVidGeo)"}
-        ctx.outputVidGeo = transformedVidGeo
+        outputVideoGeo = transformedVidGeo
       } else {
-        log.verbose{"[GTF:\(name)] No videoTF given, skipping. Using oldGeo.video: \(ctx.oldGeo.video)"}
-        ctx.outputVidGeo = ctx.oldGeo.video
+        log.verbose{"[GTF:\(name)] No videoTF given, skipping. Will use: \(outputVideoGeo)"}
       }
 
       // -- main queue -------------------------------------------------------------------------
       pwc.animationPipeline.submitInstantTask { [self] in
-        // Cache this inside animation task to ensure serial access
-        ctx.inputLayout = pwc.currentLayout
+        // Do not reference these variables until inside this animation task to ensure serial access
+        let inputLayout = pwc.currentLayout
 
         // Update context's geo with current window frame
-        ctx.oldGeo = pwc.buildGeoSet(video: ctx.oldGeo.video, activeMode: ctx.outputLayout.mode, baseGeoSet: ctx.oldGeo,
-                                     forceWinFrameUpdate: !ctx.oldSessionState.isStartingSession)
+        let inputGeoSetUpdated = pwc.buildGeoSet(video: outputVideoGeo, activeMode: inputLayout.mode, baseGeoSet: inputGeoSet,
+                                                 forceWinFrameUpdate: !gtfSessionState.isStartingSession)
+
+        var ctx = GeometryTransform.Context(mpvContext,
+                                            gtfSessionState: gtfSessionState,
+                                            inputGeoSet: inputGeoSetUpdated, outputVidGeo: outputVideoGeo,
+                                            inputLayout: inputLayout)
 
         doMainQueueWork(&ctx)
       }
@@ -178,11 +193,11 @@ struct GeometryTransform {
     /// 4. Apply `windowedTransform` / `musicModeTransform`
     let transformTasks = ctx.buildApplyTransformTasks()
 
-    if ctx.oldSessionState.isStartingSession {
+    if ctx.gtfSessionState.isStartingSession {
       let window = ctx.pwc.window!
 
       // Build tasks to transition the window to its "initial" layout.
-      switch ctx.oldSessionState {
+      switch ctx.gtfSessionState {
 
       case .restoring(let priorState):
         /// Restoring from prior launch  (`PWinSessionState.restoring`)
@@ -215,7 +230,7 @@ struct GeometryTransform {
         immediateTasks = ctx.pwc.buildTasksForNewWindow(&ctx)
 
       default:
-        Logger.fatal("Invalid PWinSessionState for initial layout: \(ctx.oldSessionState)")
+        Logger.fatal("Invalid PWinSessionState for initial layout: \(ctx.gtfSessionState)")
       }
 
       // Post-layout task: do other needed config
@@ -224,7 +239,7 @@ struct GeometryTransform {
         ctxSnapshot.pwc.doPostInitialLayoutTask(ctxSnapshot, windowIsMinimized: window.isMiniaturized)
       })
 
-      let isRestoringMinimizedWindow = ctx.oldSessionState.isRestoring && UIState.shared.windowsMinimized.contains(pwc.window!.savedStateName)
+      let isRestoringMinimizedWindow = ctx.gtfSessionState.isRestoring && UIState.shared.windowsMinimized.contains(pwc.window!.savedStateName)
       if isRestoringMinimizedWindow {
         // Minimized: can't rely on showWindow() being called, but window changes won't be seen anyway. Just run end task now.
         log.verbose{"[GTF:\(name)] Restoring minimized window: will run tasks immediately instead of enqueueing"}
@@ -239,7 +254,7 @@ struct GeometryTransform {
       immediateTasks = transformTasks
 
       /// 5. Need to switch to music mode? Append to above tasks
-      if case .existingSession_startingNewPlayback = ctx.newSessionState, Preference.bool(for: .autoSwitchToMusicMode) {
+      if case .existingSession_startingNewPlayback = ctx.gtfSessionState, Preference.bool(for: .autoSwitchToMusicMode) {
         let layout = ctx.outputLayout
         if player.overrideAutoMusicMode {
           log.verbose{"[GTF:\(name)] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y"}
@@ -264,17 +279,49 @@ struct GeometryTransform {
 
   // MARK: - Context
 
-  /// `struct GeometryTransform.Context`:
-  /// Can be used for `VideoGeometry` transforms or `PWinGeometry` transforms.
-  /// See also: `VideoGeo_Sync.swift` for syncing `VideoGeometry` from mpv.
-  struct Context {
-    // The transform spec (immutable)
+  /// Builds on the `GeometryTransform` + the variables retrieved in the mpv queue stage.
+  /// Used as input for `PWinSessionState` & `VideoGeometry` transforms.
+  struct MPVContext {
+    /// The transform spec. Immutable.
     let tf: GeometryTransform
 
-    // Playback state at the start of execution.
+    // - Variables retreived from mpv
+
     let currentPlayback: Playback
     let vidTrackID: Int
     let currentMediaAudioStatus: PlaybackInfo.MediaAudioStatus
+
+    // - Other derived properties
+
+    var name: String { tf.name }
+    var player: PlayerCore { tf.player }
+    var pwc: PlayerWindowController { player.windowController! }
+    var log: Logger.Subsystem { player.log }
+  }
+
+  /// Builds on the `MPVContext`, adding the results from the `PWinSessionState` + `VideoGeometry` transforms
+  /// + additional variables retrieved in the main queue stage.
+  /// Used as input for `PWinGeometry` transforms, as well as a useful container to pass around internal methods.
+  struct Context {
+    let mpv: MPVContext
+
+    // The transform spec (immutable)
+    var tf: GeometryTransform { mpv.tf }
+
+    var currentPlayback: Playback {
+      mpv.currentPlayback
+    }
+    var vidTrackID: Int {
+      mpv.vidTrackID
+    }
+    var currentMediaAudioStatus: PlaybackInfo.MediaAudioStatus {
+      mpv.currentMediaAudioStatus
+    }
+
+    /// The `PWinSessionState` at the start of the transform. In some cases this has been updated from
+    /// `PlayerWindowController`'s `sessionState` to a value which is applicable only during the execution of the GTF.
+    /// Do not query `PlayerWindowController.sessionState` during the transform. Use this instead.
+    let gtfSessionState: PWinSessionState
 
     /// Contains most up-to-date version of the geometries (as well as possibly unapplied changes), which transforms should build
     /// on top of. (The `PlayerWindowController`'s `geo` field should not be referenced).
@@ -283,55 +330,15 @@ struct GeometryTransform {
     /// Gets the `VideoGeometry` from `oldGeo`.
     var inputVidGeo: VideoGeometry { oldGeo.video }
     /// The transformed `VideoGeometry`.
-    var outputVidGeo: VideoGeometry {
-      get {
-        guard let _outputVidGeo else {
-          // Developer error!
-          Logger.fatal("Context.outputVidGeo cannot be accessed until after `videoTransform` is called")
-        }
-        return _outputVidGeo
-      }
-      set {
-        _outputVidGeo = newValue
-      }
-    }
-    fileprivate(set) var _outputVidGeo: VideoGeometry? = nil
+    let outputVidGeo: VideoGeometry
 
-    var inputLayout: LayoutState {
-      get {
-        guard let _inputLayout else {
-          // Developer error!
-          Logger.fatal("Context.inputLayout must not be accessed until after `stateTransition` is called")
-        }
-        return _inputLayout
-      }
-      set {
-        _inputLayout = newValue
-        _outputLayout = newValue
-      }
-    }
-    fileprivate(set) var _inputLayout: LayoutState? = nil
+    let inputLayout: LayoutState
 
     /// Defaults to `inputLayout`, but can be overwritten by `buildWindowInitialLayoutTasks`.
     /// Do not reference until after that is called.
-    var outputLayout: LayoutState {
-      get {
-        guard let _outputLayout else {
-          // Developer error!
-          Logger.fatal("Context.outputLayout must not be accessed until after `stateTransition` is called")
-        }
-        return _outputLayout
-      }
-      set {
-        _outputLayout = newValue
-      }
-    }
-    fileprivate(set) var _outputLayout: LayoutState? = nil
+    var outputLayout: LayoutState
 
     fileprivate var needsNativeFullScreen = false
-
-    let oldSessionState: PWinSessionState
-    var newSessionState: PWinSessionState
 
     // - Other derived properties
 
@@ -340,16 +347,15 @@ struct GeometryTransform {
     var pwc: PlayerWindowController { player.windowController! }
     var log: Logger.Subsystem { player.log }
 
-    init(tf: GeometryTransform, currentPlayback: Playback, vidTrackID: Int,
-         currentMediaAudioStatus: PlaybackInfo.MediaAudioStatus,
-         oldSessionState: PWinSessionState, oldGeo: GeometrySet) {
-      self.tf = tf
-      self.currentPlayback = currentPlayback
-      self.vidTrackID = vidTrackID
-      self.currentMediaAudioStatus = currentMediaAudioStatus
-      self.oldSessionState = oldSessionState
-      self.newSessionState = oldSessionState  // default for now
-      self.oldGeo = oldGeo
+    init(_ mpvContext: MPVContext, gtfSessionState: PWinSessionState,
+         inputGeoSet: GeometrySet, outputVidGeo: VideoGeometry,
+         inputLayout: LayoutState) {
+      self.mpv = mpvContext
+      self.gtfSessionState = gtfSessionState
+      self.oldGeo = inputGeoSet
+      self.outputVidGeo = outputVidGeo
+      self.inputLayout = inputLayout
+      self.outputLayout = inputLayout  // until updated
     }
 
     /// Default album art: to avoid race conditions, use the context's state instead of player.info
@@ -380,7 +386,7 @@ struct GeometryTransform {
         if let windowedTransform = tf.windowedTransform {
           resizedGeo = windowedTransform(self)
         } else {
-          switch oldSessionState {
+          switch gtfSessionState {
           case .restoring(_):
             log.verbose{"[GTF:\(name)] Restore is in progress: no transform needed"}
             // still need post-transition task
@@ -405,20 +411,20 @@ struct GeometryTransform {
             resizedGeo = nil
 
           case .noSession:
-            Logger.fatal("[GTF:\(name)] Invalid sessionState: \(oldSessionState)")
+            Logger.fatal("[GTF:\(name)] Invalid gtfSessionState: \(gtfSessionState)")
           }
         }
 
-        let intendedViewportSize: CGSize? = oldSessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
+        let intendedViewportSize: CGSize? = gtfSessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
         let outputGeo = resizedGeo ?? oldGeo.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
                                                                    intendedViewportSize: intendedViewportSize)
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
-        log.verbose{"[GTF:\(name)] Building windowed tasks: sess=\(oldSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(outputGeo)"}
+        log.verbose{"[GTF:\(name)] Building windowed tasks: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(outputGeo)"}
         tasks = pwc.buildApplyWindowGeoTasks(from: oldGeo.windowed, to: outputGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
       case .fullScreenNormal:
-        let intendedViewportSize: CGSize? = oldSessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
+        let intendedViewportSize: CGSize? = gtfSessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
         let newWinGeo = oldGeo.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
                                                         intendedViewportSize: intendedViewportSize)
         let fsGeo = outputLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, outputVidGeo)
@@ -428,7 +434,7 @@ struct GeometryTransform {
         tasks = pwc.buildApplyFullScreenGeoTasks(fsGeo: fsGeo, newWindowedGeo: newWinGeo, duration: duration, showDefaultArt: showDefaultArt)
 
       case .musicMode:
-        if case .creatingNew = oldSessionState {
+        if case .creatingNew = gtfSessionState {
           log.verbose{"[GTF:\(name)] Music mode already handled for opened window: \(oldGeo.musicMode)"}
           tasks = []
           break
@@ -452,7 +458,7 @@ struct GeometryTransform {
 
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
-        log.verbose{"[GTF:\(name)] Building musicMode tasks: sess=\(oldSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newMusicModeGeo)"}
+        log.verbose{"[GTF:\(name)] Building musicMode tasks: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newMusicModeGeo)"}
         tasks = pwc.buildApplyWindowGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo, duration: duration, showDefaultArt: showDefaultArt)
       default:
         // Interactive mode. Should be handled by its special code. Don't step on it.
@@ -469,15 +475,17 @@ struct GeometryTransform {
 
     /// Conforms to `IINAnimation.TaskFunc`. Does cleanup, updates state vars & UI.
     fileprivate func doPostTransformWork() {
-      log.verbose{"[GTF:\(name)] Running post-TF task, sess=\(oldSessionState) vid=\(vidTrackID)"}
+      log.verbose{"[GTF:\(name)] Running post-TF task, sess=\(gtfSessionState) vid=\(vidTrackID)"}
       let pwc = player.windowController!
 
-      // Apply new session state (need to do this in .main):
-      pwc.sessionState = newSessionState
+      if !pwc.isClosing {
+        // Apply new session state (need to do this in .main). This will always be `.continuing`.
+        pwc.sessionState = .existingSession_continuing
+      }
 
       // Must only modify currentPlayback state inside mpv queue
       player.mpv.queue.async {
-        if oldSessionState.isChangingVideoTrack {
+        if gtfSessionState.isChangingVideoTrack {
           // Set to prevent future duplicate calls from continuing
           currentPlayback.vidTrackLastSized = vidTrackID
           
@@ -527,12 +535,12 @@ struct GeometryTransform {
       case .always:
         log.verbose{"[GTF:\(name)] FileOpened & resizeTiming='Always' → will resize window"}
       case .onlyWhenOpen:
-        if !oldSessionState.isStartingNewPlaybackManually {
+        if !gtfSessionState.isStartingNewPlaybackManually {
           log.verbose{"[GTF:\(name)] FileOpened & resizeTiming='OnlyWhenOpen', but isStartingNewPlaybackManually=N → will resize minimally"}
           return nil
         }
       case .never:
-        if !oldSessionState.isStartingNewPlaybackManually {
+        if !gtfSessionState.isStartingNewPlaybackManually {
           log.verbose{"[GTF:\(name)] FileOpened (not manually) & resizeTiming='Never' → will resize minimally"}
           return nil
         }
@@ -551,7 +559,7 @@ struct GeometryTransform {
       case .mpvGeometry:
         // check if have mpv geometry set (initial window position/size)
         guard let mpvGeometry = player.getMPVGeometry() else {
-          if oldSessionState.isStartingNewPlaybackManually {
+          if gtfSessionState.isStartingNewPlaybackManually {
             log.debug{"[GTF:\(name)] No mpv geometry found, starting new playback: will fall back to windowedModeGeoLastClosed"}
             return outputLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
                                                             video: outputVidGeo,
@@ -564,7 +572,7 @@ struct GeometryTransform {
         }
 
         var preferredGeo = windowGeo
-        if Preference.bool(for: .lockViewportToVideoSize), oldSessionState.canUseIntendedViewportSize,
+        if Preference.bool(for: .lockViewportToVideoSize), gtfSessionState.canUseIntendedViewportSize,
            let intendedViewportSize = player.info.intendedViewportSize {
           log.verbose{"[GTF:\(name)] Using intendedViewportSize \(intendedViewportSize)"}
           preferredGeo = windowGeo.scalingViewport(to: intendedViewportSize)
@@ -599,9 +607,9 @@ extension PlayerWindowController {
 
   fileprivate func doPostInitialLayoutTask(_ ctx: GeometryTransform.Context, windowIsMinimized: Bool) {
     defer {
-      if ctx.oldSessionState.isRestoring, windowIsMinimized {
+      if ctx.gtfSessionState.isRestoring, windowIsMinimized {
         log.verbose("Restoring minimized window; skipping windowIsReadyToShow")
-      } else if ctx.oldSessionState.isRestoring, isWindowHidden {
+      } else if ctx.gtfSessionState.isRestoring, isWindowHidden {
         log.verbose("Restoring window which was hidden; posting windowMustCancelShow")
         postWindowMustCancelShow()
       } else {
@@ -672,7 +680,7 @@ extension PlayerWindowController {
     // Send GeometrySet object to builder so that it doesn't default to current window frame
     log.verbose{"[GTF:\(ctx.name)] Setting initial \(ctx.outputLayout.spec), windowedModeGeo=\(outputGeoSet.windowed), musicModeGeo=\(outputGeoSet.musicMode)"}
 
-    let isRestoring = ctx.oldSessionState.isRestoring
+    let isRestoring = ctx.gtfSessionState.isRestoring
     let transitionName = "\(isRestoring ? "Restore" : "Set")InitialLayout"
     let initialTransition = buildLayoutTransition(named: transitionName,
                                                   from: ctx.inputLayout, to: ctx.outputLayout.spec,

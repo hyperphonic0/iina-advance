@@ -23,7 +23,6 @@ import Foundation
 ///             ➤ `videoSizeCAR`
 ///               ➤ `videoSizeDisplayOverride` (if non-nil)
 struct VideoGeometry: Equatable, CustomStringConvertible {
-  typealias Transform = (GeometryTransform.Context) -> VideoGeometry?
 
   static func defaultGeometry(_ log: Logger.Subsystem? = nil) -> VideoGeometry {
     let log = log ?? Logger.log

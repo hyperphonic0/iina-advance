@@ -1760,10 +1760,6 @@ class PlayerCore: NSObject {
 
     playback.state = .started
 
-    if case .existingSession_continuing = windowController.sessionState {
-      windowController.sessionState = .existingSession_startingNewPlayback
-    }
-
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()
 
@@ -1919,20 +1915,20 @@ class PlayerCore: NSObject {
     // Done syncing tracks
 
     let gtf = GeometryTransform("FileLoaded", self,
-                               state: { [self] ctx in
+                               state: { [self] prevSessionState, ctx in
       guard ctx.currentPlayback.state == .loaded else {
         log.verbose{"[GTF:\(ctx.name)] Expected currentPlayback.state == .loaded, but found: \(ctx.currentPlayback.state)"}
         return nil
       }
 
-      switch ctx.oldSessionState {
+      switch prevSessionState {
       case .existingSession_continuing:
         return .existingSession_startingNewPlayback
       default:
-        if ctx.oldSessionState.isStartingNewPlayback {
-          return ctx.oldSessionState
+        if prevSessionState.isStartingNewPlayback {
+          return prevSessionState
         } else {
-          log.verbose("[GTF:\(ctx.name)] Not the right sessionState (\(ctx.oldSessionState)); will let another handler take this")
+          log.verbose("[GTF:\(ctx.name)] Not the right sessionState (\(prevSessionState)); will let another handler take this")
           return nil
         }
       }
@@ -3134,22 +3130,24 @@ class PlayerCore: NSObject {
     let isShowVideoPendingInMiniPlayerCached = isShowVideoPendingInMiniPlayer
     isShowVideoPendingInMiniPlayer = false
 
-    let stateChangeFunc: (GeometryTransform.Context) -> PWinSessionState? = { [self] ctx -> PWinSessionState? in
-      log.verbose{"[GTF:\(ctx.name)] Changing sessionState for vid change: vidLastSized=\(String(ctx.currentPlayback.vidTrackLastSized)), vidNew=\(ctx.vidTrackID), sessionState=\(ctx.oldSessionState), showVideoPending=\(isShowVideoPendingInMiniPlayerCached.yn)"}
-      if case .existingSession_continuing = ctx.oldSessionState {
+    let stateChangeFunc: GeometryTransform.PWinSessionStateTF = { [self] prevSessionState, ctx -> PWinSessionState? in
+      let returnValue: PWinSessionState?
+      if case .existingSession_continuing = prevSessionState {
         if ctx.currentPlayback.state.isAtLeast(.loadedAndSized) && ctx.currentPlayback.vidTrackLastSized != ctx.vidTrackID {
-          return .existingSession_videoTrackChangedForSamePlayback
+          returnValue = .existingSession_videoTrackChangedForSamePlayback
         } else {
-          return ctx.oldSessionState
+          returnValue = prevSessionState
         }
+      } else if isShowVideoPendingInMiniPlayerCached {
+        returnValue = prevSessionState
+      } else {
+        returnValue = nil  // abort
       }
-      if isShowVideoPendingInMiniPlayerCached {
-        return ctx.oldSessionState
-      }
-      return nil  // abort
+      log.verbose{"[GTF:\(ctx.name)] Changing sessionState for vid change, vidLastSized=\(String(ctx.currentPlayback.vidTrackLastSized)) vidNew=\(ctx.vidTrackID) showVideoPending=\(isShowVideoPendingInMiniPlayerCached.yn): \(prevSessionState) → \(returnValue?.description ?? "nil")"}
+      return returnValue
     }
 
-    let videoGeoTF: VideoGeometry.Transform = { [self] ctx -> VideoGeometry? in
+    let videoGeoTF: GeometryTransform.VideoGeometryTF = { [self] inputVidGeo, ctx -> VideoGeometry? in
       let vid = Int(ctx.tf.player.mpv.getInt(MPVOption.TrackSelection.vid))
       let didChange = vid != info.vid
 
@@ -3161,10 +3159,10 @@ class PlayerCore: NSObject {
         return nil
       }
 
-      var vidGeo = ctx.syncVideoParamsFromMpv()
-      if vidGeo == nil && isShowVideoPendingInMiniPlayerCached {
+      var outputVidGeo = ctx.syncVideoParamsFromMpv(startingWith: inputVidGeo)
+      if outputVidGeo == nil && isShowVideoPendingInMiniPlayerCached {
         log.verbose{"[GTF:\(ctx.name)] syncVideoParams returned nil but pending miniplayer show video; assuming no video track, continuing"}
-        vidGeo = ctx.inputVidGeo
+        outputVidGeo = inputVidGeo
       }
 
       info.vid = vid
@@ -3177,10 +3175,10 @@ class PlayerCore: NSObject {
       }
       postNotification(.iinaVIDChanged)
 
-      return vidGeo
+      return outputVidGeo
     }
 
-    let musicModeTF: PWinGeometry.Transform = { [self] ctx -> PWinGeometry? in
+    let musicModeTF: GeometryTransform.PWinGeometryTF = { [self] ctx -> PWinGeometry? in
       guard ctx.outputLayout.isMusicMode else { return nil }
 
       let oldMusicModeGeo = ctx.oldGeo.musicMode

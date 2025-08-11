@@ -6,22 +6,7 @@
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
-extension GeometryTransform {
-
-  /// General-use `VideoGeometry.Transform` to synchronize between (1) mpv's internal state, (2) IINA's internal state,
-  /// (3) IINA window layout, & (4) status elements in the UI such as Quick Settings buttons/fields; and hopefully perform
-  /// this smoothly and robustly.
-  ///
-  /// This which should be submitted as soon as possible *after* sending any updates
-  /// to mpv for video params relating to VideoGeometry data (though *after* confirming that the update completed), but
-  /// *before* performing any UI updates.
-  static func syncVideoParamsFromMpv(_ context: Context) -> VideoGeometry? {
-    context.syncVideoParamsFromMpv()
-  }
-
-}
-
-extension GeometryTransform.Context {
+extension GeometryTransform.MPVContext {
 
   /// An instance of this struct holds a subset of the parsed metadata for one of the following mpv properties
   /// (all of which have the same structure):
@@ -63,10 +48,21 @@ extension GeometryTransform.Context {
   }  // end struct MpvVideoParams
 
 
-  /// Sync VideoGeometry from mpv `video-dec-params` & `video-out-params`
-  func syncVideoParamsFromMpv(startingWith videoGeo: VideoGeometry? = nil) -> VideoGeometry? {
+  /// Overwrites fields of the given `VideoGeometry` using fresh values from mpv `video-dec-params` & `video-out-params`.
+  /// Returns `nil` if something bad happened.
+  ///
+  /// This is useful to synchronize between:
+  /// 1. mpv's internal state
+  /// 2. IINA's internal state
+  /// 3. IINA player window layout (`PWinGeometry`, which is often dependent on the state of its `VideoGeometry`).
+  /// 4. Status elements in the UI such as Quick Settings buttons/fields; & hopefully perform this smoothly & robustly.
+  ///
+  /// This should be executed as soon as possible *after* sending any updates to mpv for video params relating
+  /// to VideoGeometry data (though *after* confirming that the update completed), but *before* performing any UI
+  /// updates.
+  func syncVideoParamsFromMpv(startingWith inputVideoGeo: VideoGeometry) -> VideoGeometry? {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-    log.verbose{"[GTF:\(name)] Syncing videoGeo from mpv for \(currentPlayback.url.lastPathComponent.pii.quoted) vid=\(String(vidTrackID))|\(currentMediaAudioStatus) sessState=\(oldSessionState)"}
+    log.verbose{"[GTF:\(name)] Syncing videoGeo from mpv for \(currentPlayback.url.lastPathComponent.pii.quoted) vid=\(String(vidTrackID))|\(currentMediaAudioStatus)"}
 
     if currentMediaAudioStatus.isAudio || vidTrackID == 0 {
       // Square album art
@@ -91,8 +87,6 @@ extension GeometryTransform.Context {
       log.verbose{"[GTF:\(name)] Aborting: could not get video-out-params for playback"}
       return nil
     }
-
-    let oldVideoGeo = videoGeo ?? oldGeo.video
 
     /// `codecAspect` should match the product `par * sar`
     let codecAspect = String(videoDecParams.aspect)
@@ -123,7 +117,7 @@ extension GeometryTransform.Context {
     // First check for IINA crop filter. Derive selected crop label directly from the filter, because x & y values are ambiguous
     // in mpv's video-params APIs (nil & 0 both show as 0)
     if let vfCrop = player.getIINACropFilter(),
-       let cropLabelFromIINACrop = player.deriveCropLabel(from: vfCrop, rawVideoSize: oldVideoGeo.videoSizeRaw) {
+       let cropLabelFromIINACrop = player.deriveCropLabel(from: vfCrop, rawVideoSize: inputVideoGeo.videoSizeRaw) {
       cropLabel = cropLabelFromIINACrop
       log.verbose{"[GTF:\(name)] Determined crop label from iina_crop filter: \(cropLabel.quoted)"}
     } else if isNotCropped {
@@ -136,7 +130,7 @@ extension GeometryTransform.Context {
       if let rawWidth, let rawHeight, rawWidth > 0, rawHeight > 0 {
         rawVideoSize = CGSize(width: rawWidth, height: rawHeight)
       } else {
-        rawVideoSize = oldVideoGeo.videoSizeRaw
+        rawVideoSize = inputVideoGeo.videoSizeRaw
       }
 
       cropLabel = player.deriveCropLabel(x: videoOutParams.crop_x, y: videoOutParams.crop_y,
@@ -150,7 +144,7 @@ extension GeometryTransform.Context {
     let userRotation = player.mpv.getInt(MPVOption.Video.videoRotate)
 
     // If opening window, videoGeo may still have the global (default) log. Update it
-    var newVideoGeo = oldVideoGeo.clone(rawWidth: rawWidth, rawHeight: rawHeight,
+    var outputVideoGeo = inputVideoGeo.clone(rawWidth: rawWidth, rawHeight: rawHeight,
                                         decodedAspectLabel: codecAspect,
                                         userAspectLabel: userAspectLabel,
                                         streamRotation: streamRotation,
@@ -177,17 +171,17 @@ extension GeometryTransform.Context {
     }
     guard dwidth > 0, dheight > 0 else {
       player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-A failed: dw (\(dwidth)) or dh (\(dheight)) is 0 in \(useDSizeFromDecParams ? "video-dec-params" : "video-out-params")! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect)"}
-      return videoGeo
+      return inputVideoGeo
     }
     let videoSizeDisplay: CGSize
-    if newVideoGeo.isWidthSwappedWithHeightByTotalRotation {
+    if outputVideoGeo.isWidthSwappedWithHeightByTotalRotation {
       videoSizeDisplay = CGSize(width: dheight, height: dwidth)
     } else {
       videoSizeDisplay = CGSize(width: dwidth, height: dheight)
     }
 
     if Logger.isErrorEnabled {
-      let ours = newVideoGeo.videoSizeCA
+      let ours = outputVideoGeo.videoSizeCA
       // Allow for almost 1% variance from mpv due to rounding or error margin
       let wDiff = abs(1 - (ours.width / CGFloat(dwidth)))
       let hDiff = abs(1 - (ours.height / CGFloat(dheight)))
@@ -196,38 +190,38 @@ extension GeometryTransform.Context {
       }
     }
 
-    newVideoGeo = newVideoGeo.clone(videoSizeDisplayOverride: videoSizeDisplay)
+    outputVideoGeo = outputVideoGeo.clone(videoSizeDisplayOverride: videoSizeDisplay)
 
     if !currentPlayback.isNetworkResource {
       // Update cache with latest video params
-      MediaMetaCache.shared.updateCachedVideoMeta(id: currentPlayback.id, newVideoGeo, log)
+      MediaMetaCache.shared.updateCachedVideoMeta(id: currentPlayback.id, outputVideoGeo, log)
     }
 
     // Compare aspects by numbers for simplicity
-    let oldCustomAspectValue = Aspect(string: oldVideoGeo.userAspectLabel)?.value ?? 0.0
+    let oldCustomAspectValue = Aspect(string: inputVideoGeo.userAspectLabel)?.value ?? 0.0
     let newCustomAspectValue = Aspect(string: userAspectLabel)?.value ?? 0.0
     if oldCustomAspectValue != newCustomAspectValue {
       // FIXME: Default aspect needs i18n
-      log.verbose{"[GTF:\(name)] Changing userAspectLabel: \(oldVideoGeo.userAspectLabel.quoted) → \(userAspectLabel.quoted)"}
+      log.verbose{"[GTF:\(name)] Changing userAspectLabel: \(inputVideoGeo.userAspectLabel.quoted) → \(userAspectLabel.quoted)"}
       player.sendOSD(.aspect(userAspectLabel))
-    } else if userRotation != oldVideoGeo.userRotation {
+    } else if userRotation != inputVideoGeo.userRotation {
       // Favor rotation OSD message over crop, because rotation increments < 90° will also trigger crop
       log.verbose{"[GTF:\(name)] Changing rotation: \(userRotation)"}
       player.sendOSD(.rotation(userRotation))
-    } else if oldVideoGeo.selectedCropLabel != cropLabel,
+    } else if inputVideoGeo.selectedCropLabel != cropLabel,
               !player.windowController.isAnimatingLayoutTransition {
       // Don't show crop OSD when disabling it for entering interactive mode (layout transition)
-      log.verbose{"[GTF:\(name)] Changing selectedCropLabel: \(oldVideoGeo.selectedCropLabel.quoted) → \(cropLabel.quoted)"}
+      log.verbose{"[GTF:\(name)] Changing selectedCropLabel: \(inputVideoGeo.selectedCropLabel.quoted) → \(cropLabel.quoted)"}
       let osdLabel = cropLabel.isEmpty ? AppData.customCropIdentifier : cropLabel
       player.sendOSD(.crop(osdLabel))
     }
 
-    log.debug{"[GTF:\(name)] Derived videoGeo from mpv video-params: \(newVideoGeo)"}
+    log.debug{"[GTF:\(name)] Derived videoGeo from mpv video-params: \(outputVideoGeo)"}
     DispatchQueue.main.async { [self] in
       // Proactively reload the UI here to increase snappiness
-      player.windowController.quickSettingView.reloadVideoTabIfShown(using: newVideoGeo)
+      player.windowController.quickSettingView.reloadVideoTabIfShown(using: outputVideoGeo)
     }
-    return newVideoGeo
+    return outputVideoGeo
   }
 
   /// Gets the given property from the given player's mpv core, retrying as needed.

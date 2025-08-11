@@ -12,7 +12,6 @@ import Foundation
 /// Each `PlayerWindow` has a session associated with it. The session's state can be saved using `PlayerSaveState`.
 /// This class helps keep track of the lifecycle state of the session.
 enum PWinSessionState: CustomStringConvertible {
-  typealias Transform = (GeometryTransform.Context) -> PWinSessionState?
 
   case noSession
 
