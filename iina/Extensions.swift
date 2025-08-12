@@ -52,6 +52,10 @@ extension Int {
   func isBetweenInclusive(_ lowerBound: Int, and upperBound: Int) -> Bool {
     return self >= lowerBound && self <= upperBound
   }
+
+  var signString: String {
+    self >= 0 ? "+" : "-"
+  }
 }
 
 extension NSInteger {

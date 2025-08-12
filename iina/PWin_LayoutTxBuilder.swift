@@ -204,7 +204,7 @@ extension PlayerWindowController {
                                                          isMiddleTransition: true)
         // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
         // It's not needed until the next step anyway.
-        updateWindowFrameAndSubviews(using: middleGeo2, updateVideoView: false)
+        setFrameAndUpdateWindowSubviews(using: middleGeo2, updateVideoView: false)
       })
     }
 

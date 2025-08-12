@@ -228,7 +228,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   // MARK: - Computed properties
 
   var description: String {
-    return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) \(screenFit) \(videoShown ? "vidH=\(videoHeight.logStr)" : "vid=NO") \(isMusicModePlaylistVisible ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=NO") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidMargins=\(viewportMargins) \(video)}"
+    return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) tx=\(isMiddleTransition.yn) \(screenFit) \(videoShown ? "vidH=\(videoHeight.logStr)" : "vid=NO") \(isMusicModePlaylistVisible ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=NO") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidMargins=\(viewportMargins) \(video)}"
   }
 
   var log: Logger.Subsystem { video.log }

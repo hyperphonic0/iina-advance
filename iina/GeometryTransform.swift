@@ -422,17 +422,21 @@ struct GeometryTransform {
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose{"[GTF:\(name)] Building 'apply' tasks for windowed mode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputGeo)"}
-        tasks = pwc.buildApplyWindowGeoTasks(from: inputGeoSet.windowed, to: outputGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
+        tasks = pwc.buildApplyPWinGeoTasks(from: inputGeoSet.windowed, to: outputGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
       case .fullScreenNormal:
         let intendedViewportSize: CGSize? = gtfSessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
-        let newWinGeo = inputGeoSet.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
+        let newWindowedGeo = inputGeoSet.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
                                                         intendedViewportSize: intendedViewportSize)
-        let fsGeo = outputLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, outputVidGeo)
+        let fsGeo = outputLayout.buildFullScreenGeometry(inScreenID: newWindowedGeo.screenID, outputVidGeo)
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose{"[GTF:\(name)] Building 'apply' tasks for FS mode: defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(fsGeo)"}
-        tasks = pwc.buildApplyFullScreenGeoTasks(fsGeo: fsGeo, newWindowedGeo: newWinGeo, duration: duration, showDefaultArt: showDefaultArt)
+        tasks = pwc.buildApplyPWinGeoTasks(from: fsGeo, to: fsGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
+        tasks.append(.instantTask {
+          /// Update this even if not currently in windowed mode, as it will be needed when exiting other modes
+          pwc.windowedModeGeo = newWindowedGeo
+        })
 
       case .musicMode:
         if case .creatingNew = gtfSessionState,
@@ -461,7 +465,7 @@ struct GeometryTransform {
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose{"[GTF:\(name)] Building 'apply' tasks for musicMode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(newMusicModeGeo)"}
-        tasks = pwc.buildApplyWindowGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo,
+        tasks = pwc.buildApplyPWinGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo,
                                              duration: duration, showDefaultArt: showDefaultArt)
       default:
         // Interactive mode. Should be handled by its special code. Don't step on it.

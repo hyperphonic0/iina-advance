@@ -398,9 +398,9 @@ extension PlayerWindowController {
         log.debug{"[\(transition.name)] CloseOldPanels: applying middleGeo windowFrame=\(middleGeo.windowFrame)"}
         if transition.isTogglingMusicMode {
           // Don't add or remove aspect constraint while animating!
-          updateWindowFrameAndSubviews(using: middleGeo, updateVideoView: false)
+          setFrameAndUpdateWindowSubviews(using: middleGeo, updateVideoView: false)
         } else if !transition.isTogglingFullScreen {
-          updateWindowFrameAndSubviews(using: middleGeo, updateVideoView: true)
+          setFrameAndUpdateWindowSubviews(using: middleGeo, updateVideoView: true)
         }
       }
     }
@@ -1076,7 +1076,7 @@ extension PlayerWindowController {
       if transition.outputLayout.isNativeFullScreen {
         // Native Full Screen: set frame not including camera housing because it looks better with the native animation
         log.verbose{"[\(transition.name)] Calling setFrame to animate into nativeFS, to: \(transition.outputGeometry.windowFrame)"}
-        updateWindowFrameAndSubviews(using: transition.outputGeometry)
+        setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
       } else if transition.outputLayout.isLegacyFullScreen {
         let screen = NSScreen.getScreenOrDefault(screenID: transition.outputGeometry.screenID)
         let newGeo: PWinGeometry
@@ -1111,7 +1111,7 @@ extension PlayerWindowController {
       applyMusicModeGeo(musicModeGeo)
     case .windowedNormal, .windowedInteractive:
       log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with output windowFrame=\(transition.outputGeometry.windowFrame)")
-      updateWindowFrameAndSubviews(using: transition.outputGeometry)
+      setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
     }
 
     if transition.outputGeometry.mode.isInteractiveMode {

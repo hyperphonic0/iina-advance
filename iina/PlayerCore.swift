@@ -2133,7 +2133,7 @@ class PlayerCore: NSObject {
   }
 
   func refreshEdrMode() {
-    DispatchQueue.main.async { [self] in
+    windowController.animationPipeline.submitInstantTask { [self] in
       guard isActive else { return }
       guard windowController.loaded else { return }
       videoView.refreshEdrMode()

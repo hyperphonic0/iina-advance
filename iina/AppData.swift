@@ -39,7 +39,7 @@ struct AppData {
   static let customCropIdentifier = "Custom"
 
   static let rotations: [Int] = [0, 90, 180, 270]
-  static let scaleStep: CGFloat = 25
+  static let scaleStepWidthPixels: Int = 25
 
   /** Seek amount */
   static let seekAmountMap = [0, 0.05, 0.1, 0.25, 0.5]

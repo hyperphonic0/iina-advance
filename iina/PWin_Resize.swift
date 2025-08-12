@@ -172,6 +172,8 @@ extension PlayerWindowController {
   }
 
   /**
+   This method should always be used instead of `setFrame()` to move & resize a `PlayerWindow` instance.
+
    By default, `setFrame()` has its own implicit animation, and this can create an undesirable effect when combined with other animations.
    This function uses a `0` duration animation via the `animationResizeTime` callback to effectively remove the implicit
    default animation.
@@ -179,7 +181,7 @@ extension PlayerWindowController {
    • It will still animate if used inside an `NSAnimationContext` or `IINAAnimation.Task` with non-zero duration.
    • If `notify` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
    */
-  func updateWindowFrameAndSubviews(using geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
+  func setFrameAndUpdateWindowSubviews(using geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
     let window = (window as? PlayerWindow)!
     resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
 
@@ -240,7 +242,7 @@ extension PlayerWindowController {
   /// Explicitly changes the window frame & window subviews according to `newGeometry` (or generating a geometry if `nil`),
   /// without animation (i.e., immediately).
   /// Do not call in response to WindowWillResize, because this can call `setFrameImmediately`.
-  /// Do not call if layout needs to change. For that, use a LayoutTransition.
+  /// Do not call if layout needs to change. For that, use a `LayoutTransition`.
   ///
   /// Use with non-nil `newGeometry` for: (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or moved.
   /// Not animated.
@@ -265,7 +267,7 @@ extension PlayerWindowController {
       resizeWindowSubviews(using: newGeo)
     } else {
       /// This will also update `videoView`
-      updateWindowFrameAndSubviews(using: newGeo, notify: false)
+      setFrameAndUpdateWindowSubviews(using: newGeo, notify: false)
     }
 
     if !isFullScreen && !isTransientResize {
@@ -458,51 +460,50 @@ extension PlayerWindowController {
       return
     }
     // windowed or music mode
-    buildApplyWindowGeoTasks(from: inputGeo, to: outputGeo, duration: duration, thenRun: true)
+    buildApplyPWinGeoTasks(from: inputGeo, to: outputGeo, duration: duration, thenRun: true)
   }
 
 
   // TODO: interpolate this
-  func scaleVideoByIncrement(_ widthStep: CGFloat) {
+  func scaleVideoByIncrement(_ widthStep: Int) {
     assert(DispatchQueue.isExecutingIn(.main))
+    let currentLayout = currentLayout
 
-    func scale(_ viewportSize: CGSize, widthStep: CGFloat) -> CGSize {
-      let heightStep = widthStep / viewportSize.mpvAspect
-      return CGSize(width: round(viewportSize.width + widthStep),
-                    height: round(viewportSize.height + heightStep))
+    guard currentLayout.isWindowed || currentLayout.isMusicMode else { return }
+
+    func scaleByWidthStep(_ viewportSize: CGSize) -> CGSize {
+      let widthNew = (viewportSize.width + CGFloat(widthStep)).rounded()
+      let heightNew = (widthNew / viewportSize.mpvAspect).rounded()
+      return CGSize(width: widthNew, height: heightNew)
     }
 
-    switch currentLayout.mode {
-    case .windowedNormal, .windowedInteractive, .musicMode:
-      let gtf = GeometryTransform("ScaleVideoBy\(widthStep)px", player,
-                                  windowed: { [self] ctx -> PWinGeometry? in
-        switch ctx.outputLayout.mode {
+    let gtf = GeometryTransform("ScaleVideoWidth\(widthStep.signString)\(abs(widthStep))pt", player,
+                                windowed: { [self] ctx -> PWinGeometry? in
+      let mode = ctx.outputLayout.mode
+      switch mode {
 
-        case .fullScreenInteractive, .fullScreenNormal:
-          return nil
+      case .musicMode:
+        let inputGeo = ctx.inputGeoSet.musicMode
+        let inputViewportSize = inputGeo.viewportSize
+        guard inputGeo.videoShown else { return nil }
+        let desiredViewportSize = scaleByWidthStep(inputViewportSize)
+        log.verbose{"Stepping viewport scale: mode=\(mode) stepW=\(widthStep)pt → \(desiredViewportSize)"}
+        return inputGeo.scalingViewport(to: desiredViewportSize)
 
-        case .musicMode:
-          let inputGeo = ctx.inputGeoSet.musicMode
-          let inputViewportSize = inputGeo.viewportSize
-          guard inputGeo.videoShown else { return nil }
-          let desiredViewportSize = scale(inputViewportSize, widthStep: widthStep)
-          log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
-          return inputGeo.scalingViewport(to: desiredViewportSize)
+      case .windowedNormal, .windowedInteractive:
+        let inputGeo = ctx.inputGeoSet.windowed
+        let desiredViewportSize = scaleByWidthStep(inputGeo.viewportSize)
+        log.verbose{"Stepping viewport scale: mode=\(mode) stepW=\(widthStep)pt → \(desiredViewportSize)"}
+        let scaledGeoUnconstrained = inputGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
+        // User has actively resized the video. Assume this is the new preferred resolution
+        player.info.intendedViewportSize = scaledGeoUnconstrained.viewportSize
+        return scaledGeoUnconstrained.refitted(using: .stayInside)
 
-        case .windowedNormal, .windowedInteractive:
-          let inputGeo = ctx.inputGeoSet.windowed
-          let desiredViewportSize = scale(inputGeo.viewportSize, widthStep: widthStep)
-          log.verbose{"Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)"}
-          let scaledGeoUnconstrained = inputGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
-          // User has actively resized the video. Assume this is the new preferred resolution
-          player.info.intendedViewportSize = scaledGeoUnconstrained.viewportSize
-          return scaledGeoUnconstrained.refitted(using: .stayInside)
-        }
-      })
-      animationPipeline.submitGTF(gtf)
-    default:
-      return
-    }
+      case .fullScreenInteractive, .fullScreenNormal:
+        return nil
+      }
+    })
+    animationPipeline.submitGTF(gtf)
   }
 
 
@@ -549,7 +550,7 @@ extension PlayerWindowController {
     }
   }
 
-  // MARK: - Apply Geometry - NOT Music Mode
+  // MARK: - Apply Geometry (Legacy Full Screen)
 
   /// Set the window frame and if needed the content view frame to appropriately use the full screen.
   /// For screens that contain a camera housing the content view will be adjusted to not use that area of the screen.
@@ -562,44 +563,30 @@ extension PlayerWindowController {
     updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
 
     log.verbose{"Calling setFrame for legacyFullScreen, to \(geometry)"}
-    updateWindowFrameAndSubviews(using: geometry)
+    setFrameAndUpdateWindowSubviews(using: geometry)
   }
 
-  func buildApplyFullScreenGeoTasks(fsGeo: PWinGeometry, newWindowedGeo: PWinGeometry,
-                                    duration: CGFloat, showDefaultArt: Bool?) -> [IINAAnimation.Task] {
-    let tasks: [IINAAnimation.Task] = [
-      .init(duration: duration, { [self] in
-        // Make sure video constraints are up to date, even in full screen.
-        // Also remember that FS & windowed mode share the same screen.
-        log.verbose{"ApplyFullScreenGeo: updating videoView, videoSize=\(fsGeo.videoSize)"}
-        videoView.apply(fsGeo)
-        /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
-        windowedModeGeo = newWindowedGeo
+  // MARK: - Apply PWinGeometry (General Cases)
 
-        resetRotationPreview()
-        hideSeekPreviewImmediately()
-        updateDefaultArtVisibility(to: showDefaultArt)
-        updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyWindowGeoTasks`
-      })
-    ]
-    return tasks
-  }
-
-  /// Updates/redraws current `window.frame` and its internal views from `newGeometry`. Animated. Windowed mode only!
+  /// Generates tasks which, when executed, will update the layout of the player window & its internal views to match the
+  /// state described by `outputGeo`. Animated. Can be used for all `PlayerWindowMode` cases.
   ///
   /// Also updates cached `windowedModeGeo` and saves updated state.
   @discardableResult
-  func buildApplyWindowGeoTasks(from inputGeo: PWinGeometry, to outputGeo: PWinGeometry,
-                                duration: CGFloat = Constants.AnimationDuration.standard,
-                                timing: CAMediaTimingFunctionName = .easeInEaseOut,
-                                save: Bool = true,
-                                showDefaultArt: Bool? = nil,
-                                thenRun: Bool = false) -> [IINAAnimation.Task] {
+  func buildApplyPWinGeoTasks(from inputGeo: PWinGeometry, to outputGeo: PWinGeometry,
+                              duration: CGFloat = Constants.AnimationDuration.standard,
+                              timing: CAMediaTimingFunctionName = .easeInEaseOut,
+                              save: Bool = true,
+                              showDefaultArt: Bool? = nil,
+                              thenRun: Bool = false) -> [IINAAnimation.Task] {
 
+    // Music mode only
     let isTogglingVideoView = (inputGeo.videoShown != outputGeo.videoShown)
     let isShowingVideo = isTogglingVideoView && outputGeo.videoShown
     let isHidingVideo = isTogglingVideoView && !outputGeo.videoShown
-    log.verbose{"ApplyWindowGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) \(outputGeo)"}
+    let middleGeo: PWinGeometry? = isTogglingVideoView ? outputGeo.cloneMusicMode(isMiddleTransition: true) : nil
+
+    log.verbose{"ApplyPWinGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) \(outputGeo)"}
 
     var tasks: [IINAAnimation.Task] = []
 
@@ -608,11 +595,9 @@ extension PlayerWindowController {
       isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
       videoView.enterAsynchronousMode()
 
-      assert(!currentLayout.spec.mode.isFullScreen, "applyWindowGeo called for non-windowed mode! (found: \(currentLayout.spec.mode))")
-
       if isTogglingVideoView {
         // [MusicModeKludge-A] When toggling video, loosen constraints while animating to prevent occasional crash in mpv_render
-        let middleGeo = outputGeo.cloneMusicMode(isMiddleTransition: true)
+        let middleGeo = middleGeo!
         if isShowingVideo {
           if pip.status == .inPIP {
             // We are about to steal its video; close it:
@@ -646,15 +631,24 @@ extension PlayerWindowController {
     // TASK 2: Apply animation
     tasks.append(.init(duration: duration, timing: timing, { [self] in
       if outputGeo.mode == .musicMode {
-        // [MusicModeKludge-A] Constraints in videoVideo are applied again here, nestled deep. Recreate middle geo for consistency
-        let geoToApply = isTogglingVideoView ? outputGeo.cloneMusicMode(isMiddleTransition: true) : outputGeo
+        // [MusicModeKludge-A] Constraints in videoVideo are applied again here, nestled deep. Use middle geo for consistency
+        let geoToApply = middleGeo ?? outputGeo
         applyMusicModeGeo(geoToApply, setFrame: true, save: save)
+
+      } else if outputGeo.mode.isFullScreen {
+        // Make sure video constraints are up to date, even in full screen.
+        // Also remember that FS & windowed mode share the same screen.
+        log.verbose{"ApplyPWinGeo: updating videoView for FS, videoSize=\(outputGeo.videoSize)"}
+        videoView.apply(outputGeo)
+
       } else {
+        assert(outputGeo.mode.isWindowed, "Expected windowed mode: \(outputGeo.mode)")
         // This is only needed to achieve "fade-in" effect when opening window:
         updateWindowBorderAndOpacity()
+
         /// Make sure this is up-to-date. Do this before `setFrame`
         if !isWindowHidden {
-          updateWindowFrameAndSubviews(using: outputGeo)
+          setFrameAndUpdateWindowSubviews(using: outputGeo)
         } else {
           videoView.apply(outputGeo)
         }
@@ -664,14 +658,14 @@ extension PlayerWindowController {
           player.saveState()
         }
 
-        log.verbose{"ApplyWindowGeo: Calling sendWindowScaleToMPV, viewportSize=\(outputGeo.viewportSize)"}
+        log.verbose{"ApplyPWinGeo: Calling sendWindowScaleToMPV, viewportSize=\(outputGeo.viewportSize)"}
         sendWindowScaleToMPV(outputGeo.mpvWindowScale())
       }
     }))
 
     // TASK 3: Background cleanup
     tasks.append(.instantTask{ [self] in
-      if outputGeo.mode == .musicMode, isTogglingVideoView {
+      if outputGeo.mode == .musicMode {
         // [MusicModeKludge-A] Previous task used a middle transition geometry. Apply the stricter geometry now
         applyMusicModeGeo(outputGeo, setFrame: true, save: save)
 
@@ -682,8 +676,10 @@ extension PlayerWindowController {
 
       isAnimatingLayoutTransition = false
       // OSD messages may have been supressed because file was not done loading. Display now if needed:
-      updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyWindowGeoTasks`
-      player.events.emit(.windowSizeAdjusted, data: outputGeo.windowFrame)
+      updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyPWinGeoTasks`
+      if !outputGeo.mode.isFullScreen {
+        player.events.emit(.windowSizeAdjusted, data: outputGeo.windowFrame)
+      }
     })
 
     if thenRun {
@@ -716,7 +712,7 @@ extension PlayerWindowController {
   func applyMusicModeGeo(_ geometry: PWinGeometry, setFrame: Bool = true, save: Bool = true) {
     guard geometry.mode == .musicMode else { Logger.fatal("Expected mode=musicMode for: \(geometry)") }
     let geometry = geometry.refitted()  // enforces internal constraints, and constrains to screen
-    log.verbose{"Applying \(geometry), setFrame=\(setFrame.yn) save=\(save.yn)"}
+    log.verbose{"ApplyMMGeo \(geometry), setFrame=\(setFrame.yn) save=\(save.yn)"}
 
     videoView.enterAsynchronousMode()
 
@@ -730,7 +726,7 @@ extension PlayerWindowController {
             || (geometry.videoShown != musicModeGeo.videoShown)
             || (geometry.isMusicModePlaylistVisible != musicModeGeo.isMusicModePlaylistVisible)
             || (geometry.isMiddleTransition != musicModeGeo.isMiddleTransition) else {
-      log.verbose("No changes needed for music mode windowFrame or constraints")
+      log.verbose("ApplyMMGeo: No changes needed for music mode windowFrame or constraints")
       return
     }
 
@@ -739,7 +735,7 @@ extension PlayerWindowController {
     updateBottomBarHeight(to: geometry.outsideBars.bottom, bottomBarPlacement: .outsideViewport, mode: .musicMode)
 
     if setFrame {
-      updateWindowFrameAndSubviews(using: geometry, updateVideoView: false)
+      setFrameAndUpdateWindowSubviews(using: geometry, updateVideoView: false)
     } else {
       resizeWindowSubviews(using: geometry, updateVideoView: false)
     }
@@ -755,7 +751,7 @@ extension PlayerWindowController {
     /// Need to execute this in its own task so that other animations are not affected.
     let shouldDisableVideoView = !geometry.videoShown && geometry.isMusicModePlaylistVisible
     if !shouldDisableVideoView {
-      log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
+      log.verbose{"ApplyMMGeo: Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
       viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
     }
 

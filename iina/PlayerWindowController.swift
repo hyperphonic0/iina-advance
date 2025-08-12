@@ -1295,7 +1295,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func colorSpaceDidChange(_ notification: Notification) {
     log.verbose("ColorSpaceDidChange received")
-    videoView.refreshEdrMode()
+    player.refreshEdrMode()
   }
 
   // Note: this gets triggered by many unnecessary situations, e.g. several times each time full screen is toggled.
@@ -1356,7 +1356,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           player.saveState()
         } else if currentLayout.mode == .windowedNormal && windowedModeGeo.screenFit.shouldMoveWindowToKeepInContainer {
           // Update windowedModeGeo with new window position & screen (but preserve previous size)
-          DispatchQueue.main.async { [self] in
+            animationPipeline.submitTask(timing: .easeInEaseOut, { [self] in
             let oldWindowFrame = windowedModeGeo.windowFrame
             let newWindowFrame = window.frame
             if let screenFrame = NSScreen.forScreenID(screenID)?.visibleFrame {
@@ -1369,10 +1369,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                 let newGeo = windowedModeGeo.clone(windowFrame: newWindowFrame, screenID: screenID).refitted()
                 log.verbose{"WindowDidChangeScreen: updating windowFrame to fit screen: \(oldWindowFrame) → \(newGeo.windowFrame)"}
                 windowedModeGeo = newGeo
-                updateWindowFrameAndSubviews(using: newGeo)
+                setFrameAndUpdateWindowSubviews(using: newGeo)
               }
             }
-          }
+          })
         }
       })
     }
@@ -1421,7 +1421,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
             return
           }
           log.verbose{"WndDidChangeScreenParams: calling setFrame with wf=\(newGeo.windowFrame) vidSize=\(newGeo.videoSize)"}
-          updateWindowFrameAndSubviews(using: newGeo)
+          setFrameAndUpdateWindowSubviews(using: newGeo)
         }
       })
     }
@@ -1448,8 +1448,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           // MacOS (as of 14.0 Sonoma) sometimes moves the window around when there are multiple screens
           // and the user is changing focus between windows or apps. This can also happen if the user is using a third-party
           // window management app such as Amethyst. If this happens, move the window back to its proper place:
-          let screen = bestScreen
-          log.verbose{"WindowDidMove: Updating legacy full screen window in response to unexpected windowDidMove to frame=\(window.frame), screen=\(screen.screenID.quoted)"}
+          let bestScreen = bestScreen
+          log.verbose{"WindowDidMove: Updating legacy full screen window in response to unexpected windowDidMove to frame=\(window.frame), screen=\(bestScreen.screenID.quoted)"}
           let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, geo.video)
           applyLegacyFSGeo(fsGeo)
         } else {
@@ -1833,7 +1833,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // TODO: integrate this task into LayoutTransition build
       let uncropDuration = Constants.AnimationDuration.cropAnimation * 0.1
       tasks.append(.init(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
-        updateWindowFrameAndSubviews(using: uncroppedClosedBarsGeo)
+        setFrameAndUpdateWindowSubviews(using: uncroppedClosedBarsGeo)
       })
     }
 
@@ -1926,7 +1926,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // Animate the crop to highlight the piece being cut out.
       tasks.append(.init(duration: cropAnimationDuration, timing: .default) { [self] in
         log.verbose{"Start exiting interactive mode: animating crop using: \(newIMGeo)"}
-        updateWindowFrameAndSubviews(using: newIMGeo)
+        setFrameAndUpdateWindowSubviews(using: newIMGeo)
         // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
         videoView.videoViewConstraints?.updateSpacerMin(to: newIMGeo.viewportMargins, .init(496))
 

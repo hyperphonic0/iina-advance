@@ -1021,7 +1021,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   
   @IBAction func hdrAction(_ sender: NSSwitch) {
     self.player.info.hdrEnabled = sender.state == .on
-    self.player.refreshEdrMode()
+    player.refreshEdrMode()
   }
 
   private func redraw(indicator: NSTextField, constraint: NSLayoutConstraint, slider: NSSlider, value: String) {
