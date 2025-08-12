@@ -375,36 +375,45 @@ struct GeometryTransform {
       case .windowedNormal:
         let resizedGeo: PWinGeometry?
 
-        if let windowedTransform = tf.windowedTransform {
-          resizedGeo = windowedTransform(self)
-        } else {
-          switch gtfSessionState {
-          case .restoring(_):
-            log.verbose{"[GTF:\(name)] Restore is in progress: no 'apply' tasks needed for windowed mode"}
-            // still need post-transition task
-            return [.instantTask(doPostApplyWork)]
+        switch gtfSessionState {
+        case .restoring(_):
+          log.verbose{"[GTF:\(name)] Restore is in progress: no 'apply' tasks needed for windowed mode"}
+          assert(tf.windowedTransform == nil)
+          // still need post-transition task
+          return [.instantTask(doPostApplyWork)]
 
-          case .creatingNew:
-            // Just opened new window. Use a longer duration for this one, because the window starts small and will zoom into place.
-            duration = Constants.AnimationDuration.initialVideoReconfig
-            timing = .linear
-            resizedGeo = applyResizePrefsForNewPlaybackInWindowedMode()
+        case .creatingNew:
+          // Just opened new window. Use a longer duration for this one, because the window starts small & will zoom into place.
+          assert(tf.windowedTransform == nil)
+          duration = Constants.AnimationDuration.initialVideoReconfig
+          timing = .linear
+          resizedGeo = applyResizePrefsForNewPlaybackInWindowedMode()
 
-          case .newReplacingExisting, .existingSession_startingNewPlayback:
-            resizedGeo = applyResizePrefsForNewPlaybackInWindowedMode()
-            if let resizedGeo, resizedGeo.windowFrame != inputGeoSet.windowed.windowFrame {
-            } else {
-              // No need for animation if window's frame didn't change. Video param transitions are not animated by mpv
-              duration = 0.0
-            }
-
-          case .existingSession_videoTrackChangedForSamePlayback, .existingSession_continuing:
-            // Not a new file. Some other change to a video geo property. Fall through and resize minimally
-            resizedGeo = nil
-
-          case .noSession:
-            Logger.fatal("[GTF:\(name)] Invalid gtfSessionState: \(gtfSessionState)")
+        case .newReplacingExisting, .existingSession_startingNewPlayback:
+          assert(tf.windowedTransform == nil)
+          resizedGeo = applyResizePrefsForNewPlaybackInWindowedMode()
+          if let resizedGeo, resizedGeo.windowFrame != inputGeoSet.windowed.windowFrame {
+          } else {
+            // No need for animation if window's frame didn't change. Video param transitions are not animated by mpv
+            duration = 0.0
           }
+
+        case .existingSession_videoTrackChangedForSamePlayback, .existingSession_continuing:
+          // Not a new file. Some other change to a video geo property. Use TF func if it exists.
+          if let windowedTransform = tf.windowedTransform {
+            log.verbose{"[GTF:\(name)] Calling windowedTransform"}
+            resizedGeo = windowedTransform(self)
+          } else {
+            // Will resize minimally
+            resizedGeo = nil
+          }
+
+          if !inputGeoSet.windowed.mode.lockViewportToVideoSize {
+            duration = 0.0
+          }
+
+        case .noSession:
+          Logger.fatal("[GTF:\(name)] Invalid gtfSessionState: \(gtfSessionState)")
         }
 
         let intendedViewportSize: CGSize? = gtfSessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
@@ -492,9 +501,6 @@ struct GeometryTransform {
           // (Posting the notifications below is similarly harmless - at leas for now. Unclear if/how they may
           // be used by plugins).
 
-          // Set to prevent future duplicate calls from continuing
-          currentPlayback.vidTrackLastSized = vidTrackID
-          
           // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
           // The OSD can have weird stretching glitches if displayed while zooming open...
           if currentPlayback.state == .loaded {

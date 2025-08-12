@@ -849,11 +849,11 @@ extension PlayerWindowController {
     // FIXME: this still isn't reliable in full screen when OSC auto-hide is disabled
     animationPipeline.submitInstantTask{ [self] in
       guard player.canHideCursor else {
-        log.verbose("Not hiding cursor")
+        log.trace("Not hiding cursor")
         return
       }
 
-      log.verbose("Hiding cursor until mouse moves")
+      log.trace("Hiding cursor until mouse moves")
       NSCursor.setHiddenUntilMouseMoves(true)
       videoView.layout()
     }

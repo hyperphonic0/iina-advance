@@ -18,7 +18,7 @@ class Playback: CustomStringConvertible {
     case notYetStarted = 1    /// set as soon as we are aware of file, but before mpv is aware of it
     case started              /// set after mpv sends `fileStarted` notification
     case loaded               /// set after mpv sends `fileLoaded` notification & IINA has processed it
-    case loadedAndSized       /// see `vidTrackLastSized`
+    case loadedAndSized       /// set after IINA has finished layout & display for it
     case ended                /// Not used at present
 
     var description: String {
@@ -60,11 +60,6 @@ class Playback: CustomStringConvertible {
   var playlistPos: Int
 
   var parentPlaylist: String = ""
-
-  /// This must match the current `vid` track for the given media when determining whether a complete update is needed to VideoGeometry.
-  ///
-  /// Is set to `nil` initially because such an update must always run when state transitions to `fileLoaded`.
-  var vidTrackLastSized: Int? = nil
 
   var thumbnails: SingleMediaThumbnailsLoader? = nil
 

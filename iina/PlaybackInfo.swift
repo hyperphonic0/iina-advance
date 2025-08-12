@@ -301,23 +301,29 @@ class PlaybackInfo {
   }
 
   func currentTrack(_ type: MPVTrack.TrackType) -> MPVTrack? {
+    track(type, id: nil)
+  }
+
+  /// `id` is the index into the tracklist for the given type.
+  /// Or if `id: nil` is supplied, will look up the current track for the given type.
+  func track(_ type: MPVTrack.TrackType, id idGiven: Int?) -> MPVTrack? {
     infoLock.withLock {
       let id: Int?, list: [MPVTrack]
       switch type {
       case .video:
-        id = vid
+        id = idGiven ?? vid
         list = videoTracks
       case .audio:
-        id = aid
+        id = idGiven ?? aid
         list = audioTracks
       case .sub:
-        id = sid
+        id = idGiven ?? sid
         list = subTracks
       case .secondSub:
-        id = secondSid
+        id = idGiven ?? secondSid
         list = subTracks
       }
-      if let id = id {
+      if let id {
         return list.first { $0.id == id }
       } else {
         return nil

@@ -64,6 +64,13 @@ extension GeometryTransform.ContextStage2 {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
     log.verbose{"[GTF:\(name)] Syncing videoGeo from mpv for \(currentPlayback.url.lastPathComponent.pii.quoted) vid=\(String(vidTrackID))|\(currentMediaAudioStatus)"}
 
+
+    let vid = Int(player.mpv.getInt(MPVOption.TrackSelection.vid))
+    guard vid == vidTrackID else {
+      log.verbose{"[GTF:\(name)] Aborting: current mpv video track (\(vid)) does not match expected (\(vidTrackID))"}
+      return nil
+    }
+
     if currentMediaAudioStatus.isAudio || vidTrackID == 0 {
       // Square album art
       log.debug{"[GTF:\(name)] Using albumArtGeometry ∵ isAudio=\(currentMediaAudioStatus.isAudio.yn) vid=\(vidTrackID)"}

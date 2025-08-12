@@ -2074,7 +2074,7 @@ class PlayerCore: NSObject {
     windowController.animationPipeline.doAfterGTFs{ [self] in
       guard windowController.loaded else { return }
       guard !isStopping else { return }
-      log.verbose("Reloading QuickSettigsView")
+      log.trace("Reloading QuickSettigsView")
 
       // Easiest place to put this - need to call it when setting equalizers
       videoView.displayActive()
@@ -3123,14 +3123,21 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isRestoring, !isStopping else { return }
 
+    let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
+
     /// Grab & reset `isShowVideoPendingInMiniPlayer` in mpv queue right away to avoid race
     let isShowVideoPendingInMiniPlayerCached = isShowVideoPendingInMiniPlayer
+
+    guard (vid != info.vid) || isShowVideoPendingInMiniPlayerCached else {
+      return
+    }
     isShowVideoPendingInMiniPlayer = false
+    info.vid = vid
 
     let sessionStateTF: GeometryTransform.PWinSessionStateTF = { [self] prevSessionState, ctx -> PWinSessionState? in
       let returnValue: PWinSessionState?
       if case .existingSession_continuing = prevSessionState {
-        if ctx.currentPlayback.state.isAtLeast(.loadedAndSized) && ctx.currentPlayback.vidTrackLastSized != ctx.vidTrackID {
+        if ctx.currentPlayback.state.isAtLeast(.loadedAndSized) {
           returnValue = .existingSession_videoTrackChangedForSamePlayback
         } else {
           returnValue = prevSessionState
@@ -3140,27 +3147,11 @@ class PlayerCore: NSObject {
       } else {
         returnValue = nil  // abort
       }
-      log.verbose{"[GTF:\(ctx.name)] Changing sessionState for vid change, vidLastSized=\(String(ctx.currentPlayback.vidTrackLastSized)) vidNew=\(ctx.vidTrackID) showVideoPending=\(isShowVideoPendingInMiniPlayerCached.yn): \(prevSessionState) → \(returnValue?.description ?? "nil")"}
+      log.verbose{"[GTF:\(ctx.name)] Changing sessionState for vid change, vidNew=\(ctx.vidTrackID) showVideoPending=\(isShowVideoPendingInMiniPlayerCached.yn): \(prevSessionState) → \(returnValue?.description ?? "nil")"}
       return returnValue
     }
 
     let videoGeoTF: GeometryTransform.VideoGeometryTF = { [self] inputVidGeo, ctx -> VideoGeometry? in
-      let vid = Int(ctx.player.mpv.getInt(MPVOption.TrackSelection.vid))
-      let didChange = vid != info.vid
-
-      // sometimes still need to show videoView when no actual vid change occurred (if use has vid=0 or no vid tracks exist)
-      guard didChange || isShowVideoPendingInMiniPlayerCached else {
-        let shouldShowDefaultArt = vid == 0
-        log.verbose{"[GTF:\(ctx.name)] Already using vid=\(vid) & isShowVideoPendingInMiniPlayerCached=NO; shouldShowDefaultArt=\(shouldShowDefaultArt.yn)"}
-        // Patches a race condition caused by the call to show default art in `player.setVideoTrackDisabled`.
-        // It calls that before it commands mpv to set track to 0, to ensure that the user doesn't see a black
-        // canvas even for a moment. But that introduces a race condition which can result in default art being
-        // shown when it should not be, when the user toggles tracks multiple times quickly. Patch that here.
-        DispatchQueue.main.async { [self] in
-          windowController.updateDefaultArtVisibility(to: shouldShowDefaultArt)
-        }
-        return nil
-      }
 
       guard ctx.currentPlayback.state.isAtLeast(.loaded) else {
         log.verbose{"[GTF:\(ctx.name)] vid changed to \(vid) but file is not loaded"}
@@ -3173,10 +3164,9 @@ class PlayerCore: NSObject {
         outputVidGeo = inputVidGeo
       }
 
-      info.vid = vid
       // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
       if !silent, vid != 0, (!isInMiniPlayer || (windowController.miniPlayer.videoShown && !isShowVideoPendingInMiniPlayerCached)) {
-        sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
+        sendOSD(.track(info.track(.video, id: vid) ?? .noneVideoTrack))
       }
       if vid != 0, isActive, !isRestoring {
         reloadThumbnails()
@@ -3289,8 +3279,10 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
 
     if showDefaultAlbumArt {
-      // Show *before* disabling in mpv, to avoid a moment of empty black window. Do not show if in music mode & video is hidden.
-      windowController.updateDefaultArtVisibility(to: true)
+      windowController.animationPipeline.submitInstantTask { [self] in
+        // Show *before* disabling in mpv, to avoid a moment of empty black window. Do not show if in music mode & video is hidden.
+        windowController.updateDefaultArtVisibility(to: true)
+      }
     }
 
     mpv.queue.async { [self] in
@@ -3331,7 +3323,7 @@ class PlayerCore: NSObject {
       if index == 0 {
         log.verbose("New track is 0: launching task to show defaultAlbumArt")
         // Show default art *before* waiting for mpv confirmation, to avoid a moment of empty black window.
-        windowController.animationPipeline.submit(.init{ [self] in
+        windowController.animationPipeline.submit(.instantTask{ [self] in
           // Do not show if in music mode & video is hidden.
           guard !windowController.currentLayout.isMusicMode || windowController.musicModeGeo.videoShown else { return }
           windowController.updateDefaultArtVisibility(to: true)
