@@ -2266,44 +2266,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     })
   }
 
-  func syncPlaySliderABLoop() {
-    assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-    guard loaded, !player.isStopping else { return }
-    let a = player.abLoopA
-    let b = player.abLoopB
-
-    DispatchQueue.main.async { [self] in
-      log.verbose{"Syncing AB loop: a=\(a), b=\(b)"}
-      let hideA = a == 0
-      playSlider.abLoopA.isHidden = hideA
-      playSlider.abLoopA.posInSliderPercent = secondsToPercent(a)
-
-      let hideB = b == 0
-      playSlider.abLoopB.isHidden = hideB
-      playSlider.abLoopB.posInSliderPercent = secondsToPercent(b)
-
-      playSlider.needsDisplay = true
-    }
-  }
-
-  /// Returns the percent of the total duration of the video the given position in seconds represents.
-  ///
-  /// The percentage returned must be considered an estimate that could change. The duration of the video is obtained from the
-  /// [mpv](https://mpv.io/manual/stable/) `duration` property. The documentation for this property cautions that mpv
-  /// is not always able to determine the duration and when it does return a duration it may be an estimate. If the duration is unknown
-  /// this method will fallback to using the current playback position, if that is known. Otherwise this method will return zero.
-  /// - Parameter seconds: Position in the video as seconds from start.
-  /// - Returns: The percent of the video the given position represents.
-  private func secondsToPercent(_ seconds: Double) -> Double {
-    if let duration = player.info.playbackDurationSec {
-      return duration == 0 ? 0 : seconds / duration * 100
-    } else if let position = player.info.playbackPositionSec {
-      return position == 0 ? 0 : seconds / position * 100
-    } else {
-      return 0
-    }
-  }
-
   func showBufferIndicator(animate: Bool, progressLabel: String, detailLabel: String) {
     guard loaded else { return }
 

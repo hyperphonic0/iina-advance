@@ -104,16 +104,21 @@ extension PlayerWindowController {
         .init(NSWindow.didChangeBackingPropertiesNotification) { note in self.windowDidChangeBackingProperties(note) },
          */
         .init(NSApplication.didChangeScreenParametersNotification) { _ in self.windowDidChangeScreenParameters() },
+
+        // Play Slider loop knobs:
         .init(.iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [self] _ in
           let seconds = percentToSeconds(playSlider.abLoopA.posInSliderPercent)
+          player.info.abLoopA = seconds
           player.abLoopA = seconds
           player.sendOSD(.abLoopUpdate(.aSet, VideoTime(seconds).stringRepresentation))
         },
         .init(.iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopB) { [self] _ in
           let seconds = percentToSeconds(playSlider.abLoopB.posInSliderPercent)
+          player.info.abLoopB = seconds
           player.abLoopB = seconds
           player.sendOSD(.abLoopUpdate(.bSet, VideoTime(seconds).stringRepresentation))
         },
+
         .init(NSWorkspace.willSleepNotification) { [self] _ in
           guard Preference.bool(for: .pauseWhenGoesToSleep) else { return }
           player.pause()

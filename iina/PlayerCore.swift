@@ -285,6 +285,7 @@ class PlayerCore: NSObject {
     /// - Note: The value of the A loop point is not required by mpv to be before the B loop point.
     set {
       guard info.abLoopStatus == .aSet || info.abLoopStatus == .bSet else { return }
+      guard !isStopping else { return }
       mpv.setDouble(MPVOption.PlaybackControl.abLoopA, max(Constants.TimeInterval.minLoopPointTime, newValue))
     }
   }
@@ -307,6 +308,7 @@ class PlayerCore: NSObject {
     /// - Note: The value of the B loop point is not required by mpv to be after the A loop point.
     set {
       guard info.abLoopStatus == .bSet else { return }
+      guard !isStopping else { return }
       mpv.setDouble(MPVOption.PlaybackControl.abLoopB, max(Constants.TimeInterval.minLoopPointTime, newValue))
     }
   }
@@ -1209,11 +1211,7 @@ class PlayerCore: NSObject {
   func abLoop() {
     mpv.queue.async { [self] in
       // may subject to change
-      let returnValue = mpv.command(.abLoop)
-      guard returnValue == 0 else { return }
-
-      syncAbLoop()
-      sendOSD(.abLoop(info.abLoopStatus))
+      mpv.command(.abLoop)
     }
   }
 
@@ -1223,8 +1221,12 @@ class PlayerCore: NSObject {
     guard isActive else { return }
 
     // Obtain the values of the ab-loop-a and ab-loop-b options representing the A & B loop points.
-    let a = abLoopA
-    let b = abLoopB
+    let a = mpv.getDouble(MPVOption.PlaybackControl.abLoopA)
+    let b = mpv.getDouble(MPVOption.PlaybackControl.abLoopB)
+    let didChange = (info.abLoopA != a) || (info.abLoopB != b)
+    info.abLoopA = a
+    info.abLoopB = b
+
     if a == 0 {
       if b == 0 {
         // Neither point is set, the feature is disabled.
@@ -1240,9 +1242,18 @@ class PlayerCore: NSObject {
       // A loop point has been set. B loop point must be set as well to activate looping.
       info.abLoopStatus = b == 0 ? .aSet : .bSet
     }
+
     // The play slider has knobs representing the loop points, make insure the slider is in sync.
-    windowController?.syncPlaySliderABLoop()
-    log.verbose{"Synchronized info.abLoopStatus: \(info.abLoopStatus)"}
+    log.verbose{"Synchronized info.abLoopStatus=\(info.abLoopStatus) (changed=\(didChange.yn))"}
+
+    if didChange {
+      sendOSD(.abLoop(info.abLoopStatus))
+    }
+
+    DispatchQueue.main.async { [self] in
+      log.verbose{"Syncing player slider AB loop: a=\(a), b=\(b)"}
+      windowController.playSlider.syncABLoop(info, a: a, b: b)
+    }
   }
 
   func togglePlaylistLoop() {

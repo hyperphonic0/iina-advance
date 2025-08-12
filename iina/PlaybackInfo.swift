@@ -132,6 +132,8 @@ class PlaybackInfo {
   var sub2Pos: Double = 0
 
   var abLoopStatus: LoopStatus = .cleared
+  var abLoopA: Double = 0
+  var abLoopB: Double = 0
 
   var playSpeed: Double = 1.0
 
@@ -383,5 +385,23 @@ class PlaybackInfo {
     let urls = indexes.compactMap{ $0 < playlist.count ? playlist[$0].url : nil }
     return MediaMetaCache.shared.calculateTotalDuration(urls)
   }
-  
+
+  /// Returns the percent of the total duration of the video the given position in seconds represents.
+  ///
+  /// The percentage returned must be considered an estimate that could change. The duration of the video is obtained from the
+  /// [mpv](https://mpv.io/manual/stable/) `duration` property. The documentation for this property cautions that mpv
+  /// is not always able to determine the duration and when it does return a duration it may be an estimate. If the duration is unknown
+  /// this method will fallback to using the current playback position, if that is known. Otherwise this method will return zero.
+  /// - Parameter seconds: Position in the video as seconds from start.
+  /// - Returns: The percent of the video the given position represents.
+  func secondsToPercent(_ seconds: Double) -> Double {
+    if let duration = playbackDurationSec {
+      return duration == 0 ? 0 : seconds / duration * 100
+    } else if let position = playbackPositionSec {
+      return position == 0 ? 0 : seconds / position * 100
+    } else {
+      return 0
+    }
+  }
+
 }

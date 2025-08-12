@@ -20,6 +20,8 @@ extension MPVController {
     MPVOption.PlaybackControl.pause: MPV_FORMAT_FLAG,
     MPVOption.PlaybackControl.loopPlaylist: MPV_FORMAT_STRING,
     MPVOption.PlaybackControl.loopFile: MPV_FORMAT_STRING,
+    MPVOption.PlaybackControl.abLoopA: MPV_FORMAT_DOUBLE,
+    MPVOption.PlaybackControl.abLoopB: MPV_FORMAT_DOUBLE,
     MPVOption.OSD.osdLevel: MPV_FORMAT_INT64,
     MPVProperty.chapter: MPV_FORMAT_INT64,
     MPVOption.Video.deinterlace: MPV_FORMAT_FLAG,
@@ -353,6 +355,10 @@ extension MPVController {
         player.sendOSD(.noLoop)
       }
       player.syncUI(.loop)
+
+    case MPVOption.PlaybackControl.abLoopA, MPVOption.PlaybackControl.abLoopB:
+      player.log.verbose{"Δ mpv prop: `\(name)`"}
+      player.syncAbLoop()
 
     case MPVOption.OSD.osdLevel:
       guard let level = UnsafePointer<Int>(OpaquePointer(property.data))?.pointee else { break }

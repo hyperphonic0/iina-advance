@@ -339,16 +339,16 @@ struct PlayerSaveState: CustomStringConvertible {
     props[PropName.isSubVisible.rawValue] = info.isSubVisible.yn
     props[PropName.isSub2Visible.rawValue] = info.isSecondSubVisible.yn
 
-    // FIXME: these mpv calls are in the wrong queue! Should cache these & use the cached values!
-
-    let abLoopA: Double = player.abLoopA
+    let abLoopA: Double = player.info.abLoopA
     if abLoopA != 0 {
       props[PropName.abLoopA.rawValue] = abLoopA.stringMaxFrac6
     }
-    let abLoopB: Double = player.abLoopB
+    let abLoopB: Double = player.info.abLoopB
     if abLoopB != 0 {
       props[PropName.abLoopB.rawValue] = abLoopB.stringMaxFrac6
     }
+
+    // FIXME: these mpv calls are in the wrong queue! Should cache these & use the cached values!
 
     let maxVolume = player.mpv.getInt(MPVOption.Audio.volumeMax)
     if maxVolume != 100 {
@@ -874,11 +874,14 @@ struct PlayerSaveState: CustomStringConvertible {
     if let loopFile = string(for: .loopFile) {
       mpv.setString(MPVOption.PlaybackControl.loopFile, loopFile)
     }
-    if let abLoopA = double(for: .abLoopA) {
-      if let abLoopB = double(for: .abLoopB) {
+    if let abLoopA = double(for: .abLoopA), abLoopA > 0.0 {
+      player.info.abLoopA = abLoopA
+      mpv.setDouble(MPVOption.PlaybackControl.abLoopA, abLoopA)
+
+      if let abLoopB = double(for: .abLoopB), abLoopB > 0.0 {
+        player.info.abLoopB = abLoopB
         mpv.setDouble(MPVOption.PlaybackControl.abLoopB, abLoopB)
       }
-      mpv.setDouble(MPVOption.PlaybackControl.abLoopA, abLoopA)
     }
 
     if let vid = int(for: .vid) {

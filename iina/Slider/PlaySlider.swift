@@ -146,4 +146,16 @@ final class PlaySlider: ScrollableSlider {
 
     hoverIndicator.show(atSliderCoordX: x)
   }
+
+  func syncABLoop(_ info: PlaybackInfo, a: Double, b: Double) {
+    let hideA = a == 0
+    abLoopA.isHidden = hideA
+    abLoopA.posInSliderPercent = info.secondsToPercent(a)
+
+    let hideB = b == 0
+    abLoopB.isHidden = hideB
+    abLoopB.posInSliderPercent = info.secondsToPercent(b)
+
+    needsDisplay = true
+  }
 }
