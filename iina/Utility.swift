@@ -635,21 +635,13 @@ class Utility {
       startTime = CFAbsoluteTimeGetCurrent()
     }
 
-    var secElapsed: Double {
-      return CFAbsoluteTimeGetCurrent() - startTime
-    }
+    var secElapsed: Double { CFAbsoluteTimeGetCurrent() - startTime }
+    var msElapsed: Double { secElapsed * 1000 }
 
-    var msElapsed: Double {
-      return secElapsed * 1000
-    }
+    var secElapsedString: String { "\(secElapsed.stringMaxFrac2)s" }
+    var msElapsedString: String { "\(msElapsed.stringMaxFrac2)ms" }
 
-    var secElapsedString: String {
-      return "\(secElapsed.stringMaxFrac2)s"
-    }
-
-    var description: String {
-      return msElapsed.stringMaxFrac2
-    }
+    var description: String { msElapsed.stringMaxFrac2 }
   }
 
   class AlertInfo {

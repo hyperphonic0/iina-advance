@@ -54,7 +54,7 @@ class CustomCellView: NSTableCellView {
 }
 
 
-class PreferenceWindowController: WindowController {
+class PreferenceWindowController: WindowController, NSWindowDelegate {
   unowned var windowUndoManager: UndoManager? = nil
   /// Use for all animations in the `Preferences` window, if possible.
   let animationPipeline = IINAAnimation.Pipeline()
@@ -142,8 +142,7 @@ class PreferenceWindowController: WindowController {
   private var searchString: String = ""
   private var currentCompletionResults: [Trie.ReturnValue] = []
 
-  let indexingQueue = DispatchQueue(label: "com.iina_advance.IINAPreferenceIndexingTask", qos: .userInitiated)
-  private var isIndexing: Bool = true
+  private var needsIndex: Bool = true
   
   enum Action {
     case installPlugin(url: URL)
@@ -233,6 +232,30 @@ class PreferenceWindowController: WindowController {
       navTableSearchFieldSpacingConstraint.constant = 10.0
     }
 
+    // To restore selection properly, must set table to allow empty selection initially (in XIB).
+    // Otherwise, it will automatically select the first value and trigger the selection notification.
+    // Much safer to disable empty selection after selecting a row.
+    loadTab(at: UIState.shared.getSavedValue(for: .uiPrefWindowNavTableSelectionIndex))
+    tableView.allowsEmptySelection = false
+    let observer = prefDetailScrollView.restoreAndObserveVerticalScroll(key: .uiPrefDetailViewScrollOffsetY, defaultScrollAction: {
+      prefDetailScrollView.scroll(NSPoint())
+    })
+    self.observers.append(observer)
+
+    Logger.log.verbose{"PreferenceWindowController windowDidLoad done"}
+  }
+
+  // Need to wait until window is in focus before trying to show the completion popup (if restoring).
+  // Otherwise it will sometimes silently fail to display.
+  func windowDidBecomeKey(_ notification: Notification) {
+    if needsIndex {
+      buildIndexAndRestoreSavedSearch()
+    }
+  }
+
+  private func buildIndexAndRestoreSavedSearch() {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     var viewMap = [
       ["general", "PrefGeneralViewController"],
       ["ui", "PrefUIViewController"],
@@ -257,27 +280,24 @@ class PreferenceWindowController: WindowController {
     //logLabelDict(labelDict)
 #endif
 
-    indexingQueue.async{
-      self.isIndexing = true
-      self.makeTries(labelDict)
-      self.isIndexing = false
+    // Do the indexing in background - no need to hurry to display the popup, but don't
+    // want to slow down the launch even by 25ms
+    DispatchQueue.global(qos: .background).async { [self] in
+      let sw = Utility.Stopwatch()
+
+      makeTries(labelDict)
+      needsIndex = false
+      Logger.log.verbose("PreferenceWindow indexing done in \(sw.msElapsedString)")
+
+      // Restore previous search (if any):
+      guard let savedSearchString = PreferenceWindowController.getSearchStringFromPrefs() else { return }
+      // Add a small delay from time of window open to draw user's attention to the popup
+      DispatchQueue.main.async { [self] in
+        searchField.stringValue = savedSearchString
+        searchField.sendAction(searchField.action, to: searchField.target)
+      }
     }
 
-    // To restore selection properly, must set table to allow empty selection initially (in XIB).
-    // Otherwise, it will automatically select the first value and trigger the selection notification.
-    // Much safer to disable empty selection after selecting a row.
-    loadTab(at: UIState.shared.getSavedValue(for: .uiPrefWindowNavTableSelectionIndex))
-    tableView.allowsEmptySelection = false
-    let observer = prefDetailScrollView.restoreAndObserveVerticalScroll(key: .uiPrefDetailViewScrollOffsetY, defaultScrollAction: {
-      prefDetailScrollView.scroll(NSPoint())
-    })
-    self.observers.append(observer)
-
-    // Restore previous search (if any):
-    searchField.stringValue = PreferenceWindowController.getSearchStringFromPrefs() ?? ""
-    searchFieldAction(self)
-
-    Logger.log.verbose{"PreferenceWindowController windowDidLoad done"}
   }
 
   override func mouseDown(with event: NSEvent) {
@@ -304,9 +324,10 @@ class PreferenceWindowController: WindowController {
   }
 
   @IBAction func searchFieldAction(_ sender: Any) {
-    guard !isIndexing else { return }
+    guard !needsIndex else { return }
     let newSearchString = searchField.stringValue.lowercased().trimWhitespaceSuffix().removedLastSemicolon()
     guard newSearchString != searchString else { return }
+    Logger.log.verbose("Prefs search string: \(newSearchString.quoted)")
     if newSearchString.isEmpty {
       dismissCompletionList()
     } else {
@@ -325,8 +346,11 @@ class PreferenceWindowController: WindowController {
   }
 
   private func completeSearchField() {
-    noResultLabel.isHidden = currentCompletionResults.count != 0
+    assert(DispatchQueue.isExecutingIn(.main))
+    let resultsCount = currentCompletionResults.count
+    noResultLabel.isHidden = resultsCount != 0
     if !completionPopover.isShown {
+      Logger.log.verbose("Showing Prefs search field completion popover, resultsCount=\(resultsCount)")
       let range = searchField.currentEditor()?.selectedRange
       completionPopover.show(relativeTo: searchField.bounds, of: searchField, preferredEdge: .maxY)
       searchField.selectText(self)
@@ -337,6 +361,7 @@ class PreferenceWindowController: WindowController {
 
   private func dismissCompletionList() {
     if completionPopover.isShown {
+      Logger.log.verbose("Closing Prefs search field completion popover")
       completionPopover.close()
     }
   }

@@ -167,12 +167,12 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
 
   // TODO: this is expensive. Add throttling
   private func reloadThumbnailCacheStat(_ notification: Notification) {
-    AppDelegate.shared.preferenceWindowController.indexingQueue.async { [self] in
-      let cacheSize = ThumbnailCacheManager.shared.getCacheSize()
-      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: cacheSize, countStyle: .binary))B"
+    DispatchQueue.global(qos: .background).async { [self] in
+      let cacheSizeBytes = ThumbnailCacheManager.shared.getCacheSize()
+      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: cacheSizeBytes, countStyle: .binary))B"
       DispatchQueue.main.async { [self] in
         thumbCacheSizeLabel.stringValue = newString
-        clearThumbnailCacheBtn.isEnabled = cacheSize > 0
+        clearThumbnailCacheBtn.isEnabled = cacheSizeBytes > 0
       }
     }
   }

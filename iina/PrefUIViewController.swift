@@ -345,7 +345,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     _updateWindowGeometrySectionFromPrefs()
     updatePictureInPictureSection()
 
-    updateThumbnailCacheStat()
+    reloadThumbnailCacheStat()
     updateAspectControlsFromPrefs()
     updateCropControlsFromPrefs()
   }
@@ -871,9 +871,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     NSWorkspace.shared.open(URL(string: AppData.disableAnimationsHelpLink)!)
   }
 
-  private func updateThumbnailCacheStat() {
-    AppDelegate.shared.preferenceWindowController.indexingQueue.async { [self] in
-      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: ThumbnailCacheManager.shared.getCacheSize(), countStyle: .binary))B"
+  private func reloadThumbnailCacheStat() {
+    DispatchQueue.global(qos: .background).async { [self] in
+      let cacheSizeBytes = ThumbnailCacheManager.shared.getCacheSize()
+      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: cacheSizeBytes, countStyle: .binary))B"
       DispatchQueue.main.async { [self] in
         currentThumbCacheSizeTextField.stringValue = newString
       }
