@@ -3149,10 +3149,21 @@ class PlayerCore: NSObject {
       let didChange = vid != info.vid
 
       // sometimes still need to show videoView when no actual vid change occurred (if use has vid=0 or no vid tracks exist)
-      guard didChange || isShowVideoPendingInMiniPlayerCached else { return nil }
+      guard didChange || isShowVideoPendingInMiniPlayerCached else {
+        let shouldShowDefaultArt = vid == 0
+        log.verbose{"[GTF:\(ctx.name)] Already using vid=\(vid) & isShowVideoPendingInMiniPlayerCached=NO; shouldShowDefaultArt=\(shouldShowDefaultArt.yn)"}
+        // Patches a race condition caused by the call to show default art in `player.setVideoTrackDisabled`.
+        // It calls that before it commands mpv to set track to 0, to ensure that the user doesn't see a black
+        // canvas even for a moment. But that introduces a race condition which can result in default art being
+        // shown when it should not be, when the user toggles tracks multiple times quickly. Patch that here.
+        DispatchQueue.main.async { [self] in
+          windowController.updateDefaultArtVisibility(to: shouldShowDefaultArt)
+        }
+        return nil
+      }
 
       guard ctx.currentPlayback.state.isAtLeast(.loaded) else {
-        log.verbose{"[GTF:\(ctx.name)] vid changed to \(vid) but file is not loaded; ignoring"}
+        log.verbose{"[GTF:\(ctx.name)] vid changed to \(vid) but file is not loaded"}
         return nil
       }
 
@@ -3318,8 +3329,8 @@ class PlayerCore: NSObject {
       name = MPVOption.TrackSelection.vid
 
       if index == 0 {
-        log.verbose("Will set video track to 0; launching task to show defaultAlbumArt")
-        // Show *before* waiting for mpv confirmation, to avoid a moment of empty black window.
+        log.verbose("New track is 0: launching task to show defaultAlbumArt")
+        // Show default art *before* waiting for mpv confirmation, to avoid a moment of empty black window.
         windowController.animationPipeline.submit(.init{ [self] in
           // Do not show if in music mode & video is hidden.
           guard !windowController.currentLayout.isMusicMode || windowController.musicModeGeo.videoShown else { return }

@@ -363,7 +363,7 @@ struct GeometryTransform {
     /// by the transform  or by changes in `outputVidGeo`.
     /// Only `transformGeometry` should call this.
     fileprivate func buildApplyWindowTransformTasks() -> [IINAAnimation.Task] {
-      log.verbose{"[GTF:\(name)] Building transform tasks, mode=\(outputLayout.mode), vidTrackID=\(vidTrackID)"}
+      log.verbose{"[GTF:\(name)] Building 'apply' tasks, mode=\(outputLayout.mode), vidTrackID=\(vidTrackID)"}
 
       // There's no good animation for rotation (yet), so just do as little animation as possible in this case
       var duration: CGFloat = Constants.AnimationDuration.videoReconfig
@@ -380,7 +380,7 @@ struct GeometryTransform {
         } else {
           switch gtfSessionState {
           case .restoring(_):
-            log.verbose{"[GTF:\(name)] Restore is in progress: no transform needed"}
+            log.verbose{"[GTF:\(name)] Restore is in progress: no 'apply' tasks needed for windowed mode"}
             // still need post-transition task
             return [.instantTask(doPostApplyWork)]
 
@@ -412,7 +412,7 @@ struct GeometryTransform {
                                                                    intendedViewportSize: intendedViewportSize)
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
-        log.verbose{"[GTF:\(name)] Building windowed tasks: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(outputGeo)"}
+        log.verbose{"[GTF:\(name)] Building 'apply' tasks for windowed mode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputGeo)"}
         tasks = pwc.buildApplyWindowGeoTasks(from: inputGeoSet.windowed, to: outputGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
       case .fullScreenNormal:
@@ -422,12 +422,13 @@ struct GeometryTransform {
         let fsGeo = outputLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, outputVidGeo)
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
-        log.verbose{"[GTF:\(name)] Building FS tasks: defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(fsGeo)"}
+        log.verbose{"[GTF:\(name)] Building 'apply' tasks for FS mode: defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(fsGeo)"}
         tasks = pwc.buildApplyFullScreenGeoTasks(fsGeo: fsGeo, newWindowedGeo: newWinGeo, duration: duration, showDefaultArt: showDefaultArt)
 
       case .musicMode:
-        if case .creatingNew = gtfSessionState {
-          log.verbose{"[GTF:\(name)] Music mode already handled for opened window: \(inputGeoSet.musicMode)"}
+        if case .creatingNew = gtfSessionState,
+           case .restoring(_) = gtfSessionState {
+          log.verbose{"[GTF:\(name)] No 'apply' tasks needed; music mode already handled for sessState=\(gtfSessionState): \(inputGeoSet.musicMode)"}
           tasks = []
           break
         }
@@ -450,11 +451,12 @@ struct GeometryTransform {
 
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
-        log.verbose{"[GTF:\(name)] Building musicMode tasks: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(newMusicModeGeo)"}
-        tasks = pwc.buildApplyWindowGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo, duration: duration, showDefaultArt: showDefaultArt)
+        log.verbose{"[GTF:\(name)] Building 'apply' tasks for musicMode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(newMusicModeGeo)"}
+        tasks = pwc.buildApplyWindowGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo,
+                                             duration: duration, showDefaultArt: showDefaultArt)
       default:
         // Interactive mode. Should be handled by its special code. Don't step on it.
-        log.warn{"[GTF:\(name)] Invalid mode for TF: \(outputLayout.mode). Doing nothing"}
+        log.warn{"[GTF:\(name)] Invalid mode for 'apply': \(outputLayout.mode). Doing nothing"}
         tasks = []
         // Fall through and add post-work task
       }
