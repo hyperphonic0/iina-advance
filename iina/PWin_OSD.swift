@@ -493,7 +493,7 @@ extension PlayerWindowController {
     osd.trailingSide_TrailingConstraint = constraint
   }
 
-  func computeOffsetFromTop(for geometry: PWinGeometry, isLegacyFullScreen: Bool) -> CGFloat {
+  private func computeOffsetFromTop(for geometry: PWinGeometry, isLegacyFullScreen: Bool) -> CGFloat {
     var offsetFromTop: CGFloat = geometry.insideBars.top + 8  // offset from top of viewportView
     if isLegacyFullScreen {
       let screen = NSScreen.forScreenID(geometry.screenID)!
@@ -514,7 +514,7 @@ extension PlayerWindowController {
     return offsetFromTop
   }
 
-  // Update OSD (& Additional Info) views have correct offset from top of screen
+  /// Update OSD view & Additional Info view constraints so they have the correct offset from top of screen.
   func updateTopOffsetConstraints(for geometry: PWinGeometry, isLegacyFullScreen: Bool) {
     let newOffsetFromTop = computeOffsetFromTop(for: geometry, isLegacyFullScreen: isLegacyFullScreen)
 
