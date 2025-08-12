@@ -85,6 +85,7 @@ class PlaybackInfo {
   // When opening a sidebar and there is not enough space on screen, the viewport will be shrunk so that the sidebar can open while
   // keeping the window fully within the bounds of the screen. But when the sidebar is closed again, the viewport / window wiil be
   // expanded again to the preferred container size.
+  // FIXME: this currently barely does anything useful. Needs to be re-evaluated (or replaced)
   var intendedViewportSize: NSSize? = nil {
     didSet {
       log.trace{"Updated intendedViewportSize ≔ \(intendedViewportSize?.description ?? "nil")"}

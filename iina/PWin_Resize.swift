@@ -13,7 +13,7 @@ extension PlayerWindowController {
   // MARK: - Window Delegate: Zoom
 
   func windowShouldZoom(_ window: NSWindow, toFrame newFrame: NSRect) -> NSRect {
-    let newSize = resizeWindowSubviews(window, to: newFrame.size)
+    let newSize = resizeSubviews(of: window, to: newFrame.size)
     let newNewFrame = NSRect(origin: newFrame.origin, size: newSize)
     log.verbose{"WindowWillZoom: \(window.frame) → \(newFrame) → \(newNewFrame)"}
     return newNewFrame
@@ -25,14 +25,29 @@ extension PlayerWindowController {
 
   // MARK: - Window Delegate: Resize
 
-  /// NSWindowDelegate: windowWillResize
+  func windowWillStartLiveResize(_ notification: Notification) {
+    guard !isAnimatingLayoutTransition else { return }
+    log.trace{"WindowWillStartLiveResize"}
+    isLiveResizingWidth = nil  // reset this
+  }
+
+  func windowDidEndLiveResize(_ notification: Notification) {
+    log.trace{"WindowDidEndLiveResize"}
+  }
+
+  func windowDidResize(_ notification: Notification) {
+    // Trigger forced draws (plugs loophole for window resize when not covered by windowWillResize):
+    videoView.activateForcedRedraws()
+  }
+
+  /// NSWindowDelegate: `windowWillResize`: pretty important. Called by AppKit when it wants to resize the window.
   ///
   /// # Notes for other NSWindowDelegate notifications:
-  /// * `windowDidResize()`: Called after window is resized from (almost) any cause. Ca be called many times during every call to `window.setFrame()`.
-  /// Do not use because it interferes with animations in progress.
+  /// * `windowDidResize`: Called after window is resized from (almost) any cause. Ca be called many times during every call to
+  ///   `window.setFrame`. Do not use for anything too serious because it seems to sometimes fire during animations in progress.
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
-    // Trigger forced draws
+    // Trigger forced draws so that mpv can [try its best to] redraw the video without distortion during window resize:
     videoView.activateForcedRedraws()
 
     guard !isInWindowResizeDenialPeriod() else {
@@ -49,38 +64,11 @@ extension PlayerWindowController {
     // FIXME: this still doesn't look great. Maybe tweak VideoView constraints in music mode
     CATransaction.setAnimationDuration(0)
 
-    return resizeWindowSubviews(window, to: requestedSize)
+    return resizeSubviews(of: window, to: requestedSize)
   }
 
-  func restartWindowResizeDenialPeriod(_ reason: String) {
-    // Do not allow MacOS to change the window size
-    log.verbose{"Restarting window resize denial period due to: \(reason)"}
-    denyWindowResizePeriodStartTime = Date()
-  }
-
-  func isInWindowResizeDenialPeriod() -> Bool {
-    guard !currentLayout.isFullScreen else { return false }
-    let timeElapsed = Date().timeIntervalSince(denyWindowResizePeriodStartTime)
-    let denyWindowResize = timeElapsed - Constants.TimeInterval.denyWindowResizeTimeout < 0
-    log.trace{"Time elapsed=\(timeElapsed), timeout=\(Constants.TimeInterval.denyWindowResizeTimeout) → DenyWinResize=\(denyWindowResize.yn)"}
-    return denyWindowResize
-  }
-
-  func restartWindowScrollDenialPeriod() {
-    // Do not allow MacOS to change the window size
-    log.trace{"Restarting window scroll denial period"}
-    denyWindowScrollPeriodStartTime = Date()
-  }
-
-  func isInWindowScrollDenialPeriod() -> Bool {
-    guard !currentLayout.isFullScreen else { return false }
-    let timeElapsed = Date().timeIntervalSince(denyWindowScrollPeriodStartTime)
-    let denyWindowScroll = timeElapsed - Constants.TimeInterval.denyWindowScrollTimeout < 0
-    log.trace{"Time elapsed=\(timeElapsed), timeout=\(Constants.TimeInterval.denyWindowResizeTimeout) → DenyWinScroll=\(denyWindowScroll.yn)"}
-    return denyWindowScroll
-  }
-
-  func resizeWindowSubviews(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
+  /// Calculates the size to return for `windowWillResize` & `windowShouldZoom`. Also resizes the window's subviews appropriately.
+  private func resizeSubviews(of window: NSWindow, to requestedSize: NSSize) -> NSSize {
     let currentLayout = currentLayout
     let inLiveResize = window.inLiveResize
 
@@ -163,7 +151,7 @@ extension PlayerWindowController {
                                                              inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
       newWindowSize = newGeometry.windowFrame.size
 
-      /// This call is needed to update any necessary constraints & resize internal views
+      // Updates any necessary constraints & resize internal views (calls resizeWindowSubviews among other things)
       applyMusicModeGeo(newGeometry, setFrame: false, save: false)
     }
 
@@ -172,7 +160,7 @@ extension PlayerWindowController {
   }
 
   /**
-   This method should always be used instead of `setFrame()` to move & resize a `PlayerWindow` instance.
+   This method is used to move & resize a `PlayerWindow` instance. Always call this. Do not ever call `window.setFrame()`!
 
    By default, `setFrame()` has its own implicit animation, and this can create an undesirable effect when combined with other animations.
    This function uses a `0` duration animation via the `animationResizeTime` callback to effectively remove the implicit
@@ -196,7 +184,7 @@ extension PlayerWindowController {
   }
 
   /// Resizes *only* the subviews in the window, not the window frame. Updates other state needed when resizing window.
-  func resizeWindowSubviews(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
+  private func resizeWindowSubviews(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
     videoView.enterAsynchronousMode()
     if newGeometry.videoShown {
       if updateVideoView {
@@ -226,17 +214,6 @@ extension PlayerWindowController {
         setOSDViews()
       }
     }
-  }
-
-  /// NSWindowDelegate: start live resize
-  func windowWillStartLiveResize(_ notification: Notification) {
-    guard !isAnimatingLayoutTransition else { return }
-    log.trace{"WindowWillStartLiveResize"}
-    isLiveResizingWidth = nil  // reset this
-  }
-
-  func windowDidEndLiveResize(_ notification: Notification) {
-    log.trace{"WindowDidEndLiveResize"}
   }
 
   /// Explicitly changes the window frame & window subviews according to `newGeometry` (or generating a geometry if `nil`),
@@ -282,13 +259,38 @@ extension PlayerWindowController {
     player.events.emit(.windowResized, data: window.frame)
   }
 
-  // MARK: - Other window geometry functions
+  // MARK: - Window Resize Denial Period
+  // Trying to wrestle control of the window size away from MacOS. Hopefully someday a proper solution will be discovered...
 
-  func windowDidResize(_ notification: Notification) {
-    // Plug loophole for window resize when not covered by windowWillResize.
-    // Trigger forced draws
-    videoView.activateForcedRedraws()
+  func restartWindowResizeDenialPeriod(_ reason: String) {
+    // Do not allow MacOS to change the window size
+    log.verbose{"Restarting window resize denial period due to: \(reason)"}
+    denyWindowResizePeriodStartTime = Date()
   }
+
+  func isInWindowResizeDenialPeriod() -> Bool {
+    guard !currentLayout.isFullScreen else { return false }
+    let timeElapsed = Date().timeIntervalSince(denyWindowResizePeriodStartTime)
+    let denyWindowResize = timeElapsed - Constants.TimeInterval.denyWindowResizeTimeout < 0
+    log.trace{"Time elapsed=\(timeElapsed), timeout=\(Constants.TimeInterval.denyWindowResizeTimeout) → DenyWinResize=\(denyWindowResize.yn)"}
+    return denyWindowResize
+  }
+
+  func restartWindowScrollDenialPeriod() {
+    // Do not allow MacOS to change the window size
+    log.trace{"Restarting window scroll denial period"}
+    denyWindowScrollPeriodStartTime = Date()
+  }
+
+  func isInWindowScrollDenialPeriod() -> Bool {
+    guard !currentLayout.isFullScreen else { return false }
+    let timeElapsed = Date().timeIntervalSince(denyWindowScrollPeriodStartTime)
+    let denyWindowScroll = timeElapsed - Constants.TimeInterval.denyWindowScrollTimeout < 0
+    log.trace{"Time elapsed=\(timeElapsed), timeout=\(Constants.TimeInterval.denyWindowResizeTimeout) → DenyWinScroll=\(denyWindowScroll.yn)"}
+    return denyWindowScroll
+  }
+
+  // MARK: - Other window resize methods
 
   /// Changes video scale to `desiredVideoScale`, where a value of `1.0` is the video's native scale.
   func setVideoScale(to desiredVideoScale: Double) {
