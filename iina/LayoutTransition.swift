@@ -265,6 +265,10 @@ extension PlayerWindowController {
       return false
     }
 
+    var isOpeningVideoView: Bool {
+      !inputGeometry.videoShown && outputGeometry.videoShown
+    }
+
     var ΔWindowWidth: CGFloat {
       return outputGeometry.windowFrame.width - inputGeometry.windowFrame.width
     }

@@ -127,7 +127,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       if pwc.currentLayout.isMusicMode {
         pwc.log.verbose("Updating musicModeGeo from mag gesture state \(recognizer.state.rawValue)")
         let musicModeGeo = pwc.musicModeGeo.clone(windowFrame: finalGeo.windowFrame)
-        pwc.applyMusicModeGeo(musicModeGeo, setFrame: false, save: true)
+        pwc.applyMusicModeGeo(musicModeGeo, setFrame: false, animate: false, save: true)
       } else {
         pwc.log.verbose{"Updating windowedModeGeo & calling syncMpvWindowScale from mag gesture state \(recognizer.state.rawValue)"}
         pwc.windowedModeGeo = finalGeo
@@ -163,9 +163,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       let newMusicModeGeo = pwc.musicModeGeo.scalingVideo(toWidth: desiredWidth)
       pwc.log.verbose{"Scaling pinched video in music mode, scale=\(scale) reqWidth=\(desiredWidth) → geo=\(newMusicModeGeo)"}
 
-      IINAAnimation.disableAnimation {
-        pwc.applyMusicModeGeo(newMusicModeGeo, save: false)
-      }
+      pwc.applyMusicModeGeo(newMusicModeGeo, save: false)
       // Kind of clunky to convert to PWinGeometry, just to fit the function signature, then convert it back. But...could be worse.
       return newMusicModeGeo
     }

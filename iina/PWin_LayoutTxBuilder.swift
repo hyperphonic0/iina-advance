@@ -59,7 +59,7 @@ extension PlayerWindowController {
                                       to: outputLayout, to: outputGeometry,
                                       isWindowInitialLayout: isWindowInitialLayout)
 
-    // MiddleGeometry if needed (is applied after ClosePanels step)
+    // MiddleGeometry if needed (is applied at end of ClosePanels step)
     if let middleGeo = buildMiddleGeometry(forTransition: transition, inputGeoSet) {
       transition.middleGeometry = middleGeo.clone(isMiddleTransition: true)
     }
@@ -190,8 +190,8 @@ extension PlayerWindowController {
       updateHiddenViewsAndConstraints(transition)
     })
 
-    // Optional middle animation
-    // Extra animation when entering or exiting music mode: move & resize video frame
+    // Optional post-middle animation:
+    // When moving back or forth between windowedNormal & musicMode: scale & move the video frame for a nice transition animation.
     if transition.isTogglingMusicMode && !transition.isWindowInitialLayout {
       transition.tasks.append(.init(duration: closeOldPanelsDuration, timing: .easeInEaseOut) { [self] in
         let intermediateWindowFrame = transition.outputGeometry.videoFrameInScreenCoords
@@ -210,7 +210,9 @@ extension PlayerWindowController {
 
     // - Ending animations:
 
-    // Extra animation for exiting legacy full screen (to Native Windowed Mode)
+    // Extra animation for exiting legacy full screen to windowed mode. In Big Sur, AppKit needed an extra transaction & more
+    // time when animating around the camera housing, especially if also changing window `titled` style. This may no longer
+    // be the case, but it's not harming anything to leave this as-is for now.
     if useExtraAnimationForExitingLegacyFullScreen {
       let cameraToTotalFrameRatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
@@ -303,7 +305,8 @@ extension PlayerWindowController {
 
   /// Builds `outputGeometry`.
   private func buildOutputGeometry(inputLayout: LayoutState, inputGeometry: PWinGeometry, 
-                                   outputLayout: LayoutState, _ inputGeoSet: GeometrySet, isWindowInitialLayout: Bool) -> PWinGeometry {
+                                   outputLayout: LayoutState, _ inputGeoSet: GeometrySet,
+                                   isWindowInitialLayout: Bool) -> PWinGeometry {
 
     switch outputLayout.mode {
     case .windowedNormal:
@@ -351,7 +354,7 @@ extension PlayerWindowController {
   }
 
   /// Builds `middleGeometry`.
-  // Currently there are 4 bars. Each can be either inside or outside, exclusively.
+  /// Currently there are 4 bars. Each can be either inside or outside, exclusively.
   func buildMiddleGeometry(forTransition transition: LayoutTransition, _ inputGeoSet: GeometrySet) -> PWinGeometry? {
     if transition.isTogglingInteractiveMode {
       // - Interactive Mode

@@ -153,6 +153,7 @@ extension PlayerWindowController {
 
       // Updates any necessary constraints & resize internal views (calls resizeWindowSubviews among other things)
       applyMusicModeGeo(newGeometry, setFrame: false, save: false)
+//      resizeWindowSubviews(using: newGeometry, updateVideoView: true) TODO:
     }
 
     log.verbose{"[WinWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)"}
@@ -576,6 +577,9 @@ extension PlayerWindowController {
         let geoToApply = middleGeo ?? outputGeo
         applyMusicModeGeo(geoToApply, setFrame: true, save: save)
 
+        // This is only needed to achieve "fade-in" effect when opening window:
+        updateWindowBorderAndOpacity()
+
       } else if outputGeo.mode.isFullScreen {
         // Make sure video constraints are up to date, even in full screen.
         // Also remember that FS & windowed mode share the same screen.
@@ -610,14 +614,17 @@ extension PlayerWindowController {
         if isHidingVideo, pip.status == .notInPIP {
           updateWindowLayoutForVideoViewHidden(playlistShown: outputGeo.isMusicModePlaylistVisible)
         }
+
+        updateMusicModeButtonsVisibility(using: outputGeo)
       }
 
       log.verbose{"ApplyPWinGeo: Calling sendWindowScaleToMPV, viewportSize=\(outputGeo.viewportSize)"}
       sendWindowScaleToMPV(outputGeo.mpvWindowScale())
 
       isAnimatingLayoutTransition = false
-      // OSD messages may have been supressed because file was not done loading. Display now if needed:
-      updateUI(pullUpdatesFromMpv: true)  /// see note about OSD in `buildApplyPWinGeoTasks`
+      // OSD messages may have been supressed because isAnimatingLayoutTransition was set.
+      // Display now if needed (see note about OSD in `buildApplyPWinGeoTasks`)
+      updateUI(pullUpdatesFromMpv: true)
       if !outputGeo.mode.isFullScreen {
         player.events.emit(.windowSizeAdjusted, data: outputGeo.windowFrame)
       }
@@ -650,7 +657,7 @@ extension PlayerWindowController {
 
   /// Updates the current window and its subviews to match the given `PWinGeometry` in music mode.
   /// If `save` is true, updates `musicModeGeo`, prefs and saves player state.
-  func applyMusicModeGeo(_ geometry: PWinGeometry, setFrame: Bool = true, save: Bool = true) {
+  func applyMusicModeGeo(_ geometry: PWinGeometry, setFrame: Bool = true, animate: Bool = true, save: Bool = true) {
     guard geometry.mode == .musicMode else { Logger.fatal("Expected mode=musicMode for: \(geometry)") }
     let geometry = geometry.refitted()  // enforces internal constraints, and constrains to screen
     log.verbose{"ApplyMMGeo \(geometry), setFrame=\(setFrame.yn) save=\(save.yn)"}
@@ -671,12 +678,10 @@ extension PlayerWindowController {
       return
     }
 
-    miniPlayer.resetScrollingLabels()
-
     updateBottomBarHeight(to: geometry.outsideBars.bottom, bottomBarPlacement: .outsideViewport, mode: .musicMode)
 
     if setFrame {
-      setFrameAndUpdateWindowSubviews(using: geometry, updateVideoView: false)
+      setFrameAndUpdateWindowSubviews(using: geometry, updateVideoView: false, animate: animate)
     } else {
       resizeWindowSubviews(using: geometry, updateVideoView: false)
     }

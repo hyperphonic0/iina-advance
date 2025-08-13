@@ -1753,8 +1753,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// so that full video can be seen during interactive mode.
   private func uncropThenEnterInteractiveMode(cropFilter: MPVFilter, mode: PlayerWindowMode, uncroppedVideoGeo: VideoGeometry) {
 
-    var tasks: [IINAAnimation.Task] = []
-
     // FIXME: need to un-rotate while in interactive mode
     let videoSizeRaw = uncroppedVideoGeo.videoSizeRaw
     let prevCropBox = cropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
@@ -1773,7 +1771,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
                        insideTop: 0, insideTrailing: 0,
                        insideBottom: 0, insideLeading: 0,
                        video: uncroppedVideoGeo,
-                       pinWidthOrHeightIfAtMax: !lockViewportToVideoSize).refitted()
+                       pinWidthOrHeightIfAtMax: false).refitted()
 
     let uncroppedClosedBarsGeo: PWinGeometry
     if lockViewportToVideoSize {
@@ -1812,6 +1810,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
     }
 
+    var tasks: [IINAAnimation.Task] = []
+
     if currentLayout.mode == .windowedNormal {
       // FIXME: is this forgetting to close the sidebar??
       // TODO: integrate this task into LayoutTransition build
@@ -1823,7 +1823,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     // supply an override for windowedModeGeo here, because it won't be set until the animation above executes
     tasks.append(contentsOf: buildTasksToEnterInteractiveMode(.crop, geoOverride))
-
     animationPipeline.submit(tasks)
   }
 
@@ -2299,14 +2298,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  // These are the 2 buttons (Close & Exit) which replace the 3 traffic light title bar buttons in music mode.
-  // There are 2 variants because of different styling needs depending on whether videoView is visible
-  func updateMusicModeButtonsVisibility(using musicModeGeo: PWinGeometry) {
-    precondition(musicModeGeo.mode == .musicMode,
-                 "PWinGeometry.updateMusicModeButtonsVisibility requires musicMode geo: \(musicModeGeo)")
-    if isInMiniPlayer {
+  /// These are the 2 buttons (Close & Exit) which replace the 3 traffic light title bar buttons in music mode.
+  /// There are 2 variants because of different styling needs depending on whether videoView is visible
+  func updateMusicModeButtonsVisibility(using targetGeo: PWinGeometry) {
+    if targetGeo.mode == .musicMode {
       // Show only in music mode when video is visible
-      let showCloseButtonOverVideo = musicModeGeo.videoShown
+      let showCloseButtonOverVideo = targetGeo.videoShown
       closeButtonBackgroundViewVE.isHidden = !showCloseButtonOverVideo
 
       // Show only in music mode when video is hidden

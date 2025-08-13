@@ -464,7 +464,6 @@ extension PlayerWindowController {
 
     leadingSidebarView.idString = "LeadingSidebarView"
     leadingSidebarView.blendingMode = .withinWindow
-    leadingSidebarView.material = .toolTip
     leadingSidebarView.state = .active
     leadingSidebarView.translatesAutoresizingMaskIntoConstraints = false
     leadingSidebarView.autoresizesSubviews = false
@@ -489,7 +488,6 @@ extension PlayerWindowController {
 
     trailingSidebarView.idString = "TrailingSidebarView"
     trailingSidebarView.blendingMode = .withinWindow
-    trailingSidebarView.material = .toolTip
     trailingSidebarView.state = .active
     trailingSidebarView.translatesAutoresizingMaskIntoConstraints = false
     trailingSidebarView.autoresizesSubviews = false

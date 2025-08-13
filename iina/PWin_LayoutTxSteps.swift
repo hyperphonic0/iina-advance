@@ -463,25 +463,8 @@ extension PlayerWindowController {
       topBarView.removeFromSuperview()
     }
 
-    if transition.isWindowInitialLayout && transition.outputGeometry.videoShown {
+    if transition.isWindowInitialLayout || transition.isOpeningVideoView {
       addVideoViewToWindow()
-      if transition.isEnteringInteractiveMode {
-        // Need videoView to have superview before adding shadow
-        videoView.addShadowForInteractiveMode()
-      }
-    }
-
-    if transition.isExitingMusicMode {
-      // If exiting music mode, need to restore views early in this step
-      log.verbose{"[\(transition.name)] Cleaning up for music mode exit"}
-      miniPlayer.view.removeFromSuperview()
-
-      // Make sure to reset constraints for OSD
-      miniPlayer.hideControllerButtons()
-      closeButtonView.isHidden = true
-      if !transition.inputGeometry.videoShown {
-        addVideoViewToWindow()
-      }
     }
 
     // - Bottom Bar
@@ -582,7 +565,7 @@ extension PlayerWindowController {
     // Need to add additionalInfo, OSD before changing sidebars
     updateOSDConstraints(outputLayout, transition.outputGeometry, skipAddConstraints: true)
 
-    // Sidebars
+    // - Sidebars
 
     /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
     if transition.isClosingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
@@ -631,29 +614,30 @@ extension PlayerWindowController {
     if isOpeningOrClosingAnySidebar {
       log.verbose{"[\(transition.name)] Sidebars will be open: LeadingSidebar=\(leadingSidebarWillBeOpen.yn) TrailingSidebar=\(trailingSidebarWillBeOpen.yn)"}
 
-      if !leadingSidebarWillBeOpen {
+      if leadingSidebarWillBeOpen {
+        if outputLayout.leadingSidebarPlacement == .insideViewport {
+          leadingSidebarView.material = .menu
+        } else {
+          leadingSidebarView.material = .toolTip
+        }
+      } else {  // leading sidebar closed
         leadingSidebarConstraints = nil  // disables constraints
         leadingSidebarView.removeFromSuperview()
       }
-      if !trailingSidebarWillBeOpen {
+
+      if trailingSidebarWillBeOpen {
+        if outputLayout.trailingSidebarPlacement == .insideViewport {
+          trailingSidebarView.material = .menu
+        } else {
+          trailingSidebarView.material = .toolTip
+        }
+      } else {  // trailing sidebar closed
         trailingSidebarConstraints = nil  // disables constraints
         trailingSidebarView.removeFromSuperview()
       }
     }
 
-    if outputLayout.leadingSidebarPlacement == .insideViewport {
-      leadingSidebarView.material = .menu
-    } else {
-      leadingSidebarView.material = .toolTip
-    }
-
-    if outputLayout.trailingSidebarPlacement == .insideViewport {
-      trailingSidebarView.material = .menu
-    } else {
-      trailingSidebarView.material = .toolTip
-    }
-
-    // - Music mode (entering or already in)
+    // - Music mode: entering or continuing)
 
     // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
     if transition.isWindowInitialLayout || transition.isTogglingMusicMode {
@@ -706,6 +690,14 @@ extension PlayerWindowController {
         // Update music mode UI
         updateTitle()
       }
+    } else if transition.isExitingMusicMode {
+      // If exiting music mode, need to restore views early in this step
+      log.verbose{"[\(transition.name)] Cleaning up for music mode exit"}
+      miniPlayer.view.removeFromSuperview()
+
+      // Make sure to reset constraints for OSD
+      miniPlayer.hideControllerButtons()
+      closeButtonView.isHidden = true
     }
 
     if transition.outputLayout.isMusicMode {
@@ -720,7 +712,7 @@ extension PlayerWindowController {
     }
 
     // Need to call this for initial layout also:
-    updateMusicModeButtonsVisibility(using: musicModeGeo)
+    updateMusicModeButtonsVisibility(using: transition.outputGeometry)
 
     // OSC
 
@@ -922,6 +914,9 @@ extension PlayerWindowController {
       }
 
       if transition.isEnteringInteractiveMode {
+        // Need videoView to have superview before adding shadow
+        videoView.addShadowForInteractiveMode()
+
         // Entering interactive mode
         setEmptySpaceColor(to: Constants.Color.interactiveModeBackground)
 
