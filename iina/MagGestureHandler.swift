@@ -183,7 +183,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     pwc.player.info.intendedViewportSize = intendedGeo.viewportSize
 
     let newGeo = intendedGeo.refitted(using: .stayInside)
-    pwc.resizeWindowImmediately(using: newGeo)
+    pwc.resizeWindowInstantly(using: newGeo)
     return newGeo
   }
 }

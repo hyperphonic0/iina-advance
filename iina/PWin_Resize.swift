@@ -160,7 +160,8 @@ extension PlayerWindowController {
   }
 
   /**
-   This method is used to move & resize a `PlayerWindow` instance. Always call this. Do not ever call `window.setFrame()`!
+   This method is used to move & resize a `PlayerWindow`. It performs additional work needed beyond what `setFrame` provides.
+   Do not ever call `PlayerWindow.setFrame()` directly - call this instead!
 
    By default, `setFrame()` has its own implicit animation, and this can create an undesirable effect when combined with other animations.
    This function uses a `0` duration animation via the `animationResizeTime` callback to effectively remove the implicit
@@ -169,29 +170,50 @@ extension PlayerWindowController {
    • It will still animate if used inside an `NSAnimationContext` or `IINAAnimation.Task` with non-zero duration.
    • If `notify` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
    */
-  func setFrameAndUpdateWindowSubviews(using geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
-    let window = (window as? PlayerWindow)!
+  func setFrameAndUpdateWindowSubviews(using geometry: PWinGeometry,
+                                       updateVideoView: Bool = true, notify: Bool = true,
+                                       submitUpdate: Bool = false) {
+
     resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
 
-    guard !window.frame.equalTo(geometry.windowFrame) else {
-      log.verbose("[PWin.setFrame] No change to windowFrame; returning")
-      return
+    let window = (window as? PlayerWindow)!
+    if window.frame.equalTo(geometry.windowFrame) {
+      log.verbose("[PWin.setFrame] No change to windowFrame")
+    } else {
+      log.verbose{"[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)"}
+      window.useZeroDurationForNextResize = true
+      window.setFrame(geometry.windowFrame, display: true, animate: notify)
+
+      player.events.emit(.windowResized, data: window.frame)
     }
 
-    log.verbose{"[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)"}
-    window.useZeroDurationForNextResize = true
-    window.setFrame(geometry.windowFrame, display: true, animate: notify)
+    if submitUpdate {
+      let newWindScale = geometry.mpvWindowScale()
+      log.verbose{"[PWin.setFrame] calling sendWindowScaleToMPV with scale=\(newWindScale)"}
+      sendWindowScaleToMPV(newWindScale)
+
+      player.saveState()
+    }
   }
 
-  /// Resizes *only* the subviews in the window, not the window frame. Updates other state needed when resizing window.
+  /// Intended to be used only for resizing one or more of PlayerWindow's subviews, or to accomodate a window resize.
+  /// Resizes *only* the subviews in the window, not the window frame. May update other state needed relating to resize.
+  ///
+  /// This method cannot handle complex layout changes. For that, use a `LayoutTransition` (see `PWin_LayoutTxBuilder.swift`).
   private func resizeWindowSubviews(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
     videoView.enterAsynchronousMode()
+    videoView.activateForcedRedraws()
+
+    // These may no longer be aligned correctly. Just hide them
+    hideSeekPreviewImmediately()
+
     if newGeometry.videoShown {
       if updateVideoView {
         // Not sure if this helps fix the aspect constraint transition
         videoView.apply(newGeometry)
       }
-      sendWindowScaleToMPV(newGeometry.mpvWindowScale())
+      // FIXME: figure out whether to include this here
+//      sendWindowScaleToMPV(newGeometry.mpvWindowScale())
 
       // Update floating control bar position if applicable
       adjustFloatingControllerOrigin(for: newGeometry)
@@ -217,46 +239,29 @@ extension PlayerWindowController {
   }
 
   /// Explicitly changes the window frame & window subviews according to `newGeometry` (or generating a geometry if `nil`),
-  /// without animation (i.e., immediately).
-  /// Do not call in response to WindowWillResize, because this can call `setFrameImmediately`.
-  /// Do not call if layout needs to change. For that, use a `LayoutTransition`.
+  /// using no animation (i.e., instantly).
   ///
-  /// Use with non-nil `newGeometry` for: (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or moved.
-  /// Not animated.
+  /// Use with non-nil `newGeometry` for:
+  /// 1. Pinch-to-zoom
+  /// 2. Resizing outside sidebars, in which case the whole window needs to be resized or moved.
+  ///
   /// Can be used in windowed or full screen modes.
   /// Can be used in music mode only if playlist is hidden.
-  func resizeWindowImmediately(using newGeometry: PWinGeometry? = nil) {
-    videoView.activateForcedRedraws()
+  ///
+  /// Do not call in response to WindowWillResize, because this can call `setFrameImmediately`.
+  /// Do not call if layout needs to change in a complex way. For that, use a `LayoutTransition`.
+  func resizeWindowInstantly(using newGeometry: PWinGeometry) {
     guard let window else { return }
-
-    let layout = currentLayout
-    let isTransientResize = newGeometry != nil
-    let isFullScreen = layout.isFullScreen
-    log.verbose{"[ResizeWindInstantly] fs=\(isFullScreen.yn) live=\(window.inLiveResize.yn) geo=\(newGeometry?.description ?? "nil")"}
-
-    // These may no longer be aligned correctly. Just hide them
-    hideSeekPreviewImmediately()
-
-    let newGeo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, geo.video)
+    let isFullScreen = currentLayout.isFullScreen
+    log.verbose{"[ResizeWindInstantly] fs=\(isFullScreen.yn) \(newGeometry)"}
 
     if isFullScreen {
       // custom FS
-      resizeWindowSubviews(using: newGeo)
+      resizeWindowSubviews(using: newGeometry)
     } else {
       /// This will also update `videoView`
-      setFrameAndUpdateWindowSubviews(using: newGeo, notify: false)
+      setFrameAndUpdateWindowSubviews(using: newGeometry, notify: false)
     }
-
-    if !isFullScreen && !isTransientResize {
-      player.saveState()
-      if layout.mode == .windowedNormal {
-        let newWindScale = newGeo.mpvWindowScale()
-        log.verbose{"[ResizeWindInstantly] calling sendWindowScaleToMPV with scale=\(newWindScale)"}
-        sendWindowScaleToMPV(newWindScale)
-      }
-    }
-
-    player.events.emit(.windowResized, data: window.frame)
   }
 
   // MARK: - Window Resize Denial Period

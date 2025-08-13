@@ -1017,7 +1017,7 @@ extension PlayerWindowController {
     }
 
     if let newGeo {
-      resizeWindowImmediately(using: newGeo)
+      resizeWindowInstantly(using: newGeo)
 
       switch currentLayout.mode {
       case .windowedNormal:
