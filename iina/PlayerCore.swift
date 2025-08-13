@@ -588,6 +588,13 @@ class PlayerCore: NSObject {
             let loopMode = Preference.DefaultRepeatMode(rawValue: Preference.integer(for: .defaultRepeatMode))
             setLoopMode(loopMode == .file ? .file : .playlist)
           }
+
+          if let loopFile = mpv.getString(MPVOption.PlaybackControl.loopFile) {
+            info.loopFile = loopFile
+          }
+          if let loopPlaylist = mpv.getString(MPVOption.PlaybackControl.loopPlaylist) {
+            info.loopPlaylist = loopPlaylist
+          }
         }
       }
     }
@@ -1283,11 +1290,18 @@ class PlayerCore: NSObject {
   func getLoopMode() -> LoopMode {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     let loopFileStatus = mpv.getString(MPVOption.PlaybackControl.loopFile)
+    let loopPlaylistStatus = mpv.getString(MPVOption.PlaybackControl.loopPlaylist)
+    if let loopFileStatus {
+      info.loopFile = loopFileStatus
+    }
+    if let loopPlaylistStatus {
+      info.loopPlaylist = loopPlaylistStatus
+    }
+
     guard loopFileStatus != "inf" else { return .file }
     if let loopFileStatus = loopFileStatus, let count = Int(loopFileStatus), count != 0 {
       return .file
     }
-    let loopPlaylistStatus = mpv.getString(MPVOption.PlaybackControl.loopPlaylist)
     guard loopPlaylistStatus != "inf", loopPlaylistStatus != "force" else { return .playlist }
     guard let loopPlaylistStatus = loopPlaylistStatus, let count = Int(loopPlaylistStatus) else {
       return .off
@@ -2472,7 +2486,7 @@ class PlayerCore: NSObject {
   /// These options currently include fullscreen and ontop.
   private func checkUnsyncedWindowOptions() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard windowController.loaded else { return }
+    guard windowController.loaded, isActive else { return }
 
     syncFullScreenState()
     let ontop = mpv.getFlag(MPVOption.Window.ontop)

@@ -94,6 +94,8 @@ class PlaybackInfo {
 
   // MARK: - Filters & Equalizers
 
+  var videoFilters: [MPVFilter] = []
+  // Consider phasing these out...
   var flipFilter: MPVFilter?
   var mirrorFilter: MPVFilter?
   var audioEqFilter: MPVFilter?
@@ -121,7 +123,10 @@ class PlaybackInfo {
   var hue: Int = 0
 
   var volume: Double = 50
+  var volumeMax: Int = 50
   var isMuted: Bool = false
+
+  var audioFilters: [MPVFilter] = []
 
   // time
   var audioDelay: Double = 0
@@ -134,6 +139,10 @@ class PlaybackInfo {
   var abLoopStatus: LoopStatus = .cleared
   var abLoopA: Double = 0
   var abLoopB: Double = 0
+
+  // mpv properties (cached here for easier use by PlayerSaveState)
+  var loopFile: String = Constants.String.mpvNo
+  var loopPlaylist: String = Constants.String.mpvNo
 
   var playSpeed: Double = 1.0
 

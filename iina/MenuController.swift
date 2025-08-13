@@ -592,7 +592,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   func updateSavedFiltersMenu(type: String) {
     guard let player = PlayerCore.active else { return }
-    let filters = player.mpv.getFilters(type)
+    let filters = type == MPVProperty.vf ? player.info.videoFilters : player.info.audioFilters
     let menu: NSMenu! = type == MPVProperty.vf ? savedVideoFiltersMenu : savedAudioFiltersMenu
     for item in menu.items {
       if let string = (item.representedObject as? String), let asObject = MPVFilter(rawString: string) {

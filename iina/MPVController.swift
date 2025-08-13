@@ -336,22 +336,24 @@ class MPVController: NSObject {
 
   // MARK: - Filters
 
-  /// Get filter. only "af" or "vf" is supported for name
-  func getFilters(_ name: String) -> [MPVFilter] {
-    Logger.ensure(name == MPVProperty.vf || name == MPVProperty.af, "getFilters() do not support \(name)!")
+  /// Get all filters of the given type. only "af" or "vf" is supported for filterType
+  func getFilters(_ filterType: String) -> [MPVFilter] {
+    assert(filterType == MPVProperty.vf || filterType == MPVProperty.af, "getFilters() does not support \(filterType)!")
 
-    var result: [MPVFilter] = []
+    var filters: [MPVFilter] = []
     var node = mpv_node()
-    mpv_get_property(mpv, name, MPV_FORMAT_NODE, &node)
-    guard let filters = (try? MPVNode.parse(node)!) as? [[String: Any?]] else { return result }
-    filters.forEach { f in
+    mpv_get_property(mpv, filterType, MPV_FORMAT_NODE, &node)
+    guard let filterNodes = (try? MPVNode.parse(node)!) as? [[String: Any?]] else { return filters }
+    
+    filterNodes.forEach { f in
       let filter = MPVFilter(name: f["name"] as! String,
                              label: f["label"] as? String,
                              params: f["params"] as? [String: String])
-      result.append(filter)
+      filters.append(filter)
     }
     mpv_free_node_contents(&node)
-    return result
+
+    return filters
   }
 
   /// Remove the audio or video filter at the given index in the list of filters.

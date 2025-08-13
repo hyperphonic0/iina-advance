@@ -48,6 +48,7 @@ extension PlayerCore {
         info.audioEqFilter = filter
       }
     }
+    info.audioFilters = audioFilters
     return audioFilters
   }
 
@@ -179,6 +180,7 @@ extension PlayerCore {
         break
       }
     }
+    info.videoFilters = videoFilters
 
     return videoFilters
   }

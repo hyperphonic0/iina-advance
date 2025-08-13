@@ -348,21 +348,23 @@ struct PlayerSaveState: CustomStringConvertible {
       props[PropName.abLoopB.rawValue] = abLoopB.stringMaxFrac6
     }
 
-    // FIXME: these mpv calls are in the wrong queue! Should cache these & use the cached values!
+    props[PropName.loopPlaylist.rawValue] = info.loopFile
+    props[PropName.loopFile.rawValue] = info.loopPlaylist
 
-    let maxVolume = player.mpv.getInt(MPVOption.Audio.volumeMax)
-    if maxVolume != 100 {
-      props[PropName.maxVolume.rawValue] = String(maxVolume)
+    let volumeMax = info.volumeMax
+    if volumeMax != 100 {
+      props[PropName.maxVolume.rawValue] = String(volumeMax)
     }
 
-    props[PropName.videoFilters.rawValue] = player.mpv.getString(MPVProperty.vf)
-    props[PropName.audioFilters.rawValue] = player.mpv.getString(MPVProperty.af)
+    let videoFiltersCSV = PlayerSaveState.toCSV(mpvFilters: player.info.videoFilters)
+    props[PropName.videoFilters.rawValue] = videoFiltersCSV
+    let audioFiltersCSV = PlayerSaveState.toCSV(mpvFilters: player.info.audioFilters)
+    props[PropName.audioFilters.rawValue] = audioFiltersCSV
 
-    let vfDisabledCSV = player.info.videoFiltersDisabled.values.map({$0.stringFormat}).joined(separator: ",")
-    props[PropName.videoFiltersDisabled.rawValue] = vfDisabledCSV
+    // Remember: mpv itself uses comma as delimiter between filters in a serialized string (see the mpv docs).
+    let videoFiltersDisabled = PlayerSaveState.toCSV(mpvFilters: player.info.videoFiltersDisabled.values)
+    props[PropName.videoFiltersDisabled.rawValue] = videoFiltersDisabled
 
-    props[PropName.loopPlaylist.rawValue] = player.mpv.getString(MPVOption.PlaybackControl.loopPlaylist)
-    props[PropName.loopFile.rawValue] = player.mpv.getString(MPVOption.PlaybackControl.loopFile)
     return props
   }
 
@@ -477,6 +479,11 @@ struct PlayerSaveState: CustomStringConvertible {
     return nil
   }
 
+  func mpvFilterList(for name: PropName) -> [MPVFilter]? {
+    guard let filterListCSV = string(for: name) else { return nil }
+    return filterListCSV.split(separator: ",").compactMap({MPVFilter(rawString: String($0))})
+  }
+
   static private func string(for name: PropName, _ properties: [String: Any]) -> String? {
     return properties[name.rawValue] as? String
   }
@@ -498,6 +505,10 @@ struct PlayerSaveState: CustomStringConvertible {
       return Double(doubleString)
     }
     return nil
+  }
+
+  static private func toCSV(mpvFilters: any Collection<MPVFilter> ) -> String {
+    mpvFilters.map({$0.stringFormat}).joined(separator: ",")
   }
 
   /// Returns IINA-Advance build number associated with stored player's properties (param).
@@ -734,9 +745,8 @@ struct PlayerSaveState: CustomStringConvertible {
     }
     player.log.verbose("Restored playlist info for \(info.currentVideosInfo.count) videos, \(info.currentSubsInfo.count) subs")
 
-    if let videoFiltersDisabledCSV = string(for: .videoFiltersDisabled) {
-      let filters = videoFiltersDisabledCSV.split(separator: ",").compactMap({MPVFilter(rawString: String($0))})
-      for filter in filters {
+    if let videoFiltersDisabled = mpvFilterList(for: .videoFiltersDisabled) {
+      for filter in videoFiltersDisabled {
         if let label = filter.label {
           info.videoFiltersDisabled[label] = filter
         } else {
@@ -841,8 +851,9 @@ struct PlayerSaveState: CustomStringConvertible {
       player.info.isMuted = isMuted
       mpv.setFlag(MPVOption.Audio.mute, isMuted)
     }
-    if let maxVolume = int(for: .maxVolume) {
-      mpv.setInt(MPVOption.Audio.volumeMax, maxVolume)
+    if let volumeMax = int(for: .maxVolume) {
+      player.info.volumeMax = volumeMax
+      mpv.setInt(MPVOption.Audio.volumeMax, volumeMax)
     }
     if let audioDelay = double(for: .audioDelay) {
       mpv.setDouble(MPVOption.Audio.audioDelay, audioDelay)
@@ -869,9 +880,11 @@ struct PlayerSaveState: CustomStringConvertible {
       mpv.setDouble(MPVOption.Subtitles.secondarySubPos, sub2Pos)
     }
     if let loopPlaylist = string(for: .loopPlaylist) {
+      player.info.loopPlaylist = loopPlaylist
       mpv.setString(MPVOption.PlaybackControl.loopPlaylist, loopPlaylist)
     }
     if let loopFile = string(for: .loopFile) {
+      player.info.loopFile = loopFile
       mpv.setString(MPVOption.PlaybackControl.loopFile, loopFile)
     }
     if let abLoopA = double(for: .abLoopA), abLoopA > 0.0 {
