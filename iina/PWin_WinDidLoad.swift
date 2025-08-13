@@ -134,13 +134,8 @@ extension PlayerWindowController {
       if let priorState = priorStateIfRestoring {
         if let layoutSpec = priorState.layoutSpec {
           // Preemptively set window frames to prevent windows from "jumping" during restore
-          if layoutSpec.mode == .musicMode {
-            let pwinGeo = priorState.geoSet.musicMode
-            setFrameAndUpdateWindowSubviews(using: pwinGeo, notify: false)
-          } else {
-            let pwinGeo = priorState.geoSet.windowed
-            setFrameAndUpdateWindowSubviews(using: pwinGeo, notify: false)
-          }
+          let pwinGeo = layoutSpec.mode == .musicMode ? priorState.geoSet.musicMode : priorState.geoSet.windowed
+          setFrameAndUpdateWindowSubviews(using: pwinGeo, animate: false)
         }
 
         updateDefaultArtVisibility(to: player.info.isVideoTrackSelected)

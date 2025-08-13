@@ -852,6 +852,17 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert((bottom ?? 0) >= 0)
     assert((trailing ?? 0) >= 0)
 
+    let newOutsideBars = MarginQuad(top: top ?? outsideBars.top,
+                                    trailing: trailing ?? outsideBars.trailing,
+                                    bottom: bottom ?? outsideBars.bottom,
+                                    leading: leading ?? outsideBars.leading)
+
+    guard !mode.isFullScreen else {
+      let outputGeo = clone(outsideBars: newOutsideBars)
+      log.verbose{"[ResizeBars] Mode is FS (\(mode)): Returning same windowFrame but with closed bars"}
+      return outputGeo
+    }
+
     let ΔTop = (top ?? self.outsideBars.top) - self.outsideBars.top
     let ΔTrailing = (trailing ?? self.outsideBars.trailing) - self.outsideBars.trailing
     let ΔBottom = (bottom ?? self.outsideBars.bottom) - self.outsideBars.bottom
@@ -902,14 +913,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     // If new windowFrame is slightly off screen, so fall back to current screenID.
     // Also fall back to default screen if current screenID is defunct:
     let newScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: newWindowFrame, fallbackScreenID: screenID)
-    let newOutsideBars = MarginQuad(top: top ?? outsideBars.top,
-                                    trailing: trailing ?? outsideBars.trailing,
-                                    bottom: bottom ?? outsideBars.bottom,
-                                    leading: leading ?? outsideBars.leading)
 
-    let resizedBarsGeo = clone(windowFrame: newWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars)
-    log.verbose{"[ResizeBars] ΔW=\(ΔW.logStr) ΔH=\(ΔH.logStr) pinMax=\(pinWidthOrHeightIfAtMax.yn) moveToKeepInScreen:\(resizedBarsGeo.screenFit.shouldMoveWindowToKeepInContainer.yesno)"}
-    return resizedBarsGeo
+    let outputGeo = clone(windowFrame: newWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars)
+    log.verbose{"[ResizeBars] ΔW=\(ΔW.logStr) ΔH=\(ΔH.logStr) pinMax=\(pinWidthOrHeightIfAtMax.yn) moveToKeepInScreen:\(screenFit.shouldMoveWindowToKeepInContainer.yesno)"}
+    return outputGeo
   }
 
   /// Like `withResizedOutsideBars`, but can resize the inside bars at the same time.

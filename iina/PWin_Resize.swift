@@ -168,23 +168,27 @@ extension PlayerWindowController {
    default animation.
    • Also resizes window subviews.
    • It will still animate if used inside an `NSAnimationContext` or `IINAAnimation.Task` with non-zero duration.
-   • If `notify` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
+   • If `animate` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
    */
   func setFrameAndUpdateWindowSubviews(using geometry: PWinGeometry,
-                                       updateVideoView: Bool = true, notify: Bool = true,
+                                       updateVideoView: Bool = true, animate: Bool = true,
                                        submitUpdate: Bool = false) {
 
     resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
 
-    let window = (window as? PlayerWindow)!
-    if window.frame.equalTo(geometry.windowFrame) {
-      log.verbose("[PWin.setFrame] No change to windowFrame")
+    if geometry.mode.isFullScreen && geometry.screenFit == .nativeFullScreen {
+      log.verbose("[PWin.setFrame] Geometry is native fullscreen; will not modify window.frame")
     } else {
-      log.verbose{"[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)"}
-      window.useZeroDurationForNextResize = true
-      window.setFrame(geometry.windowFrame, display: true, animate: notify)
+      let window = (window as? PlayerWindow)!
+      if window.frame.equalTo(geometry.windowFrame) {
+        log.verbose("[PWin.setFrame] No change to windowFrame")
+      } else {
+        log.verbose{"[PWin.setFrame] Setting frame=\(geometry.windowFrame) animate=\(animate.yn)"}
+        window.useZeroDurationForNextResize = true
+        window.setFrame(geometry.windowFrame, display: true, animate: animate)
 
-      player.events.emit(.windowResized, data: window.frame)
+        player.events.emit(.windowResized, data: window.frame)
+      }
     }
 
     if submitUpdate {
@@ -235,32 +239,6 @@ extension PlayerWindowController {
       if player.info.isFileLoadedAndSized {
         setOSDViews()
       }
-    }
-  }
-
-  /// Explicitly changes the window frame & window subviews according to `newGeometry` (or generating a geometry if `nil`),
-  /// using no animation (i.e., instantly).
-  ///
-  /// Use with non-nil `newGeometry` for:
-  /// 1. Pinch-to-zoom
-  /// 2. Resizing outside sidebars, in which case the whole window needs to be resized or moved.
-  ///
-  /// Can be used in windowed or full screen modes.
-  /// Can be used in music mode only if playlist is hidden.
-  ///
-  /// Do not call in response to WindowWillResize, because this can call `setFrameImmediately`.
-  /// Do not call if layout needs to change in a complex way. For that, use a `LayoutTransition`.
-  func resizeWindowInstantly(using newGeometry: PWinGeometry) {
-    guard let window else { return }
-    let isFullScreen = currentLayout.isFullScreen
-    log.verbose{"[ResizeWindInstantly] fs=\(isFullScreen.yn) \(newGeometry)"}
-
-    if isFullScreen {
-      // custom FS
-      resizeWindowSubviews(using: newGeometry)
-    } else {
-      /// This will also update `videoView`
-      setFrameAndUpdateWindowSubviews(using: newGeometry, notify: false)
     }
   }
 
@@ -620,9 +598,6 @@ extension PlayerWindowController {
           windowedModeGeo = outputGeo
           player.saveState()
         }
-
-        log.verbose{"ApplyPWinGeo: Calling sendWindowScaleToMPV, viewportSize=\(outputGeo.viewportSize)"}
-        sendWindowScaleToMPV(outputGeo.mpvWindowScale())
       }
     }))
 
@@ -636,6 +611,9 @@ extension PlayerWindowController {
           updateWindowLayoutForVideoViewHidden(playlistShown: outputGeo.isMusicModePlaylistVisible)
         }
       }
+
+      log.verbose{"ApplyPWinGeo: Calling sendWindowScaleToMPV, viewportSize=\(outputGeo.viewportSize)"}
+      sendWindowScaleToMPV(outputGeo.mpvWindowScale())
 
       isAnimatingLayoutTransition = false
       // OSD messages may have been supressed because file was not done loading. Display now if needed:

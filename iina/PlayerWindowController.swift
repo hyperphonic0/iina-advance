@@ -1709,14 +1709,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
 
   func enterInteractiveMode(_ mode: InteractiveMode) {
+    // TODO: this line must be here (and not in a task below) or the transition glitches out. Why??
     let currentLayout = currentLayout
+
     // Especially needed to avoid duplicate transitions
     guard currentLayout.canEnterInteractiveMode else { return }
 
     // Can't work with PiP. For now just exit it and don't wait. The animation could be better but it's better
     // than entering a buggy state.
     animationPipeline.submitInstantTask{ [self] in
-
       if pip.status != .notInPIP {
         exitPIP()
       }
@@ -1732,31 +1733,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       // TODO: use key binding interceptor to support ESC and ENTER keys for interactive mode
 
-      let cropFilter: MPVFilter?
-      let uncroppedVideoGeo: VideoGeometry
-      if mode == .crop, let vf = oldVideoGeo.cropFilter {
-        log.debug{"Crop mode requested. Will remove existing crop filter: \(vf.stringFormat.quoted)"}
-        cropFilter = vf
-        uncroppedVideoGeo = oldVideoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier, videoSizeDisplayOverride: nil)
-      } else {
-        cropFilter = nil
-        uncroppedVideoGeo = oldVideoGeo
-      }
-
-      // Save disabled crop video filter
-      player.saveState()
-
       animationPipeline.submitInstantTask{ [self] in
         guard currentLayout.canEnterInteractiveMode else { return }
 
-        if let cropFilter {
-          switch currentLayout.mode {
-          case .windowedNormal, .fullScreenNormal:
-            uncropThenEnterInteractiveMode(cropFilter: cropFilter, mode: currentLayout.mode, uncroppedVideoGeo: uncroppedVideoGeo)
-          default:
-            assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
-            return
-          }
+        if mode == .crop, let cropFilter = oldVideoGeo.cropFilter {
+          log.debug{"Crop mode requested. Will remove existing crop filter: \(cropFilter.stringFormat.quoted)"}
+          let uncroppedVideoGeo = oldVideoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier, videoSizeDisplayOverride: nil)
+          uncropThenEnterInteractiveMode(cropFilter: cropFilter, mode: currentLayout.mode, uncroppedVideoGeo: uncroppedVideoGeo)
 
         } else {
           let tasks = buildTasksToEnterInteractiveMode(mode)
@@ -1814,7 +1797,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       uncroppedClosedBarsGeo = closedBarsGeo.scalingViewport(to: newViewportSize)
     } else {
       // If not locking viewport to video, just reuse viewport
-      uncroppedClosedBarsGeo = closedBarsGeo.refitted()
+      uncroppedClosedBarsGeo = closedBarsGeo.refitted(lockViewportToVideoSize: true)
     }
     let geoOverride = geo.clone(windowed: uncroppedClosedBarsGeo)
     log.verbose{"EnterInteractiveMode: Generated uncroppedGeo: \(uncroppedClosedBarsGeo)"}
@@ -1830,6 +1813,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
 
     if currentLayout.mode == .windowedNormal {
+      // FIXME: is this forgetting to close the sidebar??
       // TODO: integrate this task into LayoutTransition build
       let uncropDuration = Constants.AnimationDuration.cropAnimation * 0.1
       tasks.append(.init(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
