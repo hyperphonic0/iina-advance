@@ -697,7 +697,6 @@ extension PlayerWindowController {
 
       // Make sure to reset constraints for OSD
       miniPlayer.hideControllerButtons()
-      closeButtonView.isHidden = true
     }
 
     if transition.outputLayout.isMusicMode {

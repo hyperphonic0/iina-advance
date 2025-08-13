@@ -557,9 +557,6 @@ extension PlayerWindowController {
         // Hide OSD during animation
         hideOSD(immediately: true)
         pip.hideOverlayView()
-
-        /// Temporarily hide window buttons. Using `isHidden` will conveniently override its alpha value
-        closeButtonView.isHidden = true
       } // end isTogglingVideoView
 
       hideSeekPreviewImmediately()
