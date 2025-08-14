@@ -356,6 +356,11 @@ extension PlayerWindowController {
   /// Builds `middleGeometry`.
   /// Currently there are 4 bars. Each can be either inside or outside, exclusively.
   func buildMiddleGeometry(forTransition transition: LayoutTransition, _ inputGeoSet: GeometrySet) -> PWinGeometry? {
+    guard !transition.isWindowInitialLayout else {
+      // Not animated
+      return nil
+    }
+
     if transition.isTogglingInteractiveMode {
       // - Interactive Mode
 
