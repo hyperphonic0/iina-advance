@@ -41,29 +41,15 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   private var hideVolumePopoverTimer: Timer?
 
   unowned var windowController: PlayerWindowController!
-  var player: PlayerCore {
-    return windowController.player
-  }
+  var player: PlayerCore {  windowController.player }
+  var window: NSWindow? { windowController.window }
+  var log: Logger.Subsystem {  windowController.log }
 
-  var window: NSWindow? {
-    return windowController.window
-  }
+  var playlistShown: Bool { windowController.musicModeGeo.isMusicModePlaylistVisible }
+  var videoShown: Bool {  windowController.musicModeGeo.videoShown }
+  var windowWidthForScrollingLabels: CGFloat = 0
 
-  var log: Logger.Subsystem {
-    return windowController.log
-  }
-
-  var playlistShown: Bool {
-    windowController.musicModeGeo.isMusicModePlaylistVisible
-  }
-
-  var videoShown: Bool {
-    return windowController.musicModeGeo.videoShown
-  }
-
-  static var maxWindowWidth: CGFloat {
-    return CGFloat(Preference.float(for: .musicModeMaxWidth))
-  }
+  static var maxWindowWidth: CGFloat { CGFloat(Preference.float(for: .musicModeMaxWidth)) }
 
   var currentDisplayedPlaylistHeight: CGFloat {
     // most reliable first-hand source for this is a constraint:
@@ -176,20 +162,10 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   // MARK: - UI: Media Info
 
   func updateScrollingLabels() {
-    windowController.animationPipeline.submitInstantTask { [self] in
-      loadIfNeeded()
-      let isPaused = player.info.isPaused
-      titleLabel.redraw(paused: isPaused)
-      artistAlbumLabel.redraw(paused: isPaused)
-    }
-  }
-
-  func resetScrollingLabels() {
-    windowController.animationPipeline.submitInstantTask { [self] in
-      loadIfNeeded()
-      titleLabel.reset()
-      artistAlbumLabel.reset()
-    }
+    loadIfNeeded()
+    let isPaused = player.info.isPaused
+    titleLabel.requestRedraw(paused: isPaused)
+    artistAlbumLabel.requestRedraw(paused: isPaused)
   }
 
   func updateTitle(mediaTitle: String, mediaAlbum: String, mediaArtist: String) {
@@ -305,7 +281,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       } else {
         // Hiding video.
 
-        /// This will call `applyMusicModeGeo`, which will call `setVideoTrackDisabled`. We want to wait until the animation is done before disabling video.
+        /// This will call `setFrameAndUpdateWindowSubviews`, which will call `setVideoTrackDisabled`.
+        /// We want to wait until the animation is done before disabling video.
         // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
         let gtf = GeometryTransform("HideVideoView", player,
                                     windowed: { [self] ctx -> PWinGeometry? in

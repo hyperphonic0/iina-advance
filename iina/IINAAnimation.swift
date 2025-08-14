@@ -359,6 +359,9 @@ extension IINAAnimation {
         gtfQueue.append(gtf)
         log.verbose{"[Pipeline] Enqueued GTF: \(gtf.name.quoted); queue size: \(gtfQueue.count)"}
       }
+
+      // Kick the queue if it's idle:
+      submitInstantTask{}
     }
 
     func enqueueVideoSyncTaskIfNeeded(_ player: PlayerCore) {
@@ -373,6 +376,8 @@ extension IINAAnimation {
         let gtf = GeometryTransform("SyncVidGeo", id: newID, player)
         gtfQueue.append(gtf)
       }
+
+      submitInstantTask{}
     }
     
     func geoTransformDidFinish(_ gtf: GeometryTransform, success: Bool) {

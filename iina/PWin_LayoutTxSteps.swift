@@ -1101,7 +1101,8 @@ extension PlayerWindowController {
       }
     case .musicMode:
       // Especially needed when applying initial layout:
-      applyMusicModeGeo(musicModeGeo)
+      log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with musicMode windowFrame=\(transition.outputGeometry.windowFrame)")
+      setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
     case .windowedNormal, .windowedInteractive:
       log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with output windowFrame=\(transition.outputGeometry.windowFrame)")
       setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
@@ -1320,7 +1321,7 @@ extension PlayerWindowController {
       if transition.outputLayout.isMusicMode && !musicModeGeo.videoShown && pip.status == .notInPIP {
         updateWindowLayoutForVideoViewHidden(playlistShown: musicModeGeo.isMusicModePlaylistVisible)
       } else {
-        sendWindowScaleToMPV(transition.outputGeometry.mpvWindowScale())
+        sendWindowScaleToMPV(basedOn: transition.outputGeometry)
       }
     }
 
@@ -1381,8 +1382,8 @@ extension PlayerWindowController {
 
     }
 
-    if transition.outputLayout.isWindowed {
-      sendWindowScaleToMPV(windowedModeGeo.mpvWindowScale())
+    if transition.outputGeometry.mode.isWindowed {
+      sendWindowScaleToMPV(basedOn: transition.outputGeometry)
     }
 
     log.verbose("[\(transition.name)] Done with transition. IsFullScreen:\(transition.outputLayout.isFullScreen.yn), IsLegacy:\(transition.outputLayout.spec.isLegacyStyle.yn), Mode:\(currentLayout.mode)")

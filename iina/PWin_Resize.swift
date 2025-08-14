@@ -152,8 +152,7 @@ extension PlayerWindowController {
       newWindowSize = newGeometry.windowFrame.size
 
       // Updates any necessary constraints & resize internal views (calls resizeWindowSubviews among other things)
-      applyMusicModeGeo(newGeometry, setFrame: false, save: false)
-//      resizeWindowSubviews(using: newGeometry, updateVideoView: true) TODO:
+      resizeWindowSubviews(using: newGeometry, updateVideoView: true)
     }
 
     log.verbose{"[WinWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)"}
@@ -174,8 +173,36 @@ extension PlayerWindowController {
   func setFrameAndUpdateWindowSubviews(using geometry: PWinGeometry,
                                        updateVideoView: Bool = true, animate: Bool = true,
                                        submitUpdate: Bool = false) {
+    log.verbose{"[PWin.setFrame] Entered: \(geometry) updateVideoView=\(updateVideoView.yn) animate=\(animate.yn) submit=\(submitUpdate.yn)"}
 
-    resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
+    resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView && (geometry.mode != .musicMode))
+
+    if geometry.mode == .musicMode {
+      guard !geometry.windowFrame.equalTo(window!.frame)
+              || (geometry.videoShown != musicModeGeo.videoShown)
+              || (geometry.isMusicModePlaylistVisible != musicModeGeo.isMusicModePlaylistVisible)
+              || (geometry.isMiddleTransition != musicModeGeo.isMiddleTransition) else {
+        log.verbose("[PWin.setFrame] No changes needed for music mode windowFrame or constraints")
+        return
+      }
+
+      updateBottomBarHeight(to: geometry.outsideBars.bottom, bottomBarPlacement: .outsideViewport, mode: .musicMode)
+
+      if geometry.videoShown {
+        /// Make sure to call `apply` AFTER `updateVideoViewHeightConstraint` if video shown
+        miniPlayer.updateVideoViewHeightConstraint(videoShown: geometry.videoShown)
+        videoView.apply(geometry)
+      }
+
+      /// For the case where video is hidden but playlist is shown, AppKit won't allow the window's height to be changed by the user
+      /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
+      /// Need to execute this in its own task so that other animations are not affected.
+      let shouldDisableVideoView = !geometry.videoShown && geometry.isMusicModePlaylistVisible
+      if !shouldDisableVideoView {
+        log.verbose{"[PWin.setFrame] Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
+        viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
+      }
+    }
 
     if geometry.mode.isFullScreen && geometry.screenFit == .nativeFullScreen {
       log.verbose("[PWin.setFrame] Geometry is native fullscreen; will not modify window.frame")
@@ -193,9 +220,17 @@ extension PlayerWindowController {
     }
 
     if submitUpdate {
-      let newWindScale = geometry.mpvWindowScale()
-      log.verbose{"[PWin.setFrame] calling sendWindowScaleToMPV with scale=\(newWindScale)"}
-      sendWindowScaleToMPV(newWindScale)
+      if geometry.mode == .musicMode {
+        musicModeGeo = geometry
+        // Update defaults:
+        Preference.set(geometry.videoShown, for: .musicModeShowAlbumArt)
+        Preference.set(geometry.isMusicModePlaylistVisible, for: .musicModeShowPlaylist)
+      } else if geometry.mode.isWindowed {
+        windowedModeGeo = geometry
+      }
+
+      log.verbose{"[PWin.setFrame] Calling sendWindowScaleToMPV"}
+      sendWindowScaleToMPV(basedOn: geometry)
 
       player.saveState()
     }
@@ -217,18 +252,13 @@ extension PlayerWindowController {
         // Not sure if this helps fix the aspect constraint transition
         videoView.apply(newGeometry)
       }
-      // FIXME: figure out whether to include this here
-//      sendWindowScaleToMPV(newGeometry.mpvWindowScale())
 
       // Update floating control bar position if applicable
       adjustFloatingControllerOrigin(for: newGeometry)
     }
 
     if newGeometry.mode == .musicMode {
-      miniPlayer.loadIfNeeded()
-      // Re-evaluate space requirements for labels. May need to start scrolling.
-      // Do not save musicModeGeo here! Pinch gesture will handle itself. Drag-to-resize will be handled elsewhere.
-      miniPlayer.resetScrollingLabels()
+
     } else if newGeometry.mode.isInteractiveMode {
       // Update interactive mode selectable box size. Origin is relative to viewport origin
       let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
@@ -307,7 +337,7 @@ extension PlayerWindowController {
       player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
       let newGeo = newGeoUnconstrained.refitted(using: .stayInside)
       log.verbose{"SetVideoScale: desired=\(desiredVideoScale) adjusted=\(adjustedVideoScale) videoCAR=\(videoSizeCAR) → videoWidthScaled=\(videoWidthScaled) → windowScale=\(newGeo.mpvWindowScale())"}
-      sendWindowScaleToMPV(newGeo.mpvWindowScale())
+      sendWindowScaleToMPV(basedOn: newGeo)
       return newGeo
     })
     animationPipeline.submitGTF(gtf)
@@ -322,11 +352,12 @@ extension PlayerWindowController {
   /// Not supported in music mode at this time. Need to resolve backing scale bugs.
   ///
   /// See also: `PWinGeometry.mpvWindowScale`.
-  func sendWindowScaleToMPV(_ desiredMpvWindowScale: CGFloat) {
+  func sendWindowScaleToMPV(basedOn geometry: PWinGeometry) {
     assert(DispatchQueue.isExecutingIn(.main))
     // Do not call while resizing the window, as doing so has race conditions.
     guard loaded, let window, !window.inLiveResize, !isAnimatingLayoutTransition else { return }
 
+    let desiredMpvWindowScale = geometry.mpvWindowScale()
     guard desiredMpvWindowScale > 0.0 else {
       log.verbose("SetWindowScale: desiredMpvWindowScale (\(desiredMpvWindowScale)) is invalid; aborting")
       return
@@ -570,12 +601,12 @@ extension PlayerWindowController {
     // TASK 2: Apply animation
     tasks.append(.init(duration: duration, timing: timing, { [self] in
       if outputGeo.mode == .musicMode {
-        // [MusicModeKludge-A] Constraints in videoVideo are applied again here, nestled deep. Use middle geo for consistency
-        let geoToApply = middleGeo ?? outputGeo
-        applyMusicModeGeo(geoToApply, setFrame: true, save: save)
-
         // This is only needed to achieve "fade-in" effect when opening window:
         updateWindowBorderAndOpacity()
+
+        // [MusicModeKludge-A] Constraints in videoVideo are applied again here, nestled deep. Use middle geo for consistency
+        let geoToApply = middleGeo ?? outputGeo
+        setFrameAndUpdateWindowSubviews(using: geoToApply)
 
       } else if outputGeo.mode.isFullScreen {
         // Make sure video constraints are up to date, even in full screen.
@@ -590,14 +621,15 @@ extension PlayerWindowController {
 
         /// Make sure this is up-to-date. Do this before `setFrame`
         if !isWindowHidden {
-          setFrameAndUpdateWindowSubviews(using: outputGeo)
+          setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: save)
         } else {
           videoView.apply(outputGeo)
-        }
 
-        if save {
-          windowedModeGeo = outputGeo
-          player.saveState()
+          if save {
+            // This is also done in `setFrameAndUpdateWindowSubviews()`
+            windowedModeGeo = outputGeo
+            player.saveState()
+          }
         }
       }
     }))
@@ -606,7 +638,7 @@ extension PlayerWindowController {
     tasks.append(.instantTask{ [self] in
       if outputGeo.mode == .musicMode {
         // [MusicModeKludge-A] Previous task used a middle transition geometry. Apply the stricter geometry now
-        applyMusicModeGeo(outputGeo, setFrame: true, save: save)
+        setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: save)
 
         if isHidingVideo, pip.status == .notInPIP {
           updateWindowLayoutForVideoViewHidden(playlistShown: outputGeo.isMusicModePlaylistVisible)
@@ -615,10 +647,12 @@ extension PlayerWindowController {
         updateMusicModeButtonsVisibility(using: outputGeo)
       }
 
-      log.verbose{"ApplyPWinGeo: Calling sendWindowScaleToMPV, viewportSize=\(outputGeo.viewportSize)"}
-      sendWindowScaleToMPV(outputGeo.mpvWindowScale())
-
       isAnimatingLayoutTransition = false
+
+      // Need to wait until after isAnimatingLayoutTransition=NO before calling this, or it will be ignored
+      log.verbose{"ApplyPWinGeo: Calling sendWindowScaleToMPV, viewportSize=\(outputGeo.viewportSize)"}
+      sendWindowScaleToMPV(basedOn: outputGeo)
+
       // OSD messages may have been supressed because isAnimatingLayoutTransition was set.
       // Display now if needed (see note about OSD in `buildApplyPWinGeoTasks`)
       updateUI(pullUpdatesFromMpv: true)
@@ -645,66 +679,10 @@ extension PlayerWindowController {
     player.setVideoTrackDisabled(showDefaultAlbumArt: false)
 
     /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
-    /// (See note in `applyMusicModeGeo`)
+    /// (See note in `setFrameAndUpdateWindowSubviews`)
     if playlistShown {
       log.verbose{"Hiding video, but playlist is shown. Setting viewportBtmOffsetFromContentViewBtmConstraint inactive"}
       viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
-    }
-  }
-
-  /// Updates the current window and its subviews to match the given `PWinGeometry` in music mode.
-  /// If `save` is true, updates `musicModeGeo`, prefs and saves player state.
-  func applyMusicModeGeo(_ geometry: PWinGeometry, setFrame: Bool = true, animate: Bool = true, save: Bool = true) {
-    guard geometry.mode == .musicMode else { Logger.fatal("Expected mode=musicMode for: \(geometry)") }
-    let geometry = geometry.refitted()  // enforces internal constraints, and constrains to screen
-    log.verbose{"ApplyMMGeo \(geometry), setFrame=\(setFrame.yn) save=\(save.yn)"}
-
-    videoView.enterAsynchronousMode()
-
-    // This is only needed to achieve "fade-in" effect when opening window:
-    updateWindowBorderAndOpacity()
-
-    updateMusicModeButtonsVisibility(using: geometry)
-
-    /// Try to detect & remove unnecessary constraint updates - `updateBottomBarHeight()` may cause animation glitches if called twice
-    guard !geometry.windowFrame.equalTo(window!.frame)
-            || (geometry.videoShown != musicModeGeo.videoShown)
-            || (geometry.isMusicModePlaylistVisible != musicModeGeo.isMusicModePlaylistVisible)
-            || (geometry.isMiddleTransition != musicModeGeo.isMiddleTransition) else {
-      log.verbose("ApplyMMGeo: No changes needed for music mode windowFrame or constraints")
-      return
-    }
-
-    updateBottomBarHeight(to: geometry.outsideBars.bottom, bottomBarPlacement: .outsideViewport, mode: .musicMode)
-
-    if setFrame {
-      setFrameAndUpdateWindowSubviews(using: geometry, updateVideoView: false, animate: animate)
-    } else {
-      resizeWindowSubviews(using: geometry, updateVideoView: false)
-    }
-
-    if geometry.videoShown {
-      /// Make sure to call `apply` AFTER `updateVideoViewHeightConstraint` if video shown
-      miniPlayer.updateVideoViewHeightConstraint(videoShown: geometry.videoShown)
-      videoView.apply(geometry)
-    }
-
-    /// For the case where video is hidden but playlist is shown, AppKit won't allow the window's height to be changed by the user
-    /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
-    /// Need to execute this in its own task so that other animations are not affected.
-    let shouldDisableVideoView = !geometry.videoShown && geometry.isMusicModePlaylistVisible
-    if !shouldDisableVideoView {
-      log.verbose{"ApplyMMGeo: Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
-      viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
-    }
-
-    if save {
-      // Update defaults:
-      Preference.set(geometry.videoShown, for: .musicModeShowAlbumArt)
-      Preference.set(geometry.isMusicModePlaylistVisible, for: .musicModeShowPlaylist)
-
-      musicModeGeo = geometry
-      player.saveState()
     }
   }
 

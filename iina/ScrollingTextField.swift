@@ -26,6 +26,7 @@ class ScrollingTextField: NSTextField {
 
   private var baseTime: TimeInterval? = nil
   private var pauseTime: TimeInterval? = nil
+  private var superviewLastKnownFrameWidth: CGFloat = 0
 
   private var drawPoint = startPoint
 
@@ -40,19 +41,64 @@ class ScrollingTextField: NSTextField {
       let appendedStringCopy = "    " + stringValue
       appendedStringCopyWidth = NSAttributedString(string: appendedStringCopy, attributes: attributes).size().width
       scrollingString = NSAttributedString(string: stringValue + appendedStringCopy, attributes: attributes)
+
       reset()
     }
   }
 
   /// Redraws, after updating the label's X offset based on `baseTime` and the current time.
-  func redraw(paused: Bool) {
-    if paused {
+  func requestRedraw(paused: Bool) {
+    guard !paused else {
+      // Just return if already paused
       if pauseTime == nil {
-        pauseAnimation()
+        // Not already paused. Pause the animation now
+        pauseTime = Date().timeIntervalSince1970
       }
       return
-    } else if pauseTime != nil {
-      resumeAnimation()
+    }
+
+    if let lastPauseTime = pauseTime, let lastBaseTime = baseTime {
+      // Resume animation from pause.
+      // Need to mimic the elapsed time (between old baseTime & old pause time) to ensure offset continuity
+      let elapsedTime = lastPauseTime - lastBaseTime
+      pauseTime = nil
+      baseTime = Date().timeIntervalSince1970 - elapsedTime
+    }
+    // Else if not paused but not yet started, just allow `draw()` to set `baseTime` whenever that happens.
+
+    needsDisplay = true
+  }
+
+  private func pauseAnimation() {
+    pauseTime = Date().timeIntervalSince1970
+  }
+
+  private func resumeAnimation() {
+    if let lastPauseTime = pauseTime, let lastBaseTime = baseTime {
+      let elapsedTime = lastPauseTime - lastBaseTime
+      pauseTime = nil
+      // Need to preserve the interval between now & baseTime to ensure offset continuity
+      baseTime = Date().timeIntervalSince1970 - elapsedTime
+    } else {
+      baseTime = Date().timeIntervalSince1970
+    }
+  }
+
+  func reset() {
+    baseTime = nil
+    pauseTime = nil
+    drawPoint = startPoint
+    superviewLastKnownFrameWidth = superview!.frame.width
+    needsDisplay = true
+  }
+
+  override func draw(_ dirtyRect: NSRect) {
+    // Must use superview frame as a reference. NSTextField frame is poorly defined
+    let frameWidth = superview!.frame.width
+
+    if frameWidth != superviewLastKnownFrameWidth {
+      // Window has resized. This will mess up our previous calculations. Just start over from the beginning.
+      reset()
     }
 
     let baseTime: TimeInterval = self.baseTime ?? Date().timeIntervalSince1970
@@ -61,12 +107,12 @@ class ScrollingTextField: NSTextField {
     }
 
     let stringWidth = attributedStringValue.size().width
-    // Must use superview frame as a reference. NSTextField frame is poorly defined
-    let frameWidth = superview!.frame.width
+
     if stringWidth < frameWidth {
-      // Plenty of space. Center text instead
+      // Plenty of space; no need to animate. Center fixed text instead
       let xOffset = (frameWidth - stringWidth) / 2
       drawPoint.x = xOffset + mediaInfoViewLeadingOffset
+      attributedStringValue.draw(at: drawPoint)
     } else {
       let initialWait = Constants.TimeInterval.scrollingLabelInitialWaitSec
       let endTime = pauseTime ?? Date().timeIntervalSince1970
@@ -80,43 +126,8 @@ class ScrollingTextField: NSTextField {
         /// Subtract from X to scroll leftwards:
         drawPoint.x = -scrollOffset + mediaInfoViewLeadingOffset
       }
-    }
-    needsDisplay = true
-  }
-
-  private func pauseAnimation() {
-    pauseTime = Date().timeIntervalSince1970
-  }
-
-  private func resumeAnimation() {
-    guard let lastPauseTime = pauseTime, let lastBaseTime = baseTime else {
-      pauseTime = nil
-      baseTime = Date().timeIntervalSince1970
-      return
-    }
-    let elapsedTime = lastPauseTime - lastBaseTime
-    pauseTime = nil
-    // Need to preserve the interval between now & baseTime to ensure offset continuity
-    baseTime = Date().timeIntervalSince1970 - elapsedTime
-  }
-
-  func reset() {
-    baseTime = nil
-    pauseTime = nil
-    drawPoint = startPoint
-    needsDisplay = true
-  }
-
-  override func draw(_ dirtyRect: NSRect) {
-    let stringWidth = attributedStringValue.size().width
-    let frameWidth = superview!.frame.width
-    if stringWidth < frameWidth {
-      // Plenty of space. Center text instead
-      let xOffset = (frameWidth - stringWidth) / 2
-      drawPoint.x = xOffset + mediaInfoViewLeadingOffset
-      attributedStringValue.draw(at: drawPoint)
-    } else {
       scrollingString.draw(at: drawPoint)
     }
+
   }
 }
