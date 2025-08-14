@@ -111,11 +111,22 @@ extension IINAAnimation {
     static func instantTask(_ runFunc: @escaping TaskFunc) -> Task {
       return Task(duration: 0, timing: nil, runFunc)
     }
-
   }
 
-  struct Transaction {
-    let tasks: [Task]
+  class Transaction {
+    var tasks: [Task]
+
+    init(tasks: [Task]) {
+      self.tasks = tasks
+    }
+
+    init() {
+      self.tasks = []
+    }
+
+    func append(_ task: Task) {
+      tasks.append(task)
+    }
   }
 }
 

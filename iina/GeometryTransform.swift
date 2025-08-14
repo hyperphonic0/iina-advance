@@ -452,9 +452,9 @@ struct GeometryTransform {
           assert(transformedGeo.mode == .musicMode, "[GTF:\(name)] Tranform expected to return geometry with mode=.musicMode, but got: \(transformedGeo) ")
           newMusicModeGeo = transformedGeo
         } else {
-          /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
-          /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
-          newMusicModeGeo = oldMusicModeGeo.clone(video: outputVidGeo)
+          /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio.
+          /// (But call `refitted()` in case it doesn't fit on screen or other special cases).
+          newMusicModeGeo = oldMusicModeGeo.clone(video: outputVidGeo).refitted()
         }
 
         if oldMusicModeGeo.videoShown != newMusicModeGeo.videoShown {

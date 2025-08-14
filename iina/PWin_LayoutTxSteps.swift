@@ -670,7 +670,6 @@ extension PlayerWindowController {
         // musicModeGeo==transition.outputGeo
         let shouldDisableVideoView = !musicModeGeo.videoShown && musicModeGeo.isMusicModePlaylistVisible
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
-        /// (See note in `applyMusicModeGeo`)
         if shouldDisableVideoView {
           log.verbose{"Hiding video, but playlist is shown. Setting viewportBtmOffsetFromContentViewBtmConstraint inactive"}
           viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
