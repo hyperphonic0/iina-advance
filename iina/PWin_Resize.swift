@@ -186,11 +186,12 @@ extension PlayerWindowController {
         return
       }
 
-      updateBottomBarHeight(to: geometry.outsideBars.bottom, bottomBarPlacement: .outsideViewport, mode: .musicMode)
+      // FIXME: change bottom bar to shrink while in music mode
+//      updateBottomBarHeight(to: geometry.outsideBars.bottom, bottomBarPlacement: .outsideViewport, mode: .musicMode)
 
       if geometry.videoShown {
         /// Make sure to call `apply` AFTER `updateVideoViewHeightConstraint` if video shown
-        miniPlayer.updateVideoViewHeightConstraint(videoShown: geometry.videoShown)
+//        miniPlayer.updateVideoViewHeightConstraint(videoShown: geometry.videoShown)
         videoView.apply(geometry)
       }
 
@@ -568,6 +569,8 @@ extension PlayerWindowController {
       isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
       videoView.enterAsynchronousMode()
 
+      hideSeekPreviewImmediately()
+
       if isTogglingVideoView {
         // [MusicModeKludge-A] When toggling video, loosen constraints while animating to prevent occasional crash in mpv_render
         let middleGeo = middleGeo!
@@ -590,7 +593,6 @@ extension PlayerWindowController {
         pip.hideOverlayView()
       } // end isTogglingVideoView
 
-      hideSeekPreviewImmediately()
       // Show art if videoView is already visible, or before it needs to be shown:
       if outputGeo.videoShown {
         updateDefaultArtVisibility(to: showDefaultArt)
@@ -639,8 +641,9 @@ extension PlayerWindowController {
       if outputGeo.mode == .musicMode {
         // [MusicModeKludge-A] Previous task used a middle transition geometry. Apply the stricter geometry now
         setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: save)
+        videoView.apply(outputGeo)
 
-        if isHidingVideo, pip.status == .notInPIP {
+        if !outputGeo.videoShown, pip.status == .notInPIP {
           updateWindowLayoutForVideoViewHidden(playlistShown: outputGeo.isMusicModePlaylistVisible)
         }
 
@@ -651,7 +654,7 @@ extension PlayerWindowController {
 
       // Need to wait until after isAnimatingLayoutTransition=NO before calling this, or it will be ignored
       log.verbose{"ApplyPWinGeo: Calling sendWindowScaleToMPV, viewportSize=\(outputGeo.viewportSize)"}
-      sendWindowScaleToMPV(basedOn: outputGeo)
+//      sendWindowScaleToMPV(basedOn: outputGeo)
 
       // OSD messages may have been supressed because isAnimatingLayoutTransition was set.
       // Display now if needed (see note about OSD in `buildApplyPWinGeoTasks`)

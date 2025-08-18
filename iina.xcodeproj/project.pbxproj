@@ -302,6 +302,7 @@
 		B4E446F725CB54EF0069F06E /* Mustache in Frameworks */ = {isa = PBXBuildFile; productRef = B4E446F625CB54EF0069F06E /* Mustache */; };
 		B4E4470125CE3F930069F06E /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = B4E4470025CE3F930069F06E /* Sparkle */; };
 		C789872F1E34EF170005769F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C78987311E34EF170005769F /* InfoPlist.strings */; };
+		D10046E02E4FFD0D009F17B1 /* BorderLineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10046DF2E4FFD03009F17B1 /* BorderLineView.swift */; };
 		D101635D2C197D4D00D1D663 /* PWin_OSD.swift in Sources */ = {isa = PBXBuildFile; fileRef = D101635C2C197D4D00D1D663 /* PWin_OSD.swift */; };
 		D1049C852872C154003D47C1 /* ConfTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C842872C154003D47C1 /* ConfTableViewController.swift */; };
 		D1049C872872C17F003D47C1 /* BindingTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C862872C17F003D47C1 /* BindingTableViewController.swift */; };
@@ -1851,6 +1852,7 @@
 		C7DBA5EB1F07C5FD00C2B416 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InitialWindowController.strings; sourceTree = "<group>"; };
 		C7DC79CE1EC63821002DE23B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/HistoryWindowController.strings; sourceTree = "<group>"; };
 		C7E90B522087EC5700A58B6B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/SubChooseViewController.strings; sourceTree = "<group>"; };
+		D10046DF2E4FFD03009F17B1 /* BorderLineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorderLineView.swift; sourceTree = "<group>"; };
 		D101635C2C197D4D00D1D663 /* PWin_OSD.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PWin_OSD.swift; sourceTree = "<group>"; };
 		D1049C842872C154003D47C1 /* ConfTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTableViewController.swift; sourceTree = "<group>"; };
 		D1049C862872C17F003D47C1 /* BindingTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingTableViewController.swift; sourceTree = "<group>"; };
@@ -2799,6 +2801,7 @@
 				D1D579532B16C38F009E3520 /* ClickThroughView.swift */,
 				D1A071882D644F3600884828 /* ResizableTextView.swift */,
 				D1D579552B192946009E3520 /* CustomWindowBorderBox.swift */,
+				D10046DF2E4FFD03009F17B1 /* BorderLineView.swift */,
 				512B8FDC2BC2376E00AF41BF /* OutlineView.swift */,
 			);
 			name = Accessories;
@@ -3605,6 +3608,7 @@
 				51F7974728C7E00200812D0D /* Lock.swift in Sources */,
 				D1347A2D2B04879C00B37B0E /* VideoGeometry.swift in Sources */,
 				D1EF40ED2C3BD10B00921252 /* StateEnum.swift in Sources */,
+				D10046E02E4FFD0D009F17B1 /* BorderLineView.swift in Sources */,
 				84C8D58F1D794CE600D98A0E /* MPVFilter.swift in Sources */,
 				D1C7410A2CB3833B00522FA7 /* ScrollableSlider.swift in Sources */,
 				D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */,

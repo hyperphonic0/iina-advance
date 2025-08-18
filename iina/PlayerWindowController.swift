@@ -386,7 +386,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // Needs to be changed to align with either sidepanel or trailing edge of window:
   var topBarTrailingSpaceConstraint: NSLayoutConstraint!
 
-  // - Bottom OSC constraints
+  // - Bottom bar constraints
   var viewportBtmOffsetFromContentViewBtmConstraint: NSLayoutConstraint!
   var viewportBtmOffsetFromTopOfBottomBarConstraint: NSLayoutConstraint!
   var viewportBtmOffsetFromBtmOfBottomBarConstraint: NSLayoutConstraint!
@@ -409,7 +409,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
       if let newCons = newValue {
         log.verbose{"Enabling new leading sidebar constraints"}
-        updateActiveStatusOfLeadingSidebarConstraints(newCons)
+        newCons.setActive(active: true)
       }
     }
   }
@@ -430,11 +430,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       bottom.isActive = active
     }
   }
-
-  func updateActiveStatusOfLeadingSidebarConstraints(_ cons: LeadingSidebarConstraints) {
-    cons.setActive(active: true)
-  }
-
 
   // - Trailing sidebar constraints
   var viewportTrailingOffsetFromContentViewTrailingConstraint: NSLayoutConstraint!
@@ -469,10 +464,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       top.isActive = active
       bottom.isActive = active
     }
-  }
-
-  func updateActiveStatusOfTrailingSidebarConstraints(_ cons: TrailingSidebarConstraints) {
-    cons.setActive(active: true)
   }
 
   /// Sets the size of the spacer view in the top overlay which reserves space for a title bar.
@@ -556,7 +547,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// depending on configuration.
   let topBarView = ClickThroughVisualEffectView()
   /// Bottom border of `topBarView`.
-  let topBarBottomBorder = NSBox()
+  let topBarBottomBorder = BorderLineView(id: "TopBar-BottomBorder",
+                                          fillColor: .titleBarBorder)
   /// Reserves space for the title bar components. Can contain CustomTitleBarView *only* if using legacy
   /// windowed mode & topBarPlacement==.insideViewport
   let titleBarView = ClickThroughView()
@@ -574,7 +566,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Used to hold other views in music mode & interactive mode
   var bottomBarView: NSView = NSVisualEffectView()
   /// Top border of `bottomBarView`.
-  let bottomBarTopBorder = NSBox()
+  let bottomBarTopBorder = BorderLineView(id: "BottomBar-TopBorder",
+                                          fillColor: .titleBarBorder)
 
   /// Layout options for how to layout controls inside `currentControlBar`.
   let oscOneRowView = SingleRowBarOSCView()
@@ -582,9 +575,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   let seekPreview = SeekPreview()
 
   let leadingSidebarView = ClickThroughVisualEffectView()
-  let leadingSidebarTrailingBorder = NSBox()  // shown if leading sidebar is "outside"
+  /// Shown if leading sidebar is "outside"
+  let leadingSidebarTrailingBorder = BorderLineView(id: "LeadingSidebar-TrailingBorder",
+                                                    fillColor: .quaternaryLabelColor)
   let trailingSidebarView = ClickThroughVisualEffectView()
-  let trailingSidebarLeadingBorder = NSBox()  // shown if trailing sidebar is "outside"
+  /// Shown if trailing sidebar is "outside"
+  let trailingSidebarLeadingBorder = BorderLineView(id: "TrailingSidebar-LeadingBorder",
+                                                    fillColor: .quaternaryLabelColor)
 
   let bufferIndicatorView = BufferIndicatorView()
 

@@ -99,8 +99,9 @@ extension PlayerWindowController {
       initTitleBar()
       initOSCToolbar()
       initTopBarView(in: contentView)
-      initBottomBarTopBorder()
       rebuildBottomBarView(in: contentView, style: .visualEffectView)
+      addTopBarAndConstraints(in: contentView)
+      rebuildPanelConstraints(with: currentLayout)
       initSidebars(in: contentView)
       initPlaybackBtnsView()
       initPlaySliderAndTimeLabelsView()
@@ -285,8 +286,6 @@ extension PlayerWindowController {
     topBarView.clipsToBounds = true
     topBarView.translatesAutoresizingMaskIntoConstraints = false
 
-    addTopBarAndConstraintsIfMissing(in: contentView)
-
     /// `controlBarTop`
     controlBarTop.translatesAutoresizingMaskIntoConstraints = false
     controlBarTop.clipsToBounds = true  // for better animations when toggling OSC position/placement
@@ -309,15 +308,6 @@ extension PlayerWindowController {
     titleBarHeightConstraint.isActive = true
 
     // Bottom border
-    topBarBottomBorder.identifier = .init("TopBarBottomBorder")
-    topBarBottomBorder.boxType = .custom
-    topBarBottomBorder.titlePosition = .noTitle
-    topBarBottomBorder.borderWidth = 0
-    topBarBottomBorder.borderColor = .clear
-    topBarBottomBorder.fillColor = .titleBarBorder
-    topBarBottomBorder.setContentHugging(h: 1, v: 1000)
-    topBarBottomBorder.setCCResistance(h: 1, v: 1000)
-    topBarBottomBorder.translatesAutoresizingMaskIntoConstraints = false
     topBarView.addSubview(topBarBottomBorder)
     topBarBottomBorder.addConstraintsToFillSuperview(bottom: -0.5, leading: 0, trailing: 0)
     // Want to make a 0.5px border. But it seems that in some display modes, that is not only not possible,
@@ -328,7 +318,7 @@ extension PlayerWindowController {
     topBarBottomBorder_HeightConstraint.isActive = true
   }
 
-  func addTopBarAndConstraintsIfMissing(in contentView: NSView) {
+  func addTopBarAndConstraints(in contentView: NSView) {
     if !contentView.containsSubview(topBarView) {
       contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
     }
@@ -362,16 +352,14 @@ extension PlayerWindowController {
     }
   }
 
-  func initBottomBarTopBorder() {
-    bottomBarTopBorder.idString = "BottomBar-TopBorder"  // helps with debug logging
-    bottomBarTopBorder.boxType = .custom
-    bottomBarTopBorder.titlePosition = .noTitle
-    bottomBarTopBorder.borderWidth = 0
-    bottomBarTopBorder.borderColor = .clear
-    bottomBarTopBorder.fillColor = .titleBarBorder
-    bottomBarTopBorder.translatesAutoresizingMaskIntoConstraints = false
+  func removeTopBarAndConstraints() {
+    topBarBottomOffsetFromViewportTopConstraint?.isActive = false
+    viewportTopOffsetFromTopBarTopConstraint?.isActive = false
+    topBarView.removeFromSuperview()
   }
 
+  /// The `bottomBarView` may need to be completely rebuilt if the style changes.
+  /// This also adds as subview to `contentView`.
   func rebuildBottomBarView(in contentView: NSView, style: Preference.OSCColorScheme) {
     log.verbose{"[Load] Rebuilding bottomBarView: style=\(style)"}
     bottomBarView.removeAllSubviews()
@@ -404,38 +392,6 @@ extension PlayerWindowController {
     bottomBarView.isHidden = true
     bottomBarView.translatesAutoresizingMaskIntoConstraints = false
 
-    contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
-
-    if !isActive(viewportBtmOffsetFromTopOfBottomBarConstraint) {
-      viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0)
-      viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Top_Constraint"
-      viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
-    }
-
-    if !isActive(viewportBtmOffsetFromBtmOfBottomBarConstraint) {
-      viewportBtmOffsetFromBtmOfBottomBarConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
-      viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
-      viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint"
-    }
-
-    if !isActive(bottomBarBtmOffsetFromContentViewBtmConstraint) {
-      bottomBarBtmOffsetFromContentViewBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
-      bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = false
-      bottomBarBtmOffsetFromContentViewBtmConstraint.identifier = "bottomBar-Btm_OffsetFrom-ContentView-Btm_Constraint"
-    }
-
-    if !isActive(bottomBarLeadingSpaceConstraint) {
-      bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
-      bottomBarLeadingSpaceConstraint.isActive = true
-      bottomBarLeadingSpaceConstraint.identifier = "bottomBarLeadingSpaceConstraint"
-    }
-
-    if !isActive(bottomBarTrailingSpaceConstraint) {
-      bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
-      bottomBarTrailingSpaceConstraint.isActive = true
-      bottomBarTrailingSpaceConstraint.identifier = "bottomBarTrailingSpaceConstraint"
-    }
-
     bottomBarView.addSubview(bottomBarTopBorder)
     bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
     // Want to make a 0.5px border. But it seems that in some display modes, that is not only not possible,
@@ -446,6 +402,57 @@ extension PlayerWindowController {
     bottomBarTopBorder_HeightConstraint.isActive = true
 
     self.bottomBarView = bottomBarView
+  }
+
+  // TODO: expand this to include constraints for all panels in window
+  func rebuildPanelConstraints(with layout: LayoutState) {
+    let contentView = window!.contentView!
+
+    if layout.topBarHeight > 0 {
+      addTopBarAndConstraints(in: window!.contentView!)
+    } else {
+      removeTopBarAndConstraints()
+    }
+
+    if layout.hasBottomBar {
+      contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
+
+      // Do not enable this one. It's only used in music mode
+      if bottomBarBtmOffsetFromContentViewBtmConstraint == nil {
+        bottomBarBtmOffsetFromContentViewBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
+        bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = false
+        bottomBarBtmOffsetFromContentViewBtmConstraint.identifier = "bottomBar-Btm_OffsetFrom-ContentView-Btm_Constraint"
+      }
+
+      if !isActive(bottomBarLeadingSpaceConstraint) {
+        bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+        bottomBarLeadingSpaceConstraint.isActive = true
+        bottomBarLeadingSpaceConstraint.identifier = "bottomBarLeadingSpaceConstraint"
+      }
+
+      if !isActive(bottomBarTrailingSpaceConstraint) {
+        bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
+        bottomBarTrailingSpaceConstraint.isActive = true
+        bottomBarTrailingSpaceConstraint.identifier = "bottomBarTrailingSpaceConstraint"
+      }
+
+      if layout.isVideoViewShown {
+        assert(bottomBarView.hasSharedAncestor(with: viewportView))
+        if !isActive(viewportBtmOffsetFromTopOfBottomBarConstraint) {
+          viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0)
+          viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Top_Constraint"
+          viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
+        }
+
+        if !isActive(viewportBtmOffsetFromBtmOfBottomBarConstraint) {
+          viewportBtmOffsetFromBtmOfBottomBarConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
+          viewportBtmOffsetFromBtmOfBottomBarConstraint.priorityInt = 200
+          viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
+          viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint"
+        }
+      }
+      updateBottomBarPlacement(forLayout: layout)
+    }
   }
 
   func isActive(_ con: NSLayoutConstraint?) -> Bool {
@@ -470,13 +477,6 @@ extension PlayerWindowController {
 
     // border
     leadingSidebarView.addSubview(leadingSidebarTrailingBorder)
-    leadingSidebarTrailingBorder.idString = "LeadingSidebarTrailingBorder"
-    leadingSidebarTrailingBorder.boxType = .custom
-    leadingSidebarTrailingBorder.titlePosition = .noTitle
-    leadingSidebarTrailingBorder.borderWidth = 0
-    leadingSidebarTrailingBorder.borderColor = .clear
-    leadingSidebarTrailingBorder.fillColor = .quaternaryLabelColor
-    leadingSidebarTrailingBorder.translatesAutoresizingMaskIntoConstraints = false
     leadingSidebarTrailingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
     // Avoid constraint error by setting priority = .defaultHigh (see similar notes for bottomBarTopBorder_HeightConstraint, et al.)
     let leadingSidebarTrailingBorder_WidthConstraint = leadingSidebarTrailingBorder.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: -0.5)
@@ -494,13 +494,6 @@ extension PlayerWindowController {
 
     // border
     trailingSidebarView.addSubview(trailingSidebarLeadingBorder)
-    trailingSidebarLeadingBorder.idString = "TrailingSidebarLeadingBorder"
-    trailingSidebarLeadingBorder.boxType = .custom
-    trailingSidebarLeadingBorder.titlePosition = .noTitle
-    trailingSidebarLeadingBorder.borderWidth = 0
-    trailingSidebarLeadingBorder.borderColor = .clear
-    trailingSidebarLeadingBorder.fillColor = .quaternaryLabelColor
-    trailingSidebarLeadingBorder.translatesAutoresizingMaskIntoConstraints = false
     trailingSidebarLeadingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
     // Avoid constraint error by setting priority = .defaultHigh (see similar notes for bottomBarTopBorder_HeightConstraint, et al.)
     let trailingSidebarLeadingBorder_WidthConstraint = trailingSidebarLeadingBorder.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0.5)

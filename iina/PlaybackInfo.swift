@@ -179,12 +179,24 @@ class PlaybackInfo {
   /** Selected track IDs. Use these (instead of `isSelected` of a track) to check if selected */
   var vid: Int? {
     didSet {
-      log.verbose("Video track changed to: \(vid?.description ?? "nil")")
+      log.verbose("Track `vid` changed: \(oldValue?.description ?? "nil") → \(vid?.description ?? "nil")")
     }
   }
-  var aid: Int?
-  var sid: Int?
-  var secondSid: Int?
+  var aid: Int? {
+    didSet {
+      log.verbose("Track `aid` changed: \(oldValue?.description ?? "nil") → \(aid?.description ?? "nil")")
+    }
+  }
+  var sid: Int? {
+    didSet {
+      log.verbose("Track `sid` changed: \(oldValue?.description ?? "nil") → \(sid?.description ?? "nil")")
+    }
+  }
+  var secondSid: Int? {
+    didSet {
+      log.verbose("Track `sid2` changed: \(oldValue?.description ?? "nil") → \(sid?.description ?? "nil")")
+    }
+  }
 
   var isAudioTrackSelected: Bool {
     if let aid {
@@ -203,7 +215,7 @@ class PlaybackInfo {
   /// Used to keep track of previously selected vid track if video track is disabled due to hiding videoView in music mode.
   var vidDisabled: Int? {
     didSet {
-      log.verbose{"vidDisabled changed to: \(String(vidDisabled))"}
+      log.verbose{"vidDisabled changed: \(String(oldValue)) → \(String(vidDisabled))"}
     }
   }
 

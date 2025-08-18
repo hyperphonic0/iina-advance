@@ -156,6 +156,8 @@ extension PlayerWindowController {
       // Reset other views to initial minimums:
       speedLabelBtmConstraint.isActive = false
     }
+
+    rebuildPanelConstraints(with: transition.inputLayout)
   }
 
   /// -------------------------------------------------
@@ -359,7 +361,6 @@ extension PlayerWindowController {
         videoView.apply(middleGeo)
       }
 
-      let topBarHeight = transition.inputLayout.topBarPlacement == .insideViewport ? middleGeo.insideBars.top : middleGeo.outsideBars.top
       let cameraOffset: CGFloat
       if transition.isExitingLegacyFullScreen {
         // Use prev offset for a smoother animation
@@ -367,6 +368,8 @@ extension PlayerWindowController {
       } else {
         cameraOffset = transition.outputGeometry.topMarginHeight
       }
+
+      let topBarHeight = transition.inputLayout.topBarPlacement == .insideViewport ? middleGeo.insideBars.top : middleGeo.outsideBars.top
       log.trace{"[\(transition.name)] CloseOldPanels: applying middleGeo, topBarHeight=\(topBarHeight), cameraOffset=\(cameraOffset)"}
       updateTopBarHeight(to: topBarHeight, topBarPlacement: transition.inputLayout.topBarPlacement, cameraHousingOffset: cameraOffset)
 
@@ -453,14 +456,6 @@ extension PlayerWindowController {
       if !transition.isEnteringFullScreen {
         setWindowStyleToNative()
       }
-    }
-
-    if transition.outputLayout.topBarHeight > 0 {
-      addTopBarAndConstraintsIfMissing(in: window.contentView!)
-    } else {
-      topBarBottomOffsetFromViewportTopConstraint?.isActive = false
-      viewportTopOffsetFromTopBarTopConstraint?.isActive = false
-      topBarView.removeFromSuperview()
     }
 
     if transition.isWindowInitialLayout || transition.isOpeningVideoView {
@@ -605,7 +600,7 @@ extension PlayerWindowController {
     // Update bottom bar constraints *after* sidebars are added
     let isOpeningOrClosingAnySidebar = transition.isOpeningOrClosingAnySidebar
     if needsBottomBarUpdate || isOpeningOrClosingAnySidebar {
-      updateBottomBarPlacement(forLayout: outputLayout)
+//      updateBottomBarPlacement(forLayout: outputLayout)
     }
 
     // Make sure to call this after calls to prepareLayoutForOpening(*Sidebar)
@@ -768,10 +763,10 @@ extension PlayerWindowController {
 
       case .floating:
         currentControlBar = controlBarFloating
-        let contentView = window.contentView!
-        if !contentView.containsSubview(controlBarFloating) {
+        if !viewportView.containsSubview(controlBarFloating) {
           log.verbose{"[\(transition.name)] Adding controlBarFloating to contentView"}
-          contentView.addSubview(controlBarFloating, positioned: .above, relativeTo: viewportView)
+          viewportView.addSubview(controlBarFloating)
+          sortViewportViewSubviews()
 
           controlBarFloating.xConstraint?.isActive = false
           controlBarFloating.yConstraint?.isActive = false
@@ -960,6 +955,8 @@ extension PlayerWindowController {
 
     updateDepthOrderOfBars(outputLayout)
 
+    rebuildPanelConstraints(with: outputLayout)
+
     prepareDepthOrderOfOutsideSidebarsForToggle(transition)
 
     // So that panels toggling between "inside" and "outside" don't change until they need to (different strategy than fullscreen)
@@ -988,11 +985,12 @@ extension PlayerWindowController {
     titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
 
     // Update heights of top & bottom bars:
-    updateTopBarHeight(to: outputLayout.topBarHeight, topBarPlacement: transition.outputLayout.topBarPlacement, cameraHousingOffset: transition.outputGeometry.topMarginHeight)
+    updateTopBarHeight(to: outputLayout.topBarHeight, topBarPlacement: transition.outputLayout.topBarPlacement,
+                       cameraHousingOffset: transition.outputGeometry.topMarginHeight)
 
-    let bottomBarHeight = transition.outputLayout.bottomBarPlacement == .insideViewport ? transition.outputGeometry.insideBars.bottom : transition.outputGeometry.outsideBars.bottom
-    updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.outputLayout.bottomBarPlacement,
-                          mode: transition.outputLayout.mode)
+    let bottomBarHeight = outputLayout.bottomBarPlacement == .insideViewport ? transition.outputGeometry.insideBars.bottom : transition.outputGeometry.outsideBars.bottom
+    updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: outputLayout.bottomBarPlacement,
+                          mode: outputLayout.mode)
 
     if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
@@ -1402,6 +1400,7 @@ extension PlayerWindowController {
 
   func updateTopBarHeight(to topBarHeight: CGFloat, topBarPlacement: Preference.PanelPlacement, cameraHousingOffset: CGFloat) {
     log.trace{"Updating topBar height to: \(topBarHeight) for placement=\(topBarPlacement) cameraOffset=\(cameraHousingOffset)"}
+    guard topBarView.superview != nil else { return }
 
     switch topBarPlacement {
     case .insideViewport:
@@ -1417,9 +1416,10 @@ extension PlayerWindowController {
 
   // - Bottom bar
 
-  private func updateBottomBarPlacement(forLayout layout: LayoutState) {
+  func updateBottomBarPlacement(forLayout layout: LayoutState) {
     log.verbose{"Updating bottomBar placement to: \(layout.bottomBarPlacement)"}
     guard let window = window, let contentView = window.contentView else { return }
+    
     bottomBarLeadingSpaceConstraint.isActive = false
     bottomBarTrailingSpaceConstraint.isActive = false
 
@@ -1446,6 +1446,7 @@ extension PlayerWindowController {
   func updateBottomBarHeight(to bottomBarHeight: CGFloat, bottomBarPlacement: Preference.PanelPlacement,
                              mode: PlayerWindowMode) {
     log.trace{"Updating bottomBar height to \(bottomBarHeight) for placement=\(bottomBarPlacement)"}
+    guard bottomBarView.superview != nil else { return }
 
     switch bottomBarPlacement {
     case .insideViewport:
@@ -1458,19 +1459,17 @@ extension PlayerWindowController {
       viewportBtmOffsetFromContentViewBtmConstraint.animateToConstant(bottomBarHeight)
     }
 
-    /* TODO: improvements for music mode
     if mode == .musicMode {
-      viewportBtmOffsetFromTopOfBottomBarConstraint.priority = .defaultLow
+      bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = true
+//      viewportBtmOffsetFromTopOfBottomBarConstraint.priority = .defaultLow
       viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = false
       viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
-      bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = true
     } else {
       bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = false
+//      viewportBtmOffsetFromTopOfBottomBarConstraint.priority = .required
       viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
       viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
-      viewportBtmOffsetFromTopOfBottomBarConstraint.priority = .required
     }
-     */
   }
 
   // MARK: - Title bar items
@@ -1756,10 +1755,6 @@ extension PlayerWindowController {
       if isBottomBarOpen, bottomBar == .insideViewport {
         contentView.addSubview(bottomBarView, positioned: .below, relativeTo: trailingSidebarView)
       }
-    }
-
-    if layout.hasFloatingOSC {
-      contentView.addSubview(controlBarFloating, positioned: .below, relativeTo: bottomBarView)
     }
   }
 

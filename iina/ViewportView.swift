@@ -150,6 +150,7 @@ extension PlayerWindowController {
                             videoView,
                             defaultAlbumArtView,
                             additionalInfoView,
+                            controlBarFloating,
                             osd.osdView]
     let correctOrderedSubviews = possibleSubviews.filter { viewportView.containsSubview($0) }
     for subview in correctOrderedSubviews {

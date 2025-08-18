@@ -68,7 +68,7 @@ struct Preference {
     /** Soft volume (int, 0 - 100)*/
     static let softVolume = Key("softVolume")
 
-    /** Pause st first (pause) (bool) */
+    /** Pause at first (pause) (bool) */
     static let pauseWhenOpen = Key("pauseWhenOpen")
 
     /// If true, player windows will auto-hide when IINA is not the frontmost application, and show again when it

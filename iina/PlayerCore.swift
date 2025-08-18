@@ -3185,7 +3185,7 @@ class PlayerCore: NSObject {
 
       var outputVidGeo = ctx.syncVideoParamsFromMpv(startingWith: inputVidGeo)
       if outputVidGeo == nil && isShowVideoPendingInMiniPlayerCached {
-        log.verbose{"[GTF:\(ctx.name)] syncVideoParams returned nil but pending miniplayer show video; assuming no video track, continuing"}
+        log.verbose{"[GTF:\(ctx.name)] syncVideoParams returned nil but pending miniplayer show video. Assuming no video tracks, continuing"}
         outputVidGeo = inputVidGeo
       }
 

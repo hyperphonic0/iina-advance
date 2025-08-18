@@ -158,7 +158,7 @@ extension PlayerWindowController {
 
     // - Starting animations:
 
-    // 0: Set initial var or other tasks which happen before main animations
+    // Setup: Set initial var or other tasks which happen before main animations
     transition.tasks.append(.instantTask{ [self] in
       doPreTransitionWork(transition)
     })
@@ -184,13 +184,14 @@ extension PlayerWindowController {
       }))
     }
 
-    // 0: Middle point: update style & constraints. Should have minimal visual changes
+    // Midpoint: perform major constraints updates (any affected panels should have been reduced to 0 thickness by the previous
+    // task, so these updates can be performed without visible changes. In general, this step should have almost no visible
+    // changes.
     transition.tasks.append(.instantTask{ [self] in
-      // This also can change window styleMask
       updateHiddenViewsAndConstraints(transition)
     })
 
-    // Optional post-middle animation:
+    // (Music Mode only) Post-midpoint animation: move & scale video
     // When moving back or forth between windowedNormal & musicMode: scale & move the video frame for a nice transition animation.
     if transition.isTogglingMusicMode && !transition.isWindowInitialLayout {
       transition.tasks.append(.init(duration: closeOldPanelsDuration, timing: .easeInEaseOut) { [self] in
@@ -210,7 +211,7 @@ extension PlayerWindowController {
 
     // - Ending animations:
 
-    // Extra animation for exiting legacy full screen to windowed mode. In Big Sur, AppKit needed an extra transaction & more
+    // (Legacy FS only) Extra animation for exiting to windowed mode. In Big Sur, AppKit needed an extra transaction & more
     // time when animating around the camera housing, especially if also changing window `titled` style. This may no longer
     // be the case, but it's not harming anything to leave this as-is for now.
     if useExtraAnimationForExitingLegacyFullScreen {
@@ -238,13 +239,13 @@ extension PlayerWindowController {
       })
     }
 
-    // EndingAnimation: Open new panels
+    // EndingAnimation 1: Open new panels
     transition.tasks.append(.init(duration: openFinalPanelsDuration, timing: openFinalPanelsTiming, { [self] in
       // If toggling fullscreen, this also changes the window frame:
       openNewPanelsAndFinalizeOffsets(transition)
     }))
 
-    // EndingAnimation: Fade in new views
+    // EndingAnimation 2: Fade in new views
     // If exiting FS, this task is skipped. It needs to run in a separate CATransaction so it is run down below.
     if transition.isWindowInitialLayout || transition.needsFadeInNewViews {
       transition.tasks.append(.init(duration: fadeInNewViewsDuration, timing: fadeInNewViewsTiming) { [self] in
@@ -252,10 +253,11 @@ extension PlayerWindowController {
       })
     }
 
-    // If entering legacy full screen, will add an extra animation to hiding camera housing / menu bar / dock
+    // (Legacy FS only) If entering legacy full screen, adds an extra animation to hiding camera housing / menu bar / dock.
     if useExtraAnimationForEnteringLegacyFullScreen {
       let cameraToTotalFrameRatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
+
       transition.tasks.append(.init(duration: duration, timing: .easeIn) { [self] in
         let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : windowedModeScreen.cameraHousingHeight ?? 0
         let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame, 
@@ -265,7 +267,7 @@ extension PlayerWindowController {
       })
     }
 
-    // After animations all finish
+    // Post: After animations all finish. Not animated.
     transition.tasks.append(.instantTask{ [self] in
       if transition.isTogglingFullScreen {
         // For a better visual experience wait until window finishes moving

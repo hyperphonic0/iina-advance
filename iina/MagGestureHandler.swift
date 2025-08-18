@@ -20,6 +20,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
     guard !pwc.isInInteractiveMode else { return }
     guard !pwc.isInMiniPlayer || pwc.miniPlayer.videoShown else { return }
+    guard !pwc.isAnimatingLayoutTransition else { return }
 
     let pinchAction: Preference.PinchAction = Preference.enum(for: .pinchAction)
     switch pinchAction {
@@ -30,7 +31,6 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     case .fullScreen:
       // enter/exit fullscreen
       guard !pwc.isInMiniPlayer else { return }  // Disallow full screen toggle from pinch while in music mode
-      guard !pwc.isAnimatingLayoutTransition else { return }
       
       if recognizer.state == .began {
         let wantsEnlarge = recognizer.magnification > 0
@@ -41,7 +41,6 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       }
 
     case .windowSizeOrFullScreen:
-      guard !pwc.isAnimatingLayoutTransition else { return }
       guard let window = pwc.window, let screen = window.screen else { return }
 
       // Check for full screen toggle conditions first
@@ -92,7 +91,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       // avoid zero and negative numbers because they will cause problems
       let targetScale = max(0.0001, recognizer.magnification + 1.0)
 
-      IINAAnimation.disableAnimation {
+      IINAAnimation.disableAnimation {  // need this to prevent floating OSC from jumping
         pwc.scaleVideoFromPinchGesture(to: targetScale, recognizer.state)
       }
 
@@ -171,9 +170,11 @@ extension PlayerWindowController {
       /// Using `noConstraints` here has the bonus effect of allowing viewport to be resized via pinch when the video is already maximized
       /// (only useful when in windowed mode and `lockViewportToVideoSize` is disabled)
       let intendedGeo = originalGeo.scalingViewport(to: newViewportSize, screenFit: .noConstraints, mode: currentMode)
-      // User has actively resized the video. Assume this is the new intended resolution, even if it is outside the current screen size.
-      // This is useful for various features such as resizing without "lockViewportToVideoSize", or toggling visibility of outside bars.
-      player.info.intendedViewportSize = intendedGeo.viewportSize
+      if submitResult {
+        // User has actively resized the video. Assume this is the new intended resolution, even if it is outside the current screen size.
+        // This is useful for various features such as resizing without "lockViewportToVideoSize", or toggling visibility of outside bars.
+        player.info.intendedViewportSize = intendedGeo.viewportSize
+      }
 
       let outputGeo = intendedGeo.refitted(using: .stayInside)
       setFrameAndUpdateWindowSubviews(using: outputGeo, animate: false, submitUpdate: submitResult)

@@ -839,9 +839,19 @@ extension NSMutableAttributedString {
 
 
 extension String {
+  /// Allows an optional Int to be printed more easily (e.g., by using `String(optionalValue)`).
   init(_ optionalInt: Int?) {
     if let optionalInt {
       self.init(optionalInt)
+    } else {
+      self.init("nil")
+    }
+  }
+
+  /// Allows an optional Double to be printed more easily (e.g., by using `String(optionalValue)`).
+  init(_ optionalDouble: Double?) {
+    if let optionalDouble {
+      self.init(optionalDouble)
     } else {
       self.init("nil")
     }
@@ -1973,6 +1983,10 @@ extension NSView {
   func isInsideViewFrame(pointInWindow: CGPoint) -> Bool {
     let pointInView = convert(pointInWindow, from: nil)
     return isMousePoint(pointInView, in: bounds)
+  }
+
+  func hasSharedAncestor(with otherView: NSView) -> Bool {
+    return ancestorShared(with: otherView) != nil
   }
 
   func containsAllSubviews(_ views: [NSView]) -> Bool {

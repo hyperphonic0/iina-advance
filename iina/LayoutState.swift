@@ -370,7 +370,7 @@ struct LayoutState {
   let bottomBarHeight: CGFloat
 
   var hasBottomBar: Bool {
-    bottomBarHeight > 0
+    bottomBarView.isShowable
   }
 
   /// - Bar widths/heights IF `.outsideViewport`
@@ -455,6 +455,11 @@ struct LayoutState {
 
   var isMusicMode: Bool {
     return spec.mode == .musicMode
+  }
+
+  var isVideoViewShown: Bool {
+    // FIXME: flesh this out
+    return true // spec.mode != .musicMode
   }
 
   /// Note: this is always `false` for music mode and interactive modes.

@@ -191,7 +191,7 @@ extension IINAAnimation {
     private static let alarmStartWatermark: Int = 100
     private static let alarmResetWatermark: Int = 10
 
-    func _submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
+    fileprivate func _submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
       // Fail if not running on main thread:
       assert(DispatchQueue.isExecutingIn(.main))
 
