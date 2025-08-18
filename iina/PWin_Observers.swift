@@ -281,9 +281,17 @@ extension PlayerWindowController {
     case .controlBarAutoHideTimeout:
       fadeableViews.hideTimer.restart()
     case .lockViewportToVideoSize:
-      if let isLocked = newValue as? Bool, isLocked {
-        log.debug{"Pref \(key.rawValue.quoted) changed to \(isLocked): resizing viewport to remove any excess space"}
-        resizeViewport()
+      animationPipeline.submitInstantTask { [self] in
+        if let isLocked = newValue as? Bool, isLocked {
+          log.debug{"Pref \(key.rawValue.quoted) changed to \(isLocked): resizing viewport to remove any excess space"}
+          resizeViewport()
+
+          animationPipeline.submitInstantTask { [self] in  // do after resize tasks
+            player.setMpvKeepaspectWindow(to: currentLayout.mode.needsMpvKeepaspectWindow)
+          }
+        } else {
+          player.setMpvKeepaspectWindow(to: currentLayout.mode.needsMpvKeepaspectWindow)  // executes async in mpv queue
+        }
       }
     case .hideWindowsWhenInactive:
       animationPipeline.submitInstantTask({ [self] in

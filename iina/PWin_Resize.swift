@@ -633,7 +633,7 @@ extension PlayerWindowController {
       }
     }))
 
-    // TASK 3: Background cleanup
+    // TASK 3: Post-animation background state updates
     tasks.append(.instantTask{ [self] in
       if outputGeo.mode == .musicMode {
         // [MusicModeKludge-A] Previous task used a middle transition geometry. Apply the stricter geometry now
