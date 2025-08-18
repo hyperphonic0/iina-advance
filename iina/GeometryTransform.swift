@@ -648,19 +648,19 @@ struct GeometryTransform {
         // Post "ready to show" notification? Or post cancellation? Or do nothing more?
         if gtfSessionState.isRestoring {
           if pwc.window!.isMiniaturized {
-            log.verbose("Restoring minimized window; skipping windowIsReadyToShow")
+            log.verbose("[GTF:\(name)] Previously minimized window is being restored: skipping windowIsReadyToShow")
             return
           }
 
           if pwc.isWindowHidden {
-            log.verbose("Restoring window which was hidden; posting windowMustCancelShow")
+            log.verbose("[GTF:\(name)] Previously hidden video is being restored: posting windowMustCancelShow")
             pwc.postWindowMustCancelShow()
             return
           }
         }
 
         /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready. Post this always.
-        log.verbose("Posting windowIsReadyToShow")
+        log.verbose("[GTF:\(name)] Done with initial layout: posting windowIsReadyToShow")
         pwc.postWindowIsReadyToShow()
       }
     }
@@ -758,13 +758,6 @@ extension PlayerWindowController {
       log.verbose("[GTF:\(ctx.name)] Done with transition to initial layout")
     })
 
-    if ctx.needsNativeFullScreen {
-      tasks.append(.instantTask { [self] in
-        enterFullScreen()
-      })
-      return tasks
-    }
-
     if isRestoring {
       /// Stored window state may not be consistent with global IINA prefs.
       /// To check this, build another `LayoutSpec` from the global prefs, then compare it to the player's.
@@ -786,6 +779,12 @@ extension PlayerWindowController {
       }
     }
 
+    if ctx.needsNativeFullScreen {
+      tasks.append(.instantTask { [self] in
+        enterFullScreen()
+      })
+      return tasks
+    }
 
     tasks.append(ctx.buildPostInitialLayoutTask())
 

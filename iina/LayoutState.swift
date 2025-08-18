@@ -604,7 +604,7 @@ struct LayoutState {
 
     // Title bar & title bar accessories:
 
-    self.hasTopPaddingForCameraHousing = spec.isLegacyFullScreen && Preference.bool(for: .allowVideoToOverlapCameraHousing)
+    self.hasTopPaddingForCameraHousing = spec.isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
 
     // Title bar views
     var titleBarHeight: CGFloat = 0
@@ -759,7 +759,7 @@ struct LayoutState {
                                       outsideBars: outsideBars,
                                       insideBars: insideBars,
                                       video: video,
-                                      allowVideoToOverlapCameraHousing: hasTopPaddingForCameraHousing)
+                                      hasTopPaddingForCameraHousing: hasTopPaddingForCameraHousing)
   }
 
   /// Builds a new `PWinGeometry` from this `LayoutState` using the given params.

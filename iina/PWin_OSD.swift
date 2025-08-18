@@ -350,8 +350,8 @@ extension PlayerWindowController {
   func updateOSDConstraints(hasAdditionalInfo: Bool, hasLeadingSidebar: Bool, hasTrailingSidebar: Bool,
                             isLegacyFullScreen: Bool,_ geo: PWinGeometry, skipAddConstraints: Bool = false) {
     let hasOSD = Preference.bool(for: .enableOSD) && geo.videoShown
-    log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) legacyFS=\(isLegacyFullScreen.yn)"}
-    guard let contentView = window?.contentView else { return }
+    let offsetFromTop = computeOffsetFromTop(for: geo)
+    log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) legacyFS=\(isLegacyFullScreen.yn) offsetFromTop=\(offsetFromTop)"}
     osd.leadingSide_LeadingConstraint?.isActive = false
     osd.leadingSide_TrailingConstraint?.isActive = false
     osd.trailingSide_LeadingConstraint?.isActive = false
@@ -365,8 +365,6 @@ extension PlayerWindowController {
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
     let otherAnchorLeading = hasLeadingSidebar ? leadingSidebarView.trailingAnchor : viewportView.leadingAnchor
     let otherAnchorTrailing = hasTrailingSidebar ? trailingSidebarView.leadingAnchor : viewportView.trailingAnchor
-
-    let offsetFromTop = computeOffsetFromTop(for: geo, isLegacyFullScreen: isLegacyFullScreen)
 
     if hasOSD {
       if !viewportView.subviews.contains(osd.osdView) {
@@ -462,7 +460,7 @@ extension PlayerWindowController {
       sortViewportViewSubviews()
     }
 
-    contentView.layoutSubtreeIfNeeded()
+    window?.contentView?.layoutSubtreeIfNeeded()
   }
 
   private func updateOSDLeadingSide_LeadingConstraint(to constraint: NSLayoutConstraint) {
@@ -493,30 +491,15 @@ extension PlayerWindowController {
     osd.trailingSide_TrailingConstraint = constraint
   }
 
-  private func computeOffsetFromTop(for geometry: PWinGeometry, isLegacyFullScreen: Bool) -> CGFloat {
-    var offsetFromTop: CGFloat = geometry.insideBars.top + 8  // offset from top of viewportView
-    if isLegacyFullScreen {
-      let screen = NSScreen.forScreenID(geometry.screenID)!
-      // OSD & Additional Info must never overlap camera housing, even if video does
-      let cameraHousingHeight = screen.cameraHousingHeight ?? 0
-      let usedSpaceAbove = geometry.outsideBars.top + geometry.insideBars.top
-
-      if usedSpaceAbove < cameraHousingHeight {
-        let windowGapForCameraHousing = screen.frame.height - geometry.windowFrame.height
-        offsetFromTop -= windowGapForCameraHousing
-
-        let videoFillsEntireScreen = !geometry.hasTopPaddingForCameraHousing
-        if videoFillsEntireScreen {
-          offsetFromTop += cameraHousingHeight
-        }
-      }
-    }
+  /// OSD offset from top of viewportView
+  private func computeOffsetFromTop(for geometry: PWinGeometry) -> CGFloat {
+    let offsetFromTop = geometry.insideBars.top + 8
     return offsetFromTop
   }
 
   /// Update OSD view & Additional Info view constraints so they have the correct offset from top of screen.
   func updateTopOffsetConstraints(for geometry: PWinGeometry, isLegacyFullScreen: Bool) {
-    let newOffsetFromTop = computeOffsetFromTop(for: geometry, isLegacyFullScreen: isLegacyFullScreen)
+    let newOffsetFromTop = computeOffsetFromTop(for: geometry)
 
     log.verbose{"[OSD] Updating top constraint to: \(newOffsetFromTop)"}
     osd.osdTopOffsetConstraint?.animateToConstant(newOffsetFromTop)

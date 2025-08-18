@@ -182,13 +182,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   static func forFullScreen(in screen: NSScreen, legacy: Bool, mode: PlayerWindowMode,
                             outsideBars: MarginQuad, insideBars: MarginQuad,
                             video: VideoGeometry,
-                            allowVideoToOverlapCameraHousing: Bool) -> PWinGeometry {
+                            hasTopPaddingForCameraHousing: Bool) -> PWinGeometry {
 
     let windowFrame = fullScreenWindowFrame(in: screen, legacy: legacy)
     let screenFit: ScreenFit
     let topMarginHeight: CGFloat
     if legacy {
-      topMarginHeight = allowVideoToOverlapCameraHousing ? 0 : screen.cameraHousingHeight ?? 0
+      topMarginHeight = hasTopPaddingForCameraHousing ? (screen.cameraHousingHeight ?? 0) : 0
       screenFit = .legacyFullScreen
     } else {
       topMarginHeight = 0

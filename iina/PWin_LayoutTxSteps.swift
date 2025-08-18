@@ -381,7 +381,7 @@ extension PlayerWindowController {
       }
 
       let bottomBarHeight = transition.inputLayout.bottomBarPlacement == .insideViewport ? middleGeo.insideBars.bottom : middleGeo.outsideBars.bottom
-      updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement, mode: middleGeo.mode)
+      updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement)
 
       if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
         controlBarFloating.moveToLocationRatio(layout: transition.outputLayout, viewportSize: middleGeo.viewportSize)
@@ -599,12 +599,6 @@ extension PlayerWindowController {
 
     // Update bottom bar constraints *after* sidebars are added
     let isOpeningOrClosingAnySidebar = transition.isOpeningOrClosingAnySidebar
-    if needsBottomBarUpdate || isOpeningOrClosingAnySidebar {
-//      updateBottomBarPlacement(forLayout: outputLayout)
-    }
-
-    // Make sure to call this after calls to prepareLayoutForOpening(*Sidebar)
-    updateOSDConstraints(transition.outputLayout, transition.outputGeometry)
 
     if isOpeningOrClosingAnySidebar {
       log.verbose{"[\(transition.name)] Sidebars will be open: LeadingSidebar=\(leadingSidebarWillBeOpen.yn) TrailingSidebar=\(trailingSidebarWillBeOpen.yn)"}
@@ -953,9 +947,17 @@ extension PlayerWindowController {
       }
     }
 
-    updateDepthOrderOfBars(outputLayout)
-
     rebuildPanelConstraints(with: outputLayout)
+
+//    if needsBottomBarUpdate || isOpeningOrClosingAnySidebar {
+//      updateBottomBarPlacement(forLayout: outputLayout)
+//    }
+
+    // Make sure to call this after calls to prepareLayoutForOpening(*Sidebar)
+    updateOSDConstraints(transition.outputLayout, transition.outputGeometry)
+
+
+    updateDepthOrderOfBars(outputLayout)
 
     prepareDepthOrderOfOutsideSidebarsForToggle(transition)
 
@@ -984,13 +986,15 @@ extension PlayerWindowController {
     // Update heights to their final values:
     titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
 
+    // Need to update OSD vertical offset when exiting from legacy FS due to previous special animations
+    updateTopOffsetConstraints(for: transition.outputGeometry, isLegacyFullScreen: outputLayout.isLegacyFullScreen)
+
     // Update heights of top & bottom bars:
     updateTopBarHeight(to: outputLayout.topBarHeight, topBarPlacement: transition.outputLayout.topBarPlacement,
                        cameraHousingOffset: transition.outputGeometry.topMarginHeight)
 
     let bottomBarHeight = outputLayout.bottomBarPlacement == .insideViewport ? transition.outputGeometry.insideBars.bottom : transition.outputGeometry.outsideBars.bottom
-    updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: outputLayout.bottomBarPlacement,
-                          mode: outputLayout.mode)
+    updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: outputLayout.bottomBarPlacement)
 
     if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
@@ -1080,7 +1084,8 @@ extension PlayerWindowController {
             /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
             /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
             /// (will expand window to cover `cameraHousingHeight` in next animation)
-            newGeo = transition.outputGeometry.clone(windowFrame: screen.frameWithoutCameraHousing, screenID: screen.screenID, topMarginHeight: 0)
+            newGeo = transition.outputGeometry.clone(windowFrame: screen.frameWithoutCameraHousing,
+                                                     screenID: screen.screenID, topMarginHeight: 0)
           } else {
             /// `Use entire Macbook screen` is checked in Settings. As of MacOS before Sonoma 14.4, Apple has been making improvements
             /// but we still need to use  a separate animation to give the OS time to hide the menu bar - otherwise there will be a flicker.
@@ -1399,17 +1404,21 @@ extension PlayerWindowController {
   // - Top bar
 
   func updateTopBarHeight(to topBarHeight: CGFloat, topBarPlacement: Preference.PanelPlacement, cameraHousingOffset: CGFloat) {
-    log.trace{"Updating topBar height to: \(topBarHeight) for placement=\(topBarPlacement) cameraOffset=\(cameraHousingOffset)"}
-    guard topBarView.superview != nil else { return }
+    let isTopBarAttached = topBarView.superview != nil
+    log.verbose{"Updating topBar height to: \(topBarHeight) for placement=\(topBarPlacement) cameraOffset=\(cameraHousingOffset) topBarAttached=\(isTopBarAttached.yn)"}
 
     switch topBarPlacement {
     case .insideViewport:
-      topBarBottomOffsetFromViewportTopConstraint.animateToConstant(topBarHeight)
-      viewportTopOffsetFromTopBarTopConstraint.animateToConstant(0)
+      if isTopBarAttached {
+        topBarBottomOffsetFromViewportTopConstraint.animateToConstant(topBarHeight)
+        viewportTopOffsetFromTopBarTopConstraint.animateToConstant(0)
+      }
       viewportTopOffsetFromContentViewTopConstraint.animateToConstant(0 + cameraHousingOffset)
     case .outsideViewport:
-      topBarBottomOffsetFromViewportTopConstraint.animateToConstant(0)
-      viewportTopOffsetFromTopBarTopConstraint.animateToConstant(topBarHeight)
+      if isTopBarAttached {
+        topBarBottomOffsetFromViewportTopConstraint.animateToConstant(0)
+        viewportTopOffsetFromTopBarTopConstraint.animateToConstant(topBarHeight)
+      }
       viewportTopOffsetFromContentViewTopConstraint.animateToConstant(topBarHeight + cameraHousingOffset)
     }
   }
@@ -1443,33 +1452,25 @@ extension PlayerWindowController {
     bottomBarTrailingSpaceConstraint.isActive = true
   }
 
-  func updateBottomBarHeight(to bottomBarHeight: CGFloat, bottomBarPlacement: Preference.PanelPlacement,
-                             mode: PlayerWindowMode) {
-    log.trace{"Updating bottomBar height to \(bottomBarHeight) for placement=\(bottomBarPlacement)"}
-    guard bottomBarView.superview != nil else { return }
+  func updateBottomBarHeight(to bottomBarHeight: CGFloat, bottomBarPlacement: Preference.PanelPlacement) {
+    let isBottomBarAttached = bottomBarView.superview != nil
+    log.trace{"Updating bottomBar height to \(bottomBarHeight) for placement=\(bottomBarPlacement)  bottomBarAttached=\(isBottomBarAttached.yn)"}
 
     switch bottomBarPlacement {
     case .insideViewport:
-      viewportBtmOffsetFromTopOfBottomBarConstraint.animateToConstant(bottomBarHeight)
-      viewportBtmOffsetFromBtmOfBottomBarConstraint.animateToConstant(0)
-      viewportBtmOffsetFromContentViewBtmConstraint.animateToConstant(0)
+      if isBottomBarAttached {
+        viewportBtmOffsetFromTopOfBottomBarConstraint?.animateToConstant(bottomBarHeight)
+        viewportBtmOffsetFromBtmOfBottomBarConstraint?.animateToConstant(0)
+      }
+      viewportBtmOffsetFromContentViewBtmConstraint?.animateToConstant(0)
     case .outsideViewport:
-      viewportBtmOffsetFromTopOfBottomBarConstraint.animateToConstant(0)
-      viewportBtmOffsetFromBtmOfBottomBarConstraint.animateToConstant(bottomBarHeight)
-      viewportBtmOffsetFromContentViewBtmConstraint.animateToConstant(bottomBarHeight)
+      if isBottomBarAttached {
+        viewportBtmOffsetFromTopOfBottomBarConstraint?.animateToConstant(0)
+        viewportBtmOffsetFromBtmOfBottomBarConstraint?.animateToConstant(bottomBarHeight)
+      }
+      viewportBtmOffsetFromContentViewBtmConstraint?.animateToConstant(bottomBarHeight)
     }
 
-    if mode == .musicMode {
-      bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = true
-//      viewportBtmOffsetFromTopOfBottomBarConstraint.priority = .defaultLow
-      viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = false
-      viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
-    } else {
-      bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = false
-//      viewportBtmOffsetFromTopOfBottomBarConstraint.priority = .required
-      viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
-      viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
-    }
   }
 
   // MARK: - Title bar items

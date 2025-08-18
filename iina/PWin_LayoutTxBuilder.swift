@@ -191,7 +191,7 @@ extension PlayerWindowController {
       updateHiddenViewsAndConstraints(transition)
     })
 
-    // (Music Mode only) Post-midpoint animation: move & scale video
+    // (Only for Enter/Exit Music Mode) Post-midpoint animation: move & scale video
     // When moving back or forth between windowedNormal & musicMode: scale & move the video frame for a nice transition animation.
     if transition.isTogglingMusicMode && !transition.isWindowInitialLayout {
       transition.tasks.append(.init(duration: closeOldPanelsDuration, timing: .easeInEaseOut) { [self] in
@@ -211,7 +211,7 @@ extension PlayerWindowController {
 
     // - Ending animations:
 
-    // (Legacy FS only) Extra animation for exiting to windowed mode. In Big Sur, AppKit needed an extra transaction & more
+    // (Only for Exit Legacy FS) Extra animation for camera housing. In Big Sur, AppKit needed an extra transaction & more
     // time when animating around the camera housing, especially if also changing window `titled` style. This may no longer
     // be the case, but it's not harming anything to leave this as-is for now.
     if useExtraAnimationForExitingLegacyFullScreen {
@@ -232,7 +232,8 @@ extension PlayerWindowController {
           /// but we still need to use  a separate animation to give the OS time to hide the menu bar - otherwise there will be a flicker.
           let cameraHeight = windowedModeScreen.cameraHousingHeight ?? 0
           let margins = inputGeo.viewportMargins.addingTo(top: -cameraHeight)
-          newGeo = inputGeo.clone(windowFrame: inputGeo.windowFrame.addingTo(top: -cameraHeight), viewportMargins: margins)
+          newGeo = inputGeo.clone(windowFrame: inputGeo.windowFrame.addingTo(top: -cameraHeight), viewportMargins: margins,
+                                  isMiddleTransition: true)
         }
         log.verbose("[\(transition.name)] Updating legacy FS window to show camera housing prior to entering native windowed mode with windowFrame=\(newGeo.windowFrame)")
         applyLegacyFSGeo(newGeo)
@@ -253,15 +254,16 @@ extension PlayerWindowController {
       })
     }
 
-    // (Legacy FS only) If entering legacy full screen, adds an extra animation to hiding camera housing / menu bar / dock.
+    // (Only for Enter Legacy FS) Adds an extra animation to hiding camera housing / menu bar / dock.
     if useExtraAnimationForEnteringLegacyFullScreen {
       let cameraToTotalFrameRatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
 
       transition.tasks.append(.init(duration: duration, timing: .easeIn) { [self] in
-        let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : windowedModeScreen.cameraHousingHeight ?? 0
-        let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame, 
-                                                     screenID: windowedModeScreen.screenID, topMarginHeight: topBlackBarHeight)
+        let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : (windowedModeScreen.cameraHousingHeight ?? 0)
+        let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame,
+                                                     screenID: windowedModeScreen.screenID, topMarginHeight: topBlackBarHeight,
+                                                     isMiddleTransition: true)
         log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock with windowFrame=\(newGeo.windowFrame)")
         applyLegacyFSGeo(newGeo)
       })
@@ -488,7 +490,7 @@ extension PlayerWindowController {
                                         outsideBars: outsideBars,
                                         insideBars: insideBars,
                                         video: transition.outputGeometry.video,
-                                        allowVideoToOverlapCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
+                                        hasTopPaddingForCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
     }
 
     let resizedBarsGeo = transition.outputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
