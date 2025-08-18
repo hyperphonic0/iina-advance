@@ -372,8 +372,6 @@ extension PlayerWindowController {
 
     cachedMpvWindowScale = desiredMpvWindowScale
 
-    let mpvKeepAspect = currentLayout.mode.needsMpvKeepaspectWindow
-
     log.verbose{"Sending window-scale to mpv: \(currentMpvWindowScale) → \(desiredMpvWindowScale)"}
     player.mpv.queue.async { [self] in
       guard player.isActive, player.info.isFileLoaded else {
@@ -382,7 +380,6 @@ extension PlayerWindowController {
       }
 
       player.mpv.setDouble(MPVProperty.windowScale, desiredMpvWindowScale)
-      player._setMpvKeepaspectWindow(to: mpvKeepAspect)
     }
   }
 

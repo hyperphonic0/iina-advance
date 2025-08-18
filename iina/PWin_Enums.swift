@@ -261,7 +261,9 @@ enum PlayerWindowMode: Int {
   /// If `false`: tell mpv to stretch or shrink video to size of window.
   var needsMpvKeepaspectWindow: Bool {
     switch self {
-    case .windowedNormal, .fullScreenNormal:
+    case .fullScreenNormal:
+      return true
+    case .windowedNormal:
       let keepAspect = !Preference.bool(for: .lockViewportToVideoSize)
       return keepAspect
     case .windowedInteractive, .fullScreenInteractive, .musicMode:

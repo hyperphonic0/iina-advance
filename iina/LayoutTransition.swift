@@ -289,6 +289,10 @@ extension PlayerWindowController {
       || (inputLayout.hasTopOSC && isTopBarPlacementOrStyleChanging)
       || (inputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging)
     }
-  }
 
+    var needsMpvKeepaspectUpdate: Bool {
+      isWindowInitialLayout || (outputLayout.mode.needsMpvKeepaspectWindow != inputLayout.mode.needsMpvKeepaspectWindow)
+    }
+
+  }
 }

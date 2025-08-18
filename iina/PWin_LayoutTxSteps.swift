@@ -434,9 +434,8 @@ extension PlayerWindowController {
       break
     }
 
-    let outputMpvKeepaspectWindow = transition.outputLayout.mode.needsMpvKeepaspectWindow
-    if transition.isWindowInitialLayout || (outputMpvKeepaspectWindow != transition.inputLayout.mode.needsMpvKeepaspectWindow) {
-      player.setMpvKeepaspectWindow(to: outputMpvKeepaspectWindow)  // executes async in mpv queue
+    if !transition.isExitingFullScreen && transition.needsMpvKeepaspectUpdate {
+      player.setMpvKeepaspectWindow(to: outputLayout.mode.needsMpvKeepaspectWindow)  // executes async in mpv queue
     }
 
     if transition.outputLayout.spec.isLegacyStyle {
@@ -1268,6 +1267,11 @@ extension PlayerWindowController {
 
     } else if transition.isExitingFullScreen {
       // Exited FS
+
+      if transition.needsMpvKeepaspectUpdate {
+        player.setMpvKeepaspectWindow(to: transition.outputLayout.mode.needsMpvKeepaspectWindow)  // executes async in mpv queue
+      }
+
 
       if #available(macOS 10.16, *) {
         window.level = .normal
