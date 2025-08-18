@@ -265,6 +265,9 @@ class GLVideoLayer: CAOpenGLLayer {
       if forced { forceRender = true }
     }
 
+    // Prevent crash if trying to use forceRender when vid=0 (usually when toggling video on or off)
+    guard player.info.isVideoTrackSelected else { return }
+
     // Must not call display while holding isUninited's lock as that method will attempt to acquire
     // the lock and our locks do not support recursion.
     display()
