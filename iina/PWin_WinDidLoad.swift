@@ -417,13 +417,6 @@ extension PlayerWindowController {
     if layout.hasBottomBar {
       contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
 
-      // This one is only used in music mode
-      if layout.mode == .musicMode && !isActive(bottomBarBtmOffsetFromContentViewBtmConstraint) {
-        bottomBarBtmOffsetFromContentViewBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
-        bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = false
-        bottomBarBtmOffsetFromContentViewBtmConstraint.identifier = "bottomBar-Btm_OffsetFrom-CV-Btm_Constraint"
-      }
-
       if !isActive(bottomBarLeadingSpaceConstraint) {
         bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
         bottomBarLeadingSpaceConstraint.isActive = true
@@ -434,6 +427,12 @@ extension PlayerWindowController {
         bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
         bottomBarTrailingSpaceConstraint.isActive = true
         bottomBarTrailingSpaceConstraint.identifier = "bottomBarTrailingSpaceConstraint"
+      }
+
+      if !isActive(bottomBarBtmOffsetFromContentViewBtmConstraint) {
+        bottomBarBtmOffsetFromContentViewBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
+        bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = true
+        bottomBarBtmOffsetFromContentViewBtmConstraint.identifier = "bottomBar-Btm_OffsetFrom-CV-Btm_Constraint"
       }
 
       if layout.isVideoViewShown {
@@ -447,7 +446,7 @@ extension PlayerWindowController {
         }
 
         if layout.mode == .musicMode {
-          bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = true
+          viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = false
         } else {
           if !isActive(viewportBtmOffsetFromBtmOfBottomBarConstraint) {
             viewportBtmOffsetFromBtmOfBottomBarConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
@@ -462,11 +461,11 @@ extension PlayerWindowController {
       bottomBarView.removeFromSuperview()
     }
 
-//    if layout.mode == .musicMode {
-//      viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
-//    } else {
-//      viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
-//    }
+//      if layout.mode == .musicMode {
+//        viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
+//      } else {
+//        viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
+//      }
   }
 
   func isActive(_ con: NSLayoutConstraint?) -> Bool {

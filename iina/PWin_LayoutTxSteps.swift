@@ -146,8 +146,8 @@ extension PlayerWindowController {
           // Video was disabled in music mode, but need to restore it now
           player.setVideoTrackEnabled()
         } else {
-            log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
-            viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
+          log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
+          viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
         }
       }
     }

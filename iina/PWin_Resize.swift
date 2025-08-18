@@ -187,11 +187,11 @@ extension PlayerWindowController {
       }
 
       // FIXME: change bottom bar to shrink while in music mode
-//      updateBottomBarHeight(to: geometry.outsideBars.bottom, bottomBarPlacement: .outsideViewport, mode: .musicMode)
+      updateBottomBarHeight(to: geometry.outsideBars.bottom, bottomBarPlacement: .outsideViewport)
 
       if geometry.videoShown {
         /// Make sure to call `apply` AFTER `updateVideoViewHeightConstraint` if video shown
-//        miniPlayer.updateVideoViewHeightConstraint(videoShown: geometry.videoShown)
+        miniPlayer.updateVideoViewHeightConstraint(videoShown: geometry.videoShown)
         videoView.apply(geometry)
       }
 

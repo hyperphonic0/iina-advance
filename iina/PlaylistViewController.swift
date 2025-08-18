@@ -95,6 +95,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private var enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration)
 
   func updateTableColors() {
+    player.log.verbose{"Playlist sidebar: updating table colors"}
     // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
     let effectiveAppearance = view.window?.effectiveAppearance ?? view.effectiveAppearance
     effectiveAppearance.applyAppearanceFor {
@@ -298,6 +299,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   /// Use `animate: false` only for initial load, to avoid seeing a briefly empty table
   func reloadData(playlist: Bool, chapters: Bool, animate: Bool = true) {
     guard player.isActive else { return }
+    guard player.windowController.currentLayout.isMusicMode || player.windowController.isOpen(sidebarTabGroup: .playlist) else { return }
 
     if playlist {
       playlistTableReloadDebouncer.run { [self] in
@@ -308,8 +310,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
 
     if chapters {
-      player.log.verbose{"Reloading chapters table for \(player.info.chapters.count) entries"}
-      chapterTableView.reloadData()
+      windowController.animationPipeline.submitInstantTask { [self] in
+        player.log.verbose{"Reloading chapters table for \(player.info.chapters.count) entries"}
+        chapterTableView.reloadData()
+      }
     }
   }
 
@@ -686,8 +690,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   /// Reload all rows if not specified
   func reloadPlaylistRows(_ rows: IndexSet? = nil) {
-    let rows = rows ?? IndexSet(integersIn: 0..<playlistTableView.numberOfRows)
-    playlistTableView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integersIn: 0...1))
+    // Enqueue this asynchronously to prevent it from causing hiccups if other animations are in progress
+    windowController.animationPipeline.submitInstantTask{ [self] in
+      let rows = rows ?? IndexSet(integersIn: 0..<playlistTableView.numberOfRows)
+      playlistTableView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integersIn: 0...1))
+    }
   }
 
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {

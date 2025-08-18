@@ -650,6 +650,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     guard isViewLoaded else { return }
     switch currentTab {
     case .audio:
+      guard player.windowController.isOpen(sidebarTab: .audio) else { return }
       player.log.verbose{"QuickSettings: reloading tab \(currentTab.name.quoted)"}
       audioTableView.reloadData()
       updateAudioTabControls()
@@ -657,6 +658,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     case .video:
       reloadVideoTabIfShown(using: player.videoGeo)
     case .sub:
+      guard player.windowController.isOpen(sidebarTab: .sub) else { return }
       player.log.verbose{"QuickSettings: reloading tab \(currentTab.name.quoted)"}
       subTableView.reloadData()
       secSubTableView.reloadData()
@@ -677,6 +679,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   func reloadVideoTabIfShown(using videoGeo: VideoGeometry) {
     guard isViewLoaded else { return }
     guard currentTab == .video else { return }
+    guard player.windowController.isOpen(sidebarTab: .video) else { return }
     player.log.verbose{"QuickSettings: reloading video tab"}
     videoTableView.reloadData()
     updateVideoTabControls(using: videoGeo)
