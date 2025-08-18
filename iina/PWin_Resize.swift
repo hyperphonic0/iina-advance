@@ -203,6 +203,10 @@ extension PlayerWindowController {
         log.verbose{"[PWin.setFrame] Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
         viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
       }
+    } else if geometry.mode.isFullScreen && geometry.screenFit == .legacyFullScreen {
+      updateTopOffsetConstraints(for: geometry, isLegacyFullScreen: true)
+      let topBarHeight = currentLayout.topBarPlacement == .insideViewport ? geometry.insideBars.top : geometry.outsideBars.top
+      updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
     }
 
     if geometry.mode.isFullScreen && geometry.screenFit == .nativeFullScreen {
@@ -519,22 +523,6 @@ extension PlayerWindowController {
       }
     })
     animationPipeline.submitGTF(gtf)
-  }
-
-  // MARK: - Apply Geometry (Legacy Full Screen)
-
-  /// Set the window frame and if needed the content view frame to appropriately use the full screen.
-  /// For screens that contain a camera housing the content view will be adjusted to not use that area of the screen.
-  func applyLegacyFSGeo(_ geometry: PWinGeometry) {
-    assert(geometry.mode.isFullScreen, "Expected applyLegacyFSGeo to be called with full screen geometry but got \(geometry)")
-    let currentLayout = currentLayout
-
-    updateTopOffsetConstraints(for: geometry, isLegacyFullScreen: true)
-    let topBarHeight = currentLayout.topBarPlacement == .insideViewport ? geometry.insideBars.top : geometry.outsideBars.top
-    updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
-
-    log.verbose{"Calling setFrame for legacyFullScreen, to \(geometry)"}
-    setFrameAndUpdateWindowSubviews(using: geometry)
   }
 
   // MARK: - Apply PWinGeometry (General Cases)

@@ -1347,7 +1347,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
           log.verbose{"WindowDidChangeScreen: updating legacy FS window"}
           let fsGeo = layout.buildFullScreenGeometry(inScreenID: screenID, geo.video)
-          applyLegacyFSGeo(fsGeo)
+          setFrameAndUpdateWindowSubviews(using: fsGeo)
           // Update screenID at least, so that window won't go back to other screen when exiting FS
           windowedModeGeo = windowedModeGeo.clone(screenID: screenID)
           player.saveState()
@@ -1406,7 +1406,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
           log.verbose("WndDidChangeScreenParams: updating legacy full screen window")
           let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, geo.video)
-          applyLegacyFSGeo(fsGeo)
+          setFrameAndUpdateWindowSubviews(using: fsGeo)
         } else if layout.mode == .windowedNormal {
           /// In certain corner cases (e.g., exiting legacy full screen after changing screens while in full screen),
           /// the screen's `visibleFrame` can change after `transition.outputGeometry` was generated and won't be known until the end.
@@ -1448,7 +1448,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           let bestScreen = bestScreen
           log.verbose{"WindowDidMove: Updating legacy full screen window in response to unexpected windowDidMove to frame=\(window.frame), screen=\(bestScreen.screenID.quoted)"}
           let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, geo.video)
-          applyLegacyFSGeo(fsGeo)
+          setFrameAndUpdateWindowSubviews(using: fsGeo)
         } else {
           player.saveState()
           player.events.emit(.windowMoved, data: window.frame)

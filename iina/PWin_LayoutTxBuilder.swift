@@ -236,7 +236,7 @@ extension PlayerWindowController {
                                   isMiddleTransition: true)
         }
         log.verbose("[\(transition.name)] Updating legacy FS window to show camera housing prior to entering native windowed mode with windowFrame=\(newGeo.windowFrame)")
-        applyLegacyFSGeo(newGeo)
+        setFrameAndUpdateWindowSubviews(using: newGeo)
       })
     }
 
@@ -265,7 +265,7 @@ extension PlayerWindowController {
                                                      screenID: windowedModeScreen.screenID, topMarginHeight: topBlackBarHeight,
                                                      isMiddleTransition: true)
         log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock with windowFrame=\(newGeo.windowFrame)")
-        applyLegacyFSGeo(newGeo)
+        setFrameAndUpdateWindowSubviews(using: newGeo)
       })
     }
 

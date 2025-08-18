@@ -1099,7 +1099,7 @@ extension PlayerWindowController {
         }
         log.verbose("[\(transition.name)] Calling setFrame for legacyFS in OpenNewPanels")
         /// This calls `videoView.apply`:
-        applyLegacyFSGeo(newGeo)
+        setFrameAndUpdateWindowSubviews(using: newGeo)
       }
     case .musicMode:
       // Especially needed when applying initial layout:
