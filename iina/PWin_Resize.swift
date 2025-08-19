@@ -205,8 +205,8 @@ extension PlayerWindowController {
       }
     } else if geometry.mode.isFullScreen && geometry.screenFit == .legacyFullScreen {
       updateTopOffsetConstraints(for: geometry, isLegacyFullScreen: true)
-      let topBarHeight = currentLayout.topBarPlacement == .insideViewport ? geometry.insideBars.top : geometry.outsideBars.top
-      updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
+      updateTopBarHeight(to: currentLayout.topBarHeight, topBarPlacement: currentLayout.topBarPlacement,
+                         cameraHousingOffset: geometry.topMarginHeight)
     }
 
     if geometry.mode.isFullScreen && geometry.screenFit == .nativeFullScreen {

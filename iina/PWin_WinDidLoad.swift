@@ -100,7 +100,6 @@ extension PlayerWindowController {
       initOSCToolbar()
       initTopBarView(in: contentView)
       rebuildBottomBarView(in: contentView, style: .visualEffectView)
-      addTopBarAndConstraints(in: contentView)
       rebuildPanelConstraints(with: currentLayout)
       initSidebars(in: contentView)
       initPlaybackBtnsView()
@@ -163,22 +162,6 @@ extension PlayerWindowController {
     // These don't seem to matter. But set to reasonable values:
     viewportView.setContentHugging(h: 250, v: 250)
     viewportView.setCCResistance(h: 250, v: 250)
-
-    viewportTopOffsetFromContentViewTopConstraint = viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 0)
-    viewportTopOffsetFromContentViewTopConstraint.identifier = .init("Viewport-Top_OffsetFrom-CV-Top-Constraint")
-    viewportTopOffsetFromContentViewTopConstraint.isActive = true
-
-    viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
-    viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("CV-Btm_OffsetFrom-Viewport-Btm-Constraint")
-    viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
-
-    viewportLeadingOffsetFromContentViewLeadingConstraint = viewportView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
-    viewportLeadingOffsetFromContentViewLeadingConstraint.identifier = .init("Viewport-Leading_OffsetFrom-CV-Leading-Constraint")
-    viewportLeadingOffsetFromContentViewLeadingConstraint.isActive = true
-
-    viewportTrailingOffsetFromContentViewTrailingConstraint = contentView.trailingAnchor.constraint(equalTo: viewportView.trailingAnchor, constant: 0)
-    viewportTrailingOffsetFromContentViewTrailingConstraint.identifier = .init("CV-Trailing_OffsetFrom-Viewport-Trailing-Constraint")
-    viewportTrailingOffsetFromContentViewTrailingConstraint.isActive = true
 
     // These don't seem to matter. But set to reasonable values:
     let ch: Float = 250
@@ -352,12 +335,6 @@ extension PlayerWindowController {
     }
   }
 
-  func removeTopBarAndConstraints() {
-    topBarBottomOffsetFromViewportTopConstraint?.isActive = false
-    viewportTopOffsetFromTopBarTopConstraint?.isActive = false
-    topBarView.removeFromSuperview()
-  }
-
   /// The `bottomBarView` may need to be completely rebuilt if the style changes.
   /// This also adds as subview to `contentView`.
   func rebuildBottomBarView(in contentView: NSView, style: Preference.OSCColorScheme) {
@@ -408,12 +385,14 @@ extension PlayerWindowController {
   func rebuildPanelConstraints(with layout: LayoutState) {
     let contentView = window!.contentView!
 
+    // Top Bar
     if layout.topBarHeight > 0 {
       addTopBarAndConstraints(in: window!.contentView!)
     } else {
-      removeTopBarAndConstraints()
+      topBarView.removeFromSuperview()
     }
 
+    // Bottom Bar
     if layout.hasBottomBar {
       contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
 
@@ -435,30 +414,56 @@ extension PlayerWindowController {
         bottomBarBtmOffsetFromContentViewBtmConstraint.identifier = "bottomBar-Btm_OffsetFrom-CV-Btm_Constraint"
       }
 
-      if layout.isVideoViewShown {
-        assert(bottomBarView.hasSharedAncestor(with: viewportView))
-
-        // TODO: reconnect this when video is hidden
-        if !isActive(viewportBtmOffsetFromTopOfBottomBarConstraint) {
-          viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0)
-          viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Top_Constraint"
-          viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
-        }
-
-        if layout.mode == .musicMode {
-          viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = false
-        } else {
-          if !isActive(viewportBtmOffsetFromBtmOfBottomBarConstraint) {
-            viewportBtmOffsetFromBtmOfBottomBarConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
-            viewportBtmOffsetFromBtmOfBottomBarConstraint.priorityInt = 200
-            viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
-            viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint"
-          }
-        }
-      }
       updateBottomBarPlacement(forLayout: layout)
     } else {
       bottomBarView.removeFromSuperview()
+    }
+
+    // Viewport View
+    if layout.isVideoViewShown {
+      let secondAnchor = layout.hasBottomBar ?  bottomBarView.topAnchor : contentView.bottomAnchor
+      if !isActive(viewportBtmOffsetFromTopOfBottomBarConstraint) || (viewportBtmOffsetFromTopOfBottomBarConstraint.secondAnchor != secondAnchor) {
+        viewportBtmOffsetFromTopOfBottomBarConstraint?.isActive = false
+        viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: secondAnchor, constant: 0)
+        viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Top_Constraint"
+        viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
+      }
+
+      if !isActive(viewportTopOffsetFromContentViewTopConstraint) {
+        viewportTopOffsetFromContentViewTopConstraint = viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 0)
+        viewportTopOffsetFromContentViewTopConstraint.identifier = .init("Viewport-Top_OffsetFrom-CV-Top-Constraint")
+        viewportTopOffsetFromContentViewTopConstraint.isActive = true
+      }
+
+      if !isActive(viewportBtmOffsetFromContentViewBtmConstraint) {
+        viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
+        viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("CV-Btm_OffsetFrom-Viewport-Btm-Constraint")
+        viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
+      }
+
+      if !isActive(viewportLeadingOffsetFromContentViewLeadingConstraint) {
+        viewportLeadingOffsetFromContentViewLeadingConstraint = viewportView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+        viewportLeadingOffsetFromContentViewLeadingConstraint.identifier = .init("Viewport-Leading_OffsetFrom-CV-Leading-Constraint")
+        viewportLeadingOffsetFromContentViewLeadingConstraint.isActive = true
+      }
+
+      if !isActive(viewportTrailingOffsetFromContentViewTrailingConstraint) {
+        viewportTrailingOffsetFromContentViewTrailingConstraint = contentView.trailingAnchor.constraint(equalTo: viewportView.trailingAnchor, constant: 0)
+        viewportTrailingOffsetFromContentViewTrailingConstraint.identifier = .init("CV-Trailing_OffsetFrom-Viewport-Trailing-Constraint")
+        viewportTrailingOffsetFromContentViewTrailingConstraint.isActive = true
+      }
+
+
+      if layout.mode == .musicMode || !layout.hasBottomBar {
+        viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = false
+      } else {
+        if !isActive(viewportBtmOffsetFromBtmOfBottomBarConstraint) {
+          viewportBtmOffsetFromBtmOfBottomBarConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
+          viewportBtmOffsetFromBtmOfBottomBarConstraint.priorityInt = 200
+          viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
+          viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint"
+        }
+      }
     }
 
 //      if layout.mode == .musicMode {
@@ -483,12 +488,12 @@ extension PlayerWindowController {
     // - Leading sidebar
 
     leadingSidebarView.idString = "LeadingSidebarView"
-    leadingSidebarView.blendingMode = .withinWindow
+//    leadingSidebarView.blendingMode = .withinWindow
     leadingSidebarView.state = .active
     leadingSidebarView.translatesAutoresizingMaskIntoConstraints = false
     leadingSidebarView.autoresizesSubviews = false
 
-    // border
+    // Leading sidebar border
     leadingSidebarView.addSubview(leadingSidebarTrailingBorder)
     leadingSidebarTrailingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
     // Avoid constraint error by setting priority = .defaultHigh (see similar notes for bottomBarTopBorder_HeightConstraint, et al.)
@@ -500,12 +505,12 @@ extension PlayerWindowController {
     // - Trailing sidebar
 
     trailingSidebarView.idString = "TrailingSidebarView"
-    trailingSidebarView.blendingMode = .withinWindow
+//    trailingSidebarView.blendingMode = .withinWindow
     trailingSidebarView.state = .active
     trailingSidebarView.translatesAutoresizingMaskIntoConstraints = false
     trailingSidebarView.autoresizesSubviews = false
 
-    // border
+    // Trailing sidebar border
     trailingSidebarView.addSubview(trailingSidebarLeadingBorder)
     trailingSidebarLeadingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
     // Avoid constraint error by setting priority = .defaultHigh (see similar notes for bottomBarTopBorder_HeightConstraint, et al.)

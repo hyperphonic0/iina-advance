@@ -948,10 +948,6 @@ extension PlayerWindowController {
 
     rebuildPanelConstraints(with: outputLayout)
 
-//    if needsBottomBarUpdate || isOpeningOrClosingAnySidebar {
-//      updateBottomBarPlacement(forLayout: outputLayout)
-//    }
-
     // Make sure to call this after calls to prepareLayoutForOpening(*Sidebar)
     updateOSDConstraints(transition.outputLayout, transition.outputGeometry)
 
