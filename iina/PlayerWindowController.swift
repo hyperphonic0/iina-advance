@@ -489,8 +489,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // - Outlets: Views
 
-  let customWindowBorderBox = CustomWindowBorderBox()
-  let customWindowBorderTopHighlightBox = CustomWindowBorderBox()
+  let customWindowBorderBox = CustomWindowBorderBox(id: "CustomWndBorderBox", borderWidth: 1, borderColor: .customWindowBorder)
+  let customWindowBorderTopHighlightBox = CustomWindowBorderBox(id: "CustomWndBorderBox", borderWidth: 0.5, borderColor: .customWindowBorderHighlight)
 
   // MiniPlayer buttons:
   @IBOutlet weak var closeButtonView: NSView!
@@ -2327,11 +2327,32 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let newOpacity: Float = layout.isFullScreen || !layout.spec.isLegacyStyle ? 1.0 : newOpacity ?? (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0)
     // Native window removes the border if winodw background is transparent.
     // Try to match this behavior for legacy window
-    let hide = !layout.spec.isLegacyStyle || layout.isFullScreen || newOpacity < 1.0
-    if hide != customWindowBorderBox.isHidden {
-      log.debug{"Changing custom border to: \(hide ? "hidden" : "shown")"}
-      customWindowBorderBox.isHidden = hide
-      customWindowBorderTopHighlightBox.isHidden = hide
+    let wantsShown = layout.spec.isLegacyStyle && !layout.isFullScreen && newOpacity == 1.0
+    if wantsShown {
+      let contentView = window!.contentView!
+      if customWindowBorderBox.superview == nil {
+        contentView.addSubview(customWindowBorderBox, positioned: .above, relativeTo: contentView.containsSubview(topBarView) ? topBarView : viewportView)
+        // Deviate from the native look slightly by reducing trailing & bottom by 0.5pt. Just looks too distracting otherwise
+        customWindowBorderBox.addConstraintsToFillSuperview(top: 0, .required, bottom: -0.5, .required,
+                                                            leading: 0, .required, trailing: -0.5, .required)
+        customWindowBorderBox.isHidden = false
+        contentView.needsLayout = true
+      }
+
+      if customWindowBorderTopHighlightBox.superview == nil {
+        contentView.addSubview(customWindowBorderTopHighlightBox, positioned: .above, relativeTo: customWindowBorderBox)
+        // No highlight at all on the bottom & trailing: hide those sides outside superview bounds
+        customWindowBorderTopHighlightBox.addConstraintsToFillSuperview(bottom: -1.0, trailing: -1.0)
+        let hlBoxTop = customWindowBorderTopHighlightBox.topAnchor.constraint(equalTo: customWindowBorderBox.topAnchor, constant: 0)
+        hlBoxTop.isActive = true
+        let hlBoxLeading = customWindowBorderTopHighlightBox.leadingAnchor.constraint(equalTo: customWindowBorderBox.leadingAnchor, constant: 0)
+        hlBoxLeading.isActive = true
+        customWindowBorderTopHighlightBox.isHidden = false
+        contentView.needsLayout = true
+      }
+    } else {
+      customWindowBorderBox.removeFromSuperview()
+      customWindowBorderTopHighlightBox.removeFromSuperview()
     }
 
     // Update window opacity *after* showing the views above. Apparently their alpha values will not get updated if shown afterwards.

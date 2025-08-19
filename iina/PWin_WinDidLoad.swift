@@ -115,7 +115,6 @@ extension PlayerWindowController {
       closeButtonView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4).isActive = true
 
       initBufferIndicatorView(in: contentView)
-      initCustomWindowBorder(in: contentView)
 
       log.verbose("[Load] Configuring window for CoreAnimation")
       contentView.configureSubtreeForCoreAnimation()
@@ -435,10 +434,14 @@ extension PlayerWindowController {
         viewportTopOffsetFromContentViewTopConstraint.isActive = true
       }
 
-      if !isActive(viewportBtmOffsetFromContentViewBtmConstraint) {
-        viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
-        viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("CV-Btm_OffsetFrom-Viewport-Btm-Constraint")
-        viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
+      if layout.mode == .musicMode {
+        viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
+      } else {
+        if !isActive(viewportBtmOffsetFromContentViewBtmConstraint) {
+          viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
+          viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("CV-Btm_OffsetFrom-Viewport-Btm-Constraint")
+          viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
+        }
       }
 
       if !isActive(viewportLeadingOffsetFromContentViewLeadingConstraint) {
@@ -464,13 +467,13 @@ extension PlayerWindowController {
           viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint"
         }
       }
+    } else {
+      viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = false
+      viewportBtmOffsetFromTopOfBottomBarConstraint?.isActive = false
+      viewportTopOffsetFromContentViewTopConstraint?.isActive = false
+      viewportBtmOffsetFromContentViewBtmConstraint?.isActive = false
+      viewportLeadingOffsetFromContentViewLeadingConstraint?.isActive = false
     }
-
-//      if layout.mode == .musicMode {
-//        viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
-//      } else {
-//        viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
-//      }
   }
 
   func isActive(_ con: NSLayoutConstraint?) -> Bool {
@@ -776,36 +779,4 @@ extension PlayerWindowController {
     bufIndicatorWidthCon.isActive = true
   }
 
-  func initCustomWindowBorder(in contentView: NSView) {
-    customWindowBorderBox.idString = "CustomWndBorderBox"
-    customWindowBorderBox.boxType = .custom
-    customWindowBorderBox.titlePosition = .noTitle
-    customWindowBorderBox.borderWidth = 1
-    customWindowBorderBox.cornerRadius = 0
-    customWindowBorderBox.borderColor = .customWindowBorder
-    customWindowBorderBox.translatesAutoresizingMaskIntoConstraints = false
-    contentView.addSubview(customWindowBorderBox, positioned: .below, relativeTo: topBarView)
-    // Deviate from the native look slightly by reducing trailing & bottom by 0.5pt. Just looks too distracting otherwise
-    customWindowBorderBox.addConstraintsToFillSuperview(top: 0, .required, bottom: -0.5, .required,
-                                                        leading: 0, .required, trailing: -0.5, .required)
-
-    customWindowBorderTopHighlightBox.idString = "CustomWndBorderTopHighlightBox"
-    customWindowBorderTopHighlightBox.boxType = .custom
-    customWindowBorderTopHighlightBox.titlePosition = .noTitle
-    customWindowBorderTopHighlightBox.borderWidth = 0.5
-    customWindowBorderTopHighlightBox.cornerRadius = 0
-    customWindowBorderTopHighlightBox.borderColor = .customWindowBorderHighlight
-    customWindowBorderTopHighlightBox.translatesAutoresizingMaskIntoConstraints = false
-    contentView.addSubview(customWindowBorderTopHighlightBox, positioned: .above, relativeTo: customWindowBorderBox)
-    // No highlight at all on the bottom & trailing: hide those sides outside superview bounds
-    customWindowBorderTopHighlightBox.addConstraintsToFillSuperview(bottom: -1.0, trailing: -1.0)
-    let hlBoxTop = customWindowBorderTopHighlightBox.topAnchor.constraint(equalTo: customWindowBorderBox.topAnchor, constant: 0)
-    hlBoxTop.isActive = true
-    let hlBoxLeading = customWindowBorderTopHighlightBox.leadingAnchor.constraint(equalTo: customWindowBorderBox.leadingAnchor, constant: 0)
-    hlBoxLeading.isActive = true
-
-    // Hide by default
-    customWindowBorderTopHighlightBox.isHidden = true
-    customWindowBorderBox.isHidden = true
-  }
 }
