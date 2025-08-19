@@ -153,11 +153,6 @@ struct Sidebar {
     }
   }
 
-  struct MusicModeState {
-    let playlistShown: Bool
-    let videoShown: Bool
-  }
-
 
   // MARK: - Sidebar Init
 

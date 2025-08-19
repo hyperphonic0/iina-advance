@@ -352,6 +352,51 @@ extension PlayerWindowController {
     case .musicMode:
       /// `videoAspect` may have gone stale while not in music mode. Update it (playlist height will be recalculated if needed):
       let musicModeGeoCorrected = inputGeoSet.musicMode.cloneMusicMode(video: inputGeometry.video).refitted()
+
+      if inputLayout.mode == .musicMode, let inputState = inputLayout.spec.musicModeState,
+         let outputState = outputLayout.spec.musicModeState {
+
+        if inputState.playlistShown != outputState.playlistShown {
+          // Toggling music mode playlist
+          let inputPlistHeight = inputGeometry.musicModePlaylistHeight
+          let showPlaylist = !inputGeometry.isMusicModePlaylistVisible
+          log.verbose{"Toggling playlist visibility: \((!showPlaylist).yn) → \(showPlaylist.yn)"}
+
+          let outputWindowHeight: CGFloat
+          if showPlaylist {
+            // Try to show playlist using stored height
+            let savedPlistHeight = CGFloat(Preference.integer(for: .musicModePlaylistHeight))
+            // The window may be in the middle of a previous toggle, so we can't just assume window's current frame
+            // represents a state where the playlist is fully shown or fully hidden. Instead, start by computing the height
+            // we want to set, and then figure out the changes needed to the window's existing frame.
+            let targetHeightToAdd = savedPlistHeight - inputPlistHeight
+            // Fill up screen if needed
+            outputWindowHeight = inputGeometry.windowFrame.height + targetHeightToAdd
+          } else {
+            // Hiding playlist
+            let playlistHeightRounded = Int(round(inputPlistHeight))
+            if playlistHeightRounded >= Int(Constants.Distance.MusicMode.minPlaylistHeight) {
+              log.trace{"Saving prev playlist height: \(playlistHeightRounded)"}
+              Preference.set(playlistHeightRounded, for: .musicModePlaylistHeight)
+            }
+
+            // If video is also hidden, do not try to shrink smaller than the control view, which would cause
+            // a constraint violation. This is possible due to small imprecisions in various layout calculations.
+            outputWindowHeight = max(Constants.Distance.MusicMode.oscHeight, inputGeometry.windowFrame.height - inputPlistHeight)
+          }
+
+          // adjust window origin to expand downwards
+          let heightChange = outputWindowHeight - inputGeometry.windowFrame.height
+          let outputWindowFrame = NSRect(x: inputGeometry.windowFrame.origin.x,
+                                         y: inputGeometry.windowFrame.origin.y - heightChange,
+                                         width: inputGeometry.windowFrame.width, height: outputWindowHeight)
+
+          // Constrain window so that it doesn't expand below bottom of screen, or fall offscreen
+          let outputGeometry = inputGeometry.cloneMusicMode(windowFrame: outputWindowFrame, playlistShown: showPlaylist)
+          return outputGeometry
+        }
+
+      }
       return musicModeGeoCorrected
 
     }
@@ -407,6 +452,7 @@ extension PlayerWindowController {
       return PWinGeometry(windowFrame: middleWindowFrame, screenID: baseGeo.screenID,
                           screenFit: baseGeo.screenFit, mode: .windowedNormal, topMarginHeight: 0,
                           outsideBars: .zero, insideBars: .zero, video: baseGeo.video)
+
     } else if transition.isExitingMusicMode {
       // - Music Mode: Exit
       if transition.isEnteringFullScreen {

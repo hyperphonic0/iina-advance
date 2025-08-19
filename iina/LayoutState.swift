@@ -36,6 +36,7 @@ struct LayoutSpec {
 
   /// The mode of the interactive mode. ONLY used if `mode==.windowedInteractive || mode==.fullScreenInteractive`
   let interactiveMode: InteractiveMode?
+  let musicModeState: MusicModeState?
 
   let moreSidebarState: Sidebar.SidebarMiscState
 
@@ -45,6 +46,7 @@ struct LayoutSpec {
        oscColorScheme: Preference.OSCColorScheme,
        controlBarGeo: ControlBarGeometry? = nil,
        interactiveMode: InteractiveMode?,
+       musicModeState: MusicModeState? = nil,
        moreSidebarState: Sidebar.SidebarMiscState) {
 
     var mode = mode
@@ -55,6 +57,7 @@ struct LayoutSpec {
     }
     self.mode = mode
     self.oscColorScheme = oscColorScheme
+    self.musicModeState = musicModeState
 
     switch mode {
     case .windowedNormal, .fullScreenNormal:
@@ -109,6 +112,8 @@ struct LayoutSpec {
     // Tricky need for parantheses here! Would be great as an interview question
     let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen) : Preference.bool(for: .useLegacyWindowedMode))
     let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
+    let musicModeState = MusicModeState(playlistShown: Preference.bool(for: .musicModeShowPlaylist),
+                                        videoShown: Preference.bool(for: .musicModeShowAlbumArt))
 
     return LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
                       mode: mode,
@@ -119,6 +124,7 @@ struct LayoutSpec {
                       oscPosition: Preference.enum(for: .oscPosition),
                       oscColorScheme: effectiveOSCColorSchemeFromPrefs,
                       interactiveMode: interactiveMode,
+                      musicModeState: musicModeState,
                       moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs())
   }
 
@@ -142,7 +148,8 @@ struct LayoutSpec {
              oscPosition: Preference.OSCPosition? = nil,
              controlBarGeo: ControlBarGeometry? = nil,
              interactiveMode: InteractiveMode? = nil,
-             moreSidebarState: Sidebar.SidebarMiscState? = nil) -> LayoutSpec {
+             moreSidebarState: Sidebar.SidebarMiscState? = nil,
+             musicModeState: MusicModeState? =  nil) -> LayoutSpec {
 
     // make sure mode is consistent for self & controlBarGeo
     let controlBarGeo = controlBarGeo ?? (mode == nil ? self.controlBarGeo : self.controlBarGeo.clone(mode: mode!))
@@ -158,6 +165,7 @@ struct LayoutSpec {
                       oscColorScheme: self.oscColorScheme,
                       controlBarGeo: controlBarGeo,
                       interactiveMode: interactiveMode ?? self.interactiveMode,
+                      musicModeState: musicModeState ?? self.musicModeState,
                       moreSidebarState: moreSidebarState ?? self.moreSidebarState)
   }
 
@@ -310,6 +318,12 @@ struct LayoutSpec {
     leadingSidebar.isVisible || trailingSidebar.isVisible
   }
 }
+
+struct MusicModeState {
+  let playlistShown: Bool
+  let videoShown: Bool
+}
+
 
 /// `LayoutState`: data structure which contains all the variables which describe a single layout configuration of the `PlayerWindow`.
 /// ("Layout" might have been a better name for this class, but it's already used by AppKit). Notes:
