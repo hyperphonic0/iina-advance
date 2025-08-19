@@ -142,7 +142,7 @@ extension PlayerWindowController {
 
       if transition.isExitingMusicMode {
         // Make sure to restore video
-        if !miniPlayer.videoShown {
+        if !transition.inputGeometry.videoShown {
           // Video was disabled in music mode, but need to restore it now
           player.setVideoTrackEnabled()
         } else {
@@ -1062,11 +1062,13 @@ extension PlayerWindowController {
     }
 
     switch transition.outputLayout.mode {
+      
     case .fullScreenNormal, .fullScreenInteractive:
       if transition.outputLayout.isNativeFullScreen {
         // Native Full Screen: set frame not including camera housing because it looks better with the native animation
         log.verbose{"[\(transition.name)] Calling setFrame to animate into nativeFS, to: \(transition.outputGeometry.windowFrame)"}
         setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
+
       } else if transition.outputLayout.isLegacyFullScreen {
         let screen = NSScreen.getScreenOrDefault(screenID: transition.outputGeometry.screenID)
         let newGeo: PWinGeometry
@@ -1097,10 +1099,12 @@ extension PlayerWindowController {
         /// This calls `videoView.apply`:
         setFrameAndUpdateWindowSubviews(using: newGeo)
       }
+
     case .musicMode:
       // Especially needed when applying initial layout:
       log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with musicMode windowFrame=\(transition.outputGeometry.windowFrame)")
       setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
+
     case .windowedNormal, .windowedInteractive:
       log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with output windowFrame=\(transition.outputGeometry.windowFrame)")
       setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)

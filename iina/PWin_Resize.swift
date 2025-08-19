@@ -209,17 +209,15 @@ extension PlayerWindowController {
                          cameraHousingOffset: geometry.topMarginHeight)
     }
 
-    if geometry.mode.isFullScreen && geometry.screenFit == .nativeFullScreen {
-      log.verbose("[PWin.setFrame] Geometry is native fullscreen; will not modify window.frame")
+    let window = (window as? PlayerWindow)!
+    if window.frame.equalTo(geometry.windowFrame) {
+      log.verbose("[PWin.setFrame] No change to windowFrame")
     } else {
-      let window = (window as? PlayerWindow)!
-      if window.frame.equalTo(geometry.windowFrame) {
-        log.verbose("[PWin.setFrame] No change to windowFrame")
-      } else {
-        log.verbose{"[PWin.setFrame] Setting frame=\(geometry.windowFrame) animate=\(animate.yn)"}
-        window.useZeroDurationForNextResize = true
-        window.setFrame(geometry.windowFrame, display: true, animate: animate)
+      log.verbose{"[PWin.setFrame] Setting frame=\(geometry.windowFrame) animate=\(animate.yn)"}
+      window.useZeroDurationForNextResize = true
+      window.setFrame(geometry.windowFrame, display: true, animate: animate)
 
+      if !geometry.mode.isFullScreen {
         player.events.emit(.windowResized, data: window.frame)
       }
     }
