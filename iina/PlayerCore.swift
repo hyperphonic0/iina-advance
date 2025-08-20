@@ -3153,9 +3153,7 @@ class PlayerCore: NSObject {
     /// Grab & reset `isShowVideoPendingInMiniPlayer` in mpv queue right away to avoid race
     let isShowVideoPendingInMiniPlayerCached = isShowVideoPendingInMiniPlayer
 
-    guard (vid != info.vid) || isShowVideoPendingInMiniPlayerCached else {
-      return
-    }
+    guard (vid != info.vid) || isShowVideoPendingInMiniPlayerCached else { return }
     isShowVideoPendingInMiniPlayer = false
     info.vid = vid
 
@@ -3177,7 +3175,6 @@ class PlayerCore: NSObject {
     }
 
     let videoGeoTF: GeometryTransform.VideoGeometryTF = { [self] inputVidGeo, ctx -> VideoGeometry? in
-
       guard ctx.currentPlayback.state.isAtLeast(.loaded) else {
         log.verbose{"[GTF:\(ctx.name)] vid changed to \(vid) but file is not loaded"}
         return nil
@@ -3190,31 +3187,34 @@ class PlayerCore: NSObject {
       }
 
       // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
-      if !silent, vid != 0, (!isInMiniPlayer || (windowController.miniPlayer.videoShown && !isShowVideoPendingInMiniPlayerCached)) {
+      if !silent, (!isInMiniPlayer || (windowController.miniPlayer.videoShown && !isShowVideoPendingInMiniPlayerCached)) {
         sendOSD(.track(info.track(.video, id: vid) ?? .noneVideoTrack))
       }
       if vid != 0, isActive, !isRestoring {
         reloadThumbnails()
       }
       postNotification(.iinaVIDChanged)
-
       return outputVidGeo
     }
 
-    let musicModeTF: GeometryTransform.PWinGeometryTF = { [self] ctx -> PWinGeometry? in
-      guard ctx.outputLayout.isMusicMode else { return nil }
-
-      let inputMusicModeGeo = ctx.inputGeoSet.musicMode
-      // Vid changed, but not from toggling music mode? Then no extra changes needed to musicMode geo.
-      guard isShowVideoPendingInMiniPlayerCached else { return nil }
-      log.verbose{"[GTF:\(ctx.name)] Showing video in music mode (visibleNow=\(inputMusicModeGeo.videoShown.yesno))"}
-      miniPlayerShowVideoTimer.cancel()
-      guard isInMiniPlayer && !inputMusicModeGeo.videoShown else { return nil }
-      let newGeo = inputMusicModeGeo.withVideoViewVisible(true)
-      return newGeo
+    // Special transform if toggling video ON in music mode
+    let musicModeTF: GeometryTransform.PWinGeometryTF?
+    if isShowVideoPendingInMiniPlayerCached {
+      musicModeTF = { [self] ctx -> PWinGeometry? in
+        guard ctx.outputLayout.isMusicMode else { return nil }
+        let inputMusicModeGeo = ctx.inputGeoSet.musicMode
+        log.verbose{"[GTF:\(ctx.name)] Showing video in music mode (visibleNow=\(inputMusicModeGeo.videoShown.yesno))"}
+        miniPlayerShowVideoTimer.cancel()
+        guard isInMiniPlayer && !inputMusicModeGeo.videoShown else { return nil }
+        let newGeo = inputMusicModeGeo.withVideoViewVisible(true)
+        return newGeo
+      }
+    } else {
+      musicModeTF = nil
     }
 
-    let gtf = GeometryTransform("VidTrackChanged", self,
+    let gtfName = isShowVideoPendingInMiniPlayerCached ? "ShowVideo" : "VidTrackChanged"
+    let gtf = GeometryTransform(gtfName, self,
                                 syncVideoParams: false,   // does the syncing itself
                                 sessionState: sessionStateTF,
                                 video: videoGeoTF,

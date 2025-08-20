@@ -322,6 +322,15 @@ struct LayoutSpec {
 struct MusicModeState {
   let playlistShown: Bool
   let videoShown: Bool
+
+  func clone(playlistShown: Bool? = nil, videoShown: Bool? = nil) -> MusicModeState {
+    return MusicModeState(playlistShown: playlistShown ?? self.playlistShown,
+                          videoShown: videoShown ?? self.videoShown)
+  }
+
+  static func from(_ pwinGeo: PWinGeometry) -> MusicModeState {
+    MusicModeState(playlistShown: pwinGeo.isMusicModePlaylistVisible, videoShown: pwinGeo.videoShown)
+  }
 }
 
 

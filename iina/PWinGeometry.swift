@@ -1289,6 +1289,51 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return cloneMusicMode(windowFrame: newWindowFrame, videoShown: visible)
   }
 
+  func withPlaylistShown(_ shown: Bool) -> PWinGeometry {
+    guard shown != self.isMusicModePlaylistVisible else { return self }
+    guard mode == .musicMode else {
+      log.error{"Cannot toggle playlist visibility: not in music mode: \(self)"}
+      return self
+    }
+
+    let inputPlistHeight = musicModePlaylistHeight
+    let showPlaylist = !isMusicModePlaylistVisible
+    log.verbose{"Toggling playlist visibility: \((!showPlaylist).yn) → \(showPlaylist.yn)"}
+
+    let outputWindowHeight: CGFloat
+    if showPlaylist {
+      // Try to show playlist using stored height
+      let savedPlistHeight = CGFloat(Preference.integer(for: .musicModePlaylistHeight))
+      // The window may be in the middle of a previous toggle, so we can't just assume window's current frame
+      // represents a state where the playlist is fully shown or fully hidden. Instead, start by computing the height
+      // we want to set, and then figure out the changes needed to the window's existing frame.
+      let targetHeightToAdd = savedPlistHeight - inputPlistHeight
+      // Fill up screen if needed
+      outputWindowHeight = windowFrame.height + targetHeightToAdd
+    } else {
+      // Hiding playlist
+      let playlistHeightRounded = Int(round(inputPlistHeight))
+      if playlistHeightRounded >= Int(Constants.Distance.MusicMode.minPlaylistHeight) {
+        log.trace{"Saving prev playlist height: \(playlistHeightRounded)"}
+        Preference.set(playlistHeightRounded, for: .musicModePlaylistHeight)
+      }
+
+      // If video is also hidden, do not try to shrink smaller than the control view, which would cause
+      // a constraint violation. This is possible due to small imprecisions in various layout calculations.
+      outputWindowHeight = max(Constants.Distance.MusicMode.oscHeight, windowFrame.height - inputPlistHeight)
+    }
+
+    // adjust window origin to expand downwards
+    let heightChange = outputWindowHeight - windowFrame.height
+    let outputWindowFrame = NSRect(x: windowFrame.origin.x,
+                                   y: windowFrame.origin.y - heightChange,
+                                   width: windowFrame.width, height: outputWindowHeight)
+
+    // Constrain window so that it doesn't expand below bottom of screen, or fall offscreen
+    let outputGeometry = cloneMusicMode(windowFrame: outputWindowFrame, playlistShown: showPlaylist)
+    return outputGeometry
+  }
+
   struct MusicMode {
     static func playlistHeight(windowFrame: CGRect, video: VideoGeometry, videoShown: Bool, playlistShown: Bool) -> CGFloat {
       guard playlistShown else {

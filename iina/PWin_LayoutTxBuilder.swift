@@ -19,8 +19,8 @@ extension PlayerWindowController {
   /// which contains all the information needed to animate the UI changes from the current `LayoutState` to the new one.
   @discardableResult
   func buildLayoutTransition(named transitionName: String,
-                             from inputLayout: LayoutState,
-                             to outputSpec: LayoutSpec,
+                             from inputLayout: LayoutState, _ inputGeoExplicit: PWinGeometry? = nil,
+                             to outputSpec: LayoutSpec, _ outputGeoExplicit: PWinGeometry? = nil,
                              isWindowInitialLayout: Bool = false,
                              totalStartingDuration: CGFloat? = nil,
                              totalEndingDuration: CGFloat? = nil,
@@ -47,12 +47,13 @@ extension PlayerWindowController {
     // - Build GeometrySet
 
     // InputGeometry
-    let inputGeometry: PWinGeometry = buildInputGeometry(from: inputLayout, transitionName: transitionName,
-                                                         inputGeoSet, windowedModeScreen: windowedModeScreen)
+    let inputGeometry = inputGeoExplicit ?? buildInputGeometry(from: inputLayout, transitionName: transitionName,
+                                                               inputGeoSet, windowedModeScreen: windowedModeScreen)
 
     // OutputGeometry
-    let outputGeometry: PWinGeometry = buildOutputGeometry(inputLayout: inputLayout, inputGeometry: inputGeometry,
-                                                           outputLayout: outputLayout, inputGeoSet, isWindowInitialLayout: isWindowInitialLayout)
+    let outputGeometry = outputGeoExplicit ?? buildOutputGeometry(inputLayout: inputLayout, inputGeometry: inputGeometry,
+                                                                  outputLayout: outputLayout, inputGeoSet,
+                                                                  isWindowInitialLayout: isWindowInitialLayout)
 
     let transition = LayoutTransition(name: transitionName,
                                       from: inputLayout, from: inputGeometry,
@@ -64,9 +65,9 @@ extension PlayerWindowController {
       transition.middleGeometry = middleGeo.clone(isMiddleTransition: true)
     }
 
-    log.verbose("[\(transitionName)] INPUT:  \(inputGeometry)")
+    log.verbose("[\(transitionName)] INPUT\(inputGeoExplicit == nil ? "" : "(given)"):  \(inputGeometry)")
     log.verbose("[\(transitionName)] MIDDLE: \(transition.middleGeometry?.description ?? "nil")")
-    log.verbose("[\(transitionName)] OUTPUT: \(outputGeometry)")
+    log.verbose("[\(transitionName)] OUTPUT\(outputGeoExplicit == nil ? "" : "(given)"):  \(outputGeometry)")
 
     let closeOldPanelsTiming: CAMediaTimingFunctionName
     let openFinalPanelsTiming: CAMediaTimingFunctionName
@@ -289,6 +290,7 @@ extension PlayerWindowController {
   /// Builds `inputGeometry`.
   private func buildInputGeometry(from inputLayout: LayoutState, transitionName: String, _ inputGeoSet: GeometrySet, 
                                   windowedModeScreen: NSScreen) -> PWinGeometry {
+    
     // Restore window size & position
     switch inputLayout.mode {
     case .windowedNormal:
@@ -298,12 +300,13 @@ extension PlayerWindowController {
     case .windowedInteractive:
       /// `.inputGeoSet.windowed` should already be correct for interactiveWindowed mode, but it is easy enough to derive it
       /// from a small number of variables, and safer to do that than assume it is correct:
-      return PWinGeometry.buildInteractiveModeWindow(windowFrame: inputGeoSet.windowed.windowFrame, screenID: inputGeoSet.windowed.screenID,
-                                                     video: inputGeoSet.windowed.video)
+      return PWinGeometry.buildInteractiveModeWindow(windowFrame: inputGeoSet.windowed.windowFrame,
+                                                     screenID: inputGeoSet.windowed.screenID,
+                                                     video: inputGeoSet.video)
     case .musicMode:
       /// `musicModeGeo` should have already been deserialized and set.
       /// But make sure we correct any size problems.
-      return inputGeoSet.musicMode.refitted()
+      return inputGeoSet.musicMode.clone(video: inputGeoSet.video).refitted()
     }
   }
 
@@ -350,55 +353,21 @@ extension PlayerWindowController {
       return outputLayout.buildFullScreenGeometry(inScreenID: inputGeometry.screenID, inputGeometry.video)
 
     case .musicMode:
-      /// `videoAspect` may have gone stale while not in music mode. Update it (playlist height will be recalculated if needed):
-      let musicModeGeoCorrected = inputGeoSet.musicMode.cloneMusicMode(video: inputGeometry.video).refitted()
-
       if inputLayout.mode == .musicMode, let inputState = inputLayout.spec.musicModeState,
          let outputState = outputLayout.spec.musicModeState {
 
-        if inputState.playlistShown != outputState.playlistShown {
+        if inputState.videoShown != outputState.videoShown {
+          return inputGeometry.withVideoViewVisible(outputState.videoShown)
+
+        } else if inputState.playlistShown != outputState.playlistShown {
           // Toggling music mode playlist
-          let inputPlistHeight = inputGeometry.musicModePlaylistHeight
-          let showPlaylist = !inputGeometry.isMusicModePlaylistVisible
-          log.verbose{"Toggling playlist visibility: \((!showPlaylist).yn) → \(showPlaylist.yn)"}
-
-          let outputWindowHeight: CGFloat
-          if showPlaylist {
-            // Try to show playlist using stored height
-            let savedPlistHeight = CGFloat(Preference.integer(for: .musicModePlaylistHeight))
-            // The window may be in the middle of a previous toggle, so we can't just assume window's current frame
-            // represents a state where the playlist is fully shown or fully hidden. Instead, start by computing the height
-            // we want to set, and then figure out the changes needed to the window's existing frame.
-            let targetHeightToAdd = savedPlistHeight - inputPlistHeight
-            // Fill up screen if needed
-            outputWindowHeight = inputGeometry.windowFrame.height + targetHeightToAdd
-          } else {
-            // Hiding playlist
-            let playlistHeightRounded = Int(round(inputPlistHeight))
-            if playlistHeightRounded >= Int(Constants.Distance.MusicMode.minPlaylistHeight) {
-              log.trace{"Saving prev playlist height: \(playlistHeightRounded)"}
-              Preference.set(playlistHeightRounded, for: .musicModePlaylistHeight)
-            }
-
-            // If video is also hidden, do not try to shrink smaller than the control view, which would cause
-            // a constraint violation. This is possible due to small imprecisions in various layout calculations.
-            outputWindowHeight = max(Constants.Distance.MusicMode.oscHeight, inputGeometry.windowFrame.height - inputPlistHeight)
-          }
-
-          // adjust window origin to expand downwards
-          let heightChange = outputWindowHeight - inputGeometry.windowFrame.height
-          let outputWindowFrame = NSRect(x: inputGeometry.windowFrame.origin.x,
-                                         y: inputGeometry.windowFrame.origin.y - heightChange,
-                                         width: inputGeometry.windowFrame.width, height: outputWindowHeight)
-
-          // Constrain window so that it doesn't expand below bottom of screen, or fall offscreen
-          let outputGeometry = inputGeometry.cloneMusicMode(windowFrame: outputWindowFrame, playlistShown: showPlaylist)
-          return outputGeometry
+          return inputGeometry.withPlaylistShown(outputState.playlistShown)
         }
-
       }
-      return musicModeGeoCorrected
 
+      /// `videoAspect` may have gone stale while not in music mode. Update it (playlist height will be recalculated if needed):
+      let musicModeGeoCorrected = inputGeoSet.musicMode.cloneMusicMode(video: inputGeometry.video).refitted()
+      return musicModeGeoCorrected
     }
   }
 

@@ -231,17 +231,15 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   /// Action: Show/Hide playlist
   @IBAction func togglePlaylist(_ sender: AnyObject?) {
     windowController.animationPipeline.submitInstantTask({ [self] in
-      let inputMusicModeGeo = windowController.musicModeGeo
       // Use MusicModeState as an adapter from PWinGeometry & LayoutState paradigms
-      let inputMusicModeState = MusicModeState(playlistShown: inputMusicModeGeo.isMusicModePlaylistVisible,
-                                               videoShown: inputMusicModeGeo.videoShown)
+      let inputMusicModeState =  MusicModeState.from(windowController.musicModeGeo)
       let inputSpec = windowController.currentLayout.spec.clone(musicModeState: inputMusicModeState)
       guard inputSpec.mode == .musicMode else { return }
       let inputLayout = LayoutState(spec: inputSpec)
-      let outputMusicModeState = MusicModeState(playlistShown: !inputMusicModeState.playlistShown,
-                                                videoShown: inputMusicModeState.videoShown)
+      let outputMusicModeState = inputMusicModeState.clone(playlistShown: !inputMusicModeState.playlistShown)
       let outputSpec = inputSpec.clone(musicModeState: outputMusicModeState)
-      let name = outputMusicModeState.playlistShown ? "ShowMusicModePlaylist" : "HideMusicModePlaylist"
+
+      let name = outputMusicModeState.playlistShown ? "ShowMusicPlaylist" : "HideMusicPlaylist"
       windowController.buildLayoutTransition(named: name, from: inputLayout, to: outputSpec, thenRun: true)
     })
   }
@@ -261,7 +259,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
         /// This will call `setFrameAndUpdateWindowSubviews`, which will call `setVideoTrackDisabled`.
         /// We want to wait until the animation is done before disabling video.
         // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
-        let gtf = GeometryTransform("HideVideoView", player,
+        let gtf = GeometryTransform("HideVideo", player,
                                     windowed: { [self] ctx -> PWinGeometry? in
           // music mode only. Other modes should fall back to default
           guard ctx.outputLayout.mode == .musicMode else { return nil }

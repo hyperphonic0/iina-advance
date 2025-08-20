@@ -467,12 +467,12 @@ extension PlayerWindowController {
 
       let screenFit: ScreenFit = centerOnScreen ? .centerInside : .stayInside
       outputGeo = newGeoUnconstrained.refitted(using: screenFit)
-      log.verbose{"Calling applyWindowGeo from resizeViewport (center=\(centerOnScreen.yn)), to: \(outputGeo.windowFrame)"}
+      log.verbose{"Calling applyPWinGeo from resizeViewport (center=\(centerOnScreen.yn)), to: \(outputGeo.windowFrame)"}
     case .musicMode:
       /// In music mode, `viewportSize==videoSize` always. Will get `nil` here if video is not visible
       inputGeo = musicModeGeoForCurrentFrame()
       outputGeo = inputGeo.scalingViewport(to: desiredViewportSize)
-      log.verbose{"Calling applyWindowGeo from resizeViewport, to: \(outputGeo.windowFrame)"}
+      log.verbose{"Calling applyPWinGeo from resizeViewport, to: \(outputGeo.windowFrame)"}
     default:
       return
     }
