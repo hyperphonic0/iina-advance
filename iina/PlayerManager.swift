@@ -19,7 +19,7 @@ class PlayerManager {
 
   var pipPlayer: PlayerCore? = nil {
     willSet {
-      if let pipPlayer, let wc = pipPlayer.windowController, wc.pip.status == .inPIP {
+      if let pipPlayer, let wc = pipPlayer.pwc, wc.pip.status == .inPIP {
         wc.animationPipeline.submit(.instantTask {
           pipPlayer.log.debug("PlayerManager: another player wants PiP; exiting PiP")
           wc.exitPIP()
@@ -77,7 +77,7 @@ class PlayerManager {
 
   var hasOpenPlayer: Bool {
     for player in playerCores {
-      if player.windowController.isOpen {
+      if player.pwc.isOpen {
         return true
       }
     }

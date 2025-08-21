@@ -219,10 +219,10 @@ fileprivate class TrackAPI: JavascriptAPI, TrackAPIExportable {
 fileprivate class WindowAPI: JavascriptAPI, CoreSubAPIExportable {
   func __proxyGet(_ prop: String) -> Any? {
     if prop == "loaded" {
-      return player!.windowController.loaded
+      return player!.pwc.loaded
     }
 
-    guard let window = player!.windowController, window.loaded else { return NSNull() }
+    guard let window = player!.pwc, window.loaded else { return NSNull() }
 
     // props that requires a loaded window
     switch prop {
@@ -259,7 +259,7 @@ fileprivate class WindowAPI: JavascriptAPI, CoreSubAPIExportable {
   }
 
   func __proxySet(_ prop: String, _ value: Any) {
-    guard let window = player!.windowController, window.loaded else { return }
+    guard let window = player!.pwc, window.loaded else { return }
 
     switch prop {
     case "frame":

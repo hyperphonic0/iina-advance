@@ -285,7 +285,7 @@ extension MPVController {
       }
 
     case MPVOption.Video.videoRotate:
-      guard player.windowController.loaded else { break }
+      guard player.pwc.loaded else { break }
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
       let userRotation = Int(data)
 
@@ -295,14 +295,14 @@ extension MPVController {
       player.userRotationDidChange(to: userRotation)
 
     case MPVProperty.dwidth:
-      guard player.windowController.loaded else { break }
+      guard player.pwc.loaded else { break }
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
       let dwidth = Int(data)
       player.log.verbose("Δ mpv prop: 'dwidth' ≔ \(dwidth)")
       player.syncVideoParamsFromMpv()
 
     case MPVProperty.dheight:
-      guard player.windowController.loaded else { break }
+      guard player.pwc.loaded else { break }
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
       let dheight = Int(data)
       player.log.verbose("Δ mpv prop: 'dheight' ≔ \(dheight)")
@@ -585,7 +585,7 @@ extension MPVController {
       player.afChanged()
 
     case MPVOption.Video.videoAspectOverride:
-      guard player.windowController.loaded, !player.isShuttingDown else { break }
+      guard player.pwc.loaded, !player.isShuttingDown else { break }
       guard let aspect = getString(MPVOption.Video.videoAspectOverride) else { break }
       player.log.verbose("Δ mpv prop: 'video-aspect-override' = \(aspect.quoted)")
       player.setVideoAspectOverride(aspect)
@@ -605,13 +605,13 @@ extension MPVController {
       guard let cursorAutohide = getString(MPVOption.Window.cursorAutohide) else { break }
       log.verbose{"Δ mpv prop: 'cursor-autohide' ≔ \(cursorAutohide)"}
       player.updateCursorAutohideState()
-      player.windowController.hideCursorTimer.restart()
+      player.pwc.hideCursorTimer.restart()
 
     case MPVOption.Window.cursorAutohideFsOnly:
       let cursorAutohideFS = getFlag(MPVOption.Window.cursorAutohideFsOnly)
       log.verbose{"Δ mpv prop: 'cursor-autohide-fs-only' ≔ \(cursorAutohideFS.yn)"}
       player.updateCursorAutohideState()
-      player.windowController.hideCursorTimer.restart()
+      player.pwc.hideCursorTimer.restart()
 
     case MPVProperty.windowScale:
       guard let windowScale = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
@@ -621,7 +621,7 @@ extension MPVController {
 
       log.verbose{"Δ mpv prop: 'window-scale' ≔ \(windowScale)"}
       DispatchQueue.main.async { [self] in
-        player.windowController.mpvWindowScaleDidUpdate(to: windowScale.roundedTo6())
+        player.pwc.mpvWindowScaleDidUpdate(to: windowScale.roundedTo6())
       }
 
     case MPVProperty.mediaTitle:

@@ -39,10 +39,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   /// It will cause `scrollPlaylistToCurrentItem` to be called when done loading.
   var needsScrollToCurrentItem: Bool = true
 
-  weak var player: PlayerCore!
-  weak var windowController: PlayerWindowController! {
+  unowned var player: PlayerCore!
+  unowned var pwc: PlayerWindowController! {
     didSet {
-      self.player = windowController.player
+      self.player = pwc.player
     }
   }
 
@@ -209,7 +209,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       popoverView.trackingAreas.isEmpty {
       popoverView.addTrackingArea(NSTrackingArea(rect: popoverView.bounds,
                                                  options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
-                                                 owner: windowController, userInfo: [PlayerWindowController.TrackingArea.key: PlayerWindowController.TrackingArea.playerWindow]))
+                                                 owner: pwc, userInfo: [PlayerWindowController.TrackingArea.key: PlayerWindowController.TrackingArea.playerWindow]))
     }
     view.configureSubtreeForCoreAnimation()
     view.layoutSubtreeIfNeeded()
@@ -283,7 +283,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   func scrollPlaylistToCurrentItem() {
     // Execute in pipeline task to prevent hiccups if running other animations
-    player.windowController.animationPipeline.submitInstantTask{ [self] in
+    pwc.animationPipeline.submitInstantTask{ [self] in
       guard let playlistTableView else { return }
       if let entryIndex = player.info.currentPlayback?.playlistPos {
         player.log.verbose{"Scrolling playlist table to index \(entryIndex)"}
@@ -299,7 +299,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   /// Use `animate: false` only for initial load, to avoid seeing a briefly empty table
   func reloadData(playlist: Bool, chapters: Bool, animate: Bool = true) {
     guard player.isActive else { return }
-    guard player.windowController.currentLayout.isMusicMode || player.windowController.isOpen(sidebarTabGroup: .playlist) else { return }
+    guard pwc.currentLayout.isMusicMode || pwc.isOpen(sidebarTabGroup: .playlist) else { return }
 
     if playlist {
       playlistTableReloadDebouncer.run { [self] in
@@ -310,7 +310,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
 
     if chapters {
-      windowController.animationPipeline.submitInstantTask { [self] in
+      pwc.animationPipeline.submitInstantTask { [self] in
         player.log.verbose{"Reloading chapters table for \(player.info.chapters.count) entries"}
         chapterTableView.reloadData()
       }
@@ -343,7 +343,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       player.log.verbose{"Updating playlist table via diff"}
       playlistTableView.post(tableUIChange)
     } else {
-      windowController.animationPipeline.submitInstantTask { [self] in
+      pwc.animationPipeline.submitInstantTask { [self] in
         player.log.trace{"Updating playlist table via reloadData"}
         playlistTableView.reloadData()
         doAfterReload()
@@ -380,7 +380,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     } else {
       player.log.verbose{"Playlist: failed to recaculate total duration; hiding length label"}
     }
-    windowController.animationPipeline.submitInstantTask {
+    pwc.animationPipeline.submitInstantTask {
       self.showTotalLength()
     }
   }
@@ -389,7 +389,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard isViewLoaded else { return }
     player.mpv.queue.async { [self] in
       let loopMode = player.getLoopMode()
-      windowController.animationPipeline.submitInstantTask { [self] in
+      pwc.animationPipeline.submitInstantTask { [self] in
         switch loopMode {
         case .off:  loopBtn.state = .off
         case .file: loopBtn.state = .on
@@ -418,7 +418,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       player.log.error{"PlaylistViewController: cannot switch to tab: \(tab)"}
       return
     }
-    assert(player.windowController.isInMiniPlayer || player.windowController.isOpen(sidebarTabGroup: .playlist),
+    assert(pwc.isInMiniPlayer || pwc.isOpen(sidebarTabGroup: .playlist),
            "switchToTab should not be called when playlist TabGroup is not shown or not in music mode")
     let buttonTag: Int
     switch tab {
@@ -434,7 +434,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     currentTab = tab
     updateTabButtons()
-    windowController.didChangeTab(to: tab)
+    pwc.didChangeTab(to: tab)
   }
 
   // Updates display of all tabs buttons to indicate that the given tab is active and the rest are not
@@ -691,7 +691,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   /// Reload all rows if not specified
   func reloadPlaylistRows(_ rows: IndexSet? = nil) {
     // Enqueue this asynchronously to prevent it from causing hiccups if other animations are in progress
-    windowController.animationPipeline.submitInstantTask{ [self] in
+    pwc.animationPipeline.submitInstantTask{ [self] in
       let rows = rows ?? IndexSet(integersIn: 0..<playlistTableView.numberOfRows)
       playlistTableView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integersIn: 0...1))
     }
@@ -864,7 +864,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
               refreshTotalLength()
             }
           }
-          windowController.animationPipeline.submitInstantTask { [self] in
+          pwc.animationPipeline.submitInstantTask { [self] in
             /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
             reloadPlaylistRow(rowIndex)
           }
@@ -907,7 +907,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           // Get watch-later form file system; get other meta from ffmpeg:
           MediaMetaCache.shared.updateCachedMeta(item, mpvTitle: updatedTitle)
           // Refresh each row as it gets updated. May take a while to refresh all
-          windowController.animationPipeline.submitInstantTask { [self] in
+          pwc.animationPipeline.submitInstantTask { [self] in
             /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
             reloadPlaylistRow(rowIndex)
           }
@@ -1184,11 +1184,11 @@ extension PlaylistViewController: EditableTableViewDelegate {
   // Allows for sidebar resize to happen from inside the table, by giving it higher priority than row drag & drop.
   // If this returns false, table will proceed to process normally
   func handleMouseDown(with event: NSEvent) -> Bool {
-    return player.windowController.startResizingSidebar(with: event)
+    return pwc.startResizingSidebar(with: event)
   }
 
   override func mouseDragged(with event: NSEvent) {
-    if let pwc = player.windowController, pwc.currentDragObject == view,
+    if let pwc = pwc, pwc.currentDragObject == view,
        let sidebar = pwc.getConfiguredSidebar(forTabGroup: .playlist) {
 
       pwc.continueResizingSidebar(sidebar.locationID, with: event)
@@ -1199,7 +1199,7 @@ extension PlaylistViewController: EditableTableViewDelegate {
   }
 
   override func mouseUp(with event: NSEvent) {
-    if let pwc = player.windowController, pwc.currentDragObject == view,
+    if let pwc = pwc, pwc.currentDragObject == view,
        let sidebar = pwc.getConfiguredSidebar(forTabGroup: .playlist) {
       pwc.finishResizingSidebar(sidebar.locationID, with: event)
       pwc.currentDragObject = nil
@@ -1348,7 +1348,8 @@ class SubPopoverViewController: NSViewController, NSTableViewDelegate, NSTableVi
   @IBOutlet weak var tableView: NSTableView!
   @IBOutlet weak var playlistTableView: NSTableView!
 
-  weak var player: PlayerCore!
+  unowned var player: PlayerCore!
+  var pwc: PlayerWindowController! { player.pwc }
 
   var filePath: String = ""
 
@@ -1368,7 +1369,7 @@ class SubPopoverViewController: NSViewController, NSTableViewDelegate, NSTableVi
   @IBAction func wrongSubBtnAction(_ sender: AnyObject) {
     player.info.$matchedSubs.withLock { $0[filePath]?.removeAll() }
     tableView.reloadData()
-    let playlist = player.windowController.playlistView.displayedPlaylist
+    let playlist = pwc.playlistView.displayedPlaylist
     if let row = playlist.firstIndex(where: { $0.path == filePath }) {
       playlistTableView.reloadData(forRowIndexes: IndexSet(integer: row), columnIndexes: IndexSet(integersIn: 0...1))
     }

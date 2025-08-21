@@ -42,7 +42,7 @@ struct GeometryTransform {
   let syncVideoParams: Bool
 
   private let player: PlayerCore
-  private var pwc: PlayerWindowController { player.windowController! }
+  private var pwc: PlayerWindowController { player.pwc! }
   private var log: Logger.Subsystem { player.log }
 
   /// If `sessionStateTransform` is `nil` (omitted), treat as no-op and continue to `videoTransform`.
@@ -61,7 +61,7 @@ struct GeometryTransform {
        video: VideoGeometryTF? = nil,
        windowed: PWinGeometryTF? = nil,
        onSuccess: (() -> Void)? = nil) {
-    let pipeline = player.windowController.animationPipeline
+    let pipeline = player.pwc.animationPipeline
     self.id = pregeneratedID ?? pipeline.gtfLock.withLock {
       pipeline.nextID_NoLock()
     }
@@ -293,7 +293,7 @@ struct GeometryTransform {
 
     var name: String { tf.name }
     var player: PlayerCore { tf.player }
-    var pwc: PlayerWindowController { player.windowController! }
+    var pwc: PlayerWindowController { player.pwc! }
     var log: Logger.Subsystem { player.log }
   }
 
@@ -334,7 +334,7 @@ struct GeometryTransform {
 
     var name: String { tf.name }
     var player: PlayerCore { tf.player }
-    var pwc: PlayerWindowController { player.windowController! }
+    var pwc: PlayerWindowController { player.pwc! }
     var log: Logger.Subsystem { player.log }
 
     init(_ ctxStage2: ContextStage2, gtfSessionState: PWinSessionState,
@@ -496,7 +496,7 @@ struct GeometryTransform {
     /// Conforms to `IINAnimation.TaskFunc`. Does cleanup, updates state vars & UI.
     fileprivate func doPostApplyWork() {
       log.verbose{"[GTF:\(name)] Running final task, sess=\(gtfSessionState) vid=\(vidTrackID)"}
-      let pwc = player.windowController!
+      let pwc = player.pwc!
 
       // (tag: #SessionState-Race)
       guard !player.isStopping else { return tf.abort("In final task (main): player is stopping") }

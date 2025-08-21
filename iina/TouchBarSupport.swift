@@ -183,9 +183,9 @@ class TouchBarSupport: NSObject, NSTouchBarDelegate {
   @objc func touchBarRewindAction(_ sender: NSButton) {
     let isLeft = sender.tag == 0
     if isLeft {
-      player.windowController.leftArrowButtonAction(sender)
+      player.pwc.leftArrowButtonAction(sender)
     } else {
-      player.windowController.rightArrowButtonAction(sender)
+      player.pwc.rightArrowButtonAction(sender)
     }
   }
 
@@ -204,11 +204,11 @@ class TouchBarSupport: NSObject, NSTouchBarDelegate {
   }
 
   @objc func touchBarExitFullScrAction(_ sender: NSButton) {
-    player.windowController.toggleWindowFullScreen()
+    player.pwc.toggleWindowFullScreen()
   }
 
   @objc func touchBarTogglePIP(_ sender: NSButton) {
-    player.windowController.menuTogglePIP(sender)
+    player.pwc.menuTogglePIP(sender)
   }
 
   private func buttonTouchBarItem(withIdentifier identifier: NSTouchBarItem.Identifier, imageName: NSImage.Name, tag: Int, customLabel: String, action: Selector) -> NSCustomTouchBarItem {

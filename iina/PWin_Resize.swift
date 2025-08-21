@@ -592,7 +592,7 @@ extension PlayerWindowController {
         videoView.apply(outputGeo)
 
         if !outputGeo.videoShown, pip.status == .notInPIP {
-          updateWindowLayoutForVideoViewHidden(playlistShown: outputGeo.isMusicModePlaylistVisible)
+          updateWindowLayoutForVideoViewHidden(playlistShown: outputGeo.isMusicModePlaylistShown)
         }
 
         updateMusicModeButtonsVisibility(using: outputGeo)

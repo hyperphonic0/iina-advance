@@ -1846,7 +1846,7 @@ extension NSWindow {
   }
 
   var isOpen: Bool {
-    if let windowController = self.windowController as? PlayerWindowController, windowController.isOpen {
+    if let pwc = self.windowController as? PlayerWindowController, pwc.isOpen {
       return true
     } else if self.isVisible || self.isMiniaturized {
       return true

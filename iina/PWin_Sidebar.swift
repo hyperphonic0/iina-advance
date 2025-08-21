@@ -1197,7 +1197,7 @@ extension PlayerWindowController {
 // MARK: - SidebarTabGroupViewController
 
 protocol SidebarTabGroupViewController {
-  var windowController: PlayerWindowController! { get }
+  var pwc: PlayerWindowController! { get }
   var customTabHeight: CGFloat? { get }
 
   // Implementing classes need to define this

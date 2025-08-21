@@ -26,7 +26,7 @@ class JavascriptAPISidebarView: JavascriptAPI, JavascriptAPISidebarViewExportabl
   }
 
   func loadFile(_ path: String) {
-    guard player!.windowController.loaded else {
+    guard player!.pwc.loaded else {
       throwError(withMessage: "sidebar.loadFile called when window is not available. Please call it after receiving the \"iina.window-loaded\" event.")
       return
     }
@@ -42,20 +42,20 @@ class JavascriptAPISidebarView: JavascriptAPI, JavascriptAPISidebarViewExportabl
   }
 
   func show() {
-    guard player!.windowController.loaded else {
+    guard player!.pwc.loaded else {
       throwError(withMessage: "sidebar.show called when window is not available. Please call it after receiving the \"iina.window-loaded\" event.")
       return
     }
     let id = pluginInstance.plugin.identifier
-    player!.windowController.showSidebar(tab: .plugin(id: id), force: true, hideIfAlreadyShown: false)
+    player!.pwc.showSidebar(tab: .plugin(id: id), force: true, hideIfAlreadyShown: false)
   }
 
   func hide() {
-    guard player!.windowController.loaded else {
+    guard player!.pwc.loaded else {
       throwError(withMessage: "sidebar.hide called when window is not available. Please call it after receiving the \"iina.window-loaded\" event.")
       return
     }
-    player!.windowController.hideAllSidebars()
+    player!.pwc.hideAllSidebars()
   }
 
   func postMessage(_ name: String, _ data: JSValue) {

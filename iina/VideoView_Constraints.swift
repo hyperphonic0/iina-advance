@@ -341,6 +341,7 @@ extension VideoView {
   /// APPLY constraints: Add, update, or remove all constraints, based on the given geometry (or lack thereof).
   func apply(_ geometry: PWinGeometry?) {
     assert(DispatchQueue.isExecutingIn(.main))
+    guard let pwc else { return }
 
     guard let geometry, geometry.videoShown else {
       log.verbose{"VideoView: \(geometry == nil ? "no geometry" : "video not visible"); will remove constraints"}
@@ -348,10 +349,10 @@ extension VideoView {
       return
     }
 
-    guard player.windowController.pip.status == .notInPIP else {
-      if player.windowController.pip.status == .inPIP {
+    guard pwc.pip.status == .notInPIP else {
+      if pwc.pip.status == .inPIP {
         log.verbose("VideoView: currently in PiP. Skipping constraints update & setting aspectRatio in PiP controller ≔ \(geometry.video.videoSizeCAR)")
-        player.windowController.pip.controller.aspectRatio = geometry.video.videoSizeCAR
+        pwc.pip.controller.aspectRatio = geometry.video.videoSizeCAR
       } else {
         log.debug("VideoView: currently in PiP; skipping constraints update")
       }
@@ -382,10 +383,10 @@ extension VideoView {
 
     log.trace("VideoView updating constraints: aspect=\(videoViewAspect) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) vidSizeIdeal=\(geometry.videoSizeIdeal) mode=\(geometry.mode)")
 
-    let topSpacer = player.windowController.viewportView.topSpacer
-    let bottomSpacer = player.windowController.viewportView.bottomSpacer
-    let leadingSpacer = player.windowController.viewportView.leadingSpacer
-    let trailingSpacer = player.windowController.viewportView.trailingSpacer
+    let topSpacer = pwc.viewportView.topSpacer
+    let bottomSpacer = pwc.viewportView.bottomSpacer
+    let leadingSpacer = pwc.viewportView.leadingSpacer
+    let trailingSpacer = pwc.viewportView.trailingSpacer
 
     let cons = VideoViewConstraints(
       log: log,

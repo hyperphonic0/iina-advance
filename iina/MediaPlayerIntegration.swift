@@ -53,7 +53,7 @@ class MediaPlayerIntegration {
     Logger.log.trace("Attaching MediaPlayer remote commands")
     remoteCommand.playCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.windowController.executeActionForKey(normalizedMpvKey: "PLAY", fallbackAction: {
+      player.pwc.executeActionForKey(normalizedMpvKey: "PLAY", fallbackAction: {
         player.resume()
       })
       updateCommandEnablements(for: player)
@@ -61,7 +61,7 @@ class MediaPlayerIntegration {
     }
     remoteCommand.pauseCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.windowController.executeActionForKey(normalizedMpvKey: "PAUSE", fallbackAction: {
+      player.pwc.executeActionForKey(normalizedMpvKey: "PAUSE", fallbackAction: {
         player.pause()
       })
       updateCommandEnablements(for: player)
@@ -69,7 +69,7 @@ class MediaPlayerIntegration {
     }
     remoteCommand.togglePlayPauseCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.windowController.executeActionForKey(normalizedMpvKey: "PLAYPAUSE", fallbackAction: {
+      player.pwc.executeActionForKey(normalizedMpvKey: "PLAYPAUSE", fallbackAction: {
         player.togglePause()
       })
       updateCommandEnablements(for: player)
@@ -77,7 +77,7 @@ class MediaPlayerIntegration {
     }
     remoteCommand.stopCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.windowController.executeActionForKey(normalizedMpvKey: "STOP", fallbackAction: {
+      player.pwc.executeActionForKey(normalizedMpvKey: "STOP", fallbackAction: {
         player.stop()
       })
       updateCommandEnablements(for: player)
@@ -85,7 +85,7 @@ class MediaPlayerIntegration {
     }
     remoteCommand.nextTrackCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.windowController.executeActionForKey(normalizedMpvKey: "NEXT", fallbackAction: {
+      player.pwc.executeActionForKey(normalizedMpvKey: "NEXT", fallbackAction: {
         player.navigateInPlaylist(nextMedia: true)
       })
       updateCommandEnablements(for: player)
@@ -93,7 +93,7 @@ class MediaPlayerIntegration {
     }
     remoteCommand.previousTrackCommand.addTarget { [self] _ in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.windowController.executeActionForKey(normalizedMpvKey: "PREV", fallbackAction: {
+      player.pwc.executeActionForKey(normalizedMpvKey: "PREV", fallbackAction: {
         player.navigateInPlaylist(nextMedia: false)
       })
       updateCommandEnablements(for: player)
@@ -117,7 +117,7 @@ class MediaPlayerIntegration {
     remoteCommand.skipForwardCommand.preferredIntervals = [15]
     remoteCommand.skipForwardCommand.addTarget { [self] event in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.windowController.executeActionForKey(normalizedMpvKey: "GO_FORWARD", fallbackAction: {
+      player.pwc.executeActionForKey(normalizedMpvKey: "GO_FORWARD", fallbackAction: {
         player.seek(relativeSecond: (event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
       })
       updateCommandEnablements(for: player)
@@ -126,7 +126,7 @@ class MediaPlayerIntegration {
     remoteCommand.skipBackwardCommand.preferredIntervals = [15]
     remoteCommand.skipBackwardCommand.addTarget { [self] event in
       guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.windowController.executeActionForKey(normalizedMpvKey: "GO_BACK", fallbackAction: {
+      player.pwc.executeActionForKey(normalizedMpvKey: "GO_BACK", fallbackAction: {
         player.seek(relativeSecond: -(event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
       })
       updateCommandEnablements(for: player)

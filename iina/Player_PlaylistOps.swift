@@ -82,8 +82,8 @@ extension PlayerCore {
       log.verbose{"[Playlist] Done adding \(pathList.count) items. Playlist count is now \(info.playlist.count)"}
       _reloadPlaylist(savePlayerState: false)  // will send notification
       DispatchQueue.main.async { [self] in
-        guard windowController.loaded else { return }
-        windowController.playlistView.scrollPlaylistToCurrentItem()
+        guard pwc.loaded else { return }
+        pwc.playlistView.scrollPlaylistToCurrentItem()
       }
     })
   }
@@ -120,8 +120,8 @@ extension PlayerCore {
     log.verbose{"[Playlist] Inserting \(rowList.count) rows at index \(targetRowIndex?.description ?? "nil"): \(rowList.map{$0.path.pii})"}
     let expectedCurrentPlaylist = displayedPlaylist  // make sure user is moving what they expect!
 
-    let (tableUIChange, allItemsNew) = windowController.playlistView.isViewLoaded
-    ? windowController.playlistView.playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: expectedCurrentPlaylist)
+    let (tableUIChange, allItemsNew) = pwc.playlistView.isViewLoaded
+    ? pwc.playlistView.playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: expectedCurrentPlaylist)
     : TableUIChange.builder.buildInsert(of: rowList, at: targetRowIndex ?? displayedPlaylist.count, in: expectedCurrentPlaylist)
 
     let playlistSize = expectedCurrentPlaylist.count

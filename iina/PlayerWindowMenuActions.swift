@@ -196,7 +196,7 @@ extension PlayerWindowController {
   @objc func menuChangeCrop(_ sender: NSMenuItem) {
     if let cropStr = sender.representedObject as? String {
       if cropStr == AppData.customCropIdentifier {
-        player.windowController.enterInteractiveMode(.crop)
+        player.pwc.enterInteractiveMode(.crop)
         return
       }
       player.setCrop(fromLabel: cropStr)
@@ -569,7 +569,7 @@ extension PlayerWindowController {
       }
       // Try to emit the events that are already emitted.
       // Of course this is not exhaustive, so users shouldn't rely on this function
-      if player.windowController.loaded {
+      if player.pwc.loaded {
         player.events.emit(.windowLoaded)
       }
       player.events.emit(.mpvInitialized)

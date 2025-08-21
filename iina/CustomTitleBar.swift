@@ -14,7 +14,7 @@ fileprivate let inactiveControlOpacity: CGFloat = 0.40
 
 /// For legacy windowed mode. Manual reconstruction of title bar is needed when not using `titled` window style.
 class CustomTitleBarViewController: NSViewController {
-  unowned var windowController: PlayerWindowController!
+  unowned var pwc: PlayerWindowController!
 
   // Leading side
   let leadingStackView = TitleBarButtonsContainerView()
@@ -66,8 +66,8 @@ class CustomTitleBarViewController: NSViewController {
     builder.configureTitleBarButton(leadingSidebarToggleButton,
                                     Images.sidebarLeading,
                                     identifier: "leadingSidebarBtn",
-                                    target: windowController,
-                                    action: #selector(windowController.toggleLeadingSidebarVisibility(_:)),
+                                    target: pwc,
+                                    action: #selector(pwc.toggleLeadingSidebarVisibility(_:)),
                                     bounceOnClick: true)
 
     leadingStackView.setViews(trafficLightButtons + [leadingSidebarToggleButton], in: .center)
@@ -103,10 +103,10 @@ class CustomTitleBarViewController: NSViewController {
     // - Center views
 
     // See https://github.com/indragiek/INAppStoreWindow/blob/master/INAppStoreWindow/INAppStoreWindow.m
-    windowController.window!.representedURL = windowController.player.info.currentURL
+    pwc.window!.representedURL = pwc.player.info.currentURL
 
     documentIconButton = NSWindow.standardWindowButton(.documentIconButton, for: .titled)
-    documentIconButton.image = Utility.icon(for: windowController.player.info.currentURL,
+    documentIconButton.image = Utility.icon(for: pwc.player.info.currentURL,
                                             optimizingForHeight: documentIconButton.frame.height)
 
     titleText.identifier = .init("TitleBar-TextView")
@@ -128,15 +128,15 @@ class CustomTitleBarViewController: NSViewController {
     builder.configureTitleBarButton(onTopButton,
                                     Images.onTopOff,
                                     identifier: "OnTopButton",
-                                    target: windowController,
-                                    action: #selector(windowController.toggleOnTop(_:)),
+                                    target: pwc,
+                                    action: #selector(pwc.toggleOnTop(_:)),
                                     bounceOnClick: false) // Do not bounce (looks weird)
 
     builder.configureTitleBarButton(trailingSidebarToggleButton,
                                     Images.sidebarTrailing,
                                     identifier: "TrailingSidebarBtn",
-                                    target: windowController,
-                                    action: #selector(windowController.toggleTrailingSidebarVisibility(_:)),
+                                    target: pwc,
+                                    action: #selector(pwc.toggleTrailingSidebarVisibility(_:)),
                                     bounceOnClick: true)
     trailingStackView.setViews([trailingSidebarToggleButton, onTopButton], in: .center)
     trailingStackView.detachesHiddenViews = true
@@ -151,7 +151,7 @@ class CustomTitleBarViewController: NSViewController {
     initConstraints()
 
     view.configureSubtreeForCoreAnimation()
-    windowController.log.verbose{"CustomTitleBar viewDidLoad done"}
+    pwc.log.verbose{"CustomTitleBar viewDidLoad done"}
   }
 
   private func initConstraints() {
@@ -232,16 +232,16 @@ class CustomTitleBarViewController: NSViewController {
   func addViewTo(superview: NSView) {
     superview.addSubview(view)
     view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
-    windowController.updateTitle()
+    pwc.updateTitle()
   }
 
   override func viewWillAppear() {
     // Need to call this here to patch case where window is not active, but title bar is
     // "inside" & is made visible by mouse hover:
-    windowController.updateTitle()
+    pwc.updateTitle()
   }
 
-  /// Should be called by `windowController.updateTitle()` only.
+  /// Should be called by `pwc.updateTitle()` only.
   func updateTitle(to newTitle: String) {
     // - Update title text content
 

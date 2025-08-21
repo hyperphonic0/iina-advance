@@ -41,7 +41,7 @@ class PlaySliderCell: ScrollableSliderCell {
     let cachedRanges = player.info.cachedRanges  // will be empty if drawing cache is disabled
 
     // Disable hover zoom effect & indicator while actively scrolling; looks bad
-    let currentPreviewTimeSec: Double? = player.windowController.isScrollingOrDraggingPlaySlider ? nil : player.windowController.seekPreview.currentPreviewTimeSec
+    let currentPreviewTimeSec: Double? = pwc.isScrollingOrDraggingPlaySlider ? nil : pwc.seekPreview.currentPreviewTimeSec
 
     appearance.applyAppearanceFor {
       let drawShadow = hasClearBG

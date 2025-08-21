@@ -19,7 +19,7 @@ extension PlayerWindowController {
     guard let contentView = window.contentView else { return }
 
     miniPlayer = MiniPlayerViewController()
-    miniPlayer.windowController = self
+    miniPlayer.pwc = self
 
     undoHelper = PlayerWindowUndoHelper(self, window.undoManager)
 
@@ -73,11 +73,11 @@ extension PlayerWindowController {
     volumeSlider.scrollWheelDelegate = VolumeSliderScrollWheel(slider: volumeSlider, log)
     windowScrollWheel = PWinScrollWheel(self)
 
-    playlistView.windowController = self
+    playlistView.pwc = self
     playlistView.view.idString = "PlaylistView"
-    pluginView.windowController = self
+    pluginView.pwc = self
     pluginView.view.idString = "PluginView"
-    quickSettingView.windowController = self
+    quickSettingView.pwc = self
 
     /// This will init mpv, but we will not add `videoView` until setting the initial layout (see updateHiddenViewsAndConstraints)
     player.start()

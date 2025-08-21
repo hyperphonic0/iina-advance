@@ -494,7 +494,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     (window.windowController as? WindowController)?.refreshWindowOpenCloseAnimation()
 
     if let player = (window.windowController as? PlayerWindowController)?.player {
-      player.windowController.doPriorToWindowWillClose(window)
+      player.pwc.doPriorToWindowWillClose(window)
       // Player window was closed; need to remove some additional state
       player.clearSavedState()
 
@@ -525,7 +525,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     // Window hidden for PiP? Need special check becuase it will not be in windowsOpen set
-    if let activePlayer = PlayerManager.shared.activePlayer, activePlayer.windowController.isWindowHidden {
+    if let activePlayer = PlayerManager.shared.activePlayer, activePlayer.pwc.isWindowHidden {
       Logger.log.verbose{"App will not terminate: found active but hidden player (\(activePlayer.label))"}
       return false
     }
@@ -674,7 +674,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if player.openURLString(url) == 0 {
       startupHandler.abortWaitForOpenFilePlayerStartup()
     } else {
-      startupHandler.wcsForOpenFiles = [player.windowController]
+      startupHandler.wcsForOpenFiles = [player.pwc]
     }
     startupHandler.showWindowsIfReady()
   }
@@ -716,7 +716,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if player.openURLString(url) == 0 {
         startupHandler.abortWaitForOpenFilePlayerStartup()
       } else {
-        startupHandler.wcsForOpenFiles = [player.windowController]
+        startupHandler.wcsForOpenFiles = [player.pwc]
       }
       startupHandler.showWindowsIfReady()
       return
@@ -754,7 +754,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         if player.openURLString(urlValue) == 0 {
           startupHandler.abortWaitForOpenFilePlayerStartup()
         } else {
-          startupHandler.wcsForOpenFiles = [player.windowController]
+          startupHandler.wcsForOpenFiles = [player.pwc]
         }
       }
 
@@ -764,7 +764,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         player.mpv.setFlag(MPVOption.Window.fullscreen, true)
       } else if let pipValue = queryDict["pip"], pipValue == "1" {
         // pip
-        player.windowController.enterPIP()
+        player.pwc.enterPIP()
       }
 
       // mpv options
@@ -862,8 +862,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // When using custom window style, sometimes AppKit will remove their entries from the Window menu (e.g. when hiding the app).
     // Make sure to add them again if they are missing:
     for player in PlayerManager.shared.playerCores {
-      if player.windowController.loaded && !player.isShutDown {
-        player.windowController.updateTitle()
+      if player.pwc.loaded && !player.isShutDown {
+        player.pwc.updateTitle()
       }
     }
   }

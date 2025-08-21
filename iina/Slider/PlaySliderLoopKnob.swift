@@ -148,7 +148,7 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
   /// Begin dragging the knob.
   /// - Parameter event: An object encapsulating information about the mouse-down event initiating the drag.
   func beginDragging(with event: NSEvent) {
-    slider.customCell.player.windowController.currentDragObject = self
+    slider.customCell.player.pwc.currentDragObject = self
     let clickLocation = slider.convert(event.locationInWindow, from: nil)
     lastDragLocation = constrainX(clickLocation.x)
     updateKnobImage(to: .loopKnobSelected)

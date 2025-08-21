@@ -303,8 +303,8 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
     let isFileLoaded = player.info.isFileLoaded
     if isFileLoaded {
-      if let colorspace = player.windowController.videoView.layerColorspace {
-        let screenColorSpace = player.windowController.window?.screen?.colorSpace
+      if let colorspace = player.pwc.videoView.layerColorspace {
+        let screenColorSpace = player.pwc.window?.screen?.colorSpace
         let sdrColorSpace = screenColorSpace?.cgColorSpace ?? VideoView.SRGB
         let isHdr = colorspace != sdrColorSpace
         // Prefer the name of the CGColorSpace of the layer. If the CGColorSpace does not have a

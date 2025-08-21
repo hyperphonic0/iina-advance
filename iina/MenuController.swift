@@ -491,9 +491,9 @@ class MenuController: NSObject, NSMenuDelegate {
 
   private func updatePlaybackMenu() {
     guard let player = PlayerCore.active else { return }
-    let isDisplayingPlaylist = player.windowController.isOpen(sidebarTab: .playlist)
+    let isDisplayingPlaylist = player.pwc.isOpen(sidebarTab: .playlist)
     playlistPanel?.title = isDisplayingPlaylist ? Constants.String.hidePlaylistPanel : Constants.String.playlistPanel
-    let isDisplayingChapters = player.windowController.isOpen(sidebarTab: .chapters)
+    let isDisplayingChapters = player.pwc.isOpen(sidebarTab: .chapters)
     chapterPanel?.title = isDisplayingChapters ? Constants.String.hideChaptersPanel : Constants.String.chaptersPanel
     pause.title = player.info.isPaused ? Constants.String.resume : Constants.String.pause
     let speed = player.info.playSpeed.groupedStringUpTo6Decimals
@@ -512,12 +512,12 @@ class MenuController: NSObject, NSMenuDelegate {
 
   private func updateVideoMenu() {
     guard let player = PlayerCore.active else { return }
-    let isDisplayingSettings = player.windowController.isOpen(sidebarTab: .video)
+    let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .video)
     quickSettingsVideo?.title = isDisplayingSettings ? Constants.String.hideVideoPanel :
         Constants.String.videoPanel
-    let isInFullScreen = player.windowController.isFullScreen
-    let isInPIP = player.windowController.pip.status == .inPIP
-    let isOnTop = player.windowController.isOnTop
+    let isInFullScreen = player.pwc.isFullScreen
+    let isInPIP = player.pwc.pip.status == .inPIP
+    let isOnTop = player.pwc.isOnTop
     let isDelogo = player.info.delogoFilter != nil
     alwaysOnTop.state = isOnTop ? .on : .off
     deinterlace.state = player.info.deinterlace ? .on : .off
@@ -529,7 +529,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   private func updateAudioMenu() {
     guard let player = PlayerCore.active else { return }
-    let isDisplayingSettings = player.windowController.isOpen(sidebarTab: .audio)
+    let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .audio)
     quickSettingsAudio?.title = isDisplayingSettings ? Constants.String.hideAudioPanel :
         Constants.String.audioPanel
     let volFmtString: String
@@ -564,7 +564,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   private func updateSubMenu() {
     guard let player = PlayerCore.active else { return }
-    let isDisplayingSettings = player.windowController.isOpen(sidebarTab: .sub)
+    let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .sub)
     quickSettingsSub?.title = isDisplayingSettings ? Constants.String.hideSubtitlesPanel :
         Constants.String.subtitlesPanel
     hideSubtitles.title = player.info.isSubVisible ? Constants.String.hideSubtitles :
@@ -610,7 +610,7 @@ class MenuController: NSObject, NSMenuDelegate {
     let activePlayer = PlayerManager.shared.activePlayer
     pluginMenu.removeAllItems()
     pluginMenu.addItem(withTitle: Constants.String.managePlugins, action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
-    if let isDisplayingPluginsPanel = activePlayer?.windowController.isTabGroupVisible(.plugins) {
+    if let isDisplayingPluginsPanel = activePlayer?.pwc.isTabGroupVisible(.plugins) {
       pluginMenu.addItem(withTitle: isDisplayingPluginsPanel ? Constants.String.hidePluginsPanel : Constants.String.showPluginsPanel, action: #selector(PlayerWindowController.showPluginsPanel(_:)), keyEquivalent: "")
       pluginMenu.addItem(.separator())
     }

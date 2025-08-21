@@ -51,29 +51,28 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   /// is showing secondary sub if `false`.
   private var isShowingPrimarySubPanel: Bool {
     get {
-      guard let wc = windowController else { return true }
-      return wc.currentLayout.spec.moreSidebarState.selectedSubSegment == 0
+      guard let pwc else { return true }
+      return pwc.currentLayout.spec.moreSidebarState.selectedSubSegment == 0
     }
     set {
-      guard let wc = windowController else { return }
+      guard let pwc else { return }
       let selectedSegment = newValue ? 0 : 1  // convert from bool to segment selection
 
       // Put inside task to protect from race
-      wc.animationPipeline.submitInstantTask{
-        let prevLayout = wc.currentLayout
+      pwc.animationPipeline.submitInstantTask{
+        let prevLayout = pwc.currentLayout
         let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: prevLayout.spec.moreSidebarState.playlistSidebarWidth,
                                                         selectedSubSegment: selectedSegment,
                                                         selectedPluginTabID: prevLayout.spec.moreSidebarState.selectedPluginTabID)
-        wc.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
+        pwc.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
       }
     }
   }
 
   weak var player: PlayerCore!
-
-  weak var windowController: PlayerWindowController! {
+  weak var pwc: PlayerWindowController! {
     didSet {
-      self.player = windowController.player
+      self.player = pwc.player
     }
   }
 
@@ -616,7 +615,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   private func switchToTab(_ tab: Sidebar.Tab) {
     guard isViewLoaded else { return }
-    assert(player.windowController.isOpen(sidebarTabGroup: .settings),
+    assert(player.pwc.isOpen(sidebarTabGroup: .settings),
            "switchToTab should not be called when settings TabGroup is not shown")
     guard currentTab != tab else { return }
     guard tab.group == .settings else {
@@ -638,7 +637,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
     currentTab = tab
     tabView.selectTabViewItem(at: buttonTag)
-    windowController.didChangeTab(to: tab)
+    pwc.didChangeTab(to: tab)
     updateTabButtonSelection()
     reloadCurrentTab()
   }
@@ -650,7 +649,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     guard isViewLoaded else { return }
     switch currentTab {
     case .audio:
-      guard player.windowController.isOpen(sidebarTab: .audio) else { return }
+      guard pwc.isOpen(sidebarTab: .audio) else { return }
       player.log.verbose{"QuickSettings: reloading tab \(currentTab.name.quoted)"}
       audioTableView.reloadData()
       updateAudioTabControls()
@@ -658,7 +657,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     case .video:
       reloadVideoTabIfShown(using: player.videoGeo)
     case .sub:
-      guard player.windowController.isOpen(sidebarTab: .sub) else { return }
+      guard pwc.isOpen(sidebarTab: .sub) else { return }
       player.log.verbose{"QuickSettings: reloading tab \(currentTab.name.quoted)"}
       subTableView.reloadData()
       secSubTableView.reloadData()
@@ -679,7 +678,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   func reloadVideoTabIfShown(using videoGeo: VideoGeometry) {
     guard isViewLoaded else { return }
     guard currentTab == .video else { return }
-    guard player.windowController.isOpen(sidebarTab: .video) else { return }
+    guard pwc.isOpen(sidebarTab: .video) else { return }
     player.log.verbose{"QuickSettings: reloading video tab"}
     videoTableView.reloadData()
     updateVideoTabControls(using: videoGeo)
@@ -987,7 +986,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     player.log.verbose{"QuickSettings cropChangedAction entered"}
     if sender.selectedSegment == sender.segmentCount - 1 {
       // User clicked on "Custom...": show custom crop UI
-      windowController.enterInteractiveMode(.crop)
+      pwc.enterInteractiveMode(.crop)
     } else {
       guard let selectedCropString = sender.label(forSegment: sender.selectedSegment) else {
         player.log.error{"Bad crop segment: \(sender.selectedSegment)"}
@@ -1329,7 +1328,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   @IBAction func searchOnlineAction(_ sender: AnyObject) {
-    windowController.menuFindOnlineSub(self)
+    pwc.menuFindOnlineSub(self)
   }
 
   @IBAction func subSegmentedControlAction(_ sender: NSSegmentedControl) {

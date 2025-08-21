@@ -29,7 +29,7 @@ class JavascriptAPIGlobalController: JavascriptAPI, JavascriptAPIGlobalControlle
 
   override func cleanUp(_ instance: JavascriptPluginInstance) {
     instances.values.forEach {
-      $0.windowController.close()
+      $0.pwc.close()
       $0.shutdown()
     }
     instances.removeAll()

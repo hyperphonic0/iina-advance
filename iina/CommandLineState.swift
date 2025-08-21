@@ -119,7 +119,7 @@ class CommandLineState {
     } else if enterPIP {
       DispatchQueue.main.async {
         lastPlayer.log.verbose("Entering PIP as specified via command line")
-        lastPlayer.windowController.enterPIP()
+        lastPlayer.pwc.enterPIP()
       }
     }
   }

@@ -22,7 +22,7 @@ class JavascriptPluginInstance {
 
   lazy var overlayView: PluginOverlayView = {
     let view = PluginOverlayView.create(pluginInstance: self)
-    view.attachTo(windowController: player.windowController)
+    view.attachTo(windowController: player.pwc)
     return view
   }()
   var overlayViewLoaded = false

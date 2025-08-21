@@ -65,7 +65,7 @@ class PlaySliderScrollWheel: SliderScrollWheelDelegate {
     // Use modelValueAtEnd to keep track of last seek, to prevent sending duplicate seek requests
     guard session.modelValueAtEnd != playbackPositionNew else { return }
     session.modelValueAtEnd = playbackPositionNew
-    player.windowController.seekFromPlaySlider(playbackPositionSec: playbackPositionNew, forceExactSeek: false)
+    player.pwc.seekFromPlaySlider(playbackPositionSec: playbackPositionNew, forceExactSeek: false)
   }
 
 }  /// end `class PlaySliderScrollWheel`

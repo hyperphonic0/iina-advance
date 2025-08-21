@@ -57,7 +57,7 @@ extension PlayerWindowController {
   class PIPState {
     unowned var player: PlayerCore
     var log: Logger.Subsystem { player.log }
-    var pwc: PlayerWindowController { player.windowController }
+    var pwc: PlayerWindowController { player.pwc }
 
     var status = PIPStatus.notInPIP {
       didSet {

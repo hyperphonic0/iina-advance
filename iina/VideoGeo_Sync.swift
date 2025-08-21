@@ -216,7 +216,7 @@ extension GeometryTransform.ContextStage2 {
       log.verbose{"[GTF:\(name)] Changing rotation: \(userRotation)"}
       player.sendOSD(.rotation(userRotation))
     } else if inputVideoGeo.selectedCropLabel != cropLabel,
-              !player.windowController.isAnimatingLayoutTransition {
+              !pwc.isAnimatingLayoutTransition {
       // Don't show crop OSD when disabling it for entering interactive mode (layout transition)
       log.verbose{"[GTF:\(name)] Changing selectedCropLabel: \(inputVideoGeo.selectedCropLabel.quoted) → \(cropLabel.quoted)"}
       let osdLabel = cropLabel.isEmpty ? AppData.customCropIdentifier : cropLabel
@@ -226,7 +226,7 @@ extension GeometryTransform.ContextStage2 {
     log.debug{"[GTF:\(name)] Derived videoGeo from mpv video-params: \(outputVideoGeo)"}
     DispatchQueue.main.async { [self] in
       // Proactively reload the UI here to increase snappiness
-      player.windowController.quickSettingView.reloadVideoTabIfShown(using: outputVideoGeo)
+      pwc.quickSettingView.reloadVideoTabIfShown(using: outputVideoGeo)
     }
     return outputVideoGeo
   }

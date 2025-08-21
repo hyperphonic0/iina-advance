@@ -31,50 +31,46 @@ class ViewportView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  private var playerWindowController: PlayerWindowController? {
-    return window?.windowController as? PlayerWindowController
-  }
-
   // Need to forward this so that dragging to resize sidebar works in native full screen
   override func mouseDown(with event: NSEvent) {
     super.mouseDown(with: event)
-    playerWindowController?.mouseDown(with: event)
+    pwc?.mouseDown(with: event)
   }
 
   // Need to forward this so that dragging to resize sidebar works in native full screen
   override func mouseDragged(with event: NSEvent) {
     super.mouseDragged(with: event)
-    playerWindowController?.mouseDragged(with: event)
+    pwc?.mouseDragged(with: event)
   }
 
   // Need to forward this so that dragging to resize sidebar works in native full screen
   override func mouseUp(with event: NSEvent) {
     super.mouseUp(with: event)
-    playerWindowController?.mouseUp(with: event)
+    pwc?.mouseUp(with: event)
   }
 
   override func rightMouseDown(with event: NSEvent) {
     super.rightMouseDown(with: event)
-    playerWindowController?.rightMouseDown(with: event)
+    pwc?.rightMouseDown(with: event)
   }
 
   override func rightMouseUp(with event: NSEvent) {
-    playerWindowController?.rightMouseUp(with: event)
+    pwc?.rightMouseUp(with: event)
     super.rightMouseUp(with: event)
   }
 
   override func pressureChange(with event: NSEvent) {
-    playerWindowController?.pressureChange(with: event)
+    pwc?.pressureChange(with: event)
     super.pressureChange(with: event)
   }
 
   override func otherMouseDown(with event: NSEvent) {
-    playerWindowController?.otherMouseDown(with: event)
+    pwc?.otherMouseDown(with: event)
     super.otherMouseDown(with: event)
   }
 
   override func otherMouseUp(with event: NSEvent) {
-    playerWindowController?.otherMouseUp(with: event)
+    pwc?.otherMouseUp(with: event)
     super.otherMouseUp(with: event)
   }
 

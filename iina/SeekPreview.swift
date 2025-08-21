@@ -31,6 +31,7 @@ extension PlayerWindowController {
     fileprivate var useThumbfast = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .integrateWithThumbfast)
 
     unowned var player: PlayerCore!
+    var pwc: PlayerWindowController! { player.pwc }
     var log: Logger.Subsystem { player.log }
 
     var animationState: UIAnimationState = .shown {
@@ -39,7 +40,7 @@ extension PlayerWindowController {
           currentPreviewTimeSec = nil
         }
         // Trigger redraw of PlaySlider, in case knob needs to be shown or hidden
-        thumbnailPeekView.associatedPlayer?.windowController.playSlider.needsDisplay = true
+        thumbnailPeekView.pwc?.playSlider.needsDisplay = true
       }
     }
     // Only non-nil when SeekPreview is shown
@@ -118,7 +119,7 @@ extension PlayerWindowController {
       let thumbStore = player.info.currentPlayback?.thumbnails
       let ffThumbnail = thumbStore?.getThumbnail(forSecond: previewTimeSec)
       let viewportSize = currentGeo.viewportSize
-      let currentLayout = player.windowController.currentLayout
+      let currentLayout = pwc.currentLayout
 
       var showThumbnail = showThumbnail
       var usingThumbfast = false
@@ -263,10 +264,10 @@ extension PlayerWindowController {
         if currentLayout.oscPosition == .floating || currentLayout.isMusicMode {
           timeLabelOriginY = (oscTopY + halfMargin).rounded()
         } else {
-          let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
+          let sliderFrameInWindowCoords = pwc.playSlider.frameInWindowCoords
           let sliderCenterY = sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)
           let quarterMargin = margins.bottom * 0.25
-          let halfKnobHeight = player.windowController.playSlider.customCell.knobHeight * 0.5
+          let halfKnobHeight = pwc.playSlider.customCell.knobHeight * 0.5
           // If clear background, align the label consistently close to the slider bar.
           // Else if using gray panel, try to align the label either wholly inside or outside the panel.
           if !currentLayout.oscHasClearBG, sliderCenterY + halfKnobHeight + timeLabelSize.height >= oscTopY {
@@ -281,10 +282,10 @@ extension PlayerWindowController {
         if currentLayout.oscPosition == .floating {
           timeLabelOriginY = (oscOriginInWindowY - quarterMargin - timeLabelSize.height).rounded()
         } else {
-          let sliderFrameInWindowCoords = player.windowController.playSlider.frameInWindowCoords
+          let sliderFrameInWindowCoords = pwc.playSlider.frameInWindowCoords
           let sliderCenterY = (sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)).rounded()
           // See note for the Above case (but use ½ margin instead of ¼).
-          let halfKnobHeight = (player.windowController.playSlider.customCell.knobHeight * 0.5).rounded()
+          let halfKnobHeight = (pwc.playSlider.customCell.knobHeight * 0.5).rounded()
           if !currentLayout.oscHasClearBG, sliderCenterY - halfKnobHeight - halfMargin - timeLabelSize.height <= oscOriginInWindowY {
             timeLabelOriginY = (oscOriginInWindowY - halfMargin - timeLabelSize.height).rounded()
           } else {

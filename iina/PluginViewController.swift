@@ -16,9 +16,9 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     return NSNib.Name("PluginViewController")
   }
 
-  weak var windowController: PlayerWindowController! {
+  weak var pwc: PlayerWindowController! {
     didSet {
-      self.player = windowController.player
+      self.player = pwc.player
     }
   }
 
@@ -99,7 +99,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   func updatePluginTabs() {
     guard isViewLoaded else { return }
 
-    guard player.windowController.isOpen(sidebarTabGroup: .plugins) else {
+    guard player.pwc.isOpen(sidebarTabGroup: .plugins) else {
       player.log.verbose("Skipping update of Plugins sidebar; it is not visible")
       return
     }
@@ -149,7 +149,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
 
   private func switchToTab(_ tabID: String) {
     guard isViewLoaded else { return }
-    assert(player.windowController.isOpen(sidebarTabGroup: .plugins),
+    assert(player.pwc.isOpen(sidebarTabGroup: .plugins),
            "switchToTab should not be called when plugins TabGroup is not shown")
 
     if tabID == Constants.Sidebar.anyPluginID {
@@ -172,16 +172,16 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
 
     // Update current layout so that new tab can be saved.
     // Put inside task to protect from race
-    windowController.animationPipeline.submitInstantTask{ [self] in
-      let prevLayout = windowController.currentLayout
+    pwc.animationPipeline.submitInstantTask{ [self] in
+      let prevLayout = pwc.currentLayout
       // TODO: create a clone() method for SidebarMiscState & use it instead
       let state = Sidebar.SidebarMiscState(playlistSidebarWidth: prevLayout.spec.moreSidebarState.playlistSidebarWidth,
                                            selectedSubSegment: prevLayout.spec.moreSidebarState.selectedSubSegment,
                                            selectedPluginTabID: currentPluginID)
-      windowController.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: state))
+      pwc.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: state))
     }
     let sidebarTab = currentPluginID == Constants.Sidebar.anyPluginID ? Sidebar.Tab.anyPlugin : Sidebar.Tab.plugin(id: currentPluginID)
-    windowController.didChangeTab(to: sidebarTab)
+    pwc.didChangeTab(to: sidebarTab)
   }
 
   private func addNoPluginsLabel() {

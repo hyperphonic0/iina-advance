@@ -213,7 +213,7 @@ struct PlayerSaveState: CustomStringConvertible {
     var props: [String: Any] = [:]
     let info = player.info
     /// Must *not* access `window`: this is not the main thread
-    let pwc = player.windowController!
+    let pwc = player.pwc!
     let layout = pwc.currentLayout
 
     let buildNumber: Int = info.priorStateBuildNumber
@@ -242,7 +242,7 @@ struct PlayerSaveState: CustomStringConvertible {
       props[PropName.intendedViewportSize.rawValue] = sizeString
     }
 
-    if player.windowController.isOnTop {
+    if pwc.isOnTop {
       props[PropName.isOnTop.rawValue] = true.yn
     }
 
@@ -375,7 +375,7 @@ struct PlayerSaveState: CustomStringConvertible {
     /// Runs asynchronously in background queue to avoid blocking UI.
     /// Cuts down on duplicate work via delay and ticket check.
     player.saveUIStateDebouncer.run { [self] in
-      guard player.windowController.loaded else {
+      guard player.pwc.loaded else {
         player.log.trace{"Skipping player state save: player window is not loaded"}
         return
       }
@@ -387,7 +387,7 @@ struct PlayerSaveState: CustomStringConvertible {
         player.log.verbose("Skipping player state save: player is shutting down")
         return
       }
-      guard !player.windowController.isClosing else {
+      guard !player.pwc.isClosing else {
         // mpv core is often still active even after closing, and will send events which
         // can trigger save. Need to make sure we check for this so that we don't un-delete state
         player.log.trace("Skipping player state save: window.isClosing is true")
@@ -395,7 +395,7 @@ struct PlayerSaveState: CustomStringConvertible {
       }
 
       DispatchQueue.main.async {
-        let pwc = player.windowController!
+        let pwc = player.pwc!
         pwc.animationPipeline.submitInstantTask {
           guard !pwc.isAnimatingLayoutTransition else {
             /// The transition itself will call `save` when it is done. Just return
@@ -421,7 +421,7 @@ struct PlayerSaveState: CustomStringConvertible {
     guard player.isSaveEnabled else { return }
     assert(DispatchQueue.isExecutingIn(.main))
     player.log.debug("Saving player state synchronously")
-    let pwc = player.windowController!
+    let pwc = player.pwc!
 
     // Retrieve appropriate geometry values, updating to latest window frame if needed:
     let geo: GeometrySet
@@ -693,8 +693,8 @@ struct PlayerSaveState: CustomStringConvertible {
 
     info.priorStateBuildNumber = int(for: .buildNumber) ?? info.priorStateBuildNumber
 
-    let windowController = player.windowController!
-    windowController.geo = self.geoSet
+    let pwc = player.pwc!
+    pwc.geo = self.geoSet
 
     log.verbose("Screens from prior launch: \(self.screens)")
 
@@ -775,8 +775,8 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     // Prevent "seek" OSD from appearing unncessarily after loading finishes
-    windowController.osd.lastPlaybackPosition = info.playbackPositionSec
-    windowController.osd.lastPlaybackDuration = info.playbackDurationSec
+    pwc.osd.lastPlaybackPosition = info.playbackPositionSec
+    pwc.osd.lastPlaybackDuration = info.playbackDurationSec
 
     // IINA restore supercedes mpv watch-later.
     // Need to delete the watch-later file before mpv loads it or else things get very buggy

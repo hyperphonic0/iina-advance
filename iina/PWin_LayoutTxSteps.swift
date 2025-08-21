@@ -522,7 +522,7 @@ extension PlayerWindowController {
         // Custom title bar
         if customTitleBar == nil {
           let titleBar = CustomTitleBarViewController()
-          titleBar.windowController = self
+          titleBar.pwc = self
           customTitleBar = titleBar
           titleBar.view.alphaValue = 0  // prep it to fade in later
         }

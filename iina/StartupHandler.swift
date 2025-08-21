@@ -134,7 +134,7 @@ class StartupHandler {
 
       if let relevantActivePlayerCore {
         Logger.log.debug{"Requested URL is already playing in open window; will show it instead: \(url.path.pii.quoted)"}
-        relevantActivePlayerCore.windowController.showWindow(nil)
+        relevantActivePlayerCore.pwc.showWindow(nil)
         return false
       }
       return true
@@ -160,7 +160,7 @@ class StartupHandler {
 
         guard playerFilesOpened > 0 else { continue }
         player.openedWindowsSetIndex = wcsForOpenFiles.count
-        wcsForOpenFiles.append(player.windowController)
+        wcsForOpenFiles.append(player.pwc)
         totalFilesOpened += playerFilesOpened
         lastPlayer = player
       }
@@ -172,7 +172,7 @@ class StartupHandler {
       }
       let playerFilesOpened = player.openURLs(uniqueURLs)
       if playerFilesOpened > 0 {
-        wcsForOpenFiles.append(player.windowController)
+        wcsForOpenFiles.append(player.pwc)
         totalFilesOpened += playerFilesOpened
         lastPlayer = player
       }
@@ -344,11 +344,11 @@ class StartupHandler {
     }
 
     let player = PlayerManager.shared.createNewPlayerCore(withLabel: id)
-    let wc = player.windowController!
-    assert(wc.sessionState.isNone, "Invalid sessionState for restore: \(wc.sessionState)")
-    wc.sessionState = .restoring(playerState: savedState)
+    let pwc = player.pwc!
+    assert(pwc.sessionState.isNone, "Invalid sessionState for restore: \(pwc.sessionState)")
+    pwc.sessionState = .restoring(playerState: savedState)
 
-    addWindowToRestore(savedWindow, wc)
+    addWindowToRestore(savedWindow, pwc)
 
     player.start()
     savedState.restoreTo(player)

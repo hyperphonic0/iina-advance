@@ -64,7 +64,7 @@ class PlayerCore: NSObject {
   }
 
   /// - Important: Code referencing this property **must** be run on the main thread because it references
-  ///   [NSApplication.windowController`](https://developer.apple.com/documentation/appkit/nsapplication/1428723-mainwindow)
+  ///   [NSApplication.pwc`](https://developer.apple.com/documentation/appkit/nsapplication/1428723-mainwindow)
   static var active: PlayerCore? {
     assert(DispatchQueue.isExecutingIn(.main))
     return PlayerManager.shared.activePlayer
@@ -100,7 +100,7 @@ class PlayerCore: NSObject {
   /// Time of the last player state save when called by `updatePlaybackTimeInfo`.
   private var lastStateSaveTime = Date().timeIntervalSince1970
 
-  var undoHelper: PlayerWindowUndoHelper { windowController.undoHelper }
+  var undoHelper: PlayerWindowUndoHelper { pwc.undoHelper }
 
   private var subFileMonitor: FileMonitor? = nil
 
@@ -154,8 +154,8 @@ class PlayerCore: NSObject {
 
   // Window & views
 
-  var windowController: PlayerWindowController!
-  var window: PlayerWindow { windowController.window as! PlayerWindow }
+  var pwc: PlayerWindowController!
+  var window: PlayerWindow { pwc.window as! PlayerWindow }
 
   var mpv: MPVController!
   var videoView: VideoView!
@@ -167,15 +167,15 @@ class PlayerCore: NSObject {
   // Playlist
 
   var displayedPlaylist: [PlaybackID] {
-    get { windowController.playlistView.displayedPlaylist }
-    set { windowController.playlistView.displayedPlaylist = newValue }
+    get { pwc.playlistView.displayedPlaylist }
+    set { pwc.playlistView.displayedPlaylist = newValue }
   }
 
   let playlistTableSelectNextRowAfterDelete = false
   let playlistTableChangeNotificationName: NSNotification.Name
 
   var playlistShown: Bool {
-    isInMiniPlayer ? windowController.miniPlayer.playlistShown : windowController.isOpen(sidebarTab: .playlist)
+    isInMiniPlayer ? pwc.miniPlayer.playlistShown : pwc.isOpen(sidebarTab: .playlist)
   }
 
   // Player lifecycle state
@@ -199,19 +199,19 @@ class PlayerCore: NSObject {
 
   // Window controller convenience
 
-  var isRestoring: Bool { windowController.sessionState.isRestoring }
-  var isFullScreen: Bool { windowController.isFullScreen }
-  var isInInteractiveMode: Bool { windowController.isInInteractiveMode }
+  var isRestoring: Bool { pwc.sessionState.isRestoring }
+  var isFullScreen: Bool { pwc.isFullScreen }
+  var isInInteractiveMode: Bool { pwc.isInInteractiveMode }
 
   /// Exists to avoid refactoring legacy code
-  var videoGeo: VideoGeometry { windowController.geo.video }
+  var videoGeo: VideoGeometry { pwc.geo.video }
 
   // Music mode
 
   /// For explicit request via command line
   var startInMusicModeRequested = false
 
-  var isInMiniPlayer: Bool { windowController.isInMiniPlayer }
+  var isInMiniPlayer: Bool { pwc.isInMiniPlayer }
   var isShowVideoPendingInMiniPlayer: Bool = false
   /// Calls `self.miniPlayerShowVideoTimerAction`
   let miniPlayerShowVideoTimer = TimeoutTimer(timeout: Constants.TimeInterval.musicModeChangeTrackTimeout)
@@ -333,7 +333,7 @@ class PlayerCore: NSObject {
     self.videoView = VideoView(player: self)
     self.mpv = MPVController(playerCore: self)
     self.keyBindingContext = PlayerInputContext(playerCore: self)
-    self.windowController = PlayerWindowController(playerCore: self)
+    self.pwc = PlayerWindowController(playerCore: self)
     self.touchBarSupport = TouchBarSupport(playerCore: self)
 
     miniPlayerShowVideoTimer.action = miniPlayerShowVideoTimerAction
@@ -447,7 +447,7 @@ class PlayerCore: NSObject {
       return 0
     }
 
-    info.shouldAutoLoadFiles = AppDelegate.isInteractiveLaunch && !windowController.sessionState.isRestoring && playableFiles.count == 1
+    info.shouldAutoLoadFiles = AppDelegate.isInteractiveLaunch && !pwc.sessionState.isRestoring && playableFiles.count == 1
 
     // open the first file
     openPlayerWindow(playableFiles)
@@ -512,7 +512,7 @@ class PlayerCore: NSObject {
     let playback = Playback(url: urls[0], playlistPos: 0)
 
     if isInteractivePlayer && playback.isNetworkResource {
-      windowController.close()
+      pwc.close()
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
 
@@ -524,7 +524,7 @@ class PlayerCore: NSObject {
     mpv.queue.sync { [self] in
       let path = playback.path
       info.currentPlayback = playback
-      log.debug{"Opening player (window=\(isInteractivePlayer.yn)) for \(path.pii.quoted), playerState=\(state), sessionState=\(windowController.sessionState)"}
+      log.debug{"Opening player (window=\(isInteractivePlayer.yn)) for \(path.pii.quoted), playerState=\(state), sessionState=\(pwc.sessionState)"}
 
       if state == .stopping || state == .idle {
         // Player was previously started, but closed & is now being reopened
@@ -532,18 +532,18 @@ class PlayerCore: NSObject {
       }
 
       DispatchQueue.main.async { [self] in
-        if !windowController.sessionState.isRestoring {
+        if !pwc.sessionState.isRestoring {
           if isInteractivePlayer {
-            windowController.osd.clearQueuedOSDs()
+            pwc.osd.clearQueuedOSDs()
           }
-          windowController.sessionState = windowController.sessionState.newSession()
+          pwc.sessionState = pwc.sessionState.newSession()
         }
 
         /// This doesn't apply to restore. That is handled in `mpvRestoreWorkItem`.
-        let pauseUntilWindowOpen = isInteractivePlayer && !windowController.isOpen
+        let pauseUntilWindowOpen = isInteractivePlayer && !pwc.isOpen
 
         if isInteractivePlayer {
-          windowController.openWindow(nil)
+          pwc.openWindow(nil)
         } else {
           // Make sure mpv core is started
           start()
@@ -553,7 +553,7 @@ class PlayerCore: NSObject {
           // Send load file command
           mpv.command(.loadfile, args: [path], checkActive: false)
 
-          if case .restoring(let priorState) = windowController.sessionState {
+          if case .restoring(let priorState) = pwc.sessionState {
             priorState.restoreMpvProperties(to: self)
             return
           }
@@ -720,12 +720,12 @@ class PlayerCore: NSObject {
 
   func enterMusicMode(automatically: Bool = false, withNewVidGeo newVidGeo: VideoGeometry? =  nil) {
     log.debug{"Switch to music mode, automatically=\(automatically.yesno)"}
-    windowController.enterMusicMode(automatically: automatically)
+    pwc.enterMusicMode(automatically: automatically)
   }
 
   func exitMusicMode(automatically: Bool = false, withNewVidGeo newVidGeo: VideoGeometry? =  nil) {
     log.debug{"Switch to normal window from music mode, automatically=\(automatically.yesno)"}
-    windowController.exitMusicMode(automatically: automatically)
+    pwc.exitMusicMode(automatically: automatically)
   }
 
   // MARK: - Plugins
@@ -740,7 +740,7 @@ class PlayerCore: NSObject {
     pluginMap.removeAll()
     plugins.removeAll()
 
-    windowController.pluginView.updatePluginTabs()
+    pwc.pluginView.updatePluginTabs()
   }
 
   func loadPlugins() {
@@ -757,7 +757,7 @@ class PlayerCore: NSObject {
       return instance
     }
 
-    windowController.pluginView.updatePluginTabs()
+    pwc.pluginView.updatePluginTabs()
   }
 
   func reloadPlugin(_ plugin: JavascriptPlugin, forced: Bool = false) {
@@ -779,7 +779,7 @@ class PlayerCore: NSObject {
     }
 
     plugins = JavascriptPlugin.plugins.compactMap { pluginMap[$0.identifier] }
-    windowController.pluginView.updatePluginTabs()
+    pwc.pluginView.updatePluginTabs()
   }
 
   // MARK: - MPV commands
@@ -834,7 +834,7 @@ class PlayerCore: NSObject {
     }
 
     DispatchQueue.main.async { [self] in
-      windowController.updatePlayButtonAndSpeedUI()
+      pwc.updatePlayButtonAndSpeedUI()
     }
   }
 
@@ -886,7 +886,7 @@ class PlayerCore: NSObject {
       info.pauseStateWasChangedLocally = true
       _resume()
     }
-    windowController.updatePlayButtonAndSpeedUI()
+    pwc.updatePlayButtonAndSpeedUI()
   }
 
   /// Stop playback and unload the media.
@@ -1195,7 +1195,7 @@ class PlayerCore: NSObject {
     DispatchQueue.main.async { [self] in
       let screenshotViewController = ScreenshootOSDView()
       // Shrink to some fraction of the currently displayed video
-      let relativeSize = windowController.videoView.frame.size * 0.3
+      let relativeSize = pwc.videoView.frame.size * 0.3
       let previewImageSize = screenshotImage.size.shrink(toSize: relativeSize)
       screenshotViewController.setImage(screenshotImage,
                                         size: previewImageSize,
@@ -1259,7 +1259,7 @@ class PlayerCore: NSObject {
 
     DispatchQueue.main.async { [self] in
       log.verbose{"Syncing player slider AB loop: a=\(a), b=\(b)"}
-      windowController.playSlider.syncABLoop(info, a: a, b: b)
+      pwc.playSlider.syncABLoop(info, a: a, b: b)
     }
   }
 
@@ -1393,7 +1393,7 @@ class PlayerCore: NSObject {
           state = .started
         }
       }
-      windowController.updatePlayButtonAndSpeedUI()
+      pwc.updatePlayButtonAndSpeedUI()
       refreshSyncUITimer() // needed to get latest playback position
       if let pos = info.playbackPositionSec, let dur = info.playbackDurationSec {
         let osdMsg: OSDMessage = paused ? .pause(playbackPositionSec: pos, playbackDurationSec: dur) :
@@ -1406,12 +1406,12 @@ class PlayerCore: NSObject {
       } else {  // resume
         videoView.displayActive()
       }
-      if windowController.pip.status == .inPIP {
-        windowController.pip.controller.playing = !paused
+      if pwc.pip.status == .inPIP {
+        pwc.pip.controller.playing = !paused
       }
 
-      if windowController.loaded, Preference.bool(for: .alwaysFloatOnTop) {
-        windowController.setWindowFloatingOnTop(!paused, from: windowController.currentLayout)
+      if pwc.loaded, Preference.bool(for: .alwaysFloatOnTop) {
+        pwc.setWindowFloatingOnTop(!paused, from: pwc.currentLayout)
       }
     }
   }
@@ -1421,7 +1421,7 @@ class PlayerCore: NSObject {
     sendOSD(.speed(speed))
     saveState()  // record the new speed
     DispatchQueue.main.async { [self] in
-      windowController.updatePlayButtonAndSpeedUI()
+      pwc.updatePlayButtonAndSpeedUI()
     }
   }
 
@@ -1504,7 +1504,7 @@ class PlayerCore: NSObject {
       return
     }
 
-    windowController.animationPipeline.enqueueVideoSyncTaskIfNeeded(self)
+    pwc.animationPipeline.enqueueVideoSyncTaskIfNeeded(self)
   }
 
   func setVideoRotate(_ userRotation: Int) {
@@ -1791,7 +1791,7 @@ class PlayerCore: NSObject {
       // Check this inside main DispatchQueue
       if playlistShown {
         // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
-        windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos, thenScrollToVisible: true)
+        pwc.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos, thenScrollToVisible: true)
       }
 
       MediaPlayerIntegration.shared.update()
@@ -1815,7 +1815,7 @@ class PlayerCore: NSObject {
     }
 
     // Cannot restore playlist until after fileStarted event & mpv has a position for current item
-    if let priorState = windowController.priorStateIfRestoring {
+    if let priorState = pwc.priorStateIfRestoring {
       let playlistPathList = priorState.getPlaylistPathList()
       if !playlistPathList.isEmpty {
         let playlistPos: Int? = priorState.int(for: .playlistPos)
@@ -1915,7 +1915,7 @@ class PlayerCore: NSObject {
     }
 
     // Cache these vars to keep them constant for background tasks
-    let priorStateIfRestoring = windowController.priorStateIfRestoring
+    let priorStateIfRestoring = pwc.priorStateIfRestoring
     let isRestoring = priorStateIfRestoring != nil
 
     // Sync tracks
@@ -1957,7 +1957,7 @@ class PlayerCore: NSObject {
         }
       }
     })
-    windowController.animationPipeline.submitGTF(gtf)
+    pwc.animationPipeline.submitGTF(gtf)
 
     // Launch auto-load tasks on background thread
     let shouldAutoLoadFiles = info.shouldAutoLoadFiles
@@ -2052,10 +2052,10 @@ class PlayerCore: NSObject {
   }
 
   func fullscreenChanged() {
-    guard windowController.loaded, !isStopping else { return }
+    guard pwc.loaded, !isStopping else { return }
     let fs = mpv.getFlag(MPVOption.Window.fullscreen)
     if fs != isFullScreen {
-      windowController.toggleWindowFullScreen()
+      pwc.toggleWindowFullScreen()
     }
   }
 
@@ -2089,21 +2089,21 @@ class PlayerCore: NSObject {
   func mediaTitleChanged() {
     guard isActive else { return }
     DispatchQueue.main.async { [self] in
-      guard windowController.isOpen else { return }
+      guard pwc.isOpen else { return }
       MediaPlayerIntegration.shared.updateNowPlayingInfo()
       postNotification(.iinaMediaTitleChanged)
     }
   }
 
   func reloadQuickSettingsView() {
-    windowController.animationPipeline.doAfterGTFs{ [self] in
-      guard windowController.loaded else { return }
+    pwc.animationPipeline.doAfterGTFs{ [self] in
+      guard pwc.loaded else { return }
       guard !isStopping else { return }
       log.trace("Reloading QuickSettigsView")
 
       // Easiest place to put this - need to call it when setting equalizers
       videoView.displayActive()
-      windowController.quickSettingView.reloadCurrentTab()
+      pwc.quickSettingView.reloadCurrentTab()
     }
   }
 
@@ -2123,12 +2123,12 @@ class PlayerCore: NSObject {
 
   func ontopChanged() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard windowController.loaded else { return }
+    guard pwc.loaded else { return }
     let ontop = mpv.getFlag(MPVOption.Window.ontop)
     log.verbose{"Δ mpv prop: 'ontop' = \(ontop.yesno)"}
-    if ontop != windowController.isOnTop {
+    if ontop != pwc.isOnTop {
       DispatchQueue.main.async { [self] in
-        windowController.setWindowFloatingOnTop(ontop, from: windowController.currentLayout)
+        pwc.setWindowFloatingOnTop(ontop, from: pwc.currentLayout)
       }
     }
   }
@@ -2142,7 +2142,7 @@ class PlayerCore: NSObject {
       // Important to synchronize the time as mpv may slightly alter the playback position during a
       // restart even while paused. See issue #5337.
       updatePlaybackTimeInfo()  // prepare for updateUI()
-      windowController.updateUI()
+      pwc.updateUI()
 
       // When playback is paused the display link may be shutdown in order to not waste energy.
       // The display link will be restarted while seeking. If playback is paused shut it down again.
@@ -2151,16 +2151,16 @@ class PlayerCore: NSObject {
       }
 
       // End of seeking? Set short timer to hide seek time & thumbnail
-      windowController.seekPreview.restartHideTimer()
+      pwc.seekPreview.restartHideTimer()
     }
 
     saveState()
   }
 
   func refreshEdrMode() {
-    windowController.animationPipeline.submitInstantTask { [self] in
+    pwc.animationPipeline.submitInstantTask { [self] in
       guard isActive else { return }
-      guard windowController.loaded else { return }
+      guard pwc.loaded else { return }
       videoView.refreshEdrMode()
     }
   }
@@ -2324,7 +2324,7 @@ class PlayerCore: NSObject {
 
   func sidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !windowController.sessionState.isRestoring, !isStopping else { return }
+    guard !pwc.sessionState.isRestoring, !isStopping else { return }
     let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
     guard info.isFileLoaded else {
       log.verbose{"SID changed to \(sid) but file is not loaded; ignoring"}
@@ -2427,7 +2427,7 @@ class PlayerCore: NSObject {
     if Preference.bool(for: .autoSearchOnlineSub) &&
       !info.isNetworkResource && info.subTracks.isEmpty &&
       (info.playbackDurationSec ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
-      windowController.menuFindOnlineSub(windowController)
+      pwc.menuFindOnlineSub(pwc)
     }
   }
 
@@ -2486,24 +2486,24 @@ class PlayerCore: NSObject {
   /// These options currently include fullscreen and ontop.
   private func checkUnsyncedWindowOptions() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard windowController.loaded, isActive else { return }
+    guard pwc.loaded, isActive else { return }
 
     syncFullScreenState()
     let ontop = mpv.getFlag(MPVOption.Window.ontop)
-    if ontop != windowController.isOnTop {
-      log.verbose{"IINA OnTop state (\(windowController.isOnTop.yn)) does not match mpv (\(ontop.yn)). Will change to match mpv state"}
+    if ontop != pwc.isOnTop {
+      log.verbose{"IINA OnTop state (\(pwc.isOnTop.yn)) does not match mpv (\(ontop.yn)). Will change to match mpv state"}
       DispatchQueue.main.async { [self] in
-        windowController.setWindowFloatingOnTop(ontop, from: windowController.currentLayout, updateOnTopStatus: false)
+        pwc.setWindowFloatingOnTop(ontop, from: pwc.currentLayout, updateOnTopStatus: false)
       }
     }
   }
 
   func syncFullScreenState() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard windowController.loaded else { return }
+    guard pwc.loaded else { return }
     
     let mpvFS = mpv.getFlag(MPVOption.Window.fullscreen)
-    let iinaFS = windowController.isFullScreen
+    let iinaFS = pwc.isFullScreen
     log.verbose{"FullScreen state: IINA=\(iinaFS.yn) mpv=\(mpvFS.yn)"}
     if mpvFS != iinaFS {
       if mpvFS && didEnterFullScreenViaUserToggle {
@@ -2512,9 +2512,9 @@ class PlayerCore: NSObject {
       } else {
         DispatchQueue.main.async { [self] in
           if mpvFS {
-            windowController.enterFullScreen()
+            pwc.enterFullScreen()
           } else {
-            windowController.exitFullScreen()
+            pwc.exitFullScreen()
           }
         }
       }
@@ -2545,7 +2545,7 @@ class PlayerCore: NSObject {
 
       // If showing OSC for streaming media, even while paused the cache may still be filling,
       // which will change the duration continuously.
-      useTimer = info.isNetworkResource && windowController.isUITimerNeeded()
+      useTimer = info.isNetworkResource && pwc.isUITimerNeeded()
     } else if needsTouchBar && TouchBarSettings.shared.showAppControls || isInMiniPlayer {
       // The timer can't be stopped if the mini player is being used as it always displays the OSC
       // or if the timer is updating the information being displayed in the Touch Bar.
@@ -2554,7 +2554,7 @@ class PlayerCore: NSObject {
       // May need to show, hide, or update buffering indicator at any time.
       useTimer = true
     } else {
-      useTimer = windowController.isUITimerNeeded()
+      useTimer = pwc.isUITimerNeeded()
     }
 
     let timerConfig = AppData.syncTimerConfig
@@ -2610,7 +2610,7 @@ class PlayerCore: NSObject {
     // updated now. Playback may be paused. If that is the case then the timer will not be started.
     if !wasTimerRunning {
       // Do not wait for first redraw
-      windowController.updateUI(pullUpdatesFromMpv: true)
+      pwc.updateUI(pullUpdatesFromMpv: true)
     }
 
     guard useTimer && (timerRestartNeeded || !wasTimerRunning) else {
@@ -2633,7 +2633,7 @@ class PlayerCore: NSObject {
   }
 
   @objc func fireSyncUITimer() {
-    windowController.updateUI(pullUpdatesFromMpv: true)
+    pwc.updateUI(pullUpdatesFromMpv: true)
   }
 
   func updatePlaybackTimeInfo() {
@@ -2712,8 +2712,8 @@ class PlayerCore: NSObject {
         //    NSLog("   *** CACHED RANGES: \(cachedRanges.count): \(cachedRanges)")
         info.cachedRanges = cachedRanges
         // Redraw PlaySlider to reflect change:
-        if let osc = windowController.currentControlBar, !osc.isHidden {
-          windowController.playSlider.needsDisplay = true
+        if let osc = pwc.currentControlBar, !osc.isHidden {
+          pwc.playSlider.needsDisplay = true
         }
       }
     }
@@ -2732,39 +2732,39 @@ class PlayerCore: NSObject {
 
   func syncUI(_ option: SyncUIOption) {
     // if window not loaded, ignore
-    guard windowController.loaded else { return }
+    guard pwc.loaded else { return }
     log.verbose{"Syncing UI \(option)"}
 
     switch option {
 
     case .volume, .muteButton:
       DispatchQueue.main.async { [self] in
-        windowController.updateVolumeUI()
+        pwc.updateVolumeUI()
       }
 
     case .chapterList:
       DispatchQueue.main.async { [self] in
         // this should avoid sending reload when table view is not ready
         if isInMiniPlayer {
-          guard windowController.miniPlayer.playlistShown else { return }
-          windowController.miniPlayer.loadIfNeeded()
+          guard pwc.miniPlayer.playlistShown else { return }
+          pwc.miniPlayer.loadIfNeeded()
         } else {
-          guard windowController.isOpen(sidebarTab: .chapters) else { return }
+          guard pwc.isOpen(sidebarTab: .chapters) else { return }
         }
 
-        windowController.playlistView.chapterTableView.reloadData()
+        pwc.playlistView.chapterTableView.reloadData()
       }
 
     case .playlist:
       DispatchQueue.main.async {
         if self.playlistShown {
-          self.windowController.playlistView.playlistTableView.reloadData()
+          self.pwc.playlistView.playlistTableView.reloadData()
         }
       }
 
     case .loop:
       DispatchQueue.main.async {
-        self.windowController.playlistView.updateLoopBtnStatus()
+        self.pwc.playlistView.updateLoopBtnStatus()
       }
     }
 
@@ -2773,12 +2773,12 @@ class PlayerCore: NSObject {
   }
 
   func canShowOSD() -> Bool {
-    /// Note: use `loaded` (querying `isWindowLoaded` will initialize windowController unexpectedly)
-    if !windowController.loaded || !Preference.bool(for: .enableOSD) || isUsingMpvOSD || isRestoring || isInInteractiveMode {
+    /// Note: use `loaded` (querying `isWindowLoaded` will initialize pwc unexpectedly)
+    if !pwc.loaded || !Preference.bool(for: .enableOSD) || isUsingMpvOSD || isRestoring || isInInteractiveMode {
       return false
     }
     if isInMiniPlayer {
-      return windowController.musicModeGeo.videoShown && Preference.bool(for: .enableOSDInMusicMode)
+      return pwc.musicModeGeo.videoShown && Preference.bool(for: .enableOSDInMusicMode)
     }
 
     return true
@@ -2803,12 +2803,12 @@ class PlayerCore: NSObject {
       }
     }
 
-    windowController.displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController, isExternal: external)
+    pwc.displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController, isExternal: external)
   }
 
   func hideOSD() {
     DispatchQueue.main.async {
-      self.windowController.hideOSD()
+      self.pwc.hideOSD()
     }
   }
 
@@ -2830,9 +2830,9 @@ class PlayerCore: NSObject {
       log.verbose("Called stop, but no window to close (player is non-interactive)")
       return
     }
-    windowController.postWindowMustCancelShow()
+    pwc.postWindowMustCancelShow()
     log.verbose("Closing window")
-    windowController.close()
+    pwc.close()
     /// Some doubts about whether `windowWillClose` is always fired. Call manually to ensure things execute:
     AppDelegate.shared.windowWillClose(window)
   }
@@ -3187,7 +3187,7 @@ class PlayerCore: NSObject {
       }
 
       // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
-      if !silent, (!isInMiniPlayer || (windowController.miniPlayer.videoShown && !isShowVideoPendingInMiniPlayerCached)) {
+      if !silent, (!isInMiniPlayer || (pwc.miniPlayer.videoShown && !isShowVideoPendingInMiniPlayerCached)) {
         sendOSD(.track(info.track(.video, id: vid) ?? .noneVideoTrack))
       }
       if vid != 0, isActive, !isRestoring {
@@ -3304,9 +3304,9 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
 
     if showDefaultAlbumArt {
-      windowController.animationPipeline.submitInstantTask { [self] in
+      pwc.animationPipeline.submitInstantTask { [self] in
         // Show *before* disabling in mpv, to avoid a moment of empty black window. Do not show if in music mode & video is hidden.
-        windowController.updateDefaultArtVisibility(to: true)
+        pwc.updateDefaultArtVisibility(to: true)
       }
     }
 
@@ -3348,10 +3348,10 @@ class PlayerCore: NSObject {
       if index == 0 {
         log.verbose("New track is 0: launching task to show defaultAlbumArt")
         // Show default art *before* waiting for mpv confirmation, to avoid a moment of empty black window.
-        windowController.animationPipeline.submit(.instantTask{ [self] in
+        pwc.animationPipeline.submit(.instantTask{ [self] in
           // Do not show if in music mode & video is hidden.
-          guard !windowController.currentLayout.isMusicMode || windowController.musicModeGeo.videoShown else { return }
-          windowController.updateDefaultArtVisibility(to: true)
+          guard !pwc.currentLayout.isMusicMode || pwc.musicModeGeo.videoShown else { return }
+          pwc.updateDefaultArtVisibility(to: true)
         })
       }
     case .sub:

@@ -40,19 +40,19 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   private var hideVolumePopoverTimer: Timer?
 
-  unowned var windowController: PlayerWindowController!
-  var player: PlayerCore {  windowController.player }
-  var window: NSWindow? { windowController.window }
-  var log: Logger.Subsystem {  windowController.log }
+  unowned var pwc: PlayerWindowController!
+  var player: PlayerCore {  pwc.player }
+  var window: NSWindow? { pwc.window }
+  var log: Logger.Subsystem {  pwc.log }
 
-  var playlistShown: Bool { windowController.musicModeGeo.isMusicModePlaylistShown }
-  var videoShown: Bool {  windowController.musicModeGeo.videoShown }
+  var playlistShown: Bool { pwc.musicModeGeo.isMusicModePlaylistShown }
+  var videoShown: Bool {  pwc.musicModeGeo.videoShown }
   var windowWidthForScrollingLabels: CGFloat = 0
 
   static var maxWindowWidth: CGFloat { CGFloat(Preference.float(for: .musicModeMaxWidth)) }
 
   var currentDisplayedPlaylistHeight: CGFloat {
-    let playlistVC = windowController.playlistView
+    let playlistVC = pwc.playlistView
     guard playlistVC.isViewLoaded && !playlistVC.view.isHidden else { return 0.0 }
     let playlistHeight = playlistVC.view.frame.height
     return playlistHeight
@@ -74,13 +74,13 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     mediaInfoView.clipsToBounds = true
 
     /// Set up tracking area to show controller when hovering over it
-    windowController.viewportView.addTrackingArea(NSTrackingArea(rect: windowController.viewportView.bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
+    pwc.viewportView.addTrackingArea(NSTrackingArea(rect: pwc.viewportView.bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
     musicModeControlBarView.addTrackingArea(NSTrackingArea(rect: musicModeControlBarView.bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
 
     // close button
-    windowController.closeButtonVE.action = #selector(windowController.close)
-    windowController.closeButtonBox.action = #selector(windowController.close)
-    windowController.closeButtonBackgroundViewVE.roundCorners()
+    pwc.closeButtonVE.action = #selector(pwc.close)
+    pwc.closeButtonBox.action = #selector(pwc.close)
+    pwc.closeButtonBackgroundViewVE.roundCorners()
 
     // hide controls initially
     controllerButtonsPanelView.alphaValue = 0
@@ -99,8 +99,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     volumeButton.toolTip = NSLocalizedString("mini_player.volume", comment: "volume")
     volumeButton.identifier = .init("VolumeButton")
     volumeButton.bounceOnClick = true
-    windowController.closeButtonVE.toolTip = NSLocalizedString("mini_player.close", comment: "close")
-    windowController.backButtonVE.toolTip = NSLocalizedString("mini_player.back", comment: "back")
+    pwc.closeButtonVE.toolTip = NSLocalizedString("mini_player.close", comment: "close")
+    pwc.backButtonVE.toolTip = NSLocalizedString("mini_player.back", comment: "back")
 
     playlistWrapperView.identifier = .init("PlaylistWrapperView")
 
@@ -124,7 +124,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     /// The goal is to always show the control when the cursor is hovering over either of the 2 tracking areas.
     /// Although they are adjacent to each other, `mouseExited` can still be called when moving from one to the other.
     /// Detect and ignore this case.
-    guard !windowController.isMouseEvent(event, inAnyOf: [musicModeControlBarView, windowController.viewportView]) else {
+    guard !pwc.isMouseEvent(event, inAnyOf: [musicModeControlBarView, pwc.viewportView]) else {
       return
     }
 
@@ -132,11 +132,11 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   private func showControl() {
-    windowController.animationPipeline.submitTask(duration: Constants.AnimationDuration.musicModeShowButtons, { [self] in
+    pwc.animationPipeline.submitTask(duration: Constants.AnimationDuration.musicModeShowButtons, { [self] in
       log.trace("MiniPlayer: showing OSC controls / hiding media info")
-      windowController.osd.osdLeadingToMiniPlayerButtonsTrailingConstraint?.priority = .required
-      windowController.closeButtonView.isHidden = false
-      windowController.closeButtonView.animator().alphaValue = 1
+      pwc.osd.osdLeadingToMiniPlayerButtonsTrailingConstraint?.priority = .required
+      pwc.closeButtonView.isHidden = false
+      pwc.closeButtonView.animator().alphaValue = 1
       controllerButtonsPanelView.animator().alphaValue = 1
       mediaInfoView.animator().alphaValue = 0
     })
@@ -144,8 +144,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   /// Hides media info, shows OSC controls (runs as async task in animationPipeline)
   private func hideControllerButtonsInPipeline() {
-    guard windowController.isInMiniPlayer else { return }
-    windowController.animationPipeline.submitTask(duration: Constants.AnimationDuration.musicModeShowButtons, { [self] in
+    guard pwc.isInMiniPlayer else { return }
+    pwc.animationPipeline.submitTask(duration: Constants.AnimationDuration.musicModeShowButtons, { [self] in
       hideControllerButtons()
     })
   }
@@ -153,9 +153,9 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   /// Hides media info, shows OSC controls (synchronous version)
   func hideControllerButtons() {
     log.trace("MiniPlayer: hiding OSC controls / showing media info")
-    windowController.osd.osdLeadingToMiniPlayerButtonsTrailingConstraint?.priority = .defaultLow
-    windowController.closeButtonView.isHidden = true
-    windowController.closeButtonView.animator().alphaValue = 0
+    pwc.osd.osdLeadingToMiniPlayerButtonsTrailingConstraint?.priority = .defaultLow
+    pwc.closeButtonView.isHidden = true
+    pwc.closeButtonView.animator().alphaValue = 0
     controllerButtonsPanelView.animator().alphaValue = 0
     mediaInfoView.animator().alphaValue = 1
   }
@@ -222,7 +222,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     if volumePopover.isShown {
       volumePopover.performClose(self)
     } else {
-      windowController.updateVolumeUI()
+      pwc.updateVolumeUI()
       volumePopover.show(relativeTo: volumePopoverAlignmentView.bounds, of: volumePopoverAlignmentView,
                          preferredEdge: .minY)
     }
@@ -230,7 +230,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   /// Action: Show/Hide playlist
   @IBAction func togglePlaylist(_ sender: AnyObject?) {
-    windowController.animationPipeline.submitInstantTask({ [self] in
+    pwc.animationPipeline.submitInstantTask({ [self] in
       let gtf = GeometryTransform("TogglePlaylist", player,
                                   windowed: { [self] ctx -> PWinGeometry? in
         // music mode only. Other modes should fall back to default
@@ -247,7 +247,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   /// Action: Show/Hide `videoView`
   @IBAction func toggleVideoViewVisibleState(_ sender: AnyObject?) {
-    windowController.animationPipeline.submitInstantTask({ [self] in
+    pwc.animationPipeline.submitInstantTask({ [self] in
       let showVideoView = !videoShown
       log.verbose{"MusicMode: user clicked btn: toggling videoView visibility: \((!showVideoView).yn) → \(showVideoView.yn)"}
 
@@ -282,21 +282,21 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     if videoShown {
       log.verbose{"Deactivating ViewportView-HeightContraint for video=SHOWN"}
       // Remove zero-height constraint
-      windowController.viewportViewHeightContraint?.isActive = false
+      pwc.viewportViewHeightContraint?.isActive = false
     } else {
       log.verbose{"Activating ViewportView-HeightContraint for video=HIDDEN"}
       // Add or reactivate zero-height constraint
-      if let heightConstraint = windowController.viewportViewHeightContraint {
+      if let heightConstraint = pwc.viewportViewHeightContraint {
         heightConstraint.isActive = true
       } else {
-        let heightConstraint = windowController.viewportView.heightAnchor.constraint(equalToConstant: 0)
+        let heightConstraint = pwc.viewportView.heightAnchor.constraint(equalToConstant: 0)
         heightConstraint.identifier = "ViewportView-HeightContraint"
         heightConstraint.isActive = true
-        windowController.viewportViewHeightContraint = heightConstraint
+        pwc.viewportViewHeightContraint = heightConstraint
       }
     }
-    windowController.viewportView.needsUpdateConstraints = true
-    windowController.viewportView.layout()
+    pwc.viewportView.needsUpdateConstraints = true
+    pwc.viewportView.layout()
   }
 
   static func buildMusicModeGeometryFromPrefs(screen: NSScreen, video: VideoGeometry) -> PWinGeometry {

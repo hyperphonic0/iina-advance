@@ -61,7 +61,7 @@ class JavascriptAPIOverlay: JavascriptAPI, JavascriptAPIOverlayExportable, WKScr
       throwError(withMessage: "overlay API called without permission.")
       return
     }
-    guard player!.windowController.loaded else {
+    guard player!.pwc.loaded else {
       throwError(withMessage: "overlay.loadFile called when window is not available. Please call it after receiving the \"iina.window-loaded\" event.")
       return
     }
@@ -77,7 +77,7 @@ class JavascriptAPIOverlay: JavascriptAPI, JavascriptAPIOverlayExportable, WKScr
   }
 
   func simpleMode() {
-    guard player!.windowController.loaded && permitted(to: .displayVideoOverlay) else {
+    guard player!.pwc.loaded && permitted(to: .displayVideoOverlay) else {
       throwError(withMessage: "overlay.simpleMode called when window is not available. Please call it after receiving the \"iina.window-loaded\" event.")
       return
     }

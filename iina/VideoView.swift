@@ -21,7 +21,7 @@ class VideoView: NSView {
   /// `false`: use gpu-next / Vulkan
   let useOpenGL = true
 
-  weak var player: PlayerCore!
+  unowned var player: PlayerCore!
   var link: CVDisplayLink?
 
   var log: Logger.Subsystem {
@@ -111,7 +111,7 @@ class VideoView: NSView {
   /// In native full screen, `VideoView` receives mouse events instead of the window, so it is necessary to forward them
   /// to the window controller for handling.
   override func mouseDown(with event: NSEvent) {
-    player.windowController.mouseDown(with: event)
+    player.pwc.mouseDown(with: event)
     super.mouseDown(with: event)
   }
 
@@ -119,7 +119,7 @@ class VideoView: NSView {
   ///
   /// See `PlayerWindowController.workaroundCursorDefect` and the issue for details on this workaround.
   override func rightMouseDown(with event: NSEvent) {
-    player.windowController.rightMouseDown(with: event)
+    player.pwc.rightMouseDown(with: event)
     super.rightMouseDown(with: event)
   }
 
@@ -138,7 +138,7 @@ class VideoView: NSView {
     // needed as it would be fine to always call the controller. The check merely makes it clear
     // that this is only needed due to macOS changes starting with Big Sur.
     if #available(macOS 11, *) {
-      player.windowController.mouseUp(with: event)
+      player.pwc.mouseUp(with: event)
     } else {
       super.mouseUp(with: event)
     }
@@ -206,7 +206,7 @@ class VideoView: NSView {
 
   func needsForcedRedraws() -> Bool {
     guard let currentVideoTrack = player.info.currentTrack(.video), currentVideoTrack.id != 0 else { return false }
-    guard player.windowController.loaded, player.isActive, player.info.isPaused || currentVideoTrack.isAlbumart else { return false }
+    guard player.pwc.loaded, player.isActive, player.info.isPaused || currentVideoTrack.isAlbumart else { return false }
     guard !Preference.bool(for: .isRestoreInProgress) else { return false }
     return true
   }
@@ -253,7 +253,7 @@ class VideoView: NSView {
   }
 
   func refreshAllVideoDisplayState() {
-    guard player.windowController.loaded, player.isActive && !player.isRestoring else { return }
+    guard player.pwc.loaded, player.isActive && !player.isRestoring else { return }
     log.verbose{"Refreshing all VideoView display state"}
     updateDisplayLink()
     refreshContentsScale()
@@ -268,7 +268,7 @@ class VideoView: NSView {
       logHDR.verbose { "Skipping ICC profile: no OpenGL layer" }
       return
     }
-    let screenColorSpace = player.windowController.window?.screen?.colorSpace
+    let screenColorSpace = player.pwc.window?.screen?.colorSpace
     if !Preference.bool(for: .loadIccProfile) {
       logHDR.verbose("Not using ICC profile due to user preference")
     } else if let screenColorSpace {
@@ -313,7 +313,7 @@ class VideoView: NSView {
 
   /// See also: `refreshAllVideoDisplayState`. Cannot execute until player is started & file is loaded.
   func refreshEdrMode() {
-    guard player.windowController.loaded else { return }
+    guard player.pwc.loaded else { return }
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
 
@@ -321,7 +321,7 @@ class VideoView: NSView {
     let edrEnabled = requestEdrMode()
     let edrAvailable = edrEnabled != false
     if player.info.hdrAvailable != edrAvailable {
-      player.windowController.quickSettingView.setHdrAvailability(to: edrAvailable)
+      player.pwc.quickSettingView.setHdrAvailability(to: edrAvailable)
     }
     if edrEnabled != true { setICCProfile() }
   }
