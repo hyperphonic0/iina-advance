@@ -223,9 +223,7 @@ extension PlayerWindowController {
         let inputGeo = transition.inputGeometry
         let newGeo: PWinGeometry
         if inputGeo.hasTopPaddingForCameraHousing {
-          /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
-          /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
-          /// (will expand window to cover `cameraHousingHeight` in next animation)
+          /// Exiting legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
           newGeo = inputGeo.clone(windowFrame: windowedModeScreen.frameWithoutCameraHousing,
                                                   screenID: windowedModeScreen.screenID, topMarginHeight: 0)
         } else {
@@ -255,7 +253,7 @@ extension PlayerWindowController {
       })
     }
 
-    // (Only for Enter Legacy FS) Adds an extra animation to hiding camera housing / menu bar / dock.
+    // (Only for Enter Legacy FS) Adds an extra animation to hide camera housing / menu bar / dock.
     if useExtraAnimationForEnteringLegacyFullScreen {
       let cameraToTotalFrameRatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
       let duration = endingAnimationDuration * cameraToTotalFrameRatio

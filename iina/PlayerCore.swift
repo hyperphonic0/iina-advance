@@ -3300,15 +3300,8 @@ class PlayerCore: NSObject {
   ///  Sets `vid=0` via mpv. Does nothing if already in the target state (idempotent).
   ///
   ///  See also: `setVideoTrackEnabled`
-  func setVideoTrackDisabled(showDefaultAlbumArt: Bool = true) {
+  func setVideoTrackDisabled() {
     assert(DispatchQueue.isExecutingIn(.main))
-
-    if showDefaultAlbumArt {
-      pwc.animationPipeline.submitInstantTask { [self] in
-        // Show *before* disabling in mpv, to avoid a moment of empty black window. Do not show if in music mode & video is hidden.
-        pwc.updateDefaultArtVisibility(to: true)
-      }
-    }
 
     mpv.queue.async { [self] in
       // Change video track to None

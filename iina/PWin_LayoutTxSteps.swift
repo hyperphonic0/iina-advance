@@ -147,9 +147,6 @@ extension PlayerWindowController {
         if !transition.inputGeometry.videoShown {
           // Video was disabled in music mode, but need to restore it now
           player.setVideoTrackEnabled()
-        } else {
-          log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
-          viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
         }
       }
     }
@@ -170,7 +167,7 @@ extension PlayerWindowController {
       speedLabelBtmConstraint.isActive = false
     }
 
-    rebuildPanelConstraints(with: transition.inputLayout)
+    rebuildPanelConstraints(transition, stage: .willCloseOldPanels)
   }
 
   /// -------------------------------------------------
@@ -293,11 +290,6 @@ extension PlayerWindowController {
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
     log.verbose{"[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)"}
 
-    if transition.isExitingMusicMode {
-      // Remove kludge for hiding video
-      miniPlayer.updateVideoViewHeightConstraint(videoShown: true)
-    }
-
     // TODO: incorporate this into middleGeometry for cleaner code
     // This check is true for isWindowInitialLayout, but currently `closeOldPanels` is not executed for that.
     if isOpeningBarOSC || isClosingBarOSC {
@@ -382,10 +374,6 @@ extension PlayerWindowController {
         cameraOffset = transition.outputGeometry.topMarginHeight
       }
 
-      let topBarHeight = transition.inputLayout.topBarPlacement == .insideViewport ? middleGeo.insideBars.top : middleGeo.outsideBars.top
-      log.trace{"[\(transition.name)] CloseOldPanels: applying middleGeo, topBarHeight=\(topBarHeight), cameraOffset=\(cameraOffset)"}
-      updateTopBarHeight(to: topBarHeight, topBarPlacement: transition.inputLayout.topBarPlacement, cameraHousingOffset: cameraOffset)
-
       if !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {  // don't do this too soon when exiting these modes
         // Update sidebar vertical alignments to match top bar:
         let downshift = min(transition.inputLayout.sidebarDownshift, outputLayout.sidebarDownshift)
@@ -393,8 +381,11 @@ extension PlayerWindowController {
         updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
       }
 
-      let bottomBarHeight = transition.inputLayout.bottomBarPlacement == .insideViewport ? middleGeo.insideBars.bottom : middleGeo.outsideBars.bottom
-      updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement)
+      log.trace{"[\(transition.name)] CloseOldPanels: applying middleGeo, topBar.H=\(middleGeo.topBarHeight) bottomBar.H=\(middleGeo.bottomBarHeight) cameraOffset=\(cameraOffset)"}
+      updateTopBarHeight(to: middleGeo.topBarHeight, topBarPlacement: transition.inputLayout.topBarPlacement,
+                         cameraHousingOffset: cameraOffset)
+
+      updateBottomBarHeight(to: middleGeo.bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement)
 
       if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
         controlBarFloating.moveToLocationRatio(layout: transition.outputLayout, viewportSize: middleGeo.viewportSize)
@@ -672,14 +663,6 @@ extension PlayerWindowController {
           miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
         }
 
-        // musicModeGeo==transition.outputGeo
-        let shouldDisableVideoView = !musicModeGeo.videoShown && musicModeGeo.isMusicModePlaylistShown
-        /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
-        if shouldDisableVideoView {
-          log.verbose{"Hiding video, but playlist is shown. Setting viewportBtmOffsetFromContentViewBtmConstraint inactive"}
-          viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
-        }
-
         if !miniPlayer.volumeSliderView.subviews.contains(fragVolumeView) {
           miniPlayer.volumeSliderView.addSubview(fragVolumeView)
           fragVolumeView.centerYAnchor.constraint(equalTo: miniPlayer.volumeSliderView.centerYAnchor).isActive = true
@@ -711,6 +694,15 @@ extension PlayerWindowController {
       if !wasAlreadyPresent {
         playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0, trailing: 0)
         playSliderAndTimeLabelsView.isHidden = false
+      }
+
+      if !musicModeGeo.videoShown && pip.status == .notInPIP {
+        videoView.apply(nil)  // remove constraints
+        videoView.removeFromSuperview()
+        viewportView.removeSpacers()
+        updateDefaultArtVisibility(to: false)  // hide defaultAlbumArt
+
+        player.setVideoTrackDisabled()
       }
     }
 
@@ -963,7 +955,7 @@ extension PlayerWindowController {
       }
     }
 
-    rebuildPanelConstraints(with: outputLayout)
+    rebuildPanelConstraints(transition, stage: .willOpenNewPanels)
 
     // Make sure to call this after calls to prepareLayoutForOpening(*Sidebar)
     updateOSDConstraints(transition.outputLayout, transition.outputGeometry)
@@ -1005,8 +997,7 @@ extension PlayerWindowController {
     updateTopBarHeight(to: outputLayout.topBarHeight, topBarPlacement: transition.outputLayout.topBarPlacement,
                        cameraHousingOffset: transition.outputGeometry.topMarginHeight)
 
-    let bottomBarHeight = outputLayout.bottomBarPlacement == .insideViewport ? transition.outputGeometry.insideBars.bottom : transition.outputGeometry.outsideBars.bottom
-    updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: outputLayout.bottomBarPlacement)
+    updateBottomBarHeight(to: transition.outputGeometry.bottomBarHeight, bottomBarPlacement: outputLayout.bottomBarPlacement)
 
     if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
@@ -1097,7 +1088,7 @@ extension PlayerWindowController {
           } else if transition.outputGeometry.hasTopPaddingForCameraHousing {
             /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
             /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
-            /// (will expand window to cover `cameraHousingHeight` in next animation)
+            /// (will expand window to cover `cameraHousingHeight` in final animation)
             newGeo = transition.outputGeometry.clone(windowFrame: screen.frameWithoutCameraHousing,
                                                      screenID: screen.screenID, topMarginHeight: 0)
           } else {
@@ -1342,11 +1333,7 @@ extension PlayerWindowController {
     }
 
     if transition.isTogglingFullScreen || transition.isTogglingMusicMode {
-      if transition.outputLayout.isMusicMode && !musicModeGeo.videoShown && pip.status == .notInPIP {
-        updateWindowLayoutForVideoViewHidden(playlistShown: musicModeGeo.isMusicModePlaylistShown)
-      } else {
-        sendWindowScaleToMPV(basedOn: transition.outputGeometry)
-      }
+      sendWindowScaleToMPV(basedOn: transition.outputGeometry)
     }
 
     if transition.isTogglingMusicMode {
@@ -1405,6 +1392,8 @@ extension PlayerWindowController {
       }
 
     }
+
+    rebuildPanelConstraints(transition, stage: .done)
 
     if transition.outputGeometry.mode.isWindowed {
       sendWindowScaleToMPV(basedOn: transition.outputGeometry)

@@ -366,6 +366,16 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return videoShown ? videoHeightWhenVisible : 0
   }
 
+  var topBarHeight: CGFloat {
+    assert(((insideBars.top == 0) || (outsideBars.top == 0)), "Cannot have both inside and outside top bars")
+    return insideBars.top + outsideBars.top
+  }
+
+  var bottomBarHeight: CGFloat {
+    assert(((insideBars.bottom == 0) || (outsideBars.bottom == 0)), "Cannot have both inside and outside bottom bars")
+    return insideBars.bottom + outsideBars.bottom
+  }
+
   // MARK: - Other Util Functions
 
   func hasEqual(windowFrame windowFrame2: NSRect? = nil, videoSize videoSize2: NSSize? = nil) -> Bool {

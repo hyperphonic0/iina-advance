@@ -100,7 +100,6 @@ extension PlayerWindowController {
       initOSCToolbar()
       initTopBarView(in: contentView)
       rebuildBottomBarView(in: contentView, style: .visualEffectView)
-      rebuildPanelConstraints(with: currentLayout)
       initSidebars(in: contentView)
       initPlaybackBtnsView()
       initPlaySliderAndTimeLabelsView()

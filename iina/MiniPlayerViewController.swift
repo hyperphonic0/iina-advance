@@ -278,27 +278,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   // MARK: - Window size & layout
 
-  func updateVideoViewHeightConstraint(videoShown: Bool) {
-    if videoShown {
-      log.verbose{"Deactivating ViewportView-HeightContraint for video=SHOWN"}
-      // Remove zero-height constraint
-      pwc.viewportViewHeightContraint?.isActive = false
-    } else {
-      log.verbose{"Activating ViewportView-HeightContraint for video=HIDDEN"}
-      // Add or reactivate zero-height constraint
-      if let heightConstraint = pwc.viewportViewHeightContraint {
-        heightConstraint.isActive = true
-      } else {
-        let heightConstraint = pwc.viewportView.heightAnchor.constraint(equalToConstant: 0)
-        heightConstraint.identifier = "ViewportView-HeightContraint"
-        heightConstraint.isActive = true
-        pwc.viewportViewHeightContraint = heightConstraint
-      }
-    }
-    pwc.viewportView.needsUpdateConstraints = true
-    pwc.viewportView.layout()
-  }
-
   static func buildMusicModeGeometryFromPrefs(screen: NSScreen, video: VideoGeometry) -> PWinGeometry {
     // Default to left-top of screen. Try to use last-saved playlist height and visibility settings.
     let playlistShown = Preference.bool(for: .musicModeShowPlaylist)

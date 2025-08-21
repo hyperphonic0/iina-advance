@@ -177,33 +177,7 @@ extension PlayerWindowController {
 
     resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView && (geometry.mode != .musicMode))
 
-    if geometry.mode == .musicMode {
-      guard !geometry.windowFrame.equalTo(window!.frame)
-              || (geometry.videoShown != musicModeGeo.videoShown)
-              || (geometry.isMusicModePlaylistShown != musicModeGeo.isMusicModePlaylistShown)
-              || (geometry.isMiddleTransition != musicModeGeo.isMiddleTransition) else {
-        log.verbose("[PWin.setFrame] No changes needed for music mode windowFrame or constraints")
-        return
-      }
-
-      // FIXME: change bottom bar to shrink while in music mode
-      updateBottomBarHeight(to: geometry.outsideBars.bottom, bottomBarPlacement: .outsideViewport)
-
-      if geometry.videoShown {
-        /// Make sure to call `apply` AFTER `updateVideoViewHeightConstraint` if video shown
-        miniPlayer.updateVideoViewHeightConstraint(videoShown: geometry.videoShown)
-        videoView.apply(geometry)
-      }
-
-      /// For the case where video is hidden but playlist is shown, AppKit won't allow the window's height to be changed by the user
-      /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
-      /// Need to execute this in its own task so that other animations are not affected.
-      let shouldDisableVideoView = !geometry.videoShown && geometry.isMusicModePlaylistShown
-      if !shouldDisableVideoView {
-        log.verbose{"[PWin.setFrame] Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
-        viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
-      }
-    } else if geometry.mode.isFullScreen && geometry.screenFit == .legacyFullScreen {
+    if geometry.mode.isFullScreen && geometry.screenFit == .legacyFullScreen {
       updateTopOffsetConstraints(for: geometry, isLegacyFullScreen: true)
       updateTopBarHeight(to: currentLayout.topBarHeight, topBarPlacement: currentLayout.topBarPlacement,
                          cameraHousingOffset: geometry.topMarginHeight)
@@ -586,18 +560,6 @@ extension PlayerWindowController {
 
     // TASK 3: Post-animation background state updates
     tasks.append(.instantTask{ [self] in
-      if outputGeo.mode == .musicMode {
-        // [MusicModeKludge-A] Previous task used a middle transition geometry. Apply the stricter geometry now
-        setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: save)
-        videoView.apply(outputGeo)
-
-        if !outputGeo.videoShown, pip.status == .notInPIP {
-          updateWindowLayoutForVideoViewHidden(playlistShown: outputGeo.isMusicModePlaylistShown)
-        }
-
-        updateMusicModeButtonsVisibility(using: outputGeo)
-      }
-
       isAnimatingLayoutTransition = false
 
       // Need to wait until after isAnimatingLayoutTransition=NO before calling this, or it will be ignored
@@ -617,24 +579,6 @@ extension PlayerWindowController {
       return []
     }
     return tasks
-  }
-
-  // MARK: - Apply Geometry: Music Mode
-
-  func updateWindowLayoutForVideoViewHidden(playlistShown: Bool) {
-    videoView.apply(nil)  // remove constraints
-    videoView.removeFromSuperview()
-    viewportView.removeSpacers()
-    updateDefaultArtVisibility(to: false)  // hide defaultAlbumArt
-
-    player.setVideoTrackDisabled(showDefaultAlbumArt: false)
-
-    /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
-    /// (See note in `setFrameAndUpdateWindowSubviews`)
-    if playlistShown {
-      log.verbose{"Hiding video, but playlist is shown. Setting viewportBtmOffsetFromContentViewBtmConstraint inactive"}
-      viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 499
-    }
   }
 
 }

@@ -375,8 +375,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // - Outlets: Constraints
 
-  var viewportViewHeightContraint: NSLayoutConstraint? = nil
-
   // - Top bar (title bar and/or top OSC) constraints
   var topBarBottomOffsetFromViewportTopConstraint: NSLayoutConstraint!
   var viewportTopOffsetFromTopBarTopConstraint: NSLayoutConstraint!

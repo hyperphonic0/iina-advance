@@ -35,7 +35,7 @@
                 <visualEffectView wantsLayer="YES" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Q6R-eL-qkW" userLabel="MusicModeControlBar View">
                     <rect key="frame" x="0.0" y="1" width="260" height="72"/>
                     <subviews>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="Cef-Fd-eDH" userLabel="MediaInfo View">
+                        <customView identifier="MediaInfoView" translatesAutoresizingMaskIntoConstraints="NO" id="Cef-Fd-eDH" userLabel="MediaInfo View">
                             <rect key="frame" x="10" y="24" width="240" height="48"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jAX-WD-i2a" userLabel="Title Label" customClass="ScrollingTextField" customModule="IINA_Advance" customModuleProvider="target">
@@ -125,7 +125,7 @@
                                 <constraint firstItem="ezf-Py-pMY" firstAttribute="centerY" secondItem="BS3-lV-sRn" secondAttribute="centerY" constant="10" id="zH1-ze-J0W"/>
                             </constraints>
                         </customView>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="e1r-vi-5HY" userLabel="PlaySlider-Wrapper View">
+                        <customView identifier="PlaySliderWrapper" translatesAutoresizingMaskIntoConstraints="NO" id="e1r-vi-5HY" userLabel="PlaySlider-Wrapper View">
                             <rect key="frame" x="10" y="0.0" width="240" height="32"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="32" id="olE-cm-nVe"/>
@@ -145,10 +145,10 @@
                         <constraint firstAttribute="bottom" secondItem="e1r-vi-5HY" secondAttribute="bottom" id="yds-qi-gcy"/>
                     </constraints>
                 </visualEffectView>
-                <visualEffectView wantsLayer="YES" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="2bL-q1-qry" userLabel="Playlist-Wrapper View">
+                <visualEffectView identifier="PlaylistWrapperView" wantsLayer="YES" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="2bL-q1-qry" userLabel="Playlist-Wrapper View">
                     <rect key="frame" x="0.0" y="0.0" width="260" height="1"/>
                     <subviews>
-                        <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="9gg-yc-YXV">
+                        <box identifier="PlaylistWrapper-TopBorder" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="9gg-yc-YXV">
                             <rect key="frame" x="0.0" y="-1" width="260" height="4"/>
                         </box>
                     </subviews>
