@@ -45,7 +45,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   var window: NSWindow? { windowController.window }
   var log: Logger.Subsystem {  windowController.log }
 
-  var playlistShown: Bool { windowController.musicModeGeo.isMusicModePlaylistVisible }
+  var playlistShown: Bool { windowController.musicModeGeo.isMusicModePlaylistShown }
   var videoShown: Bool {  windowController.musicModeGeo.videoShown }
   var windowWidthForScrollingLabels: CGFloat = 0
 
@@ -237,8 +237,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
         guard ctx.inputLayout.mode == .musicMode, ctx.outputLayout.mode == .musicMode else { return nil }
 
         let inputMusicModeGeo = ctx.inputGeoSet.musicMode
-        let outputMusicModeGeo = inputMusicModeGeo.withPlaylistShown(!inputMusicModeGeo.isMusicModePlaylistVisible)
-        log.verbose{"MusicMode: toggling playlist visibility: \(inputMusicModeGeo.isMusicModePlaylistVisible.yesno) → \(outputMusicModeGeo.isMusicModePlaylistVisible.yesno), H=\(outputMusicModeGeo.musicModePlaylistHeight)"}
+        let outputMusicModeGeo = inputMusicModeGeo.withPlaylistShown(!inputMusicModeGeo.isMusicModePlaylistShown)
+        log.verbose{"MusicMode: toggling playlist visibility: \(inputMusicModeGeo.isMusicModePlaylistShown.yesno) → \(outputMusicModeGeo.isMusicModePlaylistShown.yesno), H=\(outputMusicModeGeo.musicModePlaylistHeight)"}
         return outputMusicModeGeo
       })
       gtf.submit()

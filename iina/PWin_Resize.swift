@@ -146,7 +146,7 @@ extension PlayerWindowController {
       // Use explicit `videoShown`, `playlistShown`: these are derived from the windowFrame, but when we update from
       // current we can end up with small imprecisions which could alter their values.
       let currentGeo = musicModeGeoForCurrentFrame().cloneMusicMode(videoShown: musicModeGeo.videoShown,
-                                                                    playlistShown: musicModeGeo.isMusicModePlaylistVisible)
+                                                                    playlistShown: musicModeGeo.isMusicModePlaylistShown)
       let newGeometry = currentGeo.resizingWindowInMusicMode(to: requestedSize,
                                                              inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
       newWindowSize = newGeometry.windowFrame.size
@@ -180,7 +180,7 @@ extension PlayerWindowController {
     if geometry.mode == .musicMode {
       guard !geometry.windowFrame.equalTo(window!.frame)
               || (geometry.videoShown != musicModeGeo.videoShown)
-              || (geometry.isMusicModePlaylistVisible != musicModeGeo.isMusicModePlaylistVisible)
+              || (geometry.isMusicModePlaylistShown != musicModeGeo.isMusicModePlaylistShown)
               || (geometry.isMiddleTransition != musicModeGeo.isMiddleTransition) else {
         log.verbose("[PWin.setFrame] No changes needed for music mode windowFrame or constraints")
         return
@@ -198,7 +198,7 @@ extension PlayerWindowController {
       /// For the case where video is hidden but playlist is shown, AppKit won't allow the window's height to be changed by the user
       /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
       /// Need to execute this in its own task so that other animations are not affected.
-      let shouldDisableVideoView = !geometry.videoShown && geometry.isMusicModePlaylistVisible
+      let shouldDisableVideoView = !geometry.videoShown && geometry.isMusicModePlaylistShown
       if !shouldDisableVideoView {
         log.verbose{"[PWin.setFrame] Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
         viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
@@ -227,7 +227,7 @@ extension PlayerWindowController {
         musicModeGeo = geometry
         // Update defaults:
         Preference.set(geometry.videoShown, for: .musicModeShowAlbumArt)
-        Preference.set(geometry.isMusicModePlaylistVisible, for: .musicModeShowPlaylist)
+        Preference.set(geometry.isMusicModePlaylistShown, for: .musicModeShowPlaylist)
       } else if geometry.mode.isWindowed {
         windowedModeGeo = geometry
       }
@@ -581,7 +581,7 @@ extension PlayerWindowController {
           }
         }
       }
-      
+
     }))
 
     // TASK 3: Post-animation background state updates

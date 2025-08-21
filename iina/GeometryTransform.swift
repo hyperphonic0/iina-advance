@@ -463,7 +463,7 @@ struct GeometryTransform {
         log.verbose{"[GTF:\(name)] Building 'apply' tasks for musicMode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputMusicModeGeo)"}
 
         let isTogglingVideoView = inputMusicModeGeo.videoShown != outputMusicModeGeo.videoShown
-        let isTogglingPlaylist = inputMusicModeGeo.isMusicModePlaylistVisible != outputMusicModeGeo.isMusicModePlaylistVisible
+        let isTogglingPlaylist = inputMusicModeGeo.isMusicModePlaylistShown != outputMusicModeGeo.isMusicModePlaylistShown
         if isTogglingVideoView || isTogglingPlaylist {
           // Need to use LayoutTransition for complex layout changes
           tasks = pwc.buildLayoutTransition(named: "MusicModeTransform", from: inputLayout,

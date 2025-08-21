@@ -1213,7 +1213,7 @@ extension PWinGeometry {
                self.windowFrame.width.stringMaxFrac2,
                self.windowFrame.height.stringMaxFrac2,
                self.videoShown.yn,
-               self.isMusicModePlaylistVisible.yn,
+               self.isMusicModePlaylistShown.yn,
                self.screenID.replacingOccurrences(of: ",", with: ";"),  // ensure it's CSV-compatible
                self.video.toEmbeddedCSV()
     ].joined(separator: ",")

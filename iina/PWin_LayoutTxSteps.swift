@@ -673,7 +673,7 @@ extension PlayerWindowController {
         }
 
         // musicModeGeo==transition.outputGeo
-        let shouldDisableVideoView = !musicModeGeo.videoShown && musicModeGeo.isMusicModePlaylistVisible
+        let shouldDisableVideoView = !musicModeGeo.videoShown && musicModeGeo.isMusicModePlaylistShown
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
         if shouldDisableVideoView {
           log.verbose{"Hiding video, but playlist is shown. Setting viewportBtmOffsetFromContentViewBtmConstraint inactive"}
@@ -1343,7 +1343,7 @@ extension PlayerWindowController {
 
     if transition.isTogglingFullScreen || transition.isTogglingMusicMode {
       if transition.outputLayout.isMusicMode && !musicModeGeo.videoShown && pip.status == .notInPIP {
-        updateWindowLayoutForVideoViewHidden(playlistShown: musicModeGeo.isMusicModePlaylistVisible)
+        updateWindowLayoutForVideoViewHidden(playlistShown: musicModeGeo.isMusicModePlaylistShown)
       } else {
         sendWindowScaleToMPV(basedOn: transition.outputGeometry)
       }
@@ -1355,7 +1355,7 @@ extension PlayerWindowController {
         /// Do this even if playlist is not visible now, because it will not be be reloaded when toggled.
         playlistView.needsScrollToCurrentItem = true
         playlistView.reloadPlaylistRows()
-      } else if transition.outputLayout.isMusicMode && transition.outputGeometry.isMusicModePlaylistVisible {
+      } else if transition.outputLayout.isMusicMode && transition.outputGeometry.isMusicModePlaylistShown {
         // Music mode playlist is visible: need to scroll to current item again due to size change
         playlistView.scrollPlaylistToCurrentItem()
       } else if transition.outputLayout.playlistShown {
