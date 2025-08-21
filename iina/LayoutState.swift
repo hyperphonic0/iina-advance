@@ -460,11 +460,6 @@ struct LayoutState {
     return spec.mode == .musicMode
   }
 
-  var isVideoViewShown: Bool {
-    // FIXME: flesh this out
-    return true // spec.mode != .musicMode
-  }
-
   /// Note: this is always `false` for music mode and interactive modes.
   ///
   /// To include possibility of music mode, see `hasControlBar()`.
@@ -754,8 +749,13 @@ struct LayoutState {
   func buildFullScreenGeometry(in screen: NSScreen, _ video: VideoGeometry) -> PWinGeometry {
     var modeToUse = mode
     if !modeToUse.isFullScreen {
-      Logger.log.error("Cannot build full screen geometry for non-full screen mode: \(modeToUse). Will try using 'fullScreenNormal'. This message indicates a bug in the code")
-      assert(false)  // fail fast if in debug to bring attention to the error
+      // Try to use analogue of last windowed mode.
+      if modeToUse == .windowedNormal {
+        modeToUse  = .fullScreenNormal
+      } else if modeToUse == .windowedInteractive {
+        modeToUse = .fullScreenInteractive
+      }
+      Logger.log.warn("Cannot build full screen geometry for non-FS mode (\(mode)); will use best guess: \(modeToUse)")
       modeToUse = .fullScreenNormal
     }
     return PWinGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: modeToUse,

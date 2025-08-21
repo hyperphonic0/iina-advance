@@ -168,6 +168,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       self.viewportMargins = GeoUtil.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize,
                                                                 insideBars: insideBars, mode: mode)
     }
+
+    assert(!mode.isFullScreen || screenFit.isFullScreen, "screenFit must be fullScreen when mode is fullScreen")
   }
 
   static func fullScreenWindowFrame(in screen: NSScreen, legacy: Bool) -> NSRect {
@@ -324,6 +326,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   var hasTopPaddingForCameraHousing: Bool {
     return topMarginHeight > 0
+  }
+
+  var isLegacyFullScreen: Bool {
+    screenFit == .legacyFullScreen
   }
 
   // MARK: - Calculation Utils

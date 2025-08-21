@@ -110,7 +110,7 @@ extension PlayerWindowController {
       playSlider.target = self
       playSlider.action = #selector(playSliderAction(_:))
 
-      closeButtonView.leadingAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 4).isActive = true
+      closeButtonView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 4).isActive = true
       closeButtonView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4).isActive = true
 
       initBufferIndicatorView(in: contentView)
@@ -153,7 +153,6 @@ extension PlayerWindowController {
 
   private func initViewportView(in contentView: NSView) {
     viewportView.idString = "ViewportView"
-    contentView.addSubview(viewportView, positioned: .below, relativeTo: nil)
     viewportView.clipsToBounds = true
     viewportView.translatesAutoresizingMaskIntoConstraints = false
     viewportView.autoresizesSubviews = false
@@ -299,40 +298,6 @@ extension PlayerWindowController {
     topBarBottomBorder_HeightConstraint.isActive = true
   }
 
-  func addTopBarAndConstraints(in contentView: NSView) {
-    if !contentView.containsSubview(topBarView) {
-      contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
-    }
-
-    if let con = topBarLeadingSpaceConstraint, con.isActive {
-    } else {
-      topBarLeadingSpaceConstraint = topBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
-      topBarLeadingSpaceConstraint.identifier = "TopBarLeadingSpaceConstraint"
-      topBarLeadingSpaceConstraint.isActive = true
-    }
-
-    if let con = topBarTrailingSpaceConstraint, con.isActive {
-    } else {
-      topBarTrailingSpaceConstraint = topBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
-      topBarTrailingSpaceConstraint.identifier = "TopBarTrailingSpaceConstraint"
-      topBarTrailingSpaceConstraint.isActive = true
-    }
-
-    if let con = viewportTopOffsetFromTopBarTopConstraint, con.isActive {
-    } else {
-      viewportTopOffsetFromTopBarTopConstraint = viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: 0)
-      viewportTopOffsetFromTopBarTopConstraint.identifier = "ViewportTopOffsetFromTopBarTopConstraint"
-      viewportTopOffsetFromTopBarTopConstraint.isActive = true
-    }
-
-    if let con = topBarBottomOffsetFromViewportTopConstraint, con.isActive {
-    } else {
-      topBarBottomOffsetFromViewportTopConstraint = topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: 0)
-      topBarBottomOffsetFromViewportTopConstraint.identifier = "TopBarBottomOffsetFromViewportTopConstraint"
-      topBarBottomOffsetFromViewportTopConstraint.isActive = true
-    }
-  }
-
   /// The `bottomBarView` may need to be completely rebuilt if the style changes.
   /// This also adds as subview to `contentView`.
   func rebuildBottomBarView(in contentView: NSView, style: Preference.OSCColorScheme) {
@@ -380,12 +345,62 @@ extension PlayerWindowController {
   }
 
   // TODO: expand this to include constraints for all panels in window
-  func rebuildPanelConstraints(with layout: LayoutState) {
+  func rebuildPanelConstraints(_ transition: LayoutTransition, stage: LayoutTransition.Stage) {
     let contentView = window!.contentView!
 
+    let layout: LayoutState
+    let geometry: PWinGeometry
+    switch stage {
+    case .willCloseOldPanels:
+      layout = transition.inputLayout
+      geometry = transition.inputGeometry
+    case .willOpenNewPanels:
+      layout = transition.outputLayout
+      geometry = transition.outputGeometry
+    case .done:
+      layout = transition.outputLayout
+      geometry = transition.outputGeometry
+    }
+
+    if geometry.videoShown {
+      if !contentView.containsSubview(viewportView) {
+        contentView.addSubview(viewportView, positioned: .below, relativeTo: nil)
+      }
+    }
+    if layout.hasBottomBar {
+      contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
+    }
+    if layout.hasTopBar {
+      contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
+    }
+
     // Top Bar
-    if layout.topBarHeight > 0 {
-      addTopBarAndConstraints(in: window!.contentView!)
+    if layout.hasTopBar {
+      assert(geometry.videoShown, "Must have videoView when showing top bar!")
+
+      if !isActive(topBarLeadingSpaceConstraint) {
+        topBarLeadingSpaceConstraint = topBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+        topBarLeadingSpaceConstraint.identifier = "TopBarLeadingSpaceConstraint"
+        topBarLeadingSpaceConstraint.isActive = true
+      }
+
+      if !isActive(topBarTrailingSpaceConstraint) {
+        topBarTrailingSpaceConstraint = topBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
+        topBarTrailingSpaceConstraint.identifier = "TopBarTrailingSpaceConstraint"
+        topBarTrailingSpaceConstraint.isActive = true
+      }
+
+      if !isActive(viewportTopOffsetFromTopBarTopConstraint) {
+        viewportTopOffsetFromTopBarTopConstraint = viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: 0)
+        viewportTopOffsetFromTopBarTopConstraint.identifier = "ViewportTopOffsetFromTopBarTopConstraint"
+        viewportTopOffsetFromTopBarTopConstraint.isActive = true
+      }
+
+      if !isActive(topBarBottomOffsetFromViewportTopConstraint) {
+        topBarBottomOffsetFromViewportTopConstraint = topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: 0)
+        topBarBottomOffsetFromViewportTopConstraint.identifier = "TopBarBottomOffsetFromViewportTopConstraint"
+        topBarBottomOffsetFromViewportTopConstraint.isActive = true
+      }
     } else {
       topBarView.removeFromSuperview()
     }
@@ -406,10 +421,10 @@ extension PlayerWindowController {
         bottomBarTrailingSpaceConstraint.identifier = "bottomBarTrailingSpaceConstraint"
       }
 
-      if !isActive(bottomBarBtmOffsetFromContentViewBtmConstraint) {
-        bottomBarBtmOffsetFromContentViewBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
-        bottomBarBtmOffsetFromContentViewBtmConstraint.isActive = true
-        bottomBarBtmOffsetFromContentViewBtmConstraint.identifier = "bottomBar-Btm_OffsetFrom-CV-Btm_Constraint"
+      if !isActive(bottomBarBtmToCVBtmConstraint) {
+        bottomBarBtmToCVBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
+        bottomBarBtmToCVBtmConstraint.isActive = true
+        bottomBarBtmToCVBtmConstraint.identifier = "bottomBar-Btm_OffsetFrom-CV-Btm_Constraint"
       }
 
       updateBottomBarPlacement(forLayout: layout)
@@ -418,7 +433,7 @@ extension PlayerWindowController {
     }
 
     // Viewport View
-    if layout.isVideoViewShown {
+    if geometry.videoShown {
       let secondAnchor = layout.hasBottomBar ?  bottomBarView.topAnchor : contentView.bottomAnchor
       if !isActive(viewportBtmOffsetFromTopOfBottomBarConstraint) || (viewportBtmOffsetFromTopOfBottomBarConstraint.secondAnchor != secondAnchor) {
         viewportBtmOffsetFromTopOfBottomBarConstraint?.isActive = false
@@ -431,16 +446,6 @@ extension PlayerWindowController {
         viewportTopOffsetFromContentViewTopConstraint = viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 0)
         viewportTopOffsetFromContentViewTopConstraint.identifier = .init("Viewport-Top_OffsetFrom-CV-Top-Constraint")
         viewportTopOffsetFromContentViewTopConstraint.isActive = true
-      }
-
-      if layout.mode == .musicMode {
-        viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
-      } else {
-        if !isActive(viewportBtmOffsetFromContentViewBtmConstraint) {
-          viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: 0)
-          viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("CV-Btm_OffsetFrom-Viewport-Btm-Constraint")
-          viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
-        }
       }
 
       if !isActive(viewportLeadingOffsetFromContentViewLeadingConstraint) {
@@ -466,12 +471,56 @@ extension PlayerWindowController {
           viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint"
         }
       }
+
+      if layout.mode == .musicMode && transition.outputGeometry.isMusicModePlaylistShown && stage == .done {
+        viewportBtmOffsetFromContentViewBtmConstraint.isActive = false
+      } else {
+        if !isActive(viewportBtmOffsetFromContentViewBtmConstraint) {
+          viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: layout.bottomBarPlacement == .insideViewport ? 0 : layout.bottomBarHeight)
+          viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("CV-Btm_OffsetFrom-Viewport-Btm-Constraint")
+          viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
+        }
+      }
+
     } else {
       viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = false
       viewportBtmOffsetFromTopOfBottomBarConstraint?.isActive = false
       viewportTopOffsetFromContentViewTopConstraint?.isActive = false
       viewportBtmOffsetFromContentViewBtmConstraint?.isActive = false
       viewportLeadingOffsetFromContentViewLeadingConstraint?.isActive = false
+      viewportView.removeFromSuperview()
+    }
+
+    // FIXME: not clear if this part is needed
+    switch stage {
+    case .willCloseOldPanels:
+      updateTopBarHeight(to: transition.inputGeometry.topBarHeight, topBarPlacement: transition.inputLayout.topBarPlacement,
+                         cameraHousingOffset: transition.inputGeometry.topMarginHeight)
+      updateBottomBarHeight(to: transition.inputGeometry.bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement)
+      updateBottomBarHeight(to: transition.inputGeometry.bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement)
+
+    case .willOpenNewPanels:
+      let middleGeo = transition.middleGeometry ?? transition.inputGeometry
+
+      let cameraOffset: CGFloat
+      if transition.isExitingLegacyFullScreen {
+        // Use prev offset for a smoother animation
+        cameraOffset = transition.inputGeometry.topMarginHeight
+      } else {
+        cameraOffset = transition.outputGeometry.topMarginHeight
+      }
+
+      updateTopBarHeight(to: middleGeo.topBarHeight, topBarPlacement: transition.inputLayout.topBarPlacement,
+                         cameraHousingOffset: cameraOffset)
+
+      updateBottomBarHeight(to: middleGeo.bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement)
+
+    case .done:
+      // Update heights of top & bottom bars:
+      updateTopBarHeight(to: transition.outputLayout.topBarHeight, topBarPlacement: transition.outputLayout.topBarPlacement,
+                         cameraHousingOffset: transition.outputGeometry.topMarginHeight)
+
+      updateBottomBarHeight(to: transition.outputGeometry.bottomBarHeight, bottomBarPlacement: transition.outputLayout.bottomBarPlacement)
     }
   }
 
@@ -490,7 +539,6 @@ extension PlayerWindowController {
     // - Leading sidebar
 
     leadingSidebarView.idString = "LeadingSidebarView"
-//    leadingSidebarView.blendingMode = .withinWindow
     leadingSidebarView.state = .active
     leadingSidebarView.translatesAutoresizingMaskIntoConstraints = false
     leadingSidebarView.autoresizesSubviews = false
@@ -507,7 +555,6 @@ extension PlayerWindowController {
     // - Trailing sidebar
 
     trailingSidebarView.idString = "TrailingSidebarView"
-//    trailingSidebarView.blendingMode = .withinWindow
     trailingSidebarView.state = .active
     trailingSidebarView.translatesAutoresizingMaskIntoConstraints = false
     trailingSidebarView.autoresizesSubviews = false
@@ -653,6 +700,7 @@ extension PlayerWindowController {
   }
 
   private func initPlaySliderAndTimeLabelsView() {
+    log.verbose{"[Load] Init play slider & time labels"}
     // - Configure playSliderAndTimeLabelsView
     playSliderAndTimeLabelsView.idString = "PlaySliderAndTimeLabelsView"
     playSliderAndTimeLabelsView.translatesAutoresizingMaskIntoConstraints = false

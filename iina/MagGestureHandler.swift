@@ -145,7 +145,7 @@ extension PlayerWindowController {
     /// transitions are complete.
     guard !isAnimatingLayoutTransition else { return }
 
-    log.verbose{"Scaling pinched video, target scale: \(targetScale)"}
+    let outputGeo: PWinGeometry
 
     // If in music mode but playlist is not visible, allow scaling up to screen size like regular windowed mode.
     // If playlist is visible, do not resize window beyond current window height
@@ -158,10 +158,9 @@ extension PlayerWindowController {
       }
       let inputWidth = musicModeGeo.windowFrame.width
       let desiredWidth = (inputWidth * targetScale).rounded()
-      let outMusicModeGeo = musicModeGeo.scalingVideo(toWidth: desiredWidth)
-      log.verbose{"Scaling pinched video in music mode, scale=\(targetScale) reqWidth=\(desiredWidth) → geo=\(outMusicModeGeo)"}
+      outputGeo = musicModeGeo.scalingVideo(toWidth: desiredWidth)
+      log.verbose{"Scaling pinched video in music mode, scale=\(targetScale) reqWidth=\(desiredWidth) → result=\(outputGeo)"}
 
-      setFrameAndUpdateWindowSubviews(using: outMusicModeGeo, animate: false, submitUpdate: submitResult)
     } else {
       let originalGeo = windowedModeGeo
 
@@ -176,8 +175,9 @@ extension PlayerWindowController {
         player.info.intendedViewportSize = intendedGeo.viewportSize
       }
 
-      let outputGeo = intendedGeo.refitted(using: .stayInside)
-      setFrameAndUpdateWindowSubviews(using: outputGeo, animate: false, submitUpdate: submitResult)
+      outputGeo = intendedGeo.refitted(using: .stayInside)
+      log.verbose{"Scaling pinched video in windowed mode, scale=\(targetScale) → result=\(outputGeo)"}
     }
+    setFrameAndUpdateWindowSubviews(using: outputGeo, animate: false, submitUpdate: submitResult)
   }
 }

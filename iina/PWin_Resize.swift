@@ -177,7 +177,7 @@ extension PlayerWindowController {
 
     resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView && (geometry.mode != .musicMode))
 
-    if geometry.mode.isFullScreen && geometry.screenFit == .legacyFullScreen {
+    if geometry.isLegacyFullScreen {
       updateTopOffsetConstraints(for: geometry, isLegacyFullScreen: true)
       updateTopBarHeight(to: currentLayout.topBarHeight, topBarPlacement: currentLayout.topBarPlacement,
                          cameraHousingOffset: geometry.topMarginHeight)
@@ -517,10 +517,10 @@ extension PlayerWindowController {
 
     // TASK 1: Background prep
     tasks.append(.instantTask{ [self] in
-      isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
-      videoView.enterAsynchronousMode()
+      isAnimatingLayoutTransition = true  /// Try not to trigger `windowDidResize` while animating
+      videoView.enterAsynchronousMode()   /// Enable smooth video redraws while animating
 
-      hideSeekPreviewImmediately()
+      hideSeekPreviewImmediately()        /// Location of thumbnail may become invalid during window resize; just hide it
 
       // Show art if videoView is already visible, or before it needs to be shown:
       if outputGeo.videoShown {
@@ -542,14 +542,13 @@ extension PlayerWindowController {
         // This is only needed to achieve "fade-in" effect when opening window:
         updateWindowBorderAndOpacity()
 
-        /// Make sure this is up-to-date. Do this before `setFrame`
         if !isWindowHidden {
           setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: save)
         } else {
-          videoView.apply(outputGeo)
+          videoView.apply(outputGeo)  // Update video constraints
 
+          // Mimicks logic in `setFrameAndUpdateWindowSubviews()`
           if save {
-            // This is also done in `setFrameAndUpdateWindowSubviews()`
             windowedModeGeo = outputGeo
             player.saveState()
           }

@@ -16,6 +16,12 @@ extension PlayerWindowController {
   /// See `buildLayoutTransition()`, where an instance of this class is assembled.
   /// Other important variables: `currentLayout`, `windowedModeGeo`, `musicModeGeo` (in `PlayerWindowController`)
   class LayoutTransition {
+    enum Stage {
+      case willCloseOldPanels
+      case willOpenNewPanels
+      case done
+    }
+
     let name: String  // just used for debugging
 
     let inputLayout: LayoutState

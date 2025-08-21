@@ -796,7 +796,6 @@ extension PlayerWindowController {
       tasks.append(.instantTask { [self] in
         enterFullScreen()
       })
-      return tasks
     }
 
     tasks.append(ctx.buildPostInitialLayoutTask())
