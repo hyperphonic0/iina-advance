@@ -121,7 +121,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     player.log.verbose{"Playlist: updating downshift=\(downshift), tabHeight=\(tabHeight)"}
     self.buttonTopConstraint?.animateToConstant(downshift)
     self.tabHeightConstraint?.animateToConstant(tabHeight)
-    view.layoutSubtreeIfNeeded()
+    view.needsLayout = true
   }
 
   override func viewDidLoad() {
@@ -212,7 +212,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
                                                  owner: pwc, userInfo: [PlayerWindowController.TrackingArea.key: PlayerWindowController.TrackingArea.playerWindow]))
     }
     view.configureSubtreeForCoreAnimation()
-    view.layoutSubtreeIfNeeded()
+    view.needsLayout = true
 
     // Set up notification observers last
     playlistChangeObserver = NotificationCenter.default.addObserver(forName: .iinaPlaylistChanged, object: player, queue: .main) { [self] _ in

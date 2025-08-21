@@ -70,7 +70,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     player.log.verbose{"PluginSidebar: updating downshift=\(downshift), tabHeight=\(tabHeight)"}
     buttonTopConstraint?.animateToConstant(downshift)
     pluginTabsViewHeightConstraint?.animateToConstant(tabHeight)
-    view.layoutSubtreeIfNeeded()
+    view.needsLayout = true
   }
 
   func pleaseSwitchToTab(_ id: String) {

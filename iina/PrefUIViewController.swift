@@ -512,7 +512,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     animationPipeline.submitTask { [self] in
       // Need to call this here to get proper fade effect instead of jump:
-      oscBottomPlacementContainerView.superview?.layoutSubtreeIfNeeded()
+      oscBottomPlacementContainerView.superview?.needsLayout = true
 
       updateOSCToolbarPreview(from: newGeo)
 

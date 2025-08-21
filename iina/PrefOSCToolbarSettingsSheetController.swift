@@ -310,7 +310,7 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
     NSAnimationContext.runAnimationGroup({ context in
       context.duration = 0.25
       context.allowsImplicitAnimation = true
-      self.layoutSubtreeIfNeeded()
+      self.needsLayout = true
     }, completionHandler: nil)
 
     return isAvailableItem ? .copy : .move

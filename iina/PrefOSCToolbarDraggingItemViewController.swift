@@ -47,7 +47,7 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
     buttonTopToBoxTopConstraint.constant = toolbarButton.iconSpacing + 1
     buttonBottomToBoxBottomConstraint.constant = toolbarButton.iconSpacing + 1
     buttonTrailingConstraint.constant = toolbarButton.iconSpacing
-    toolbarButton.superview?.layoutSubtreeIfNeeded()
+    toolbarButton.superview?.needsLayout = true
 
     descriptionLabel.stringValue = buttonType.description()
   }

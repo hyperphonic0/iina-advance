@@ -460,7 +460,7 @@ extension PlayerWindowController {
       sortViewportViewSubviews()
     }
 
-    window?.contentView?.layoutSubtreeIfNeeded()
+    window?.contentView?.needsLayout = true
   }
 
   private func updateOSDLeadingSide_LeadingConstraint(to constraint: NSLayoutConstraint) {
@@ -856,7 +856,7 @@ extension PlayerWindowController {
       osd.osdVStackView.addView(accessoryView, in: .bottom)
     }
 
-    osd.osdView.layoutSubtreeIfNeeded()
+    osd.osdView.needsLayout = true
     osd.osdView.alphaValue = 1
     osd.osdView.isHidden = false
   }

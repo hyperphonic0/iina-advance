@@ -167,7 +167,7 @@ extension PlayerWindowController {
       speedLabelBtmConstraint.isActive = false
     }
 
-    rebuildPanelConstraints(transition, stage: .willCloseOldPanels)
+//    rebuildPanelConstraints(transition, stage: .willCloseOldPanels)
   }
 
   /// -------------------------------------------------
@@ -564,6 +564,8 @@ extension PlayerWindowController {
     let leadingSidebarWillBeOpen = outputLayout.leadingSidebar.isVisible
     let trailingSidebarWillBeOpen = outputLayout.trailingSidebar.isVisible
 
+    rebuildPanelConstraints(transition, stage: .willOpenNewPanels)
+
     // Need to add additionalInfo, OSD before changing sidebars
     updateOSDConstraints(outputLayout, transition.outputGeometry, skipAddConstraints: true)
 
@@ -955,10 +957,8 @@ extension PlayerWindowController {
       }
     }
 
-    rebuildPanelConstraints(transition, stage: .willOpenNewPanels)
-
-    // Make sure to call this after calls to prepareLayoutForOpening(*Sidebar)
-    updateOSDConstraints(transition.outputLayout, transition.outputGeometry)
+    // Add constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
+    updateOSDConstraints(outputLayout, transition.outputGeometry)
 
 
     updateDepthOrderOfBars(outputLayout)
@@ -1125,7 +1125,7 @@ extension PlayerWindowController {
         // Hide for now, to prepare for a nice fade-in animation
         cropController.cropBoxView.isHidden = true
         cropController.cropBoxView.alphaValue = 0
-        cropController.cropBoxView.layoutSubtreeIfNeeded()
+        cropController.cropBoxView.needsLayout = true
       } else if !player.isRestoring, player.info.isFileLoaded, !player.info.isVideoTrackSelected {
         // if restoring, there will be a brief delay before getting player info, which is ok
         Utility.showAlert("no_video_track")
@@ -1196,7 +1196,7 @@ extension PlayerWindowController {
       // But all other modes should use precalculated values because NSView bounds is sometimes not reliable depending on timing
       let cropBoxBounds = outputLayout.isNativeFullScreen ? videoView.bounds : NSRect(origin: CGPointZero, size: transition.outputGeometry.videoSize)
       cropController.cropBoxView.resized(with: cropBoxBounds)
-      cropController.cropBoxView.layoutSubtreeIfNeeded()
+      cropController.cropBoxView.needsLayout = true
     }
 
     if transition.isExitingInteractiveMode {
@@ -1409,7 +1409,8 @@ extension PlayerWindowController {
     player.saveState()
   }
 
-  // End of layout steps
+  // END of layout steps
+  // --------------------------------------------------
 
   // MARK: - Bars Layout
 
@@ -1552,7 +1553,7 @@ extension PlayerWindowController {
       }
 
     } else {
-      viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = false
+      viewportBtmOffsetFromBtmOfBottomBarConstraint?.isActive = false
       viewportBtmOffsetFromTopOfBottomBarConstraint?.isActive = false
       viewportTopOffsetFromContentViewTopConstraint?.isActive = false
       viewportBtmOffsetFromContentViewBtmConstraint?.isActive = false

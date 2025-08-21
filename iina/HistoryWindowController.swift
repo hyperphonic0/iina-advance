@@ -639,7 +639,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     // Do not set this until after width has been adjusted! Otherwise AppKit will change its width property
     // but will not actually resize it:
     timeColumn.minWidth = newMinWidth
-    outlineView.layoutSubtreeIfNeeded()
+    outlineView.needsLayout = true
     log.verbose("Updated \(timeColumn.identifier.rawValue.quoted) col width: \(timeColumn.width), minWidth: \(timeColumn.minWidth)")
   }
 

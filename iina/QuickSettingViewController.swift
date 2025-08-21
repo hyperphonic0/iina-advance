@@ -215,7 +215,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     player.log.verbose("QuickSettings: updating downshift=\(downshift), tabHeight=\(tabHeight)")
     self.buttonTopConstraint?.animateToConstant(downshift)
     self.tabHeightConstraint?.animateToConstant(tabHeight)
-    view.layoutSubtreeIfNeeded()
+    view.needsLayout = true
   }
 
   override func viewDidLoad() {
@@ -298,7 +298,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
 
     view.configureSubtreeForCoreAnimation()
-    view.layoutSubtreeIfNeeded()
+    view.needsLayout = true
 
     // We register some of the tables for drag & drop (see below), so users will drag over the
     // sidebar to get to them. However, ViewportView & VideoView both also accept fileURLs, and

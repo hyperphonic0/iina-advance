@@ -24,7 +24,6 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   private var undoHelper = PrefAdvancedUndoHelper()
 
   var preferenceTabTitle: String {
-    view.layoutSubtreeIfNeeded()
     return NSLocalizedString("preference.advanced", comment: "Advanced")
   }
 

@@ -22,7 +22,6 @@ class PrefNetworkViewController: PreferenceViewController, PreferenceWindowEmbed
   }
 
   var preferenceTabTitle: String {
-    view.layoutSubtreeIfNeeded()
     return NSLocalizedString("preference.network", comment: "Network")
   }
 
