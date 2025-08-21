@@ -537,12 +537,6 @@ extension PlayerWindowController {
                               showDefaultArt: Bool? = nil,
                               thenRun: Bool = false) -> [IINAAnimation.Task] {
 
-    // Music mode only
-    let isTogglingVideoView = (inputGeo.videoShown != outputGeo.videoShown)
-    let isShowingVideo = isTogglingVideoView && outputGeo.videoShown
-    let isHidingVideo = isTogglingVideoView && !outputGeo.videoShown
-    let middleGeo: PWinGeometry? = isTogglingVideoView ? outputGeo.cloneMusicMode(isMiddleTransition: true) : nil
-
     log.verbose{"ApplyPWinGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) \(outputGeo)"}
 
     var tasks: [IINAAnimation.Task] = []
@@ -554,28 +548,6 @@ extension PlayerWindowController {
 
       hideSeekPreviewImmediately()
 
-      if isTogglingVideoView {
-        // [MusicModeKludge-A] When toggling video, loosen constraints while animating to prevent occasional crash in mpv_render
-        let middleGeo = middleGeo!
-        if isShowingVideo {
-          if pip.status == .inPIP {
-            // We are about to steal its video; close it:
-            exitPIP()
-          }
-          addVideoViewToWindow(using: middleGeo)
-        } else {
-          // Hiding video
-          // Remove OSD constraints *before* reducing viewportView height to 0
-          updateOSDConstraintsForMusicMode(middleGeo)
-          // [MusicModeKludge-A] Loosen constraints manually *before* the animation task below
-          videoView.videoViewConstraints?.aspectRatio.isActive = false
-        }
-
-        // Hide OSD during animation
-        hideOSD(immediately: true)
-        pip.hideOverlayView()
-      } // end isTogglingVideoView
-
       // Show art if videoView is already visible, or before it needs to be shown:
       if outputGeo.videoShown {
         updateDefaultArtVisibility(to: showDefaultArt)
@@ -585,22 +557,14 @@ extension PlayerWindowController {
 
     // TASK 2: Apply animation
     tasks.append(.init(duration: duration, timing: timing, { [self] in
-      if outputGeo.mode == .musicMode {
-        // This is only needed to achieve "fade-in" effect when opening window:
-        updateWindowBorderAndOpacity()
-
-        // [MusicModeKludge-A] Constraints in videoVideo are applied again here, nestled deep. Use middle geo for consistency
-        let geoToApply = middleGeo ?? outputGeo
-        setFrameAndUpdateWindowSubviews(using: geoToApply)
-
-      } else if outputGeo.mode.isFullScreen {
+      if outputGeo.mode.isFullScreen {
         // Make sure video constraints are up to date, even in full screen.
         // Also remember that FS & windowed mode share the same screen.
         log.verbose{"ApplyPWinGeo: updating videoView for FS, videoSize=\(outputGeo.videoSize)"}
         videoView.apply(outputGeo)
 
       } else {
-        assert(outputGeo.mode.isWindowed, "Expected windowed mode: \(outputGeo.mode)")
+        assert(outputGeo.mode.isWindowed || outputGeo.mode == .musicMode, "Expected windowed or music mode: \(outputGeo.mode)")
         // This is only needed to achieve "fade-in" effect when opening window:
         updateWindowBorderAndOpacity()
 
@@ -617,6 +581,7 @@ extension PlayerWindowController {
           }
         }
       }
+      
     }))
 
     // TASK 3: Post-animation background state updates

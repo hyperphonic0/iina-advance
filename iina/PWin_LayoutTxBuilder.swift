@@ -19,8 +19,8 @@ extension PlayerWindowController {
   /// which contains all the information needed to animate the UI changes from the current `LayoutState` to the new one.
   @discardableResult
   func buildLayoutTransition(named transitionName: String,
-                             from inputLayout: LayoutState, _ inputGeoExplicit: PWinGeometry? = nil,
-                             to outputSpec: LayoutSpec, _ outputGeoExplicit: PWinGeometry? = nil,
+                             from inputLayout: LayoutState, inputGeo inputGeoExplicit: PWinGeometry? = nil,
+                             to outputSpec: LayoutSpec, outputGeo outputGeoExplicit: PWinGeometry? = nil,
                              isWindowInitialLayout: Bool = false,
                              totalStartingDuration: CGFloat? = nil,
                              totalEndingDuration: CGFloat? = nil,
@@ -353,18 +353,6 @@ extension PlayerWindowController {
       return outputLayout.buildFullScreenGeometry(inScreenID: inputGeometry.screenID, inputGeometry.video)
 
     case .musicMode:
-      if inputLayout.mode == .musicMode, let inputState = inputLayout.spec.musicModeState,
-         let outputState = outputLayout.spec.musicModeState {
-
-        if inputState.videoShown != outputState.videoShown {
-          return inputGeometry.withVideoViewVisible(outputState.videoShown)
-
-        } else if inputState.playlistShown != outputState.playlistShown {
-          // Toggling music mode playlist
-          return inputGeometry.withPlaylistShown(outputState.playlistShown)
-        }
-      }
-
       /// `videoAspect` may have gone stale while not in music mode. Update it (playlist height will be recalculated if needed):
       let musicModeGeoCorrected = inputGeoSet.musicMode.cloneMusicMode(video: inputGeometry.video).refitted()
       return musicModeGeoCorrected
@@ -431,6 +419,12 @@ extension PlayerWindowController {
       return transition.inputGeometry.withResizedBars(mode: .windowedNormal,
                                                       outsideBottom: 0,
                                                       pinWidthOrHeightIfAtMax: false)
+    } else if transition.inputGeometry.mode == .musicMode, transition.outputGeometry.mode == .musicMode {
+      if transition.isTogglingVideoView {
+        return transition.outputGeometry.cloneMusicMode(isMiddleTransition: true)
+      } else {
+        return nil
+      }
     }
 
     // TOP

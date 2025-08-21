@@ -81,11 +81,7 @@ extension PlayerWindowController {
       self.player = player
     }
 
-    func hideOverlayView() {
-      // Hide PiP overlay (if in PiP) during animation
-      overlayView.removeFromSuperview()
-    }
-
+    /// Hide PiP overlay if in PiP and during animation. Show overlay if PiP shown.
     func showOrHidePipOverlayView() {
       let mustHide: Bool
       if status == .inPIP {
@@ -93,11 +89,13 @@ extension PlayerWindowController {
       } else {
         mustHide = true
       }
+
       log.verbose{"\(mustHide ? "Hiding" : "Showing") PiP overlay"}
       if mustHide {
-        hideOverlayView()
+        overlayView.removeFromSuperview()
       } else {
         guard !pwc.viewportView.containsSubview(overlayView) else { return }
+
         pwc.viewportView.addSubview(overlayView)
         overlayView.addAllConstraintsToFillSuperview()
         pwc.sortViewportViewSubviews()

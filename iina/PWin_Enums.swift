@@ -82,7 +82,7 @@ enum PWinSessionState: CustomStringConvertible {
 
   /// Returns true if starting or resuming a session.
   var isStartingSession: Bool {
-    return !isNone && isStartingNewPlaybackManually
+    return isStartingNewPlaybackManually
   }
 
   /// Most similar to the term "Opening file" in Settings window's UI, but also applies when changing video track

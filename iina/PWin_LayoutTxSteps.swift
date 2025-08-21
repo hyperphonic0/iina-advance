@@ -28,23 +28,25 @@ extension PlayerWindowController {
     /// To avoid possible bugs as a result, let's update this at the very beginning.
     currentLayout = transition.outputLayout
 
-    if !transition.outputLayout.isWindowed && transition.inputLayout.isWindowed {
-      /// `inputGeometry` may contain the most up-to-date `windowFrame` for `windowedModeGeo`, which `windowedModeGeo` does not have.
-      /// Make sure to save it for later use, or later references may use an older version which the user will not expect
-      windowedModeGeo = transition.inputGeometry
-    } else if !transition.outputLayout.isMusicMode && transition.inputLayout.isMusicMode {
-      // Ditto with musicMode
-      musicModeGeo = transition.inputGeometry
-    }
+    if !player.isRestoring {
+      if !transition.outputLayout.isWindowed && transition.inputLayout.isWindowed {
+        /// `inputGeometry` may contain the most up-to-date `windowFrame` for `windowedModeGeo`, which `windowedModeGeo` does not have.
+        /// Make sure to save it for later use, or later references may use an older version which the user will not expect
+        windowedModeGeo = transition.inputGeometry
+      } else if !transition.outputLayout.isMusicMode && transition.inputLayout.isMusicMode {
+        // Ditto with musicMode
+        musicModeGeo = transition.inputGeometry
+      }
 
-    /// Set this here because we are setting `currentLayout`
-    switch transition.outputLayout.mode {
-    case .windowedNormal, .windowedInteractive:
-      windowedModeGeo = transition.outputGeometry
-    case .fullScreenNormal, .fullScreenInteractive:
-      break  // Not applicable
-    case .musicMode:
-      musicModeGeo = transition.outputGeometry
+      /// Set this here because we are setting `currentLayout`
+      switch transition.outputLayout.mode {
+      case .windowedNormal, .windowedInteractive:
+        windowedModeGeo = transition.outputGeometry
+      case .fullScreenNormal, .fullScreenInteractive:
+        break  // Not applicable
+      case .musicMode:
+        musicModeGeo = transition.outputGeometry
+      }
     }
 
     guard let window = window else { return }
@@ -149,6 +151,17 @@ extension PlayerWindowController {
           log.verbose{"Setting viewportBtmOffsetFromContentViewBtmConstraint isActive"}
           viewportBtmOffsetFromContentViewBtmConstraint.priorityInt = 1000
         }
+      }
+    }
+
+    if transition.outputLayout.isMusicMode {
+      if transition.isClosingVideoView {
+        // Hiding video
+        // Remove OSD constraints *before* reducing viewportView height to 0
+        updateOSDConstraintsForMusicMode(transition.outputGeometry)
+
+        // [MusicModeKludge-A] Loosen constraints manually *before* the animation task below
+        videoView.videoViewConstraints?.aspectRatio.isActive = false
       }
     }
 
@@ -458,6 +471,10 @@ extension PlayerWindowController {
     }
 
     if transition.isWindowInitialLayout || transition.isOpeningVideoView {
+      if !transition.isWindowInitialLayout, pip.status == .inPIP {
+        // We are about to steal its video; close it:
+        exitPIP()
+      }
       addVideoViewToWindow()
     }
 

@@ -445,28 +445,41 @@ struct GeometryTransform {
           tasks = []
           break
         }
-        let oldMusicModeGeo = inputGeoSet.musicMode  // has updated windowFrame
-        let newMusicModeGeo: PWinGeometry
+        let inputMusicModeGeo = inputGeoSet.musicMode  // has updated windowFrame
+        let outputMusicModeGeo: PWinGeometry
         /// Use transformed music mode geo if provided. Otherwise update minimally for new `VideoGeometry`:
         if let windowedTransform = tf.windowedTransform, let transformedGeo = windowedTransform(self) {
           assert(transformedGeo.mode == .musicMode, "[GTF:\(name)] Tranform expected to return geometry with mode=.musicMode, but got: \(transformedGeo) ")
-          newMusicModeGeo = transformedGeo
+
+          outputMusicModeGeo = transformedGeo
+
         } else {
           /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio.
           /// (But call `refitted()` in case it doesn't fit on screen or other special cases).
-          newMusicModeGeo = oldMusicModeGeo.clone(video: outputVidGeo).refitted()
-        }
-
-        if oldMusicModeGeo.videoShown != newMusicModeGeo.videoShown {
-          // Toggling videoView visiblity: use longer duration for nicety
-          duration = Constants.AnimationDuration.standard
+          outputMusicModeGeo = inputMusicModeGeo.clone(video: outputVidGeo).refitted()
         }
 
         let showDefaultArt: Bool? = shouldChangeDefaultArt
+        log.verbose{"[GTF:\(name)] Building 'apply' tasks for musicMode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputMusicModeGeo)"}
 
-        log.verbose{"[GTF:\(name)] Building 'apply' tasks for musicMode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(newMusicModeGeo)"}
-        tasks = pwc.buildApplyPWinGeoTasks(from: oldMusicModeGeo, to: newMusicModeGeo,
-                                             duration: duration, showDefaultArt: showDefaultArt)
+        let isTogglingVideoView = inputMusicModeGeo.videoShown != outputMusicModeGeo.videoShown
+        let isTogglingPlaylist = inputMusicModeGeo.isMusicModePlaylistVisible != outputMusicModeGeo.isMusicModePlaylistVisible
+        if isTogglingVideoView || isTogglingPlaylist {
+          // Need to use LayoutTransition for complex layout changes
+          tasks = pwc.buildLayoutTransition(named: "MusicModeTransform", from: inputLayout,
+                                            inputGeo: inputLayout.isMusicMode ? inputMusicModeGeo : nil,
+                                            to: outputLayout.spec, outputGeo: outputMusicModeGeo,
+                                            totalStartingDuration: duration, totalEndingDuration: duration,
+                                            inputGeoSet).tasks
+
+          // FIXME: default art?
+          // FIXME: more precise durations for open vs close
+          duration = Constants.AnimationDuration.standard
+        } else {
+          tasks = pwc.buildApplyPWinGeoTasks(from: inputMusicModeGeo, to: outputMusicModeGeo,
+                                               duration: duration, showDefaultArt: showDefaultArt)
+        }
+
       default:
         // Interactive mode. Should be handled by its special code. Don't step on it.
         log.warn{"[GTF:\(name)] Invalid mode for 'apply': \(outputLayout.mode). Doing nothing"}

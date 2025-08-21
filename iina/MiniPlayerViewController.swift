@@ -231,16 +231,17 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   /// Action: Show/Hide playlist
   @IBAction func togglePlaylist(_ sender: AnyObject?) {
     windowController.animationPipeline.submitInstantTask({ [self] in
-      // Use MusicModeState as an adapter from PWinGeometry & LayoutState paradigms
-      let inputMusicModeState =  MusicModeState.from(windowController.musicModeGeo)
-      let inputSpec = windowController.currentLayout.spec.clone(musicModeState: inputMusicModeState)
-      guard inputSpec.mode == .musicMode else { return }
-      let inputLayout = LayoutState(spec: inputSpec)
-      let outputMusicModeState = inputMusicModeState.clone(playlistShown: !inputMusicModeState.playlistShown)
-      let outputSpec = inputSpec.clone(musicModeState: outputMusicModeState)
+      let gtf = GeometryTransform("TogglePlaylist", player,
+                                  windowed: { [self] ctx -> PWinGeometry? in
+        // music mode only. Other modes should fall back to default
+        guard ctx.inputLayout.mode == .musicMode, ctx.outputLayout.mode == .musicMode else { return nil }
 
-      let name = outputMusicModeState.playlistShown ? "ShowMusicPlaylist" : "HideMusicPlaylist"
-      windowController.buildLayoutTransition(named: name, from: inputLayout, to: outputSpec, thenRun: true)
+        let inputMusicModeGeo = ctx.inputGeoSet.musicMode
+        let outputMusicModeGeo = inputMusicModeGeo.withPlaylistShown(!inputMusicModeGeo.isMusicModePlaylistVisible)
+        log.verbose{"MusicMode: toggling playlist visibility: \(inputMusicModeGeo.isMusicModePlaylistVisible.yesno) → \(outputMusicModeGeo.isMusicModePlaylistVisible.yesno), H=\(outputMusicModeGeo.musicModePlaylistHeight)"}
+        return outputMusicModeGeo
+      })
+      gtf.submit()
     })
   }
 
@@ -248,7 +249,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBAction func toggleVideoViewVisibleState(_ sender: AnyObject?) {
     windowController.animationPipeline.submitInstantTask({ [self] in
       let showVideoView = !videoShown
-      log.verbose{"MusicMode: user clicked video toggle btn. Changing videoView visibility: \((!showVideoView).yn) → \(showVideoView.yn)"}
+      log.verbose{"MusicMode: user clicked btn: toggling videoView visibility: \((!showVideoView).yn) → \(showVideoView.yn)"}
 
       if showVideoView {
         /// If showing video, call `setVideoTrackEnabled()`, then do animations, for a nicer effect.
@@ -256,13 +257,14 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       } else {
         // Hiding video.
 
-        /// This will call `setFrameAndUpdateWindowSubviews`, which will call `setVideoTrackDisabled`.
-        /// We want to wait until the animation is done before disabling video.
+        /// This will call `setFrameAndUpdateWindowSubviews`, which will call `setVideoTrackDisabled`
+        /// (we want to wait until the animation is done before disabling video).
+        /// Use `GeometryTransform` to stay consistent with "ShowVideo" which needs a GTF.
         // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/
         let gtf = GeometryTransform("HideVideo", player,
                                     windowed: { [self] ctx -> PWinGeometry? in
           // music mode only. Other modes should fall back to default
-          guard ctx.outputLayout.mode == .musicMode else { return nil }
+          guard ctx.inputLayout.mode == .musicMode, ctx.outputLayout.mode == .musicMode else { return nil }
 
           let inputMusicModeGeo = ctx.inputGeoSet.musicMode
           let outputMusicModeGeo = inputMusicModeGeo.withVideoViewVisible(false)

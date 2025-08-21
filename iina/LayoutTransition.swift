@@ -269,6 +269,14 @@ extension PlayerWindowController {
       !inputGeometry.videoShown && outputGeometry.videoShown
     }
 
+    var isClosingVideoView: Bool {
+      inputGeometry.videoShown && !outputGeometry.videoShown
+    }
+
+    var isTogglingVideoView: Bool {
+      inputGeometry.videoShown != outputGeometry.videoShown
+    }
+
     var ΔWindowWidth: CGFloat {
       return outputGeometry.windowFrame.width - inputGeometry.windowFrame.width
     }
