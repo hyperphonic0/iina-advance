@@ -167,7 +167,7 @@ extension PlayerWindowController {
       speedLabelBtmConstraint.isActive = false
     }
 
-    rebuildPanelConstraints(transition, stage: .willCloseOldPanels)
+//    rebuildPanelConstraints(transition, stage: .willCloseOldPanels)
   }
 
   /// -------------------------------------------------
@@ -534,26 +534,16 @@ extension PlayerWindowController {
       }
     }
 
-    if !outputLayout.hasControlBar {
-      log.verbose{"[\(transition.name)] Removing playSliderAndTimeLabelsView, oscOneRowView & oscTwoRowView from window"}
-      playSliderAndTimeLabelsView.removeFromSuperview()
+    if !outputLayout.enableOSC || outputLayout.controlBarGeo.isTwoRowBarOSC {
       if oscOneRowView.superview != nil {
+        log.verbose{"[\(transition.name)] Removing oscOneRowView from window"}
         oscOneRowView.dispose()
       }
+    }
+    if !outputLayout.enableOSC || !outputLayout.controlBarGeo.isTwoRowBarOSC {
       if oscTwoRowView.superview != nil {
+        log.verbose{"[\(transition.name)] Removing oscTwoRowView from window"}
         oscTwoRowView.dispose()
-      }
-    } else if outputLayout.enableOSC {
-      if outputLayout.controlBarGeo.isTwoRowBarOSC {
-        if oscOneRowView.superview != nil {
-          log.verbose{"[\(transition.name)] Removing oscOneRowView from window"}
-          oscOneRowView.dispose()
-        }
-      } else {
-        if oscTwoRowView.superview != nil {
-          log.verbose{"[\(transition.name)] Removing oscTwoRowView from window"}
-          oscTwoRowView.dispose()
-        }
       }
     }
 
@@ -1620,28 +1610,39 @@ extension PlayerWindowController {
   // - Bottom bar
 
   private func updateBottomBarPlacement(forLayout layout: LayoutState) {
-    log.verbose{"Updating bottomBar placement to: \(layout.bottomBarPlacement)"}
+    log.verbose{"Updating bottomBar placement to: \(layout.bottomBarPlacement) leadingSB_Shown=\(layout.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layout.isTrailingSidebarVisible.yn)"}
     guard let window = window, let contentView = window.contentView else { return }
-    
-    bottomBarLeadingSpaceConstraint.isActive = false
-    bottomBarTrailingSpaceConstraint.isActive = false
+
+    let leadingSpacePartner: NSLayoutXAxisAnchor
+    let trailingSpacePartner: NSLayoutXAxisAnchor
 
     if layout.bottomBarPlacement == .insideViewport && layout.isLeadingSidebarVisible {
       // Align left & right sides with sidebars (top bar will squeeze to make space for sidebars)
       assert(leadingSidebarView.superview != nil)
-      bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: 0)
+      leadingSpacePartner = leadingSidebarView.trailingAnchor
     } else {
       // Align left & right sides with window (sidebars go below top bar)
-      bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+      leadingSpacePartner = contentView.leadingAnchor
     }
 
     if layout.bottomBarPlacement == .insideViewport && layout.isTrailingSidebarVisible {
       assert(trailingSidebarView.superview != nil)
-      bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0)
+      trailingSpacePartner = trailingSidebarView.leadingAnchor
     } else {
-      bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
+      trailingSpacePartner = contentView.trailingAnchor
     }
 
+    let mustReplaceLeading = bottomBarLeadingSpaceConstraint.secondAnchor != leadingSpacePartner
+    let mustReplaceTrailing = bottomBarTrailingSpaceConstraint.secondAnchor != trailingSpacePartner
+
+    if mustReplaceLeading {
+      bottomBarLeadingSpaceConstraint?.isActive = false
+      bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: leadingSpacePartner, constant: 0)
+    }
+    if mustReplaceTrailing {
+      bottomBarTrailingSpaceConstraint?.isActive = false
+      bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: trailingSpacePartner, constant: 0)
+    }
     bottomBarLeadingSpaceConstraint.isActive = true
     bottomBarTrailingSpaceConstraint.isActive = true
   }

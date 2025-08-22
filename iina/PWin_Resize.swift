@@ -175,7 +175,7 @@ extension PlayerWindowController {
                                        submitUpdate: Bool = false) {
     log.verbose{"[PWin.setFrame] Entered: \(geometry) updateVideoView=\(updateVideoView.yn) animate=\(animate.yn) submit=\(submitUpdate.yn)"}
 
-    resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView && (geometry.mode != .musicMode))
+    resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
 
     if geometry.isLegacyFullScreen {
       updateTopOffsetConstraints(for: geometry, isLegacyFullScreen: true)

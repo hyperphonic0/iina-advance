@@ -244,7 +244,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   var isMusicModePlaylistShown: Bool {
     guard mode == .musicMode else { return false }
     let playlistHeight = outsideBars.totalHeight - Constants.Distance.MusicMode.oscHeight
-    return playlistHeight > 0
+    return playlistHeight >= Constants.Distance.MusicMode.minPlaylistHeight
   }
 
   /// If in music mode & playlist is visible, indicates playlist height.
@@ -1217,8 +1217,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let log = video.log
     var windowFrame = NSRect(origin: windowFrame.origin, size:
                               CGSize(width: windowFrame.width.rounded(), height: windowFrame.height.rounded()))
-    let videoHeight = PWinGeometry.MusicMode.videoHeight(windowFrame: windowFrame, video: video, videoShown: videoShown, playlistShown: playlistShown)
-    var musicModePlaylistHeight = windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
+    let videoHeight = PWinGeometry.MusicMode.videoHeight(windowFrame: windowFrame, video: video, videoShown: videoShown)
+    var musicModePlaylistHeight = windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight + 1
 
     let extraWidthNeeded = Constants.Distance.MusicMode.minWindowWidth - windowFrame.width
     if extraWidthNeeded > 0 {
@@ -1230,13 +1230,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       let extraHeightNeeded = Constants.Distance.MusicMode.minPlaylistHeight - musicModePlaylistHeight
       if extraHeightNeeded > 0 {
         log.verbose{"MusicModeGeoInit: height too small for playlist; adding: \(extraHeightNeeded)"}
-        windowFrame = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - extraHeightNeeded,
-                             width: windowFrame.width, height: windowFrame.height + extraHeightNeeded)
-      }
-    } else {
-      let extraHeightNeeded = -musicModePlaylistHeight
-      if extraHeightNeeded != 0 {
-        log.verbose{"MusicModeGeoInit: height is invalid; adding: \(extraHeightNeeded)"}
         windowFrame = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - extraHeightNeeded,
                              width: windowFrame.width, height: windowFrame.height + extraHeightNeeded)
       }
@@ -1355,11 +1348,11 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       guard playlistShown else {
         return 0
       }
-      let videoHeight = videoHeight(windowFrame: windowFrame, video: video, videoShown: videoShown, playlistShown: playlistShown)
+      let videoHeight = videoHeight(windowFrame: windowFrame, video: video, videoShown: videoShown)
       return windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
     }
 
-    static func videoHeight(windowFrame: CGRect, video: VideoGeometry, videoShown: Bool, playlistShown: Bool) -> CGFloat {
+    static func videoHeight(windowFrame: CGRect, video: VideoGeometry, videoShown: Bool) -> CGFloat {
       guard videoShown else {
         return 0
       }

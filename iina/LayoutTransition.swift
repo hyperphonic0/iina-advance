@@ -82,6 +82,7 @@ extension PlayerWindowController {
         return false
       }
       return isClosingLeadingSidebar || isClosingTrailingSidebar
+      || isClosingPlaylistInMusicMode || isClosingVideoView
       || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
       || (inputLayout.spec.isLegacyStyle != outputLayout.spec.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
@@ -281,6 +282,14 @@ extension PlayerWindowController {
 
     var isTogglingVideoView: Bool {
       inputGeometry.videoShown != outputGeometry.videoShown
+    }
+
+    var isOpeningPlaylistInMusicMode: Bool {
+      !inputGeometry.isMusicModePlaylistShown && outputGeometry.isMusicModePlaylistShown
+    }
+
+    var isClosingPlaylistInMusicMode: Bool {
+      inputGeometry.isMusicModePlaylistShown && !outputGeometry.isMusicModePlaylistShown
     }
 
     var ΔWindowWidth: CGFloat {
