@@ -273,7 +273,11 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       /// Must set this before calling `addVideoViewToWindow()`
       pip.status = .notInPIP
 
-      addVideoViewToWindow()
+      let currentGeo = currentLayout.mode == .musicMode ? musicModeGeo : windowedModeGeo
+      if currentGeo.videoShown {
+        addVideoToWindowIfNeeded()
+        videoView.apply(currentGeo)
+      }
 
       if isInMiniPlayer {
         miniPlayer.loadIfNeeded()

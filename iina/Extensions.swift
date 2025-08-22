@@ -1972,6 +1972,11 @@ extension NSView {
     }
     set {
       self.identifier = .init(newValue)
+#if DEBUG
+      // Sometimes these are shown in the View Debugger
+      self.setAccessibilityTitle(newValue)
+      self.setAccessibilityIdentifier(newValue)
+#endif
     }
   }
 

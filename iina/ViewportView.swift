@@ -108,24 +108,31 @@ class ViewportView: NSView {
     trailingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true
   }
 
-  func addSpacers() {
-    player.log.verbose("[Load] Adding videoView spacers to viewportView")
+  /// Returns true if at least one spacer needed to be added.
+  func addSpacers() -> Bool {
+    var spacersAdded = 0
     if !subviews.contains(topSpacer) {
       addSubview(topSpacer)
       topSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
+      spacersAdded += 1
     }
     if !subviews.contains(bottomSpacer) {
       addSubview(bottomSpacer)
       bottomSpacer.addConstraintsToFillSuperview(bottom: 0, trailing: 0)
+      spacersAdded += 1
     }
     if !subviews.contains(leadingSpacer) {
       addSubview(leadingSpacer)
       leadingSpacer.addConstraintsToFillSuperview(top: 0, leading: 0)
+      spacersAdded += 1
     }
     if !subviews.contains(trailingSpacer) {
       addSubview(trailingSpacer)
       trailingSpacer.addConstraintsToFillSuperview(top: 0, trailing: 0)
+      spacersAdded += 1
     }
+    player.log.verbose("[Load] Added \(spacersAdded) spacers to viewportView")
+    return spacersAdded > 0
   }
 
   func removeSpacers() {

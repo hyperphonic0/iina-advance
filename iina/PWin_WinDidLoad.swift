@@ -57,7 +57,7 @@ extension PlayerWindowController {
     shouldCascadeWindows = false
 
     window.minSize = Constants.Window.minWindowSize
-    contentView.idString = "PWinCV"
+    contentView.idString = "WindowCV"
 
     leftTimeLabel.mode = .current
     rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration

@@ -146,7 +146,7 @@ class TwoRowBarOSCView: ClickThroughView {
       hStackView.setVisibilityPriority(.detachLessEarly, for: timeSlashLabel)
     }
 
-    pwc.log.verbose{"TwoRowOSC barH=\(oscGeo.barHeight) sliderH=\(oscGeo.playSliderHeight) btmMargin=\(bottomMargin) hStackH=\(hStackViewHeight) toolIconH=\(oscGeo.toolIconSize)"}
+    pwc.log.verbose{"Updating TwoRowOSC barH=\(oscGeo.barHeight) sliderH=\(oscGeo.playSliderHeight) btmMargin=\(bottomMargin) hStackH=\(hStackViewHeight) toolIconH=\(oscGeo.toolIconSize)"}
     // Although space is stolen from the icons to give to the bottom margin, it is given right back by adding to the top
     // (and overlapping with the btm of the play slider, but that is just empty space not being used anyway).
     hStackView_BottomMarginConstraint.animateToConstant(bottomMargin * 2)
@@ -156,9 +156,9 @@ class TwoRowBarOSCView: ClickThroughView {
     hStackView_BottomMarginConstraint.priority = .required
     hStackView_HeightConstraint.priority = .init(900)
 
-    pwc.fragToolbarView.updateConstraints()
-    pwc.osd.osdHStackView.updateConstraints()
-    pwc.osd.osdHStackView.layout()
+    pwc.fragToolbarView.needsUpdateConstraints = true
+    pwc.osd.osdHStackView.needsUpdateConstraints = true
+    pwc.osd.osdHStackView.needsLayout = true
   }
 
   func relaxConstraints() {

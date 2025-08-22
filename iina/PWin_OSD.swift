@@ -352,15 +352,17 @@ extension PlayerWindowController {
     let hasOSD = Preference.bool(for: .enableOSD) && geo.videoShown
     let offsetFromTop = computeOffsetFromTop(for: geo)
     log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) legacyFS=\(isLegacyFullScreen.yn) offsetFromTop=\(offsetFromTop)"}
-    osd.leadingSide_LeadingConstraint?.isActive = false
-    osd.leadingSide_TrailingConstraint?.isActive = false
-    osd.trailingSide_LeadingConstraint?.isActive = false
-    osd.trailingSide_TrailingConstraint?.isActive = false
-    osd.additionalInfoTopOffsetConstraint?.isActive = false
-    osd.osdTopOffsetConstraint?.isActive = false
-    osd.bottomOffsetConstraint?.isActive = false
-    osd.additionalInfoBottomOffsetConstraint?.isActive = false
-    osd.osdLeadingToMiniPlayerButtonsTrailingConstraint?.isActive = false
+    if !skipAddConstraints {
+      osd.leadingSide_LeadingConstraint?.isActive = false
+      osd.leadingSide_TrailingConstraint?.isActive = false
+      osd.trailingSide_LeadingConstraint?.isActive = false
+      osd.trailingSide_TrailingConstraint?.isActive = false
+      osd.additionalInfoTopOffsetConstraint?.isActive = false
+      osd.osdTopOffsetConstraint?.isActive = false
+      osd.bottomOffsetConstraint?.isActive = false
+      osd.additionalInfoBottomOffsetConstraint?.isActive = false
+      osd.osdLeadingToMiniPlayerButtonsTrailingConstraint?.isActive = false
+    }
 
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
     let otherAnchorLeading = hasLeadingSidebar ? leadingSidebarView.trailingAnchor : viewportView.leadingAnchor
@@ -408,8 +410,10 @@ extension PlayerWindowController {
         closeBtnConstraint.isActive = true
       }
     } else {
-      log.verbose{"[OSD] Removing osdView from superview"}
-      osd.osdView.removeFromSuperview()
+      if osd.osdView.superview != nil {
+        log.verbose{"[OSD] Removing osdView from superview"}
+        osd.osdView.removeFromSuperview()
+      }
     }
 
     if hasAdditionalInfo {
@@ -452,8 +456,10 @@ extension PlayerWindowController {
         updateAdditionalInfoContent()  // update content
       }
     } else {
-      log.verbose{"[OSD] Removing additionalInfoView from superview"}
-      additionalInfoView.removeFromSuperview()
+      if additionalInfoView.superview != nil {
+        log.verbose{"[OSD] Removing additionalInfoView from superview"}
+        additionalInfoView.removeFromSuperview()
+      }
     }
 
     if (hasOSD || hasAdditionalInfo) && !skipAddConstraints {

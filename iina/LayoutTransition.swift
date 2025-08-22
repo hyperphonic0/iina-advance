@@ -17,9 +17,11 @@ extension PlayerWindowController {
   /// Other important variables: `currentLayout`, `windowedModeGeo`, `musicModeGeo` (in `PlayerWindowController`)
   class LayoutTransition {
     enum Stage {
-      case willCloseOldPanels
-      case willOpenNewPanels
-      case done
+      case preTransitionSetup
+      case closeOldPanels
+      case midTransitionHiddenUpdates
+      case openNewPanels
+      case postTransition
     }
 
     let name: String  // just used for debugging
@@ -178,7 +180,7 @@ extension PlayerWindowController {
 
     var isOSCStyleChanging: Bool {
       return (inputLayout.effectiveOSCColorScheme != outputLayout.effectiveOSCColorScheme) ||
-       (inputLayout.controlBarGeo.isTwoRowBarOSC != outputLayout.controlBarGeo.isTwoRowBarOSC)
+      (inputLayout.controlBarGeo.isTwoRowBarOSC != outputLayout.controlBarGeo.isTwoRowBarOSC)
     }
 
     var isTopBarPlacementOrStyleChanging: Bool {
@@ -298,9 +300,9 @@ extension PlayerWindowController {
 
     var isOpeningBarOSCFromZero: Bool {
       isWindowInitialLayout || (outputLayout.hasTopOrBottomOSC &&
-      (!inputLayout.hasTopOrBottomOSC || (inputLayout.oscPosition != outputLayout.oscPosition) ||
-       (outputLayout.hasTopOSC && isTopBarPlacementOrStyleChanging)
-       || (outputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging)))
+                                (!inputLayout.hasTopOrBottomOSC || (inputLayout.oscPosition != outputLayout.oscPosition) ||
+                                 (outputLayout.hasTopOSC && isTopBarPlacementOrStyleChanging)
+                                 || (outputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging)))
     }
 
     /// For animation purposes only
@@ -315,6 +317,124 @@ extension PlayerWindowController {
 
     var needsMpvKeepaspectUpdate: Bool {
       isWindowInitialLayout || (outputLayout.mode.needsMpvKeepaspectWindow != inputLayout.mode.needsMpvKeepaspectWindow)
+    }
+
+    // MARK: - Layout per Stage
+
+    // Top bar
+    
+    func topBarPlacement(for stage: Stage) -> Preference.PanelPlacement {
+      switch stage {
+      case .preTransitionSetup, .closeOldPanels, .midTransitionHiddenUpdates:
+        return inputLayout.topBarPlacement
+      case .openNewPanels, .postTransition:
+        return outputLayout.topBarPlacement
+      }
+    }
+
+    func topBarHeight(for stage: Stage) -> CGFloat {
+      switch stage {
+      case .preTransitionSetup:
+        return inputGeometry.topBarHeight
+      case .closeOldPanels, .midTransitionHiddenUpdates:
+        let middleGeo = middleGeometry ?? inputGeometry
+        return middleGeo.topBarHeight
+      case .openNewPanels, .postTransition:
+        return outputLayout.topBarHeight
+      }
+    }
+
+    func cameraHousingOffset(for stage: Stage) -> CGFloat {
+      switch stage {
+      case .preTransitionSetup:
+        return inputGeometry.topMarginHeight
+      case .closeOldPanels, .midTransitionHiddenUpdates:
+        if isExitingLegacyFullScreen {
+          // Use prev offset for a smoother animation
+          return inputGeometry.topMarginHeight
+        } else {
+          return outputGeometry.topMarginHeight
+        }
+      case .openNewPanels, .postTransition:
+        return outputGeometry.topMarginHeight
+      }
+    }
+
+    func topBarBottomOffsetFromViewportTopConstraint(for stage: Stage) -> CGFloat {
+      switch topBarPlacement(for: stage) {
+      case .insideViewport:
+        return topBarHeight(for: stage)
+      case .outsideViewport:
+        return 0
+      }
+    }
+
+    func viewportTopOffsetFromTopBarTopConstraint(for stage: Stage) -> CGFloat {
+      switch topBarPlacement(for: stage) {
+      case .insideViewport:
+        return 0
+      case .outsideViewport:
+        return topBarHeight(for: stage)
+      }
+    }
+
+    func viewportTopOffsetFromContentViewTopConstraint(for stage: Stage) -> CGFloat {
+      switch topBarPlacement(for: stage) {
+      case .insideViewport:
+        return 0 + cameraHousingOffset(for: stage)
+      case .outsideViewport:
+        return topBarHeight(for: stage) + cameraHousingOffset(for: stage)
+      }
+    }
+
+    // Bottom bar
+
+    func bottomBarHeight(for stage: Stage) -> CGFloat {
+      switch stage {
+      case .preTransitionSetup:
+        return inputGeometry.bottomBarHeight
+      case .closeOldPanels, .midTransitionHiddenUpdates:
+        let middleGeo = middleGeometry ?? inputGeometry
+        return middleGeo.bottomBarHeight
+      case .openNewPanels, .postTransition:
+        return outputLayout.bottomBarHeight
+      }
+    }
+
+    func bottomBarPlacement(for stage: Stage) -> Preference.PanelPlacement {
+      switch stage {
+      case .preTransitionSetup, .closeOldPanels, .midTransitionHiddenUpdates:
+        return inputLayout.bottomBarPlacement
+      case .openNewPanels, .postTransition:
+        return outputLayout.bottomBarPlacement
+      }
+    }
+
+    func viewportBtmOffsetFromTopOfBottomBarConstraint(for stage: Stage) -> CGFloat {
+      switch bottomBarPlacement(for: stage) {
+      case .insideViewport:
+        return bottomBarHeight(for: stage)
+      case .outsideViewport:
+        return 0
+      }
+    }
+
+    func viewportBtmOffsetFromBtmOfBottomBarConstraint(for stage: Stage) -> CGFloat {
+      switch bottomBarPlacement(for: stage) {
+      case .insideViewport:
+        return 0
+      case .outsideViewport:
+        return bottomBarHeight(for: stage)
+      }
+    }
+
+    func viewportBtmOffsetFromContentViewBtmConstraint(for stage: Stage) -> CGFloat {
+      switch bottomBarPlacement(for: stage) {
+      case .insideViewport:
+        return 0
+      case .outsideViewport:
+        return bottomBarHeight(for: stage)
+      }
     }
 
   }

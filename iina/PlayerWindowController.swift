@@ -379,10 +379,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var topBarBottomOffsetFromViewportTopConstraint: NSLayoutConstraint!
   var viewportTopOffsetFromTopBarTopConstraint: NSLayoutConstraint!
   var viewportTopOffsetFromContentViewTopConstraint: NSLayoutConstraint!
-  // Needs to be changed to align with either sidepanel or leading edge of window:
-  var topBarLeadingSpaceConstraint: NSLayoutConstraint!
-  // Needs to be changed to align with either sidepanel or trailing edge of window:
-  var topBarTrailingSpaceConstraint: NSLayoutConstraint!
 
   // - Bottom bar constraints
   var viewportBtmOffsetFromContentViewBtmConstraint: NSLayoutConstraint!
@@ -683,7 +679,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// When entering "windowed" mode (either from initial load, PIP, or music mode), call this to add/return `videoView`
   /// to this window. Will do nothing if it's already there.
-  func addVideoViewToWindow(using mmGeo: PWinGeometry? = nil) {
+  func addVideoToWindowIfNeeded() {
     guard let window else { return }
     assert(loaded, "Must not be called if not done loading the window!")
 
@@ -691,6 +687,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       log.debug{"Aborting add of videoView to window: PiP status=\(pip.status)"}
       return
     }
+    var didAddSubview = false
     do {
       let hasOpenGL = videoView.lockAndSetOpenGLContext()
       defer {
@@ -699,21 +696,31 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         }
       }
       videoView.$isUninited.withLock() { isUninited in
-        guard !viewportView.subviews.contains(videoView) else { return }
-        viewportView.addSpacers()
-        log.verbose{"Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)"}
-        viewportView.addSubview(videoView)
-        sortViewportViewSubviews()
-        /// Add constraints. These get removed each time `videoView` changes superviews.
-        videoView.translatesAutoresizingMaskIntoConstraints = false
-        let mmGeo = currentLayout.mode == .musicMode ? (mmGeo ?? musicModeGeo) : windowedModeGeo
-        videoView.apply(mmGeo)
-        // Reset this in case it was changed for PiP. (Need to use optional to support initial load)
-        videoView.layer?.autoresizingMask = []
+        if !window.contentView!.containsSubview(viewportView) {
+          window.contentView!.addSubview(viewportView)
+        }
+        if !viewportView.subviews.contains(videoView) {
+          log.verbose{"Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)"}
+          viewportView.addSubview(videoView)
+          // Reset this in case it was changed for PiP. (Need to use optional to support initial load)
+          videoView.layer?.autoresizingMask = []
+          /// Add constraints. These get removed each time `videoView` changes superviews.
+          videoView.translatesAutoresizingMaskIntoConstraints = false
+          didAddSubview = true
+        }
+
+        let didAddSpacers = viewportView.addSpacers()
+        didAddSubview = didAddSubview || didAddSpacers
+
+        if didAddSubview {
+          sortViewportViewSubviews()
+        }
       }
     }
-    // Screen may have changed. Refresh. Do not keep the OpenGL lock because it is locked in here
-    videoView.refreshAllVideoDisplayState()
+    if didAddSubview {
+      // Screen may have changed. Refresh. Do not keep the OpenGL lock because it is locked in here
+      videoView.refreshAllVideoDisplayState()
+    }
   }
 
   /// Set material & theme (light or dark mode) for OSC and title bar.

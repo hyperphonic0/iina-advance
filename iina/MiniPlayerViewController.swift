@@ -63,6 +63,9 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   override func viewDidLoad() {
     super.viewDidLoad()
 
+    titleLabel.idString = "TitleLabel"
+    artistAlbumLabel.idString = "ArtistAlbumLabel"
+
     /// `musicModeControlBarView` is always the same height
     musicModeControlBarView.heightAnchor.constraint(equalToConstant: Constants.Distance.MusicMode.oscHeight).isActive = true
     musicModeControlBarView.idString = "MusicModeControlBarView"

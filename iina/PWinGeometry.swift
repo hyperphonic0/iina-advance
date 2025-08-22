@@ -1218,7 +1218,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     var windowFrame = NSRect(origin: windowFrame.origin, size:
                               CGSize(width: windowFrame.width.rounded(), height: windowFrame.height.rounded()))
     let videoHeight = PWinGeometry.MusicMode.videoHeight(windowFrame: windowFrame, video: video, videoShown: videoShown)
-    var musicModePlaylistHeight = windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight + 1
+    var musicModePlaylistHeight = windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
 
     let extraWidthNeeded = Constants.Distance.MusicMode.minWindowWidth - windowFrame.width
     if extraWidthNeeded > 0 {
@@ -1361,7 +1361,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
 
     static func videoHeightWhenVisible(windowFrame: CGRect, video: VideoGeometry) -> CGFloat {
-      return (windowFrame.width / video.videoAspectCAR).rounded()
+      // Round down (toward zero) *always* to hopefully reduce inconsistencies due to rounding
+      return (windowFrame.width / video.videoAspectCAR).rounded(.towardZero)
     }
 
   }  // end struct MusicMode

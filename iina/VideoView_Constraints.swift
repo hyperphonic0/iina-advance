@@ -204,11 +204,11 @@ struct VideoViewConstraints {
 
     if let wMax {
       widthMax.animateToConstant(wMax)
-      widthMax.priority = whMax_Priority //+ (videoViewAspect > 1 ? 1 : 0)
+      widthMax.priority = whMax_Priority
     }
     if let hMax {
       heightMax.animateToConstant(hMax)
-      heightMax.priority = whMax_Priority //+ (videoViewAspect > 1 ? 0 : 1)
+      heightMax.priority = whMax_Priority
     }
 
     centerX.priority = center.priority
@@ -449,6 +449,7 @@ extension VideoView {
 
     let interactiveMode = geometry.mode.isInteractiveMode
 
+    // spacerMin == viewport min margins
     let spacerMinValues: MarginQuad = (interactiveMode && !geometry.isMiddleTransition) ? Constants.InteractiveMode.viewportMargins : .zero
 
     // FIXME: keepVideoAwayFromBars is broken with keepaspect-window=no
