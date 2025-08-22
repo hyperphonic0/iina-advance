@@ -352,7 +352,7 @@ extension PlayerWindowController {
     }
 
     if transition.inputLayout.titleBarHeight > outputLayout.titleBarHeight {
-      titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
+      topBarView.titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
     }
 
     if transition.inputLayout.controlBarGeo.playSliderHeight > outputLayout.controlBarGeo.playSliderHeight {
@@ -522,14 +522,7 @@ extension PlayerWindowController {
         }
 
         if let customTitleBar {
-          // Update superview based on placement. Cannot always add to contentView due to constraint issues
-          if transition.outputLayout.topBarPlacement == .outsideViewport {
-            customTitleBar.addViewTo(superview: titleBarView)
-          } else {
-            if let contentView = window.contentView {
-              customTitleBar.addViewTo(superview: contentView)
-            }
-          }
+          customTitleBar.addViewTo(superview: topBarView.titleBarView)
           if !transition.inputLayout.titleBar.isShowable {
             customTitleBar.view.alphaValue = 0  // prep it to fade in later
           }
@@ -708,7 +701,7 @@ extension PlayerWindowController {
 
       switch outputLayout.oscPosition {
       case .top:
-        currentControlBar = controlBarTop
+        currentControlBar = topBarView.controlBarTop
 
 
         let oscContentView: NSView
@@ -722,8 +715,8 @@ extension PlayerWindowController {
           oscOneRowView.updateSubviews(from: self, newGeo)
         }
 
-        if !controlBarTop.subviews.contains(oscContentView) {
-          controlBarTop.addSubview(oscContentView, positioned: .below, relativeTo: topBarBottomBorder)
+        if !topBarView.controlBarTop.subviews.contains(oscContentView) {
+          topBarView.controlBarTop.addSubview(oscContentView, positioned: .below, relativeTo: topBarView.bottomBorder)
           // Match leading/trailing spacing of title bar icons above
           oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing,
                                                        trailing: Constants.Distance.titleBarIconHSpacing)
@@ -975,7 +968,7 @@ extension PlayerWindowController {
     }
 
     // Update heights to their final values:
-    titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
+    topBarView.titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
 
     // Need to update OSD vertical offset when exiting from legacy FS due to previous special animations
     updateTopOffsetConstraints(for: transition.outputGeometry, isLegacyFullScreen: outputLayout.isLegacyFullScreen)

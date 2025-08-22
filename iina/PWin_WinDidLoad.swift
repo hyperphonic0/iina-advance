@@ -101,7 +101,6 @@ extension PlayerWindowController {
       initOSCToolbar()
       initPlaybackBtnsView(using: oscGeo)
       initPlaySliderAndTimeLabelsView()
-      initTopBarView()
       initVolumeView(using: oscGeo)
       initSidebars()
 
@@ -243,51 +242,11 @@ extension PlayerWindowController {
     trailingTB.addArrangedSubview(onTopButton)
   }
 
-  func initOSCToolbar() {
+  private func initOSCToolbar() {
     fragToolbarView.idString = "OSC-ToolbarView"
     fragToolbarView.translatesAutoresizingMaskIntoConstraints = false
     fragToolbarView.orientation = .horizontal
     fragToolbarView.distribution = .fill
-  }
-
-  func initTopBarView() {
-    topBarView.idString = "TopBarView"
-    topBarView.material = .titlebar
-    topBarView.state = .followsWindowActiveState
-    // Needed to try to clip half of topBarBottomBorder, to achieve 0.5px ideally. See below
-    topBarView.clipsToBounds = true
-    topBarView.translatesAutoresizingMaskIntoConstraints = false
-
-    /// `controlBarTop`
-    controlBarTop.translatesAutoresizingMaskIntoConstraints = false
-    controlBarTop.clipsToBounds = true  // for better animations when toggling OSC position/placement
-    controlBarTop.identifier = .init("ControlBarTopView")
-    topBarView.addSubviewAndConstraints(controlBarTop, bottom: 0, leading: 0, trailing: 0)
-
-    /// `titleBarView`
-    titleBarView.translatesAutoresizingMaskIntoConstraints = false
-    topBarView.addSubview(titleBarView)
-    titleBarView.identifier = .init("TitleBarView")
-    let titleBarBottom_ToControlBarTop_Constraint = titleBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
-    titleBarBottom_ToControlBarTop_Constraint.identifier = .init("TitleBar-Bottom_ToControlBarTop_Constraint")
-    titleBarBottom_ToControlBarTop_Constraint.isActive = true
-
-    titleBarView.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
-
-    titleBarHeightConstraint = titleBarView.bottomAnchor.constraint(equalTo: topBarView.topAnchor, constant: Constants.Distance.standardTitleBarHeight)
-    titleBarHeightConstraint.identifier = .init("TitleBarView-HeightConstraint")
-    titleBarHeightConstraint.priority = .init(900)
-    titleBarHeightConstraint.isActive = true
-
-    // Bottom border
-    topBarView.addSubview(topBarBottomBorder)
-    topBarBottomBorder.addConstraintsToFillSuperview(bottom: -0.5, leading: 0, trailing: 0)
-    // Want to make a 0.5px border. But it seems that in some display modes, that is not only not possible,
-    // but it will trigger an auto-layout constraint error. So use defaultHigh and be prepared to accept a 1px border.
-    let topBarBottomBorder_HeightConstraint = topBarBottomBorder.topAnchor.constraint(equalTo: topBarView.bottomAnchor, constant: -0.5)
-    topBarBottomBorder_HeightConstraint.identifier = .init("TopBarBottomBorder-HeightConstraint")
-    topBarBottomBorder_HeightConstraint.priority = .defaultHigh
-    topBarBottomBorder_HeightConstraint.isActive = true
   }
 
   /// The `bottomBarView` may need to be completely rebuilt if the style changes.
@@ -630,7 +589,7 @@ extension PlayerWindowController {
     volumeSlider.action = #selector(volumeSliderAction(_:))
   }
 
-  func initBufferIndicatorView() {
+  private func initBufferIndicatorView() {
     bufferIndicatorView.roundCorners()
     let bufIndicatorWidthCon = bufferIndicatorView.widthAnchor.constraint(equalToConstant: 160)
     bufIndicatorWidthCon.priority = .defaultLow

@@ -349,6 +349,7 @@
 		D19247FD2BC634D3003BEEE8 /* Player_Crop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19247FC2BC634D3003BEEE8 /* Player_Crop.swift */; };
 		D19690CC2B56770F002B0458 /* MPVLogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19690CB2B56770F002B0458 /* MPVLogLevel.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */; };
+		D19CFD902E5885AE00746611 /* TopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CFD8F2E5885AB00746611 /* TopBarView.swift */; };
 		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
 		D1A071892D644F4600884828 /* ResizableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A071882D644F3600884828 /* ResizableTextView.swift */; };
 		D1A44D8A2A5E18D00089B283 /* PWinGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A44D892A5E18D00089B283 /* PWinGeometry.swift */; };
@@ -1899,6 +1900,7 @@
 		D19247FC2BC634D3003BEEE8 /* Player_Crop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player_Crop.swift; sourceTree = "<group>"; };
 		D19690CB2B56770F002B0458 /* MPVLogLevel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MPVLogLevel.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfFileCache.swift; sourceTree = "<group>"; };
+		D19CFD8F2E5885AB00746611 /* TopBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBarView.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
 		D1A071882D644F3600884828 /* ResizableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizableTextView.swift; sourceTree = "<group>"; };
 		D1A44D892A5E18D00089B283 /* PWinGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinGeometry.swift; sourceTree = "<group>"; };
@@ -2980,6 +2982,7 @@
 				8460FBA71D6497490081841B /* PlaylistViewController.swift */,
 				8400D5CE1E1AB2FF006785F5 /* PlaylistViewController.xib */,
 				845FB0C61D39462E00C011E0 /* FloatingControlBarView.swift */,
+				D19CFD8F2E5885AB00746611 /* TopBarView.swift */,
 				D1BE7BD12D4B7E000085539F /* SingleRowBarOSCView.swift */,
 				D1BE7BCE2D4B7CD20085539F /* TwoRowBarOSCView.swift */,
 				D16E1F142E302C5D00F8F208 /* DefaultAlbumArtView.swift */,
@@ -3421,6 +3424,7 @@
 				8488D6E31E1183D300D5B952 /* PrefSubViewController.swift in Sources */,
 				846352581EEEE11A0043F0CC /* ThumbnailPeekView.swift in Sources */,
 				D160783B2D140DEE00105001 /* BarFactoryUtil.swift in Sources */,
+				D19CFD902E5885AE00746611 /* TopBarView.swift in Sources */,
 				84E745D61DFDD4FD00588DED /* KeyCodeHelper.swift in Sources */,
 				840D479B1DFEF649000D9A64 /* KeyRecordViewController.swift in Sources */,
 				D1AC43942DE1BADC00189782 /* VideoGeo_Sync.swift in Sources */,

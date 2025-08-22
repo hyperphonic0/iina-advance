@@ -460,9 +460,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  /// Sets the size of the spacer view in the top overlay which reserves space for a title bar.
-  var titleBarHeightConstraint: NSLayoutConstraint!
-
   var fragPlaybackBtnsHeightConstraint: NSLayoutConstraint!
   var fragPlaybackBtnsWidthConstraint: NSLayoutConstraint!
   var speedLabelBtmConstraint: NSLayoutConstraint!
@@ -539,16 +536,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Sidebar at top of window. May be `insideViewport` or `outsideViewport`. May contain `titleBarView` and/or `controlBarTop`
   /// depending on configuration.
-  let topBarView = ClickThroughVisualEffectView()
-  /// Bottom border of `topBarView`.
-  let topBarBottomBorder = BorderLineView(id: "TopBar-BottomBorder",
-                                          fillColor: .titleBarBorder)
-  /// Reserves space for the title bar components. Can contain CustomTitleBarView *only* if using legacy
-  /// windowed mode & topBarPlacement==.insideViewport
-  let titleBarView = ClickThroughView()
-  /// OSC at top of window, if configured.
-  let controlBarTop = ClickThroughView()
-
+  let topBarView = TopBarView()
   /// Floating OSC
   let controlBarFloating = FloatingControlBarView()
 
@@ -619,7 +607,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   var mouseActionDisabledViews: [NSView?] {
-    return [leadingSidebarView, trailingSidebarView, titleBarView, currentControlBar, subPopoverView]
+    return [leadingSidebarView, trailingSidebarView, topBarView.titleBarView, currentControlBar, subPopoverView]
   }
 
   lazy var pluginOverlayViewContainer: NSView! = {
