@@ -94,21 +94,17 @@ extension PlayerWindowController {
 
       window.preservesContentDuringLiveResize = false
 
+      let oscGeo = currentLayout.controlBarGeo
       initViewportView(in: contentView)
       initSeekPreview(in: contentView)
       initTitleBar()
       initOSCToolbar()
+      initPlaybackBtnsView(using: oscGeo)
+      initPlaySliderAndTimeLabelsView()
       initTopBarView(in: contentView)
+      initVolumeView(using: oscGeo)
       rebuildBottomBarView(in: contentView, style: .visualEffectView)
       initSidebars(in: contentView)
-      initPlaybackBtnsView()
-      initPlaySliderAndTimeLabelsView()
-      addSubviewsToPlaySliderAndTimeLabelsView(currentLayout.controlBarGeo)
-      initVolumeView()
-      playSlider.customCell.pwc = self
-      volumeSliderCell.pwc = self
-      playSlider.target = self
-      playSlider.action = #selector(playSliderAction(_:))
 
       closeButtonView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 4).isActive = true
       closeButtonView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4).isActive = true
@@ -175,8 +171,8 @@ extension PlayerWindowController {
 
   private func initSeekPreview(in contentView: NSView) {
     seekPreview.player = player
-    contentView.addSubview(seekPreview.timeLabel, positioned: .above, relativeTo: viewportView)
-    contentView.addSubview(seekPreview.thumbnailPeekView, positioned: .below, relativeTo: seekPreview.timeLabel)
+    contentView.addSubview(seekPreview.thumbnailPeekView, positioned: .above, relativeTo: viewportView)
+    contentView.addSubview(seekPreview.timeLabel, positioned: .above, relativeTo: seekPreview.thumbnailPeekView)
     // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
     seekPreview.timeLabel.nextResponder = playSlider
 
@@ -388,9 +384,8 @@ extension PlayerWindowController {
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews
-  private func initPlaybackBtnsView() {
+  private func initPlaybackBtnsView(using oscGeo: ControlBarGeometry) {
     log.verbose{"[Load] Init playback buttons"}
-    let oscGeo = currentLayout.controlBarGeo
 
     // Play button
     playButton.image = Images.play
@@ -540,6 +535,9 @@ extension PlayerWindowController {
     leftTimeLabel.setContentCompressionResistancePriority(.init(501), for: .horizontal)
 
     playSlider.idString = "PlaySlider"
+    playSlider.customCell.pwc = self
+    playSlider.target = self
+    playSlider.action = #selector(playSliderAction(_:))
     playSlider.minValue = 0
     playSlider.maxValue = 100
     playSlider.isContinuous = true
@@ -565,7 +563,8 @@ extension PlayerWindowController {
     rightTimeLabel.setContentCompressionResistancePriority(.init(749), for: .horizontal)
   }
 
-  func addSubviewsToPlaySliderAndTimeLabelsView(_ oscGeo: ControlBarGeometry) {
+  /// Can be called redundantly without ill effect
+  func addSubviewsToPlaySliderAndTimeLabelsView(using oscGeo: ControlBarGeometry) {
     // Assume that if all subviews are inside, the constraints are properly configured as well, & no more work is needed.
     playSliderAndTimeLabelsView.removeAllSubviews()
 
@@ -591,9 +590,7 @@ extension PlayerWindowController {
     rightTimeLabel.trailingAnchor.constraint(equalTo: playSliderAndTimeLabelsView.trailingAnchor).isActive = true
   }
 
-  private func initVolumeView() {
-    // We are early in the loading process. Don't trust cached ControlBarGeometry too much...
-    let oscGeo = ControlBarGeometry(mode: currentLayout.mode)
+  private func initVolumeView(using oscGeo: ControlBarGeometry) {
     let hSpacing: CGFloat = 2
 
     // Volume view
@@ -621,6 +618,7 @@ extension PlayerWindowController {
     // Volume slider
     fragVolumeView.addSubview(volumeSlider)
     volumeSlider.cell = volumeSliderCell
+    volumeSliderCell.pwc = self
     // For some reason this needs to be set here, instead of in volumeSliderCell init.
     // Otherwise action will continue to be nil...
     volumeSliderCell.hoverTimer.action = volumeSliderCell.refreshVolumeSliderHoverEffect

@@ -536,7 +536,7 @@ extension PlayerWindowController {
     let boundaryView: NSView
 
     // Add leading sidebar if not already present
-    contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: bufferIndicatorView)
+    contentView.addSubview(leadingSidebarView, positioned: .above, relativeTo: viewportView)
 
     let viewportLeadingClipTrailing: NSLayoutConstraint?
     if placement == .insideViewport {
@@ -662,7 +662,7 @@ extension PlayerWindowController {
     let contentView = window!.contentView!
 
     // Add sidebar if not already added
-    contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: bufferIndicatorView)
+    contentView.addSubview(trailingSidebarView, positioned: .above, relativeTo: viewportView)
 
     let viewportTrailingClipLeading: NSLayoutConstraint?
     let tabContainerView: NSView

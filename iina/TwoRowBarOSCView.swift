@@ -90,7 +90,7 @@ class TwoRowBarOSCView: ClickThroughView {
     let playSliderTypeView: NSView
     if oscGeo.timeLabelsWrapSlider {
       // Option 2: Both PlaySlider & time labels go in Row 1 (via playSliderAndTimeLabelsView)
-      pwc.addSubviewsToPlaySliderAndTimeLabelsView(oscGeo)
+      pwc.addSubviewsToPlaySliderAndTimeLabelsView(using: oscGeo)
       playSliderTypeView = pwc.playSliderAndTimeLabelsView
     } else {
       // Option 1: PlaySlider goes in Row 1; time labels in Row 2

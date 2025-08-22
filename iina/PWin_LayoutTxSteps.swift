@@ -167,7 +167,7 @@ extension PlayerWindowController {
       speedLabelBtmConstraint.isActive = false
     }
 
-//    rebuildPanelConstraints(transition, stage: .willCloseOldPanels)
+    rebuildPanelConstraints(transition, stage: .willCloseOldPanels)
   }
 
   /// -------------------------------------------------
@@ -692,7 +692,7 @@ extension PlayerWindowController {
       // move playback position slider & time labels
       let wasAlreadyPresent = miniPlayer.positionSliderWrapperView.subviews.contains(playSliderAndTimeLabelsView)
       miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
-      addSubviewsToPlaySliderAndTimeLabelsView(transition.outputLayout.controlBarGeo)
+      addSubviewsToPlaySliderAndTimeLabelsView(using: transition.outputLayout.controlBarGeo)
       if !wasAlreadyPresent {
         playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0, trailing: 0)
         playSliderAndTimeLabelsView.isHidden = false
@@ -1058,7 +1058,7 @@ extension PlayerWindowController {
 
         topRowView.setClippingResistancePriority(.defaultLow, for: .horizontal)
 
-        addSubviewsToPlaySliderAndTimeLabelsView(transition.outputLayout.controlBarGeo)
+        addSubviewsToPlaySliderAndTimeLabelsView(using: transition.outputLayout.controlBarGeo)
         controlBarFloating.bottomRowView.addSubview(playSliderAndTimeLabelsView)
         playSliderAndTimeLabelsView.isHidden = false
         playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
@@ -1434,7 +1434,7 @@ extension PlayerWindowController {
 
     if geometry.videoShown {
       if !contentView.containsSubview(viewportView) {
-        contentView.addSubview(viewportView, positioned: .below, relativeTo: nil)
+        contentView.addSubview(viewportView, positioned: .below, relativeTo: seekPreview.timeLabel)
       }
     }
     if layout.hasBottomBar {
