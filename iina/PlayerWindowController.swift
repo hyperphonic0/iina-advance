@@ -2357,6 +2357,18 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     window.contentView?.layer?.opacity = newOpacity
   }
 
+  /// Need to call this after adding a new subview to `window.contentView` to ensure ordering of subviews is correct.
+  func sortContentViewSubviews() {
+    // TODO: flesh this out
+
+    let contentView = window!.contentView!
+    let possibleSubviews = [customWindowBorderBox, customWindowBorderTopHighlightBox]
+    let correctOrderedSubviews = possibleSubviews.filter { contentView.containsSubview($0) }
+    for subview in correctOrderedSubviews {
+      contentView.addSubview(subview, positioned: .above, relativeTo: nil)
+    }
+  }
+
   // MARK: - IBActions
 
   @objc func menuSwitchToMiniPlayer(_ sender: NSMenuItem) {

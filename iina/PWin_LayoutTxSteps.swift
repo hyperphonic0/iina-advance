@@ -56,7 +56,9 @@ extension PlayerWindowController {
       window.isMovableByWindowBackground = false
     }
 
-    rebuildPanelConstraints(transition, stage: .preTransitionSetup)
+    if !transition.isWindowInitialLayout {  // Skip for initial layout: not all panels have been init'd yet
+      rebuildPanelConstraints(transition, stage: .preTransitionSetup)
+    }
 
     // Need to call this here to avoid border being drawn incorrectly during FS transition.
     // But don't want to interfere with special effects such as fade-in
@@ -1373,7 +1375,7 @@ extension PlayerWindowController {
 
     }
 
-    rebuildPanelConstraints(transition, stage: .postTransition)
+//    rebuildPanelConstraints(transition, stage: .postTransition)
 
     if transition.outputGeometry.mode.isWindowed {
       sendWindowScaleToMPV(basedOn: transition.outputGeometry)
@@ -1418,7 +1420,7 @@ extension PlayerWindowController {
 
     let useViewport = useStrongConstraints || geometry.videoShown
     let useBottomBar = useStrongConstraints || layout.hasBottomBar
-    let useTopBar = layout.hasTopBar
+    let useTopBar = useStrongConstraints || layout.hasTopBar
     let useLeadingSidebar = useStrongConstraints || layout.isLeadingSidebarVisible
     let useTrailingSidebar = useStrongConstraints || layout.isTrailingSidebarVisible
 
@@ -1457,16 +1459,18 @@ extension PlayerWindowController {
 
     // Add/remove topBarView if needed
     if useTopBar {
-      contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
+      if !contentView.containsSubview(topBarView) {
+        contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
 
-      // These constraints don't change as long as topBarView is attached
-      let topBarLeadingSpaceConstraint = topBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
-      topBarLeadingSpaceConstraint.identifier = "TopBarLeadingSpaceConstraint"
-      topBarLeadingSpaceConstraint.isActive = true
+        // These constraints don't change as long as topBarView is attached
+        let topBarLeadingSpaceConstraint = topBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+        topBarLeadingSpaceConstraint.identifier = "TopBarLeadingSpaceConstraint"
+        topBarLeadingSpaceConstraint.isActive = true
 
-      let topBarTrailingSpaceConstraint = topBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
-      topBarTrailingSpaceConstraint.identifier = "TopBarTrailingSpaceConstraint"
-      topBarTrailingSpaceConstraint.isActive = true
+        let topBarTrailingSpaceConstraint = topBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
+        topBarTrailingSpaceConstraint.identifier = "TopBarTrailingSpaceConstraint"
+        topBarTrailingSpaceConstraint.isActive = true
+      }
     } else {
       topBarView.removeFromSuperview()
     }
@@ -1475,18 +1479,23 @@ extension PlayerWindowController {
 
     // Top Bar
     if useTopBar {
+      assert(useViewport, "Cannot use topBarView without viewportView")
+      let constant1 = transition.viewportTopOffsetFromTopBarTopConstraint(for: stage)
       if !isActive(viewportTopOffsetFromTopBarTopConstraint) {
-        let constant = transition.viewportTopOffsetFromTopBarTopConstraint(for: stage)
-        viewportTopOffsetFromTopBarTopConstraint = viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: constant)
+        viewportTopOffsetFromTopBarTopConstraint = viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: constant1)
         viewportTopOffsetFromTopBarTopConstraint.identifier = "ViewportTopOffsetFromTopBarTopConstraint"
         viewportTopOffsetFromTopBarTopConstraint.isActive = true
+      } else {
+        viewportTopOffsetFromTopBarTopConstraint.animateToConstant(constant1)
       }
 
+      let constant2 = transition.topBarBottomOffsetFromViewportTopConstraint(for: stage)
       if !isActive(topBarBottomOffsetFromViewportTopConstraint) {
-        let constant = transition.topBarBottomOffsetFromViewportTopConstraint(for: stage)
-        topBarBottomOffsetFromViewportTopConstraint = topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: constant)
+        topBarBottomOffsetFromViewportTopConstraint = topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: constant2)
         topBarBottomOffsetFromViewportTopConstraint.identifier = "TopBarBottomOffsetFromViewportTopConstraint"
         topBarBottomOffsetFromViewportTopConstraint.isActive = true
+      } else {
+        topBarBottomOffsetFromViewportTopConstraint.animateToConstant(constant2)
       }
     }
 
@@ -1498,63 +1507,69 @@ extension PlayerWindowController {
       // This will always be zero
       if !isActive(bottomBarBtmToCVBtmConstraint) {
         bottomBarBtmToCVBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
-        bottomBarBtmToCVBtmConstraint.isActive = true
         bottomBarBtmToCVBtmConstraint.identifier = "bottomBar-Btm_OffsetFrom-CV-Btm_Constraint"
+        bottomBarBtmToCVBtmConstraint.isActive = true
+      }
+    }
+
+
+    if useViewport && useBottomBar {
+      let constant1 = transition.viewportBtmOffsetFromBtmOfBottomBarConstraint(for: stage)
+      if !isActive(viewportBtmOffsetFromBtmOfBottomBarConstraint) {
+        viewportBtmOffsetFromBtmOfBottomBarConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: constant1)
+        viewportBtmOffsetFromBtmOfBottomBarConstraint.priorityInt = 200
+        viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint"
+        viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
+      } else {
+        viewportBtmOffsetFromBtmOfBottomBarConstraint.animateToConstant(constant1)
+      }
+
+      let constant2 = transition.viewportBtmOffsetFromTopOfBottomBarConstraint(for: stage)
+      if !isActive(viewportBtmOffsetFromTopOfBottomBarConstraint)  {
+        viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: constant2)
+        viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Top_Constraint"
+        viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
+      } else {
+        viewportBtmOffsetFromTopOfBottomBarConstraint.animateToConstant(constant2)
       }
     }
 
     // Viewport View
     if useViewport {
-      let secondAnchor = useBottomBar ?  bottomBarView.topAnchor : contentView.bottomAnchor
-      if !isActive(viewportBtmOffsetFromTopOfBottomBarConstraint) || (viewportBtmOffsetFromTopOfBottomBarConstraint.secondAnchor != secondAnchor) {
-        viewportBtmOffsetFromTopOfBottomBarConstraint?.isActive = false
-
-        let constant = transition.viewportBtmOffsetFromTopOfBottomBarConstraint(for: stage)
-        viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: secondAnchor, constant: constant)
-        viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Top_Constraint"
-        viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
-      }
-
+      let constant1 = transition.viewportTopOffsetFromContentViewTopConstraint(for: stage)
       if !isActive(viewportTopOffsetFromContentViewTopConstraint) {
-        let constant = transition.viewportTopOffsetFromContentViewTopConstraint(for: stage)
-        viewportTopOffsetFromContentViewTopConstraint = viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: constant)
+        viewportTopOffsetFromContentViewTopConstraint = viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: constant1)
         viewportTopOffsetFromContentViewTopConstraint.identifier = .init("Viewport-Top_OffsetFrom-CV-Top-Constraint")
-        viewportTopOffsetFromContentViewTopConstraint.isActive = true
+      } else {
+        viewportTopOffsetFromContentViewTopConstraint.animateToConstant(constant1)
       }
 
       if !isActive(viewportLeadingOffsetFromContentViewLeadingConstraint) {
         viewportLeadingOffsetFromContentViewLeadingConstraint = viewportView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
         viewportLeadingOffsetFromContentViewLeadingConstraint.identifier = .init("Viewport-Leading_OffsetFrom-CV-Leading-Constraint")
-        viewportLeadingOffsetFromContentViewLeadingConstraint.isActive = true
       }
 
       if !isActive(viewportTrailingOffsetFromContentViewTrailingConstraint) {
         viewportTrailingOffsetFromContentViewTrailingConstraint = contentView.trailingAnchor.constraint(equalTo: viewportView.trailingAnchor, constant: 0)
         viewportTrailingOffsetFromContentViewTrailingConstraint.identifier = .init("CV-Trailing_OffsetFrom-Viewport-Trailing-Constraint")
-        viewportTrailingOffsetFromContentViewTrailingConstraint.isActive = true
-      }
-
-      if useBottomBar {
-        if !isActive(viewportBtmOffsetFromBtmOfBottomBarConstraint) {
-          let constant = transition.viewportBtmOffsetFromBtmOfBottomBarConstraint(for: stage)
-          viewportBtmOffsetFromBtmOfBottomBarConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: constant)
-          viewportBtmOffsetFromBtmOfBottomBarConstraint.priorityInt = 200
-          viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
-          viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Constraint"
-        }
       }
 
       if !useStrongConstraints && layout.mode == .musicMode && transition.outputGeometry.isMusicModePlaylistShown {
         viewportBtmOffsetFromContentViewBtmConstraint?.isActive = false
       } else {
+        let constant1 = transition.viewportBtmOffsetFromContentViewBtmConstraint(for: stage)
         if !isActive(viewportBtmOffsetFromContentViewBtmConstraint) {
-          let constant = transition.viewportBtmOffsetFromContentViewBtmConstraint(for: stage)
-          viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: constant)
+          viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: constant1)
           viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("CV-Btm_OffsetFrom-Viewport-Btm-Constraint")
           viewportBtmOffsetFromContentViewBtmConstraint.isActive = true
+        } else {
+          viewportBtmOffsetFromContentViewBtmConstraint.animateToConstant(constant1)
         }
       }
 
+      viewportLeadingOffsetFromContentViewLeadingConstraint.isActive = true
+      viewportTrailingOffsetFromContentViewTrailingConstraint.isActive = true
+      viewportTopOffsetFromContentViewTopConstraint.isActive = true
     }
 
   }

@@ -1250,8 +1250,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     let isValidHeight = playlistShown ? (musicModePlaylistHeight >= Constants.Distance.MusicMode.minPlaylistHeight) : (musicModePlaylistHeight == 0)
     if !isValidHeight {
-      log.errorDebugAlert{"Music mode window: playlist height is invalid (will attempt to fix): playlistShown=\(playlistShown.yn) but playlistHeight (\(musicModePlaylistHeight)) is less than minimum (\(Constants.Distance.MusicMode.minPlaylistHeight))."}
-      return winGeo.refitted()
+      log.errorDebugAlert{"Music mode window: playlist height is invalid (will attempt to fix): playlistShown=\(playlistShown.yn) playlistH=\(musicModePlaylistHeight) minPlaylistH=\(Constants.Distance.MusicMode.minPlaylistHeight)."}
+      let newWindowHeight = videoHeight + Constants.Distance.MusicMode.oscHeight
+      let heightChange = windowFrame.height - newWindowHeight
+      let windowFrameFixed = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - heightChange,
+                           width: windowFrame.width, height: newWindowHeight)
+      return winGeo.cloneMusicMode(windowFrame: windowFrameFixed, videoShown: true, playlistShown: false).refitted()
     }
     assert(videoShown == winGeo.videoShown,
            "Expected videoShown to match: \(videoShown.yesno) → \(winGeo.videoShown.yesno)")

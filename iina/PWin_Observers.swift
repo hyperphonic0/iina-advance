@@ -185,7 +185,7 @@ extension PlayerWindowController {
       player.mpv.updateLoggingLevels()
       player.mpv.updateUsingMpvOSDFromPrefs()
 
-      animationPipeline.submitTask({ [self] in
+      animationPipeline.submitInstantTask({ [self] in
         // May change enablement of 2-row OSC; refresh:
         updateTitleBarAndOSC()
         updateWindowBorderAndOpacity()
@@ -213,7 +213,7 @@ extension PlayerWindowController {
         }
       }
     case .playerWindowOpacity:
-      animationPipeline.submitTask({ [self] in
+      animationPipeline.submitInstantTask({ [self] in
         updateWindowBorderAndOpacity()
       })
     case .showCachedRangesInSlider:
