@@ -95,21 +95,20 @@ extension PlayerWindowController {
       window.preservesContentDuringLiveResize = false
 
       let oscGeo = currentLayout.controlBarGeo
-      initViewportView(in: contentView)
+      initViewportView()
       initSeekPreview(in: contentView)
       initTitleBar()
       initOSCToolbar()
       initPlaybackBtnsView(using: oscGeo)
       initPlaySliderAndTimeLabelsView()
-      initTopBarView(in: contentView)
+      initTopBarView()
       initVolumeView(using: oscGeo)
-      rebuildBottomBarView(in: contentView, style: .visualEffectView)
-      initSidebars(in: contentView)
+      initSidebars()
 
       closeButtonView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 4).isActive = true
       closeButtonView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4).isActive = true
 
-      initBufferIndicatorView(in: contentView)
+      initBufferIndicatorView()
 
       log.verbose("[Load] Configuring window for CoreAnimation")
       contentView.configureSubtreeForCoreAnimation()
@@ -147,7 +146,7 @@ extension PlayerWindowController {
 
   // MARK: - Building Components
 
-  private func initViewportView(in contentView: NSView) {
+  private func initViewportView() {
     viewportView.idString = "ViewportView"
     viewportView.clipsToBounds = true
     viewportView.translatesAutoresizingMaskIntoConstraints = false
@@ -251,9 +250,8 @@ extension PlayerWindowController {
     fragToolbarView.distribution = .fill
   }
 
-  func initTopBarView(in contentView: NSView) {
+  func initTopBarView() {
     topBarView.idString = "TopBarView"
-    topBarView.blendingMode = .withinWindow
     topBarView.material = .titlebar
     topBarView.state = .followsWindowActiveState
     // Needed to try to clip half of topBarBottomBorder, to achieve 0.5px ideally. See below
@@ -293,8 +291,8 @@ extension PlayerWindowController {
   }
 
   /// The `bottomBarView` may need to be completely rebuilt if the style changes.
-  /// This also adds as subview to `contentView`.
-  func rebuildBottomBarView(in contentView: NSView, style: Preference.OSCColorScheme) {
+  /// This also removes the previous `bottomBarView` from `contentView`.
+  func rebuildBottomBarView(style: Preference.OSCColorScheme) {
     log.verbose{"[Load] Rebuilding bottomBarView: style=\(style)"}
     bottomBarView.removeAllSubviews()
     bottomBarView.removeFromSuperview()
@@ -318,7 +316,6 @@ extension PlayerWindowController {
 
     bottomBarView.clipsToBounds = true
     if let bottomBarView = bottomBarView as? NSVisualEffectView {
-      bottomBarView.blendingMode = .withinWindow
       bottomBarView.material = .sidebar
       bottomBarView.state = .active
     }
@@ -345,9 +342,7 @@ extension PlayerWindowController {
     return false
   }
 
-  /// Prerequisites:
-  /// 1. `viewportView` added to `contentView`.
-  private func initSidebars(in contentView: NSView) {
+  private func initSidebars() {
     log.verbose{"[Load] Init sidebars"}
 
     // - Leading sidebar
@@ -635,7 +630,7 @@ extension PlayerWindowController {
     volumeSlider.action = #selector(volumeSliderAction(_:))
   }
 
-  func initBufferIndicatorView(in contentView: NSView) {
+  func initBufferIndicatorView() {
     bufferIndicatorView.roundCorners()
     let bufIndicatorWidthCon = bufferIndicatorView.widthAnchor.constraint(equalToConstant: 160)
     bufIndicatorWidthCon.priority = .defaultLow

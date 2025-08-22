@@ -325,9 +325,9 @@ extension PlayerWindowController {
     
     func topBarPlacement(for stage: Stage) -> Preference.PanelPlacement {
       switch stage {
-      case .preTransitionSetup, .closeOldPanels, .midTransitionHiddenUpdates:
+      case .preTransitionSetup, .closeOldPanels:
         return inputLayout.topBarPlacement
-      case .openNewPanels, .postTransition:
+      case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
         return outputLayout.topBarPlacement
       }
     }
@@ -403,9 +403,9 @@ extension PlayerWindowController {
 
     func bottomBarPlacement(for stage: Stage) -> Preference.PanelPlacement {
       switch stage {
-      case .preTransitionSetup, .closeOldPanels, .midTransitionHiddenUpdates:
+      case .preTransitionSetup, .closeOldPanels:
         return inputLayout.bottomBarPlacement
-      case .openNewPanels, .postTransition:
+      case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
         return outputLayout.bottomBarPlacement
       }
     }

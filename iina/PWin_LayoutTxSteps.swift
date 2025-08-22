@@ -422,13 +422,6 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose{"[\(transition.name)] UpdateHiddenViewsAndConstraints: start"}
 
-    // Remove aspect constraint between animations (for some mode changes):
-    if transition.isTogglingMusicMode {
-      videoView.apply(transition.outputGeometry)
-    } else if transition.isExitingInteractiveMode {
-      videoView.apply(transition.outputGeometry)
-    }
-
     switch transition.outputLayout.mode {
     case .fullScreenInteractive, .windowedInteractive:
       // Show cursor always in these modes
@@ -436,10 +429,6 @@ extension PlayerWindowController {
     case .windowedNormal, .fullScreenNormal, .musicMode:
       // TODO: hide cursor now if configured to always hide
       break
-    }
-
-    if !transition.isExitingFullScreen && transition.needsMpvKeepaspectUpdate {
-      player.setMpvKeepaspectWindow(to: outputLayout.mode.needsMpvKeepaspectWindow)  // executes async in mpv queue
     }
 
     if transition.outputLayout.spec.isLegacyStyle {
@@ -467,15 +456,26 @@ extension PlayerWindowController {
         exitPIP()
       }
     }
+    // Remove aspect constraint between animations (for some mode changes):
+    if transition.isTogglingMusicMode {
+      videoView.apply(transition.outputGeometry)
+    } else if transition.isExitingInteractiveMode {
+      videoView.apply(transition.outputGeometry)
+    }
+
+    if !transition.isExitingFullScreen && transition.needsMpvKeepaspectUpdate {
+      player.setMpvKeepaspectWindow(to: outputLayout.mode.needsMpvKeepaspectWindow)  // executes async in mpv queue
+    }
+
     if transition.outputGeometry.videoShown {
-      // This also adds viewportView & spacers if needed
+      // This adds videoView, viewportView & spacers if not already added
       addVideoToWindowIfNeeded()
     }
 
     // - Bottom Bar
     let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging
     if needsBottomBarUpdate {
-      rebuildBottomBarView(in: window.contentView!, style: transition.outputLayout.effectiveOSCColorScheme)
+      rebuildBottomBarView(style: transition.outputLayout.effectiveOSCColorScheme)
     }
 
     // Title bar views
@@ -553,9 +553,6 @@ extension PlayerWindowController {
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
     let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscHasClearBG)
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
-    
-    let leadingSidebarWillBeOpen = outputLayout.leadingSidebar.isVisible
-    let trailingSidebarWillBeOpen = outputLayout.trailingSidebar.isVisible
 
     rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
 
@@ -603,28 +600,22 @@ extension PlayerWindowController {
     let isOpeningOrClosingAnySidebar = transition.isOpeningOrClosingAnySidebar
 
     if isOpeningOrClosingAnySidebar {
-      log.verbose{"[\(transition.name)] Sidebars will be open: LeadingSidebar=\(leadingSidebarWillBeOpen.yn) TrailingSidebar=\(trailingSidebarWillBeOpen.yn)"}
+      log.verbose{"[\(transition.name)] Sidebars will be open: LeadingSidebar=\(outputLayout.leadingSidebar.isVisible.yn) TrailingSidebar=\(outputLayout.trailingSidebar.isVisible.yn)"}
 
-      if leadingSidebarWillBeOpen {
+      if outputLayout.leadingSidebar.isVisible {
         if outputLayout.leadingSidebarPlacement == .insideViewport {
           leadingSidebarView.material = .menu
         } else {
           leadingSidebarView.material = .toolTip
         }
-      } else {  // leading sidebar closed
-        leadingSidebarConstraints = nil  // disables constraints
-        leadingSidebarView.removeFromSuperview()
       }
 
-      if trailingSidebarWillBeOpen {
+      if outputLayout.trailingSidebar.isVisible {
         if outputLayout.trailingSidebarPlacement == .insideViewport {
           trailingSidebarView.material = .menu
         } else {
           trailingSidebarView.material = .toolTip
         }
-      } else {  // trailing sidebar closed
-        trailingSidebarConstraints = nil  // disables constraints
-        trailingSidebarView.removeFromSuperview()
       }
     }
 
@@ -957,12 +948,11 @@ extension PlayerWindowController {
     // Add constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
     updateOSDConstraints(outputLayout, transition.outputGeometry)
 
-
     updateDepthOrderOfBars(outputLayout)
 
     prepareDepthOrderOfOutsideSidebarsForToggle(transition)
 
-    // So that panels toggling between "inside" and "outside" don't change until they need to (different strategy than fullscreen)
+    // So that panels toggling between "inside" and "outside" don't change until they need to (but FS is OK)
     if !transition.isTogglingFullScreen {
       updatePanelBlendingModes(to: outputLayout)
     }
@@ -1390,7 +1380,7 @@ extension PlayerWindowController {
 
     }
 
-//    rebuildPanelConstraints(transition, stage: .postTransition)
+    rebuildPanelConstraints(transition, stage: .postTransition)
 
     if transition.outputGeometry.mode.isWindowed {
       sendWindowScaleToMPV(basedOn: transition.outputGeometry)
@@ -1419,9 +1409,13 @@ extension PlayerWindowController {
     let geometry: PWinGeometry
     let useStrongConstraints: Bool
     switch stage {
-    case .preTransitionSetup, .closeOldPanels, .midTransitionHiddenUpdates:
+    case .preTransitionSetup:
       layout = transition.inputLayout
       geometry = transition.inputGeometry
+      useStrongConstraints = true
+    case .closeOldPanels, .midTransitionHiddenUpdates:
+      layout = transition.outputLayout
+      geometry = transition.middleGeometry ?? transition.inputGeometry
       useStrongConstraints = true
     case .openNewPanels, .postTransition:
       layout = transition.outputLayout
@@ -1431,7 +1425,9 @@ extension PlayerWindowController {
 
     let useViewport = useStrongConstraints || geometry.videoShown
     let useBottomBar = useStrongConstraints || layout.hasBottomBar
-    let useTopBar = useStrongConstraints || layout.hasTopBar
+    let useTopBar = layout.hasTopBar
+    let useLeadingSidebar = useStrongConstraints || layout.isLeadingSidebarVisible
+    let useTrailingSidebar = useStrongConstraints || layout.isTrailingSidebarVisible
 
     // - Add window subviews in a well-defined order (before adding constraints between them)
 
@@ -1443,6 +1439,21 @@ extension PlayerWindowController {
     } else {
       viewportView.removeFromSuperview()
     }
+
+    // Add/remove sidebars if needed
+    if useLeadingSidebar {
+      contentView.addSubview(leadingSidebarView, positioned: .above, relativeTo: viewportView)
+    } else {
+      leadingSidebarConstraints = nil  // disables constraints
+      leadingSidebarView.removeFromSuperview()
+    }
+    if useTrailingSidebar {
+      contentView.addSubview(trailingSidebarView, positioned: .above, relativeTo: viewportView)
+    } else {
+      trailingSidebarConstraints = nil  // disables constraints
+      trailingSidebarView.removeFromSuperview()
+    }
+
 
     // Add/remove bottomBarView if needed
     if useBottomBar {
@@ -1471,8 +1482,6 @@ extension PlayerWindowController {
 
     // Top Bar
     if useTopBar {
-      assert(geometry.videoShown, "Must have videoView when showing top bar!")
-
       if !isActive(viewportTopOffsetFromTopBarTopConstraint) {
         let constant = transition.viewportTopOffsetFromTopBarTopConstraint(for: stage)
         viewportTopOffsetFromTopBarTopConstraint = viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: constant)
@@ -1532,9 +1541,7 @@ extension PlayerWindowController {
         viewportTrailingOffsetFromContentViewTrailingConstraint.isActive = true
       }
 
-      if !useBottomBar {
-        viewportBtmOffsetFromBtmOfBottomBarConstraint?.isActive = false
-      } else {
+      if useBottomBar {
         if !isActive(viewportBtmOffsetFromBtmOfBottomBarConstraint) {
           let constant = transition.viewportBtmOffsetFromBtmOfBottomBarConstraint(for: stage)
           viewportBtmOffsetFromBtmOfBottomBarConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: constant)
@@ -1902,9 +1909,6 @@ extension PlayerWindowController {
       contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: viewportView)
     }
 
-    if isTopBarOpen {
-      contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
-    }
     if isBottomBarOpen {
       contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
     }
@@ -1923,6 +1927,9 @@ extension PlayerWindowController {
       if isBottomBarOpen, bottomBar == .insideViewport {
         contentView.addSubview(bottomBarView, positioned: .below, relativeTo: trailingSidebarView)
       }
+    }
+    if isTopBarOpen {
+      contentView.addSubview(topBarView, positioned: .above, relativeTo: nil)
     }
   }
 
