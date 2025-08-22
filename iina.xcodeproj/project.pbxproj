@@ -350,6 +350,7 @@
 		D19690CC2B56770F002B0458 /* MPVLogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19690CB2B56770F002B0458 /* MPVLogLevel.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */; };
 		D19CFD902E5885AE00746611 /* TopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CFD8F2E5885AB00746611 /* TopBarView.swift */; };
+		D19CFD922E59077700746611 /* PWin_LayoutTxUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CFD912E59076A00746611 /* PWin_LayoutTxUtil.swift */; };
 		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
 		D1A071892D644F4600884828 /* ResizableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A071882D644F3600884828 /* ResizableTextView.swift */; };
 		D1A44D8A2A5E18D00089B283 /* PWinGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A44D892A5E18D00089B283 /* PWinGeometry.swift */; };
@@ -1901,6 +1902,7 @@
 		D19690CB2B56770F002B0458 /* MPVLogLevel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MPVLogLevel.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfFileCache.swift; sourceTree = "<group>"; };
 		D19CFD8F2E5885AB00746611 /* TopBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBarView.swift; sourceTree = "<group>"; };
+		D19CFD912E59076A00746611 /* PWin_LayoutTxUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_LayoutTxUtil.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
 		D1A071882D644F3600884828 /* ResizableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizableTextView.swift; sourceTree = "<group>"; };
 		D1A44D892A5E18D00089B283 /* PWinGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinGeometry.swift; sourceTree = "<group>"; };
@@ -2972,6 +2974,7 @@
 				D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */,
 				D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */,
 				D191EE142ACE763A00FEF801 /* PWin_LayoutTxSteps.swift */,
+				D19CFD912E59076A00746611 /* PWin_LayoutTxUtil.swift */,
 				D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */,
 				D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */,
 				D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */,
@@ -3664,6 +3667,7 @@
 				D1D29A282ADE2E8000D8660F /* CustomTitleBar.swift in Sources */,
 				84FBF23E1EF06A90003EA491 /* ThumbnailCache.swift in Sources */,
 				51DE55C92A6646710050AD06 /* Sysctl.swift in Sources */,
+				D19CFD922E59077700746611 /* PWin_LayoutTxUtil.swift in Sources */,
 				D1D4C7422B0F3219003B09C2 /* MPVHookValue.swift in Sources */,
 				845FB0C71D39462E00C011E0 /* FloatingControlBarView.swift in Sources */,
 				D1AF71462DED707F000FA9B8 /* BufferIndicatorView.swift in Sources */,

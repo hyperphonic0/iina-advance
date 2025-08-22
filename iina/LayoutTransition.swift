@@ -340,7 +340,7 @@ extension PlayerWindowController {
         let middleGeo = middleGeometry ?? inputGeometry
         return middleGeo.topBarHeight
       case .openNewPanels, .postTransition:
-        return outputLayout.topBarHeight
+        return outputGeometry.topBarHeight
       }
     }
 
@@ -397,7 +397,7 @@ extension PlayerWindowController {
         let middleGeo = middleGeometry ?? inputGeometry
         return middleGeo.bottomBarHeight
       case .openNewPanels, .postTransition:
-        return outputLayout.bottomBarHeight
+        return outputGeometry.bottomBarHeight
       }
     }
 

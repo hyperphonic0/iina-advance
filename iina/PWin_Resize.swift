@@ -179,7 +179,7 @@ extension PlayerWindowController {
 
     if geometry.isLegacyFullScreen {
       updateTopOffsetConstraints(for: geometry, isLegacyFullScreen: true)
-      updateTopBarHeight(to: currentLayout.topBarHeight, topBarPlacement: currentLayout.topBarPlacement,
+      updateTopBarHeight(to: geometry.topBarHeight, topBarPlacement: currentLayout.topBarPlacement,
                          cameraHousingOffset: geometry.topMarginHeight)
     }
 

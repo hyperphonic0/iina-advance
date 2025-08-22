@@ -556,17 +556,19 @@ extension PlayerWindowController {
     let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX: centerOfKnobInSliderCoordX)
     let previewTimeSec = mediaDuration * playbackPositionRatio
 
-    guard let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID() else {
-      log.debug("Cannot display SeekPreview: could not get window.frame or screenID")
-      return false
-    }
-
     // Get X coord of hover (not the knob center)!
     let pointInWindowX: CGFloat = playSlider.convert(pointInWindow, from: nil).x
     playSlider.showHoverIndicator(atSliderCoordX: pointInWindowX)
 
-    // This may be for music mode also!
-    let currentGeo = currentLayout.buildGeometry(windowFrame: latestWindowFrame, screenID: latestScreenID, geo.video)
+    let currentGeo: PWinGeometry
+    switch currentLayout.mode {
+    case .musicMode:
+      currentGeo = musicModeGeoForCurrentFrame()
+    case .windowedNormal, .windowedInteractive:
+      currentGeo = windowedGeoForCurrentFrame()
+    case .fullScreenNormal, .fullScreenInteractive:
+      currentGeo = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, geo.video)
+    }
 
     seekPreview.showPreview(withThumbnail: showThumbnail, forTime: previewTimeSec, mediaDuration: mediaDuration,
                             posInWindowX: pointInWindowCorrected.x, currentControlBar: currentControlBar, currentGeo)
