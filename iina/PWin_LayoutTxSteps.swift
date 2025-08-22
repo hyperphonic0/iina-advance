@@ -551,7 +551,7 @@ extension PlayerWindowController {
     let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscHasClearBG)
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
-    if !transition.isEnteringFullScreen {
+    if transition.isWindowInitialLayout || !transition.isEnteringFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }
 
@@ -946,8 +946,6 @@ extension PlayerWindowController {
 
     // Add constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
     updateOSDConstraints(outputLayout, transition.outputGeometry)
-
-    updateDepthOrderOfBars(outputLayout)
 
     prepareDepthOrderOfOutsideSidebarsForToggle(transition)
 

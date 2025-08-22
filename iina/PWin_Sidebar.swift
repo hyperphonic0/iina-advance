@@ -576,6 +576,7 @@ extension PlayerWindowController {
 
     assert(coefficients.2 * sidebarWidth == 0,
            "viewportLeadingOffsetFromContentViewLeadingConstraint should be zero: \(coefficients.2 * sidebarWidth)")
+    assert(viewportLeadingOffsetFromContentViewLeadingConstraint != nil)
     viewportLeadingOffsetFromContentViewLeadingConstraint.animateToConstant(coefficients.2 * sidebarWidth)
 
     // Will remove old constraints & add the new ones
@@ -624,6 +625,7 @@ extension PlayerWindowController {
       cons.viewportLeadingOffsetFromLeading.animateToConstant(coefficients.0 * newWidth)
       cons.viewportLeadingOffsetFromTrailing.animateToConstant(coefficients.1 * newWidth)
     }
+    assert(viewportLeadingOffsetFromContentViewLeadingConstraint != nil)
     viewportLeadingOffsetFromContentViewLeadingConstraint.animateToConstant(coefficients.2 * newWidth)
   }
 
@@ -696,6 +698,7 @@ extension PlayerWindowController {
     let top = trailingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor)
     let bottom = viewportView.bottomAnchor.constraint(equalTo: trailingSidebarView.bottomAnchor)
 
+    assert(viewportTrailingOffsetFromContentViewTrailingConstraint != nil)
     viewportTrailingOffsetFromContentViewTrailingConstraint.animateToConstant(coefficients.2 * sidebarWidth)
 
     // Will remove old constraints & add new ones

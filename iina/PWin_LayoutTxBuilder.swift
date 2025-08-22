@@ -165,7 +165,8 @@ extension PlayerWindowController {
     })
 
     // StartingAnimation 1: Show fadeable views from current layout
-    for fadeAnimation in buildAnimationToShowFadeableViews(restartFadeTimer: false, duration: showFadeableViewsDuration,
+    for fadeAnimation in buildAnimationToShowFadeableViews(targetLayout: transition.inputLayout,
+                                                           restartFadeTimer: false, duration: showFadeableViewsDuration,
                                                            forceShow: true, forceShowTopBar: true) {
       transition.tasks.append(fadeAnimation)
     }

@@ -163,6 +163,8 @@ extension PlayerWindowController {
     // Viewport View
     if useViewport {
       let constant1 = transition.viewportTopOffsetFromContentViewTopConstraint(for: stage)
+      let constant2 = transition.viewportBtmOffsetFromContentViewBtmConstraint(for: stage)
+      log.verbose("[RebuildPanels] Updating viewport: viewport.top<-CV.top: \(constant1), CV.bottom<-viewport.bottom: \(constant2)")
       if !isActive(viewportTopOffsetFromContentViewTopConstraint) {
         viewportTopOffsetFromContentViewTopConstraint = viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: constant1)
         viewportTopOffsetFromContentViewTopConstraint.identifier = .init("Viewport-Top_OffsetFrom-CV-Top-Constraint")
@@ -183,7 +185,6 @@ extension PlayerWindowController {
       if isFinalStage && layoutForBottomBar.mode == .musicMode && transition.outputGeometry.isMusicModePlaylistShown {
         viewportBtmOffsetFromContentViewBtmConstraint?.isActive = false
       } else {
-        let constant2 = transition.viewportBtmOffsetFromContentViewBtmConstraint(for: stage)
         if !isActive(viewportBtmOffsetFromContentViewBtmConstraint) {
           viewportBtmOffsetFromContentViewBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: constant2)
           viewportBtmOffsetFromContentViewBtmConstraint.identifier = .init("CV-Btm_OffsetFrom-Viewport-Btm-Constraint")
@@ -198,6 +199,7 @@ extension PlayerWindowController {
       viewportTopOffsetFromContentViewTopConstraint.isActive = true
     }
 
+    sortContentViewSubviews(for: layoutForBottomBar)
   }
 
   // - Top bar
@@ -520,52 +522,63 @@ extension PlayerWindowController {
     viewController.view.removeFromSuperview()
   }
 
+  /// Need to call this after adding a new subview to `window.contentView` to ensure ordering of subviews is correct.
+  ///
   /// After bars are shown or hidden, or their placement changes, this ensures that their shadows appear in the correct places.
   /// • Outside bars never cast shadows or have shadows cast on them.
   /// • Inside sidebars cast shadows over inside top bar & inside bottom bar, and over `viewportView`.
   /// • Inside top & inside bottom bars do not cast shadows over `viewportView`.
-  func updateDepthOrderOfBars(_ layout: LayoutState) {
-    guard let window = window, let contentView = window.contentView else { return }
-    let isTopBarOpen = layout.topBarHeight > 0
-    let isBottomBarOpen = layout.bottomBarHeight > 0
+  /// 
+  func sortContentViewSubviews(for layout: LayoutState) {
     let isLeadingSidebarOpen = layout.leadingSidebar.isVisible
     let isTrailingSidebarOpen = layout.trailingSidebar.isVisible
 
+    let isBottomBarOpen = layout.hasBottomBar
     let bottomBar = layout.bottomBarPlacement
     let leadingSidebar = layout.leadingSidebarPlacement
     let trailingSidebar = layout.trailingSidebarPlacement
 
+    var possibleSubviews: [NSView] = []
+
     // If a sidebar is "outsideViewport", need to put it behind the video because:
     // (1) Don't want sidebar to cast a shadow on the video
     // (2) Animate sidebar open/close with "slide in" / "slide out" from behind the video
-    if isLeadingSidebarOpen, leadingSidebar == .outsideViewport {
-      contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: viewportView)
-    }
-    if isTrailingSidebarOpen, trailingSidebar == .outsideViewport {
-      contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: viewportView)
-    }
+    let leadingSidebarIsBelowViewport = isLeadingSidebarOpen && leadingSidebar == .outsideViewport
+    let trailingSidebarIsBelowViewport = isTrailingSidebarOpen && trailingSidebar == .outsideViewport
+    let bottomBariIsBelowSidebars = isBottomBarOpen && bottomBar == .insideViewport
 
-    if isBottomBarOpen {
-      contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
+    if bottomBariIsBelowSidebars && (leadingSidebarIsBelowViewport || trailingSidebarIsBelowViewport) {
+      possibleSubviews.append(bottomBarView)
     }
-
-    if isLeadingSidebarOpen, leadingSidebar == .insideViewport {
-      contentView.addSubview(leadingSidebarView, positioned: .above, relativeTo: viewportView)
-
-      if isBottomBarOpen, bottomBar == .insideViewport {
-        contentView.addSubview(bottomBarView, positioned: .below, relativeTo: leadingSidebarView)
-      }
+    if leadingSidebarIsBelowViewport {
+      possibleSubviews.append(leadingSidebarView)
+    }
+    if trailingSidebarIsBelowViewport {
+      possibleSubviews.append(trailingSidebarView)
     }
 
-    if isTrailingSidebarOpen, trailingSidebar == .insideViewport {
-      contentView.addSubview(trailingSidebarView, positioned: .above, relativeTo: viewportView)
+    possibleSubviews.append(viewportView)
 
-      if isBottomBarOpen, bottomBar == .insideViewport {
-        contentView.addSubview(bottomBarView, positioned: .below, relativeTo: trailingSidebarView)
-      }
+    if !leadingSidebarIsBelowViewport {
+      possibleSubviews.append(leadingSidebarView)
     }
-    if isTopBarOpen {
-      contentView.addSubview(topBarView, positioned: .above, relativeTo: nil)
+    if !trailingSidebarIsBelowViewport {
+      possibleSubviews.append(trailingSidebarView)
+    }
+    if !bottomBariIsBelowSidebars || !(leadingSidebarIsBelowViewport || trailingSidebarIsBelowViewport) {
+      possibleSubviews.append(bottomBarView)
+    }
+
+    let contentView = window!.contentView!
+    possibleSubviews += [
+      seekPreview.thumbnailPeekView,
+      seekPreview.timeLabel,
+      topBarView,
+      customWindowBorderBox,
+      customWindowBorderTopHighlightBox]
+    let correctOrderedSubviews = possibleSubviews.filter { contentView.containsSubview($0) }
+    for subview in correctOrderedSubviews {
+      contentView.addSubview(subview, positioned: .above, relativeTo: nil)
     }
   }
 

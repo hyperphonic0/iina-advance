@@ -135,7 +135,8 @@ extension PlayerWindowController {
       }
     }
 
-    let moreTasks = buildAnimationToShowFadeableViews(restartFadeTimer: restartFadeTimer,
+    let moreTasks = buildAnimationToShowFadeableViews(targetLayout: currentLayout,
+                                                      restartFadeTimer: restartFadeTimer,
                                                       duration: duration,
                                                       forceShowTopBar: wantsTopBarVisible)
 
@@ -144,12 +145,11 @@ extension PlayerWindowController {
   }
 
   /// This is only expected to be called by `showFadeableViews()` and by the animation transition builder. Do not call directly from elsewhere.
-  func buildAnimationToShowFadeableViews(restartFadeTimer: Bool = true,
+  func buildAnimationToShowFadeableViews(targetLayout: LayoutState,
+                                         restartFadeTimer: Bool = true,
                                          duration: CGFloat = Constants.AnimationDuration.standard,
                                          forceShow: Bool = false,
                                          forceShowTopBar: Bool = false) -> [IINAAnimation.Task] {
-
-    let currentLayout = self.currentLayout
 
     return [
       IINAAnimation.Task(duration: duration, { [self] in
@@ -180,8 +180,8 @@ extension PlayerWindowController {
             v.animator().alphaValue = 1
           }
 
-          if currentLayout.titleBar == .showFadeableTopBar {
-            if currentLayout.spec.isLegacyStyle {
+          if targetLayout.titleBar == .showFadeableTopBar {
+            if targetLayout.spec.isLegacyStyle {
               customTitleBar?.view.animator().alphaValue = 1
             } else {
               for button in trafficLightButtons {
@@ -212,8 +212,8 @@ extension PlayerWindowController {
             v.isHidden = false
           }
 
-          if currentLayout.titleBar == .showFadeableTopBar {
-            if currentLayout.spec.isLegacyStyle {
+          if targetLayout.titleBar == .showFadeableTopBar {
+            if targetLayout.spec.isLegacyStyle {
               customTitleBar?.view.isHidden = false
             } else {
               for button in trafficLightButtons {
@@ -229,7 +229,7 @@ extension PlayerWindowController {
     ]
   }
 
-  func hideFadeableViews(hideCursorToo: Bool = false) {
+  func hideFadeableViews(targetLayout givenLayout: LayoutState? = nil, hideCursorToo: Bool = false) {
     // Don't hide overlays when in PIP or when they are not actually shown
     let isWindowMinimized = window?.isMiniaturized ?? false
     guard pip.status == .notInPIP, !isWindowMinimized else {
@@ -247,9 +247,11 @@ extension PlayerWindowController {
       return $0
     }
 
+    let targetLayout = givenLayout ?? currentLayout
+
     // Seek time & thumbnail can only be shown if the OSC is visible.
     // Need to hide them because the OSC is being hidden:
-    let mustHideSeekPreview = !currentLayout.hasPermanentControlBar
+    let mustHideSeekPreview = !targetLayout.hasPermanentControlBar
     var fadeables: Set<NSView> = []
     var fadeablesInTopBar: Set<NSView> = []
 
@@ -291,8 +293,8 @@ extension PlayerWindowController {
         v.animator().alphaValue = 0
       }
       /// Quirk 1: special handling for `trafficLightButtons`
-      if currentLayout.titleBar == .showFadeableTopBar {
-        if currentLayout.spec.isLegacyStyle {
+      if targetLayout.titleBar == .showFadeableTopBar {
+        if targetLayout.spec.isLegacyStyle {
           customTitleBar?.view.alphaValue = 0
         } else {
           documentIconButton?.alphaValue = 0
@@ -328,8 +330,8 @@ extension PlayerWindowController {
         v.isHidden = true
       }
       /// Quirk 1: need to set `alphaValue` back to `1` so that each button's corresponding menu items still work
-      if currentLayout.titleBar == .showFadeableTopBar {
-        if currentLayout.spec.isLegacyStyle {
+      if targetLayout.titleBar == .showFadeableTopBar {
+        if targetLayout.spec.isLegacyStyle {
           customTitleBar?.view.isHidden = true
         } else {
           hideBuiltInTitleBarViews(setAlpha: false)
