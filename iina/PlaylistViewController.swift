@@ -338,7 +338,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     if animate {
       let tableUIChange = TableUIChange.builder.buildDiff(oldRows: oldPlaylistRows,
                                                           newRows: newPlaylistRows, completionHandler: { _ in
-        doAfterReload()
+        self.pwc.animationPipeline.submitInstantTask {
+          doAfterReload()
+        }
       })
       player.log.verbose{"Updating playlist table via diff"}
       playlistTableView.post(tableUIChange)
@@ -898,12 +900,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         titles.append(mpvTitle) // may be nil
       }
 
-      for (rowIndex, item) in playlistItems.enumerated() {
-        let updatedTitle = titles[rowIndex]
-        let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: item)
-        let needsRefresh = (item.url.isFileURL && !existingCachedMeta.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta.title)
-        guard needsRefresh else { continue }
-        PlayerCore.playlistQueue.async { [self] in
+      PlayerCore.playlistQueue.async { [self] in
+        for (rowIndex, item) in playlistItems.enumerated() {
+          let updatedTitle = titles[rowIndex]
+          let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: item)
+          let needsRefresh = (item.url.isFileURL && !existingCachedMeta.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta.title)
+          guard needsRefresh else { continue }
           // Get watch-later form file system; get other meta from ffmpeg:
           MediaMetaCache.shared.updateCachedMeta(item, mpvTitle: updatedTitle)
           // Refresh each row as it gets updated. May take a while to refresh all
@@ -912,10 +914,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
             reloadPlaylistRow(rowIndex)
           }
         }
-      }
 
-      // Finally, append a task to recalculate the total length. Do not show it until it is done!
-      PlayerCore.playlistQueue.async { [self] in
+        // Finally, append a task to recalculate the total length. Do not show it until it is done!
         player.log.verbose{"Playlist: finished cache updates for \(playlistItems.count) rows in \(sw.secElapsedString)"}
         refreshTotalLength()
       }
