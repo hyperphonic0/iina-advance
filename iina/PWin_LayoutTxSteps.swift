@@ -205,9 +205,7 @@ extension PlayerWindowController {
     if needToHideTopBar || outputLayout.titlebarAccessoryViewControllers == .hidden {
       // Hide all title bar accessories (if needed):
       leadingTitleBarAccessoryView.alphaValue = 0
-      fadeableViews.fadeablesInTopBar.remove(leadingTitleBarAccessoryView)
       trailingTitleBarAccessoryView.alphaValue = 0
-      fadeableViews.fadeablesInTopBar.remove(trailingTitleBarAccessoryView)
     } else {
       /// We may have gotten here in response to one of these buttons' visibility being toggled in the prefs,
       /// so we need to allow for showing/hiding these individually.
@@ -215,28 +213,23 @@ extension PlayerWindowController {
       /// So just set alpha value for now, and hide later in `updateHiddenViewsAndConstraints()`
       if outputLayout.leadingSidebarToggleButton == .hidden {
         leadingSidebarToggleButton.alphaValue = 0
-        fadeableViews.fadeablesInTopBar.remove(leadingSidebarToggleButton)
 
         // Match behavior for custom title bar's copy:
         if let customTitleBar {
           customTitleBar.leadingSidebarToggleButton.alphaValue = 0
-          fadeableViews.fadeablesInTopBar.remove(customTitleBar.leadingSidebarToggleButton)
         }
       }
       if outputLayout.trailingSidebarToggleButton == .hidden {
         trailingSidebarToggleButton.alphaValue = 0
-        fadeableViews.fadeablesInTopBar.remove(trailingSidebarToggleButton)
 
         if let customTitleBar {
           customTitleBar.trailingSidebarToggleButton.alphaValue = 0
-          fadeableViews.fadeablesInTopBar.remove(customTitleBar.trailingSidebarToggleButton)
         }
       }
 
       let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
       if onTopButtonVisibility == .hidden {
         onTopButton.alphaValue = 0
-        fadeableViews.fadeablesInTopBar.remove(onTopButton)
 
         if let customTitleBar {
           customTitleBar.onTopButton.alphaValue = 0
@@ -282,6 +275,9 @@ extension PlayerWindowController {
         transition.isBottomBarPlacementOrStyleChanging || transition.isOpeningOrClosingAnySidebar {
       hideSeekPreviewImmediately()
     }
+
+    fadeableViews.fadeablesInTopBar.removeAll()
+    fadeableViews.fadeables.removeAll()
   }
 
   /// -------------------------------------------------
