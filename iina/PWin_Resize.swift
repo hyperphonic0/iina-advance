@@ -60,9 +60,6 @@ extension PlayerWindowController {
       log.verbose{"[WinWillResize] Denying req=\(requestedSize): left mouseBtn down, but not resizing"}
       return window.frame.size
     }
-    // Tweak to improve responsiveness in music mode. Doesn't seem to affect normal windowed mode.
-    // FIXME: this still doesn't look great. Maybe tweak VideoView constraints in music mode
-    CATransaction.setAnimationDuration(0)
 
     return resizeSubviews(of: window, to: requestedSize)
   }

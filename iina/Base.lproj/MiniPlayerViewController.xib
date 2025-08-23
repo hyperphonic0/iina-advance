@@ -29,13 +29,13 @@
             </connections>
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
-        <view identifier="MiniPlayerView" translatesAutoresizingMaskIntoConstraints="NO" id="98Q-Fi-3N5" userLabel="MiniPlayerView" customClass="ClickThroughView" customModule="IINA_Advance" customModuleProvider="target">
-            <rect key="frame" x="0.0" y="0.0" width="260" height="73"/>
+        <view identifier="MiniPlayerView" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="98Q-Fi-3N5" userLabel="MiniPlayerView" customClass="ClickThroughView" customModule="IINA_Advance" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="260" height="172"/>
             <subviews>
-                <visualEffectView identifier="MiniControlBarView" wantsLayer="YES" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Q6R-eL-qkW" userLabel="MusicModeControlBar View">
-                    <rect key="frame" x="0.0" y="1" width="260" height="72"/>
+                <visualEffectView identifier="MiniControlBarView" autoresizesSubviews="NO" wantsLayer="YES" verticalCompressionResistancePriority="1000" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Q6R-eL-qkW" userLabel="MusicModeControlBar View">
+                    <rect key="frame" x="0.0" y="100" width="260" height="72"/>
                     <subviews>
-                        <customView identifier="MediaInfoView" translatesAutoresizingMaskIntoConstraints="NO" id="Cef-Fd-eDH" userLabel="MediaInfo View">
+                        <customView identifier="MediaInfoView" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Cef-Fd-eDH" userLabel="MediaInfo View">
                             <rect key="frame" x="10" y="24" width="240" height="48"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jAX-WD-i2a" userLabel="Title Label" customClass="ScrollingTextField" customModule="IINA_Advance" customModuleProvider="target">
@@ -61,7 +61,7 @@
                                 <constraint firstItem="jAX-WD-i2a" firstAttribute="top" secondItem="Cef-Fd-eDH" secondAttribute="top" constant="6" id="gHa-e1-bbE"/>
                             </constraints>
                         </customView>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="Wxl-Ex-FWV" userLabel="Controller-Buttons-Panel View">
+                        <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Wxl-Ex-FWV" userLabel="Controller-Buttons-Panel View">
                             <rect key="frame" x="10" y="24" width="240" height="48"/>
                             <subviews>
                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="ezf-Py-pMY" userLabel="Volume-Popover-Alignment View">
@@ -81,7 +81,7 @@
                                         <action selector="volumeBtnAction:" target="-2" id="Hyn-iX-PXx"/>
                                     </connections>
                                 </imageView>
-                                <customView translatesAutoresizingMaskIntoConstraints="NO" id="EqE-sr-ba8" userLabel="Playback-Buttons-Wrapper View">
+                                <customView identifier="PlaybackButtomsWrapperView" translatesAutoresizingMaskIntoConstraints="NO" id="EqE-sr-ba8" userLabel="Playback-Buttons-Wrapper View">
                                     <rect key="frame" x="56" y="8" width="120" height="32"/>
                                     <constraints>
                                         <constraint firstAttribute="width" constant="120" id="wPH-JJ-xCb"/>
@@ -133,7 +133,6 @@
                         </customView>
                     </subviews>
                     <constraints>
-                        <constraint firstAttribute="bottom" secondItem="Wxl-Ex-FWV" secondAttribute="bottom" constant="24" id="2TO-2y-vp5"/>
                         <constraint firstItem="Cef-Fd-eDH" firstAttribute="leading" secondItem="Q6R-eL-qkW" secondAttribute="leading" constant="10" id="8fE-Km-0Pi"/>
                         <constraint firstAttribute="trailing" secondItem="Cef-Fd-eDH" secondAttribute="trailing" constant="10" id="FnO-yn-yDx"/>
                         <constraint firstItem="e1r-vi-5HY" firstAttribute="trailing" secondItem="Cef-Fd-eDH" secondAttribute="trailing" id="HCp-vY-HD0"/>
@@ -142,14 +141,15 @@
                         <constraint firstItem="Cef-Fd-eDH" firstAttribute="leading" secondItem="Wxl-Ex-FWV" secondAttribute="leading" id="e7Y-Rx-6ZK"/>
                         <constraint firstItem="e1r-vi-5HY" firstAttribute="leading" secondItem="Cef-Fd-eDH" secondAttribute="leading" id="foP-4g-0tA"/>
                         <constraint firstItem="Cef-Fd-eDH" firstAttribute="trailing" secondItem="Wxl-Ex-FWV" secondAttribute="trailing" id="gzB-24-b08"/>
+                        <constraint firstAttribute="height" constant="72" id="hjf-xu-iUb"/>
                         <constraint firstAttribute="bottom" secondItem="e1r-vi-5HY" secondAttribute="bottom" id="yds-qi-gcy"/>
                     </constraints>
                 </visualEffectView>
-                <visualEffectView identifier="PlaylistWrapperView" wantsLayer="YES" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="2bL-q1-qry" userLabel="Playlist-Wrapper View">
-                    <rect key="frame" x="0.0" y="0.0" width="260" height="1"/>
+                <visualEffectView identifier="PlaylistWrapperView" autoresizesSubviews="NO" wantsLayer="YES" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="2bL-q1-qry" userLabel="Playlist-Wrapper View">
+                    <rect key="frame" x="0.0" y="0.0" width="260" height="100"/>
                     <subviews>
-                        <box identifier="PlaylistWrapper-TopBorder" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="9gg-yc-YXV">
-                            <rect key="frame" x="0.0" y="-1" width="260" height="4"/>
+                        <box identifier="PlaylistWrapper-TopBorder" autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="9gg-yc-YXV">
+                            <rect key="frame" x="0.0" y="98" width="260" height="4"/>
                         </box>
                     </subviews>
                     <constraints>
@@ -170,7 +170,7 @@
                 <constraint firstAttribute="trailing" secondItem="Q6R-eL-qkW" secondAttribute="trailing" id="aFO-ag-c2T"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="qHK-Ae-PRZ" secondAttribute="trailing" priority="499" id="mvA-Hm-ujy"/>
                 <constraint firstItem="qHK-Ae-PRZ" firstAttribute="leading" secondItem="98Q-Fi-3N5" secondAttribute="leading" id="n4z-DE-xyQ"/>
-                <constraint firstAttribute="bottom" secondItem="2bL-q1-qry" secondAttribute="bottom" id="rXy-cV-9EW"/>
+                <constraint firstAttribute="bottom" secondItem="2bL-q1-qry" secondAttribute="bottom" priority="750" identifier="MiniPlayerBtmExpansionConstraint" id="rXy-cV-9EW"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="jAX-WD-i2a" secondAttribute="trailing" priority="499" id="red-gP-AmK"/>
                 <constraint firstItem="jAX-WD-i2a" firstAttribute="leading" secondItem="98Q-Fi-3N5" secondAttribute="leading" id="uDk-4s-KAt"/>
                 <constraint firstItem="2bL-q1-qry" firstAttribute="leading" secondItem="98Q-Fi-3N5" secondAttribute="leading" id="yJm-hm-4s8"/>

@@ -909,10 +909,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           // Get watch-later form file system; get other meta from ffmpeg:
           MediaMetaCache.shared.updateCachedMeta(item, mpvTitle: updatedTitle)
           // Refresh each row as it gets updated. May take a while to refresh all
-          pwc.animationPipeline.submitInstantTask { [self] in
+          pwc.animationPipeline.submit(.init{ [self] in
             /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
             reloadPlaylistRow(rowIndex)
-          }
+          })
         }
 
         // Finally, append a task to recalculate the total length. Do not show it until it is done!

@@ -71,10 +71,11 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     musicModeControlBarView.idString = "MusicModeControlBarView"
     positionSliderWrapperView.idString = "PositionSliderWrapperView"
     controllerButtonsPanelView.idString = "ControllerButtonsPanelView"
+    
     mediaInfoView.idString = "MediaInfoView"
-
     // Clip scrolling text at the margins so it doesn't touch the sides of the window
     mediaInfoView.clipsToBounds = true
+    mediaInfoView.translatesAutoresizingMaskIntoConstraints = false
 
     /// Set up tracking area to show controller when hovering over it
     pwc.viewportView.addTrackingArea(NSTrackingArea(rect: pwc.viewportView.bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
@@ -106,6 +107,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     pwc.backButtonVE.toolTip = NSLocalizedString("mini_player.back", comment: "back")
 
     playlistWrapperView.identifier = .init("PlaylistWrapperView")
+    playlistWrapperView.translatesAutoresizingMaskIntoConstraints = false
 
     volumePopover.delegate = self
 

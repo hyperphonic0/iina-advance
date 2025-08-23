@@ -624,11 +624,7 @@ extension PlayerWindowController {
         log.verbose{"[\(transition.name)] Entering music mode: adding miniPlayer view to bottomBarView"}
         miniPlayer.loadIfNeeded()
         bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
-        miniPlayer.view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
-
-        let bottomConstraint = miniPlayer.view.superview!.bottomAnchor.constraint(equalTo: miniPlayer.view.bottomAnchor, constant: 0)
-        bottomConstraint.priority = .defaultHigh
-        bottomConstraint.isActive = true
+        miniPlayer.view.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0, trailing: 0)
 
         // move playist view
         let playlistView = playlistView.view

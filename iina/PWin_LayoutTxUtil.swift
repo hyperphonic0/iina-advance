@@ -129,11 +129,21 @@ extension PlayerWindowController {
       // Handle leading & trailing constraints
       updateBottomBarPlacement(forLayout: layoutForBottomBar)
 
-      // This will always be zero
+      // This will always have constant: 0
       if !isActive(bottomBarBtmToCVBtmConstraint) {
         bottomBarBtmToCVBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0)
-        bottomBarBtmToCVBtmConstraint.identifier = "bottomBar-Btm_OffsetFrom-CV-Btm_Constraint"
+        bottomBarBtmToCVBtmConstraint.identifier = "bottomBar-Btm_OffsetFrom-CV-Btm_Con"
         bottomBarBtmToCVBtmConstraint.isActive = true
+      }
+
+      if useViewport {
+        bottomBarTopToCVBtmConstraint?.isActive = false
+      } else {
+        if !isActive(bottomBarTopToCVBtmConstraint) {
+          bottomBarTopToCVBtmConstraint = bottomBarView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 0)
+          bottomBarTopToCVBtmConstraint.identifier = "bottomBar-Btm_OffsetFrom-CV-Btm_Con"
+          bottomBarTopToCVBtmConstraint.isActive = true
+        }
       }
     }
 
