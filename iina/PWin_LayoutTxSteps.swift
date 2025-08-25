@@ -361,9 +361,17 @@ extension PlayerWindowController {
 
     // Update heights of top & bottom bars
     if let middleGeo = transition.middleGeometry {
+      assert(!transition.isWindowInitialLayout)
       if transition.isEnteringInteractiveMode {
         // Animate the open/close of viewport margins:
         videoView.apply(middleGeo)
+      }
+
+      if !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {  // don't do this too soon when exiting these modes
+        // Update sidebar vertical alignments to match top bar:
+        let downshift = min(transition.inputLayout.sidebarDownshift, outputLayout.sidebarDownshift)
+        let tabHeight = min(transition.inputLayout.sidebarTabHeight, outputLayout.sidebarTabHeight)
+        updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
       }
 
       let cameraOffset: CGFloat
@@ -372,13 +380,6 @@ extension PlayerWindowController {
         cameraOffset = transition.inputGeometry.topMarginHeight
       } else {
         cameraOffset = transition.outputGeometry.topMarginHeight
-      }
-
-      if !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {  // don't do this too soon when exiting these modes
-        // Update sidebar vertical alignments to match top bar:
-        let downshift = min(transition.inputLayout.sidebarDownshift, outputLayout.sidebarDownshift)
-        let tabHeight = min(transition.inputLayout.sidebarTabHeight, outputLayout.sidebarTabHeight)
-        updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
       }
 
       log.trace{"[\(transition.name)] CloseOldPanels: applying middleGeo, topBar.H=\(middleGeo.topBarHeight) bottomBar.H=\(middleGeo.bottomBarHeight) cameraOffset=\(cameraOffset)"}
@@ -401,14 +402,12 @@ extension PlayerWindowController {
       // Do not do this when first opening the window though, because it will cause the window location restore to be incorrect.
       // Also do not apply when toggling fullscreen because it is not relevant at this stage and will look glitchy because the
       // animation has zero duration.
-      if !transition.isWindowInitialLayout {
-        log.debug{"[\(transition.name)] CloseOldPanels: applying middleGeo windowFrame=\(middleGeo.windowFrame)"}
-        if transition.isTogglingMusicMode {
-          // Don't add or remove aspect constraint while animating!
-          setFrameAndUpdateWindowSubviews(using: middleGeo, updateVideoView: false)
-        } else if !transition.isTogglingFullScreen {
-          setFrameAndUpdateWindowSubviews(using: middleGeo, updateVideoView: true)
-        }
+      log.debug{"[\(transition.name)] CloseOldPanels: applying middleGeo windowFrame=\(middleGeo.windowFrame)"}
+      if transition.isTogglingMusicMode {
+        // Don't add or remove aspect constraint while animating!
+        setFrameAndUpdateWindowSubviews(using: middleGeo, updateVideoView: false)
+      } else if !transition.isTogglingFullScreen {
+        setFrameAndUpdateWindowSubviews(using: middleGeo, updateVideoView: true)
       }
     }
   }
@@ -964,17 +963,8 @@ extension PlayerWindowController {
       updatePresentationOptions(windowIsLegacyFS: false)
     }
 
-    // Update heights to their final values:
-    topBarView.titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
-
     // Need to update OSD vertical offset when exiting from legacy FS due to previous special animations
-    updateTopOffsetConstraints(for: transition.outputGeometry, isLegacyFullScreen: outputLayout.isLegacyFullScreen)
-
-    // Update heights of top & bottom bars:
-    updateTopBarHeight(to: outputLayout.topBarHeight, topBarPlacement: transition.outputLayout.topBarPlacement,
-                       cameraHousingOffset: transition.outputGeometry.topMarginHeight)
-
-    updateBottomBarHeight(to: transition.outputGeometry.bottomBarHeight, bottomBarPlacement: outputLayout.bottomBarPlacement)
+    updateOSDTopOffsetConstraints(for: transition.outputGeometry, isLegacyFullScreen: outputLayout.isLegacyFullScreen)
 
     if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
@@ -1046,15 +1036,22 @@ extension PlayerWindowController {
       controlBarFloating.moveToLocationRatio(layout: transition.outputLayout, viewportSize: transition.outputGeometry.viewportSize)
     }
 
+    rebuildPanelConstraints(transition, stage: .openNewPanels)
+
     switch transition.outputLayout.mode {
-      
+
+    case .windowedNormal, .windowedInteractive, .musicMode:
+      log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels (\(transition.outputLayout.mode)): \(transition.outputGeometry.windowFrame)")
+      setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
+
     case .fullScreenNormal, .fullScreenInteractive:
       if transition.outputLayout.isNativeFullScreen {
         // Native Full Screen: set frame not including camera housing because it looks better with the native animation
         log.verbose{"[\(transition.name)] Calling setFrame to animate into nativeFS, to: \(transition.outputGeometry.windowFrame)"}
         setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
 
-      } else if transition.outputLayout.isLegacyFullScreen {
+      } else {
+        assert(transition.outputLayout.isLegacyFullScreen, "Expected ouputLayout to be in legacyFullScreen mode!")
         let screen = NSScreen.getScreenOrDefault(screenID: transition.outputGeometry.screenID)
         let newGeo: PWinGeometry
         if transition.isEnteringLegacyFullScreen && !transition.isWindowInitialLayout {
@@ -1081,15 +1078,6 @@ extension PlayerWindowController {
         /// This calls `videoView.apply`:
         setFrameAndUpdateWindowSubviews(using: newGeo)
       }
-
-    case .musicMode:
-      // Especially needed when applying initial layout:
-      log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with musicMode windowFrame=\(transition.outputGeometry.windowFrame)")
-      setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
-
-    case .windowedNormal, .windowedInteractive:
-      log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with output windowFrame=\(transition.outputGeometry.windowFrame)")
-      setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
     }
 
     if transition.outputGeometry.mode.isInteractiveMode {
