@@ -155,6 +155,7 @@ extension PlayerWindowController {
         bottomBarTopFromCVTopConstraint.isActive = true
       }
     } else {
+      // Need to manually remove this one because it doesn't depend on viewportView, & thus won't get removed if/when viewport gets removed.
       bottomBarTopFromCVTopConstraint?.isActive = false
     }
 
@@ -192,15 +193,6 @@ extension PlayerWindowController {
       let constant1 = transition.bottomBarBtmOffsetFromViewportBtmConstraint(for: stage)
       let constant2 = transition.viewportBtmOffsetFromTopOfBottomBarConstraint(for: stage)
       log.verbose("[RebuildPanels] Updating topBar&viewport: viewport.btm<-bottomBar.bottom: \(constant1), viewport.btm<-bottomBar.top: \(constant2)")
-      if !isActive(bottomBarBtmOffsetFromViewportBtmConstraint) {
-        bottomBarBtmOffsetFromViewportBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: constant1)
-        bottomBarBtmOffsetFromViewportBtmConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Con"
-        // Needs to be lower priority than VideoView constraints soas to not override them
-        bottomBarBtmOffsetFromViewportBtmConstraint.priorityInt = 260
-        bottomBarBtmOffsetFromViewportBtmConstraint.isActive = true
-      } else {
-        bottomBarBtmOffsetFromViewportBtmConstraint.animateToConstant(constant1)
-      }
 
       if !isActive(viewportBtmOffsetFromTopOfBottomBarConstraint)  {
         viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: constant2)
@@ -208,6 +200,21 @@ extension PlayerWindowController {
         viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
       } else {
         viewportBtmOffsetFromTopOfBottomBarConstraint.animateToConstant(constant2)
+      }
+
+      if !isActive(bottomBarBtmOffsetFromViewportBtmConstraint) {
+        bottomBarBtmOffsetFromViewportBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: constant1)
+        bottomBarBtmOffsetFromViewportBtmConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Con"
+        bottomBarBtmOffsetFromViewportBtmConstraint.isActive = true
+      } else {
+        bottomBarBtmOffsetFromViewportBtmConstraint.animateToConstant(constant1)
+      }
+
+      if isFinalStage && layoutForBottomBar.mode == .musicMode {
+        // Needs to be lower priority than VideoView constraints. Otherwise live resize of window will break
+        bottomBarBtmOffsetFromViewportBtmConstraint.priorityInt = 260
+      } else {
+        bottomBarBtmOffsetFromViewportBtmConstraint.priority = .required
       }
     }
 

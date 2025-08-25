@@ -47,6 +47,19 @@ enum ScreenFit: Int {
       return false
     }
   }
+
+  func changeDesiredFit(to desiredFit: ScreenFit? = nil) -> ScreenFit {
+    if self.isFullScreen {
+      // If already in full screen, it makes no sense to update screenFit, so just ignore the requested change
+      return self
+    }
+    if let desiredFit {
+      return desiredFit
+    } else {
+      // do not center in screen again unless explicitly requested
+      return self == .centerInside ? .stayInside : self
+    }
+  }
 }
 
 /**
@@ -533,8 +546,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return scalingViewport(to: requestedViewportSize, screenID: screenID, screenFit: screenFit)
   }
 
-  func refitted(using newFit: ScreenFit? = nil, lockViewportToVideoSize: Bool? = nil) -> PWinGeometry {
-    return scalingViewport(screenFit: newFit, lockViewportToVideoSize: lockViewportToVideoSize)
+  func refitted(using desiredScreenFit: ScreenFit? = nil, lockViewportToVideoSize: Bool? = nil) -> PWinGeometry {
+    return scalingViewport(screenFit: desiredScreenFit, lockViewportToVideoSize: lockViewportToVideoSize)
   }
 
   /// Computes a new, valid `PWinGeometry` from this one, resized appropriately using the given params.
@@ -551,7 +564,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// • If `screenFit` is provided, it will be applied to the resulting `PWinGeometry`; otherwise `self.screenFit` will be used.
   func scalingViewport(to desiredSize: NSSize? = nil,
                        screenID: String? = nil,
-                       screenFit: ScreenFit? = nil,
+                       screenFit desiredScreenFit: ScreenFit? = nil,
                        lockViewportToVideoSize: Bool? = nil,
                        mode: PlayerWindowMode? = nil) -> PWinGeometry {
     guard video.videoAspectCAR >= 0 else {
@@ -569,11 +582,11 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     // -- First, set up needed variables
 
     let lockViewportToVideoSize = mode.alwaysLockViewportToVideoSize || (lockViewportToVideoSize ?? Preference.bool(for: .lockViewportToVideoSize))
-    // do not center in screen again unless explicitly requested
-    let newFitOption = screenFit ?? (self.screenFit == .centerInside ? .stayInside : self.screenFit)
+    let outputScreenFit = screenFit.changeDesiredFit(to: desiredScreenFit)
     let outsideBarsSize = outsideBars.totalSize
     let newScreenID = screenID ?? self.screenID
-    let containerFrame: NSRect? = GeoUtil.getContainerFrame(forScreenID: newScreenID, screenFit: newFitOption)
+    
+    let containerFrame: NSRect? = GeoUtil.getContainerFrame(forScreenID: newScreenID, screenFit: outputScreenFit)
     let maxViewportSize: NSSize?
     if let containerFrame {
       maxViewportSize = computeMaxViewportSize(in: containerFrame.size)
@@ -626,21 +639,21 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     // -- Window size calculation
 
     let newWindowSize = NSSize(width: round(newViewportSize.width + outsideBarsSize.width),
-                               height: round(newViewportSize.height + outsideBarsSize.height))
+                               height: round(newViewportSize.height + outsideBarsSize.height + topMarginHeight))
 
     let adjustedOrigin = adjustWindowOrigin(forNewWindowSize: newWindowSize)
-    var newWindowFrame = NSRect(origin: adjustedOrigin, size: newWindowSize)
-    if let containerFrame, newFitOption.shouldMoveWindowToKeepInContainer {
-      newWindowFrame = newWindowFrame.constrainOrigin(in: containerFrame)
-      if newFitOption == .centerInside {
-        newWindowFrame = newWindowFrame.size.centeredRect(in: containerFrame)
+    var outputWindowFrame = NSRect(origin: adjustedOrigin, size: newWindowSize)
+    if let containerFrame, outputScreenFit.shouldMoveWindowToKeepInContainer {
+      outputWindowFrame = outputWindowFrame.constrainOrigin(in: containerFrame)
+      if outputScreenFit == .centerInside {
+        outputWindowFrame = outputWindowFrame.size.centeredRect(in: containerFrame)
       }
-      log.trace{"[geo] ScaleViewport: constrainedIn=\(containerFrame) → windowFrame=\(newWindowFrame)"}
+      log.trace{"[geo] ScaleViewport: constrainedIn=\(containerFrame) → windowFrame=\(outputWindowFrame)"}
     } else {
-      log.trace{"[geo] ScaleViewport: → windowFrame=\(newWindowFrame)"}
+      log.trace{"[geo] ScaleViewport: → windowFrame=\(outputWindowFrame)"}
     }
 
-    let refittedGeo = self.clone(windowFrame: newWindowFrame, screenID: newScreenID, screenFit: newFitOption, mode: mode)
+    let refittedGeo = self.clone(windowFrame: outputWindowFrame, screenID: newScreenID, screenFit: outputScreenFit, mode: mode)
 
 #if DEBUG
     if DebugConfig.validatePWinGeometry {
@@ -693,7 +706,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// (Only the desired width is required. The video height will be calculated from the width and the video's known aspect ratio).
   func scalingVideo(toWidth desiredVideoWidth: CGFloat,
                     screenID: String? = nil,
-                    screenFit: ScreenFit? = nil,
+                    screenFit desiredScreenFit: ScreenFit? = nil,
                     lockViewportToVideoSize: Bool? = nil,
                     mode: PlayerWindowMode? = nil) -> PWinGeometry {
 
@@ -787,20 +800,14 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let lockViewportToVideoSize = lockViewportToVideoSize ?? Preference.bool(for: .lockViewportToVideoSize) || mode.alwaysLockViewportToVideoSize
     log.trace{"[geo] ScaleVideo start, desiredVideoWidth: \(desiredVideoWidth), videoAspectCAR: \(video.videoAspectCAR), lockViewportToVideoSize: \(lockViewportToVideoSize)"}
 
-    // do not center in screen again unless explicitly requested
-    var newFitOption = screenFit ?? (self.screenFit == .centerInside ? .stayInside : self.screenFit)
-    if newFitOption == .legacyFullScreen || newFitOption == .nativeFullScreen {
-      // Programmer screwed up
-      log.error{"[geo] ScaleVideo: invalid fit option: \(newFitOption). Defaulting to 'none'"}
-      newFitOption = .noConstraints
-    }
+    let outputScreenFit = screenFit.changeDesiredFit(to: desiredScreenFit)
 
     let minVideoSize = minVideoSize()
     let newWidth = max(minVideoSize.width, desiredVideoWidth)
     /// Enforce `videoView` aspectRatio: Recalculate height using width
     var newVideoSize = NSSize(width: newWidth, height: round(newWidth / video.videoAspectCAR))
 
-    let containerFrame: NSRect? = GeoUtil.getContainerFrame(forScreenID: screenID ?? self.screenID, screenFit: newFitOption)
+    let containerFrame: NSRect? = GeoUtil.getContainerFrame(forScreenID: screenID ?? self.screenID, screenFit: outputScreenFit)
     if let containerFrame {
       // Scale down to fit in bounds of container
       if newVideoSize.width > containerFrame.width {
@@ -1204,9 +1211,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                         leading: viewportMargins.leading + leadingWidthOutsideCropBox)
 
     log.debug("[geo] Cropping from cropRect \(cropRect) x videoScale (\(scaleRatio)), windowSize=\(windowFrame.size), → newVideoSize:\(cropRectScaledToWindow.size), newVideoAspect:\(croppedVideoAspect), newViewportMargins:\(newViewportMargins)")
-    let newFitOption = self.screenFit == .centerInside ? .stayInside : self.screenFit
-    log.debug("[geo] Cropped to new cropLabel: \(newVidGeo.selectedCropLabel.quoted), screenID: \(screenID), screenFit: \(newFitOption)")
-    return self.clone(screenFit: newFitOption, viewportMargins: newViewportMargins, video: newVidGeo)
+    let outputScreenFit = screenFit.changeDesiredFit()
+    log.debug("[geo] Cropped to new cropLabel: \(newVidGeo.selectedCropLabel.quoted), screenID: \(screenID), screenFit: \(outputScreenFit)")
+    return self.clone(screenFit: outputScreenFit, viewportMargins: newViewportMargins, video: newVidGeo)
   }
 
   // MARK: - Music Mode

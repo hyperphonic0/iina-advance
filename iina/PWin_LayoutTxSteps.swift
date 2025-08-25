@@ -1057,12 +1057,9 @@ extension PlayerWindowController {
       } else if transition.outputLayout.isLegacyFullScreen {
         let screen = NSScreen.getScreenOrDefault(screenID: transition.outputGeometry.screenID)
         let newGeo: PWinGeometry
-        if transition.isEnteringLegacyFullScreen {
-          // Deal with possible top margin needed to hide camera housing
-          if transition.isWindowInitialLayout {
-            /// No animation after this
-            newGeo = transition.outputGeometry
-          } else if transition.outputGeometry.hasTopPaddingForCameraHousing {
+        if transition.isEnteringLegacyFullScreen && !transition.isWindowInitialLayout {
+          // Use extra animation to deal with possible top margin needed to hide camera housing
+          if transition.outputGeometry.hasTopPaddingForCameraHousing {
             /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
             /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
             /// (will expand window to cover `cameraHousingHeight` in final animation)
@@ -1077,7 +1074,7 @@ extension PlayerWindowController {
             newGeo = geo.clone(windowFrame: geo.windowFrame.addingTo(top: -cameraHeight), viewportMargins: margins)
           }
         } else {
-          /// Either already in legacy FS, or entering legacy FS. Apply final geometry.
+          /// No need for extra animation. Apply final geometry.
           newGeo = transition.outputGeometry
         }
         log.verbose("[\(transition.name)] Calling setFrame for legacyFS in OpenNewPanels")
