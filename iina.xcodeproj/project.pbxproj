@@ -314,6 +314,7 @@
 		D11AB83628EEE72A00673A90 /* EditableTableViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */; };
 		D11E07B92D1812C200F9FB9F /* SymButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11E07B82D1812BE00F9FB9F /* SymButton.swift */; };
 		D11FB5402CB8E4EA0012A45A /* ShutdownHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11FB53F2CB8E4E20012A45A /* ShutdownHandler.swift */; };
+		D126E4422E59BF970099DEA9 /* BottomBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D126E4412E59BF8F0099DEA9 /* BottomBarView.swift */; };
 		D12C074028EAEA4400FA9958 /* AppInputConfigBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */; };
 		D13209BB2B90596000069C94 /* AspectTokenField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13209BA2B90596000069C94 /* AspectTokenField.swift */; };
 		D13350952D06B7EC00201623 /* GeometryTransform.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13350942D06B7E200201623 /* GeometryTransform.swift */; };
@@ -1865,6 +1866,7 @@
 		D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableViewDelegate.swift; sourceTree = "<group>"; };
 		D11E07B82D1812BE00F9FB9F /* SymButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymButton.swift; sourceTree = "<group>"; };
 		D11FB53F2CB8E4E20012A45A /* ShutdownHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShutdownHandler.swift; sourceTree = "<group>"; };
+		D126E4412E59BF8F0099DEA9 /* BottomBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomBarView.swift; sourceTree = "<group>"; };
 		D127821A2D840CF20058F609 /* iinaRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iinaRelease.entitlements; sourceTree = "<group>"; };
 		D127821B2D841E040058F609 /* OpenInIINARelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OpenInIINARelease.entitlements; sourceTree = "<group>"; };
 		D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfigBuilder.swift; sourceTree = "<group>"; };
@@ -2986,6 +2988,7 @@
 				8400D5CE1E1AB2FF006785F5 /* PlaylistViewController.xib */,
 				845FB0C61D39462E00C011E0 /* FloatingControlBarView.swift */,
 				D19CFD8F2E5885AB00746611 /* TopBarView.swift */,
+				D126E4412E59BF8F0099DEA9 /* BottomBarView.swift */,
 				D1BE7BD12D4B7E000085539F /* SingleRowBarOSCView.swift */,
 				D1BE7BCE2D4B7CD20085539F /* TwoRowBarOSCView.swift */,
 				D16E1F142E302C5D00F8F208 /* DefaultAlbumArtView.swift */,
@@ -3452,6 +3455,7 @@
 				D1ACFDCD2D967FAD00F45712 /* MPV_EventHandling.swift in Sources */,
 				D1AD325C2ACC07E500F86EE8 /* LayoutTransition.swift in Sources */,
 				84A886E41E24F37D008755BB /* ShooterSubtitle.swift in Sources */,
+				D126E4422E59BF970099DEA9 /* BottomBarView.swift in Sources */,
 				D17CBBA32CC8E37F006160AC /* PWin_WinDidLoad.swift in Sources */,
 				E3CB258B2222885E00A62C47 /* JavascriptAPIOverlay.swift in Sources */,
 				E337D5E6241EF60400B5729A /* JavascriptAPISubtitle.swift in Sources */,

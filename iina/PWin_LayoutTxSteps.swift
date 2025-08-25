@@ -624,7 +624,7 @@ extension PlayerWindowController {
         log.verbose{"[\(transition.name)] Entering music mode: adding miniPlayer view to bottomBarView"}
         miniPlayer.loadIfNeeded()
         bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
-        miniPlayer.view.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0, trailing: 0)
+        miniPlayer.view.addAllConstraintsToFillSuperview()
 
         // move playist view
         let playlistView = playlistView.view
@@ -659,7 +659,7 @@ extension PlayerWindowController {
         miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
         addSubviewsToPlaySliderAndTimeLabelsView(using: transition.outputLayout.controlBarGeo)
         if !wasAlreadyPresent {
-          playSliderAndTimeLabelsView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0, trailing: 0)
+          playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
           playSliderAndTimeLabelsView.isHidden = false
         }
 
@@ -716,7 +716,8 @@ extension PlayerWindowController {
         if !topBarView.controlBarTop.subviews.contains(oscContentView) {
           topBarView.controlBarTop.addSubview(oscContentView, positioned: .below, relativeTo: topBarView.bottomBorder)
           // Match leading/trailing spacing of title bar icons above
-          oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconHSpacing,
+          oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0,
+                                                       leading: Constants.Distance.titleBarIconHSpacing,
                                                        trailing: Constants.Distance.titleBarIconHSpacing)
         }
 

@@ -259,27 +259,14 @@ extension PlayerWindowController {
     let bottomBarView: NSView
     switch style {
     case .visualEffectView:
-      bottomBarView = NSVisualEffectView()
+      bottomBarView = BottomBarVisualEffectView()
     case .clearGradient:
-      bottomBarView = NSView()
-      let gradient = CAGradientLayer()
-      gradient.frame = bottomBarView.bounds
-      // Top → Bottom
-      gradient.startPoint = CGPoint(x: 0.5, y: 1.0)
-      gradient.endPoint = CGPoint(x: 0.5, y: 0.0)
-      // Ideally the gradient would use a quadratic function, but seems we are limited to linear, so just fudge it a bit.
-      gradient.colors = Constants.Color.clearBlackGradientColors
-      bottomBarView.layer = gradient
-      bottomBarView.wantsLayer = true
+      bottomBarView = BottomBarGradientView()
     }
 
-    bottomBarView.clipsToBounds = true
-    if let bottomBarView = bottomBarView as? NSVisualEffectView {
-      bottomBarView.material = .sidebar
-      bottomBarView.state = .active
-    }
     bottomBarView.idString = "BottomBarView"  // helps with debug logging
     bottomBarView.isHidden = true
+    bottomBarView.clipsToBounds = true  // for better animations when toggling OSC position/placement
     bottomBarView.translatesAutoresizingMaskIntoConstraints = false
 
     bottomBarView.addSubview(bottomBarTopBorder)

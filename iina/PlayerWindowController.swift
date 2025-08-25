@@ -378,14 +378,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // - Top bar (title bar and/or top OSC) constraints
   var topBarBottomOffsetFromViewportTopConstraint: NSLayoutConstraint!
   var viewportTopOffsetFromTopBarTopConstraint: NSLayoutConstraint!
-  var viewportTopOffsetFromContentViewTopConstraint: NSLayoutConstraint!
+  var viewportTopOffsetFromCVTopConstraint: NSLayoutConstraint!
 
   // - Bottom bar constraints
-  var viewportBtmOffsetFromContentViewBtmConstraint: NSLayoutConstraint!
+  var cvBtmOffsetFromViewportBtmConstraint: NSLayoutConstraint!
   var viewportBtmOffsetFromTopOfBottomBarConstraint: NSLayoutConstraint!
-  var viewportBtmOffsetFromBtmOfBottomBarConstraint: NSLayoutConstraint!
+  var bottomBarBtmOffsetFromViewportBtmConstraint: NSLayoutConstraint!
   /// Only active when video is hidden
-  var bottomBarTopToCVBtmConstraint: NSLayoutConstraint!
+  var bottomBarTopFromCVTopConstraint: NSLayoutConstraint!
   var bottomBarBtmToCVBtmConstraint: NSLayoutConstraint!
   // Needs to be changed to align with either sidepanel or leading edge of window:
   var bottomBarLeadingSpaceConstraint: NSLayoutConstraint!

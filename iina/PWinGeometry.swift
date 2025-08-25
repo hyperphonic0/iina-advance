@@ -1261,17 +1261,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     let isValidHeight = playlistShown ? (musicModePlaylistHeight >= Constants.Distance.MusicMode.minPlaylistHeight) : (musicModePlaylistHeight == 0)
     if !isValidHeight {
-      log.errorDebugAlert{"[geo] MusicMode: playlistHeight (\(musicModePlaylistHeight)) is invalid; will attempt to fix: playlistShown=\(playlistShown.yn) minPlaylistH=\(Constants.Distance.MusicMode.minPlaylistHeight)."}
-      let newWindowHeight = videoHeight + Constants.Distance.MusicMode.oscHeight
-      let heightChange = windowFrame.height - newWindowHeight
-      let windowFrameFixed = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - heightChange,
-                           width: windowFrame.width, height: newWindowHeight)
-      return winGeo.cloneMusicMode(windowFrame: windowFrameFixed, videoShown: true, playlistShown: false).refitted()
+      log.warn{"[geo] MusicMode: playlistHeight (\(musicModePlaylistHeight)) is invalid; playlistShown=\(playlistShown.yn) minPlaylistH=\(Constants.Distance.MusicMode.minPlaylistHeight)"}
+    } else {
+      assert(videoShown == winGeo.videoShown,
+             "Expected videoShown to match: \(videoShown.yesno) → \(winGeo.videoShown.yesno)")
+      assert(playlistShown == winGeo.isMusicModePlaylistShown,
+             "Expected playlistShown to match: \(playlistShown.yesno) → \(winGeo.isMusicModePlaylistShown.yesno)")
     }
-    assert(videoShown == winGeo.videoShown,
-           "Expected videoShown to match: \(videoShown.yesno) → \(winGeo.videoShown.yesno)")
-    assert(playlistShown == winGeo.isMusicModePlaylistShown,
-           "Expected playlistShown to match: \(playlistShown.yesno) → \(winGeo.isMusicModePlaylistShown.yesno)")
     return winGeo
   }
 

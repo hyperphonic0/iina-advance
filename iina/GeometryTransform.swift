@@ -466,7 +466,7 @@ struct GeometryTransform {
         let isTogglingPlaylist = inputMusicModeGeo.isMusicModePlaylistShown != outputMusicModeGeo.isMusicModePlaylistShown
         if isTogglingVideoView || isTogglingPlaylist {
           // Need to use LayoutTransition for complex layout changes
-          tasks = pwc.buildLayoutTransition(named: "MusicModeTransform", from: inputLayout,
+          tasks = pwc.buildLayoutTransition(named: name, from: inputLayout,
                                             inputGeo: inputLayout.isMusicMode ? inputMusicModeGeo : nil,
                                             to: outputLayout.spec, outputGeo: outputMusicModeGeo,
                                             totalStartingDuration: duration, totalEndingDuration: duration,
