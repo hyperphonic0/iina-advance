@@ -15,14 +15,14 @@ extension PlayerWindowController {
   /// transition.
   ///
   /// ┌─ Top                          ┬                                                ┬  ┬
-  /// │                               │                ⁴bottomBarTopFromCVTopConstraint│  │
+  /// │                               │                                                │  │
   /// │window                         │viewportTopOffsetFromCVTopConstraint            │  │
   /// │contentView      ┌───────────┐ │     ┬                                          │  │
   /// │                 │  TopBar   │ │     │viewportTopOffsetFromTopBarTopConstraint  │  │
   /// │        ┌────────│────┐      │ ▼  ┬  ▼                                          │  │
   /// │        │        │    │      │    │topBarBottomOffsetFromViewportTopConstraint  │  │
   /// │        │        └───────────┘    ▼                                             │  │
-  /// │        │   Viewport  │                                                         │  │
+  /// │        │   Viewport  │                         ⁴bottomBarTopFromCVTopConstraint│  │
   /// │  ┌─────────────┐     │      ┬                                                  ▼  │
   /// │  │     │       │     │      │viewportBtmOffsetFromTopOfBottomBarConstraint        │
   /// │  │     └───────│─────┘   ┬  ▼               ⁵bottomBarBtmOffsetFromCVTopConstraint│  ┬
@@ -195,6 +195,8 @@ extension PlayerWindowController {
       if !isActive(bottomBarBtmOffsetFromViewportBtmConstraint) {
         bottomBarBtmOffsetFromViewportBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: constant1)
         bottomBarBtmOffsetFromViewportBtmConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Con"
+        // Needs to be lower priority than VideoView constraints soas to not override them
+        bottomBarBtmOffsetFromViewportBtmConstraint.priorityInt = 260
         bottomBarBtmOffsetFromViewportBtmConstraint.isActive = true
       } else {
         bottomBarBtmOffsetFromViewportBtmConstraint.animateToConstant(constant1)
