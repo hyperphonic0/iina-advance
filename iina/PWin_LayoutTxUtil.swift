@@ -44,10 +44,10 @@ extension PlayerWindowController {
     let layoutForBottomBar: LayoutState
     let layoutForTopBar: LayoutState
     switch stage {
-    case .preTransitionSetup:
+    case .preTransitionSetup, .closeOldPanels:
       layoutForBottomBar = transition.inputLayout
       layoutForTopBar = transition.inputLayout
-    case .closeOldPanels, .midTransitionHiddenUpdates:
+    case .midTransitionHiddenUpdates:
       layoutForBottomBar = transition.outputLayout
       layoutForTopBar = transition.outputLayout
     case .openNewPanels, .postTransition:
@@ -55,7 +55,8 @@ extension PlayerWindowController {
       layoutForTopBar = transition.outputLayout
     }
 
-    var useViewport = transition.outputGeometry.videoShown
+    let outputGeo = transition.outputGeometry
+    var useViewport = outputGeo.videoShown
     var useBottomBar = transition.outputLayout.hasBottomBar
     var useTopBar = transition.outputLayout.hasTopBar
     var useLeadingSidebar = transition.outputLayout.isLeadingSidebarVisible
@@ -162,9 +163,9 @@ extension PlayerWindowController {
     // Bottom Bar
     if useBottomBar {
       // Handle leading & trailing constraints
-      updateBottomBarPlacement(forLayout: layoutForBottomBar)
+      updateBottomBarHorizontalContraints(forLayout: layoutForBottomBar)
 
-      if layoutForBottomBar.mode == .musicMode && !transition.outputGeometry.isMusicModePlaylistShown && !transition.outputGeometry.videoShown {
+      if outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.videoShown {
         bottomBarBtmOffsetFromCVBtmConstraint?.isActive = false
 
         let bottomBarHeight = transition.bottomBarHeight(for: stage)
@@ -210,7 +211,7 @@ extension PlayerWindowController {
         bottomBarBtmOffsetFromViewportBtmConstraint.animateToConstant(constant1)
       }
 
-      if isFinalStage && layoutForBottomBar.mode == .musicMode {
+      if isFinalStage && outputGeo.mode == .musicMode {
         // Needs to be lower priority than VideoView constraints. Otherwise live resize of window will break
         bottomBarBtmOffsetFromViewportBtmConstraint.priorityInt = 260
       } else {
@@ -232,7 +233,7 @@ extension PlayerWindowController {
         viewportTopOffsetFromCVTopConstraint.animateToConstant(constant1)
       }
 
-      if isFinalStage && layoutForBottomBar.mode == .musicMode && transition.outputGeometry.isMusicModePlaylistShown {
+      if isFinalStage && outputGeo.mode == .musicMode && outputGeo.isMusicModePlaylistShown {
         cvBtmOffsetFromViewportBtmConstraint?.isActive = false
       } else {
         if !isActive(cvBtmOffsetFromViewportBtmConstraint) {
@@ -262,46 +263,41 @@ extension PlayerWindowController {
 
   // - Top bar
 
-  // TODO: rewrite with Stages
-  func updateTopBarHeight(to topBarHeight: CGFloat, topBarPlacement: Preference.PanelPlacement,
-                          cameraHousingOffset: CGFloat) {
-    let isTopBarAttached = topBarView.superview != nil
-    log.verbose{"Updating topBar height to: \(topBarHeight) for placement=\(topBarPlacement) cameraOffset=\(cameraHousingOffset) topBarAttached=\(isTopBarAttached.yn)"}
+  func updateTopBarHeight(using geometry: PWinGeometry) {
+    log.verbose{"Updating topBar height to: inside=\(geometry.insideBars.top) outside=\(geometry.outsideBars.top) cameraOffset=\(geometry.topMarginHeight)"}
 
-    switch topBarPlacement {
-    case .insideViewport:
-      if isTopBarAttached {
-        topBarBottomOffsetFromViewportTopConstraint.animateToConstant(topBarHeight)
-        viewportTopOffsetFromTopBarTopConstraint.animateToConstant(0)
-      }
-      viewportTopOffsetFromCVTopConstraint.animateToConstant(0 + cameraHousingOffset)
-    case .outsideViewport:
-      if isTopBarAttached {
-        topBarBottomOffsetFromViewportTopConstraint.animateToConstant(0)
-        viewportTopOffsetFromTopBarTopConstraint.animateToConstant(topBarHeight)
-      }
-      viewportTopOffsetFromCVTopConstraint.animateToConstant(topBarHeight + cameraHousingOffset)
-    }
+    topBarBottomOffsetFromViewportTopConstraint?.animateToConstant(geometry.insideBars.top)
+    viewportTopOffsetFromTopBarTopConstraint?.animateToConstant(geometry.outsideBars.top)
+    viewportTopOffsetFromCVTopConstraint?.animateToConstant(geometry.outsideBars.top + geometry.topMarginHeight)
   }
 
   // - Bottom bar
 
-  private func updateBottomBarPlacement(forLayout layout: LayoutState) {
+  private func updateBottomBarHorizontalContraints(forLayout layout: LayoutState) {
     log.verbose{"Updating bottomBar placement to: \(layout.bottomBarPlacement) leadingSB_Shown=\(layout.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layout.isTrailingSidebarVisible.yn)"}
     guard let window = window, let contentView = window.contentView else { return }
 
-    let leadingSpacePartner: NSLayoutXAxisAnchor
-    let trailingSpacePartner: NSLayoutXAxisAnchor
+    // - Leading
 
+    let leadingSpacePartner: NSLayoutXAxisAnchor
     if layout.bottomBarPlacement == .insideViewport && layout.isLeadingSidebarVisible {
-      // Align left & right sides with sidebars (top bar will squeeze to make space for sidebars)
+      // Align left & right sides with sidebars (bottom bar will squeeze to make space for sidebars)
       assert(leadingSidebarView.superview != nil)
       leadingSpacePartner = leadingSidebarView.trailingAnchor
     } else {
-      // Align left & right sides with window (sidebars go below top bar)
+      // Left side of bottomBar is flush with left edge of window (leading sidebar is behind bottom bar visually)
       leadingSpacePartner = contentView.leadingAnchor
     }
 
+    if !isActive(bottomBarLeadingSpaceConstraint) || (bottomBarLeadingSpaceConstraint.secondAnchor != leadingSpacePartner) {
+      bottomBarLeadingSpaceConstraint?.isActive = false
+      bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: leadingSpacePartner, constant: 0)
+      bottomBarLeadingSpaceConstraint.identifier = "bottomBarLeadingSpaceConstraint"
+    }
+
+    // - Trailing
+
+    let trailingSpacePartner: NSLayoutXAxisAnchor
     if layout.bottomBarPlacement == .insideViewport && layout.isTrailingSidebarVisible {
       assert(trailingSidebarView.superview != nil)
       trailingSpacePartner = trailingSidebarView.leadingAnchor
@@ -309,43 +305,14 @@ extension PlayerWindowController {
       trailingSpacePartner = contentView.trailingAnchor
     }
 
-    let mustReplaceLeading = !isActive(bottomBarLeadingSpaceConstraint) || (bottomBarLeadingSpaceConstraint.secondAnchor != leadingSpacePartner)
-    let mustReplaceTrailing = !isActive(bottomBarTrailingSpaceConstraint) || (bottomBarTrailingSpaceConstraint.secondAnchor != trailingSpacePartner)
-
-    if mustReplaceLeading {
-      bottomBarLeadingSpaceConstraint?.isActive = false
-      bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: leadingSpacePartner, constant: 0)
-      bottomBarLeadingSpaceConstraint.identifier = "bottomBarLeadingSpaceConstraint"
-    }
-    if mustReplaceTrailing {
+    if !isActive(bottomBarTrailingSpaceConstraint) || (bottomBarTrailingSpaceConstraint.secondAnchor != trailingSpacePartner) {
       bottomBarTrailingSpaceConstraint?.isActive = false
       bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: trailingSpacePartner, constant: 0)
       bottomBarTrailingSpaceConstraint.identifier = "bottomBarTrailingSpaceCon"
     }
+
     bottomBarLeadingSpaceConstraint.isActive = true
     bottomBarTrailingSpaceConstraint.isActive = true
-  }
-
-  // TODO: rewrite with Stages
-  func updateBottomBarHeight(to bottomBarHeight: CGFloat, bottomBarPlacement: Preference.PanelPlacement) {
-    let isBottomBarAttached = bottomBarView.superview != nil
-    log.verbose{"Updating bottomBar height to \(bottomBarHeight) for placement=\(bottomBarPlacement)  bottomBarAttached=\(isBottomBarAttached.yn)"}
-
-    switch bottomBarPlacement {
-    case .insideViewport:
-      if isBottomBarAttached {
-        viewportBtmOffsetFromTopOfBottomBarConstraint?.animateToConstant(bottomBarHeight)
-        bottomBarBtmOffsetFromViewportBtmConstraint?.animateToConstant(0)
-      }
-      cvBtmOffsetFromViewportBtmConstraint?.animateToConstant(0)
-    case .outsideViewport:
-      if isBottomBarAttached {
-        viewportBtmOffsetFromTopOfBottomBarConstraint?.animateToConstant(0)
-        bottomBarBtmOffsetFromViewportBtmConstraint?.animateToConstant(bottomBarHeight)
-      }
-      cvBtmOffsetFromViewportBtmConstraint?.animateToConstant(bottomBarHeight)
-    }
-
   }
 
   // MARK: - Title bar items
@@ -588,22 +555,16 @@ extension PlayerWindowController {
   /// • Inside top & inside bottom bars do not cast shadows over `viewportView`.
   /// 
   private func sortContentViewSubviews(for layout: LayoutState) {
-    let isLeadingSidebarOpen = layout.leadingSidebar.isVisible
-    let isTrailingSidebarOpen = layout.trailingSidebar.isVisible
-
-    let isBottomBarOpen = layout.hasBottomBar
-    let bottomBar = layout.bottomBarPlacement
-    let leadingSidebar = layout.leadingSidebarPlacement
-    let trailingSidebar = layout.trailingSidebarPlacement
-
-    var possibleSubviews: [NSView] = []
-
     // If a sidebar is "outsideViewport", need to put it behind the video because:
     // (1) Don't want sidebar to cast a shadow on the video
     // (2) Animate sidebar open/close with "slide in" / "slide out" from behind the video
-    let leadingSidebarIsBelowViewport = isLeadingSidebarOpen && leadingSidebar == .outsideViewport
-    let trailingSidebarIsBelowViewport = isTrailingSidebarOpen && trailingSidebar == .outsideViewport
-    let bottomBariIsBelowSidebars = isBottomBarOpen && bottomBar == .insideViewport
+    let leadingSidebar = layout.leadingSidebarPlacement
+    let trailingSidebar = layout.trailingSidebarPlacement
+    let leadingSidebarIsBelowViewport = layout.leadingSidebar.isVisible && leadingSidebar == .outsideViewport
+    let trailingSidebarIsBelowViewport = layout.trailingSidebar.isVisible && trailingSidebar == .outsideViewport
+    let bottomBariIsBelowSidebars = layout.hasBottomBar && layout.bottomBarPlacement == .insideViewport
+
+    var possibleSubviews: [NSView] = []
 
     if bottomBariIsBelowSidebars && (leadingSidebarIsBelowViewport || trailingSidebarIsBelowViewport) {
       possibleSubviews.append(bottomBarView)
@@ -627,13 +588,15 @@ extension PlayerWindowController {
       possibleSubviews.append(bottomBarView)
     }
 
-    let contentView = window!.contentView!
     possibleSubviews += [
       seekPreview.thumbnailPeekView,
       seekPreview.timeLabel,
       topBarView,
+      closeButtonView,
       customWindowBorderBox,
       customWindowBorderTopHighlightBox]
+
+    let contentView = window!.contentView!
     let correctOrderedSubviews = possibleSubviews.filter { contentView.containsSubview($0) }
     for subview in correctOrderedSubviews {
       contentView.addSubview(subview, positioned: .above, relativeTo: nil)

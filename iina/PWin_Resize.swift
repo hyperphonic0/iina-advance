@@ -175,9 +175,8 @@ extension PlayerWindowController {
     resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
 
     if geometry.isLegacyFullScreen {
-      updateOSDTopOffsetConstraints(for: geometry, isLegacyFullScreen: true)
-      updateTopBarHeight(to: geometry.topBarHeight, topBarPlacement: currentLayout.topBarPlacement,
-                         cameraHousingOffset: geometry.topMarginHeight)
+      updateOSDTopOffsetConstraints(for: geometry)
+      updateTopBarHeight(using: geometry)
     }
 
     let window = (window as? PlayerWindow)!

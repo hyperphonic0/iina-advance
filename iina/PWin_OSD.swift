@@ -504,7 +504,7 @@ extension PlayerWindowController {
   }
 
   /// Update OSD view & Additional Info view constraints so they have the correct offset from top of screen.
-  func updateOSDTopOffsetConstraints(for geometry: PWinGeometry, isLegacyFullScreen: Bool) {
+  func updateOSDTopOffsetConstraints(for geometry: PWinGeometry) {
     let newOffsetFromTop = computeOffsetFromTop(for: geometry)
 
     log.verbose{"[OSD] Updating top constraint to: \(newOffsetFromTop)"}

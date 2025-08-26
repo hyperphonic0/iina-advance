@@ -374,19 +374,7 @@ extension PlayerWindowController {
         updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
       }
 
-      let cameraOffset: CGFloat
-      if transition.isExitingLegacyFullScreen {
-        // Use prev offset for a smoother animation
-        cameraOffset = transition.inputGeometry.topMarginHeight
-      } else {
-        cameraOffset = transition.outputGeometry.topMarginHeight
-      }
-
-      log.trace{"[\(transition.name)] CloseOldPanels: applying middleGeo, topBar.H=\(middleGeo.topBarHeight) bottomBar.H=\(middleGeo.bottomBarHeight) cameraOffset=\(cameraOffset)"}
-      updateTopBarHeight(to: middleGeo.topBarHeight, topBarPlacement: transition.inputLayout.topBarPlacement,
-                         cameraHousingOffset: cameraOffset)
-
-      updateBottomBarHeight(to: middleGeo.bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement)
+      rebuildPanelConstraints(transition, stage: .closeOldPanels)
 
       if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
         controlBarFloating.moveToLocationRatio(layout: transition.outputLayout, viewportSize: middleGeo.viewportSize)
@@ -964,7 +952,7 @@ extension PlayerWindowController {
     }
 
     // Need to update OSD vertical offset when exiting from legacy FS due to previous special animations
-    updateOSDTopOffsetConstraints(for: transition.outputGeometry, isLegacyFullScreen: outputLayout.isLegacyFullScreen)
+    updateOSDTopOffsetConstraints(for: transition.outputGeometry)
 
     if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
