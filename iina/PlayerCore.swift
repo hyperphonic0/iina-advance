@@ -37,13 +37,8 @@ class PlayerCore: NSObject {
     /// Whether shutdown of this player has completed (mpv has shut down).
     case shutDown
 
-    func isAtLeast(_ minState: LifecycleState) -> Bool {
-      rawValue >= minState.rawValue
-    }
-
-    func isNotYet(_ state: LifecycleState) -> Bool {
-      rawValue < state.rawValue
-    }
+    func isAtLeast(_ minState: LifecycleState) -> Bool { rawValue >= minState.rawValue }
+    func isNotYet(_ state: LifecycleState) -> Bool { rawValue < state.rawValue }
   }
 
   // MARK: - Singleton Fields

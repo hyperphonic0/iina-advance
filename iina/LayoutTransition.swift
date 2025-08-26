@@ -16,12 +16,30 @@ extension PlayerWindowController {
   /// See `buildLayoutTransition()`, where an instance of this class is assembled.
   /// Other important variables: `currentLayout`, `windowedModeGeo`, `musicModeGeo` (in `PlayerWindowController`)
   class LayoutTransition {
-    enum Stage {
+    enum Stage: Int, StateEnum, CustomStringConvertible {
       case preTransitionSetup
       case closeOldPanels
       case midTransitionHiddenUpdates
       case openNewPanels
       case postTransition
+
+      var description: String {
+        switch self {
+        case .preTransitionSetup:
+          return "preTransitionSetup"
+        case .closeOldPanels:
+          return "closeOldPanels"
+        case .midTransitionHiddenUpdates:
+          return "midTransitionHiddenUpdates"
+        case .openNewPanels:
+          return "openNewPanels"
+        case .postTransition:
+          return "postTransition"
+        }
+      }
+
+      func isAtLeast(_ minStatus: Stage) -> Bool { rawValue >= minStatus.rawValue }
+      func isNotYet(_ status: Stage) -> Bool { rawValue < status.rawValue }
     }
 
     let name: String  // just used for debugging
@@ -321,6 +339,17 @@ extension PlayerWindowController {
 
     // MARK: - Layout per Stage
 
+    func geometry(for stage: Stage) -> PWinGeometry {
+      switch stage {
+      case .preTransitionSetup:
+        return inputGeometry
+      case .closeOldPanels, .midTransitionHiddenUpdates:
+        return middleGeometry ?? inputGeometry
+      case .openNewPanels, .postTransition:
+        return outputGeometry
+      }
+    }
+
     // Top bar
     
     func topBarPlacement(for stage: Stage) -> Preference.PanelPlacement {
@@ -333,15 +362,8 @@ extension PlayerWindowController {
     }
 
     func topBarHeight(for stage: Stage) -> CGFloat {
-      switch stage {
-      case .preTransitionSetup:
-        return inputGeometry.topBarHeight
-      case .closeOldPanels, .midTransitionHiddenUpdates:
-        let middleGeo = middleGeometry ?? inputGeometry
-        return middleGeo.topBarHeight
-      case .openNewPanels, .postTransition:
-        return outputGeometry.topBarHeight
-      }
+      let geo = geometry(for: stage)
+      return geo.topBarHeight
     }
 
     func cameraHousingOffset(for stage: Stage) -> CGFloat {
@@ -359,7 +381,7 @@ extension PlayerWindowController {
         return outputGeometry.topMarginHeight
       }
     }
-
+    
     func topBarBottomOffsetFromViewportTopConstraint(for stage: Stage) -> CGFloat {
       switch topBarPlacement(for: stage) {
       case .insideViewport:
@@ -390,15 +412,8 @@ extension PlayerWindowController {
     // Bottom bar
 
     func bottomBarHeight(for stage: Stage) -> CGFloat {
-      switch stage {
-      case .preTransitionSetup:
-        return inputGeometry.bottomBarHeight
-      case .closeOldPanels, .midTransitionHiddenUpdates:
-        let middleGeo = middleGeometry ?? inputGeometry
-        return middleGeo.bottomBarHeight
-      case .openNewPanels, .postTransition:
-        return outputGeometry.bottomBarHeight
-      }
+      let geo = geometry(for: stage)
+      return geo.bottomBarHeight
     }
 
     func bottomBarPlacement(for stage: Stage) -> Preference.PanelPlacement {

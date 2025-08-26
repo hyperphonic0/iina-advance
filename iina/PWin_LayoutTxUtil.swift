@@ -11,8 +11,9 @@ extension PlayerWindowController {
 
   // MARK: - Bars Layout
 
-  /// Add, remove, or modify each of the bars & their constraints based on the given stage of the layout
-  /// transition.
+  /// Add, remove, or modify each of the bars & their constraints based on the given stage of the layout transition.
+  /// # Diagram: Vertical contraints in relation to `PWinGeometry` panels
+  /// Note the consistent direction between anchors.
   ///
   /// ┌─ Top                          ┬                                                ┬  ┬
   /// │                               │                                                │  │
@@ -71,7 +72,7 @@ extension PlayerWindowController {
       useTrailingSidebar = useTrailingSidebar || transition.inputLayout.isTrailingSidebarVisible
     }
 
-    log.verbose("[RebuildPanels] Stage \(stage): viewport=\(useViewport.yn) bottomBar=\(useBottomBar.yn) topBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSBr=\(useTrailingSidebar.yn)")
+    log.verbose("[RebuildPanels] Stage=\(stage): viewport=\(useViewport.yn) bottomBar=\(useBottomBar.yn) topBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSBr=\(useTrailingSidebar.yn)")
 
     // - Add window subviews in a well-defined order (before adding constraints between them)
 
@@ -211,7 +212,7 @@ extension PlayerWindowController {
         bottomBarBtmOffsetFromViewportBtmConstraint.animateToConstant(constant1)
       }
 
-      if isFinalStage && outputGeo.mode == .musicMode {
+      if outputGeo.mode == .musicMode {
         // Needs to be lower priority than VideoView constraints. Otherwise live resize of window will break
         bottomBarBtmOffsetFromViewportBtmConstraint.priorityInt = 260
       } else {
@@ -245,12 +246,14 @@ extension PlayerWindowController {
         }
       }
 
+      // Leading
       if !isActive(viewportLeadingOffsetFromContentViewLeadingConstraint) {
         viewportLeadingOffsetFromContentViewLeadingConstraint = viewportView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
         viewportLeadingOffsetFromContentViewLeadingConstraint.identifier = .init("Viewport-Leading_OffsetFrom-CV-Leading-Con")
         viewportLeadingOffsetFromContentViewLeadingConstraint.isActive = true
       }
 
+      // Trailing
       if !isActive(viewportTrailingOffsetFromContentViewTrailingConstraint) {
         viewportTrailingOffsetFromContentViewTrailingConstraint = contentView.trailingAnchor.constraint(equalTo: viewportView.trailingAnchor, constant: 0)
         viewportTrailingOffsetFromContentViewTrailingConstraint.identifier = .init("CV-Trailing_OffsetFrom-Viewport-Trailing-Con")

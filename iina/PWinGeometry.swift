@@ -94,22 +94,22 @@ enum ScreenFit: Int {
  ~                                (of `wc.viewportView`)
  ~                             ◄--------------------------►
  ┌────────────────────────────────────────────────────────────────────────────────────────┐`geo.windowFrame`
- │                                            ▲                                           │
- │                                            │`geo.topMarginHeight`                      │
- │                                            ▼ (only nonzero when covering Macbook notch)│
+ │ Top Margin                                   ▲                                         │
+ │ (only nonzero when covering Macbook notch)   │`geo.topMarginHeight`                    │
+ │                                              ▼                                         │
  ├────────────────────────────────────────────────────────────────────────────────────────┤
- │                                          ▲                                             │
+ │ Top Bar (outside)                        ▲                                             │
  │                                          │`geo.outsideBars.top`                        │
  │                                          ▼  (`wc.topBarView`)                          │
  ├────────────────────────────┬────────────────────────────┬──────────────────────────────┤ ─ ◄--- `geo.insideBars.top == 0`
- │                            │   `viewportMargins.top`    │                              │ ▲
+ │ Leading Sidebar (outside)  │   `viewportMargins.top`    │ Trailing Sidebar (outside)   │ ▲
  │                            ├─────┬────────────────┬─────┤                              │ │ `geo.viewportSize.height`
- │◄--------------------------►│ [€] │ `geo.videoSize`│ [¥] │◄----------------------------►│ │  (of `wc.viewportView`)
- │                            │     │(`wc.videoView`)│     │  `geo.outsideBars.trailing`  │ │
+ │                            │ [€] │ `geo.videoSize`│ [¥] │◄----------------------------►│ │  (of `wc.viewportView`)
+ │◄--------------------------►│     │(`wc.videoView`)│     │  `geo.outsideBars.trailing`  │ │
  │  `geo.outsideBars.leading` ├─────┴────────────────┴─────┤ (of `wc.trailingSidebarView`)│ │
  │(of `wc.leadingSidebarView`)│  `viewportMargins.bottom`  │                              │ ▼
  ├────────────────────────────┴────────────────────────────┴──────────────────────────────┤ ─ ◄--- `geo.insideBars.bottom == 0`
- │                                      ▲                                                 │
+ │ Bottom Bar (outside)                 ▲                                                 │
  │                                      │`geo.outsideBars.bottom`                         │  [€] = `viewportMargins.leading`
  │                                      ▼ (of `wc.bottomBarView`)                         │  [¥] = `viewportMargins.trailing`
  └────────────────────────────────────────────────────────────────────────────────────────┘

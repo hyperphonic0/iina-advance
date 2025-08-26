@@ -36,13 +36,8 @@ class Playback: CustomStringConvertible {
       }
     }
 
-    func isAtLeast(_ minStatus: LifecycleState) -> Bool {
-      return rawValue >= minStatus.rawValue
-    }
-
-    func isNotYet(_ status: LifecycleState) -> Bool {
-      return rawValue < status.rawValue
-    }
+    func isAtLeast(_ minStatus: LifecycleState) -> Bool { rawValue >= minStatus.rawValue }
+    func isNotYet(_ status: LifecycleState) -> Bool { rawValue < status.rawValue }
   }  /// end `enum Playback.LifecycleState`
 
 
