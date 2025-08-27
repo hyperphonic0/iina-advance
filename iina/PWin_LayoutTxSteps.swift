@@ -450,14 +450,19 @@ extension PlayerWindowController {
     }
 
     // Remove aspect constraint between animations (for some mode changes):
-    if transition.isExitingMusicMode {
+    if transition.isExitingMusicMode || transition.isOpeningVideoView {
       videoView.apply(transition.outputGeometry)
+      if transition.isOpeningVideoView {
+        // Allow "stretch" effect when opening videoView
+        videoView.videoViewConstraints?.aspectRatio.isActive = false
+
+        // Show default album art if no video track selected
+        if let currentPlayback = player.info.currentPlayback, currentPlayback.state.isAtLeast(.loaded), !player.info.isVideoTrackSelected {
+          updateDefaultArtVisibility(to: true)
+        }
+      }
     } else if transition.isExitingInteractiveMode {
       videoView.apply(transition.outputGeometry)
-    } else if transition.isOpeningVideoView {
-      videoView.apply(transition.outputGeometry)
-      // Allow "stretch" effect when opening videoView
-      videoView.videoViewConstraints?.aspectRatio.isActive = false
     }
 
     if !transition.isExitingFullScreen && transition.needsMpvKeepaspectUpdate {
