@@ -1291,7 +1291,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
     let showVideo = videoShown ?? self.videoShown
     let showPlaylist = playlistShown ?? self.isMusicModePlaylistShown
-    log.verbose("Cloning music mode geometry from \(self), showVideo=\(showVideo.yn), showPlaylist=\(showPlaylist.yn)")
+    log.verbose("Cloning music mode geometry from \(self) → showVideo=\(showVideo.yn) showPlaylist=\(showPlaylist.yn)")
     return PWinGeometry.forMusicMode(windowFrame: windowFrame ?? self.windowFrame,
                                      screenID: screenID ?? self.screenID,
                                      video: video ?? self.video,

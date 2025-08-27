@@ -382,7 +382,7 @@ extension PlayerWindowController {
       }
     }
     
-    func topBarBottomOffsetFromViewportTopConstraint(for stage: Stage) -> CGFloat {
+    func topBarBottomOffsetFromViewportTop(for stage: Stage) -> CGFloat {
       switch topBarPlacement(for: stage) {
       case .insideViewport:
         return topBarHeight(for: stage)
@@ -391,7 +391,7 @@ extension PlayerWindowController {
       }
     }
 
-    func viewportTopOffsetFromTopBarTopConstraint(for stage: Stage) -> CGFloat {
+    func viewportTopOffsetFromTopBarTop(for stage: Stage) -> CGFloat {
       switch topBarPlacement(for: stage) {
       case .insideViewport:
         return 0
@@ -400,7 +400,7 @@ extension PlayerWindowController {
       }
     }
 
-    func viewportTopOffsetFromCVTopConstraint(for stage: Stage) -> CGFloat {
+    func viewportTopOffsetFromCVTop(for stage: Stage) -> CGFloat {
       switch topBarPlacement(for: stage) {
       case .insideViewport:
         return 0 + cameraHousingOffset(for: stage)
@@ -425,7 +425,7 @@ extension PlayerWindowController {
       }
     }
 
-    func viewportBtmOffsetFromTopOfBottomBarConstraint(for stage: Stage) -> CGFloat {
+    func viewportBtmOffsetFromTopOfBottomBar(for stage: Stage) -> CGFloat {
       switch bottomBarPlacement(for: stage) {
       case .insideViewport:
         return bottomBarHeight(for: stage)
@@ -443,7 +443,7 @@ extension PlayerWindowController {
       }
     }
 
-    func cvBtmOffsetFromViewportBtmConstraint(for stage: Stage) -> CGFloat {
+    func cvBtmOffsetFromViewportBtm(for stage: Stage) -> CGFloat {
       switch bottomBarPlacement(for: stage) {
       case .insideViewport:
         return 0
