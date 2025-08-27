@@ -505,8 +505,6 @@ extension PlayerWindowController {
   /// Executed prior to opening `leadingSidebar` to the given tab.
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
   func prepareLayoutForOpening(leadingSidebar: Sidebar, layout: LayoutState, ΔWindowWidth: CGFloat) {
-    let tabToShow: Sidebar.Tab = leadingSidebar.visibleTab!
-
     for subview in leadingSidebarView.subviews {
       // remove clipView without keeping a reference to it
       if subview != leadingSidebarTrailingBorder {
@@ -514,7 +512,9 @@ extension PlayerWindowController {
       }
     }
 
+    let tabToShow: Sidebar.Tab = leadingSidebar.visibleTab!
     let sidebarWidth = tabToShow.group.width(using: layout.spec.moreSidebarState)
+
     let tabContainerView: NSView = setLeadingSidebarHorizontalConstraintsForPreOpen(leadingSidebar.placement,
                                                                                    sidebarWidth: sidebarWidth, ΔWindowWidth: ΔWindowWidth)
 
@@ -530,7 +530,6 @@ extension PlayerWindowController {
   /// * `viewportLeadingOffsetFromContentViewLeading`
   private func setLeadingSidebarHorizontalConstraintsForPreOpen(_ placement: Preference.PanelPlacement,
                                                                 sidebarWidth: CGFloat, ΔWindowWidth: CGFloat) -> NSView {
-    let contentView = window!.contentView!
 
     let tabContainerView: NSView
     let boundaryView: NSView
@@ -538,7 +537,7 @@ extension PlayerWindowController {
     let viewportLeadingClipTrailing: NSLayoutConstraint?
     if placement == .insideViewport {
       tabContainerView = leadingSidebarView
-      boundaryView = contentView
+      boundaryView = window!.contentView!
       viewportLeadingClipTrailing = nil
     } else {
       assert(placement == .outsideViewport)
@@ -633,8 +632,6 @@ extension PlayerWindowController {
   /// Executed prior to opening `trailingSidebar` to the given tab.
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
   func prepareLayoutForOpening(trailingSidebar: Sidebar, layout: LayoutState, ΔWindowWidth: CGFloat) {
-    let tabToShow: Sidebar.Tab = trailingSidebar.visibleTab!
-
     for subview in trailingSidebarView.subviews {
       // remove clipView without keeping a reference to it
       if subview != trailingSidebarLeadingBorder {
@@ -642,7 +639,9 @@ extension PlayerWindowController {
       }
     }
 
+    let tabToShow: Sidebar.Tab = trailingSidebar.visibleTab!
     let sidebarWidth = tabToShow.group.width(using: layout.spec.moreSidebarState)
+
     let tabContainerView: NSView = setTrailingSidebarHorizontalConstraintsForPreOpen(trailingSidebar.placement,
                                                                                     sidebarWidth: sidebarWidth, ΔWindowWidth: ΔWindowWidth)
 
@@ -658,14 +657,13 @@ extension PlayerWindowController {
   /// * `viewportTrailingOffsetFromContentViewTrailing`
   private func setTrailingSidebarHorizontalConstraintsForPreOpen(_ placement: Preference.PanelPlacement,
                                                                  sidebarWidth: CGFloat, ΔWindowWidth: CGFloat) -> NSView {
-    let contentView = window!.contentView!
 
     let viewportTrailingClipLeading: NSLayoutConstraint?
     let tabContainerView: NSView
     let boundaryView: NSView
     if placement == .insideViewport {
       tabContainerView = trailingSidebarView
-      boundaryView = contentView
+      boundaryView = window!.contentView!
       viewportTrailingClipLeading = nil
     } else {
       assert(placement == .outsideViewport)

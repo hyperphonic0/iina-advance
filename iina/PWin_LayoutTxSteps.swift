@@ -443,20 +443,25 @@ extension PlayerWindowController {
         exitPIP()
       }
     }
-    // Remove aspect constraint between animations (for some mode changes):
-    if transition.isTogglingMusicMode {
-      videoView.apply(transition.outputGeometry)
-    } else if transition.isExitingInteractiveMode {
-      videoView.apply(transition.outputGeometry)
-    }
-
-    if !transition.isExitingFullScreen && transition.needsMpvKeepaspectUpdate {
-      player.setMpvKeepaspectWindow(to: outputLayout.mode.needsMpvKeepaspectWindow)  // executes async in mpv queue
-    }
 
     if transition.outputGeometry.videoShown {
       // This adds videoView, viewportView & spacers if not already added
       addVideoToWindowIfNeeded()
+    }
+
+    // Remove aspect constraint between animations (for some mode changes):
+    if transition.isExitingMusicMode {
+      videoView.apply(transition.outputGeometry)
+    } else if transition.isExitingInteractiveMode {
+      videoView.apply(transition.outputGeometry)
+    } else if transition.isOpeningVideoView {
+      videoView.apply(transition.outputGeometry)
+      // Allow "stretch" effect when opening videoView
+      videoView.videoViewConstraints?.aspectRatio.isActive = false
+    }
+
+    if !transition.isExitingFullScreen && transition.needsMpvKeepaspectUpdate {
+      player.setMpvKeepaspectWindow(to: outputLayout.mode.needsMpvKeepaspectWindow)  // executes async in mpv queue
     }
 
     // - Bottom Bar
@@ -1030,7 +1035,7 @@ extension PlayerWindowController {
 
     case .windowedNormal, .windowedInteractive, .musicMode:
       log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels (\(transition.outputLayout.mode)): \(transition.outputGeometry.windowFrame)")
-      setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
+      setFrameAndUpdateWindowSubviews(using: transition.outputGeometry, updateVideoView: transition.outputGeometry.mode != .musicMode)
 
     case .fullScreenNormal, .fullScreenInteractive:
       if transition.outputLayout.isNativeFullScreen {
@@ -1299,6 +1304,10 @@ extension PlayerWindowController {
         // Playlist sidebar is visible: need to scroll to current item again due to size change
         playlistView.scrollPlaylistToCurrentItem()
       }
+    }
+
+    if transition.outputGeometry.mode == .musicMode && transition.outputGeometry.videoShown {
+      videoView.apply(transition.outputGeometry)
     }
 
     refreshHidesOnDeactivateStatus()
