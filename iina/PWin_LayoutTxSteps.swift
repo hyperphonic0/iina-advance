@@ -160,8 +160,8 @@ extension PlayerWindowController {
     if transition.outputLayout.isMusicMode {
       if transition.isClosingVideoView {
         // Hiding video
-        // Remove OSD constraints *before* reducing viewportView height to 0
-        updateOSDConstraintsForMusicMode(transition.outputGeometry)
+        // Remove OSD & AdditionalInfo *before* reducing viewportView height to 0
+        addOrRemoveOSDViews(transition.outputLayout, transition.outputGeometry)
 
         // [MusicModeKludge-A] Loosen constraints manually *before* the animation task below
         videoView.videoViewConstraints?.aspectRatio.isActive = false
@@ -539,7 +539,7 @@ extension PlayerWindowController {
     }
 
     // Need to add additionalInfo, OSD before changing sidebars
-    updateOSDConstraints(outputLayout, transition.outputGeometry, skipAddConstraints: true)
+    addOrRemoveOSDViews(outputLayout, transition.outputGeometry)
 
     // - Sidebars
 

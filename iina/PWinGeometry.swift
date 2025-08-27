@@ -253,6 +253,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return viewportSize.height > 0
   }
 
+  var shouldHaveOSD: Bool {
+    return Preference.bool(for: .enableOSD) && videoShown
+  }
+
   /// Can only be `true` while in music mode.
   var isMusicModePlaylistShown: Bool {
     guard mode == .musicMode else { return false }

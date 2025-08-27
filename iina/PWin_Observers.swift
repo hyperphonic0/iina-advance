@@ -364,6 +364,7 @@ extension PlayerWindowController {
         } else {
           fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
         }
+        addOrRemoveOSDViews(layout, currentGeo)
         updateOSDConstraints(layout, currentGeo)
       }
     case .osdTextSize:

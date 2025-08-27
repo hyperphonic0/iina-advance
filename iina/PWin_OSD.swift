@@ -329,34 +329,8 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
 
 // PlayerWindow UI: OSD
 extension PlayerWindowController {
-
-  /// Convenience version of `updateOSDConstraints` which extracts needed info from the given `LayoutState`.
-  func updateOSDConstraints(_ layout: LayoutState, _ geo: PWinGeometry, skipAddConstraints: Bool = false) {
-    updateOSDConstraints(hasAdditionalInfo: layout.hasAdditionalInfo,
-                         hasLeadingSidebar: layout.leadingSidebar.isVisible,
-                         hasTrailingSidebar: layout.trailingSidebar.isVisible,
-                         isLegacyFullScreen: layout.isLegacyFullScreen, geo,
-                         skipAddConstraints: skipAddConstraints)
-  }
-
-
-  /// Convenience version of `updateOSDConstraints` for music mode
-  func updateOSDConstraintsForMusicMode(_ geo: PWinGeometry) {
-    updateOSDConstraints(hasAdditionalInfo: false, hasLeadingSidebar: false, hasTrailingSidebar: false,
-                         isLegacyFullScreen: false, geo)
-  }
-
-  /// - Enforces `Preference.Key.osdPosition` pref which allows OSD to be on either left or right.
-  /// - For many of the constraints, priority=900 will be used to avoid problems with black swan layouts
-  /// which might trigger constraint violations if priority=required were used.
-  /// - Setting `skipAddConstraints` to `true` is a kludge for special use during layout transitions
-  func updateOSDConstraints(hasAdditionalInfo: Bool, hasLeadingSidebar: Bool, hasTrailingSidebar: Bool,
-                            isLegacyFullScreen: Bool,_ geo: PWinGeometry, skipAddConstraints: Bool = false) {
-    let hasOSD = Preference.bool(for: .enableOSD) && geo.videoShown
-    let offsetFromTop = computeOffsetFromTop(for: geo)
-    log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) legacyFS=\(isLegacyFullScreen.yn) offsetFromTop=\(offsetFromTop)"}
-
-    if hasOSD {
+  func addOrRemoveOSDViews(_ layout: LayoutState, _ geo: PWinGeometry) {
+    if geo.shouldHaveOSD {
       if !viewportView.subviews.contains(osd.osdView) {
         log.verbose{"[OSD] Adding osdView to viewportView"}
         viewportView.addSubview(osd.osdView)  // will sort below
@@ -370,14 +344,14 @@ extension PlayerWindowController {
       }
     }
 
-    if hasAdditionalInfo {
+    if layout.hasAdditionalInfo {
       if !viewportView.subviews.contains(additionalInfoView) {
         log.verbose{"[OSD] Adding additionalInfoView to viewportView"}
         viewportView.addSubview(additionalInfoView)  // will sort below
         additionalInfoView.roundCorners()
       }
-
       updateAdditionalInfoContent()  // update content
+
     } else {
       if additionalInfoView.superview != nil {
         log.verbose{"[OSD] Removing additionalInfoView from superview"}
@@ -385,61 +359,75 @@ extension PlayerWindowController {
       }
     }
 
-    if !skipAddConstraints {
-      osd.leadingSide_LeadingConstraint?.isActive = false
-      osd.leadingSide_TrailingConstraint?.isActive = false
-      osd.trailingSide_LeadingConstraint?.isActive = false
-      osd.trailingSide_TrailingConstraint?.isActive = false
-      osd.osd1TopOffsetConstraint?.isActive = false
-      osd.osd1BottomOffsetConstraint?.isActive = false
-      osd.osd2TopOffsetConstraint?.isActive = false
-      osd.osd2BottomOffsetConstraint?.isActive = false
-      osd.osdLeadingToMiniPlayerButtonsTrailingConstraint?.isActive = false
+  }
 
-      let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
-      let leadingView = osdPosition == .topLeading ? (hasOSD ? osd.osdView : nil) :  (hasAdditionalInfo ? additionalInfoView : nil)
-      let trailingView = osdPosition == .topLeading ? (hasAdditionalInfo ? additionalInfoView : nil) :  (hasOSD ? osd.osdView : nil)
+  /// - Enforces `Preference.Key.osdPosition` pref which allows OSD to be on either left or right.
+  /// - For many of the constraints, priority=900 will be used to avoid problems with black swan layouts
+  /// which might trigger constraint violations if priority=required were used.
+  /// - Setting `skipAddConstraints` to `true` is a kludge for special use during layout transitions
+  func updateOSDConstraints(_ layout: LayoutState, _ geo: PWinGeometry) {
+    osd.leadingSide_LeadingConstraint?.isActive = false
+    osd.leadingSide_TrailingConstraint?.isActive = false
+    osd.trailingSide_LeadingConstraint?.isActive = false
+    osd.trailingSide_TrailingConstraint?.isActive = false
+    osd.osd1TopOffsetConstraint?.isActive = false
+    osd.osd1BottomOffsetConstraint?.isActive = false
+    osd.osd2TopOffsetConstraint?.isActive = false
+    osd.osd2BottomOffsetConstraint?.isActive = false
+    osd.osdLeadingToMiniPlayerButtonsTrailingConstraint?.isActive = false
 
-      let otherAnchorLeading = hasLeadingSidebar ? leadingSidebarView.trailingAnchor : viewportView.leadingAnchor
-      let otherAnchorTrailing = hasTrailingSidebar ? trailingSidebarView.leadingAnchor : viewportView.trailingAnchor
+    let hasOSD = geo.shouldHaveOSD
+    let offsetFromTop = computeOffsetFromTop(for: geo)
+    let isLegacyFullScreen = layout.isLegacyFullScreen
+    let hasAdditionalInfo = layout.hasAdditionalInfo
+    let hasLeadingSidebar = layout.leadingSidebar.isVisible
+    let hasTrailingSidebar = layout.trailingSidebar.isVisible
+    let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
 
-      if let leadingView {
-        let leadingConstraint = otherAnchorLeading.constraint(equalTo: leadingView.leadingAnchor, constant: -8)
-        osd.leadingSide_LeadingConstraint = make("OSD_leadingSide_LeadingConstraint", leadingConstraint)
+    log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) legacyFS=\(isLegacyFullScreen.yn) offsetFromTop=\(offsetFromTop)"}
 
-        let trailingConstraint = leadingView.trailingAnchor.constraint(lessThanOrEqualTo: otherAnchorTrailing, constant: -8)
-        osd.leadingSide_TrailingConstraint = make("OSD_LeadingSide_TrailingConstraint", trailingConstraint)
+    let leadingView = osdPosition == .topLeading ? (hasOSD ? osd.osdView : nil) :  (hasAdditionalInfo ? additionalInfoView : nil)
+    let trailingView = osdPosition == .topLeading ? (hasAdditionalInfo ? additionalInfoView : nil) :  (hasOSD ? osd.osdView : nil)
 
-        let topConstraint = leadingView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: offsetFromTop)
-        osd.osd1TopOffsetConstraint = make("OSDLeadingView_TopOffsetConstraint", topConstraint)
+    let otherAnchorLeading = hasLeadingSidebar ? leadingSidebarView.trailingAnchor : viewportView.leadingAnchor
+    let otherAnchorTrailing = hasTrailingSidebar ? trailingSidebarView.leadingAnchor : viewportView.trailingAnchor
 
-        let bottomConstraint = viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: leadingView.bottomAnchor, constant: 8)
-        osd.osd1BottomOffsetConstraint = make("OSDLeadingView_BtmOffsetConstraint", bottomConstraint)
+    if let leadingView {
+      let leadingConstraint = otherAnchorLeading.constraint(equalTo: leadingView.leadingAnchor, constant: -8)
+      osd.leadingSide_LeadingConstraint = make("OSD_leadingSide_LeadingConstraint", leadingConstraint)
 
-        let closeButtonsConstraint = leadingView.leadingAnchor.constraint(greaterThanOrEqualTo: closeButtonView.trailingAnchor, constant: 4)
-        osd.osdLeadingToMiniPlayerButtonsTrailingConstraint = make("CloseBtn_GTLeadingOSDViewConstraint", closeButtonsConstraint)
-      }
+      let trailingConstraint = leadingView.trailingAnchor.constraint(lessThanOrEqualTo: otherAnchorTrailing, constant: -8)
+      osd.leadingSide_TrailingConstraint = make("OSD_LeadingSide_TrailingConstraint", trailingConstraint)
 
-      if let trailingView {
-        let trailingConstraint = otherAnchorTrailing.constraint(equalTo: trailingView.trailingAnchor, constant: 8)
-        osd.trailingSide_TrailingConstraint = make("OSD_trailingSide_TrailingConstraint", trailingConstraint)
+      let topConstraint = leadingView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: offsetFromTop)
+      osd.osd1TopOffsetConstraint = make("OSDLeadingView_TopOffsetConstraint", topConstraint)
 
-        let leadingConstraint = trailingView.leadingAnchor.constraint(greaterThanOrEqualTo: otherAnchorLeading, constant: -8)
-        osd.trailingSide_LeadingConstraint = make("OSD_TrailingSide_LeadingConstraint", leadingConstraint)
+      let bottomConstraint = viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: leadingView.bottomAnchor, constant: 8)
+      osd.osd1BottomOffsetConstraint = make("OSDLeadingView_BtmOffsetConstraint", bottomConstraint)
 
-        let topConstraint = trailingView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: offsetFromTop)
-        osd.osd2TopOffsetConstraint = make("OSDTrailingView_TopOffsetConstraint", topConstraint)
-
-        let bottomConstraint = viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: trailingView.bottomAnchor, constant: 8)
-        osd.osd2BottomOffsetConstraint = make("OSDTrailingView_BtmOffsetConstraint", bottomConstraint)
-      }
-
-      if hasOSD || hasAdditionalInfo {
-        sortViewportViewSubviews()
-        window?.contentView?.needsLayout = true
-      }
-
+      let closeButtonsConstraint = leadingView.leadingAnchor.constraint(greaterThanOrEqualTo: closeButtonView.trailingAnchor, constant: 4)
+      osd.osdLeadingToMiniPlayerButtonsTrailingConstraint = make("CloseBtn_GTLeadingOSDViewConstraint", closeButtonsConstraint)
     }
+
+    if let trailingView {
+      let trailingConstraint = otherAnchorTrailing.constraint(equalTo: trailingView.trailingAnchor, constant: 8)
+      osd.trailingSide_TrailingConstraint = make("OSD_trailingSide_TrailingConstraint", trailingConstraint)
+
+      let leadingConstraint = trailingView.leadingAnchor.constraint(greaterThanOrEqualTo: otherAnchorLeading, constant: -8)
+      osd.trailingSide_LeadingConstraint = make("OSD_TrailingSide_LeadingConstraint", leadingConstraint)
+
+      let topConstraint = trailingView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: offsetFromTop)
+      osd.osd2TopOffsetConstraint = make("OSDTrailingView_TopOffsetConstraint", topConstraint)
+
+      let bottomConstraint = viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: trailingView.bottomAnchor, constant: 8)
+      osd.osd2BottomOffsetConstraint = make("OSDTrailingView_BtmOffsetConstraint", bottomConstraint)
+    }
+
+    if hasOSD || hasAdditionalInfo {
+      sortViewportViewSubviews()
+      window?.contentView?.needsLayout = true
+    }
+
   }
 
   private func make(_ identifier: String, _ constraint: NSLayoutConstraint) -> NSLayoutConstraint {
