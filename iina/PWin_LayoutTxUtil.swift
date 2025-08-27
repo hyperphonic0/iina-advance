@@ -17,6 +17,15 @@ extension PlayerWindowController {
       self.identifier = identifier
     }
 
+    func createIfMissing(_ creationFunc: () -> NSLayoutConstraint) {
+      guard !isActive else { return }
+
+      let newConstraint = creationFunc()
+      newConstraint.identifier = identifier
+      newConstraint.isActive = true
+      constraint = newConstraint
+    }
+
     func createOrUpdate(to constantToSet: CGFloat = 0, requiredSecondAnchor: NSLayoutXAxisAnchor? = nil, _ creationFunc: (CGFloat) -> NSLayoutConstraint) {
       if let constraint, isActive, requiredSecondAnchor == nil || (constraint.secondAnchor == requiredSecondAnchor) {
         constraint.animateToConstant(constantToSet)
@@ -268,13 +277,13 @@ extension PlayerWindowController {
       }
 
       // Leading
-      p.viewportLeadingOffsetFromContentViewLeading.createOrUpdate(to: 0) { [self] c in
-        viewportView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: c)
+      p.viewportLeadingOffsetFromContentViewLeading.createIfMissing() { [self] in
+        viewportView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
       }
 
       // Trailing
-      p.viewportTrailingOffsetFromContentViewTrailing.createOrUpdate(to: 0) { [self] c in
-        contentView.trailingAnchor.constraint(equalTo: viewportView.trailingAnchor, constant: c)
+      p.viewportTrailingOffsetFromContentViewTrailing.createIfMissing() { [self] in
+        contentView.trailingAnchor.constraint(equalTo: viewportView.trailingAnchor, constant: 0)
       }
     }
 
