@@ -375,27 +375,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // - Outlets: Constraints
 
-  // - Top bar (title bar and/or top OSC) constraints
-  var topBarBottomOffsetFromViewportTopConstraint: NSLayoutConstraint!
-  var viewportTopOffsetFromTopBarTopConstraint: NSLayoutConstraint!
-  var viewportTopOffsetFromCVTopConstraint: NSLayoutConstraint!
+  let panelConstraints = PWinPanelConstraints()
 
-  // - Bottom bar constraints
-  var cvBtmOffsetFromViewportBtmConstraint: NSLayoutConstraint!
-  var viewportBtmOffsetFromTopOfBottomBarConstraint: NSLayoutConstraint!
-  var bottomBarBtmOffsetFromViewportBtmConstraint: NSLayoutConstraint!
-  /// Only active when video is hidden
-  var bottomBarTopFromCVTopConstraint: NSLayoutConstraint!
-  /// Only active when video is hidden
-  var bottomBarBtmOffsetFromCVTopConstraint: NSLayoutConstraint!
-  var bottomBarBtmOffsetFromCVBtmConstraint: NSLayoutConstraint!
-  // Needs to be changed to align with either sidepanel or leading edge of window:
-  var bottomBarLeadingSpaceConstraint: NSLayoutConstraint!
-  // Needs to be changed to align with either sidepanel or trailing edge of window:
-  var bottomBarTrailingSpaceConstraint: NSLayoutConstraint!
-  
   // - Leading sidebar constraints
-  var viewportLeadingOffsetFromContentViewLeadingConstraint: NSLayoutConstraint!
+
   /// If non-nil, activates all constraints in the new object reference.
   /// Any constraints in the old reference will be deactivated.
   var leadingSidebarConstraints: LeadingSidebarConstraints? = nil {
@@ -430,7 +413,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   // - Trailing sidebar constraints
-  var viewportTrailingOffsetFromContentViewTrailingConstraint: NSLayoutConstraint!
+
   /// If non-nil, activates all constraints in the new object reference.
   /// Any constraints in the old reference will be deactivated.
   var trailingSidebarConstraints: TrailingSidebarConstraints? = nil {
@@ -463,6 +446,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       bottom.isActive = active
     }
   }
+
+  // - OSC internal constraints
 
   var fragPlaybackBtnsHeightConstraint: NSLayoutConstraint!
   var fragPlaybackBtnsWidthConstraint: NSLayoutConstraint!

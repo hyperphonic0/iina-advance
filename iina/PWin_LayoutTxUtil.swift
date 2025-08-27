@@ -8,6 +8,61 @@
 
 /// This file contains support functions for the transition tasks found in `PWin_LayoutTxSteps.swift`.
 extension PlayerWindowController {
+  class MetaConstraint {
+    let identifier: String
+    var constraint: NSLayoutConstraint? = nil
+
+    init(_ identifier: String) {
+      self.identifier = identifier
+    }
+
+    func createOrUpdate(to constantToSet: CGFloat = 0, requiredSecondAnchor: NSLayoutXAxisAnchor? = nil, _ creationFunc: (CGFloat) -> NSLayoutConstraint) {
+      if let constraint, isActive, requiredSecondAnchor == nil || (constraint.secondAnchor == requiredSecondAnchor) {
+        constraint.animateToConstant(constantToSet)
+      } else {
+        constraint?.isActive = false
+        let newConstraint = creationFunc(constantToSet)
+        newConstraint.identifier = identifier
+        newConstraint.isActive = true
+        constraint = newConstraint
+      }
+    }
+
+    var isActive: Bool {
+      get {
+        if let constraint {
+          return constraint.isActive
+        }
+        return false
+      } set {
+        constraint?.isActive = false
+      }
+    }
+  }
+
+  class PWinPanelConstraints {
+    // - Top bar (title bar and/or top OSC) constraints
+    let topBarBottomOffsetFromViewportTopConstraint = MetaConstraint("TopBar-Bottom_OffsetFrom-Viewport-Top_Con")
+    let viewportTopOffsetFromTopBarTopConstraint = MetaConstraint("Viewport-Top_OffsetFrom-TopBar-Top_Con")
+    let viewportTopOffsetFromCVTopConstraint = MetaConstraint("Viewport-Top_OffsetFrom-CV-Top-Con")
+
+    // - Bottom bar constraints
+    let cvBtmOffsetFromViewportBtmConstraint = MetaConstraint("CV-Btm_OffsetFrom-Viewport-Btm-Con")
+    let viewportBtmOffsetFromTopOfBottomBarConstraint = MetaConstraint("Viewport-Btm_OffsetFrom-BottomBar-Top_Con")
+    let bottomBarBtmOffsetFromViewportBtmConstraint = MetaConstraint("Viewport-Btm_OffsetFrom-BottomBar-Btm_Con")
+    /// Only active when video is hidden
+    let bottomBarTopFromCVTopConstraint = MetaConstraint("BottomBar-Top_OffsetFrom-CV-Top_Con")
+    /// Only active when video is hidden
+    let bottomBarBtmOffsetFromCVTopConstraint = MetaConstraint("BottomBar-Btm_OffsetFrom-BottomBar-Top_Con")
+    let bottomBarBtmOffsetFromCVBtmConstraint = MetaConstraint("BottomBar-Btm_OffsetFrom-CV-Btm_Con")
+    // Needs to be changed to align with either sidepanel or leading edge of window:
+    let bottomBarLeadingSpaceConstraint = MetaConstraint("BottomBar-LeadingSpaceCon")
+    // Needs to be changed to align with either sidepanel or trailing edge of window:
+    let bottomBarTrailingSpaceConstraint = MetaConstraint("BottomBar-TrailingSpaceCon")
+
+    let viewportLeadingOffsetFromContentViewLeadingConstraint = MetaConstraint("Viewport-Leading_OffsetFrom-CV-Leading-Con")
+    let viewportTrailingOffsetFromContentViewTrailingConstraint = MetaConstraint("CV-Trailing_OffsetFrom-Viewport-Trailing-Con")
+  }
 
   // MARK: - Bars Layout
 
@@ -40,6 +95,7 @@ extension PlayerWindowController {
   /// (Diagram made with https://asciip.dev/, then hand-edited.)
   func rebuildPanelConstraints(_ transition: LayoutTransition, stage: LayoutTransition.Stage) {
     let contentView = window!.contentView!
+    let p = panelConstraints
 
     // TODO: expand this to include constraints for sidebars too
     let layoutForBottomBar: LayoutState
@@ -131,34 +187,25 @@ extension PlayerWindowController {
       let constant1 = transition.viewportTopOffsetFromTopBarTopConstraint(for: stage)
       let constant2 = transition.topBarBottomOffsetFromViewportTopConstraint(for: stage)
       log.verbose("[RebuildPanels] Updating topBar: viewport.top<-topBar.top: \(constant1), topBar.bottom<-viewport.top: \(constant2)")
-      if !isActive(viewportTopOffsetFromTopBarTopConstraint) {
-        viewportTopOffsetFromTopBarTopConstraint = viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: constant1)
-        viewportTopOffsetFromTopBarTopConstraint.identifier = "Viewport-Top_OffsetFrom-TopBar-Top_Con"
-        viewportTopOffsetFromTopBarTopConstraint.isActive = true
-      } else {
-        viewportTopOffsetFromTopBarTopConstraint.animateToConstant(constant1)
+
+      p.viewportTopOffsetFromTopBarTopConstraint.createOrUpdate(to: constant1) { [self] c in
+        viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
       }
 
-      if !isActive(topBarBottomOffsetFromViewportTopConstraint) {
-        topBarBottomOffsetFromViewportTopConstraint = topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: constant2)
-        topBarBottomOffsetFromViewportTopConstraint.identifier = "TopBar-Bottom_OffsetFrom-Viewport-Top_Con"
-        topBarBottomOffsetFromViewportTopConstraint.isActive = true
-      } else {
-        topBarBottomOffsetFromViewportTopConstraint.animateToConstant(constant2)
+      p.topBarBottomOffsetFromViewportTopConstraint.createOrUpdate(to: constant2) { [self] c in
+        topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
       topBarView.titleBarHeightConstraint.animateToConstant(layoutForTopBar.titleBarHeight)
     }
 
     if useBottomBar && !useViewport {
-      if !isActive(bottomBarTopFromCVTopConstraint) {
-        bottomBarTopFromCVTopConstraint = bottomBarView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 0)
-        bottomBarTopFromCVTopConstraint.identifier = "BottomBar-Top_OffsetFrom-CV-Top_Con"
-        bottomBarTopFromCVTopConstraint.isActive = true
+      p.bottomBarTopFromCVTopConstraint.createOrUpdate(to: 0) { [self] c in
+        bottomBarView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
       }
     } else {
       // Need to manually remove this one because it doesn't depend on viewportView, & thus won't get removed if/when viewport gets removed.
-      bottomBarTopFromCVTopConstraint?.isActive = false
+      p.bottomBarTopFromCVTopConstraint.isActive = false
     }
 
     // Bottom Bar
@@ -167,26 +214,19 @@ extension PlayerWindowController {
       updateBottomBarHorizontalContraints(forLayout: layoutForBottomBar)
 
       if outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.videoShown {
-        bottomBarBtmOffsetFromCVBtmConstraint?.isActive = false
+        p.bottomBarBtmOffsetFromCVBtmConstraint.isActive = false
 
         let bottomBarHeight = transition.bottomBarHeight(for: stage)
-        if !isActive(bottomBarBtmOffsetFromCVTopConstraint) {
-          bottomBarBtmOffsetFromCVTopConstraint = bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: bottomBarHeight)
-          bottomBarBtmOffsetFromCVTopConstraint.identifier = "BottomBar-Btm_OffsetFrom-BottomBar-Top_Con"
-          bottomBarBtmOffsetFromCVTopConstraint.isActive = true
-        } else {
-          bottomBarBtmOffsetFromCVTopConstraint.animateToConstant(bottomBarHeight)
+        p.bottomBarBtmOffsetFromCVTopConstraint.createOrUpdate(to: bottomBarHeight) { [self] c in
+          bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
         }
       } else {
-        bottomBarBtmOffsetFromCVTopConstraint?.isActive = false
+        p.bottomBarBtmOffsetFromCVTopConstraint.isActive = false
 
         // This will always have constant: 0
-        if !isActive(bottomBarBtmOffsetFromCVBtmConstraint) {
-          bottomBarBtmOffsetFromCVBtmConstraint = contentView.bottomAnchor.constraint(equalTo: bottomBarView.bottomAnchor, constant: 0)
-          bottomBarBtmOffsetFromCVBtmConstraint.identifier = "BottomBar-Btm_OffsetFrom-CV-Btm_Con"
-          bottomBarBtmOffsetFromCVBtmConstraint.isActive = true
+        p.bottomBarBtmOffsetFromCVBtmConstraint.createOrUpdate(to: 0) { [self] c in
+          contentView.bottomAnchor.constraint(equalTo: bottomBarView.bottomAnchor, constant: c)
         }
-
       }
     }
 
@@ -196,28 +236,16 @@ extension PlayerWindowController {
       let constant2 = transition.viewportBtmOffsetFromTopOfBottomBarConstraint(for: stage)
       log.verbose("[RebuildPanels] Updating topBar&viewport: viewport.btm<-bottomBar.bottom: \(constant1), viewport.btm<-bottomBar.top: \(constant2)")
 
-      if !isActive(viewportBtmOffsetFromTopOfBottomBarConstraint)  {
-        viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: constant2)
-        viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Top_Con"
-        viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
-      } else {
-        viewportBtmOffsetFromTopOfBottomBarConstraint.animateToConstant(constant2)
+      p.viewportBtmOffsetFromTopOfBottomBarConstraint.createOrUpdate(to: constant2) { [self] c in
+        viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
       }
 
-      if !isActive(bottomBarBtmOffsetFromViewportBtmConstraint) {
-        bottomBarBtmOffsetFromViewportBtmConstraint = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: constant1)
-        bottomBarBtmOffsetFromViewportBtmConstraint.identifier = "Viewport-Btm_OffsetFrom-BottomBar-Btm_Con"
-        bottomBarBtmOffsetFromViewportBtmConstraint.isActive = true
-      } else {
-        bottomBarBtmOffsetFromViewportBtmConstraint.animateToConstant(constant1)
+      p.bottomBarBtmOffsetFromViewportBtmConstraint.createOrUpdate(to: constant1) { [self] c in
+        bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
       }
 
-      if outputGeo.mode == .musicMode {
-        // Needs to be lower priority than VideoView constraints. Otherwise live resize of window will break
-        bottomBarBtmOffsetFromViewportBtmConstraint.priorityInt = 260
-      } else {
-        bottomBarBtmOffsetFromViewportBtmConstraint.priority = .required
-      }
+      // In music mode, need to be lower priority than VideoView constraints. Otherwise live resize of window will break
+      p.bottomBarBtmOffsetFromViewportBtmConstraint.constraint?.priorityInt = outputGeo.mode == .musicMode ? 260 : 1000
     }
 
     // Viewport View
@@ -226,38 +254,26 @@ extension PlayerWindowController {
       let constant2 = transition.cvBtmOffsetFromViewportBtmConstraint(for: stage)
       log.verbose("[RebuildPanels] Updating viewport: viewport.top<-CV.top: \(constant1), CV.bottom<-viewport.bottom: \(constant2)")
 
-      if !isActive(viewportTopOffsetFromCVTopConstraint) {
-        viewportTopOffsetFromCVTopConstraint = viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: constant1)
-        viewportTopOffsetFromCVTopConstraint.identifier = .init("Viewport-Top_OffsetFrom-CV-Top-Con")
-        viewportTopOffsetFromCVTopConstraint.isActive = true
-      } else {
-        viewportTopOffsetFromCVTopConstraint.animateToConstant(constant1)
+      p.viewportTopOffsetFromCVTopConstraint.createOrUpdate(to: constant1) { [self] c in
+        viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
       }
 
       if isFinalStage && outputGeo.mode == .musicMode && outputGeo.isMusicModePlaylistShown {
-        cvBtmOffsetFromViewportBtmConstraint?.isActive = false
+        p.cvBtmOffsetFromViewportBtmConstraint.isActive = false
       } else {
-        if !isActive(cvBtmOffsetFromViewportBtmConstraint) {
-          cvBtmOffsetFromViewportBtmConstraint = contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: constant2)
-          cvBtmOffsetFromViewportBtmConstraint.identifier = .init("CV-Btm_OffsetFrom-Viewport-Btm-Con")
-          cvBtmOffsetFromViewportBtmConstraint.isActive = true
-        } else {
-          cvBtmOffsetFromViewportBtmConstraint.animateToConstant(constant2)
+        p.cvBtmOffsetFromViewportBtmConstraint.createOrUpdate(to: constant2) { [self] c in
+          contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
         }
       }
 
       // Leading
-      if !isActive(viewportLeadingOffsetFromContentViewLeadingConstraint) {
-        viewportLeadingOffsetFromContentViewLeadingConstraint = viewportView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
-        viewportLeadingOffsetFromContentViewLeadingConstraint.identifier = .init("Viewport-Leading_OffsetFrom-CV-Leading-Con")
-        viewportLeadingOffsetFromContentViewLeadingConstraint.isActive = true
+      p.viewportLeadingOffsetFromContentViewLeadingConstraint.createOrUpdate(to: 0) { [self] c in
+        viewportView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: c)
       }
 
       // Trailing
-      if !isActive(viewportTrailingOffsetFromContentViewTrailingConstraint) {
-        viewportTrailingOffsetFromContentViewTrailingConstraint = contentView.trailingAnchor.constraint(equalTo: viewportView.trailingAnchor, constant: 0)
-        viewportTrailingOffsetFromContentViewTrailingConstraint.identifier = .init("CV-Trailing_OffsetFrom-Viewport-Trailing-Con")
-        viewportTrailingOffsetFromContentViewTrailingConstraint.isActive = true
+      p.viewportTrailingOffsetFromContentViewTrailingConstraint.createOrUpdate(to: 0) { [self] c in
+        contentView.trailingAnchor.constraint(equalTo: viewportView.trailingAnchor, constant: c)
       }
     }
 
@@ -269,9 +285,10 @@ extension PlayerWindowController {
   func updateTopBarHeight(using geometry: PWinGeometry) {
     log.verbose{"Updating topBar height to: inside=\(geometry.insideBars.top) outside=\(geometry.outsideBars.top) cameraOffset=\(geometry.topMarginHeight)"}
 
-    topBarBottomOffsetFromViewportTopConstraint?.animateToConstant(geometry.insideBars.top)
-    viewportTopOffsetFromTopBarTopConstraint?.animateToConstant(geometry.outsideBars.top)
-    viewportTopOffsetFromCVTopConstraint?.animateToConstant(geometry.outsideBars.top + geometry.topMarginHeight)
+    let p = panelConstraints
+    p.topBarBottomOffsetFromViewportTopConstraint.constraint?.animateToConstant(geometry.insideBars.top)
+    p.viewportTopOffsetFromTopBarTopConstraint.constraint?.animateToConstant(geometry.outsideBars.top)
+    p.viewportTopOffsetFromCVTopConstraint.constraint?.animateToConstant(geometry.outsideBars.top + geometry.topMarginHeight)
   }
 
   // - Bottom bar
@@ -279,6 +296,7 @@ extension PlayerWindowController {
   private func updateBottomBarHorizontalContraints(forLayout layout: LayoutState) {
     log.verbose{"Updating bottomBar placement to: \(layout.bottomBarPlacement) leadingSB_Shown=\(layout.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layout.isTrailingSidebarVisible.yn)"}
     guard let window = window, let contentView = window.contentView else { return }
+    let p = panelConstraints
 
     // - Leading
 
@@ -292,10 +310,8 @@ extension PlayerWindowController {
       leadingSpacePartner = contentView.leadingAnchor
     }
 
-    if !isActive(bottomBarLeadingSpaceConstraint) || (bottomBarLeadingSpaceConstraint.secondAnchor != leadingSpacePartner) {
-      bottomBarLeadingSpaceConstraint?.isActive = false
-      bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: leadingSpacePartner, constant: 0)
-      bottomBarLeadingSpaceConstraint.identifier = "bottomBarLeadingSpaceConstraint"
+    p.bottomBarLeadingSpaceConstraint.createOrUpdate(to: 0, requiredSecondAnchor: leadingSpacePartner) { [self] c in
+      bottomBarView.leadingAnchor.constraint(equalTo: leadingSpacePartner, constant: c)
     }
 
     // - Trailing
@@ -308,14 +324,9 @@ extension PlayerWindowController {
       trailingSpacePartner = contentView.trailingAnchor
     }
 
-    if !isActive(bottomBarTrailingSpaceConstraint) || (bottomBarTrailingSpaceConstraint.secondAnchor != trailingSpacePartner) {
-      bottomBarTrailingSpaceConstraint?.isActive = false
-      bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: trailingSpacePartner, constant: 0)
-      bottomBarTrailingSpaceConstraint.identifier = "bottomBarTrailingSpaceCon"
+    p.bottomBarTrailingSpaceConstraint.createOrUpdate(to: 0, requiredSecondAnchor: trailingSpacePartner) { [self] c in
+      bottomBarView.trailingAnchor.constraint(equalTo: trailingSpacePartner, constant: c)
     }
-
-    bottomBarLeadingSpaceConstraint.isActive = true
-    bottomBarTrailingSpaceConstraint.isActive = true
   }
 
   // MARK: - Title bar items
