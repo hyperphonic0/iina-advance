@@ -529,7 +529,7 @@ struct GeometryTransform {
           if currentPlayback.state == .loaded {
             log.debug{"[GTF:\(name)] Updating playback.state = .loadedAndSized; will emit fileLoaded"}
             currentPlayback.state = .loadedAndSized
-            DispatchQueue.main.async {
+            pwc.animationPipeline.submitInstantTask {
               // Should refresh EDR each time switching files
               pwc.videoView.refreshAllVideoDisplayState()
               // If is network resource, may not be loaded yet. If file, it will be.
