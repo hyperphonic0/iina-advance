@@ -460,25 +460,31 @@ struct GeometryTransform {
         }
 
         let showDefaultArt: Bool? = shouldChangeDefaultArt
-        log.verbose{"[GTF:\(name)] Building 'apply' tasks for musicMode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputMusicModeGeo)"}
-
         let isTogglingVideoView = inputMusicModeGeo.videoShown != outputMusicModeGeo.videoShown
         let isTogglingPlaylist = inputMusicModeGeo.isMusicModePlaylistShown != outputMusicModeGeo.isMusicModePlaylistShown
         if isTogglingVideoView || isTogglingPlaylist {
+          duration = Constants.AnimationDuration.toggleVideoView
+          let isOpeningVideoView = !inputMusicModeGeo.videoShown && outputMusicModeGeo.videoShown
+          let isClosingVideoView = inputMusicModeGeo.videoShown && !outputMusicModeGeo.videoShown
+          let isOpeningPlaylist = !inputMusicModeGeo.isMusicModePlaylistShown && outputMusicModeGeo.isMusicModePlaylistShown
+          let isClosingPlaylist = inputMusicModeGeo.isMusicModePlaylistShown && !outputMusicModeGeo.isMusicModePlaylistShown
+          // Closing playlist happens in OpenPanels step
+          let startingDuration = isClosingVideoView ? duration : 0
+          let endingDuration = isOpeningVideoView || isOpeningPlaylist || isClosingPlaylist ? duration : 0
           // Need to use LayoutTransition for complex layout changes
           tasks = pwc.buildLayoutTransition(named: name, from: inputLayout,
                                             inputGeo: inputLayout.isMusicMode ? inputMusicModeGeo : nil,
                                             to: outputLayout.spec, outputGeo: outputMusicModeGeo,
-                                            totalStartingDuration: duration, totalEndingDuration: duration,
+                                            totalStartingDuration: startingDuration, totalEndingDuration: endingDuration,
                                             inputGeoSet).tasks
 
           // FIXME: default art?
-          // FIXME: more precise durations for open vs close
           duration = Constants.AnimationDuration.standard
         } else {
           tasks = pwc.buildApplyPWinGeoTasks(from: inputMusicModeGeo, to: outputMusicModeGeo,
                                                duration: duration, showDefaultArt: showDefaultArt)
         }
+        log.verbose{"[GTF:\(name)] Built 'apply' tasks for musicMode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputMusicModeGeo)"}
 
       default:
         // Interactive mode. Should be handled by its special code. Don't step on it.
