@@ -276,6 +276,19 @@ extension PlayerWindowController {
       hideSeekPreviewImmediately()
     }
 
+    if !outputLayout.enableOSC || outputLayout.controlBarGeo.isTwoRowBarOSC {
+      if oscOneRowView.superview != nil {
+        log.verbose{"[\(transition.name)] Removing oscOneRowView from window"}
+        oscOneRowView.dispose()
+      }
+    }
+    if !outputLayout.enableOSC || !outputLayout.controlBarGeo.isTwoRowBarOSC {
+      if oscTwoRowView.superview != nil {
+        log.verbose{"[\(transition.name)] Removing oscTwoRowView from window"}
+        oscTwoRowView.dispose()
+      }
+    }
+
     fadeableViews.fadeablesInTopBar.removeAll()
     fadeableViews.fadeables.removeAll()
   }
@@ -450,19 +463,21 @@ extension PlayerWindowController {
     }
 
     // Remove aspect constraint between animations (for some mode changes):
-    if transition.isExitingMusicMode || transition.isOpeningVideoView {
+    if transition.isExitingMusicMode {
       videoView.apply(transition.outputGeometry)
-      if transition.isOpeningVideoView {
-        // Allow "stretch" effect when opening videoView
-        videoView.videoViewConstraints?.aspectRatio.isActive = false
-
-        // Show default album art if no video track selected
-        if let currentPlayback = player.info.currentPlayback, currentPlayback.state.isAtLeast(.loaded), !player.info.isVideoTrackSelected {
-          updateDefaultArtVisibility(to: true)
-        }
-      }
+    } else if transition.isOpeningVideoView {
+      videoView.apply(transition.outputGeometry)
+      // Allow "stretch" effect when opening videoView
+      videoView.videoViewConstraints?.aspectRatio.isActive = false
     } else if transition.isExitingInteractiveMode {
       videoView.apply(transition.outputGeometry)
+    }
+
+    if transition.isOpeningVideoView {
+      // Show default album art if no video track selected
+      if let currentPlayback = player.info.currentPlayback, currentPlayback.state.isAtLeast(.loaded), !player.info.isVideoTrackSelected {
+        updateDefaultArtVisibility(to: true)
+      }
     }
 
     if !transition.isExitingFullScreen && transition.needsMpvKeepaspectUpdate {
@@ -524,19 +539,6 @@ extension PlayerWindowController {
             customTitleBar.view.alphaValue = 0  // prep it to fade in later
           }
         }
-      }
-    }
-
-    if !outputLayout.enableOSC || outputLayout.controlBarGeo.isTwoRowBarOSC {
-      if oscOneRowView.superview != nil {
-        log.verbose{"[\(transition.name)] Removing oscOneRowView from window"}
-        oscOneRowView.dispose()
-      }
-    }
-    if !outputLayout.enableOSC || !outputLayout.controlBarGeo.isTwoRowBarOSC {
-      if oscTwoRowView.superview != nil {
-        log.verbose{"[\(transition.name)] Removing oscTwoRowView from window"}
-        oscTwoRowView.dispose()
       }
     }
 

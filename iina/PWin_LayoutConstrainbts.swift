@@ -38,6 +38,7 @@ extension PlayerWindowController {
       }
     }
 
+
     var isActive: Bool {
       get {
         if let constraint {
@@ -59,7 +60,7 @@ extension PlayerWindowController {
     // - Bottom bar constraints
     let cvBtmOffsetFromViewportBtm = OptionalConstraint("CV-Btm_OffsetFrom-Viewport-Btm-Con")
     let viewportBtmOffsetFromTopOfBottomBar = OptionalConstraint("Viewport-Btm_OffsetFrom-BottomBar-Top_Con")
-    let bottomBarBtmOffsetFromViewportBtmConstraint = OptionalConstraint("Viewport-Btm_OffsetFrom-BottomBar-Btm_Con")
+    let bottomBarBtmOffsetFromViewportBtm = OptionalConstraint("Viewport-Btm_OffsetFrom-BottomBar-Btm_Con")
     /// Only active when video is hidden
     let bottomBarTopFromCVTop = OptionalConstraint("BottomBar-Top_OffsetFrom-CV-Top_Con")
     /// Only active when video is hidden
@@ -138,7 +139,7 @@ extension PlayerWindowController {
       useTrailingSidebar = useTrailingSidebar || transition.inputLayout.isTrailingSidebarVisible
     }
 
-    log.verbose("[RebuildPanels] Stage=\(stage): viewport=\(useViewport.yn) bottomBar=\(useBottomBar.yn) topBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSBr=\(useTrailingSidebar.yn)")
+    log.verbose("[\(transition.name)] RebuildPanels stage=\(stage): viewport=\(useViewport.yn) bottomBar=\(useBottomBar.yn) topBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSBr=\(useTrailingSidebar.yn)")
 
     // - Add window subviews in a well-defined order (before adding constraints between them)
 
@@ -196,7 +197,7 @@ extension PlayerWindowController {
       assert(useViewport, "Cannot use topBarView without viewportView")
       let constant1 = transition.viewportTopOffsetFromTopBarTop(for: stage)
       let constant2 = transition.topBarBottomOffsetFromViewportTop(for: stage)
-      log.verbose("[RebuildPanels] Updating topBar: viewport.top<-topBar.top: \(constant1), topBar.bottom<-viewport.top: \(constant2)")
+      log.verbose("[\(transition.name)] RebuildPanels: updating topBar, viewport.top<-topBar.top: \(constant1), topBar.bottom<-viewport.top: \(constant2)")
 
       p.viewportTopOffsetFromTopBarTop.createOrUpdate(to: constant1) { [self] c in
         viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
@@ -221,6 +222,7 @@ extension PlayerWindowController {
     // Bottom Bar
     if useBottomBar {
       // Handle leading & trailing constraints
+      log.verbose{"[\(transition.name)] RebuildPanels: updating bottomBar placement to: \(layoutForBottomBar.bottomBarPlacement) leadingSB_Shown=\(layoutForBottomBar.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layoutForBottomBar.isTrailingSidebarVisible.yn)"}
       updateBottomBarHorizontalContraints(forLayout: layoutForBottomBar)
 
       if outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.videoShown {
@@ -242,27 +244,31 @@ extension PlayerWindowController {
 
 
     if useViewport && useBottomBar {
-      let constant1 = transition.bottomBarBtmOffsetFromViewportBtmConstraint(for: stage)
-      let constant2 = transition.viewportBtmOffsetFromTopOfBottomBar(for: stage)
-      log.verbose("[RebuildPanels] Updating topBar&viewport: viewport.btm<-bottomBar.bottom: \(constant1), viewport.btm<-bottomBar.top: \(constant2)")
+      let constant2 = transition.bottomBarBtmOffsetFromViewportBtm(for: stage)
+      let constant1 = transition.viewportBtmOffsetFromTopOfBottomBar(for: stage)
+      log.verbose("[\(transition.name)] RebuildPanels: updating topBar&viewport, viewport.btm<-bottomBar.top: \(constant1), viewport.btm<-bottomBar.bottom: \(constant2)")
 
-      p.viewportBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant2) { [self] c in
+      p.viewportBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1) { [self] c in
         viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
       }
 
-      p.bottomBarBtmOffsetFromViewportBtmConstraint.createOrUpdate(to: constant1) { [self] c in
-        bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
+      p.bottomBarBtmOffsetFromViewportBtm.createOrUpdate(to: constant2) { [self] c in
+        let con = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
+        // In music mode, need to be lower priority than VideoView constraints. Otherwise live resize of window will break.
+        // Leave as lower priority always - doesn't seem to hurt, and prevent conflicting constraints
+        con.priorityInt = 260
+        return con
       }
 
       // In music mode, need to be lower priority than VideoView constraints. Otherwise live resize of window will break
-      p.bottomBarBtmOffsetFromViewportBtmConstraint.constraint?.priorityInt = outputGeo.mode == .musicMode ? 260 : 1000
+//      p.bottomBarBtmOffsetFromViewportBtm.constraint?.priorityInt = (outputGeo.mode == .musicMode) && stage.isAtLeast(.midTransitionHiddenUpdates) ? 260 : 1000
     }
 
     // Viewport View
     if useViewport {
       let constant1 = transition.viewportTopOffsetFromCVTop(for: stage)
       let constant2 = transition.cvBtmOffsetFromViewportBtm(for: stage)
-      log.verbose("[RebuildPanels] Updating viewport: viewport.top<-CV.top: \(constant1), CV.bottom<-viewport.bottom: \(constant2)")
+      log.verbose("[\(transition.name)] RebuildPanels: updating viewport, viewport.top<-CV.top: \(constant1), CV.bottom<-viewport.bottom: \(constant2)")
 
       p.viewportTopOffsetFromCVTop.createOrUpdate(to: constant1) { [self] c in
         viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
@@ -304,7 +310,6 @@ extension PlayerWindowController {
   // - Bottom bar
 
   private func updateBottomBarHorizontalContraints(forLayout layout: LayoutState) {
-    log.verbose{"Updating bottomBar placement to: \(layout.bottomBarPlacement) leadingSB_Shown=\(layout.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layout.isTrailingSidebarVisible.yn)"}
     guard let window = window, let contentView = window.contentView else { return }
     let p = panelConstraints
 

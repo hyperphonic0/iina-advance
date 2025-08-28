@@ -434,7 +434,7 @@ extension PlayerWindowController {
       }
     }
 
-    func bottomBarBtmOffsetFromViewportBtmConstraint(for stage: Stage) -> CGFloat {
+    func bottomBarBtmOffsetFromViewportBtm(for stage: Stage) -> CGFloat {
       switch bottomBarPlacement(for: stage) {
       case .insideViewport:
         return 0

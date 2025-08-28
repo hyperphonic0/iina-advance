@@ -2304,6 +2304,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// All args are optional overrides
   func updateWindowBorderAndOpacity(using layout: LayoutState? = nil, windowOpacity newOpacity: Float? = nil) {
+    // Do not use "required" priority for at least 1 constraint in each dimension (avoids constraint errors if an animation
+    // reduces the window size to 0px).
+    let priority = NSLayoutConstraint.Priority.defaultHigh
     let layout = layout ?? currentLayout
     /// The title bar of the native `titled` style doesn't support translucency. So do not allow it for native modes:
     let newOpacity: Float = layout.isFullScreen || !layout.spec.isLegacyStyle ? 1.0 : newOpacity ?? (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0)
@@ -2315,8 +2318,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       if customWindowBorderBox.superview == nil {
         contentView.addSubview(customWindowBorderBox, positioned: .above, relativeTo: contentView.containsSubview(topBarView) ? topBarView : viewportView)
         // Deviate from the native look slightly by reducing trailing & bottom by 0.5pt. Just looks too distracting otherwise
-        customWindowBorderBox.addConstraintsToFillSuperview(top: 0, .required, bottom: -0.5, .required,
-                                                            leading: 0, .required, trailing: -0.5, .required)
+        customWindowBorderBox.addConstraintsToFillSuperview(top: 0, .required, bottom: -0.5, priority,
+                                                            leading: 0, .required, trailing: -0.5, priority)
         customWindowBorderBox.isHidden = false
         contentView.needsLayout = true
       }
@@ -2326,8 +2329,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         // No highlight at all on the bottom & trailing: hide those sides outside superview bounds
         customWindowBorderTopHighlightBox.addConstraintsToFillSuperview(bottom: -1.0, trailing: -1.0)
         let hlBoxTop = customWindowBorderTopHighlightBox.topAnchor.constraint(equalTo: customWindowBorderBox.topAnchor, constant: 0)
+        hlBoxTop.priority = priority
         hlBoxTop.isActive = true
         let hlBoxLeading = customWindowBorderTopHighlightBox.leadingAnchor.constraint(equalTo: customWindowBorderBox.leadingAnchor, constant: 0)
+        hlBoxLeading.priority = priority
         hlBoxLeading.isActive = true
         customWindowBorderTopHighlightBox.isHidden = false
         contentView.needsLayout = true
