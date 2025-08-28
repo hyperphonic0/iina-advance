@@ -139,7 +139,7 @@ extension PlayerWindowController {
       useTrailingSidebar = useTrailingSidebar || transition.inputLayout.isTrailingSidebarVisible
     }
 
-    log.verbose("[\(transition.name)] RebuildPanels stage=\(stage): viewport=\(useViewport.yn) bottomBar=\(useBottomBar.yn) topBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSBr=\(useTrailingSidebar.yn)")
+    log.verbose("[\(transition.name)] RebuildPanels:\(stage): viewport=\(useViewport.yn) bottomBar=\(useBottomBar.yn) topBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSBr=\(useTrailingSidebar.yn)")
 
     // - Add window subviews in a well-defined order (before adding constraints between them)
 
@@ -197,7 +197,7 @@ extension PlayerWindowController {
       assert(useViewport, "Cannot use topBarView without viewportView")
       let constant1 = transition.viewportTopOffsetFromTopBarTop(for: stage)
       let constant2 = transition.topBarBottomOffsetFromViewportTop(for: stage)
-      log.verbose("[\(transition.name)] RebuildPanels: updating topBar, viewport.top<-topBar.top: \(constant1), topBar.bottom<-viewport.top: \(constant2)")
+      log.verbose("[\(transition.name)] RebuildPanels:\(stage): updating topBar, viewport.top<-topBar.top: \(constant1), topBar.bottom<-viewport.top: \(constant2)")
 
       p.viewportTopOffsetFromTopBarTop.createOrUpdate(to: constant1) { [self] c in
         viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
@@ -207,7 +207,10 @@ extension PlayerWindowController {
         topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
-      topBarView.titleBarHeightConstraint.animateToConstant(layoutForTopBar.titleBarHeight)
+      // For "closeOldPanels" stage, rely on logic in the step itself
+      if stage != .closeOldPanels {
+        topBarView.titleBarHeightConstraint.animateToConstant(layoutForTopBar.titleBarHeight)
+      }
     }
 
     if useBottomBar && !useViewport {
@@ -222,7 +225,7 @@ extension PlayerWindowController {
     // Bottom Bar
     if useBottomBar {
       // Handle leading & trailing constraints
-      log.verbose{"[\(transition.name)] RebuildPanels: updating bottomBar placement to: \(layoutForBottomBar.bottomBarPlacement) leadingSB_Shown=\(layoutForBottomBar.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layoutForBottomBar.isTrailingSidebarVisible.yn)"}
+      log.verbose{"[\(transition.name)] RebuildPanels:\(stage): updating bottomBar placement to: \(layoutForBottomBar.bottomBarPlacement) leadingSB_Shown=\(layoutForBottomBar.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layoutForBottomBar.isTrailingSidebarVisible.yn)"}
       updateBottomBarHorizontalContraints(forLayout: layoutForBottomBar)
 
       if outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.videoShown {
@@ -246,7 +249,7 @@ extension PlayerWindowController {
     if useViewport && useBottomBar {
       let constant2 = transition.bottomBarBtmOffsetFromViewportBtm(for: stage)
       let constant1 = transition.viewportBtmOffsetFromTopOfBottomBar(for: stage)
-      log.verbose("[\(transition.name)] RebuildPanels: updating topBar&viewport, viewport.btm<-bottomBar.top: \(constant1), viewport.btm<-bottomBar.bottom: \(constant2)")
+      log.verbose("[\(transition.name)] RebuildPanels:\(stage): updating topBar&viewport, viewport.btm<-bottomBar.top: \(constant1), viewport.btm<-bottomBar.bottom: \(constant2)")
 
       p.viewportBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1) { [self] c in
         viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
@@ -268,7 +271,7 @@ extension PlayerWindowController {
     if useViewport {
       let constant1 = transition.viewportTopOffsetFromCVTop(for: stage)
       let constant2 = transition.cvBtmOffsetFromViewportBtm(for: stage)
-      log.verbose("[\(transition.name)] RebuildPanels: updating viewport, viewport.top<-CV.top: \(constant1), CV.bottom<-viewport.bottom: \(constant2)")
+      log.verbose("[\(transition.name)] RebuildPanels:\(stage): updating viewport, viewport.top<-CV.top: \(constant1), CV.bottom<-viewport.bottom: \(constant2)")
 
       p.viewportTopOffsetFromCVTop.createOrUpdate(to: constant1) { [self] c in
         viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)

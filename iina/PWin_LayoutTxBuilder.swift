@@ -419,6 +419,7 @@ extension PlayerWindowController {
                                                       outsideBottom: 0,
                                                       pinWidthOrHeightIfAtMax: false)
     } else if transition.inputGeometry.mode == .musicMode, transition.outputGeometry.mode == .musicMode {
+      // - Music Mode: Continuing
       if transition.isTogglingVideoView {
         return transition.outputGeometry.cloneMusicMode(isMiddleTransition: true)
       } else {
@@ -501,16 +502,16 @@ extension PlayerWindowController {
                                         hasTopPaddingForCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
     }
 
-    let resizedBarsGeo = transition.outputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
-                                                                   outsideTrailing: outsideTrailingBarWidth,
-                                                                   outsideBottom: outsideBottomBarHeight,
-                                                                   outsideLeading: outsideLeadingBarWidth,
-                                                                   insideTop: insideTopBarHeight,
-                                                                   insideTrailing: insideTrailingBarWidth,
-                                                                   insideBottom: insideBottomBarHeight,
-                                                                   insideLeading: insideLeadingBarWidth,
-                                                                   pinWidthOrHeightIfAtMax: true)
-    return resizedBarsGeo.refitted()
+    let closedBarsGeo = transition.outputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
+                                                                  outsideTrailing: outsideTrailingBarWidth,
+                                                                  outsideBottom: outsideBottomBarHeight,
+                                                                  outsideLeading: outsideLeadingBarWidth,
+                                                                  insideTop: insideTopBarHeight,
+                                                                  insideTrailing: insideTrailingBarWidth,
+                                                                  insideBottom: insideBottomBarHeight,
+                                                                  insideLeading: insideLeadingBarWidth,
+                                                                  pinWidthOrHeightIfAtMax: true)
+    return closedBarsGeo.refitted()
   }
 
 }

@@ -303,6 +303,8 @@ extension PlayerWindowController {
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
     log.verbose{"[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)"}
 
+    rebuildPanelConstraints(transition, stage: .closeOldPanels)
+
     // TODO: incorporate this into middleGeometry for cleaner code
     // This check is true for isWindowInitialLayout, but currently `closeOldPanels` is not executed for that.
     if isOpeningBarOSC || isClosingBarOSC {
@@ -317,6 +319,7 @@ extension PlayerWindowController {
       playBtnHeightConstraint.animateToConstant(0)
       arrowBtnWidthConstraint.animateToConstant(0)
       fragPlaybackBtnsHeightConstraint.animateToConstant(0)
+      topBarView.titleBarHeightConstraint.animateToConstant(0)
     } else if outputLayout.hasControlBar {
       // Reduce size of icons if they are smaller. This is needed to look pleasant when panels are also shrinking.
       let oldGeo = transition.inputLayout.controlBarGeo
@@ -386,8 +389,6 @@ extension PlayerWindowController {
         let tabHeight = min(transition.inputLayout.sidebarTabHeight, outputLayout.sidebarTabHeight)
         updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
       }
-
-      rebuildPanelConstraints(transition, stage: .closeOldPanels)
 
       if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
         controlBarFloating.moveToLocationRatio(layout: transition.outputLayout, viewportSize: middleGeo.viewportSize)
