@@ -89,10 +89,10 @@ enum ScreenFit: Int {
  • The window's frame (`windowFrame`) is the outermost rectangle.
  • The frame of `wc.videoView` is the innermost dotted-lined rectangle.
  • The frame of `wc.viewportView` contains `wc.videoView` and additional space for black bars.
- •
- ~                               `geo.viewportSize.width`
- ~                                (of `wc.viewportView`)
- ~                             ◄--------------------------►
+ ```
+                                 `geo.viewportSize.width`
+                                  (of `wc.viewportView`)
+                               ◄--------------------------►
  ┌────────────────────────────────────────────────────────────────────────────────────────┐`geo.windowFrame`
  │ Top Margin                                   ▲                                         │
  │ (only nonzero when covering Macbook notch)   │`geo.topMarginHeight`                    │
@@ -113,6 +113,7 @@ enum ScreenFit: Int {
  │                                      │`geo.outsideBars.bottom`                         │  [€] = `viewportMargins.leading`
  │                                      ▼ (of `wc.bottomBarView`)                         │  [¥] = `viewportMargins.trailing`
  └────────────────────────────────────────────────────────────────────────────────────────┘
+ ```
  */
 struct PWinGeometry: Equatable, CustomStringConvertible {
 

@@ -51,6 +51,32 @@ extension PlayerWindowController {
     }
   }
 
+  /// Add, remove, or modify each of the bars & their constraints based on the given stage of the layout transition.
+  /// # Diagram: Vertical contraints in relation to `PWinGeometry` panels
+  /// Note the consistent direction between anchors. (Created with https://asciip.dev/, then hand-edited.)
+  ///```
+  /// ┌─ Top                          ┬                                            ┬  ┬
+  /// │                               │                                            │  │
+  /// │window                         │viewportTopOffsetFromCVTop                  │  │
+  /// │contentView      ┌───────────┐ │     ┬                                      │  │
+  /// │                 │  TopBar   │ │     │viewportTopOffsetFromTopBarTop        │  │
+  /// │        ┌────────│────┐      │ ▼  ┬  ▼                                      │  │
+  /// │        │        │    │      │    │topBarBottomOffsetFromViewportTop        │  │
+  /// │        │        └───────────┘    ▼                                         │  │
+  /// │        │   Viewport  │                               ⁴bottomBarTopFromCVTop│  │
+  /// │  ┌─────────────┐     │      ┬                                              ▼  │
+  /// │  │     │       │     │      │viewportBtmOffsetFromTopOfBottomBar              │
+  /// │  │     └───────│─────┘   ┬  ▼                     ⁵bottomBarBtmOffsetFromCVTop│  ┬
+  /// │  │  BottomBar  │         │bottomBarBtmOffsetFromViewportBtmConstraint         │  │
+  /// │  └─────────────┘      ┬  ▼                                                    ▼  │
+  /// │                       │                                                          │
+  /// │                       │bottomBarBtmOffsetFromCVBtm                               │
+  /// │                       │                                                          │
+  /// │                       │                                cvBtmOffsetFromViewportBtm│
+  /// └─ Bottom               ▼                                                          ▼
+  ///```
+  /// - ⁴Only used when bottomBar is shown & viewport is hidden.
+  /// - ⁵Only used in music mode when both video & playlist are hidden.
   class PWinPanelConstraints {
     // - Top bar (title bar and/or top OSC) constraints
     let topBarBottomOffsetFromViewportTop = OptionalConstraint("TopBar-Bottom_OffsetFrom-Viewport-Top_Con")
@@ -77,33 +103,6 @@ extension PlayerWindowController {
 
   // MARK: - Bars Layout
 
-  /// Add, remove, or modify each of the bars & their constraints based on the given stage of the layout transition.
-  /// # Diagram: Vertical contraints in relation to `PWinGeometry` panels
-  /// Note the consistent direction between anchors.
-  ///
-  /// ┌─ Top                          ┬                                            ┬  ┬
-  /// │                               │                                            │  │
-  /// │window                         │viewportTopOffsetFromCVTop                  │  │
-  /// │contentView      ┌───────────┐ │     ┬                                      │  │
-  /// │                 │  TopBar   │ │     │viewportTopOffsetFromTopBarTop        │  │
-  /// │        ┌────────│────┐      │ ▼  ┬  ▼                                      │  │
-  /// │        │        │    │      │    │topBarBottomOffsetFromViewportTop        │  │
-  /// │        │        └───────────┘    ▼                                         │  │
-  /// │        │   Viewport  │                               ⁴bottomBarTopFromCVTop│  │
-  /// │  ┌─────────────┐     │      ┬                                              ▼  │
-  /// │  │     │       │     │      │viewportBtmOffsetFromTopOfBottomBar              │
-  /// │  │     └───────│─────┘   ┬  ▼                     ⁵bottomBarBtmOffsetFromCVTop│  ┬
-  /// │  │  BottomBar  │         │bottomBarBtmOffsetFromViewportBtmConstraint         │  │
-  /// │  └─────────────┘      ┬  ▼                                                    ▼  │
-  /// │                       │                                                          │
-  /// │                       │bottomBarBtmOffsetFromCVBtm                               │
-  /// │                       │                                                          │
-  /// │                       │                                cvBtmOffsetFromViewportBtm│
-  /// └─ Bottom               ▼                                                          ▼
-  ///
-  /// ⁴Only used when bottomBar is shown & viewport is hidden.
-  /// ⁵Only used in music mode when both video & playlist are hidden.
-  /// (Diagram made with https://asciip.dev/, then hand-edited.)
   func rebuildPanelConstraints(_ transition: LayoutTransition, stage: LayoutTransition.Stage) {
     let contentView = window!.contentView!
     let p = panelConstraints
