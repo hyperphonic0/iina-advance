@@ -56,12 +56,6 @@ extension PlayerWindowController {
       window.isMovableByWindowBackground = false
     }
 
-    // Skip for initial layout: not all panels have been init'd yet.
-    // Don't use with legacy full screen transitions; they use extra animations which will be screwed up
-    if !transition.isWindowInitialLayout && !transition.isTogglingFullScreen {
-      rebuildPanelConstraints(transition, stage: .preTransitionSetup)
-    }
-
     // Need to call this here to avoid border being drawn incorrectly during FS transition.
     // But don't want to interfere with special effects such as fade-in
     let opacity = window.contentView?.layer?.opacity ?? -1

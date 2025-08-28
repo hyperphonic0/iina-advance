@@ -312,6 +312,10 @@ extension PlayerWindowController {
       inputGeometry.isMusicModePlaylistShown && !outputGeometry.isMusicModePlaylistShown
     }
 
+    var isTogglingPlaylistInMusicMode: Bool {
+      isOpeningPlaylistInMusicMode || isClosingPlaylistInMusicMode
+    }
+
     var ΔWindowWidth: CGFloat {
       return outputGeometry.windowFrame.width - inputGeometry.windowFrame.width
     }
