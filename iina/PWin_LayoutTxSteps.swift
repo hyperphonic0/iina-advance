@@ -56,6 +56,12 @@ extension PlayerWindowController {
       window.isMovableByWindowBackground = false
     }
 
+    // Skip for initial layout: not all panels have been init'd yet.
+    // Don't use with legacy full screen transitions; they use extra animations which will be screwed up
+    if !transition.isWindowInitialLayout && transition.isTogglingMusicMode {
+      rebuildPanelConstraints(transition, stage: .preTransitionSetup)
+    }
+
     // Need to call this here to avoid border being drawn incorrectly during FS transition.
     // But don't want to interfere with special effects such as fade-in
     let opacity = window.contentView?.layer?.opacity ?? -1
@@ -300,9 +306,9 @@ extension PlayerWindowController {
     rebuildPanelConstraints(transition, stage: .closeOldPanels)
 
     // TODO: incorporate this into middleGeometry for cleaner code
-    // This check is true for isWindowInitialLayout, but currently `closeOldPanels` is not executed for that.
     if isOpeningBarOSC || isClosingBarOSC {
-      // Shrink all the buttons to create cool animated effect
+      // Shrink all the buttons vertically to create cool animated effect.
+      // Don't worry about horizontal.
       for toolbarItem in fragToolbarView.views {
         (toolbarItem as! OSCToolbarButton).setStyle(iconSize: 0, iconSpacing: 0)
       }
@@ -314,35 +320,53 @@ extension PlayerWindowController {
       arrowBtnWidthConstraint.animateToConstant(0)
       fragPlaybackBtnsHeightConstraint.animateToConstant(0)
       topBarView.titleBarHeightConstraint.animateToConstant(0)
+      playSliderHeightConstraint.animateToConstant(0)
+
     } else if outputLayout.hasControlBar {
       // Reduce size of icons if they are smaller. This is needed to look pleasant when panels are also shrinking.
       let oldGeo = transition.inputLayout.controlBarGeo
       let newGeo = outputLayout.controlBarGeo
 
+      // - Vertical
+
       if oldGeo.volumeIconHeight > newGeo.volumeIconHeight {
         volumeIconHeightConstraint.animateToConstant(newGeo.volumeIconHeight)
       }
+
       if oldGeo.volumeSliderWidth > newGeo.volumeSliderWidth {
         volumeSliderWidthConstraint.animateToConstant(newGeo.volumeSliderWidth)
       }
+
       if let img = muteButton.image {
         volumeIconAspectConstraint.isActive = false
         volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
         volumeIconAspectConstraint.isActive = true
       }
-      if oldGeo.arrowIconHeight > newGeo.arrowIconHeight {
-        arrowBtnWidthConstraint.animateToConstant(newGeo.arrowIconWidth)
-      }
+
       if oldGeo.playIconSize > newGeo.playIconSize {
         playBtnHeightConstraint.animateToConstant(newGeo.playIconSize)
       }
 
-      if oldGeo.totalPlayControlsWidth > newGeo.totalPlayControlsWidth {
-        fragPlaybackBtnsWidthConstraint.animateToConstant(newGeo.totalPlayControlsWidth)
-      }
-
       if oldGeo.fullIconHeight > newGeo.fullIconHeight {
         fragPlaybackBtnsHeightConstraint.animateToConstant(newGeo.fullIconHeight)
+      }
+
+      if transition.inputLayout.titleBarHeight > outputLayout.titleBarHeight {
+        topBarView.titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
+      }
+
+      if transition.inputLayout.controlBarGeo.playSliderHeight > outputLayout.controlBarGeo.playSliderHeight {
+        playSliderHeightConstraint.animateToConstant(outputLayout.controlBarGeo.playSliderHeight)
+      }
+
+      // - Horizontal
+
+      if oldGeo.arrowIconHeight > newGeo.arrowIconHeight {
+        arrowBtnWidthConstraint.animateToConstant(newGeo.arrowIconWidth)
+      }
+
+      if oldGeo.totalPlayControlsWidth > newGeo.totalPlayControlsWidth {
+        fragPlaybackBtnsWidthConstraint.animateToConstant(newGeo.totalPlayControlsWidth)
       }
 
       if oldGeo.leftArrowCenterXOffset > newGeo.leftArrowCenterXOffset {
@@ -361,15 +385,8 @@ extension PlayerWindowController {
       updateToolbarHStack(iconSpacing: toolSpacing)
     }
 
-    if transition.inputLayout.titleBarHeight > outputLayout.titleBarHeight {
-      topBarView.titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
-    }
+    // - Middle Geometry
 
-    if transition.inputLayout.controlBarGeo.playSliderHeight > outputLayout.controlBarGeo.playSliderHeight {
-      playSliderHeightConstraint.animateToConstant(outputLayout.controlBarGeo.playSliderHeight)
-    }
-
-    // Update heights of top & bottom bars
     if let middleGeo = transition.middleGeometry {
       assert(!transition.isWindowInitialLayout)
       if transition.isEnteringInteractiveMode {
@@ -689,7 +706,7 @@ extension PlayerWindowController {
       let newGeo = outputLayout.controlBarGeo
       log.verbose{"[\(transition.name)] Setting up OSC: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(newGeo.playIconSize) playIconSpacing=\(newGeo.playIconSpacing)"}
 
-      rebuildOSCToolbar(transition)
+      rebuildOSCToolbar(transition, .midTransitionHiddenUpdates)
 
       switch outputLayout.oscPosition {
       case .top:

@@ -106,6 +106,7 @@ extension PlayerWindowController {
   func rebuildPanelConstraints(_ transition: LayoutTransition, stage: LayoutTransition.Stage) {
     let contentView = window!.contentView!
     let p = panelConstraints
+    let logPre = transition.logPreamble(for: stage)
 
     // TODO: expand this to include constraints for sidebars too
     let layoutForBottomBar: LayoutState
@@ -138,7 +139,7 @@ extension PlayerWindowController {
       useTrailingSidebar = useTrailingSidebar || transition.inputLayout.isTrailingSidebarVisible
     }
 
-    log.verbose("[\(transition.name)] RebuildPanels:\(stage): viewport=\(useViewport.yn) bottomBar=\(useBottomBar.yn) topBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSBr=\(useTrailingSidebar.yn)")
+    log.verbose("\(logPre) RebuildPanels: viewport=\(useViewport.yn) bottomBar=\(useBottomBar.yn) topBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSBr=\(useTrailingSidebar.yn)")
 
     // - Add window subviews in a well-defined order (before adding constraints between them)
 
@@ -196,7 +197,7 @@ extension PlayerWindowController {
       assert(useViewport, "Cannot use topBarView without viewportView")
       let constant1 = transition.viewportTopOffsetFromTopBarTop(for: stage)
       let constant2 = transition.topBarBottomOffsetFromViewportTop(for: stage)
-      log.verbose("[\(transition.name)] RebuildPanels:\(stage): updating topBar, viewport.top<-topBar.top: \(constant1), topBar.bottom<-viewport.top: \(constant2)")
+      log.verbose("\(logPre) updating topBar, viewport.top<-topBar.top: \(constant1), topBar.bottom<-viewport.top: \(constant2)")
 
       p.viewportTopOffsetFromTopBarTop.createOrUpdate(to: constant1) { [self] c in
         viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
@@ -224,7 +225,7 @@ extension PlayerWindowController {
     // Bottom Bar
     if useBottomBar {
       // Handle leading & trailing constraints
-      log.verbose{"[\(transition.name)] RebuildPanels:\(stage): updating bottomBar placement to: \(layoutForBottomBar.bottomBarPlacement) leadingSB_Shown=\(layoutForBottomBar.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layoutForBottomBar.isTrailingSidebarVisible.yn)"}
+      log.verbose{"\(logPre) updating bottomBar placement to: \(layoutForBottomBar.bottomBarPlacement) leadingSB_Shown=\(layoutForBottomBar.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layoutForBottomBar.isTrailingSidebarVisible.yn)"}
       updateBottomBarHorizontalContraints(forLayout: layoutForBottomBar)
 
       if outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.videoShown {
@@ -248,7 +249,7 @@ extension PlayerWindowController {
     if useViewport && useBottomBar {
       let constant2 = transition.bottomBarBtmOffsetFromViewportBtm(for: stage)
       let constant1 = transition.viewportBtmOffsetFromTopOfBottomBar(for: stage)
-      log.verbose("[\(transition.name)] RebuildPanels:\(stage): updating topBar&viewport, viewport.btm<-bottomBar.top: \(constant1), viewport.btm<-bottomBar.bottom: \(constant2)")
+      log.verbose("\(logPre) updating topBar&viewport, viewport.btm<-bottomBar.top: \(constant1), viewport.btm<-bottomBar.bottom: \(constant2)")
 
       p.viewportBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1) { [self] c in
         viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
@@ -270,7 +271,7 @@ extension PlayerWindowController {
     if useViewport {
       let constant1 = transition.viewportTopOffsetFromCVTop(for: stage)
       let constant2 = transition.cvBtmOffsetFromViewportBtm(for: stage)
-      log.verbose("[\(transition.name)] RebuildPanels:\(stage): updating viewport, viewport.top<-CV.top: \(constant1), CV.bottom<-viewport.bottom: \(constant2)")
+      log.verbose("\(logPre) updating viewport, viewport.top<-CV.top: \(constant1), CV.bottom<-viewport.bottom: \(constant2)")
 
       p.viewportTopOffsetFromCVTop.createOrUpdate(to: constant1) { [self] c in
         viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
@@ -471,7 +472,7 @@ extension PlayerWindowController {
   }
 
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
-  func rebuildOSCToolbar(_ transition: LayoutTransition) {
+  func rebuildOSCToolbar(_ transition: LayoutTransition, _ stage: LayoutTransition.Stage) {
     let oldGeo = transition.inputLayout.controlBarGeo
     let newGeo = transition.outputLayout.controlBarGeo
     let newButtonTypes = newGeo.toolbarItems
@@ -488,7 +489,7 @@ extension PlayerWindowController {
       fragToolbarView.views.forEach { fragToolbarView.removeView($0) }
 
       if newButtonTypes.count > 0 {
-        log.verbose{"[\(transition.name)] Updating OSC toolbar: iconSize=\(iconSize) iconSpacing=\(iconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]"}
+        log.verbose{"\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(iconSize) iconSpacing=\(iconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]"}
         for buttonType in newButtonTypes {
           let button = OSCToolbarButton()
           button.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
@@ -502,7 +503,7 @@ extension PlayerWindowController {
     }
 
     if needsButtonsUpdate {
-      log.verbose{"[\(transition.name)] Updating OSC toolbar: iconSize=\(newGeo.toolIconSize) iconSpacing=\(newGeo.toolIconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]"}
+      log.verbose{"\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(newGeo.toolIconSize) iconSpacing=\(newGeo.toolIconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]"}
       for button in fragToolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
         button.setStyle(iconSize: iconSize, iconSpacing: iconSpacing)
         button.setOSCColors(hasClearBG: transition.outputLayout.oscHasClearBG)
@@ -511,7 +512,7 @@ extension PlayerWindowController {
 
     // Do not zero this out:
     updateToolbarHStack(iconSpacing: newGeo.toolIconSpacing)
-    log.verbose{"[\(transition.name)] Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)"}
+    log.verbose{"\(transition.logPreamble(for: stage)) Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)"}
   }
 
   // It's not possible to control the icon padding from inside the buttons in all cases.

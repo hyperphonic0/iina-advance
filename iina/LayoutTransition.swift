@@ -343,6 +343,10 @@ extension PlayerWindowController {
 
     // MARK: - Layout per Stage
 
+    func logPreamble(for stage: Stage) -> String {
+      "[\(name)] \(stage): "
+    }
+
     func geometry(for stage: Stage) -> PWinGeometry {
       switch stage {
       case .preTransitionSetup:

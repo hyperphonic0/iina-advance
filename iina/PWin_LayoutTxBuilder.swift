@@ -374,12 +374,10 @@ extension PlayerWindowController {
         return transition.outputGeometry
       }
 
-      let outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight >= transition.outputLayout.topBarHeight ? transition.outputLayout.outsideTopBarHeight : 0
-
       let videoFrame = transition.outputGeometry.videoFrameInScreenCoords
       let extraWidthNeeded = max(0, Constants.InteractiveMode.minWindowWidth - videoFrame.width)
       let newWindowFrame = NSRect(origin: NSPoint(x: videoFrame.origin.x - (extraWidthNeeded * 0.5), y: videoFrame.origin.y),
-                                  size: CGSize(width: videoFrame.width + extraWidthNeeded, height: videoFrame.height + outsideTopBarHeight))
+                                  size: CGSize(width: videoFrame.width + extraWidthNeeded, height: videoFrame.height))
 
       // Need to supply explicit viewportMargins when exiting interactive mode, to ensure they are zero.
       // Otherwise they will be implicitly set to the standard interactive mode margins, which won't work for our animation.
@@ -388,7 +386,7 @@ extension PlayerWindowController {
                                     screenFit: transition.outputGeometry.screenFit,
                                     mode: transition.inputLayout.mode,
                                     topMarginHeight: 0,
-                                    outsideBars: MarginQuad(top: outsideTopBarHeight), insideBars: MarginQuad.zero,
+                                    outsideBars: MarginQuad(top: 0), insideBars: MarginQuad.zero,
                                     viewportMargins: viewportMargins,
                                     video: transition.outputGeometry.video)
       return resizedGeo
@@ -398,7 +396,7 @@ extension PlayerWindowController {
 
       let baseGeo: PWinGeometry
       if transition.inputLayout.isFullScreen {
-        // Need middle geo so that sidebars get closed
+        // Need middle geo so that sidebars get closed.
         baseGeo = inputGeoSet.musicMode.cloneMusicMode(video: inputGeoSet.video, playlistShown: false)
       } else {
         baseGeo = transition.inputGeometry
