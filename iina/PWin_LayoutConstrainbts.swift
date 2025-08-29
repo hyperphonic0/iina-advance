@@ -197,7 +197,7 @@ extension PlayerWindowController {
       assert(useViewport, "Cannot use topBarView without viewportView")
       let constant1 = transition.viewportTopOffsetFromTopBarTop(for: stage)
       let constant2 = transition.topBarBottomOffsetFromViewportTop(for: stage)
-      log.verbose("\(logPre) updating topBar, viewport.top<-topBar.top: \(constant1), topBar.bottom<-viewport.top: \(constant2)")
+      log.verbose("\(logPre) Updating topBar, viewport.top<-topBar.top: \(constant1), topBar.bottom<-viewport.top: \(constant2)")
 
       p.viewportTopOffsetFromTopBarTop.createOrUpdate(to: constant1) { [self] c in
         viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
@@ -225,7 +225,7 @@ extension PlayerWindowController {
     // Bottom Bar
     if useBottomBar {
       // Handle leading & trailing constraints
-      log.verbose{"\(logPre) updating bottomBar placement to: \(layoutForBottomBar.bottomBarPlacement) leadingSB_Shown=\(layoutForBottomBar.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layoutForBottomBar.isTrailingSidebarVisible.yn)"}
+      log.verbose{"\(logPre) Updating bottomBar placement to: \(layoutForBottomBar.bottomBarPlacement) leadingSB_Shown=\(layoutForBottomBar.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layoutForBottomBar.isTrailingSidebarVisible.yn)"}
       updateBottomBarHorizontalContraints(forLayout: layoutForBottomBar)
 
       if outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.videoShown {
@@ -271,7 +271,7 @@ extension PlayerWindowController {
     if useViewport {
       let constant1 = transition.viewportTopOffsetFromCVTop(for: stage)
       let constant2 = transition.cvBtmOffsetFromViewportBtm(for: stage)
-      log.verbose("\(logPre) updating viewport, viewport.top<-CV.top: \(constant1), CV.bottom<-viewport.bottom: \(constant2)")
+      log.verbose("\(logPre) Updating viewport, viewport.top<-CV.top: \(constant1), CV.bottom<-viewport.bottom: \(constant2)")
 
       p.viewportTopOffsetFromCVTop.createOrUpdate(to: constant1) { [self] c in
         viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)

@@ -26,15 +26,15 @@ extension PlayerWindowController {
       var description: String {
         switch self {
         case .preTransitionSetup:
-          return "preTransitionSetup"
+          return "PreTxSetup"
         case .closeOldPanels:
-          return "closeOldPanels"
+          return "CloseOldPanels"
         case .midTransitionHiddenUpdates:
-          return "midTransitionHiddenUpdates"
+          return "MidTxHiddenUpdates"
         case .openNewPanels:
-          return "openNewPanels"
+          return "OpenNewPanels"
         case .postTransition:
-          return "postTransition"
+          return "PostTx"
         }
       }
 
@@ -344,7 +344,7 @@ extension PlayerWindowController {
     // MARK: - Layout per Stage
 
     func logPreamble(for stage: Stage) -> String {
-      "[\(name)] \(stage): "
+      "[\(name)-\(stage)]"
     }
 
     func geometry(for stage: Stage) -> PWinGeometry {

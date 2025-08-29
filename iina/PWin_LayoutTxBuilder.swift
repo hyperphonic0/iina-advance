@@ -393,14 +393,7 @@ extension PlayerWindowController {
 
     } else if transition.isEnteringMusicMode {
       // - Music Mode: Enter
-
-      let baseGeo: PWinGeometry
-      if transition.inputLayout.isFullScreen {
-        // Need middle geo so that sidebars get closed.
-        baseGeo = inputGeoSet.musicMode.cloneMusicMode(video: inputGeoSet.video, playlistShown: false)
-      } else {
-        baseGeo = transition.inputGeometry
-      }
+      let baseGeo = transition.inputGeometry
 
       let middleWindowFrame = baseGeo.videoFrameInScreenCoords
       return PWinGeometry(windowFrame: middleWindowFrame, screenID: baseGeo.screenID,
