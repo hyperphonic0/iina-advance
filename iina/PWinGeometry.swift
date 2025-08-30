@@ -1273,7 +1273,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     let isValidHeight = playlistShown ? (musicModePlaylistHeight >= Constants.Distance.MusicMode.minPlaylistHeight) : (musicModePlaylistHeight == 0)
     if !isValidHeight {
-      log.warn{"[geo] MusicMode: playlistHeight (\(musicModePlaylistHeight)) is invalid; playlistShown=\(playlistShown.yn) minPlaylistH=\(Constants.Distance.MusicMode.minPlaylistHeight)"}
+      if !playlistShown {
+        log.warn{"[geo] MusicMode: playlistHeight (\(musicModePlaylistHeight)) is invalid (will try to correct); playlistShown=\(playlistShown.yn) minPlaylistH=\(Constants.Distance.MusicMode.minPlaylistHeight)"}
+        let heightDiff = musicModePlaylistHeight
+        let newWindowFrame = NSRect(origin: NSPoint(x: windowFrame.origin.x, y: windowFrame.origin.y + heightDiff), size: NSSize(width: windowFrame.width, height: windowFrame.height - heightDiff))
+        return forMusicMode(windowFrame: newWindowFrame, screenID: screenID, video: video, videoShown: videoShown, playlistShown: playlistShown, isMiddleTransition: isMiddleTransition)
+      }
     } else {
       assert(videoShown == winGeo.videoShown,
              "Expected videoShown to match: \(videoShown.yesno) → \(winGeo.videoShown.yesno)")

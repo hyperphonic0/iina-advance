@@ -419,6 +419,11 @@ extension PlayerWindowController {
 
     // Bottom bar
 
+    func bottomBarBtmOffsetFromCVTop(for stage: Stage) -> CGFloat {
+      let geo = geometry(for: stage)
+      return geo.windowFrame.height
+    }
+
     func bottomBarHeight(for stage: Stage) -> CGFloat {
       let geo = geometry(for: stage)
       return geo.bottomBarHeight

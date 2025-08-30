@@ -231,8 +231,9 @@ extension PlayerWindowController {
       if outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.videoShown {
         p.bottomBarBtmOffsetFromCVBtm.isActive = false
 
-        let bottomBarHeight = transition.bottomBarHeight(for: stage)
-        p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: bottomBarHeight) { [self] c in
+        let constant1 = transition.bottomBarBtmOffsetFromCVTop(for: stage)
+        log.verbose{"\(logPre) Updating bottomBarBtmOffsetFromCVTop to \(constant1)"}
+        p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1) { [self] c in
           bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
         }
       } else {
@@ -262,9 +263,6 @@ extension PlayerWindowController {
         con.priorityInt = 260
         return con
       }
-
-      // In music mode, need to be lower priority than VideoView constraints. Otherwise live resize of window will break
-//      p.bottomBarBtmOffsetFromViewportBtm.constraint?.priorityInt = (outputGeo.mode == .musicMode) && stage.isAtLeast(.midTransitionHiddenUpdates) ? 260 : 1000
     }
 
     // Viewport View
