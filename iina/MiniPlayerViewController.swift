@@ -71,7 +71,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     musicModeControlBarView.idString = "MusicModeControlBarView"
     positionSliderWrapperView.idString = "PositionSliderWrapperView"
     controllerButtonsPanelView.idString = "ControllerButtonsPanelView"
-    
+
     mediaInfoView.idString = "MediaInfoView"
     // Clip scrolling text at the margins so it doesn't touch the sides of the window
     mediaInfoView.clipsToBounds = true
@@ -134,6 +134,22 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     }
 
     hideControllerButtonsInPipeline()
+  }
+
+  func addPlaylistViewIfMissing() {
+    // move playist view
+    let playlistView = pwc.playlistView.view
+    guard !playlistWrapperView.containsSubview(playlistView) else { return }
+    log.verbose("MiniPlayer: adding playlistView")
+    playlistWrapperView.addSubview(playlistView)
+    playlistView.addAllConstraintsToFillSuperview()
+  }
+
+  func removePlaylistViewIfPresent() {
+    let playlistView = pwc.playlistView.view
+    guard playlistWrapperView.containsSubview(playlistView) else { return }
+    log.verbose("MiniPlayer: removing playlistView")
+    playlistView.removeFromSuperview()
   }
 
   private func showControl() {

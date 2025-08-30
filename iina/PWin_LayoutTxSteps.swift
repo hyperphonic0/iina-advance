@@ -632,6 +632,12 @@ extension PlayerWindowController {
 
     // - Music mode: entering or continuing)
 
+    if (transition.isEnteringMusicMode || transition.isTogglingPlaylistInMusicMode) && transition.outputGeometry.isMusicModePlaylistShown {
+      // move playist view
+      miniPlayer.loadIfNeeded()
+      miniPlayer.addPlaylistViewIfMissing()
+    }
+
     // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
     if transition.isWindowInitialLayout || transition.isTogglingMusicMode {
       pip.showOrHidePipOverlayView()
@@ -641,11 +647,6 @@ extension PlayerWindowController {
         miniPlayer.loadIfNeeded()
         bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
         miniPlayer.view.addAllConstraintsToFillSuperview()
-
-        // move playist view
-        let playlistView = playlistView.view
-        miniPlayer.playlistWrapperView.addSubview(playlistView)
-        playlistView.addAllConstraintsToFillSuperview()
 
         playSlider.customCell.knobHeight = Constants.Distance.Slider.musicModeKnobHeight
 
@@ -1332,6 +1333,11 @@ extension PlayerWindowController {
         // Playlist sidebar is visible: need to scroll to current item again due to size change
         playlistView.scrollPlaylistToCurrentItem()
       }
+    }
+
+    if transition.isExitingMusicMode || transition.isClosingPlaylistInMusicMode {
+      // move playist view
+      miniPlayer.removePlaylistViewIfPresent()
     }
 
     if transition.outputGeometry.mode == .musicMode && transition.outputGeometry.videoShown {
