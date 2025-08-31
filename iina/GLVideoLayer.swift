@@ -30,7 +30,7 @@ class GLVideoLayer: CAOpenGLLayer {
   private var fbo: GLint = 1
 
   private var needsMPVRender = false
-  private var forceRender = false
+  private var forceDraw = false
 
   private let asychronousModeLock: Lock
   private var asychronousModeTimer: Timer?
@@ -136,6 +136,10 @@ class GLVideoLayer: CAOpenGLLayer {
 
   override func canDraw(inCGLContext ctx: CGLContextObj, pixelFormat pf: CGLPixelFormatObj,
                         forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) -> Bool {
+    // When isAsynchronous==true, skip all drawing calls on the main thread.
+    // Setting isAsynchronous = true is enough to prevent jittering.
+    guard !(isAsynchronous && Thread.isMainThread) else { return false }
+
     guard lockAndSetOpenGLContext() else { return false }
     defer { unlockOpenGLContext() }
     return videoView.$isUninited.withLock { isUninited in
@@ -150,7 +154,7 @@ class GLVideoLayer: CAOpenGLLayer {
       }
       printStats()
 #endif
-      if forceRender { return true }
+      if forceDraw { return true }
       return shouldRenderUpdateFrame()
     }
   }
@@ -258,14 +262,14 @@ class GLVideoLayer: CAOpenGLLayer {
       guard lockAndSetOpenGLContext() else { return }
       defer { unlockOpenGLContext() }
 
-      // The properties forceRender and needsMPVRender are always accessed while holding isUninited's
+      // The properties forceDraw and needsMPVRender are always accessed while holding isUninited's
       // lock. This avoids the need for separate locks to avoid data races with these flags. No need
       // to check isUninited at this point.
       needsMPVRender = true
-      if forced { forceRender = true }
+      if forced { forceDraw = true }
     }
 
-    // Prevent crash if trying to use forceRender when vid=0 (usually when toggling video on or off)
+    // Prevent crash if trying to use forceDraw when vid=0 (usually when toggling video on or off)
     guard player.info.isVideoTrackSelected else { return }
 
     // Must not call display while holding isUninited's lock as that method will attempt to acquire
@@ -290,8 +294,8 @@ class GLVideoLayer: CAOpenGLLayer {
     videoView.$isUninited.withLock() { [self] isUninited in
       guard !isUninited else { return }
 
-      guard !forceRender else {
-        forceRender = false
+      guard !forceDraw else {
+        forceDraw = false
         return
       }
       guard needsMPVRender else { return }
