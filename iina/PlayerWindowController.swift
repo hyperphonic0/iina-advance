@@ -1847,6 +1847,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     var tasks: [IINAAnimation.Task] = []
     var geoSet: GeometrySet? = nil
     let cropAnimationDuration = immediately ? 0 : Constants.AnimationDuration.cropAnimation * 0.005
+    let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenInteractive ? .fullScreenNormal : .windowedNormal
 
     if let cropController = cropSettingsView {
       // We were in interactive crop
@@ -1866,6 +1867,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
             /// Set the filter. This will result in `transformGeometry` getting called, which will trigger an exit from interactive mode.
             /// But that task can only happen once we return and relinquish the main queue.
             _ = player.addVideoFilter(newCropFilter)
+            // May need to re-enable mpv's keepaspect-window prematurely for a nicer animation
+            player._setMpvKeepaspectWindow(to: newMode.needsMpvKeepaspectWindow)
           } else {
             // If no crop, remove any existing crop filter
             log.verbose{"Start exiting interactive mode: crop changing to none; removing crop filter"}
@@ -1901,7 +1904,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
 
     // Build exit animation
-    let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenInteractive ? .fullScreenNormal : .windowedNormal
     let lastSpec = currentLayout.mode == .fullScreenInteractive ? currentLayout.spec : lastWindowedLayoutSpec
     log.verbose("Exiting interactive mode, newMode: \(newMode)")
     let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
