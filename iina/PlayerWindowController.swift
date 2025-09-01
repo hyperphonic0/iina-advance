@@ -375,7 +375,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // - Outlets: Constraints
 
-  let panelConstraints = PWinPanelConstraints()
+  let panelConstraints = PanelConstraints()
 
   // - Leading sidebar constraints
 
