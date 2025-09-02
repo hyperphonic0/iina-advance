@@ -2090,16 +2090,21 @@ class PlayerCore: NSObject {
     }
   }
 
-  func reloadQuickSettingsView() {
+  /// *Enqueues*
+  func setQuickSettingsViewNeedsUpdate() {
     pwc.animationPipeline.doAfterGTFs{ [self] in
-      guard pwc.loaded else { return }
-      guard !isStopping else { return }
-      log.trace("Reloading QuickSettigsView")
-
-      // Easiest place to put this - need to call it when setting equalizers
-      videoView.displayActive()
-      pwc.quickSettingView.reloadCurrentTab()
+      reloadQuickSettingsViewNow()
     }
+  }
+
+  func reloadQuickSettingsViewNow() {
+    guard pwc.loaded else { return }
+    guard !isStopping else { return }
+    log.trace("Reloading QuickSettigsView")
+
+    // Easiest place to put this - need to call it when setting equalizers
+    videoView.displayActive()
+    pwc.quickSettingView.reloadCurrentTab()
   }
 
   func seeking() {
@@ -2221,7 +2226,7 @@ class PlayerCore: NSObject {
         setTrack(currentSub.id, forType: .sub)
       }
 
-      reloadQuickSettingsView()
+      setQuickSettingsViewNeedsUpdate()
     }
   }
 
@@ -2354,7 +2359,7 @@ class PlayerCore: NSObject {
     }
     postNotification(.iinaSSIDChanged)
     saveState()
-    reloadQuickSettingsView()
+    setQuickSettingsViewNeedsUpdate()
   }
 
   func subScaleChanged(_ subScale: Double) {
@@ -2362,7 +2367,7 @@ class PlayerCore: NSObject {
     let displayValue = subScale >= 1 ? subScale : -1/subScale
     sendOSD(.subScale(displayValue.roundedTo2()))
     saveState()
-    reloadQuickSettingsView()
+    setQuickSettingsViewNeedsUpdate()
   }
 
   func subVisibilityChanged(_ visible: Bool) {
@@ -2391,7 +2396,7 @@ class PlayerCore: NSObject {
       sendOSD(.subDelay(delay))
       saveState()
     }
-    reloadQuickSettingsView()
+    setQuickSettingsViewNeedsUpdate()
   }
 
   func secondarySubDelayChanged(_ delay: Double) {
@@ -2399,7 +2404,7 @@ class PlayerCore: NSObject {
     info.sub2Delay = delay
     sendOSD(.secondSubDelay(delay))
     saveState()
-    reloadQuickSettingsView()
+    setQuickSettingsViewNeedsUpdate()
   }
 
   func subPosChanged(_ position: Double) {
@@ -2407,7 +2412,7 @@ class PlayerCore: NSObject {
     info.subPos = position
     sendOSD(.subPos(position))
     saveState()
-    reloadQuickSettingsView()
+    setQuickSettingsViewNeedsUpdate()
   }
 
   func secondarySubPosChanged(_ position: Double) {
@@ -2415,7 +2420,7 @@ class PlayerCore: NSObject {
     info.sub2Pos = position
     sendOSD(.secondSubPos(position))
     saveState()
-    reloadQuickSettingsView()
+    setQuickSettingsViewNeedsUpdate()
   }
 
   private func autoSearchOnlineSub() {

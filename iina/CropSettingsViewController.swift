@@ -35,6 +35,11 @@ class CropSettingsViewController: CropBoxViewController {
     super.selectedRectUpdated()
     guard view.superview != nil else { return }
 
+    defer {
+      cropBoxView.needsLayout = true
+      cropBoxView.needsDisplay = true
+    }
+
     cropRectLabel.stringValue = readableCropString
 
     let actualSize = cropBoxView.actualSize
@@ -167,12 +172,14 @@ class CropSettingsViewController: CropBoxViewController {
   private func adjustCropBoxView(ratio: String) {
     guard let aspect = Aspect(string: ratio) else {
       // Fall back to selecting all
+      pwc.log.error("Failed to get aspect from string \(ratio.quoted); falling back to select all")
       cropBoxView.setSelectedRect(to: NSRect(origin: CGPointZero, size: cropBoxView.actualSize))
       return
     }
 
     let actualSize = cropBoxView.actualSize
     let cropped = actualSize.getCropRect(withAspect: aspect)
+    pwc.log.error("Adjusting cropBoxView to \(cropped)")
     cropBoxView.setSelectedRect(to: cropped)
   }
 

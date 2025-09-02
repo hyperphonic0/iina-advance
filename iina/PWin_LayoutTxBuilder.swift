@@ -28,7 +28,7 @@ extension PlayerWindowController {
                              _ geoSet: GeometrySet? = nil) -> LayoutTransition {
 
     // use latest window frame in case it exists and was moved
-    let inputGeoSet = geoSet ?? self.buildGeoSet(activeMode: inputLayout.mode)
+    let inputGeoSet = geoSet ?? self.buildGeoSet(layoutMode: inputLayout.mode)
 
     var transitionID: Int = 0
     $layoutTransitionCounter.withLock {

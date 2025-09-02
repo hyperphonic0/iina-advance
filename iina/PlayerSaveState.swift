@@ -402,7 +402,7 @@ struct PlayerSaveState: CustomStringConvertible {
             return
           }
           // Retrieve appropriate geometry values, updating to latest window frame if needed:
-          let geo = pwc.buildGeoSet(activeMode: pwc.currentLayout.mode)
+          let geo = pwc.buildGeoSet(layoutMode: pwc.currentLayout.mode)
           saveQueue.async {
             guard !player.isShuttingDown else { return }
 
@@ -428,7 +428,7 @@ struct PlayerSaveState: CustomStringConvertible {
     if pwc.isAnimatingLayoutTransition {
       geo = pwc.geo
     } else {
-      geo = pwc.buildGeoSet(activeMode: pwc.currentLayout.mode)
+      geo = pwc.buildGeoSet(layoutMode: pwc.currentLayout.mode)
     }
 
     /// Using `sync` here should delay shutdown & makes sure any existing async saves aren't killed mid-write!

@@ -50,6 +50,9 @@ struct GeometryTransform {
   private let sessionStateTransform: PWinSessionStateTF?
   private let videoTransform: VideoGeometryTF?
   private let windowedTransform: PWinGeometryTF?
+  /// If provided, overrides all logic for generating the window geometry transform tasks.
+  /// This option is mutually exclusive with the `windowedTransform` option; both should not both be provided in the same GTF.
+  private let buildPWinTransformTasks: ((GeometryTransform.ContextStage3) -> [IINAAnimation.Task])?
 
   private let onSuccess: (() -> Void)?
 
@@ -60,6 +63,7 @@ struct GeometryTransform {
        sessionState: PWinSessionStateTF? = nil,
        video: VideoGeometryTF? = nil,
        windowed: PWinGeometryTF? = nil,
+       buildPWinTransformTasks: ((GeometryTransform.ContextStage3) -> [IINAAnimation.Task])? = nil,
        onSuccess: (() -> Void)? = nil) {
     let pipeline = player.pwc.animationPipeline
     self.id = pregeneratedID ?? pipeline.gtfLock.withLock {
@@ -71,6 +75,7 @@ struct GeometryTransform {
     self.sessionStateTransform = sessionState
     self.videoTransform = video
     self.windowedTransform = windowed
+    self.buildPWinTransformTasks = buildPWinTransformTasks
     self.onSuccess = onSuccess
   }
 
@@ -91,10 +96,10 @@ struct GeometryTransform {
     // MARK: - STAGE 1
     assert(DispatchQueue.isExecutingIn(.main))
 
-    // Get a copy of geo inside animationPipeline to ensure serial access.
+    // Get a copy of videoGeo inside animationPipeline to ensure serial access.
     // This is reused asynchronously down below, so some parts of it may fall out of date, but
     // shouldn't be the parts we need for now...
-    let prevGeoSet = pwc.geo
+    var outputVideoGeo = pwc.geo.video
 
     // Quick summary of how we will avoid race conditions with `pwc.sessionState` (tag: #SessionState-Race)
     // 1. All reads and writes of this variable occur on the main DQ.
@@ -144,8 +149,6 @@ struct GeometryTransform {
         log.verbose{"[GTF:\(name)] No sessionStateChange provided; using prev value: \(gtfSessionState)"}
       }
 
-      var outputVideoGeo = prevGeoSet.video
-
       /// 2b: Sync video params from mpv, if `syncVideoParams` is true.
       if syncVideoParams {
         log.verbose{"[GTF:\(name)] Calling syncVideoParamsFromMpv as configured"}
@@ -176,16 +179,16 @@ struct GeometryTransform {
         // Do not reference these variables until inside this animation task to ensure serial access
         let inputLayout = pwc.currentLayout
 
-        guard !inputLayout.mode.isInteractiveMode else {
-          return abort("In final task (main): cannot use for currentLayout mode: \(inputLayout.mode)")
-        }
+//        guard !inputLayout.mode.isInteractiveMode else {
+//          return abort("In final task (main): currentLayout.mode is disqualifying: \(inputLayout.mode)")
+//        }
 
         // Update context's geo with current window frame
-        let inputGeoSet = pwc.buildGeoSet(activeMode: inputLayout.mode, baseGeoSet: prevGeoSet,
+        let inputGeoSet = pwc.buildGeoSet(layoutMode: inputLayout.mode,
                                           forceWinFrameUpdate: !gtfSessionState.isStartingSession)
+        log.verbose{"[GTF:\(name)] Input geoSet=\(inputGeoSet)"}
 
-        var ctxStage3 = GeometryTransform.ContextStage3(ctxStage2,
-                                                        gtfSessionState: gtfSessionState,
+        var ctxStage3 = GeometryTransform.ContextStage3(ctxStage2, gtfSessionState: gtfSessionState,
                                                         inputGeoSet: inputGeoSet, outputVidGeo: outputVideoGeo,
                                                         inputLayout: inputLayout)
 
@@ -197,58 +200,21 @@ struct GeometryTransform {
   private func doMainQueueWork(_ ctx: inout GeometryTransform.ContextStage3) {
     log.trace{"[GTF:\(name)] Starting main thread work: startingSession=\(ctx.gtfSessionState.isStartingSession)"}
 
-    var immediateTasks: [IINAAnimation.Task]
+    /// 3. Build tasks to transition the window to its "initial" layout (new sessions only)
+    var immediateTasks: [IINAAnimation.Task] = buildInitialLayoutTasks(&ctx)
 
-    if ctx.gtfSessionState.isStartingSession {
-      /// 3. Transition window to initial layout
-      let window = ctx.pwc.window!
-
-      // Build tasks to transition the window to its "initial" layout.
-      switch ctx.gtfSessionState {
-
-      case .restoring(let priorState):
-        /// Restoring from prior launch  (`PWinSessionState.restoring`).
-        /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
-        immediateTasks = ctx.pwc.buildTasksToRestoreLayout(priorState, &ctx)
-
-      case .newReplacingExisting:
-        /// Reusing existing window for new file (`PWinSessionState.newReplacingExisting`)
-        log.verbose("[GTF:\(ctx.name)] Opening a new file in an already open window, mode=\(ctx.inputLayout.mode)")
-
-        /// `windowFrame` may be slightly off; update it
-        if ctx.inputLayout.mode == .windowedNormal {
-          /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
-          /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
-          PlayerWindowController.windowedModeGeoLastClosed = ctx.inputLayout.buildGeometry(windowFrame: window.frame,
-                                                                                           screenID: ctx.pwc.bestScreen.screenID,
-                                                                                           ctx.outputVidGeo)
-        } else if ctx.inputLayout.mode == .musicMode {
-          /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
-          PlayerWindowController.musicModeGeoLastClosed = ctx.inputGeoSet.musicMode.cloneMusicMode(windowFrame: window.frame,
-                                                                                                   screenID: ctx.pwc.bestScreen.screenID,
-                                                                                                   video: ctx.outputVidGeo)
-        }
-        // No initial layout tasks needed. Fall through to add post-layout task
-        immediateTasks = [ctx.buildPostInitialLayoutTask()]
-
-      case .creatingNew:
-        log.verbose{"[GTF:\(ctx.name)] Brand new window is opening: building initial layout tasks"}
-        /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
-        immediateTasks = ctx.pwc.buildTasksForNewWindow(&ctx)
-
-      default:
-        Logger.fatal("Invalid PWinSessionState for initial layout: \(ctx.gtfSessionState)")
-      }
-      // Done with construction of initial layout tasks
-    } else {
-      immediateTasks = []
-    }
-
+    var remainingTasks: [IINAAnimation.Task]
     /// 4. Build tasks which apply `windowedTransform` (if it exists), as well as any needed adjustments for
     /// `outputVidGeo`.
     /// Important: must be called *after* building the initial layout tasks!
     /// (expects `ctx.outputLayout`, `ctx.needsNativeFullScreen` to have been set)
-    var remainingTasks = ctx.buildApplyWindowTransformTasks()
+    if let buildPWinTransformTasks {
+      assert(windowedTransform == nil, "buildPWinTransformTasks & windowedTransform cannot both be set")
+      remainingTasks = buildPWinTransformTasks(ctx)
+      remainingTasks.append(.instantTask(ctx.doPostApplyWork))
+    } else {
+      remainingTasks = ctx.buildPWinTransformTasks()
+    }
 
     /// 5. Need to switch to/from music mode, or enter full screen (if not done elsewhere)?
     /// If so, append to "remaining" tasks.
@@ -261,7 +227,8 @@ struct GeometryTransform {
 
     // If restoring minimized: can't rely on showWindow() being called, but window changes won't be seen anyway.
     // So run end task right away even though it's technically starting a new session.
-    let isRestoringMinimizedWindow = ctx.gtfSessionState.isRestoring && UIState.shared.windowsMinimized.contains(pwc.window!.savedStateName)
+    let window = ctx.pwc.window!
+    let isRestoringMinimizedWindow = ctx.gtfSessionState.isRestoring && UIState.shared.windowsMinimized.contains(window.savedStateName)
     if isRestoringMinimizedWindow {
       log.verbose{"[GTF:\(name)] Restoring minimized window: will run tasks immediately instead of enqueueing"}
     }
@@ -277,6 +244,49 @@ struct GeometryTransform {
 
     log.verbose{"[GTF:\(name)] Submitting immediate tasks: count=\(immediateTasks.count) timeTotal=\(immediateTasks.reduce(0) { $0 + $1.duration })"}
     pwc.animationPipeline.submit(immediateTasks)
+  }
+
+  /// For new sessions, constructs & returns tasks to set up the "initial" window layout.
+  /// Returns empty list if no initial layout needed.
+  private func buildInitialLayoutTasks(_ ctx: inout GeometryTransform.ContextStage3) -> [IINAAnimation.Task] {
+    let window = ctx.pwc.window!
+
+    switch ctx.gtfSessionState {
+
+    case .restoring(let priorState):
+      /// Restoring from prior launch  (`PWinSessionState.restoring`).
+      /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
+      return ctx.pwc.buildTasksToRestoreLayout(priorState, &ctx)
+
+    case .newReplacingExisting:
+      /// Reusing existing window for new file (`PWinSessionState.newReplacingExisting`)
+      log.verbose("[GTF:\(ctx.name)] Opening a new file in an already open window, mode=\(ctx.inputLayout.mode)")
+
+      /// `windowFrame` may be slightly off; update it
+      if ctx.inputLayout.mode == .windowedNormal {
+        /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
+        /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
+        PlayerWindowController.windowedModeGeoLastClosed = ctx.inputLayout.buildGeometry(windowFrame: window.frame,
+                                                                                         screenID: ctx.pwc.bestScreen.screenID,
+                                                                                         ctx.outputVidGeo)
+      } else if ctx.inputLayout.mode == .musicMode {
+        /// Set this so that `transformGeometry` will use the correct default window frame if it looks for it.
+        PlayerWindowController.musicModeGeoLastClosed = ctx.inputGeoSet.musicMode.cloneMusicMode(windowFrame: window.frame,
+                                                                                                 screenID: ctx.pwc.bestScreen.screenID,
+                                                                                                 video: ctx.outputVidGeo)
+      }
+      // No initial layout tasks needed. Fall through to add finishing task
+      return [ctx.buildFinalInitialLayoutTask()]
+
+    case .creatingNew:
+      log.verbose{"[GTF:\(ctx.name)] Brand new window is opening: building initial layout tasks"}
+      /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
+      return ctx.pwc.buildTasksForNewWindow(&ctx)
+
+    default:
+      log.verbose{"[GTF:\(ctx.name)] No initial layout tasks needed"}
+      return []
+    }
   }
 
   // MARK: - Context
@@ -366,7 +376,7 @@ struct GeometryTransform {
     /// Applies the `windowedTransform` (if it exists), and generates tasks which animate any changes caused
     /// by the transform  or by changes in `outputVidGeo`.
     /// Only `transformGeometry` should call this.
-    fileprivate func buildApplyWindowTransformTasks() -> [IINAAnimation.Task] {
+    fileprivate func buildPWinTransformTasks() -> [IINAAnimation.Task] {
       log.verbose{"[GTF:\(name)] Building 'apply' tasks, mode=\(outputLayout.mode), vidTrackID=\(vidTrackID)"}
 
       // There's no good animation for rotation (yet), so just do as little animation as possible in this case
@@ -426,7 +436,8 @@ struct GeometryTransform {
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose{"[GTF:\(name)] Building 'apply' tasks for windowed mode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputGeo)"}
-        tasks = pwc.buildApplyPWinGeoTasks(from: inputGeoSet.windowed, to: outputGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
+        tasks = pwc.buildApplyPWinGeoTasks(from: inputGeoSet.windowed, to: outputGeo,
+                                           duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
       case .fullScreenNormal:
         let intendedViewportSize: CGSize? = gtfSessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
@@ -551,7 +562,7 @@ struct GeometryTransform {
       pwc.updateWindowBorderAndOpacity()
 
       // Always do this in case the video geometry changed:
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
 
       // Must force drawing to cover the case where this player was previously used to play a video
       // and is now playing an audio file without an album cover and without using music mode.
@@ -639,7 +650,7 @@ struct GeometryTransform {
 
     /// Post-layout task: update various internal UI stuff, and finally (maybe) post `windowIsReadyToShow` or `windowMustCancelShow`.
     /// Requires `ctx.outputLayout`.
-    fileprivate func buildPostInitialLayoutTask() -> IINAAnimation.Task {
+    fileprivate func buildFinalInitialLayoutTask() -> IINAAnimation.Task {
       return IINAAnimation.Task.instantTask{
         // Run this early when restoring, before showWindow(), to avoid noticeable color flickering
         pwc.videoView.refreshAllVideoDisplayState()
@@ -701,11 +712,11 @@ struct GeometryTransform {
           return nil
         } else if currentMediaAudioStatus.isAudio && !layout.isMusicMode && !layout.isFullScreen {
           log.debug{"[GTF:\(name)] Opened media is audio: auto-switching to music mode"}
-          let geo = pwc.buildGeoSet(video: outputVidGeo, activeMode: layout.mode)
+          let geo = pwc.buildGeoSet(video: outputVidGeo, layoutMode: layout.mode)
           return pwc.buildTasksToEnterMusicMode(automatically: true, from: layout, geo)
         } else if currentMediaAudioStatus == .notAudio && layout.isMusicMode {
           log.debug{"[GTF:\(name)] Opened media is not audio: auto-switching to normal window"}
-          let geo = pwc.buildGeoSet(video: outputVidGeo, activeMode: layout.mode)
+          let geo = pwc.buildGeoSet(video: outputVidGeo, layoutMode: layout.mode)
           return pwc.buildTasksToExitMusicMode(automatically: true, from: layout, geo)
         }
       default:
@@ -808,7 +819,7 @@ extension PlayerWindowController {
       })
     }
 
-    tasks.append(ctx.buildPostInitialLayoutTask())
+    tasks.append(ctx.buildFinalInitialLayoutTask())
 
     return tasks
   }

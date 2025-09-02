@@ -34,7 +34,7 @@ extension PlayerCore {
     guard !isStopping else { return }
     _ = updateAudioFiltersFromMpv()
     saveState()
-    reloadQuickSettingsView()
+    setQuickSettingsViewNeedsUpdate()
     postNotification(.iinaAFChanged)
   }
 
@@ -152,7 +152,7 @@ extension PlayerCore {
 
     postNotification(.iinaVFChanged)
     saveState()
-    reloadQuickSettingsView()
+    setQuickSettingsViewNeedsUpdate()
   }
 
   /// `vf`: gets up-to-date list of video filters

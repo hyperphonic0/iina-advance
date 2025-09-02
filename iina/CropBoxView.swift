@@ -47,13 +47,14 @@ class CropBoxView: NSView, DraggableObject {
     updateBoxRect()
     updateCursorRects()
     updateSelectedRect()
-    needsDisplay = true
+    settingsViewController.selectedRectUpdated()
   }
 
   // set boxRect, and update selectedRect
   private func boxRectChanged(to rect: NSRect) {
     boxRect = rect
     updateSelectedRect()
+    settingsViewController.selectedRectUpdated()
   }
 
   // set selectedRect, and update boxRect
@@ -61,7 +62,7 @@ class CropBoxView: NSView, DraggableObject {
     selectedRect = rect
     updateBoxRect()
     updateCursorRects()
-    needsDisplay = true
+    settingsViewController.selectedRectUpdated()
   }
 
   // FIXME: these 2 functions below can result in major imprecisions!
@@ -86,7 +87,6 @@ class CropBoxView: NSView, DraggableObject {
     if abs(ih + iy - actualSize.height) <= 4 { ih = actualSize.height - iy }
 
     selectedRect = NSMakeRect(ix, iy, iw, ih)
-    settingsViewController.selectedRectUpdated()
 //    Logger.log("actualSize: \(actualSize), boxRect: \(boxRect) -> selectedRect: \(selectedRect) <-")
   }
 
@@ -103,7 +103,6 @@ class CropBoxView: NSView, DraggableObject {
     let ih = selectedRect.height * yScale
 
     boxRect = NSMakeRect(ix, iy, iw, ih)
-    settingsViewController.selectedRectUpdated()
 //    Logger.log("actualSize: \(actualSize) -> boxRect: \(boxRect) <- selectedRect: \(selectedRect)")
   }
 

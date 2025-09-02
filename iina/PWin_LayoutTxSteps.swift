@@ -921,26 +921,27 @@ extension PlayerWindowController {
         bottomBarView.addSubview(cropController.view, positioned: .below, relativeTo: bottomBarTopBorder)
         cropController.view.addAllConstraintsToFillSuperview()
         cropController.view.alphaValue = 0
-        let videoSizeRaw = player.videoGeo.videoSizeRaw
-        if let cropController = cropSettingsView {
-          addOrReplaceCropBoxSelection(rawVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
+        let videoSizeRaw = transition.outputGeometry.video.videoSizeRaw
+        // Hide for now, to prepare for a nice fade-in animation
+        cropController.cropBoxView.isHidden = true
+        cropController.cropBoxView.alphaValue = 0
+        cropController.cropBoxView.needsLayout = true
 
-          /// `selectedRect` should be subrect of`actualSize`
-          let selectedRect: NSRect
-          switch currentLayout.spec.interactiveMode {
-          case .crop:
-            if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
-              selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-              log.verbose{"\(logPre) Setting crop box selectedRect from prevFilter: \(selectedRect)"}
-            } else {
-              selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
-              log.verbose{"\(logPre) Setting crop box selectedRect to default whole videoSize: \(selectedRect)"}
-            }
-          case .freeSelecting, .none:
-            selectedRect = .zero
+        /// `selectedRect` should be subrect of`actualSize`
+        let selectedRect: NSRect
+        switch currentLayout.spec.interactiveMode {
+        case .crop:
+          if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
+            selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
+            log.verbose{"\(logPre) Setting crop box selectedRect from prevFilter: \(selectedRect)"}
+          } else {
+            selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
+            log.verbose{"\(logPre) Setting crop box selectedRect to default whole videoSize: \(selectedRect)"}
           }
-          cropController.cropBoxView.selectedRect = selectedRect
+        case .freeSelecting, .none:
+          selectedRect = .zero
         }
+        cropController.cropBoxView.selectedRect = selectedRect
 
       } else if transition.isExitingInteractiveMode {
         // Exiting interactive mode
@@ -954,6 +955,22 @@ extension PlayerWindowController {
       }
     }
 
+    if transition.outputGeometry.mode.isInteractiveMode {
+      if let cropController = cropSettingsView {
+        let videoSizeRaw = transition.outputGeometry.video.videoSizeRaw
+        addOrReplaceCropBoxSelection(rawVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
+
+        // Native FS seems to change frame sizes on its own in some undocumented way, so just measure whatever is displayed for that.
+        // But all other modes should use precalculated values because NSView bounds is sometimes not reliable depending on timing
+        let cropBoxBounds = outputLayout.isNativeFullScreen ? videoView.bounds : NSRect(origin: CGPointZero, size: transition.outputGeometry.videoSize)
+        cropController.cropBoxView.resized(with: cropBoxBounds)
+        cropController.cropBoxView.needsLayout = true
+      } else if !player.isRestoring, player.info.isFileLoaded, !player.info.isVideoTrackSelected {
+        // if restoring, there will be a brief delay before getting player info, which is ok
+        Utility.showAlert("no_video_track")
+      }
+    }
+
     // Add constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
     updateOSDConstraints(outputLayout, transition.outputGeometry)
 
@@ -963,6 +980,17 @@ extension PlayerWindowController {
     if !transition.isTogglingFullScreen {
       updatePanelBlendingModes(to: outputLayout)
     }
+
+    // Do this here so that BarFactory regenerates close enough to mid-animation (so bar thickness changes pleasantly)
+    if let screen = window.screen {
+      applyThemeMaterial(using: transition.outputLayout.spec, window, screen)
+    } else {
+      // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
+      // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
+      // be called via windowDidChangeScreen.
+      log.verbose{"\(logPre) Skipped applyThemeMaterial due to missing window or screen"}
+    }
+
 
     // Other misc views
     updateVolumeUI()
@@ -1100,30 +1128,6 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.outputGeometry.mode.isInteractiveMode {
-      let videoSizeRaw = player.videoGeo.videoSizeRaw
-      if let cropController = cropSettingsView {
-        addOrReplaceCropBoxSelection(rawVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
-        // Hide for now, to prepare for a nice fade-in animation
-        cropController.cropBoxView.isHidden = true
-        cropController.cropBoxView.alphaValue = 0
-        cropController.cropBoxView.needsLayout = true
-      } else if !player.isRestoring, player.info.isFileLoaded, !player.info.isVideoTrackSelected {
-        // if restoring, there will be a brief delay before getting player info, which is ok
-        Utility.showAlert("no_video_track")
-      }
-    }
-
-    // Do this here so that BarFactory regenerates close enough to mid-animation (so bar thickness changes pleasantly)
-    if let window, let screen = window.screen {
-      applyThemeMaterial(using: transition.outputLayout.spec, window, screen)
-    } else {
-      // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
-      // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
-      // be called via windowDidChangeScreen.
-      log.verbose{"\(logPre) Skipped applyThemeMaterial due to missing window or screen"}
-    }
-
   }
 
   /// -------------------------------------------------
@@ -1131,7 +1135,7 @@ extension PlayerWindowController {
   /// Expected to be animated.
   func fadeInNewViews(_ transition: LayoutTransition) {
     guard let window = window else { return }
-    let logPre = "[\(transition.name)@FadeInNewViews"
+    let logPre = "[\(transition.name):FadeInNewViews"
     let outputLayout = transition.outputLayout
     log.verbose("\(logPre) Start")
 
@@ -1174,12 +1178,6 @@ extension PlayerWindowController {
         cropController.cropBoxView.isHidden = false
         cropController.cropBoxView.alphaValue = 1
       }
-
-      // Native FS seems to change frame sizes on its own in some undocumented way, so just measure whatever is displayed for that.
-      // But all other modes should use precalculated values because NSView bounds is sometimes not reliable depending on timing
-      let cropBoxBounds = outputLayout.isNativeFullScreen ? videoView.bounds : NSRect(origin: CGPointZero, size: transition.outputGeometry.videoSize)
-      cropController.cropBoxView.resized(with: cropBoxBounds)
-      cropController.cropBoxView.needsLayout = true
     }
 
     if transition.isExitingInteractiveMode {

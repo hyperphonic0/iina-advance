@@ -261,7 +261,7 @@ extension MPVController {
 
     case MPVProperty.videoParams:
       player.log.verbose("Δ mpv prop: \(MPVProperty.videoParams.quoted)")
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVProperty.videoOutParams:
       /** From the mpv manual:
@@ -342,7 +342,7 @@ extension MPVController {
       player.log.verbose("Δ mpv prop: `speed` = \(speed)")
 
       player.speedDidChange(to: speed)
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.PlaybackControl.loopPlaylist, MPVOption.PlaybackControl.loopFile:
       let loopMode = player.getLoopMode()
@@ -378,7 +378,7 @@ extension MPVController {
         player.info.deinterlace = data
         player.sendOSD(.deinterlace(data))
       }
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Video.hwdec:
       let data = String(cString: property.data.assumingMemoryBound(to: UnsafePointer<UInt8>.self).pointee)
@@ -387,7 +387,7 @@ extension MPVController {
         player.info.hwdec = data
         player.sendOSD(.hwdec(player.info.hwdecEnabled))
       }
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Audio.mute:
       guard let isMuted = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else {
@@ -420,7 +420,7 @@ extension MPVController {
         player.log.verbose{"Δ mpv prop: `audio-delay` = \(delay)"}
         player.info.audioDelay = delay
         player.sendOSD(.audioDelay(delay))
-        player.reloadQuickSettingsView()
+        player.setQuickSettingsViewNeedsUpdate()
       }
 
     case MPVOption.Subtitles.subVisibility:
@@ -428,7 +428,7 @@ extension MPVController {
         if player.info.isSubVisible != visible {
           player.info.isSubVisible = visible
           player.sendOSD(visible ? .subVisible : .subHidden)
-          player.reloadQuickSettingsView()
+          player.setQuickSettingsViewNeedsUpdate()
         }
       }
 
@@ -437,7 +437,7 @@ extension MPVController {
         if player.info.isSecondSubVisible != visible {
           player.info.isSecondSubVisible = visible
           player.sendOSD(visible ? .secondSubVisible : .secondSubHidden)
-          player.reloadQuickSettingsView()
+          player.setQuickSettingsViewNeedsUpdate()
         }
       }
 
@@ -483,34 +483,34 @@ extension MPVController {
       break
 
     case MPVOption.Subtitles.subFont:
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
       // TODO: OSD
 
     case MPVOption.Subtitles.subFontSize:
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
       //      if let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee {
       //        let fontSize = Int(data)
       //        // TODO: OSD
       //      }
 
     case MPVOption.Subtitles.subBold:
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
       //      if let isBold = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee {
       //        // TODO: OSD
       //      }
 
     case MPVOption.Subtitles.subBorderColor:
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
       // TODO: OSD
 
     case MPVOption.Subtitles.subBorderSize:
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
       //      if let borderSize = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee {
       //        // TODO: OSD
       //      }
 
     case MPVOption.Subtitles.subBackColor:
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
       // TODO: OSD
 
     case MPVOption.Equalizer.contrast:
@@ -522,7 +522,7 @@ extension MPVController {
       player.log.verbose("Δ mpv prop: 'contrast' = \(intData)")
       player.info.contrast = intData
       player.sendOSD(.contrast(intData))
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Equalizer.hue:
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else {
@@ -533,7 +533,7 @@ extension MPVController {
       player.log.verbose("Δ mpv prop: 'hue' = \(intData)")
       player.info.hue = intData
       player.sendOSD(.hue(intData))
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Equalizer.brightness:
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else {
@@ -544,7 +544,7 @@ extension MPVController {
       player.log.verbose("Δ mpv prop: 'brightness' = \(intData)")
       player.info.brightness = intData
       player.sendOSD(.brightness(intData))
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Equalizer.gamma:
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else {
@@ -555,7 +555,7 @@ extension MPVController {
       player.log.verbose("Δ mpv prop: 'gamma' = \(intData)")
       player.info.gamma = intData
       player.sendOSD(.gamma(intData))
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Equalizer.saturation:
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else {
@@ -566,7 +566,7 @@ extension MPVController {
       player.log.verbose("Δ mpv prop: 'saturation' = \(intData)")
       player.info.saturation = intData
       player.sendOSD(.saturation(intData))
-      player.reloadQuickSettingsView()
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVProperty.playlistCount:
       player.log.verbose("Δ mpv prop: 'playlist-count'")

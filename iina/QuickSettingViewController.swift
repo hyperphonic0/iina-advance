@@ -644,7 +644,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   /// Reload Quick Settings controls for the current tab.
   ///
-  /// Do not call this directly. Call `player.reloadQuickSettingsView()` instead.
+  /// Do not call this directly. Call `player.setQuickSettingsViewNeedsUpdate()` instead.
   func reloadCurrentTab() {
     guard isViewLoaded else { return }
     switch currentTab {

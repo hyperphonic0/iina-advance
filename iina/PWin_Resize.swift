@@ -230,10 +230,9 @@ extension PlayerWindowController {
       adjustFloatingControllerOrigin(for: newGeometry)
     }
 
-    if newGeometry.mode == .musicMode {
-
-    } else if newGeometry.mode.isInteractiveMode {
-      // Update interactive mode selectable box size. Origin is relative to viewport origin
+    if newGeometry.mode.isInteractiveMode, !isAnimatingLayoutTransition {
+      // Update interactive mode selectable box size. Origin is relative to viewport origin.
+      // Do not do this when animating layout changes. It causes jitters in the animation.
       let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
       cropSettingsView?.cropBoxView.resized(with: newVideoRect)
     }
@@ -507,7 +506,7 @@ extension PlayerWindowController {
                               showDefaultArt: Bool? = nil,
                               thenRun: Bool = false) -> [IINAAnimation.Task] {
 
-    log.verbose{"ApplyPWinGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) \(outputGeo)"}
+    log.verbose{"ApplyPWinGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) save=\(save.yn) \(outputGeo)"}
 
     var tasks: [IINAAnimation.Task] = []
 
