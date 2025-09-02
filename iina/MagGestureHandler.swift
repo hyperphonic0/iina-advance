@@ -63,7 +63,8 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
           // KLUDGE! AppKit does not give us the correct visibleFrame until after we have exited FS. The resulting window (as of MacOS 14.4)
           // is 6 pts too tall. For now, run another quick resize after exiting FS using the (now) correct visibleFrame
           pwc.animationPipeline.submitInstantTask{ [self] in
-            pwc.resizeViewport(to: screen.visibleFrame.size, centerOnScreen: true, duration: Constants.AnimationDuration.standard * 0.25)
+            let tasks = pwc.buildResizeViewportTasks(to: screen.visibleFrame.size, centerOnScreen: true, duration: Constants.AnimationDuration.standard * 0.25)
+            pwc.animationPipeline.submit(tasks)
           }
           return
 

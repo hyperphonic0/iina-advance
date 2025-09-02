@@ -419,8 +419,8 @@ extension PlayerWindowController {
    The window's position will also be updated to maintain its current center if possible, but also to
    ensure it is placed entirely inside `screen.visibleFrame`.
    */
-  func resizeViewport(to desiredViewportSize: CGSize? = nil, centerOnScreen: Bool = false,
-                      duration: CGFloat = Constants.AnimationDuration.standard) {
+  func buildResizeViewportTasks(to desiredViewportSize: CGSize? = nil, centerOnScreen: Bool = false,
+                                duration: CGFloat = Constants.AnimationDuration.standard) -> [IINAAnimation.Task] {
     assert(DispatchQueue.isExecutingIn(.main))
 
     let inputGeo: PWinGeometry
@@ -443,10 +443,10 @@ extension PlayerWindowController {
       outputGeo = inputGeo.scalingViewport(to: desiredViewportSize)
       log.verbose{"Calling applyPWinGeo from resizeViewport, to: \(outputGeo.windowFrame)"}
     default:
-      return
+      return []
     }
     // windowed or music mode
-    buildApplyPWinGeoTasks(from: inputGeo, to: outputGeo, duration: duration, thenRun: true)
+    return buildApplyPWinGeoTasks(from: inputGeo, to: outputGeo, duration: duration)
   }
 
 

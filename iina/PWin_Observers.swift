@@ -284,13 +284,16 @@ extension PlayerWindowController {
       animationPipeline.submitInstantTask { [self] in
         if let isLocked = newValue as? Bool, isLocked {
           log.debug{"Pref \(key.rawValue.quoted) changed to \(isLocked): resizing viewport to remove any excess space"}
-          resizeViewport()
+          var tasks = buildResizeViewportTasks()
 
-          animationPipeline.submitInstantTask { [self] in  // do after resize tasks
-            player.setMpvKeepaspectWindow(to: currentLayout.mode.needsMpvKeepaspectWindow)
-          }
+          tasks.append(.instantTask { [self] in  // do after resize tasks
+            player.updateMpvKeepaspectWindowSynchronously()
+          })
+
+          animationPipeline.submit(tasks)
         } else {
-          player.setMpvKeepaspectWindow(to: currentLayout.mode.needsMpvKeepaspectWindow)  // executes async in mpv queue
+          // No need for animation
+          player.updateMpvKeepaspectWindowSynchronously()
         }
       }
     case .hideWindowsWhenInactive:

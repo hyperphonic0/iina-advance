@@ -779,14 +779,23 @@ class PlayerCore: NSObject {
 
   // MARK: - MPV commands
 
+  /// __CAUTION:__ this call can cause a momentary hiccup while animating, so we don't want to run it `async` in mpv queue.
+  /// This should be run by using `mpv.queue.sync()` (and very carefully).
   func setMpvKeepaspectWindow(to enable: Bool) {
-    mpv.queue.async { [self] in
-      _setMpvKeepaspectWindow(to: enable)
-    }
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard isActive else { return }
+    guard info.mpvKeepaspectWindow != enable else { return }
+    mpv.setFlag(MPVOption.Window.keepaspectWindow, enable, level: .verbose)
   }
 
-  func _setMpvKeepaspectWindow(to enable: Bool) {
-    mpv.setFlag(MPVOption.Window.keepaspect, enable, level: .verbose)
+  /// __CAUTION:__ this call uses `sync` to mpv queue.
+  func updateMpvKeepaspectWindowSynchronously() {
+    assert(DispatchQueue.isExecutingIn(DispatchQueue.main))
+    log.verbose{"Updating mpv keepaspect-window synchronously"}
+    mpv.queue.sync {
+      setMpvKeepaspectWindow(to: pwc.currentLayout.mode.needsMpvKeepaspectWindow)
+    }
+    log.verbose{"Updating mpv keepaspect-window synchronously: done"}
   }
 
   func togglePause() {

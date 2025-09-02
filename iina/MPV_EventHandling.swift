@@ -52,6 +52,7 @@ extension MPVController {
     MPVOption.Equalizer.gamma: MPV_FORMAT_INT64,
     MPVOption.Equalizer.hue: MPV_FORMAT_INT64,
     MPVOption.Equalizer.saturation: MPV_FORMAT_INT64,
+    MPVOption.Window.keepaspectWindow: MPV_FORMAT_FLAG,
     MPVOption.Window.fullscreen: MPV_FORMAT_FLAG,
     MPVOption.Window.ontop: MPV_FORMAT_FLAG,
     MPVOption.Window.cursorAutohide: MPV_FORMAT_STRING,
@@ -594,6 +595,12 @@ extension MPVController {
       guard player.isActive else { break }
       guard let aspectName = getString(MPVProperty.videoParamsAspect) else { break }
       player.log.verbose("Δ mpv prop: 'video-params/aspect' = \(aspectName.quoted)")
+
+    case MPVOption.Window.keepaspectWindow:
+      let keepAspectWindow = getFlag(MPVOption.Window.keepaspectWindow)
+      player.log.verbose("Δ mpv prop: 'keepaspect-window' = \(keepAspectWindow.yn)")
+      guard player.info.mpvKeepaspectWindow != keepAspectWindow else { break }
+      player.info.mpvKeepaspectWindow = keepAspectWindow
 
     case MPVOption.Window.fullscreen:
       player.syncFullScreenState()

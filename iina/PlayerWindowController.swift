@@ -1867,7 +1867,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       tasks.append(.instantTask{ [self] in
         isAnimatingLayoutTransition = true  // Prevent window listeners from interfering
 
-        player.mpv.queue.async { [self] in
+        func mpvWork() {
           if let newVidGeo, let newCropFilter = newVidGeo.cropFilter {
             // If newVidGeo contains a crop, we must apply it
             log.verbose{"Cropping video from videoSizeRaw: \(newVidGeo.videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(newVidGeo.cropRect?.description ?? "nil")"}
@@ -1876,7 +1876,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
             /// But that task can only happen once we return and relinquish the main queue.
             _ = player.addVideoFilter(newCropFilter)
             // May need to re-enable mpv's keepaspect-window prematurely for a nicer animation
-            player._setMpvKeepaspectWindow(to: newMode.needsMpvKeepaspectWindow)
+            player.setMpvKeepaspectWindow(to: newMode.needsMpvKeepaspectWindow)
           } else {
             // If no crop, remove any existing crop filter
             log.verbose{"Start exiting interactive mode: crop changing to none; removing crop filter"}
@@ -1885,6 +1885,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
               player.setQuickSettingsViewNeedsUpdate()
             }
           }
+        }
+        player.mpv.queue.sync {
+          mpvWork()
         }
       })
 

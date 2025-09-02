@@ -115,6 +115,8 @@ class PlaybackInfo {
   var hdrAvailable: Bool = false
   var hdrEnabled: Bool = true
 
+  var mpvKeepaspectWindow: Bool = true
+
   // video equalizer
   var brightness: Int = 0
   var contrast: Int = 0

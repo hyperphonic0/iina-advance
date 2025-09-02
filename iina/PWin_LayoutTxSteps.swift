@@ -498,7 +498,7 @@ extension PlayerWindowController {
     }
 
     if !transition.isExitingFullScreen && transition.needsMpvKeepaspectUpdate {
-      player.setMpvKeepaspectWindow(to: outputLayout.mode.needsMpvKeepaspectWindow)  // executes async in mpv queue
+      player.updateMpvKeepaspectWindowSynchronously()
     }
 
     // - Bottom Bar
@@ -1259,7 +1259,7 @@ extension PlayerWindowController {
       // Exited FS
 
       if transition.needsMpvKeepaspectUpdate {
-        player.setMpvKeepaspectWindow(to: transition.outputLayout.mode.needsMpvKeepaspectWindow)  // executes async in mpv queue
+        player.updateMpvKeepaspectWindowSynchronously()
       }
 
 
