@@ -307,7 +307,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       log.verbose{"Δ windowedModeGeo ≔ \(newValue)"}
       assert(newValue.mode.isWindowed, "windowedModeGeo has unexpected mode: \(newValue.mode)")
       assert(!newValue.screenFit.isFullScreen, "windowedModeGeo has invalid screenFit: \(newValue.screenFit)")
-      assert(newValue.mode == currentLayout.mode, "windowedModeGeo does not match currentLayout mode (\(currentLayout.mode))")
     }
   }
 

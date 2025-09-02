@@ -234,12 +234,14 @@ extension PlayerWindowController {
           return bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
         }
       } else {
-        log.verbose{"\(logPre) Disabling bottomBarBtmOffsetFromCVTop. Enabling bottomBarBtmOffsetFromCVBtm"}
-        p.bottomBarBtmOffsetFromCVTop.isActive = false
+        if p.bottomBarBtmOffsetFromCVTop.isActive {
+          p.bottomBarBtmOffsetFromCVTop.isActive = false
+        }
 
         // This will always have constant: 0
         p.bottomBarBtmOffsetFromCVBtm.createOrUpdate(to: 0) { [self] c in
-          contentView.bottomAnchor.constraint(equalTo: bottomBarView.bottomAnchor, constant: c)
+          log.verbose("\(logPre) Creating constraint: bottomBarBtmOffsetFromCVBtm")
+          return contentView.bottomAnchor.constraint(equalTo: bottomBarView.bottomAnchor, constant: c)
         }
       }
     }

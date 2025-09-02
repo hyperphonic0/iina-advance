@@ -295,18 +295,21 @@ class VideoView: NSView {
       glLayer.wantsExtendedDynamicRangeContent = false
     }
 
-    let useAutoICC = Preference.bool(for: .loadIccProfile) &&  screenColorSpace != nil
-    player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, useAutoICC)
+    player.mpv.queue.async { [self] in
+      guard player.isActive, player.info.isFileLoaded else { return }
+      let useAutoICC = Preference.bool(for: .loadIccProfile) &&  screenColorSpace != nil
+      player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, useAutoICC)
 
-    player.mpv.setString(MPVOption.GPURendererOptions.targetTrc, "auto")
-    player.mpv.setString(MPVOption.GPURendererOptions.targetPrim, "auto")
-    player.mpv.setString(MPVOption.GPURendererOptions.targetPeak, "auto")
-    player.mpv.setString(MPVOption.GPURendererOptions.toneMapping, "auto")
-    // Check first to avoid spurious error in mpv 0.40.0 log complaining about the value being out of range
-    if player.mpv.getString(MPVOption.GPURendererOptions.toneMappingParam) != "default" {
-      player.mpv.setString(MPVOption.GPURendererOptions.toneMappingParam, "default")
+      player.mpv.setString(MPVOption.GPURendererOptions.targetTrc, "auto")
+      player.mpv.setString(MPVOption.GPURendererOptions.targetPrim, "auto")
+      player.mpv.setString(MPVOption.GPURendererOptions.targetPeak, "auto")
+      player.mpv.setString(MPVOption.GPURendererOptions.toneMapping, "auto")
+      // Check first to avoid spurious error in mpv 0.40.0 log complaining about the value being out of range
+      if player.mpv.getString(MPVOption.GPURendererOptions.toneMappingParam) != "default" {
+        player.mpv.setString(MPVOption.GPURendererOptions.toneMappingParam, "default")
+      }
+      player.mpv.setFlag(MPVOption.Screenshot.screenshotTagColorspace, false)
     }
-    player.mpv.setFlag(MPVOption.Screenshot.screenshotTagColorspace, false)
   }
 
   // MARK: - HDR
@@ -318,112 +321,133 @@ class VideoView: NSView {
     guard let displayId = currentDisplay else { return }
 
     log.debug{"Refreshing HDR @ screen \(NSScreen.forDisplayID(displayId)?.screenID.quoted ?? "nil")"}
-    let edrEnabled = requestEdrMode()
-    let edrAvailable = edrEnabled != false
-    if player.info.hdrAvailable != edrAvailable {
-      player.pwc.quickSettingView.setHdrAvailability(to: edrAvailable)
-    }
-    if edrEnabled != true { setICCProfile() }
+    requestEdrMode(then: { [self] edrEnabled in
+      DispatchQueue.main.execOrAsync { [self] in
+        let edrAvailable = edrEnabled != false
+        if player.info.hdrAvailable != edrAvailable {
+          player.pwc.quickSettingView.setHdrAvailability(to: edrAvailable)
+        }
+        if edrEnabled != true { setICCProfile() }
+      }
+    })
   }
 
-  private func requestEdrMode() -> Bool? {
-    guard let mpv = player.mpv else { return false }
-
-    guard let primaries = mpv.getString(MPVProperty.videoParamsPrimaries), let gamma = mpv.getString(MPVProperty.videoParamsGamma) else {
-      logHDR.debug{"Video gamma and primaries not available"}
-      return false
-    }
-  
-    let peak = mpv.getDouble(MPVProperty.videoParamsSigPeak)
-    logHDR.debug{"Video gamma=\(gamma), primaries=\(primaries), sig_peak=\(peak)"}
-
-    // HDR videos use a Hybrid Log Gamma (HLG) or a Perceptual Quantization (PQ) transfer function.
-    guard gamma == "hlg" || gamma == "pq" else { return false }
-
-    let name: CFString
-    switch primaries {
-    case "display-p3":
-      if #available(macOS 10.15.4, *) {
-        name = CGColorSpace.displayP3_PQ
-      } else {
-        name = CGColorSpace.displayP3_PQ_EOTF
+  private func requestEdrMode(then doAfter: @escaping (Bool?) -> Void) {
+    player.mpv.queue.async { [self] in
+      guard player.info.isFileLoaded, let mpv = player.mpv else {
+        return doAfter(false)
       }
 
-    case "bt.2020":
-      if #unavailable(macOS 10.15.4) {
-        name = CGColorSpace.itur_2020_PQ_EOTF
-      } else if #unavailable(macOS 11.0) {
-        name = CGColorSpace.itur_2020_PQ
-      } else {
-        name = CGColorSpace.itur_2100_PQ
+      guard let primaries = mpv.getString(MPVProperty.videoParamsPrimaries), let gamma = mpv.getString(MPVProperty.videoParamsGamma) else {
+        logHDR.debug{"Video gamma and primaries not available"}
+        return doAfter(false)
       }
 
-    case "bt.709":
-      return false // SDR
+      let peak = mpv.getDouble(MPVProperty.videoParamsSigPeak)
+      logHDR.debug{"Video gamma=\(gamma), primaries=\(primaries), sig_peak=\(peak)"}
 
-    default:
-      logHDR.warn{"Unsupported color space: gamma=\(gamma) primaries=\(primaries)"}
-      return false
-    }
+      // HDR videos use a Hybrid Log Gamma (HLG) or a Perceptual Quantization (PQ) transfer function.
+      guard gamma == "hlg" || gamma == "pq" else {
+        return doAfter(false)
+      }
 
-    let maxRangeEDR = window?.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0
-    guard maxRangeEDR > 1.0 else {
-      logHDR.debug{"HDR video was found but the display does not support EDR mode (maxEDR=\(maxRangeEDR))"}
-      return false
-    }
-
-    guard player.info.hdrEnabled else { return nil }
-
-    guard let glLayer else {
-      // TODO: is this relevant for Metal layer?
-      logHDR.verbose { "Aborting HDR mode: no OpenGL layer" }
-      return nil
-    }
-
-    logHDR.debug{"Using HDR color space instead of ICC profile (maxEDR=\(maxRangeEDR))"}
-    glLayer.wantsExtendedDynamicRangeContent = true
-    glLayer.colorspace = CGColorSpace(name: name)
-    mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, false)
-    mpv.setString(MPVOption.GPURendererOptions.targetPrim, primaries)
-    // PQ videos will be display as it was, HLG videos will be converted to PQ
-    mpv.setString(MPVOption.GPURendererOptions.targetTrc, "pq")
-    mpv.setFlag(MPVOption.Screenshot.screenshotTagColorspace, true)
-
-    if Preference.bool(for: .enableToneMapping) {
-      var targetPeak = Preference.integer(for: .toneMappingTargetPeak)
-      // If the target peak is set to zero then IINA attempts to determine peak brightness of the
-      // display.
-      if targetPeak == 0 {
-        if let displayInfo = CoreDisplay_DisplayCreateInfoDictionary(currentDisplay!)?.takeRetainedValue() as? [String: AnyObject] {
-          logHDR.debug("Successfully obtained information about the display")
-          // Apple Silicon Macs use the key NonReferencePeakHDRLuminance.
-          if let hdrLuminance = displayInfo["NonReferencePeakHDRLuminance"] as? Int {
-            logHDR.debug("Found NonReferencePeakHDRLuminance: \(hdrLuminance)")
-            targetPeak = hdrLuminance
-          } else if let hdrLuminance = displayInfo["DisplayBacklight"] as? Int {
-            // Intel Macs use the key DisplayBacklight.
-            logHDR.debug("Found DisplayBacklight: \(hdrLuminance)")
-            targetPeak = hdrLuminance
-          } else {
-            logHDR.debug("Didn't find NonReferencePeakHDRLuminance or DisplayBacklight, assuming HDR400")
-            logHDR.debug("Display info dictionary: \(displayInfo)")
-            targetPeak = 400
-          }
+      let name: CFString
+      switch primaries {
+      case "display-p3":
+        if #available(macOS 10.15.4, *) {
+          name = CGColorSpace.displayP3_PQ
         } else {
-          logHDR.warn("Unable to obtain display information, assuming HDR400")
-          targetPeak = 400
+          name = CGColorSpace.displayP3_PQ_EOTF
         }
-      }
-      let algorithm = Preference.ToneMappingAlgorithmOption(rawValue: Preference.integer(for: .toneMappingAlgorithm))?.mpvString
-      ?? Preference.ToneMappingAlgorithmOption.defaultValue.mpvString
 
-      logHDR.debug("Will enable tone mapping: target-peak=\(targetPeak) algorithm=\(algorithm)")
-      mpv.setInt(MPVOption.GPURendererOptions.targetPeak, targetPeak)
-      mpv.setString(MPVOption.GPURendererOptions.toneMapping, algorithm)
-    } else {
-      mpv.setString(MPVOption.GPURendererOptions.targetPeak, "auto")
-      mpv.setString(MPVOption.GPURendererOptions.toneMapping, "")
+      case "bt.2020":
+        if #unavailable(macOS 10.15.4) {
+          name = CGColorSpace.itur_2020_PQ_EOTF
+        } else if #unavailable(macOS 11.0) {
+          name = CGColorSpace.itur_2020_PQ
+        } else {
+          name = CGColorSpace.itur_2100_PQ
+        }
+
+      case "bt.709":
+        // SDR
+        return doAfter(false)
+
+      default:
+        logHDR.warn{"Unsupported color space: gamma=\(gamma) primaries=\(primaries)"}
+        return doAfter(false)
+      }
+
+      DispatchQueue.main.async { [self] in
+        let maxRangeEDR = window?.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0
+        guard maxRangeEDR > 1.0 else {
+          logHDR.debug{"HDR video was found but the display does not support EDR mode (maxEDR=\(maxRangeEDR))"}
+          return doAfter(false)
+        }
+
+        guard player.info.hdrEnabled else {
+          return doAfter(nil)
+        }
+
+        guard let glLayer else {
+          // TODO: is this relevant for Metal layer?
+          logHDR.verbose { "Aborting HDR mode: no OpenGL layer" }
+          return doAfter(nil)
+        }
+
+        logHDR.debug{"Using HDR color space instead of ICC profile (maxEDR=\(maxRangeEDR))"}
+        glLayer.wantsExtendedDynamicRangeContent = true
+        glLayer.colorspace = CGColorSpace(name: name)
+
+        player.mpv.queue.async { [self] in
+          guard player.isActive else {
+            return doAfter(false)
+          }
+
+          mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, false)
+          mpv.setString(MPVOption.GPURendererOptions.targetPrim, primaries)
+          // PQ videos will be display as it was, HLG videos will be converted to PQ
+          mpv.setString(MPVOption.GPURendererOptions.targetTrc, "pq")
+          mpv.setFlag(MPVOption.Screenshot.screenshotTagColorspace, true)
+
+          if Preference.bool(for: .enableToneMapping) {
+            var targetPeak = Preference.integer(for: .toneMappingTargetPeak)
+            // If the target peak is set to zero then IINA attempts to determine peak brightness of the
+            // display.
+            if targetPeak == 0 {
+              if let displayInfo = CoreDisplay_DisplayCreateInfoDictionary(currentDisplay!)?.takeRetainedValue() as? [String: AnyObject] {
+                logHDR.debug("Successfully obtained information about the display")
+                // Apple Silicon Macs use the key NonReferencePeakHDRLuminance.
+                if let hdrLuminance = displayInfo["NonReferencePeakHDRLuminance"] as? Int {
+                  logHDR.debug("Found NonReferencePeakHDRLuminance: \(hdrLuminance)")
+                  targetPeak = hdrLuminance
+                } else if let hdrLuminance = displayInfo["DisplayBacklight"] as? Int {
+                  // Intel Macs use the key DisplayBacklight.
+                  logHDR.debug("Found DisplayBacklight: \(hdrLuminance)")
+                  targetPeak = hdrLuminance
+                } else {
+                  logHDR.debug("Didn't find NonReferencePeakHDRLuminance or DisplayBacklight, assuming HDR400")
+                  logHDR.debug("Display info dictionary: \(displayInfo)")
+                  targetPeak = 400
+                }
+              } else {
+                logHDR.warn("Unable to obtain display information, assuming HDR400")
+                targetPeak = 400
+              }
+            }
+            let algorithm = Preference.ToneMappingAlgorithmOption(rawValue: Preference.integer(for: .toneMappingAlgorithm))?.mpvString
+            ?? Preference.ToneMappingAlgorithmOption.defaultValue.mpvString
+
+            logHDR.debug("Will enable tone mapping: target-peak=\(targetPeak) algorithm=\(algorithm)")
+            mpv.setInt(MPVOption.GPURendererOptions.targetPeak, targetPeak)
+            mpv.setString(MPVOption.GPURendererOptions.toneMapping, algorithm)
+          } else {
+            mpv.setString(MPVOption.GPURendererOptions.targetPeak, "auto")
+            mpv.setString(MPVOption.GPURendererOptions.toneMapping, "")
+          }
+        }
+        return doAfter(true)
+      }
     }
-    return true
   }
 }
