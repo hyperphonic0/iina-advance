@@ -326,7 +326,7 @@ extension IINAAnimation {
         }
       }
 
-      log.verbose{"[Pipeline] Can run ReloadQuickSettings: \(canRunNow.yn)"}
+      log.verbose{"[Pipeline] Submitting ReloadQuickSettings task: \(canRunNow.yn)"}
       if canRunNow {
         submitInstantTask(work)
       }

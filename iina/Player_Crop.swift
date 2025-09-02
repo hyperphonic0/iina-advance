@@ -98,11 +98,6 @@ extension PlayerCore {
   @discardableResult
   func removeCrop() -> Bool {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    // special kludge when removing crop while entering interactive mode
-    guard !info.videoFiltersDisabled.keys.contains(Constants.FilterLabel.crop) else {
-      log.verbose("Ignoring request to remove crop because looks like we are transitioning to interactive mode")
-      return false
-    }
 
     // Don't care about state of videoGeo. Need to remove the crop filter if there is one.
     guard let cropFilter = getIINACropFilter() else {
