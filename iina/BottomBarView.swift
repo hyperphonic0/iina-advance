@@ -11,6 +11,7 @@ class BottomBarVisualEffectView: NSVisualEffectView {
     super.init(frame: .zero)
     material = .sidebar
     state = .active
+    wantsLayer = true
   }
 
   @MainActor required init?(coder: NSCoder) {
@@ -22,6 +23,7 @@ class BottomBarVisualEffectView: NSVisualEffectView {
 class BottomBarGradientView: NSView {
   init() {
     super.init(frame: .zero)
+    wantsLayer = true
     let gradient = CAGradientLayer()
     gradient.frame = bounds
     // Top → Bottom
@@ -30,7 +32,6 @@ class BottomBarGradientView: NSView {
     // Ideally the gradient would use a quadratic function, but seems we are limited to linear, so just fudge it a bit.
     gradient.colors = Constants.Color.clearBlackGradientColors
     layer = gradient
-    wantsLayer = true
   }
 
   @MainActor required init?(coder: NSCoder) {

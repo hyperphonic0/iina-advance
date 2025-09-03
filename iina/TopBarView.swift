@@ -42,6 +42,7 @@ class TopBarView: ClickThroughVisualEffectView {
 
     material = .titlebar
     state = .followsWindowActiveState
+    wantsLayer = true  // needed for shadow
     clipsToBounds = true  // for better animations when toggling OSC position/placement
     translatesAutoresizingMaskIntoConstraints = false
 

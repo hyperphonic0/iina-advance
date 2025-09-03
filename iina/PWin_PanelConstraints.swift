@@ -589,31 +589,33 @@ extension PlayerWindowController {
   /// • Outside bars never cast shadows or have shadows cast on them.
   /// • Inside sidebars cast shadows over inside top bar & inside bottom bar, and over `viewportView`.
   /// • Inside top & inside bottom bars do not cast shadows over `viewportView`.
-  /// 
   private func sortContentViewSubviews(for layout: LayoutState) {
+    var possibleSubviews: [NSView] = []
+
     // If a sidebar is "outsideViewport", need to put it behind the video because:
     // (1) Don't want sidebar to cast a shadow on the video
     // (2) Animate sidebar open/close with "slide in" / "slide out" from behind the video
-    let leadingSidebarIsBelowViewport = layout.leadingSidebar.isVisible && layout.leadingSidebarPlacement == .outsideViewport
-    let trailingSidebarIsBelowViewport = layout.trailingSidebar.isVisible && layout.trailingSidebarPlacement == .outsideViewport
-
-    var possibleSubviews: [NSView] = []
-
-    if leadingSidebarIsBelowViewport {
+    if layout.leadingSidebarPlacement == .outsideViewport {
       possibleSubviews.append(leadingSidebarView)
     }
-    if trailingSidebarIsBelowViewport {
+    if layout.trailingSidebarPlacement == .outsideViewport {
       possibleSubviews.append(trailingSidebarView)
     }
 
     possibleSubviews.append(viewportView)
-    possibleSubviews.append(bottomBarView)
 
-    if !leadingSidebarIsBelowViewport {
+    if layout.bottomBarPlacement == .insideViewport {
+      possibleSubviews.append(bottomBarView)
+    }
+    if layout.leadingSidebarPlacement == .insideViewport {
       possibleSubviews.append(leadingSidebarView)
     }
-    if !trailingSidebarIsBelowViewport {
+    if layout.trailingSidebarPlacement == .insideViewport {
       possibleSubviews.append(trailingSidebarView)
+    }
+
+    if layout.bottomBarPlacement == .outsideViewport {
+      possibleSubviews.append(bottomBarView)
     }
 
     possibleSubviews += [

@@ -295,6 +295,7 @@ extension PlayerWindowController {
 
     leadingSidebarView.idString = "LeadingSidebarView"
     leadingSidebarView.state = .active
+    addShadow(to: leadingSidebarView)
     leadingSidebarView.translatesAutoresizingMaskIntoConstraints = false
     leadingSidebarView.autoresizesSubviews = false
 
@@ -311,6 +312,7 @@ extension PlayerWindowController {
 
     trailingSidebarView.idString = "TrailingSidebarView"
     trailingSidebarView.state = .active
+    addShadow(to: trailingSidebarView)
     trailingSidebarView.translatesAutoresizingMaskIntoConstraints = false
     trailingSidebarView.autoresizesSubviews = false
 
@@ -322,6 +324,15 @@ extension PlayerWindowController {
     trailingSidebarLeadingBorder_WidthConstraint.identifier = .init("TrailingSidebarLeadingBorder-WidthConstraint")
     trailingSidebarLeadingBorder_WidthConstraint.priority = .defaultHigh
     trailingSidebarLeadingBorder_WidthConstraint.isActive = true
+  }
+
+  private func addShadow(to view: NSView) {
+    view.wantsLayer = true
+    let layer = view.layer!
+    layer.shadowColor = .black
+    layer.shadowOffset = .zero
+    layer.shadowOpacity = 1
+    layer.shadowRadius = 12
   }
 
   /// Init `fragPlaybackBtnsView` & its subviews

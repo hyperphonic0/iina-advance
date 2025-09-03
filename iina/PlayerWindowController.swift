@@ -535,7 +535,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Control bar at bottom of window, if configured. May be `insideViewport` or `outsideViewport`.
   /// Used to hold other views in music mode & interactive mode
-  var bottomBarView: NSView = NSVisualEffectView()
+  var bottomBarView: NSView = BottomBarVisualEffectView()
   /// Top border of `bottomBarView`.
   let bottomBarTopBorder = BorderLineView(id: "BottomBar-TopBorder",
                                           fillColor: .titleBarBorder)

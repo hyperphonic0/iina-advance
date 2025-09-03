@@ -505,6 +505,8 @@ extension PlayerWindowController {
     let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging
     if needsBottomBarUpdate {
       rebuildBottomBarView(style: transition.outputLayout.effectiveOSCColorScheme)
+      // Just add the new view now. It will have its Z order corrected in `rebuildPanelConstraints`.
+      window.contentView!.addSubview(bottomBarView)
     }
 
     // Title bar views
