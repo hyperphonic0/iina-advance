@@ -594,17 +594,11 @@ extension PlayerWindowController {
     // If a sidebar is "outsideViewport", need to put it behind the video because:
     // (1) Don't want sidebar to cast a shadow on the video
     // (2) Animate sidebar open/close with "slide in" / "slide out" from behind the video
-    let leadingSidebar = layout.leadingSidebarPlacement
-    let trailingSidebar = layout.trailingSidebarPlacement
-    let leadingSidebarIsBelowViewport = layout.leadingSidebar.isVisible && leadingSidebar == .outsideViewport
-    let trailingSidebarIsBelowViewport = layout.trailingSidebar.isVisible && trailingSidebar == .outsideViewport
-    let bottomBariIsBelowSidebars = layout.hasBottomBar && layout.bottomBarPlacement == .insideViewport
+    let leadingSidebarIsBelowViewport = layout.leadingSidebar.isVisible && layout.leadingSidebarPlacement == .outsideViewport
+    let trailingSidebarIsBelowViewport = layout.trailingSidebar.isVisible && layout.trailingSidebarPlacement == .outsideViewport
 
     var possibleSubviews: [NSView] = []
 
-    if bottomBariIsBelowSidebars && (leadingSidebarIsBelowViewport || trailingSidebarIsBelowViewport) {
-      possibleSubviews.append(bottomBarView)
-    }
     if leadingSidebarIsBelowViewport {
       possibleSubviews.append(leadingSidebarView)
     }
@@ -613,15 +607,13 @@ extension PlayerWindowController {
     }
 
     possibleSubviews.append(viewportView)
+    possibleSubviews.append(bottomBarView)
 
     if !leadingSidebarIsBelowViewport {
       possibleSubviews.append(leadingSidebarView)
     }
     if !trailingSidebarIsBelowViewport {
       possibleSubviews.append(trailingSidebarView)
-    }
-    if !bottomBariIsBelowSidebars || !(leadingSidebarIsBelowViewport || trailingSidebarIsBelowViewport) {
-      possibleSubviews.append(bottomBarView)
     }
 
     possibleSubviews += [
@@ -634,6 +626,8 @@ extension PlayerWindowController {
 
     let contentView = window!.contentView!
     let correctOrderedSubviews = possibleSubviews.filter { contentView.containsSubview($0) }
+
+    log.verbose("ContentView panels: \(correctOrderedSubviews.map{$0.idString})")
     for subview in correctOrderedSubviews {
       contentView.addSubview(subview, positioned: .above, relativeTo: nil)
     }

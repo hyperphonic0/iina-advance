@@ -520,10 +520,24 @@ extension PlayerWindowController {
         customTitleBar.removeAndCleanUp()
         self.customTitleBar = nil
       }
-    } else if let customTitleBar {
-      fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: customTitleBar.leadingSidebarToggleButton)
-      fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: customTitleBar.trailingSidebarToggleButton)
-      fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: customTitleBar.onTopButton)
+    }
+
+    if outputLayout.titleBar.isShowable, transition.outputLayout.spec.isLegacyStyle {
+      let titleBar: CustomTitleBarViewController
+      // Custom title bar
+      if let customTitleBar {
+        titleBar = customTitleBar
+      } else {
+        titleBar = CustomTitleBarViewController()
+        titleBar.pwc = self
+        customTitleBar = titleBar
+        titleBar.view.alphaValue = 0  // prep it to fade in later
+      }
+
+      titleBar.addViewTo(superview: topBarView.titleBarView)
+      fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: titleBar.leadingSidebarToggleButton)
+      fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: titleBar.trailingSidebarToggleButton)
+      fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: titleBar.onTopButton)
     }
 
     fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
@@ -537,26 +551,6 @@ extension PlayerWindowController {
     // But we do need it when tranitioning from music mode → FS, or top bar may never be shown
     if !transition.isEnteringFullScreen || transition.isExitingMusicMode {
       fadeableViews.applyVisibility(outputLayout.topBarView, to: topBarView)
-    }
-
-    if outputLayout.titleBar.isShowable {
-      if transition.outputLayout.spec.isLegacyStyle {
-
-        // Custom title bar
-        if customTitleBar == nil {
-          let titleBar = CustomTitleBarViewController()
-          titleBar.pwc = self
-          customTitleBar = titleBar
-          titleBar.view.alphaValue = 0  // prep it to fade in later
-        }
-
-        if let customTitleBar {
-          customTitleBar.addViewTo(superview: topBarView.titleBarView)
-          if !transition.inputLayout.titleBar.isShowable {
-            customTitleBar.view.alphaValue = 0  // prep it to fade in later
-          }
-        }
-      }
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
@@ -893,8 +887,6 @@ extension PlayerWindowController {
         // Invalidate all cached knob images so they are rebuilt with new style
         knobFactory.invalidateCachedKnobs()
       }
-
-      log.verbose{"\(logPre) Done"}
     }
 
     // Interactive mode
@@ -996,6 +988,7 @@ extension PlayerWindowController {
     updateVolumeUI()
     playSlider.needsDisplay = true
 
+    log.verbose{"\(logPre) Done"}
   }  /// end `updateHiddenViewsAndConstraints`
 
   /// -------------------------------------------------
@@ -1395,7 +1388,7 @@ extension PlayerWindowController {
     screenParamsChangedDebouncer.invalidate()
     isAnimatingLayoutTransition = false
 
-    log.verbose("[\(transition.name)] Done with transition. IsFullScreen:\(transition.outputLayout.isFullScreen.yn), IsLegacy:\(transition.outputLayout.spec.isLegacyStyle.yn), Mode:\(currentLayout.mode)")
+    log.verbose("[\(transition.name)] Done with transition: isLegacy=\(transition.outputLayout.spec.isLegacyStyle.yn) mode=\(currentLayout.mode)")
 
     player.saveState()
   }

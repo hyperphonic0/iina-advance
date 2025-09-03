@@ -76,10 +76,10 @@ class CropBoxView: NSView, DraggableObject {
     let xScale = actualSize.width / videoRect.width
     let yScale = actualSize.height / videoRect.height
 
-    var ix = (boxRect.origin.x - videoRect.origin.x) * xScale
-    var iy = (boxRect.origin.y - videoRect.origin.y) * xScale
-    var iw = boxRect.width * xScale
-    var ih = boxRect.height * yScale
+    var ix = ((boxRect.origin.x - videoRect.origin.x) * xScale).rounded()
+    var iy = ((boxRect.origin.y - videoRect.origin.y) * xScale).rounded()
+    var iw = (boxRect.width * xScale).rounded()
+    var ih = (boxRect.height * yScale).rounded()
 
     if abs(ix) <= 4 { ix = 0 }
     if abs(iy) <= 4 { iy = 0 }

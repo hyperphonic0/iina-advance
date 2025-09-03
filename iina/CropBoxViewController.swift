@@ -32,7 +32,7 @@ class CropBoxViewController: NSViewController {
   }()
 
   func selectedRectUpdated() {
-    pwc.log.verbose("CropBox: selected rect updated")
+    pwc.log.trace("CropBox: selected rect updated")
     guard pwc.isInInteractiveMode else { return }
     updateCropValues(from: cropBoxView.selectedRect)
     cropBoxView.needsLayout = true

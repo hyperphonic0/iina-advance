@@ -179,10 +179,6 @@ struct GeometryTransform {
         // Do not reference these variables until inside this animation task to ensure serial access
         let inputLayout = pwc.currentLayout
 
-//        guard !inputLayout.mode.isInteractiveMode else {
-//          return abort("In final task (main): currentLayout.mode is disqualifying: \(inputLayout.mode)")
-//        }
-
         // Update context's geo with current window frame
         let inputGeoSet = pwc.buildGeoSet(layoutMode: inputLayout.mode,
                                           forceWinFrameUpdate: !gtfSessionState.isStartingSession)
