@@ -63,7 +63,8 @@ extension MPVController {
     MPVProperty.videoParamsRotate: MPV_FORMAT_INT64,
     MPVProperty.videoParamsPrimaries: MPV_FORMAT_STRING,
     MPVProperty.videoParamsGamma: MPV_FORMAT_STRING,
-    MPVProperty.idleActive: MPV_FORMAT_FLAG
+    MPVProperty.idleActive: MPV_FORMAT_FLAG,
+    MPVProperty.currentAo: MPV_FORMAT_STRING
   ]
 
   func addEventCallbacks() {
@@ -642,6 +643,11 @@ extension MPVController {
       }
       guard idleActive else { break }
       player.idleActiveChanged()
+
+    case MPVProperty.currentAo:
+      DispatchQueue.main.async {
+        self.player.currentAoChanged()
+      }
 
     case MPVProperty.inputBindings:
       do {
