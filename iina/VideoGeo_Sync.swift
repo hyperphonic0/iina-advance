@@ -237,7 +237,7 @@ extension GeometryTransform.ContextStage2 {
   fileprivate func getWithRetries(propName mpvPropertyName: String) -> MpvVideoParams? {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
-    let retriesMax = 3
+    let retriesMax = 6
     var retryNum = 1
     guard let mpv = player.mpv else {
       return nil
@@ -253,9 +253,7 @@ extension GeometryTransform.ContextStage2 {
       }
 
       if let json = mpv.getString(mpvPropertyName) {
-        if Logger.isVerboseEnabled {
-          log.verbose{"[GTF:\(name)] VidTrack-\(vidTrackID) mpv \(mpvPropertyName): \(json)"}
-        }
+        log.verbose{"[GTF:\(name)] VidTrack-\(vidTrackID) mpv \(mpvPropertyName): \(json)"}
         let videoParams = MpvVideoParams.fromJSON(json, mpvPropertyName, log)
         return videoParams
       }

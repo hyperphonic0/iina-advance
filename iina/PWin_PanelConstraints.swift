@@ -248,8 +248,8 @@ extension PlayerWindowController {
 
 
     if useViewport && useBottomBar {
-      let constant2 = transition.bottomBarBtmOffsetFromViewportBtm(for: stage)
       let constant1 = transition.viewportBtmOffsetFromTopOfBottomBar(for: stage)
+      let constant2 = transition.bottomBarBtmOffsetFromViewportBtm(for: stage)
       log.verbose("\(logPre) Updating topBar & viewport: viewport.btm<-bottomBar.top=\(constant1), viewport.btm<-bottomBar.bottom=\(constant2)")
 
       p.viewportBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1) { [self] c in

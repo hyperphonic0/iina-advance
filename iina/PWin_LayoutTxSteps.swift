@@ -304,7 +304,9 @@ extension PlayerWindowController {
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
     log.verbose{"\(logPre) Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)"}
 
-    rebuildPanelConstraints(transition, stage: .closeOldPanels)
+    if !transition.isWindowInitialLayout {
+      rebuildPanelConstraints(transition, stage: .closeOldPanels)
+    }
 
     // TODO: incorporate this into middleGeometry for cleaner code
     if isOpeningBarOSC || isClosingBarOSC {

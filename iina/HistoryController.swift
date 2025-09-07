@@ -63,7 +63,19 @@ class HistoryController {
       return
     }
 
-    $tasksOutstanding.withLock { $0 += 1 }
+    var isTerminating = false
+    $tasksOutstanding.withLock {
+      if isAppTerminating {
+        isTerminating = true
+      } else {
+        $0 += 1
+      }
+    }
+    guard !isTerminating else {
+      log.verbose("Aborting new task: app is terminating")
+      return
+    }
+
     workDQ.async { [self] in
       taskBody()
 
@@ -120,8 +132,16 @@ class HistoryController {
   }
 
   func stop() {
-    isAppTerminating = true
     folderMonitor.stopMonitoring()
+
+    // Flush workQueue
+    $tasksOutstanding.withLock {
+      isAppTerminating = true
+      $0 += 1
+    }
+    workDQ.async { [self] in
+      log.debug("Reached end of workDQ")
+    }
 
     fileExistsDQ.async { [self] in
       log.debug("Reached end of fileExistsDQ; sending shutdown acknowledgment")
