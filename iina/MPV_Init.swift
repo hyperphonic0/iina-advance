@@ -506,6 +506,8 @@ extension MPVController {
   /// hardware decoding support on this Mac. This is not comprehensive. This method only covers the recent codecs whose support
   /// for hardware decoding varies among Macs. This merely reduces the dependence upon the FFmpeg fallback to software decoding
   /// feature in some cases.
+  /// - ToDo: **REMOVE** workaround for FFmpeg not supporting AV1 hardware decoding when upgrading to a FFmpeg version
+  ///         that supports it.
   private func adjustCodecWhiteList() {
     // Allow the user to override this behavior.
     guard !player.isPresentInUserOptions(MPVOption.Video.hwdecCodecs) else {
@@ -534,6 +536,17 @@ extension MPVController {
       // any of them retain the codec in the option value.
       for codecType in codecTypes {
         if HardwareDecodeCapabilities.shared.isSupported(codecType) {
+          if codecType == kCMVideoCodecType_AV1 {
+            // WORKAROUND missing support for AV1 hardware decoding.
+            // This Mac supports AV1 hardware decoding, but the version of FFmpeg IINA is using does
+            // not. FFmpeg will try to use hardware decoding, which will fail. FFmpeg will then fall
+            // back to software decoding. When FFmpeg does this it logs the warning message "Error
+            // while decoding frame (hardware decoding)!" which is alarming to users. Prevent this
+            // by removing AV1 from the codecs whitelist.
+            needsAdjustment = true
+            log.debug("FFmpeg does not support av1 hardware decoding")
+            continue codecLoop
+          }
           adjusted.append(codec)
           continue codecLoop
         }
@@ -579,12 +592,12 @@ extension MPVController {
   private func applyHardwareAccelerationWorkaround() {
     // The problem is not reproducible under Apple Silicon.
     guard !runningOnAppleSilicon() else {
-      log.debug("Running on Apple Silicon, not applying FFmpeg 9599 workaround")
+      log("Running on Apple Silicon, not applying FFmpeg 9599 workaround")
       return
     }
     // Allow the user to override this behavior.
-    guard !player.isPresentInUserOptions(MPVOption.Video.hwdecCodecs) else {
-      log.debug("""
+    guard !userOptionsContains(MPVOption.Video.hwdecCodecs) else {
+      log("""
         Option \(MPVOption.Video.hwdecCodecs) has been set in advanced settings, \
         not applying FFmpeg 9599 workaround
         """)
@@ -593,7 +606,7 @@ extension MPVController {
     guard let whitelist = getString(MPVOption.Video.hwdecCodecs) else {
       // Internal error. Make certain this method is called after mpv_initialize which sets the
       // default value.
-      log.error("Failed to obtain the value of option \(MPVOption.Video.hwdecCodecs)")
+      log("Failed to obtain the value of option \(MPVOption.Video.hwdecCodecs)", level: .error)
       return
     }
     var adjusted: [String] = []
@@ -606,7 +619,7 @@ extension MPVController {
       needsWorkaround = true
     }
     if needsWorkaround {
-      log.debug("Disabling hardware acceleration for VP9 encoded videos to workaround FFmpeg 9599")
+      log("Disabling hardware acceleration for VP9 encoded videos to workaround FFmpeg 9599")
       chkErr(setOptionString(MPVOption.Video.hwdecCodecs, adjusted.joined(separator: ",")))
     }
   }

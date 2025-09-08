@@ -1534,7 +1534,6 @@
 		847C62C81DC13CDA00E1EF16 /* PrefGeneralViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrefGeneralViewController.swift; sourceTree = "<group>"; };
 		84817C971DBDCE4300CC2279 /* RoundedColorWell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RoundedColorWell.swift; sourceTree = "<group>"; };
 		8482982123C3843C0088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/MainMenu.strings; sourceTree = "<group>"; };
-		8482982323C384400088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/PlayerWindowController.strings; sourceTree = "<group>"; };
 		8482982523C3844C0088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/QuickSettingViewController.strings; sourceTree = "<group>"; };
 		8482982723C384500088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/PlaylistViewController.strings; sourceTree = "<group>"; };
 		8482982923C384540088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InspectorWindowController.strings; sourceTree = "<group>"; };
@@ -3882,7 +3881,6 @@
 				5EF9F7E621FB42E900748374 /* pt-BR */,
 				845900C2220E134200B4A7C4 /* cs */,
 				84CE109E22E6EAA0008ED3AC /* pl */,
-				8482982323C384400088E223 /* en */,
 				84B3B1EC23C0CE7100340754 /* tr */,
 				84EA52C42404E83900F7617A /* ca */,
 				348BFF2C28DC5F2C0045F683 /* af */,
