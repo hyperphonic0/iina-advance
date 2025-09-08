@@ -264,7 +264,7 @@ extension GeometryTransform.ContextStage2 {
         return nil
       }
       let pauseDuration = Constants.TimeInterval.videoParamsRetryInterval
-      log.debug{"[GTF:\(name)] Could not get \(mpvPropertyName) from mpv; will try again in \(pauseDuration)s (tries remaining: \(retriesMax - retryNum + 1))"}
+      log.debug{"[GTF:\(name)] Could not get \(mpvPropertyName) from mpv. Will retry in \(pauseDuration)s (tries remaining: \(retriesMax - retryNum + 1))"}
       Thread.sleep(forTimeInterval: pauseDuration)
     }
   }

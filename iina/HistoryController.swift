@@ -135,9 +135,8 @@ class HistoryController {
     folderMonitor.stopMonitoring()
 
     // Flush workQueue
-    $tasksOutstanding.withLock {
+    $tasksOutstanding.withLock { _ in
       isAppTerminating = true
-      $0 += 1
     }
     workDQ.async { [self] in
       log.debug("Reached end of workDQ")
@@ -160,7 +159,7 @@ class HistoryController {
     }
     let sw = Utility.Stopwatch()
     do {
-      log.verbose("Saving playback history to file \(plistURL.path.pii.quoted)")
+      log.verbose("Saving playback history (entryCount=\(history.count)) to file \(plistURL.path.pii.quoted)")
       let data = try NSKeyedArchiver.archivedData(withRootObject: history, requiringSecureCoding: true)
       try data.write(to: plistURL)
     } catch {
@@ -186,6 +185,7 @@ class HistoryController {
         return
       }
       history = historyItemList
+      log.verbose("Loaded playback history (entryCount=\(historyItemList.count))")
     } catch {
       log.error("Failed to load playback history file \(plistURL.path.pii.quoted): \(error)")
     }
