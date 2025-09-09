@@ -637,9 +637,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
     currentTab = tab
     tabView.selectTabViewItem(at: buttonTag)
-    pwc.didChangeTab(to: tab)
-    updateTabButtonSelection()
-    reloadCurrentTab()
+    pwc.didChangeTab(to: tab, then: { [self] in
+      updateTabButtonSelection()
+      reloadCurrentTab()
+    })
   }
 
   /// Reload Quick Settings controls for the current tab.
