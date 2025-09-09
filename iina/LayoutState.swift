@@ -657,16 +657,14 @@ struct LayoutState {
           titleBarHeight = Constants.Distance.reducedTitleBarHeight
         }
 
-        let topBarVisibility: VisibilityMode
         if spec.topBarPlacement == .outsideViewport {
-          topBarVisibility = .showAlways
+          topBarView = .showAlways
         } else if titleBarVisibleState.isShowable {
           // Match value from above
-          topBarVisibility = titleBarVisibleState
+          topBarView = titleBarVisibleState
         } else {
-          topBarVisibility = .showFadeableTopBar
+          topBarView = .showFadeableTopBar
         }
-        topBarView = topBarVisibility
         topOSCHeight = spec.controlBarGeo.barHeight
       case .bottom:
         bottomBarView = (spec.bottomBarPlacement == .insideViewport) ? .showFadeableNonTopBar : .showAlways

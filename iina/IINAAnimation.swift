@@ -153,9 +153,16 @@ extension IINAAnimation {
     let gtfLock = Lock()
     var gtfCurrentlyRunningID: Int? = nil
     var lastGeneratedID: Int = 0
+    var wantsVideoGeoSync: Bool = false
 
-    var pwc: PlayerWindowController? = nil
-    var log = Logger.log
+    init(_ player: PlayerCore?) {
+      self.player = player
+      self.log = player?.log ?? Logger.log
+    }
+
+    unowned var player: PlayerCore?
+    var pwc: PlayerWindowController? { player?.pwc }
+    unowned var log: Logger.Subsystem
 
     // Convenience function. Run the task with no animation / zero duration.
     // Useful for updating constraints, etc., which cannot be animated or do not look good animated.
@@ -315,6 +322,7 @@ extension IINAAnimation {
     /// Flattening all requests to this single instance works as a debouncer for reload requests.
     private var pendingWorkAfterGTFs: TaskFunc? = nil
 
+    // TODO: replace this logic with a simple flag
     func doAfterGTFs(_ work: @escaping TaskFunc) {
       let canRunNow = gtfLock.withLock{ [self] in
         if isDoneWithAllGTFs {
@@ -326,8 +334,8 @@ extension IINAAnimation {
         }
       }
 
-      log.verbose{"[Pipeline] Submitting ReloadQuickSettings task: \(canRunNow.yn)"}
       if canRunNow {
+        log.verbose{"[Pipeline] Submitting ReloadQuickSettings task"}
         submitInstantTask(work)
       }
     }
@@ -336,12 +344,19 @@ extension IINAAnimation {
     /// If so, pops & returns it.
     private func popNextReadyGTF() -> GeometryTransform? {
       gtfLock.withLock{ [self] in
-        guard gtfCurrentlyRunningID == nil, let nextGTF = gtfQueue.removeFirst() else {
-          return nil
+        guard gtfCurrentlyRunningID == nil else { return nil }
+        if let nextGTF = gtfQueue.removeFirst() {
+          gtfCurrentlyRunningID = nextGTF.id
+          log.verbose{"[Pipeline] Starting GTF: \(nextGTF.name.quoted); queue size: \(gtfQueue.count)"}
+          return nextGTF
         }
-        gtfCurrentlyRunningID = nextGTF.id
-        log.verbose{"[Pipeline] Starting GTF: \(nextGTF.name.quoted); queue size: \(gtfQueue.count)"}
-        return nextGTF
+        if wantsVideoGeoSync, let player {
+          wantsVideoGeoSync = false
+          let gtf = GeometryTransform("SyncVidGeo", id: nextID_NoLock(), player)
+          return gtf
+        }
+
+        return nil
       }
     }
 
@@ -366,15 +381,9 @@ extension IINAAnimation {
 
     func enqueueVideoSyncTaskIfNeeded(_ player: PlayerCore) {
       gtfLock.withLock{ [self] in
-        guard gtfQueue.isEmpty else {
-          log.verbose{"[Pipeline] No need to add SyncVidGeo; queue not empty"}
-          return
-        }
-        log.verbose{"Enqueuing SyncVidGeo transform"}
-
-        let newID = nextID_NoLock()
-        let gtf = GeometryTransform("SyncVidGeo", id: newID, player)
-        gtfQueue.append(gtf)
+        guard !wantsVideoGeoSync else { return }
+        log.verbose{"Setting wantsVideoGeoSync = YES"}
+        wantsVideoGeoSync = true
       }
 
       submitInstantTask{}

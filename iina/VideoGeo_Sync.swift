@@ -95,6 +95,12 @@ extension GeometryTransform.ContextStage2 {
       return nil
     }
 
+    player.pwc.animationPipeline.gtfLock.withLock{ [self] in
+      guard player.pwc.animationPipeline.wantsVideoGeoSync else { return }
+      log.verbose{"Setting wantsVideoGeoSync = NO"}
+      player.pwc.animationPipeline.wantsVideoGeoSync = false
+    }
+
     /// `codecAspect` should match the product `par * sar`
     let codecAspect = String(videoDecParams.aspect)
 
@@ -118,7 +124,7 @@ extension GeometryTransform.ContextStage2 {
 
     // No crop if full-sized. There may be an IINA filter though and we should favor that for status.
     // Make sure to use videoOutParams for all params in this comparion, as some dimensions will differ from videoDecParams.
-    let isNotCropped = videoOutParams.crop_x == 0 && videoOutParams.crop_y == 0 && videoOutParams.crop_w == videoOutParams.w && videoOutParams.crop_h == videoOutParams.h
+    var isNotCropped = videoOutParams.crop_x == 0 && videoOutParams.crop_y == 0 && videoOutParams.crop_w == videoOutParams.w && videoOutParams.crop_h == videoOutParams.h
 
     let cropLabel: String
     // First check for IINA crop filter. Derive selected crop label directly from the filter, because x & y values are ambiguous
@@ -127,6 +133,7 @@ extension GeometryTransform.ContextStage2 {
        let cropLabelFromIINACrop = player.deriveCropLabel(from: vfCrop, rawVideoSize: inputVideoGeo.videoSizeRaw) {
       cropLabel = cropLabelFromIINACrop
       log.verbose{"[GTF:\(name)] Determined crop label from iina_crop filter: \(cropLabel.quoted)"}
+      isNotCropped = false  // override this...it is still not perfect
     } else if isNotCropped {
       cropLabel = AppData.noneCropIdentifier
       log.verbose{"[GTF:\(name)] Looks like video is not cropped"}
@@ -152,12 +159,12 @@ extension GeometryTransform.ContextStage2 {
 
     // If opening window, videoGeo may still have the global (default) log. Update it
     var outputVideoGeo = inputVideoGeo.clone(rawWidth: rawWidth, rawHeight: rawHeight,
-                                        decodedAspectLabel: codecAspect,
-                                        userAspectLabel: userAspectLabel,
-                                        streamRotation: streamRotation,
-                                        userRotation: userRotation,
-                                        selectedCropLabel: cropLabel,
-                                        videoSizeDisplayOverride: nil)
+                                             decodedAspectLabel: codecAspect,
+                                             userAspectLabel: userAspectLabel,
+                                             streamRotation: streamRotation,
+                                             userRotation: userRotation,
+                                             selectedCropLabel: cropLabel,
+                                             videoSizeDisplayOverride: nil)
 
     // FIXME: audioStatus==notAudio for playlist which auto-plays audio
     assert(!currentMediaAudioStatus.isAudio && (vidTrackID != 0),
@@ -224,10 +231,6 @@ extension GeometryTransform.ContextStage2 {
     }
 
     log.debug{"[GTF:\(name)] Derived videoGeo from mpv video-params: \(outputVideoGeo)"}
-    DispatchQueue.main.async { [self] in
-      // Proactively reload the UI here to increase snappiness
-      pwc.quickSettingView.reloadVideoTabIfShown(using: outputVideoGeo)
-    }
     return outputVideoGeo
   }
 

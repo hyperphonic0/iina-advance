@@ -170,7 +170,7 @@ extension PlayerWindowController {
   func setFrameAndUpdateWindowSubviews(using geometry: PWinGeometry,
                                        updateVideoView: Bool = true, animate: Bool = true,
                                        submitUpdate: Bool = false) {
-    log.verbose{"[PWin.setFrame] Entered: \(geometry) updateVideoView=\(updateVideoView.yn) animate=\(animate.yn) submit=\(submitUpdate.yn)"}
+    log.verbose{"[PWin.setFrame] Entered: updateVideoView=\(updateVideoView.yn) animate=\(animate.yn) submit=\(submitUpdate.yn) geo=\(geometry)"}
 
     resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
 

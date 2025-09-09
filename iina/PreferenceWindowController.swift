@@ -57,7 +57,7 @@ class CustomCellView: NSTableCellView {
 class PreferenceWindowController: WindowController, NSWindowDelegate {
   unowned var windowUndoManager: UndoManager? = nil
   /// Use for all animations in the `Preferences` window, if possible.
-  let animationPipeline = IINAAnimation.Pipeline()
+  let animationPipeline = IINAAnimation.Pipeline(nil)
 
   class Trie {
 
