@@ -181,6 +181,9 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose{"[\(transition.name)] FadeOutOldViews"}
 
+    fadeableViews.fadeablesInTopBar.removeAll()
+    fadeableViews.fadeables.removeAll()
+
     // Title bar & title bar accessories:
 
     let needToHideTopBar = transition.isTopBarPlacementOrStyleChanging || transition.isTogglingLegacyStyle || transition.isTogglingInteractiveMode
@@ -288,9 +291,6 @@ extension PlayerWindowController {
         oscTwoRowView.dispose()
       }
     }
-
-    fadeableViews.fadeablesInTopBar.removeAll()
-    fadeableViews.fadeables.removeAll()
   }
 
   /// -------------------------------------------------
@@ -552,7 +552,7 @@ extension PlayerWindowController {
     // Note: hiding top bar here when entering FS with "top outside" OSC will cause it to go black too soon.
     // But we do need it when tranitioning from music mode → FS, or top bar may never be shown
     if !transition.isEnteringFullScreen || transition.isExitingMusicMode {
-      fadeableViews.applyVisibility(outputLayout.topBarView, to: topBarView)
+      fadeableViews.applyOnlyIfHidden(outputLayout.topBarView, to: topBarView)
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good

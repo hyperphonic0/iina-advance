@@ -165,6 +165,7 @@ class GLVideoLayer: CAOpenGLLayer {
            "Unexpected DQ priority for: \(DispatchQueue.current!.label)")
     lockAndSetOpenGLContext()
     defer { unlockOpenGLContext() }
+
     guard !videoView.isUninited else { return }
 
     needsMPVRender = false
@@ -269,15 +270,15 @@ class GLVideoLayer: CAOpenGLLayer {
       if forced { forceDraw = true }
     }
 
-    // Prevent crash if trying to use forceDraw when vid=0 (usually when toggling video on or off)
-    guard player.info.isVideoTrackSelected else { return }
-
     // Must not call display while holding isUninited's lock as that method will attempt to acquire
     // the lock and our locks do not support recursion.
     display()
   }
 
   override func display() {
+    // Prevent crash if trying to use forceDraw when vid=0 (usually when toggling video on or off)
+    guard player.info.isVideoTrackSelected else { return }
+
     super.display()
     CATransaction.flush()
 

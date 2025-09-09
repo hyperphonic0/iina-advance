@@ -662,15 +662,6 @@ struct GeometryTransform {
           pwc.updateDefaultArtVisibility(to: showDefaultArt)
         }
 
-        /// This check is after `reloadSelectedTracks` which will ensure that `info.aid` will have been updated with the
-        /// current audio track selection, or `0` if none selected.
-        /// Before `fileLoaded` it may change to `0` while the track info is still being processed, but this is unhelpful
-        /// because it can mislead us into thinking that the user has deselected the audio track.
-        if player.info.aid == 0 {
-          pwc.muteButton.isEnabled = false
-          pwc.volumeSlider.isEnabled = false
-        }
-
         pwc.hideSeekPreviewImmediately()
         pwc.updateTitle()
         pwc.playlistView.needsScrollToCurrentItem = true  // reset flag for when it does open

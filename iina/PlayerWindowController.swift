@@ -1745,7 +1745,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         let uncroppedVideoGeo = ctx.outputVidGeo  // Should have been set in VideoGeometryTF
         let videoSizeRaw = uncroppedVideoGeo.videoSizeRaw
         let prevCropBox = cropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-        log.verbose{"[GTF:\(ctx.name)] Uncropping video from cropRect \(prevCropBox) to videoSizeRaw: \(videoSizeRaw)"}
+        log.verbose{"[GTF:\(ctx.name)] Uncropping video from cropRect=\(prevCropBox) to videoSizeRaw=\(videoSizeRaw)"}
 
         // Scale viewport to roughly match window size
         let closedBarsGeo = windowedGeoForCurrentFrame()
@@ -2128,6 +2128,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let volume = player.info.volume
     let isMuted = player.info.isMuted
+    /// `info.aid` contains the current audio track selection, or `0` if none selected.
+    /// Before `fileLoaded` it may change to `0` while the track info is still being processed, but this is unhelpful
+    /// because it can mislead us into thinking that the user has deselected the audio track.
     let hasAudio = player.info.isAudioTrackSelected
 
     volumeSlider.isEnabled = hasAudio

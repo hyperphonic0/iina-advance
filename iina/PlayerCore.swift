@@ -1936,7 +1936,7 @@ class PlayerCore: NSObject {
     // Set this *before* reloading track selections! They will check state
     currentPlayback.state = .loaded
 
-    reloadSelectedTracks(silent: true)
+//    reloadSelectedTracks(silent: true)
     _reloadPlaylist()  // Need to do this when opening a playlist!
     _reloadChapters()
     syncAbLoop()
@@ -3105,16 +3105,6 @@ class PlayerCore: NSObject {
     return true
   }
 
-  private func reloadSelectedTracks(silent: Bool = false) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    log.verbose("Reloading selected tracks")
-
-    aidChanged(silent: silent)
-    vidChanged(silent: silent)
-    sidChanged(silent: silent)
-    secondarySidChanged(silent: silent)
-  }
-
   func trackListChanged() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     // No need to process track list changes if playback is being stopped. Must not process track
@@ -3124,7 +3114,6 @@ class PlayerCore: NSObject {
     guard info.isFileLoaded else { return }
     log.debug("Track list changed")
     guard reloadTrackInfo() else { return }
-    reloadSelectedTracks()
     log.verbose{"Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) sid=\(String(info.sid))"}
     postNotification(.iinaTracklistChanged)
   }
@@ -3362,7 +3351,6 @@ class PlayerCore: NSObject {
       name = MPVOption.Subtitles.secondarySid
     }
     mpv.setInt(name, index)
-    reloadSelectedTracks(silent: silent)
   }
 
 }
