@@ -154,6 +154,9 @@ class GLVideoLayer: CAOpenGLLayer {
       }
       printStats()
 #endif
+      // Prevent crash if trying to use forceDraw when vid=0 (usually when toggling video on or off)
+      guard player.info.isVideoTrackSelected else { return false }
+      guard videoView.isReadyToRender else { return false }
       if forceDraw { return true }
       return shouldRenderUpdateFrame()
     }
@@ -276,9 +279,6 @@ class GLVideoLayer: CAOpenGLLayer {
   }
 
   override func display() {
-    // Prevent crash if trying to use forceDraw when vid=0 (usually when toggling video on or off)
-    guard player.info.isVideoTrackSelected else { return }
-
     super.display()
     CATransaction.flush()
 
@@ -347,6 +347,7 @@ class GLVideoLayer: CAOpenGLLayer {
 
     func mpvUpdateCallback(_ ctx: UnsafeMutableRawPointer?) {
       let layer = bridge(ptr: ctx!) as GLVideoLayer
+      layer.videoView.isReadyToRender = true
       layer.drawAsync()
     }
 

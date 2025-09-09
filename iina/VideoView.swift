@@ -33,6 +33,8 @@ class VideoView: NSView {
   /// The Metal layer, if using MoltenVK with proper init
   var metalLayer: CAMetalLayer? { layer as? CAMetalLayer }
 
+  var isReadyToRender = false
+
   var layerColorspace: CGColorSpace? {
     return glLayer?.colorspace ?? metalLayer?.colorspace
   }

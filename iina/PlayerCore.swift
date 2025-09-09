@@ -3152,7 +3152,12 @@ class PlayerCore: NSObject {
 
     guard (vid != info.vid) || isShowVideoPendingInMiniPlayerCached else { return }
     isShowVideoPendingInMiniPlayer = false
-    info.vid = vid
+    videoView.$isUninited.withLock{ _ in
+      // Try to prevent crash when forcing draws. After changing vid from 0 to non-zero, do not allow forced drawing until after
+      // the first render callback is triggered.
+      videoView.isReadyToRender = false
+      info.vid = vid
+    }
 
     let sessionStateTF: GeometryTransform.PWinSessionStateTF = { [self] prevSessionState, ctx -> PWinSessionState? in
       let returnValue: PWinSessionState?
