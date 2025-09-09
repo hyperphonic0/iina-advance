@@ -114,6 +114,10 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
                          log: log ?? self.log)
   }
 
+  func removingCrop() -> VideoGeometry {
+    return clone(selectedCropLabel: AppData.noneCropIdentifier, videoSizeDisplayOverride: nil)
+  }
+
   // MARK: - TRANSFORMATION 1: Crop
 
   /// The currently applied crop (`iina_crop` filter), or `None` if no crop.

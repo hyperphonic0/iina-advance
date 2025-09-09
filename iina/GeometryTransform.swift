@@ -45,12 +45,24 @@ struct GeometryTransform {
   private var pwc: PlayerWindowController { player.pwc! }
   private var log: Logger.Subsystem { player.log }
 
+  // - mpv queue transforms
+
   /// If `sessionStateTransform` is `nil` (omitted), treat as no-op and continue to `videoTransform`.
   /// If `sessionStateTransform` returns `nil`, transition should be aborted.
   private let sessionStateTransform: PWinSessionStateTF?
+
+  /// This always runs in the `mpv` `DispatchQueue`, and can be used for other functionality.
   private let videoTransform: VideoGeometryTF?
+
+  // - main queue transforms
+
+  /// Can be used for custom logic for building `PWinGeometryTF`.
+  ///
+  /// See also `buildPWinTransformTasks`.
   private let windowedTransform: PWinGeometryTF?
+
   /// If provided, overrides all logic for generating the window geometry transform tasks.
+  ///
   /// This option is mutually exclusive with the `windowedTransform` option; both should not both be provided in the same GTF.
   private let buildPWinTransformTasks: ((GeometryTransform.ContextStage3) -> [IINAAnimation.Task])?
 

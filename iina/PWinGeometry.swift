@@ -1127,7 +1127,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                         video: video)
   }
 
-  // Transition windowed mode geometry to Interactive Mode geometry. Note that this is not a direct conversion; it will modify the view sizes
+  /// Transition windowed mode geometry to Interactive Mode geometry.
+  /// Note that this is not a direct conversion; it will modify the viewport size.
   func toInteractiveMode() -> PWinGeometry {
     assert(screenFit != .legacyFullScreen && screenFit != .nativeFullScreen)
     assert(mode == .windowedNormal)

@@ -1680,11 +1680,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     /// while `changeWindowsItem` needs to be called if `addWindowsItem` was already called. To be safe, just call both.
     NSApplication.shared.addWindowsItem(window, title: titleText, filename: filename)
     NSApplication.shared.changeWindowsItem(window, title: titleText, filename: filename)
-
   }
 
-  // MARK: - UI: Interactive mode
+  func showContextMenu() {
+    // TODO
+  }
 
+
+  // MARK: - UI: Interactive Mode
 
   func enterInteractiveMode(_ mode: InteractiveMode) {
     // Can't work with PiP. For now just exit it and don't wait. The animation could be better but it's better
@@ -1695,8 +1698,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
     }
 
-    var mustUncropFirst = false
-
     let videoTF: GeometryTransform.VideoGeometryTF = { [self] inputVidGeo, ctx -> VideoGeometry? in
       log.verbose{"Entering interactive mode: \(mode)"}
 
@@ -1706,7 +1707,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       if mode == .crop, let cropFilter = inputVidGeo.cropFilter {
         log.debug{"Crop mode requested. Will remove existing crop filter: \(cropFilter.stringFormat.quoted)"}
-        let uncroppedVidGeo = inputVidGeo.clone(selectedCropLabel: AppData.noneCropIdentifier, videoSizeDisplayOverride: nil)
+        let uncroppedVidGeo = inputVidGeo.removingCrop()
 
         // A crop is already set. Need to temporarily remove it so that the whole video can be seen again,
         // so that a new crop can be chosen. But keep info from the old filter in case the user cancels.
@@ -1716,7 +1717,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           log.error{"Failed to remove prev crop filter: (\(cropFilter.stringFormat.quoted)) for some reason. Will ignore and try to proceed anyway"}
         }
 
-        mustUncropFirst = true
         return uncroppedVidGeo
       } else {
         return inputVidGeo
@@ -1737,79 +1737,16 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // TODO: use key binding interceptor to support ESC and ENTER keys for interactive mode
       let isInFullScreen = ctx.inputLayout.mode.isFullScreen
 
-      var tasks: [IINAAnimation.Task] = []
-      let geoOverride: GeometrySet
-
-      if mustUncropFirst {
-        let cropFilter = ctx.inputVidGeo.cropFilter!
-        let uncroppedVideoGeo = ctx.outputVidGeo  // Should have been set in VideoGeometryTF
-        let videoSizeRaw = uncroppedVideoGeo.videoSizeRaw
-        let prevCropBox = cropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-        log.verbose{"[GTF:\(ctx.name)] Uncropping video from cropRect=\(prevCropBox) to videoSizeRaw=\(videoSizeRaw)"}
-
-        // Scale viewport to roughly match window size
-        let closedBarsGeo = windowedGeoForCurrentFrame()
-          .withResizedBars(outsideTop: 0, outsideTrailing: 0,
-                           outsideBottom: 0, outsideLeading: 0,
-                           insideTop: 0, insideTrailing: 0,
-                           insideBottom: 0, insideLeading: 0,
-                           video: uncroppedVideoGeo,
-                           pinWidthOrHeightIfAtMax: false).refitted()
-
-        let uncroppedClosedBarsGeo: PWinGeometry
-        if Preference.bool(for: .lockViewportToVideoSize) {
-          // Otherwise try to avoid shrinking the window too much if the aspect changes dramatically.
-          // This heuristic seems to work ok
-          let newVideoAspect = videoSizeRaw.mpvAspect
-          let oldVideoAspect = prevCropBox.size.mpvAspect
-
-          let aspectChangeFactor = newVideoAspect / oldVideoAspect
-          let viewportSizeMultiplier = (aspectChangeFactor < 0) ? (1.0 / aspectChangeFactor) : aspectChangeFactor
-          var newViewportSize = closedBarsGeo.viewportSize * viewportSizeMultiplier  // not rounded. Need to round below.
-
-          // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
-          let minViewportSizeIM = closedBarsGeo.minViewportSize(mode: .windowedInteractive)
-          let minViewportSizeWindowed = CGSize.computeMinSize(withAspect: newVideoAspect,
-                                                              minWidth: minViewportSizeIM.width,
-                                                              minHeight: minViewportSizeIM.height)
-          let minViewportMarginsIM = GeoUtil.minViewportMargins(forMode: .windowedInteractive)
-          newViewportSize = NSSize(width: max(newViewportSize.width + minViewportMarginsIM.totalWidth, minViewportSizeWindowed.width).rounded(),
-                                   height: max(newViewportSize.height + minViewportMarginsIM.totalHeight, minViewportSizeWindowed.height).rounded())
-
-          log.verbose{"[GTF:\(ctx.name)] aspectChangeFactor=\(aspectChangeFactor) viewportSizeMultiplier=\(viewportSizeMultiplier) newViewportSize=\(newViewportSize)"}
-          uncroppedClosedBarsGeo = closedBarsGeo.scalingViewport(to: newViewportSize)
-        } else {
-          // If not locking viewport to video, just reuse viewport
-          uncroppedClosedBarsGeo = closedBarsGeo.refitted(lockViewportToVideoSize: true)
-        }
-        // Create an override for windowedModeGeo here, because it won't be set until the animation above executes
-        geoOverride = ctx.inputGeoSet.clone(windowed: uncroppedClosedBarsGeo)
-        log.verbose{"[GTF:\(ctx.name)] Generated uncroppedGeo: \(uncroppedClosedBarsGeo)"}
-
-        // Special task if uncropping in windowed mode
-        if !isInFullScreen {
-          // TODO: integrate this task into LayoutTransition build
-          let uncropDuration = Constants.AnimationDuration.cropAnimation * 0.1
-          tasks.append(.init(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
-            setFrameAndUpdateWindowSubviews(using: uncroppedClosedBarsGeo)
-          })
-        }
-
-      } else {
-        geoOverride = ctx.inputGeoSet
-      }
-
       // Build entry animation
       let newMode: PlayerWindowMode = isInFullScreen ? .fullScreenInteractive : .windowedInteractive
       let interactiveModeLayout = ctx.inputLayout.spec.clone(mode: newMode, interactiveMode: mode)
       let startDuration = Constants.AnimationDuration.cropAnimation * 0.5
       let endDuration = isInFullScreen ? startDuration * 0.5 : startDuration
-      let entryTransition = buildLayoutTransition(named: "EnterInteractiveMode", from: ctx.inputLayout,
+      let entryTransition = buildLayoutTransition(named: "EnterInteractiveMode_\(mode)", from: ctx.inputLayout,
                                                   to: interactiveModeLayout,
                                                   totalStartingDuration: startDuration,
-                                                  totalEndingDuration: endDuration, geoOverride)
-      tasks += entryTransition.tasks
-      return tasks
+                                                  totalEndingDuration: endDuration, ctx.inputGeoSet)
+      return entryTransition.tasks
     }
 
     let gtf = GeometryTransform("EnterInteractiveMode", player,
@@ -1908,11 +1845,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     gtf.submit()
   }
 
-  // MARK: - UI: Music mode
 
-  func showContextMenu() {
-    // TODO
-  }
+  // MARK: - UI: Music Mode
 
   /// Calls `buildTransitionToEnterMusicMode`, but first exits existing FS or interactive mode.
   func enterMusicMode(automatically: Bool = false, from oldLayout: LayoutState? = nil, _ geo: GeometrySet? = nil) {
