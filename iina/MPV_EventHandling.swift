@@ -202,10 +202,11 @@ extension MPVController {
       // wait for idle
       guard let dataPtr = UnsafeMutablePointer<mpv_event_end_file>(OpaquePointer(event.pointee.data)) else { break }
       let reasonString = dataPtr.pointee.reasonString
-      let reason = event!.pointee.data.load(as: mpv_end_file_reason.self)
+      let reasonEnum = event!.pointee.data.load(as: mpv_end_file_reason.self)
+      let dueToStopCommand = reasonEnum == MPV_END_FILE_REASON_STOP
       // let reasonString = dataPtr.pointee.reasonString
-      player.log.verbose("FileEnded, reason: \(reasonString)")
-      player.fileEnded(dueToStopCommand: reason == MPV_END_FILE_REASON_STOP)
+      player.log.verbose("FileEnded reason=\(reasonEnum) detail=\(reasonString.quoted)")
+      player.fileEnded(dueToStopCommand: dueToStopCommand, detail: reasonString)
 
     case MPV_EVENT_COMMAND_REPLY:
       let reply = event.pointee.reply_userdata

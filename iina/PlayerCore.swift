@@ -219,7 +219,7 @@ class PlayerCore: NSObject {
     didSet { log.verbose("Δ isUsingMpvOSD ≔ \(isUsingMpvOSD.yn)") }
   }
 
-  var receivedEndFileWhileLoading: Bool = false
+  var errorWhileLoading: String? = nil
 
   /// Set this to `true` if user changes "music mode" status manually. This disables `autoSwitchToMusicMode`
   /// functionality for the duration of this player even if the preference is `true`. But if they manually change the
@@ -1933,10 +1933,8 @@ class PlayerCore: NSObject {
 
       /// Will complete restore when `transformGeometry` is done
     }
-    // Set this *before* reloading track selections! They will check state
     currentPlayback.state = .loaded
 
-//    reloadSelectedTracks(silent: true)
     _reloadPlaylist()  // Need to do this when opening a playlist!
     _reloadChapters()
     syncAbLoop()
@@ -2031,14 +2029,14 @@ class PlayerCore: NSObject {
     log.debug("Auto load done")
   }
 
-  func fileEnded(dueToStopCommand: Bool) {
+  func fileEnded(dueToStopCommand: Bool, detail: String) {
     // if receive end-file when loading file, might be error
     // wait for idle
     if info.isFileLoaded {
       info.shouldAutoLoadFiles = false
     } else {
       if !dueToStopCommand {
-        receivedEndFileWhileLoading = true
+        errorWhileLoading = detail
       }
     }
     if dueToStopCommand {
@@ -2065,13 +2063,14 @@ class PlayerCore: NSObject {
 
   func idleActiveChanged() {
     let isFileLoaded = info.isFileLoaded
-    let eofWhileLoading = receivedEndFileWhileLoading
-    log.verbose{"Got mpv 'idle-active': isFileLoaded=\(isFileLoaded.yn) eofLoading=\(eofWhileLoading.yn) playerState=\(state)"}
+    let errorMsg = errorWhileLoading
+    log.verbose{"Got mpv 'idle-active': isFileLoaded=\(isFileLoaded.yn) error=\(errorMsg?.quoted ?? "nil") playerState=\(state)"}
     /// Make sure to check that `info.currentPlayback != nil` before outputting error
-    if eofWhileLoading, let playback = info.currentPlayback, playback.state.isNotYet(.loaded) {
+    if let errorMsg, let playback = info.currentPlayback, playback.state.isNotYet(.loaded) {
       log.error{"Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted)! Will stop player\(isInteractivePlayer ? " & close window" : "")"}
       DispatchQueue.main.async { [self] in
-        Utility.showAlert("error_open_name", arguments: [playback.path.quoted])
+        let errorDetail = errorMsg.isEmpty ? "" : "\n\n\(errorMsg)"
+        Utility.showAlert("error_open_name", arguments: ["\(playback.path.quoted)\(errorDetail)"])
         let openURLWindow = AppDelegate.shared.openURLWindow
         if openURLWindow.playerCore == self, openURLWindow.window?.isOpen == true {
           openURLWindow.failedToLoadURL()
@@ -2082,10 +2081,10 @@ class PlayerCore: NSObject {
       // Check for stopping status also. Sometimes libmpv doesn't post stop message.
       closeWindow()
     }
-    receivedEndFileWhileLoading = false
+    errorWhileLoading = nil
     // Make sure current playback is taken into account before changing state to `idle`.
     // Idle player is one which is closed but can be reused. Do not set to idle when changing media or other small intervals
-    if (state.isAtLeast(.started) && state.isNotYet(.shuttingDown)), (eofWhileLoading || info.currentPlayback == nil) {
+    if state.isAtLeast(.started), state.isNotYet(.shuttingDown), (errorMsg != nil) || (info.currentPlayback == nil) {
       state = .idle
     }
   }
