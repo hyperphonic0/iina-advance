@@ -1923,6 +1923,14 @@ class PlayerCore: NSObject {
         }
       }
       mpv.setFlag(MPVOption.PlaybackControl.pause, shouldPause)
+
+      // Normally the display link is started when MainWindowController.windowDidLoad calls initVideo.
+      // However if this player is being reused then the window will have already been loaded and
+      // windowDidLoad will not be called. If playback is not paused make sure the display link is
+      // active.
+      if !shouldPause, pwc.loaded {
+        pwc.videoView.displayActive()
+      }
     }
     log.verbose{"FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")"}
 

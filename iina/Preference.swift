@@ -613,6 +613,10 @@ struct Preference {
     /// Internal setting to allow disabling the new feature that shows cover artwork in the Now Playing module in case a serious
     /// problem is encountered.
     static let enableNowPlayingArtwork = Key("enableNowPlayingArtwork")
+
+    /// Internal setting to allow disabling the feature that detects when a display is idle and shuts down the display link to save energy
+    /// in case a problem is found where the display link is shut down when it is needed.
+    static let enableDisplayIdle = Key("enableDisplayIdle")
   }
 
   // MARK: - Enums
@@ -1610,7 +1614,8 @@ struct Preference {
     .killRequest: 0,
     .enableFFmpegImageDecoder: true,
     .enableHdrWorkaround: false,
-    .enableNowPlayingArtwork: true
+    .enableNowPlayingArtwork: true,
+    .enableDisplayIdle: true
   ]
 
 

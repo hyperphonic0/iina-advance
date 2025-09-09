@@ -121,6 +121,13 @@ extension VideoView {
   /// - Note: In addition to playback the display link must be running for operations such seeking, stepping and entering and leaving
   ///         full screen mode.
   func displayIdle() {
+    // Because the display link is critical there is an internal setting that can be changed to
+    // disable shutting down the display link should any problems with this energy saving feature
+    // be discovered.
+    guard Preference.bool(for: .enableDisplayIdle) else {
+      displayIdleTimer.cancel()
+      return
+    }
     log.trace("VideoView displayIdle")
     assert(DispatchQueue.isExecutingIn(.main))
     displayIdleTimer.restart()
