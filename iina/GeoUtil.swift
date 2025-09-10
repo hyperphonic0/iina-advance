@@ -29,9 +29,7 @@ struct GeoUtil {
       let viewportMinH = max(Constants.Window.minViewportSize.height, insideBars.totalHeight + Constants.Window.minHeightBetweenInsideSidebars)
       return NSSize(width: viewportMinW, height: viewportMinH)
     case .windowedInteractive, .fullScreenInteractive:
-      viewportMinW = Constants.InteractiveMode.minWindowWidth
-      // assume viewport aspect is same as video for now
-      return NSSize(width: viewportMinW, height: Constants.Window.minViewportSize.height)
+      return Constants.InteractiveMode.minViewportSize
     case .musicMode:
       // note that a viewport height of zero would be ok if video was disabled in music mode
       return NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: 0)

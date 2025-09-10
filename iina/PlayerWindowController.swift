@@ -1803,8 +1803,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           let croppedIMGeo = currentIMGeo.cropVideo(using: ctx.outputVidGeo, isMiddleTransition: true)
 
           if !isInFullScreen {
-            let newIMGeo: PWinGeometry
+
             // Tag: #ViewportSizeHeuristic
+            var newViewportSize: CGSize
             if Preference.bool(for: .lockViewportToVideoSize) {
               // Try to avoid shrinking the window too much if the aspect changes dramatically.
               let containerSize = NSScreen.getScreenOrDefault(screenID: currentIMGeo.screenID).visibleFrame.size
@@ -1812,17 +1813,17 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
               let useRatioH = (currentIMGeo.viewportSize.height / containerSize.height).clamped(to: 0...1)
               let useRatioMax = max(useRatioW, useRatioH)
 
-              var newViewportSize = containerSize * useRatioMax  // not rounded. Need to round below.
-              while newViewportSize.width < 200 || newViewportSize.height < 200 {
-                newViewportSize = newViewportSize * 2.0
-              }
-              newViewportSize = newViewportSize.rounded()
-
-              newIMGeo = croppedIMGeo.scalingViewport(to: newViewportSize)
+              newViewportSize = containerSize * useRatioMax  // not rounded. Need to round below.
             } else {
               // Try to keep current viewportSize
-              newIMGeo = croppedIMGeo.scalingViewport(to: currentIMGeo.viewportSize)
+              newViewportSize = currentIMGeo.viewportSize
             }
+
+            while (newViewportSize.width < Constants.InteractiveMode.minViewportSize.width) || (newViewportSize.height < Constants.InteractiveMode.minViewportSize.height) {
+              newViewportSize = newViewportSize * 2.0
+            }
+            newViewportSize = newViewportSize.rounded()
+            let newIMGeo = croppedIMGeo.scalingViewport(to: newViewportSize)
 
             geoSet = buildGeoSet(windowed: newIMGeo, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
           }

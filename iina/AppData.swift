@@ -342,8 +342,8 @@ struct Constants {
     static let aspectLabel = "4:3"
   }
   struct Window {
-    static let minViewportSize = CGSize(width: 285, height: 120)
-    static let minWindowSize = CGSize(width: 285, height: 160)
+    static let minViewportSize = CGSize(width: 300, height: 160)
+    static let minWindowSize = CGSize(width: 300, height: 200)
     // The minimum distance that the user must drag before their click or tap gesture is interpreted as a drag gesture:
     static let minInitialDragThreshold: CGFloat = 1.0
 
@@ -361,6 +361,8 @@ struct Constants {
     // Window's top bezel must be at least as large as the title bar so that dragging the top of crop doesn't drag the window too
     static let viewportMargins = MarginQuad(top: Constants.Distance.standardTitleBarHeight, trailing: 24,
                                          bottom: Constants.Distance.standardTitleBarHeight, leading: 24)
+    static let minViewportSize = CGSize(width: Constants.Window.minViewportSize.width + viewportMargins.totalWidth,
+                                        height: Constants.Window.minViewportSize.height + viewportMargins.totalHeight)
   }
   struct AlbumArt {
     static let rawWidth: Int = 1600

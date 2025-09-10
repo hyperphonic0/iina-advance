@@ -195,11 +195,12 @@ extension PlayerWindowController {
 
     // (Only for Enter/Exit Music Mode) Post-midpoint animation: move & scale video
     // When moving back or forth between windowedNormal & musicMode: scale & move the video frame for a nice transition animation.
-    if !transition.isWindowInitialLayout, transition.isTogglingMusicMode ||
-        (transition.isTogglingInteractiveMode && !transition.inputLayout.isFullScreen) {
+    if !transition.isWindowInitialLayout,
+        transition.isTogglingMusicMode || (transition.isTogglingInteractiveMode && !transition.inputLayout.isFullScreen) {
       let duration = transition.isTogglingInteractiveMode ? (closeOldPanelsDuration * 0.5) : closeOldPanelsDuration
       transition.tasks.append(.init(duration: duration, timing: .easeInEaseOut) { [self] in
 
+        // FIXME: For Interactive Mode with very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
         let intermediateWindowFrame = transition.outputGeometry.videoFrameInScreenCoords
 
         // Need to have mode which is not music mode
@@ -354,11 +355,13 @@ extension PlayerWindowController {
       } else {
         /// Entering interactive mode: convert from `windowed` to `windowedInteractive`
         log.verbose("Entering windowed interactive mode from windowed mode")
+
         if outputLayout.spec.interactiveMode == .crop {
           // Need to remove crop if it exists
-          // Tag: #ViewportSizeHeuristic
           let uncroppedNaiveGeo = inputGeometry.clone(video: inputGeometry.video.removingCrop())
-          let newIMGeo: PWinGeometry
+
+          // Tag: #ViewportSizeHeuristic
+          var newViewportSize: CGSize
           if Preference.bool(for: .lockViewportToVideoSize) {
             // Try to avoid shrinking the window too much if the aspect changes dramatically.
             let containerSize = NSScreen.getScreenOrDefault(screenID: inputGeometry.screenID).visibleFrame.size
@@ -366,17 +369,17 @@ extension PlayerWindowController {
             let useRatioH = (inputGeometry.viewportSize.height / containerSize.height).clamped(to: 0...1)
             let useRatioMax = max(useRatioW, useRatioH)
 
-            var newViewportSize = containerSize * useRatioMax  // not rounded. Need to round below.
-            while newViewportSize.width < 200 || newViewportSize.height < 200 {
-              newViewportSize = newViewportSize * 2.0
-            }
-            newViewportSize = newViewportSize.rounded()
-
-            newIMGeo = uncroppedNaiveGeo.scalingViewport(to: newViewportSize)
+            newViewportSize = containerSize * useRatioMax  // not rounded. Need to round below.
           } else {
             // Try to keep current viewportSize
-            newIMGeo = uncroppedNaiveGeo.scalingViewport(to: inputGeometry.viewportSize)
+            newViewportSize = inputGeometry.viewportSize
           }
+
+          while (newViewportSize.width < Constants.Window.minViewportSize.width) || (newViewportSize.height < Constants.Window.minViewportSize.height) {
+            newViewportSize = newViewportSize * 2.0
+          }
+          newViewportSize = newViewportSize.rounded()
+          let newIMGeo = uncroppedNaiveGeo.scalingViewport(to: newViewportSize)
 
           return newIMGeo.toInteractiveMode()
         }
@@ -413,6 +416,7 @@ extension PlayerWindowController {
 
       let mustUncropFirst = (transition.outputLayout.spec.interactiveMode == .crop) && (transition.inputGeometry.video.cropFilter != nil)
       if mustUncropFirst, let cropFilter = transition.inputGeometry.video.cropFilter {
+        assert(transition.isEnteringInteractiveMode, "Expected to be entering interactive mode only when uncropping video")
         let uncroppedVideoGeo = transition.inputGeometry.video.removingCrop()
         log.verbose{"Uncropping video from cropRect=\(cropFilter.cropRect(origVideoSize: uncroppedVideoGeo.videoSizeRaw, flipY: true)) to videoSizeRaw=\(uncroppedVideoGeo.videoSizeRaw)"}
 
@@ -426,8 +430,9 @@ extension PlayerWindowController {
       }
 
       let baseGeo = transition.isEnteringInteractiveMode ? transition.inputGeometry : transition.outputGeometry
-
+      // FIXME: For very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
       let intermediateWindowFrame = baseGeo.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords
+
       let middleGeo = baseGeo.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
                                     topMarginHeight: 0,
                                     outsideBars: .zero, insideBars: .zero,
