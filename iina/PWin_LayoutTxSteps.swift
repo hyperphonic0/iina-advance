@@ -938,12 +938,7 @@ extension PlayerWindowController {
       } else if transition.isExitingInteractiveMode {
         // Exiting interactive mode
         setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
-
-        if let cropController = self.cropSettingsView {
-          cropController.cropBoxView.removeFromSuperview()
-          cropController.view.removeFromSuperview()
-          self.cropSettingsView = nil
-        }
+        removeCropControls()
       }
     }
 

@@ -14,8 +14,9 @@ class CropSettingsViewController: CropBoxViewController {
   @IBOutlet weak var aspectPresetsSegment: NSSegmentedControl!
   @IBOutlet weak var aspectEntryTextField: NSTextField!
 
-  override func viewDidAppear() {
-    super.viewDidAppear()
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    // The target view will be destroyed & recreated each time interactive mode is entered
     updateSegmentLabels()
   }
 
