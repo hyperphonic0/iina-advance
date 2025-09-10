@@ -487,14 +487,20 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         }
 
         // Determine width first
-        let newWindowWidth: CGFloat = requestedSize.width.rounded().clamped(to: Constants.Distance.MusicMode.minWindowWidth...maxWinWidth)
+        var newWindowWidth: CGFloat = requestedSize.width.rounded()
+        if Constants.Distance.MusicMode.minWindowWidth <= maxWinWidth {  // may not be true for videos with extreme aspect
+          newWindowWidth = newWindowWidth.clamped(to: Constants.Distance.MusicMode.minWindowWidth...maxWinWidth)
+        }
 
         // Now determine height. Clamp again in case rounding goes outside of bounds
         let videoHeight = (newWindowWidth / videoAspect).rounded(.towardZero).clamped(to: 0...maxVideoHeight)
         // Make sure height is within acceptable values
         let minWindowHeight = videoHeight + Constants.Distance.MusicMode.oscHeight + minPlaylistHeight
         let maxWindowHeight = isMusicModePlaylistShown ? containerFrame.height : minWindowHeight
-        let newWindowHeight = requestedSize.height.rounded().clamped(to: minWindowHeight...maxWindowHeight)
+        var newWindowHeight = requestedSize.height.rounded()
+        if minWindowHeight <= maxWindowHeight {
+          newWindowHeight = newWindowHeight.clamped(to: minWindowHeight...maxWindowHeight)
+        }
 
         var newWindowFrame = NSRect(origin: windowFrame.origin,
                                     size: NSSize(width: newWindowWidth, height: newWindowHeight))
