@@ -324,11 +324,11 @@ extension PlayerWindowController {
           let halfMargin = (margins.bottom * 0.5).rounded()
           thumbOriginY = timeLabelOriginY + timeLabelSize.height + halfMargin
         } else {
-          let halfMargin = margins.top * 0.5
+          let halfMargin = (margins.top * 0.5).rounded()
           thumbOriginY = timeLabelOriginY - halfMargin - thumbHeight
         }
 
-        let thumbWidth_Halved = thumbWidth / 2
+        let thumbWidth_Halved = (thumbWidth / 2).rounded()
 
         if usingThumbfast {
           // Experiment with Thumbfast Lua script as an alternative (https://github.com/po5/thumbfast)
@@ -338,18 +338,19 @@ extension PlayerWindowController {
           let viewportSize = currentGeo.viewportSize
           // Thumbfast expects X,Y to represent top-left corner of thumbnail
           let scaleRatio = osdWidth / viewportSize.width
-          let thumbOriginX = ((posInWindowX * scaleRatio).rounded() - (thumbWidth * 0.5)).clamped(to: 0...(max(0, osdWidth - thumbWidth)))
           let viewportFrameInWindowCoords = currentGeo.viewportFrameInWindowCoords
+          let thumbOriginInViewportX = posInWindowX - viewportFrameInWindowCoords.minX
+          let thumbOriginX = ((thumbOriginInViewportX * scaleRatio) - (thumbWidth_Halved)).clamped(to: 0...(max(0, osdWidth - thumbWidth))).rounded()
           let thumbOriginInViewportY = thumbOriginY - viewportFrameInWindowCoords.minY
           var yConverted = ((viewportSize.height - thumbOriginInViewportY) * scaleRatio) - thumbHeight
           if !showAbove {
             yConverted -= thumbHeight
           }
-          let thumbOriginY = yConverted.clamped(to: 0...(max(0, (viewportSize.height * scaleRatio) - thumbHeight)))
+          let thumbOriginY = yConverted.clamped(to: 0...(max(0, (viewportSize.height * scaleRatio) - thumbHeight))).rounded()
           player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: thumbOriginX, y: thumbOriginY)
           thumbnailPeekView.isHidden = true
         } else {
-          let thumbOriginX = round(posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth))
+          let thumbOriginX = (posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth)).rounded()
           let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY.rounded(), width: thumbWidth, height: thumbHeight)
           updateThumbnailPeekView(to: ffThumbnail!, thumbFrame: thumbFrame, thumbStore!, currentGeo, previewTimeSec: previewTimeSec)
           thumbnailPeekView.isHidden = !showThumbnail
