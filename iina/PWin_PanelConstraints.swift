@@ -193,7 +193,7 @@ extension PlayerWindowController {
       assert(useViewport, "Cannot use topBarView without viewportView")
       let constant1 = transition.viewportTopOffsetFromTopBarTop(for: stage)
       let constant2 = transition.topBarBottomOffsetFromViewportTop(for: stage)
-      log.verbose("\(logPre) Updating topBar: viewport.top<-topBar.top=\(constant1), topBar.bottom<-viewport.top=\(constant2)")
+      log.verbose("\(logPre) Updating topBar: viewport.top<-topBar.top=\(constant1), topBar.bottom<-viewport.top=\(constant2), titleBarHeight=\(layout.titleBarHeight)")
 
       p.viewportTopOffsetFromTopBarTop.createOrUpdate(to: constant1) { [self] c in
         viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
@@ -250,7 +250,7 @@ extension PlayerWindowController {
     if useViewport && useBottomBar {
       let constant1 = transition.viewportBtmOffsetFromTopOfBottomBar(for: stage)
       let constant2 = transition.bottomBarBtmOffsetFromViewportBtm(for: stage)
-      log.verbose("\(logPre) Updating topBar & viewport: viewport.btm<-bottomBar.top=\(constant1), viewport.btm<-bottomBar.bottom=\(constant2)")
+      log.verbose("\(logPre) Updating bottomBar & viewport: viewport.btm<-bottomBar.top=\(constant1), viewport.btm<-bottomBar.bottom=\(constant2)")
 
       p.viewportBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1) { [self] c in
         viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)

@@ -104,6 +104,7 @@ extension PlayerWindowController {
       initVolumeView(using: oscGeo)
       initSidebars()
 
+      closeButtonView.idString = "MiniCloseButtonView"
       closeButtonView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 4).isActive = true
       closeButtonView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4).isActive = true
 
