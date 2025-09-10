@@ -15,6 +15,7 @@
                 <outlet property="noResultLabel" destination="0yO-bT-GQW" id="9Yr-Yb-yWw"/>
                 <outlet property="prefDetailContentView" destination="5R5-77-bmq" id="om5-Bx-6J5"/>
                 <outlet property="prefDetailScrollView" destination="VYU-tb-v3l" id="vrz-s4-dn8"/>
+                <outlet property="scrollViewTopConstraint" destination="gJS-on-Kmb" id="U1Q-pi-zxX"/>
                 <outlet property="searchField" destination="rKj-eM-MTH" id="h5z-XD-hFu"/>
                 <outlet property="tableView" destination="vde-uJ-0ge" id="ezK-1d-1Px"/>
                 <outlet property="window" destination="F0z-JX-Cv5" id="gIp-Ho-8D9"/>
@@ -37,7 +38,7 @@
                         <subviews>
                             <searchField wantsLayer="YES" focusRingType="none" verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rKj-eM-MTH">
                                 <rect key="frame" x="9" y="422" width="182" height="28"/>
-                                <searchFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" sendsSearchStringImmediately="YES" id="ZLM-z2-CyT">
+                                <searchFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" refusesFirstResponder="YES" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" id="ZLM-z2-CyT">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -173,7 +174,7 @@
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
                         <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="94x-ey-qaM">
-                            <rect key="frame" x="464" y="0.0" width="16" height="480"/>
+                            <rect key="frame" x="603" y="0.0" width="17" height="452"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
                     </scrollView>
@@ -188,10 +189,10 @@
                     <constraint firstItem="anY-kd-ix3" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" id="IPO-JP-XJz"/>
                     <constraint firstAttribute="bottom" secondItem="AO2-1e-7F6" secondAttribute="bottom" id="Iae-jL-Lbe"/>
                     <constraint firstItem="anY-kd-ix3" firstAttribute="leading" secondItem="AO2-1e-7F6" secondAttribute="trailing" constant="-1" id="MfE-Gd-IRb"/>
-                    <constraint firstItem="VYU-tb-v3l" firstAttribute="top" secondItem="mpW-1b-ztU" secondAttribute="top" id="Q5q-tt-fwu"/>
                     <constraint firstAttribute="trailing" secondItem="mpW-1b-ztU" secondAttribute="trailing" id="TaF-ES-bGg"/>
                     <constraint firstItem="AO2-1e-7F6" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" id="Yag-r7-077"/>
                     <constraint firstAttribute="bottom" secondItem="mpW-1b-ztU" secondAttribute="bottom" id="ZFX-8N-eqw"/>
+                    <constraint firstItem="VYU-tb-v3l" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" id="gJS-on-Kmb"/>
                     <constraint firstItem="mpW-1b-ztU" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" id="zpa-gD-im9"/>
                 </constraints>
             </view>

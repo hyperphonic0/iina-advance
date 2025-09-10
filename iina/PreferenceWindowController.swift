@@ -152,6 +152,8 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var tableView: NSTableView!
   @IBOutlet weak var maskView: PrefSearchResultMaskView!
   @IBOutlet weak var prefDetailScrollView: NSScrollView!  // contains the prefs detail panel (on right)
+  // Check `prefDetailContentView` constraints in the XIB for window content insets
+  @IBOutlet weak var scrollViewTopConstraint: NSLayoutConstraint!
   @IBOutlet weak var prefDetailContentView: NSView!       // contains the sections stack
   @IBOutlet var completionPopover: NSPopover!
   @IBOutlet weak var completionTableView: NSTableView!
@@ -218,6 +220,14 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     tableView.dataSource = self
     completionTableView.delegate = self
     completionTableView.dataSource = self
+    
+    // It seems that on Tahoe RC, the sytstem will force to draw titlebar background if there's a scrollview
+    // that overlaps with the titlebar area. We just add an ugly workaround for now and wait for the new settings window.
+    if #available(macOS 26, *) {
+      scrollViewTopConstraint.constant = 32
+    } else {
+      scrollViewTopConstraint.constant = 28
+    }
 
     detailViewBottomConstraint = prefDetailContentView.bottomAnchor.constraint(equalTo: prefDetailContentView.superview!.bottomAnchor)
 
@@ -372,7 +382,7 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     prefDetailContentView.removeAllSubviews()
     guard let vc = viewControllers[at: index] else { return nil }
     prefDetailContentView.addSubview(vc.view)
-    Utility.quickConstraints(["H:|-28-[v]-28-|", "V:|-28-[v]-28-|"], ["v": vc.view])
+    Utility.quickConstraints(["H:|-28-[v]-28-|", "V:|-0-[v]-28-|"], ["v": vc.view])
 
     let isScrollable = vc.preferenceContentIsScrollable
     detailViewBottomConstraint?.isActive = !isScrollable
