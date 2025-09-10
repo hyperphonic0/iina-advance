@@ -1800,18 +1800,40 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
         if let cropController = cropSettingsView {
           let currentIMGeo = ctx.inputGeoSet.windowed
-          let newIMGeo = currentIMGeo.cropVideo(using: ctx.outputVidGeo)
+          let croppedIMGeo = currentIMGeo.cropVideo(using: ctx.outputVidGeo, isMiddleTransition: true)
+
           if !isInFullScreen {
-            geoSet = buildGeoSet(windowed: newIMGeo, video: newIMGeo.video, layoutMode: ctx.inputLayout.mode)
+            let newIMGeo: PWinGeometry
+            // Tag: #ViewportSizeHeuristic
+            if Preference.bool(for: .lockViewportToVideoSize) {
+              // Try to avoid shrinking the window too much if the aspect changes dramatically.
+              let containerSize = NSScreen.getScreenOrDefault(screenID: currentIMGeo.screenID).visibleFrame.size
+              let useRatioW = (currentIMGeo.viewportSize.width / containerSize.width).clamped(to: 0...1)
+              let useRatioH = (currentIMGeo.viewportSize.height / containerSize.height).clamped(to: 0...1)
+              let useRatioMax = max(useRatioW, useRatioH)
+
+              var newViewportSize = containerSize * useRatioMax  // not rounded. Need to round below.
+              while newViewportSize.width < 200 || newViewportSize.height < 200 {
+                newViewportSize = newViewportSize * 2.0
+              }
+              newViewportSize = newViewportSize.rounded()
+
+              newIMGeo = croppedIMGeo.scalingViewport(to: newViewportSize)
+            } else {
+              // Try to keep current viewportSize
+              newIMGeo = croppedIMGeo.scalingViewport(to: currentIMGeo.viewportSize)
+            }
+
+            geoSet = buildGeoSet(windowed: newIMGeo, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
           }
 
           // Animate the crop to highlight the piece being cut out.
           let cropAnimationDuration = immediately ? 0 : Constants.AnimationDuration.cropAnimation * 0.005
           tasks.append(.init(duration: cropAnimationDuration, timing: .default) { [self] in
-            log.verbose{"Start exiting interactive mode: animating crop using: \(newIMGeo)"}
-            setFrameAndUpdateWindowSubviews(using: newIMGeo)
+            log.verbose{"Start exiting interactive mode: animating crop using: \(croppedIMGeo)"}
+            setFrameAndUpdateWindowSubviews(using: croppedIMGeo)
             // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
-            videoView.videoViewConstraints?.updateSpacerMin(to: newIMGeo.viewportMargins, .init(496))
+            videoView.videoViewConstraints?.updateSpacerMin(to: croppedIMGeo.viewportMargins, .init(496))
 
             // Fade out cropBox selection rect
             cropController.cropBoxView.isHidden = true

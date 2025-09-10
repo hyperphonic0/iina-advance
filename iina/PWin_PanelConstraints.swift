@@ -107,6 +107,7 @@ extension PlayerWindowController {
     let contentView = window!.contentView!
     let p = panelConstraints
     let logPre = transition.logPreamble(for: stage)
+    let outputGeo = transition.outputGeometry
 
     // TODO: expand this to include constraints for sidebars too
     let layout: LayoutState
@@ -119,7 +120,6 @@ extension PlayerWindowController {
       layout = transition.outputLayout
     }
 
-    let outputGeo = transition.outputGeometry
     var useViewport = outputGeo.videoShown
     var useBottomBar = transition.outputLayout.hasBottomBar
     var useTopBar = transition.outputLayout.hasTopBar
@@ -467,6 +467,14 @@ extension PlayerWindowController {
   }
 
   // MARK: - Controller content layout
+
+  func removeCropControls() {
+    guard let cropController = self.cropSettingsView else { return }
+
+    cropController.cropBoxView.removeFromSuperview()
+    cropController.view.removeFromSuperview()
+    self.cropSettingsView = nil
+  }
 
   func updateSpeedLabelFont(for transition: LayoutTransition) {
     let oscGeo = transition.outputLayout.controlBarGeo

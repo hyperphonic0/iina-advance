@@ -270,6 +270,8 @@ extension PlayerWindowController {
       cropController.view.isHidden = true
       cropController.cropBoxView.isHidden = true
       cropController.cropBoxView.alphaValue = 0
+      // Need to remove these ASAP. Their constraints can interfere with window resize animation (e.g. during crop).
+      removeCropControls()
     }
 
     // Hide seek preview for mode transitions or large animations
@@ -895,11 +897,7 @@ extension PlayerWindowController {
 
     if transition.isTogglingInteractiveMode {
       // Even if entering IM, may have a prev crop due to a bug elsewhere. Remove if found
-      if let cropController = self.cropSettingsView {
-        cropController.cropBoxView.removeFromSuperview()
-        cropController.view.removeFromSuperview()
-        self.cropSettingsView = nil
-      }
+      removeCropControls()
 
       if transition.isEnteringInteractiveMode {
         // Need videoView to have superview before adding shadow
@@ -1394,8 +1392,5 @@ extension PlayerWindowController {
 
     player.saveState()
   }
-
-  // END of layout steps
-  // --------------------------------------------------
 
 }

@@ -197,10 +197,10 @@ extension PlayerWindowController {
     // When moving back or forth between windowedNormal & musicMode: scale & move the video frame for a nice transition animation.
     if !transition.isWindowInitialLayout, transition.isTogglingMusicMode ||
         (transition.isTogglingInteractiveMode && !transition.inputLayout.isFullScreen) {
-      transition.tasks.append(.init(duration: closeOldPanelsDuration, timing: .easeInEaseOut) { [self] in
+      let duration = transition.isTogglingInteractiveMode ? (closeOldPanelsDuration * 0.5) : closeOldPanelsDuration
+      transition.tasks.append(.init(duration: duration, timing: .easeInEaseOut) { [self] in
 
         let intermediateWindowFrame = transition.outputGeometry.videoFrameInScreenCoords
-        log.verbose{"[\(transition.name)] Moving & resizing window to intermediate windowFrame=\(intermediateWindowFrame)"}
 
         // Need to have mode which is not music mode
         let middleGeo2 = transition.outputGeometry.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
@@ -208,6 +208,8 @@ extension PlayerWindowController {
                                                          outsideBars: .zero, insideBars: .zero,
                                                          viewportMargins: .zero,
                                                          isMiddleTransition: true)
+        log.verbose{"[\(transition.name)] Moving & resizing window to middleGeo2=\(middleGeo2)"}
+
         // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
         // It's not needed until the next step anyway.
         setFrameAndUpdateWindowSubviews(using: middleGeo2, updateVideoView: false)
@@ -324,37 +326,59 @@ extension PlayerWindowController {
         /// `windowedInteractive` -> `windowed`
         log.verbose("Exiting interactive mode: converting windowedInteractive geo to windowed for outputGeo")
         prevWindowedGeo = inputGeometry.fromWindowedInteractiveMode()
-      } else if inputGeoSet.windowed.mode == .windowedInteractive {
-        prevWindowedGeo = inputGeoSet.windowed.fromWindowedInteractiveMode()
       } else {
+        log.verbose("Exiting interactive mode: reusing prev windowed geo for outputGeo")
         prevWindowedGeo = inputGeoSet.windowed
       }
       let pinWidthOrHeightIfAtMax = !isWindowInitialLayout
+      // Make sure videoGeo is up to date
       return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, video: inputGeometry.video,
                                                       pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax, log)
 
     case .windowedInteractive:
       if inputGeometry.mode == .windowedInteractive {
-        log.verbose("Already in interactive mode: converting windowed geo to interactiveWindowed for outputGeo")
-        return PWinGeometry.buildInteractiveModeWindow(windowFrame: inputGeoSet.windowed.windowFrame,
-                                                       screenID: inputGeoSet.windowed.screenID,
-                                                       video: inputGeoSet.windowed.video)
+        log.verbose("Already in interactive mode: reusing inputGeo for outputGeo")
+        return inputGeometry
       } else if inputGeometry.mode == .fullScreenInteractive {
         if inputGeoSet.windowed.mode == .windowedInteractive {
-          log.verbose("Converting windowedModeGeo with mode=windowedInteractive to fullScreenInteractive")
+          log.verbose("Converting windowedModeGeo with mode=windowedInteractive to fullScreenInteractive for outputGeo")
           return PWinGeometry.buildInteractiveModeWindow(windowFrame: inputGeoSet.windowed.windowFrame,
                                                          screenID: inputGeoSet.windowed.screenID,
                                                          video: inputGeometry.video)
+        } else {
+          assert(inputGeoSet.windowed.mode == .windowedNormal,
+                 "Expected mode==.windowedNormal for inputGeoSet.windowed: \(inputGeoSet.windowed)")
+          log.verbose("Exiting full screen in interactive mode: converting windowedModeGeo to fullScreenInteractive")
+          return inputGeoSet.windowed.clone(video: inputGeometry.video).toInteractiveMode()
         }
-        log.verbose("Exiting full screen in interactive mode: converting windowedModeGeo to fullScreenInteractive")
-        return inputGeoSet.windowed.clone(video: inputGeometry.video).toInteractiveMode()
       } else {
         /// Entering interactive mode: convert from `windowed` to `windowedInteractive`
         log.verbose("Entering windowed interactive mode from windowed mode")
         if outputLayout.spec.interactiveMode == .crop {
-          // May need to remove crop
-          // FIXME: this needs improvement
-          return inputGeometry.clone(video: inputGeometry.video.removingCrop()).toInteractiveMode()
+          // Need to remove crop if it exists
+          // Tag: #ViewportSizeHeuristic
+          let uncroppedNaiveGeo = inputGeometry.clone(video: inputGeometry.video.removingCrop())
+          let newIMGeo: PWinGeometry
+          if Preference.bool(for: .lockViewportToVideoSize) {
+            // Try to avoid shrinking the window too much if the aspect changes dramatically.
+            let containerSize = NSScreen.getScreenOrDefault(screenID: inputGeometry.screenID).visibleFrame.size
+            let useRatioW = (inputGeometry.viewportSize.width / containerSize.width).clamped(to: 0...1)
+            let useRatioH = (inputGeometry.viewportSize.height / containerSize.height).clamped(to: 0...1)
+            let useRatioMax = max(useRatioW, useRatioH)
+
+            var newViewportSize = containerSize * useRatioMax  // not rounded. Need to round below.
+            while newViewportSize.width < 200 || newViewportSize.height < 200 {
+              newViewportSize = newViewportSize * 2.0
+            }
+            newViewportSize = newViewportSize.rounded()
+
+            newIMGeo = uncroppedNaiveGeo.scalingViewport(to: newViewportSize)
+          } else {
+            // Try to keep current viewportSize
+            newIMGeo = uncroppedNaiveGeo.scalingViewport(to: inputGeometry.viewportSize)
+          }
+
+          return newIMGeo.toInteractiveMode()
         }
         // Not cropping, but entering some other interactive mode mode
         return inputGeometry.toInteractiveMode()
@@ -401,14 +425,14 @@ extension PlayerWindowController {
         return middleGeo
       }
 
-      let intermediateWindowFrame = transition.inputGeometry.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords
+      let baseGeo = transition.isEnteringInteractiveMode ? transition.inputGeometry : transition.outputGeometry
 
-      // Need to have mode which is not music mode
-      let middleGeo = transition.inputGeometry.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
-                                                     topMarginHeight: 0,
-                                                     outsideBars: .zero, insideBars: .zero,
-                                                     viewportMargins: .zero,
-                                                     isMiddleTransition: true)
+      let intermediateWindowFrame = baseGeo.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords
+      let middleGeo = baseGeo.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
+                                    topMarginHeight: 0,
+                                    outsideBars: .zero, insideBars: .zero,
+                                    viewportMargins: .zero,
+                                    isMiddleTransition: true)
       return middleGeo
 
     } else if transition.isEnteringMusicMode {

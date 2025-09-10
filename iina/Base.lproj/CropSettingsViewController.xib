@@ -16,7 +16,7 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="Hz6-mo-xeY" userLabel="CropBoxSettings View">
+        <customView horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Hz6-mo-xeY" userLabel="CropBoxSettings View">
             <rect key="frame" x="0.0" y="0.0" width="550" height="62"/>
             <subviews>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EC9-NQ-gwl">
@@ -27,6 +27,17 @@
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Crop" id="6tX-fN-Gm2">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hsz-Wv-zHe">
+                    <rect key="frame" x="62" y="47" width="33" height="14"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="14" id="8Hk-sR-8dp"/>
+                    </constraints>
+                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Label" id="Fgl-Cs-eEh">
+                        <font key="font" metaFont="controlContent" size="11"/>
+                        <color key="textColor" name="linkColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
@@ -51,17 +62,34 @@
                         <action selector="predefinedAspectValueAction:" target="-2" id="Fzw-EP-cyv"/>
                     </connections>
                 </segmentedControl>
-                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hsz-Wv-zHe">
-                    <rect key="frame" x="62" y="47" width="33" height="14"/>
+                <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7a4-Wz-kzd" userLabel="CustomCropEntry Text Field">
+                    <rect key="frame" x="298" y="15" width="58" height="24"/>
                     <constraints>
-                        <constraint firstAttribute="height" constant="14" id="8Hk-sR-8dp"/>
+                        <constraint firstAttribute="height" constant="24" id="oWX-hh-nYk"/>
+                        <constraint firstAttribute="width" constant="58" id="pNn-1d-GJj"/>
                     </constraints>
-                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Label" id="Fgl-Cs-eEh">
-                        <font key="font" metaFont="controlContent" size="11"/>
-                        <color key="textColor" name="linkColor" catalog="System" colorSpace="catalog"/>
-                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" id="fmj-Zk-xbC">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
+                    <connections>
+                        <action selector="customCropEditFinishedAction:" target="-2" id="jUD-og-uJc"/>
+                    </connections>
                 </textField>
+                <button focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="99r-Th-YSz">
+                    <rect key="frame" x="397" y="10" width="76" height="32"/>
+                    <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" refusesFirstResponder="YES" borderStyle="border" focusRingType="none" imageScaling="proportionallyDown" inset="2" id="BtO-vw-tiy">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                        <string key="keyEquivalent" base64-UTF8="YES">
+Gw
+</string>
+                    </buttonCell>
+                    <connections>
+                        <action selector="cancelBtnAction:" target="-2" id="L9R-GV-vYv"/>
+                    </connections>
+                </button>
                 <button focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sHe-JW-Elk">
                     <rect key="frame" x="467" y="11" width="66" height="30"/>
                     <buttonCell key="cell" type="push" title="Done" bezelStyle="rounded" alignment="center" refusesFirstResponder="YES" borderStyle="border" focusRingType="none" imageScaling="proportionallyDown" inset="2" id="eu5-yH-hHg">
@@ -78,34 +106,6 @@ DQ
                         <action selector="doneBtnAction:" target="-2" id="y1L-6G-8iz"/>
                     </connections>
                 </button>
-                <button focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="99r-Th-YSz">
-                    <rect key="frame" x="397" y="10" width="76" height="32"/>
-                    <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" refusesFirstResponder="YES" borderStyle="border" focusRingType="none" imageScaling="proportionallyDown" inset="2" id="BtO-vw-tiy">
-                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="system"/>
-                        <string key="keyEquivalent" base64-UTF8="YES">
-Gw
-</string>
-                    </buttonCell>
-                    <connections>
-                        <action selector="cancelBtnAction:" target="-2" id="L9R-GV-vYv"/>
-                    </connections>
-                </button>
-                <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7a4-Wz-kzd" userLabel="CustomCropEntry Text Field">
-                    <rect key="frame" x="298" y="15" width="58" height="24"/>
-                    <constraints>
-                        <constraint firstAttribute="height" constant="24" id="oWX-hh-nYk"/>
-                        <constraint firstAttribute="width" constant="58" id="pNn-1d-GJj"/>
-                    </constraints>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" id="fmj-Zk-xbC">
-                        <font key="font" metaFont="system"/>
-                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                    </textFieldCell>
-                    <connections>
-                        <action selector="customCropEditFinishedAction:" target="-2" id="jUD-og-uJc"/>
-                    </connections>
-                </textField>
             </subviews>
             <constraints>
                 <constraint firstItem="7a4-Wz-kzd" firstAttribute="leading" secondItem="yrf-Aq-Gy6" secondAttribute="trailing" constant="4" id="Aza-sO-BYU"/>

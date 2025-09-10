@@ -1166,7 +1166,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// The cropBox is the section of the video rect which remains after the crop. Its origin is the lower left of the video.
   /// This func assumes that the currently displayed video (`videoSize`) is uncropped. Returns a new geometry which expanding the margins
   /// while collapsing the viewable video down to the cropped portion. The window size does not change.
-  func cropVideo(using newVidGeo: VideoGeometry) -> PWinGeometry {
+  func cropVideo(using newVidGeo: VideoGeometry, isMiddleTransition: Bool? = nil) -> PWinGeometry {
     // First scale the cropBox to the current window scale
     let scaleRatio = videoSize.width / newVidGeo.videoSizeRaw.width
     guard let cropRect = newVidGeo.cropRect else {
@@ -1219,7 +1219,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     log.debug("[geo] Cropping from cropRect \(cropRect) x videoScale (\(scaleRatio)), windowSize=\(windowFrame.size), → newVideoSize:\(cropRectScaledToWindow.size), newVideoAspect:\(croppedVideoAspect), newViewportMargins:\(newViewportMargins)")
     let outputScreenFit = screenFit.changeDesiredFit()
     log.debug("[geo] Cropped to new cropLabel: \(newVidGeo.selectedCropLabel.quoted), screenID: \(screenID), screenFit: \(outputScreenFit)")
-    return self.clone(screenFit: outputScreenFit, viewportMargins: newViewportMargins, video: newVidGeo)
+    return self.clone(screenFit: outputScreenFit, viewportMargins: newViewportMargins, video: newVidGeo,
+                      isMiddleTransition: isMiddleTransition)
   }
 
   // MARK: - Music Mode
