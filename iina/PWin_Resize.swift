@@ -50,6 +50,10 @@ extension PlayerWindowController {
     // Trigger forced draws so that mpv can [try its best to] redraw the video without distortion during window resize:
     videoView.activateForcedRedraws()
 
+    guard !isAnimatingLayoutTransition else {
+      log.verbose{"[WinWillResize] Denying req=\(requestedSize): isAnimatingLayoutTransition=Y. Will stay at \(window.frame.size)"}
+      return window.frame.size
+    }
     guard !isInWindowResizeDenialPeriod() else {
       log.verbose{"[WinWillResize] Denying req=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)"}
       pendingResizeForScreenChange = false  // should be safe to reset this now
@@ -187,7 +191,7 @@ extension PlayerWindowController {
         log.verbose{"[PWin.setFrame] Setting frame=\(geometry.windowFrame) animate=\(animate.yn)"}
         window.useZeroDurationForNextResize = true
         window.setFrame(geometry.windowFrame, display: true, animate: animate)
-        
+
         if !geometry.mode.isFullScreen {
           player.events.emit(.windowResized, data: window.frame)
         }
