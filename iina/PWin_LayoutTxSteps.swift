@@ -256,7 +256,7 @@ extension PlayerWindowController {
       trailingSidebarView.blendingMode = .withinWindow
     }
 
-    if transition.isTogglingMusicMode {
+    if transition.isTogglingMusicMode || transition.isTogglingInteractiveMode {
       hideOSD()
     }
 

@@ -350,6 +350,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     screenFit == .legacyFullScreen
   }
 
+  var isNativeFullScreen: Bool {
+    screenFit == .nativeFullScreen
+  }
+
   // MARK: - Calculation Utils
 
   /// Finds minimum video size of the current geometry, assuming bars, mode, video aspect stay constant
@@ -762,7 +766,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
           var trialHeight: CGFloat = newVideoHeight
           while (newVideoHeight > maxVideoHeight) || (newWindowWidth > maxWindowWidth) {
             trialHeight = min(maxVideoHeight, trialHeight - 1)
-            newWindowWidth = (trialHeight * videoAspect).rounded()
+            newWindowWidth = (trialHeight * videoAspect).rounded(.towardZero)
             newVideoHeight = (newWindowWidth / videoAspect).rounded(.towardZero)
           }
         } else {
@@ -772,7 +776,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
           newVideoHeight = min(newVideoHeight, maxVideoHeight)
 
           // Need to calculate height from with to keep rounding consistent with PwinGeometry.forMusicMode()
-          newWindowWidth = min((newVideoHeight * videoAspect).rounded(), containerFrame.width)
+          newWindowWidth = min((newVideoHeight * videoAspect).rounded(.towardZero), containerFrame.width)
           newVideoHeight = (newWindowWidth / videoAspect).rounded(.towardZero)
           newWindowHeight = newVideoHeight + Constants.Distance.MusicMode.oscHeight
         }

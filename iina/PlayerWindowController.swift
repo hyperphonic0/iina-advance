@@ -1799,11 +1799,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         var geoSet: GeometrySet = ctx.inputGeoSet
 
         if let cropController = cropSettingsView {
-          let currentIMGeo = ctx.inputGeoSet.windowed
+          let currentIMGeo = isInFullScreen ? ctx.inputLayout.buildFullScreenGeometry(inScreenID: ctx.inputGeoSet.windowed.screenID, ctx.outputVidGeo) : ctx.inputGeoSet.windowed
           let croppedIMGeo = currentIMGeo.cropVideo(using: ctx.outputVidGeo, isMiddleTransition: true)
 
-          if !isInFullScreen {
-
+          if isInFullScreen {
+            geoSet = buildGeoSet(windowed: croppedIMGeo, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
+          } else {
             // Tag: #ViewportSizeHeuristic
             var newViewportSize: CGSize
             if Preference.bool(for: .lockViewportToVideoSize) {

@@ -391,8 +391,15 @@ extension PlayerWindowController {
       }
 
     case .fullScreenNormal, .fullScreenInteractive:
+      let vidGeo: VideoGeometry
+      if outputLayout.isInteractiveMode, outputLayout.spec.interactiveMode == .crop {
+        // Need to remove crop if it exists
+        vidGeo = inputGeometry.video.removingCrop()
+      } else {
+        vidGeo = inputGeometry.video
+      }
       // Full screen always uses same screen as windowed mode
-      return outputLayout.buildFullScreenGeometry(inScreenID: inputGeometry.screenID, inputGeometry.video)
+      return outputLayout.buildFullScreenGeometry(inScreenID: inputGeometry.screenID, vidGeo)
 
     case .musicMode:
       /// `videoAspect` may have gone stale while not in music mode. Update it (playlist height will be recalculated if needed):

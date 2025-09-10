@@ -815,13 +815,7 @@ extension PlayerWindowController {
       log.trace("[OSD] Will hide")
     }
     osd.animationState = .willHide
-    osd.isShowingPersistentOSD = false
-    osd.context = nil
     osd.hideOSDTimer.cancel()
-
-    if refreshSyncUITimer {
-      player.refreshSyncUITimer()
-    }
 
     IINAAnimation.runAsync(IINAAnimation.Task(duration: immediately ? 0 : Constants.AnimationDuration.osdAnimation, { [self] in
       osd.osdView.alphaValue = 0
@@ -830,8 +824,14 @@ extension PlayerWindowController {
       if osd.animationState == .willHide {
         osd.animationState = .hidden
         osd.osdView.isHidden = true
+        osd.isShowingPersistentOSD = false
+        osd.context = nil
         for subview in osd.osdVStackView.views(in: .bottom) {
           osd.osdVStackView.removeView(subview)
+        }
+
+        if refreshSyncUITimer {
+          player.refreshSyncUITimer()
         }
       }
     })
