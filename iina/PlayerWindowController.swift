@@ -1819,6 +1819,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
               newViewportSize = currentIMGeo.viewportSize
             }
 
+            // Add IM margins
+            newViewportSize = CGSize(width: newViewportSize.width + Constants.InteractiveMode.viewportMargins.totalWidth,
+                                     height: newViewportSize.height + Constants.InteractiveMode.viewportMargins.totalHeight)
             while (newViewportSize.width < Constants.InteractiveMode.minViewportSize.width) || (newViewportSize.height < Constants.InteractiveMode.minViewportSize.height) {
               newViewportSize = newViewportSize * 2.0
             }
@@ -1829,7 +1832,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           }
 
           // Animate the crop to highlight the piece being cut out.
-          let cropAnimationDuration = immediately ? 0 : Constants.AnimationDuration.cropAnimation * 0.005
+          let cropAnimationDuration = 0.0
           tasks.append(.init(duration: cropAnimationDuration, timing: .default) { [self] in
             log.verbose{"Start exiting interactive mode: animating crop using: \(croppedIMGeo)"}
             setFrameAndUpdateWindowSubviews(using: croppedIMGeo)
