@@ -1740,8 +1740,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // Build entry animation
       let newMode: PlayerWindowMode = isInFullScreen ? .fullScreenInteractive : .windowedInteractive
       let interactiveModeLayout = ctx.inputLayout.spec.clone(mode: newMode, interactiveMode: mode)
-      let startDuration = Constants.AnimationDuration.cropAnimation * 0.5
-      let endDuration = isInFullScreen ? startDuration * 0.5 : startDuration
+      let startDuration = isInFullScreen ? 0.0 : Constants.AnimationDuration.cropAnimation * 0.5
+      let endDuration = startDuration
       let entryTransition = buildLayoutTransition(named: "EnterInteractiveMode_\(mode)", from: ctx.inputLayout,
                                                   to: interactiveModeLayout,
                                                   totalStartingDuration: startDuration,
@@ -1830,20 +1830,22 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
             let newIMGeo = croppedIMGeo.scalingViewport(to: newViewportSize)
 
             geoSet = buildGeoSet(windowed: newIMGeo, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
+
+            // Animate the crop to highlight the piece being cut out.
+            // TODO: support this in full screen once again
+            let cropAnimationDuration = 0.0
+            tasks.append(.init(duration: cropAnimationDuration, timing: .default) { [self] in
+              log.verbose{"Start exiting interactive mode: animating crop using: \(croppedIMGeo)"}
+              setFrameAndUpdateWindowSubviews(using: croppedIMGeo)
+              // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
+              videoView.videoViewConstraints?.updateSpacerMin(to: croppedIMGeo.viewportMargins, .init(496))
+
+              // Fade out cropBox selection rect
+              cropController.cropBoxView.isHidden = true
+              cropController.cropBoxView.alphaValue = 0
+            })
           }
 
-          // Animate the crop to highlight the piece being cut out.
-          let cropAnimationDuration = 0.0
-          tasks.append(.init(duration: cropAnimationDuration, timing: .default) { [self] in
-            log.verbose{"Start exiting interactive mode: animating crop using: \(croppedIMGeo)"}
-            setFrameAndUpdateWindowSubviews(using: croppedIMGeo)
-            // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
-            videoView.videoViewConstraints?.updateSpacerMin(to: croppedIMGeo.viewportMargins, .init(496))
-
-            // Fade out cropBox selection rect
-            cropController.cropBoxView.isHidden = true
-            cropController.cropBoxView.alphaValue = 0
-          })
         }
 
         // Build exit animation
@@ -1851,8 +1853,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         let lastSpec = isInFullScreen ? ctx.inputLayout.spec : lastWindowedLayoutSpec
         log.verbose("Exiting interactive mode, newMode=\(newMode)")
         let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
-        let startDuration = immediately ? 0 : Constants.AnimationDuration.cropAnimation * 0.75
-        let endDuration = immediately ? 0 : Constants.AnimationDuration.cropAnimation * 0.25
+        let startDuration = immediately || isInFullScreen ? 0 : Constants.AnimationDuration.cropAnimation * 0.75
+        let endDuration = immediately || isInFullScreen ? 0 : Constants.AnimationDuration.cropAnimation * 0.25
         let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: ctx.inputLayout, to: newLayoutSpec,
                                                totalStartingDuration: startDuration, totalEndingDuration: endDuration, geoSet)
         tasks.append(contentsOf: transition.tasks)
