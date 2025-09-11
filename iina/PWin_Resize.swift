@@ -180,19 +180,17 @@ extension PlayerWindowController {
       updateTopBarHeight(using: geometry)
     }
 
-    if !geometry.isNativeFullScreen {
-      let window = (window as? PlayerWindow)!
-      if window.frame.equalTo(geometry.windowFrame) {
-        log.verbose("[PWin.setFrame] No change to windowFrame")
-      } else {
-        log.verbose{"[PWin.setFrame] Setting frame=\(geometry.windowFrame)"}
-        window.useZeroDurationForAnimationResize = true
-        window.setFrame(geometry.windowFrame, display: true, animate: true)
-        window.useZeroDurationForAnimationResize = false
+    let window = (window as? PlayerWindow)!
+    if window.frame.equalTo(geometry.windowFrame) {
+      log.verbose("[PWin.setFrame] No change to windowFrame")
+    } else {
+      log.verbose{"[PWin.setFrame] Setting frame=\(geometry.windowFrame)"}
+      window.useZeroDurationForAnimationResize = true
+      window.setFrame(geometry.windowFrame, display: true, animate: true)
+      window.useZeroDurationForAnimationResize = false
 
-        if !geometry.mode.isFullScreen {
-          player.events.emit(.windowResized, data: window.frame)
-        }
+      if !geometry.mode.isFullScreen {
+        player.events.emit(.windowResized, data: window.frame)
       }
     }
 

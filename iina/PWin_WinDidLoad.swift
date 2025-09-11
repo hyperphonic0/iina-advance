@@ -54,8 +54,6 @@ extension PlayerWindowController {
 
     window.initialFirstResponder = nil
 
-    shouldCascadeWindows = false
-
     window.minSize = Constants.Window.minWindowSize
     contentView.idString = "WindowCV"
 
