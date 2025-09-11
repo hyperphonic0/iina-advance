@@ -56,9 +56,10 @@ class WindowController: NSWindowController {
       Logger.log.verbose{"refreshWindowOpenCloseAnimation: empty savedStateName for window; skipping"}
       return
     }
+
     let savedStateName = window.savedStateName
     guard IINAAnimation.isAnimationEnabled else {
-      Logger.log.verbose{"refreshWindowOpenCloseAnimation: animation disabled or motion reduction enabled. Using .default for \(savedStateName.quoted)"}
+      Logger.log.verbose{"refreshWindowOpenCloseAnimation: animation disabled or motion reduction enabled; using .none for \(savedStateName.quoted)"}
       window.animationBehavior = .none
       return
     }
@@ -76,49 +77,44 @@ class WindowController: NSWindowController {
       return
     }
 
+    let animationType: Preference.WindowOpenCloseAnimation
+
     if !AppDelegate.shared.isDoneLaunching || (autosaveEnum == .welcome && AppDelegate.shared.initialWindow.isFirstLoad) {
       // Use zoom effect for initial open
-      let animationType: Preference.WindowOpenCloseAnimation = Preference.enum(for: .windowLaunchAnimation)
-      switch animationType {
-      case .useDefault, .zoomIn:
+      animationType = Preference.enum(for: .windowLaunchAnimation)
+
+      if animationType == .useDefault {
         window.animationBehavior = .documentWindow
-      case .none:
-        window.animationBehavior = .default
+        return
       }
-      return
+
+    } else if autosaveEnum.isPlayerWindow {
+      animationType = Preference.enum(for: .playerWindowOpenCloseAnimation)
+    } else {
+      animationType = Preference.enum(for: .auxWindowOpenCloseAnimation)
     }
 
-    if autosaveEnum.isPlayerWindow {
-      let animationType: Preference.WindowOpenCloseAnimation = Preference.enum(for: .playerWindowOpenCloseAnimation)
-      switch animationType {
-      case .zoomIn:
-        window.animationBehavior = .documentWindow
-        return
-      case .none:
-        window.animationBehavior = .default
-        return
-      case .useDefault:
+    let behavior: NSWindow.AnimationBehavior
+    switch animationType {
+    case .zoomIn:
+      behavior = .documentWindow
+    case .none:
+      behavior = .default
+    case .useDefault:
+      if autosaveEnum.isPlayerWindow {
         // a little kludgey, but makes the matching logic work for the array below
         autosaveEnum = .anyPlayerWindow
       }
-    } else {
-      let animationType: Preference.WindowOpenCloseAnimation = Preference.enum(for: .auxWindowOpenCloseAnimation)
-      switch animationType {
-      case .zoomIn:
-        window.animationBehavior = .documentWindow
+
+      guard let behaviorFound = UIState.shared.windowOpenCloseAnimations[autosaveEnum] else {
+        assert(false, "Expected guaranteed match for WindowAutosaveName \(autosaveEnum)")
+        Logger.log.error{"refreshWindowOpenCloseAnimation: no match for WindowAutosaveName \(autosaveEnum); skipping"}
         return
-      case .none:
-        window.animationBehavior = .default
-        return
-      case .useDefault:
-        break
       }
+      behavior = behaviorFound
     }
-    guard let behavior = UIState.shared.windowOpenCloseAnimations[autosaveEnum] else {
-      assert(false, "Expected guaranteed match for WindowAutosaveName \(autosaveEnum)")
-      Logger.log.error{"refreshWindowOpenCloseAnimation: no match for WindowAutosaveName \(autosaveEnum); skipping"}
-      return
-    }
+
+    Logger.log.verbose{"refreshWindowOpenCloseAnimation: setting behavior for \(savedStateName) to \(behavior)"}
     window.animationBehavior = behavior
   }
 
