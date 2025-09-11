@@ -20,10 +20,12 @@ class ViewportView: NSView {
     super.init(frame: .zero)
     idString = "ViewportView"
     registerForDraggedTypes([.nsFilenames, .nsURL, .string])
-    setContentCompressionResistancePriority(.required, for: .horizontal)
-    setContentCompressionResistancePriority(.required, for: .vertical)
-    setContentHuggingPriority(.required, for: .horizontal)
-    setContentHuggingPriority(.required, for: .vertical)
+    // These don't seem to matter. But set to reasonable values:
+    setContentHugging(h: 250, v: 250)
+    setCCResistance(h: 750, v: 750)
+    clipsToBounds = true
+    translatesAutoresizingMaskIntoConstraints = false
+    autoresizesSubviews = false
     initVideoViewSpacers()
   }
 
@@ -89,19 +91,7 @@ class ViewportView: NSView {
   // MARK: - Spacers
 
   func initVideoViewSpacers() {
-    // These don't seem to matter. But set to reasonable values:
-    let ch: Float = 250
-    trailingSpacer.setContentHugging(h: ch, v: ch)
-    leadingSpacer.setContentHugging(h: ch, v: ch)
-    topSpacer.setContentHugging(h: ch, v: ch)
-    bottomSpacer.setContentHugging(h: ch, v: ch)
-    let ccr: Float = 250
-    trailingSpacer.setCCResistance(h: ccr, v: ccr)
-    leadingSpacer.setCCResistance(h: ccr, v: ccr)
-    topSpacer.setCCResistance(h: ccr, v: ccr)
-    bottomSpacer.setCCResistance(h: ccr, v: ccr)
-    
-    // Reduce the unused dimension of each spacer to keep it well-defined
+    // Reduce the unused dimension of each spacer to keep its size well-defined
     topSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
     bottomSpacer.widthAnchor.constraint(equalToConstant: 0).isActive = true
     leadingSpacer.heightAnchor.constraint(equalToConstant: 0).isActive = true

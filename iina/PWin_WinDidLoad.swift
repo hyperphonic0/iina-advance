@@ -95,7 +95,6 @@ extension PlayerWindowController {
       window.preservesContentDuringLiveResize = false
 
       let oscGeo = currentLayout.controlBarGeo
-      initViewportView()
       initSeekPreview(in: contentView)
       initTitleBar()
       initOSCToolbar()
@@ -145,28 +144,6 @@ extension PlayerWindowController {
   }
 
   // MARK: - Building Components
-
-  private func initViewportView() {
-    viewportView.idString = "ViewportView"
-    viewportView.clipsToBounds = true
-    viewportView.translatesAutoresizingMaskIntoConstraints = false
-    viewportView.autoresizesSubviews = false
-    // These don't seem to matter. But set to reasonable values:
-    viewportView.setContentHugging(h: 250, v: 250)
-    viewportView.setCCResistance(h: 250, v: 250)
-
-    // These don't seem to matter. But set to reasonable values:
-    let ch: Float = 250
-    viewportView.trailingSpacer.setContentHugging(h: ch, v: ch)
-    viewportView.leadingSpacer.setContentHugging(h: ch, v: ch)
-    viewportView.topSpacer.setContentHugging(h: ch, v: ch)
-    viewportView.bottomSpacer.setContentHugging(h: ch, v: ch)
-    let ccr: Float = 250
-    viewportView.trailingSpacer.setCCResistance(h: ccr, v: ccr)
-    viewportView.leadingSpacer.setCCResistance(h: ccr, v: ccr)
-    viewportView.topSpacer.setCCResistance(h: ccr, v: ccr)
-    viewportView.bottomSpacer.setCCResistance(h: ccr, v: ccr)
-  }
 
   private func initSeekPreview(in contentView: NSView) {
     seekPreview.player = player
