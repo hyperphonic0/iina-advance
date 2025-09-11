@@ -734,7 +734,7 @@ class StartupHandler {
 
   // MARK: - Command Line
 
-  func parseCommandLine(_ cmdLineArgs: ArraySlice<String>) {
+  func processCommandLine(_ cmdLineArgs: ArraySlice<String>) {
     if cmdLineArgs.contains(where: { $0 == "--help" || $0 == "-h" }) {
       print(InfoDictionary.iinaBinaryUsageText)
       exit(0)

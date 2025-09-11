@@ -143,7 +143,7 @@ class ShutdownHandler {
         Logger.log.warn("Logout of online subtitles provider completed after application termination timed out")
         return
       }
-      Logger.log("Got iinaLogoutCompleted notification", level: .verbose)
+      Logger.log.verbose("Got iinaLogoutCompleted notification")
       proceedWithTermination()
     })
 
@@ -159,11 +159,11 @@ class ShutdownHandler {
       // If there are still tasks outstanding then must continue waiting.
       let remainingHistoryTasks = HistoryController.shared.tasksOutstanding
       guard remainingHistoryTasks == 0 else {
-        Logger.log.trace{"Received iinaHistoryTasksFinished but \(remainingHistoryTasks) tasks still outstanding"}
+        Logger.log.verbose{"Received iinaHistoryTasksFinished but \(remainingHistoryTasks) tasks still outstanding"}
         return
       }
       guard HistoryController.shared.fileExistsDQ_ShutdownAck else {
-        Logger.log.trace{"Received iinaHistoryTasksFinished but still waiting for fileExistsDQ shutdown ack"}
+        Logger.log.verbose{"Received iinaHistoryTasksFinished but still waiting for fileExistsDQ shutdown ack"}
         return
       }
       Logger.log("Saving of playback history finished")

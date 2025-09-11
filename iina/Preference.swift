@@ -509,6 +509,8 @@ struct Preference {
     /// are used by `thumbfast.lua`). Change this to true to log these launches like any other.
     static let logNonInteractiveLaunches = Key("logNonInteractiveLaunches")
 
+    // MARK: - mpv Options
+
     /// User defined mpv options ([string, string])
     static let userOptions = Key("userOptions")
 
@@ -520,6 +522,8 @@ struct Preference {
     /// Inspector window watch list
     static let watchProperties = Key("watchProperties")
 
+    // MARK: - Other Saved User Data
+
     static let savedVideoFilters = Key("savedVideoFilters")
     static let savedAudioFilters = Key("savedAudioFilters")
 
@@ -527,7 +531,6 @@ struct Preference {
     static let iinaLastPlayedFilePath = Key("iinaLastPlayedFilePath")
     static let iinaLastPlayedFilePosition = Key("iinaLastPlayedFilePosition")
 
-    /** Internal */
     static let iinaEnablePluginSystem = Key("iinaEnablePluginSystem")
 
     /// Workaround for issue [#4688](https://github.com/iina/iina/issues/4688)
@@ -582,6 +585,16 @@ struct Preference {
 
     static let uiLastClosedWindowedModeGeometry = Key("uiLastClosedWindowedModeGeometry")
     static let uiLastClosedMusicModeGeometry = Key("uiLastClosedMusicModeGeometry")
+
+    // MARK: - Misc Flags
+
+    /// In some cases (usually while debugging, but possibly others), instances of IINA which are launched in non-interactive mode
+    /// (e.g., by Thumbfast) will keep running even after their parent process has died. These zombie processes use resources and can
+    /// also interfere with a new interactive launch. For some reason these instances sometimes show a running status in the Dock, and
+    /// receive the `applicationShouldHandleReopen` callback, but whether responding to it with Y or N, it seems to block a new instance
+    /// from being launched in interactive mode. There now exists logic to kill any non-interactive mode instances when they receive
+    /// `applicationShouldHandleReopen`, but this functionality can be disabled by setting this pref to `false`.
+    static let killNonInteractiveLaunchesAtReopen = Key("killNonInteractiveLaunchesAtReopen")
 
     static let enableFFmpegImageDecoder = Key("enableFFmpegImageDecoder")
 
@@ -1544,6 +1557,8 @@ struct Preference {
 
     .aspectRatioPanelPresets: "4:3,16:9,16:10,21:9,5:4",
     .cropPanelPresets: "4:3,16:9,16:10,21:9,5:4",
+
+    .killNonInteractiveLaunchesAtReopen: true,
     .enableFFmpegImageDecoder: true,
     .enableHdrWorkaround: false
   ]

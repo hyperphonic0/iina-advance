@@ -169,19 +169,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   /// Only implemented for special case of `UIState.shared.currentLaunchName`. All other prefs should be checked in `prefDidChange`.
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-    guard let keyPath, let change, keyPath == UIState.shared.currentLaunchName, let newLaunchLifecycleState = change[.newKey] as? Int else { return }
-    guard !isTerminating else { return }
-    guard newLaunchLifecycleState != 0 else { return }
+    guard let keyPath, let change else { return }
 
-    if UIState.shared.isSaveEnabled {
-      Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)). Probably a younger instance of IINA has started and is attempting to restore")
-      Logger.log("Changing our lifecycle state back to 'stillRunning' so the other launch will skip this instance.")
-      UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: keyPath)
-    } else {
-      Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)), but save is disabled; ignoring")
-    }
-    DispatchQueue.main.async { [self] in
-      NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
+    switch keyPath {
+    case UIState.shared.currentLaunchName:
+      guard let newLaunchLifecycleState = change[.newKey] as? Int else { return }
+      guard !isTerminating else { return }
+      guard newLaunchLifecycleState != UIState.LaunchLifecycleState.none.rawValue else { return }
+
+      if UIState.shared.isSaveEnabled {
+        Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)). Probably a younger instance of IINA has started and is attempting to restore")
+        Logger.log("Changing our lifecycle state back to 'stillRunning' so the other launch will skip this instance.")
+        UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: keyPath)
+      } else {
+        Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)), but save is disabled; ignoring")
+      }
+      DispatchQueue.main.async { [self] in
+        NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
+      }
+
+    default:
+      return
     }
   }
 
@@ -206,7 +214,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Parse & process command line arguments, if any.
     // Do this *before* loading history or even initLogging, because both can be disabled by CLI args.
     let cmdLineArgs = ProcessInfo.processInfo.arguments.dropFirst()
-    startupHandler.parseCommandLine(cmdLineArgs)  // may update `uiIsEnabled`
+    startupHandler.processCommandLine(cmdLineArgs)  /// may update `isInteractiveLaunch`
 
     Logger.initLogging()
     AppDetailsLogging.shared.logAllAppDetails()
@@ -791,8 +799,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // reopening once termination has started.
     guard !isTerminating else { return false }
     guard startupHandler.state == .doneOpening else { return false }
-    guard AppDelegate.isInteractiveLaunch else {
-      Logger.log.verbose("HandleReopen: is non-interactive launch; ignoring")
+
+    if terminateIfNotInteractiveLaunch() {
       return false
     }
 
@@ -804,6 +812,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     Logger.log.debug("HandleReopen: doing actionAfterLaunch")
     doLaunchOrReopenAction()
+    return true
+  }
+
+  /// Returns `true` if app termination was initiated.
+  private func terminateIfNotInteractiveLaunch() -> Bool {
+    if AppDelegate.isInteractiveLaunch {
+      return false
+    }
+
+    guard Preference.bool(for: .killNonInteractiveLaunchesAtReopen) else { return false }
+
+    Logger.log.debug("HandleReopen: this is a non-interactive launch! Will terminate this instance.")
+    RunLoop.main.perform(inModes: [.common]) {
+      guard !AppDelegate.shared.isTerminating else { return }
+      NSApp.terminate(nil)
+    }
+
     return true
   }
 
