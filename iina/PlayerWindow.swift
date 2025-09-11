@@ -9,7 +9,7 @@
 import Cocoa
 
 class PlayerWindow: NSWindow {
-  var useZeroDurationForNextResize = false
+  var useZeroDurationForAnimationResize = false
   private var keyDownCount: Int = 0
   private var keyUpCount: Int = 0
 
@@ -38,8 +38,7 @@ class PlayerWindow: NSWindow {
 
   override func animationResizeTime(_ newFrame: NSRect) -> TimeInterval {
     let time: TimeInterval
-    if useZeroDurationForNextResize {
-      useZeroDurationForNextResize = false
+    if useZeroDurationForAnimationResize {
       time = 0.0
     } else {
       time = super.animationResizeTime(newFrame)
@@ -279,8 +278,6 @@ class PlayerWindow: NSWindow {
 
   /// See `windowShouldZoom`, `windowWillUseStandardFrame` in `PlayerWindowController` for zoom handling.
   override func zoom(_ sender: Any?) {
-    // Explicitly enable animation. Otherwise the window may jump
-    useZeroDurationForNextResize = false
     super.zoom(sender)
   }
   

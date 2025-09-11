@@ -189,8 +189,9 @@ extension PlayerWindowController {
         log.verbose("[PWin.setFrame] No change to windowFrame")
       } else {
         log.verbose{"[PWin.setFrame] Setting frame=\(geometry.windowFrame) animate=\(animate.yn)"}
-        window.useZeroDurationForNextResize = true
+        window.useZeroDurationForAnimationResize = true
         window.setFrame(geometry.windowFrame, display: true, animate: animate)
+        window.useZeroDurationForAnimationResize = false
 
         if !geometry.mode.isFullScreen {
           player.events.emit(.windowResized, data: window.frame)
