@@ -179,6 +179,6 @@ extension PlayerWindowController {
       outputGeo = intendedGeo.refitted(using: .stayInside)
       log.verbose{"Scaling pinched video in windowed mode, scale=\(targetScale) → result=\(outputGeo)"}
     }
-    setFrameAndUpdateWindowSubviews(using: outputGeo, animate: false, submitUpdate: submitResult)
+    setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: submitResult)
   }
 }

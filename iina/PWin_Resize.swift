@@ -160,21 +160,18 @@ extension PlayerWindowController {
     return newWindowSize
   }
 
-  /**
-   This method is used to move & resize a `PlayerWindow`. It performs additional work needed beyond what `setFrame` provides.
-   Do not ever call `PlayerWindow.setFrame()` directly - call this instead!
-
-   By default, `setFrame()` has its own implicit animation, and this can create an undesirable effect when combined with other animations.
-   This function uses a `0` duration animation via the `animationResizeTime` callback to effectively remove the implicit
-   default animation.
-   • Also resizes window subviews.
-   • It will still animate if used inside an `NSAnimationContext` or `IINAAnimation.Task` with non-zero duration.
-   • If `animate` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
-   */
+  /// This method is used to move & resize a `PlayerWindow`. It performs additional work needed beyond what `setFrame` provides.
+  /// Do not ever call `PlayerWindow.setFrame()` directly - call this instead!
+  ///
+  /// By default, `setFrame()` has its own implicit animation, and this can create an undesirable effect when combined with other animations.
+  /// This function uses a `0` duration animation via the `animationResizeTime` callback to effectively remove the implicit
+  /// default animation.
+  /// • Also resizes window subviews.
+  /// • It will still animate if used inside an `NSAnimationContext` or `IINAAnimation.Task` with non-zero duration.
   func setFrameAndUpdateWindowSubviews(using geometry: PWinGeometry,
-                                       updateVideoView: Bool = true, animate: Bool = true,
+                                       updateVideoView: Bool = true,
                                        submitUpdate: Bool = false) {
-    log.verbose{"[PWin.setFrame] Entered: updateVideoView=\(updateVideoView.yn) animate=\(animate.yn) submit=\(submitUpdate.yn) geo=\(geometry)"}
+    log.verbose{"[PWin.setFrame] Entered: updateVideoView=\(updateVideoView.yn) submit=\(submitUpdate.yn) geo=\(geometry)"}
 
     resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
 
@@ -188,9 +185,9 @@ extension PlayerWindowController {
       if window.frame.equalTo(geometry.windowFrame) {
         log.verbose("[PWin.setFrame] No change to windowFrame")
       } else {
-        log.verbose{"[PWin.setFrame] Setting frame=\(geometry.windowFrame) animate=\(animate.yn)"}
+        log.verbose{"[PWin.setFrame] Setting frame=\(geometry.windowFrame)"}
         window.useZeroDurationForAnimationResize = true
-        window.setFrame(geometry.windowFrame, display: true, animate: animate)
+        window.setFrame(geometry.windowFrame, display: true, animate: true)
         window.useZeroDurationForAnimationResize = false
 
         if !geometry.mode.isFullScreen {

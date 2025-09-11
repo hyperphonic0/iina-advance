@@ -123,16 +123,6 @@ extension PlayerWindowController {
         }
       }
 
-      if let priorState = priorStateIfRestoring {
-        if let layoutSpec = priorState.layoutSpec {
-          // Preemptively set window frames to prevent windows from "jumping" during restore
-          let pwinGeo = layoutSpec.mode == .musicMode ? priorState.geoSet.musicMode : priorState.geoSet.windowed
-          setFrameAndUpdateWindowSubviews(using: pwinGeo, animate: false)
-        }
-
-        updateDefaultArtVisibility(to: player.info.isVideoTrackSelected)
-      }
-
       if player.disableUI { hideFadeableViews() }
 
       // Must wait until *after* loaded==true to load plugins!
