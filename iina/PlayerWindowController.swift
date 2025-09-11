@@ -1316,7 +1316,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       guard !sessionState.isRestoring, !isAnimatingLayoutTransition else { return }
 
-      animationPipeline.submitTask(timing: .easeInEaseOut, { [self] in
+      animationPipeline.submitTask(timing: .linear, { [self] in
         let screenID = bestScreen.screenID
         let currentLayout = currentLayout
 
@@ -1334,7 +1334,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           player.saveState()
         } else if currentLayout.mode == .windowedNormal && windowedModeGeo.screenFit.shouldMoveWindowToKeepInContainer {
           // Update windowedModeGeo with new window position & screen (but preserve previous size)
-            animationPipeline.submitTask(timing: .easeInEaseOut, { [self] in
+          animationPipeline.submitTask(timing: .linear, { [self] in
             let oldWindowFrame = windowedModeGeo.windowFrame
             let newWindowFrame = window.frame
             if let screenFrame = NSScreen.forScreenID(screenID)?.visibleFrame {
@@ -1519,6 +1519,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         if AppInputConfig.current.associatedPlayerLabel != player.label {
           AppInputConfig.rebuildCurrent()
         }
+
       } else {
         /// Always restore window level from `floating` to `normal`, so other windows aren't blocked & cause confusion
         if currentLayout.isLegacyFullScreen && window.level != .normal {
@@ -1834,7 +1835,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
             // Animate the crop to highlight the piece being cut out.
             // TODO: support this in full screen once again
             let cropAnimationDuration = 0.0
-            tasks.append(.init(duration: cropAnimationDuration, timing: .default) { [self] in
+            tasks.append(.init(duration: cropAnimationDuration) { [self] in
               log.verbose{"Start exiting interactive mode: animating crop using: \(croppedIMGeo)"}
               setFrameAndUpdateWindowSubviews(using: croppedIMGeo)
               // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry

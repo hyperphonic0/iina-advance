@@ -72,18 +72,21 @@ extension PlayerWindowController {
     let closeOldPanelsTiming: CAMediaTimingFunctionName
     let openFinalPanelsTiming: CAMediaTimingFunctionName
     let fadeInNewViewsTiming: CAMediaTimingFunctionName = .linear
-    if transition.isTogglingFullScreen {
+    if transition.isEnteringFullScreen {
+      closeOldPanelsTiming = .easeIn
+      openFinalPanelsTiming = .easeIn
+    } else if transition.isExitingFullScreen {
       closeOldPanelsTiming = .easeOut
       openFinalPanelsTiming = .easeOut
     } else if transition.isOpeningOrClosingAnySidebar {
-      closeOldPanelsTiming = .easeIn
-      openFinalPanelsTiming = .easeIn
-    } else if transition.isExitingInteractiveMode {
-      closeOldPanelsTiming = .easeOut
-      openFinalPanelsTiming = .linear
-    } else {
+      closeOldPanelsTiming = .easeInEaseOut
+      openFinalPanelsTiming = .easeInEaseOut
+    } else if transition.isTogglingInteractiveMode {
       closeOldPanelsTiming = .linear
       openFinalPanelsTiming = .linear
+    } else {
+      closeOldPanelsTiming = .easeInEaseOut
+      openFinalPanelsTiming = .easeInEaseOut
     }
 
     // - Determine durations
@@ -226,7 +229,7 @@ extension PlayerWindowController {
       let cameraToTotalFrameRatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
 
-      transition.tasks.append(.init(duration: duration, timing: .easeIn) { [self] in
+      transition.tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
         let inputGeo = transition.inputGeometry
         let newGeo: PWinGeometry
         if inputGeo.hasTopPaddingForCameraHousing {
@@ -265,7 +268,7 @@ extension PlayerWindowController {
       let cameraToTotalFrameRatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
 
-      transition.tasks.append(.init(duration: duration, timing: .easeIn) { [self] in
+      transition.tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
         let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : (windowedModeScreen.cameraHousingHeight ?? 0)
         let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame,
                                                      screenID: windowedModeScreen.screenID, topMarginHeight: topBlackBarHeight,
