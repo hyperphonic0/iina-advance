@@ -20,9 +20,6 @@ class ViewportView: NSView {
     super.init(frame: .zero)
     idString = "ViewportView"
     registerForDraggedTypes([.nsFilenames, .nsURL, .string])
-    // These don't seem to matter. But set to reasonable values:
-    setContentHugging(h: 250, v: 250)
-    setCCResistance(h: 750, v: 750)
     clipsToBounds = true
     translatesAutoresizingMaskIntoConstraints = false
     autoresizesSubviews = false
