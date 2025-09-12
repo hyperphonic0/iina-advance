@@ -744,42 +744,42 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       var newWindowWidth = desiredVideoWidth.clamped(to: Constants.Distance.MusicMode.minWindowWidth...maxWindowWidth)
 
       // Window height should not change. Only video size should be scaled
-      var newWindowHeight = min(containerFrame.height, windowFrame.height)
-
-      var newVideoHeight: CGFloat = 0
+      var newWindowHeight: CGFloat
+      var newVideoHeight: CGFloat = 0  // will stay 0 if !videoShown
       if videoShown {
         let videoAspect = video.videoAspectCAR
+        // Need to calculate height from with to keep rounding consistent with PwinGeometry.forMusicMode()
         newVideoHeight = (newWindowWidth / videoAspect).rounded(.towardZero)
 
         let maxVideoHeight: CGFloat
         if isMusicModePlaylistShown {
           // If playlist is visible, keep the window height fixed.
           // The video will only be able to expand until the playlist is at its min height
-          maxVideoHeight = newWindowHeight - Constants.Distance.MusicMode.oscHeight - Constants.Distance.MusicMode.minPlaylistHeight
-
-          /// Due to rounding errors and the fact that both `videoHeight` & `playlistHeight` are calculated
-          /// (kind of backed into a corner with this one. Oops...) need to make sure that the calculation of
-          /// `videoHeight` from `window.frame.width` & video aspect will not result in 1 too many pixels.
-          /// This only appears to show up when scaling video to fill the screen & playlist is shown.
-          /// Don't want to just distort the video for even 1 pixel to make it fit, as that will cause a
-          /// validation error in various sanity checks.
-          var trialHeight: CGFloat = newVideoHeight
-          while (newVideoHeight > maxVideoHeight) || (newWindowWidth > maxWindowWidth) {
-            trialHeight = min(maxVideoHeight, trialHeight - 1)
-            newWindowWidth = (trialHeight * videoAspect).rounded(.towardZero)
-            newVideoHeight = (newWindowWidth / videoAspect).rounded(.towardZero)
-          }
+          let desiredWindowHeight = min(containerFrame.height, windowFrame.height)
+          maxVideoHeight = desiredWindowHeight - Constants.Distance.MusicMode.oscHeight - Constants.Distance.MusicMode.minPlaylistHeight
         } else {
           // If playlist not visible, window height can grow up to the size of the screen
           maxVideoHeight = containerFrame.height - Constants.Distance.MusicMode.oscHeight
-
-          newVideoHeight = min(newVideoHeight, maxVideoHeight)
-
-          // Need to calculate height from with to keep rounding consistent with PwinGeometry.forMusicMode()
-          newWindowWidth = min((newVideoHeight * videoAspect).rounded(.towardZero), containerFrame.width)
-          newVideoHeight = (newWindowWidth / videoAspect).rounded(.towardZero)
-          newWindowHeight = newVideoHeight + Constants.Distance.MusicMode.oscHeight
         }
+
+        /// Due to rounding errors and the fact that both `videoHeight` & `playlistHeight` are calculated
+        /// (kind of backed into a corner with this one. Oops...) need to make sure that the calculation of
+        /// `videoHeight` from `window.frame.width` & video aspect will not result in 1 too many pixels.
+        /// This only appears to show up when scaling video to fill the screen & playlist is shown.
+        /// Don't want to just distort the video for even 1 pixel to make it fit, as that will cause a
+        /// validation error in various sanity checks.
+        var trialHeight: CGFloat = newVideoHeight + 1 // add 1 initially because we subtract it below. Try to equal max at first.
+        while (newVideoHeight > maxVideoHeight) || (newWindowWidth > maxWindowWidth) {
+          trialHeight -= 1
+          newWindowWidth = (trialHeight * videoAspect).rounded()
+          newVideoHeight = (newWindowWidth / videoAspect).rounded(.towardZero)
+        }
+      }
+
+      if isMusicModePlaylistShown {
+        newWindowHeight = min(containerFrame.height, windowFrame.height)
+      } else {
+        newWindowHeight = newVideoHeight + Constants.Distance.MusicMode.oscHeight
       }
       let newWindowSize = NSSize(width: newWindowWidth, height: newWindowHeight)
 
