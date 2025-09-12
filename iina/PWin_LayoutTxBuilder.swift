@@ -148,7 +148,7 @@ extension PlayerWindowController {
     var openFinalPanelsDuration = endingAnimationDuration
     if transition.isExitingFullScreen {
       fadeInNewViewsDuration = 0
-    } else if useExtraAnimationForEnteringLegacyFullScreen || useExtraAnimationForEnteringLegacyFullScreen {
+    } else if useExtraAnimationForEnteringLegacyFullScreen || useExtraAnimationForExitingLegacyFullScreen {
       let frameWithoutCameraRatio = windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height
       openFinalPanelsDuration *= frameWithoutCameraRatio
     } else if transition.isEnteringInteractiveMode {
