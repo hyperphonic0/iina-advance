@@ -204,7 +204,8 @@ extension PlayerWindowController {
       }
     }
 
-    // Place this task either before or after updateHiddenViewsAndConstraints depending on entering or exiting
+    // Place this task either before or after updateHiddenViewsAndConstraints depending on entering or exiting.
+    // Want to put this *before* it when entering music mode & hiding (closing) viewportView, but other cases the order shouldn't matter.
     if let moveAndResizeVideoTask, transition.isEnteringMusicMode {
       transition.tasks.append(moveAndResizeVideoTask)
     }

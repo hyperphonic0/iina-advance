@@ -236,7 +236,7 @@ extension GeometryTransform.ContextStage2 {
     return outputVideoGeo
   }
 
-  /// Gets the given property from the given player's mpv core, retrying as needed.
+  /// Gets the given property from the given player's mpv core, retrying as needed if nil is returned.
   /// Must be one of the `video-[*]params` properties, which contain JSON capable of being parsed as a `MpvVideoParams` object.
   /// Returns nil on failure.
   fileprivate func getWithRetries(propName mpvPropertyName: String) -> MpvVideoParams? {

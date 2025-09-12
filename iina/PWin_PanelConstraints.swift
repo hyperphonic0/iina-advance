@@ -124,8 +124,14 @@ extension PlayerWindowController {
       layout = transition.inputLayout
       useTopBar = useTopBar || transition.inputLayout.hasTopBar
       useViewport = useViewport || transition.inputGeometry.videoShown
-    case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
+    case .midTransitionHiddenUpdates, .openNewPanels:
+      if transition.isTogglingFullScreen {  // need exception for FS toggle
+        useTopBar = useTopBar || transition.inputLayout.hasTopBar
+        useViewport = useViewport || transition.inputGeometry.videoShown
+      }
       // About to apply output geometry, or applying output geometry: use output layout
+      layout = transition.outputLayout
+    case .postTransition:
       layout = transition.outputLayout
     }
 
