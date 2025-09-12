@@ -592,12 +592,12 @@ extension MPVController {
   private func applyHardwareAccelerationWorkaround() {
     // The problem is not reproducible under Apple Silicon.
     guard !runningOnAppleSilicon() else {
-      log("Running on Apple Silicon, not applying FFmpeg 9599 workaround")
+      log.debug("Running on Apple Silicon, not applying FFmpeg 9599 workaround")
       return
     }
     // Allow the user to override this behavior.
-    guard !userOptionsContains(MPVOption.Video.hwdecCodecs) else {
-      log("""
+    guard !player.isPresentInUserOptions(MPVOption.Video.hwdecCodecs) else {
+      log.debug("""
         Option \(MPVOption.Video.hwdecCodecs) has been set in advanced settings, \
         not applying FFmpeg 9599 workaround
         """)
@@ -606,7 +606,7 @@ extension MPVController {
     guard let whitelist = getString(MPVOption.Video.hwdecCodecs) else {
       // Internal error. Make certain this method is called after mpv_initialize which sets the
       // default value.
-      log("Failed to obtain the value of option \(MPVOption.Video.hwdecCodecs)", level: .error)
+      log.error("Failed to obtain the value of option \(MPVOption.Video.hwdecCodecs)")
       return
     }
     var adjusted: [String] = []
@@ -619,7 +619,7 @@ extension MPVController {
       needsWorkaround = true
     }
     if needsWorkaround {
-      log("Disabling hardware acceleration for VP9 encoded videos to workaround FFmpeg 9599")
+      log.debug("Disabling hardware acceleration for VP9 encoded videos to workaround FFmpeg 9599")
       chkErr(setOptionString(MPVOption.Video.hwdecCodecs, adjusted.joined(separator: ",")))
     }
   }
