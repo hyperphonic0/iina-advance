@@ -51,7 +51,11 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
     material = .popover
     state = .active
 
-    roundCorners()
+    if #available(macOS 26, *) {
+      roundCorners(withRadius: 10)
+    } else {
+      roundCorners(withRadius: 6)
+    }
 
     subviews = [topRowView, bottomRowView]
 
