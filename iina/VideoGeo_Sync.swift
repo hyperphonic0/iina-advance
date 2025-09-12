@@ -6,6 +6,8 @@
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
+fileprivate let maxAttemptsForGetVideoParams = 6
+
 extension GeometryTransform.ContextStage2 {
 
   /// An instance of this struct holds a subset of the parsed metadata for one of the following mpv properties
@@ -240,7 +242,7 @@ extension GeometryTransform.ContextStage2 {
   fileprivate func getWithRetries(propName mpvPropertyName: String) -> MpvVideoParams? {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
-    let retriesMax = 6
+    let maxRetries = maxAttemptsForGetVideoParams
     var retryNum = 1
     guard let mpv = player.mpv else {
       return nil
@@ -262,12 +264,12 @@ extension GeometryTransform.ContextStage2 {
       }
 
       retryNum += 1
-      guard retryNum <= retriesMax else {
+      guard retryNum <= maxRetries else {
         log.verbose{"[GTF:\(name)] Vid \(vidTrackID) has mpv \(mpvPropertyName): nil"}
         return nil
       }
       let pauseDuration = Constants.TimeInterval.videoParamsRetryInterval
-      log.debug{"[GTF:\(name)] Could not get \(mpvPropertyName) from mpv. Will retry in \(pauseDuration)s (tries remaining: \(retriesMax - retryNum + 1))"}
+      log.debug{"[GTF:\(name)] Could not get \(mpvPropertyName) from mpv. Will retry in \(pauseDuration)s (tries remaining: \(maxRetries - retryNum + 1))"}
       Thread.sleep(forTimeInterval: pauseDuration)
     }
   }

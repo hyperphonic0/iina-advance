@@ -1534,10 +1534,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  func windowWillMove(_ notification: Notification) {
-    log.verbose("PWin WillMove")
-  }
-
   // Don't really care if window is main in IINA Advance; we care only if window is key,
   // because the key window is the active window in AppKit.
   // Fire events anyway to keep compatibility with upstream IINA.

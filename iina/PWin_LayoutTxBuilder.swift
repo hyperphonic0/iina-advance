@@ -96,7 +96,7 @@ extension PlayerWindowController {
     // - Determine durations
 
     let startingAnimationDuration: CGFloat
-    if transition.isWindowInitialLayout {
+    if transition.isWindowInitialLayout || !IINAAnimation.isAnimationEnabled {
       startingAnimationDuration = 0
     } else if transition.isEnteringFullScreen {
       startingAnimationDuration = 0
@@ -132,17 +132,17 @@ extension PlayerWindowController {
     }
 
     let endingAnimationDuration: CGFloat
-    if transition.isWindowInitialLayout {
+    if transition.isWindowInitialLayout || !IINAAnimation.isAnimationEnabled {
       endingAnimationDuration = 0
     } else {
       endingAnimationDuration = totalEndingDuration ?? Constants.AnimationDuration.standard
     }
 
     // Extra animation when entering legacy full screen: cover camera housing with black bar
-    let useExtraAnimationForEnteringLegacyFullScreen = transition.isEnteringLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isWindowInitialLayout
+    let useExtraAnimationForEnteringLegacyFullScreen = IINAAnimation.isAnimationEnabled && transition.isEnteringLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isWindowInitialLayout
 
     // Extra animation when exiting legacy full screen: remove camera housing with black bar
-    let useExtraAnimationForExitingLegacyFullScreen = transition.isExitingLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isWindowInitialLayout
+    let useExtraAnimationForExitingLegacyFullScreen = IINAAnimation.isAnimationEnabled && transition.isExitingLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isWindowInitialLayout
 
     var fadeInNewViewsDuration = endingAnimationDuration * 0.5
     var openFinalPanelsDuration = endingAnimationDuration
@@ -186,11 +186,27 @@ extension PlayerWindowController {
     }
 
     // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies middleGeometry if it exists.
-    // Not enabled for full screen transitions.
-    if transition.needsCloseOldPanels {
+    // Not enabled for full screen transitions or if animation is disabled.
+    if transition.needsCloseOldPanels, closeOldPanelsDuration > 0.0 {
       transition.tasks.append(.init(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
         closeOldPanels(transition)
       }))
+    }
+
+    // (Only when animating Enter/Exit Music Mode or Enter/Exit Windowed Interactive Mode) Post-midpoint animation: move & scale video.
+    var moveAndResizeVideoTask: IINAAnimation.Task? = nil
+    if !transition.isWindowInitialLayout, closeOldPanelsDuration > 0.0,
+        transition.isTogglingMusicMode ||
+        (transition.isTogglingInteractiveMode && !transition.inputLayout.isFullScreen) {
+      let duration = transition.isTogglingInteractiveMode ? (closeOldPanelsDuration * 0.5) : closeOldPanelsDuration
+      moveAndResizeVideoTask = .init(duration: duration, timing: .easeInEaseOut) { [self] in
+        moveAndResizeVideoFrame(transition)
+      }
+    }
+
+    // Place this task either before or after updateHiddenViewsAndConstraints depending on entering or exiting
+    if let moveAndResizeVideoTask, transition.isEnteringMusicMode {
+      transition.tasks.append(moveAndResizeVideoTask)
     }
 
     // Midpoint: perform major constraints updates (any affected panels should have been reduced to 0 thickness by the previous
@@ -200,28 +216,8 @@ extension PlayerWindowController {
       updateHiddenViewsAndConstraints(transition)
     })
 
-    // (Only for Enter/Exit Music Mode) Post-midpoint animation: move & scale video
-    // When moving back or forth between windowedNormal & musicMode: scale & move the video frame for a nice transition animation.
-    if !transition.isWindowInitialLayout,
-        transition.isTogglingMusicMode || (transition.isTogglingInteractiveMode && !transition.inputLayout.isFullScreen) {
-      let duration = transition.isTogglingInteractiveMode ? (closeOldPanelsDuration * 0.5) : closeOldPanelsDuration
-      transition.tasks.append(.init(duration: duration, timing: .easeInEaseOut) { [self] in
-
-        // FIXME: For Interactive Mode with very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
-        let intermediateWindowFrame = transition.outputGeometry.videoFrameInScreenCoords
-
-        // Need to have mode which is not music mode
-        let middleGeo2 = transition.outputGeometry.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
-                                                         topMarginHeight: 0,
-                                                         outsideBars: .zero, insideBars: .zero,
-                                                         viewportMargins: .zero,
-                                                         isMiddleTransition: true)
-        log.verbose{"[\(transition.name)] Moving & resizing window to middleGeo2=\(middleGeo2)"}
-
-        // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
-        // It's not needed until the next step anyway.
-        setFrameAndUpdateWindowSubviews(using: middleGeo2, updateVideoView: false)
-      })
+    if let moveAndResizeVideoTask, !transition.isEnteringMusicMode {
+      transition.tasks.append(moveAndResizeVideoTask)
     }
 
     // - Ending animations:

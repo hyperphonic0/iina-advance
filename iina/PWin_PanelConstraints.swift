@@ -58,12 +58,12 @@ extension PlayerWindowController {
   /// ┌─ Top                          ┬                                            ┬  ┬
   /// │                               │                                            │  │
   /// │window                         │viewportTopOffsetFromCVTop                  │  │
-  /// │contentView      ┌───────────┐ │     ┬                                      │  │
-  /// │                 │  TopBar   │ │     │viewportTopOffsetFromTopBarTop        │  │
-  /// │        ┌────────│────┐      │ ▼  ┬  ▼                                      │  │
-  /// │        │        │    │      │    │topBarBottomOffsetFromViewportTop        │  │
-  /// │        │        └───────────┘    ▼                                         │  │
-  /// │        │   Viewport  │                               ⁴bottomBarTopOffsetFromCVTop│  │
+  /// │contentView      ┌───────────┐ │  ┬                                         │  │
+  /// │                 │  TopBar   │ │  │viewportTopOffsetFromTopBarTop           │  │
+  /// │        ┌────────│────┐      │ ▼  ▼  ┬                                      │  │
+  /// │        │        │    │      │       │topBarBottomOffsetFromViewportTop     │  │
+  /// │        │        └───────────┘       ▼                                      │  │
+  /// │        │   Viewport  │                         ⁴bottomBarTopOffsetFromCVTop│  │
   /// │  ┌─────────────┐     │      ┬                                              ▼  │
   /// │  │     │       │     │      │viewportBtmOffsetFromTopOfBottomBar              │
   /// │  │     └───────│─────┘   ┬  ▼                     ⁵bottomBarBtmOffsetFromCVTop│  ┬
@@ -109,17 +109,6 @@ extension PlayerWindowController {
     let logPre = transition.logPreamble(for: stage)
     let outputGeo = transition.outputGeometry
 
-    // TODO: expand this to include constraints for sidebars too
-    let layout: LayoutState
-    switch stage {
-    case .preTransitionSetup, .closeOldPanels:
-      // Closing or preparing to close: use existing layout
-      layout = transition.inputLayout
-    case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
-      // About to apply output geometry, or applying output geometry: use output layout
-      layout = transition.outputLayout
-    }
-
     var useViewport = outputGeo.videoShown
     var useBottomBar = transition.outputLayout.hasBottomBar
     var useTopBar = transition.outputLayout.hasTopBar
@@ -127,10 +116,21 @@ extension PlayerWindowController {
     var useTrailingSidebar = transition.outputLayout.isTrailingSidebarVisible
     let isFinalStage = stage == .postTransition
 
-    if !isFinalStage {
-      useViewport = useViewport || transition.inputGeometry.videoShown
-      useBottomBar = useBottomBar || transition.inputLayout.hasBottomBar
+    // TODO: expand this to include constraints for sidebars too
+    let layout: LayoutState
+    switch stage {
+    case .preTransitionSetup, .closeOldPanels:
+      // Closing or preparing to close: use existing layout
+      layout = transition.inputLayout
       useTopBar = useTopBar || transition.inputLayout.hasTopBar
+      useViewport = useViewport || transition.inputGeometry.videoShown
+    case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
+      // About to apply output geometry, or applying output geometry: use output layout
+      layout = transition.outputLayout
+    }
+
+    if !isFinalStage {
+      useBottomBar = useBottomBar || transition.inputLayout.hasBottomBar
       useLeadingSidebar = useLeadingSidebar || transition.inputLayout.isLeadingSidebarVisible
       useTrailingSidebar = useTrailingSidebar || transition.inputLayout.isTrailingSidebarVisible
     }

@@ -432,6 +432,29 @@ extension PlayerWindowController {
   }
 
   /// -------------------------------------------------
+  /// MIDPOINT: MOVE & RESIZE VIDEO FRAME
+  /// Only executed for certain transitions (windowed mode <-> either music mode or interactive mode).
+  /// All bars are expected to be closed at this point, leaving only the viewportView.
+  /// This animation moves & resizes the video frame for a nice effect.
+  /// May execute either before or after `updateHiddenViewsAndConstraints`.
+  func moveAndResizeVideoFrame(_ transition: LayoutTransition) {
+    // FIXME: For Interactive Mode with very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
+    let intermediateWindowFrame = transition.outputGeometry.videoFrameInScreenCoords
+
+    // Need to have mode which is not music mode
+    let middleGeo2 = transition.outputGeometry.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
+                                                     topMarginHeight: 0,
+                                                     outsideBars: .zero, insideBars: .zero,
+                                                     viewportMargins: .zero,
+                                                     isMiddleTransition: true)
+    log.verbose{"[\(transition.name)] Moving & resizing window to middleGeo2=\(middleGeo2)"}
+
+    // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
+    // It's not needed until the next step anyway.
+    setFrameAndUpdateWindowSubviews(using: middleGeo2, updateVideoView: false)
+  }
+
+  /// -------------------------------------------------
   /// MIDPOINT: UPDATE INVISIBLES
   /// This is needed as its own transaction in case constraints need to be replaced or views need to be added or replaced in the window such that
   /// there is not an appropriate animation which should be seen.
@@ -1095,7 +1118,7 @@ extension PlayerWindowController {
         assert(transition.outputLayout.isLegacyFullScreen, "Expected ouputLayout to be in legacyFullScreen mode!")
         let screen = NSScreen.getScreenOrDefault(screenID: transition.outputGeometry.screenID)
         let newGeo: PWinGeometry
-        if transition.isEnteringLegacyFullScreen && !transition.isWindowInitialLayout {
+        if transition.isEnteringLegacyFullScreen && !transition.isWindowInitialLayout && IINAAnimation.isAnimationEnabled {
           // Use extra animation to deal with possible top margin needed to hide camera housing
           if transition.outputGeometry.hasTopPaddingForCameraHousing {
             /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
