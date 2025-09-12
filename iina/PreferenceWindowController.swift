@@ -159,6 +159,8 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var completionTableView: NSTableView!
   @IBOutlet weak var noResultLabel: NSTextField!
 
+  @IBOutlet weak var searchFieldTopConstraint: NSLayoutConstraint!
+  @IBOutlet weak var searchFieldBottomConstraint: NSLayoutConstraint!
   @IBOutlet weak var navTableSearchFieldSpacingConstraint: NSLayoutConstraint!
 
   private var detailViewBottomConstraint: NSLayoutConstraint?
@@ -225,6 +227,8 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     // that overlaps with the titlebar area. We just add an ugly workaround for now and wait for the new settings window.
     if #available(macOS 26, *) {
       scrollViewTopConstraint.constant = 32
+      searchFieldTopConstraint.constant = 40
+      searchFieldBottomConstraint.constant = 8
     } else {
       scrollViewTopConstraint.constant = 28
     }

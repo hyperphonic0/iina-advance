@@ -55,6 +55,7 @@
                 <outlet property="saturationSlider" destination="VlS-Jo-4C0" id="rJV-p9-OVz"/>
                 <outlet property="secHideSwitch" destination="Ji9-kR-VBA" id="YnG-5d-WVd"/>
                 <outlet property="secSubTableView" destination="Jve-qX-Agy" id="0ia-bh-sbu"/>
+                <outlet property="secondarySubtitleSwitch" destination="Ji9-kR-VBA" id="Ugv-ZE-Rgp"/>
                 <outlet property="speedResetBtn" destination="705-dt-Zwl" id="9IK-Q7-fza"/>
                 <outlet property="speedSlider" destination="UWh-M9-5Nw" id="UXr-dD-8K1"/>
                 <outlet property="speedSlider0_25xLabel" destination="Nhb-Co-xbZ" id="16j-wm-Ajt"/>
@@ -86,6 +87,7 @@
                 <outlet property="subTextColorWellContainer" destination="bka-sn-QOh" id="rZt-sf-3Do"/>
                 <outlet property="subTextFontBtn" destination="qGz-rB-dsV" id="Xkg-P1-vDv"/>
                 <outlet property="subTextSizePopUp" destination="xtF-tn-m9W" id="62h-S6-9gV"/>
+                <outlet property="subtitleSwitch" destination="9f0-0q-rg2" id="XMA-2S-Elp"/>
                 <outlet property="subtitlesTabScrollView" destination="3kA-IY-poi" id="ziS-ja-gIe"/>
                 <outlet property="switchHorizontalLine" destination="PyM-xa-vx9" id="LX2-Xa-lH4"/>
                 <outlet property="switchHorizontalLine2" destination="qYi-uQ-6qo" id="doE-zM-QU3"/>
