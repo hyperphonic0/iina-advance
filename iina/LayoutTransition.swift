@@ -417,7 +417,22 @@ extension PlayerWindowController {
       }
     }
 
+    func viewportBtmOffsetFromCVTop(for stage: Stage) -> CGFloat {
+      let viewportHeight = geometry(for: stage).viewportSize.height
+      return viewportTopOffsetFromCVTop(for: stage) + viewportHeight
+    }
+
     // Bottom bar
+
+    func bottomBarTopOffsetFromCVTop(for stage: Stage) -> CGFloat {
+      let viewportBtmOffsetFromCVTop = viewportBtmOffsetFromCVTop(for: stage)
+      switch bottomBarPlacement(for: stage) {
+      case .insideViewport:
+        return viewportBtmOffsetFromCVTop - bottomBarHeight(for: stage)
+      case .outsideViewport:
+        return viewportBtmOffsetFromCVTop
+      }
+    }
 
     func bottomBarBtmOffsetFromCVTop(for stage: Stage) -> CGFloat {
       let geo = geometry(for: stage)
@@ -443,7 +458,7 @@ extension PlayerWindowController {
       case .insideViewport:
         return bottomBarHeight(for: stage)
       case .outsideViewport:
-        return 0
+        return -viewportBtmSpecialOffset(for: stage)
       }
     }
 
@@ -452,7 +467,7 @@ extension PlayerWindowController {
       case .insideViewport:
         return 0
       case .outsideViewport:
-        return bottomBarHeight(for: stage)
+        return bottomBarHeight(for: stage) + viewportBtmSpecialOffset(for: stage)
       }
     }
 
@@ -461,9 +476,30 @@ extension PlayerWindowController {
       case .insideViewport:
         return 0
       case .outsideViewport:
-        return bottomBarHeight(for: stage)
+        let bottomBarHeight = bottomBarHeight(for: stage)
+        return bottomBarHeight + viewportBtmSpecialOffset(for: stage)
       }
     }
 
+    func viewportBtmSpecialOffset(for stage: Stage) -> CGFloat {
+      let inputViewportHeight = inputGeometry.viewportSize.height
+      let outputViewportHeight = outputGeometry.viewportSize.height
+
+      let isTogglingVideo = inputViewportHeight == 0 || outputViewportHeight == 0
+      switch stage {
+      case .preTransitionSetup, .closeOldPanels:
+        if isTogglingVideo && outputViewportHeight == 0 {
+          return inputViewportHeight
+        } else {
+          return 0
+        }
+      case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
+        if isTogglingVideo && inputViewportHeight == 0 {
+          return outputViewportHeight
+        } else {
+          return 0
+        }
+      }
+    }
   }
 }

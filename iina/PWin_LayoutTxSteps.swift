@@ -58,7 +58,7 @@ extension PlayerWindowController {
 
     // Skip for initial layout: not all panels have been init'd yet.
     // Don't use with legacy full screen transitions; they use extra animations which will be screwed up
-    if !transition.isWindowInitialLayout && transition.isTogglingMusicMode {
+    if !transition.isWindowInitialLayout {
       rebuildPanelConstraints(transition, stage: .preTransitionSetup)
     }
 
@@ -589,7 +589,7 @@ extension PlayerWindowController {
     let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscHasClearBG)
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
-    if transition.isWindowInitialLayout || !transition.isEnteringFullScreen {
+    if !transition.isWindowInitialLayout && !transition.isTogglingFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }
 
