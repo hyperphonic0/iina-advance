@@ -596,7 +596,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   var mouseActionDisabledViews: [NSView?] {
-    return [leadingSidebarView, trailingSidebarView, topBarView.titleBarView, currentControlBar, subPopoverView]
+    return [leadingSidebarView, trailingSidebarView, topBarView, currentControlBar, subPopoverView]
   }
 
   lazy var pluginOverlayViewContainer: NSView! = {

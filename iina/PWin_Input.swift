@@ -851,6 +851,11 @@ extension PlayerWindowController {
     // code may cause any NSCursor API call to fail if overlapping with any other).
     // FIXME: this still isn't reliable in full screen when OSC auto-hide is disabled
     animationPipeline.submitInstantTask{ [self] in
+      guard !isPoint(mouseLocationInWindow, inAnyOf: mouseActionDisabledViews) else {
+        log.trace("Not hiding cursor: mouse is in a disabled view")
+        return
+      }
+
       guard player.canHideCursor else {
         log.trace("Not hiding cursor")
         return
