@@ -61,25 +61,26 @@ extension PlayerWindowController {
   /// │contentView      ┌───────────┐ │  ┬                                         │  │  │
   /// │                 │  TopBar   │ │  │viewportTopOffsetFromTopBarTop           │  │  │
   /// │        ┌────────│────┐      │ ▼  ▼  ┬                                      │  │  │
-  /// │        │        │    │      │       │topBarBottomOffsetFromViewportTop     │  │  │
+  /// │        │        │    │      │       │topBarBtmOffsetFromViewportTop        │  │  │
   /// │        │        └───────────┘       ▼                                      │  │  │
   /// │        │   Viewport  │                                                     │  │  │bottomBarTopOffsetFromCVTop⁴
   /// │  ┌─────────────┐     │      ┬                                              │  │  ▼
   /// │  │     │       │     │      │viewportBtmOffsetFromTopOfBottomBar           │  │viewportBtmOffsetFromCVTop
   /// │  │     └───────│─────┘   ┬  ▼                                           ┬  │  ▼
-  /// │  │  BottomBar  │         │bottomBarBtmOffsetFromViewportBtmConstraint   │  │bottomBarBtmOffsetFromCVTop⁵
+  /// │  │  BottomBar  │         │bottomBarBtmOffsetFromViewportBtm             │  │bottomBarBtmOffsetFromCVTop⁵
   /// │  └─────────────┘      ┬  ▼                                              │  ▼
   /// │                       │                                                 │
-  /// │                       │bottomBarBtmOffsetFromCVBtm                      │
+  /// │                       │cvBtmOffsetFromBottomBarBtm                      │
   /// │                       │                                                 │
   /// │                       │                                                 │cvBtmOffsetFromViewportBtm
   /// └─ Bottom               ▼                                                 ▼
   ///```
   /// - ⁴Only used when bottomBar is shown & viewport is hidden.
   /// - ⁵Only used in music mode when both video & playlist are hidden.
+  /// bottomBarTopOffsetFromCVTop
   class PanelConstraints {
     // - Top bar (title bar and/or top OSC) constraints
-    let topBarBottomOffsetFromViewportTop = OptionalConstraint("TopBar-Bottom_OffsetFrom-Viewport-Top_Con")
+    let topBarBtmOffsetFromViewportTop = OptionalConstraint("TopBar-Bottom_OffsetFrom-Viewport-Top_Con")
     let viewportTopOffsetFromTopBarTop = OptionalConstraint("Viewport-Top_OffsetFrom-TopBar-Top_Con")
     let viewportTopOffsetFromCVTop = OptionalConstraint("Viewport-Top_OffsetFrom-CV-Top-Con")
     let viewportBtmOffsetFromCVTop = OptionalConstraint("Viewport-Btm_OffsetFrom-CV-Top-Con")
@@ -92,7 +93,7 @@ extension PlayerWindowController {
     let bottomBarTopOffsetFromCVTop = OptionalConstraint("BottomBar-Top_OffsetFrom-CV-Top_Con")
     /// Only active when video is hidden
     let bottomBarBtmOffsetFromCVTop = OptionalConstraint("BottomBar-Btm_OffsetFrom-BottomBar-Top_Con")
-    let bottomBarBtmOffsetFromCVBtm = OptionalConstraint("BottomBar-Btm_OffsetFrom-CV-Btm_Con")
+    let cvBtmOffsetFromBottomBarBtm = OptionalConstraint("BottomBar-Btm_OffsetFrom-CV-Btm_Con")
     // Needs to be changed to align with either sidepanel or leading edge of window:
     let bottomBarLeadingSpace = OptionalConstraint("BottomBar-LeadingSpaceCon")
     // Needs to be changed to align with either sidepanel or trailing edge of window:
@@ -110,7 +111,7 @@ extension PlayerWindowController {
     let logPre = transition.logPreamble(for: stage)
     let outputGeo = transition.outputGeometry
 
-    var useViewport = outputGeo.videoShown
+    var useViewport = outputGeo.isViewportShown
     var useBottomBar = transition.outputLayout.hasBottomBar
     var useTopBar = transition.outputLayout.hasTopBar
     var useLeadingSidebar = transition.outputLayout.isLeadingSidebarVisible
@@ -124,11 +125,11 @@ extension PlayerWindowController {
       // Closing or preparing to close: use existing layout
       layout = transition.inputLayout
       useTopBar = useTopBar || transition.inputLayout.hasTopBar
-      useViewport = useViewport || transition.inputGeometry.videoShown
+      useViewport = useViewport || transition.inputGeometry.isViewportShown
     case .midTransitionHiddenUpdates, .openNewPanels:
       if transition.isTogglingFullScreen {  // need exception for FS toggle
         useTopBar = useTopBar || transition.inputLayout.hasTopBar
-        useViewport = useViewport || transition.inputGeometry.videoShown
+        useViewport = useViewport || transition.inputGeometry.isViewportShown
       }
       // About to apply output geometry, or applying output geometry: use output layout
       layout = transition.outputLayout
@@ -199,15 +200,15 @@ extension PlayerWindowController {
     if useTopBar {
       assert(useViewport, "Cannot use topBarView without viewportView")
       let constant1 = transition.viewportTopOffsetFromTopBarTop(for: stage)
-      let constant2 = transition.topBarBottomOffsetFromViewportTop(for: stage)
+      let constant2 = transition.topBarBtmOffsetFromViewportTop(for: stage)
       let titleHeight = min(layout.titleBarHeight, constant1 - constant2)  // do not make titleBar larger than top bar
-      log.verbose("\(logPre) Updating topBar: viewportTopOffsetFromTopBarTop=\(constant1), topBarBottomOffsetFromViewportTop=\(constant2), titleBarHeight=\(titleHeight)")
+      log.verbose("\(logPre) Updating topBar: viewportTopOffsetFromTopBarTop=\(constant1), topBarBtmOffsetFromViewportTop=\(constant2), titleBarHeight=\(titleHeight)")
 
       p.viewportTopOffsetFromTopBarTop.createOrUpdate(to: constant1) { [self] c in
         viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
       }
 
-      p.topBarBottomOffsetFromViewportTop.createOrUpdate(to: constant2) { [self] c in
+      p.topBarBtmOffsetFromViewportTop.createOrUpdate(to: constant2) { [self] c in
         topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
@@ -220,9 +221,8 @@ extension PlayerWindowController {
     // CV.top
     // ↓
     // BottomBar.top
-    let viewportWillBeShown = outputGeo.videoShown
-    let isAnimatingVideoViewOpen = transition.isOpeningVideoView && !isFinalStage  // Music Mode: opening video
-    if useBottomBar && (!viewportWillBeShown || isAnimatingVideoViewOpen) {
+    let isAnimatingVideoViewOpen = transition.isOpeningViewport && !isFinalStage  // Music Mode: opening video
+    if useBottomBar && (!outputGeo.isViewportShown || isAnimatingVideoViewOpen) {
       let constant1 = transition.bottomBarTopOffsetFromCVTop(for: stage)
       log.verbose("\(logPre) Updating bottomBarTopOffsetFromCVTop=\(constant1)")
       p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1) { [self] c in
@@ -258,9 +258,8 @@ extension PlayerWindowController {
       // Handle leading & trailing constraints
       updateBottomBarHorizontalContraints(forLayout: layout, logPre: logPre)
 
-      let outputWillBe_playlistClosed_viewportClosed = outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !viewportWillBeShown
-      // enable for animations also
-      if outputWillBe_playlistClosed_viewportClosed || !isFinalStage {
+      // enable for animations or if in music mode & neither playlist nor video is open
+      if !isFinalStage || (outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown) {
         let constant1 = transition.bottomBarBtmOffsetFromCVTop(for: stage)
         log.verbose{"\(logPre) Updating bottomBarBtmOffsetFromCVTop to \(constant1)"}
         p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1) { [self] c in
@@ -276,8 +275,8 @@ extension PlayerWindowController {
       }
 
       // This will always have constant: 0
-      p.bottomBarBtmOffsetFromCVBtm.createOrUpdate(to: 0) { [self] c in
-        log.verbose("\(logPre) Creating constraint: bottomBarBtmOffsetFromCVBtm")
+      p.cvBtmOffsetFromBottomBarBtm.createOrUpdate(to: 0) { [self] c in
+        log.verbose("\(logPre) Creating constraint: cvBtmOffsetFromBottomBarBtm")
         return contentView.bottomAnchor.constraint(equalTo: bottomBarView.bottomAnchor, constant: c)
       }
 
@@ -294,7 +293,7 @@ extension PlayerWindowController {
         viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
       }
 
-      if (transition.isTogglingVideoView || transition.isTogglingPlaylistInMusicMode), !isFinalStage {
+      if (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode), !isFinalStage {
         let constant3 = transition.viewportBtmOffsetFromCVTop(for: stage)
 
         log.verbose("\(logPre) Updating viewport: viewportBtmOffsetFromCVTop=\(constant3)")
@@ -334,7 +333,7 @@ extension PlayerWindowController {
     log.verbose{"Updating topBar height to: inside=\(geometry.insideBars.top) outside=\(geometry.outsideBars.top) cameraOffset=\(geometry.topMarginHeight)"}
 
     let p = panelConstraints
-    p.topBarBottomOffsetFromViewportTop.constraint?.animateToConstant(geometry.insideBars.top)
+    p.topBarBtmOffsetFromViewportTop.constraint?.animateToConstant(geometry.insideBars.top)
     p.viewportTopOffsetFromTopBarTop.constraint?.animateToConstant(geometry.outsideBars.top)
     p.viewportTopOffsetFromCVTop.constraint?.animateToConstant(geometry.outsideBars.top + geometry.topMarginHeight)
   }

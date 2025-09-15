@@ -2239,7 +2239,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func updateMusicModeButtonsVisibility(using targetGeo: PWinGeometry) {
     if targetGeo.mode == .musicMode {
       // Show only in music mode when video is visible
-      let showCloseButtonOverVideo = targetGeo.videoShown
+      let showCloseButtonOverVideo = targetGeo.isViewportShown
       closeButtonBackgroundViewVE.isHidden = !showCloseButtonOverVideo
 
       // Show only in music mode when video is hidden

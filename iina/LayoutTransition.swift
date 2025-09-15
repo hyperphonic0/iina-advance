@@ -102,7 +102,7 @@ extension PlayerWindowController {
         return false
       }
       return isClosingLeadingSidebar || isClosingTrailingSidebar
-      || isClosingPlaylistInMusicMode || isClosingVideoView
+      || isClosingPlaylistInMusicMode || isClosingViewport
       || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
       || (inputLayout.spec.isLegacyStyle != outputLayout.spec.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
@@ -292,16 +292,16 @@ extension PlayerWindowController {
       return false
     }
 
-    var isOpeningVideoView: Bool {
-      !inputGeometry.videoShown && outputGeometry.videoShown
+    var isOpeningViewport: Bool {
+      !inputGeometry.isViewportShown && outputGeometry.isViewportShown
     }
 
-    var isClosingVideoView: Bool {
-      inputGeometry.videoShown && !outputGeometry.videoShown
+    var isClosingViewport: Bool {
+      inputGeometry.isViewportShown && !outputGeometry.isViewportShown
     }
 
-    var isTogglingVideoView: Bool {
-      inputGeometry.videoShown != outputGeometry.videoShown
+    var isTogglingViewport: Bool {
+      inputGeometry.isViewportShown != outputGeometry.isViewportShown
     }
 
     var isOpeningPlaylistInMusicMode: Bool {
@@ -390,7 +390,7 @@ extension PlayerWindowController {
       }
     }
     
-    func topBarBottomOffsetFromViewportTop(for stage: Stage) -> CGFloat {
+    func topBarBtmOffsetFromViewportTop(for stage: Stage) -> CGFloat {
       switch topBarPlacement(for: stage) {
       case .insideViewport:
         return topBarHeight(for: stage)

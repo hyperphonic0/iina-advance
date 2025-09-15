@@ -150,7 +150,7 @@ extension PlayerWindowController {
 
       if transition.isExitingMusicMode {
         // Make sure to restore video
-        if !transition.inputGeometry.videoShown {
+        if !transition.inputGeometry.isViewportShown {
           // Video was disabled in music mode, but need to restore it now
           player.setVideoTrackEnabled()
         }
@@ -158,7 +158,7 @@ extension PlayerWindowController {
     }
 
     if transition.outputLayout.isMusicMode {
-      if transition.isClosingVideoView {
+      if transition.isClosingViewport {
         // Hiding video
         // Remove OSD & AdditionalInfo *before* reducing viewportView height to 0
         addOrRemoveOSDViews(transition.outputLayout, transition.outputGeometry)
@@ -497,14 +497,14 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.isWindowInitialLayout || transition.isOpeningVideoView {
+    if transition.isWindowInitialLayout || transition.isOpeningViewport {
       if !transition.isWindowInitialLayout, pip.status == .inPIP {
         // We are about to steal its video; close it:
         exitPIP()
       }
     }
 
-    if transition.outputGeometry.videoShown {
+    if transition.outputGeometry.isViewportShown {
       // This adds videoView, viewportView & spacers if not already added
       addVideoToWindowIfNeeded()
     }
@@ -512,7 +512,7 @@ extension PlayerWindowController {
     // Remove aspect constraint between animations (for some mode changes):
     if transition.isExitingMusicMode {
       videoView.apply(transition.outputGeometry)
-    } else if transition.isOpeningVideoView {
+    } else if transition.isOpeningViewport {
       videoView.apply(transition.outputGeometry)
       // Allow "stretch" effect when opening videoView
       videoView.videoViewConstraints?.aspectRatio.isActive = false
@@ -520,7 +520,7 @@ extension PlayerWindowController {
       videoView.apply(transition.outputGeometry)
     }
 
-    if transition.isOpeningVideoView {
+    if transition.isOpeningViewport {
       // Show default album art if no video track selected
       if let currentPlayback = player.info.currentPlayback, currentPlayback.state.isAtLeast(.loaded), !player.info.isVideoTrackSelected {
         updateDefaultArtVisibility(to: true)
@@ -721,7 +721,7 @@ extension PlayerWindowController {
       // Need to call this for initial layout also, or if toggling video:
       updateMusicModeButtonsVisibility(using: transition.outputGeometry)
 
-      if !transition.outputGeometry.videoShown && pip.status == .notInPIP {
+      if !transition.outputGeometry.isViewportShown && pip.status == .notInPIP {
         videoView.apply(nil)  // remove constraints
         videoView.removeFromSuperview()
         viewportView.removeSpacers()
@@ -1354,7 +1354,7 @@ extension PlayerWindowController {
       miniPlayer.removePlaylistViewIfPresent()
     }
 
-    if transition.outputGeometry.mode == .musicMode && transition.outputGeometry.videoShown {
+    if transition.outputGeometry.mode == .musicMode && transition.outputGeometry.isViewportShown {
       videoView.apply(transition.outputGeometry)
     }
 

@@ -474,7 +474,7 @@ extension PlayerWindowController {
                                                       pinWidthOrHeightIfAtMax: false)
     } else if transition.inputGeometry.mode == .musicMode, transition.outputGeometry.mode == .musicMode {
       // - Music Mode: Continuing
-      if transition.isTogglingVideoView {
+      if transition.isTogglingViewport {
         return transition.outputGeometry.cloneMusicMode(isMiddleTransition: true)
       } else {
         return nil

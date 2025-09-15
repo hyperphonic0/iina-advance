@@ -19,7 +19,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
     guard !pwc.isInInteractiveMode else { return }
-    guard !pwc.isInMiniPlayer || pwc.miniPlayer.videoShown else { return }
+    guard !pwc.isInMiniPlayer || pwc.miniPlayer.isViewportShown else { return }
     guard !pwc.isAnimatingLayoutTransition else { return }
 
     let pinchAction: Preference.PinchAction = Preference.enum(for: .pinchAction)
@@ -153,7 +153,7 @@ extension PlayerWindowController {
     if currentMode == .musicMode {
       miniPlayer.loadIfNeeded()
 
-      guard miniPlayer.videoShown else {
+      guard miniPlayer.isViewportShown else {
         log.verbose("Window is in music mode but video not visible. Ignoring pinch gesture")
         return
       }

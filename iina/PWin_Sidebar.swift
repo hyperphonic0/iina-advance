@@ -523,8 +523,8 @@ extension PlayerWindowController {
   }
 
   /// Adds or updates the constraints:
-  /// * `viewportLeadingOffsetFromTrailing`
   /// * `viewportLeadingOffsetFromLeading`
+  /// * `viewportLeadingOffsetFromTrailing`
   /// * `viewportLeadingClipTrailing`
   /// Updates the contraints:
   /// * `viewportLeadingOffsetFromContentViewLeading`

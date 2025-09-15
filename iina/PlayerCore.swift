@@ -2786,7 +2786,7 @@ class PlayerCore: NSObject {
       return false
     }
     if isInMiniPlayer {
-      return pwc.musicModeGeo.videoShown && Preference.bool(for: .enableOSDInMusicMode)
+      return pwc.musicModeGeo.isViewportShown && Preference.bool(for: .enableOSDInMusicMode)
     }
 
     return true
@@ -3193,7 +3193,7 @@ class PlayerCore: NSObject {
       }
 
       // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
-      if !silent, (!isInMiniPlayer || (pwc.miniPlayer.videoShown && !isShowVideoPendingInMiniPlayerCached)) {
+      if !silent, (!isInMiniPlayer || (pwc.miniPlayer.isViewportShown && !isShowVideoPendingInMiniPlayerCached)) {
         sendOSD(.track(info.track(.video, id: vid) ?? .noneVideoTrack))
       }
       if vid != 0, isActive, !isRestoring {
@@ -3209,9 +3209,9 @@ class PlayerCore: NSObject {
       musicModeTF = { [self] ctx -> PWinGeometry? in
         guard ctx.outputLayout.isMusicMode else { return nil }
         let inputMusicModeGeo = ctx.inputGeoSet.musicMode
-        log.verbose{"[GTF:\(ctx.name)] Showing video in music mode (visibleNow=\(inputMusicModeGeo.videoShown.yesno))"}
+        log.verbose{"[GTF:\(ctx.name)] Showing video in music mode (visibleNow=\(inputMusicModeGeo.isViewportShown.yesno))"}
         miniPlayerShowVideoTimer.cancel()
-        guard isInMiniPlayer && !inputMusicModeGeo.videoShown else { return nil }
+        guard isInMiniPlayer && !inputMusicModeGeo.isViewportShown else { return nil }
         let newGeo = inputMusicModeGeo.clone(video: ctx.outputVidGeo).withVideoViewVisible(true)
         return newGeo
       }
@@ -3349,7 +3349,7 @@ class PlayerCore: NSObject {
         // Show default art *before* waiting for mpv confirmation, to avoid a moment of empty black window.
         pwc.animationPipeline.submit(.instantTask{ [self] in
           // Do not show if in music mode & video is hidden.
-          guard !pwc.currentLayout.isMusicMode || pwc.musicModeGeo.videoShown else { return }
+          guard !pwc.currentLayout.isMusicMode || pwc.musicModeGeo.isViewportShown else { return }
           pwc.updateDefaultArtVisibility(to: true)
         })
       }

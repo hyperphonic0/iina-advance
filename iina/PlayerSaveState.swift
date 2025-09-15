@@ -1143,7 +1143,7 @@ extension PWinGeometry {
             let winOriginY = Double(iter.next()!),
             let winWidth = Double(iter.next()!),
             let winHeight = Double(iter.next()!),
-            let videoShown = Bool.yn(iter.next()!),
+            let isViewportShown = Bool.yn(iter.next()!),
             let playlistShown = Bool.yn(iter.next()!),
             let screenID = iter.next(),
             let videoGeoEmbeddedCSV = iter.next()
@@ -1161,7 +1161,7 @@ extension PWinGeometry {
 
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
       return PWinGeometry.forMusicMode(windowFrame: windowFrame, screenID: screenID, video: videoGeo,
-                                       videoShown: videoShown, playlistShown: playlistShown)
+                                       isViewportShown: isViewportShown, playlistShown: playlistShown)
     }
 
     if let mmGeo {
@@ -1178,7 +1178,7 @@ extension PWinGeometry {
             let winWidth = Double(iter.next()!),
             let winHeight = Double(iter.next()!),
             let _ = Double(iter.next()!),  /// was `playlistHeight` (defunct as of 1.1)
-            let videoShown = Bool.yn(iter.next()!),
+            let isViewportShown = Bool.yn(iter.next()!),
             let playlistShown = Bool.yn(iter.next()!),
             let _ = Double(iter.next()!),  /// was `videoAspect` (defunct as of 1.2)
             let screenID = iter.next()
@@ -1199,7 +1199,7 @@ extension PWinGeometry {
 
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
       return PWinGeometry.forMusicMode(windowFrame: windowFrame, screenID: screenID, video: videoGeo,
-                                       videoShown: videoShown, playlistShown: playlistShown)
+                                       isViewportShown: isViewportShown, playlistShown: playlistShown)
     }
   }
 
@@ -1212,7 +1212,7 @@ extension PWinGeometry {
                self.windowFrame.origin.y.stringMaxFrac2,
                self.windowFrame.width.stringMaxFrac2,
                self.windowFrame.height.stringMaxFrac2,
-               self.videoShown.yn,
+               self.isViewportShown.yn,
                self.isMusicModePlaylistShown.yn,
                self.screenID.replacingOccurrences(of: ",", with: ";"),  // ensure it's CSV-compatible
                self.video.toEmbeddedCSV()

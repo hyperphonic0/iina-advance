@@ -343,7 +343,7 @@ extension VideoView {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let pwc else { return }
 
-    guard let geometry, geometry.videoShown else {
+    guard let geometry, geometry.isViewportShown else {
       log.verbose{"VideoView: \(geometry == nil ? "no geometry" : "video not visible"); will remove constraints"}
       removeVideoConstraints()
       return
@@ -456,7 +456,7 @@ extension VideoView {
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
     let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
 
-    let musicMode = geometry.mode == .musicMode && geometry.videoShown // TODO: improvements for music mode (search for this)
+    let musicMode = geometry.mode == .musicMode && geometry.isViewportShown // TODO: improvements for music mode (search for this)
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers: Constraint(active: true, priority: 1000),
                 // The desired aspect must always be honored. All constraints are secondary to this.

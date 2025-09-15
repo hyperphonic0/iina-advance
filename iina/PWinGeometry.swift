@@ -244,18 +244,18 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   // MARK: - Computed properties
 
   var description: String {
-    return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) tx=\(isMiddleTransition.yn) \(screenFit) \(videoShown ? "vidH=\(videoHeight.logStr)" : "vid=N") \(isMusicModePlaylistShown ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=N") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidMargins=\(viewportMargins) \(video)}"
+    return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) tx=\(isMiddleTransition.yn) \(screenFit) \(isViewportShown ? "vidH=\(videoHeight.logStr)" : "vid=N") \(isMusicModePlaylistShown ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=N") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidMargins=\(viewportMargins) \(video)}"
   }
 
   var log: Logger.Subsystem { video.log }
 
   /// Can only be `false` while in music mode. All other modes should return `true` always.
-  var videoShown: Bool {
+  var isViewportShown: Bool {
     return viewportSize.height > 0
   }
 
   var shouldHaveOSD: Bool {
-    return Preference.bool(for: .enableOSD) && videoShown
+    return Preference.bool(for: .enableOSD) && isViewportShown
   }
 
   /// Can only be `true` while in music mode.
@@ -391,7 +391,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   /// Derived from other properties.
   var videoHeight: CGFloat {
-    return videoShown ? videoHeightWhenVisible : 0
+    return isViewportShown ? videoHeightWhenVisible : 0
   }
 
   var topBarHeight: CGFloat {
@@ -451,7 +451,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       assert(lockViewportToVideoSize, "lockViewportToVideoSize must always be true in music mode")
       let containerFrame = GeoUtil.getContainerFrame(forScreenID: screenID, screenFit: .stayInside)!
 
-      if inLiveResize, videoShown && !isMusicModePlaylistShown {
+      if inLiveResize, isViewportShown && !isMusicModePlaylistShown {
         // Special case when scaling only video without playlist: allow window height to change, similar to windowed mode.
         let nonViewportAreaSize = windowFrame.size - viewportSize
         let requestedViewportSize = requestedSize - nonViewportAreaSize
@@ -481,7 +481,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
         var maxWinWidth = min(MiniPlayerViewController.maxWindowWidth, containerFrame.width)
         var maxVideoHeight: CGFloat
-        if videoShown {
+        if isViewportShown {
           maxVideoHeight = containerFrame.height - Constants.Distance.MusicMode.oscHeight - minPlaylistHeight
           /// `maxVideoHeight` can be negative if very short screen! Fall back to height based on `MiniPlayerMinWidth` if needed
           maxVideoHeight = max(maxVideoHeight, (Constants.Distance.MusicMode.minWindowWidth / videoAspect).rounded(.towardZero))
@@ -731,7 +731,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       /// Separate logic for music mode window.
       /// The MiniPlayerWindow's width must be between `MiniPlayerMinWidth` and `Preference.musicModeMaxWidth`.
       /// It is composed of up to 3 vertical sections:
-      /// 1. `viewportView`: Visible if `videoShown` is true. Scales with the aspect ratio of its video.
+      /// 1. `viewportView`: Visible if `isViewportShown` is true. Scales with the aspect ratio of its video.
       /// 2. `musicModeControlBarView`: Visible always. Fixed height.
       /// 3. `playlistWrapperView`: Visible if `playlistShown` is true. Height is user resizable, and must be >= `PlaylistMinHeight`.
       /// Must also ensure that window stays within the bounds of the screen it is in. Almost all of the time the window  will be
@@ -745,8 +745,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
       // Window height should not change. Only video size should be scaled
       var newWindowHeight: CGFloat
-      var newVideoHeight: CGFloat = 0  // will stay 0 if !videoShown
-      if videoShown {
+      var newVideoHeight: CGFloat = 0  // will stay 0 if !isViewportShown
+      if isViewportShown {
         let videoAspect = video.videoAspectCAR
         // Need to calculate height from with to keep rounding consistent with PwinGeometry.forMusicMode()
         newVideoHeight = (newWindowWidth / videoAspect).rounded(.towardZero)
@@ -803,12 +803,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       }
 
       let outputGeo = cloneMusicMode(windowFrame: newWindowFrame)
-      assert(videoShown == outputGeo.videoShown,
-             "Scaling musicMode video: videoShown mismatch: \(videoShown.yesno) → \(outputGeo.videoShown.yesno)")
+      assert(isViewportShown == outputGeo.isViewportShown,
+             "Scaling musicMode video: isViewportShown mismatch: \(isViewportShown.yesno) → \(outputGeo.isViewportShown.yesno)")
       assert(isMusicModePlaylistShown == outputGeo.isMusicModePlaylistShown,
              "Scaling musicMode video: playlistShown mismatch: \(isMusicModePlaylistShown.yesno) → \(outputGeo.isMusicModePlaylistShown.yesno)")
 
-      log.verbose("[geo] Scaled video (MusicMode): desiredWidth=\(desiredVideoWidth) maxWidth=\(maxWindowWidth) videoShown=\(videoShown.yn) playlistShown=\(isMusicModePlaylistShown.yn) newWndWidth=\(newWindowWidth) newWndSize=\(newWindowFrame.size) → \(outputGeo)")
+      log.verbose("[geo] Scaled video (MusicMode): desiredWidth=\(desiredVideoWidth) maxWidth=\(maxWindowWidth) isViewportShown=\(isViewportShown.yn) playlistShown=\(isMusicModePlaylistShown.yn) newWndWidth=\(newWindowWidth) newWndSize=\(newWindowFrame.size) → \(outputGeo)")
       return outputGeo
     }  // end music mode logic
 
@@ -1248,11 +1248,11 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
    This function will always return a `PWinGeometry` object which has `mode: .musicMode`.
    */
   static func forMusicMode(windowFrame: NSRect, screenID: String, video: VideoGeometry,
-                           videoShown: Bool, playlistShown: Bool, isMiddleTransition: Bool = false) -> PWinGeometry {
+                           isViewportShown: Bool, playlistShown: Bool, isMiddleTransition: Bool = false) -> PWinGeometry {
     let log = video.log
     var windowFrame = NSRect(origin: windowFrame.origin, size:
                               CGSize(width: windowFrame.width.rounded(), height: windowFrame.height.rounded()))
-    let videoHeight = PWinGeometry.MusicMode.videoHeight(windowFrame: windowFrame, video: video, videoShown: videoShown)
+    let videoHeight = PWinGeometry.MusicMode.videoHeight(windowFrame: windowFrame, video: video, isViewportShown: isViewportShown)
     var musicModePlaylistHeight = windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
 
     let extraWidthNeeded = Constants.Distance.MusicMode.minWindowWidth - windowFrame.width
@@ -1289,11 +1289,11 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         log.warn{"[geo] MusicMode: playlistHeight (\(musicModePlaylistHeight)) is invalid (will try to correct); playlistShown=\(playlistShown.yn) minPlaylistH=\(Constants.Distance.MusicMode.minPlaylistHeight)"}
         let heightDiff = musicModePlaylistHeight
         let newWindowFrame = NSRect(origin: NSPoint(x: windowFrame.origin.x, y: windowFrame.origin.y + heightDiff), size: NSSize(width: windowFrame.width, height: windowFrame.height - heightDiff))
-        return forMusicMode(windowFrame: newWindowFrame, screenID: screenID, video: video, videoShown: videoShown, playlistShown: playlistShown, isMiddleTransition: isMiddleTransition)
+        return forMusicMode(windowFrame: newWindowFrame, screenID: screenID, video: video, isViewportShown: isViewportShown, playlistShown: playlistShown, isMiddleTransition: isMiddleTransition)
       }
     } else {
-      assert(videoShown == winGeo.videoShown,
-             "Expected videoShown to match: \(videoShown.yesno) → \(winGeo.videoShown.yesno)")
+      assert(isViewportShown == winGeo.isViewportShown,
+             "Expected isViewportShown to match: \(isViewportShown.yesno) → \(winGeo.isViewportShown.yesno)")
       assert(playlistShown == winGeo.isMusicModePlaylistShown,
              "Expected playlistShown to match: \(playlistShown.yesno) → \(winGeo.isMusicModePlaylistShown.yesno)")
     }
@@ -1301,19 +1301,19 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   func cloneMusicMode(windowFrame: NSRect? = nil, screenID: String? = nil, video: VideoGeometry? = nil,
-                      videoShown: Bool? = nil, playlistShown: Bool? = nil, isMiddleTransition: Bool? =  nil) -> PWinGeometry {
+                      isViewportShown: Bool? = nil, playlistShown: Bool? = nil, isMiddleTransition: Bool? =  nil) -> PWinGeometry {
     guard mode == .musicMode else {
       log.error("Cannot call PWinGeometry.cloneMusicMode when mode ≠ music mode: \(self)")
       assert(false, "Cannot call PWinGeometry.cloneMusicMode when mode ≠ music mode: \(self)")  // fail fast when debugging
       return self
     }
-    let showVideo = videoShown ?? self.videoShown
+    let showVideo = isViewportShown ?? self.isViewportShown
     let showPlaylist = playlistShown ?? self.isMusicModePlaylistShown
     log.trace("Cloning musicMode geo: \(self) → showVideo=\(showVideo.yn) showPlaylist=\(showPlaylist.yn)")
     return PWinGeometry.forMusicMode(windowFrame: windowFrame ?? self.windowFrame,
                                      screenID: screenID ?? self.screenID,
                                      video: video ?? self.video,
-                                     videoShown: showVideo,
+                                     isViewportShown: showVideo,
                                      playlistShown: showPlaylist,
                                      isMiddleTransition: isMiddleTransition ?? self.isMiddleTransition)
   }
@@ -1325,7 +1325,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       assert(false, "Cannot call PWinGeometry.withVideoViewVisible when mode ≠ music mode: \(self)")  // fail fast when debugging
       return self
     }
-    guard self.videoShown != visible else { return self }
+    guard self.isViewportShown != visible else { return self }
 
     var newWindowFrame = windowFrame
     if visible {
@@ -1335,7 +1335,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       // a constraint violation. This is possible due to small imprecisions in various layout calculations.
       newWindowFrame.size.height = max(Constants.Distance.MusicMode.oscHeight, newWindowFrame.size.height - videoHeightWhenVisible)
     }
-    return cloneMusicMode(windowFrame: newWindowFrame, videoShown: visible)
+    return cloneMusicMode(windowFrame: newWindowFrame, isViewportShown: visible)
   }
 
   func withPlaylistShown(_ shown: Bool) -> PWinGeometry {
@@ -1384,16 +1384,16 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   struct MusicMode {
-    static func playlistHeight(windowFrame: CGRect, video: VideoGeometry, videoShown: Bool, playlistShown: Bool) -> CGFloat {
+    static func playlistHeight(windowFrame: CGRect, video: VideoGeometry, isViewportShown: Bool, playlistShown: Bool) -> CGFloat {
       guard playlistShown else {
         return 0
       }
-      let videoHeight = videoHeight(windowFrame: windowFrame, video: video, videoShown: videoShown)
+      let videoHeight = videoHeight(windowFrame: windowFrame, video: video, isViewportShown: isViewportShown)
       return windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
     }
 
-    static func videoHeight(windowFrame: CGRect, video: VideoGeometry, videoShown: Bool) -> CGFloat {
-      guard videoShown else {
+    static func videoHeight(windowFrame: CGRect, video: VideoGeometry, isViewportShown: Bool) -> CGFloat {
+      guard isViewportShown else {
         return 0
       }
       let vidHeight = videoHeightWhenVisible(windowFrame: windowFrame, video: video)

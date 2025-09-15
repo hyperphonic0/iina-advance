@@ -783,7 +783,7 @@ struct LayoutState {
       return geo.scalingViewport()
     case .musicMode:
       let geo = PWinGeometry.forMusicMode(windowFrame: windowFrame, screenID: screenID, video: video,
-                                          videoShown: Preference.bool(for: .musicModeShowAlbumArt),
+                                          isViewportShown: Preference.bool(for: .musicModeShowAlbumArt),
                                           playlistShown: Preference.bool(for: .musicModeShowPlaylist))
       return geo
     }

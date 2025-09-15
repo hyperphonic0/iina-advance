@@ -144,9 +144,9 @@ extension PlayerWindowController {
         return musicModeGeo.windowFrame.size
       }
 
-      // Use explicit `videoShown`, `playlistShown`: these are derived from the windowFrame, but when we update from
+      // Use explicit `isViewportShown`, `playlistShown`: these are derived from the windowFrame, but when we update from
       // current we can end up with small imprecisions which could alter their values.
-      let currentGeo = musicModeGeoForCurrentFrame().cloneMusicMode(videoShown: musicModeGeo.videoShown,
+      let currentGeo = musicModeGeoForCurrentFrame().cloneMusicMode(isViewportShown: musicModeGeo.isViewportShown,
                                                                     playlistShown: musicModeGeo.isMusicModePlaylistShown)
       let newGeometry = currentGeo.resizingWindowInMusicMode(to: requestedSize,
                                                              inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
@@ -198,7 +198,7 @@ extension PlayerWindowController {
       if geometry.mode == .musicMode {
         musicModeGeo = geometry
         // Update defaults:
-        Preference.set(geometry.videoShown, for: .musicModeShowAlbumArt)
+        Preference.set(geometry.isViewportShown, for: .musicModeShowAlbumArt)
         Preference.set(geometry.isMusicModePlaylistShown, for: .musicModeShowPlaylist)
       } else if geometry.mode.isWindowed {
         windowedModeGeo = geometry
@@ -222,7 +222,7 @@ extension PlayerWindowController {
     // These may no longer be aligned correctly. Just hide them
     hideSeekPreviewImmediately()
 
-    if newGeometry.videoShown {
+    if newGeometry.isViewportShown {
       if updateVideoView {
         // Not sure if this helps fix the aspect constraint transition
         videoView.apply(newGeometry)
@@ -473,7 +473,7 @@ extension PlayerWindowController {
       case .musicMode:
         let inputGeo = ctx.inputGeoSet.musicMode
         let inputViewportSize = inputGeo.viewportSize
-        guard inputGeo.videoShown else { return nil }
+        guard inputGeo.isViewportShown else { return nil }
         let desiredViewportSize = scaleByWidthStep(inputViewportSize)
         log.verbose{"Stepping viewport scale: mode=\(mode) stepW=\(widthStep)pt → \(desiredViewportSize)"}
         return inputGeo.scalingViewport(to: desiredViewportSize)
@@ -520,7 +520,7 @@ extension PlayerWindowController {
       hideSeekPreviewImmediately()        /// Location of thumbnail may become invalid during window resize; just hide it
 
       // Show art if videoView is already visible, or before it needs to be shown:
-      if outputGeo.videoShown {
+      if outputGeo.isViewportShown {
         updateDefaultArtVisibility(to: showDefaultArt)
       }
       resetRotationPreview()

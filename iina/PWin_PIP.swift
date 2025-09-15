@@ -85,7 +85,7 @@ extension PlayerWindowController {
     func showOrHidePipOverlayView() {
       let mustHide: Bool
       if status == .inPIP {
-        mustHide = pwc.isInMiniPlayer && !pwc.musicModeGeo.videoShown
+        mustHide = pwc.isInMiniPlayer && !pwc.musicModeGeo.isViewportShown
       } else {
         mustHide = true
       }
@@ -126,7 +126,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       
       if isInMiniPlayer {
         miniPlayer.loadIfNeeded()
-        if !miniPlayer.videoShown {
+        if !miniPlayer.isViewportShown {
           // need to re-enable video to enter PiP
           player.setVideoTrackEnabled()
         }
@@ -275,14 +275,14 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       pip.status = .notInPIP
 
       let currentGeo = currentLayout.mode == .musicMode ? musicModeGeo : windowedModeGeo
-      if currentGeo.videoShown {
+      if currentGeo.isViewportShown {
         addVideoToWindowIfNeeded()
         videoView.apply(currentGeo)
       }
 
       if isInMiniPlayer {
         miniPlayer.loadIfNeeded()
-        if miniPlayer.videoShown {
+        if miniPlayer.isViewportShown {
           player.setVideoTrackEnabled()
         } else {
           player.setVideoTrackDisabled()

@@ -482,20 +482,20 @@ struct GeometryTransform {
           outputMusicModeGeo = inputMusicModeGeo.clone(video: outputVidGeo).refitted()
         }
 
-        let isTogglingVideoView = inputMusicModeGeo.videoShown != outputMusicModeGeo.videoShown
+        let isTogglingViewport = inputMusicModeGeo.isViewportShown != outputMusicModeGeo.isViewportShown
         let isTogglingPlaylist = inputMusicModeGeo.isMusicModePlaylistShown != outputMusicModeGeo.isMusicModePlaylistShown
-        if isTogglingVideoView || isTogglingPlaylist {
+        if isTogglingViewport || isTogglingPlaylist {
           // Only set nonzero duration for the step which is being applied
           duration = Constants.AnimationDuration.toggleVideoView
-          let isOpeningVideoView = !inputMusicModeGeo.videoShown && outputMusicModeGeo.videoShown
-          let isClosingVideoView = inputMusicModeGeo.videoShown && !outputMusicModeGeo.videoShown
+          let isOpeningViewport = !inputMusicModeGeo.isViewportShown && outputMusicModeGeo.isViewportShown
+          let isClosingViewport = inputMusicModeGeo.isViewportShown && !outputMusicModeGeo.isViewportShown
           let isOpeningPlaylist = !inputMusicModeGeo.isMusicModePlaylistShown && outputMusicModeGeo.isMusicModePlaylistShown
           let isClosingPlaylist = inputMusicModeGeo.isMusicModePlaylistShown && !outputMusicModeGeo.isMusicModePlaylistShown
           // Closing playlist happens in OpenPanels step
-          let startingDuration = isClosingVideoView ? duration : 0
-          let endingDuration = isOpeningVideoView || isOpeningPlaylist || isClosingPlaylist ? duration : 0
+          let startingDuration = isClosingViewport ? duration : 0
+          let endingDuration = isOpeningViewport || isOpeningPlaylist || isClosingPlaylist ? duration : 0
 
-          log.verbose{"[GTF:\(name)] Building transition tasks for musicMode: sess=\(gtfSessionState) togglingVideo=\(isTogglingVideoView.yn) togglingPlaylist=\(isTogglingPlaylist.yn) dur=\(duration) → \(outputMusicModeGeo)"}
+          log.verbose{"[GTF:\(name)] Building transition tasks for musicMode: sess=\(gtfSessionState) togglingVideo=\(isTogglingViewport.yn) togglingPlaylist=\(isTogglingPlaylist.yn) dur=\(duration) → \(outputMusicModeGeo)"}
           // Need to use LayoutTransition for complex layout changes
           tasks = pwc.buildLayoutTransition(named: name, from: inputLayout,
                                             inputGeo: inputLayout.isMusicMode ? inputMusicModeGeo : nil,
@@ -667,7 +667,7 @@ struct GeometryTransform {
         player.touchBarSupport.setupTouchBarUI()
 
         // At this point it is safe to assume that `musicModeGeo` will have be set
-        let shouldDecideDefaultArtStatus = !outputLayout.isMusicMode || pwc.musicModeGeo.videoShown
+        let shouldDecideDefaultArtStatus = !outputLayout.isMusicMode || pwc.musicModeGeo.isViewportShown
         let showDefaultArt: Bool? = shouldDecideDefaultArtStatus ? shouldChangeDefaultArt : nil
         if let showDefaultArt {
           // May need to set this while restoring a network audio stream
