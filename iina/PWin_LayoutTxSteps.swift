@@ -610,7 +610,7 @@ extension PlayerWindowController {
     }
 
     // - Leading Sidebar
-    if transition.isOpeningLeadingSidebar {
+    if !transition.isWindowInitialLayout && transition.isOpeningLeadingSidebar {
       // Opening sidebar from closed state
       prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
                               layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
@@ -622,7 +622,7 @@ extension PlayerWindowController {
     }
 
     // - Trailing Sidebar
-    if transition.isOpeningTrailingSidebar {
+    if !transition.isWindowInitialLayout && transition.isOpeningTrailingSidebar {
       // Opening sidebar from closed state
       prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
                               layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
@@ -986,8 +986,10 @@ extension PlayerWindowController {
       }
     }
 
-    // Add constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
-    updateOSDConstraints(outputLayout, transition.outputGeometry)
+    if !transition.isWindowInitialLayout {
+      // Add constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
+      updateOSDConstraints(outputLayout, transition.outputGeometry)
+    }
 
     prepareDepthOrderOfOutsideSidebarsForToggle(transition)
 
@@ -1058,20 +1060,24 @@ extension PlayerWindowController {
       updateToolbarHStack(iconSpacing: newGeo.toolIconSpacing)
     }
 
+    rebuildPanelConstraints(transition, stage: .openNewPanels)
 
-    // Sidebars (if opening)
-    let leadingSidebar = transition.outputLayout.leadingSidebar
-    let trailingSidebar = transition.outputLayout.trailingSidebar
-    let ΔWindowWidth = transition.ΔWindowWidth
-    animateShowOrHideSidebars(transition: transition,
-                              layout: transition.outputLayout,
-                              setLeadingTo: transition.isOpeningLeadingSidebar ? leadingSidebar.visibility : nil,
-                              setTrailingTo: transition.isOpeningTrailingSidebar ? trailingSidebar.visibility : nil,
-                              ΔWindowWidth: ΔWindowWidth)
+    if transition.inputGeometry.isMusicModePlaylistShown || transition.outputGeometry.isMusicModePlaylistShown
+        || transition.inputLayout.isAnySidebarVisible || transition.outputLayout.isAnySidebarVisible {
+      // Sidebars (if opening)
+      let leadingSidebar = transition.outputLayout.leadingSidebar
+      let trailingSidebar = transition.outputLayout.trailingSidebar
+      let ΔWindowWidth = transition.ΔWindowWidth
+      animateShowOrHideSidebars(transition: transition,
+                                layout: transition.outputLayout,
+                                setLeadingTo: transition.isOpeningLeadingSidebar ? leadingSidebar.visibility : nil,
+                                setTrailingTo: transition.isOpeningTrailingSidebar ? trailingSidebar.visibility : nil,
+                                ΔWindowWidth: ΔWindowWidth)
 
-    // Update sidebar downshift & tab heights
-    log.verbose{"\(logPre) Updating sidebars: downshift=\(outputLayout.sidebarDownshift) tabHeight=\(outputLayout.sidebarTabHeight)"}
-    updateSidebarVerticalConstraints(tabHeight: outputLayout.sidebarTabHeight, downshift: outputLayout.sidebarDownshift)
+      // Update sidebar downshift & tab heights
+      log.verbose{"\(logPre) Updating sidebars: downshift=\(outputLayout.sidebarDownshift) tabHeight=\(outputLayout.sidebarTabHeight)"}
+      updateSidebarVerticalConstraints(tabHeight: outputLayout.sidebarTabHeight, downshift: outputLayout.sidebarDownshift)
+    }
 
     if outputLayout.hasFloatingOSC {
       // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs
@@ -1099,8 +1105,6 @@ extension PlayerWindowController {
       // Update floating control bar position
       controlBarFloating.moveToLocationRatio(layout: transition.outputLayout, viewportSize: transition.outputGeometry.viewportSize)
     }
-
-    rebuildPanelConstraints(transition, stage: .openNewPanels)
 
     switch transition.outputLayout.mode {
 

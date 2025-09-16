@@ -390,7 +390,7 @@ extension PlayerWindowController {
       }
     }
     
-    func topBarBtmOffsetFromViewportTop(for stage: Stage) -> CGFloat {
+    func topBarBtmOffsetFromVPTop(for stage: Stage) -> CGFloat {
       switch topBarPlacement(for: stage) {
       case .insideViewport:
         return topBarHeight(for: stage)
@@ -399,7 +399,7 @@ extension PlayerWindowController {
       }
     }
 
-    func viewportTopOffsetFromTopBarTop(for stage: Stage) -> CGFloat {
+    func vpTopOffsetFromTopBarTop(for stage: Stage) -> CGFloat {
       switch topBarPlacement(for: stage) {
       case .insideViewport:
         return 0
@@ -408,7 +408,7 @@ extension PlayerWindowController {
       }
     }
 
-    func viewportTopOffsetFromCVTop(for stage: Stage) -> CGFloat {
+    func vpTopOffsetFromCVTop(for stage: Stage) -> CGFloat {
       switch topBarPlacement(for: stage) {
       case .insideViewport:
         return 0 + cameraHousingOffset(for: stage)
@@ -417,20 +417,20 @@ extension PlayerWindowController {
       }
     }
 
-    func viewportBtmOffsetFromCVTop(for stage: Stage) -> CGFloat {
+    func vpBtmOffsetFromCVTop(for stage: Stage) -> CGFloat {
       let viewportHeight = geometry(for: stage).viewportSize.height
-      return viewportTopOffsetFromCVTop(for: stage) + viewportHeight
+      return vpTopOffsetFromCVTop(for: stage) + viewportHeight
     }
 
     // Bottom bar
 
     func bottomBarTopOffsetFromCVTop(for stage: Stage) -> CGFloat {
-      let viewportBtmOffsetFromCVTop = viewportBtmOffsetFromCVTop(for: stage)
+      let vpBtmOffsetFromCVTop = vpBtmOffsetFromCVTop(for: stage)
       switch bottomBarPlacement(for: stage) {
       case .insideViewport:
-        return viewportBtmOffsetFromCVTop - bottomBarHeight(for: stage)
+        return vpBtmOffsetFromCVTop - bottomBarHeight(for: stage)
       case .outsideViewport:
-        return viewportBtmOffsetFromCVTop
+        return vpBtmOffsetFromCVTop
       }
     }
 
@@ -453,7 +453,7 @@ extension PlayerWindowController {
       }
     }
 
-    func viewportBtmOffsetFromTopOfBottomBar(for stage: Stage) -> CGFloat {
+    func vpBtmOffsetFromTopOfBottomBar(for stage: Stage) -> CGFloat {
       switch bottomBarPlacement(for: stage) {
       case .insideViewport:
         return bottomBarHeight(for: stage)
@@ -462,7 +462,7 @@ extension PlayerWindowController {
       }
     }
 
-    func bottomBarBtmOffsetFromViewportBtm(for stage: Stage) -> CGFloat {
+    func bottomBarBtmOffsetFromVPBtm(for stage: Stage) -> CGFloat {
       switch bottomBarPlacement(for: stage) {
       case .insideViewport:
         return 0
@@ -471,7 +471,7 @@ extension PlayerWindowController {
       }
     }
 
-    func cvBtmOffsetFromViewportBtm(for stage: Stage) -> CGFloat {
+    func cvBtmOffsetFromVPBtm(for stage: Stage) -> CGFloat {
       switch bottomBarPlacement(for: stage) {
       case .insideViewport:
         return 0
@@ -485,17 +485,16 @@ extension PlayerWindowController {
       let inputViewportHeight = inputGeometry.viewportSize.height
       let outputViewportHeight = outputGeometry.viewportSize.height
 
-      let isTogglingVideo = inputViewportHeight == 0 || outputViewportHeight == 0
       switch stage {
       case .preTransitionSetup, .closeOldPanels:
-        if isTogglingVideo && outputViewportHeight == 0 {
-          return inputViewportHeight
+        if inputViewportHeight == 0 {
+          return -inputGeometry.videoHeightWhenVisible
         } else {
           return 0
         }
       case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
-        if isTogglingVideo && inputViewportHeight == 0 {
-          return outputViewportHeight
+        if outputViewportHeight == 0 {
+          return -outputGeometry.videoHeightWhenVisible
         } else {
           return 0
         }

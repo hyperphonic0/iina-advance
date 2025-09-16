@@ -278,7 +278,7 @@ struct Constants {
   struct AnimationDuration {
     static var standard: CGFloat = Preference.double(for: .animationDurationDefault)
     static var tableUIChange: CGFloat = standard
-    static var toggleVideoView: CGFloat = standard
+    static var toggleVideoView: CGFloat = standard * 4
     static var tableUIFlash: CGFloat = 0.2
     static var videoReconfig: CGFloat = standard * 0.5
     static var initialVideoReconfig: CGFloat = standard
