@@ -248,11 +248,11 @@ extension PlayerWindowController {
       isOpeningLeadingSidebar || isOpeningTrailingSidebar || isClosingLeadingSidebar || isClosingTrailingSidebar
     }
 
-    /// Is opening given sidebar?
+    /// Returns true if opening given sidebar from the closed state or from the initial state, or doing an open + close.
     func isOpening(_ sidebarID: Preference.SidebarLocation) -> Bool {
       let oldState = inputLayout.sidebar(withID: sidebarID)
       let newState = outputLayout.sidebar(withID: sidebarID)
-      if !oldState.isVisible && newState.isVisible {
+      if (isWindowInitialLayout || !oldState.isVisible) && newState.isVisible {
         return true
       }
       return isClosingAndThenOpening(sidebarID)

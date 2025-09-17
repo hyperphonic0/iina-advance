@@ -583,23 +583,12 @@ extension PlayerWindowController {
 
     // - Sidebars
 
-    /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
-    if transition.isClosingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
-      /// Finish closing (if closing)
-      removeSidebarTabGroupView(group: tabToHide.group)
-    }
-    if transition.isClosingTrailingSidebar, let tabToHide = transition.inputLayout.trailingSidebar.visibleTab {
-      /// Finish closing (if closing).
-      /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
-      removeSidebarTabGroupView(group: tabToHide.group)
-    }
-
-    // - Leading Sidebar
+    // Leading Sidebar
     if let visibleTab = transition.outputLayout.leadingSidebar.visibleTab {
       switchToTabInTabGroup(tab: visibleTab)
     }
 
-    // - Trailing Sidebar
+    // Trailing Sidebar
     if let visibleTab = transition.outputLayout.trailingSidebar.visibleTab {
       switchToTabInTabGroup(tab: visibleTab)
     }

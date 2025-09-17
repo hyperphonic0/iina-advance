@@ -750,6 +750,7 @@ extension PlayerWindowController {
       viewController = pluginView
     }
     let tabGroupView = viewController.view
+    guard !tabContainerView.containsSubview(tabGroupView) else { return }
     tabContainerView.addSubviewAndConstraints(tabGroupView, top: 0, bottom: 0, leading: 0, trailing: 0)
   }
 

@@ -494,6 +494,7 @@ class StartupHandler {
 
     /// Dismiss the prompt (if any). It seems we can't just call `close` on its `window` object, because the
     /// responder chain is left unusable. Instead, click its default button after setting `state`.
+    Logger.log.debug("Dismissing Restore Timeout alert panel")
     let keepWaitingBtn = restoreTimeoutAlertPanel.buttons[0]
     keepWaitingBtn.performClick(self)
     self.restoreTimeoutAlertPanel = nil

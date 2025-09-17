@@ -88,9 +88,9 @@ extension PlayerWindowController {
     // - Bottom bar constraints
     let cvBtmOffsetFromVPBtm = OptionalConstraint("CV.btm-offset-from-VP.btm")
     let vpBtmOffsetFromTopOfBottomBar = OptionalConstraint("VP.btm-offset-from-BottomBar.top")
-    let bottomBarBtmOffsetFromVPBtm = OptionalConstraint("BottomBar.btm_offset-from-VP.btm")
+    let bottomBarBtmOffsetFromVPBtm = OptionalConstraint("BottomBar.btm-offset-from-VP.btm")
     /// Only active when video is hidden
-    let bottomBarTopOffsetFromCVTop = OptionalConstraint("BottomBar.top_offset-from-CV.top")
+    let bottomBarTopOffsetFromCVTop = OptionalConstraint("BottomBar.top-offset-from-CV.top")
     /// Only active when video is hidden
     let bottomBarBtmOffsetFromCVTop = OptionalConstraint("BottomBar.btm-offset-from-CV.top")
     let cvBtmOffsetFromBottomBarBtm = OptionalConstraint("BottomBar.btm-offset-from-CV.btm")
@@ -348,22 +348,27 @@ extension PlayerWindowController {
           updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
         }
       }
-
     case .midTransitionHiddenUpdates:
-      if transition.isOpeningLeadingSidebar {
-        // Opening sidebar from closed state
-        prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
-                                layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+      /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
+      if transition.isClosingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
+        /// Finish closing (if closing)
+        removeSidebarTabGroupView(group: tabToHide.group)
       }
-      if transition.isOpeningTrailingSidebar {
-        // Opening sidebar from closed state
-        prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
-                                layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+      if transition.isClosingTrailingSidebar, let tabToHide = transition.inputLayout.trailingSidebar.visibleTab {
+        /// Finish closing (if closing).
+        /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
+        removeSidebarTabGroupView(group: tabToHide.group)
       }
-      updateSidebarVerticalConstraints(tabHeight: transition.outputLayout.sidebarTabHeight, downshift: transition.outputLayout.sidebarDownshift)
+
+      prepareSidebarsForOpening(transition)
 
     case .openNewPanels:
-      if useLeadingSidebar || useTrailingSidebar {
+      if transition.isWindowInitialLayout {
+        // Need to run this now because intiial layout doesn't run the midTransitionHiddenUpdates step
+        prepareSidebarsForOpening(transition)
+      }
+      if transition.inputGeometry.isMusicModePlaylistShown || transition.outputGeometry.isMusicModePlaylistShown
+          || transition.inputLayout.isAnySidebarVisible || transition.outputLayout.isAnySidebarVisible {
         // Sidebars (if opening)
         let ΔWindowWidth = transition.ΔWindowWidth
         animateShowOrHideSidebars(transition: transition,
@@ -371,19 +376,31 @@ extension PlayerWindowController {
                                   setLeadingTo: transition.isOpeningLeadingSidebar ? layout.leadingSidebar.visibility : nil,
                                   setTrailingTo: transition.isOpeningTrailingSidebar ? layout.trailingSidebar.visibility : nil,
                                   ΔWindowWidth: ΔWindowWidth)
-      }
 
-      if useLeadingSidebar || useTrailingSidebar || outputGeo.isMusicModePlaylistShown {
-        // Update sidebar downshift & tab heights
         log.verbose{"\(logPre) Updating sidebars: downshift=\(layout.sidebarDownshift) tabHeight=\(layout.sidebarTabHeight)"}
         updateSidebarVerticalConstraints(tabHeight: layout.sidebarTabHeight, downshift: layout.sidebarDownshift)
       }
-      
     case .postTransition:
       break
     }
 
     sortContentViewSubviews(for: layout)
+  }
+
+  private func prepareSidebarsForOpening(_ transition: LayoutTransition) {
+    if transition.isOpeningLeadingSidebar {
+      // Opening sidebar from closed state
+      prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
+                              layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+    }
+    if transition.isOpeningTrailingSidebar {
+      // Opening sidebar from closed state
+      prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
+                              layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+    }
+    if transition.inputLayout.isMusicMode || transition.outputLayout.isMusicMode {
+      updateSidebarVerticalConstraints(tabHeight: transition.outputLayout.sidebarTabHeight, downshift: transition.outputLayout.sidebarDownshift)
+    }
   }
 
   // - Top bar

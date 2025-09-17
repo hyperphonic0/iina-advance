@@ -800,9 +800,9 @@ extension PlayerWindowController {
       } else {
         // Not consistent. But we already have the correct spec, so just build a layout from it and transition to correct layout
 #if DEBUG
-        log.errorDebugAlert{"Player's saved layout does not match IINA app prefs. Will fix & apply corrected layout"}
+        log.errorDebugAlert{"Player's saved layout does not match IINA app prefs; will fix & apply corrected layout"}
 #else
-        log.warn{"Player's saved layout does not match IINA app prefs. Will fix & apply corrected layout"}
+        log.warn{"Player's saved layout does not match IINA app prefs; will fix & apply corrected layout"}
 #endif
         log.debug{"[GTF:\(ctx.name)] SavedSpec: \(currentLayout.spec). PrefsSpec: \(prefsSpec)"}
         let transition = buildLayoutTransition(named: "FixInvalidInitialLayout",
