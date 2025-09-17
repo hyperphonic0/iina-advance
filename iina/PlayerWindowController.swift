@@ -1687,6 +1687,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // MARK: - UI: Interactive Mode
 
+  // FIXME: Delogo is broken
   func enterInteractiveMode(_ mode: InteractiveMode) {
     // Can't work with PiP. For now just exit it and don't wait. The animation could be better but it's better
     // than entering a buggy state.
