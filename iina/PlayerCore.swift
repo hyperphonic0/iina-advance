@@ -3310,6 +3310,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
 
     mpv.queue.async { [self] in
+      guard isActive else { return }
       // Change video track to None
       let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
 

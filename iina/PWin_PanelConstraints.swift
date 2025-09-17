@@ -80,27 +80,27 @@ extension PlayerWindowController {
   /// - ⁵Only used in music mode when both video & playlist are hidden.
   class PanelConstraints {
     // - Top bar (title bar and/or top OSC) constraints
-    let topBarBtmOffsetFromVPTop = OptionalConstraint("TopBar-Bottom_OffsetFrom-VP-Top_Con")
-    let vpTopOffsetFromTopBarTop = OptionalConstraint("VP-Top_OffsetFrom-TopBar-Top_Con")
-    let vpTopOffsetFromCVTop = OptionalConstraint("VP-Top_OffsetFrom-CV-Top-Con")
-    let vpBtmOffsetFromCVTop = OptionalConstraint("VP-Btm_OffsetFrom-CV-Top-Con")
+    let topBarBtmOffsetFromVPTop = OptionalConstraint("TopBar.btm-offset-from-VP.top")
+    let vpTopOffsetFromTopBarTop = OptionalConstraint("VP.top-offset-from-TopBar.top")
+    let vpTopOffsetFromCVTop = OptionalConstraint("VP.top-offset-from-CV.top")
+    let vpBtmOffsetFromCVTop = OptionalConstraint("VP.btm_offset-from-CV.top")
 
     // - Bottom bar constraints
-    let cvBtmOffsetFromVPBtm = OptionalConstraint("CV-Btm_OffsetFrom-VP-Btm-Con")
-    let vpBtmOffsetFromTopOfBottomBar = OptionalConstraint("VP-Btm_OffsetFrom-BottomBar-Top_Con")
-    let bottomBarBtmOffsetFromVPBtm = OptionalConstraint("BottomBar-Btm_OffsetFrom-VP-Btm_Con")
+    let cvBtmOffsetFromVPBtm = OptionalConstraint("CV.btm-offset-from-VP.btm")
+    let vpBtmOffsetFromTopOfBottomBar = OptionalConstraint("VP.btm-offset-from-BottomBar.top")
+    let bottomBarBtmOffsetFromVPBtm = OptionalConstraint("BottomBar.btm_offset-from-VP.btm")
     /// Only active when video is hidden
-    let bottomBarTopOffsetFromCVTop = OptionalConstraint("BottomBar-Top_OffsetFrom-CV-Top_Con")
+    let bottomBarTopOffsetFromCVTop = OptionalConstraint("BottomBar.top_offset-from-CV.top")
     /// Only active when video is hidden
-    let bottomBarBtmOffsetFromCVTop = OptionalConstraint("BottomBar-Btm_OffsetFrom-CV-Top_Con")
-    let cvBtmOffsetFromBottomBarBtm = OptionalConstraint("BottomBar-Btm_OffsetFrom-CV-Btm_Con")
+    let bottomBarBtmOffsetFromCVTop = OptionalConstraint("BottomBar.btm-offset-from-CV.top")
+    let cvBtmOffsetFromBottomBarBtm = OptionalConstraint("BottomBar.btm-offset-from-CV.btm")
     // Needs to be changed to align with either sidepanel or leading edge of window:
-    let bottomBarLeadingSpace = OptionalConstraint("BottomBar-LeadingSpaceCon")
+    let bottomBarLeadingSpace = OptionalConstraint("BottomBar.leading-space")
     // Needs to be changed to align with either sidepanel or trailing edge of window:
-    let bottomBarTrailingSpace = OptionalConstraint("BottomBar-TrailingSpaceCon")
+    let bottomBarTrailingSpace = OptionalConstraint("BottomBar.trailing-space")
 
-    let vpLeadingOffsetFromCVLeading = OptionalConstraint("VP-Leading_OffsetFrom-CV-Leading-Con")
-    let vpTrailingOffsetFromCVTrailing = OptionalConstraint("CV-Trailing_OffsetFrom-VP-Trailing-Con")
+    let vpLeadingOffsetFromCVLeading = OptionalConstraint("VP.leading-offset-from-CV.leading")
+    let vpTrailingOffsetFromCVTrailing = OptionalConstraint("CV.trailing-offset-from-VP.trailing")
   }
 
   // MARK: - Bars Layout
@@ -118,7 +118,6 @@ extension PlayerWindowController {
     var useTrailingSidebar = transition.outputLayout.isTrailingSidebarVisible
     let isFinalStage = stage == .postTransition
 
-    // TODO: expand this to include constraints for sidebars too
     let layout: LayoutState
     switch stage {
     case .preTransitionSetup, .closeOldPanels:
@@ -360,13 +359,11 @@ extension PlayerWindowController {
     } else if stage == .openNewPanels {
       if useLeadingSidebar || useTrailingSidebar {
         // Sidebars (if opening)
-        let leadingSidebar = layout.leadingSidebar
-        let trailingSidebar = layout.trailingSidebar
         let ΔWindowWidth = transition.ΔWindowWidth
         animateShowOrHideSidebars(transition: transition,
                                   layout: transition.outputLayout,
-                                  setLeadingTo: transition.isOpeningLeadingSidebar ? leadingSidebar.visibility : nil,
-                                  setTrailingTo: transition.isOpeningTrailingSidebar ? trailingSidebar.visibility : nil,
+                                  setLeadingTo: transition.isOpeningLeadingSidebar ? layout.leadingSidebar.visibility : nil,
+                                  setTrailingTo: transition.isOpeningTrailingSidebar ? layout.trailingSidebar.visibility : nil,
                                   ΔWindowWidth: ΔWindowWidth)
       }
 

@@ -512,14 +512,14 @@ extension PlayerWindowController {
       }
     }
 
-    let tabToShow: Sidebar.Tab = leadingSidebar.visibleTab!
-    let sidebarWidth = tabToShow.group.width(using: layout.spec.moreSidebarState)
+    let tabGroupToShow: Sidebar.TabGroup = leadingSidebar.visibleTabGroup!
+    let sidebarWidth = tabGroupToShow.width(using: layout.spec.moreSidebarState)
 
     let tabContainerView: NSView = setLeadingSidebarHorizontalConstraintsForPreOpen(leadingSidebar.placement,
                                                                                    sidebarWidth: sidebarWidth, ΔWindowWidth: ΔWindowWidth)
 
-    prepareRemainingLayoutForOpening(sidebar: leadingSidebar, sidebarView: leadingSidebarView,
-                                     tabContainerView: tabContainerView, tab: tabToShow, layout: layout)
+    log.verbose{"Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(leadingSidebar.locationID)"}
+    addTabGroupView(for: tabGroupToShow, to: tabContainerView)
   }
 
   /// Adds or updates the constraints:
@@ -639,14 +639,14 @@ extension PlayerWindowController {
       }
     }
 
-    let tabToShow: Sidebar.Tab = trailingSidebar.visibleTab!
-    let sidebarWidth = tabToShow.group.width(using: layout.spec.moreSidebarState)
+    let tabGroupToShow: Sidebar.TabGroup = trailingSidebar.visibleTabGroup!
+    let sidebarWidth = tabGroupToShow.width(using: layout.spec.moreSidebarState)
 
     let tabContainerView: NSView = setTrailingSidebarHorizontalConstraintsForPreOpen(trailingSidebar.placement,
                                                                                     sidebarWidth: sidebarWidth, ΔWindowWidth: ΔWindowWidth)
 
-    prepareRemainingLayoutForOpening(sidebar: trailingSidebar, sidebarView: trailingSidebarView,
-                                     tabContainerView: tabContainerView, tab: tabToShow, layout: layout)
+    log.verbose{"Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(trailingSidebar.locationID)"}
+    addTabGroupView(for: tabGroupToShow, to: tabContainerView)
   }
 
   /// Adds or updates the constraints:
@@ -752,13 +752,10 @@ extension PlayerWindowController {
 
   /// Prepares those layout components which are generic for either `Sidebar`.
   /// Executed prior to opening the given `Sidebar` with corresponding `sidebarView`
-  private func prepareRemainingLayoutForOpening(sidebar: Sidebar, sidebarView: NSView, tabContainerView: NSView,
-                                                tab: Sidebar.Tab, layout: LayoutState) {
-    log.verbose{"ChangeVisibility pre-animation, show \(sidebar.locationID), \(tab.name.quoted) tab"}
-
+  private func addTabGroupView(for tabGroup: Sidebar.TabGroup, to tabContainerView: NSView) {
     // Add tab group view
     let viewController: NSViewController
-    switch tab.group {
+    switch tabGroup {
     case .playlist:
       viewController = playlistView
     case .settings:
