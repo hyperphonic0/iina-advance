@@ -217,9 +217,6 @@ extension PlayerWindowController {
       }
     }
 
-    // CV.top
-    // ↓
-    // BottomBar.top
     let isAnimatingVideoViewOpen = transition.isOpeningViewport && !isFinalStage  // Music Mode: opening video
     if useBottomBar && (!outputGeo.isViewportShown || isAnimatingVideoViewOpen) {
       let constant1 = transition.bottomBarTopOffsetFromCVTop(for: stage)
@@ -326,7 +323,9 @@ extension PlayerWindowController {
     // - Sidebars
     switch stage {
     case .preTransitionSetup:
-      break
+      if transition.isWindowInitialLayout || transition.inputLayout.isMusicMode || transition.outputLayout.isMusicMode {
+        updateSidebarVerticalConstraints(tabHeight: transition.outputLayout.sidebarTabHeight, downshift: transition.outputLayout.sidebarDownshift)
+      }
 
     case .closeOldPanels:
       if let middleGeo = transition.middleGeometry, !transition.isWindowInitialLayout {
@@ -392,13 +391,12 @@ extension PlayerWindowController {
       // Opening sidebar from closed state
       prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
                               layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+      updateSidebarVerticalConstraints(tabHeight: transition.outputLayout.sidebarTabHeight, downshift: transition.outputLayout.sidebarDownshift)
     }
     if transition.isOpeningTrailingSidebar {
       // Opening sidebar from closed state
       prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
                               layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-    }
-    if transition.inputLayout.isMusicMode || transition.outputLayout.isMusicMode {
       updateSidebarVerticalConstraints(tabHeight: transition.outputLayout.sidebarTabHeight, downshift: transition.outputLayout.sidebarDownshift)
     }
   }
