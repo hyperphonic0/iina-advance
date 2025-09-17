@@ -1767,6 +1767,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
 
     let videoTF: GeometryTransform.VideoGeometryTF = { [self] inputVidGeo, ctx -> VideoGeometry? in
+      let outputVidGeo: VideoGeometry?
 
       if let cropController = cropSettingsView, let newVidGeo, let newCropFilter = newVidGeo.cropFilter {
         // If newVidGeo contains a crop, we must apply it
@@ -1778,7 +1779,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         // May need to re-enable mpv's keepaspect-window prematurely for a nicer animation
         ctx.player.setMpvKeepaspectWindow(to: PlayerWindowMode.windowedNormal.needsMpvKeepaspectWindow)
 
-        return ctx.syncVideoParamsFromMpv(startingWith: newVidGeo)
+        outputVidGeo = ctx.syncVideoParamsFromMpv(startingWith: newVidGeo)
       } else {
         // If no crop, remove any existing crop filter
         log.verbose{"Start exiting interactive mode: crop changing to none; removing crop filter"}
@@ -1786,8 +1787,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           // Still may need to bring UI up to date
           player.setQuickSettingsViewNeedsUpdate()
         }
-        return ctx.syncVideoParamsFromMpv(startingWith: inputVidGeo)
+        outputVidGeo = ctx.syncVideoParamsFromMpv(startingWith: inputVidGeo)
       }
+      // Zap videoSizeDisplayOverride because it will probably be wrong at this stage due to mpv race condition
+      return outputVidGeo?.clone(videoSizeDisplayOverride: nil)
     }
 
     let buildPWinTransformTasks: (GeometryTransform.ContextStage3) -> [IINAAnimation.Task] = { [self] ctx -> [IINAAnimation.Task] in
@@ -1831,13 +1834,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
             geoSet = buildGeoSet(windowed: newIMGeo, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
 
             // Animate the crop to highlight the piece being cut out.
-            // TODO: support this in full screen once again
+            // TODO: support animation in full screen once again
             let cropAnimationDuration = 0.0
             tasks.append(.init(duration: cropAnimationDuration) { [self] in
               log.verbose{"Start exiting interactive mode: animating crop using: \(croppedIMGeo)"}
               setFrameAndUpdateWindowSubviews(using: croppedIMGeo)
               // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
-              videoView.videoViewConstraints?.updateSpacerMin(to: croppedIMGeo.viewportMargins, .init(496))
+              videoView.videoViewConstraints?.updateSpacerMin(to: croppedIMGeo.viewportMargins, .init(1000))
 
               // Fade out cropBox selection rect
               cropController.cropBoxView.isHidden = true

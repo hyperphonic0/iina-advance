@@ -1228,7 +1228,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     log.debug("[geo] Cropping from cropRect \(cropRect) x videoScale (\(scaleRatio)), windowSize=\(windowFrame.size), → newVideoSize:\(cropRectScaledToWindow.size), newVideoAspect:\(croppedVideoAspect), newViewportMargins:\(newViewportMargins)")
     let outputScreenFit = screenFit.changeDesiredFit()
-    log.debug("[geo] Cropped to new cropLabel: \(newVidGeo.selectedCropLabel.quoted), screenID: \(screenID), screenFit: \(outputScreenFit)")
+    log.debug("[geo] Cropped PWinGeometry using: \(newVidGeo), screenID: \(screenID), screenFit: \(outputScreenFit)")
     return self.clone(screenFit: outputScreenFit, viewportMargins: newViewportMargins, video: newVidGeo,
                       isMiddleTransition: isMiddleTransition)
   }

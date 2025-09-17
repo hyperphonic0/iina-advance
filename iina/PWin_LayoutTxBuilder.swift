@@ -27,9 +27,6 @@ extension PlayerWindowController {
                              thenRun: Bool = false,
                              _ geoSet: GeometrySet? = nil) -> LayoutTransition {
 
-    // use latest window frame in case it exists and was moved
-    let inputGeoSet = geoSet ?? self.buildGeoSet(layoutMode: inputLayout.mode)
-
     var transitionID: Int = 0
     $layoutTransitionCounter.withLock {
       $0 += 1
@@ -37,14 +34,17 @@ extension PlayerWindowController {
     }
     let transitionName = "#\(transitionID) \(transitionName)"
 
-    // This also applies to full screen, because full screen always uses the same screen as windowed.
-    // Does not apply to music mode, which can be a different screen.
-    let windowedModeScreen = NSScreen.getScreenOrDefault(screenID: inputGeoSet.windowed.screenID)
-
     // Compile outputLayout
     let outputLayout = LayoutState.buildFrom(outputSpec)
 
-    // - Build GeometrySet
+    // - Geometries Setup
+
+    // use latest window frame in case it exists and was moved
+    let inputGeoSet = geoSet ?? self.buildGeoSet(layoutMode: inputLayout.mode)
+
+    // This also applies to full screen, because full screen always uses the same screen as windowed.
+    // Does not apply to music mode, which can be a different screen.
+    let windowedModeScreen = NSScreen.getScreenOrDefault(screenID: inputGeoSet.windowed.screenID)
 
     // InputGeometry
     let inputGeometry = inputGeoExplicit ?? buildInputGeometry(from: inputLayout, transitionName: transitionName,
@@ -68,6 +68,8 @@ extension PlayerWindowController {
     log.verbose("[\(transitionName)] INPUT\(inputGeoExplicit == nil ? "" : "(given)"):  \(inputGeometry)")
     log.verbose("[\(transitionName)] MIDDLE: \(transition.middleGeometry?.description ?? "nil")")
     log.verbose("[\(transitionName)] OUTPUT\(outputGeoExplicit == nil ? "" : "(given)"):  \(outputGeometry)")
+
+    // - Timings Setup
 
     let closeOldPanelsTiming: CAMediaTimingFunctionName
     let openFinalPanelsTiming: CAMediaTimingFunctionName
@@ -93,7 +95,7 @@ extension PlayerWindowController {
       openFinalPanelsTiming = .easeInEaseOut
     }
 
-    // - Determine durations
+    // - Durations Setup
 
     let startingAnimationDuration: CGFloat
     if transition.isWindowInitialLayout || !IINAAnimation.isAnimationEnabled {

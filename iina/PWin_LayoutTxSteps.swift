@@ -265,7 +265,6 @@ extension PlayerWindowController {
     }
 
     if transition.isExitingInteractiveMode, let cropController = self.cropSettingsView {
-      // Exiting interactive mode
       cropController.view.alphaValue = 0
       cropController.view.isHidden = true
       cropController.cropBoxView.isHidden = true

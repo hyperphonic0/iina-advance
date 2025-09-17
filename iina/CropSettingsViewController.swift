@@ -16,6 +16,7 @@ class CropSettingsViewController: CropBoxViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    self.view.idString = "CropSettingsView"
     // The target view will be destroyed & recreated each time interactive mode is entered
     updateSegmentLabels()
   }

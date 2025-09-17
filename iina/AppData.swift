@@ -354,7 +354,8 @@ struct Constants {
   struct InteractiveMode {
     // Need enough space to display all the buttons and field at the bottom:
     static let minWindowWidth: CGFloat = 510
-    static let outsideBottomBarHeight: CGFloat = 68
+    /// This is the height of `CropSettingsView`. Make sure it matches the XIB!
+    static let outsideBottomBarHeight: CGFloat = 72
     // Show title bar only in windowed mode
     static let outsideTopBarHeight = Constants.Distance.standardTitleBarHeight
 

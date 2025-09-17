@@ -95,7 +95,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
 
   // MARK: - Substitution convenience functions
 
-  /// Any fields omitted here will use values from self - except for `videoSizeDisplay`, which is required, even if `nil`,
+  /// Any fields omitted here will use values from self - except for `videoSizeDisplayOverride`, which is required, even if `nil`,
   /// to prevent ambiguity.
   func clone(rawWidth: Int? = nil, rawHeight: Int? = nil,
              decodedAspectLabel: String? = nil,
