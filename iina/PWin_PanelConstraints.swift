@@ -324,8 +324,32 @@ extension PlayerWindowController {
     }
 
     // - Sidebars
+    switch stage {
+    case .preTransitionSetup:
+      break
 
-    if stage == .midTransitionHiddenUpdates || (transition.isWindowInitialLayout && stage == .openNewPanels) {
+    case .closeOldPanels:
+      if let middleGeo = transition.middleGeometry, !transition.isWindowInitialLayout {
+        if useLeadingSidebar || useTrailingSidebar {
+          // Sidebars (if closing)
+          let ΔWindowWidth = middleGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
+          animateShowOrHideSidebars(transition: transition, layout: layout,
+                                    setLeadingTo: transition.isClosingLeadingSidebar ? .closed : nil,
+                                    setTrailingTo: transition.isClosingTrailingSidebar ? .closed : nil,
+                                    ΔWindowWidth: ΔWindowWidth)
+
+        }
+
+        if useLeadingSidebar || useTrailingSidebar, !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {
+          // Update sidebar vertical alignments to match top bar:
+          let downshift = min(transition.inputLayout.sidebarDownshift, transition.outputLayout.sidebarDownshift)
+          let tabHeight = min(transition.inputLayout.sidebarTabHeight, transition.outputLayout.sidebarTabHeight)
+          log.verbose{"\(logPre) Updating sidebars: downshift=\(downshift) tabHeight=\(tabHeight)"}
+          updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
+        }
+      }
+
+    case .midTransitionHiddenUpdates:
       if transition.isOpeningLeadingSidebar {
         // Opening sidebar from closed state
         prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
@@ -336,27 +360,9 @@ extension PlayerWindowController {
         prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
                                 layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
       }
-    }
+      updateSidebarVerticalConstraints(tabHeight: transition.outputLayout.sidebarTabHeight, downshift: transition.outputLayout.sidebarDownshift)
 
-    if stage == .closeOldPanels, let middleGeo = transition.middleGeometry, !transition.isWindowInitialLayout {
-      if useLeadingSidebar || useTrailingSidebar {
-        // Sidebars (if closing)
-        let ΔWindowWidth = middleGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
-        animateShowOrHideSidebars(transition: transition, layout: layout,
-                                  setLeadingTo: transition.isClosingLeadingSidebar ? .closed : nil,
-                                  setTrailingTo: transition.isClosingTrailingSidebar ? .closed : nil,
-                                  ΔWindowWidth: ΔWindowWidth)
-
-      }
-
-      if useLeadingSidebar || useTrailingSidebar, !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {
-        // Update sidebar vertical alignments to match top bar:
-        let downshift = min(transition.inputLayout.sidebarDownshift, transition.outputLayout.sidebarDownshift)
-        let tabHeight = min(transition.inputLayout.sidebarTabHeight, transition.outputLayout.sidebarTabHeight)
-        log.verbose{"\(logPre) Updating sidebars: downshift=\(downshift) tabHeight=\(tabHeight)"}
-        updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
-      }
-    } else if stage == .openNewPanels {
+    case .openNewPanels:
       if useLeadingSidebar || useTrailingSidebar {
         // Sidebars (if opening)
         let ΔWindowWidth = transition.ΔWindowWidth
@@ -372,6 +378,9 @@ extension PlayerWindowController {
         log.verbose{"\(logPre) Updating sidebars: downshift=\(layout.sidebarDownshift) tabHeight=\(layout.sidebarTabHeight)"}
         updateSidebarVerticalConstraints(tabHeight: layout.sidebarTabHeight, downshift: layout.sidebarDownshift)
       }
+      
+    case .postTransition:
+      break
     }
 
     sortContentViewSubviews(for: layout)

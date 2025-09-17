@@ -59,8 +59,8 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     // tabHeight is not used by this class. It uses its own fixed tab height
     if self.downshift != downshift {
       self.downshift = downshift
-      updateVerticalConstraints()
     }
+    updateVerticalConstraints()
   }
 
   private func updateVerticalConstraints() {
