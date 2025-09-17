@@ -324,6 +324,59 @@ extension PlayerWindowController {
       }
     }
 
+    // - Sidebars
+
+    if stage == .midTransitionHiddenUpdates || (transition.isWindowInitialLayout && stage == .openNewPanels) {
+      if transition.isOpeningLeadingSidebar {
+        // Opening sidebar from closed state
+        prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
+                                layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+      }
+      if transition.isOpeningTrailingSidebar {
+        // Opening sidebar from closed state
+        prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
+                                layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+      }
+    }
+
+    if stage == .closeOldPanels, let middleGeo = transition.middleGeometry, !transition.isWindowInitialLayout {
+      if useLeadingSidebar || useTrailingSidebar {
+        // Sidebars (if closing)
+        let ΔWindowWidth = middleGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
+        animateShowOrHideSidebars(transition: transition, layout: layout,
+                                  setLeadingTo: transition.isClosingLeadingSidebar ? .closed : nil,
+                                  setTrailingTo: transition.isClosingTrailingSidebar ? .closed : nil,
+                                  ΔWindowWidth: ΔWindowWidth)
+
+      }
+
+      if useLeadingSidebar || useTrailingSidebar, !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {
+        // Update sidebar vertical alignments to match top bar:
+        let downshift = min(transition.inputLayout.sidebarDownshift, transition.outputLayout.sidebarDownshift)
+        let tabHeight = min(transition.inputLayout.sidebarTabHeight, transition.outputLayout.sidebarTabHeight)
+        log.verbose{"\(logPre) Updating sidebars: downshift=\(downshift) tabHeight=\(tabHeight)"}
+        updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
+      }
+    } else if stage == .openNewPanels {
+      if useLeadingSidebar || useTrailingSidebar {
+        // Sidebars (if opening)
+        let leadingSidebar = layout.leadingSidebar
+        let trailingSidebar = layout.trailingSidebar
+        let ΔWindowWidth = transition.ΔWindowWidth
+        animateShowOrHideSidebars(transition: transition,
+                                  layout: transition.outputLayout,
+                                  setLeadingTo: transition.isOpeningLeadingSidebar ? leadingSidebar.visibility : nil,
+                                  setTrailingTo: transition.isOpeningTrailingSidebar ? trailingSidebar.visibility : nil,
+                                  ΔWindowWidth: ΔWindowWidth)
+      }
+
+      if useLeadingSidebar || useTrailingSidebar || outputGeo.isMusicModePlaylistShown {
+        // Update sidebar downshift & tab heights
+        log.verbose{"\(logPre) Updating sidebars: downshift=\(layout.sidebarDownshift) tabHeight=\(layout.sidebarTabHeight)"}
+        updateSidebarVerticalConstraints(tabHeight: layout.sidebarTabHeight, downshift: layout.sidebarDownshift)
+      }
+    }
+
     sortContentViewSubviews(for: layout)
   }
 

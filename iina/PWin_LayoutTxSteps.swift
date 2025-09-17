@@ -399,24 +399,9 @@ extension PlayerWindowController {
         videoView.apply(middleGeo)
       }
 
-      if !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {  // don't do this too soon when exiting these modes
-        // Update sidebar vertical alignments to match top bar:
-        let downshift = min(transition.inputLayout.sidebarDownshift, outputLayout.sidebarDownshift)
-        let tabHeight = min(transition.inputLayout.sidebarTabHeight, outputLayout.sidebarTabHeight)
-        log.verbose{"\(logPre) Updating sidebars: downshift=\(downshift) tabHeight=\(tabHeight)"}
-        updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
-      }
-
       if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
         controlBarFloating.moveToLocationRatio(layout: transition.outputLayout, viewportSize: middleGeo.viewportSize)
       }
-
-      // Sidebars (if closing)
-      let ΔWindowWidth = middleGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
-      animateShowOrHideSidebars(transition: transition, layout: transition.inputLayout,
-                                setLeadingTo: transition.isClosingLeadingSidebar ? .closed : nil,
-                                setTrailingTo: transition.isClosingTrailingSidebar ? .closed : nil,
-                                ΔWindowWidth: ΔWindowWidth)
 
       // Do not do this when first opening the window though, because it will cause the window location restore to be incorrect.
       // Also do not apply when toggling fullscreen because it is not relevant at this stage and will look glitchy because the
@@ -506,7 +491,7 @@ extension PlayerWindowController {
 
     if transition.outputGeometry.isViewportShown {
       // This adds videoView, viewportView & spacers if not already added
-      addVideoToWindowIfNeeded()
+      addViewportAndSubviewsToWindowIfNeeded()
     }
 
     // Remove aspect constraint between animations (for some mode changes):
@@ -610,33 +595,17 @@ extension PlayerWindowController {
     }
 
     // - Leading Sidebar
-    if !transition.isWindowInitialLayout && transition.isOpeningLeadingSidebar {
-      // Opening sidebar from closed state
-      prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
-                              layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-    } else if let tabToShow = transition.outputLayout.leadingSidebar.visibleTab,
-              transition.isWindowInitialLayout || tabToShow != transition.inputLayout.leadingSidebar.visibleTab,
-              transition.inputLayout.leadingSidebar.visibleTabGroup == transition.outputLayout.leadingSidebar.visibleTabGroup {
-      // Tab group is already showing, but just need to switch tab
-      switchToTabInTabGroup(tab: tabToShow)
+    if let visibleTab = transition.outputLayout.leadingSidebar.visibleTab {
+      switchToTabInTabGroup(tab: visibleTab)
     }
 
     // - Trailing Sidebar
-    if !transition.isWindowInitialLayout && transition.isOpeningTrailingSidebar {
-      // Opening sidebar from closed state
-      prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
-                              layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-    } else if let tabToShow = transition.outputLayout.trailingSidebar.visibleTab,
-              transition.isWindowInitialLayout || tabToShow != transition.inputLayout.trailingSidebar.visibleTab,
-              transition.inputLayout.trailingSidebar.visibleTabGroup == transition.outputLayout.trailingSidebar.visibleTabGroup {
-      // Tab group is already showing, but just need to switch tab
-      switchToTabInTabGroup(tab: tabToShow)
+    if let visibleTab = transition.outputLayout.trailingSidebar.visibleTab {
+      switchToTabInTabGroup(tab: visibleTab)
     }
 
     // Update bottom bar constraints *after* sidebars are added
-    let isOpeningOrClosingAnySidebar = transition.isOpeningOrClosingAnySidebar
-
-    if isOpeningOrClosingAnySidebar {
+    if transition.isOpeningAnySidebar {
       log.verbose{"\(logPre) Sidebars will be open: LeadingSidebar=\(outputLayout.leadingSidebar.isVisible.yn) TrailingSidebar=\(outputLayout.trailingSidebar.isVisible.yn)"}
 
       if outputLayout.leadingSidebar.isVisible {
@@ -1061,23 +1030,6 @@ extension PlayerWindowController {
     }
 
     rebuildPanelConstraints(transition, stage: .openNewPanels)
-
-    if transition.inputGeometry.isMusicModePlaylistShown || transition.outputGeometry.isMusicModePlaylistShown
-        || transition.inputLayout.isAnySidebarVisible || transition.outputLayout.isAnySidebarVisible {
-      // Sidebars (if opening)
-      let leadingSidebar = transition.outputLayout.leadingSidebar
-      let trailingSidebar = transition.outputLayout.trailingSidebar
-      let ΔWindowWidth = transition.ΔWindowWidth
-      animateShowOrHideSidebars(transition: transition,
-                                layout: transition.outputLayout,
-                                setLeadingTo: transition.isOpeningLeadingSidebar ? leadingSidebar.visibility : nil,
-                                setTrailingTo: transition.isOpeningTrailingSidebar ? trailingSidebar.visibility : nil,
-                                ΔWindowWidth: ΔWindowWidth)
-
-      // Update sidebar downshift & tab heights
-      log.verbose{"\(logPre) Updating sidebars: downshift=\(outputLayout.sidebarDownshift) tabHeight=\(outputLayout.sidebarTabHeight)"}
-      updateSidebarVerticalConstraints(tabHeight: outputLayout.sidebarTabHeight, downshift: outputLayout.sidebarDownshift)
-    }
 
     if outputLayout.hasFloatingOSC {
       // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs

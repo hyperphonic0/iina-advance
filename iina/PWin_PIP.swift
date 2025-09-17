@@ -276,7 +276,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
       let currentGeo = currentLayout.mode == .musicMode ? musicModeGeo : windowedModeGeo
       if currentGeo.isViewportShown {
-        addVideoToWindowIfNeeded()
+        addViewportAndSubviewsToWindowIfNeeded()
         videoView.apply(currentGeo)
       }
 

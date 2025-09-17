@@ -756,6 +756,7 @@ extension PlayerWindowController {
                                                 tab: Sidebar.Tab, layout: LayoutState) {
     log.verbose{"ChangeVisibility pre-animation, show \(sidebar.locationID), \(tab.name.quoted) tab"}
 
+    // Add tab group view
     let viewController: NSViewController
     switch tab.group {
     case .playlist:
@@ -766,23 +767,13 @@ extension PlayerWindowController {
       viewController = pluginView
     }
     let tabGroupView = viewController.view
-
     tabContainerView.addSubviewAndConstraints(tabGroupView, top: 0, bottom: 0, leading: 0, trailing: 0)
-
-    sidebarView.isHidden = false
-
-    // Update blending mode instantaneously. It doesn't animate well
-    updateSidebarBlendingMode(sidebar.locationID, layout: layout)
-
-    // Make it the active tab in its parent tab group:
-    switchToTabInTabGroup(tab: tab)
-
-    sidebarView.needsUpdateConstraints = true
   }
 
   // MARK: - Changing tabs
 
   /// Assuming the correct sidebar is already showing, & it is showing the correct tab group, switches to the given tab in the same tab group.
+  /// Does nothing if the given tab group is already showing the requested tab.
   func switchToTabInTabGroup(tab: Sidebar.Tab) {
     assert((getConfiguredSidebar(forTabGroup: tab.group)!.visibleTabGroup == tab.group),
            "switchToTabInTabGroup: expected TabGroup \(tab.group) to be visible")
@@ -790,9 +781,17 @@ extension PlayerWindowController {
     // Make it the active tab in its parent tab group (can do this whether or not it's shown):
     switch tab.group {
     case .playlist:
+      guard playlistView.currentTab != tab else {
+        log.verbose("Already showing tab \(tab.name.quoted) in playlistView; no need to change")
+        return
+      }
       log.verbose("Switching to tab \(tab.name.quoted) in playlistView")
       playlistView.pleaseSwitchToTab(tab)
     case .settings:
+      guard quickSettingView.currentTab != tab else {
+        log.verbose("Already showing tab \(tab.name.quoted) in quickSettingView; no need to change")
+        return
+      }
       log.verbose("Switching to tab \(tab.name.quoted) in quickSettingView")
       quickSettingView.pleaseSwitchToTab(tab)
     case .plugins:
@@ -805,7 +804,12 @@ extension PlayerWindowController {
         log.error("Cannot switch to tab \(tab.name.quoted): bad plugin tab object!")
         return
       }
-      
+
+      guard pluginView.currentPluginID != pluginID else {
+        log.verbose("Already showing plugin tab \(pluginID.quoted) in pluginView; no need to change")
+        return
+      }
+
       log.verbose{"Switching to tab \(pluginID.quoted) in pluginView"}
       pluginView.pleaseSwitchToTab(pluginID)
     }

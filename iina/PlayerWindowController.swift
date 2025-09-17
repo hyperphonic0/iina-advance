@@ -653,9 +653,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  /// When entering "windowed" mode (either from initial load, PIP, or music mode), call this to add/return `videoView`
-  /// to this window. Will do nothing if it's already there.
-  func addVideoToWindowIfNeeded() {
+  /// When entering "windowed" mode (either from initial load, PIP, or music mode), call this to add/return `viewportView`
+  /// to this window, and add `videoView` and spacers to that. Will do nothing if all views are already in place.
+  func addViewportAndSubviewsToWindowIfNeeded() {
     guard let window else { return }
     assert(loaded, "Must not be called if not done loading the window!")
 
@@ -663,7 +663,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       log.debug{"Aborting add of videoView to window: PiP status=\(pip.status)"}
       return
     }
-    var didAddSubview = false
+    var didAddSubviewToViewport = false
     do {
       let hasOpenGL = videoView.lockAndSetOpenGLContext()
       defer {
@@ -673,6 +673,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
       videoView.$isUninited.withLock() { isUninited in
         if !window.contentView!.containsSubview(viewportView) {
+          log.verbose{"Adding viewportView to window"}
           window.contentView!.addSubview(viewportView)
         }
         if !viewportView.subviews.contains(videoView) {
@@ -682,18 +683,18 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           videoView.layer?.autoresizingMask = []
           /// Add constraints. These get removed each time `videoView` changes superviews.
           videoView.translatesAutoresizingMaskIntoConstraints = false
-          didAddSubview = true
+          didAddSubviewToViewport = true
         }
 
         let didAddSpacers = viewportView.addSpacers()
-        didAddSubview = didAddSubview || didAddSpacers
+        didAddSubviewToViewport = didAddSubviewToViewport || didAddSpacers
 
-        if didAddSubview {
+        if didAddSubviewToViewport {
           sortViewportViewSubviews()
         }
       }
     }
-    if didAddSubview {
+    if didAddSubviewToViewport {
       // Screen may have changed. Refresh. Do not keep the OpenGL lock because it is locked in here
       videoView.refreshAllVideoDisplayState()
     }

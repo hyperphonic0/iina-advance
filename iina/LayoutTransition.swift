@@ -240,9 +240,13 @@ extension PlayerWindowController {
       return isClosing(.trailingSidebar)
     }()
 
-    lazy var isOpeningOrClosingAnySidebar: Bool = {
-      return isOpeningLeadingSidebar || isOpeningTrailingSidebar || isClosingLeadingSidebar || isClosingTrailingSidebar
-    }()
+    var isOpeningAnySidebar: Bool {
+      isOpeningLeadingSidebar || isOpeningTrailingSidebar
+    }
+
+    var isOpeningOrClosingAnySidebar: Bool {
+      isOpeningLeadingSidebar || isOpeningTrailingSidebar || isClosingLeadingSidebar || isClosingTrailingSidebar
+    }
 
     /// Is opening given sidebar?
     func isOpening(_ sidebarID: Preference.SidebarLocation) -> Bool {
