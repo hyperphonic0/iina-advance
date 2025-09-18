@@ -1,24 +1,12 @@
 {
-  "images" : [
-    {
-      "filename" : "plugin.pdf",
-      "idiom" : "universal"
-    }
-  ],
   "info" : {
     "author" : "xcode",
     "version" : 1
   },
-<<<<<<<< HEAD:iina/Assets.xcassets/Icons/sidebar.leading.symbolset/Contents.json
   "symbols" : [
     {
       "filename" : "sidebar.leading.svg",
       "idiom" : "universal"
     }
   ]
-========
-  "properties" : {
-    "template-rendering-intent" : "template"
-  }
->>>>>>>> 4b4ae3152a771587b5a75142cf2e1b33c34a87b5:iina/Assets.xcassets/Icons/plugin.imageset/Contents.json
 }

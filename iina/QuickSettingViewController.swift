@@ -192,9 +192,14 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   @IBOutlet weak var subtitleSwitch: NSSwitch!
   @IBOutlet weak var secondarySubtitleSwitch: NSSwitch!
   
-  private lazy var eqSliders: [NSSlider] = [
+  private lazy var audioEQSliders: [NSSlider] = [
     audioEqSlider1, audioEqSlider2, audioEqSlider3, audioEqSlider4, audioEqSlider5,
-    audioEqSlider6, audioEqSlider7, audioEqSlider8, audioEqSlider9, audioEqSlider10]
+    audioEqSlider6, audioEqSlider7, audioEqSlider8, audioEqSlider9, audioEqSlider10
+  ]
+
+  private lazy var videoEQSliders: [NSSlider] = [
+    brightnessSlider, contrastSlider, saturationSlider, gammaSlider, hueSlider
+  ]
 
   private var lastUsedProfileName: String = ""
   private var inputString: String = ""
@@ -268,6 +273,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     if #available(macOS 26, *) {
       subtitleSwitch.controlSize = .small
       secondarySubtitleSwitch.controlSize = .small
+
+      speedSlider.neutralValue = 8
+      (audioEQSliders + videoEQSliders + [audioDelaySlider, subDelaySlider, subScaleSlider]).forEach {
+        $0.neutralValue = 0
+      }
+
+      subPosSlider.tintProminence = .none
     }
     */
 
@@ -983,12 +995,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     block(videoTableView, .video)
   }
 
-  private func withAllAudioEqSliders(_ block: (NSSlider) -> Void) {
-    eqSliders.forEach {
-      block($0)
-    }
-  }
-
   // MARK: - Actions
 
   // MARK: Tab buttons
@@ -1237,14 +1243,14 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   private func applyEQ(_ profile: EQProfile) {
-    zip(eqSliders, profile.gains).forEach { (slider, gain) in
+    zip(audioEQSliders, profile.gains).forEach { (slider, gain) in
       slider.doubleValue = gain
     }
     player.setAudioEq(fromGains: profile.gains)
   }
 
   private func findProfileFromSliders() -> (String, EQProfile)? {
-    player.log.trace{"EQ Sliders: \(eqSliders.map{String($0.doubleValue.truncatedTo1())}.joined(separator: " "))"}
+    player.log.trace{"EQ Sliders: \(audioEQSliders.map{String($0.doubleValue.truncatedTo1())}.joined(separator: " "))"}
     for presetProfile in presetEQs {
       if matchesSliders(presetProfile.name, presetProfile) {
         return (presetProfile.name, presetProfile)
@@ -1261,7 +1267,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   private func matchesSliders(_ profileName: String, _ profile: EQProfile) -> Bool {
-    for (slider, gain) in zip(eqSliders, profile.gains) {
+    for (slider, gain) in zip(audioEQSliders, profile.gains) {
       player.log.trace{"Matching EQ profile \(profileName.quoted): \(gain.roundedTo2()) v \(slider.doubleValue.roundedTo2())"}
       if slider.doubleValue.roundedTo2() != gain.roundedTo2() {
         return false
@@ -1276,17 +1282,17 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   @IBAction func audioEqSliderAction(_ sender: NSSlider) {
-    player.setAudioEq(fromGains: eqSliders.map { $0.doubleValue })
+    player.setAudioEq(fromGains: audioEQSliders.map { $0.doubleValue })
     updateAudioEqState()
   }
 
   private func refreshAudioEqResetButton() {
     var isAllDefault = true
-    withAllAudioEqSliders({ audioEqSlider in
+    for audioEqSlider in audioEQSliders {
       if audioEqSlider.doubleValue != 0.0 {
         isAllDefault = false
       }
-    })
+    }
     audioEQResetBtn.isHidden = isAllDefault
   }
 
@@ -1480,11 +1486,11 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
 extension QuickSettingViewController {
 
-  func updateAudioEqState() {
+  private func updateAudioEqState() {
     // EQ filter (if there is one) -> sliders
     if let filter = player.info.audioEqFilter {
       if let arrayOfParamDictDicts = filter.lavfiParse() {
-        for (paramDictDict, slider) in zip(arrayOfParamDictDicts, eqSliders) {
+        for (paramDictDict, slider) in zip(arrayOfParamDictDicts, audioEQSliders) {
           if let paramDict = paramDictDict["equalizer"], let gain = paramDict["g"] {
             slider.doubleValue = Double(gain) ?? 0
           } else {
@@ -1495,8 +1501,9 @@ extension QuickSettingViewController {
         player.log.error("Failed to parse audio EQ filter: \(filter.stringFormat.quoted)")
       }
     } else {  // No filter
-      eqSliders.forEach { $0.doubleValue = 0 }
+      audioEQSliders.forEach { $0.doubleValue = 0 }
     }
+    eqPopUpButton.selectItem(withTag: eqCustomMenuItemTag)
     refreshAudioEqResetButton()
 
     // Update menu
@@ -1589,7 +1596,7 @@ extension QuickSettingViewController {
     switch tag {
     case eqSaveMenuItemTag:
       if let inputString = promptAudioEQProfileName(isNewProfile: true) {
-        let newProfile = EQProfile(fromCurrentSliders: eqSliders)
+        let newProfile = EQProfile(fromCurrentSliders: audioEQSliders)
         userEQs[inputString] = newProfile
       }
     case eqRenameMenuItemTag:
