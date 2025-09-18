@@ -121,7 +121,7 @@ struct PlaybackID: Equatable, Hashable {
 
   var isFile: Bool { url.isFileURL }
 
-  var isNetworkResource: Bool { !isFile }
+  var isNetworkResource: Bool { !isFile || url.pathExtension.starts(with: "m3u") }
 
   var displayName: String { PlaybackID.displayName(from: url) }
 
