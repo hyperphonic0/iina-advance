@@ -128,30 +128,17 @@ class StartupHandler {
       isOpeningNewWindowsForOpenedFiles = true
     }
 
-    let uniqueURLs = urls.filter{ url in
-      // skip if url is already open in some player
-      let activePlayerCores = PlayerManager.shared.playerCores.filter { !$0.isIdleOrUnused }
-      let relevantActivePlayerCore = activePlayerCores.first { $0.info.currentURL == url }
-
-      if let relevantActivePlayerCore {
-        Logger.log.debug{"Requested URL is already playing in open window; will show it instead: \(url.path.pii.quoted)"}
-        relevantActivePlayerCore.pwc.showWindow(nil)
-        return false
-      }
-      return true
-    }
-
-    Logger.log.debug{"Opening URLs: count=\(uniqueURLs.count) cli=\((cli != nil).yn) multipleWindows=\(openingMultipleWindows.yn)"}
+    Logger.log.debug{"Opening URLs: count=\(urls.count) cli=\((cli != nil).yn) multipleWindows=\(openingMultipleWindows.yn)"}
     var totalFilesOpened = 0
 
     var lastPlayer: PlayerCore? = nil
     var wcsForOpenFiles: [PlayerWindowController] = []
     if openingMultipleWindows {
-      if uniqueURLs.count > 10 {
+      if urls.count > 10 {
         // TODO: put up a confirmation prompt
-        Logger.log.warn{"User requested to open a large number of windows (count: \(uniqueURLs.count))"}
+        Logger.log.warn{"User requested to open a large number of windows (count: \(urls.count))"}
       }
-      for url in uniqueURLs {
+      for url in urls {
         // open one window per file
         let player = PlayerManager.shared.getIdleOrCreateNew()
         if let cli {
@@ -171,7 +158,7 @@ class StartupHandler {
       if let cli {
         cli.applyCommandLineArgs(to: player)
       }
-      let playerFilesOpened = player.openURLs(uniqueURLs)
+      let playerFilesOpened = player.openURLs(urls)
       if playerFilesOpened > 0 {
         wcsForOpenFiles.append(player.pwc)
         totalFilesOpened += playerFilesOpened
