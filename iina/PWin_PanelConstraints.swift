@@ -83,7 +83,7 @@ extension PlayerWindowController {
     let topBarBtmOffsetFromVPTop = OptionalConstraint("TopBar.btm-offset-from-VP.top")
     let vpTopOffsetFromTopBarTop = OptionalConstraint("VP.top-offset-from-TopBar.top")
     let vpTopOffsetFromCVTop = OptionalConstraint("VP.top-offset-from-CV.top")
-    let vpBtmOffsetFromCVTop = OptionalConstraint("VP.btm_offset-from-CV.top")
+    let vpBtmOffsetFromCVTop = OptionalConstraint("VP.btm-offset-from-CV.top")
 
     // - Bottom bar constraints
     let cvBtmOffsetFromVPBtm = OptionalConstraint("CV.btm-offset-from-VP.btm")
@@ -184,11 +184,11 @@ extension PlayerWindowController {
 
         // These constraints don't change as long as topBarView is attached
         let topBarLeadingSpaceConstraint = topBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
-        topBarLeadingSpaceConstraint.identifier = "TopBar-LeadingSpace_Con"
+        topBarLeadingSpaceConstraint.identifier = "TopBar.leading-offset-from-CV.leading"
         topBarLeadingSpaceConstraint.isActive = true
 
         let topBarTrailingSpaceConstraint = topBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
-        topBarTrailingSpaceConstraint.identifier = "TopBar-TrailingSpace_Con"
+        topBarTrailingSpaceConstraint.identifier = "TopBar.trailing-offset-from-CV.trailing"
         topBarTrailingSpaceConstraint.isActive = true
       }
     } else {

@@ -527,6 +527,8 @@ extension Notification.Name {
   /// Must handle via DistributedNotificationCenter.
   static let appleColorPreferencesChangedNotification = Notification.Name("AppleColorPreferencesChangedNotification")
 
+  /// Used by an instance of IINA to request all other instances which hear it to close.
+  static let iinaKillRequest = Notification.Name("IINA-KillRequest")
   static let iinaPlayerWindowChanged = Notification.Name("IINAPlayerWindowChanged")
   static let iinaPlaylistChanged = Notification.Name("IINAPlaylistChanged")
   static let iinaTracklistChanged = Notification.Name("IINATracklistChanged")

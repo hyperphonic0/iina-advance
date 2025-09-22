@@ -175,7 +175,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     case UIState.shared.currentLaunchName:
       guard let newLaunchLifecycleState = change[.newKey] as? Int else { return }
       guard !isTerminating else { return }
-      guard newLaunchLifecycleState != UIState.LaunchLifecycleState.none.rawValue else { return }
+      guard newLaunchLifecycleState != UIState.LaunchLifecycleState.missingOrInvalid.rawValue else { return }
 
       if UIState.shared.isSaveEnabled {
         Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)). Probably a younger instance of IINA has started and is attempting to restore")
@@ -253,6 +253,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     ncDefaultObservers.append(.init(NSWindow.didEndSheetNotification, windowDidEndSheet))
     ncDefaultObservers.append(.init(NSWindow.didMiniaturizeNotification, windowDidMiniaturize))
     ncDefaultObservers.append(.init(NSWindow.didDeminiaturizeNotification, windowDidDeminiaturize))
+
+    ncDefaultObservers.append(.init(.iinaKillRequest, appDidReceiveKillRequest))
 
 #if DEBUG
     if DebugConfig.logAllScreenChangeEvents {
@@ -823,11 +825,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     guard Preference.bool(for: .killNonInteractiveLaunchesAtReopen) else { return false }
 
-    Logger.log.debug("HandleReopen: this is a non-interactive launch! Will terminate this instance.")
-    RunLoop.main.perform(inModes: [.common]) {
-      guard !AppDelegate.shared.isTerminating else { return }
-      NSApp.terminate(nil)
-    }
+    Logger.log.debug("HandleReopen: this is a non-interactive launch! Sending iinaKillRequest notification to all running instances")
+    NotificationCenter.default.post(name: .iinaKillRequest, object: nil)
 
     return true
   }
@@ -850,6 +849,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       showHistoryWindow(self)
     case .none:
       break
+    }
+  }
+
+  private func appDidReceiveKillRequest(_  notfication: Notification) {
+    guard Preference.bool(for: .killNonInteractiveLaunchesAtReopen) else {
+      Logger.log.debug("Got iinaKillRequest but killNonInteractiveLaunchesAtReopen is disabled; ignoring")
+      return
+    }
+    Logger.log.debug("Got iinaKillRequest notification! Terminating this instance.")
+    RunLoop.main.perform(inModes: [.common]) {
+      guard !AppDelegate.shared.isTerminating else { return }
+      NSApp.terminate(nil)
     }
   }
 

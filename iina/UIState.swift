@@ -19,7 +19,7 @@ class UIState {
   static let shared = UIState()
 
   enum LaunchLifecycleState: Int {
-    case none = 0
+    case missingOrInvalid = 0
     case stillRunning = 1
     case indeterminate1 = 2
     case indeterminate2 = 3
@@ -28,7 +28,7 @@ class UIState {
     case indeterminate5 = 6
     case indeterminate6 = 7
     case indeterminate7 = 8
-    case indeterminate8 = 9
+    case killed = 9
     case done = 10
   }
 
@@ -36,7 +36,7 @@ class UIState {
     /// launch ID
     let id: Int
     /// `none` == pref entry missing
-    var lifecycleState: LaunchLifecycleState = .none
+    var lifecycleState: LaunchLifecycleState = .missingOrInvalid
     /// Will be `nil` if the pref entry is missing
     var savedWindows: [SavedWindow]? = nil
     // each entry in the set is a pref key
@@ -47,7 +47,11 @@ class UIState {
     }
 
     var hasAnyData: Bool {
-      return lifecycleState != .none || !(savedWindows?.isEmpty ?? true) || !playerKeys.isEmpty
+      lifecycleState != .missingOrInvalid || !(savedWindows?.isEmpty ?? true) || !playerKeys.isEmpty
+    }
+
+    var isRunningOrIndeterminate: Bool {
+      lifecycleState.rawValue < LaunchLifecycleState.killed.rawValue
     }
 
     var windowCount: Int {
@@ -76,8 +80,8 @@ class UIState {
 
     var lifecycleStateDescription: String {
       switch lifecycleState {
-      case .none:
-        return "none"
+      case .missingOrInvalid:
+        return "missingOrInvalid"
       case .done:
         return "done"
       default:
@@ -462,21 +466,19 @@ class UIState {
   private func launchStatus(fromAny value: Any, launchName: String) -> LaunchLifecycleState {
     guard let lifecycleStateInt = value as? Int else {
       log.error("Failed to parse lifecycleState int from pref entry! (entry: \(launchName.quoted), value: \(value))")
-      return .none
+      return .missingOrInvalid
     }
     let lifecycleState = LaunchLifecycleState(rawValue: lifecycleStateInt)
     guard let lifecycleState else {
       log.error("Status int from pref entry is invalid! (entry: \(launchName.quoted), value: \(value))")
-      return .none
+      return .missingOrInvalid
     }
     return lifecycleState
   }
 
-  private func buildLaunchDict(cleanUpAlongTheWay isCleanUpEnabled: Bool = false) -> [Int: LaunchState] {
-    var countOfLaunchesToWaitOn = 0
+  private func buildLaunchDict(migrateLegacyPrefEntries: Bool = false) -> [Int: LaunchState] {
     var launchDict: [Int: LaunchState] = [:]
 
-    let thisLaunchID = UIState.shared.currentLaunchID
     // It is easier & less bug-prone to just to iterate over all entries in the plist than to try to guess key names
     for (key, value) in UserDefaults.standard.dictionaryRepresentation() {
       if let launchID = launchID(fromLaunchName: key) {
@@ -485,17 +487,6 @@ class UIState {
 
         launch.lifecycleState = launchStatus(fromAny: value, launchName: key)
         launchDict[launchID] = launch
-
-        if isCleanUpEnabled, launch.lifecycleState != LaunchLifecycleState.done, launchID != thisLaunchID {
-          /// Launch was not marked `done`?
-          /// Maybe it is done but did not exit cleanly. Send ping to see if it is still alive
-          var newValue = LaunchLifecycleState.indeterminate1
-          if launch.lifecycleState.rawValue < LaunchLifecycleState.done.rawValue - 1 {
-            newValue = LaunchLifecycleState(rawValue: launch.lifecycleState.rawValue + 1) ?? LaunchLifecycleState.indeterminate2
-          }
-          UserDefaults.standard.setValue(newValue.rawValue, forKey: key)
-          countOfLaunchesToWaitOn += 1
-        }
 
       } else if let launchID = launchID(fromPlayerWindowKey: key) {
         // Entry is type: PlayerWindow
@@ -514,8 +505,8 @@ class UIState {
         }
         launchDict[launchID] = launch
 
-        if isCleanUpEnabled {
-          // Now migrate legacy key
+        if migrateLegacyPrefEntries {
+          // Cleanup: migrate legacy key to modern key
           let newKey = makeOpenWindowListKey(forLaunchID: launch.id)
           UserDefaults.standard.setValue(value, forKey: newKey)
           log.warn("Copied legacy pref entry: \(key.quoted) → \(newKey)")
@@ -534,33 +525,22 @@ class UIState {
       }
     }
 
-    if countOfLaunchesToWaitOn > 0 {
-      let iffyKeys = launchDict.filter{ $0.value.id != currentLaunchID &&
-        $0.value.lifecycleState != UIState.LaunchLifecycleState.done}.keys.map{$0}
-      log.verbose("Looks like these launches may still be running: \(iffyKeys)")
-      log.debug("Waiting 1s to see if \(countOfLaunchesToWaitOn) past launches are still running...")
-
-      Thread.sleep(forTimeInterval: 1)
-    }
-
     return launchDict
   }
 
   /// Returns list of "launch name" identifiers for past launches of IINA which have saved state to restore.
   /// This omits launches which are detected as still running.
   func collectLaunchState(cleanUpAlongTheWay isCleanUpEnabled: Bool = false) -> [LaunchState] {
-    let launchDict = buildLaunchDict(cleanUpAlongTheWay: isCleanUpEnabled)
-
-    var countEntriesDeleted: Int = 0
-
-    // Iterate backwards through past launches, from most recent to least recent.
-    let launchesNewestToOldest = launchDict.values.sorted(by: { $0.id > $1.id })
-
+    let launchDict = buildLaunchDict(migrateLegacyPrefEntries: isCleanUpEnabled)
     let currentBuildNumber = Int(InfoDictionary.shared.version.1)!
 
-    for launch in launchesNewestToOldest {
-      guard launch.lifecycleState != LaunchLifecycleState.none else {
-        if isCleanUpEnabled {
+    var countOfLaunchesToWaitOn: Int = 0
+    var countEntriesDeleted: Int = 0
+
+    let thisLaunchID = UIState.shared.currentLaunchID
+    if isCleanUpEnabled {
+      for (launchID, launch) in launchDict {
+        if launch.lifecycleState == LaunchLifecycleState.missingOrInvalid {
           // Anything found here is orphaned. Clean it up.
           // Remember that we are iterating backwards, so all data should be accounted for.
 
@@ -592,10 +572,35 @@ class UIState {
             UserDefaults.standard.removeObject(forKey: playerKey)
             countEntriesDeleted += 1
           }
-        }
 
-        continue
+          continue
+        } else if launch.isRunningOrIndeterminate, launchID != thisLaunchID {
+          /// Launch was not marked `done` or `killed`?
+          /// Maybe it is done but did not exit cleanly. Send ping to see if it is still alive
+          var newStatus = LaunchLifecycleState.indeterminate1
+          if launch.lifecycleState.rawValue < LaunchLifecycleState.killed.rawValue - 1 {
+            newStatus = LaunchLifecycleState(rawValue: launch.lifecycleState.rawValue + 1) ?? LaunchLifecycleState.indeterminate2
+          }
+          log.verbose("Pinging pref entry \(launch.name.quoted) by setting status=\(newStatus.rawValue)")
+          UserDefaults.standard.setValue(newStatus.rawValue, forKey: launch.name)
+          countOfLaunchesToWaitOn += 1
+        }
       }
+
+      if countOfLaunchesToWaitOn > 0 {
+        log.trace("Launches found with running or indeterminate status: \(launchDict.filter{ $0.value.id != currentLaunchID && $0.value.isRunningOrIndeterminate}.keys.map{$0})")
+        log.debug("Waiting 1s to see if \(countOfLaunchesToWaitOn) past launches are still running...")
+
+        Thread.sleep(forTimeInterval: 1)
+      }
+
+    }
+
+    // Iterate backwards through past launches, from most recent to least recent.
+    let launchesNewestToOldest = launchDict.values.sorted(by: { $0.id > $1.id })
+
+    for launch in launchesNewestToOldest {
+      guard launch.lifecycleState != LaunchLifecycleState.missingOrInvalid else { continue }
 
       // Old player windows may have been associated with newer launches. Update our data structure to match
       if let savedWindows = launch.savedWindows {
@@ -679,8 +684,8 @@ class UIState {
         UserDefaults.standard.removeObject(forKey: windowListKey)
       }
 
-      if launch.lifecycleState != .none {
-        log.debug("Clearing saved launch lifecycleState (pref key: \(launchName.quoted))")
+      if launch.lifecycleState != .missingOrInvalid {
+        log.debug("Clearing pref key: \(launchName.quoted)")
         UserDefaults.standard.removeObject(forKey: launchName)
       }
     }

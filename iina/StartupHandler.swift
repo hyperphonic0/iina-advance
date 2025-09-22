@@ -76,6 +76,7 @@ class StartupHandler {
     // Register to restore for successive launches. Set status to currently running so that it isn't restored immediately by the next launch.
     // Do this *before* restoring, because the cleanup task will reassign windows to this launch
     if UIState.shared.isSaveEnabled {
+      Logger.log.verbose("Setting pref \(UIState.shared.currentLaunchName.quoted) = \(UIState.LaunchLifecycleState.stillRunning.rawValue)")
       UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: UIState.shared.currentLaunchName)
     }
     // Add observer even if save is disabled; it may be re-enabled again
@@ -339,7 +340,7 @@ class StartupHandler {
     log.debug{"Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)"}
 
     guard let savedState = UIState.shared.getPlayerSaveState(forPlayerID: id) else {
-      log.error{"Cannot restore window: could not find saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)"}
+      log.errorDebugAlert{"Cannot restore window: could not find saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)"}
       return
     }
 
