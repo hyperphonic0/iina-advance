@@ -465,17 +465,18 @@ class UIState {
 
   private func launchStatus(fromAny value: Any, launchName: String) -> LaunchLifecycleState {
     guard let lifecycleStateInt = value as? Int else {
-      log.error("Failed to parse lifecycleState int from pref entry! (entry: \(launchName.quoted), value: \(value))")
+      log.errorDebugAlert("Failed to parse lifecycleState int from pref entry! (entry: \(launchName.quoted), value: \(value))")
       return .missingOrInvalid
     }
     let lifecycleState = LaunchLifecycleState(rawValue: lifecycleStateInt)
     guard let lifecycleState else {
-      log.error("Status int from pref entry is invalid! (entry: \(launchName.quoted), value: \(value))")
+      log.errorDebugAlert("Status int from pref entry is invalid! (entry: \(launchName.quoted), value: \(value))")
       return .missingOrInvalid
     }
     return lifecycleState
   }
 
+  /// Builds a raw launch dict, but the data returned still needs some cleaning up.
   private func buildLaunchDict(migrateLegacyPrefEntries: Bool = false) -> [Int: LaunchState] {
     var launchDict: [Int: LaunchState] = [:]
 
@@ -492,11 +493,23 @@ class UIState {
         // Entry is type: PlayerWindow
         let launch = launchDict[launchID] ?? LaunchState(launchID)
 
+        // We don't yet know which launch's windows this window belongs to, if any. We won't know until we finish
+        // iterating through all the pref entries and then examining each launch's player windows.
+        // For now, just store it under the launchID of its original launch, which is stored in its name.
         launch.playerKeys.insert(key)
         launchDict[launchID] = launch
 
+      } else if let launchID = launchID(fromOpenWindowListKey: key) {
+        // Entry is type: Open Windows List
+        let launch = launchDict[launchID] ?? LaunchState(launchID)
+
+        if let csv = value as? String {
+          launch.savedWindows = parseSavedOpenWindowsBackToFront(fromPrefValue: csv)
+        }
+        launchDict[launchID] = launch
+
       } else if let launchID = launchID(fromLegacyOpenWindowListKey: key) {
-        // Entry is type: Open Windows List (legacy)
+        // Entry is type: Legacy Open Windows List
         let launch = launchDict[launchID] ?? LaunchState(launchID)
 
         // Do same logic as for modern entry:
@@ -513,15 +526,6 @@ class UIState {
           UserDefaults.standard.removeObject(forKey: key)
           log.warn("Deleted legacy pref entry: \(key.quoted)")
         }
-
-      } else if let launchID = launchID(fromOpenWindowListKey: key) {
-        // Entry is type: Open Windows List
-        let launch = launchDict[launchID] ?? LaunchState(launchID)
-
-        if let csv = value as? String {
-          launch.savedWindows = parseSavedOpenWindowsBackToFront(fromPrefValue: csv)
-        }
-        launchDict[launchID] = launch
       }
     }
 
@@ -538,15 +542,20 @@ class UIState {
     var countEntriesDeleted: Int = 0
 
     let thisLaunchID = UIState.shared.currentLaunchID
-    if isCleanUpEnabled {
-      for (launchID, launch) in launchDict {
-        if launch.lifecycleState == LaunchLifecycleState.missingOrInvalid {
+
+    // Iterate backwards through past launches, from most recent to least recent.
+    let launchesNewestToOldest = launchDict.values.sorted(by: { $0.id > $1.id })
+
+    for launch in launchesNewestToOldest {
+
+      if launch.lifecycleState == LaunchLifecycleState.missingOrInvalid {
+        if isCleanUpEnabled {
           // Anything found here is orphaned. Clean it up.
           // Remember that we are iterating backwards, so all data should be accounted for.
 
           if launch.savedWindows != nil {
             let key = makeOpenWindowListKey(forLaunchID: launch.id)
-            log.warn("Deleting orphaned pref entry \(key.quoted) (value=\(launch.savedWindowsDescription))")
+            log.errorDebugAlert("Deleting orphaned pref entry \(key.quoted) (value=\(launch.savedWindowsDescription))")
             UserDefaults.standard.removeObject(forKey: key)
             countEntriesDeleted += 1
           }
@@ -565,16 +574,33 @@ class UIState {
               continue
             }
 
-            if Logger.isEnabled(.warning) {
-              let path = PlaybackID.path(from: savedState.url(for: .url))
-              log.warn("Deleting orphaned pref entry: \(playerKey.quoted) with path \(path.quoted)")
-            }
+            log.warn("Deleting orphaned pref entry: \(playerKey.quoted) with path \(PlaybackID.path(from: savedState.url(for: .url)).quoted)")
             UserDefaults.standard.removeObject(forKey: playerKey)
             countEntriesDeleted += 1
           }
+        }
 
-          continue
-        } else if launch.isRunningOrIndeterminate, launchID != thisLaunchID {
+      } else {
+
+        // Old player windows may have been associated with newer launches in our data structures. Clean up our dict's data as we go along
+        if let savedWindows = launch.savedWindows {
+          log.verbose("\(launch.name) has saved windows: \(launch.savedWindowsDescription)")
+          for savedWindow in savedWindows {
+            let playerLaunchID = savedWindow.saveName.playerWindowLaunchID
+            if let playerLaunchID, playerLaunchID != launch.id {
+              // There is a player window whose launchID does not match the launch it is attached to.
+              // If player window is from a past launch, need to remove it from that launch's list in our data so that it is not seen as orphan.
+              if let prevLaunch = launchDict[playerLaunchID],
+                 let playerKeyFromPrev = prevLaunch.playerKeys.remove(savedWindow.saveName.string) {
+                assert(playerLaunchID < launch.id, "Expected playerLaunchID (\(playerLaunchID)) to be less than launch.id (\(launch.id))")
+                log.verbose{"Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID) but is now part of launch \(launch.id)"}
+                launch.playerKeys.insert(playerKeyFromPrev)
+              }
+            }
+          }
+        }
+
+        if isCleanUpEnabled, launch.isRunningOrIndeterminate, launch.id != thisLaunchID {
           /// Launch was not marked `done` or `killed`?
           /// Maybe it is done but did not exit cleanly. Send ping to see if it is still alive
           var newStatus = LaunchLifecycleState.indeterminate1
@@ -586,45 +612,20 @@ class UIState {
           countOfLaunchesToWaitOn += 1
         }
       }
-
-      if countOfLaunchesToWaitOn > 0 {
-        log.trace("Launches found with running or indeterminate status: \(launchDict.filter{ $0.value.id != currentLaunchID && $0.value.isRunningOrIndeterminate}.keys.map{$0})")
-        log.debug("Waiting 1s to see if \(countOfLaunchesToWaitOn) past launches are still running...")
-
-        Thread.sleep(forTimeInterval: 1)
-      }
-
     }
 
-    // Iterate backwards through past launches, from most recent to least recent.
-    let launchesNewestToOldest = launchDict.values.sorted(by: { $0.id > $1.id })
+    if countOfLaunchesToWaitOn > 0 {
+      // Wait for past launches to report back their lifecycleState so that we can clean up improperly terminated launches
+      log.trace("Launches found with running or indeterminate status: \(launchDict.filter{ $0.value.id != currentLaunchID && $0.value.isRunningOrIndeterminate}.keys.map{$0})")
+      log.debug("Waiting 1s to see if \(countOfLaunchesToWaitOn) past launches are still running...")
 
-    for launch in launchesNewestToOldest {
-      guard launch.lifecycleState != LaunchLifecycleState.missingOrInvalid else { continue }
+      // FIXME: need to replace this with proper IPC...
+      Thread.sleep(forTimeInterval: 1)
 
-      // Old player windows may have been associated with newer launches. Update our data structure to match
-      if let savedWindows = launch.savedWindows {
-        log.verbose("\(launch.name) has saved windows: \(launch.savedWindowsDescription)")
-        for savedWindow in savedWindows {
-          let playerLaunchID = savedWindow.saveName.playerWindowLaunchID
-          if let playerLaunchID, playerLaunchID != launch.id {
-            if playerLaunchID > launch.id {
-              // Should only happen if someone messed up the .plist file
-              log.error("Suspicious data found! Saved launch (\(launch.id)) contains a player window from a newer launch (\(playerLaunchID))!")
-            } else if let prevLaunch = launchDict[playerLaunchID],
-               let playerKeyFromPrev = prevLaunch.playerKeys.remove(savedWindow.saveName.string) {
-              assert(playerLaunchID < launch.id, "Expected playerLaunchID (\(playerLaunchID)) to be less than launch.id (\(launch.id))")
-              // If player window is from a past launch, need to remove it from that launch's list so that it is not seen as orphan
-              log.verbose{"Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID) but is now part of launch \(launch.id)"}
-              launch.playerKeys.insert(playerKeyFromPrev)
-            }
-          }
-        }
-      }
+      // Refresh lifecycleState now.
+      for launch in launchesNewestToOldest {
+        guard launch.lifecycleState != LaunchLifecycleState.missingOrInvalid else { continue }
 
-      if isCleanUpEnabled {
-        // May have been waiting for past launches to report back their lifecycleState so that we
-        // can clean up improperly terminated launches. Refresh lifecycleState now.
         let pastLaunchName = launch.name
         let lifecycleStateInt: Int = UserDefaults.standard.integer(forKey: pastLaunchName)
         launch.lifecycleState = launchStatus(fromAny: lifecycleStateInt, launchName: pastLaunchName)
