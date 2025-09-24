@@ -260,14 +260,14 @@ extension PlayerWindowController {
       // enable for animations or if in music mode & neither playlist nor video is open
       if !isFinalStage || (outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown) {
         let constant1 = transition.bottomBarBtmOffsetFromCVTop(for: stage)
-        log.verbose{"Updating bottomBarBtmOffsetFromCVTop to \(constant1)"}
+        log.verbose("Updating bottomBarBtmOffsetFromCVTop to \(constant1)")
         p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
           bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
         }
       } else {
         // remove
         if p.bottomBarBtmOffsetFromCVTop.isActive {
-          log.verbose{"Removing bottomBarBtmOffsetFromCVTop"}
+          log.verbose("Removing bottomBarBtmOffsetFromCVTop")
           p.bottomBarBtmOffsetFromCVTop.isActive = false
         }
       }
@@ -343,7 +343,7 @@ extension PlayerWindowController {
           // Update sidebar vertical alignments to match top bar:
           let downshift = min(transition.inputLayout.sidebarDownshift, transition.outputLayout.sidebarDownshift)
           let tabHeight = min(transition.inputLayout.sidebarTabHeight, transition.outputLayout.sidebarTabHeight)
-          log.verbose{"Updating sidebars: downshift=\(downshift) tabHeight=\(tabHeight)"}
+          log.verbose("Updating sidebars: downshift=\(downshift) tabHeight=\(tabHeight)")
           updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
         }
       }
@@ -376,7 +376,7 @@ extension PlayerWindowController {
                                   setTrailingTo: transition.isOpeningTrailingSidebar ? layout.trailingSidebar.visibility : nil,
                                   ΔWindowWidth: ΔWindowWidth)
 
-        log.verbose{"Updating sidebars: downshift=\(layout.sidebarDownshift) tabHeight=\(layout.sidebarTabHeight)"}
+        log.verbose("Updating sidebars: downshift=\(layout.sidebarDownshift) tabHeight=\(layout.sidebarTabHeight)")
         updateSidebarVerticalConstraints(tabHeight: layout.sidebarTabHeight, downshift: layout.sidebarDownshift)
       }
     case .postTransition:
@@ -407,7 +407,7 @@ extension PlayerWindowController {
   // - Top bar
 
   func updateTopBarHeight(using geometry: PWinGeometry) {
-    log.verbose{"Updating topBar height to: inside=\(geometry.insideBars.top) outside=\(geometry.outsideBars.top) cameraOffset=\(geometry.topMarginHeight)"}
+    log.verbose("Updating topBar height to: inside=\(geometry.insideBars.top) outside=\(geometry.outsideBars.top) cameraOffset=\(geometry.topMarginHeight)")
 
     let p = panelConstraints
     p.topBarBtmOffsetFromVPTop.constraint?.animateToConstant(geometry.insideBars.top)
@@ -421,7 +421,7 @@ extension PlayerWindowController {
     guard let window = window, let contentView = window.contentView else { return }
     let p = panelConstraints
 
-    log.verbose{"\(logPre) Updating bottomBar placement to: \(layout.bottomBarPlacement) leadingSB_Shown=\(layout.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layout.isTrailingSidebarVisible.yn)"}
+    log.verbose("\(logPre) Updating bottomBar placement to: \(layout.bottomBarPlacement) leadingSB_Shown=\(layout.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layout.isTrailingSidebarVisible.yn)")
 
     // - Leading
 
@@ -584,7 +584,7 @@ extension PlayerWindowController {
   func updateSpeedLabelFont(for transition: LayoutTransition) {
     let oscGeo = transition.outputLayout.controlBarGeo
     let speedLabelFontSize = oscGeo.speedLabelFontSize
-    log.trace{"Updating speed label fontSize=\(speedLabelFontSize)"}
+    log.trace("Updating speed label fontSize=\(speedLabelFontSize)")
     speedLabel.font = .messageFont(ofSize: speedLabelFontSize)
   }
 
@@ -606,7 +606,7 @@ extension PlayerWindowController {
       fragToolbarView.views.forEach { fragToolbarView.removeView($0) }
 
       if newButtonTypes.count > 0 {
-        log.verbose{"\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(iconSize) iconSpacing=\(iconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]"}
+        log.verbose("\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(iconSize) iconSpacing=\(iconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
         for buttonType in newButtonTypes {
           let button = OSCToolbarButton()
           button.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
@@ -620,7 +620,7 @@ extension PlayerWindowController {
     }
 
     if needsButtonsUpdate {
-      log.verbose{"\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(newGeo.toolIconSize) iconSpacing=\(newGeo.toolIconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]"}
+      log.verbose("\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(newGeo.toolIconSize) iconSpacing=\(newGeo.toolIconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
       for button in fragToolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
         button.setStyle(iconSize: iconSize, iconSpacing: iconSpacing)
         button.setOSCColors(hasClearBG: transition.outputLayout.oscHasClearBG)
@@ -629,13 +629,13 @@ extension PlayerWindowController {
 
     // Do not zero this out:
     updateToolbarHStack(iconSpacing: newGeo.toolIconSpacing)
-    log.verbose{"\(transition.logPreamble(for: stage)) Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)"}
+    log.verbose("\(transition.logPreamble(for: stage)) Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)")
   }
 
   // It's not possible to control the icon padding from inside the buttons in all cases.
   // Instead we can get the same effect with a little more work, by using the stack view's features.
   func updateToolbarHStack(iconSpacing: CGFloat) {
-    log.verbose{"Updating toolbar hstack using spacing=\(iconSpacing)"}
+    log.verbose("Updating toolbar hstack using spacing=\(iconSpacing)")
     fragToolbarView.spacing = 2 * iconSpacing
     let sideInset = (iconSpacing * 0.5).rounded()
     fragToolbarView.edgeInsets = .init(top: iconSpacing, left: sideInset,
@@ -683,7 +683,7 @@ extension PlayerWindowController {
 
   /// Remove the tab group view associated with `group` from its parent view (also removes constraints)
   func removeSidebarTabGroupView(group: Sidebar.TabGroup) {
-    log.verbose{"Removing sidebar tab group view for \(group)"}
+    log.verbose("Removing sidebar tab group view for \(group)")
     let viewController: NSViewController
     switch group {
     case .playlist:

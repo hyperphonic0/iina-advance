@@ -206,34 +206,34 @@ class Logger: NSObject {
       self.preamble = ""
       super.init(rawValue: rawValue)
     }
-    
-    override func trace(_ rawMessage: String) {
+
+    override func trace(_ rawMessage: @autoclosure () -> String) {
       guard isTraceEnabled else { return }
-      Logger.log("\(preamble) \(rawMessage)", level: .trace, subsystem: self)
+      Logger.log("\(preamble) \(rawMessage())", level: .trace, subsystem: self)
     }
 
-    override func verbose(_ rawMessage: String) {
-      Logger.log("\(preamble) \(rawMessage)", level: .verbose, subsystem: self)
+    override func verbose(_ rawMessage: @autoclosure () -> String) {
+      Logger.log("\(preamble) \(rawMessage())", level: .verbose, subsystem: self)
     }
 
-    override func debug(_ rawMessage: String) {
-      Logger.log("\(preamble) \(rawMessage)", level: .debug, subsystem: self)
+    override func debug(_ rawMessage: @autoclosure () -> String) {
+      Logger.log("\(preamble) \(rawMessage())", level: .debug, subsystem: self)
     }
 
-    override func warn(_ rawMessage: String) {
-      Logger.log("\(preamble) \(rawMessage)", level: .warning, subsystem: self)
+    override func warn(_ rawMessage: @autoclosure () -> String) {
+      Logger.log("\(preamble) \(rawMessage())", level: .warning, subsystem: self)
     }
 
-    override func error(_ rawMessage: String) {
-      Logger.log("\(preamble) \(rawMessage)", level: .error, subsystem: self)
+    override func error(_ rawMessage: @autoclosure () -> String) {
+      Logger.log("\(preamble) \(rawMessage())", level: .error, subsystem: self)
     }
 
-    override func fatalError(_ rawMessage: String) -> Never {
-      Logger.fatal("\(preamble) \(rawMessage)")
+    override func fatalError(_ rawMessage: @autoclosure () -> String) -> Never {
+      Logger.fatal("\(preamble) \(rawMessage())")
     }
 
-    override func log(_ rawMessage: String, level: Level = .debug) {
-      Logger.log("\(preamble) \(rawMessage)", level: level, subsystem: self)
+    override func log(_ rawMessage: @autoclosure () -> String, level: Level = .debug) {
+      Logger.log("\(preamble) \(rawMessage())", level: level, subsystem: self)
     }
 
   }
@@ -270,50 +270,51 @@ class Logger: NSObject {
       return DecoratedSubsystem(original: self, preamble: preamble)
     }
 
-    // MARK: - String arg variants
-
-    func trace(_ rawMessage: String) {
+    func trace(_ rawMessage: @autoclosure () -> String) {
       guard isTraceEnabled else { return }
-      Logger.log(rawMessage, level: .trace, subsystem: self)
+      Logger.log(rawMessage(), level: .trace, subsystem: self)
     }
 
-    func verbose(_ rawMessage: String) {
-      Logger.log(rawMessage, level: .verbose, subsystem: self)
+    func verbose(_ rawMessage: @autoclosure () -> String) {
+      Logger.log(rawMessage(), level: .verbose, subsystem: self)
     }
 
-    func debug(_ rawMessage: String) {
-      Logger.log(rawMessage, level: .debug, subsystem: self)
+    func debug(_ rawMessage: @autoclosure () -> String) {
+      Logger.log(rawMessage(), level: .debug, subsystem: self)
     }
 
-    func warn(_ rawMessage: String) {
-      Logger.log(rawMessage, level: .warning, subsystem: self)
+    func warn(_ rawMessage: @autoclosure () -> String) {
+      Logger.log(rawMessage(), level: .warning, subsystem: self)
     }
 
-    func error(_ rawMessage: String) {
+    func error(_ rawMessage: @autoclosure () -> String) {
+      Logger.log(rawMessage(), level: .error, subsystem: self)
+    }
+
+    func fatalError(_ rawMessage: @autoclosure () -> String) -> Never {
+      Logger.fatal(rawMessage())
+    }
+
+    func log(_ rawMessage: @autoclosure () -> String, level: Level = .debug) {
+      Logger.log(rawMessage(), level: level, subsystem: self)
+    }
+
+    // MARK: - Log Functions
+
+    func errorDebugAlert(_ msg: @autoclosure () -> String) {
+      guard Logger.enabled else { return }
+      let rawMessage = msg()
+#if DEBUG
+
+      DispatchQueue.main.async {
+        Utility.showAlert(rawMessage, style: .critical, logAlert: false)
+      }
+#endif
       Logger.log(rawMessage, level: .error, subsystem: self)
     }
 
-    func fatalError(_ rawMessage: String) -> Never {
-      Logger.fatal(rawMessage)
-    }
 
-    func log(_ rawMessage: String, level: Level = .debug) {
-      Logger.log(rawMessage, level: level, subsystem: self)
-    }
-
-    // MARK: - Closure arg variants
-
-    /// Provide a `LogMsgFunc` as arg instead of a `String` to get a small performance improvement when logging is
-    /// disabled.
-    ///
-    /// By using a closure, the effort to format the string will be delayed until after checking for enablement,
-    /// and thus will be skipped if not needed. If only using a static string with no dynamic formatting, using
-    /// these is probably unnecessary.
-    ///
-    /// To use, just use brackets instead of parentheses when calling each logging variant. Example:
-    /// ```
-    /// log.verbose{"Something happened!"}
-    /// ```
+    // MARK: - Closure arg variants (DEPRECATED!)
     typealias LogMsgFunc = () -> String
 
     func trace(_ msgFunc: LogMsgFunc) {
@@ -339,16 +340,6 @@ class Logger: NSObject {
     func error(_ msgFunc: LogMsgFunc) {
       guard Logger.enabled else { return }
       Logger.log(msgFunc(), level: .error, subsystem: self)
-    }
-
-    func errorDebugAlert(_ msg: String) {
-      guard Logger.enabled else { return }
-#if DEBUG
-      DispatchQueue.main.async {
-        Utility.showAlert(msg, style: .critical, logAlert: false)
-      }
-#endif
-      Logger.log(msg, level: .error, subsystem: self)
     }
 
     func errorDebugAlert(_ msgFunc: LogMsgFunc) {
@@ -563,10 +554,10 @@ class Logger: NSObject {
     return "\(time) |\(subsystem.rawValue) \(level.description)| \(message)\(appendNewlineAtTheEnd ? "\n" : "")"
   }
 
-  static func log(_ rawMessage: String, level: Level = .debug, subsystem: Subsystem = .general) {
+  static func log(_ msg: @autoclosure () -> String, level: Level = .debug, subsystem: Subsystem = .general) {
     guard isEnabled(level) else { return }
 
-    let message = maskAnyPII(rawMessage)
+    let message = maskAnyPII(msg())
 
     let date = Date()
     let string = formatMessage(message, level, subsystem, true, date)
