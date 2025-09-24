@@ -306,24 +306,24 @@ class UIState {
   func saveCurrentOpenWindowList(excludingWindowName nameToExclude: String? = nil) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !AppDelegate.shared.isTerminating else { return }
-    guard !Preference.bool(for: .isRestoreInProgress) else { return }
-    var openWindowsSet = windowsOpen
+    guard AppDelegate.shared.isDoneLaunching else { return }
+    guard UIState.shared.isSaveEnabled else { return }
+    
+    var openWindowsCacheSet = windowsOpen
     var openWindowNames = getCurrentOpenWindowNames(excludingWindowName: nameToExclude)
     // Don't care about ordering of these:
     let minimizedWindowNames = Array(windowsMinimized)
 
-    if openWindowsSet.count != openWindowNames.count {
+    if openWindowsCacheSet.count != openWindowNames.count {
       for windName in openWindowNames {
-        openWindowsSet.remove(windName)
+        openWindowsCacheSet.remove(windName)
       }
       // Add missing windows to end of list (front):
-      log.verbose{"Assuming windows are still opening; appending \(openWindowsSet) to saved windows list: \(openWindowNames)"}
-      for windName in openWindowsSet {
+      log.verbose{"Assuming windows are still opening; appending \(openWindowsCacheSet) to saved windows list: \(openWindowNames)"}
+      for windName in openWindowsCacheSet {
         openWindowNames.append(windName)
       }
     }
-
-    guard UIState.shared.isSaveEnabled else { return }
 
     log.trace{"Saving window list: open=\(openWindowNames), minimized=\(minimizedWindowNames)"}
     let minimizedStrings = minimizedWindowNames.map({ "\(SavedWindow.minimizedPrefix)\($0)" })

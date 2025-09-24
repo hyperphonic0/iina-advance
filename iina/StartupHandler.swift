@@ -711,7 +711,7 @@ class StartupHandler {
     guard let window = notification.object as? NSWindow else { return }
     let log = Logger.Subsystem.restore
 
-    guard Preference.bool(for: .isRestoreInProgress) else { return }
+    guard !isDoneLaunching else { return }
 
     // No longer waiting for this window before showing all windows
     let toRestoreCountOld = wcsToRestore.count
