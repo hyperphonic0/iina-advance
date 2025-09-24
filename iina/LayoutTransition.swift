@@ -13,7 +13,7 @@ extension PlayerWindowController {
   /// a single `PlayerWindow` from one layout (`inputLayout`) to another (`outputLayout`). Instances of `PWinGeometry`
   /// are also used along the way to dictate window location/size, viewport size, sidebar sizes, & other geometry.
   ///
-  /// See `buildLayoutTransition()`, where an instance of this class is assembled.
+  /// See `buildLayoutTransition()`, where an instance of this object is assembled.
   /// Other important variables: `currentLayout`, `windowedModeGeo`, `musicModeGeo` (in `PlayerWindowController`)
   struct LayoutTransition {
     enum Stage: Int, StateEnum, CustomStringConvertible {
@@ -52,14 +52,16 @@ extension PlayerWindowController {
     let middleGeometry: PWinGeometry?
     let outputGeometry: PWinGeometry
 
+    /// Random datum needed for building tasks
+    let windowedModeScreen: NSScreen
+
     /// Should only be true when setting layout on session open. See `buildWindowInitialLayoutTasks()`.
     let isWindowInitialLayout: Bool
-
-    var tasks: [IINAAnimation.Task] = []
 
     init(name: String, from inputLayout: LayoutState, from inputGeometry: PWinGeometry,
          to outputLayout: LayoutState, to outputGeometry: PWinGeometry,
          middleGeometry: PWinGeometry? = nil,
+         windowedModeScreen: NSScreen,
          isWindowInitialLayout: Bool = false) {
       self.name = name
       self.inputLayout = inputLayout
@@ -67,6 +69,7 @@ extension PlayerWindowController {
       self.middleGeometry = middleGeometry
       self.outputLayout = outputLayout
       self.outputGeometry = outputGeometry
+      self.windowedModeScreen = windowedModeScreen
       self.isWindowInitialLayout = isWindowInitialLayout
     }
 

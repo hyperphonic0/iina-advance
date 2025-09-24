@@ -497,11 +497,10 @@ struct GeometryTransform {
 
           log.verbose{"[GTF:\(name)] Building transition tasks for musicMode: sess=\(gtfSessionState) togglingVideo=\(isTogglingViewport.yn) togglingPlaylist=\(isTogglingPlaylist.yn) dur=\(duration) → \(outputMusicModeGeo)"}
           // Need to use LayoutTransition for complex layout changes
-          tasks = pwc.buildLayoutTransition(named: name, from: inputLayout,
-                                            inputGeo: inputLayout.isMusicMode ? inputMusicModeGeo : nil,
-                                            to: outputLayout.spec, outputGeo: outputMusicModeGeo,
-                                            totalStartingDuration: startingDuration, totalEndingDuration: endingDuration,
-                                            inputGeoSet).tasks
+          let transition = pwc.buildLayoutTransition(named: name, from: inputLayout,
+                                                     inputGeo: inputLayout.isMusicMode ? inputMusicModeGeo : nil,
+                                                     to: outputLayout.spec, outputGeo: outputMusicModeGeo, inputGeoSet)
+          tasks = pwc.buildTasks(for: transition, totalStartingDuration: startingDuration, totalEndingDuration: endingDuration)
         } else {
           let showDefaultArt: Bool? = shouldChangeDefaultArt
           log.verbose{"[GTF:\(name)] Building 'apply' tasks for musicMode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputMusicModeGeo)"}
@@ -766,7 +765,7 @@ extension PlayerWindowController {
       // For initial layout (when window is first shown), to avoid jitteriness when drawing, do all the layout
       // in a single animation block.
       do {
-        for task in initialTransition.tasks {
+        for task in buildTasks(for: initialTransition) {
           try task.runFunc()
         }
       } catch {
@@ -805,10 +804,10 @@ extension PlayerWindowController {
         log.warn{"Player's saved layout does not match IINA app prefs; will fix & apply corrected layout"}
 #endif
         log.debug{"[GTF:\(ctx.name)] SavedSpec: \(currentLayout.spec). PrefsSpec: \(prefsSpec)"}
-        let transition = buildLayoutTransition(named: "FixInvalidInitialLayout",
-                                               from: initialTransition.outputLayout, to: prefsSpec)
+        let repairTransition = buildLayoutTransition(named: "FixInvalidInitialLayout",
+                                                     from: initialTransition.outputLayout, to: prefsSpec)
 
-        tasks.append(contentsOf: transition.tasks)
+        tasks.append(contentsOf: buildTasks(for: repairTransition))
       }
     }
 

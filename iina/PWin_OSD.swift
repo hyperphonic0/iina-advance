@@ -13,6 +13,16 @@ import Mustache
 fileprivate let priority = NSLayoutConstraint.Priority(rawValue: 400)
 
 /// Encapsulates all of the window's OSD state vars
+///
+/// OSD constraints: shown here in "upper-left" configuration.
+/// For "upper-right" config: swap OSD & AdditionalInfo anchors in A & B, and invert all the params of B.
+/// ```
+/// ┌───────────────────────┐
+/// │ A ┌────┐  ┌───────┐ B │  A: leadingSide_LeadingConstraint
+/// │◄─►│ OSD│  │ AddNfo│◄─►│  B: trailingSide_TrailingConstraint
+/// │   └────┘  └───────┘   │
+/// └───────────────────────┘
+/// ```
 class OSDState {
   let log: Logger.Subsystem
 
@@ -32,7 +42,6 @@ class OSDState {
   var osdTrailingMarginConstraint: NSLayoutConstraint!
   var osdLeadingMarginConstraint: NSLayoutConstraint!
   var osdBottomMarginConstraint: NSLayoutConstraint!
-
 
   /// Whether current OSD needs user interaction to be dismissed.
   var isShowingPersistentOSD = false
@@ -63,15 +72,6 @@ class OSDState {
   fileprivate var osd2TopOffsetConstraint: NSLayoutConstraint? = nil
   fileprivate var osd2BottomOffsetConstraint: NSLayoutConstraint? = nil
 
-  /*
-   OSD: shown here in "upper-left" configuration.
-   For "upper-right" config: swap OSD & AdditionalInfo anchors in A & B, and invert all the params of B.
-   ┌───────────────────────┐
-   │ A ┌────┐  ┌───────┐ B │  A: leadingSide_LeadingConstraint
-   │◄─►│ OSD│  │ AddNfo│◄─►│  B: trailingSide_TrailingConstraint
-   │   └────┘  └───────┘   │
-   └───────────────────────┘
-   */
   fileprivate var leadingSide_LeadingConstraint: NSLayoutConstraint? = nil
   fileprivate var leadingSide_TrailingConstraint: NSLayoutConstraint? = nil
   fileprivate var trailingSide_LeadingConstraint: NSLayoutConstraint? = nil

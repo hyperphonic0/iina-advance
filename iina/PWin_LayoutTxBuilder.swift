@@ -22,9 +22,6 @@ extension PlayerWindowController {
                              from inputLayout: LayoutState, inputGeo inputGeoExplicit: PWinGeometry? = nil,
                              to outputSpec: LayoutSpec, outputGeo outputGeoExplicit: PWinGeometry? = nil,
                              isWindowInitialLayout: Bool = false,
-                             totalStartingDuration: CGFloat? = nil,
-                             totalEndingDuration: CGFloat? = nil,
-                             thenRun: Bool = false,
                              _ geoSet: GeometrySet? = nil) -> LayoutTransition {
 
     var transitionID: Int = 0
@@ -58,19 +55,30 @@ extension PlayerWindowController {
     let protoTransition = LayoutTransition(name: transitionName,
                                            from: inputLayout, from: inputGeometry,
                                            to: outputLayout, to: outputGeometry,
+                                           windowedModeScreen: windowedModeScreen,
                                            isWindowInitialLayout: isWindowInitialLayout)
 
     let middleGeometry = protoTransition.buildMiddleGeometry()?.clone(isMiddleTransition: true)
-    var transition = LayoutTransition(name: transitionName,
+    let transition = LayoutTransition(name: transitionName,
                                       from: inputLayout, from: inputGeometry,
                                       to: outputLayout, to: outputGeometry,
                                       middleGeometry: middleGeometry,
+                                      windowedModeScreen: windowedModeScreen,
                                       isWindowInitialLayout: isWindowInitialLayout)
 
 
     log.verbose("[\(transitionName)] INPUT\(inputGeoExplicit == nil ? "" : "(given)"):  \(inputGeometry)")
     log.verbose("[\(transitionName)] MIDDLE: \(transition.middleGeometry?.description ?? "nil")")
     log.verbose("[\(transitionName)] OUTPUT\(outputGeoExplicit == nil ? "" : "(given)"):  \(outputGeometry)")
+
+    return transition
+  }
+
+  @discardableResult
+  func buildTasks(for transition: LayoutTransition,
+                  totalStartingDuration: CGFloat? = nil,
+                  totalEndingDuration: CGFloat? = nil,
+                  thenRun: Bool = false) -> [IINAAnimation.Task] {
 
     // - Timings Setup
 
@@ -143,18 +151,21 @@ extension PlayerWindowController {
       endingAnimationDuration = totalEndingDuration ?? Constants.AnimationDuration.standard
     }
 
+    let screenHasCameraHousing = transition.windowedModeScreen.hasCameraHousing
+
     // Extra animation when entering legacy full screen: cover camera housing with black bar
-    let useExtraAnimationForEnteringLegacyFullScreen = IINAAnimation.isAnimationEnabled && transition.isEnteringLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isWindowInitialLayout
+    let useExtraAnimationForEnteringLegacyFullScreen = IINAAnimation.isAnimationEnabled && transition.isEnteringLegacyFullScreen && screenHasCameraHousing && !transition.isWindowInitialLayout
 
     // Extra animation when exiting legacy full screen: remove camera housing with black bar
-    let useExtraAnimationForExitingLegacyFullScreen = IINAAnimation.isAnimationEnabled && transition.isExitingLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isWindowInitialLayout
+    let useExtraAnimationForExitingLegacyFullScreen = IINAAnimation.isAnimationEnabled && transition.isExitingLegacyFullScreen && screenHasCameraHousing && !transition.isWindowInitialLayout
 
     var fadeInNewViewsDuration = endingAnimationDuration * 0.5
     var openFinalPanelsDuration = endingAnimationDuration
     if transition.isExitingFullScreen {
       fadeInNewViewsDuration = 0
     } else if useExtraAnimationForEnteringLegacyFullScreen || useExtraAnimationForExitingLegacyFullScreen {
-      let frameWithoutCameraRatio = windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height
+      let winScreen = transition.windowedModeScreen
+      let frameWithoutCameraRatio = winScreen.frameWithoutCameraHousing.size.height / winScreen.frame.height
       openFinalPanelsDuration *= frameWithoutCameraRatio
     } else if transition.isEnteringInteractiveMode {
       openFinalPanelsDuration *= 0.5
@@ -167,7 +178,7 @@ extension PlayerWindowController {
       }
     }
 
-    log.verbose("[\(transitionName)] Task durations: ShowOldFadeables=\(showFadeableViewsDuration) FadeOutOldViews=\(fadeOutOldViewsDuration), CloseOldPanels=\(closeOldPanelsDuration) FadeInNewViews=\(fadeInNewViewsDuration) OpenFinalPanels=\(openFinalPanelsDuration)")
+    log.verbose("[\(transition.name)] Task durations: ShowOldFadeables=\(showFadeableViewsDuration) FadeOutOldViews=\(fadeOutOldViewsDuration), CloseOldPanels=\(closeOldPanelsDuration) FadeInNewViews=\(fadeInNewViewsDuration) OpenFinalPanels=\(openFinalPanelsDuration)")
 
     var tasks: [IINAAnimation.Task] = []
 
@@ -234,7 +245,8 @@ extension PlayerWindowController {
     // time when animating around the camera housing, especially if also changing window `titled` style. This may no longer
     // be the case, but it's not harming anything to leave this as-is for now.
     if useExtraAnimationForExitingLegacyFullScreen {
-      let cameraToTotalFrameRatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
+      let winScreen = transition.windowedModeScreen
+      let cameraToTotalFrameRatio = 1 - (winScreen.frameWithoutCameraHousing.size.height / winScreen.frame.height)
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
 
       tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
@@ -242,12 +254,12 @@ extension PlayerWindowController {
         let newGeo: PWinGeometry
         if inputGeo.hasTopPaddingForCameraHousing {
           /// Exiting legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
-          newGeo = inputGeo.clone(windowFrame: windowedModeScreen.frameWithoutCameraHousing,
-                                                  screenID: windowedModeScreen.screenID, topMarginHeight: 0)
+          newGeo = inputGeo.clone(windowFrame: winScreen.frameWithoutCameraHousing,
+                                                  screenID: winScreen.screenID, topMarginHeight: 0)
         } else {
           /// `Use entire Macbook screen` is checked in Settings. As of MacOS before Sonoma 14.4, Apple has been making improvements
           /// but we still need to use  a separate animation to give the OS time to hide the menu bar - otherwise there will be a flicker.
-          let cameraHeight = windowedModeScreen.cameraHousingHeight ?? 0
+          let cameraHeight = winScreen.cameraHousingHeight ?? 0
           let margins = inputGeo.viewportMargins.addingTo(top: -cameraHeight)
           newGeo = inputGeo.clone(windowFrame: inputGeo.windowFrame.addingTo(top: -cameraHeight), viewportMargins: margins,
                                   isMiddleTransition: true)
@@ -273,13 +285,14 @@ extension PlayerWindowController {
 
     // (Only for Enter Legacy FS) Adds an extra animation to hide camera housing / menu bar / dock.
     if useExtraAnimationForEnteringLegacyFullScreen {
-      let cameraToTotalFrameRatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
+      let winScreen = transition.windowedModeScreen
+      let cameraToTotalFrameRatio = 1 - (winScreen.frameWithoutCameraHousing.size.height / winScreen.frame.height)
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
 
       tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
-        let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : (windowedModeScreen.cameraHousingHeight ?? 0)
-        let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame,
-                                                     screenID: windowedModeScreen.screenID, topMarginHeight: topBlackBarHeight,
+        let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : (winScreen.cameraHousingHeight ?? 0)
+        let newGeo = transition.outputGeometry.clone(windowFrame: winScreen.frame,
+                                                     screenID: winScreen.screenID, topMarginHeight: topBlackBarHeight,
                                                      isMiddleTransition: true)
         log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock with windowFrame=\(newGeo.windowFrame)")
         setFrameAndUpdateWindowSubviews(using: newGeo)
@@ -295,12 +308,10 @@ extension PlayerWindowController {
       doPostTransitionWork(transition)
     })
 
-    transition.tasks = tasks
-
     if thenRun {
-      animationPipeline.submit(transition.tasks)
+      animationPipeline.submit(tasks)
     }
-    return transition
+    return tasks
   }
 
   // MARK: - Geometry

@@ -745,7 +745,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       animationPipeline.submitInstantTask { [self] in
         let oldLayout = currentLayout
         let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
-        buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec, thenRun: true)
+        let transition = buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec)
+        buildTasks(for: transition, thenRun: true)
       }
     }
   }
@@ -1023,11 +1024,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let newLayoutSpec = currentLayout.spec.clone(leadingSidebar: currentLayout.leadingSidebar.clone(visibility: .closed),
                                                    trailingSidebar: currentLayout.trailingSidebar.clone(visibility: .closed),
                                                    controlBarGeo: newOSCGeo)
-      let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutSpec,
-                                                  totalStartingDuration: 0, totalEndingDuration: 0)
+      let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutSpec)
+      let tasks = buildTasks(for: resetTransition, totalStartingDuration: 0, totalEndingDuration: 0)
 
       // Do all the layout instantly. Need to run each in its own transaction however, to avoid intractable constraint errors
-      var cleanupTasks = resetTransition.tasks.map { IINAAnimation.Task.instantTask($0.runFunc) }
+      var cleanupTasks = tasks.map { IINAAnimation.Task.instantTask($0.runFunc) }
       cleanupTasks.append(.instantTask { [self] in
         pendingVideoGeoUpdateTasks = []
         // The user may expect both to be updated.
@@ -1080,8 +1081,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // May be in interactive mode, with some panels hidden. Honor existing layout but change value of isFullScreen
     let fullscreenLayout = LayoutSpec.fromPreferences(andMode: newMode, isLegacyStyle: isLegacy, fillingInFrom: oldLayout.spec)
 
-    buildLayoutTransition(named: "Enter\(isLegacy ? "Legacy" : "Native")FullScreen", from: oldLayout, to: fullscreenLayout,
-                          totalStartingDuration: 0, totalEndingDuration: duration, thenRun: true)
+    let transition = buildLayoutTransition(named: "Enter\(isLegacy ? "Legacy" : "Native")FullScreen", from: oldLayout, to: fullscreenLayout)
+    buildTasks(for: transition, totalStartingDuration: 0, totalEndingDuration: duration, thenRun: true)
   }
 
   func window(_ window: NSWindow, startCustomAnimationToExitFullScreenWithDuration duration: TimeInterval) {
@@ -1130,17 +1131,17 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     assert(!windowedLayoutSpec.isFullScreen, "Cannot exit full screen into mode \(windowedLayoutSpec.mode)! Spec: \(windowedLayoutSpec)")
     /// Split the duration between `openNewPanels` animation and `fadeInNewViews` animation
     let exitFSTransition = buildLayoutTransition(named: "Exit\(isLegacy ? "Legacy" : "Native")FullScreen",
-                                                 from: oldLayout, to: windowedLayoutSpec,
-                                                 totalStartingDuration: 0, totalEndingDuration: duration)
+                                                 from: oldLayout, to: windowedLayoutSpec)
+    let exitFSTasks = buildTasks(for: exitFSTransition, totalStartingDuration: 0, totalEndingDuration: duration)
 
     if modeToSetAfterExitingFullScreen == .musicMode {
       let windowedLayout = LayoutState.buildFrom(windowedLayoutSpec)
       let geo = geo.clone(windowed: exitFSTransition.outputGeometry)
       let enterMusicModeTransitionTasks = buildTasksToEnterMusicMode(from: windowedLayout, geo)
-      animationPipeline.submit(exitFSTransition.tasks + enterMusicModeTransitionTasks)
+      animationPipeline.submit(exitFSTasks + enterMusicModeTransitionTasks)
       modeToSetAfterExitingFullScreen = nil
     } else {
-      animationPipeline.submit(exitFSTransition.tasks)
+      animationPipeline.submit(exitFSTasks)
     }
   }
 
@@ -1745,11 +1746,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let interactiveModeLayout = ctx.inputLayout.spec.clone(mode: newMode, interactiveMode: mode)
       let startDuration = isInFullScreen ? 0.0 : Constants.AnimationDuration.cropAnimation * 0.5
       let endDuration = startDuration
-      let entryTransition = buildLayoutTransition(named: "EnterInteractiveMode_\(mode)", from: ctx.inputLayout,
-                                                  to: interactiveModeLayout,
-                                                  totalStartingDuration: startDuration,
-                                                  totalEndingDuration: endDuration, ctx.inputGeoSet)
-      return entryTransition.tasks
+      let entryTransition = buildLayoutTransition(named: "EnterInteractiveMode_\(mode)",
+                                                  from: ctx.inputLayout, to: interactiveModeLayout, ctx.inputGeoSet)
+      return buildTasks(for: entryTransition, totalStartingDuration: startDuration, totalEndingDuration: endDuration)
     }
 
     let gtf = GeometryTransform("EnterInteractiveMode", player,
@@ -1861,9 +1860,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
         let startDuration = immediately || isInFullScreen ? 0 : Constants.AnimationDuration.cropAnimation * 0.75
         let endDuration = immediately || isInFullScreen ? 0 : Constants.AnimationDuration.cropAnimation * 0.25
-        let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: ctx.inputLayout, to: newLayoutSpec,
-                                               totalStartingDuration: startDuration, totalEndingDuration: endDuration, geoSet)
-        tasks.append(contentsOf: transition.tasks)
+        let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: ctx.inputLayout, to: newLayoutSpec, geoSet)
+        let transitionTasks = buildTasks(for: transition, totalStartingDuration: startDuration, totalEndingDuration: endDuration)
+        tasks.append(contentsOf: transitionTasks)
       }
 
       if let doAfter {
@@ -1905,7 +1904,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func buildTasksToEnterMusicMode(automatically: Bool = false,
                                   from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
     let miniPlayerLayout = oldLayout.spec.clone(mode: .musicMode)
-    var transitionTasks = buildLayoutTransition(named: "EnterMusicMode", from: oldLayout, to: miniPlayerLayout, geo).tasks
+    let transition = buildLayoutTransition(named: "EnterMusicMode", from: oldLayout, to: miniPlayerLayout, geo)
+    var transitionTasks = buildTasks(for: transition)
 
     transitionTasks.append(.instantTask { [self] in
       if !automatically {
@@ -1938,7 +1938,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func buildTasksToExitMusicMode(automatically: Bool = false,
                                  from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
     let windowedLayout = LayoutSpec.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutSpec)
-    var transitionTasks = buildLayoutTransition(named: "ExitMusicMode", from: oldLayout, to: windowedLayout, geo).tasks
+    let transition = buildLayoutTransition(named: "ExitMusicMode", from: oldLayout, to: windowedLayout, geo)
+    var transitionTasks = buildTasks(for: transition)
     if !automatically {
       transitionTasks.append(.instantTask { [self] in
         if !automatically {

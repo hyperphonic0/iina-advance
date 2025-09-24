@@ -360,7 +360,8 @@ extension PlayerWindowController {
       }
 
       let newLayoutSpec = oldLayout.spec.clone(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar)
-      buildLayoutTransition(named: "UpdateSidebarPlacements", from: oldLayout, to: newLayoutSpec, thenRun: true)
+      let transition = buildLayoutTransition(named: "UpdateSidebarPlacements", from: oldLayout, to: newLayoutSpec)
+      buildTasks(for: transition, thenRun: true)
     }
   }
 
@@ -371,13 +372,14 @@ extension PlayerWindowController {
     animationPipeline.submitInstantTask { [self] in
       let oldLayout = currentLayout
       let newLayoutSpec = oldLayout.spec.withSidebarsHidden()
-      let transition = buildLayoutTransition(named: "HideAllSidebars", from: oldLayout, to: newLayoutSpec, totalEndingDuration: 0)
+      let transition = buildLayoutTransition(named: "HideAllSidebars", from: oldLayout, to: newLayoutSpec)
+      let transitionTasks = buildTasks(for: transition, totalEndingDuration: 0)
 
       if animate {
-        animationPipeline.submit(transition.tasks)
+        animationPipeline.submit(transitionTasks)
       } else {
         IINAAnimation.disableAnimation{
-          animationPipeline.submit(transition.tasks)
+          animationPipeline.submit(transitionTasks)
         }
       }
     }
@@ -438,7 +440,8 @@ extension PlayerWindowController {
 
     log.verbose("Transitioning to layout with \(leadingSidebar.locationID)=\(leadingSidebar.visibility) \(trailingSidebar.locationID)=\(trailingSidebar.visibility)")
     let newLayoutSpec = oldLayout.spec.clone(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar)
-    buildLayoutTransition(named: "\(shouldShow ? "Show" : "Hide")Sidebar", from: oldLayout, to: newLayoutSpec, thenRun: true)
+    let transition = buildLayoutTransition(named: "\(shouldShow ? "Show" : "Hide")Sidebar", from: oldLayout, to: newLayoutSpec)
+    buildTasks(for: transition, thenRun: true)
   }
 
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
@@ -872,7 +875,8 @@ extension PlayerWindowController {
       let newLayoutSpec = oldLayout.spec.clone(
         leadingSidebar: leadingSidebar.clone(tabGroups: newLeadingTabGroups, visibility: newLeadingSidebarVisibility),
         trailingSidebar: trailingSidebar.clone(tabGroups: newTrailingTabGroups, visibility: newTraillingSidebarVisibility))
-      buildLayoutTransition(named: "MoveTabGroupToSidebar", from: oldLayout, to: newLayoutSpec, thenRun: true)
+      let transition = buildLayoutTransition(named: "MoveTabGroupToSidebar", from: oldLayout, to: newLayoutSpec)
+      buildTasks(for: transition, thenRun: true)
     }
   }
 
@@ -1171,7 +1175,8 @@ extension PlayerWindowController {
       animationPipeline.submitInstantTask { [self] in
         let newLayoutSpec = oldLayout.spec.clone(leadingSidebar: hideLeading ? oldLayout.leadingSidebar.clone(visibility: .closed) : nil,
                                                  trailingSidebar: hideTrailing ? oldLayout.trailingSidebar.clone(visibility: .closed) : nil)
-        buildLayoutTransition(named: "HideSidebarsOnClick", from: oldLayout, to: newLayoutSpec, totalEndingDuration: 0, thenRun: true)
+        let transition = buildLayoutTransition(named: "HideSidebarsOnClick", from: oldLayout, to: newLayoutSpec)
+        buildTasks(for: transition, totalEndingDuration: 0, thenRun: true)
       }
       return true
     }
