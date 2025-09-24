@@ -17,7 +17,7 @@ extension PlayerWindowController {
       self.identifier = identifier
     }
 
-    func createIfMissing(_ creationFunc: () -> NSLayoutConstraint) {
+    func createIfMissing(_ log: Logger.Subsystem?,_ creationFunc: () -> NSLayoutConstraint) {
       guard !isActive else { return }
 
       let newConstraint = creationFunc()
@@ -26,11 +26,14 @@ extension PlayerWindowController {
       constraint = newConstraint
     }
 
-    func createOrUpdate(to constantToSet: CGFloat = 0, requiredSecondAnchor: NSLayoutXAxisAnchor? = nil, _ creationFunc: (CGFloat) -> NSLayoutConstraint) {
+    func createOrUpdate(to constantToSet: CGFloat = 0, requiredSecondAnchor: NSLayoutXAxisAnchor? = nil,
+                        _ log: Logger.Subsystem?,
+                        _ creationFunc: (CGFloat) -> NSLayoutConstraint) {
       if let constraint, isActive, requiredSecondAnchor == nil || (constraint.secondAnchor == requiredSecondAnchor) {
         constraint.animateToConstant(constantToSet)
       } else {
         constraint?.isActive = false
+        log?.verbose("Creating constraint: \(identifier)")
         let newConstraint = creationFunc(constantToSet)
         newConstraint.identifier = identifier
         newConstraint.isActive = true
@@ -109,6 +112,7 @@ extension PlayerWindowController {
     let contentView = window!.contentView!
     let p = panelConstraints
     let logPre = transition.logPreamble(for: stage)
+    let log = self.log.withPreamble(logPre)
     let outputGeo = transition.outputGeometry
 
     var useViewport = outputGeo.isViewportShown
@@ -142,7 +146,7 @@ extension PlayerWindowController {
       useTrailingSidebar = useTrailingSidebar || transition.inputLayout.isTrailingSidebarVisible
     }
 
-    log.verbose("\(logPre) RebuildPanels: Viewport=\(useViewport.yn) BottomBar=\(useBottomBar.yn) TopBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSB=\(useTrailingSidebar.yn)")
+    log.verbose("RebuildPanels: Viewport=\(useViewport.yn) BottomBar=\(useBottomBar.yn) TopBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSB=\(useTrailingSidebar.yn)")
 
     // - Add window subviews in a well-defined order (before adding constraints between them)
 
@@ -201,13 +205,13 @@ extension PlayerWindowController {
       let constant1 = transition.vpTopOffsetFromTopBarTop(for: stage)
       let constant2 = transition.topBarBtmOffsetFromVPTop(for: stage)
       let titleHeight = min(layout.titleBarHeight, constant1 - constant2)  // do not make titleBar larger than top bar
-      log.verbose("\(logPre) Updating topBar: vpTopOffsetFromTopBarTop=\(constant1) topBarBtmOffsetFromVPTop=\(constant2) titleBarHeight=\(titleHeight)")
+      log.verbose("Updating topBar: vpTopOffsetFromTopBarTop=\(constant1) topBarBtmOffsetFromVPTop=\(constant2) titleBarHeight=\(titleHeight)")
 
-      p.vpTopOffsetFromTopBarTop.createOrUpdate(to: constant1) { [self] c in
+      p.vpTopOffsetFromTopBarTop.createOrUpdate(to: constant1, log) { [self] c in
         viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
       }
 
-      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: constant2) { [self] c in
+      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: constant2, log) { [self] c in
         topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
@@ -220,10 +224,9 @@ extension PlayerWindowController {
     let isAnimatingVideoViewOpen = transition.isOpeningViewport && !isFinalStage  // Music Mode: opening video
     if useBottomBar && (!outputGeo.isViewportShown || isAnimatingVideoViewOpen) {
       let constant1 = transition.bottomBarTopOffsetFromCVTop(for: stage)
-      log.verbose("\(logPre) Updating bottomBarTopOffsetFromCVTop=\(constant1)")
-      p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1) { [self] c in
-        log.verbose("\(logPre) Creating constraint: bottomBarTopOffsetFromCVTop")
-        return bottomBarView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
+      log.verbose("Updating bottomBarTopOffsetFromCVTop=\(constant1)")
+      p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
+        bottomBarView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
       }
     } else {
       // Need to manually remove this one because it doesn't depend on viewportView, & thus won't get removed if/when viewport gets removed.
@@ -234,13 +237,13 @@ extension PlayerWindowController {
     if useBottomBar && useViewport && !isAnimatingVideoViewOpen {
       let constant1 = transition.vpBtmOffsetFromTopOfBottomBar(for: stage)
       let constant2 = transition.bottomBarBtmOffsetFromVPBtm(for: stage)
-      log.verbose("\(logPre) Updating bottomBar & viewport: vpBtmOffsetFromTopOfBottomBar=\(constant1) bottomBarBtmOffsetFromVPBtm=\(constant2)")
+      log.verbose("Updating bottomBar & viewport: vpBtmOffsetFromTopOfBottomBar=\(constant1) bottomBarBtmOffsetFromVPBtm=\(constant2)")
 
-      p.vpBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1) { [self] c in
+      p.vpBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1, log) { [self] c in
         viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
       }
 
-      p.bottomBarBtmOffsetFromVPBtm.createOrUpdate(to: constant2) { [self] c in
+      p.bottomBarBtmOffsetFromVPBtm.createOrUpdate(to: constant2, log) { [self] c in
         let con = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
         // In music mode, need to be lower priority than VideoView constraints. Otherwise live resize of window will break.
         // Leave as lower priority always - doesn't seem to hurt, and prevent conflicting constraints
@@ -257,23 +260,21 @@ extension PlayerWindowController {
       // enable for animations or if in music mode & neither playlist nor video is open
       if !isFinalStage || (outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown) {
         let constant1 = transition.bottomBarBtmOffsetFromCVTop(for: stage)
-        log.verbose{"\(logPre) Updating bottomBarBtmOffsetFromCVTop to \(constant1)"}
-        p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1) { [self] c in
-          log.verbose("\(logPre) Creating constraint: bottomBarBtmOffsetFromCVTop")
-          return bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
+        log.verbose{"Updating bottomBarBtmOffsetFromCVTop to \(constant1)"}
+        p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
+          bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
         }
       } else {
         // remove
         if p.bottomBarBtmOffsetFromCVTop.isActive {
-          log.verbose{"\(logPre) Removing bottomBarBtmOffsetFromCVTop"}
+          log.verbose{"Removing bottomBarBtmOffsetFromCVTop"}
           p.bottomBarBtmOffsetFromCVTop.isActive = false
         }
       }
 
       // This will always have constant: 0
-      p.cvBtmOffsetFromBottomBarBtm.createOrUpdate(to: 0) { [self] c in
-        log.verbose("\(logPre) Creating constraint: cvBtmOffsetFromBottomBarBtm")
-        return contentView.bottomAnchor.constraint(equalTo: bottomBarView.bottomAnchor, constant: c)
+      p.cvBtmOffsetFromBottomBarBtm.createOrUpdate(to: 0, log) { [self] c in
+        contentView.bottomAnchor.constraint(equalTo: bottomBarView.bottomAnchor, constant: c)
       }
 
     }
@@ -283,19 +284,18 @@ extension PlayerWindowController {
     if useViewport {
       let constant1 = transition.vpTopOffsetFromCVTop(for: stage)
       let constant2 = transition.cvBtmOffsetFromVPBtm(for: stage)
-      log.verbose("\(logPre) Updating viewport: vpTopOffsetFromCVTop=\(constant1) cvBtmOffsetFromVPBtm=\(constant2) vpLeadingOffsetFromCVLeading=0 vpTrailingOffsetFromCVTrailing=0")
+      log.verbose("Updating viewport: vpTopOffsetFromCVTop=\(constant1) cvBtmOffsetFromVPBtm=\(constant2) vpLeadingOffsetFromCVLeading=0 vpTrailingOffsetFromCVTrailing=0")
 
-      p.vpTopOffsetFromCVTop.createOrUpdate(to: constant1) { [self] c in
+      p.vpTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
         viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
       }
 
       if (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode), !isFinalStage {
         let constant3 = transition.vpBtmOffsetFromCVTop(for: stage)
 
-        log.verbose("\(logPre) Updating viewport: vpBtmOffsetFromCVTop=\(constant3)")
-        p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3) { [self] c in
-          log.verbose("\(logPre) Creating constraint: vpBtmOffsetFromCVTop")
-          return viewportView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
+        log.verbose("Updating viewport: vpBtmOffsetFromCVTop=\(constant3)")
+        p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3, log) { [self] c in
+          viewportView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
         }
       } else {
         p.vpBtmOffsetFromCVTop.isActive = false
@@ -304,18 +304,18 @@ extension PlayerWindowController {
       if isFinalStage && outputGeo.mode == .musicMode && outputGeo.isMusicModePlaylistShown {
         p.cvBtmOffsetFromVPBtm.isActive = false
       } else {
-        p.cvBtmOffsetFromVPBtm.createOrUpdate(to: constant2) { [self] c in
+        p.cvBtmOffsetFromVPBtm.createOrUpdate(to: constant2, log) { [self] c in
           contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
         }
       }
 
       // Leading
-      p.vpLeadingOffsetFromCVLeading.createIfMissing() { [self] in
+      p.vpLeadingOffsetFromCVLeading.createIfMissing(log) { [self] in
         viewportView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
       }
 
       // Trailing
-      p.vpTrailingOffsetFromCVTrailing.createIfMissing() { [self] in
+      p.vpTrailingOffsetFromCVTrailing.createIfMissing(log) { [self] in
         contentView.trailingAnchor.constraint(equalTo: viewportView.trailingAnchor, constant: 0)
       }
     }
@@ -343,7 +343,7 @@ extension PlayerWindowController {
           // Update sidebar vertical alignments to match top bar:
           let downshift = min(transition.inputLayout.sidebarDownshift, transition.outputLayout.sidebarDownshift)
           let tabHeight = min(transition.inputLayout.sidebarTabHeight, transition.outputLayout.sidebarTabHeight)
-          log.verbose{"\(logPre) Updating sidebars: downshift=\(downshift) tabHeight=\(tabHeight)"}
+          log.verbose{"Updating sidebars: downshift=\(downshift) tabHeight=\(tabHeight)"}
           updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
         }
       }
@@ -376,7 +376,7 @@ extension PlayerWindowController {
                                   setTrailingTo: transition.isOpeningTrailingSidebar ? layout.trailingSidebar.visibility : nil,
                                   ΔWindowWidth: ΔWindowWidth)
 
-        log.verbose{"\(logPre) Updating sidebars: downshift=\(layout.sidebarDownshift) tabHeight=\(layout.sidebarTabHeight)"}
+        log.verbose{"Updating sidebars: downshift=\(layout.sidebarDownshift) tabHeight=\(layout.sidebarTabHeight)"}
         updateSidebarVerticalConstraints(tabHeight: layout.sidebarTabHeight, downshift: layout.sidebarDownshift)
       }
     case .postTransition:
@@ -435,8 +435,7 @@ extension PlayerWindowController {
       leadingSpacePartner = contentView.leadingAnchor
     }
 
-    p.bottomBarLeadingSpace.createOrUpdate(to: 0, requiredSecondAnchor: leadingSpacePartner) { [self] c in
-      log.verbose("\(logPre) Creating constraint: bottomBarLeadingSpace")
+    p.bottomBarLeadingSpace.createOrUpdate(to: 0, requiredSecondAnchor: leadingSpacePartner, log) { [self] c in
       return bottomBarView.leadingAnchor.constraint(equalTo: leadingSpacePartner, constant: c)
     }
 
@@ -450,8 +449,7 @@ extension PlayerWindowController {
       trailingSpacePartner = contentView.trailingAnchor
     }
 
-    p.bottomBarTrailingSpace.createOrUpdate(to: 0, requiredSecondAnchor: trailingSpacePartner) { [self] c in
-      log.verbose("\(logPre) Creating constraint: bottomBarTrailingSpace")
+    p.bottomBarTrailingSpace.createOrUpdate(to: 0, requiredSecondAnchor: trailingSpacePartner, log) { [self] c in
       return bottomBarView.trailingAnchor.constraint(equalTo: trailingSpacePartner, constant: c)
     }
   }

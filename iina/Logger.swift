@@ -193,6 +193,51 @@ class Logger: NSObject {
 
   // MARK: - Subsystem
 
+  // TODO: this is kludgey! Investigate using a thread local var when time permits
+  class DecoratedSubsystem: Subsystem {
+    let preamble: String
+
+    init(original: Subsystem, preamble: String) {
+      self.preamble = preamble
+      super.init(rawValue: original.rawValue)
+    }
+
+    required init(rawValue: String) {
+      self.preamble = ""
+      super.init(rawValue: rawValue)
+    }
+    
+    override func trace(_ rawMessage: String) {
+      guard isTraceEnabled else { return }
+      Logger.log("\(preamble) \(rawMessage)", level: .trace, subsystem: self)
+    }
+
+    override func verbose(_ rawMessage: String) {
+      Logger.log("\(preamble) \(rawMessage)", level: .verbose, subsystem: self)
+    }
+
+    override func debug(_ rawMessage: String) {
+      Logger.log("\(preamble) \(rawMessage)", level: .debug, subsystem: self)
+    }
+
+    override func warn(_ rawMessage: String) {
+      Logger.log("\(preamble) \(rawMessage)", level: .warning, subsystem: self)
+    }
+
+    override func error(_ rawMessage: String) {
+      Logger.log("\(preamble) \(rawMessage)", level: .error, subsystem: self)
+    }
+
+    override func fatalError(_ rawMessage: String) -> Never {
+      Logger.fatal("\(preamble) \(rawMessage)")
+    }
+
+    override func log(_ rawMessage: String, level: Level = .debug) {
+      Logger.log("\(preamble) \(rawMessage)", level: level, subsystem: self)
+    }
+
+  }
+
   class Subsystem: RawRepresentable {
     let rawValue: String
     var added = false
@@ -219,6 +264,10 @@ class Logger: NSObject {
 
     required init(rawValue: String) {
       self.rawValue = rawValue
+    }
+
+    func withPreamble(_ preamble: String) -> Subsystem {
+      return DecoratedSubsystem(original: self, preamble: preamble)
     }
 
     // MARK: - String arg variants
