@@ -573,12 +573,12 @@ extension PlayerWindowController {
     let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscHasClearBG)
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
+    // Need to add additionalInfo, OSD before changing sidebars
+    addOrRemoveOSDViews(outputLayout, transition.outputGeometry)
+
     if !transition.isWindowInitialLayout && !transition.isTogglingFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }
-
-    // Need to add additionalInfo, OSD before changing sidebars
-    addOrRemoveOSDViews(outputLayout, transition.outputGeometry)
 
     // - Sidebars
 

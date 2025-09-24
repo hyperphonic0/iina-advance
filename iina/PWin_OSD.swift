@@ -10,7 +10,8 @@ import Foundation
 import Mustache
 
 // Avoid constraint violations during window resize
-fileprivate let priority = NSLayoutConstraint.Priority(rawValue: 400)
+fileprivate let constraintPriority = NSLayoutConstraint.Priority(rawValue: 400)
+fileprivate let lowerConstraintPriority = NSLayoutConstraint.Priority(rawValue: 300)
 
 /// Encapsulates all of the window's OSD state vars
 ///
@@ -349,6 +350,7 @@ extension PlayerWindowController {
         log.verbose{"[OSD] Adding additionalInfoView to viewportView"}
         viewportView.addSubview(additionalInfoView)  // will sort below
         additionalInfoView.roundCorners()
+        fadeableViews.applyVisibility(.hidden, additionalInfoView)  // hide for now. Will show in later stage
       }
       updateAdditionalInfoContent()  // update content
 
@@ -394,11 +396,11 @@ extension PlayerWindowController {
     let otherAnchorTrailing = hasTrailingSidebar ? trailingSidebarView.leadingAnchor : viewportView.trailingAnchor
 
     if let leadingView {
-      let leadingConstraint = otherAnchorLeading.constraint(equalTo: leadingView.leadingAnchor, constant: -8)
+      let leadingConstraint = leadingView.leadingAnchor.constraint(equalTo: otherAnchorLeading, constant: 8)
       osd.leadingSide_LeadingConstraint = make("OSD_leadingSide_LeadingConstraint", leadingConstraint)
 
-      let trailingConstraint = leadingView.trailingAnchor.constraint(lessThanOrEqualTo: otherAnchorTrailing, constant: -8)
-      osd.leadingSide_TrailingConstraint = make("OSD_LeadingSide_TrailingConstraint", trailingConstraint)
+      let trailingConstraint = otherAnchorTrailing.constraint(greaterThanOrEqualTo: leadingView.trailingAnchor, constant: 8)
+      osd.leadingSide_TrailingConstraint = make("OSD_LeadingSide_TrailingConstraint", trailingConstraint, lowerConstraintPriority)
 
       let topConstraint = leadingView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: offsetFromTop)
       osd.osd1TopOffsetConstraint = make("OSDLeadingView_TopOffsetConstraint", topConstraint)
@@ -407,15 +409,15 @@ extension PlayerWindowController {
       osd.osd1BottomOffsetConstraint = make("OSDLeadingView_BtmOffsetConstraint", bottomConstraint)
 
       let closeButtonsConstraint = leadingView.leadingAnchor.constraint(greaterThanOrEqualTo: closeButtonView.trailingAnchor, constant: 4)
-      osd.osdLeadingToMiniPlayerButtonsTrailingConstraint = make("CloseBtn_GTLeadingOSDViewConstraint", closeButtonsConstraint)
+      osd.osdLeadingToMiniPlayerButtonsTrailingConstraint = make("CloseBtn_GTLeadingOSDViewConstraint", closeButtonsConstraint, lowerConstraintPriority)
     }
 
     if let trailingView {
       let trailingConstraint = otherAnchorTrailing.constraint(equalTo: trailingView.trailingAnchor, constant: 8)
       osd.trailingSide_TrailingConstraint = make("OSD_trailingSide_TrailingConstraint", trailingConstraint)
 
-      let leadingConstraint = trailingView.leadingAnchor.constraint(greaterThanOrEqualTo: otherAnchorLeading, constant: -8)
-      osd.trailingSide_LeadingConstraint = make("OSD_TrailingSide_LeadingConstraint", leadingConstraint)
+      let leadingConstraint = otherAnchorLeading.constraint(lessThanOrEqualTo: trailingView.leadingAnchor, constant: 8)
+      osd.trailingSide_LeadingConstraint = make("OSD_TrailingSide_LeadingConstraint", leadingConstraint, lowerConstraintPriority)
 
       let topConstraint = trailingView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: offsetFromTop)
       osd.osd2TopOffsetConstraint = make("OSDTrailingView_TopOffsetConstraint", topConstraint)
@@ -431,7 +433,7 @@ extension PlayerWindowController {
 
   }
 
-  private func make(_ identifier: String, _ constraint: NSLayoutConstraint) -> NSLayoutConstraint {
+  private func make(_ identifier: String, _ constraint: NSLayoutConstraint, _ priority: NSLayoutConstraint.Priority = constraintPriority) -> NSLayoutConstraint {
     constraint.identifier = identifier
     constraint.priority = priority
     constraint.isActive = true
