@@ -78,7 +78,7 @@ extension PlayerWindowController {
   /// - ¹Used for opening/closing viewport animation.
   /// - ⁴Only used when bottomBar is shown & viewport is hidden.
   /// - ⁵Only used in music mode when both video & playlist are hidden.
-  class PanelConstraints {
+  final class PanelConstraints {
     // - Top bar (title bar and/or top OSC) constraints
     let topBarBtmOffsetFromVPTop = OptionalConstraint("TopBar.btm-offset-from-VP.top")
     let vpTopOffsetFromTopBarTop = OptionalConstraint("VP.top-offset-from-TopBar.top")

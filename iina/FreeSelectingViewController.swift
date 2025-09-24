@@ -20,17 +20,18 @@ class FreeSelectingViewController: CropBoxViewController {
         "y": String(self.cropy),
         "w": String(self.cropw),
         "h": String(self.croph)
-        ])
-      if let existingFilter = player.info.delogoFilter {
-        player.mpv.queue.async {
+      ])
+      player.mpv.queue.async {
+        if let existingFilter = player.info.delogoFilter {
           player.removeVideoFilter(existingFilter)
+        } else if !player.addVideoFilter(filter) {
+          DispatchQueue.main.async {
+            Utility.showAlert("filter.incorrect")
+          }
+          return
         }
+        player.info.delogoFilter = filter
       }
-      if !player.addVideoFilter(filter) {
-        Utility.showAlert("filter.incorrect")
-        return
-      }
-      player.info.delogoFilter = filter
     }
   }
 

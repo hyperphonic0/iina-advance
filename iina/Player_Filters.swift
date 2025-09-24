@@ -191,8 +191,8 @@ extension PlayerCore {
   /// - Parameter filter: The filter to add.
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
   /// Can run on either mpv or main DispatchQueue.
-  // TODO: refactor to execute mpv commands only on mpv queue
   func addVideoFilter(_ filter: MPVFilter) -> Bool {
+    // TODO: refactor to execute mpv commands only on mpv queue. Make this async!
     let success = addVideoFilter(filter.stringFormat)
     if !success {
       log.verbose{"Video filter \(filter.stringFormat) was not added"}
@@ -208,10 +208,13 @@ extension PlayerCore {
   func addVideoFilter(_ filter: String) -> Bool {
     log.debug{"Adding video filter \(filter.quoted)..."}
 
+    // FIXME: make this an async task!
     // check hwdec
     let hwdec = mpv.getString(MPVProperty.hwdec)
     if hwdec == "auto" {
-      let askHwdec: (() -> Bool) = { [self] in
+      log.debug{"Prompting user whether to change hwdec from 'auto'"}
+      // if not on main thread, post the alert in main thread
+      let canContinue: Bool = DispatchQueue.main.execOrSync{ [self] in
         let panel = NSAlert()
         panel.messageText = NSLocalizedString("alert.title_warning", comment: "Warning")
         panel.informativeText = NSLocalizedString("alert.filter_hwdec.message", comment: "")
@@ -232,15 +235,9 @@ extension PlayerCore {
         }
       }
 
-      // if not on main thread, post the alert in main thread
-      if Thread.isMainThread {
-        if !askHwdec() { return false }
-      } else {
-        var result = false
-        DispatchQueue.main.sync {
-          result = askHwdec()
-        }
-        if !result { return false }
+      guard canContinue else {
+        log.debug{"Cannot add filter: hwdec==auto & user chose not to change it"}
+        return false
       }
     }
 

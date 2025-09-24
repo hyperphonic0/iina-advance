@@ -2273,11 +2273,11 @@ extension DispatchQueue {
     }
   }
 
-  public func execOrSync(execute work: @convention(block) () -> Void) {
+  public func execOrSync<R>(execute work: () -> R) -> R {
     if DispatchQueue.isExecutingIn(self, logError: false) {
-      work()
+      return work()
     } else {
-      sync {
+      return sync {
         work()
       }
     }

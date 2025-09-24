@@ -650,6 +650,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     DispatchQueue.main.async { [self] in
       // If launched non-interactively, load all the UI stuff now
+      if !AppDelegate.isInteractiveLaunch {
+        // TODO: remove this when problems fixed...
+        Utility.showAlert("OpenFiles: Launch is not interactive!", style: .critical, logAlert: true)
+        return
+      }
       ensureInteractiveLaunchEnabled()
 
       // if installing a plugin package

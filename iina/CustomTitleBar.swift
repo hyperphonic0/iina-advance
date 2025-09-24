@@ -292,7 +292,7 @@ class CustomTitleBarViewController: NSViewController {
 
 /// Leading stack view for custom title bar. Needed to subclass parent view of traffic light buttons
 /// in order to get their highlight working properly. See: https://stackoverflow.com/a/30417372/1347529
-class TitleBarButtonsContainerView: NSStackView {
+final class TitleBarButtonsContainerView: NSStackView {
   var isMouseInside: Bool = false
 
   @objc func _mouseInGroup(_ button: NSButton) -> Bool {
@@ -316,7 +316,7 @@ class TitleBarButtonsContainerView: NSStackView {
   }
 }
 
-class CustomTitleBar {
+final class CustomTitleBar {
   static let shared = CustomTitleBar()
 
   func makeTitleBarButton(_ image: NSImage, identifier: String, target: AnyObject, action: Selector, bounceOnClick: Bool) -> SymButton {
