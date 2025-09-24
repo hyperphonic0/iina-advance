@@ -366,6 +366,7 @@ extension PlayerWindowController {
   /// which might trigger constraint violations if priority=required were used.
   /// - Setting `skipAddConstraints` to `true` is a kludge for special use during layout transitions
   func updateOSDConstraints(_ layout: LayoutState, _ geo: PWinGeometry) {
+    // FIXME: rewrite these using OptionalConstraints
     osd.leadingSide_LeadingConstraint?.isActive = false
     osd.leadingSide_TrailingConstraint?.isActive = false
     osd.trailingSide_LeadingConstraint?.isActive = false

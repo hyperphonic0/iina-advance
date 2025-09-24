@@ -55,15 +55,18 @@ extension PlayerWindowController {
                                                                   outputLayout: outputLayout, inputGeoSet,
                                                                   isWindowInitialLayout: isWindowInitialLayout)
 
-    let transition = LayoutTransition(name: transitionName,
+    let protoTransition = LayoutTransition(name: transitionName,
+                                           from: inputLayout, from: inputGeometry,
+                                           to: outputLayout, to: outputGeometry,
+                                           isWindowInitialLayout: isWindowInitialLayout)
+
+    let middleGeometry = protoTransition.buildMiddleGeometry()?.clone(isMiddleTransition: true)
+    var transition = LayoutTransition(name: transitionName,
                                       from: inputLayout, from: inputGeometry,
                                       to: outputLayout, to: outputGeometry,
+                                      middleGeometry: middleGeometry,
                                       isWindowInitialLayout: isWindowInitialLayout)
 
-    // MiddleGeometry if needed (is applied at end of ClosePanels step)
-    if let middleGeo = buildMiddleGeometry(forTransition: transition, inputGeoSet) {
-      transition.middleGeometry = middleGeo.clone(isMiddleTransition: true)
-    }
 
     log.verbose("[\(transitionName)] INPUT\(inputGeoExplicit == nil ? "" : "(given)"):  \(inputGeometry)")
     log.verbose("[\(transitionName)] MIDDLE: \(transition.middleGeometry?.description ?? "nil")")
@@ -166,10 +169,12 @@ extension PlayerWindowController {
 
     log.verbose("[\(transitionName)] Task durations: ShowOldFadeables=\(showFadeableViewsDuration) FadeOutOldViews=\(fadeOutOldViewsDuration), CloseOldPanels=\(closeOldPanelsDuration) FadeInNewViews=\(fadeInNewViewsDuration) OpenFinalPanels=\(openFinalPanelsDuration)")
 
+    var tasks: [IINAAnimation.Task] = []
+
     // - Starting animations:
 
     // Setup: Set initial var or other tasks which happen before main animations
-    transition.tasks.append(.instantTask{ [self] in
+    tasks.append(.instantTask{ [self] in
       doPreTransitionWork(transition)
     })
 
@@ -177,12 +182,12 @@ extension PlayerWindowController {
     for fadeAnimation in buildAnimationToShowFadeableViews(targetLayout: transition.inputLayout,
                                                            restartFadeTimer: false, duration: showFadeableViewsDuration,
                                                            forceShow: true, forceShowTopBar: true) {
-      transition.tasks.append(fadeAnimation)
+      tasks.append(fadeAnimation)
     }
 
     // StartingAnimation 2: Fade out views which no longer will be shown but aren't enclosed in a panel.
     if transition.needsFadeOutOldViews {
-      transition.tasks.append(.init(duration: fadeOutOldViewsDuration, { [self] in
+      tasks.append(.init(duration: fadeOutOldViewsDuration, { [self] in
         fadeOutOldViews(transition)
       }))
     }
@@ -190,7 +195,7 @@ extension PlayerWindowController {
     // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies middleGeometry if it exists.
     // Not enabled for full screen transitions or if animation is disabled.
     if transition.needsCloseOldPanels, closeOldPanelsDuration > 0.0 {
-      transition.tasks.append(.init(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
+      tasks.append(.init(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
         closeOldPanels(transition)
       }))
     }
@@ -209,18 +214,18 @@ extension PlayerWindowController {
     // Place this task either before or after updateHiddenViewsAndConstraints depending on entering or exiting.
     // Want to put this *before* it when entering music mode & hiding (closing) viewportView, but other cases the order shouldn't matter.
     if let moveAndResizeVideoTask, transition.isEnteringMusicMode {
-      transition.tasks.append(moveAndResizeVideoTask)
+      tasks.append(moveAndResizeVideoTask)
     }
 
     // Midpoint: perform major constraints updates (any affected panels should have been reduced to 0 thickness by the previous
     // task, so these updates can be performed without visible changes. In general, this step should have almost no visible
     // changes.
-    transition.tasks.append(.instantTask{ [self] in
+    tasks.append(.instantTask{ [self] in
       updateHiddenViewsAndConstraints(transition)
     })
 
     if let moveAndResizeVideoTask, !transition.isEnteringMusicMode {
-      transition.tasks.append(moveAndResizeVideoTask)
+      tasks.append(moveAndResizeVideoTask)
     }
 
     // - Ending animations:
@@ -232,7 +237,7 @@ extension PlayerWindowController {
       let cameraToTotalFrameRatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
 
-      transition.tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
+      tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
         let inputGeo = transition.inputGeometry
         let newGeo: PWinGeometry
         if inputGeo.hasTopPaddingForCameraHousing {
@@ -253,7 +258,7 @@ extension PlayerWindowController {
     }
 
     // EndingAnimation 1: Open new panels
-    transition.tasks.append(.init(duration: openFinalPanelsDuration, timing: openFinalPanelsTiming, { [self] in
+    tasks.append(.init(duration: openFinalPanelsDuration, timing: openFinalPanelsTiming, { [self] in
       // If toggling fullscreen, this also changes the window frame:
       openNewPanelsAndFinalizeOffsets(transition)
     }))
@@ -261,7 +266,7 @@ extension PlayerWindowController {
     // EndingAnimation 2: Fade in new views
     // If exiting FS, this task is skipped. It needs to run in a separate CATransaction so it is run down below.
     if transition.isWindowInitialLayout || transition.needsFadeInNewViews {
-      transition.tasks.append(.init(duration: fadeInNewViewsDuration, timing: fadeInNewViewsTiming) { [self] in
+      tasks.append(.init(duration: fadeInNewViewsDuration, timing: fadeInNewViewsTiming) { [self] in
         fadeInNewViews(transition)
       })
     }
@@ -271,7 +276,7 @@ extension PlayerWindowController {
       let cameraToTotalFrameRatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
 
-      transition.tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
+      tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
         let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : (windowedModeScreen.cameraHousingHeight ?? 0)
         let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame,
                                                      screenID: windowedModeScreen.screenID, topMarginHeight: topBlackBarHeight,
@@ -282,13 +287,15 @@ extension PlayerWindowController {
     }
 
     // Post: After animations all finish. Not animated.
-    transition.tasks.append(.instantTask{ [self] in
+    tasks.append(.instantTask{ [self] in
       if transition.isTogglingFullScreen {
         // For a better visual experience wait until window finishes moving
         fadeInNewViews(transition)
       }
       doPostTransitionWork(transition)
     })
+
+    transition.tasks = tasks
 
     if thenRun {
       animationPipeline.submit(transition.tasks)
@@ -414,38 +421,44 @@ extension PlayerWindowController {
     }
   }
 
+}
+
+extension PlayerWindowController.LayoutTransition {
+
   /// Builds `middleGeometry`.
   /// Currently there are 4 bars. Each can be either inside or outside, exclusively.
-  func buildMiddleGeometry(forTransition transition: LayoutTransition, _ inputGeoSet: GeometrySet) -> PWinGeometry? {
-    guard !transition.isWindowInitialLayout else {
+  func buildMiddleGeometry() -> PWinGeometry? {
+    guard !isWindowInitialLayout else {
       // Not animated
       return nil
     }
 
-    if transition.isTogglingInteractiveMode {
+    let log = inputGeometry.log
+
+    if isTogglingInteractiveMode {
       // - Interactive Mode
 
-      if transition.inputLayout.isFullScreen {
+      if inputLayout.isFullScreen {
         // Need to hide sidebars when entering interactive mode in full screen
-        return transition.outputGeometry
+        return outputGeometry
       }
 
-      let mustUncropFirst = (transition.outputLayout.spec.interactiveMode == .crop) && (transition.inputGeometry.video.cropFilter != nil)
-      if mustUncropFirst, let cropFilter = transition.inputGeometry.video.cropFilter {
-        assert(transition.isEnteringInteractiveMode, "Expected to be entering interactive mode only when uncropping video")
-        let uncroppedVideoGeo = transition.inputGeometry.video.removingCrop()
+      let mustUncropFirst = (outputLayout.spec.interactiveMode == .crop) && (inputGeometry.video.cropFilter != nil)
+      if mustUncropFirst, let cropFilter = inputGeometry.video.cropFilter {
+        assert(isEnteringInteractiveMode, "Expected to be entering interactive mode only when uncropping video")
+        let uncroppedVideoGeo = inputGeometry.video.removingCrop()
         log.verbose{"Uncropping video from cropRect=\(cropFilter.cropRect(origVideoSize: uncroppedVideoGeo.videoSizeRaw, flipY: true)) to videoSizeRaw=\(uncroppedVideoGeo.videoSizeRaw)"}
 
-        let intermediateWindowFrame = transition.inputGeometry.clone(video: uncroppedVideoGeo).refitted().videoFrameInScreenCoords
-        let middleGeo = transition.inputGeometry.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
-                                                       topMarginHeight: 0,
-                                                       outsideBars: .zero, insideBars: .zero,
-                                                       viewportMargins: .zero,
-                                                       isMiddleTransition: true)
+        let intermediateWindowFrame = inputGeometry.clone(video: uncroppedVideoGeo).refitted().videoFrameInScreenCoords
+        let middleGeo = inputGeometry.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
+                                            topMarginHeight: 0,
+                                            outsideBars: .zero, insideBars: .zero,
+                                            viewportMargins: .zero,
+                                            isMiddleTransition: true)
         return middleGeo
       }
 
-      let baseGeo = transition.isEnteringInteractiveMode ? transition.inputGeometry : transition.outputGeometry
+      let baseGeo = isEnteringInteractiveMode ? inputGeometry : outputGeometry
       // FIXME: For very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
       let intermediateWindowFrame = baseGeo.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords
 
@@ -456,28 +469,30 @@ extension PlayerWindowController {
                                     isMiddleTransition: true)
       return middleGeo
 
-    } else if transition.isEnteringMusicMode {
+    } else if isEnteringMusicMode {
       // - Music Mode: Enter
-      let baseGeo = transition.inputGeometry
+      let baseGeo = inputGeometry
 
       let middleWindowFrame = baseGeo.videoFrameInScreenCoords
       return PWinGeometry(windowFrame: middleWindowFrame, screenID: baseGeo.screenID,
                           screenFit: baseGeo.screenFit, mode: .windowedNormal, topMarginHeight: 0,
-                          outsideBars: .zero, insideBars: .zero, video: baseGeo.video)
+                          outsideBars: .zero, insideBars: .zero, video: baseGeo.video,
+                          isMiddleTransition: true)
 
-    } else if transition.isExitingMusicMode {
+    } else if isExitingMusicMode {
       // - Music Mode: Exit
-      if transition.isEnteringFullScreen {
+      if isEnteringFullScreen {
         return nil
       }
       // Only bottom bar needs to be closed. No need to constrain in screen
-      return transition.inputGeometry.withResizedBars(mode: .windowedNormal,
-                                                      outsideBottom: 0,
-                                                      pinWidthOrHeightIfAtMax: false)
-    } else if transition.inputGeometry.mode == .musicMode, transition.outputGeometry.mode == .musicMode {
+      return inputGeometry.withResizedBars(mode: .windowedNormal,
+                                           outsideBottom: 0,
+                                           pinWidthOrHeightIfAtMax: false,
+                                           isMiddleTransition: true)
+    } else if inputGeometry.mode == .musicMode, outputGeometry.mode == .musicMode {
       // - Music Mode: Continuing
-      if transition.isTogglingViewport {
-        return transition.outputGeometry.cloneMusicMode(isMiddleTransition: true)
+      if isTogglingViewport {
+        return outputGeometry.cloneMusicMode(isMiddleTransition: true)
       } else {
         return nil
       }
@@ -486,61 +501,61 @@ extension PlayerWindowController {
     // TOP
     let insideTopBarHeight: CGFloat
     let outsideTopBarHeight: CGFloat
-    if !transition.isWindowInitialLayout && transition.isTopBarPlacementOrStyleChanging {
+    if !isWindowInitialLayout && isTopBarPlacementOrStyleChanging {
       insideTopBarHeight = 0  // close completely. will animate reopening if needed later
       outsideTopBarHeight = 0
-    } else if transition.outputGeometry.outsideBars.top < transition.inputGeometry.outsideBars.top {
+    } else if outputGeometry.outsideBars.top < inputGeometry.outsideBars.top {
       insideTopBarHeight = 0
-      outsideTopBarHeight = transition.outputGeometry.outsideBars.top
-    } else if transition.outputGeometry.insideBars.top < transition.inputGeometry.insideBars.top {
-      insideTopBarHeight = transition.outputGeometry.insideBars.top
+      outsideTopBarHeight = outputGeometry.outsideBars.top
+    } else if outputGeometry.insideBars.top < inputGeometry.insideBars.top {
+      insideTopBarHeight = outputGeometry.insideBars.top
       outsideTopBarHeight = 0
-    } else if transition.outputLayout.topBarHeight < transition.inputLayout.topBarHeight {
+    } else if outputLayout.topBarHeight < inputLayout.topBarHeight {
       insideTopBarHeight = 0
-      outsideTopBarHeight = transition.outputLayout.topBarHeight
+      outsideTopBarHeight = outputLayout.topBarHeight
     } else {
-      insideTopBarHeight = transition.inputGeometry.insideBars.top  // leave the same
-      outsideTopBarHeight = transition.inputGeometry.outsideBars.top
+      insideTopBarHeight = inputGeometry.insideBars.top  // leave the same
+      outsideTopBarHeight = inputGeometry.outsideBars.top
     }
 
     // BOTTOM
     let insideBottomBarHeight: CGFloat
     let outsideBottomBarHeight: CGFloat
-    if !transition.isWindowInitialLayout && transition.isBottomBarPlacementOrStyleChanging {
+    if !isWindowInitialLayout && isBottomBarPlacementOrStyleChanging {
       // close completely. will animate reopening if needed later
       insideBottomBarHeight = 0
       outsideBottomBarHeight = 0
-    } else if transition.outputGeometry.outsideBars.bottom < transition.inputGeometry.outsideBars.bottom {
+    } else if outputGeometry.outsideBars.bottom < inputGeometry.outsideBars.bottom {
       insideBottomBarHeight = 0
-      outsideBottomBarHeight = transition.outputGeometry.outsideBars.bottom
-    } else if transition.outputGeometry.insideBars.bottom < transition.inputGeometry.insideBars.bottom {
-      insideBottomBarHeight = transition.outputGeometry.insideBars.bottom
+      outsideBottomBarHeight = outputGeometry.outsideBars.bottom
+    } else if outputGeometry.insideBars.bottom < inputGeometry.insideBars.bottom {
+      insideBottomBarHeight = outputGeometry.insideBars.bottom
       outsideBottomBarHeight = 0
     } else {
-      insideBottomBarHeight = transition.inputGeometry.insideBars.bottom
-      outsideBottomBarHeight = transition.inputGeometry.outsideBars.bottom
+      insideBottomBarHeight = inputGeometry.insideBars.bottom
+      outsideBottomBarHeight = inputGeometry.outsideBars.bottom
     }
 
     // LEADING
     let insideLeadingBarWidth: CGFloat
     let outsideLeadingBarWidth: CGFloat
-    if transition.isClosingLeadingSidebar {
+    if isClosingLeadingSidebar {
       insideLeadingBarWidth = 0
       outsideLeadingBarWidth = 0
     } else {
-      insideLeadingBarWidth = transition.inputGeometry.insideBars.leading
-      outsideLeadingBarWidth = transition.inputGeometry.outsideBars.leading
+      insideLeadingBarWidth = inputGeometry.insideBars.leading
+      outsideLeadingBarWidth = inputGeometry.outsideBars.leading
     }
 
     // TRAILING
     let insideTrailingBarWidth: CGFloat
     let outsideTrailingBarWidth: CGFloat
-    if transition.isClosingTrailingSidebar {
+    if isClosingTrailingSidebar {
       insideTrailingBarWidth = 0
       outsideTrailingBarWidth = 0
     } else {
-      insideTrailingBarWidth = transition.inputGeometry.insideBars.trailing
-      outsideTrailingBarWidth = transition.inputGeometry.outsideBars.trailing
+      insideTrailingBarWidth = inputGeometry.insideBars.trailing
+      outsideTrailingBarWidth = inputGeometry.outsideBars.trailing
     }
 
     let insideBars = MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
@@ -548,26 +563,26 @@ extension PlayerWindowController {
     let outsideBars = MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
                                  bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
 
-    if transition.outputLayout.isFullScreen {
-      let screen = NSScreen.getScreenOrDefault(screenID: transition.inputGeometry.screenID)
-      return PWinGeometry.forFullScreen(in: screen, legacy: transition.outputLayout.isLegacyFullScreen,
-                                        mode: transition.outputLayout.mode,
+    if outputLayout.isFullScreen {
+      let screen = NSScreen.getScreenOrDefault(screenID: inputGeometry.screenID)
+      return PWinGeometry.forFullScreen(in: screen, legacy: outputLayout.isLegacyFullScreen,
+                                        mode: outputLayout.mode,
                                         outsideBars: outsideBars,
                                         insideBars: insideBars,
-                                        video: transition.outputGeometry.video,
-                                        hasTopPaddingForCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
+                                        video: outputGeometry.video,
+                                        hasTopPaddingForCameraHousing: outputLayout.hasTopPaddingForCameraHousing)
     }
 
-    let closedBarsGeo = transition.outputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
-                                                                  outsideTrailing: outsideTrailingBarWidth,
-                                                                  outsideBottom: outsideBottomBarHeight,
-                                                                  outsideLeading: outsideLeadingBarWidth,
-                                                                  insideTop: insideTopBarHeight,
-                                                                  insideTrailing: insideTrailingBarWidth,
-                                                                  insideBottom: insideBottomBarHeight,
-                                                                  insideLeading: insideLeadingBarWidth,
-                                                                  pinWidthOrHeightIfAtMax: true)
+    let closedBarsGeo = outputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
+                                                       outsideTrailing: outsideTrailingBarWidth,
+                                                       outsideBottom: outsideBottomBarHeight,
+                                                       outsideLeading: outsideLeadingBarWidth,
+                                                       insideTop: insideTopBarHeight,
+                                                       insideTrailing: insideTrailingBarWidth,
+                                                       insideBottom: insideBottomBarHeight,
+                                                       insideLeading: insideLeadingBarWidth,
+                                                       pinWidthOrHeightIfAtMax: true,
+                                                       isMiddleTransition: true)
     return closedBarsGeo.refitted()
   }
-
 }

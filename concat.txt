@@ -1,0 +1,2 @@
+file '/Users/msvoboda/Home/Media/Video/Screenshots/01.mov'
+file '/Users/msvoboda/Home/Media/Video/Screenshots/03.mov'

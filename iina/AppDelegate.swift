@@ -93,7 +93,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   var startupHandler = StartupHandler()
   private var shutdownHandler = ShutdownHandler()
-  private var co: NotificationHandler!
+  private var notiHandler: NotificationHandler!
 
   private var lastClosedWindowName: String = ""
   var isShowingOpenFileWindow = false
@@ -281,10 +281,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
     /// before `applicationDidFinishLaunching`.
-    co = NotificationHandler(Logger.log, prefDidChange: prefDidChange,
-                       legacyPrefKeyObserver: self, observedPrefKeys, [
-      .default: ncDefaultObservers
-    ])
+    notiHandler = NotificationHandler(Logger.log, prefDidChange: prefDidChange,
+                                      legacyPrefKeyObserver: self,
+                                      observedPrefKeys, [
+                                        .default: ncDefaultObservers
+                                      ])
 
     // Install plugins
     if AppDelegate.iinaPluginSystemEnabled, FirstRunManager.isFirstRun(for: .init("installedDefaultPlugins")) {
@@ -322,7 +323,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       }
     }
 
-    co.addAllObservers()
+    notiHandler.addAllObservers()
 
     // Check for legacy pref entries and migrate them to their modern equivalents.
     // Must do this before setting defaults so that checking for existing entries doesn't result in false positives

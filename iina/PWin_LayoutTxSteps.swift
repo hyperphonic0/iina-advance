@@ -943,11 +943,6 @@ extension PlayerWindowController {
       }
     }
 
-    if !transition.isWindowInitialLayout {
-      // Add constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
-      updateOSDConstraints(outputLayout, transition.outputGeometry)
-    }
-
     prepareDepthOrderOfOutsideSidebarsForToggle(transition)
 
     // So that panels toggling between "inside" and "outside" don't change until they need to (but FS is OK)

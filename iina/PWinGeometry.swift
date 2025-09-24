@@ -144,7 +144,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   /// 4 values, representing the thickness of each of the 4 "inside" panels.
   /// A value of `0` indicates the given panel is closed/hidden.
-  var insideBars: MarginQuad
+  let insideBars: MarginQuad
 
   let viewportMargins: MarginQuad
   let video: VideoGeometry
@@ -895,7 +895,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// This should be more intuitive to the user which is expecting "near" full screen behavior when maximized.
   func withResizedOutsideBars(top: CGFloat? = nil, trailing: CGFloat? = nil,
                               bottom: CGFloat? = nil, leading: CGFloat? = nil,
-                              pinWidthOrHeightIfAtMax: Bool) -> PWinGeometry {
+                              pinWidthOrHeightIfAtMax: Bool,
+                              isMiddleTransition: Bool? = nil) -> PWinGeometry {
     assert((top ?? 0) >= 0)
     assert((trailing ?? 0) >= 0)
     assert((bottom ?? 0) >= 0)
@@ -963,7 +964,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     // Also fall back to default screen if current screenID is defunct:
     let newScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: newWindowFrame, fallbackScreenID: screenID)
 
-    let outputGeo = clone(windowFrame: newWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars)
+    let outputGeo = clone(windowFrame: newWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars,
+                          isMiddleTransition: isMiddleTransition)
     log.verbose{"[ResizeBars] ΔW=\(ΔW.logStr) ΔH=\(ΔH.logStr) pinMax=\(pinWidthOrHeightIfAtMax.yn) moveToKeepInScreen:\(screenFit.shouldMoveWindowToKeepInContainer.yesno)"}
     return outputGeo
   }
@@ -975,7 +977,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                        insideTop: CGFloat? = nil, insideTrailing: CGFloat? = nil,
                        insideBottom: CGFloat? = nil, insideLeading: CGFloat? = nil,
                        video: VideoGeometry? = nil,
-                       pinWidthOrHeightIfAtMax: Bool = false) -> PWinGeometry {
+                       pinWidthOrHeightIfAtMax: Bool = false,
+                       isMiddleTransition: Bool? = nil) -> PWinGeometry {
 
     // Inside bars
     let newInsideBars = MarginQuad(top: insideTop ?? insideBars.top,
@@ -989,7 +992,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                                        trailing: outsideTrailing,
                                                        bottom: outsideBottom,
                                                        leading: outsideLeading,
-                                                       pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax)
+                                                       pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax,
+                                                       isMiddleTransition: isMiddleTransition)
   }
 
   /// Calculate the window frame from a parsed struct of mpv's `geometry` option.

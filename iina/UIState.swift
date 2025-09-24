@@ -459,8 +459,8 @@ class UIState {
   func clearPlayerSaveState(forPlayerID playerID: String, force: Bool = false) {
     guard isSaveEnabled || force else { return }
     let key = WindowAutosaveName.playerWindow(id: playerID).string
+    log.verbose("Deleting stored UI state for player, pref key: \(key.quoted)")
     UserDefaults.standard.removeObject(forKey: key)
-    log.verbose("Removed stored UI state for player \(key.quoted)")
   }
 
   private func launchStatus(fromAny value: Any, launchName: String) -> LaunchLifecycleState {
@@ -611,12 +611,11 @@ class UIState {
             if playerLaunchID > launch.id {
               // Should only happen if someone messed up the .plist file
               log.error("Suspicious data found! Saved launch (\(launch.id)) contains a player window from a newer launch (\(playerLaunchID))!")
-            }
-
-            // If player window is from a past launch, need to remove it from that launch's list so that it is not seen as orphan
-            if let prevLaunch = launchDict[playerLaunchID],
+            } else if let prevLaunch = launchDict[playerLaunchID],
                let playerKeyFromPrev = prevLaunch.playerKeys.remove(savedWindow.saveName.string) {
-              log.trace{"Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID) but is now part of launch \(launch.id)"}
+              assert(playerLaunchID < launch.id, "Expected playerLaunchID (\(playerLaunchID)) to be less than launch.id (\(launch.id))")
+              // If player window is from a past launch, need to remove it from that launch's list so that it is not seen as orphan
+              log.verbose{"Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID) but is now part of launch \(launch.id)"}
               launch.playerKeys.insert(playerKeyFromPrev)
             }
           }
@@ -626,7 +625,7 @@ class UIState {
       if isCleanUpEnabled {
         // May have been waiting for past launches to report back their lifecycleState so that we
         // can clean up improperly terminated launches. Refresh lifecycleState now.
-        let pastLaunchName = UIState.launchName(forID: launch.id)
+        let pastLaunchName = launch.name
         let lifecycleStateInt: Int = UserDefaults.standard.integer(forKey: pastLaunchName)
         launch.lifecycleState = launchStatus(fromAny: lifecycleStateInt, launchName: pastLaunchName)
       }

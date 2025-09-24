@@ -15,7 +15,7 @@ extension PlayerWindowController {
   ///
   /// See `buildLayoutTransition()`, where an instance of this class is assembled.
   /// Other important variables: `currentLayout`, `windowedModeGeo`, `musicModeGeo` (in `PlayerWindowController`)
-  class LayoutTransition {
+  struct LayoutTransition {
     enum Stage: Int, StateEnum, CustomStringConvertible {
       case preTransitionSetup
       case closeOldPanels
@@ -42,13 +42,14 @@ extension PlayerWindowController {
       func isNotYet(_ status: Stage) -> Bool { rawValue < status.rawValue }
     }
 
-    let name: String  // just used for debugging
+    let name: String  // just used to improve logging
 
     let inputLayout: LayoutState
     let outputLayout: LayoutState
 
     let inputGeometry: PWinGeometry
-    var middleGeometry: PWinGeometry?
+    /// MiddleGeometry, if needed, is applied at end of ClosePanels step
+    let middleGeometry: PWinGeometry?
     let outputGeometry: PWinGeometry
 
     /// Should only be true when setting layout on session open. See `buildWindowInitialLayoutTasks()`.
@@ -224,21 +225,21 @@ extension PlayerWindowController {
       return inputLayout.trailingSidebarPlacement != outputLayout.trailingSidebarPlacement
     }
 
-    lazy var isOpeningLeadingSidebar: Bool = {
+    var isOpeningLeadingSidebar: Bool {
       return isOpening(.leadingSidebar)
-    }()
+    }
 
-    lazy var isOpeningTrailingSidebar: Bool = {
+    var isOpeningTrailingSidebar: Bool {
       return isOpening(.trailingSidebar)
-    }()
+    }
 
-    lazy var isClosingLeadingSidebar: Bool = {
+    var isClosingLeadingSidebar: Bool {
       return isClosing(.leadingSidebar)
-    }()
+    }
 
-    lazy var isClosingTrailingSidebar: Bool = {
+    var isClosingTrailingSidebar: Bool {
       return isClosing(.trailingSidebar)
-    }()
+    }
 
     var isOpeningAnySidebar: Bool {
       isOpeningLeadingSidebar || isOpeningTrailingSidebar

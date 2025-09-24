@@ -383,6 +383,9 @@ extension PlayerWindowController {
       break
     }
 
+    // OSD constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
+    updateOSDConstraints(layout, transition.geometry(for: stage))
+
     sortContentViewSubviews(for: layout)
   }
 
