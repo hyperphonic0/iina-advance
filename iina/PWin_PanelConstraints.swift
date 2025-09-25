@@ -6,54 +6,54 @@
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
-/// This file contains support functions for the transition tasks found in `PWin_LayoutTxSteps.swift`.
-extension PlayerWindowController {
-  /// Decoarates a single, optional `NSLayoutConstraint` with functions which make it easier to work with given its optional nature.
-  class OptionalConstraint {
-    let identifier: String
-    var constraint: NSLayoutConstraint? = nil
+/// Decoarates a single, optional `NSLayoutConstraint` with functions which make it easier to work with given its optional nature.
+class OptionalConstraint {
+  let identifier: String
+  var constraint: NSLayoutConstraint? = nil
 
-    init(_ identifier: String) {
-      self.identifier = identifier
-    }
+  init(_ identifier: String) {
+    self.identifier = identifier
+  }
 
-    func createIfMissing(_ log: Logger.Subsystem?,_ creationFunc: () -> NSLayoutConstraint) {
-      guard !isActive else { return }
+  func createIfMissing(_ log: Logger.Subsystem?,_ creationFunc: () -> NSLayoutConstraint) {
+    guard !isActive else { return }
 
-      let newConstraint = creationFunc()
+    let newConstraint = creationFunc()
+    newConstraint.identifier = identifier
+    newConstraint.isActive = true
+    constraint = newConstraint
+  }
+
+  func createOrUpdate(to constantToSet: CGFloat = 0, requiredSecondAnchor: NSLayoutXAxisAnchor? = nil,
+                      _ log: Logger.Subsystem?,
+                      _ creationFunc: (CGFloat) -> NSLayoutConstraint) {
+    if let constraint, isActive, requiredSecondAnchor == nil || (constraint.secondAnchor == requiredSecondAnchor) {
+      constraint.animateToConstant(constantToSet)
+    } else {
+      constraint?.isActive = false
+      log?.verbose("Creating constraint: \(identifier)")
+      let newConstraint = creationFunc(constantToSet)
       newConstraint.identifier = identifier
       newConstraint.isActive = true
       constraint = newConstraint
     }
-
-    func createOrUpdate(to constantToSet: CGFloat = 0, requiredSecondAnchor: NSLayoutXAxisAnchor? = nil,
-                        _ log: Logger.Subsystem?,
-                        _ creationFunc: (CGFloat) -> NSLayoutConstraint) {
-      if let constraint, isActive, requiredSecondAnchor == nil || (constraint.secondAnchor == requiredSecondAnchor) {
-        constraint.animateToConstant(constantToSet)
-      } else {
-        constraint?.isActive = false
-        log?.verbose("Creating constraint: \(identifier)")
-        let newConstraint = creationFunc(constantToSet)
-        newConstraint.identifier = identifier
-        newConstraint.isActive = true
-        constraint = newConstraint
-      }
-    }
-
-
-    var isActive: Bool {
-      get {
-        if let constraint {
-          return constraint.isActive
-        }
-        return false
-      } set {
-        constraint?.isActive = false
-      }
-    }
   }
 
+
+  var isActive: Bool {
+    get {
+      if let constraint {
+        return constraint.isActive
+      }
+      return false
+    } set {
+      constraint?.isActive = false
+    }
+  }
+}
+
+/// This file contains support functions for the transition tasks found in `PWin_LayoutTxSteps.swift`.
+extension PlayerWindowController {
   /// Add, remove, or modify each of the bars & their constraints based on the given stage of the layout transition.
   /// # Diagram: Vertical contraints in relation to `PWinGeometry` panels
   /// Note the consistent direction between anchors. (Created with https://asciip.dev/, then hand-edited.)

@@ -161,7 +161,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if let newValue = newValue as? Double {
         Constants.AnimationDuration.standard = newValue
       }
-      
+    case .killRequest:
+      appDidReceiveKillRequest()
+
     default:
       break
     }
@@ -254,8 +256,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     ncDefaultObservers.append(.init(NSWindow.didMiniaturizeNotification, windowDidMiniaturize))
     ncDefaultObservers.append(.init(NSWindow.didDeminiaturizeNotification, windowDidDeminiaturize))
 
-    ncDefaultObservers.append(.init(.iinaKillRequest, appDidReceiveKillRequest))
-
 #if DEBUG
     if DebugConfig.logAllScreenChangeEvents {
       ncDefaultObservers.append(.init(NSWindow.didChangeScreenNotification, { noti in
@@ -277,6 +277,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       .animationDurationFullScreen,
       .animationDurationOSD,
       .animationDurationDefault,
+      .killRequest,
     ]
 
     /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
@@ -499,7 +500,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       /// the user closes a window which is not in the foreground.
       UIState.shared.saveCurrentOpenWindowList(excludingWindowName: window.savedStateName)
     } else {
-      Logger.log.verbose{"Window not marked as open or minimized; skipping state update: \(windowName.quoted)"}
+      Logger.log.verbose{"Window was not listed as open or minimized; skipping state update for \(windowName.quoted)"}
     }
 
     (window.windowController as? WindowController)?.refreshWindowOpenCloseAnimation()
@@ -542,8 +543,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     guard AppDelegate.isInteractiveLaunch else {
-      Logger.log.debug{"App will not terminate for window close: app-wide UI is disabled"}
-      return false
+      Logger.log.verbose{"Received `'ast window closed' notifiation for non-interactive launch. App will quit"}
+      return true
     }
 
     guard Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit else {
@@ -831,8 +832,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     guard Preference.bool(for: .killNonInteractiveLaunchesAtReopen) else { return false }
 
-    Logger.log.debug("HandleReopen: this is a non-interactive launch! Sending iinaKillRequest notification to all running instances")
-    NotificationCenter.default.post(name: .iinaKillRequest, object: nil)
+    Logger.log.debug("HandleReopen: this is a non-interactive launch! Sending killRequest to all running instances")
+    Preference.set(Preference.integer(for: .killRequest) + 1, for: .killRequest)
 
     return true
   }
@@ -858,12 +859,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  private func appDidReceiveKillRequest(_  notfication: Notification) {
+  private func appDidReceiveKillRequest() {
     guard Preference.bool(for: .killNonInteractiveLaunchesAtReopen) else {
-      Logger.log.debug("Got iinaKillRequest but killNonInteractiveLaunchesAtReopen is disabled; ignoring")
+      Logger.log.debug("Received killRequest but killNonInteractiveLaunchesAtReopen is disabled; ignoring")
       return
     }
-    Logger.log.debug("Got iinaKillRequest notification! Terminating this instance.")
+    Logger.log.debug("Got killRequest! Terminating this instance.")
+
     RunLoop.main.perform(inModes: [.common]) {
       guard !AppDelegate.shared.isTerminating else { return }
       NSApp.terminate(nil)

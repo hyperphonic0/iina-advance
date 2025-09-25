@@ -1018,12 +1018,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         windowedModeGeo = windowedGeoForCurrentFrame(force: true)
       }
 
-      // CLOSE SIDEBARS for reopen
+      // Reset layout & its state (or at least the big stuff) for reopen: close sidebars, disable OSC
       let currentLayout = currentLayout
-      let newOSCGeo = ControlBarGeometry(mode: .windowedNormal, barHeight: 0)
       let newLayoutSpec = currentLayout.spec.clone(leadingSidebar: currentLayout.leadingSidebar.clone(visibility: .closed),
                                                    trailingSidebar: currentLayout.trailingSidebar.clone(visibility: .closed),
-                                                   controlBarGeo: newOSCGeo)
+                                                   enableOSC: false)
       let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutSpec)
       let tasks = buildTasks(for: resetTransition, totalStartingDuration: 0, totalEndingDuration: 0)
 

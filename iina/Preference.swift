@@ -596,6 +596,9 @@ struct Preference {
     /// `applicationShouldHandleReopen`, but this functionality can be disabled by setting this pref to `false`.
     static let killNonInteractiveLaunchesAtReopen = Key("killNonInteractiveLaunchesAtReopen")
 
+    /// Janky substitute for an IPC message. Postted when an IINA client requests all clients to quit.
+    static let killRequest = Key("killRequest")
+
     static let enableFFmpegImageDecoder = Key("enableFFmpegImageDecoder")
 
     /// The belief is that the workaround for issue #3844 that adds a tiny subview to the player window is no longer needed.
@@ -1559,6 +1562,7 @@ struct Preference {
     .cropPanelPresets: "4:3,16:9,16:10,21:9,5:4",
 
     .killNonInteractiveLaunchesAtReopen: true,
+    .killRequest: 0,
     .enableFFmpegImageDecoder: true,
     .enableHdrWorkaround: false
   ]
