@@ -139,8 +139,9 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
 
   // MARK: - Positioning
 
-  func moveToLocationRatio(layout: LayoutState, viewportSize: CGSize) {
+  func moveToLocationRatio(parentGeo: PWinGeometry) {
     guard superview != nil, let xConstraint, let yConstraint else { return }
+    assert(parentGeo.mode.isWindowed, "Expected windowed mode for: \(parentGeo)")
 
     let ratioH = Preference.double(for: .controlBarPositionHorizontal)
     let ratioV = Preference.double(for: .controlBarPositionVertical)
@@ -158,7 +159,7 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
       return
     }
 
-    let geometry = FloatingControlBarGeometry(windowLayout: layout, viewportSize: viewportSize)
+    let geometry = FloatingControlBarGeometry(parentGeo: parentGeo)
     let availableWidth = geometry.availableWidth
     let centerX = geometry.minCenterX + ((availableWidth - geometry.barWidth) * ratioH)
     let originY = geometry.minOriginY + (ratioV * (geometry.maxOriginY - geometry.minOriginY))
@@ -197,7 +198,9 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
     window?.isMovableByWindowBackground = false
     mousePosRelatedToView = self.convert(event.locationInWindow, from: nil)
     mouseDownLocationInWindow = event.locationInWindow
-    let geometry = FloatingControlBarGeometry(windowLayout: pwc.currentLayout, viewportSize: pwc.viewportView.frame.size)
+    assert(pwc.currentLayout.isWindowed, "FloatingOSC mouseDown called in non-windowed mode!")
+    let windowedGeo = pwc.windowedGeoForCurrentFrame()
+    let geometry = FloatingControlBarGeometry(parentGeo: windowedGeo)
     let originInViewport = pwc.viewportView.convert(frame.origin, from: nil)
     let threshold = geometry.availableWidth * Constants.Distance.floatingControllerSnapToCenterThresholdMultiplier
     isAlignFeedbackSent = abs(originInViewport.x - (pwc.viewportView.frame.width - frame.width) / 2) <= threshold
@@ -224,9 +227,10 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
     }
     assert(isDragging, "Something's wrong: isDragging should be true here")
 
-    let currentLocInViewport = pwc.viewportView.convert(event.locationInWindow, from: nil)
-    let geometry = FloatingControlBarGeometry(windowLayout: pwc.currentLayout, viewportSize: pwc.viewportView.frame.size)
+    let windowedGeo = pwc.windowedGeoForCurrentFrame()
+    let geometry = FloatingControlBarGeometry(parentGeo: windowedGeo)
 
+    let currentLocInViewport = pwc.viewportView.convert(event.locationInWindow, from: nil)
     let xxx = currentLocInViewport.x - mousePosRelatedToView.x
 
     var newCenterX = (userInterfaceLayoutDirection == .rightToLeft ? geometry.maxCenterX - xxx : xxx + geometry.halfBarWidth)
@@ -261,7 +265,8 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
       pwc.log.verbose("FloatingOSC mouseUp")
     }
 
-    let geometry = FloatingControlBarGeometry(windowLayout: pwc.currentLayout, viewportSize: pwc.viewportView.frame.size)
+    let geo = pwc.windowedGeoForCurrentFrame()
+    let geometry = FloatingControlBarGeometry(parentGeo: geo)
 
     if event.clickCount == 2 {
       // Double-clicked: center the OSC
@@ -279,24 +284,24 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
 
   func cancelDrag() {
     guard let pwc = playerWindowController else { return }
-    let geometry = FloatingControlBarGeometry(windowLayout: pwc.currentLayout, viewportSize: pwc.viewportView.frame.size)
+    let geo = pwc.windowedGeoForCurrentFrame()
+    let geometry = FloatingControlBarGeometry(parentGeo: geo)
     updateRatios(xConst: xConstraint.constant, yConst: yConstraint.constant, geometry)
   }
 
   // MARK: - Coordinates in Viewport
 
   struct FloatingControlBarGeometry {
-    let windowLayout: LayoutState
-    let viewportSize: CGSize
+    let parentGeo: PWinGeometry
 
     // "available" == space to move OSC within
     var availableWidthMinX: CGFloat {
-      return windowLayout.insideLeadingBarWidth + FloatingControlBarView.margin
+      return parentGeo.insideBars.leading + FloatingControlBarView.margin
     }
 
     var availableWidthMaxX: CGFloat {
-      let viewportMaxX = viewportSize.width
-      let trailingUsedSpace = windowLayout.insideTrailingBarWidth + FloatingControlBarView.margin
+      let viewportMaxX = parentGeo.viewportSize.width
+      let trailingUsedSpace = parentGeo.insideBars.trailing + FloatingControlBarView.margin
       return max(viewportMaxX - trailingUsedSpace, FloatingControlBarView.margin + FloatingControlBarView.minBarWidth)
     }
 
@@ -330,8 +335,8 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
     }
 
     var maxOriginY: CGFloat {
-      let maxYWithoutTopBar = viewportSize.height - FloatingControlBarView.barHeight - FloatingControlBarView.margin
-      let topBarHeight = windowLayout.insideTopBarHeight
+      let maxYWithoutTopBar = parentGeo.viewportSize.height - FloatingControlBarView.barHeight - FloatingControlBarView.margin
+      let topBarHeight = parentGeo.insideBars.top
       return maxYWithoutTopBar - topBarHeight
     }
 
@@ -361,12 +366,12 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
 
 extension PlayerWindowController {
 
-  func adjustFloatingControllerOrigin(for newGeometry: PWinGeometry? = nil) {
+  func adjustFloatingControllerOrigin(for targetGeometry: PWinGeometry? = nil) {
     guard let window = window, currentLayout.hasFloatingOSC else { return }
     guard controlBarFloating.superview != nil else { return }
 
-    let newViewportSize = newGeometry?.viewportSize ?? viewportView.frame.size
-    controlBarFloating.moveToLocationRatio(layout: currentLayout, viewportSize: newViewportSize)
+    let parentGeo = targetGeometry ?? windowedModeGeo
+    controlBarFloating.moveToLocationRatio(parentGeo: parentGeo)
 
     // Detach the views in topRowView manually on macOS 11 only; as it will cause freeze
     if #available(macOS 11.0, *) {

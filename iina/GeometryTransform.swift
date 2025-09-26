@@ -935,8 +935,8 @@ extension PlayerWindowController {
       let viewportSize = CGSize.computeMinSize(withAspect: ctx.outputVidGeo.videoAspectCAR,
                                                minWidth: Constants.Window.minViewportSize.width,
                                                minHeight: Constants.Window.minViewportSize.height)
-      let intendedWindowSize = NSSize(width: viewportSize.width + ctx.outputLayout.outsideLeadingBarWidth + ctx.outputLayout.outsideTrailingBarWidth,
-                                      height: viewportSize.height + ctx.outputLayout.outsideTopBarHeight + ctx.outputLayout.outsideBottomBarHeight)
+      let intendedWindowSize = NSSize(width: viewportSize.width + ctx.outputLayout.outsideBars.totalWidth,
+                                      height: viewportSize.height + ctx.outputLayout.outsideBars.totalHeight)
       let windowFrame = NSRect(origin: NSPoint.zero, size: intendedWindowSize)
       /// Change the window origin so that it opens where the mouse was when `openURLs` was called. This visually reinforces the user-initiated
       /// behavior and is less jarring than popping out of the periphery. It will move while zooming to its final location, which remains

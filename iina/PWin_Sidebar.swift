@@ -1033,7 +1033,7 @@ extension PlayerWindowController {
 
     if currentLayout.leadingSidebar.placement == .insideViewport {
       // Stop sidebar from resizing when the viewportView is not wide enough to fit it.
-      let negativeDeficit = min(0, currentLayout.spec.getExcessSpaceBetweenInsideSidebars(leadingSidebarWidth: desiredPlaylistWidth, in: oldGeo.viewportSize.width))
+      let negativeDeficit = min(0, oldGeo.getExcessSpaceBetweenInsideSidebars(leadingSidebarWidth: desiredPlaylistWidth, in: oldGeo.viewportSize.width))
       newPlaylistWidth = desiredPlaylistWidth + negativeDeficit
       if newPlaylistWidth < Constants.Sidebar.minPlaylistWidth {
         // should not happen in theory, because playlist shouldn't have been shown when resize started
@@ -1091,7 +1091,7 @@ extension PlayerWindowController {
     let desiredPlaylistWidth = clampPlaylistWidth(desiredWidth)
 
     if currentLayout.trailingSidebar.placement == .insideViewport {
-      let negativeDeficit = min(0, currentLayout.spec.getExcessSpaceBetweenInsideSidebars(trailingSidebarWidth: desiredPlaylistWidth, in: viewportSize.width))
+      let negativeDeficit = min(0, oldGeo.getExcessSpaceBetweenInsideSidebars(trailingSidebarWidth: desiredPlaylistWidth, in: viewportSize.width))
 
       newPlaylistWidth = desiredPlaylistWidth + negativeDeficit
       if newPlaylistWidth < Constants.Sidebar.minPlaylistWidth {

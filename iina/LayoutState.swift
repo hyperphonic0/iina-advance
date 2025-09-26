@@ -169,34 +169,31 @@ struct LayoutSpec {
   }
 
   var insideLeadingBarWidth: CGFloat {
-    if leadingSidebar.placement == .outsideViewport {
-      return 0
+    if leadingSidebar.placement == .insideViewport, let visibleTabGroup = leadingSidebar.visibleTabGroup {
+      return visibleTabGroup.width(using: moreSidebarState)
     }
-    return leadingSidebar.visibleTabGroup?.width(using: moreSidebarState) ?? 0
+    return 0
   }
 
-  /// NOTE: Is mutable!
   var insideTrailingBarWidth: CGFloat {
-    if trailingSidebar.placement == .outsideViewport {
-      return 0
+    if trailingSidebar.placement == .insideViewport, let visibleTabGroup = trailingSidebar.visibleTabGroup {
+      return visibleTabGroup.width(using: moreSidebarState)
     }
-    return trailingSidebar.visibleTabGroup?.width(using: moreSidebarState) ?? 0
+    return 0
   }
 
-  /// NOTE: Is mutable!
   var outsideTrailingBarWidth: CGFloat {
-    if trailingSidebar.placement == .insideViewport {
-      return 0
+    if trailingSidebar.placement == .outsideViewport, let visibleTabGroup = trailingSidebar.visibleTabGroup {
+      return visibleTabGroup.width(using: moreSidebarState)
     }
-    return trailingSidebar.visibleTabGroup?.width(using: moreSidebarState) ?? 0
+    return 0
   }
 
-  /// NOTE: Is mutable!
   var outsideLeadingBarWidth: CGFloat {
-    if leadingSidebar.placement == .insideViewport {
-      return 0
+    if leadingSidebar.placement == .outsideViewport, let visibleTabGroup = leadingSidebar.visibleTabGroup {
+      return visibleTabGroup.width(using: moreSidebarState)
     }
-    return leadingSidebar.visibleTabGroup?.width(using: moreSidebarState) ?? 0
+    return 0
   }
 
   var isInteractiveMode: Bool {
@@ -231,46 +228,6 @@ struct LayoutSpec {
     && otherSpec.leadingSidebar.tabGroups == leadingSidebar.tabGroups
     && otherSpec.trailingSidebar.tabGroups == trailingSidebar.tabGroups
     && otherSpec.moreSidebarState.playlistSidebarWidth == moreSidebarState.playlistSidebarWidth
-  }
-
-  func getWidthBetweenInsideSidebars(leadingSidebarWidth: CGFloat? = nil, trailingSidebarWidth: CGFloat? = nil,
-                                     in viewportWidth: CGFloat) -> CGFloat {
-    let lead = leadingSidebarWidth ?? insideLeadingBarWidth
-    let trail = trailingSidebarWidth ?? insideTrailingBarWidth
-    return viewportWidth - lead - trail
-  }
-
-  func getExcessSpaceBetweenInsideSidebars(leadingSidebarWidth: CGFloat? = nil, trailingSidebarWidth: CGFloat? = nil,
-                                           in viewportWidth: CGFloat) -> CGFloat {
-    return getWidthBetweenInsideSidebars(leadingSidebarWidth: leadingSidebarWidth, trailingSidebarWidth: trailingSidebarWidth, in: viewportWidth) - Constants.Window.minWidthBetweenInsideSidebars
-  }
-
-  /// Returns `(shouldCloseLeadingSidebar, shouldCloseTrailingSidebar)`, indicating which sidebars should be hidden
-  /// due to lack of space in the viewport.
-  func isHideSidebarNeeded(in viewportWidth: CGFloat) -> (Bool, Bool) {
-    var leadingSidebarSpace = insideLeadingBarWidth
-    var trailingSidebarSpace = insideTrailingBarWidth
-    var vidConSpace = viewportWidth
-
-    var shouldCloseLeadingSidebar = false
-    var shouldCloseTrailingSidebar = false
-    if leadingSidebarSpace + trailingSidebarSpace > 0 {
-      while getExcessSpaceBetweenInsideSidebars(leadingSidebarWidth: leadingSidebarSpace, trailingSidebarWidth: trailingSidebarSpace,
-                                                in: vidConSpace) < 0 {
-        if leadingSidebarSpace > 0 && leadingSidebarSpace >= trailingSidebarSpace {
-          shouldCloseLeadingSidebar = true
-          leadingSidebarSpace = 0
-          vidConSpace -= leadingSidebarSpace
-        } else if trailingSidebarSpace > 0 && trailingSidebarSpace >= leadingSidebarSpace {
-          shouldCloseTrailingSidebar = true
-          trailingSidebarSpace = 0
-          vidConSpace -= trailingSidebarSpace
-        } else {
-          break
-        }
-      }
-    }
-    return (shouldCloseLeadingSidebar, shouldCloseTrailingSidebar)
   }
 
   var hasPermanentControlBar: Bool {
@@ -382,36 +339,16 @@ struct LayoutState {
     return topBarPlacement == .outsideViewport ? topBarHeight : 0
   }
 
-  /// NOTE: Is mutable!
-  var outsideTrailingBarWidth: CGFloat {
-    return spec.outsideTrailingBarWidth
-  }
-
   var outsideBottomBarHeight: CGFloat {
     return bottomBarPlacement == .outsideViewport ? bottomBarHeight : 0
   }
 
-  /// NOTE: Is mutable!
-  var outsideLeadingBarWidth: CGFloat {
-    return spec.outsideLeadingBarWidth
-  }
-
   var outsideBars: MarginQuad {
-    return MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
-                      bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
+    return MarginQuad(top: outsideTopBarHeight, trailing: spec.outsideTrailingBarWidth,
+                      bottom: outsideBottomBarHeight, leading: spec.outsideLeadingBarWidth)
   }
 
   /// - Bar widths/heights IF `.insideViewport`
-
-  /// NOTE: Is mutable!
-  var insideLeadingBarWidth: CGFloat {
-    return spec.insideLeadingBarWidth
-  }
-
-  /// NOTE: Is mutable!
-  var insideTrailingBarWidth: CGFloat {
-    return spec.insideTrailingBarWidth
-  }
 
   var insideTopBarHeight: CGFloat {
     return topBarPlacement == .insideViewport ? topBarHeight : 0
@@ -422,8 +359,8 @@ struct LayoutState {
   }
 
   var insideBars: MarginQuad {
-    return MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
-                      bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
+    return MarginQuad(top: insideTopBarHeight, trailing: spec.insideTrailingBarWidth,
+                      bottom: insideBottomBarHeight, leading: spec.insideLeadingBarWidth)
   }
 
   // - Other derived properties
@@ -449,11 +386,11 @@ struct LayoutState {
   }
 
   var isNativeFullScreen: Bool {
-    return isFullScreen && !spec.isLegacyStyle
+    return spec.isNativeFullScreen
   }
 
   var isLegacyFullScreen: Bool {
-    return isFullScreen && spec.isLegacyStyle
+    return spec.isLegacyFullScreen
   }
 
   var isMusicMode: Bool {
@@ -708,14 +645,16 @@ struct LayoutState {
   func convertWindowedModeGeometry(from existingGeometry: PWinGeometry, video: VideoGeometry? = nil, pinWidthOrHeightIfAtMax: Bool,
                                    applyOffsetIndex offsetIndex: Int = 0, _ log: Logger.Subsystem) -> PWinGeometry {
     assert(existingGeometry.mode.isWindowed, "Expected existingGeometry to be windowed: \(existingGeometry)")
-    let resizedBarsGeo = existingGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
-                                                          outsideTrailing: outsideTrailingBarWidth,
-                                                          outsideBottom: outsideBottomBarHeight,
-                                                          outsideLeading: outsideLeadingBarWidth,
-                                                          insideTop: insideTopBarHeight,
-                                                          insideTrailing: insideTrailingBarWidth,
-                                                          insideBottom: insideBottomBarHeight,
-                                                          insideLeading: insideLeadingBarWidth,
+    let insideBars = insideBars
+    let outsideBars = outsideBars
+    let resizedBarsGeo = existingGeometry.withResizedBars(outsideTop: outsideBars.top,
+                                                          outsideTrailing: outsideBars.trailing,
+                                                          outsideBottom: outsideBars.bottom,
+                                                          outsideLeading: outsideBars.leading,
+                                                          insideTop: insideBars.top,
+                                                          insideTrailing: insideBars.trailing,
+                                                          insideBottom: insideBars.bottom,
+                                                          insideLeading: insideBars.leading,
                                                           video: video,
                                                           pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax).refitted()
 

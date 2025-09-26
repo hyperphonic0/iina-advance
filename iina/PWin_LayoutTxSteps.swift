@@ -399,7 +399,7 @@ extension PlayerWindowController {
       }
 
       if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
-        controlBarFloating.moveToLocationRatio(layout: transition.outputLayout, viewportSize: middleGeo.viewportSize)
+        controlBarFloating.moveToLocationRatio(parentGeo: middleGeo)
       }
 
       // Do not do this when first opening the window though, because it will cause the window location restore to be incorrect.
@@ -1038,7 +1038,7 @@ extension PlayerWindowController {
       updateSpeedLabelFont(for: transition)
 
       // Update floating control bar position
-      controlBarFloating.moveToLocationRatio(layout: transition.outputLayout, viewportSize: transition.outputGeometry.viewportSize)
+      controlBarFloating.moveToLocationRatio(parentGeo: transition.outputGeometry)
     }
 
     switch transition.outputLayout.mode {

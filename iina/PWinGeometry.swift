@@ -356,6 +356,20 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   // MARK: - Calculation Utils
 
+  func getWidthBetweenInsideSidebars(leadingSidebarWidth: CGFloat? = nil, trailingSidebarWidth: CGFloat? = nil,
+                                     in viewportWidth: CGFloat) -> CGFloat {
+    let lead = leadingSidebarWidth ?? insideBars.leading
+    let trail = trailingSidebarWidth ?? insideBars.trailing
+    return viewportWidth - lead - trail
+  }
+
+  func getExcessSpaceBetweenInsideSidebars(leadingSidebarWidth: CGFloat? = nil, trailingSidebarWidth: CGFloat? = nil,
+                                           in viewportWidth: CGFloat) -> CGFloat {
+    getWidthBetweenInsideSidebars(leadingSidebarWidth: leadingSidebarWidth,
+                                  trailingSidebarWidth: trailingSidebarWidth,
+                                  in: viewportWidth) - Constants.Window.minWidthBetweenInsideSidebars
+  }
+
   /// Finds minimum video size of the current geometry, assuming bars, mode, video aspect stay constant
   func minVideoSize() -> CGSize {
     return GeoUtil.minViewportSize(mode: mode, videoAspect: video.videoAspectCAR, insideBars: insideBars)
