@@ -8,60 +8,6 @@
 
 import Foundation
 
-/// Describes how a given player window must fit inside its given screen.
-enum ScreenFit: Int {
-
-  case noConstraints = 0
-
-  /// Constrains inside `screen.visibleFrame`. Windowed modes only.
-  case stayInside
-
-  /// Constrains and centers inside `screen.visibleFrame`. Windowed modes only.
-  case centerInside
-
-  /// Constrains inside `screen.frame`
-  case legacyFullScreen
-
-  /// Constrains inside `screen.frameWithoutCameraHousing`. Provided here for completeness, but not used at present.
-  case nativeFullScreen
-
-  var isFullScreen: Bool {
-    switch self {
-    case .legacyFullScreen, .nativeFullScreen:
-      return true
-    default:
-      return false
-    }
-  }
-
-  var shouldMoveWindowToKeepInContainer: Bool {
-    switch self {
-    case .legacyFullScreen, .nativeFullScreen:
-      return true
-    case .stayInside, .centerInside:
-      if Preference.bool(for: .enableAdvancedSettings) {
-        return Preference.bool(for: .moveWindowIntoVisibleScreenOnResize)
-      }
-      return true
-    default:
-      return false
-    }
-  }
-
-  func changeDesiredFit(to desiredFit: ScreenFit? = nil) -> ScreenFit {
-    if self.isFullScreen {
-      // If already in full screen, it makes no sense to update screenFit, so just ignore the requested change
-      return self
-    }
-    if let desiredFit {
-      return desiredFit
-    } else {
-      // do not center in screen again unless explicitly requested
-      return self == .centerInside ? .stayInside : self
-    }
-  }
-}
-
 /**
 `PWinGeometry`
  Data structure which describes the basic layout configuration of a player window (`PlayerWindowController`).
@@ -119,10 +65,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   // MARK: Stored properties
 
+  /// If true, indicates that this `PWinGeometry` is meant to be a temporary window state used only for animation.
+  /// This just means that certain constraints should be given different priorities for the sake of the animation.
   let isMiddleTransition: Bool
 
   // - Screen:
-  // The ID of the screen on which this window is displayed
+
+  /// The ID of the screen on which this window is displayed
   let screenID: String
   /// Describes how a given `PlayerWindow` must fit inside its given screen (corresponding to `screenID`).
   let screenFit: ScreenFit

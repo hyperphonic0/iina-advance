@@ -16,6 +16,8 @@ import Foundation
 /// See also: `LayoutState.buildFrom()`, which compiles a `LayoutSpec` into a `LayoutState`.
 struct LayoutSpec {
 
+  // MARK: Stored Properties
+
   let leadingSidebar: Sidebar
   let trailingSidebar: Sidebar
 
@@ -38,6 +40,8 @@ struct LayoutSpec {
   let interactiveMode: InteractiveMode?
 
   let moreSidebarState: Sidebar.SidebarMiscState
+
+  // MARK: Init / Factory
 
   init(leadingSidebar: Sidebar, trailingSidebar: Sidebar, mode: PlayerWindowMode, isLegacyStyle: Bool,
        topBarPlacement: Preference.PanelPlacement, bottomBarPlacement: Preference.PanelPlacement,
@@ -83,54 +87,6 @@ struct LayoutSpec {
     self.controlBarGeo = controlBarGeo ?? ControlBarGeometry(mode: mode, oscPosition: oscPosition)
   }
 
-  /// Factory method. Fills in most from app singleton preferences, and the rest from default values.
-  static func fromPrefsAndDefaults() -> LayoutSpec {
-    return fromPreferences()
-  }
-
-  /// Factory method. Init from preferences, except for `mode` and tab params
-  static func fromPreferences(andMode newMode: PlayerWindowMode? = nil,
-                              isLegacyStyle: Bool? = nil,
-                              fillingInFrom oldSpec: LayoutSpec? = nil) -> LayoutSpec {
-
-    let oldLeadingSidebar = oldSpec?.leadingSidebar
-    let oldTrailingSidebar = oldSpec?.trailingSidebar
-
-    let leadingSidebar =  Sidebar(.leadingSidebar,
-                                  tabGroups: Sidebar.TabGroup.fromPrefs(for: .leadingSidebar),
-                                  placement: Preference.enum(for: .leadingSidebarPlacement),
-                                  visibility: oldLeadingSidebar?.visibility ?? .closed,
-                                  lastVisibleTab: oldLeadingSidebar?.lastVisibleTab)
-    let trailingSidebar = Sidebar(.trailingSidebar,
-                                  tabGroups: Sidebar.TabGroup.fromPrefs(for: .trailingSidebar),
-                                  placement: Preference.enum(for: .trailingSidebarPlacement),
-                                  visibility: oldTrailingSidebar?.visibility ?? .closed,
-                                  lastVisibleTab: oldTrailingSidebar?.lastVisibleTab)
-    let mode = newMode ?? oldSpec?.mode ?? .windowedNormal
-    // Tricky need for parantheses here! Would be great as an interview question
-    let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen) : Preference.bool(for: .useLegacyWindowedMode))
-    let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
-
-    return LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
-                      mode: mode,
-                      isLegacyStyle: isLegacyStyle,
-                      topBarPlacement: Preference.enum(for: .topBarPlacement),
-                      bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
-                      enableOSC: Preference.bool(for: .enableOSC),
-                      oscPosition: Preference.enum(for: .oscPosition),
-                      oscColorScheme: effectiveOSCColorSchemeFromPrefs,
-                      interactiveMode: interactiveMode,
-                      moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs())
-  }
-
-  static var effectiveOSCColorSchemeFromPrefs: Preference.OSCColorScheme {
-    if Preference.bool(for: .enableOSC), Preference.enum(for: .oscPosition) == Preference.OSCPosition.bottom,
-        Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
-      return Preference.enum(for: .oscColorScheme)
-    }
-    return .visualEffectView
-  }
-
   /// Specify any properties to override; if nil, will use self's property values -
   /// EXCEPT for `oscColorScheme`, which is computed.
   func clone(leadingSidebar: Sidebar? = nil,
@@ -167,6 +123,8 @@ struct LayoutSpec {
     return clone(leadingSidebar: leadingSidebar.clone(visibility: .closed),
                  trailingSidebar: trailingSidebar.clone(visibility: .closed))
   }
+
+  // MARK: Computed Properties
 
   var insideLeadingBarWidth: CGFloat {
     if leadingSidebar.placement == .insideViewport, let visibleTabGroup = leadingSidebar.visibleTabGroup {
@@ -216,20 +174,6 @@ struct LayoutSpec {
     return isFullScreen && isLegacyStyle
   }
 
-  /// Returns `true` if `otherSpec` has the same values which are configured from IINA app-wide prefs
-  func hasSamePrefsValues(as otherSpec: LayoutSpec) -> Bool {
-    return otherSpec.enableOSC == enableOSC
-    && otherSpec.oscPosition == oscPosition
-    && otherSpec.isLegacyStyle == isLegacyStyle
-    && otherSpec.topBarPlacement == topBarPlacement
-    && otherSpec.bottomBarPlacement == bottomBarPlacement
-    && otherSpec.leadingSidebarPlacement == leadingSidebarPlacement
-    && otherSpec.trailingSidebarPlacement == trailingSidebarPlacement
-    && otherSpec.leadingSidebar.tabGroups == leadingSidebar.tabGroups
-    && otherSpec.trailingSidebar.tabGroups == trailingSidebar.tabGroups
-    && otherSpec.moreSidebarState.playlistSidebarWidth == moreSidebarState.playlistSidebarWidth
-  }
-
   var hasPermanentControlBar: Bool {
     if mode == .musicMode {
       return true
@@ -268,6 +212,73 @@ struct LayoutSpec {
   var isAnySidebarVisible: Bool {
     leadingSidebar.isVisible || trailingSidebar.isVisible
   }
+
+  // MARK: Utility Functions
+
+  /// Returns `true` if `otherSpec` has the same values which are configured from IINA app-wide prefs
+  func hasSamePrefsValues(as otherSpec: LayoutSpec) -> Bool {
+    return otherSpec.enableOSC == enableOSC
+    && otherSpec.oscPosition == oscPosition
+    && otherSpec.isLegacyStyle == isLegacyStyle
+    && otherSpec.topBarPlacement == topBarPlacement
+    && otherSpec.bottomBarPlacement == bottomBarPlacement
+    && otherSpec.leadingSidebarPlacement == leadingSidebarPlacement
+    && otherSpec.trailingSidebarPlacement == trailingSidebarPlacement
+    && otherSpec.leadingSidebar.tabGroups == leadingSidebar.tabGroups
+    && otherSpec.trailingSidebar.tabGroups == trailingSidebar.tabGroups
+    && otherSpec.moreSidebarState.playlistSidebarWidth == moreSidebarState.playlistSidebarWidth
+  }
+
+  // MARK: Static
+
+  /// Factory method. Fills in most from app singleton preferences, and the rest from default values.
+  static func fromPrefsAndDefaults() -> LayoutSpec {
+    return fromPreferences()
+  }
+
+  /// Factory method. Init from preferences, except for `mode` and tab params
+  static func fromPreferences(andMode newMode: PlayerWindowMode? = nil,
+                              isLegacyStyle: Bool? = nil,
+                              fillingInFrom oldSpec: LayoutSpec? = nil) -> LayoutSpec {
+
+    let oldLeadingSidebar = oldSpec?.leadingSidebar
+    let oldTrailingSidebar = oldSpec?.trailingSidebar
+
+    let leadingSidebar =  Sidebar(.leadingSidebar,
+                                  tabGroups: Sidebar.TabGroup.fromPrefs(for: .leadingSidebar),
+                                  placement: Preference.enum(for: .leadingSidebarPlacement),
+                                  visibility: oldLeadingSidebar?.visibility ?? .closed,
+                                  lastVisibleTab: oldLeadingSidebar?.lastVisibleTab)
+    let trailingSidebar = Sidebar(.trailingSidebar,
+                                  tabGroups: Sidebar.TabGroup.fromPrefs(for: .trailingSidebar),
+                                  placement: Preference.enum(for: .trailingSidebarPlacement),
+                                  visibility: oldTrailingSidebar?.visibility ?? .closed,
+                                  lastVisibleTab: oldTrailingSidebar?.lastVisibleTab)
+    let mode = newMode ?? oldSpec?.mode ?? .windowedNormal
+    // Tricky need for parantheses here! Would be great as an interview question
+    let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen) : Preference.bool(for: .useLegacyWindowedMode))
+    let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
+
+    return LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
+                      mode: mode,
+                      isLegacyStyle: isLegacyStyle,
+                      topBarPlacement: Preference.enum(for: .topBarPlacement),
+                      bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
+                      enableOSC: Preference.bool(for: .enableOSC),
+                      oscPosition: Preference.enum(for: .oscPosition),
+                      oscColorScheme: effectiveOSCColorSchemeFromPrefs,
+                      interactiveMode: interactiveMode,
+                      moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs())
+  }
+
+  static var effectiveOSCColorSchemeFromPrefs: Preference.OSCColorScheme {
+    if Preference.bool(for: .enableOSC), Preference.enum(for: .oscPosition) == Preference.OSCPosition.bottom,
+       Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
+      return Preference.enum(for: .oscColorScheme)
+    }
+    return .visualEffectView
+  }
+
 }
 
 
@@ -275,10 +286,9 @@ struct LayoutSpec {
 /// ("Layout" might have been a better name for this class, but it's already used by AppKit). Notes:
 /// • With all the different window layout configurations which are now possible, it's crucial to use this class in order for animations
 ///   to work reliably.
-/// • It should be treated like a read-only object after it's built. Its member variables are only mutable to make it easier to build.
 /// • When any member variable inside it needs to be changed, a new `LayoutState` object should be constructed to describe the new state,
-///   and a `LayoutTransition` should be built to describe the animations needs to go from old to new.
-/// • The new `LayoutState`, once active, should be stored in the `currentLayout` of `PlayerWindowController` for future reference.
+///   and a `LayoutTransition` should be built to construct the animations & structural changes from this `LayoutState` to the new one.
+/// • The new `LayoutState`, once active, should be stored as the `currentLayout` of `PlayerWindowController`.
 struct LayoutState {
   // MARK: Stored properties
 
@@ -315,7 +325,9 @@ struct LayoutState {
   /// Has OSC with clear background.
   ///
   /// Equivalent to `effectiveOSCColorScheme == .clearGradient`
-  let oscHasClearBG: Bool
+  var oscHasClearBG: Bool {
+    spec.oscBackgroundIsClear
+  }
 
   // MARK: Derived / computed properties
 
@@ -638,10 +650,11 @@ struct LayoutState {
     self.titleBarHeight = titleBarHeight
     self.sidebarDownshift = sidebarDownshift
     self.sidebarTabHeight = sidebarTabHeight
-    self.oscHasClearBG = spec.oscBackgroundIsClear
   }
 
-  // Converts & updates existing geometry to this layout
+  /// Converts & updates existing geometry to this layout.
+  ///
+  /// Useful when restoring a saved layout and ironing out any inconsistencies between the given `PWinGeometry` & this `LayoutState`.
   func convertWindowedModeGeometry(from existingGeometry: PWinGeometry, video: VideoGeometry? = nil, pinWidthOrHeightIfAtMax: Bool,
                                    applyOffsetIndex offsetIndex: Int = 0, _ log: Logger.Subsystem) -> PWinGeometry {
     assert(existingGeometry.mode.isWindowed, "Expected existingGeometry to be windowed: \(existingGeometry)")
