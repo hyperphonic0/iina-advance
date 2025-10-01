@@ -551,6 +551,7 @@ extension PlayerWindowController {
       }
 
       titleBar.addViewTo(superview: topBarView.titleBarView)
+      titleBar.updateTrackingAreas()  // call this *after* attaching to superview
       fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: titleBar.leadingSidebarToggleButton)
       fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: titleBar.trailingSidebarToggleButton)
       fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: titleBar.onTopButton)

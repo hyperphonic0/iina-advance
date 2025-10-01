@@ -91,15 +91,6 @@ class CustomTitleBarViewController: NSViewController {
       btn.setContentCompressionResistancePriority(.required, for: .vertical)
     }
 
-    if leadingStackView.trackingAreas.count <= 1 && trafficLightButtons.count == 3 {
-      for btn in trafficLightButtons {
-        /// This solution works better than using `window` as owner, because with that the green button would get stuck with highlight
-        /// when menu was shown.
-        let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .mouseEnteredAndExited]
-        btn.addTrackingArea(NSTrackingArea(rect: btn.bounds, options: options, owner: leadingStackView, userInfo: nil))
-      }
-    }
-
     // - Center views
 
     // See https://github.com/indragiek/INAppStoreWindow/blob/master/INAppStoreWindow/INAppStoreWindow.m
@@ -151,7 +142,31 @@ class CustomTitleBarViewController: NSViewController {
     initConstraints()
 
     view.configureSubtreeForCoreAnimation()
+
     pwc.log.verbose{"CustomTitleBar viewDidLoad done"}
+  }
+
+
+  func updateTrackingAreas() {
+    removeTrackingAreas()
+    addTrackingAreas()
+  }
+
+  func addTrackingAreas() {
+    for btn in trafficLightButtons {
+      /// This solution works better than using `window` as owner, because with that the green button would get stuck with highlight
+      /// when menu was shown.
+      let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .mouseEnteredAndExited]
+      btn.addTrackingArea(NSTrackingArea(rect: btn.bounds, options: options, owner: leadingStackView, userInfo: nil))
+    }
+  }
+
+  func removeTrackingAreas() {
+    for view in trafficLightButtons {
+      for area in view.trackingAreas {
+        view.removeTrackingArea(area)
+      }
+    }
   }
 
   private func initConstraints() {

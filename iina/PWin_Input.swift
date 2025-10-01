@@ -201,6 +201,8 @@ extension PlayerWindowController {
                                                   userInfo: [TrackingArea.key: TrackingArea.volumeSlider]))
       addedCount += 1
     }
+
+    customTitleBar?.addTrackingAreas()
     log.verbose{"Added \(addedCount) tracking areas"}
   }
 
@@ -214,6 +216,7 @@ extension PlayerWindowController {
         }
       }
     }
+    customTitleBar?.removeTrackingAreas()
     log.verbose{"Removed \(removedCount) tracking areas"}
   }
 
