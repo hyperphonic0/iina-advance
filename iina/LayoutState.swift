@@ -51,6 +51,9 @@ struct LayoutState {
 
   let moreSidebarState: Sidebar.SidebarMiscState
 
+  /// Only applies for legacy full screen
+  let hasTopPaddingForCameraHousing: Bool
+
   // MARK: Derived Properties
   // TODO: convert these to computed properties
 
@@ -67,9 +70,6 @@ struct LayoutState {
 
   let bottomBarView: VisibilityMode
   let topBarView: VisibilityMode
-
-  /// Only applies for legacy full screen
-  let hasTopPaddingForCameraHousing: Bool
 
   // - Sizes / offsets
 
@@ -89,6 +89,7 @@ struct LayoutState {
        controlBarGeo givenControlBarGeo: ControlBarGeometry? = nil,
        interactiveMode: InteractiveMode?,
        moreSidebarState: Sidebar.SidebarMiscState,
+       hasTopPaddingForCameraHousing: Bool,
   ) {
 
     var mode = mode
@@ -126,6 +127,8 @@ struct LayoutState {
     let controlBarGeo = givenControlBarGeo ?? ControlBarGeometry(mode: mode, oscPosition: oscPosition)
     self.controlBarGeo = controlBarGeo
 
+    self.hasTopPaddingForCameraHousing = hasTopPaddingForCameraHousing
+
     // - Derived Properties
     // These are derived from the above fields.
 
@@ -133,7 +136,6 @@ struct LayoutState {
 
     let isLegacyFullScreen = mode.isFullScreen && isLegacyStyle
     let isNativeFullScreen = mode.isFullScreen && !isLegacyStyle
-    self.hasTopPaddingForCameraHousing = isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
 
     // Title bar views
     var titleBarHeight: CGFloat = 0
@@ -245,6 +247,7 @@ struct LayoutState {
              enableOSC: Bool? = nil,
              oscPosition: Preference.OSCPosition? = nil,
              controlBarGeo: ControlBarGeometry? = nil,
+             hasTopPaddingForCameraHousing: Bool? = nil,
              interactiveMode: InteractiveMode? = nil,
              moreSidebarState: Sidebar.SidebarMiscState? = nil,
   ) -> LayoutState {
@@ -253,17 +256,18 @@ struct LayoutState {
     let controlBarGeo = controlBarGeo ?? (mode == nil ? self.controlBarGeo : self.controlBarGeo.clone(mode: mode!))
 
     return LayoutState(leadingSidebar: leadingSidebar ?? self.leadingSidebar,
-                      trailingSidebar: trailingSidebar ?? self.trailingSidebar,
-                      mode: mode ?? self.mode,
-                      isLegacyStyle: isLegacyStyle ?? self.isLegacyStyle,
-                      topBarPlacement: topBarPlacement ?? self.topBarPlacement,
-                      bottomBarPlacement: bottomBarPlacement ?? self.bottomBarPlacement,
-                      enableOSC: enableOSC ?? self.enableOSC,
-                      oscPosition: self.oscPosition,
-                      oscColorScheme: self.oscColorScheme,
-                      controlBarGeo: controlBarGeo,
-                      interactiveMode: interactiveMode ?? self.interactiveMode,
-                      moreSidebarState: moreSidebarState ?? self.moreSidebarState)
+                       trailingSidebar: trailingSidebar ?? self.trailingSidebar,
+                       mode: mode ?? self.mode,
+                       isLegacyStyle: isLegacyStyle ?? self.isLegacyStyle,
+                       topBarPlacement: topBarPlacement ?? self.topBarPlacement,
+                       bottomBarPlacement: bottomBarPlacement ?? self.bottomBarPlacement,
+                       enableOSC: enableOSC ?? self.enableOSC,
+                       oscPosition: self.oscPosition,
+                       oscColorScheme: self.oscColorScheme,
+                       controlBarGeo: controlBarGeo,
+                       interactiveMode: interactiveMode ?? self.interactiveMode,
+                       moreSidebarState: moreSidebarState ?? self.moreSidebarState,
+                       hasTopPaddingForCameraHousing: hasTopPaddingForCameraHousing ?? self.hasTopPaddingForCameraHousing)
   }
 
   func withSidebarsHidden() -> LayoutState {
@@ -523,16 +527,19 @@ struct LayoutState {
     let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen) : Preference.bool(for: .useLegacyWindowedMode))
     let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
 
+    let isLegacyFullScreen = mode.isFullScreen && isLegacyStyle
+    let hasTopPaddingForCameraHousing = isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
     return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
-                      mode: mode,
-                      isLegacyStyle: isLegacyStyle,
-                      topBarPlacement: Preference.enum(for: .topBarPlacement),
-                      bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
-                      enableOSC: Preference.bool(for: .enableOSC),
-                      oscPosition: Preference.enum(for: .oscPosition),
-                      oscColorScheme: effectiveOSCColorSchemeFromPrefs,
-                      interactiveMode: interactiveMode,
-                      moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs())
+                       mode: mode,
+                       isLegacyStyle: isLegacyStyle,
+                       topBarPlacement: Preference.enum(for: .topBarPlacement),
+                       bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
+                       enableOSC: Preference.bool(for: .enableOSC),
+                       oscPosition: Preference.enum(for: .oscPosition),
+                       oscColorScheme: effectiveOSCColorSchemeFromPrefs,
+                       interactiveMode: interactiveMode,
+                       moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs(),
+                       hasTopPaddingForCameraHousing: hasTopPaddingForCameraHousing)
   }
 
   static var effectiveOSCColorSchemeFromPrefs: Preference.OSCColorScheme {

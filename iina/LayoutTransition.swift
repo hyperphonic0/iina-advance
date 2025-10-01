@@ -106,6 +106,7 @@ extension PlayerWindowController {
         return false
       }
       return isClosingLeadingSidebar || isClosingTrailingSidebar
+      || inputLayout.hasTopPaddingForCameraHousing != outputLayout.hasTopPaddingForCameraHousing
       || isClosingPlaylistInMusicMode || isClosingViewport
       || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
       || (inputLayout.isLegacyStyle != outputLayout.isLegacyStyle)
@@ -377,7 +378,7 @@ extension PlayerWindowController {
     func computeExtraAnimationGeoForLegacyFS(fsGeometry: PWinGeometry) -> PWinGeometry {
       assert(isTogglingLegacyFullScreen, "computeExtraAnimationGeoForLegacyFS should not be called unless toggling legacy full screen")
       let screen = NSScreen.getScreenOrDefault(screenID: fsGeometry.screenID)
-      
+
       // Use extra animation to deal with possible top margin needed to hide camera housing
       if fsGeometry.hasTopPaddingForCameraHousing {
         /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.

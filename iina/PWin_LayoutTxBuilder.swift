@@ -244,7 +244,7 @@ extension PlayerWindowController {
     if useExtraAnimationForExitingLegacyFullScreen {
       let winScreen = transition.windowedModeScreen
       let cameraToTotalFrameRatio = 1 - (winScreen.frameWithoutCameraHousing.size.height / winScreen.frame.height)
-      let duration = endingAnimationDuration * cameraToTotalFrameRatio
+      let duration = endingAnimationDuration// * cameraToTotalFrameRatio
 
       tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
         let newGeo = transition.computeExtraAnimationGeoForLegacyFS(fsGeometry: transition.inputGeometry)
@@ -271,7 +271,7 @@ extension PlayerWindowController {
     if useExtraAnimationForEnteringLegacyFullScreen {
       let winScreen = transition.windowedModeScreen
       let cameraToTotalFrameRatio = 1 - (winScreen.frameWithoutCameraHousing.size.height / winScreen.frame.height)
-      let duration = endingAnimationDuration * cameraToTotalFrameRatio
+      let duration = endingAnimationDuration //* cameraToTotalFrameRatio
 
       tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
         rebuildPanelConstraints(transition, stage: .postTransition)

@@ -1495,12 +1495,14 @@ extension LayoutState {
         // v1 of the CSV lacked this info. Fall back to default
         moreSidebarState = Sidebar.SidebarMiscState.fromDefaultPrefs()
       }
-
+      let isLegacyFullScreen = mode.isFullScreen && isLegacyStyle
+      let hasTopPaddingForCameraHousing = isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
       return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar, mode: mode,
-                        isLegacyStyle: isLegacyStyle, topBarPlacement: topBarPlacement,
-                        bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition,
-                        oscColorScheme: Preference.enum(for: .oscColorScheme),
-                        interactiveMode: interactiveMode, moreSidebarState: moreSidebarState)
+                         isLegacyStyle: isLegacyStyle, topBarPlacement: topBarPlacement,
+                         bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition,
+                         oscColorScheme: Preference.enum(for: .oscColorScheme),
+                         interactiveMode: interactiveMode, moreSidebarState: moreSidebarState,
+                         hasTopPaddingForCameraHousing: hasTopPaddingForCameraHousing)
     }
 
     do {
