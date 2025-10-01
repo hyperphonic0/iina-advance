@@ -334,7 +334,7 @@ extension PlayerWindowController {
         if targetLayout.isLegacyStyle {
           customTitleBar?.view.isHidden = true
         } else {
-          hideBuiltInTitleBarViews(setAlpha: false)
+          hideNativeTitleBarViews(andSetAlpha: false)
         }
       }
 

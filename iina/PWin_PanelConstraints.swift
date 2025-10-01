@@ -431,35 +431,6 @@ extension PlayerWindowController {
     fadeableViews.applyVisibility(layoutState.titlebarAccessoryViewControllers, to: trailingTitleBarAccessoryView)
   }
 
-  func addTitleBarAccessoryViews() {
-    guard let window = window else { return }
-    if leadingTitlebarAccesoryViewController == nil {
-      let controller = NSTitlebarAccessoryViewController()
-      leadingTitlebarAccesoryViewController = controller
-      controller.view = leadingTitleBarAccessoryView
-      controller.layoutAttribute = .leading
-    }
-    if trailingTitlebarAccesoryViewController == nil {
-      let controller = NSTitlebarAccessoryViewController()
-      trailingTitlebarAccesoryViewController = controller
-      controller.view = trailingTitleBarAccessoryView
-      controller.layoutAttribute = .trailing
-    }
-    if window.styleMask.contains(.titled) {
-      if !window.titlebarAccessoryViewControllers.contains(leadingTitlebarAccesoryViewController!) {
-        window.addTitlebarAccessoryViewController(leadingTitlebarAccesoryViewController!)
-        leadingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
-        leadingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
-      }
-
-      if !window.titlebarAccessoryViewControllers.contains(trailingTitlebarAccesoryViewController!) {
-        window.addTitlebarAccessoryViewController(trailingTitlebarAccesoryViewController!)
-        trailingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
-        trailingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
-      }
-    }
-  }
-
   /// Hides all the various buttons of the built-in title bar, some of which can have strange quirks.
   ///
   /// Note: there is an Apple bug (as of MacOS 13.3.1) where setting `alphaValue=0` on `miniaturizeButton` will
@@ -473,7 +444,7 @@ extension PlayerWindowController {
   /// We can work around the problem by (1) inserting or removing `.titled` from the window's style mask, which
   /// effectively swaps the whole title bar in or out), and (2) in native windowed mode, *always* show the title bar when
   /// the mouse hovers over it, because even if we set the document icon's alpha to 0, the user can still click on it.
-  func hideBuiltInTitleBarViews(setAlpha: Bool = false) {
+  func hideNativeTitleBarViews(andSetAlpha setAlpha: Bool) {
     if setAlpha {
       documentIconButton?.alphaValue = 0
       titleTextField?.alphaValue = 0
@@ -492,7 +463,7 @@ extension PlayerWindowController {
   }
 
   /// Special case for these because their instances may change. Do not use `fadeableViews`. Always set `alphaValue = 1`.
-  func showBuiltInTitleBarViews() {
+  func showNativeTitleBarViews() {
     for button in trafficLightButtons {
       button.alphaValue = 1
       button.isHidden = false
@@ -520,118 +491,10 @@ extension PlayerWindowController {
     }
   }
 
-  // MARK: - Controller content layout
-
-  func removeCropControls() {
-    guard let cropController = self.cropSettingsView else { return }
-
-    cropController.cropBoxView.removeFromSuperview()
-    cropController.view.removeFromSuperview()
-    self.cropSettingsView = nil
-  }
-
-  func updateSpeedLabelFont(for transition: LayoutTransition) {
-    let oscGeo = transition.outputLayout.controlBarGeo
-    let speedLabelFontSize = oscGeo.speedLabelFontSize
-    log.trace("Updating speed label fontSize=\(speedLabelFontSize)")
-    speedLabel.font = .messageFont(ofSize: speedLabelFontSize)
-  }
-
-  /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
-  func rebuildOSCToolbar(_ transition: LayoutTransition, _ stage: LayoutTransition.Stage) {
-    let oldGeo = transition.inputLayout.controlBarGeo
-    let newGeo = transition.outputLayout.controlBarGeo
-    let newButtonTypes = newGeo.toolbarItems
-
-    let hasSizeChange = oldGeo.toolIconSize != newGeo.toolIconSize || oldGeo.toolIconSpacing != newGeo.toolIconSpacing
-    let hasColorChange = transition.inputLayout.oscBackgroundIsClear != transition.outputLayout.oscBackgroundIsClear
-    var needsButtonsUpdate = hasSizeChange || hasColorChange
-
-    let isOpeningBarOSCFromZero = transition.isOpeningBarOSCFromZero
-    let zeroOut = isOpeningBarOSCFromZero && !transition.isWindowInitialLayout
-    let iconSize: CGFloat = zeroOut ? 0 : newGeo.toolIconSize
-    let iconSpacing: CGFloat = zeroOut ? 0 : newGeo.toolIconSpacing
-    if isOpeningBarOSCFromZero || !oldGeo.toolbarItemsAreSame(as: newGeo) {
-      fragToolbarView.views.forEach { fragToolbarView.removeView($0) }
-
-      if newButtonTypes.count > 0 {
-        log.verbose("\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(iconSize) iconSpacing=\(iconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
-        for buttonType in newButtonTypes {
-          let button = OSCToolbarButton()
-          button.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
-          button.setOSCColors(hasClearBG: transition.outputLayout.oscBackgroundIsClear)
-          button.action = #selector(self.toolBarButtonAction(_:))
-          fragToolbarView.addView(button, in: .trailing)
-          fragToolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
-        }
-        needsButtonsUpdate = false
-      }
-    }
-
-    if needsButtonsUpdate {
-      log.verbose("\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(newGeo.toolIconSize) iconSpacing=\(newGeo.toolIconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
-      for button in fragToolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
-        button.setStyle(iconSize: iconSize, iconSpacing: iconSpacing)
-        button.setOSCColors(hasClearBG: transition.outputLayout.oscBackgroundIsClear)
-      }
-    }
-
-    // Do not zero this out:
-    updateToolbarHStack(iconSpacing: newGeo.toolIconSpacing)
-    log.verbose("\(transition.logPreamble(for: stage)) Toolbar spacing=\(fragToolbarView.spacing) edgeInsets=\(fragToolbarView.edgeInsets)")
-  }
-
-  // It's not possible to control the icon padding from inside the buttons in all cases.
-  // Instead we can get the same effect with a little more work, by using the stack view's features.
-  func updateToolbarHStack(iconSpacing: CGFloat) {
-    log.verbose("Updating toolbar hstack using spacing=\(iconSpacing)")
-    fragToolbarView.spacing = 2 * iconSpacing
-    let sideInset = (iconSpacing * 0.5).rounded()
-    fragToolbarView.edgeInsets = .init(top: iconSpacing, left: sideInset,
-                                       bottom: iconSpacing, right: sideInset)
-    fragToolbarView.needsUpdateConstraints = true
-  }
-
-  // MARK: - Misc support functions
-
-  /// Call this when `origVideoSize` is known.
-  /// Assumes `videoRect == videoView.frame`
-  func addOrReplaceCropBoxSelection(rawVideoSize: NSSize, videoViewSize: NSSize) {
-    guard let cropController = self.cropSettingsView else { return }
-
-    if !videoView.subviews.contains(cropController.cropBoxView) {
-      videoView.addSubview(cropController.cropBoxView)
-      cropController.cropBoxView.addAllConstraintsToFillSuperview()
-    }
-
-    cropController.cropBoxView.actualSize = rawVideoSize
-    cropController.cropBoxView.resized(with: NSRect(origin: .zero, size: videoViewSize))
-  }
-
-  /// Either legacy FS or windowed
-  func setWindowStyleToLegacy() {
-    guard let window = window else { return }
-    if window.styleMask.contains(.titled) {
-      log.verbose("Removing window styleMask.titled")
-      window.styleMask.remove(.titled)
-    }
-    window.styleMask.insert(.closable)
-    window.styleMask.insert(.miniaturizable)
-  }
-
-  /// "Native" == `.titled` style mask
-  func setWindowStyleToNative() {
-    guard let window = window else { return }
-
-    if !window.styleMask.contains(.titled) {
-      log.verbose("Inserting window styleMask.titled")
-      window.styleMask.remove(.borderless)
-      window.styleMask.insert(.titled)
-    }
-  }
+  // MARK: - Private support functions
 
   /// Remove the tab group view associated with `group` from its parent view (also removes constraints)
-  func removeSidebarTabGroupView(group: Sidebar.TabGroup) {
+  private func removeSidebarTabGroupView(group: Sidebar.TabGroup) {
     log.verbose("Removing sidebar tab group view for \(group)")
     let viewController: NSViewController
     switch group {
@@ -697,49 +560,4 @@ extension PlayerWindowController {
     }
   }
 
-  /// This fixes an edge case when both sidebars are shown and are `.outsideViewport`. When one is toggled, and width of
-  /// `videoView` is smaller than that of the sidebar being toggled, must ensure that the sidebar being animated is below
-  /// the other one, otherwise it will be briefly seen popping out on top of the other one.
-  func prepareDepthOrderOfOutsideSidebarsForToggle(_ transition: LayoutTransition) {
-    guard transition.isOpeningOrClosingAnySidebar,
-          transition.outputLayout.leadingSidebar.placement == .outsideViewport,
-          transition.outputLayout.trailingSidebar.placement == .outsideViewport else { return }
-    guard let contentView = window?.contentView else { return }
-
-    if transition.isOpeningLeadingSidebar {
-      contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: trailingSidebarView)
-    } else if transition.isOpeningTrailingSidebar {
-      contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: leadingSidebarView)
-    }
-  }
-
-  func updatePanelBlendingModes(to outputLayout: LayoutState) {
-    if outputLayout.topBarHeight > 0 {
-      // Full screen + "behindWindow" doesn't blend properly and looks ugly
-      if outputLayout.topBarPlacement == .insideViewport || outputLayout.isFullScreen {
-        topBarView.blendingMode = .withinWindow
-      } else {
-        topBarView.blendingMode = .behindWindow
-      }
-    }
-
-    if outputLayout.bottomBarHeight > 0 {
-      if let bottomBarView = bottomBarView as? NSVisualEffectView {
-        // Full screen + "behindWindow" doesn't blend properly and looks ugly
-        if outputLayout.bottomBarPlacement == .insideViewport || outputLayout.isFullScreen {
-          bottomBarView.blendingMode = .withinWindow
-        } else {
-          bottomBarView.blendingMode = .behindWindow
-        }
-      }
-    }
-
-    if outputLayout.leadingSidebar.isVisible {
-      updateSidebarBlendingMode(.leadingSidebar, layout: outputLayout)
-    }
-
-    if outputLayout.trailingSidebar.isVisible {
-      updateSidebarBlendingMode(.trailingSidebar, layout: outputLayout)
-    }
-  }
 }
