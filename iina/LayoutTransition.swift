@@ -108,7 +108,7 @@ extension PlayerWindowController {
       return isClosingLeadingSidebar || isClosingTrailingSidebar
       || isClosingPlaylistInMusicMode || isClosingViewport
       || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
-      || (inputLayout.spec.isLegacyStyle != outputLayout.spec.isLegacyStyle)
+      || (inputLayout.isLegacyStyle != outputLayout.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.enableOSC != outputLayout.enableOSC)
       || (inputLayout.enableOSC && (inputLayout.oscPosition != outputLayout.oscPosition))
@@ -119,7 +119,7 @@ extension PlayerWindowController {
       return (inputGeometry.topMarginHeight != outputGeometry.topMarginHeight)
       || isOpeningLeadingSidebar || isOpeningTrailingSidebar
       || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
-      || (inputLayout.spec.isLegacyStyle != outputLayout.spec.isLegacyStyle)
+      || (inputLayout.isLegacyStyle != outputLayout.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.topBarHeight != outputLayout.topBarHeight)
       || (inputGeometry.insideBars.bottom != outputGeometry.insideBars.bottom)
@@ -129,15 +129,15 @@ extension PlayerWindowController {
     }
 
     var isAddingLegacyStyle: Bool {
-      return !inputLayout.spec.isLegacyStyle && outputLayout.spec.isLegacyStyle
+      return !inputLayout.isLegacyStyle && outputLayout.isLegacyStyle
     }
 
     var isRemovingLegacyStyle: Bool {
-      return inputLayout.spec.isLegacyStyle && !outputLayout.spec.isLegacyStyle
+      return inputLayout.isLegacyStyle && !outputLayout.isLegacyStyle
     }
 
     var isTogglingLegacyStyle: Bool {
-      return inputLayout.spec.isLegacyStyle != outputLayout.spec.isLegacyStyle
+      return inputLayout.isLegacyStyle != outputLayout.isLegacyStyle
     }
 
     var isTogglingFullScreen: Bool {

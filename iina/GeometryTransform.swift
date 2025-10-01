@@ -499,7 +499,7 @@ struct GeometryTransform {
           // Need to use LayoutTransition for complex layout changes
           let transition = pwc.buildLayoutTransition(named: name, from: inputLayout,
                                                      inputGeo: inputLayout.isMusicMode ? inputMusicModeGeo : nil,
-                                                     to: outputLayout.spec, outputGeo: outputMusicModeGeo, inputGeoSet)
+                                                     to: outputLayout, outputGeo: outputMusicModeGeo, inputGeoSet)
           tasks = pwc.buildTasks(for: transition, totalStartingDuration: startingDuration, totalEndingDuration: endingDuration)
         } else {
           let showDefaultArt: Bool? = shouldChangeDefaultArt
@@ -752,12 +752,12 @@ extension PlayerWindowController {
     isAnimatingLayoutTransition = true
 
     // Send GeometrySet object to builder so that it doesn't default to current window frame
-    log.verbose{"[GTF:\(ctx.name)] Setting initial \(ctx.outputLayout.spec), windowedModeGeo=\(outputGeoSet.windowed), musicModeGeo=\(outputGeoSet.musicMode)"}
+    log.verbose{"[GTF:\(ctx.name)] Setting initial \(ctx.outputLayout), windowedModeGeo=\(outputGeoSet.windowed), musicModeGeo=\(outputGeoSet.musicMode)"}
 
     let isRestoring = ctx.gtfSessionState.isRestoring
     let transitionName = "\(isRestoring ? "Restore" : "Set")InitialLayout"
     let initialTransition = buildLayoutTransition(named: transitionName,
-                                                  from: ctx.inputLayout, to: ctx.outputLayout.spec,
+                                                  from: ctx.inputLayout, to: ctx.outputLayout,
                                                   isWindowInitialLayout: true, outputGeoSet)
     var tasks: [IINAAnimation.Task] = []
 
@@ -792,9 +792,9 @@ extension PlayerWindowController {
 
     if isRestoring {
       /// Stored window state may not be consistent with global IINA prefs.
-      /// To check this, build another `LayoutSpec` from the global prefs, then compare it to the player's.
-      let prefsSpec = LayoutSpec.fromPreferences(fillingInFrom: ctx.outputLayout.spec)
-      if ctx.outputLayout.spec.hasSamePrefsValues(as: prefsSpec) {
+      /// To check this, build another `LayoutState` from the global prefs, then compare it to the player's.
+      let prefsSpec = LayoutState.fromPreferences(fillingInFrom: ctx.outputLayout)
+      if ctx.outputLayout.hasSamePrefsValues(as: prefsSpec) {
         log.verbose{"[GTF:\(ctx.name)] Saved layout is consistent with IINA global prefs"}
       } else {
         // Not consistent. But we already have the correct spec, so just build a layout from it and transition to correct layout
@@ -803,7 +803,7 @@ extension PlayerWindowController {
 #else
         log.warn{"Player's saved layout does not match IINA app prefs; will fix & apply corrected layout"}
 #endif
-        log.debug{"[GTF:\(ctx.name)] SavedSpec: \(currentLayout.spec). PrefsSpec: \(prefsSpec)"}
+        log.debug{"[GTF:\(ctx.name)] SavedSpec: \(currentLayout). PrefsSpec: \(prefsSpec)"}
         let repairTransition = buildLayoutTransition(named: "FixInvalidInitialLayout",
                                                      from: initialTransition.outputLayout, to: prefsSpec)
 
@@ -826,22 +826,21 @@ extension PlayerWindowController {
   /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
   fileprivate func buildTasksToRestoreLayout(_ priorState: PlayerSaveState,
                                              _ ctx: inout GeometryTransform.ContextStage3) -> [IINAAnimation.Task] {
-    if let priorLayoutSpec = priorState.layoutSpec {
+    if let priorLayoutState = priorState.layoutState {
       log.verbose("[GTF:\(ctx.name)] Transitioning to initial layout from prior window state")
 
-      let initialLayoutSpec: LayoutSpec
-      if priorLayoutSpec.isNativeFullScreen {
+      let initialLayoutState: LayoutState
+      if priorLayoutState.isNativeFullScreen {
         // Special handling for native fullscreen. Rely on mpv to put us in FS when it is ready
-        initialLayoutSpec = priorLayoutSpec.clone(mode: .windowedNormal)
+        initialLayoutState = priorLayoutState.clone(mode: .windowedNormal)
         ctx.needsNativeFullScreen = true
       } else {
-        initialLayoutSpec = priorLayoutSpec
+        initialLayoutState = priorLayoutState
       }
-      ctx.outputLayout = LayoutState.buildFrom(initialLayoutSpec)
+      ctx.outputLayout = initialLayoutState
     } else {
-      log.error("[GTF:\(ctx.name)] Failed to read LayoutSpec object for restore! Will try to assemble window from prefs instead")
-      let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutSpec)
-      ctx.outputLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
+      log.error("[GTF:\(ctx.name)] Failed to read LayoutState object for restore! Will try to assemble window from prefs instead")
+      ctx.outputLayout = LayoutState.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutState)
     }
 
     // Clean up savedGeoSet (actually just windowedModeGeo so far) if inconsistencies found with it
@@ -852,7 +851,7 @@ extension PlayerWindowController {
     let savedWindowedGeo = savedGeoSet.windowed
 
     if !savedWindowedGeo.mode.isWindowed || savedWindowedGeo.screenFit.isFullScreen {
-      log.error{"[GTF:\(ctx.name)] Initial layout: windowedModeGeo from prior state has invalid mode (\(savedWindowedGeo.mode)) or screenFit (\(savedWindowedGeo.screenFit)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead"}
+      log.error{"[GTF:\(ctx.name)] Initial layout: windowedModeGeo from prior state has invalid mode (\(savedWindowedGeo.mode)) or screenFit (\(savedWindowedGeo.screenFit)). Will generate a fresh windowedModeGeo from saved layoutState and last closed window instead"}
 
       let lastClosedGeo = PlayerWindowController.windowedModeGeoLastClosed
       let windowed: PWinGeometry
@@ -868,7 +867,7 @@ extension PlayerWindowController {
       log.error{"[GTF:\(ctx.name)] Initial layout: windowedModeGeo from prior state has window size (\(savedWindowedGeo.windowFrame.size)) which is too small to accomodate bars (outside=\(savedWindowedGeo.outsideBars), inside=\(savedWindowedGeo.insideBars)). Will close sidebars."}
 
       /// Overwrite `outputLayout` with fixed version
-      ctx.outputLayout = LayoutState.buildFrom(ctx.outputLayout.spec.withSidebarsHidden())
+      ctx.outputLayout = ctx.outputLayout.withSidebarsHidden()
       let outsideNew = savedWindowedGeo.outsideBars.clone(trailing: 0, leading: 0)
       let insideNew = savedWindowedGeo.insideBars.clone(trailing: 0, leading: 0)
       let windowed = savedWindowedGeo.clone(outsideBars: outsideNew, insideBars: insideNew)
@@ -909,8 +908,7 @@ extension PlayerWindowController {
     }
 
     // Set to default layout, but use existing aspect ratio & video size for now, because we don't have that info yet for the new video
-    let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: mode, fillingInFrom: lastWindowedLayoutSpec)
-    ctx.outputLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
+    ctx.outputLayout = LayoutState.fromPreferences(andMode: mode, fillingInFrom: lastWindowedLayoutState)
 
     let outputGeoSet = buildGeoSetForNewWindow(ctx)
     return buildTransitionTasksToInitialLayout(ctx, outputGeoSet: outputGeoSet)

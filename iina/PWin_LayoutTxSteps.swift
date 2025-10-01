@@ -462,7 +462,7 @@ extension PlayerWindowController {
       break
     }
 
-    if transition.outputLayout.spec.isLegacyStyle {
+    if transition.outputLayout.isLegacyStyle {
       // Set legacy style
       setWindowStyleToLegacy()
 
@@ -538,7 +538,7 @@ extension PlayerWindowController {
       }
     }
 
-    if outputLayout.titleBar.isShowable, transition.outputLayout.spec.isLegacyStyle {
+    if outputLayout.titleBar.isShowable, transition.outputLayout.isLegacyStyle {
       let titleBar: CustomTitleBarViewController
       // Custom title bar
       if let customTitleBar {
@@ -571,7 +571,7 @@ extension PlayerWindowController {
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
-    let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscHasClearBG)
+    let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscBackgroundIsClear)
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
     // Need to add additionalInfo, OSD before changing sidebars
@@ -834,7 +834,7 @@ extension PlayerWindowController {
       volumeSlider.needsDisplay = true
 
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging || transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight {
-        let hasClearBG = transition.outputLayout.oscHasClearBG
+        let hasClearBG = transition.outputLayout.oscBackgroundIsClear
         log.verbose{"\(logPre) Updating OSC colors: hasClearBG=\(hasClearBG.yn)"}
 
         playButton.setOSCColors(hasClearBG: hasClearBG)
@@ -844,7 +844,7 @@ extension PlayerWindowController {
 
         let textAlpha: CGFloat
         let timeLabelTextColor: NSColor?
-        if transition.outputLayout.oscHasClearBG {
+        if transition.outputLayout.oscBackgroundIsClear {
           textAlpha = 0.8
           timeLabelTextColor = .white
 
@@ -893,7 +893,7 @@ extension PlayerWindowController {
         setEmptySpaceColor(to: Constants.Color.interactiveModeBackground)
 
         // Add crop settings at bottom
-        let cropController = self.cropSettingsView ?? transition.outputLayout.spec.interactiveMode!.viewController()
+        let cropController = self.cropSettingsView ?? transition.outputLayout.interactiveMode!.viewController()
         cropController.pwc = self
         self.cropSettingsView = cropController
         bottomBarView.addSubview(cropController.view, positioned: .below, relativeTo: bottomBarTopBorder)
@@ -907,7 +907,7 @@ extension PlayerWindowController {
 
         /// `selectedRect` should be subrect of`actualSize`
         let selectedRect: NSRect
-        switch currentLayout.spec.interactiveMode {
+        switch currentLayout.interactiveMode {
         case .crop:
           if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
             selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
@@ -953,7 +953,7 @@ extension PlayerWindowController {
 
     // Do this here so that BarFactory regenerates close enough to mid-animation (so bar thickness changes pleasantly)
     if let screen = window.screen {
-      applyThemeMaterial(using: transition.outputLayout.spec, window, screen)
+      applyThemeMaterial(using: transition.outputLayout, window, screen)
     } else {
       // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
       // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
@@ -1107,7 +1107,7 @@ extension PlayerWindowController {
     // If exiting FS, the openNewPanels and fadInNewViews steps are combined. Wait till later
     if outputLayout.titleBar.isShowable {
       if !transition.isExitingFullScreen {
-        if outputLayout.spec.isLegacyStyle {  // Legacy windowed mode
+        if outputLayout.isLegacyStyle {  // Legacy windowed mode
           for view in trafficLightButtons + [documentIconButton, titleTextField, customTitleBar?.view] {
             if let view {
               view.alphaValue = 1
@@ -1142,7 +1142,7 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.isExitingFullScreen && !transition.outputLayout.spec.isLegacyStyle && transition.outputLayout.titleBar.isShowable {
+    if transition.isExitingFullScreen && !transition.outputLayout.isLegacyStyle && transition.outputLayout.titleBar.isShowable {
       // MUST put this in prev task to avoid race condition!
       window.titleVisibility = .visible
     }
@@ -1238,7 +1238,7 @@ extension PlayerWindowController {
 
       player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: false)
 
-      if transition.outputLayout.spec.isLegacyStyle {  // legacy windowed
+      if transition.outputLayout.isLegacyStyle {  // legacy windowed
         setWindowStyleToLegacy()
         window.styleMask.remove(.borderless)
         if let customTitleBar {
@@ -1351,7 +1351,7 @@ extension PlayerWindowController {
     screenParamsChangedDebouncer.invalidate()
     isAnimatingLayoutTransition = false
 
-    log.verbose("[\(transition.name)] Done with transition: isLegacy=\(transition.outputLayout.spec.isLegacyStyle.yn) mode=\(currentLayout.mode)")
+    log.verbose("[\(transition.name)] Done with transition: isLegacy=\(transition.outputLayout.isLegacyStyle.yn) mode=\(currentLayout.mode)")
 
     player.saveState()
   }

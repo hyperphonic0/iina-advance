@@ -52,7 +52,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   private var isShowingPrimarySubPanel: Bool {
     get {
       guard let pwc else { return true }
-      return pwc.currentLayout.spec.moreSidebarState.selectedSubSegment == 0
+      return pwc.currentLayout.moreSidebarState.selectedSubSegment == 0
     }
     set {
       guard let pwc else { return }
@@ -61,10 +61,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       // Put inside task to protect from race
       pwc.animationPipeline.submitInstantTask{
         let prevLayout = pwc.currentLayout
-        let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: prevLayout.spec.moreSidebarState.playlistSidebarWidth,
+        let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: prevLayout.moreSidebarState.playlistSidebarWidth,
                                                         selectedSubSegment: selectedSegment,
-                                                        selectedPluginTabID: prevLayout.spec.moreSidebarState.selectedPluginTabID)
-        pwc.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
+                                                        selectedPluginTabID: prevLayout.moreSidebarState.selectedPluginTabID)
+        pwc.currentLayout = prevLayout.clone(moreSidebarState: moreSidebarState)
       }
     }
   }

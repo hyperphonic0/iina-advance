@@ -359,8 +359,8 @@ extension PlayerWindowController {
         return
       }
 
-      let newLayoutSpec = oldLayout.spec.clone(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar)
-      let transition = buildLayoutTransition(named: "UpdateSidebarPlacements", from: oldLayout, to: newLayoutSpec)
+      let newLayoutState = oldLayout.clone(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar)
+      let transition = buildLayoutTransition(named: "UpdateSidebarPlacements", from: oldLayout, to: newLayoutState)
       buildTasks(for: transition, thenRun: true)
     }
   }
@@ -371,8 +371,8 @@ extension PlayerWindowController {
 
     animationPipeline.submitInstantTask { [self] in
       let oldLayout = currentLayout
-      let newLayoutSpec = oldLayout.spec.withSidebarsHidden()
-      let transition = buildLayoutTransition(named: "HideAllSidebars", from: oldLayout, to: newLayoutSpec)
+      let newLayoutState = oldLayout.withSidebarsHidden()
+      let transition = buildLayoutTransition(named: "HideAllSidebars", from: oldLayout, to: newLayoutState)
       let transitionTasks = buildTasks(for: transition, totalEndingDuration: 0)
 
       if animate {
@@ -439,8 +439,8 @@ extension PlayerWindowController {
     }
 
     log.verbose("Transitioning to layout with \(leadingSidebar.locationID)=\(leadingSidebar.visibility) \(trailingSidebar.locationID)=\(trailingSidebar.visibility)")
-    let newLayoutSpec = oldLayout.spec.clone(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar)
-    let transition = buildLayoutTransition(named: "\(shouldShow ? "Show" : "Hide")Sidebar", from: oldLayout, to: newLayoutSpec)
+    let newLayoutState = oldLayout.clone(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar)
+    let transition = buildLayoutTransition(named: "\(shouldShow ? "Show" : "Hide")Sidebar", from: oldLayout, to: newLayoutState)
     buildTasks(for: transition, thenRun: true)
   }
 
@@ -462,11 +462,11 @@ extension PlayerWindowController {
       let sidebarWidth: CGFloat
       switch goal {
       case .open(let tabToShow):
-        sidebarWidth = tabToShow.group.width(using: layout.spec.moreSidebarState)
+        sidebarWidth = tabToShow.group.width(using: layout.moreSidebarState)
         shouldShow = true
       case .closed:
         if let lastVisibleTab = leadingSidebar.lastVisibleTab {
-          sidebarWidth = lastVisibleTab.group.width(using: layout.spec.moreSidebarState)
+          sidebarWidth = lastVisibleTab.group.width(using: layout.moreSidebarState)
         } else {
           log.error{"[\(transition.name)] Failed to find lastVisibleTab for leadingSidebar"}
           sidebarWidth = 0
@@ -485,11 +485,11 @@ extension PlayerWindowController {
       let sidebarWidth: CGFloat
       switch goal {
       case .open(let tabToShow):
-        sidebarWidth = tabToShow.group.width(using: layout.spec.moreSidebarState)
+        sidebarWidth = tabToShow.group.width(using: layout.moreSidebarState)
         shouldShow = true
       case .closed:
         if let lastVisibleTab = trailingSidebar.lastVisibleTab {
-          sidebarWidth = lastVisibleTab.group.width(using: layout.spec.moreSidebarState)
+          sidebarWidth = lastVisibleTab.group.width(using: layout.moreSidebarState)
         } else {
           log.error{"[\(transition.name)] Failed to find lastVisibleTab for trailingSidebar"}
           sidebarWidth = 0
@@ -524,7 +524,7 @@ extension PlayerWindowController {
     }
 
     let tabGroupToShow: Sidebar.TabGroup = leadingSidebar.visibleTabGroup!
-    let sidebarWidth = tabGroupToShow.width(using: layout.spec.moreSidebarState)
+    let sidebarWidth = tabGroupToShow.width(using: layout.moreSidebarState)
     let tabContainerView: NSView
     let boundaryView: NSView
 
@@ -644,7 +644,7 @@ extension PlayerWindowController {
     }
 
     let tabGroupToShow: Sidebar.TabGroup = trailingSidebar.visibleTabGroup!
-    let sidebarWidth = tabGroupToShow.width(using: layout.spec.moreSidebarState)
+    let sidebarWidth = tabGroupToShow.width(using: layout.moreSidebarState)
 
     let viewportTrailingClipLeading: NSLayoutConstraint?
     let tabContainerView: NSView
@@ -819,8 +819,7 @@ extension PlayerWindowController {
         trailingSidebar = layout.trailingSidebar.clone(visibility: newVisibility)
       }
       // Need to update current layout, but no need for animation
-      let newLayoutSpec = layout.spec.clone(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar)
-      let outputLayout = LayoutState.buildFrom(newLayoutSpec)
+      let outputLayout = layout.clone(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar)
       currentLayout = outputLayout
       player.saveState()
 
@@ -872,10 +871,10 @@ extension PlayerWindowController {
         }
       }
 
-      let newLayoutSpec = oldLayout.spec.clone(
+      let newLayoutState = oldLayout.clone(
         leadingSidebar: leadingSidebar.clone(tabGroups: newLeadingTabGroups, visibility: newLeadingSidebarVisibility),
         trailingSidebar: trailingSidebar.clone(tabGroups: newTrailingTabGroups, visibility: newTraillingSidebarVisibility))
-      let transition = buildLayoutTransition(named: "MoveTabGroupToSidebar", from: oldLayout, to: newLayoutSpec)
+      let transition = buildLayoutTransition(named: "MoveTabGroupToSidebar", from: oldLayout, to: newLayoutState)
       buildTasks(for: transition, thenRun: true)
     }
   }
@@ -1148,9 +1147,9 @@ extension PlayerWindowController {
     // Update layout state. Do this inside the animation pipeline to prevent (more) races
     animationPipeline.submitInstantTask{ [self] in
       let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: newPlaylistWidth,
-                                                      selectedSubSegment: currentLayout.spec.moreSidebarState.selectedSubSegment,
-                                                      selectedPluginTabID: currentLayout.spec.moreSidebarState.selectedPluginTabID)
-      self.currentLayout = LayoutState.buildFrom(currentLayout.spec.clone(moreSidebarState: moreSidebarState))
+                                                      selectedSubSegment: currentLayout.moreSidebarState.selectedSubSegment,
+                                                      selectedPluginTabID: currentLayout.moreSidebarState.selectedPluginTabID)
+      self.currentLayout = currentLayout.clone(moreSidebarState: moreSidebarState)
     }
 
     let pointInWindow = mouseLocationInWindow
@@ -1173,9 +1172,9 @@ extension PlayerWindowController {
 
     if hideLeading || hideTrailing {
       animationPipeline.submitInstantTask { [self] in
-        let newLayoutSpec = oldLayout.spec.clone(leadingSidebar: hideLeading ? oldLayout.leadingSidebar.clone(visibility: .closed) : nil,
-                                                 trailingSidebar: hideTrailing ? oldLayout.trailingSidebar.clone(visibility: .closed) : nil)
-        let transition = buildLayoutTransition(named: "HideSidebarsOnClick", from: oldLayout, to: newLayoutSpec)
+        let newLayoutState = oldLayout.clone(leadingSidebar: hideLeading ? oldLayout.leadingSidebar.clone(visibility: .closed) : nil,
+                                             trailingSidebar: hideTrailing ? oldLayout.trailingSidebar.clone(visibility: .closed) : nil)
+        let transition = buildLayoutTransition(named: "HideSidebarsOnClick", from: oldLayout, to: newLayoutState)
         buildTasks(for: transition, totalEndingDuration: 0, thenRun: true)
       }
       return true

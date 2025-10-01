@@ -15,12 +15,12 @@ extension PlayerWindowController {
 
   // MARK: - Building LayoutTransition
 
-  /// First builds a new `LayoutState` based on the given `LayoutSpec`, then builds & returns a `LayoutTransition`,
+  /// First builds a new `LayoutState` based on the given `LayoutState`, then builds & returns a `LayoutTransition`,
   /// which contains all the information needed to animate the UI changes from the current `LayoutState` to the new one.
   @discardableResult
   func buildLayoutTransition(named transitionName: String,
                              from inputLayout: LayoutState, inputGeo inputGeoExplicit: PWinGeometry? = nil,
-                             to outputSpec: LayoutSpec, outputGeo outputGeoExplicit: PWinGeometry? = nil,
+                             to outputLayout: LayoutState, outputGeo outputGeoExplicit: PWinGeometry? = nil,
                              isWindowInitialLayout: Bool = false,
                              _ geoSet: GeometrySet? = nil) -> LayoutTransition {
 
@@ -30,9 +30,6 @@ extension PlayerWindowController {
       transitionID = $0
     }
     let transitionName = "#\(transitionID) \(transitionName)"
-
-    // Compile outputLayout
-    let outputLayout = LayoutState.buildFrom(outputSpec)
 
     // - Geometries Setup
 
@@ -380,7 +377,7 @@ extension PlayerWindowController {
         /// Entering interactive mode: convert from `windowed` to `windowedInteractive`
         log.verbose("Entering windowed interactive mode from windowed mode")
 
-        if outputLayout.spec.interactiveMode == .crop {
+        if outputLayout.interactiveMode == .crop {
           // Need to remove crop if it exists
           let uncroppedNaiveGeo = inputGeometry.clone(video: inputGeometry.video.removingCrop())
 
@@ -416,7 +413,7 @@ extension PlayerWindowController {
 
     case .fullScreenNormal, .fullScreenInteractive:
       let vidGeo: VideoGeometry
-      if outputLayout.isInteractiveMode, outputLayout.spec.interactiveMode == .crop {
+      if outputLayout.isInteractiveMode, outputLayout.interactiveMode == .crop {
         // Need to remove crop if it exists
         vidGeo = inputGeometry.video.removingCrop()
       } else {
@@ -454,7 +451,7 @@ extension PlayerWindowController.LayoutTransition {
         return outputGeometry
       }
 
-      let mustUncropFirst = (outputLayout.spec.interactiveMode == .crop) && (inputGeometry.video.cropFilter != nil)
+      let mustUncropFirst = (outputLayout.interactiveMode == .crop) && (inputGeometry.video.cropFilter != nil)
       if mustUncropFirst, let cropFilter = inputGeometry.video.cropFilter {
         assert(isEnteringInteractiveMode, "Expected to be entering interactive mode only when uncropping video")
         let uncroppedVideoGeo = inputGeometry.video.removingCrop()

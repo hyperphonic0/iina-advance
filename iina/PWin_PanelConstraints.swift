@@ -595,7 +595,7 @@ extension PlayerWindowController {
     let newButtonTypes = newGeo.toolbarItems
 
     let hasSizeChange = oldGeo.toolIconSize != newGeo.toolIconSize || oldGeo.toolIconSpacing != newGeo.toolIconSpacing
-    let hasColorChange = transition.inputLayout.oscHasClearBG != transition.outputLayout.oscHasClearBG
+    let hasColorChange = transition.inputLayout.oscBackgroundIsClear != transition.outputLayout.oscBackgroundIsClear
     var needsButtonsUpdate = hasSizeChange || hasColorChange
 
     let isOpeningBarOSCFromZero = transition.isOpeningBarOSCFromZero
@@ -610,7 +610,7 @@ extension PlayerWindowController {
         for buttonType in newButtonTypes {
           let button = OSCToolbarButton()
           button.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
-          button.setOSCColors(hasClearBG: transition.outputLayout.oscHasClearBG)
+          button.setOSCColors(hasClearBG: transition.outputLayout.oscBackgroundIsClear)
           button.action = #selector(self.toolBarButtonAction(_:))
           fragToolbarView.addView(button, in: .trailing)
           fragToolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
@@ -623,7 +623,7 @@ extension PlayerWindowController {
       log.verbose("\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(newGeo.toolIconSize) iconSpacing=\(newGeo.toolIconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
       for button in fragToolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
         button.setStyle(iconSize: iconSize, iconSpacing: iconSpacing)
-        button.setOSCColors(hasClearBG: transition.outputLayout.oscHasClearBG)
+        button.setOSCColors(hasClearBG: transition.outputLayout.oscBackgroundIsClear)
       }
     }
 

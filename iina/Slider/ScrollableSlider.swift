@@ -145,7 +145,7 @@ class ScrollableSliderCell: NSSliderCell {
   }
 
   var hasClearBG: Bool {
-    if let pwc, pwc.currentLayout.oscHasClearBG {
+    if let pwc, pwc.currentLayout.oscBackgroundIsClear {
       return true
     }
     return false

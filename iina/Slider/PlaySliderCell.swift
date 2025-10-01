@@ -30,7 +30,7 @@ class PlaySliderCell: ScrollableSliderCell {
     guard let pwc else { return }
     let scaleFactor: CGFloat = slider.window?.screen?.backingScaleFactor ?? Constants.defaultBackingScaleFactor
     let appearance = sliderAppearance ?? slider.effectiveAppearance
-    let bf = pwc.barFactory ?? BarFactory(effectiveAppearance: appearance, pwc.currentLayout.spec)
+    let bf = pwc.barFactory ?? BarFactory(effectiveAppearance: appearance, pwc.currentLayout)
 
     /// The position of the knob, rounded for cleaner drawing. If `width==0`, do not draw knob.
     let knobRect = knobRect(flipped: false)

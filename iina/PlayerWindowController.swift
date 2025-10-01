@@ -268,16 +268,16 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // MARK: - Vars: Window Layout State
 
-  var currentLayout: LayoutState = LayoutState(spec: LayoutSpec.fromPrefsAndDefaults()) {
+  var currentLayout: LayoutState = LayoutState.fromPrefsAndDefaults() {
     didSet {
       if currentLayout.mode == .windowedNormal {
-        lastWindowedLayoutSpec = currentLayout.spec
+        lastWindowedLayoutState = currentLayout
       }
     }
   }
   /// For restoring windowed mode layout from music mode or other mode which does not support sidebars.
   /// Also used to preserve layout if a new file is dragged & dropped into this window
-  var lastWindowedLayoutSpec: LayoutSpec = LayoutSpec.fromPrefsAndDefaults()
+  var lastWindowedLayoutState: LayoutState = LayoutState.fromPrefsAndDefaults()
 
   // Only used for debug logging:
   @Atomic var layoutTransitionCounter: Int = 0
@@ -335,7 +335,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
     // Compute default geometry for main screen
     let defaultScreen = NSScreen.screens[0]
-    return LayoutState.buildFrom(LayoutSpec.fromPrefsAndDefaults()).buildDefaultInitialGeometry(screen: defaultScreen)
+    return LayoutState.fromPrefsAndDefaults().buildDefaultInitialGeometry(screen: defaultScreen)
   }() {
     didSet {
       guard windowedModeGeoLastClosed.mode.isWindowed, !windowedModeGeoLastClosed.screenFit.isFullScreen else {
@@ -702,7 +702,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Set material & theme (light or dark mode) for OSC and title bar.
   /// Make sure this is running inside an animation task too!
-  func applyThemeMaterial(using layoutSpec: LayoutSpec? = nil, _ window: NSWindow, _ screen: NSScreen) {
+  func applyThemeMaterial(using layoutState: LayoutState? = nil, _ window: NSWindow, _ screen: NSScreen) {
     assert(DispatchQueue.isExecutingIn(.main))
     log.verbose{"Applying theme material for screen \(screen.screenID.pii.quoted)"}
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
@@ -713,16 +713,16 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // Either dark or light, never nil:
     let effectiveAppearance: NSAppearance = newAppearance ?? window.effectiveAppearance
 
-    let layoutSpec: LayoutSpec = layoutSpec ?? currentLayout.spec
-    let oscGeo = layoutSpec.controlBarGeo
+    let layoutState: LayoutState = layoutState ?? currentLayout
+    let oscGeo = layoutState.controlBarGeo
 
     if playlistView.isViewLoaded {
       playlistView.updateTableColors()
     }
 
-    let sliderAppearance = layoutSpec.effectiveOSCColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
+    let sliderAppearance = layoutState.effectiveOSCColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
     sliderAppearance.applyAppearanceFor {
-      barFactory = BarFactory(effectiveAppearance: effectiveAppearance, layoutSpec)
+      barFactory = BarFactory(effectiveAppearance: effectiveAppearance, layoutState)
       knobFactory.invalidateCachedKnobs()
       playSlider.abLoopA.updateKnobImage(to: .loopKnob)
       playSlider.abLoopB.updateKnobImage(to: .loopKnob)
@@ -744,8 +744,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     titleBarAndOSCUpdateDebouncer.run { [self] in
       animationPipeline.submitInstantTask { [self] in
         let oldLayout = currentLayout
-        let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
-        let transition = buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec)
+        let newLayoutState = LayoutState.fromPreferences(fillingInFrom: oldLayout)
+        let transition = buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutState)
         buildTasks(for: transition, thenRun: true)
       }
     }
@@ -1020,10 +1020,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       // Reset layout & its state (or at least the big stuff) for reopen: close sidebars, disable OSC
       let currentLayout = currentLayout
-      let newLayoutSpec = currentLayout.spec.clone(leadingSidebar: currentLayout.leadingSidebar.clone(visibility: .closed),
-                                                   trailingSidebar: currentLayout.trailingSidebar.clone(visibility: .closed),
-                                                   enableOSC: false)
-      let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutSpec)
+      let newLayoutState = currentLayout.clone(leadingSidebar: currentLayout.leadingSidebar.clone(visibility: .closed),
+                                               trailingSidebar: currentLayout.trailingSidebar.clone(visibility: .closed),
+                                               enableOSC: false)
+      let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutState)
       let tasks = buildTasks(for: resetTransition, totalStartingDuration: 0, totalEndingDuration: 0)
 
       // Do all the layout instantly. Need to run each in its own transaction however, to avoid intractable constraint errors
@@ -1078,7 +1078,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let newMode: PlayerWindowMode = oldLayout.mode == .windowedInteractive ? .fullScreenInteractive : .fullScreenNormal
     log.verbose{"Animating \(duration)s entry from \(oldLayout.mode) → \(isLegacy ? "legacy " : "native ")\(newMode)"}
     // May be in interactive mode, with some panels hidden. Honor existing layout but change value of isFullScreen
-    let fullscreenLayout = LayoutSpec.fromPreferences(andMode: newMode, isLegacyStyle: isLegacy, fillingInFrom: oldLayout.spec)
+    let fullscreenLayout = LayoutState.fromPreferences(andMode: newMode, isLegacyStyle: isLegacy, fillingInFrom: oldLayout)
 
     let transition = buildLayoutTransition(named: "Enter\(isLegacy ? "Legacy" : "Native")FullScreen", from: oldLayout, to: fullscreenLayout)
     buildTasks(for: transition, totalStartingDuration: 0, totalEndingDuration: duration, thenRun: true)
@@ -1124,19 +1124,18 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     } else {
       nextMode = .windowedNormal
     }
-    let windowedLayoutSpec = LayoutSpec.fromPreferences(andMode: nextMode, fillingInFrom: oldLayout.spec)
+    let windowedLayoutState = LayoutState.fromPreferences(andMode: nextMode, fillingInFrom: oldLayout)
 
-    log.verbose{"Animating \(duration)s exit from \(isLegacy ? "legacy " : "")\(oldLayout.mode) → \(windowedLayoutSpec.mode)"}
-    assert(!windowedLayoutSpec.isFullScreen, "Cannot exit full screen into mode \(windowedLayoutSpec.mode)! Spec: \(windowedLayoutSpec)")
+    log.verbose{"Animating \(duration)s exit from \(isLegacy ? "legacy " : "")\(oldLayout.mode) → \(windowedLayoutState.mode)"}
+    assert(!windowedLayoutState.isFullScreen, "Cannot exit full screen into mode \(windowedLayoutState.mode)! Spec: \(windowedLayoutState)")
     /// Split the duration between `openNewPanels` animation and `fadeInNewViews` animation
     let exitFSTransition = buildLayoutTransition(named: "Exit\(isLegacy ? "Legacy" : "Native")FullScreen",
-                                                 from: oldLayout, to: windowedLayoutSpec)
+                                                 from: oldLayout, to: windowedLayoutState)
     let exitFSTasks = buildTasks(for: exitFSTransition, totalStartingDuration: 0, totalEndingDuration: duration)
 
     if modeToSetAfterExitingFullScreen == .musicMode {
-      let windowedLayout = LayoutState.buildFrom(windowedLayoutSpec)
       let geo = geo.clone(windowed: exitFSTransition.outputGeometry)
-      let enterMusicModeTransitionTasks = buildTasksToEnterMusicMode(from: windowedLayout, geo)
+      let enterMusicModeTransitionTasks = buildTasksToEnterMusicMode(from: windowedLayoutState, geo)
       animationPipeline.submit(exitFSTasks + enterMusicModeTransitionTasks)
       modeToSetAfterExitingFullScreen = nil
     } else {
@@ -1239,10 +1238,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
     // Exit from legacy FS only. Native FS will fail if not the active space
     guard oldLayout.isLegacyFullScreen else { return }
-    let outputLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
-    if oldLayout.spec.isLegacyStyle != outputLayoutSpec.isLegacyStyle {
+    let outputLayoutState = LayoutState.fromPreferences(fillingInFrom: oldLayout)
+    if oldLayout.isLegacyStyle != outputLayoutState.isLegacyStyle {
       DispatchQueue.main.async { [self] in
-        log.verbose{"User toggled legacy FS pref to \(outputLayoutSpec.isLegacyStyle.yesno) while in FS. Will try to exit FS"}
+        log.verbose{"User toggled legacy FS pref to \(outputLayoutState.isLegacyStyle.yesno) while in FS. Will try to exit FS"}
         exitFullScreen()
       }
     }
@@ -1742,7 +1741,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       // Build entry animation
       let newMode: PlayerWindowMode = isInFullScreen ? .fullScreenInteractive : .windowedInteractive
-      let interactiveModeLayout = ctx.inputLayout.spec.clone(mode: newMode, interactiveMode: mode)
+      let interactiveModeLayout = ctx.inputLayout.clone(mode: newMode, interactiveMode: mode)
       let startDuration = isInFullScreen ? 0.0 : Constants.AnimationDuration.cropAnimation * 0.5
       let endDuration = startDuration
       let entryTransition = buildLayoutTransition(named: "EnterInteractiveMode_\(mode)",
@@ -1854,12 +1853,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
         // Build exit animation
         let newMode: PlayerWindowMode = isInFullScreen ? .fullScreenNormal : .windowedNormal
-        let lastSpec = isInFullScreen ? ctx.inputLayout.spec : lastWindowedLayoutSpec
+        let lastLayout = isInFullScreen ? ctx.inputLayout : lastWindowedLayoutState
         log.verbose("Exiting interactive mode, newMode=\(newMode)")
-        let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
+        let newLayoutState = LayoutState.fromPreferences(andMode: newMode, fillingInFrom: lastLayout)
         let startDuration = immediately || isInFullScreen ? 0 : Constants.AnimationDuration.cropAnimation * 0.75
         let endDuration = immediately || isInFullScreen ? 0 : Constants.AnimationDuration.cropAnimation * 0.25
-        let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: ctx.inputLayout, to: newLayoutSpec, geoSet)
+        let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: ctx.inputLayout, to: newLayoutState, geoSet)
         let transitionTasks = buildTasks(for: transition, totalStartingDuration: startDuration, totalEndingDuration: endDuration)
         tasks.append(contentsOf: transitionTasks)
       }
@@ -1885,7 +1884,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func enterMusicMode(automatically: Bool = false, from oldLayout: LayoutState? = nil, _ geo: GeometrySet? = nil) {
     exitInteractiveMode(then: { [self] in
       /// Start by hiding OSC and/or "outside" panels, which aren't needed and might mess up the layout.
-      /// We can do this by creating a `LayoutSpec`, then using it to build a `LayoutTransition` and executing its animation.
+      /// We can do this by creating a `LayoutState`, then using it to build a `LayoutTransition` and executing its animation.
       let oldLayout = oldLayout ?? currentLayout
       if oldLayout.isFullScreen {
         // Use exit FS as main animation and piggypack on that.
@@ -1902,7 +1901,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// `automatically` == via auto-switch to music mode
   func buildTasksToEnterMusicMode(automatically: Bool = false,
                                   from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
-    let miniPlayerLayout = oldLayout.spec.clone(mode: .musicMode)
+    let miniPlayerLayout = oldLayout.clone(mode: .musicMode)
     let transition = buildLayoutTransition(named: "EnterMusicMode", from: oldLayout, to: miniPlayerLayout, geo)
     var transitionTasks = buildTasks(for: transition)
 
@@ -1921,7 +1920,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   func exitMusicMode(automatically: Bool = false, from oldLayout: LayoutState? = nil, _ geo: GeometrySet? = nil) {
     animationPipeline.submitInstantTask { [self] in
       /// Start by hiding OSC and/or "outside" panels, which aren't needed and might mess up the layout.
-      /// We can do this by creating a `LayoutSpec`, then using it to build a `LayoutTransition` and executing its animation.
+      /// We can do this by creating a `LayoutState`, then using it to build a `LayoutTransition` and executing its animation.
       let oldLayout = oldLayout ?? currentLayout
       var tasks = buildTasksToExitMusicMode(automatically: automatically, from: oldLayout, geo)
       
@@ -1936,7 +1935,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func buildTasksToExitMusicMode(automatically: Bool = false,
                                  from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
-    let windowedLayout = LayoutSpec.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutSpec)
+    let windowedLayout = LayoutState.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutState)
     let transition = buildLayoutTransition(named: "ExitMusicMode", from: oldLayout, to: windowedLayout, geo)
     var transitionTasks = buildTasks(for: transition)
     if !automatically {
@@ -2275,10 +2274,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let priority = NSLayoutConstraint.Priority.defaultHigh
     let layout = layout ?? currentLayout
     /// The title bar of the native `titled` style doesn't support translucency. So do not allow it for native modes:
-    let newOpacity: Float = layout.isFullScreen || !layout.spec.isLegacyStyle ? 1.0 : newOpacity ?? (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0)
+    let newOpacity: Float = layout.isFullScreen || !layout.isLegacyStyle ? 1.0 : newOpacity ?? (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0)
     // Native window removes the border if winodw background is transparent.
     // Try to match this behavior for legacy window
-    let wantsShown = layout.spec.isLegacyStyle && !layout.isFullScreen && newOpacity == 1.0
+    let wantsShown = layout.isLegacyStyle && !layout.isFullScreen && newOpacity == 1.0
     if wantsShown {
       let contentView = window!.contentView!
       if customWindowBorderBox.superview == nil {

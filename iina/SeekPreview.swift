@@ -270,7 +270,7 @@ extension PlayerWindowController {
           let halfKnobHeight = pwc.playSlider.customCell.knobHeight * 0.5
           // If clear background, align the label consistently close to the slider bar.
           // Else if using gray panel, try to align the label either wholly inside or outside the panel.
-          if !currentLayout.oscHasClearBG, sliderCenterY + halfKnobHeight + timeLabelSize.height >= oscTopY {
+          if !currentLayout.oscBackgroundIsClear, sliderCenterY + halfKnobHeight + timeLabelSize.height >= oscTopY {
             timeLabelOriginY = (oscTopY + quarterMargin).rounded()
           } else {
             timeLabelOriginY = (sliderCenterY + halfKnobHeight + quarterMargin).rounded()
@@ -286,7 +286,7 @@ extension PlayerWindowController {
           let sliderCenterY = (sliderFrameInWindowCoords.origin.y + (sliderFrameInWindowCoords.height * 0.5)).rounded()
           // See note for the Above case (but use ½ margin instead of ¼).
           let halfKnobHeight = (pwc.playSlider.customCell.knobHeight * 0.5).rounded()
-          if !currentLayout.oscHasClearBG, sliderCenterY - halfKnobHeight - halfMargin - timeLabelSize.height <= oscOriginInWindowY {
+          if !currentLayout.oscBackgroundIsClear, sliderCenterY - halfKnobHeight - halfMargin - timeLabelSize.height <= oscOriginInWindowY {
             timeLabelOriginY = (oscOriginInWindowY - halfMargin - timeLabelSize.height).rounded()
           } else {
             timeLabelOriginY = (sliderCenterY - halfKnobHeight - halfMargin - timeLabelSize.height).rounded()

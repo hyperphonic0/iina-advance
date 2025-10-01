@@ -175,10 +175,10 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     pwc.animationPipeline.submitInstantTask{ [self] in
       let prevLayout = pwc.currentLayout
       // TODO: create a clone() method for SidebarMiscState & use it instead
-      let state = Sidebar.SidebarMiscState(playlistSidebarWidth: prevLayout.spec.moreSidebarState.playlistSidebarWidth,
-                                           selectedSubSegment: prevLayout.spec.moreSidebarState.selectedSubSegment,
+      let state = Sidebar.SidebarMiscState(playlistSidebarWidth: prevLayout.moreSidebarState.playlistSidebarWidth,
+                                           selectedSubSegment: prevLayout.moreSidebarState.selectedSubSegment,
                                            selectedPluginTabID: currentPluginID)
-      pwc.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: state))
+      pwc.currentLayout = prevLayout.clone(moreSidebarState: state)
     }
     let sidebarTab = currentPluginID == Constants.Sidebar.anyPluginID ? Sidebar.Tab.anyPlugin : Sidebar.Tab.plugin(id: currentPluginID)
     pwc.didChangeTab(to: sidebarTab)

@@ -8,13 +8,19 @@
 
 import Foundation
 
-/// `LayoutSpec`: data structure containing a player window's layout configuration, and contains all the info needed to build a `LayoutState`.
-/// (`LayoutSpec` is more compact & convenient for state storage, but `LayoutState` contains extra derived data which is more useful for
-/// window operations).
-/// The values for most fields in this struct can be derived from IINA's application settings, although some state like active sidebar tab
-/// and window mode can vary for each player window.
-/// See also: `LayoutState.buildFrom()`, which compiles a `LayoutSpec` into a `LayoutState`.
-struct LayoutSpec {
+/// `LayoutState`: data structure which contains all the variables which describe a single layout configuration of the `PlayerWindow`.
+///
+/// ("Layout" might have been a better name for this class, but it's already used by AppKit).
+/// Notes:
+///
+/// • The values for most fields in this struct can be derived from IINA's application settings, although some state like active sidebar
+///   tab & window mode can vary for each player window.
+/// • With all the different window layout configurations which are now possible, it's crucial to use this class in order for animations
+///   to work reliably.
+/// • When any member variable inside it needs to be changed, a new `LayoutState` object should be constructed to describe the new state,
+///   and a `LayoutTransition` should be built to construct the animations & structural changes from this `LayoutState` to the new one.
+/// • The new `LayoutState`, once active, should be stored as the `currentLayout` of `PlayerWindowController`.
+struct LayoutState {
 
   // MARK: Stored Properties
 
@@ -30,7 +36,11 @@ struct LayoutSpec {
   var trailingSidebarPlacement: Preference.PanelPlacement { return trailingSidebar.placement }
 
   /// Can only be `true` for `windowedNormal` & `fullScreenNormal` modes!
+  /// This is always `false` for `musicMode` and interactive modes.
+  ///
+  /// To include possibility of music mode, see `hasControlBar()`.
   let enableOSC: Bool
+
   let oscPosition: Preference.OSCPosition
   let oscColorScheme: Preference.OSCColorScheme
 
@@ -41,13 +51,42 @@ struct LayoutSpec {
 
   let moreSidebarState: Sidebar.SidebarMiscState
 
+  // MARK: Derived Properties
+  // TODO: convert these to computed properties
+
+  // - Visibility of views/categories
+
+  let titleBar: VisibilityMode
+  let titleIconAndText: VisibilityMode
+  let trafficLightButtons: VisibilityMode
+  let titlebarAccessoryViewControllers: VisibilityMode
+  let leadingSidebarToggleButton: VisibilityMode
+  let trailingSidebarToggleButton: VisibilityMode
+
+  let controlBarFloating: VisibilityMode
+
+  let bottomBarView: VisibilityMode
+  let topBarView: VisibilityMode
+
+  /// Only applies for legacy full screen
+  let hasTopPaddingForCameraHousing: Bool
+
+  // - Sizes / offsets
+
+  let sidebarDownshift: CGFloat
+  let sidebarTabHeight: CGFloat
+
+  let titleBarHeight: CGFloat
+  let topOSCHeight: CGFloat
+  let bottomBarHeight: CGFloat
+
   // MARK: Init / Factory
 
   init(leadingSidebar: Sidebar, trailingSidebar: Sidebar, mode: PlayerWindowMode, isLegacyStyle: Bool,
        topBarPlacement: Preference.PanelPlacement, bottomBarPlacement: Preference.PanelPlacement,
        enableOSC: Bool, oscPosition: Preference.OSCPosition,
        oscColorScheme: Preference.OSCColorScheme,
-       controlBarGeo: ControlBarGeometry? = nil,
+       controlBarGeo givenControlBarGeo: ControlBarGeometry? = nil,
        interactiveMode: InteractiveMode?,
        moreSidebarState: Sidebar.SidebarMiscState,
   ) {
@@ -84,7 +123,115 @@ struct LayoutSpec {
     self.oscPosition = oscPosition
     self.moreSidebarState = moreSidebarState
     // Should be ok to fill in most of ControlBarGeometry from prefs if not given
-    self.controlBarGeo = controlBarGeo ?? ControlBarGeometry(mode: mode, oscPosition: oscPosition)
+    let controlBarGeo = givenControlBarGeo ?? ControlBarGeometry(mode: mode, oscPosition: oscPosition)
+    self.controlBarGeo = controlBarGeo
+
+    // - Derived Properties
+    // These are derived from the above fields.
+
+    // Title bar & title bar accessories:
+
+    let isLegacyFullScreen = mode.isFullScreen && isLegacyStyle
+    let isNativeFullScreen = mode.isFullScreen && !isLegacyStyle
+    self.hasTopPaddingForCameraHousing = isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
+
+    // Title bar views
+    var titleBarHeight: CGFloat = 0
+    let titleBarVisibleState: VisibilityMode
+    if isNativeFullScreen {
+      titleBarVisibleState = .hidden
+      self.trafficLightButtons = .showAlways
+      self.titleIconAndText = .showAlways
+    } else {
+      if isLegacyFullScreen {
+        titleBarVisibleState = .hidden
+      } else if mode.isWindowed {
+        titleBarVisibleState = topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
+      } else {
+        titleBarVisibleState = .hidden
+      }
+      self.trafficLightButtons = titleBarVisibleState
+      self.titleIconAndText = titleBarVisibleState
+    }
+    self.titleBar = titleBarVisibleState
+    self.titlebarAccessoryViewControllers = titleBarVisibleState
+    if titleBarVisibleState.isShowable {
+      // May be overridden depending on OSC layout anyway
+      titleBarHeight = Constants.Distance.standardTitleBarHeight
+    }
+    // LeadingSidebar toggle button
+    let hasLeadingSidebar = mode.canShowSidebars && !leadingSidebar.tabGroups.isEmpty
+    self.leadingSidebarToggleButton = hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) ? titleBarVisibleState : .hidden
+    // TrailingSidebar toggle button
+    let hasTrailingSidebar = mode.canShowSidebars && !trailingSidebar.tabGroups.isEmpty
+    self.trailingSidebarToggleButton = hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) ? titleBarVisibleState : .hidden
+
+    // May be overridden below
+    var topBarView: VisibilityMode = titleBarVisibleState
+    var bottomBarView: VisibilityMode = .hidden
+    var topOSCHeight: CGFloat = 0
+    var controlBarFloating: VisibilityMode = .hidden
+    var bottomBarHeight: CGFloat = 0
+    var sidebarTabHeight: CGFloat = Constants.Sidebar.defaultTabHeight
+    var sidebarDownshift: CGFloat = Constants.Sidebar.defaultDownshift
+
+    // OSC:
+
+    if enableOSC {
+      // add fragment views
+      switch oscPosition {
+      case .floating:
+        controlBarFloating = .showFadeableNonTopBar  // floating is always fadeable
+      case .top:
+        if titleBarVisibleState.isShowable {
+          // Reduce title height a bit because it will share space with OSC
+          titleBarHeight = Constants.Distance.reducedTitleBarHeight
+        }
+
+        if topBarPlacement == .outsideViewport {
+          topBarView = .showAlways
+        } else if titleBarVisibleState.isShowable {
+          // Match value from above
+          topBarView = titleBarVisibleState
+        } else {
+          topBarView = .showFadeableTopBar
+        }
+        topOSCHeight = controlBarGeo.barHeight
+      case .bottom:
+        bottomBarView = (bottomBarPlacement == .insideViewport) ? .showFadeableNonTopBar : .showAlways
+        bottomBarHeight = controlBarGeo.barHeight
+      }
+    } else if mode == .musicMode {
+      assert(bottomBarPlacement == .outsideViewport)
+      bottomBarView = .showAlways
+    } else if mode.isInteractiveMode {
+      assert(bottomBarPlacement == .outsideViewport)
+      bottomBarView = .showAlways
+
+      bottomBarHeight = Constants.InteractiveMode.outsideBottomBarHeight
+    }
+    self.topBarView = topBarView
+    self.topOSCHeight = topOSCHeight
+    self.controlBarFloating = controlBarFloating
+    self.bottomBarView = bottomBarView
+    self.bottomBarHeight = bottomBarHeight
+
+    /// Sidebar tabHeight and downshift.
+    /// Downshift: try to match height of title bar
+    /// Tab height: if top OSC is `insideViewport`, try to match its height
+    if mode == .musicMode {
+      /// Special case for music mode. Only really applies to `playlistView`,
+      /// because `quickSettingView` is never shown in this mode.
+      sidebarTabHeight = Constants.Sidebar.musicModeTabHeight
+    } else if topBarView.isShowable {
+      // Top bar always spans the whole width of the window (unlike the bottom bar)
+      if topBarPlacement == .insideViewport {
+        sidebarDownshift = titleBarHeight + topOSCHeight
+      }
+    }
+    self.titleBarHeight = titleBarHeight
+    self.sidebarDownshift = sidebarDownshift
+    self.sidebarTabHeight = sidebarTabHeight
   }
 
   /// Specify any properties to override; if nil, will use self's property values -
@@ -100,12 +247,12 @@ struct LayoutSpec {
              controlBarGeo: ControlBarGeometry? = nil,
              interactiveMode: InteractiveMode? = nil,
              moreSidebarState: Sidebar.SidebarMiscState? = nil,
-  ) -> LayoutSpec {
+  ) -> LayoutState {
 
     // make sure mode is consistent for self & controlBarGeo
     let controlBarGeo = controlBarGeo ?? (mode == nil ? self.controlBarGeo : self.controlBarGeo.clone(mode: mode!))
 
-    return LayoutSpec(leadingSidebar: leadingSidebar ?? self.leadingSidebar,
+    return LayoutState(leadingSidebar: leadingSidebar ?? self.leadingSidebar,
                       trailingSidebar: trailingSidebar ?? self.trailingSidebar,
                       mode: mode ?? self.mode,
                       isLegacyStyle: isLegacyStyle ?? self.isLegacyStyle,
@@ -119,7 +266,7 @@ struct LayoutSpec {
                       moreSidebarState: moreSidebarState ?? self.moreSidebarState)
   }
 
-  func withSidebarsHidden() -> LayoutSpec {
+  func withSidebarsHidden() -> LayoutState {
     return clone(leadingSidebar: leadingSidebar.clone(visibility: .closed),
                  trailingSidebar: trailingSidebar.clone(visibility: .closed))
   }
@@ -197,8 +344,15 @@ struct LayoutSpec {
     return .visualEffectView
   }
 
+  /// Has OSC with clear background.
+  ///
+  /// Equivalent to `effectiveOSCColorScheme == .clearGradient`.
   var oscBackgroundIsClear: Bool {
     return effectiveOSCColorScheme == .clearGradient
+  }
+
+  var canShowSidebars: Bool {
+    mode.canShowSidebars
   }
 
   var isLeadingSidebarVisible: Bool {
@@ -213,10 +367,120 @@ struct LayoutSpec {
     leadingSidebar.isVisible || trailingSidebar.isVisible
   }
 
+  var topBarHeight: CGFloat {
+    self.titleBarHeight + self.topOSCHeight
+  }
+
+  var hasTopBar: Bool {
+    topBarHeight > 0
+  }
+
+  var hasBottomBar: Bool {
+    bottomBarView.isShowable
+  }
+
+  /// - Bar widths/heights IF `.outsideViewport`
+
+  var outsideTopBarHeight: CGFloat {
+    return topBarPlacement == .outsideViewport ? topBarHeight : 0
+  }
+
+  var outsideBottomBarHeight: CGFloat {
+    return bottomBarPlacement == .outsideViewport ? bottomBarHeight : 0
+  }
+
+  var outsideBars: MarginQuad {
+    return MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
+                      bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
+  }
+
+  /// - Bar widths/heights IF `.insideViewport`
+
+  var insideTopBarHeight: CGFloat {
+    return topBarPlacement == .insideViewport ? topBarHeight : 0
+  }
+
+  var insideBottomBarHeight: CGFloat {
+    return bottomBarPlacement == .insideViewport ? bottomBarHeight : 0
+  }
+
+  var insideBars: MarginQuad {
+    return MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
+                      bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
+  }
+
+  // - Other derived properties
+
+  var canEnterInteractiveMode: Bool {
+    return mode == .windowedNormal || mode == .fullScreenNormal
+  }
+
+  var hasAdditionalInfo: Bool {
+    isFullScreen && Preference.bool(for: .displayTimeAndBatteryInFullScreen)
+  }
+
+  var isMusicMode: Bool {
+    return mode == .musicMode
+  }
+
+  /// Only windowed & full screen modes can have floating OSC, and OSC must be enabled
+  var hasFloatingOSC: Bool {
+    return enableOSC && oscPosition == .floating
+  }
+
+  var hasTopOSC: Bool {
+    return enableOSC && oscPosition == .top
+  }
+
+  var hasControlBar: Bool {
+    return isMusicMode || enableOSC
+  }
+
+  var hasFadeableOSC: Bool {
+    return enableOSC && (oscPosition == .floating ||
+                         (oscPosition == .top && topBarView.isFadeable) ||
+                         (oscPosition == .bottom && bottomBarView.isFadeable))
+  }
+
+  /// Whether PlaySlider & VolumeSlider should change height when in focus (on mouse hover or during scroll)
+  var useSliderFocusEffect: Bool {
+    return mode == .musicMode || (enableOSC && (oscPosition == .top || oscPosition == .bottom))
+  }
+
+  var playlistShown: Bool {
+    if isMusicMode {
+      return outsideBottomBarHeight > Constants.Distance.MusicMode.oscHeight
+    } else {
+      return leadingSidebar.visibleTab == .playlist || trailingSidebar.visibleTab == .playlist
+    }
+  }
+
   // MARK: Utility Functions
 
+  func sidebar(withID id: Preference.SidebarLocation) -> Sidebar {
+    switch id {
+    case .leadingSidebar:
+      return leadingSidebar
+    case .trailingSidebar:
+      return trailingSidebar
+    }
+  }
+
+  func computeOnTopButtonVisibility(isOnTop: Bool) -> VisibilityMode {
+    let showOnTopStatus = Preference.bool(for: .alwaysShowOnTopIcon) || isOnTop
+    if isFullScreen || isMusicMode || !showOnTopStatus {
+      return .hidden
+    }
+
+    if topBarPlacement == .insideViewport {
+      return .showFadeableNonTopBar
+    }
+
+    return .showAlways
+  }
+
   /// Returns `true` if `otherSpec` has the same values which are configured from IINA app-wide prefs
-  func hasSamePrefsValues(as otherSpec: LayoutSpec) -> Bool {
+  func hasSamePrefsValues(as otherSpec: LayoutState) -> Bool {
     return otherSpec.enableOSC == enableOSC
     && otherSpec.oscPosition == oscPosition
     && otherSpec.isLegacyStyle == isLegacyStyle
@@ -232,14 +496,14 @@ struct LayoutSpec {
   // MARK: Static
 
   /// Factory method. Fills in most from app singleton preferences, and the rest from default values.
-  static func fromPrefsAndDefaults() -> LayoutSpec {
+  static func fromPrefsAndDefaults() -> LayoutState {
     return fromPreferences()
   }
 
   /// Factory method. Init from preferences, except for `mode` and tab params
   static func fromPreferences(andMode newMode: PlayerWindowMode? = nil,
                               isLegacyStyle: Bool? = nil,
-                              fillingInFrom oldSpec: LayoutSpec? = nil) -> LayoutSpec {
+                              fillingInFrom oldSpec: LayoutState? = nil) -> LayoutState {
 
     let oldLeadingSidebar = oldSpec?.leadingSidebar
     let oldTrailingSidebar = oldSpec?.trailingSidebar
@@ -259,7 +523,7 @@ struct LayoutSpec {
     let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen) : Preference.bool(for: .useLegacyWindowedMode))
     let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
 
-    return LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
+    return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
                       mode: mode,
                       isLegacyStyle: isLegacyStyle,
                       topBarPlacement: Preference.enum(for: .topBarPlacement),
@@ -279,378 +543,7 @@ struct LayoutSpec {
     return .visualEffectView
   }
 
-}
-
-
-/// `LayoutState`: data structure which contains all the variables which describe a single layout configuration of the `PlayerWindow`.
-/// ("Layout" might have been a better name for this class, but it's already used by AppKit). Notes:
-/// • With all the different window layout configurations which are now possible, it's crucial to use this class in order for animations
-///   to work reliably.
-/// • When any member variable inside it needs to be changed, a new `LayoutState` object should be constructed to describe the new state,
-///   and a `LayoutTransition` should be built to construct the animations & structural changes from this `LayoutState` to the new one.
-/// • The new `LayoutState`, once active, should be stored as the `currentLayout` of `PlayerWindowController`.
-struct LayoutState {
-  // MARK: Stored properties
-
-  // All other variables in this class are derived from this spec, or from stored prefs:
-  let spec: LayoutSpec
-
-  // - Visibility of views/categories
-
-  let titleBar: VisibilityMode
-  let titleIconAndText: VisibilityMode
-  let trafficLightButtons: VisibilityMode
-  let titlebarAccessoryViewControllers: VisibilityMode
-  let leadingSidebarToggleButton: VisibilityMode
-  let trailingSidebarToggleButton: VisibilityMode
-
-  let controlBarFloating: VisibilityMode
-
-  let bottomBarView: VisibilityMode
-  let topBarView: VisibilityMode
-
-  /// Only applies for legacy full screen
-  let hasTopPaddingForCameraHousing: Bool
-
-  // - Sizes / offsets
-
-  let sidebarDownshift: CGFloat
-  let sidebarTabHeight: CGFloat
-
-  let titleBarHeight: CGFloat
-  let topOSCHeight: CGFloat
-
-  // - Colors / styles
-
-  /// Has OSC with clear background.
-  ///
-  /// Equivalent to `effectiveOSCColorScheme == .clearGradient`
-  var oscHasClearBG: Bool {
-    spec.oscBackgroundIsClear
-  }
-
-  // MARK: Derived / computed properties
-
-  var topBarHeight: CGFloat {
-    self.titleBarHeight + self.topOSCHeight
-  }
-
-  var hasTopBar: Bool {
-    topBarHeight > 0
-  }
-
-  let bottomBarHeight: CGFloat
-
-  var hasBottomBar: Bool {
-    bottomBarView.isShowable
-  }
-
-  /// - Bar widths/heights IF `.outsideViewport`
-
-  var outsideTopBarHeight: CGFloat {
-    return topBarPlacement == .outsideViewport ? topBarHeight : 0
-  }
-
-  var outsideBottomBarHeight: CGFloat {
-    return bottomBarPlacement == .outsideViewport ? bottomBarHeight : 0
-  }
-
-  var outsideBars: MarginQuad {
-    return MarginQuad(top: outsideTopBarHeight, trailing: spec.outsideTrailingBarWidth,
-                      bottom: outsideBottomBarHeight, leading: spec.outsideLeadingBarWidth)
-  }
-
-  /// - Bar widths/heights IF `.insideViewport`
-
-  var insideTopBarHeight: CGFloat {
-    return topBarPlacement == .insideViewport ? topBarHeight : 0
-  }
-
-  var insideBottomBarHeight: CGFloat {
-    return bottomBarPlacement == .insideViewport ? bottomBarHeight : 0
-  }
-
-  var insideBars: MarginQuad {
-    return MarginQuad(top: insideTopBarHeight, trailing: spec.insideTrailingBarWidth,
-                      bottom: insideBottomBarHeight, leading: spec.insideLeadingBarWidth)
-  }
-
-  // - Other derived properties
-
-  var isInteractiveMode: Bool {
-    return spec.isInteractiveMode
-  }
-
-  var canEnterInteractiveMode: Bool {
-    return spec.mode == .windowedNormal || spec.mode == .fullScreenNormal
-  }
-
-  var isFullScreen: Bool {
-    return spec.isFullScreen
-  }
-
-  var hasAdditionalInfo: Bool {
-    isFullScreen && Preference.bool(for: .displayTimeAndBatteryInFullScreen)
-  }
-
-  var isWindowed: Bool {
-    return spec.isWindowed
-  }
-
-  var isNativeFullScreen: Bool {
-    return spec.isNativeFullScreen
-  }
-
-  var isLegacyFullScreen: Bool {
-    return spec.isLegacyFullScreen
-  }
-
-  var isMusicMode: Bool {
-    return spec.mode == .musicMode
-  }
-
-  /// Note: this is always `false` for music mode and interactive modes.
-  ///
-  /// To include possibility of music mode, see `hasControlBar()`.
-  var enableOSC: Bool {
-    return spec.enableOSC
-  }
-
-  var oscPosition: Preference.OSCPosition {
-    return spec.oscPosition
-  }
-
-  var topBarPlacement: Preference.PanelPlacement {
-    return spec.topBarPlacement
-  }
-
-  var bottomBarPlacement: Preference.PanelPlacement {
-    return spec.bottomBarPlacement
-  }
-
-  var leadingSidebarPlacement: Preference.PanelPlacement {
-    return spec.leadingSidebarPlacement
-  }
-
-  var trailingSidebarPlacement: Preference.PanelPlacement {
-    return spec.trailingSidebarPlacement
-  }
-
-  var leadingSidebar: Sidebar {
-    return spec.leadingSidebar
-  }
-
-  var trailingSidebar: Sidebar {
-    return spec.trailingSidebar
-  }
-
-  var canShowSidebars: Bool {
-    return spec.mode.canShowSidebars
-  }
-
-  /// Only windowed & full screen modes can have floating OSC, and OSC must be enabled
-  var hasFloatingOSC: Bool {
-    return enableOSC && oscPosition == .floating
-  }
-
-  var hasTopOSC: Bool {
-    return enableOSC && oscPosition == .top
-  }
-
-  var hasBottomOSC: Bool {
-    return spec.hasBottomOSC
-  }
-
-  var hasControlBar: Bool {
-    return isMusicMode || enableOSC
-  }
-
-  var hasFadeableOSC: Bool {
-    return enableOSC && (oscPosition == .floating ||
-                         (oscPosition == .top && topBarView.isFadeable) ||
-                         (oscPosition == .bottom && bottomBarView.isFadeable))
-  }
-
-  /// Whether PlaySlider & VolumeSlider should change height when in focus (on mouse hover or during scroll)
-  var useSliderFocusEffect: Bool {
-    return mode == .musicMode || (enableOSC && (oscPosition == .top || oscPosition == .bottom))
-  }
-
-  var hasPermanentControlBar: Bool {
-    return spec.hasPermanentControlBar
-  }
-
-  var mode: PlayerWindowMode {
-    return spec.mode
-  }
-
-  var controlBarGeo: ControlBarGeometry {
-    return spec.controlBarGeo
-  }
-
-  var hasTopOrBottomOSC: Bool {
-    return spec.hasTopOrBottomOSC
-  }
-
-  var effectiveOSCColorScheme: Preference.OSCColorScheme {
-    return spec.effectiveOSCColorScheme
-  }
-
-  func sidebar(withID id: Preference.SidebarLocation) -> Sidebar {
-    switch id {
-    case .leadingSidebar:
-      return leadingSidebar
-    case .trailingSidebar:
-      return trailingSidebar
-    }
-  }
-
-  var isLeadingSidebarVisible: Bool {
-    spec.isLeadingSidebarVisible
-  }
-
-  var isTrailingSidebarVisible: Bool {
-    spec.isTrailingSidebarVisible
-  }
-
-  var isAnySidebarVisible: Bool {
-    spec.isAnySidebarVisible
-  }
-
-  var playlistShown: Bool {
-    if isMusicMode {
-      return outsideBottomBarHeight > Constants.Distance.MusicMode.oscHeight
-    } else {
-      return leadingSidebar.visibleTab == .playlist || trailingSidebar.visibleTab == .playlist
-    }
-  }
-
-  func computeOnTopButtonVisibility(isOnTop: Bool) -> VisibilityMode {
-    let showOnTopStatus = Preference.bool(for: .alwaysShowOnTopIcon) || isOnTop
-    if isFullScreen || isMusicMode || !showOnTopStatus {
-      return .hidden
-    }
-
-    if topBarPlacement == .insideViewport {
-      return .showFadeableNonTopBar
-    }
-
-    return .showAlways
-  }
-
-  // MARK: - Build LayoutState from LayoutSpec
-
-  /// Compiles the given `LayoutSpec` into a `LayoutState`. This is an idempotent operation.
-  static func buildFrom(_ layoutSpec: LayoutSpec) -> LayoutState {
-    let outputLayout = LayoutState(spec: layoutSpec)
-    return outputLayout
-  }
-
-  init(spec: LayoutSpec) {
-    self.spec = spec
-
-    // Title bar & title bar accessories:
-
-    self.hasTopPaddingForCameraHousing = spec.isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
-
-    // Title bar views
-    var titleBarHeight: CGFloat = 0
-    let titleBarVisibleState: VisibilityMode
-    if spec.isNativeFullScreen {
-      titleBarVisibleState = .hidden
-      self.trafficLightButtons = .showAlways
-      self.titleIconAndText = .showAlways
-    } else {
-      if spec.isLegacyFullScreen {
-        titleBarVisibleState = .hidden
-      } else if spec.isWindowed {
-        titleBarVisibleState = spec.topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
-      } else {
-        titleBarVisibleState = .hidden
-      }
-      self.trafficLightButtons = titleBarVisibleState
-      self.titleIconAndText = titleBarVisibleState
-    }
-    self.titleBar = titleBarVisibleState
-    self.titlebarAccessoryViewControllers = titleBarVisibleState
-    if titleBarVisibleState.isShowable {
-      // May be overridden depending on OSC layout anyway
-      titleBarHeight = Constants.Distance.standardTitleBarHeight
-    }
-    // LeadingSidebar toggle button
-    let hasLeadingSidebar = spec.mode.canShowSidebars && !spec.leadingSidebar.tabGroups.isEmpty
-    self.leadingSidebarToggleButton = hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) ? titleBarVisibleState : .hidden
-    // TrailingSidebar toggle button
-    let hasTrailingSidebar = spec.mode.canShowSidebars && !spec.trailingSidebar.tabGroups.isEmpty
-    self.trailingSidebarToggleButton = hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) ? titleBarVisibleState : .hidden
-
-    // May be overridden below
-    var topBarView: VisibilityMode = titleBarVisibleState
-    var bottomBarView: VisibilityMode = .hidden
-    var topOSCHeight: CGFloat = 0
-    var controlBarFloating: VisibilityMode = .hidden
-    var bottomBarHeight: CGFloat = 0
-    var sidebarTabHeight: CGFloat = Constants.Sidebar.defaultTabHeight
-    var sidebarDownshift: CGFloat = Constants.Sidebar.defaultDownshift
-
-    // OSC:
-
-    if spec.enableOSC {
-      // add fragment views
-      switch spec.oscPosition {
-      case .floating:
-        controlBarFloating = .showFadeableNonTopBar  // floating is always fadeable
-      case .top:
-        if titleBarVisibleState.isShowable {
-          // Reduce title height a bit because it will share space with OSC
-          titleBarHeight = Constants.Distance.reducedTitleBarHeight
-        }
-
-        if spec.topBarPlacement == .outsideViewport {
-          topBarView = .showAlways
-        } else if titleBarVisibleState.isShowable {
-          // Match value from above
-          topBarView = titleBarVisibleState
-        } else {
-          topBarView = .showFadeableTopBar
-        }
-        topOSCHeight = spec.controlBarGeo.barHeight
-      case .bottom:
-        bottomBarView = (spec.bottomBarPlacement == .insideViewport) ? .showFadeableNonTopBar : .showAlways
-        bottomBarHeight = spec.controlBarGeo.barHeight
-      }
-    } else if spec.mode == .musicMode {
-      assert(spec.bottomBarPlacement == .outsideViewport)
-      bottomBarView = .showAlways
-    } else if spec.isInteractiveMode {
-      assert(spec.bottomBarPlacement == .outsideViewport)
-      bottomBarView = .showAlways
-
-      bottomBarHeight = Constants.InteractiveMode.outsideBottomBarHeight
-    }
-    self.topBarView = topBarView
-    self.topOSCHeight = topOSCHeight
-    self.controlBarFloating = controlBarFloating
-    self.bottomBarView = bottomBarView
-    self.bottomBarHeight = bottomBarHeight
-
-    /// Sidebar tabHeight and downshift.
-    /// Downshift: try to match height of title bar
-    /// Tab height: if top OSC is `insideViewport`, try to match its height
-    if spec.mode == .musicMode {
-      /// Special case for music mode. Only really applies to `playlistView`,
-      /// because `quickSettingView` is never shown in this mode.
-      sidebarTabHeight = Constants.Sidebar.musicModeTabHeight
-    } else if topBarView.isShowable {
-      // Top bar always spans the whole width of the window (unlike the bottom bar)
-      if spec.topBarPlacement == .insideViewport {
-        sidebarDownshift = titleBarHeight + topOSCHeight
-      }
-    }
-    self.titleBarHeight = titleBarHeight
-    self.sidebarDownshift = sidebarDownshift
-    self.sidebarTabHeight = sidebarTabHeight
-  }
+  // MARK: - Geometry
 
   /// Converts & updates existing geometry to this layout.
   ///
@@ -708,7 +601,7 @@ struct LayoutState {
       Logger.log.warn("Cannot build full screen geometry for non-FS mode (\(mode)); will use best guess: \(modeToUse)")
       modeToUse = .fullScreenNormal
     }
-    return PWinGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: modeToUse,
+    return PWinGeometry.forFullScreen(in: screen, legacy: isLegacyStyle, mode: modeToUse,
                                       outsideBars: outsideBars,
                                       insideBars: insideBars,
                                       video: video,

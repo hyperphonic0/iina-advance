@@ -181,7 +181,7 @@ extension PlayerWindowController {
           }
 
           if targetLayout.titleBar == .showFadeableTopBar {
-            if targetLayout.spec.isLegacyStyle {
+            if targetLayout.isLegacyStyle {
               customTitleBar?.view.animator().alphaValue = 1
             } else {
               for button in trafficLightButtons {
@@ -213,7 +213,7 @@ extension PlayerWindowController {
           }
 
           if targetLayout.titleBar == .showFadeableTopBar {
-            if targetLayout.spec.isLegacyStyle {
+            if targetLayout.isLegacyStyle {
               customTitleBar?.view.isHidden = false
             } else {
               for button in trafficLightButtons {
@@ -294,7 +294,7 @@ extension PlayerWindowController {
       }
       /// Quirk 1: special handling for `trafficLightButtons`
       if targetLayout.titleBar == .showFadeableTopBar {
-        if targetLayout.spec.isLegacyStyle {
+        if targetLayout.isLegacyStyle {
           customTitleBar?.view.alphaValue = 0
         } else {
           documentIconButton?.alphaValue = 0
@@ -331,7 +331,7 @@ extension PlayerWindowController {
       }
       /// Quirk 1: need to set `alphaValue` back to `1` so that each button's corresponding menu items still work
       if targetLayout.titleBar == .showFadeableTopBar {
-        if targetLayout.spec.isLegacyStyle {
+        if targetLayout.isLegacyStyle {
           customTitleBar?.view.isHidden = true
         } else {
           hideBuiltInTitleBarViews(setAlpha: false)

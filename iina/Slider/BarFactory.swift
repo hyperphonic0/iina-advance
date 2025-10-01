@@ -46,7 +46,7 @@ class BarFactory {
   private var leftCachedColor: CGColor
   private var rightCachedColor: CGColor
 
-  init(effectiveAppearance: NSAppearance, _ layout: LayoutSpec) {
+  init(effectiveAppearance: NSAppearance, _ layout: LayoutState) {
     // If clear BG, can mostly reuse dark theme, but some things need tweaks (e.g. barColorRight needs extra alpha)
     let hasClearBG = layout.effectiveOSCColorScheme == .clearGradient
     let barAppearance = hasClearBG ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
