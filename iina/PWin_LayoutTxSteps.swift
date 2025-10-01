@@ -171,6 +171,12 @@ extension PlayerWindowController {
     if transition.isWindowInitialLayout {
       // Reset other views to initial minimums:
       speedLabelBtmConstraint.isActive = false
+
+      /// Set `window.contentView`'s background to black so that the windows behind this one don't bleed through
+      /// when `lockViewportToVideoSize` is disabled, or when in legacy full screen on a Macbook screen  with a
+      /// notch and the preference `allowVideoToOverlapCameraHousing` is false. Also needed so that sidebars don't
+      /// bleed through during their show/hide animations.
+      setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
     }
   }
 
@@ -1056,31 +1062,10 @@ extension PlayerWindowController {
 
       } else {
         assert(transition.outputLayout.isLegacyFullScreen, "Expected ouputLayout to be in legacyFullScreen mode!")
-        let screen = NSScreen.getScreenOrDefault(screenID: transition.outputGeometry.screenID)
-        let newGeo: PWinGeometry
-        if transition.isEnteringLegacyFullScreen && !transition.isWindowInitialLayout && IINAAnimation.isAnimationEnabled {
-          // Use extra animation to deal with possible top margin needed to hide camera housing
-          if transition.outputGeometry.hasTopPaddingForCameraHousing {
-            /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
-            /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
-            /// (will expand window to cover `cameraHousingHeight` in final animation)
-            newGeo = transition.outputGeometry.clone(windowFrame: screen.frameWithoutCameraHousing,
-                                                     screenID: screen.screenID, topMarginHeight: 0)
-          } else {
-            /// `Use entire Macbook screen` is checked in Settings. As of MacOS before Sonoma 14.4, Apple has been making improvements
-            /// but we still need to use  a separate animation to give the OS time to hide the menu bar - otherwise there will be a flicker.
-            let cameraHeight = screen.cameraHousingHeight ?? 0
-            let geo = transition.outputGeometry
-            let margins = geo.viewportMargins.addingTo(top: -cameraHeight)
-            newGeo = geo.clone(windowFrame: geo.windowFrame.addingTo(top: -cameraHeight), viewportMargins: margins)
-          }
-        } else {
-          /// No need for extra animation. Apply final geometry.
-          newGeo = transition.outputGeometry
-        }
+        let geo: PWinGeometry = transition.geometry(for: .openNewPanels)
         log.verbose("\(logPre) Calling setFrame for legacyFS in OpenNewPanels")
         /// This calls `videoView.apply`:
-        setFrameAndUpdateWindowSubviews(using: newGeo)
+        setFrameAndUpdateWindowSubviews(using: geo)
       }
     }
 
@@ -1158,6 +1143,7 @@ extension PlayerWindowController {
   func doPostTransitionWork(_ transition: LayoutTransition) {
     let logPre = transition.logPreamble(for: .postTransition)
     log.verbose{"\(logPre) Start"}
+
     // Update blending mode:
     updatePanelBlendingModes(to: transition.outputLayout)
 
@@ -1218,25 +1204,15 @@ extension PlayerWindowController {
         player.updateMpvKeepaspectWindowSynchronously()
       }
 
-
-      if #available(macOS 10.16, *) {
-        window.level = .normal
-      } else {
-        window.styleMask.remove(.fullScreen)
-      }
-
       if transition.inputLayout.isLegacyFullScreen {
+        if #available(macOS 10.16, *) {
+          window.level = .normal
+        } else {
+          window.styleMask.remove(.fullScreen)
+        }
+
         window.styleMask.insert(.resizable)
       }
-
-      if player.info.isPaused {
-        // When playback is paused the display link is stopped in order to avoid wasting energy on
-        // needless processing. It must be running while transitioning from full screen mode. Now that
-        // the transition has completed it can be stopped.
-        videoView.displayIdle()
-      }
-
-      player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: false)
 
       if transition.outputLayout.isLegacyStyle {  // legacy windowed
         setWindowStyleToLegacy()
@@ -1259,19 +1235,32 @@ extension PlayerWindowController {
         removeBlackWindows()
       }
 
-      // restore ontop status
+      // Restore ontop status / set proper window level
       setWindowFloatingOnTop(isOnTop, from: transition.outputLayout, updateOnTopStatus: false)
+
+      player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: false)
 
       if Preference.bool(for: .pauseWhenLeavingFullScreen) && player.info.isPlaying {
         player.pause()
       }
 
+      if player.info.isPaused {
+        // When playback is paused the display link is stopped in order to avoid wasting energy on
+        // needless processing. It must be running while transitioning from full screen mode. Now that
+        // the transition has completed it can be stopped.
+        videoView.displayIdle()
+      }
+
       player.events.emit(.windowFullscreenChanged, data: false)
     }
 
-    if transition.isTogglingFullScreen || transition.isTogglingMusicMode {
-      sendWindowScaleToMPV(basedOn: transition.outputGeometry)
+    if transition.isExitingMusicMode || transition.isClosingPlaylistInMusicMode {
+      // move playist view
+      miniPlayer.removePlaylistViewIfPresent()
     }
+
+    rebuildPanelConstraints(transition, stage: .postTransition)
+    setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
 
     if transition.isTogglingMusicMode {
       if Preference.bool(for: .playlistShowMetadataInMusicMode) {
@@ -1286,15 +1275,6 @@ extension PlayerWindowController {
         // Playlist sidebar is visible: need to scroll to current item again due to size change
         playlistView.scrollPlaylistToCurrentItem()
       }
-    }
-
-    if transition.isExitingMusicMode || transition.isClosingPlaylistInMusicMode {
-      // move playist view
-      miniPlayer.removePlaylistViewIfPresent()
-    }
-
-    if transition.outputGeometry.mode == .musicMode && transition.outputGeometry.isViewportShown {
-      videoView.apply(transition.outputGeometry)
     }
 
     refreshHidesOnDeactivateStatus()
@@ -1339,9 +1319,7 @@ extension PlayerWindowController {
 
     }
 
-    rebuildPanelConstraints(transition, stage: .postTransition)
-
-    if transition.outputGeometry.mode.isWindowed {
+    if transition.outputGeometry.mode.isWindowed || transition.isTogglingFullScreen || transition.isTogglingMusicMode {
       sendWindowScaleToMPV(basedOn: transition.outputGeometry)
     }
 

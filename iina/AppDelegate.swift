@@ -810,7 +810,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard startupHandler.state == .doneOpening else { return false }
 
     if terminateIfNotInteractiveLaunch() {
-      return false
+      return true
     }
 
     // OpenFile is an NSPanel, which AppKit considers not to be a window. Need to account for this ourselves.
@@ -835,6 +835,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log.debug("HandleReopen: this is a non-interactive launch! Sending killRequest to all running instances")
     Preference.set(Preference.integer(for: .killRequest) + 1, for: .killRequest)
 
+    // Start our own shutdown immediately
+    appDidReceiveKillRequest()
     return true
   }
 

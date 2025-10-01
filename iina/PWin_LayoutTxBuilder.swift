@@ -213,7 +213,7 @@ extension PlayerWindowController {
     if !transition.isWindowInitialLayout, closeOldPanelsDuration > 0.0,
         transition.isTogglingMusicMode ||
         (transition.isTogglingInteractiveMode && !transition.inputLayout.isFullScreen) {
-      let duration = transition.isTogglingInteractiveMode ? (closeOldPanelsDuration * 0.5) : closeOldPanelsDuration
+      let duration = transition.isTogglingInteractiveMode ? closeOldPanelsDuration * 0.5 : closeOldPanelsDuration
       moveAndResizeVideoTask = .init(duration: duration, timing: .easeInEaseOut) { [self] in
         moveAndResizeVideoFrame(transition)
       }
@@ -247,20 +247,7 @@ extension PlayerWindowController {
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
 
       tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
-        let inputGeo = transition.inputGeometry
-        let newGeo: PWinGeometry
-        if inputGeo.hasTopPaddingForCameraHousing {
-          /// Exiting legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
-          newGeo = inputGeo.clone(windowFrame: winScreen.frameWithoutCameraHousing,
-                                                  screenID: winScreen.screenID, topMarginHeight: 0)
-        } else {
-          /// `Use entire Macbook screen` is checked in Settings. As of MacOS before Sonoma 14.4, Apple has been making improvements
-          /// but we still need to use  a separate animation to give the OS time to hide the menu bar - otherwise there will be a flicker.
-          let cameraHeight = winScreen.cameraHousingHeight ?? 0
-          let margins = inputGeo.viewportMargins.addingTo(top: -cameraHeight)
-          newGeo = inputGeo.clone(windowFrame: inputGeo.windowFrame.addingTo(top: -cameraHeight), viewportMargins: margins,
-                                  isMiddleTransition: true)
-        }
+        let newGeo = transition.computeExtraAnimationGeoForLegacyFS(fsGeometry: transition.inputGeometry)
         log.verbose("[\(transition.name)] Updating legacy FS window to show camera housing prior to entering native windowed mode with windowFrame=\(newGeo.windowFrame)")
         setFrameAndUpdateWindowSubviews(using: newGeo)
       })
@@ -287,10 +274,8 @@ extension PlayerWindowController {
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
 
       tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
-        let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : (winScreen.cameraHousingHeight ?? 0)
-        let newGeo = transition.outputGeometry.clone(windowFrame: winScreen.frame,
-                                                     screenID: winScreen.screenID, topMarginHeight: topBlackBarHeight,
-                                                     isMiddleTransition: true)
+        rebuildPanelConstraints(transition, stage: .postTransition)
+        let newGeo = transition.outputGeometry
         log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock with windowFrame=\(newGeo.windowFrame)")
         setFrameAndUpdateWindowSubviews(using: newGeo)
       })

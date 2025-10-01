@@ -84,12 +84,6 @@ extension PlayerWindowController {
     /// NOTE: this will likely execute *after* `_openWindow()`
     animationPipeline.submitInstantTask{ [self] in
 
-      /// Set `window.contentView`'s background to black so that the windows behind this one don't bleed through
-      /// when `lockViewportToVideoSize` is disabled, or when in legacy full screen on a Macbook screen  with a
-      /// notch and the preference `allowVideoToOverlapCameraHousing` is false. Also needed so that sidebars don't
-      /// bleed through during their show/hide animations.
-      setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
-
       window.preservesContentDuringLiveResize = false
 
       let oscGeo = currentLayout.controlBarGeo

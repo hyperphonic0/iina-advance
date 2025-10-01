@@ -297,6 +297,7 @@ extension PlayerWindowController {
           updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
         }
       }
+
     case .midTransitionHiddenUpdates:
       /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
       if transition.isClosingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {

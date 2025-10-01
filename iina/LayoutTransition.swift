@@ -361,8 +361,36 @@ extension PlayerWindowController {
         return inputGeometry
       case .closeOldPanels, .midTransitionHiddenUpdates:
         return middleGeometry ?? inputGeometry
-      case .openNewPanels, .postTransition:
+      case .openNewPanels:
+        if isEnteringLegacyFullScreen && !isWindowInitialLayout && IINAAnimation.isAnimationEnabled {
+          return computeExtraAnimationGeoForLegacyFS(fsGeometry: outputGeometry)
+        } else {
+          /// No need for extra animation. Apply final geometry.
+          return outputGeometry
+        }
+      case .postTransition:
         return outputGeometry
+      }
+    }
+
+    /// Entering or exiting
+    func computeExtraAnimationGeoForLegacyFS(fsGeometry: PWinGeometry) -> PWinGeometry {
+      assert(isTogglingLegacyFullScreen, "computeExtraAnimationGeoForLegacyFS should not be called unless toggling legacy full screen")
+      let screen = NSScreen.getScreenOrDefault(screenID: fsGeometry.screenID)
+      
+      // Use extra animation to deal with possible top margin needed to hide camera housing
+      if fsGeometry.hasTopPaddingForCameraHousing {
+        /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
+        /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
+        /// (If entering FS: will expand window to cover `cameraHousingHeight` in final animation)
+        return fsGeometry.clone(windowFrame: screen.frameWithoutCameraHousing,
+                                    screenID: screen.screenID, topMarginHeight: 0)
+      } else {
+        /// `Use entire Macbook screen` is checked in Settings. As of MacOS before Sonoma 14.4, Apple has been making improvements
+        /// but we still need to use  a separate animation to give the OS time to show/hide the menu bar - otherwise there will be a flicker.
+        let cameraHeight = screen.cameraHousingHeight ?? 0
+        let margins = fsGeometry.viewportMargins.addingTo(top: -cameraHeight)
+        return fsGeometry.clone(windowFrame: fsGeometry.windowFrame.addingTo(top: -cameraHeight), viewportMargins: margins, isMiddleTransition: true)
       }
     }
 
