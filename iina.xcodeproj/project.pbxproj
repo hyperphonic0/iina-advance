@@ -348,6 +348,7 @@
 		D188CB2628D9E95500F166FD /* BindingTableState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* BindingTableState.swift */; };
 		D191EE152ACE763A00FEF801 /* PWin_LayoutTxSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = D191EE142ACE763A00FEF801 /* PWin_LayoutTxSteps.swift */; };
 		D19247FD2BC634D3003BEEE8 /* Player_Crop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19247FC2BC634D3003BEEE8 /* Player_Crop.swift */; };
+		D192C7D82E8CF2BD00CC537A /* OptionalConstraint.swift in Sources */ = {isa = PBXBuildFile; fileRef = D192C7D72E8CF2B800CC537A /* OptionalConstraint.swift */; };
 		D19690CC2B56770F002B0458 /* MPVLogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19690CB2B56770F002B0458 /* MPVLogLevel.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */; };
 		D19CFD902E5885AE00746611 /* TopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CFD8F2E5885AB00746611 /* TopBarView.swift */; };
@@ -1901,6 +1902,7 @@
 		D188CB2528D9E95500F166FD /* BindingTableState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingTableState.swift; sourceTree = "<group>"; };
 		D191EE142ACE763A00FEF801 /* PWin_LayoutTxSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_LayoutTxSteps.swift; sourceTree = "<group>"; };
 		D19247FC2BC634D3003BEEE8 /* Player_Crop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player_Crop.swift; sourceTree = "<group>"; };
+		D192C7D72E8CF2B800CC537A /* OptionalConstraint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionalConstraint.swift; sourceTree = "<group>"; };
 		D19690CB2B56770F002B0458 /* MPVLogLevel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MPVLogLevel.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfFileCache.swift; sourceTree = "<group>"; };
 		D19CFD8F2E5885AB00746611 /* TopBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBarView.swift; sourceTree = "<group>"; };
@@ -2423,6 +2425,7 @@
 		845ABEAD1D4D19CF00BFB15B /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				D192C7D72E8CF2B800CC537A /* OptionalConstraint.swift */,
 				84791C8A1D405E9D0069E28A /* PlaybackInfo.swift */,
 				D1EF40EA2C3BCEA800921252 /* Playback.swift */,
 				8476440B1D48F63D004F6DF5 /* OSDMessage.swift */,
@@ -3553,6 +3556,7 @@
 				D15CABE62B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift in Sources */,
 				D1FF15752A7E072200C0CE86 /* PlayerManager.swift in Sources */,
 				D1D87E042932086000737886 /* TableUIChangeBuilder.swift in Sources */,
+				D192C7D82E8CF2BD00CC537A /* OptionalConstraint.swift in Sources */,
 				84C6D3621EAF8D63009BF721 /* HistoryController.swift in Sources */,
 				D16A434D2CDDB75B0012D66F /* BarFactory.swift in Sources */,
 				D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */,
