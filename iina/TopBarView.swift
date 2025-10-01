@@ -23,13 +23,15 @@ class TopControlBarView: ClickThroughView {
 
 /// The bar at the very top of the window. May include title bar and/or OSC.
 class TopBarView: ClickThroughVisualEffectView {
+  /// Reserves space for the title bar components. Can contain CustomTitleBarView *only* if using legacy
+  /// windowed mode & topBarPlacement==.insideViewport
+  let titleBarView = ClickThroughView()
+
+  /// Contains the OSC if it is enabled and configured for "top" position. Located below `titleBarView`.
   let controlBarTop = TopControlBarView()
 
   /// Bottom border of `TopBarView`.
   let bottomBorder = BorderLineView(id: "TopBar-BottomBorder", fillColor: .titleBarBorder)
-  /// Reserves space for the title bar components. Can contain CustomTitleBarView *only* if using legacy
-  /// windowed mode & topBarPlacement==.insideViewport
-  let titleBarView = ClickThroughView()
 
   /// Sets the size of the spacer view in the top overlay which reserves space for a title bar.
   var titleBarHeightConstraint: NSLayoutConstraint!
@@ -46,16 +48,10 @@ class TopBarView: ClickThroughVisualEffectView {
     clipsToBounds = true  // for better animations when toggling OSC position/placement
     translatesAutoresizingMaskIntoConstraints = false
 
-    /// `controlBarTop`
-    addSubviewAndConstraints(controlBarTop, bottom: 0, leading: 0, trailing: 0)
-
     /// `titleBarView`
     titleBarView.translatesAutoresizingMaskIntoConstraints = false
     addSubview(titleBarView)
     titleBarView.identifier = .init("TitleBarView")
-    let titleBarBottom_ToControlBarTop_Constraint = titleBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
-    titleBarBottom_ToControlBarTop_Constraint.identifier = .init("TitleBar-Bottom_ToControlBarTop_Constraint")
-    titleBarBottom_ToControlBarTop_Constraint.isActive = true
 
     titleBarView.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
 
@@ -63,6 +59,13 @@ class TopBarView: ClickThroughVisualEffectView {
     titleBarHeightConstraint.identifier = .init("TitleBarView-HeightConstraint")
     titleBarHeightConstraint.priority = .init(900)
     titleBarHeightConstraint.isActive = true
+
+    /// `controlBarTop`
+    addSubviewAndConstraints(controlBarTop, bottom: 0, leading: 0, trailing: 0)
+
+    let titleBarBottom_ToControlBarTop_Constraint = titleBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
+    titleBarBottom_ToControlBarTop_Constraint.identifier = .init("TitleBar-Bottom_ToControlBarTop_Constraint")
+    titleBarBottom_ToControlBarTop_Constraint.isActive = true
 
     // Bottom border
     addSubview(bottomBorder)

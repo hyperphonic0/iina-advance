@@ -34,23 +34,6 @@ class TwoRowBarOSCView: ClickThroughView {
 
     addSubview(hStackView)
 
-    hStackView_HeightConstraint = hStackView.topAnchor.constraint(equalTo: self.bottomAnchor, constant: 0)
-    hStackView_HeightConstraint.identifier = "\(hStackView.idString)_HeightConstraint"
-    hStackView_HeightConstraint.isActive = true
-
-    hStackViewLeadingConstraint = hStackView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 0)
-    hStackViewLeadingConstraint.identifier = "\(hStackView.idString)_Lead-Offset"
-    hStackViewLeadingConstraint.isActive = true
-
-    hStackViewTrailingConstraint = self.trailingAnchor.constraint(equalTo: hStackView.trailingAnchor, constant: 0)
-    hStackViewTrailingConstraint.identifier = "\(hStackView.idString)_Trail-Offset"
-    hStackViewTrailingConstraint.isActive = true
-
-    hStackView_BottomMarginConstraint = bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: 0)
-    hStackView_BottomMarginConstraint.identifier = "\(TwoRowBarOSCView.id)-HStackView-BtmOffset"
-    hStackView_BottomMarginConstraint.isActive = true
-    relaxConstraints()
-
     timeSlashLabel.idString = "PlayPos-TimeSlashLabel"
     timeSlashLabel.isBordered = false
     timeSlashLabel.drawsBackground = false
@@ -58,6 +41,25 @@ class TwoRowBarOSCView: ClickThroughView {
     timeSlashLabel.refusesFirstResponder = true
     timeSlashLabel.baseWritingDirection = .leftToRight
     timeSlashLabel.stringValue = "/"
+
+    hStackView_HeightConstraint = hStackView.topAnchor.constraint(equalTo: self.bottomAnchor, constant: 0)
+    hStackView_HeightConstraint.identifier = "\(hStackView.idString)_Height"
+
+    hStackViewLeadingConstraint = hStackView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 0)
+    hStackViewLeadingConstraint.identifier = "\(hStackView.idString)_Lead-Offset"
+
+    hStackViewTrailingConstraint = self.trailingAnchor.constraint(equalTo: hStackView.trailingAnchor, constant: 0)
+    hStackViewTrailingConstraint.identifier = "\(hStackView.idString)_Trail-Offset"
+
+    hStackView_BottomMarginConstraint = bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: 0)
+    hStackView_BottomMarginConstraint.identifier = "\(TwoRowBarOSCView.id)-HStackView-BtmOffset"
+    
+    relaxConstraints()
+    hStackView_HeightConstraint.isActive = true
+    hStackViewLeadingConstraint.isActive = true
+    hStackViewTrailingConstraint.isActive = true
+    hStackView_BottomMarginConstraint.isActive = true
+
   }
 
   required init?(coder: NSCoder) {
@@ -108,7 +110,6 @@ class TwoRowBarOSCView: ClickThroughView {
     addSubview(playSliderTypeView, positioned: .below, relativeTo: hStackView)
     playSliderTypeView.addConstraintsToFillSuperview(top: 0, leading: oscGeo.leadingSpace_Row1,
                                                      trailing: oscGeo.trailingSpace_Row1)
-    hStackView_HeightConstraint.priority = .defaultLow  // for now
 
     let bottomMargin = ControlBarGeometry.twoRowOSC_BottomMargin(playSliderHeight: oscGeo.playSliderHeight)
     let hStackViewHeight = oscGeo.fullIconHeight + bottomMargin
@@ -157,8 +158,6 @@ class TwoRowBarOSCView: ClickThroughView {
     hStackView_HeightConstraint.priority = .init(900)
 
     pwc.fragToolbarView.needsUpdateConstraints = true
-    pwc.osd.osdHStackView.needsUpdateConstraints = true
-    pwc.osd.osdHStackView.needsLayout = true
   }
 
   func relaxConstraints() {

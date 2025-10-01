@@ -1250,9 +1250,8 @@ extension PlayerWindowController {
           hideBuiltInTitleBarViews()
         } else {
           showBuiltInTitleBarViews()  /// do this again after adding `titled` style
+          addTitleBarAccessoryViews() /// Need to make sure this executes after styleMask is `.titled`
         }
-        // Need to make sure this executes after styleMask is .titled
-        addTitleBarAccessoryViews()
         updateTitle()
       }
 

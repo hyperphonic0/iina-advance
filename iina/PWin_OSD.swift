@@ -25,37 +25,39 @@ fileprivate let standardOffset: CGFloat = 8
 /// │   └────┘  └───────┘   │
 /// └───────────────────────┘
 /// ```
-class OSDState {
+final class OSDState {
   let log: Logger.Subsystem
 
-  let osdView = OSDView()
-  let osdHStackView = ClickThroughStackView()
-  let osdVStackView = ClickThroughStackView()
-  let osdIconImageView = NSImageView()
-  /// Use label constructor (even with empty string) to ensure proper styling
-  let osdLabel = NSTextField(labelWithString: "")
-  let osdAccessoryText = NSTextField(labelWithString: "")
-  let osdAccessoryProgress = NSProgressIndicator()
+  // - Views
 
-  // Internal constraints (not actually optional)
+  let osdView = OSDView()
+  fileprivate let osdHStackView = ClickThroughStackView()
+  fileprivate let osdVStackView = ClickThroughStackView()
+  fileprivate let osdIconImageView = NSImageView()
+  /// Use label constructor (even with empty string) to ensure proper styling
+  fileprivate let osdLabel = NSTextField(labelWithString: "")
+  fileprivate let osdAccessoryText = NSTextField(labelWithString: "")
+  fileprivate let osdAccessoryProgress = NSProgressIndicator()
+
+  // - Internal constraints (not actually optional)
 
   // Icon size
-  let osdIconWidthConstraint = OptionalConstraint("OSDIcon.width")
-  let osdIconHeightConstraint = OptionalConstraint("OSDIcon.height")
+  fileprivate let osdIconWidthConstraint = OptionalConstraint("OSDIcon.width")
+  fileprivate let osdIconHeightConstraint = OptionalConstraint("OSDIcon.height")
   // Internal padding
-  let osdTopMarginConstraint = OptionalConstraint("OSDView-TopMargin")
-  let osdTrailingMarginConstraint = OptionalConstraint("OSD-TrailingView-TrailingMargin")
-  let osdLeadingMarginConstraint = OptionalConstraint("OSD-LeadingView-LeadingMargin")
-  let osdBottomMarginConstraint = OptionalConstraint("OSD-View-BottomMargin")
+  fileprivate let osdTopPaddingConstraint = OptionalConstraint("OSD-TopPadding")
+  fileprivate let osdTrailingPaddingConstraint = OptionalConstraint("OSD-TrailingPadding")
+  fileprivate let osdLeadingPaddingConstraint = OptionalConstraint("OSD-LeadingPadding")
+  fileprivate let osdBtmPaddingConstraint = OptionalConstraint("OSD-BtmPadding")
 
-  // Optional constraints
+  // - Optional constraints
 
-  var osdLeadingToMiniPlayerButtonsTrailingConstraint = OptionalConstraint("CloseBtn.leadingGT-LeadingOSDView.trailing")
+  let osdLeadingToMiniPlayerButtonsTrailingConstraint = OptionalConstraint("CloseBtn.leadingGT-LeadingOSDView.trailing")
 
-  fileprivate let osd1TopOffsetConstraint = OptionalConstraint("OSD-LeadingView_TopOffset")
-  fileprivate let osd1BottomOffsetConstraint = OptionalConstraint("OSD-LeadingView_BtmOffset")
-  fileprivate let osd2TopOffsetConstraint = OptionalConstraint("OSD-TrailingView_TopOffset")
-  fileprivate let osd2BottomOffsetConstraint = OptionalConstraint("OSD-TrailingView_BtmOffset")
+  fileprivate let leadingSide_TopOffsetConstraint = OptionalConstraint("OSD-LeadingView_TopOffset")
+  fileprivate let leadingSide_BtmOffsetConstraint = OptionalConstraint("OSD-LeadingView_BtmOffset")
+  fileprivate let trailingSide_TopOffsetConstraint = OptionalConstraint("OSD-TrailingView_TopOffset")
+  fileprivate let trailingSide_BtmOffsetConstraint = OptionalConstraint("OSD-TrailingView_BtmOffset")
 
   fileprivate let leadingSide_LeadingConstraint = OptionalConstraint("OSD-LeadingView_Leading")
   fileprivate let leadingSide_TrailingConstraint = OptionalConstraint("OSD-LeadingView_Trailing")
@@ -65,8 +67,8 @@ class OSDState {
   fileprivate var optionalConstraints: [OptionalConstraint] {
     [
       osdLeadingToMiniPlayerButtonsTrailingConstraint,
-      osd1TopOffsetConstraint, osd1BottomOffsetConstraint,
-      osd2TopOffsetConstraint, osd2BottomOffsetConstraint,
+      leadingSide_TopOffsetConstraint, leadingSide_BtmOffsetConstraint,
+      trailingSide_TopOffsetConstraint, trailingSide_BtmOffsetConstraint,
       leadingSide_LeadingConstraint, leadingSide_TrailingConstraint,
       trailingSide_LeadingConstraint, trailingSide_TrailingConstraint,
     ]
@@ -200,16 +202,16 @@ class OSDState {
       osdIconImageView.heightAnchor.constraint(equalToConstant: c)
     }
 
-    osdTopMarginConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
+    osdTopPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
       osdHStackView.topAnchor.constraint(equalTo: osdView.topAnchor, constant: c)
     }
-    osdBottomMarginConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
+    osdBtmPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
       osdView.bottomAnchor.constraint(equalTo: osdHStackView.bottomAnchor, constant: c)
     }
-    osdLeadingMarginConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
+    osdLeadingPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
       osdHStackView.leadingAnchor.constraint(equalTo: osdView.leadingAnchor, constant: c)
     }
-    osdTrailingMarginConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
+    osdTrailingPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
       osdView.trailingAnchor.constraint(equalTo: osdHStackView.trailingAnchor, constant: c)
     }
 
@@ -421,13 +423,13 @@ extension PlayerWindowController {
         otherAnchorTrailing.constraint(greaterThanOrEqualTo: leadingView.trailingAnchor, constant: c)
       }
 
-      osd.osd1TopOffsetConstraint.createOrUpdate(to: offsetFromTop, priorityInt: constraintPriorityInt,
+      osd.leadingSide_TopOffsetConstraint.createOrUpdate(to: offsetFromTop, priorityInt: constraintPriorityInt,
                                                  requiredFirstAnchor: leadingView.topAnchor,
                                                  requiredSecondAnchor: viewportView.topAnchor, log) { [self] c in
         leadingView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
-      osd.osd1BottomOffsetConstraint.createOrUpdate(to: standardOffset, priorityInt: constraintPriorityInt,
+      osd.leadingSide_BtmOffsetConstraint.createOrUpdate(to: standardOffset, priorityInt: constraintPriorityInt,
                                                     requiredFirstAnchor: viewportView.bottomAnchor,
                                                     requiredSecondAnchor: leadingView.bottomAnchor, log) { [self] c in
         viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: leadingView.bottomAnchor, constant: c)
@@ -452,13 +454,13 @@ extension PlayerWindowController {
         otherAnchorLeading.constraint(lessThanOrEqualTo: trailingView.leadingAnchor, constant: c)
       }
 
-      osd.osd2TopOffsetConstraint.createOrUpdate(to: offsetFromTop, priorityInt: constraintPriorityInt,
+      osd.trailingSide_TopOffsetConstraint.createOrUpdate(to: offsetFromTop, priorityInt: constraintPriorityInt,
                                                  requiredFirstAnchor: trailingView.topAnchor,
                                                  requiredSecondAnchor: viewportView.topAnchor, log) { [self] c in
         trailingView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
-      osd.osd2BottomOffsetConstraint.createOrUpdate(to: standardOffset, priorityInt: constraintPriorityInt,
+      osd.trailingSide_BtmOffsetConstraint.createOrUpdate(to: standardOffset, priorityInt: constraintPriorityInt,
                                                     requiredFirstAnchor: viewportView.bottomAnchor,
                                                     requiredSecondAnchor: trailingView.bottomAnchor, log) { [self] c in
         viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: trailingView.bottomAnchor, constant: c)
@@ -483,8 +485,8 @@ extension PlayerWindowController {
     let newOffsetFromTop = computeOffsetFromTop(for: geometry)
 
     log.verbose{"[OSD] Updating top constraint to: \(newOffsetFromTop)"}
-    osd.osd1TopOffsetConstraint.constraint?.animateToConstant(newOffsetFromTop)
-    osd.osd2TopOffsetConstraint.constraint?.animateToConstant(newOffsetFromTop)
+    osd.leadingSide_TopOffsetConstraint.constraint?.animateToConstant(newOffsetFromTop)
+    osd.trailingSide_TopOffsetConstraint.constraint?.animateToConstant(newOffsetFromTop)
   }
 
   // MARK: - Additional Info Content Updates
@@ -920,10 +922,10 @@ extension PlayerWindowController {
     osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
 
     let marginScaled = 8 + (osdTextSize * 0.06)
-    osd.osdTopMarginConstraint.constraint?.animateToConstant(marginScaled)
-    osd.osdBottomMarginConstraint.constraint?.animateToConstant(marginScaled)
-    osd.osdTrailingMarginConstraint.constraint?.animateToConstant(marginScaled)
-    osd.osdLeadingMarginConstraint.constraint?.animateToConstant(marginScaled)
+    osd.osdTopPaddingConstraint.constraint?.animateToConstant(marginScaled)
+    osd.osdBtmPaddingConstraint.constraint?.animateToConstant(marginScaled)
+    osd.osdTrailingPaddingConstraint.constraint?.animateToConstant(marginScaled)
+    osd.osdLeadingPaddingConstraint.constraint?.animateToConstant(marginScaled)
 
     let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
     osd.osdLabel.font = osdLabelFont

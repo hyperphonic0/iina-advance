@@ -24,10 +24,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     return NSNib.Name("PlayerWindowController")
   }
 
-  @objc var videoView: VideoView {
-    return player.videoView
-  }
-
   var undoHelper: PlayerWindowUndoHelper!
 
   var bestScreen: NSScreen {
@@ -58,9 +54,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /** The control view for interactive mode. */
   var cropSettingsView: CropBoxViewController?
-
-  // For legacy windowed mode
-  var customTitleBar: CustomTitleBarViewController? = nil
 
 
   // MARK: - Vars: Services
@@ -258,10 +251,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // Other visibility
   var hideCursorTimer = TimeoutTimer(timeout: Constants.TimeInterval.hideCursorMinTimeoutMS)
 
-  // - OSD
-
-  var osd: OSDState
-
   // - PiP
 
   var pip: PIPState
@@ -371,9 +360,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  // MARK: - Outlets
-
-  // - Outlets: Constraints
+  // - MARK: Constraints
 
   let panelConstraints = PanelConstraints()
 
@@ -467,10 +454,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var volumeIconAspectConstraint: NSLayoutConstraint!
   var volumeSliderWidthConstraint: NSLayoutConstraint!
 
-  // - Outlets: Views
-
-  let customWindowBorderBox = CustomWindowBorderBox(id: "CustomWndBorderBox", borderWidth: 1, borderColor: .customWindowBorder)
-  let customWindowBorderTopHighlightBox = CustomWindowBorderBox(id: "CustomWndBorderBox", borderWidth: 0.5, borderColor: .customWindowBorderHighlight)
+  // - MARK: Views
 
   // MiniPlayer buttons:
   @IBOutlet weak var closeButtonView: NSView!
@@ -483,7 +467,34 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var closeButtonBox: NSButton!
   @IBOutlet weak var backButtonBox: NSButton!
 
-  // Title Bar:
+  /// Contains `videoView` and margins around it
+  let viewportView = ViewportView()
+
+  @objc var videoView: VideoView {
+    return player.videoView
+  }
+
+  /// Contains thumbnail preview & seek time.
+  let seekPreview = SeekPreview()
+
+  /// Contains info to be displayed while loading/buffering a network stream.
+  let bufferIndicatorView = BufferIndicatorView()
+
+  let defaultAlbumArtView = DefaultAlbumArtView()
+
+  // OSD
+  let osd: OSDState
+  let additionalInfoView = AdditionalInfoView()
+
+  /// Custom-built window border, used for legacy windowed mode
+  let customWindowBorderBox = CustomWindowBorderBox(id: "CustomWndBorderBox", borderWidth: 1, borderColor: .customWindowBorder)
+  /// Custom-built window border highlight, used for legacy windowed mode
+  let customWindowBorderTopHighlightBox = CustomWindowBorderBox(id: "CustomWndBorderBox", borderWidth: 0.5, borderColor: .customWindowBorderHighlight)
+
+  /// Custom-built title bar, used for legacy windowed mode
+  var customTitleBar: CustomTitleBarViewController? = nil
+
+  // Native Title Bar:
 
   var leadingTitlebarAccesoryViewController: NSTitlebarAccessoryViewController?
   var trailingTitlebarAccesoryViewController: NSTitlebarAccessoryViewController?
@@ -494,10 +505,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   let leadingSidebarToggleButton = SymButton()
   let trailingSidebarToggleButton = SymButton()
 
+  /// The document icon of the window's native title bar.
   var documentIconButton: NSButton? {
     window?.standardWindowButton(.documentIconButton)
   }
 
+  /// The traffic light buttons of the window's native title bar.
   var trafficLightButtons: [NSButton] {
     if let window, window.styleMask.contains(.titled) {
       return ([.closeButton, .miniaturizeButton, .zoomButton] as [NSWindow.ButtonType]).compactMap {
@@ -507,31 +520,16 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     return customTitleBar?.trafficLightButtons ?? []
   }
 
-  // Width of the 3 traffic light buttons
-  lazy var trafficLightButtonsWidth: CGFloat = {
-    var maxX: CGFloat = 0
-    for buttonType in [NSWindow.ButtonType.closeButton, NSWindow.ButtonType.miniaturizeButton, NSWindow.ButtonType.zoomButton] {
-      if let button = window!.standardWindowButton(buttonType) {
-        maxX = max(maxX, button.frame.origin.x + button.frame.width)
-      }
-    }
-    return maxX
-  }()
-
-  /// Get the `NSTextField` of widow's title.
+  /// Computed property which gets the `NSTextField` of window's native title bar.
   var titleTextField: NSTextField? {
     return window?.standardWindowButton(.closeButton)?.superview?.subviews.compactMap({ $0 as? NSTextField }).first
   }
 
-  /// Sidebar at top of window. May be `insideViewport` or `outsideViewport`. May contain `titleBarView` and/or `controlBarTop`
+  // - Bars
+
+  /// Bar at top of window. May be `insideViewport` or `outsideViewport`. May contain `titleBarView` and/or `controlBarTop`
   /// depending on configuration.
   let topBarView = TopBarView()
-  /// Floating OSC
-  let controlBarFloating = FloatingControlBarView()
-
-  /// Current OSC container view. May be top, bottom, floating, or inside music mode window,
-  /// depending on user pref and current configuration.
-  var currentControlBar: NSView?
 
   /// Control bar at bottom of window, if configured. May be `insideViewport` or `outsideViewport`.
   /// Used to hold other views in music mode & interactive mode
@@ -539,11 +537,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Top border of `bottomBarView`.
   let bottomBarTopBorder = BorderLineView(id: "BottomBar-TopBorder",
                                           fillColor: .titleBarBorder)
-
-  /// Layout options for how to layout controls inside `currentControlBar`.
-  let oscOneRowView = SingleRowBarOSCView()
-  let oscTwoRowView = TwoRowBarOSCView()
-  let seekPreview = SeekPreview()
 
   let leadingSidebarView = ClickThroughVisualEffectView()
   /// Shown if leading sidebar is "outside"
@@ -554,14 +547,18 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   let trailingSidebarLeadingBorder = BorderLineView(id: "TrailingSidebar-LeadingBorder",
                                                     fillColor: .quaternaryLabelColor)
 
-  let bufferIndicatorView = BufferIndicatorView()
+  /// Floating OSC
+  let controlBarFloating = FloatingControlBarView()
 
-  // OSD
-  let additionalInfoView = AdditionalInfoView()
+  /// Layout options for bar-type ("top" or "bottom" position) OSC controls inside `currentControlBar`.
+  let oscOneRowView = SingleRowBarOSCView()
+  let oscTwoRowView = TwoRowBarOSCView()
 
-  let viewportView = ViewportView()
+  /// Reference to the current OSC container view. May be top, bottom, floating, inside music mode window, or `nil`,
+  /// depending on current user settings.
+  var currentControlBar: NSView?
 
-  let defaultAlbumArtView = DefaultAlbumArtView()
+  // - OSC internal views
 
   /// Container for volume slider & mute button
   var fragVolumeView = ClickThroughView()
@@ -594,6 +591,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
     return buttons
   }
+
+  // - Misc Views
 
   var mouseActionDisabledViews: [NSView?] {
     return [leadingSidebarView, trailingSidebarView, topBarView, currentControlBar, subPopoverView]
