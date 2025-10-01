@@ -10,6 +10,7 @@
 class OptionalConstraint {
   let identifier: String
   var constraint: NSLayoutConstraint? = nil
+  var priorityInt: Int = 1000
 
   init(_ identifier: String) {
     self.identifier = identifier
@@ -24,21 +25,34 @@ class OptionalConstraint {
     constraint = newConstraint
   }
 
-  func createOrUpdate(to constantToSet: CGFloat = 0, requiredSecondAnchor: NSLayoutXAxisAnchor? = nil,
+  func createOrUpdate(to constantToSet: CGFloat = 0, priorityInt: Int? = nil,
+                      requiredSecondAnchor: NSLayoutXAxisAnchor? = nil,
                       _ log: Logger.Subsystem?,
                       _ creationFunc: (CGFloat) -> NSLayoutConstraint) {
     if let constraint, isActive, requiredSecondAnchor == nil || (constraint.secondAnchor == requiredSecondAnchor) {
+      log?.verbose("Updating constraint \(identifier.quoted) to \(constantToSet)")
       constraint.animateToConstant(constantToSet)
     } else {
-      constraint?.isActive = false
-      log?.verbose("Creating constraint: \(identifier)")
+      remove(log)
+      if let priorityInt {
+        self.priorityInt = priorityInt
+      } else {
+        self.priorityInt = 1000
+      }
+      log?.verbose("Creating constraint \(identifier.quoted) const=\(constantToSet) priority=\(self.priorityInt)")
       let newConstraint = creationFunc(constantToSet)
       newConstraint.identifier = identifier
+      newConstraint.priorityInt = self.priorityInt  // TODO: lower priorities during transition
       newConstraint.isActive = true
       constraint = newConstraint
     }
   }
 
+  func remove(_ log: Logger.Subsystem?) {
+    guard let constraint, constraint.isActive else { return }
+    log?.verbose("Removing constraint \(identifier.quoted)")
+    constraint.isActive = false
+  }
 
   var isActive: Bool {
     get {
@@ -46,8 +60,6 @@ class OptionalConstraint {
         return constraint.isActive
       }
       return false
-    } set {
-      constraint?.isActive = false
     }
   }
 }
@@ -55,6 +67,7 @@ class OptionalConstraint {
 /// This file contains support functions for the transition tasks found in `PWin_LayoutTxSteps.swift`.
 extension PlayerWindowController {
   /// Add, remove, or modify each of the bars & their constraints based on the given stage of the layout transition.
+  ///
   /// # Diagram: Vertical contraints in relation to `PWinGeometry` panels
   /// Note the consistent direction between anchors. (Created with https://asciip.dev/, then hand-edited.)
   ///```
@@ -81,7 +94,7 @@ extension PlayerWindowController {
   /// - ¹Used for opening/closing viewport animation.
   /// - ⁴Only used when bottomBar is shown & viewport is hidden.
   /// - ⁵Only used in music mode when both video & playlist are hidden.
-  final class PanelConstraints {
+  struct PanelConstraints {
     // - Top bar (title bar and/or top OSC) constraints
     let topBarBtmOffsetFromVPTop = OptionalConstraint("TopBar.btm-offset-from-VP.top")
     let vpTopOffsetFromTopBarTop = OptionalConstraint("VP.top-offset-from-TopBar.top")
@@ -224,13 +237,12 @@ extension PlayerWindowController {
     let isAnimatingVideoViewOpen = transition.isOpeningViewport && !isFinalStage  // Music Mode: opening video
     if useBottomBar && (!outputGeo.isViewportShown || isAnimatingVideoViewOpen) {
       let constant1 = transition.bottomBarTopOffsetFromCVTop(for: stage)
-      log.verbose("Updating bottomBarTopOffsetFromCVTop=\(constant1)")
       p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
         bottomBarView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
       }
     } else {
       // Need to manually remove this one because it doesn't depend on viewportView, & thus won't get removed if/when viewport gets removed.
-      p.bottomBarTopOffsetFromCVTop.isActive = false
+      p.bottomBarTopOffsetFromCVTop.remove(log)
     }
 
     // BottomBar + Viewport
@@ -260,15 +272,13 @@ extension PlayerWindowController {
       // enable for animations or if in music mode & neither playlist nor video is open
       if !isFinalStage || (outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown) {
         let constant1 = transition.bottomBarBtmOffsetFromCVTop(for: stage)
-        log.verbose("Updating bottomBarBtmOffsetFromCVTop to \(constant1)")
         p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
           bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
         }
       } else {
         // remove
         if p.bottomBarBtmOffsetFromCVTop.isActive {
-          log.verbose("Removing bottomBarBtmOffsetFromCVTop")
-          p.bottomBarBtmOffsetFromCVTop.isActive = false
+          p.bottomBarBtmOffsetFromCVTop.remove(log)
         }
       }
 
@@ -293,16 +303,15 @@ extension PlayerWindowController {
       if (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode), !isFinalStage {
         let constant3 = transition.vpBtmOffsetFromCVTop(for: stage)
 
-        log.verbose("Updating viewport: vpBtmOffsetFromCVTop=\(constant3)")
         p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3, log) { [self] c in
           viewportView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
         }
       } else {
-        p.vpBtmOffsetFromCVTop.isActive = false
+        p.vpBtmOffsetFromCVTop.remove(log)
       }
 
       if isFinalStage && outputGeo.mode == .musicMode && outputGeo.isMusicModePlaylistShown {
-        p.cvBtmOffsetFromVPBtm.isActive = false
+        p.cvBtmOffsetFromVPBtm.remove(log)
       } else {
         p.cvBtmOffsetFromVPBtm.createOrUpdate(to: constant2, log) { [self] c in
           contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
@@ -343,7 +352,6 @@ extension PlayerWindowController {
           // Update sidebar vertical alignments to match top bar:
           let downshift = min(transition.inputLayout.sidebarDownshift, transition.outputLayout.sidebarDownshift)
           let tabHeight = min(transition.inputLayout.sidebarTabHeight, transition.outputLayout.sidebarTabHeight)
-          log.verbose("Updating sidebars: downshift=\(downshift) tabHeight=\(tabHeight)")
           updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
         }
       }
@@ -376,7 +384,6 @@ extension PlayerWindowController {
                                   setTrailingTo: transition.isOpeningTrailingSidebar ? layout.trailingSidebar.visibility : nil,
                                   ΔWindowWidth: ΔWindowWidth)
 
-        log.verbose("Updating sidebars: downshift=\(layout.sidebarDownshift) tabHeight=\(layout.sidebarTabHeight)")
         updateSidebarVerticalConstraints(tabHeight: layout.sidebarTabHeight, downshift: layout.sidebarDownshift)
       }
     case .postTransition:

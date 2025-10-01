@@ -24,7 +24,7 @@ struct PlayerSaveState: CustomStringConvertible {
     case matchedSubtitles = "matchedSubs"
 
     case intendedViewportSize = "intendedViewportSize"
-    case layoutState = "layoutSpec"     /// `LayoutSpec` was merged into `LayoutState` in v1.4
+    case layoutState = "layoutSpec"     /// Class `LayoutSpec` was merged into `LayoutState` in v1.4
     case videoGeo = "videoGeo"          /// Added in v1.2
     case windowedModeGeo = "windowedModeGeo"
     case musicModeGeo = "musicModeGeo"
