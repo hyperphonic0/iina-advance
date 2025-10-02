@@ -14,7 +14,7 @@ private func clampPlaylistWidth(_ width: CGFloat) -> CGFloat {
 
 // Sidebar layout state
 struct Sidebar {
-  enum Visibility {
+  enum Visibility: CustomStringConvertible {
     case open(tabToShow: Sidebar.Tab)
     case closed
 
@@ -26,10 +26,19 @@ struct Sidebar {
         return nil
       }
     }
+
+    var description: String {
+      switch self {
+      case .open(let tabToShow):
+        return "open(tabToShow=\(tabToShow.name))"
+      case .closed:
+        return "closed"
+      }
+    }
   }
 
   /// Type of the view embedded in sidebar.
-  enum TabGroup: String {
+  enum TabGroup: String, CustomStringConvertible {
     case settings
     case playlist
     case plugins
@@ -41,6 +50,10 @@ struct Sidebar {
       case .playlist:
         return clampPlaylistWidth(CGFloat(sidebarState.playlistSidebarWidth))
       }
+    }
+
+    var description: String {
+      self.rawValue
     }
 
     static func fromPrefs(for locationID: Preference.SidebarLocation) -> Set<Sidebar.TabGroup> {

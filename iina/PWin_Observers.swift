@@ -273,7 +273,7 @@ extension PlayerWindowController {
         .roundSliderBarRects,
         .sliderBarDoneColor:
 
-      log.verbose{"Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted)"}
+      log.verbose{"Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted) = \(String(describing: newValue))"}
       updateTitleBarAndOSC()
     case .alwaysShowSliderKnob:
       playSlider.needsDisplay = true

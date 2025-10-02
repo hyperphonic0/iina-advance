@@ -194,13 +194,23 @@ enum LoopStatus: Int {
 }
 
 
-enum PlayerWindowMode: Int {
+enum PlayerWindowMode: Int, CustomStringConvertible {
   /// Note: both `windowed` & `windowedInteractive` modes are considered windowed"
   case windowedNormal = 1
   case fullScreenNormal
   case musicMode
   case windowedInteractive
   case fullScreenInteractive
+
+  var description: String {
+    switch self {
+    case .windowedNormal: return "windowedNormal(\(rawValue))"
+    case .fullScreenNormal: return "fullScreenNormal(\(rawValue))"
+    case .musicMode: return "musicMode(\(rawValue))"
+    case .windowedInteractive: return "windowedInteractive(\(rawValue))"
+    case .fullScreenInteractive: return "fullScreenInteractive(\(rawValue))"
+    }
+  }
 
   var alwaysLockViewportToVideoSize: Bool {
     switch self {

@@ -87,7 +87,7 @@ extension PlayerWindowController {
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.bottomBarPlacement == .insideViewport && isBottomBarPlacementOrStyleChanging) // fade OUT
       || (inputLayout.enableOSC != outputLayout.enableOSC)
-      || (inputLayout.enableOSC && (inputLayout.oscPosition != outputLayout.oscPosition))
+      || (inputLayout.enableOSC && (inputLayout.oscPosition.rawValue != outputLayout.oscPosition.rawValue))
       || (inputLayout.leadingSidebarToggleButton.isShowable && !outputLayout.leadingSidebarToggleButton.isShowable)
       || (inputLayout.trailingSidebarToggleButton.isShowable && !outputLayout.trailingSidebarToggleButton.isShowable)
     }
@@ -100,7 +100,7 @@ extension PlayerWindowController {
       || (outputLayout.mode.isInteractiveMode)  // Needed to fade in cropBoxView again after layout update
       || (outputLayout.bottomBarPlacement == .insideViewport && isBottomBarPlacementOrStyleChanging) // fade IN
       || (inputLayout.enableOSC != outputLayout.enableOSC)
-      || (outputLayout.enableOSC && (inputLayout.oscPosition != outputLayout.oscPosition))
+      || (outputLayout.enableOSC && (inputLayout.oscPosition.rawValue != outputLayout.oscPosition.rawValue))
       || (!inputLayout.leadingSidebarToggleButton.isShowable && outputLayout.leadingSidebarToggleButton.isShowable)
       || (!inputLayout.trailingSidebarToggleButton.isShowable && outputLayout.trailingSidebarToggleButton.isShowable)
     }
@@ -117,7 +117,7 @@ extension PlayerWindowController {
       || (inputLayout.isLegacyStyle != outputLayout.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.enableOSC != outputLayout.enableOSC)
-      || (inputLayout.enableOSC && (inputLayout.oscPosition != outputLayout.oscPosition))
+      || (inputLayout.enableOSC && (inputLayout.oscPosition.rawValue != outputLayout.oscPosition.rawValue))
     }
 
     var needsMoveAndResizeVideoFrameStep: Bool {
@@ -142,7 +142,7 @@ extension PlayerWindowController {
       || (inputGeometry.insideBars.bottom != outputGeometry.insideBars.bottom)
       || (inputGeometry.outsideBars.bottom != outputGeometry.outsideBars.bottom)
       || (inputLayout.enableOSC != outputLayout.enableOSC)
-      || (inputLayout.enableOSC && (inputLayout.oscPosition != outputLayout.oscPosition))
+      || (inputLayout.enableOSC && (inputLayout.oscPosition.rawValue != outputLayout.oscPosition.rawValue))
     }
 
     var isAddingLegacyStyle: Bool {
@@ -348,7 +348,7 @@ extension PlayerWindowController {
 
     var isOpeningBarOSCFromZero: Bool {
       isWindowInitialLayout || (outputLayout.hasTopOrBottomOSC &&
-                                (!inputLayout.hasTopOrBottomOSC || (inputLayout.oscPosition != outputLayout.oscPosition) ||
+                                (!inputLayout.hasTopOrBottomOSC || (inputLayout.oscPosition.rawValue != outputLayout.oscPosition.rawValue) ||
                                  (outputLayout.hasTopOSC && isTopBarPlacementOrStyleChanging)
                                  || (outputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging)))
     }

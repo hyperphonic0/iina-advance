@@ -274,16 +274,19 @@ extension PlayerWindowController {
       hideSeekPreviewImmediately()
     }
 
-    if !outputLayout.enableOSC || outputLayout.controlBarGeo.isTwoRowBarOSC {
-      if oscOneRowView.superview != nil {
-        log.verbose{"[\(transition.name)] Removing oscOneRowView from window"}
-        oscOneRowView.dispose()
+    if outputLayout.isInteractiveMode || outputLayout.isMusicMode {
+      // Fade out OSC
+      if !outputLayout.enableOSC || outputLayout.controlBarGeo.isTwoRowBarOSC {
+        if oscOneRowView.superview != nil {
+          log.verbose{"[\(transition.name)] Removing oscOneRowView from window"}
+          oscOneRowView.dispose()
+        }
       }
-    }
-    if !outputLayout.enableOSC || !outputLayout.controlBarGeo.isTwoRowBarOSC {
-      if oscTwoRowView.superview != nil {
-        log.verbose{"[\(transition.name)] Removing oscTwoRowView from window"}
-        oscTwoRowView.dispose()
+      if !outputLayout.enableOSC || !outputLayout.controlBarGeo.isTwoRowBarOSC {
+        if oscTwoRowView.superview != nil {
+          log.verbose{"[\(transition.name)] Removing oscTwoRowView from window"}
+          oscTwoRowView.dispose()
+        }
       }
     }
   }

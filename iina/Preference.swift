@@ -634,7 +634,7 @@ struct Preference {
     }
   }
 
-  enum ArrowButtonAction: Int, InitializingFromKey {
+  enum ArrowButtonAction: Int, InitializingFromKey, CustomStringConvertible {
     case speed = 0
     case playlist = 1
     case seek = 2
@@ -644,6 +644,15 @@ struct Preference {
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
+      switch self {
+      case .speed: return "Speed(\(rawValue))"
+      case .playlist: return "Playlist(\(rawValue))"
+      case .seek: return "Seek(\(rawValue))"
+      case .unused: return "Unused(\(rawValue))"
+      }
     }
   }
 
@@ -742,7 +751,7 @@ struct Preference {
     }
   }
 
-  enum SidebarLocation: Int, InitializingFromKey {
+  enum SidebarLocation: Int, InitializingFromKey, CustomStringConvertible {
     case leadingSidebar = 1
     case trailingSidebar
 
@@ -751,9 +760,14 @@ struct Preference {
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
     }
+
+    var description: String {
+      self == .leadingSidebar ? "leadingSidebar" : "trailingSidebar"
+    }
+
   }
 
-  enum PanelPlacement: Int, InitializingFromKey {
+  enum PanelPlacement: Int, InitializingFromKey, CustomStringConvertible {
     case insideViewport = 1
     case outsideViewport
 
@@ -769,9 +783,13 @@ struct Preference {
       }
       self.init(rawValue: intValue)
     }
+
+    var description: String {
+      self == .insideViewport ? "inside" : "outside"
+    }
   }
 
-  enum OSCColorScheme: Int, InitializingFromKey {
+  enum OSCColorScheme: Int, InitializingFromKey, CustomStringConvertible {
     /// Use Apple's `NSVisualEffectView`
     case visualEffectView = 1
     /// Use clear background with slight alpha gradient
@@ -789,6 +807,10 @@ struct Preference {
       }
       self.init(rawValue: intValue)
     }
+
+    var description: String {
+      self == .visualEffectView ? "visualEffectView" : "clearGradient"
+    }
   }
 
   enum ShowTopBarTrigger: Int, InitializingFromKey {
@@ -802,7 +824,7 @@ struct Preference {
     }
   }
 
-  enum OSCPosition: Int, InitializingFromKey {
+  enum OSCPosition: Int, InitializingFromKey, CustomStringConvertible {
     case floating = 0
     case top
     case bottom
@@ -811,6 +833,14 @@ struct Preference {
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
+      switch self {
+      case .floating: return "floating(\(rawValue))"
+      case .top: return "top(\(rawValue))"
+      case .bottom: return "bottom(\(rawValue))"
+      }
     }
   }
 

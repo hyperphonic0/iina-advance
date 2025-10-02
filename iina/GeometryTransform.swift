@@ -803,7 +803,7 @@ extension PlayerWindowController {
 #else
         log.warn{"Player's saved layout does not match IINA app prefs; will fix & apply corrected layout"}
 #endif
-        log.debug{"[GTF:\(ctx.name)] SavedSpec: \(currentLayout). PrefsSpec: \(prefsSpec)"}
+        log.debug{"[GTF:\(ctx.name)] SavedLayout=\(currentLayout). LayoutFromPrefs=\(prefsSpec)"}
         let repairTransition = buildLayoutTransition(named: "FixInvalidInitialLayout",
                                                      from: initialTransition.outputLayout, to: prefsSpec)
 
