@@ -156,6 +156,7 @@ struct LayoutState {
       self.titleIconAndText = titleBarVisibleState
     }
     self.titleBar = titleBarVisibleState
+
     self.titlebarAccessoryViewControllers = titleBarVisibleState
     if titleBarVisibleState.isShowable {
       // May be overridden depending on OSC layout anyway

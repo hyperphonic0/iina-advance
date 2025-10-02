@@ -215,6 +215,7 @@ class VideoView: NSView {
 
   func activateForcedRedraws() {
     guard needsForcedRedraws() else { return }
+    log.trace("Activating forced redraws")
     enterAsynchronousMode()
     displayActive()
   }

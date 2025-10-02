@@ -182,8 +182,7 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose{"[\(transition.name)] FadeOutOldViews"}
 
-    fadeableViews.fadeablesInTopBar.removeAll()
-    fadeableViews.fadeables.removeAll()
+    fadeableViews.clearFadeableSets()
 
     // Title bar & title bar accessories:
 
@@ -505,7 +504,7 @@ extension PlayerWindowController {
       }
     }
 
-    if !transition.isExitingFullScreen && transition.needsMpvKeepaspectUpdate {
+    if !transition.isExitingFullScreen && !transition.isEnteringInteractiveMode && transition.needsMpvKeepaspectUpdate {
       player.updateMpvKeepaspectWindowSynchronously()
     }
 

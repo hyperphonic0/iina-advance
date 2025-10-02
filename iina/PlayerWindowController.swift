@@ -246,7 +246,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var customCursor: CursorType = .normalCursor
 
   // - Fadeable Views
-  var fadeableViews = FadeableViewsHandler()
+  let fadeableViews: FadeableViewsHandler
 
   // Other visibility
   var hideCursorTimer = TimeoutTimer(timeout: Constants.TimeInterval.hideCursorMinTimeoutMS)
@@ -619,6 +619,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   init(playerCore player: PlayerCore) {
     self.player = player
     self.animationPipeline = IINAAnimation.Pipeline(player)
+    self.fadeableViews = FadeableViewsHandler(player.log)
     self.osd = OSDState(log: player.log)
     self.pip = PIPState(player)
     player.log.verbose{"PlayerWindowController init: using lastClosed geometries for now"}

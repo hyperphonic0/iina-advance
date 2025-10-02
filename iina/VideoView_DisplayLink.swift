@@ -43,6 +43,7 @@ extension VideoView {
   }
 
   func stopDisplayLink() {
+    assert(DispatchQueue.isExecutingIn(.main))
     guard let link = link, CVDisplayLinkIsRunning(link) else { return }
     checkResult(CVDisplayLinkStop(link), "CVDisplayLinkStop")
     log.verbose("DisplayLink stopped")
@@ -50,6 +51,7 @@ extension VideoView {
 
   /// This should be called at start or if the window has changed displays
   func updateDisplayLink() {
+    assert(DispatchQueue.isExecutingIn(.main))
     guard let link, let displayId = window?.screen?.displayId else { return }
 
     // Do nothing if on the same display
@@ -100,7 +102,7 @@ extension VideoView {
     }
     startDisplayLink()
     if hasTimeout {
-      displayIdle()
+      displayIdleTimer.restart()
     }
   }
 
@@ -127,6 +129,7 @@ extension VideoView {
   /// Triggered when `displayIdleTimer` times out
   @objc func displayIdleDidTimeout() {
     guard let glLayer else { return }
+    assert(DispatchQueue.isExecutingIn(.main))
     glLayer.exitAsynchronousMode()
     glLayer.videoView.stopDisplayLink()
   }

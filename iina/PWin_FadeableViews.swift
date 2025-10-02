@@ -31,8 +31,21 @@ extension PlayerWindowController {
     @Atomic fileprivate(set) var showHideTicketCount: Int = 0
     /// Need to carry an extra bit of info for this
     fileprivate var pendingShowTopPanel: Bool = false
+    fileprivate var log: Logger.Subsystem
+
+    init(_ log: Logger.Subsystem) {
+      self.log = log
+    }
+
+    func clearFadeableSets() {
+      log.verbose("Clearing fadeables sets")
+      fadeables = Set<NSView>()
+      fadeablesInTopBar = Set<NSView>()
+    }
 
     func applyVisibility(_ visibility: VisibilityMode, to fadeableView: NSView) {
+      log.verbose("Applying visibility to \(fadeableView.idString.quoted) ≔ \(visibility)")
+
       switch visibility {
       case .hidden:
         fadeableView.alphaValue = 0
@@ -82,7 +95,7 @@ extension PlayerWindowController {
     let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
     let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(pointInWindow) && fadeableViews.topBarAnimationState == .hidden
     // Check whether mouse is in OSC
-    let shouldRestartFadeTimer = !(isPoint(pointInWindow, inAnyOf: fadeableViews.fadeables) || isPoint(pointInWindow, inAnyOf: fadeableViews.fadeablesInTopBar))
+    let shouldRestartFadeTimer = !isMouseInsideFadeableView(pointInWindow)
     log.trace{"ShouldRestartFadeTimer=\(shouldRestartFadeTimer.yesno) forceShowTopBar=\(forceShowTopBar.yesno)"}
     showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
   }
@@ -137,6 +150,9 @@ extension PlayerWindowController {
       return $0
     }
 
+    var fadeables: Set<NSView> = []
+    var fadeablesInTopBar: Set<NSView> = []
+
     return [
       IINAAnimation.Task(duration: duration, { [self] in
         // Note to Future Self: stop messing with this logic! It works fine and is fast enough!
@@ -148,7 +164,9 @@ extension PlayerWindowController {
             throw IINAError.cancelAnimationTransaction
           }
 
-          log.trace("SHOW fadeables: currentTicket=\(currentTicket), latest=\(fadeableViews.showHideTicketCount)")
+          fadeables = fadeableViews.fadeables
+          fadeablesInTopBar = fadeableViews.fadeablesInTopBar
+          log.trace("SHOW fadeables: currentTkt=\(currentTicket) latestTkt=\(fadeableViews.showHideTicketCount) views=\(fadeables.count) topBar=\(fadeablesInTopBar.count)")
 
           guard (currentTicket == fadeableViews.$showHideTicketCount.withLock{ $0 }) else {
             if forceShowTopBar {
@@ -162,7 +180,7 @@ extension PlayerWindowController {
         player.refreshSyncUITimer(logMsg: "Showing fadeable views ")
         fadeableViews.hideTimer.cancel()
 
-        for v in fadeableViews.fadeables {
+        for v in fadeables {
           v.animator().alphaValue = 1
         }
 
@@ -171,7 +189,7 @@ extension PlayerWindowController {
         if wantsTopBarVisible {  // start top bar
           fadeableViews.pendingShowTopPanel = false
           fadeableViews.topBarAnimationState = .willShow
-          for v in fadeableViews.fadeablesInTopBar {
+          for v in fadeablesInTopBar {
             v.animator().alphaValue = 1
           }
 
@@ -193,7 +211,7 @@ extension PlayerWindowController {
       .instantTask { [self] in
         fadeableViews.animationState = .shown
         // Do not cache fadeables for show. But cache them for hide (ensures additionalInfoView is shown/hidden correctly).
-        for v in fadeableViews.fadeables {
+        for v in fadeables {
           v.isHidden = false
         }
 
@@ -203,7 +221,7 @@ extension PlayerWindowController {
 
         if fadeableViews.topBarAnimationState == .willShow {
           fadeableViews.topBarAnimationState = .shown
-          for v in fadeableViews.fadeablesInTopBar {
+          for v in fadeablesInTopBar {
             v.isHidden = false
           }
 
@@ -351,7 +369,9 @@ extension PlayerWindowController {
   }
 
   func isMouseInsideFadeableView(_ pointInWindow: NSPoint) -> Bool {
-    return isPoint(pointInWindow, inAnyOf: fadeableViews.fadeables) || isPoint(pointInWindow, inAnyOf: fadeableViews.fadeablesInTopBar)
+    let fadeables = fadeableViews.fadeables
+    let fadeablesInTopBar = fadeableViews.fadeablesInTopBar
+    return isPoint(pointInWindow, inAnyOf: fadeables) || isPoint(pointInWindow, inAnyOf: fadeablesInTopBar)
   }
 
   func hideFadeableViewsAndCursor() {

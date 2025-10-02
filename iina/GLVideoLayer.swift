@@ -32,7 +32,6 @@ class GLVideoLayer: CAOpenGLLayer {
   private var needsMPVRender = false
   private var forceDraw = false
 
-  private let asychronousModeLock: Lock
   private var asychronousModeTimer: Timer?
 
   /// To enable `LOG_VIDEO_LAYER`:
@@ -76,7 +75,6 @@ class GLVideoLayer: CAOpenGLLayer {
     self.videoView = videoView
     (cglPixelFormat, bufferDepth) = GLVideoLayer.createPixelFormat(videoView.player)
     cglContext = GLVideoLayer.createContext(cglPixelFormat)
-    asychronousModeLock = Lock()
     super.init()
     isOpaque = true
     /// Do not set to `[.layerWidthSizable, .layerHeightSizable]` resizable! It messes up during window resize if the trailing inside sidebar is open.
@@ -93,7 +91,6 @@ class GLVideoLayer: CAOpenGLLayer {
     bufferDepth = previousLayer.bufferDepth
     cglContext = previousLayer.cglContext
     videoView = previousLayer.videoView
-    asychronousModeLock = previousLayer.asychronousModeLock
     super.init()
     isOpaque = true
     autoresizingMask = previousLayer.autoresizingMask
@@ -221,36 +218,34 @@ class GLVideoLayer: CAOpenGLLayer {
   /// But we don't want to leave this on full-time, because it will result in extra draw requests and may
   /// throw off the timing of each draw.
   func enterAsynchronousMode() {
-    asychronousModeLock.withLock{
-      asychronousModeTimer?.invalidate()
-      if !isAsynchronous {
-        videoView.player.log.trace("Entering asynchronous mode")
-      }
-      /// Set this to `true` to enable video redraws to match the timing of the view redraw during animations.
-      /// This fixes a situation where the layer size may not match the size of its superview at each redraw,
-      /// which would cause noticable clipping or wobbling during animations.
-      isAsynchronous = true
-
-      asychronousModeTimer = Timer.scheduledTimer(
-        timeInterval: Constants.TimeInterval.asynchronousModeTimeout,
-        target: self,
-        selector: #selector(self.exitAsynchronousMode),
-        userInfo: nil,
-        repeats: false
-      )
-      /// Save some CPU by making this less strict, because we don't really care that much
-      asychronousModeTimer?.tolerance = Constants.TimeInterval.asynchronousModeTimeout * 0.1
+    assert(DispatchQueue.isExecutingIn(.main))
+    asychronousModeTimer?.invalidate()
+    if !isAsynchronous {
+      videoView.player.log.trace("Entering asynchronous mode")
     }
+    /// Set this to `true` to enable video redraws to match the timing of the view redraw during animations.
+    /// This fixes a situation where the layer size may not match the size of its superview at each redraw,
+    /// which would cause noticable clipping or wobbling during animations.
+    isAsynchronous = true
+
+    asychronousModeTimer = Timer.scheduledTimer(
+      timeInterval: Constants.TimeInterval.asynchronousModeTimeout,
+      target: self,
+      selector: #selector(self.exitAsynchronousMode),
+      userInfo: nil,
+      repeats: false
+    )
+    /// Save some CPU by making this less strict, because we don't really care that much
+    asychronousModeTimer?.tolerance = Constants.TimeInterval.asynchronousModeTimeout * 0.1
   }
 
   @objc func exitAsynchronousMode() {
-    asychronousModeLock.withLock{
-      videoView.player.log.trace("Exiting asynchronous mode")
-      asychronousModeTimer?.invalidate()
-      /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
-      /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.
-      isAsynchronous = false
-    }
+    assert(DispatchQueue.isExecutingIn(.main))
+    videoView.player.log.verbose("Exiting asynchronous mode")
+    asychronousModeTimer?.invalidate()
+    /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
+    /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.
+    isAsynchronous = false
   }
 
   func drawAsync(forced: Bool = false) {
