@@ -19,6 +19,8 @@ extension PlayerWindowController {
     enum Stage: Int, StateEnum, CustomStringConvertible {
       case preTransitionSetup
       case closeOldPanels
+      /// NOTE: this can occur either before or after `closeOldPanels`
+//      case moveAndScale
       case midTransitionHiddenUpdates
       case openNewPanels
       case postTransition
@@ -29,6 +31,8 @@ extension PlayerWindowController {
           return "PreTxSetup"
         case .closeOldPanels:
           return "CloseOldPanels"
+//        case .moveAndScale:
+//          return "MoveAndScale"
         case .midTransitionHiddenUpdates:
           return "MidTxHiddenUpdates"
         case .openNewPanels:
@@ -220,7 +224,8 @@ extension PlayerWindowController {
 
     var isTopBarPlacementOrStyleChanging: Bool {
       // assume that if a style change is happening, it affects active panel
-      return isTopBarPlacementChanging // || (outputLayout.hasTopOSC && isOSCStyleChanging)
+      // NOTE: Only 1 style is currently supported for topBar!
+      return isTopBarPlacementChanging
     }
 
     /// Note: this may not include OSC
@@ -353,7 +358,7 @@ extension PlayerWindowController {
       guard inputLayout.hasTopOrBottomOSC else { return false }
 
       return !outputLayout.hasTopOrBottomOSC
-      || (inputLayout.oscPosition != outputLayout.oscPosition)
+      || (inputLayout.oscPosition.rawValue != outputLayout.oscPosition.rawValue)
       || (inputLayout.hasTopOSC && isTopBarPlacementOrStyleChanging)
       || (inputLayout.hasBottomOSC && isBottomBarPlacementOrStyleChanging)
     }

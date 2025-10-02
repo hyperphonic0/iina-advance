@@ -159,7 +159,7 @@ extension PlayerWindowController {
       assert(useViewport, "Cannot use topBarView without viewportView")
       let constant1 = transition.vpTopOffsetFromTopBarTop(for: stage)
       let constant2 = transition.topBarBtmOffsetFromVPTop(for: stage)
-      let titleHeight = min(layout.titleBarHeight, constant1 - constant2)  // do not make titleBar larger than top bar
+      let titleHeight = min(layout.titleBarHeight, abs(constant1 - constant2))  // do not make titleBar larger than top bar
       log.verbose("Updating topBar: vpTopOffsetFromTopBarTop=\(constant1) topBarBtmOffsetFromVPTop=\(constant2) titleBarHeight=\(titleHeight)")
 
       p.vpTopOffsetFromTopBarTop.createOrUpdate(to: constant1, log) { [self] c in
