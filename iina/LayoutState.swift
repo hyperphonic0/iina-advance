@@ -246,21 +246,6 @@ struct LayoutState {
     return 0
   }
 
-  /// Sidebar tab downshift: try to match height of topBar.
-  var sidebarDownshift: CGFloat {
-    if topBarView.isShowable && topBarPlacement == .insideViewport {
-      // Top bar always spans the whole width of the window (unlike the bottom bar) so we need to add space for it
-      return topBarHeight
-    }
-    return Constants.Sidebar.defaultDownshift
-  }
-  /// Sidebar tab height
-  ///
-  /// Special case for music mode: only really applies to `playlistView` because `quickSettingView` is never shown in this mode.
-  var sidebarTabHeight: CGFloat {
-    mode == .musicMode ? Constants.Sidebar.musicModeTabHeight : Constants.Sidebar.defaultTabHeight
-  }
-
   var insideLeadingBarWidth: CGFloat {
     if leadingSidebar.placement == .insideViewport, let visibleTabGroup = leadingSidebar.visibleTabGroup {
       return visibleTabGroup.width(using: moreSidebarState)

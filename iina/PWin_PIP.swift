@@ -110,12 +110,13 @@ extension PlayerWindowController: PIPViewControllerDelegate {
   func enterPIP(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil, then doOnSuccess: (() -> Void)? = nil) {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    // Must not try to enter PiP if already in PiP - will crash!
-    guard pip.status == .notInPIP else { return }
-    pip.status = .intermediate
-
+    // Exit interactive mode before even entering intermediate status
     exitInteractiveMode(then: { [self] in
       log.verbose("About to enter PIP")
+      // Must not try to enter PiP if already in PiP - will crash!
+      guard pip.status == .notInPIP else { return }
+      pip.status = .intermediate
+
       PlayerManager.shared.pipPlayer = player
 
       guard player.info.isVideoTrackSelected else {
@@ -158,13 +159,12 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
       pip.controller.playing = player.info.isPlaying
       pip.controller.title = window.title
-
-      pip.controller.presentAsPicture(inPicture: pip.videoController)
-      pip.showOrHidePipOverlayView()
-
       let aspectRatioSize = player.videoGeo.videoSizeCAR
       log.verbose{"Setting PiP aspect to \(aspectRatioSize.aspect)"}
       pip.controller.aspectRatio = aspectRatioSize
+
+      pip.controller.presentAsPicture(inPicture: pip.videoController)
+      pip.showOrHidePipOverlayView()
     }
 
     if !window.styleMask.contains(.fullScreen) && !window.isMiniaturized {

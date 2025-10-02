@@ -69,6 +69,7 @@ extension PlayerWindowController {
     let logPre = transition.logPreamble(for: stage)
     let log = self.log.withPreamble(logPre)
     let outputGeo = transition.outputGeometry
+    let stageGeo = transition.geometry(for: stage)
 
     var useViewport = outputGeo.isViewportShown
     var useBottomBar = transition.outputLayout.hasBottomBar
@@ -280,7 +281,7 @@ extension PlayerWindowController {
     switch stage {
     case .preTransitionSetup:
       if transition.isWindowInitialLayout || transition.inputLayout.isMusicMode || transition.outputLayout.isMusicMode {
-        updateSidebarVerticalConstraints(tabHeight: transition.outputLayout.sidebarTabHeight, downshift: transition.outputLayout.sidebarDownshift)
+        updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
       }
 
     case .closeOldPanels:
@@ -297,9 +298,7 @@ extension PlayerWindowController {
 
         if useLeadingSidebar || useTrailingSidebar, !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {
           // Update sidebar vertical alignments to match top bar:
-          let downshift = min(transition.inputLayout.sidebarDownshift, transition.outputLayout.sidebarDownshift)
-          let tabHeight = min(transition.inputLayout.sidebarTabHeight, transition.outputLayout.sidebarTabHeight)
-          updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
+          updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
         }
       }
 
@@ -315,12 +314,16 @@ extension PlayerWindowController {
         removeSidebarTabGroupView(group: tabToHide.group)
       }
 
-      prepareSidebarsForOpening(transition)
+      if prepareSidebarsForOpening(transition) {
+        updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
+      }
 
     case .openNewPanels:
       if transition.isWindowInitialLayout {
         // Need to run this now because intiial layout doesn't run the midTransitionHiddenUpdates step
-        prepareSidebarsForOpening(transition)
+        if prepareSidebarsForOpening(transition) {
+          updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
+        }
       }
       if transition.inputGeometry.isMusicModePlaylistShown || transition.outputGeometry.isMusicModePlaylistShown
           || transition.inputLayout.isAnySidebarVisible || transition.outputLayout.isAnySidebarVisible {
@@ -332,31 +335,33 @@ extension PlayerWindowController {
                                   setTrailingTo: transition.isOpeningTrailingSidebar ? layout.trailingSidebar.visibility : nil,
                                   ΔWindowWidth: ΔWindowWidth)
 
-        updateSidebarVerticalConstraints(tabHeight: layout.sidebarTabHeight, downshift: layout.sidebarDownshift)
+        updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
       }
     case .postTransition:
       break
     }
 
     // OSD constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
-    updateOSDConstraints(layout, transition.geometry(for: stage))
+    updateOSDConstraints(layout, stageGeo)
 
     sortContentViewSubviews(for: layout)
   }
 
-  private func prepareSidebarsForOpening(_ transition: LayoutTransition) {
+  private func prepareSidebarsForOpening(_ transition: LayoutTransition) -> Bool {
+    var didSomething = false
     if transition.isOpeningLeadingSidebar {
       // Opening sidebar from closed state
       prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
                               layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-      updateSidebarVerticalConstraints(tabHeight: transition.outputLayout.sidebarTabHeight, downshift: transition.outputLayout.sidebarDownshift)
+      didSomething = true
     }
     if transition.isOpeningTrailingSidebar {
       // Opening sidebar from closed state
       prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
                               layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-      updateSidebarVerticalConstraints(tabHeight: transition.outputLayout.sidebarTabHeight, downshift: transition.outputLayout.sidebarDownshift)
+      didSomething = true
     }
+    return didSomething
   }
 
   // - Top bar

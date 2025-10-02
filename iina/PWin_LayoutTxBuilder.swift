@@ -82,7 +82,14 @@ extension PlayerWindowController {
     let closeOldPanelsTiming: CAMediaTimingFunctionName
     let openFinalPanelsTiming: CAMediaTimingFunctionName
     let fadeInNewViewsTiming: CAMediaTimingFunctionName = .linear
-    if transition.isEnteringFullScreen {
+    if transition.isTogglingInteractiveMode {
+      closeOldPanelsTiming = .linear
+      openFinalPanelsTiming = .linear
+    } else if transition.isTogglingMusicMode {
+      // Try to reduce wobble when collapsing or expanding viewport. Need to do more research to prevent wobbling
+      closeOldPanelsTiming = .linear
+      openFinalPanelsTiming = .linear
+    } else if transition.isEnteringFullScreen {
       closeOldPanelsTiming = .easeIn
       openFinalPanelsTiming = .easeIn
     } else if transition.isExitingFullScreen {
@@ -91,13 +98,6 @@ extension PlayerWindowController {
     } else if transition.isOpeningOrClosingAnySidebar {
       closeOldPanelsTiming = .easeInEaseOut
       openFinalPanelsTiming = .easeInEaseOut
-    } else if transition.isTogglingInteractiveMode {
-      closeOldPanelsTiming = .linear
-      openFinalPanelsTiming = .linear
-    } else if transition.isTogglingMusicMode {
-      // Try to reduce wobble when collapsing or expanding viewport. Need to do more research to prevent wobbling
-      closeOldPanelsTiming = .linear
-      openFinalPanelsTiming = .linear
     } else {
       closeOldPanelsTiming = .easeInEaseOut
       openFinalPanelsTiming = .easeInEaseOut

@@ -366,6 +366,22 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return insideBars.bottom + outsideBars.bottom
   }
 
+  /// Sidebar tab downshift: try to match height of inside topBar.
+  ///
+  /// Top bar always spans the whole width of the window (unlike the bottom bar) so we need to add space for it.
+  var sidebarDownshift: CGFloat {
+    if insideBars.top > 0 {
+      return insideBars.top
+    }
+    return Constants.Sidebar.defaultDownshift
+  }
+  /// Sidebar tab height
+  ///
+  /// Special case for music mode: only really applies to `playlistView` because `quickSettingView` is never shown in this mode.
+  var sidebarTabHeight: CGFloat {
+    mode == .musicMode ? Constants.Sidebar.musicModeTabHeight : Constants.Sidebar.defaultTabHeight
+  }
+
   // MARK: - Other Util Functions
 
   func hasEqual(windowFrame windowFrame2: NSRect? = nil, videoSize videoSize2: NSSize? = nil) -> Bool {
