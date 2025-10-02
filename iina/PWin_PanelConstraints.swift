@@ -191,7 +191,7 @@ extension PlayerWindowController {
     if useBottomBar && useViewport && !isAnimatingVideoViewOpen {
       let constant1 = transition.vpBtmOffsetFromTopOfBottomBar(for: stage)
       let constant2 = transition.bottomBarBtmOffsetFromVPBtm(for: stage)
-      log.verbose("Updating bottomBar & viewport: vpBtmOffsetFromTopOfBottomBar=\(constant1) bottomBarBtmOffsetFromVPBtm=\(constant2)")
+      log.verbose("Updating bottomBar & viewport: vpBtmOffsetFromTopOfBottomBar=\(Int(constant1)) bottomBarBtmOffsetFromVPBtm=\(Int(constant2))")
 
       p.vpBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1, log) { [self] c in
         viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
@@ -236,7 +236,7 @@ extension PlayerWindowController {
     if useViewport {
       let constant1 = transition.vpTopOffsetFromCVTop(for: stage)
       let constant2 = transition.cvBtmOffsetFromVPBtm(for: stage)
-      log.verbose("Updating viewport: vpTopOffsetFromCVTop=\(constant1) cvBtmOffsetFromVPBtm=\(constant2) vpLeadingOffsetFromCVLeading=0 vpTrailingOffsetFromCVTrailing=0")
+      log.verbose("Updating viewport: vpTopOffsetFromCVTop=\(Int(constant1)) cvBtmOffsetFromVPBtm=\(Int(constant2)) vpLeadingOffsetFromCVLeading=0 vpTrailingOffsetFromCVTrailing=0")
 
       p.vpTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
         viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)

@@ -201,7 +201,7 @@ extension PlayerWindowController {
     }
 
     // (Only when animating Enter/Exit Music Mode or Enter/Exit Windowed Interactive Mode) Post-midpoint animation: move & scale video.
-    var moveAndResizeVideoTask: IINAAnimation.Task? = nil
+    var moveAndScaleTask: IINAAnimation.Task? = nil
 
     if closeOldPanelsDuration > 0.0 {
       // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies middleGeometry if it exists.
@@ -213,16 +213,16 @@ extension PlayerWindowController {
       }
 
       if transition.needsMoveAndResizeVideoFrameStep {
-        let duration = transition.isTogglingInteractiveMode ? closeOldPanelsDuration * 0.5 : closeOldPanelsDuration
-        moveAndResizeVideoTask = .init(duration: duration, timing: .easeInEaseOut) { [self] in
-          moveAndResizeVideoFrame(transition)
+        let duration = closeOldPanelsDuration * 2.0 //transition.isTogglingInteractiveMode ? closeOldPanelsDuration * 0.5 : closeOldPanelsDuration
+        moveAndScaleTask = .init(duration: duration, timing: .easeInEaseOut) { [self] in
+          moveAndScaleVideoFrame(transition)
         }
       }
 
       // Place this task either before or after updateHiddenViewsAndConstraints depending on entering or exiting.
       // Want to put this *before* it when entering music mode & hiding (closing) viewportView, but other cases the order shouldn't matter.
-      if let moveAndResizeVideoTask, transition.isEnteringMusicMode || transition.isEnteringInteractiveMode {
-        tasks.append(moveAndResizeVideoTask)
+      if let moveAndScaleTask, transition.isMoveAndResizeStepBeforeMidpoint {
+        tasks.append(moveAndScaleTask)
       }
     }
 
@@ -233,8 +233,8 @@ extension PlayerWindowController {
       updateHiddenViewsAndConstraints(transition)
     })
 
-    if let moveAndResizeVideoTask, !(transition.isEnteringMusicMode || transition.isEnteringInteractiveMode) {
-      tasks.append(moveAndResizeVideoTask)
+    if let moveAndScaleTask, !transition.isMoveAndResizeStepBeforeMidpoint {
+      tasks.append(moveAndScaleTask)
     }
 
     // - Ending animations:
@@ -440,10 +440,10 @@ extension PlayerWindowController.LayoutTransition {
       let mustUncropFirst = (outputLayout.interactiveMode == .crop) && (inputGeometry.video.cropFilter != nil)
       if mustUncropFirst, let cropFilter = inputGeometry.video.cropFilter {
         assert(isEnteringInteractiveMode, "Expected to be entering interactive mode only when uncropping video")
-        let uncroppedVideoGeo = inputGeometry.video.removingCrop()
-        log.verbose{"Uncropping video from cropRect=\(cropFilter.cropRect(origVideoSize: uncroppedVideoGeo.videoSizeRaw, flipY: true)) to videoSizeRaw=\(uncroppedVideoGeo.videoSizeRaw)"}
+        let uncroppedNaiveGeo = inputGeometry.clone(video: inputGeometry.video.removingCrop())
+        log.verbose{"Uncropping video from cropRect=\(cropFilter.cropRect(origVideoSize: inputGeometry.video.videoSizeCAR, flipY: true)) to uncroppedVideo=\(uncroppedNaiveGeo.video.videoSizeDisplay)"}
 
-        let intermediateWindowFrame = inputGeometry.clone(video: uncroppedVideoGeo).refitted().videoFrameInScreenCoords
+        let intermediateWindowFrame = uncroppedNaiveGeo.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords
         let middleGeo = inputGeometry.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
                                             topMarginHeight: 0,
                                             outsideBars: .zero, insideBars: .zero,

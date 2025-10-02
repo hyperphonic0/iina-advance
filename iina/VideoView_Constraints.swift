@@ -478,7 +478,7 @@ extension VideoView {
                 spacerPreferred: QuadConstraint(active: false, priority: 481, keepVideoAwayFromBars ? geometry.insideBars : nil),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-                center: Constraint(active: interactiveMode || musicMode, priority: 480)
+                center: Constraint(active: (interactiveMode || musicMode) || geometry.isMiddleTransition, priority: 480)
                 )
 
 

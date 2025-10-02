@@ -120,6 +120,13 @@ extension PlayerWindowController {
       !isWindowInitialLayout && (isTogglingMusicMode || (isTogglingInteractiveMode && !inputLayout.isFullScreen))
     }
 
+    /// Assuming that `needsMoveAndResizeVideoFrameStep==true`, returns `true` if the "move & resize video frame" step should
+    /// execute *prior* to the `updateHiddenViewsAndConstraints` step; returns `false` if it should execute afterwards.
+    var isMoveAndResizeStepBeforeMidpoint: Bool {
+      assert(needsMoveAndResizeVideoFrameStep)
+      return isEnteringMusicMode || isEnteringInteractiveMode
+    }
+
     /// Always need to execute this step. But may not need to use an animation.
     var needsAnimationForOpenFinalPanels: Bool {
       return (inputGeometry.topMarginHeight != outputGeometry.topMarginHeight)

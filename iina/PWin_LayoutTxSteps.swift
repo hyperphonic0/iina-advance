@@ -380,8 +380,6 @@ extension PlayerWindowController {
       updateToolbarHStack(iconSpacing: toolSpacing)
     }
 
-    rebuildPanelConstraints(transition, stage: .closeOldPanels)
-
     // - Middle Geometry
 
     if let middleGeo = transition.middleGeometry {
@@ -400,6 +398,8 @@ extension PlayerWindowController {
         setFrameAndUpdateWindowSubviews(using: middleGeo, updateVideoView: true)
       }
     }
+    
+    rebuildPanelConstraints(transition, stage: .closeOldPanels)
   }
 
   /// -------------------------------------------------
@@ -408,7 +408,7 @@ extension PlayerWindowController {
   /// All bars are expected to be closed at this point, leaving only the viewportView.
   /// This animation moves & resizes the video frame for a nice effect.
   /// May execute either before or after `updateHiddenViewsAndConstraints`.
-  func moveAndResizeVideoFrame(_ transition: LayoutTransition) {
+  func moveAndScaleVideoFrame(_ transition: LayoutTransition) {
     // FIXME: For Interactive Mode with very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
     let intermediateWindowFrame = transition.outputGeometry.videoFrameInScreenCoords
 

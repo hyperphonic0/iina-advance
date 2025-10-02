@@ -272,12 +272,11 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   var videoFrameInWindowCoords: NSRect {
-    let viewportSize = viewportSize
     assert(viewportSize.width - videoSize.width >= 0 && viewportSize.height - videoSize.height >= 0,
            "viewportSize \(viewportSize) is smaller than videoSize \(videoSize)")
-    let origin = CGPoint(x: outsideBars.leading + viewportMargins.leading,
-                         y: outsideBars.bottom + viewportMargins.bottom)
-    return NSRect(origin: origin, size: videoSize)
+    let adjustedOrigin = CGPoint(x: outsideBars.leading + viewportMargins.leading,
+                                 y: outsideBars.bottom + viewportMargins.bottom)
+    return NSRect(origin: adjustedOrigin, size: videoSize)
   }
 
   var videoFrameInScreenCoords: NSRect {
