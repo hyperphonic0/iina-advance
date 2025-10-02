@@ -207,6 +207,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return Preference.bool(for: .enableOSD) && isViewportShown
   }
 
+  /// OSD offset from top of viewportView
+  func osdOffsetFromTopOfViewport() -> CGFloat {
+    insideBars.top + 8
+  }
+
+
   /// Can only be `true` while in music mode.
   var isMusicModePlaylistShown: Bool {
     guard mode == .musicMode else { return false }

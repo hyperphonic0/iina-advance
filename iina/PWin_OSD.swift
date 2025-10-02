@@ -52,17 +52,17 @@ final class OSDState {
 
   // - Optional constraints
 
-  let osdLeadingToMiniPlayerButtonsTrailingConstraint = OptionalConstraint("CloseBtn.leadingGT-LeadingOSDView.trailing")
+  let osdLeadingToMiniPlayerButtonsTrailingConstraint = OptionalConstraint("CloseBtn.leadingGT-LeadingOSD.trailing")
 
-  fileprivate let leadingSide_TopOffsetConstraint = OptionalConstraint("OSD-LeadingView_TopOffset")
-  fileprivate let leadingSide_BtmOffsetConstraint = OptionalConstraint("OSD-LeadingView_BtmOffset")
-  fileprivate let trailingSide_TopOffsetConstraint = OptionalConstraint("OSD-TrailingView_TopOffset")
-  fileprivate let trailingSide_BtmOffsetConstraint = OptionalConstraint("OSD-TrailingView_BtmOffset")
+  fileprivate let leadingSide_TopOffsetConstraint = OptionalConstraint("LeadingOSD.top-offset-from-VP.top")
+  fileprivate let leadingSide_BtmOffsetConstraint = OptionalConstraint("VP.btm-offset-from-LeadingOSD.btm")
+  fileprivate let trailingSide_TopOffsetConstraint = OptionalConstraint("TrailingOSD-TopOffset")
+  fileprivate let trailingSide_BtmOffsetConstraint = OptionalConstraint("TrailingOSD-BtmOffset")
 
-  fileprivate let leadingSide_LeadingConstraint = OptionalConstraint("OSD-LeadingView_Leading")
-  fileprivate let leadingSide_TrailingConstraint = OptionalConstraint("OSD-LeadingView_Trailing")
-  fileprivate let trailingSide_LeadingConstraint = OptionalConstraint("OSD-TrailingView_Leading")
-  fileprivate let trailingSide_TrailingConstraint = OptionalConstraint("OSD-TrailingView_Trailing")
+  fileprivate let leadingSide_LeadingConstraint = OptionalConstraint("LeadingOSD-Leading")
+  fileprivate let leadingSide_TrailingConstraint = OptionalConstraint("LeadingOSD-Trailing")
+  fileprivate let trailingSide_LeadingConstraint = OptionalConstraint("TrailingOSD-Leading")
+  fileprivate let trailingSide_TrailingConstraint = OptionalConstraint("TrailingOSD-Trailing")
 
   fileprivate var optionalConstraints: [OptionalConstraint] {
     [
@@ -389,20 +389,17 @@ extension PlayerWindowController {
   /// - For many of the constraints, priority=900 will be used to avoid problems with black swan layouts
   /// which might trigger constraint violations if priority=required were used.
   /// - Setting `skipAddConstraints` to `true` is a kludge for special use during layout transitions
-  func updateOSDConstraints(_ layout: LayoutState, _ geo: PWinGeometry) {
+  func updateOSDConstraints(_ layout: LayoutState, _ geo: PWinGeometry, hasLeadingSidebar: Bool, hasTrailingSidebar: Bool) {
     for optCon in osd.optionalConstraints {
       optCon.constraint?.priorityInt = 1
     }
 
     let hasOSD = geo.shouldHaveOSD
-    let offsetFromTop = computeOffsetFromTop(for: geo)
-    let isLegacyFullScreen = layout.isLegacyFullScreen
+    let offsetFromTop = geo.osdOffsetFromTopOfViewport()
     let hasAdditionalInfo = layout.hasAdditionalInfo
-    let hasLeadingSidebar = layout.leadingSidebar.isVisible
-    let hasTrailingSidebar = layout.trailingSidebar.isVisible
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
 
-    log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) legacyFS=\(isLegacyFullScreen.yn) offsetFromTop=\(offsetFromTop)"}
+    log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) offsetFromTop=\(offsetFromTop)"}
 
     let leadingView = osdPosition == .topLeading ? (hasOSD ? osd.osdView : nil) :  (hasAdditionalInfo ? additionalInfoView : nil)
     let trailingView = osdPosition == .topLeading ? (hasAdditionalInfo ? additionalInfoView : nil) :  (hasOSD ? osd.osdView : nil)
@@ -474,15 +471,9 @@ extension PlayerWindowController {
 
   }
 
-  /// OSD offset from top of viewportView
-  private func computeOffsetFromTop(for geometry: PWinGeometry) -> CGFloat {
-    let offsetFromTop = geometry.insideBars.top + 8
-    return offsetFromTop
-  }
-
   /// Update OSD view & Additional Info view constraints so they have the correct offset from top of screen.
   func updateOSDTopOffsetConstraints(for geometry: PWinGeometry) {
-    let newOffsetFromTop = computeOffsetFromTop(for: geometry)
+    let newOffsetFromTop = geometry.osdOffsetFromTopOfViewport()
 
     log.verbose{"[OSD] Updating top constraint to: \(newOffsetFromTop)"}
     osd.leadingSide_TopOffsetConstraint.constraint?.animateToConstant(newOffsetFromTop)

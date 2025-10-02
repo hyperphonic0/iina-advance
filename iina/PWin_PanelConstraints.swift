@@ -342,7 +342,7 @@ extension PlayerWindowController {
     }
 
     // OSD constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
-    updateOSDConstraints(layout, stageGeo)
+    updateOSDConstraints(layout, stageGeo, hasLeadingSidebar: useLeadingSidebar, hasTrailingSidebar: useTrailingSidebar)
 
     sortContentViewSubviews(for: layout)
   }

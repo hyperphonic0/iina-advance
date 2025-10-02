@@ -382,7 +382,7 @@ struct LayoutState {
                       bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
   }
 
-  // - Other derived properties
+  // - Other computed properties
 
   var canEnterInteractiveMode: Bool {
     return mode == .windowedNormal || mode == .fullScreenNormal
