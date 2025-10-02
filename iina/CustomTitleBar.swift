@@ -112,7 +112,6 @@ class CustomTitleBarViewController: NSViewController {
     centerStackView.spacing = 0
     centerStackView.distribution = .fill
     centerStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-    centerStackView.setHuggingPriority(.init(500), for: .horizontal)
 
     // - Trailing views
 
@@ -213,7 +212,6 @@ class CustomTitleBarViewController: NSViewController {
 
   private func initConstraintsForCenterStackViewItems() {
     titleText.translatesAutoresizingMaskIntoConstraints = false
-    titleText.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
     // Priorities: CenterX < CompressionResistance < Equals(leading & trailing titles) < ContentHugging < 500
     // (>= 500 would interfere with window resize).
     // We want text's horizontal center to align with window's center, but more importantly it should use up

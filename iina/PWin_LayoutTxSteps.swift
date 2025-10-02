@@ -518,7 +518,9 @@ extension PlayerWindowController {
     // Allow for showing/hiding each button individually
     let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
 
-    if outputLayout.titleBar == .hidden || transition.isTopBarPlacementOrStyleChanging || transition.isTogglingFullScreen {
+    // For some reason, transitioning to/from interactive mode messes up the alignment of CustomTitleBar's title text.
+    // Removing the whole CustomTitleBar view hierarchy & recreating it seems to be a valid workaround.
+    if outputLayout.titleBar == .hidden || transition.isTopBarPlacementOrStyleChanging || (transition.inputLayout.mode != transition.outputLayout.mode) {
       /// Even if exiting FS, still don't want to show title & buttons until after panel open animation:
       hideNativeTitleBarViews(andSetAlpha: true)
 
