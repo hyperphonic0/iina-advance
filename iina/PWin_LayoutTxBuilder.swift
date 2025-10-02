@@ -66,7 +66,7 @@ extension PlayerWindowController {
 
     log.verbose("[\(transitionName)] INPUT\(inputGeoExplicit == nil ? "" : "(given)"):  \(inputGeometry)")
     log.verbose("[\(transitionName)] MIDDLE: \(transition.middleGeometry?.description ?? "nil")")
-    log.verbose("[\(transitionName)] OUTPUT\(outputGeoExplicit == nil ? "" : "(given)"):  \(outputGeometry)")
+    log.verbose("[\(transitionName)] OUTPUT\(outputGeoExplicit == nil ? "" : "(given)"): \(outputGeometry)")
 
     return transition
   }
@@ -134,9 +134,9 @@ extension PlayerWindowController {
       if !transition.needsAnimationForShowFadeables {
         showFadeableViewsDuration = 0
       }
-      if !transition.needsFadeOutOldViews {
+      if !transition.needsFadeOutOldViewsStep {
         fadeOutOldViewsDuration = 0
-      } else if !transition.needsCloseOldPanels {
+      } else if !transition.needsCloseOldPanelsStep {
         closeOldPanelsDuration = 0
       }
     }
@@ -168,7 +168,7 @@ extension PlayerWindowController {
       openFinalPanelsDuration *= 0.5
       fadeInNewViewsDuration *= 0.5
     } else {
-      if !transition.needsFadeInNewViews {
+      if !transition.needsFadeInNewViewsStep {
         fadeInNewViewsDuration = 0
       } else if !transition.needsAnimationForOpenFinalPanels {
         openFinalPanelsDuration = 0
@@ -194,35 +194,36 @@ extension PlayerWindowController {
     }
 
     // StartingAnimation 2: Fade out views which no longer will be shown but aren't enclosed in a panel.
-    if transition.needsFadeOutOldViews {
+    if transition.needsFadeOutOldViewsStep {
       tasks.append(.init(duration: fadeOutOldViewsDuration, { [self] in
         fadeOutOldViews(transition)
       }))
     }
 
-    // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies middleGeometry if it exists.
-    // Not enabled for full screen transitions or if animation is disabled.
-    if transition.needsCloseOldPanels, closeOldPanelsDuration > 0.0 {
-      tasks.append(.init(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
-        closeOldPanels(transition)
-      }))
-    }
-
     // (Only when animating Enter/Exit Music Mode or Enter/Exit Windowed Interactive Mode) Post-midpoint animation: move & scale video.
     var moveAndResizeVideoTask: IINAAnimation.Task? = nil
-    if !transition.isWindowInitialLayout, closeOldPanelsDuration > 0.0,
-        transition.isTogglingMusicMode ||
-        (transition.isTogglingInteractiveMode && !transition.inputLayout.isFullScreen) {
-      let duration = transition.isTogglingInteractiveMode ? closeOldPanelsDuration * 0.5 : closeOldPanelsDuration
-      moveAndResizeVideoTask = .init(duration: duration, timing: .easeInEaseOut) { [self] in
-        moveAndResizeVideoFrame(transition)
-      }
-    }
 
-    // Place this task either before or after updateHiddenViewsAndConstraints depending on entering or exiting.
-    // Want to put this *before* it when entering music mode & hiding (closing) viewportView, but other cases the order shouldn't matter.
-    if let moveAndResizeVideoTask, transition.isEnteringMusicMode {
-      tasks.append(moveAndResizeVideoTask)
+    if closeOldPanelsDuration > 0.0 {
+      // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies middleGeometry if it exists.
+      // Not enabled for full screen transitions or if animation is disabled.
+      if transition.needsCloseOldPanelsStep {
+        tasks.append(.init(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
+          closeOldPanels(transition)
+        }))
+      }
+
+      if transition.needsMoveAndResizeVideoFrameStep {
+        let duration = transition.isTogglingInteractiveMode ? closeOldPanelsDuration * 0.5 : closeOldPanelsDuration
+        moveAndResizeVideoTask = .init(duration: duration, timing: .easeInEaseOut) { [self] in
+          moveAndResizeVideoFrame(transition)
+        }
+      }
+
+      // Place this task either before or after updateHiddenViewsAndConstraints depending on entering or exiting.
+      // Want to put this *before* it when entering music mode & hiding (closing) viewportView, but other cases the order shouldn't matter.
+      if let moveAndResizeVideoTask, transition.isEnteringMusicMode || transition.isEnteringInteractiveMode {
+        tasks.append(moveAndResizeVideoTask)
+      }
     }
 
     // Midpoint: perform major constraints updates (any affected panels should have been reduced to 0 thickness by the previous
@@ -232,7 +233,7 @@ extension PlayerWindowController {
       updateHiddenViewsAndConstraints(transition)
     })
 
-    if let moveAndResizeVideoTask, !transition.isEnteringMusicMode {
+    if let moveAndResizeVideoTask, !(transition.isEnteringMusicMode || transition.isEnteringInteractiveMode) {
       tasks.append(moveAndResizeVideoTask)
     }
 
@@ -261,7 +262,7 @@ extension PlayerWindowController {
 
     // EndingAnimation 2: Fade in new views
     // If exiting FS, this task is skipped. It needs to run in a separate CATransaction so it is run down below.
-    if transition.isWindowInitialLayout || transition.needsFadeInNewViews {
+    if transition.needsFadeInNewViewsStep {
       tasks.append(.init(duration: fadeInNewViewsDuration, timing: fadeInNewViewsTiming) { [self] in
         fadeInNewViews(transition)
       })

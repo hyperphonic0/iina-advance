@@ -47,12 +47,12 @@ class OptionalConstraint {
     if let constraint, isActive,
        requiredFirstAnchor == nil || (constraint.firstAnchor == requiredFirstAnchor),
        requiredSecondAnchor == nil || (constraint.secondAnchor == requiredSecondAnchor) {
-      log?.verbose("Updating constraint \(identifier.quoted) to \(constantToSet) priority=\(self.priorityInt)")
+      log?.verbose("Updating constraint \(identifier.quoted) to \(constantToSet) pri=\(self.priorityInt)")
       constraint.priorityInt = self.priorityInt
       constraint.animateToConstant(constantToSet)
     } else {
       remove(log)
-      log?.verbose("Creating constraint \(identifier.quoted) const=\(constantToSet) priority=\(self.priorityInt)")
+      log?.verbose("Creating constraint \(identifier.quoted) const=\(constantToSet) pri=\(self.priorityInt)")
       let newConstraint = creationFunc(constantToSet)
       newConstraint.identifier = identifier
       newConstraint.priorityInt = self.priorityInt

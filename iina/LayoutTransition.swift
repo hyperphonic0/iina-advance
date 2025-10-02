@@ -75,10 +75,10 @@ extension PlayerWindowController {
 
     // Always need to execute this step. But may not need to use an animation
     var needsAnimationForShowFadeables: Bool {
-      return !outputLayout.isInteractiveMode && needsFadeOutOldViews
+      return !outputLayout.isInteractiveMode && needsFadeOutOldViewsStep
     }
 
-    var needsFadeOutOldViews: Bool {
+    var needsFadeOutOldViewsStep: Bool {
       return isTogglingLegacyStyle || isTopBarPlacementOrStyleChanging
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.bottomBarPlacement == .insideViewport && isBottomBarPlacementOrStyleChanging) // fade OUT
@@ -88,7 +88,8 @@ extension PlayerWindowController {
       || (inputLayout.trailingSidebarToggleButton.isShowable && !outputLayout.trailingSidebarToggleButton.isShowable)
     }
 
-    var needsFadeInNewViews: Bool {
+    var needsFadeInNewViewsStep: Bool {
+      if isWindowInitialLayout { return true }
       if isTogglingFullScreen { return false }
       return isTogglingLegacyStyle || isTopBarPlacementOrStyleChanging
       || (inputLayout.mode != outputLayout.mode)
@@ -100,7 +101,7 @@ extension PlayerWindowController {
       || (!inputLayout.trailingSidebarToggleButton.isShowable && outputLayout.trailingSidebarToggleButton.isShowable)
     }
 
-    var needsCloseOldPanels: Bool {
+    var needsCloseOldPanelsStep: Bool {
       if isEnteringFullScreen || isWindowInitialLayout {
         // Avoid bounciness and possible unwanted video scaling animation (not needed for ->FS anyway)
         return false
@@ -115,7 +116,11 @@ extension PlayerWindowController {
       || (inputLayout.enableOSC && (inputLayout.oscPosition != outputLayout.oscPosition))
     }
 
-    // Always need to execute this step. But may not need to use an animation
+    var needsMoveAndResizeVideoFrameStep: Bool {
+      !isWindowInitialLayout && (isTogglingMusicMode || (isTogglingInteractiveMode && !inputLayout.isFullScreen))
+    }
+
+    /// Always need to execute this step. But may not need to use an animation.
     var needsAnimationForOpenFinalPanels: Bool {
       return (inputGeometry.topMarginHeight != outputGeometry.topMarginHeight)
       || isOpeningLeadingSidebar || isOpeningTrailingSidebar

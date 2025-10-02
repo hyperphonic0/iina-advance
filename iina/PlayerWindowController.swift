@@ -510,14 +510,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     window?.standardWindowButton(.documentIconButton)
   }
 
-  /// The traffic light buttons of the window's native title bar.
+  /// The traffic light buttons of the window's native title bar (given that window's styleMask contains `.titled`).
   var trafficLightButtons: [NSButton] {
     if let window, window.styleMask.contains(.titled) {
       return ([.closeButton, .miniaturizeButton, .zoomButton] as [NSWindow.ButtonType]).compactMap {
         window.standardWindowButton($0)
       }
     }
-    return customTitleBar?.trafficLightButtons ?? []
+    return []
   }
 
   /// Computed property which gets the `NSTextField` of window's native title bar.
@@ -535,17 +535,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Used to hold other views in music mode & interactive mode
   var bottomBarView: NSView = BottomBarVisualEffectView()
   /// Top border of `bottomBarView`.
-  let bottomBarTopBorder = BorderLineView(id: "BottomBar-TopBorder",
-                                          fillColor: .titleBarBorder)
+  let bottomBarTopBorder = BorderLineView(id: "BottomBar-TopBorder", fillColor: .titleBarBorder)
 
   let leadingSidebarView = ClickThroughVisualEffectView()
   /// Shown if leading sidebar is "outside"
-  let leadingSidebarTrailingBorder = BorderLineView(id: "LeadingSidebar-TrailingBorder",
-                                                    fillColor: .quaternaryLabelColor)
+  let leadingSidebarTrailingBorder = BorderLineView(id: "LeadingSidebar-TrailingBorder", fillColor: .quaternaryLabelColor)
+
   let trailingSidebarView = ClickThroughVisualEffectView()
   /// Shown if trailing sidebar is "outside"
-  let trailingSidebarLeadingBorder = BorderLineView(id: "TrailingSidebar-LeadingBorder",
-                                                    fillColor: .quaternaryLabelColor)
+  let trailingSidebarLeadingBorder = BorderLineView(id: "TrailingSidebar-LeadingBorder", fillColor: .quaternaryLabelColor)
 
   /// Floating OSC
   let controlBarFloating = FloatingControlBarView()

@@ -161,12 +161,20 @@ struct LayoutState {
   var titleIconAndText: VisibilityMode { titleBar }
   var trafficLightButtons: VisibilityMode { titleBar }
   var titlebarAccessoryViewControllers: VisibilityMode { isLegacyStyle ? .hidden : titleBar }
-  /// LeadingSidebar toggle button
+
+  /// LeadingSidebar toggle button.
+  ///
+  /// Warning! This property can vary according to the value cooresponding to
+  /// `Preference.Key.showLeadingSidebarToggleButton` and is not cached or persisted (so far there has been no need).
   var leadingSidebarToggleButton: VisibilityMode {
     let hasLeadingSidebar = mode.canShowSidebars && !leadingSidebar.tabGroups.isEmpty
     return hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) ? titleBar : .hidden
   }
-  /// TrailingSidebar toggle button
+
+  /// TrailingSidebar toggle button.
+  ///
+  /// Warning! This property can vary according to the value cooresponding to
+  /// `Preference.Key.showTrailingSidebarToggleButton` and is not cached or persisted (so far there has been no need).
   var trailingSidebarToggleButton: VisibilityMode {
     let hasTrailingSidebar = mode.canShowSidebars && !trailingSidebar.tabGroups.isEmpty
     return hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) ? titleBar : .hidden

@@ -189,19 +189,13 @@ extension PlayerWindowController {
     let needToHideTopBar = transition.isTopBarPlacementOrStyleChanging || transition.isTogglingLegacyStyle || transition.isTogglingInteractiveMode
 
     // Hide all title bar items if top bar placement is changing
-    if needToHideTopBar || outputLayout.titleIconAndText == .hidden {
+    if needToHideTopBar || outputLayout.titleBar == .hidden {
+      // Native & custom title bar components
       fadeableViews.applyVisibility(.hidden, documentIconButton, titleTextField, customTitleBar?.view)
-    }
 
-    if needToHideTopBar || outputLayout.trafficLightButtons == .hidden {
-      if let customTitleBar {
-        // legacy windowed mode
-        customTitleBar.view.alphaValue = 0
-      } else {
-        // native windowed or full screen
-        for button in trafficLightButtons {
-          button.alphaValue = 0
-        }
+      // native windowed or full screen
+      for button in trafficLightButtons {
+        button.alphaValue = 0
       }
     }
 
@@ -1063,7 +1057,7 @@ extension PlayerWindowController {
     if outputLayout.titleBar.isShowable {
       if !transition.isExitingFullScreen {
         if outputLayout.isLegacyStyle {  // Legacy windowed mode
-          for view in trafficLightButtons + [documentIconButton, titleTextField, customTitleBar?.view] {
+          for view in [customTitleBar?.view] {
             if let view {
               view.alphaValue = 1
               view.isHidden = false

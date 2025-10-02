@@ -209,7 +209,7 @@ extension PlayerWindowController {
     // Bottom Bar
     if useBottomBar {
       // Handle leading & trailing constraints
-      updateBottomBarHorizontalContraints(forLayout: layout, logPre: logPre)
+      updateBottomBarHorizontalContraints(forLayout: layout, log)
 
       // enable for animations or if in music mode & neither playlist nor video is open
       if !isFinalStage || (outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown) {
@@ -367,11 +367,11 @@ extension PlayerWindowController {
 
   // - Bottom bar
 
-  private func updateBottomBarHorizontalContraints(forLayout layout: LayoutState, logPre: String) {
+  private func updateBottomBarHorizontalContraints(forLayout layout: LayoutState, _ log: Logger.Subsystem) {
     guard let window = window, let contentView = window.contentView else { return }
     let p = panelConstraints
 
-    log.verbose("\(logPre) Updating bottomBar placement to: \(layout.bottomBarPlacement) leadingSB_Shown=\(layout.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layout.isTrailingSidebarVisible.yn)")
+    log.verbose("Updating bottomBar placement to: \(layout.bottomBarPlacement) leadingSB_Shown=\(layout.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layout.isTrailingSidebarVisible.yn)")
 
     // - Leading
 
