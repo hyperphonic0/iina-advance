@@ -203,7 +203,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   private var tabHeight: CGFloat = 0
 
   func setVerticalConstraints(downshift: CGFloat, tabHeight: CGFloat) {
-    if self.downshift != downshift || self.tabHeight != tabHeight {
+    if (self.downshift != downshift) || (self.tabHeight != tabHeight) {
       self.downshift = downshift
       self.tabHeight = tabHeight
       updateVerticalConstraints()
@@ -211,7 +211,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   private func updateVerticalConstraints() {
-    guard isViewLoaded else { return }
     player.log.verbose("QuickSettings: updating downshift=\(downshift), tabHeight=\(tabHeight)")
     self.buttonTopConstraint?.animateToConstant(downshift)
     self.tabHeightConstraint?.animateToConstant(tabHeight)
