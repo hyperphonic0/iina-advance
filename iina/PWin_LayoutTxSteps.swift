@@ -141,19 +141,14 @@ extension PlayerWindowController {
     if transition.isEnteringInteractiveMode {
       isPausedPriorToInteractiveMode = player.info.isPaused
       player.pause()
-
-      videoView.addShadowForInteractiveMode()
     }
 
     // Music mode
-    if transition.isTogglingMusicMode {
-
-      if transition.isExitingMusicMode {
-        // Make sure to restore video
-        if !transition.inputGeometry.isViewportShown {
-          // Video was disabled in music mode, but need to restore it now
-          player.setVideoTrackEnabled()
-        }
+    if transition.isExitingMusicMode {
+      // Make sure to restore video
+      if !transition.inputGeometry.isViewportShown {
+        // Video was disabled in music mode, but need to restore it now
+        player.setVideoTrackEnabled()
       }
     }
 
@@ -305,15 +300,12 @@ extension PlayerWindowController {
   /// This step is not always executed (e.g.: not for initial layout or for full screen toggle).
   /// Expected to be animated.
   func closeOldPanels(_ transition: LayoutTransition) {
+    assert(!transition.isWindowInitialLayout)
     let logPre = transition.logPreamble(for: .closeOldPanels)
     let outputLayout = transition.outputLayout
     let isClosingBarOSC = transition.isClosingBarOSC
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
     log.verbose{"\(logPre) Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)"}
-
-    if !transition.isWindowInitialLayout {
-      rebuildPanelConstraints(transition, stage: .closeOldPanels)
-    }
 
     // TODO: incorporate this into middleGeometry for cleaner code
     if isOpeningBarOSC || isClosingBarOSC {
@@ -395,15 +387,11 @@ extension PlayerWindowController {
       updateToolbarHStack(iconSpacing: toolSpacing)
     }
 
+    rebuildPanelConstraints(transition, stage: .closeOldPanels)
+
     // - Middle Geometry
 
     if let middleGeo = transition.middleGeometry {
-      assert(!transition.isWindowInitialLayout)
-      if transition.isEnteringInteractiveMode {
-        // Animate the open/close of viewport margins:
-        videoView.apply(middleGeo)
-      }
-
       if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
         controlBarFloating.moveToLocationRatio(parentGeo: middleGeo)
       }
@@ -413,7 +401,7 @@ extension PlayerWindowController {
       // animation has zero duration.
       log.debug{"\(logPre) Applying middleGeo windowFrame=\(middleGeo.windowFrame)"}
       if transition.isTogglingMusicMode {
-        // Don't add or remove aspect constraint while animating!
+        // Don't add or remove aspect constraint while animating music mode toggle!
         setFrameAndUpdateWindowSubviews(using: middleGeo, updateVideoView: false)
       } else if !transition.isTogglingFullScreen {
         setFrameAndUpdateWindowSubviews(using: middleGeo, updateVideoView: true)
@@ -545,22 +533,22 @@ extension PlayerWindowController {
     }
 
     if outputLayout.titleBar.isShowable, transition.outputLayout.isLegacyStyle {
-      let titleBar: CustomTitleBarViewController
+      let legacyTitleBar: CustomTitleBarViewController
       // Custom title bar
       if let customTitleBar {
-        titleBar = customTitleBar
+        legacyTitleBar = customTitleBar
       } else {
-        titleBar = CustomTitleBarViewController()
-        titleBar.pwc = self
-        customTitleBar = titleBar
-        titleBar.view.alphaValue = 0  // prep it to fade in later
+        legacyTitleBar = CustomTitleBarViewController()
+        legacyTitleBar.pwc = self
+        customTitleBar = legacyTitleBar
+        legacyTitleBar.view.alphaValue = 0  // prep it to fade in later
       }
 
-      titleBar.addViewTo(superview: topBarView.titleBarView)
-      titleBar.updateTrackingAreas()  // call this *after* attaching to superview
-      fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: titleBar.leadingSidebarToggleButton)
-      fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: titleBar.trailingSidebarToggleButton)
-      fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: titleBar.onTopButton)
+      legacyTitleBar.addViewTo(superview: topBarView.titleBarView)
+      legacyTitleBar.updateTrackingAreas()  // call this *after* attaching to superview
+      fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: legacyTitleBar.leadingSidebarToggleButton)
+      fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: legacyTitleBar.trailingSidebarToggleButton)
+      fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: legacyTitleBar.onTopButton)
     }
 
     fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
@@ -1021,6 +1009,10 @@ extension PlayerWindowController {
 
     rebuildPanelConstraints(transition, stage: .openNewPanels)
 
+    let openNewPanelsGeo: PWinGeometry = transition.geometry(for: .openNewPanels)
+    log.verbose("\(logPre) Calling setFrame from OpenNewPanels (\(openNewPanelsGeo.mode)): \(openNewPanelsGeo.windowFrame)")
+    setFrameAndUpdateWindowSubviews(using: openNewPanelsGeo, updateVideoView: openNewPanelsGeo.mode != .musicMode)
+
     if outputLayout.hasFloatingOSC {
       // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs
       let topRowView = controlBarFloating.topRowView
@@ -1046,27 +1038,6 @@ extension PlayerWindowController {
 
       // Update floating control bar position
       controlBarFloating.moveToLocationRatio(parentGeo: transition.outputGeometry)
-    }
-
-    switch transition.outputLayout.mode {
-
-    case .windowedNormal, .windowedInteractive, .musicMode:
-      log.verbose("\(logPre) Calling setFrame from OpenNewPanels (\(transition.outputLayout.mode)): \(transition.outputGeometry.windowFrame)")
-      setFrameAndUpdateWindowSubviews(using: transition.outputGeometry, updateVideoView: transition.outputGeometry.mode != .musicMode)
-
-    case .fullScreenNormal, .fullScreenInteractive:
-      if transition.outputLayout.isNativeFullScreen {
-        // Native Full Screen: set frame not including camera housing because it looks better with the native animation
-        log.verbose{"\(logPre) Calling setFrame to animate into nativeFS, to: \(transition.outputGeometry.windowFrame)"}
-        setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
-
-      } else {
-        assert(transition.outputLayout.isLegacyFullScreen, "Expected ouputLayout to be in legacyFullScreen mode!")
-        let geo: PWinGeometry = transition.geometry(for: .openNewPanels)
-        log.verbose("\(logPre) Calling setFrame for legacyFS in OpenNewPanels")
-        /// This calls `videoView.apply`:
-        setFrameAndUpdateWindowSubviews(using: geo)
-      }
     }
 
   }

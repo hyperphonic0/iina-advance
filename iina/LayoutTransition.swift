@@ -101,7 +101,7 @@ extension PlayerWindowController {
     }
 
     var needsCloseOldPanels: Bool {
-      if isEnteringFullScreen {
+      if isEnteringFullScreen || isWindowInitialLayout {
         // Avoid bounciness and possible unwanted video scaling animation (not needed for ->FS anyway)
         return false
       }

@@ -118,30 +118,11 @@ extension PlayerWindowController {
       return
     }
 
-    let currentTicket = fadeableViews.$showHideTicketCount.withLock {
-      $0 += 1
-      return $0
-    }
-
-    let firstTask = IINAAnimation.Task.instantTask { [self] in
-      if log.isTraceEnabled {
-        log.trace("SHOW fadeables: currentTicket=\(currentTicket), latest=\(fadeableViews.showHideTicketCount)")
-      }
-      guard currentTicket == fadeableViews.showHideTicketCount else {
-        if wantsTopBarVisible {
-          fadeableViews.pendingShowTopPanel = true
-        }
-        throw IINAError.cancelAnimationTransaction
-      }
-    }
-
-    let moreTasks = buildAnimationToShowFadeableViews(targetLayout: currentLayout,
-                                                      restartFadeTimer: restartFadeTimer,
-                                                      duration: duration,
-                                                      forceShowTopBar: wantsTopBarVisible)
-
-
-    animationPipeline.submit([firstTask] + moreTasks)
+    let tasks = buildAnimationToShowFadeableViews(targetLayout: currentLayout,
+                                                  restartFadeTimer: restartFadeTimer,
+                                                  duration: duration,
+                                                  forceShowTopBar: wantsTopBarVisible)
+    animationPipeline.submit(tasks)
   }
 
   /// This is only expected to be called by `showFadeableViews()` and by the animation transition builder. Do not call directly from elsewhere.
@@ -151,14 +132,28 @@ extension PlayerWindowController {
                                          forceShow: Bool = false,
                                          forceShowTopBar: Bool = false) -> [IINAAnimation.Task] {
 
+    let currentTicket = fadeableViews.$showHideTicketCount.withLock {
+      $0 += 1
+      return $0
+    }
+
     return [
       IINAAnimation.Task(duration: duration, { [self] in
         // Note to Future Self: stop messing with this logic! It works fine and is fast enough!
         if forceShow {
-          // Invalidate any pending hides
+          // Invalidate any pending shows & hides
           fadeableViews.$showHideTicketCount.withLock { $0 += 1 }
         } else {
           guard fadeableViews.animationState == .hidden || fadeableViews.animationState == .shown else {
+            throw IINAError.cancelAnimationTransaction
+          }
+
+          log.trace("SHOW fadeables: currentTicket=\(currentTicket), latest=\(fadeableViews.showHideTicketCount)")
+
+          guard (currentTicket == fadeableViews.$showHideTicketCount.withLock{ $0 }) else {
+            if forceShowTopBar {
+              fadeableViews.pendingShowTopPanel = true
+            }
             throw IINAError.cancelAnimationTransaction
           }
         }
