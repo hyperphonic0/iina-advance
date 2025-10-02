@@ -164,10 +164,6 @@ extension PlayerWindowController {
             throw IINAError.cancelAnimationTransaction
           }
 
-          fadeables = fadeableViews.fadeables
-          fadeablesInTopBar = fadeableViews.fadeablesInTopBar
-          log.trace("SHOW fadeables: currentTkt=\(currentTicket) latestTkt=\(fadeableViews.showHideTicketCount) views=\(fadeables.count) topBar=\(fadeablesInTopBar.count)")
-
           guard (currentTicket == fadeableViews.$showHideTicketCount.withLock{ $0 }) else {
             if forceShowTopBar {
               fadeableViews.pendingShowTopPanel = true
@@ -177,6 +173,11 @@ extension PlayerWindowController {
         }
 
         fadeableViews.animationState = .willShow
+
+        fadeables = fadeableViews.fadeables
+        fadeablesInTopBar = fadeableViews.fadeablesInTopBar
+        log.trace("SHOW fadeables: currentTkt=\(currentTicket) latestTkt=\(fadeableViews.showHideTicketCount) views=\(fadeables.count) topBar=\(fadeablesInTopBar.count)")
+
         player.refreshSyncUITimer(logMsg: "Showing fadeable views ")
         fadeableViews.hideTimer.cancel()
 
@@ -186,7 +187,7 @@ extension PlayerWindowController {
 
         let pendingShowTopPanel = fadeableViews.pendingShowTopPanel
         let wantsTopBarVisible = forceShowTopBar || pendingShowTopPanel
-        if wantsTopBarVisible {  // start top bar
+        if wantsTopBarVisible {  // show top bar
           fadeableViews.pendingShowTopPanel = false
           fadeableViews.topBarAnimationState = .willShow
           for v in fadeablesInTopBar {

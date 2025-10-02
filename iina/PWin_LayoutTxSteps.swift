@@ -318,7 +318,6 @@ extension PlayerWindowController {
       arrowBtnWidthConstraint.animateToConstant(0)
       fragPlaybackBtnsHeightConstraint.animateToConstant(0)
       playSliderHeightConstraint.animateToConstant(0)
-      topBarView.titleBarHeightConstraint.animateToConstant(Constants.Distance.standardTitleBarHeight)
 
     } else if outputLayout.hasControlBar {
       // Reduce size of icons if they are smaller. This is needed to look pleasant when panels are also shrinking.
@@ -349,10 +348,6 @@ extension PlayerWindowController {
         fragPlaybackBtnsHeightConstraint.animateToConstant(newGeo.fullIconHeight)
       }
 
-      if transition.inputLayout.titleBarHeight > outputLayout.titleBarHeight {
-        topBarView.titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
-      }
-
       if transition.inputLayout.controlBarGeo.playSliderHeight > outputLayout.controlBarGeo.playSliderHeight {
         playSliderHeightConstraint.animateToConstant(outputLayout.controlBarGeo.playSliderHeight)
       }
@@ -367,7 +362,8 @@ extension PlayerWindowController {
         fragPlaybackBtnsWidthConstraint.animateToConstant(newGeo.totalPlayControlsWidth)
       }
 
-      if oldGeo.leftArrowCenterXOffset > newGeo.leftArrowCenterXOffset {
+      // `leftArrowCenterXOffset` is always negative! Need to reverse sign.
+      if oldGeo.leftArrowCenterXOffset < newGeo.leftArrowCenterXOffset {
         leftArrowBtn_CenterXOffsetConstraint.animateToConstant(newGeo.leftArrowCenterXOffset)
       }
 
@@ -980,6 +976,12 @@ extension PlayerWindowController {
       // Increase size of icons if they are larger
       let newGeo = outputLayout.controlBarGeo
 
+      // Weaken constraints temporarily
+      leftArrowBtn_CenterXOffsetConstraint.priority = .defaultLow
+      rightArrowBtn_CenterXOffsetConstraint.priority = .defaultLow
+      fragPlaybackBtnsHeightConstraint.priority = .defaultLow
+      fragPlaybackBtnsWidthConstraint.priority = .defaultLow
+
       playSliderHeightConstraint.animateToConstant(newGeo.playSliderHeight)
 
       volumeIconHeightConstraint.animateToConstant(newGeo.volumeIconHeight)
@@ -989,6 +991,7 @@ extension PlayerWindowController {
         volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
         volumeIconAspectConstraint.isActive = true
       }
+      log.verbose("TotalPlayControls.width=\(newGeo.totalPlayControlsWidth), leftArrowXOffset=\(newGeo.leftArrowCenterXOffset) rightArrowXOffset=\(newGeo.rightArrowCenterXOffset)")
 
       arrowBtnWidthConstraint.animateToConstant(newGeo.arrowIconWidth)
       playBtnHeightConstraint.animateToConstant(newGeo.playIconSize)
@@ -996,6 +999,12 @@ extension PlayerWindowController {
       fragPlaybackBtnsHeightConstraint.animateToConstant(newGeo.fullIconHeight)
       leftArrowBtn_CenterXOffsetConstraint.animateToConstant(newGeo.leftArrowCenterXOffset)
       rightArrowBtn_CenterXOffsetConstraint.animateToConstant(newGeo.rightArrowCenterXOffset)
+
+      // Finalize
+      leftArrowBtn_CenterXOffsetConstraint.priority = .required
+      rightArrowBtn_CenterXOffsetConstraint.priority = .required
+      fragPlaybackBtnsWidthConstraint.priority = .required
+      fragPlaybackBtnsHeightConstraint.priority = .required
 
       // Animate toolbar icons to full size now
       for toolbarItem in fragToolbarView.views {

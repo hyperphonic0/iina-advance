@@ -159,8 +159,7 @@ extension PlayerWindowController {
       assert(useViewport, "Cannot use topBarView without viewportView")
       let constant1 = transition.vpTopOffsetFromTopBarTop(for: stage)
       let constant2 = transition.topBarBtmOffsetFromVPTop(for: stage)
-      let titleHeight = min(layout.titleBarHeight, abs(constant1 - constant2))  // do not make titleBar larger than top bar
-      log.verbose("Updating topBar: vpTopOffsetFromTopBarTop=\(constant1) topBarBtmOffsetFromVPTop=\(constant2) titleBarHeight=\(titleHeight)")
+      log.verbose("Updating topBar: vpTopOffsetFromTopBarTop=\(constant1) topBarBtmOffsetFromVPTop=\(constant2)")
 
       p.vpTopOffsetFromTopBarTop.createOrUpdate(to: constant1, log) { [self] c in
         viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
@@ -170,8 +169,14 @@ extension PlayerWindowController {
         topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
-      // For "closeOldPanels" stage, rely on logic in the step itself
-      if stage != .closeOldPanels {
+      if stage == .closeOldPanels {
+        if let middleGeo = transition.middleGeometry, middleGeo.topBarHeight == 0 {
+          log.verbose("Updating titleHeight=\(0)")
+          topBarView.titleBarHeightConstraint.animateToConstant(0)
+        }
+      } else {
+        let titleHeight = min(layout.titleBarHeight, abs(constant1 - constant2))  // do not make titleBar larger than top bar
+        log.verbose("Updating titleHeight=\(titleHeight)")
         topBarView.titleBarHeightConstraint.animateToConstant(titleHeight)
       }
     }

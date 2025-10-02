@@ -20,19 +20,19 @@ extension PlayerWindowController {
       case preTransitionSetup
       case closeOldPanels
       /// NOTE: this can occur either before or after `closeOldPanels`
-//      case moveAndScale
+      //      case moveAndScale
       case midTransitionHiddenUpdates
       case openNewPanels
       case postTransition
-
+      
       var description: String {
         switch self {
         case .preTransitionSetup:
           return "PreTxSetup"
         case .closeOldPanels:
           return "CloseOldPanels"
-//        case .moveAndScale:
-//          return "MoveAndScale"
+          //        case .moveAndScale:
+          //          return "MoveAndScale"
         case .midTransitionHiddenUpdates:
           return "MidTxHiddenUpdates"
         case .openNewPanels:
@@ -41,27 +41,27 @@ extension PlayerWindowController {
           return "PostTx"
         }
       }
-
+      
       func isAtLeast(_ minStatus: Stage) -> Bool { rawValue >= minStatus.rawValue }
       func isNotYet(_ status: Stage) -> Bool { rawValue < status.rawValue }
     }
-
+    
     let name: String  // just used to improve logging
-
+    
     let inputLayout: LayoutState
     let outputLayout: LayoutState
-
+    
     let inputGeometry: PWinGeometry
     /// MiddleGeometry, if needed, is applied at end of ClosePanels step
     let middleGeometry: PWinGeometry?
     let outputGeometry: PWinGeometry
-
+    
     /// Random datum needed for building tasks
     let windowedModeScreen: NSScreen
-
+    
     /// Should only be true when setting layout on session open. See `buildWindowInitialLayoutTasks()`.
     let isWindowInitialLayout: Bool
-
+    
     init(name: String, from inputLayout: LayoutState, from inputGeometry: PWinGeometry,
          to outputLayout: LayoutState, to outputGeometry: PWinGeometry,
          middleGeometry: PWinGeometry? = nil,
@@ -76,12 +76,12 @@ extension PlayerWindowController {
       self.windowedModeScreen = windowedModeScreen
       self.isWindowInitialLayout = isWindowInitialLayout
     }
-
+    
     // Always need to execute this step. But may not need to use an animation
     var needsAnimationForShowFadeables: Bool {
       return !outputLayout.isInteractiveMode && needsFadeOutOldViewsStep
     }
-
+    
     var needsFadeOutOldViewsStep: Bool {
       return isTogglingLegacyStyle || isTopBarPlacementOrStyleChanging
       || (inputLayout.mode != outputLayout.mode)
@@ -91,7 +91,7 @@ extension PlayerWindowController {
       || (inputLayout.leadingSidebarToggleButton.isShowable && !outputLayout.leadingSidebarToggleButton.isShowable)
       || (inputLayout.trailingSidebarToggleButton.isShowable && !outputLayout.trailingSidebarToggleButton.isShowable)
     }
-
+    
     var needsFadeInNewViewsStep: Bool {
       if isWindowInitialLayout { return true }
       if isTogglingFullScreen { return false }
@@ -104,13 +104,14 @@ extension PlayerWindowController {
       || (!inputLayout.leadingSidebarToggleButton.isShowable && outputLayout.leadingSidebarToggleButton.isShowable)
       || (!inputLayout.trailingSidebarToggleButton.isShowable && outputLayout.trailingSidebarToggleButton.isShowable)
     }
-
+    
     var needsCloseOldPanelsStep: Bool {
       if isEnteringFullScreen || isWindowInitialLayout {
         // Avoid bounciness and possible unwanted video scaling animation (not needed for ->FS anyway)
         return false
       }
-      return isClosingLeadingSidebar || isClosingTrailingSidebar
+      return middleGeometry != nil
+      || isClosingLeadingSidebar || isClosingTrailingSidebar
       || inputLayout.hasTopPaddingForCameraHousing != outputLayout.hasTopPaddingForCameraHousing
       || isClosingPlaylistInMusicMode || isClosingViewport
       || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging

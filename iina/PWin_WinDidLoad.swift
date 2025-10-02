@@ -383,6 +383,10 @@ extension PlayerWindowController {
     leftArrowBtn_CenterXOffsetConstraint.identifier = .init("leftArrowBtn-HorizOffsetConstraint")
     leftArrowBtn_CenterXOffsetConstraint.isActive = true
 
+    let leftArrowBtn_LeadingXOffsetConstraint = leftArrowButton.leadingAnchor.constraint(greaterThanOrEqualTo: fragPlaybackBtnsView.leadingAnchor)
+    leftArrowBtn_LeadingXOffsetConstraint.identifier = .init("leftArrowBtn-LeadingXOffset")
+    leftArrowBtn_LeadingXOffsetConstraint.isActive = true
+
     arrowBtnWidthConstraint = leftArrowButton.widthAnchor.constraint(equalToConstant: 0)
     arrowBtnWidthConstraint.identifier = .init("arrowBtn-WidthConstraint")
     arrowBtnWidthConstraint.isActive = true
