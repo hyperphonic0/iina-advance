@@ -685,10 +685,8 @@ struct PlayerSaveState: CustomStringConvertible {
       return
     }
 
-    if Logger.isEnabled(.verbose) {
       // Log properties
-      log.verbose("Restoring from prior launch: \(self)")
-    }
+    log.verbose("Restoring from prior launch: \(self)")
     let info = player.info
 
     info.priorStateBuildNumber = int(for: .buildNumber) ?? info.priorStateBuildNumber
@@ -755,11 +753,6 @@ struct PlayerSaveState: CustomStringConvertible {
       }
     }
 
-    /// Need to set these in `info` before `openURLs()` is called
-    /// (or at least for `aid`, so that volume slider is correct at first draw)
-    if let vid = int(for: .vid) {
-      info.vid = vid
-    }
     if let aid = int(for: .aid) {
       info.aid = aid
     }

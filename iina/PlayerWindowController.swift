@@ -1766,6 +1766,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
 
     let videoTF: GeometryTransform.VideoGeometryTF = { [self] inputVidGeo, ctx -> VideoGeometry? in
+      assert(DispatchQueue.isExecutingIn(player.mpv.queue))
       let outputVidGeo: VideoGeometry?
 
       if let cropController = cropSettingsView, let newVidGeo, let newCropFilter = newVidGeo.cropFilter {

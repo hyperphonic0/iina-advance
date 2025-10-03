@@ -1852,7 +1852,10 @@ class PlayerCore: NSObject {
 
     // mpv will play when loaded by default.
     // If restoring, playback was already paused (and will not be unpaused until window is ready to show)
-    if !isRestoring {
+    if isRestoring {
+      // Finally call this to update info.vid & related video track state in VideoView:
+      updateVidStateFromMpv()
+    } else {
       var shouldPause = Preference.bool(for: .pauseWhenOpen)
       for option in userOptions.reversed() {
         if option.0 == MPVOption.PlaybackControl.pause {
@@ -3141,23 +3144,38 @@ class PlayerCore: NSObject {
     }
   }
 
+  @discardableResult
+  func updateVidStateFromMpv() -> (Int, Bool) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard !isStopping else { return (0, false) }
+
+    let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
+    let isVidEnabled = vid != 0
+    let trackIsAlbumArt = isVidEnabled && (mpv.getString(MPVProperty.trackListNAlbumart(vid)) == "yes")
+
+    return videoView.$isUninited.withLock{ _ in
+      guard vid != info.vid else { return (vid, false) }
+      videoView.isVidEnabled = isVidEnabled
+      videoView.isVidAlbumArt = trackIsAlbumArt
+      // Try to prevent crash when forcing draws. After changing vid from 0 to non-zero, do not allow forced drawing until after
+      // the first render callback is triggered (unless track is album art).
+      videoView.isReadyToRender = (isVidEnabled && trackIsAlbumArt) || isRestoring
+      info.vid = vid
+      return (vid, true)
+    }
+  }
+
   func vidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isRestoring, !isStopping else { return }
 
-    let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
-
     /// Grab & reset `isShowVideoPendingInMiniPlayer` in mpv queue right away to avoid race
     let isShowVideoPendingInMiniPlayerCached = isShowVideoPendingInMiniPlayer
 
-    guard (vid != info.vid) || isShowVideoPendingInMiniPlayerCached else { return }
+    let (vid, vidDidChange) = updateVidStateFromMpv()
+
+    guard vidDidChange || isShowVideoPendingInMiniPlayerCached else { return }
     isShowVideoPendingInMiniPlayer = false
-    videoView.$isUninited.withLock{ _ in
-      // Try to prevent crash when forcing draws. After changing vid from 0 to non-zero, do not allow forced drawing until after
-      // the first render callback is triggered.
-      videoView.isReadyToRender = false
-      info.vid = vid
-    }
 
     let sessionStateTF: GeometryTransform.PWinSessionStateTF = { [self] prevSessionState, ctx -> PWinSessionState? in
       let returnValue: PWinSessionState?

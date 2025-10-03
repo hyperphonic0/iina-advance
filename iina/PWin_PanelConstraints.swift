@@ -155,6 +155,9 @@ extension PlayerWindowController {
       topBarView.removeFromSuperview()
     }
 
+    // Need to add additionalInfo, OSD before changing sidebars
+    addOrRemoveOSDViews(stageGeo)
+
     // - Add constraints between subviews
     if useTopBar {
       assert(useViewport, "Cannot use topBarView without viewportView")

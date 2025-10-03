@@ -33,6 +33,9 @@ class VideoView: NSView {
   /// The Metal layer, if using MoltenVK with proper init
   var metalLayer: CAMetalLayer? { layer as? CAMetalLayer }
 
+  /// Roughly equivalent to `player.info.isVideoTrackSelected`, but more performant
+  var isVidEnabled = false
+  var isVidAlbumArt = false
   var isReadyToRender = false
 
   var layerColorspace: CGColorSpace? {
@@ -208,9 +211,7 @@ class VideoView: NSView {
 
   func needsForcedRedraws() -> Bool {
     guard player.pwc.loaded, player.isActive else { return false }
-    // FIXME: Refactor this to remove need for lock!
-    guard let currentVideoTrack = player.info.currentTrack(.video),
-          currentVideoTrack.id != 0, player.info.isPaused || currentVideoTrack.isAlbumart else { return false }
+    guard player.videoView.isVidEnabled, player.videoView.isVidAlbumArt || player.info.isPaused else { return false }
     guard !player.pwc.sessionState.isRestoring else { return false }
     return true
   }

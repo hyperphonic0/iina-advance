@@ -152,8 +152,7 @@ class GLVideoLayer: CAOpenGLLayer {
       printStats()
 #endif
       // Prevent crash if trying to use forceDraw when vid=0 (usually when toggling video on or off)
-      guard player.info.isVideoTrackSelected else { return false }
-      guard videoView.isReadyToRender else { return false }
+      guard videoView.isVidEnabled && videoView.isReadyToRender else { return false }
       if forceDraw { return true }
       return shouldRenderUpdateFrame()
     }

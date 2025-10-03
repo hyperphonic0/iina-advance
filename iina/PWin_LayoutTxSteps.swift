@@ -145,15 +145,11 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.outputLayout.isMusicMode {
-      if transition.isClosingViewport {
-        // Hiding video
-        // Remove OSD & AdditionalInfo *before* reducing viewportView height to 0
-        addOrRemoveOSDViews(transition.outputGeometry)
+    if transition.outputLayout.isMusicMode && transition.isClosingViewport {
+      // Hiding video
 
-        // [MusicModeKludge-A] Loosen constraints manually *before* the animation task below
-        videoView.videoViewConstraints?.aspectRatio.isActive = false
-      }
+      // [MusicModeKludge-A] Loosen constraints manually *before* the animation task below
+      videoView.videoViewConstraints?.aspectRatio.isActive = false
     }
 
     if transition.isWindowInitialLayout {
@@ -548,9 +544,6 @@ extension PlayerWindowController {
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
     let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscBackgroundIsClear)
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
-
-    // Need to add additionalInfo, OSD before changing sidebars
-    addOrRemoveOSDViews(transition.outputGeometry)
 
     if !transition.isWindowInitialLayout && !transition.isTogglingFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
