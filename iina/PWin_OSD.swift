@@ -264,7 +264,6 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
 
     subviews = [titleLabel, hStackView]
 
-    titleLabel.setContentHuggingPriority(.init(900), for: .horizontal)
     titleLabel.idString = "AdditionalInfo-Title"
     titleLabel.font = NSFont.systemFont(ofSize: 18, weight: .medium)
     titleLabel.alignment = .right
@@ -484,12 +483,14 @@ extension PlayerWindowController {
 
   // MARK: - Additional Info Content Updates
 
+  /// Update `additionalInfoView` with battery status & media title
   func updateAdditionalInfoContent() {
-    // Update content
-    let title = window?.representedURL?.lastPathComponent ?? window?.title ?? ""
+    log.verbose{"[OSD] Updating additionalInfoView content with URL: \(player.info.currentPlayback?.url.lastPathComponent ?? "nil")"}
+    guard let title = player.info.currentPlayback?.url.lastPathComponent else { return }
     additionalInfoView.titleLabel.string = title
     additionalInfoView.titleLabel.sizeToFit()
     additionalInfoView.titleLabel.invalidateIntrinsicContentSize()
+    additionalInfoView.needsLayout = true  // Need this for titleLabel to update
 
     if let capacity = PowerSource.getList().filter({ $0.type == "InternalBattery" }).first?.currentCapacity {
       additionalInfoView.batteryLabel.stringValue = "\(capacity)%"
@@ -498,7 +499,6 @@ extension PlayerWindowController {
       additionalInfoView.hStackView.setVisibilityPriority(.notVisible, for: additionalInfoView.batteryView)
     }
     additionalInfoView.clockTimeLabel.stringValue = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
-    additionalInfoView.needsDisplay = true
   }
 
   // MARK: - OSD Content Updates
