@@ -91,9 +91,6 @@ extension PlayerWindowController {
     case .moveAndScale, .midTransitionHiddenUpdates, .openNewPanels:
       if transition.isTogglingFullScreen {  // need exception for FS toggle
         useTopBar = useTopBar || transition.inputLayout.hasTopBar
-        useViewport = useViewport || transition.inputGeometry.isViewportShown
-      } else if stage == .moveAndScale {
-        useViewport = useViewport || transition.inputGeometry.isViewportShown
       }
       useBottomBar = useBottomBar || transition.inputLayout.hasBottomBar
       // About to apply output geometry, or applying output geometry: use output layout
@@ -227,7 +224,7 @@ extension PlayerWindowController {
       // enable for animations or if in music mode & neither playlist nor video is open
       if !isFinalStage || (outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown) {
         let constant1 = transition.bottomBarBtmOffsetFromCVTop(for: stage)
-        p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
+        p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1, priorityInt: 999, log) { [self] c in
           bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
         }
       } else {
