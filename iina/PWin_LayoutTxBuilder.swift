@@ -55,35 +55,36 @@ extension PlayerWindowController {
                                            windowedModeScreen: windowedModeScreen,
                                            isWindowInitialLayout: isWindowInitialLayout)
 
-    let middleGeometry = protoTransition.buildMiddleGeometry()?.clone(isMiddleTransition: true)
+    let closeOldPanelsGeometry = protoTransition.buildCloseOldPanelsGeometry()
+    assert(closeOldPanelsGeometry == nil || closeOldPanelsGeometry!.isMiddleTransition)
 
-    let middleGeometry2: PWinGeometry?
+    let moveAndScaleGeometry: PWinGeometry?
     if protoTransition.needsMoveAndScaleVideoFrameStep {
       // FIXME: For Interactive Mode with very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
       // Need to have mode which is not music mode
-      middleGeometry2 = outputGeometry.clone(windowFrame: outputGeometry.videoFrameInScreenCoords,
-                                             mode: .windowedNormal,
-                                             topMarginHeight: 0,
-                                             outsideBars: .zero, insideBars: .zero,
-                                             viewportMargins: .zero,
-                                             isMiddleTransition: true)
+      moveAndScaleGeometry = outputGeometry.clone(windowFrame: outputGeometry.videoFrameInScreenCoords,
+                                                  mode: .windowedNormal,
+                                                  topMarginHeight: 0,
+                                                  outsideBars: .zero, insideBars: .zero,
+                                                  viewportMargins: .zero,
+                                                  isMiddleTransition: true)
     } else {
-      middleGeometry2 = nil
+      moveAndScaleGeometry = nil
     }
 
     let transition = LayoutTransition(name: transitionName,
                                       from: inputLayout, from: inputGeometry,
                                       to: outputLayout, to: outputGeometry,
-                                      middleGeometry: middleGeometry,
-                                      middleGeometry2: middleGeometry2,
+                                      closeOldPanelsGeometry: closeOldPanelsGeometry,
+                                      moveAndScaleGeometry: moveAndScaleGeometry,
                                       windowedModeScreen: windowedModeScreen,
                                       isWindowInitialLayout: isWindowInitialLayout)
 
 
-    log.verbose("[\(transitionName)] INPUT\(inputGeoExplicit == nil ? "" : "(given)"):  \(inputGeometry)")
-    log.verbose("[\(transitionName)] MIDDLE: \(transition.middleGeometry?.description ?? "nil")")
-    log.verbose("[\(transitionName)] MV_SCL: \(transition.middleGeometry2?.description ?? "nil")")
-    log.verbose("[\(transitionName)] OUTPUT\(outputGeoExplicit == nil ? "" : "(given)"): \(outputGeometry)")
+    log.verbose("[\(transitionName)] INPUT_GEO\(inputGeoExplicit == nil ? "" : "(given)"):  \(inputGeometry)")
+    log.verbose("[\(transitionName)] CLOSE_OLD:  \(transition.closeOldPanelsGeometry?.description ?? "nil")")
+    log.verbose("[\(transitionName)] MOVE_SCALE: \(transition.moveAndScaleGeometry?.description ?? "nil")")
+    log.verbose("[\(transitionName)] OUTPUT_GEO\(outputGeoExplicit == nil ? "" : "(given)"): \(outputGeometry)")
 
     return transition
   }
@@ -220,7 +221,7 @@ extension PlayerWindowController {
     var moveAndScaleTask: IINAAnimation.Task? = nil
 
     if closeOldPanelsDuration > 0.0 {
-      // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies middleGeometry if it exists.
+      // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies closeOldPanelsGeometry if it exists.
       // Not enabled for full screen transitions or if animation is disabled.
       if transition.needsCloseOldPanelsStep {
         tasks.append(.init(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
@@ -434,9 +435,9 @@ extension PlayerWindowController {
 
 extension PlayerWindowController.LayoutTransition {
 
-  /// Builds `middleGeometry`.
+  /// Builds `closeOldPanelsGeometry`.
   /// Currently there are 4 bars. Each can be either inside or outside, exclusively.
-  func buildMiddleGeometry() -> PWinGeometry? {
+  func buildCloseOldPanelsGeometry() -> PWinGeometry? {
     guard !isWindowInitialLayout else {
       // Not animated
       return nil
@@ -447,16 +448,16 @@ extension PlayerWindowController.LayoutTransition {
     if isTogglingInteractiveMode {
       // - Interactive Mode
 
-      if inputLayout.isFullScreen {
-        // Need to hide sidebars when entering interactive mode in full screen
-        return outputGeometry
-      }
-
       let mustUncropFirst = (outputLayout.interactiveMode == .crop) && (inputGeometry.video.cropFilter != nil)
       if mustUncropFirst, let cropFilter = inputGeometry.video.cropFilter {
         assert(isEnteringInteractiveMode, "Expected to be entering interactive mode only when uncropping video")
-        let uncroppedNaiveGeo = inputGeometry.clone(video: inputGeometry.video.removingCrop())
+        let uncroppedNaiveGeo = inputGeometry.clone(video: inputGeometry.video.removingCrop(),
+                                                    isMiddleTransition: true)
         log.verbose{"Uncropping video from cropRect=\(cropFilter.cropRect(origVideoSize: inputGeometry.video.videoSizeCAR, flipY: true)) to uncroppedVideo=\(uncroppedNaiveGeo.video.videoSizeDisplay)"}
+
+        if inputLayout.isFullScreen {
+          return uncroppedNaiveGeo.refitted()
+        }
 
         let intermediateWindowFrame = uncroppedNaiveGeo.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords
         let middleGeo = inputGeometry.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
@@ -579,7 +580,8 @@ extension PlayerWindowController.LayoutTransition {
                                         outsideBars: outsideBars,
                                         insideBars: insideBars,
                                         video: outputGeometry.video,
-                                        hasTopPaddingForCameraHousing: outputLayout.hasTopPaddingForCameraHousing)
+                                        hasTopPaddingForCameraHousing: outputLayout.hasTopPaddingForCameraHousing,
+                                        isMiddleTransition: true)
     }
 
     let closedBarsGeo = outputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,

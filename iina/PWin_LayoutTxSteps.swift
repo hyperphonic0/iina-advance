@@ -303,7 +303,7 @@ extension PlayerWindowController {
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
     log.verbose{"Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)"}
 
-    // TODO: incorporate this into middleGeometry for cleaner code
+    // TODO: incorporate this into closeOldPanelsGeometry for cleaner code
     if isOpeningBarOSC || isClosingBarOSC {
       // Shrink all the buttons vertically to create cool animated effect.
       // Don't worry about horizontal.
@@ -381,7 +381,7 @@ extension PlayerWindowController {
 
     // - Middle Geometry
 
-    if let middleGeo = transition.middleGeometry {
+    if let middleGeo = transition.closeOldPanelsGeometry {
       if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
         controlBarFloating.moveToLocationRatio(parentGeo: middleGeo)
       }
@@ -409,7 +409,7 @@ extension PlayerWindowController {
   /// May execute either before or after `updateHiddenViewsAndConstraints`.
   func moveAndScaleVideoFrame(_ transition: LayoutTransition) {
     let logPre = transition.logPreamble(for: .moveAndScale)
-    let geo = transition.middleGeometry2!
+    let geo = transition.moveAndScaleGeometry!
     log.verbose{"\(logPre) Moving & scaling video window to middleGeo2=\(geo)"}
 
     // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).

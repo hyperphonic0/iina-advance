@@ -147,7 +147,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   static func forFullScreen(in screen: NSScreen, legacy: Bool, mode: PlayerWindowMode,
                             outsideBars: MarginQuad, insideBars: MarginQuad,
                             video: VideoGeometry,
-                            hasTopPaddingForCameraHousing: Bool) -> PWinGeometry {
+                            hasTopPaddingForCameraHousing: Bool,
+                            isMiddleTransition: Bool = false) -> PWinGeometry {
 
     let windowFrame = fullScreenWindowFrame(in: screen, legacy: legacy)
     let screenFit: ScreenFit
@@ -161,7 +162,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
 
     return PWinGeometry(windowFrame: windowFrame, screenID: screen.screenID, screenFit: screenFit, mode: mode,
-                        topMarginHeight: topMarginHeight, outsideBars: outsideBars, insideBars: insideBars, video: video)
+                        topMarginHeight: topMarginHeight, outsideBars: outsideBars, insideBars: insideBars,
+                        video: video, isMiddleTransition: isMiddleTransition)
   }
 
   func clone(windowFrame: NSRect? = nil, screenID: String? = nil, screenFit: ScreenFit? = nil,
@@ -174,7 +176,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let mode = mode ?? self.mode
     if mode == .musicMode {
       // This might get ugly in the future... maybe fail instead to force developer to add explcit choice in all situations?
-      return cloneMusicMode(windowFrame: windowFrame, screenID: screenID, video: video)
+      return cloneMusicMode(windowFrame: windowFrame, screenID: screenID, video: video, isMiddleTransition: isMiddleTransition)
     }
 
     let newGeo = PWinGeometry(windowFrame: windowFrame ?? self.windowFrame,

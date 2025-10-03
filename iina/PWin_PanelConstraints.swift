@@ -171,7 +171,7 @@ extension PlayerWindowController {
       }
 
       if stage == .closeOldPanels {
-        if let middleGeo = transition.middleGeometry, middleGeo.topBarHeight == 0 {
+        if let middleGeo = transition.closeOldPanelsGeometry, middleGeo.topBarHeight == 0 {
           log.verbose("Updating titleHeight=\(0)")
           topBarView.titleBarHeightConstraint.animateToConstant(0)
         }
@@ -286,7 +286,7 @@ extension PlayerWindowController {
       }
 
     case .closeOldPanels:
-      if let middleGeo = transition.middleGeometry, !transition.isWindowInitialLayout {
+      if let middleGeo = transition.closeOldPanelsGeometry, !transition.isWindowInitialLayout {
         if useLeadingSidebar || useTrailingSidebar {
           // Sidebars (if closing)
           let ΔWindowWidth = middleGeo.windowFrame.width - transition.inputGeometry.windowFrame.width

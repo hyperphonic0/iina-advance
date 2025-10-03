@@ -53,9 +53,9 @@ extension PlayerWindowController {
     
     let inputGeometry: PWinGeometry
     /// If this exists, it is applied during the `closeOldPanels` step.
-    let middleGeometry: PWinGeometry?
+    let closeOldPanelsGeometry: PWinGeometry?
     /// If this exists, it is applied during the `moveAndScale` step, which may occur either before or after the `closeOldPanels` step.
-    let middleGeometry2: PWinGeometry?
+    let moveAndScaleGeometry: PWinGeometry?
     let outputGeometry: PWinGeometry
     
     /// Random datum needed for building tasks
@@ -66,15 +66,15 @@ extension PlayerWindowController {
     
     init(name: String, from inputLayout: LayoutState, from inputGeometry: PWinGeometry,
          to outputLayout: LayoutState, to outputGeometry: PWinGeometry,
-         middleGeometry: PWinGeometry? = nil,
-         middleGeometry2: PWinGeometry? = nil,
+         closeOldPanelsGeometry: PWinGeometry? = nil,
+         moveAndScaleGeometry: PWinGeometry? = nil,
          windowedModeScreen: NSScreen,
          isWindowInitialLayout: Bool = false) {
       self.name = name
       self.inputLayout = inputLayout
       self.inputGeometry = inputGeometry
-      self.middleGeometry = middleGeometry
-      self.middleGeometry2 = middleGeometry2
+      self.closeOldPanelsGeometry = closeOldPanelsGeometry
+      self.moveAndScaleGeometry = moveAndScaleGeometry
       self.outputLayout = outputLayout
       self.outputGeometry = outputGeometry
       self.windowedModeScreen = windowedModeScreen
@@ -114,7 +114,7 @@ extension PlayerWindowController {
         // Avoid bounciness and possible unwanted video scaling animation (not needed for ->FS anyway)
         return false
       }
-      return middleGeometry != nil
+      return closeOldPanelsGeometry != nil
       || isClosingLeadingSidebar || isClosingTrailingSidebar
       || inputLayout.hasTopPaddingForCameraHousing != outputLayout.hasTopPaddingForCameraHousing
       || isClosingPlaylistInMusicMode || isClosingViewport
@@ -383,16 +383,16 @@ extension PlayerWindowController {
       case .preTransitionSetup:
         return inputGeometry
       case .closeOldPanels:
-        return middleGeometry ?? inputGeometry
+        return closeOldPanelsGeometry ?? inputGeometry
       case .midTransitionHiddenUpdates:
-        if let middleGeometry2, isMoveAndScaleStepBeforeMidpoint {
-          return middleGeometry2
+        if let moveAndScaleGeometry, isMoveAndScaleStepBeforeMidpoint {
+          return moveAndScaleGeometry
         } else {
           return geometry(for: .closeOldPanels)
         }
       case .moveAndScale:
-        if let middleGeometry2 {
-          return middleGeometry2
+        if let moveAndScaleGeometry {
+          return moveAndScaleGeometry
         } else {
           return geometry(for: .closeOldPanels)
         }
