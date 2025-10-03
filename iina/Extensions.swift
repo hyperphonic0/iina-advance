@@ -1746,6 +1746,16 @@ extension NSScreen {
     return (cameraHousingHeight ?? 0) > 0
   }
 
+  var cameraHeightToFrameHeightRatio: CGFloat {
+    safeAreaInsets.top / frame.height
+  }
+
+  /// • `nonCameraHeightToFrameHeightRatio >= cameraHeightToFrameHeightRatio` (or should be).
+  /// • `nonCameraHeightToFrameHeightRatio + cameraHeightToFrameHeightRatio == 1`.
+  var nonCameraHeightToFrameHeightRatio: CGFloat {
+    1 - (safeAreaInsets.top / frame.height)
+  }
+
   var displayId: UInt32 {
     return deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as! UInt32
   }

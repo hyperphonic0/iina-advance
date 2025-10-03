@@ -56,16 +56,33 @@ extension PlayerWindowController {
                                            isWindowInitialLayout: isWindowInitialLayout)
 
     let middleGeometry = protoTransition.buildMiddleGeometry()?.clone(isMiddleTransition: true)
+
+    let middleGeometry2: PWinGeometry?
+    if protoTransition.needsMoveAndScaleVideoFrameStep {
+      // FIXME: For Interactive Mode with very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
+      // Need to have mode which is not music mode
+      middleGeometry2 = outputGeometry.clone(windowFrame: outputGeometry.videoFrameInScreenCoords,
+                                             mode: .windowedNormal,
+                                             topMarginHeight: 0,
+                                             outsideBars: .zero, insideBars: .zero,
+                                             viewportMargins: .zero,
+                                             isMiddleTransition: true)
+    } else {
+      middleGeometry2 = nil
+    }
+
     let transition = LayoutTransition(name: transitionName,
                                       from: inputLayout, from: inputGeometry,
                                       to: outputLayout, to: outputGeometry,
                                       middleGeometry: middleGeometry,
+                                      middleGeometry2: middleGeometry2,
                                       windowedModeScreen: windowedModeScreen,
                                       isWindowInitialLayout: isWindowInitialLayout)
 
 
     log.verbose("[\(transitionName)] INPUT\(inputGeoExplicit == nil ? "" : "(given)"):  \(inputGeometry)")
     log.verbose("[\(transitionName)] MIDDLE: \(transition.middleGeometry?.description ?? "nil")")
+    log.verbose("[\(transitionName)] MV_SCL: \(transition.middleGeometry2?.description ?? "nil")")
     log.verbose("[\(transitionName)] OUTPUT\(outputGeoExplicit == nil ? "" : "(given)"): \(outputGeometry)")
 
     return transition
@@ -161,8 +178,7 @@ extension PlayerWindowController {
     if transition.isExitingFullScreen {
       fadeInNewViewsDuration = 0
     } else if useExtraAnimationForEnteringLegacyFullScreen || useExtraAnimationForExitingLegacyFullScreen {
-      let winScreen = transition.windowedModeScreen
-      let frameWithoutCameraRatio = winScreen.frameWithoutCameraHousing.size.height / winScreen.frame.height
+      let frameWithoutCameraRatio = transition.windowedModeScreen.nonCameraHeightToFrameHeightRatio
       openFinalPanelsDuration *= frameWithoutCameraRatio
     } else if transition.isEnteringInteractiveMode {
       openFinalPanelsDuration *= 0.5
@@ -212,8 +228,8 @@ extension PlayerWindowController {
         }))
       }
 
-      if transition.needsMoveAndResizeVideoFrameStep {
-        let duration = closeOldPanelsDuration * 2.0 //transition.isTogglingInteractiveMode ? closeOldPanelsDuration * 0.5 : closeOldPanelsDuration
+      if transition.needsMoveAndScaleVideoFrameStep {
+        let duration = transition.isTogglingInteractiveMode ? closeOldPanelsDuration * 0.5 : closeOldPanelsDuration
         moveAndScaleTask = .init(duration: duration, timing: .easeInEaseOut) { [self] in
           moveAndScaleVideoFrame(transition)
         }
@@ -221,7 +237,7 @@ extension PlayerWindowController {
 
       // Place this task either before or after updateHiddenViewsAndConstraints depending on entering or exiting.
       // Want to put this *before* it when entering music mode & hiding (closing) viewportView, but other cases the order shouldn't matter.
-      if let moveAndScaleTask, transition.isMoveAndResizeStepBeforeMidpoint {
+      if let moveAndScaleTask, transition.isMoveAndScaleStepBeforeMidpoint {
         tasks.append(moveAndScaleTask)
       }
     }
@@ -233,7 +249,7 @@ extension PlayerWindowController {
       updateHiddenViewsAndConstraints(transition)
     })
 
-    if let moveAndScaleTask, !transition.isMoveAndResizeStepBeforeMidpoint {
+    if let moveAndScaleTask, !transition.isMoveAndScaleStepBeforeMidpoint {
       tasks.append(moveAndScaleTask)
     }
 
@@ -243,13 +259,11 @@ extension PlayerWindowController {
     // time when animating around the camera housing, especially if also changing window `titled` style. This may no longer
     // be the case, but it's not harming anything to leave this as-is for now.
     if useExtraAnimationForExitingLegacyFullScreen {
-      let winScreen = transition.windowedModeScreen
-      let cameraToTotalFrameRatio = 1 - (winScreen.frameWithoutCameraHousing.size.height / winScreen.frame.height)
-      let duration = endingAnimationDuration// * cameraToTotalFrameRatio
+      let duration = endingAnimationDuration * transition.windowedModeScreen.cameraHeightToFrameHeightRatio
 
       tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
         let newGeo = transition.computeExtraAnimationGeoForLegacyFS(fsGeometry: transition.inputGeometry)
-        log.verbose("[\(transition.name)] Updating legacy FS window to show camera housing prior to entering native windowed mode with windowFrame=\(newGeo.windowFrame)")
+        log.verbose("[\(transition.name)] Updating legacy FS window to show camera housing prior to entering windowed mode with windowFrame=\(newGeo.windowFrame)")
         setFrameAndUpdateWindowSubviews(using: newGeo)
       })
     }
@@ -260,25 +274,23 @@ extension PlayerWindowController {
       openNewPanelsAndFinalizeOffsets(transition)
     }))
 
-    // EndingAnimation 2: Fade in new views
-    // If exiting FS, this task is skipped. It needs to run in a separate CATransaction so it is run down below.
-    if transition.needsFadeInNewViewsStep {
-      tasks.append(.init(duration: fadeInNewViewsDuration, timing: fadeInNewViewsTiming) { [self] in
-        fadeInNewViews(transition)
-      })
-    }
-
     // (Only for Enter Legacy FS) Adds an extra animation to hide camera housing / menu bar / dock.
     if useExtraAnimationForEnteringLegacyFullScreen {
-      let winScreen = transition.windowedModeScreen
-      let cameraToTotalFrameRatio = 1 - (winScreen.frameWithoutCameraHousing.size.height / winScreen.frame.height)
-      let duration = endingAnimationDuration //* cameraToTotalFrameRatio
+      let duration = endingAnimationDuration * transition.windowedModeScreen.cameraHeightToFrameHeightRatio
 
       tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
         rebuildPanelConstraints(transition, stage: .postTransition)
         let newGeo = transition.outputGeometry
         log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock with windowFrame=\(newGeo.windowFrame)")
         setFrameAndUpdateWindowSubviews(using: newGeo)
+      })
+    }
+
+    // EndingAnimation 2: Fade in new views
+    // If exiting FS, this task is skipped. It needs to run in a separate CATransaction so it is run down below.
+    if transition.needsFadeInNewViewsStep {
+      tasks.append(.init(duration: fadeInNewViewsDuration, timing: fadeInNewViewsTiming) { [self] in
+        fadeInNewViews(transition)
       })
     }
 

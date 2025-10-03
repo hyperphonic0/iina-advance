@@ -2046,7 +2046,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     updatePlayButtonAndSpeedUI()
     updatePlaybackTimeUI()
-    if currentLayout.hasAdditionalInfo {
+    if additionalInfoView.superview != nil {
       updateAdditionalInfoContent()
     }
 

@@ -156,7 +156,7 @@ extension PlayerWindowController {
       if transition.isClosingViewport {
         // Hiding video
         // Remove OSD & AdditionalInfo *before* reducing viewportView height to 0
-        addOrRemoveOSDViews(transition.outputLayout, transition.outputGeometry)
+        addOrRemoveOSDViews(transition.outputGeometry)
 
         // [MusicModeKludge-A] Loosen constraints manually *before* the animation task below
         videoView.videoViewConstraints?.aspectRatio.isActive = false
@@ -408,20 +408,14 @@ extension PlayerWindowController {
   /// This animation moves & resizes the video frame for a nice effect.
   /// May execute either before or after `updateHiddenViewsAndConstraints`.
   func moveAndScaleVideoFrame(_ transition: LayoutTransition) {
-    // FIXME: For Interactive Mode with very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
-    let intermediateWindowFrame = transition.outputGeometry.videoFrameInScreenCoords
-
-    // Need to have mode which is not music mode
-    let middleGeo2 = transition.outputGeometry.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
-                                                     topMarginHeight: 0,
-                                                     outsideBars: .zero, insideBars: .zero,
-                                                     viewportMargins: .zero,
-                                                     isMiddleTransition: true)
-    log.verbose{"[\(transition.name)] Moving & resizing window to middleGeo2=\(middleGeo2)"}
+    let logPre = transition.logPreamble(for: .moveAndScale)
+    let geo = transition.middleGeometry2!
+    log.verbose{"\(logPre) Moving & scaling video window to middleGeo2=\(geo)"}
 
     // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
     // It's not needed until the next step anyway.
-    setFrameAndUpdateWindowSubviews(using: middleGeo2, updateVideoView: false)
+    setFrameAndUpdateWindowSubviews(using: geo, updateVideoView: false)
+    rebuildPanelConstraints(transition, stage: .moveAndScale)
   }
 
   /// -------------------------------------------------
@@ -563,7 +557,7 @@ extension PlayerWindowController {
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
     // Need to add additionalInfo, OSD before changing sidebars
-    addOrRemoveOSDViews(outputLayout, transition.outputGeometry)
+    addOrRemoveOSDViews(transition.outputGeometry)
 
     if !transition.isWindowInitialLayout && !transition.isTogglingFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)

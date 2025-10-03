@@ -19,8 +19,8 @@ extension PlayerWindowController {
     enum Stage: Int, StateEnum, CustomStringConvertible {
       case preTransitionSetup
       case closeOldPanels
-      /// NOTE: this can occur either before or after `closeOldPanels`
-      //      case moveAndScale
+      /// This is __optional__ & can occur either before or after `closeOldPanels`
+      case moveAndScale
       case midTransitionHiddenUpdates
       case openNewPanels
       case postTransition
@@ -31,8 +31,8 @@ extension PlayerWindowController {
           return "PreTxSetup"
         case .closeOldPanels:
           return "CloseOldPanels"
-          //        case .moveAndScale:
-          //          return "MoveAndScale"
+        case .moveAndScale:
+          return "MoveAndScale"
         case .midTransitionHiddenUpdates:
           return "MidTxHiddenUpdates"
         case .openNewPanels:
@@ -52,8 +52,10 @@ extension PlayerWindowController {
     let outputLayout: LayoutState
     
     let inputGeometry: PWinGeometry
-    /// MiddleGeometry, if needed, is applied at end of ClosePanels step
+    /// If this exists, it is applied during the `closeOldPanels` step.
     let middleGeometry: PWinGeometry?
+    /// If this exists, it is applied during the `moveAndScale` step, which may occur either before or after the `closeOldPanels` step.
+    let middleGeometry2: PWinGeometry?
     let outputGeometry: PWinGeometry
     
     /// Random datum needed for building tasks
@@ -65,12 +67,14 @@ extension PlayerWindowController {
     init(name: String, from inputLayout: LayoutState, from inputGeometry: PWinGeometry,
          to outputLayout: LayoutState, to outputGeometry: PWinGeometry,
          middleGeometry: PWinGeometry? = nil,
+         middleGeometry2: PWinGeometry? = nil,
          windowedModeScreen: NSScreen,
          isWindowInitialLayout: Bool = false) {
       self.name = name
       self.inputLayout = inputLayout
       self.inputGeometry = inputGeometry
       self.middleGeometry = middleGeometry
+      self.middleGeometry2 = middleGeometry2
       self.outputLayout = outputLayout
       self.outputGeometry = outputGeometry
       self.windowedModeScreen = windowedModeScreen
@@ -121,14 +125,14 @@ extension PlayerWindowController {
       || (inputLayout.enableOSC && (inputLayout.oscPosition.rawValue != outputLayout.oscPosition.rawValue))
     }
 
-    var needsMoveAndResizeVideoFrameStep: Bool {
+    var needsMoveAndScaleVideoFrameStep: Bool {
       !isWindowInitialLayout && (isTogglingMusicMode || (isTogglingInteractiveMode && !inputLayout.isFullScreen))
     }
 
-    /// Assuming that `needsMoveAndResizeVideoFrameStep==true`, returns `true` if the "move & resize video frame" step should
+    /// Assuming that `needsMoveAndScaleVideoFrameStep==true`, returns `true` if the "move & resize video frame" step should
     /// execute *prior* to the `updateHiddenViewsAndConstraints` step; returns `false` if it should execute afterwards.
-    var isMoveAndResizeStepBeforeMidpoint: Bool {
-      assert(needsMoveAndResizeVideoFrameStep)
+    var isMoveAndScaleStepBeforeMidpoint: Bool {
+      assert(needsMoveAndScaleVideoFrameStep)
       return isEnteringMusicMode || isEnteringInteractiveMode
     }
 
@@ -378,8 +382,20 @@ extension PlayerWindowController {
       switch stage {
       case .preTransitionSetup:
         return inputGeometry
-      case .closeOldPanels, .midTransitionHiddenUpdates:
+      case .closeOldPanels:
         return middleGeometry ?? inputGeometry
+      case .midTransitionHiddenUpdates:
+        if let middleGeometry2, isMoveAndScaleStepBeforeMidpoint {
+          return middleGeometry2
+        } else {
+          return geometry(for: .closeOldPanels)
+        }
+      case .moveAndScale:
+        if let middleGeometry2 {
+          return middleGeometry2
+        } else {
+          return geometry(for: .closeOldPanels)
+        }
       case .openNewPanels:
         if isEnteringLegacyFullScreen && !isWindowInitialLayout && IINAAnimation.isAnimationEnabled {
           return computeExtraAnimationGeoForLegacyFS(fsGeometry: outputGeometry)
@@ -417,7 +433,7 @@ extension PlayerWindowController {
     
     func topBarPlacement(for stage: Stage) -> Preference.PanelPlacement {
       switch stage {
-      case .preTransitionSetup, .closeOldPanels:
+      case .preTransitionSetup, .closeOldPanels, .moveAndScale:
         return inputLayout.topBarPlacement
       case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
         return outputLayout.topBarPlacement
@@ -433,7 +449,7 @@ extension PlayerWindowController {
       switch stage {
       case .preTransitionSetup:
         return inputGeometry.topMarginHeight
-      case .closeOldPanels, .midTransitionHiddenUpdates:
+      case .closeOldPanels, .moveAndScale, .midTransitionHiddenUpdates:
         if isExitingLegacyFullScreen {
           // Use prev offset for a smoother animation
           return inputGeometry.topMarginHeight
@@ -501,7 +517,7 @@ extension PlayerWindowController {
 
     func bottomBarPlacement(for stage: Stage) -> Preference.PanelPlacement {
       switch stage {
-      case .preTransitionSetup, .closeOldPanels:
+      case .preTransitionSetup, .closeOldPanels, .moveAndScale:
         return inputLayout.bottomBarPlacement
       case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
         return outputLayout.bottomBarPlacement
@@ -537,17 +553,17 @@ extension PlayerWindowController {
     }
 
     func viewportBtmSpecialOffset(for stage: Stage) -> CGFloat {
-      let inputViewportHeight = inputGeometry.viewportSize.height
-      let outputViewportHeight = outputGeometry.viewportSize.height
-
       switch stage {
-      case .preTransitionSetup, .closeOldPanels:
+      case .preTransitionSetup, .closeOldPanels, .moveAndScale:
+        let inputViewportHeight = inputGeometry.viewportSize.height
         if inputViewportHeight == 0 {
           return -inputGeometry.videoHeightWhenVisible
         } else {
           return 0
         }
+
       case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
+        let outputViewportHeight = outputGeometry.viewportSize.height
         if outputViewportHeight == 0 {
           return -outputGeometry.videoHeightWhenVisible
         } else {

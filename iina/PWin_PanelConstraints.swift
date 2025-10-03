@@ -80,7 +80,7 @@ extension PlayerWindowController {
 
     let layout: LayoutState
     switch stage {
-    case .preTransitionSetup, .closeOldPanels:
+    case .preTransitionSetup, .closeOldPanels, .moveAndScale:
       // Closing or preparing to close: use existing layout
       layout = transition.inputLayout
       useTopBar = useTopBar || transition.inputLayout.hasTopBar
@@ -212,10 +212,11 @@ extension PlayerWindowController {
       }
     }
 
-    // Bottom Bar
+    // - Bottom Bar
     if useBottomBar {
       // Handle leading & trailing constraints
-      updateBottomBarHorizontalContraints(forLayout: layout, log)
+      updateBottomBarHorizontalContraints(bottomBarPlacement: layout.bottomBarPlacement,
+                                          useLeadingSidebar: useLeadingSidebar, useTrailingSidebar: useTrailingSidebar, log)
 
       // enable for animations or if in music mode & neither playlist nor video is open
       if !isFinalStage || (outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown) {
@@ -238,7 +239,7 @@ extension PlayerWindowController {
     }
 
 
-    // Viewport View
+    // - Viewport View
     if useViewport {
       let constant1 = transition.vpTopOffsetFromCVTop(for: stage)
       let constant2 = transition.cvBtmOffsetFromVPBtm(for: stage)
@@ -302,6 +303,9 @@ extension PlayerWindowController {
         }
       }
 
+    case .moveAndScale:
+      break
+
     case .midTransitionHiddenUpdates:
       /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
       if transition.isClosingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
@@ -342,7 +346,7 @@ extension PlayerWindowController {
     }
 
     // OSD constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
-    updateOSDConstraints(layout, stageGeo, hasLeadingSidebar: useLeadingSidebar, hasTrailingSidebar: useTrailingSidebar)
+    updateOSDConstraints(stageGeo, hasLeadingSidebar: useLeadingSidebar, hasTrailingSidebar: useTrailingSidebar)
 
     sortContentViewSubviews(for: layout)
   }
@@ -377,16 +381,17 @@ extension PlayerWindowController {
 
   // - Bottom bar
 
-  private func updateBottomBarHorizontalContraints(forLayout layout: LayoutState, _ log: Logger.Subsystem) {
+  private func updateBottomBarHorizontalContraints(bottomBarPlacement: Preference.PanelPlacement,
+                                                   useLeadingSidebar: Bool, useTrailingSidebar: Bool, _ log: Logger.Subsystem) {
     guard let window = window, let contentView = window.contentView else { return }
     let p = panelConstraints
 
-    log.verbose("Updating bottomBar placement to: \(layout.bottomBarPlacement) leadingSB_Shown=\(layout.isLeadingSidebarVisible.yn) trailingSB_Shown=\(layout.isTrailingSidebarVisible.yn)")
+    log.verbose("Updating bottomBar placement to: \(bottomBarPlacement) leadingSB=\(useLeadingSidebar.yn) trailingSB=\(useTrailingSidebar.yn)")
 
     // - Leading
 
     let leadingSpacePartner: NSLayoutXAxisAnchor
-    if layout.bottomBarPlacement == .insideViewport && layout.isLeadingSidebarVisible {
+    if bottomBarPlacement == .insideViewport && useLeadingSidebar {
       // Align left & right sides with sidebars (bottom bar will squeeze to make space for sidebars)
       assert(leadingSidebarView.superview != nil)
       leadingSpacePartner = leadingSidebarView.trailingAnchor
@@ -402,7 +407,7 @@ extension PlayerWindowController {
     // - Trailing
 
     let trailingSpacePartner: NSLayoutXAxisAnchor
-    if layout.bottomBarPlacement == .insideViewport && layout.isTrailingSidebarVisible {
+    if bottomBarPlacement == .insideViewport && useTrailingSidebar {
       assert(trailingSidebarView.superview != nil)
       trailingSpacePartner = trailingSidebarView.leadingAnchor
     } else {

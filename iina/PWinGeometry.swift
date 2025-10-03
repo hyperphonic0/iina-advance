@@ -207,6 +207,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return Preference.bool(for: .enableOSD) && isViewportShown
   }
 
+  var shouldHaveAdditionalInfo: Bool {
+    mode.isFullScreen && Preference.bool(for: .displayTimeAndBatteryInFullScreen)
+  }
+
   /// OSD offset from top of viewportView
   func osdOffsetFromTopOfViewport() -> CGFloat {
     insideBars.top + 8

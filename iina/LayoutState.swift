@@ -388,10 +388,6 @@ struct LayoutState {
     return mode == .windowedNormal || mode == .fullScreenNormal
   }
 
-  var hasAdditionalInfo: Bool {
-    isFullScreen && Preference.bool(for: .displayTimeAndBatteryInFullScreen)
-  }
-
   var isMusicMode: Bool {
     return mode == .musicMode
   }

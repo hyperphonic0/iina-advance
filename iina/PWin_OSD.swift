@@ -352,7 +352,7 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
 
 // PlayerWindow UI: OSD
 extension PlayerWindowController {
-  func addOrRemoveOSDViews(_ layout: LayoutState, _ geo: PWinGeometry) {
+  func addOrRemoveOSDViews(_ geo: PWinGeometry) {
     if geo.shouldHaveOSD {
       if !viewportView.subviews.contains(osd.osdView) {
         log.verbose{"[OSD] Adding osdView to viewportView"}
@@ -367,7 +367,7 @@ extension PlayerWindowController {
       }
     }
 
-    if layout.hasAdditionalInfo {
+    if geo.shouldHaveAdditionalInfo {
       if !viewportView.subviews.contains(additionalInfoView) {
         log.verbose{"[OSD] Adding additionalInfoView to viewportView"}
         viewportView.addSubview(additionalInfoView)  // will sort below
@@ -389,14 +389,14 @@ extension PlayerWindowController {
   /// - For many of the constraints, priority=900 will be used to avoid problems with black swan layouts
   /// which might trigger constraint violations if priority=required were used.
   /// - Setting `skipAddConstraints` to `true` is a kludge for special use during layout transitions
-  func updateOSDConstraints(_ layout: LayoutState, _ geo: PWinGeometry, hasLeadingSidebar: Bool, hasTrailingSidebar: Bool) {
+  func updateOSDConstraints(_ geo: PWinGeometry, hasLeadingSidebar: Bool, hasTrailingSidebar: Bool) {
     for optCon in osd.optionalConstraints {
       optCon.constraint?.priorityInt = 1
     }
 
     let hasOSD = geo.shouldHaveOSD
     let offsetFromTop = geo.osdOffsetFromTopOfViewport()
-    let hasAdditionalInfo = layout.hasAdditionalInfo
+    let hasAdditionalInfo = geo.shouldHaveAdditionalInfo
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
 
     log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) offsetFromTop=\(offsetFromTop)"}
