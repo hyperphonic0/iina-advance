@@ -283,9 +283,7 @@ extension PlayerWindowController {
     // - Sidebars
     switch stage {
     case .preTransitionSetup:
-      if transition.isWindowInitialLayout || transition.inputLayout.isMusicMode || transition.outputLayout.isMusicMode {
-        updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
-      }
+      updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
 
     case .closeOldPanels:
       if let middleGeo = transition.closeOldPanelsGeometry, !transition.isWindowInitialLayout {
@@ -296,7 +294,10 @@ extension PlayerWindowController {
                                   setTrailingTo: transition.isClosingTrailingSidebar ? .closed : nil,
                                   ΔWindowWidth: ΔWindowWidth)
 
-        if useLeadingSidebar || useTrailingSidebar, !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {
+        if transition.isExitingMusicMode {
+          // Use music mode tab height
+          updateSidebarVerticalConstraints(tabHeight: transition.inputGeometry.sidebarTabHeight, downshift: transition.inputGeometry.sidebarDownshift)
+        } else if useLeadingSidebar || useTrailingSidebar {
           // Update sidebar vertical alignments to match top bar:
           updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
         }
@@ -319,13 +320,15 @@ extension PlayerWindowController {
 
       if prepareSidebarsForOpening(transition) {
         updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
+      } else if transition.isEnteringMusicMode {
+        updateSidebarVerticalConstraints(tabHeight: transition.outputGeometry.sidebarTabHeight, downshift: transition.outputGeometry.sidebarDownshift)
       }
 
     case .openNewPanels:
       if transition.isWindowInitialLayout {
         // Need to run this now because intiial layout doesn't run the midTransitionHiddenUpdates step
         if prepareSidebarsForOpening(transition) {
-          updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
+          updateSidebarVerticalConstraints(tabHeight: transition.outputGeometry.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
         }
       }
       if transition.inputGeometry.isMusicModePlaylistShown || transition.outputGeometry.isMusicModePlaylistShown
