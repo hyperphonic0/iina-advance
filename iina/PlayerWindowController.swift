@@ -921,7 +921,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
         updateTitle()
         window?.isExcludedFromWindowsMenu = false
-        videoView.forceDraw()  // needed if restoring while paused
+        videoView.activateForcedRedraws()  // needed if restoring while paused
       })
 
       let pendingTasks = pendingVideoGeoUpdateTasks

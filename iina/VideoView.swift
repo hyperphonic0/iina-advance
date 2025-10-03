@@ -207,9 +207,11 @@ class VideoView: NSView {
   // MARK: - Misc
 
   func needsForcedRedraws() -> Bool {
-    guard let currentVideoTrack = player.info.currentTrack(.video), currentVideoTrack.id != 0 else { return false }
-    guard player.pwc.loaded, player.isActive, player.info.isPaused || currentVideoTrack.isAlbumart else { return false }
-    guard !Preference.bool(for: .isRestoreInProgress) else { return false }
+    guard player.pwc.loaded, player.isActive else { return false }
+    // FIXME: Refactor this to remove need for lock!
+    guard let currentVideoTrack = player.info.currentTrack(.video),
+          currentVideoTrack.id != 0, player.info.isPaused || currentVideoTrack.isAlbumart else { return false }
+    guard !player.pwc.sessionState.isRestoring else { return false }
     return true
   }
 
@@ -223,7 +225,8 @@ class VideoView: NSView {
   /// Deprecated! Use `activateForcedRedraws` instead.
   func forceDraw() {
     assert(DispatchQueue.isExecutingIn(.main))
-    activateForcedRedraws()
+    guard needsForcedRedraws() else { return }
+    glLayer?.drawAsync(forced: true)
   }
 
   func addShadowForInteractiveMode() {

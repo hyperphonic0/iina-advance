@@ -47,9 +47,6 @@ extension PlayerWindowController {
   ///   `window.setFrame`. Do not use for anything too serious because it seems to sometimes fire during animations in progress.
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
-    // Trigger forced draws so that mpv can [try its best to] redraw the video without distortion during window resize:
-    videoView.activateForcedRedraws()
-
     guard !isAnimatingLayoutTransition else {
       log.verbose{"[WinWillResize] Denying req=\(requestedSize): isAnimatingLayoutTransition=Y. Will stay at \(window.frame.size)"}
       return window.frame.size
@@ -216,7 +213,7 @@ extension PlayerWindowController {
   ///
   /// This method cannot handle complex layout changes. For that, use a `LayoutTransition` (see `PWin_LayoutTxBuilder.swift`).
   private func resizeWindowSubviews(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
-    videoView.enterAsynchronousMode()
+    // Trigger forced draws so that mpv can [try its best to] redraw the video without distortion during window resize:
     videoView.activateForcedRedraws()
 
     // These may no longer be aligned correctly. Just hide them

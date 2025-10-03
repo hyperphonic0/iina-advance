@@ -389,7 +389,7 @@ extension PlayerWindowController {
   /// - For many of the constraints, priority=900 will be used to avoid problems with black swan layouts
   /// which might trigger constraint violations if priority=required were used.
   /// - Setting `skipAddConstraints` to `true` is a kludge for special use during layout transitions
-  func updateOSDConstraints(_ geo: PWinGeometry, hasLeadingSidebar: Bool, hasTrailingSidebar: Bool) {
+  func updateOSDConstraints(_ geo: PWinGeometry) {
     for optCon in osd.optionalConstraints {
       optCon.constraint?.priorityInt = 1
     }
@@ -398,6 +398,8 @@ extension PlayerWindowController {
     let offsetFromTop = geo.osdOffsetFromTopOfViewport()
     let hasAdditionalInfo = geo.shouldHaveAdditionalInfo
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
+    let hasLeadingSidebar = geo.insideBars.leading > 0
+    let hasTrailingSidebar = geo.insideBars.trailing > 0
 
     log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) offsetFromTop=\(offsetFromTop)"}
 

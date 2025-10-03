@@ -130,13 +130,6 @@ extension PlayerWindowController {
       }
     }
 
-    // Apply workaround for edge case when both sidebars are "outside" and visible, then one is opened or closed.
-    // Need extra checks here so that the workaround isn't also applied when switching sidebar from "inside" to "outside".
-    if transition.inputLayout.leadingSidebar.isVisible, transition.inputLayout.leadingSidebar.placement == .outsideViewport,
-       transition.inputLayout.trailingSidebar.isVisible, transition.inputLayout.trailingSidebar.placement == .outsideViewport {
-      prepareDepthOrderOfOutsideSidebarsForToggle(transition)
-    }
-
     // Interactive mode
     if transition.isEnteringInteractiveMode {
       isPausedPriorToInteractiveMode = player.info.isPaused
@@ -926,8 +919,6 @@ extension PlayerWindowController {
       }
     }
 
-    prepareDepthOrderOfOutsideSidebarsForToggle(transition)
-
     // So that panels toggling between "inside" and "outside" don't change until they need to (but FS is OK)
     if !transition.isTogglingFullScreen {
       updatePanelBlendingModes(to: outputLayout)
@@ -1448,23 +1439,6 @@ extension PlayerWindowController {
   }
 
   // MARK: - Support Functions: Style
-
-
-  /// This fixes an edge case when both sidebars are shown and are `.outsideViewport`. When one is toggled, and width of
-  /// `videoView` is smaller than that of the sidebar being toggled, must ensure that the sidebar being animated is below
-  /// the other one, otherwise it will be briefly seen popping out on top of the other one.
-  private func prepareDepthOrderOfOutsideSidebarsForToggle(_ transition: LayoutTransition) {
-    guard transition.isOpeningOrClosingAnySidebar,
-          transition.outputLayout.leadingSidebar.placement == .outsideViewport,
-          transition.outputLayout.trailingSidebar.placement == .outsideViewport else { return }
-    guard let contentView = window?.contentView else { return }
-
-    if transition.isOpeningLeadingSidebar {
-      contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: trailingSidebarView)
-    } else if transition.isOpeningTrailingSidebar {
-      contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: leadingSidebarView)
-    }
-  }
 
   private func updatePanelBlendingModes(to outputLayout: LayoutState) {
     if outputLayout.topBarHeight > 0 {

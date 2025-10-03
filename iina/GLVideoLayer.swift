@@ -236,7 +236,7 @@ class GLVideoLayer: CAOpenGLLayer {
       repeats: false
     )
     /// Save some CPU by making this less strict, because we don't really care that much
-    asychronousModeTimer?.tolerance = Constants.TimeInterval.asynchronousModeTimeout * 0.1
+    asychronousModeTimer?.tolerance = Constants.TimeInterval.asynchronousModeTimeout * 0.2
   }
 
   @objc func exitAsynchronousMode() {

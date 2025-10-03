@@ -287,15 +287,12 @@ extension PlayerWindowController {
 
     case .closeOldPanels:
       if let middleGeo = transition.closeOldPanelsGeometry, !transition.isWindowInitialLayout {
-        if useLeadingSidebar || useTrailingSidebar {
-          // Sidebars (if closing)
-          let ΔWindowWidth = middleGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
-          animateShowOrHideSidebars(transition: transition, layout: layout,
-                                    setLeadingTo: transition.isClosingLeadingSidebar ? .closed : nil,
-                                    setTrailingTo: transition.isClosingTrailingSidebar ? .closed : nil,
-                                    ΔWindowWidth: ΔWindowWidth)
-
-        }
+        // Sidebars (if closing)
+        let ΔWindowWidth = middleGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
+        animateShowOrHideSidebars(transition: transition, layout: layout,
+                                  setLeadingTo: transition.isClosingLeadingSidebar ? .closed : nil,
+                                  setTrailingTo: transition.isClosingTrailingSidebar ? .closed : nil,
+                                  ΔWindowWidth: ΔWindowWidth)
 
         if useLeadingSidebar || useTrailingSidebar, !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {
           // Update sidebar vertical alignments to match top bar:
@@ -308,14 +305,14 @@ extension PlayerWindowController {
 
     case .midTransitionHiddenUpdates:
       /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
-      if transition.isClosingLeadingSidebar, let tabToHide = transition.inputLayout.leadingSidebar.visibleTab {
+      if transition.isClosingLeadingSidebar, let tabGroupToHide = transition.inputLayout.leadingSidebar.visibleTabGroup {
         /// Finish closing (if closing)
-        removeSidebarTabGroupView(group: tabToHide.group)
+        removeSidebarTabGroupView(group: tabGroupToHide)
       }
-      if transition.isClosingTrailingSidebar, let tabToHide = transition.inputLayout.trailingSidebar.visibleTab {
+      if transition.isClosingTrailingSidebar, let tabGroupToHide = transition.inputLayout.trailingSidebar.visibleTabGroup {
         /// Finish closing (if closing).
         /// If entering music mode, make sure to do this BEFORE moving `playlistView` down below:
-        removeSidebarTabGroupView(group: tabToHide.group)
+        removeSidebarTabGroupView(group: tabGroupToHide)
       }
 
       if prepareSidebarsForOpening(transition) {
@@ -346,9 +343,10 @@ extension PlayerWindowController {
     }
 
     // OSD constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
-    updateOSDConstraints(stageGeo, hasLeadingSidebar: useLeadingSidebar, hasTrailingSidebar: useTrailingSidebar)
+    updateOSDConstraints(stageGeo)
 
-    sortContentViewSubviews(for: layout)
+    // Must execute this *before* sidebars logic below, which may alter their orders
+    sortContentViewSubviews(for: layout, in: transition)
   }
 
   private func prepareSidebarsForOpening(_ transition: LayoutTransition) -> Bool {
@@ -530,16 +528,25 @@ extension PlayerWindowController {
   /// • Outside bars never cast shadows or have shadows cast on them.
   /// • Inside sidebars cast shadows over inside top bar & inside bottom bar, and over `viewportView`.
   /// • Inside top & inside bottom bars do not cast shadows over `viewportView`.
-  private func sortContentViewSubviews(for layout: LayoutState) {
+  private func sortContentViewSubviews(for layout: LayoutState, in transition: LayoutTransition) {
     var possibleSubviews: [NSView] = []
+
+    var placedTrailingOutsideSidebar = false
 
     // If a sidebar is "outsideViewport", need to put it behind the video because:
     // (1) Don't want sidebar to cast a shadow on the video
     // (2) Animate sidebar open/close with "slide in" / "slide out" from behind the video
     if layout.leadingSidebarPlacement == .outsideViewport {
+      /// This fixes an edge case when both sidebars are shown and are `.outsideViewport`. When one is toggled, and width of
+      /// `videoView` is smaller than that of the sidebar being toggled, we must ensure that the sidebar being animated is below
+      /// the other one. Otherwise it will be briefly seen popping out on top of the other one.
+      if layout.trailingSidebarPlacement == .outsideViewport, transition.isOpeningTrailingSidebar || transition.isClosingTrailingSidebar {
+        possibleSubviews.append(trailingSidebarView)
+        placedTrailingOutsideSidebar = true
+      }
       possibleSubviews.append(leadingSidebarView)
     }
-    if layout.trailingSidebarPlacement == .outsideViewport {
+    if layout.trailingSidebarPlacement == .outsideViewport, !placedTrailingOutsideSidebar {
       possibleSubviews.append(trailingSidebarView)
     }
 

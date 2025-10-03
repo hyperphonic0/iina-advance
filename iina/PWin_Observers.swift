@@ -368,7 +368,7 @@ extension PlayerWindowController {
           fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
         }
         addOrRemoveOSDViews(currentGeo)
-        updateOSDConstraints(currentGeo, hasLeadingSidebar: layout.leadingSidebar.isVisible, hasTrailingSidebar: layout.trailingSidebar.isVisible)
+        updateOSDConstraints(currentGeo)
       }
     case .osdTextSize:
       animationPipeline.submitInstantTask { [self] in
