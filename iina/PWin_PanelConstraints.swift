@@ -80,26 +80,26 @@ extension PlayerWindowController {
 
     let layout: LayoutState
     switch stage {
-    case .preTransitionSetup, .closeOldPanels, .moveAndScale:
+    case .preTransitionSetup, .closeOldPanels:
       // Closing or preparing to close: use existing layout
       layout = transition.inputLayout
-      useTopBar = useTopBar || transition.inputLayout.hasTopBar
       useViewport = useViewport || transition.inputGeometry.isViewportShown
-    case .midTransitionHiddenUpdates, .openNewPanels:
+      useTopBar = useTopBar || transition.inputLayout.hasTopBar
+      useBottomBar = useBottomBar || transition.inputLayout.hasBottomBar
+      useLeadingSidebar = useLeadingSidebar || transition.inputLayout.isLeadingSidebarVisible
+      useTrailingSidebar = useTrailingSidebar || transition.inputLayout.isTrailingSidebarVisible
+    case .moveAndScale, .midTransitionHiddenUpdates, .openNewPanels:
       if transition.isTogglingFullScreen {  // need exception for FS toggle
         useTopBar = useTopBar || transition.inputLayout.hasTopBar
         useViewport = useViewport || transition.inputGeometry.isViewportShown
+      } else if stage == .moveAndScale {
+        useViewport = useViewport || transition.inputGeometry.isViewportShown
       }
+      useBottomBar = useBottomBar || transition.inputLayout.hasBottomBar
       // About to apply output geometry, or applying output geometry: use output layout
       layout = transition.outputLayout
     case .postTransition:
       layout = transition.outputLayout
-    }
-
-    if !isFinalStage {
-      useBottomBar = useBottomBar || transition.inputLayout.hasBottomBar
-      useLeadingSidebar = useLeadingSidebar || transition.inputLayout.isLeadingSidebarVisible
-      useTrailingSidebar = useTrailingSidebar || transition.inputLayout.isTrailingSidebarVisible
     }
 
     log.verbose("RebuildPanels: Viewport=\(useViewport.yn) BottomBar=\(useBottomBar.yn) TopBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSB=\(useTrailingSidebar.yn)")
@@ -158,6 +158,10 @@ extension PlayerWindowController {
     // Need to add additionalInfo, OSD before changing sidebars
     addOrRemoveOSDViews(stageGeo)
 
+    // - Done adding / removing views
+
+    log.verbose("RebuildPanels: ViewportH=\(viewportView.frame.height) BottomBarH=\(bottomBarView.frame.height) TopBar=\(topBarView.frame.height)")
+
     // - Add constraints between subviews
     if useTopBar {
       assert(useViewport, "Cannot use topBarView without viewportView")
@@ -206,11 +210,10 @@ extension PlayerWindowController {
         viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
       }
 
-      p.bottomBarBtmOffsetFromVPBtm.createOrUpdate(to: constant2, log) { [self] c in
+      p.bottomBarBtmOffsetFromVPBtm.createOrUpdate(to: constant2, priorityInt: 260, log) { [self] c in
         let con = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
         // In music mode, need to be lower priority than VideoView constraints. Otherwise live resize of window will break.
         // Leave as lower priority always - doesn't seem to hurt, and prevent conflicting constraints
-        con.priorityInt = 260
         return con
       }
     }
@@ -229,9 +232,7 @@ extension PlayerWindowController {
         }
       } else {
         // remove
-        if p.bottomBarBtmOffsetFromCVTop.isActive {
-          p.bottomBarBtmOffsetFromCVTop.remove(log)
-        }
+        p.bottomBarBtmOffsetFromCVTop.remove(log)
       }
 
       // This will always have constant: 0
@@ -241,8 +242,19 @@ extension PlayerWindowController {
 
     }
 
-
     // - Viewport View
+
+    // This constraint is only used during the animation. Do not use priority=1000 because it may be off by a pixel...
+    if useViewport, (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode), !isFinalStage {
+      let constant3 = transition.vpBtmOffsetFromCVTop(for: stage)
+
+      p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3, priorityInt: 999, log) { [self] c in
+        viewportView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
+      }
+    } else {
+      p.vpBtmOffsetFromCVTop.remove(log)
+    }
+
     if useViewport {
       let constant1 = transition.vpTopOffsetFromCVTop(for: stage)
       let constant2 = transition.cvBtmOffsetFromVPBtm(for: stage)
@@ -250,16 +262,6 @@ extension PlayerWindowController {
 
       p.vpTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
         viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
-      }
-
-      if (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode), !isFinalStage {
-        let constant3 = transition.vpBtmOffsetFromCVTop(for: stage)
-
-        p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3, log) { [self] c in
-          viewportView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
-        }
-      } else {
-        p.vpBtmOffsetFromCVTop.remove(log)
       }
 
       if isFinalStage && outputGeo.mode == .musicMode && outputGeo.isMusicModePlaylistShown {

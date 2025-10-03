@@ -498,6 +498,7 @@ extension PlayerWindowController {
       additionalInfoView.hStackView.setVisibilityPriority(.notVisible, for: additionalInfoView.batteryView)
     }
     additionalInfoView.clockTimeLabel.stringValue = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
+    additionalInfoView.needsDisplay = true
   }
 
   // MARK: - OSD Content Updates

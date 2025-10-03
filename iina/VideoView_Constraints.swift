@@ -467,7 +467,7 @@ extension VideoView {
                 /// For interactive mode, max width should equal superview's width minus minMargins
                 wMax: -spacerMinValues.totalWidth,
                 hMax: -spacerMinValues.totalHeight,
-                whMax_Priority: .init(495),
+                whMax_Priority: musicMode ? .required : .init(495),
 
                 spacerMax: Constraint(active: !interactiveMode && !musicMode, priority: 490),
 

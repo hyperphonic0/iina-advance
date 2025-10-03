@@ -271,7 +271,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     }
 
     tasks.append(.instantTask { [self] in
-      /// Must set this before calling `addVideoViewToWindow()`
+      /// Must set this before calling `addViewportAndSubviewsToWindowIfNeeded()`
       pip.status = .notInPIP
 
       let currentGeo = currentLayout.mode == .musicMode ? musicModeGeo : windowedModeGeo

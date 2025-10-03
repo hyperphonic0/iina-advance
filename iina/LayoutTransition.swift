@@ -529,7 +529,7 @@ extension PlayerWindowController {
       case .insideViewport:
         return bottomBarHeight(for: stage)
       case .outsideViewport:
-        return -viewportBtmSpecialOffset(for: stage)
+        return 0//-viewportBtmSpecialOffset(for: stage)
       }
     }
 
@@ -538,7 +538,7 @@ extension PlayerWindowController {
       case .insideViewport:
         return 0
       case .outsideViewport:
-        return bottomBarHeight(for: stage) + viewportBtmSpecialOffset(for: stage)
+        return bottomBarHeight(for: stage) //+ viewportBtmSpecialOffset(for: stage)
       }
     }
 
@@ -548,7 +548,7 @@ extension PlayerWindowController {
         return 0
       case .outsideViewport:
         let bottomBarHeight = bottomBarHeight(for: stage)
-        return bottomBarHeight + viewportBtmSpecialOffset(for: stage)
+        return bottomBarHeight //+ viewportBtmSpecialOffset(for: stage)
       }
     }
 

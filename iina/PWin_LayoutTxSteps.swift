@@ -397,9 +397,9 @@ extension PlayerWindowController {
   /// This animation moves & resizes the video frame for a nice effect.
   /// May execute either before or after `updateHiddenViewsAndConstraints`.
   func moveAndScaleVideoFrame(_ transition: LayoutTransition) {
-    let logPre = transition.logPreamble(for: .moveAndScale)
+    let log = log.withPreamble(transition.logPreamble(for: .moveAndScale))
     let geo = transition.moveAndScaleGeometry!
-    log.verbose{"\(logPre) Moving & scaling video window to middleGeo2=\(geo)"}
+    log.verbose{"Moving & scaling video window to middleGeo2=\(geo)"}
 
     // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
     // It's not needed until the next step anyway.
@@ -413,9 +413,9 @@ extension PlayerWindowController {
   /// there is not an appropriate animation which should be seen.
   func updateHiddenViewsAndConstraints(_ transition: LayoutTransition) {
     guard let window = window else { return }
-    let logPre = transition.logPreamble(for: .midTransitionHiddenUpdates)
+    let log = log.withPreamble(transition.logPreamble(for: .midTransitionHiddenUpdates))
     let outputLayout = transition.outputLayout
-    log.verbose{"\(logPre) Start"}
+    log.verbose{"Start"}
 
     if outputLayout.topBarView == .showAlways {
       // This is apparently missed
@@ -449,6 +449,7 @@ extension PlayerWindowController {
         setWindowStyleToNative()
       }
     }
+    
 
     if transition.isWindowInitialLayout || transition.isOpeningViewport {
       if !transition.isWindowInitialLayout, pip.status == .inPIP {
@@ -563,7 +564,7 @@ extension PlayerWindowController {
 
     // Update bottom bar constraints *after* sidebars are added
     if transition.isOpeningAnySidebar {
-      log.verbose{"\(logPre) Sidebars will be open: LeadingSidebar=\(outputLayout.leadingSidebar.isVisible.yn) TrailingSidebar=\(outputLayout.trailingSidebar.isVisible.yn)"}
+      log.verbose{"Sidebars will be open: LeadingSidebar=\(outputLayout.leadingSidebar.isVisible.yn) TrailingSidebar=\(outputLayout.trailingSidebar.isVisible.yn)"}
 
       if outputLayout.leadingSidebar.isVisible {
         if outputLayout.leadingSidebarPlacement == .insideViewport {
@@ -595,7 +596,7 @@ extension PlayerWindowController {
       pip.showOrHidePipOverlayView()
 
       if transition.isEnteringMusicMode {
-        log.verbose{"\(logPre) Entering music mode: adding miniPlayer view to bottomBarView"}
+        log.verbose{"Entering music mode: adding miniPlayer view to bottomBarView"}
         miniPlayer.loadIfNeeded()
         bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
         miniPlayer.view.addAllConstraintsToFillSuperview()
@@ -634,7 +635,7 @@ extension PlayerWindowController {
 
       } else if transition.isExitingMusicMode {
         // If exiting music mode, need to restore views early in this step
-        log.verbose{"\(logPre) Cleaning up for music mode exit"}
+        log.verbose{"Cleaning up for music mode exit"}
         miniPlayer.loadIfNeeded()
         miniPlayer.view.removeFromSuperview()
 
@@ -662,7 +663,7 @@ extension PlayerWindowController {
     // [Re-]add OSC:
     if outputLayout.enableOSC {
       let newGeo = outputLayout.controlBarGeo
-      log.verbose{"\(logPre) Setting up OSC: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(newGeo.playIconSize) playIconSpacing=\(newGeo.playIconSpacing)"}
+      log.verbose{"Setting up OSC: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(newGeo.playIconSize) playIconSpacing=\(newGeo.playIconSpacing)"}
 
       rebuildOSCToolbar(transition, .midTransitionHiddenUpdates)
 
@@ -674,11 +675,11 @@ extension PlayerWindowController {
         let oscContentView: NSView
         if newGeo.isTwoRowBarOSC {
           oscContentView = oscTwoRowView
-          log.verbose{"\(logPre) Adding subviews to oscTwoRowView for top bar, topBarHeight=\(outputLayout.topBarHeight)"}
+          log.verbose{"Adding subviews to oscTwoRowView for top bar, topBarHeight=\(outputLayout.topBarHeight)"}
           oscTwoRowView.updateSubviews(from: self, newGeo)
         } else {
           oscContentView = oscOneRowView
-          log.verbose{"\(logPre) Adding subviews to oscOneRowView for top bar"}
+          log.verbose{"Adding subviews to oscOneRowView for top bar"}
           oscOneRowView.updateSubviews(from: self, newGeo)
         }
 
@@ -696,11 +697,11 @@ extension PlayerWindowController {
         let oscContentView: NSView
         if newGeo.isTwoRowBarOSC {
           oscContentView = oscTwoRowView
-          log.verbose{"\(logPre) Adding subviews to oscTwoRowView for bottom bar, bottomBarHeight=\(outputLayout.bottomBarHeight)"}
+          log.verbose{"Adding subviews to oscTwoRowView for bottom bar, bottomBarHeight=\(outputLayout.bottomBarHeight)"}
           oscTwoRowView.updateSubviews(from: self, newGeo)
         } else {
           oscContentView = oscOneRowView
-          log.verbose{"\(logPre) Adding subviews to oscOneRowView for bottom bar"}
+          log.verbose{"Adding subviews to oscOneRowView for bottom bar"}
           oscOneRowView.updateSubviews(from: self, newGeo)
         }
 
@@ -715,7 +716,7 @@ extension PlayerWindowController {
       case .floating:
         currentControlBar = controlBarFloating
         if !viewportView.containsSubview(controlBarFloating) {
-          log.verbose{"\(logPre) Adding controlBarFloating to contentView"}
+          log.verbose{"Adding controlBarFloating to contentView"}
           viewportView.addSubview(controlBarFloating)
           sortViewportViewSubviews()
 
@@ -803,7 +804,7 @@ extension PlayerWindowController {
 
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging || transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight {
         let hasClearBG = transition.outputLayout.oscBackgroundIsClear
-        log.verbose{"\(logPre) Updating OSC colors: hasClearBG=\(hasClearBG.yn)"}
+        log.verbose{"Updating OSC colors: hasClearBG=\(hasClearBG.yn)"}
 
         playButton.setOSCColors(hasClearBG: hasClearBG)
         leftArrowButton.setOSCColors(hasClearBG: hasClearBG)
@@ -879,10 +880,10 @@ extension PlayerWindowController {
         case .crop:
           if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
             selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-            log.verbose{"\(logPre) Setting crop box selectedRect from prevFilter: \(selectedRect)"}
+            log.verbose{"Setting crop box selectedRect from prevFilter: \(selectedRect)"}
           } else {
             selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
-            log.verbose{"\(logPre) Setting crop box selectedRect to default whole videoSize: \(selectedRect)"}
+            log.verbose{"Setting crop box selectedRect to default whole videoSize: \(selectedRect)"}
           }
         case .freeSelecting, .none:
           selectedRect = .zero
@@ -924,7 +925,7 @@ extension PlayerWindowController {
       // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
       // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
       // be called via windowDidChangeScreen.
-      log.verbose{"\(logPre) Skipped applyThemeMaterial due to missing window or screen"}
+      log.verbose{"Skipped applyThemeMaterial due to missing window or screen"}
     }
 
 
@@ -932,15 +933,16 @@ extension PlayerWindowController {
     updateVolumeUI()
     playSlider.needsDisplay = true
 
-    log.verbose{"\(logPre) Done"}
+    log.verbose{"Done"}
   }  /// end `updateHiddenViewsAndConstraints`
+
 
   /// -------------------------------------------------
   /// OPEN PANELS & FINALIZE OFFSETS
   func openNewPanelsAndFinalizeOffsets(_ transition: LayoutTransition) {
     let outputLayout = transition.outputLayout
-    let logPre = transition.logPreamble(for: .openNewPanels)
-    log.verbose{"\(logPre) Start: TitleBar_H=\(outputLayout.titleBarHeight) TopOSC_H=\(outputLayout.topOSCHeight)"}
+    let log = log.withPreamble(transition.logPreamble(for: .openNewPanels))
+    log.verbose{"Start: TitleBar_H=\(outputLayout.titleBarHeight) TopOSC_H=\(outputLayout.topOSCHeight)"}
 
     if transition.isExitingLegacyFullScreen {
       /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
@@ -969,7 +971,7 @@ extension PlayerWindowController {
         volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
         volumeIconAspectConstraint.isActive = true
       }
-      log.verbose("TotalPlayControls.width=\(newGeo.totalPlayControlsWidth), leftArrowXOffset=\(newGeo.leftArrowCenterXOffset) rightArrowXOffset=\(newGeo.rightArrowCenterXOffset)")
+      log.trace("TotalPlayControls.width=\(newGeo.totalPlayControlsWidth) leftArrowXOffset=\(newGeo.leftArrowCenterXOffset) rightArrowXOffset=\(newGeo.rightArrowCenterXOffset)")
 
       arrowBtnWidthConstraint.animateToConstant(newGeo.arrowIconWidth)
       playBtnHeightConstraint.animateToConstant(newGeo.playIconSize)
@@ -995,7 +997,7 @@ extension PlayerWindowController {
     rebuildPanelConstraints(transition, stage: .openNewPanels)
 
     let openNewPanelsGeo: PWinGeometry = transition.geometry(for: .openNewPanels)
-    log.verbose("\(logPre) Calling setFrame from OpenNewPanels (\(openNewPanelsGeo.mode)): \(openNewPanelsGeo.windowFrame)")
+    log.verbose("Calling setFrame from OpenNewPanels (\(openNewPanelsGeo.mode)): \(openNewPanelsGeo.windowFrame)")
     setFrameAndUpdateWindowSubviews(using: openNewPanelsGeo, updateVideoView: openNewPanelsGeo.mode != .musicMode)
 
     if outputLayout.hasFloatingOSC {
@@ -1025,6 +1027,7 @@ extension PlayerWindowController {
       controlBarFloating.moveToLocationRatio(parentGeo: transition.outputGeometry)
     }
 
+    log.verbose{"Done"}
   }
 
   /// -------------------------------------------------
@@ -1097,8 +1100,8 @@ extension PlayerWindowController {
   /// POST TRANSITION: UPDATE INVISIBLES
   /// Cleanup & variable state updates. Always instantaneous (not animated).
   func doPostTransitionWork(_ transition: LayoutTransition) {
-    let logPre = transition.logPreamble(for: .postTransition)
-    log.verbose{"\(logPre) Start"}
+    let log = log.withPreamble(transition.logPreamble(for: .postTransition))
+    log.verbose{"Start"}
 
     // Update blending mode:
     updatePanelBlendingModes(to: transition.outputLayout)
@@ -1114,7 +1117,7 @@ extension PlayerWindowController {
     log.verbose{
       let fadeableIDs = fadeableViews.fadeables.map{$0.idString}
       let fadeablesTopBarIDs = fadeableViews.fadeablesInTopBar.map{$0.idString}
-      return "\(logPre) FadeableViews=\(fadeableIDs) InTopBar=\(fadeablesTopBarIDs)"
+      return "FadeableViews=\(fadeableIDs) InTopBar=\(fadeablesTopBarIDs)"
     }
 
     guard let window else { return }
@@ -1288,6 +1291,7 @@ extension PlayerWindowController {
 
     player.saveState()
   }
+  // End of steps
 
   // MARK: - Support Functions: Title Bar
 
