@@ -1747,13 +1747,21 @@ extension NSScreen {
   }
 
   var cameraHeightToFrameHeightRatio: CGFloat {
-    safeAreaInsets.top / frame.height
+    if #available(macOS 12.0, *) {
+      return safeAreaInsets.top / frame.height
+    } else {
+      return 0
+    }
   }
 
   /// • `nonCameraHeightToFrameHeightRatio >= cameraHeightToFrameHeightRatio` (or should be).
   /// • `nonCameraHeightToFrameHeightRatio + cameraHeightToFrameHeightRatio == 1`.
   var nonCameraHeightToFrameHeightRatio: CGFloat {
-    1 - (safeAreaInsets.top / frame.height)
+    if #available(macOS 12.0, *) {
+      return 1 - (safeAreaInsets.top / frame.height)
+    } else {
+      return 1
+    }
   }
 
   var displayId: UInt32 {
