@@ -203,7 +203,8 @@ extension PlayerWindowController {
     let isAnimatingVideoViewOpen = transition.isOpeningViewport && !isFinalStage  // Music Mode: opening video
     if useBottomBar && (!outputGeo.isViewportShown || isAnimatingVideoViewOpen) {
       let constant1 = transition.bottomBarTopOffsetFromCVTop(for: stage)
-      p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
+      // Do not use "required" priority - can cause errors leaving music mode when video was hidden
+      p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1, priorityInt: 999, log) { [self] c in
         bottomBarView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
       }
     } else {
@@ -318,10 +319,7 @@ extension PlayerWindowController {
         }
       }
 
-    case .moveAndScale:
-      break
-
-    case .midTransitionHiddenUpdates:
+    case .moveAndScale, .midTransitionHiddenUpdates:
       /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
       if transition.isClosingLeadingSidebar, let tabGroupToHide = transition.inputLayout.leadingSidebar.visibleTabGroup {
         /// Finish closing (if closing)
