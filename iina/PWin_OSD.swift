@@ -485,7 +485,7 @@ extension PlayerWindowController {
 
   /// Update `additionalInfoView` with battery status & media title
   func updateAdditionalInfoContent() {
-    log.verbose{"[OSD] Updating additionalInfoView content with URL: \(player.info.currentPlayback?.url.lastPathComponent ?? "nil")"}
+    log.trace{"[OSD] Updating additionalInfoView content with URL: \(player.info.currentPlayback?.url.lastPathComponent ?? "nil")"}
     guard let title = player.info.currentPlayback?.url.lastPathComponent else { return }
     additionalInfoView.titleLabel.string = title
     additionalInfoView.titleLabel.sizeToFit()

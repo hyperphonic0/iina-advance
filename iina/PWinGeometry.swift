@@ -218,6 +218,43 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     insideBars.top + 8
   }
 
+  /// Only if leading sidebar is open
+  var leadingSidebarWidth: CGFloat {
+    assert(outsideBars.trailing == 0 || insideBars.trailing == 0)
+    return outsideBars.leading + insideBars.leading
+  }
+
+  var isLeadingSidebarShown: Bool {
+    return leadingSidebarWidth > 0
+  }
+
+  var leadingSidebarPlacement: Preference.PanelPlacement? {
+    if insideBars.leading > 0 {
+      return .insideViewport
+    } else if outsideBars.leading > 0 {
+      return .outsideViewport
+    }
+    return nil
+  }
+
+  /// Only if trailing sidebar is open
+  var trailingSidebarWidth: CGFloat {
+    assert(outsideBars.trailing == 0 || insideBars.trailing == 0)
+    return outsideBars.trailing + insideBars.trailing
+  }
+
+  var isTrailingSidebarShown: Bool {
+    return trailingSidebarWidth > 0
+  }
+
+  var trailingSidebarPlacement: Preference.PanelPlacement? {
+    if insideBars.trailing > 0 {
+      return .insideViewport
+    } else if outsideBars.trailing > 0 {
+      return .outsideViewport
+    }
+    return nil
+  }
 
   /// Can only be `true` while in music mode.
   var isMusicModePlaylistShown: Bool {
@@ -407,8 +444,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// Adjusts the window origin for given `newWindowSize` such that the window's center does not move.
   private func adjustWindowOrigin(forNewWindowSize newWindowSize: NSSize) -> NSPoint {
     // Round the results to prevent excessive window drift due to small imprecisions in calculation
-    let deltaX = ((newWindowSize.width - windowFrame.size.width) / 2).rounded(.towardZero)
-    let deltaY = ((newWindowSize.height - windowFrame.size.height) / 2).rounded(.towardZero)
+    let deltaX = ((newWindowSize.width - windowFrame.size.width) / 2).rounded()
+    let deltaY = ((newWindowSize.height - windowFrame.size.height) / 2).rounded()
     let newOrigin = NSPoint(x: windowFrame.origin.x - deltaX,
                             y: windowFrame.origin.y - deltaY)
     return newOrigin
@@ -451,7 +488,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
           // Option A: resize height based on requested width
           scaledViewportSize = NSSize(width: requestedViewportSize.width,
                                       height: 0)  // note: only width is used by scalingViewport()
-//                                      height: (requestedViewportSize.width / video.videoAspectCAR).rounded(.towardZero))
         } else {
           // Option B: resize width based on requested height
           // Always need to calculate valid width first, then recalculate height based on width (to ensure video size rounding is consistent for PWinGeo constructor)
@@ -474,7 +510,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         if isViewportShown {
           maxVideoHeight = containerFrame.height - Constants.Distance.MusicMode.oscHeight - minPlaylistHeight
           /// `maxVideoHeight` can be negative if very short screen! Fall back to height based on `MiniPlayerMinWidth` if needed
-          maxVideoHeight = max(maxVideoHeight, (Constants.Distance.MusicMode.minWindowWidth / videoAspect).rounded(.towardZero))
+          maxVideoHeight = max(maxVideoHeight, (Constants.Distance.MusicMode.minWindowWidth / videoAspect).rounded())
           maxWinWidth = min(maxWinWidth, maxVideoHeight * videoAspect)
         } else {
           maxVideoHeight = 0
@@ -487,7 +523,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         }
 
         // Now determine height. Clamp again in case rounding goes outside of bounds
-        let videoHeight = (newWindowWidth / videoAspect).rounded(.towardZero).clamped(to: 0...maxVideoHeight)
+        let videoHeight = (newWindowWidth / videoAspect).rounded().clamped(to: 0...maxVideoHeight)
         // Make sure height is within acceptable values
         let minWindowHeight = videoHeight + Constants.Distance.MusicMode.oscHeight + minPlaylistHeight
         let maxWindowHeight = isMusicModePlaylistShown ? containerFrame.height : minWindowHeight
@@ -739,7 +775,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       if isViewportShown {
         let videoAspect = video.videoAspectCAR
         // Need to calculate height from with to keep rounding consistent with PwinGeometry.forMusicMode()
-        newVideoHeight = (newWindowWidth / videoAspect).rounded(.towardZero)
+        newVideoHeight = (newWindowWidth / videoAspect).rounded()
 
         let maxVideoHeight: CGFloat
         if isMusicModePlaylistShown {
@@ -762,7 +798,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         while (newVideoHeight > maxVideoHeight) || (newWindowWidth > maxWindowWidth) {
           trialHeight -= 1
           newWindowWidth = (trialHeight * videoAspect).rounded()
-          newVideoHeight = (newWindowWidth / videoAspect).rounded(.towardZero)
+          newVideoHeight = (newWindowWidth / videoAspect).rounded()
         }
       }
 
@@ -1396,7 +1432,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     static func videoHeightWhenVisible(windowFrame: CGRect, video: VideoGeometry) -> CGFloat {
       // Round down (toward zero) *always* to hopefully reduce inconsistencies due to rounding
-      return (windowFrame.width / video.videoAspectCAR).rounded(.towardZero)
+      return (windowFrame.width / video.videoAspectCAR).rounded()
     }
 
   }  // end struct MusicMode

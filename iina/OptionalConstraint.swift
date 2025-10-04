@@ -26,14 +26,14 @@ class OptionalConstraint {
   }
 
   /// This overload exists solely to fix a compiler error complaining about an ambiguous generic type
-  func createOrUpdate(to constantToSet: CGFloat = 0, priorityInt: Int = 1000,
+  func createOrUpdate(to constantToSet: CGFloat = 0, priorityInt: Int = 999,
                       _ log: Logger.Subsystem?,
                       _ creationFunc: (CGFloat) -> NSLayoutConstraint) {
     let requiredFirstAnchor: NSLayoutAnchor<NSLayoutXAxisAnchor>? = nil  // needed to keep compiler happy
     createOrUpdate(to: constantToSet, priorityInt: priorityInt, requiredFirstAnchor: requiredFirstAnchor, requiredSecondAnchor: nil, log, creationFunc)
   }
 
-  func createOrUpdate<AnchorType>(to constantToSet: CGFloat = 0, priorityInt: Int = 1000,
+  func createOrUpdate<AnchorType>(to constantToSet: CGFloat = 0, priorityInt: Int = 999,
                                   requiredFirstAnchor: NSLayoutAnchor<AnchorType>? = nil,
                                   requiredSecondAnchor: NSLayoutAnchor<AnchorType>? = nil,
                                   _ log: Logger.Subsystem?,

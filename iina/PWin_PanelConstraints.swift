@@ -63,6 +63,10 @@ extension PlayerWindowController {
 
   // MARK: - Bars Layout
 
+  // FIXME: 1. Exit Custom FS bad animation
+  // FIXME: 2. Exit Interactive Mode bad animation
+  // FIXME: 3. Interactive Mode Full Screen completely broken
+  // FIXME: 4. Delogo broken
   func rebuildPanelConstraints(_ transition: LayoutTransition, stage: LayoutTransition.Stage) {
     let contentView = window!.contentView!
     let p = panelConstraints
@@ -70,34 +74,44 @@ extension PlayerWindowController {
     let log = self.log.withPreamble(logPre)
     let outputGeo = transition.outputGeometry
     let stageGeo = transition.geometry(for: stage)
+    let isFinalStage: Bool = stage == .postTransition
 
-    var useViewport = outputGeo.isViewportShown
-    var useBottomBar = transition.outputLayout.hasBottomBar
-    var useTopBar = transition.outputLayout.hasTopBar
-    var useLeadingSidebar = transition.outputLayout.isLeadingSidebarVisible
-    var useTrailingSidebar = transition.outputLayout.isTrailingSidebarVisible
-    let isFinalStage = stage == .postTransition
+    // Need to always have viewportView during animations (when toggling music mode with video off)
+    let useViewport = (!isFinalStage && transition.inputGeometry.isViewportShown) || outputGeo.isViewportShown
+    let useBottomBar: Bool
+    let useTopBar: Bool
+    let useLeadingSidebar: Bool
+    let useTrailingSidebar: Bool
 
     let layout: LayoutState
     switch stage {
     case .preTransitionSetup, .closeOldPanels:
       // Closing or preparing to close: use existing layout
       layout = transition.inputLayout
-      useViewport = useViewport || transition.inputGeometry.isViewportShown
-      useTopBar = useTopBar || transition.inputLayout.hasTopBar
-      useBottomBar = useBottomBar || transition.inputLayout.hasBottomBar
-      useLeadingSidebar = useLeadingSidebar || transition.inputLayout.isLeadingSidebarVisible
-      useTrailingSidebar = useTrailingSidebar || transition.inputLayout.isTrailingSidebarVisible
-    case .moveAndScale, .midTransitionHiddenUpdates, .openNewPanels:
-      if transition.isTogglingFullScreen {  // need exception for FS toggle
-        useTopBar = useTopBar || transition.inputLayout.hasTopBar
+      useTopBar = layout.hasTopBar
+    case .moveAndScale:
+      if transition.isMoveAndScaleStepBeforeMidpoint {
+        layout = transition.inputLayout
+      } else {
+        layout = transition.outputLayout
       }
-      useBottomBar = useBottomBar || transition.inputLayout.hasBottomBar
+      if transition.isTogglingFullScreen {
+        useTopBar = transition.inputLayout.hasTopBar || transition.outputLayout.hasTopBar
+      } else  {
+        useTopBar = layout.hasTopBar
+      }
+    case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
       // About to apply output geometry, or applying output geometry: use output layout
       layout = transition.outputLayout
-    case .postTransition:
-      layout = transition.outputLayout
+      if transition.isTogglingFullScreen {
+        useTopBar = (!isFinalStage && transition.inputLayout.hasTopBar) || transition.outputLayout.hasTopBar
+      } else {
+        useTopBar = layout.hasTopBar
+      }
     }
+    useBottomBar = layout.hasBottomBar
+    useLeadingSidebar = layout.isLeadingSidebarVisible
+    useTrailingSidebar = layout.isTrailingSidebarVisible
 
     log.verbose("RebuildPanels: Viewport=\(useViewport.yn) BottomBar=\(useBottomBar.yn) TopBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSB=\(useTrailingSidebar.yn)")
 
@@ -219,7 +233,8 @@ extension PlayerWindowController {
     if useBottomBar {
       // Handle leading & trailing constraints
       updateBottomBarHorizontalContraints(bottomBarPlacement: layout.bottomBarPlacement,
-                                          useLeadingSidebar: useLeadingSidebar, useTrailingSidebar: useTrailingSidebar, log)
+                                          useLeadingSidebar: useLeadingSidebar,
+                                          useTrailingSidebar: useTrailingSidebar, log)
 
       // enable for animations or if in music mode & neither playlist nor video is open
       if !isFinalStage || (outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown) {
@@ -289,10 +304,10 @@ extension PlayerWindowController {
       if let middleGeo = transition.closeOldPanelsGeometry, !transition.isWindowInitialLayout {
         // Sidebars (if closing)
         let ΔWindowWidth = middleGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
-        animateShowOrHideSidebars(transition: transition, layout: layout,
-                                  setLeadingTo: transition.isClosingLeadingSidebar ? .closed : nil,
-                                  setTrailingTo: transition.isClosingTrailingSidebar ? .closed : nil,
-                                  ΔWindowWidth: ΔWindowWidth)
+        animateShowOrHideSidebars(transition.inputGeometry,
+                                  leadingVisible: transition.isClosingLeadingSidebar ? false : nil,
+                                  trailingVisible: transition.isClosingTrailingSidebar ? false : nil,
+                                  ΔWindowWidth: ΔWindowWidth, log)
 
         if transition.isExitingMusicMode {
           // Use music mode tab height
@@ -335,11 +350,10 @@ extension PlayerWindowController {
           || transition.inputLayout.isAnySidebarVisible || transition.outputLayout.isAnySidebarVisible {
         // Sidebars (if opening)
         let ΔWindowWidth = transition.ΔWindowWidth
-        animateShowOrHideSidebars(transition: transition,
-                                  layout: transition.outputLayout,
-                                  setLeadingTo: transition.isOpeningLeadingSidebar ? layout.leadingSidebar.visibility : nil,
-                                  setTrailingTo: transition.isOpeningTrailingSidebar ? layout.trailingSidebar.visibility : nil,
-                                  ΔWindowWidth: ΔWindowWidth)
+        animateShowOrHideSidebars(transition.outputGeometry,
+                                  leadingVisible: transition.isOpeningLeadingSidebar ? true : nil,
+                                  trailingVisible: transition.isOpeningTrailingSidebar ? true : nil,
+                                  ΔWindowWidth: ΔWindowWidth, log)
 
         updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
       }

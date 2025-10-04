@@ -20,6 +20,7 @@ extension PlayerWindowController {
       case preTransitionSetup
       case closeOldPanels
       /// This is __optional__ & can occur either before or after `closeOldPanels`
+      /// See: `isMoveAndScaleStepBeforeMidpoint`
       case moveAndScale
       case midTransitionHiddenUpdates
       case openNewPanels

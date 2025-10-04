@@ -401,10 +401,11 @@ extension PlayerWindowController {
     let geo = transition.moveAndScaleGeometry!
     log.verbose{"Moving & scaling video window to middleGeo2=\(geo)"}
 
+    rebuildPanelConstraints(transition, stage: .moveAndScale)
+
     // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
     // It's not needed until the next step anyway.
     setFrameAndUpdateWindowSubviews(using: geo, updateVideoView: false)
-    rebuildPanelConstraints(transition, stage: .moveAndScale)
   }
 
   /// -------------------------------------------------
@@ -449,7 +450,7 @@ extension PlayerWindowController {
         setWindowStyleToNative()
       }
     }
-    
+
 
     if transition.isWindowInitialLayout || transition.isOpeningViewport {
       if !transition.isWindowInitialLayout, pip.status == .inPIP {

@@ -458,60 +458,30 @@ extension PlayerWindowController {
   }
 
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
-  func animateShowOrHideSidebars(transition: LayoutTransition,
-                                 layout: LayoutState,
-                                 setLeadingTo leadingGoal: Sidebar.Visibility? = nil,
-                                 setTrailingTo trailingGoal: Sidebar.Visibility? = nil,
-                                 ΔWindowWidth: CGFloat) {
+  func animateShowOrHideSidebars(_ geo: PWinGeometry,
+                                 leadingVisible: Bool? = nil,
+                                 trailingVisible: Bool? = nil,
+                                 ΔWindowWidth: CGFloat, _ log: Logger.Subsystem) {
 
-    guard leadingGoal != nil || trailingGoal != nil else { return }
+    guard leadingVisible != nil || trailingVisible != nil else { return }
 
-    let leadingSidebar = layout.leadingSidebar
-    let trailingSidebar = layout.trailingSidebar
-
-    if let goal = leadingGoal {
-      log.verbose{"[\(transition.name)] Toggling leadingSidebar visibility to \(goal)"}
-      var shouldShow = false
-      let sidebarWidth: CGFloat
-      switch goal {
-      case .open(let tabToShow):
-        sidebarWidth = tabToShow.group.width(using: layout.moreSidebarState)
-        shouldShow = true
-      case .closed:
-        if let lastVisibleTab = leadingSidebar.lastVisibleTab {
-          sidebarWidth = lastVisibleTab.group.width(using: layout.moreSidebarState)
-        } else {
-          log.error{"[\(transition.name)] Failed to find lastVisibleTab for leadingSidebar"}
-          sidebarWidth = 0
-        }
-      }
-      updateLeadingSidebarWidthConstraints(to: sidebarWidth, visible: shouldShow, leadingSidebar.placement,
+    if let leadingVisible, let leadingSidebarPlacement = geo.leadingSidebarPlacement {
+      let sidebarWidth = geo.leadingSidebarWidth
+      log.verbose{"Toggling leadingSidebar visibility to \(leadingVisible.yn), width=\(sidebarWidth)"}
+      updateLeadingSidebarWidthConstraints(to: sidebarWidth, visible: leadingVisible, leadingSidebarPlacement,
                                            ΔWindowWidth: ΔWindowWidth)
-      if leadingSidebar.placement == .outsideViewport {
-        leadingSidebarTrailingBorder.isHidden = !shouldShow
+      if leadingSidebarPlacement == .outsideViewport {
+        leadingSidebarTrailingBorder.isHidden = !leadingVisible
       }
     }
 
-    if let goal = trailingGoal {
-      log.verbose{"[\(transition.name)] Toggling trailingSidebar visibility to \(goal)"}
-      var shouldShow = false
-      let sidebarWidth: CGFloat
-      switch goal {
-      case .open(let tabToShow):
-        sidebarWidth = tabToShow.group.width(using: layout.moreSidebarState)
-        shouldShow = true
-      case .closed:
-        if let lastVisibleTab = trailingSidebar.lastVisibleTab {
-          sidebarWidth = lastVisibleTab.group.width(using: layout.moreSidebarState)
-        } else {
-          log.error{"[\(transition.name)] Failed to find lastVisibleTab for trailingSidebar"}
-          sidebarWidth = 0
-        }
-      }
-      updateTrailingSidebarWidthConstraints(to: sidebarWidth, visible: shouldShow, placement: trailingSidebar.placement,
+    if let trailingVisible, let trailingSidebarPlacement = geo.trailingSidebarPlacement {
+      let sidebarWidth = geo.trailingSidebarWidth
+      log.verbose{"Toggling trailingSidebar visibility to \(trailingVisible.yn), width=\(sidebarWidth)"}
+      updateTrailingSidebarWidthConstraints(to: sidebarWidth, visible: trailingVisible, placement: trailingSidebarPlacement,
                                             ΔWindowWidth: ΔWindowWidth)
-      if trailingSidebar.placement == .outsideViewport {
-        trailingSidebarLeadingBorder.isHidden = !shouldShow
+      if trailingSidebarPlacement == .outsideViewport {
+        trailingSidebarLeadingBorder.isHidden = !trailingVisible
       }
     }
   }
