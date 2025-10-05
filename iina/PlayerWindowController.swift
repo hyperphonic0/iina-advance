@@ -1802,7 +1802,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
         if let cropController = cropSettingsView {
           let currentIMGeo = isInFullScreen ? ctx.inputLayout.buildFullScreenGeometry(inScreenID: ctx.inputGeoSet.windowed.screenID, ctx.outputVidGeo) : ctx.inputGeoSet.windowed
-          let croppedIMGeo = currentIMGeo.cropVideo(using: ctx.outputVidGeo, isMiddleTransition: true)
+          let croppedIMGeo = currentIMGeo.cropVideo(using: ctx.outputVidGeo, isMiddleTransition: false)
 
           if isInFullScreen {
             geoSet = buildGeoSet(windowed: croppedIMGeo, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
@@ -1822,9 +1822,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
               newViewportSize = currentIMGeo.viewportSize
             }
 
-            // Add IM margins
-            newViewportSize = CGSize(width: newViewportSize.width + Constants.InteractiveMode.viewportMargins.totalWidth,
-                                     height: newViewportSize.height + Constants.InteractiveMode.viewportMargins.totalHeight)
             while (newViewportSize.width < Constants.InteractiveMode.minViewportSize.width) || (newViewportSize.height < Constants.InteractiveMode.minViewportSize.height) {
               newViewportSize = newViewportSize * 2.0
             }

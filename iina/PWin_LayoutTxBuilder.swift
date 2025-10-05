@@ -400,9 +400,6 @@ extension PlayerWindowController {
             newViewportSize = inputGeometry.viewportSize
           }
 
-          // Add IM margins
-          newViewportSize = CGSize(width: newViewportSize.width + Constants.InteractiveMode.viewportMargins.totalWidth,
-                                   height: newViewportSize.height + Constants.InteractiveMode.viewportMargins.totalHeight)
           while (newViewportSize.width < Constants.InteractiveMode.minViewportSize.width) || (newViewportSize.height < Constants.InteractiveMode.minViewportSize.height) {
             newViewportSize = newViewportSize * 2.0
           }
