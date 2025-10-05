@@ -71,7 +71,6 @@ extension PlayerWindowController {
   // MARK: - Bars Layout
 
   // FIXME: 1. Exit Custom FS bad animation
-  // FIXME: 3. Interactive Mode Full Screen completely broken
   // FIXME: 4. Delogo broken
   func rebuildPanelConstraints(_ transition: LayoutTransition, stage: LayoutTransition.Stage) {
     let contentView = window!.contentView!

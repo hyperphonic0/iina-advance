@@ -220,27 +220,25 @@ extension PlayerWindowController {
     // (Only when animating Enter/Exit Music Mode or Enter/Exit Windowed Interactive Mode) Post-midpoint animation: move & scale video.
     var moveAndScaleTask: IINAAnimation.Task? = nil
 
-    if closeOldPanelsDuration > 0.0 {
-      // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies closeOldPanelsGeometry if it exists.
-      // Not enabled for full screen transitions or if animation is disabled.
-      if transition.needsCloseOldPanelsStep {
-        tasks.append(.init(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
-          closeOldPanels(transition)
-        }))
-      }
+    // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies closeOldPanelsGeometry if it exists.
+    // Not enabled for full screen transitions or if animation is disabled.
+    if transition.needsCloseOldPanelsStep {
+      tasks.append(.init(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
+        closeOldPanels(transition)
+      }))
+    }
 
-      if transition.needsMoveAndScaleVideoFrameStep {
-        let duration = transition.isTogglingInteractiveMode ? closeOldPanelsDuration * 0.5 : closeOldPanelsDuration
-        moveAndScaleTask = .init(duration: duration, timing: .easeInEaseOut) { [self] in
-          moveAndScaleVideoFrame(transition)
-        }
+    if transition.needsMoveAndScaleVideoFrameStep {
+      let duration = transition.isTogglingInteractiveMode ? closeOldPanelsDuration * 0.5 : closeOldPanelsDuration
+      moveAndScaleTask = .init(duration: duration, timing: .easeInEaseOut) { [self] in
+        moveAndScaleVideoFrame(transition)
       }
+    }
 
-      // Place this task either before or after updateHiddenViewsAndConstraints depending on entering or exiting.
-      // Want to put this *before* it when entering music mode & hiding (closing) viewportView, but other cases the order shouldn't matter.
-      if let moveAndScaleTask, transition.isMoveAndScaleStepBeforeMidpoint {
-        tasks.append(moveAndScaleTask)
-      }
+    // Place this task either before or after updateHiddenViewsAndConstraints depending on entering or exiting.
+    // Want to put this *before* it when entering music mode & hiding (closing) viewportView, but other cases the order shouldn't matter.
+    if let moveAndScaleTask, transition.isMoveAndScaleStepBeforeMidpoint {
+      tasks.append(moveAndScaleTask)
     }
 
     // Midpoint: perform major constraints updates (any affected panels should have been reduced to 0 thickness by the previous
@@ -277,7 +275,7 @@ extension PlayerWindowController {
 
     // (Only for Enter Legacy FS) Adds an extra animation to hide camera housing / menu bar / dock.
     if useExtraAnimationForEnteringLegacyFullScreen {
-      let duration = endingAnimationDuration * transition.windowedModeScreen.cameraHeightToFrameHeightRatio
+      let duration = endingAnimationDuration // * transition.windowedModeScreen.cameraHeightToFrameHeightRatio
 
       tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
         rebuildPanelConstraints(transition, stage: .postTransition)
@@ -323,11 +321,7 @@ extension PlayerWindowController {
     case .fullScreenNormal, .fullScreenInteractive:
       return inputLayout.buildFullScreenGeometry(in: windowedModeScreen, inputGeoSet.video)
     case .windowedInteractive:
-      /// `.inputGeoSet.windowed` should already be correct for interactiveWindowed mode, but it is easy enough to derive it
-      /// from a small number of variables, and safer to do that than assume it is correct:
-      let computedGeo = PWinGeometry.buildInteractiveModeWindow(windowFrame: inputGeoSet.windowed.windowFrame,
-                                                     screenID: inputGeoSet.windowed.screenID,
-                                                     video: inputGeoSet.video)
+      /// `.inputGeoSet.windowed` should already be correct for interactiveWindowed mode
       let inputGeo = inputGeoSet.windowed
       return inputGeo
     case .musicMode:
@@ -450,12 +444,14 @@ extension PlayerWindowController.LayoutTransition {
       let mustUncropFirst = (outputLayout.interactiveMode == .crop) && (inputGeometry.video.cropFilter != nil)
       if mustUncropFirst, let cropFilter = inputGeometry.video.cropFilter {
         assert(isEnteringInteractiveMode, "Expected to be entering interactive mode only when uncropping video")
-        let uncroppedNaiveGeo = inputGeometry.clone(video: inputGeometry.video.removingCrop(),
-                                                    isMiddleTransition: true)
+        let uncroppedNaiveGeo = inputGeometry.clone(video: inputGeometry.video.removingCrop())
         log.verbose{"Uncropping video from cropRect=\(cropFilter.cropRect(origVideoSize: inputGeometry.video.videoSizeCAR, flipY: true)) to uncroppedVideo=\(uncroppedNaiveGeo.video.videoSizeDisplay)"}
 
         if inputLayout.isFullScreen {
-          return uncroppedNaiveGeo.refitted()
+          return uncroppedNaiveGeo.clone(topMarginHeight: 0,
+                                          outsideBars: .zero, insideBars: .zero,
+                                          viewportMargins: .zero,
+                                          isMiddleTransition: true)
         }
 
         let intermediateWindowFrame = uncroppedNaiveGeo.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords

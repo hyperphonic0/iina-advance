@@ -419,8 +419,7 @@ extension PlayerWindowController {
         /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
         /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
         /// (If entering FS: will expand window to cover `cameraHousingHeight` in final animation)
-        return fsGeometry.clone(windowFrame: screen.frameWithoutCameraHousing,
-                                    screenID: screen.screenID, topMarginHeight: 0)
+        return fsGeometry.clone(windowFrame: screen.frameWithoutCameraHousing, screenID: screen.screenID, topMarginHeight: 0)
       } else {
         /// `Use entire Macbook screen` is checked in Settings. As of MacOS before Sonoma 14.4, Apple has been making improvements
         /// but we still need to use  a separate animation to give the OS time to show/hide the menu bar - otherwise there will be a flicker.
