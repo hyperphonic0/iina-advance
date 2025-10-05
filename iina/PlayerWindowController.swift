@@ -1918,11 +1918,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func exitMusicMode(automatically: Bool = false, from oldLayout: LayoutState? = nil, _ geo: GeometrySet? = nil) {
     animationPipeline.submitInstantTask { [self] in
-      /// Start by hiding OSC and/or "outside" panels, which aren't needed and might mess up the layout.
-      /// We can do this by creating a `LayoutState`, then using it to build a `LayoutTransition` and executing its animation.
       let oldLayout = oldLayout ?? currentLayout
+
+      // If not showing video, then enable video first & wait for it to return before exiting
+      if oldLayout.isMusicMode && !(geo ?? self.geo).musicMode.isViewportShown {
+        player.setVideoTrackEnabled(thenDoAction: .exitMusicMode)
+        return
+      }
+
       var tasks = buildTasksToExitMusicMode(automatically: automatically, from: oldLayout, geo)
-      
       tasks.append(.instantTask { [self] in
         updateTitle()
         player.events.emit(.musicModeChanged, data: false)

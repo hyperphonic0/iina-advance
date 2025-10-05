@@ -207,9 +207,19 @@ class PlayerCore: NSObject {
   var startInMusicModeRequested = false
 
   var isInMiniPlayer: Bool { pwc.isInMiniPlayer }
-  var isShowViewportPendingInMiniPlayer: Bool = false
-  /// Calls `self.miniPlayerShowVideoTimerAction`
+
+  fileprivate var pendingActionOnVidChange: PendingActionOnVidChange = .none
+  fileprivate var isShowViewportPendingInMiniPlayer: Bool {
+    pendingActionOnVidChange != .none
+  }
+  /// Calls `self.miniPlayerShowViewportTimerAction`
   let miniPlayerShowVideoTimer = TimeoutTimer(timeout: Constants.TimeInterval.musicModeChangeTrackTimeout)
+
+  enum PendingActionOnVidChange {
+    case none
+    case showViewportInMusicMode
+    case exitMusicMode
+  }
 
   // Other state
 
@@ -331,7 +341,7 @@ class PlayerCore: NSObject {
     self.pwc = PlayerWindowController(playerCore: self)
     self.touchBarSupport = TouchBarSupport(playerCore: self)
 
-    miniPlayerShowVideoTimer.action = miniPlayerShowVideoTimerAction
+    miniPlayerShowVideoTimer.action = miniPlayerShowViewportTimerAction
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeFnModes)
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeGlobal)
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModePerApp)
@@ -3170,12 +3180,13 @@ class PlayerCore: NSObject {
     guard !isRestoring, !isStopping else { return }
 
     /// Grab & reset `isShowViewportPendingInMiniPlayer` in mpv queue right away to avoid race
-    let isShowViewportPendingInMiniPlayerCached = isShowViewportPendingInMiniPlayer
+    let pendingAction = pendingActionOnVidChange
+    pendingActionOnVidChange = .none
 
     let (vid, vidDidChange) = updateVidStateFromMpv()
 
-    guard vidDidChange || isShowViewportPendingInMiniPlayerCached else { return }
-    isShowViewportPendingInMiniPlayer = false
+    let hasPendingAction = pendingAction != .none
+    guard vidDidChange || hasPendingAction else { return }
 
     let sessionStateTF: GeometryTransform.PWinSessionStateTF = { [self] prevSessionState, ctx -> PWinSessionState? in
       let returnValue: PWinSessionState?
@@ -3185,12 +3196,12 @@ class PlayerCore: NSObject {
         } else {
           returnValue = prevSessionState
         }
-      } else if isShowViewportPendingInMiniPlayerCached {
+      } else if hasPendingAction {
         returnValue = prevSessionState
       } else {
         returnValue = nil  // abort
       }
-      log.verbose{"[GTF:\(ctx.name)] Changing sessionState for vid change, vidNew=\(ctx.vidTrackID) showVideoPending=\(isShowViewportPendingInMiniPlayerCached.yn): \(prevSessionState) → \(returnValue?.description ?? "nil")"}
+      log.verbose{"[GTF:\(ctx.name)] Changing sessionState for vid change, vidNew=\(ctx.vidTrackID) pendingAction=\(pendingAction): \(prevSessionState) → \(returnValue?.description ?? "nil")"}
       return returnValue
     }
 
@@ -3201,7 +3212,7 @@ class PlayerCore: NSObject {
       }
 
       var outputVidGeo = ctx.syncVideoParamsFromMpv(startingWith: inputVidGeo)
-      if outputVidGeo == nil && isShowViewportPendingInMiniPlayerCached {
+      if outputVidGeo == nil && hasPendingAction {
         log.verbose{"[GTF:\(ctx.name)] syncVideoParams returned nil but pending miniplayer show video. Assuming no video tracks; will show default art"}
         outputVidGeo = inputVidGeo
         // (kludge): ideally we'd want to include this in our window transform, but need refactor to get there from here. This should work ok.
@@ -3211,7 +3222,7 @@ class PlayerCore: NSObject {
       }
 
       // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
-      if !silent, (!isInMiniPlayer || (pwc.miniPlayer.isViewportShown && !isShowViewportPendingInMiniPlayerCached)) {
+      if !silent, (!isInMiniPlayer || (pwc.miniPlayer.isViewportShown && !hasPendingAction)) {
         sendOSD(.track(info.track(.video, id: vid) ?? .noneVideoTrack))
       }
       if vid != 0, isActive, !isRestoring {
@@ -3221,36 +3232,58 @@ class PlayerCore: NSObject {
       return outputVidGeo
     }
 
-    // Special transform if toggling video ON in music mode
-    let musicModeTF: GeometryTransform.PWinGeometryTF?
-    if isShowViewportPendingInMiniPlayerCached {
-      musicModeTF = { [self] ctx -> PWinGeometry? in
+    let gtf: GeometryTransform
+
+    switch pendingAction {
+    case .none:
+      gtf = GeometryTransform("VidTrackChanged", self,
+                              syncVideoParams: false,   // does the syncing itself
+                              sessionState: sessionStateTF,
+                              video: videoGeoTF)
+      gtf.submit()
+
+    case .showViewportInMusicMode:
+      gtf = GeometryTransform("ShowViewport", self,
+                              syncVideoParams: false,   // does the syncing itself
+                              sessionState: sessionStateTF,
+                              video: videoGeoTF,
+                              windowed: { [self] ctx -> PWinGeometry? in
         guard ctx.outputLayout.isMusicMode else { return nil }
         let inputMusicModeGeo = ctx.inputGeoSet.musicMode
-        log.verbose{"[GTF:\(ctx.name)] Showing video in music mode (visibleNow=\(inputMusicModeGeo.isViewportShown.yesno))"}
+        log.verbose{"[GTF:\(ctx.name)] Showing viewport in music mode (visibleNow=\(inputMusicModeGeo.isViewportShown.yesno))"}
         miniPlayerShowVideoTimer.cancel()
-        guard isInMiniPlayer && !inputMusicModeGeo.isViewportShown else { return nil }
+        guard ctx.inputLayout.isMusicMode && !inputMusicModeGeo.isViewportShown else { return nil }
         let newGeo = inputMusicModeGeo.clone(video: ctx.outputVidGeo).withVideoViewVisible(true)
         return newGeo
-      }
-    } else {
-      musicModeTF = nil
+      })
+
+    case .exitMusicMode:
+      gtf = GeometryTransform( "ExitMusicModeOnVidChange", self,
+                               syncVideoParams: false,   // does the syncing itself
+                               sessionState: sessionStateTF,
+                               video: videoGeoTF,
+                               buildPWinTransformTasks: { [self] ctx -> [IINAAnimation.Task] in
+        
+        let inputMusicModeGeo = ctx.inputGeoSet.musicMode
+        log.verbose{"[GTF:\(ctx.name)] Showing viewport & exiting music mode (visibleNow=\(inputMusicModeGeo.isViewportShown.yesno))"}
+        miniPlayerShowVideoTimer.cancel()
+        guard ctx.inputLayout.isMusicMode && !inputMusicModeGeo.isViewportShown else { return [] }
+
+        let outputWindowed = ctx.inputGeoSet.windowed.clone(video: ctx.outputVidGeo).refitted()
+        let outputGeoSet = ctx.inputGeoSet.clone(windowed: outputWindowed)
+        let exitMusicModeTransitionTasks = ctx.pwc.buildTasksToExitMusicMode(from: ctx.inputLayout, outputGeoSet)
+        return exitMusicModeTransitionTasks
+      })
+      gtf.submit()
     }
 
-    let gtfName = isShowViewportPendingInMiniPlayerCached ? "ShowViewport" : "VidTrackChanged"
-    let gtf = GeometryTransform(gtfName, self,
-                                syncVideoParams: false,   // does the syncing itself
-                                sessionState: sessionStateTF,
-                                video: videoGeoTF,
-                                windowed: musicModeTF)
     gtf.submit()
-
   }
 
   /// In music mode, when toggling album art on, we wait for `vidChanged` to get called before showing the art.
   /// But it will not be called if there is no change (i.e. there are no video tracks at all).
   /// We can bridge the gap by setting a timer which will call `vidChanged`.
-  private func miniPlayerShowVideoTimerAction() {
+  private func miniPlayerShowViewportTimerAction() {
     mpv.queue.async { [self] in
       guard isShowViewportPendingInMiniPlayer else { return }
       log.verbose("Forcing vidChanged() to show videoView")
@@ -3262,7 +3295,7 @@ class PlayerCore: NSObject {
   ///  Does nothing if already in the target state (idempotent).
   ///
   ///  See also: `setVideoTrackDisabled`
-  func setVideoTrackEnabled(thenShowMiniPlayerVideo showMiniPlayerVideo: Bool = false) {
+  func setVideoTrackEnabled(thenDoAction action: PendingActionOnVidChange = .none) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     mpv.queue.async { [self] in
@@ -3287,8 +3320,9 @@ class PlayerCore: NSObject {
       } else {
         vidToSet = 1
       }
-      if showMiniPlayerVideo {
-        isShowViewportPendingInMiniPlayer = true
+      let hasPendingAction = action != .none
+      if hasPendingAction {
+        pendingActionOnVidChange = action
         // In most cases, mpv will async'ly notify when the video track is done changing. But it is not guaranteed in all cases.
         // Give it a chance to load but use a timer as fallback to guarantee the videoView will open.
         log.verbose{"Will show music mode video after enabling video track, timeout=\(miniPlayerShowVideoTimer.timeout)s"}
@@ -3296,11 +3330,11 @@ class PlayerCore: NSObject {
           miniPlayerShowVideoTimer.restart()
         }
       }
-      log.verbose{"Enabling video track: changing vid from \(vidNow) → \(vidToSet) vidTrackCount=\(vidTrackCount) showMiniPlayerVideo=\(showMiniPlayerVideo.yn)"}
+      log.verbose{"Enabling video track: changing vid from \(vidNow) → \(vidToSet) vidTrackCount=\(vidTrackCount) pnedingAction=\(action)"}
       let hasVidTrack = vidTrackCount > 0
       guard hasVidTrack else {
         info.vidDisabled = nil  // clear saved track
-        if showMiniPlayerVideo {
+        if hasPendingAction {
           // If no tracks, will not get a response from mpv if requesting to change tracks.
           // Or if a track is already selected, don't need to change tracks. But still need to show videoView.
           log.verbose("Enabling video track: skipping, but forcing call to vidChanged to show videoView")
@@ -3309,8 +3343,8 @@ class PlayerCore: NSObject {
         return
       }
       guard info.vid! != vidToSet else {
-        log.verbose{"Enabling video track: no change to vid (showMiniPlayerVideo=\(showMiniPlayerVideo.yn))"}
-        if showMiniPlayerVideo {
+        log.verbose{"Enabling video track: no change to vid (pendingAction=\(action))"}
+        if hasPendingAction {
           // Still need to call this to show videoView
           vidChanged(silent: true)
         }

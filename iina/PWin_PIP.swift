@@ -129,7 +129,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
         miniPlayer.loadIfNeeded()
         if !miniPlayer.isViewportShown {
           // need to re-enable video to enter PiP
-          player.setVideoTrackEnabled()
+          player.setVideoTrackEnabled(thenDoAction: .showViewportInMusicMode)
         }
       }
 

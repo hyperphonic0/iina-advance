@@ -274,7 +274,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
       if showVideoView {
         /// If showing video, call `setVideoTrackEnabled()`, then do animations, for a nicer effect.
-        player.setVideoTrackEnabled(thenShowMiniPlayerVideo: true)
+        player.setVideoTrackEnabled(thenDoAction: .showViewportInMusicMode)
       } else {
         // Hiding video.
 
