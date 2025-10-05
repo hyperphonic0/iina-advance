@@ -1986,7 +1986,7 @@ extension NSView {
 
   var idString: String {
     get {
-      return self.identifier?.rawValue ?? "<none>"
+      return self.identifier?.rawValue ?? "<unnamed>"
     }
     set {
       self.identifier = .init(newValue)

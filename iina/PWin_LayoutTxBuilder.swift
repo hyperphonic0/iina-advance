@@ -325,9 +325,11 @@ extension PlayerWindowController {
     case .windowedInteractive:
       /// `.inputGeoSet.windowed` should already be correct for interactiveWindowed mode, but it is easy enough to derive it
       /// from a small number of variables, and safer to do that than assume it is correct:
-      return PWinGeometry.buildInteractiveModeWindow(windowFrame: inputGeoSet.windowed.windowFrame,
+      let computedGeo = PWinGeometry.buildInteractiveModeWindow(windowFrame: inputGeoSet.windowed.windowFrame,
                                                      screenID: inputGeoSet.windowed.screenID,
                                                      video: inputGeoSet.video)
+      let inputGeo = inputGeoSet.windowed
+      return inputGeo
     case .musicMode:
       /// `musicModeGeo` should have already been deserialized and set.
       /// But make sure we correct any size problems.
@@ -366,7 +368,7 @@ extension PlayerWindowController {
       } else if inputGeometry.mode == .fullScreenInteractive {
         if inputGeoSet.windowed.mode == .windowedInteractive {
           log.verbose("Converting windowedModeGeo with mode=windowedInteractive to fullScreenInteractive for outputGeo")
-          return PWinGeometry.buildInteractiveModeWindow(windowFrame: inputGeoSet.windowed.windowFrame,
+          return PWinGeometry.buildInteractiveModeWindow(windowFrame: inputGeometry.windowFrame,
                                                          screenID: inputGeoSet.windowed.screenID,
                                                          video: inputGeometry.video)
         } else {
@@ -468,7 +470,7 @@ extension PlayerWindowController.LayoutTransition {
         return middleGeo
       }
 
-      let baseGeo = isEnteringInteractiveMode ? inputGeometry : outputGeometry
+      let baseGeo = isEnteringInteractiveMode ? inputGeometry : outputGeometry// inputGeometry.fromWindowedInteractiveMode()
       // FIXME: For very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
       let intermediateWindowFrame = baseGeo.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords
 

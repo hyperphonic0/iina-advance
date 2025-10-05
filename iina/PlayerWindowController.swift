@@ -1726,7 +1726,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let buildPWinTransformTasks: (GeometryTransform.ContextStage3) -> [IINAAnimation.Task] = { [self] ctx -> [IINAAnimation.Task] in
 
       guard ctx.inputLayout.canEnterInteractiveMode else {
-        assert(false)
+        log.debug("Aborting entry into interactive mode as it is not possible for this input layout")
         return []
       }
 

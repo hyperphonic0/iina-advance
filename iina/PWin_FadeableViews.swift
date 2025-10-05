@@ -44,7 +44,7 @@ extension PlayerWindowController {
     }
 
     func applyVisibility(_ visibility: VisibilityMode, to fadeableView: NSView) {
-      log.verbose("Applying visibility to \(fadeableView.idString.quoted) ≔ \(visibility)")
+      log.verbose("ApplyVisibility: \(fadeableView.idString.quoted) ≔ \(visibility)")
 
       switch visibility {
       case .hidden:

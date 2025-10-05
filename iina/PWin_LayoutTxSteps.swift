@@ -290,7 +290,7 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     let isClosingBarOSC = transition.isClosingBarOSC
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
-    log.verbose{"Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)"}
+    log.verbose("Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)")
 
     // TODO: incorporate this into closeOldPanelsGeometry for cleaner code
     if isOpeningBarOSC || isClosingBarOSC {
@@ -378,7 +378,7 @@ extension PlayerWindowController {
       // Do not do this when first opening the window though, because it will cause the window location restore to be incorrect.
       // Also do not apply when toggling fullscreen because it is not relevant at this stage and will look glitchy because the
       // animation has zero duration.
-      log.debug{"Applying middleGeo windowFrame=\(middleGeo.windowFrame)"}
+      log.debug("Applying middleGeo windowFrame=\(middleGeo.windowFrame)")
       if transition.isTogglingMusicMode {
         // Don't add or remove aspect constraint while animating music mode toggle!
         setFrameAndUpdateWindowSubviews(using: middleGeo, updateVideoView: false)
