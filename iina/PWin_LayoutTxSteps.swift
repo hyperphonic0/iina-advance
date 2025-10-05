@@ -56,6 +56,12 @@ extension PlayerWindowController {
       window.isMovableByWindowBackground = false
     }
 
+    if transition.isEnteringFullScreen, let customTitleBar {
+      // Workaround: for some reason, rebuildPanelConstraints() causes custom title bar's title text to lose centering. Just get rid of it now.
+      customTitleBar.removeAndCleanUp()
+      self.customTitleBar = nil
+    }
+
     // Skip for initial layout: not all panels have been init'd yet.
     // Don't use with legacy full screen transitions; they use extra animations which will be screwed up
     if !transition.isWindowInitialLayout {
@@ -175,7 +181,7 @@ extension PlayerWindowController {
 
     // Title bar & title bar accessories:
 
-    let needToHideTopBar = transition.isTopBarPlacementOrStyleChanging || transition.isTogglingLegacyStyle || transition.isTogglingInteractiveMode
+    let needToHideTopBar = transition.isTopBarPlacementOrStyleChanging || transition.isTogglingLegacyStyle  || (transition.outputLayout.mode != transition.inputLayout.mode)
 
     // Hide all title bar items if top bar placement is changing
     if needToHideTopBar || outputLayout.titleBar == .hidden {
@@ -186,12 +192,11 @@ extension PlayerWindowController {
       for button in trafficLightButtons {
         button.alphaValue = 0
       }
-    }
 
-    if needToHideTopBar || outputLayout.titlebarAccessoryViewControllers == .hidden {
       // Hide all title bar accessories (if needed):
       leadingTitleBarAccessoryView.alphaValue = 0
       trailingTitleBarAccessoryView.alphaValue = 0
+
     } else {
       /// We may have gotten here in response to one of these buttons' visibility being toggled in the prefs,
       /// so we need to allow for showing/hiding these individually.
