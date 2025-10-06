@@ -140,8 +140,8 @@ extension PlayerWindowController {
     var fadeOutOldViewsDuration: CGFloat = startingAnimationDuration
     var closeOldPanelsDuration: CGFloat = startingAnimationDuration
     if transition.isEnteringMusicMode && !transition.isExitingFullScreen {
-      showFadeableViewsDuration = startingAnimationDuration * 0.5
-      fadeOutOldViewsDuration = startingAnimationDuration * 0.5
+      showFadeableViewsDuration = startingAnimationDuration * 0.25
+      fadeOutOldViewsDuration = startingAnimationDuration * 0.25
     } else if transition.isEnteringInteractiveMode {
       showFadeableViewsDuration = startingAnimationDuration * 0.25
       fadeOutOldViewsDuration = startingAnimationDuration * 0.5

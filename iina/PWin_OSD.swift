@@ -351,8 +351,8 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
 
 // PlayerWindow UI: OSD
 extension PlayerWindowController {
-  func addOrRemoveOSDViews(_ geo: PWinGeometry) {
-    if geo.shouldHaveOSD {
+  func addOrRemoveOSDViews(_ stageGeo: PWinGeometry) {
+    if stageGeo.shouldHaveOSD {
       if !viewportView.subviews.contains(osd.osdView) {
         log.verbose{"[OSD] Adding osdView to viewportView"}
         viewportView.addSubview(osd.osdView)  // will sort below
@@ -366,7 +366,7 @@ extension PlayerWindowController {
       }
     }
 
-    if geo.shouldHaveAdditionalInfo {
+    if stageGeo.shouldHaveAdditionalInfo {
       if !viewportView.subviews.contains(additionalInfoView) {
         log.verbose{"[OSD] Adding additionalInfoView to viewportView"}
         viewportView.addSubview(additionalInfoView)  // will sort below
@@ -388,17 +388,17 @@ extension PlayerWindowController {
   /// - For many of the constraints, priority=900 will be used to avoid problems with black swan layouts
   /// which might trigger constraint violations if priority=required were used.
   /// - Setting `skipAddConstraints` to `true` is a kludge for special use during layout transitions
-  func updateOSDConstraints(_ geo: PWinGeometry) {
+  func updateOSDConstraints(_ stageGeo: PWinGeometry) {
     for optCon in osd.optionalConstraints {
       optCon.constraint?.priorityInt = 1
     }
 
-    let hasOSD = geo.shouldHaveOSD
-    let offsetFromTop = geo.osdOffsetFromTopOfViewport()
-    let hasAdditionalInfo = geo.shouldHaveAdditionalInfo
+    let hasOSD = stageGeo.shouldHaveOSD
+    let offsetFromTop = stageGeo.osdOffsetFromTopOfViewport()
+    let hasAdditionalInfo = stageGeo.shouldHaveAdditionalInfo
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
-    let hasLeadingSidebar = geo.insideBars.leading > 0
-    let hasTrailingSidebar = geo.insideBars.trailing > 0
+    let hasLeadingSidebar = stageGeo.insideBars.leading > 0
+    let hasTrailingSidebar = stageGeo.insideBars.trailing > 0
 
     log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) offsetFromTop=\(offsetFromTop)"}
 
