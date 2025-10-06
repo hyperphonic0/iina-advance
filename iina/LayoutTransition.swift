@@ -23,6 +23,8 @@ extension PlayerWindowController {
       /// See: `isMoveAndScaleStepBeforeMidpoint`
       case moveAndScale
       case midTransitionHiddenUpdates
+      /// Currently only used for entering or exiting legacy FS
+      case extraAnimationBeforeOpenNewPanels
       case openNewPanels
       case postTransition
       
@@ -36,6 +38,8 @@ extension PlayerWindowController {
           return "MoveAndScale"
         case .midTransitionHiddenUpdates:
           return "MidTxHiddenUpdates"
+        case .extraAnimationBeforeOpenNewPanels:
+          return "ExtraAnimationBeforeOpenNewPanels"
         case .openNewPanels:
           return "OpenNewPanels"
         case .postTransition:
@@ -390,7 +394,7 @@ extension PlayerWindowController {
         } else {
           return outputLayout
         }
-      case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
+      case .midTransitionHiddenUpdates, .extraAnimationBeforeOpenNewPanels, .openNewPanels, .postTransition:
         // About to apply output geometry, or applying output geometry: use output layout
         return outputLayout
       }
@@ -414,21 +418,22 @@ extension PlayerWindowController {
         } else {
           return geometry(for: .closeOldPanels)
         }
-      case .openNewPanels:
-        if isEnteringLegacyFullScreen && !isWindowInitialLayout && IINAAnimation.isAnimationEnabled {
-          return computeExtraAnimationGeoForLegacyFS(fsGeometry: outputGeometry)
+      case .extraAnimationBeforeOpenNewPanels:
+        if isTogglingLegacyFullScreen {
+          assert(!isWindowInitialLayout && IINAAnimation.isAnimationEnabled)
+          return buildGeoForExtraLegacyFSAnimation(fsGeometry: outputGeometry)
         } else {
           /// No need for extra animation. Apply final geometry.
           return outputGeometry
         }
-      case .postTransition:
+      case .openNewPanels, .postTransition:
         return outputGeometry
       }
     }
 
     /// Entering or exiting
-    func computeExtraAnimationGeoForLegacyFS(fsGeometry: PWinGeometry) -> PWinGeometry {
-      assert(isTogglingLegacyFullScreen, "computeExtraAnimationGeoForLegacyFS should not be called unless toggling legacy full screen")
+    func buildGeoForExtraLegacyFSAnimation(fsGeometry: PWinGeometry) -> PWinGeometry {
+      assert(isTogglingLegacyFullScreen, "buildGeoForExtraLegacyFSAnimation should not be called unless toggling legacy full screen")
       let screen = NSScreen.getScreenOrDefault(screenID: fsGeometry.screenID)
 
       // Use extra animation to deal with possible top margin needed to hide camera housing
@@ -452,7 +457,7 @@ extension PlayerWindowController {
       switch stage {
       case .preTransitionSetup, .closeOldPanels, .moveAndScale:
         return inputLayout.topBarPlacement
-      case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
+      case .midTransitionHiddenUpdates, .extraAnimationBeforeOpenNewPanels, .openNewPanels, .postTransition:
         return outputLayout.topBarPlacement
       }
     }
@@ -463,46 +468,23 @@ extension PlayerWindowController {
     }
 
     func cameraHousingOffset(for stage: Stage) -> CGFloat {
-      switch stage {
-      case .preTransitionSetup:
-        return inputGeometry.topMarginHeight
-      case .closeOldPanels, .moveAndScale, .midTransitionHiddenUpdates:
-        if isExitingLegacyFullScreen {
-          // Use prev offset for a smoother animation
-          return inputGeometry.topMarginHeight
-        } else {
-          return outputGeometry.topMarginHeight
-        }
-      case .openNewPanels, .postTransition:
-        return outputGeometry.topMarginHeight
-      }
+      let geo = geometry(for: stage)
+      return geo.cameraHousingOffset
     }
     
     func topBarBtmOffsetFromVPTop(for stage: Stage) -> CGFloat {
-      switch topBarPlacement(for: stage) {
-      case .insideViewport:
-        return topBarHeight(for: stage)
-      case .outsideViewport:
-        return 0
-      }
+      let geo = geometry(for: stage)
+      return geo.insideBars.top
     }
 
     func vpTopOffsetFromTopBarTop(for stage: Stage) -> CGFloat {
-      switch topBarPlacement(for: stage) {
-      case .insideViewport:
-        return 0
-      case .outsideViewport:
-        return topBarHeight(for: stage)
-      }
+      let geo = geometry(for: stage)
+      return geo.vpTopOffsetFromTopBarTop
     }
 
     func vpTopOffsetFromCVTop(for stage: Stage) -> CGFloat {
-      switch topBarPlacement(for: stage) {
-      case .insideViewport:
-        return 0 + cameraHousingOffset(for: stage)
-      case .outsideViewport:
-        return topBarHeight(for: stage) + cameraHousingOffset(for: stage)
-      }
+      let geo = geometry(for: stage)
+      return geo.vpTopOffsetFromCVTop
     }
 
     func vpBtmOffsetFromCVTop(for stage: Stage) -> CGFloat {
@@ -514,12 +496,9 @@ extension PlayerWindowController {
 
     func bottomBarTopOffsetFromCVTop(for stage: Stage) -> CGFloat {
       let vpBtmOffsetFromCVTop = vpBtmOffsetFromCVTop(for: stage)
-      switch bottomBarPlacement(for: stage) {
-      case .insideViewport:
-        return vpBtmOffsetFromCVTop - bottomBarHeight(for: stage)
-      case .outsideViewport:
-        return vpBtmOffsetFromCVTop
-      }
+
+      let geo = geometry(for: stage)
+      return vpBtmOffsetFromCVTop - geo.insideBars.bottom
     }
 
     func bottomBarBtmOffsetFromCVTop(for stage: Stage) -> CGFloat {
@@ -536,37 +515,23 @@ extension PlayerWindowController {
       switch stage {
       case .preTransitionSetup, .closeOldPanels, .moveAndScale:
         return inputLayout.bottomBarPlacement
-      case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
+      case .midTransitionHiddenUpdates, .extraAnimationBeforeOpenNewPanels, .openNewPanels, .postTransition:
         return outputLayout.bottomBarPlacement
       }
     }
 
     func vpBtmOffsetFromTopOfBottomBar(for stage: Stage) -> CGFloat {
-      switch bottomBarPlacement(for: stage) {
-      case .insideViewport:
-        return bottomBarHeight(for: stage)
-      case .outsideViewport:
-        return 0//-viewportBtmSpecialOffset(for: stage)
-      }
+      let geo = geometry(for: stage)
+      return geo.insideBars.bottom
     }
 
     func bottomBarBtmOffsetFromVPBtm(for stage: Stage) -> CGFloat {
-      switch bottomBarPlacement(for: stage) {
-      case .insideViewport:
-        return 0
-      case .outsideViewport:
-        return bottomBarHeight(for: stage) //+ viewportBtmSpecialOffset(for: stage)
-      }
+      let geo = geometry(for: stage)
+      return geo.outsideBars.bottom
     }
 
     func cvBtmOffsetFromVPBtm(for stage: Stage) -> CGFloat {
-      switch bottomBarPlacement(for: stage) {
-      case .insideViewport:
-        return 0
-      case .outsideViewport:
-        let bottomBarHeight = bottomBarHeight(for: stage)
-        return bottomBarHeight //+ viewportBtmSpecialOffset(for: stage)
-      }
+      return bottomBarBtmOffsetFromVPBtm(for: stage)  // same
     }
 
     func viewportBtmSpecialOffset(for stage: Stage) -> CGFloat {
@@ -579,7 +544,7 @@ extension PlayerWindowController {
           return 0
         }
 
-      case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
+      case .midTransitionHiddenUpdates, .extraAnimationBeforeOpenNewPanels, .openNewPanels, .postTransition:
         let outputViewportHeight = outputGeometry.viewportSize.height
         if outputViewportHeight == 0 {
           return -outputGeometry.videoHeightWhenVisible

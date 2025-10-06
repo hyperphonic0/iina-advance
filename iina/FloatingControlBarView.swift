@@ -141,7 +141,6 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
 
   func moveToLocationRatio(parentGeo: PWinGeometry) {
     guard superview != nil, let xConstraint, let yConstraint else { return }
-    assert(parentGeo.mode.isWindowed, "Expected windowed mode for: \(parentGeo)")
 
     let ratioH = Preference.double(for: .controlBarPositionHorizontal)
     let ratioV = Preference.double(for: .controlBarPositionVertical)

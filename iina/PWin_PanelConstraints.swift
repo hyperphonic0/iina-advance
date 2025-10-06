@@ -315,7 +315,11 @@ extension PlayerWindowController {
         updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
       }
 
-    case .moveAndScale, .midTransitionHiddenUpdates:
+    case .moveAndScale:
+        break
+
+    case .midTransitionHiddenUpdates:
+      let outputLayout = transition.outputLayout
       /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
       if transition.isClosingLeadingSidebar, let tabGroupToHide = transition.inputLayout.leadingSidebar.visibleTabGroup {
         /// Finish closing (if closing)
@@ -327,11 +331,44 @@ extension PlayerWindowController {
         removeSidebarTabGroupView(group: tabGroupToHide)
       }
 
+      // Leading Sidebar - if already showing but need to change tab group
+      if let visibleTab = outputLayout.leadingSidebar.visibleTab {
+        switchToTabInTabGroup(tab: visibleTab)
+      }
+      // Trailing Sidebar - if already showing but need to change tab group
+      if let visibleTab = outputLayout.trailingSidebar.visibleTab {
+        switchToTabInTabGroup(tab: visibleTab)
+      }
+
       if prepareSidebarsForOpening(transition) {
         updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
       } else if transition.isEnteringMusicMode {
         updateSidebarVerticalConstraints(tabHeight: transition.outputGeometry.sidebarTabHeight, downshift: transition.outputGeometry.sidebarDownshift)
       }
+
+      // Update bottom bar constraints *after* sidebars are added
+      if transition.isOpeningAnySidebar {
+        log.verbose{"Sidebars will be open: LeadingSidebar=\(outputLayout.leadingSidebar.isVisible.yn) TrailingSidebar=\(outputLayout.trailingSidebar.isVisible.yn)"}
+
+        if outputLayout.leadingSidebar.isVisible {
+          if outputLayout.leadingSidebarPlacement == .insideViewport {
+            leadingSidebarView.material = .menu
+          } else {
+            leadingSidebarView.material = .toolTip
+          }
+        }
+
+        if outputLayout.trailingSidebar.isVisible {
+          if outputLayout.trailingSidebarPlacement == .insideViewport {
+            trailingSidebarView.material = .menu
+          } else {
+            trailingSidebarView.material = .toolTip
+          }
+        }
+      }
+
+    case .extraAnimationBeforeOpenNewPanels:
+      break
 
     case .openNewPanels:
       if transition.isWindowInitialLayout || hasSidebarAtAnyStage {
@@ -346,6 +383,7 @@ extension PlayerWindowController {
 
         updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
       }
+
     case .postTransition:
       break
     }
@@ -374,6 +412,8 @@ extension PlayerWindowController {
       updateVideoView = false
     case .midTransitionHiddenUpdates:
       return
+    case .extraAnimationBeforeOpenNewPanels:
+      updateVideoView = false
     case .openNewPanels:
       updateVideoView = stageGeo.mode != .musicMode
     case .postTransition:

@@ -213,9 +213,16 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     mode.isFullScreen && Preference.bool(for: .displayTimeAndBatteryInFullScreen)
   }
 
-  /// OSD offset from top of viewportView
+  /// OSD offset from top of viewportView.
+  ///
+  ///  Needs to include topMarginHeight if it exists. We never want the OSD to overlap with the notch.
+  ///  (We do allow the OSC to overlap with the notch though).
   func osdOffsetFromTopOfViewport() -> CGFloat {
-    insideBars.top + 8
+    let screen = NSScreen.getScreenOrDefault(screenID: screenID)
+    let screenNotchHeight = screen.cameraHousingHeight ?? 0
+    let extraHeightNeededForNotch = max(0, screenNotchHeight - vpTopOffsetFromCVTop)
+
+    return extraHeightNeededForNotch + 8
   }
 
   /// Only if leading sidebar is open
@@ -254,6 +261,19 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       return .outsideViewport
     }
     return nil
+  }
+
+  /// Alias for `topMarginHeight`.
+  var cameraHousingOffset: CGFloat {
+    topMarginHeight
+  }
+
+  var vpTopOffsetFromTopBarTop: CGFloat {
+    return outsideBars.top
+  }
+
+  var vpTopOffsetFromCVTop: CGFloat {
+    vpTopOffsetFromTopBarTop + cameraHousingOffset
   }
 
   /// Can only be `true` while in music mode.

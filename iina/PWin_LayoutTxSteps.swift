@@ -528,39 +528,6 @@ extension PlayerWindowController {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }
 
-    // - Sidebars
-
-    // Leading Sidebar
-    if let visibleTab = transition.outputLayout.leadingSidebar.visibleTab {
-      switchToTabInTabGroup(tab: visibleTab)
-    }
-
-    // Trailing Sidebar
-    if let visibleTab = transition.outputLayout.trailingSidebar.visibleTab {
-      switchToTabInTabGroup(tab: visibleTab)
-    }
-
-    // Update bottom bar constraints *after* sidebars are added
-    if transition.isOpeningAnySidebar {
-      log.verbose{"Sidebars will be open: LeadingSidebar=\(outputLayout.leadingSidebar.isVisible.yn) TrailingSidebar=\(outputLayout.trailingSidebar.isVisible.yn)"}
-
-      if outputLayout.leadingSidebar.isVisible {
-        if outputLayout.leadingSidebarPlacement == .insideViewport {
-          leadingSidebarView.material = .menu
-        } else {
-          leadingSidebarView.material = .toolTip
-        }
-      }
-
-      if outputLayout.trailingSidebar.isVisible {
-        if outputLayout.trailingSidebarPlacement == .insideViewport {
-          trailingSidebarView.material = .menu
-        } else {
-          trailingSidebarView.material = .toolTip
-        }
-      }
-    }
-
     // - Music mode: entering or continuing)
 
     if (transition.isEnteringMusicMode || transition.isTogglingPlaylistInMusicMode) && transition.outputGeometry.isMusicModePlaylistShown {

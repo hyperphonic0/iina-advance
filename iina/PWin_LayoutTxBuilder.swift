@@ -257,13 +257,14 @@ extension PlayerWindowController {
     // (Only for Exit Legacy FS) Extra animation for camera housing. In Big Sur, AppKit needed an extra transaction & more
     // time when animating around the camera housing, especially if also changing window `titled` style. This may no longer
     // be the case, but it's not harming anything to leave this as-is for now.
-    if useExtraAnimationForExitingLegacyFullScreen {
-      let duration = endingAnimationDuration * transition.windowedModeScreen.cameraHeightToFrameHeightRatio
+    if useExtraAnimationForEnteringLegacyFullScreen || useExtraAnimationForExitingLegacyFullScreen {
+      let duration = endingAnimationDuration // * transition.windowedModeScreen.cameraHeightToFrameHeightRatio
 
       tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
-        let newGeo = transition.computeExtraAnimationGeoForLegacyFS(fsGeometry: transition.inputGeometry)
-        log.verbose("[\(transition.name)] Updating legacy FS window to show camera housing prior to entering windowed mode with windowFrame=\(newGeo.windowFrame)")
-        setFrameAndUpdateWindowSubviews(using: newGeo)
+        rebuildPanelConstraints(transition, stage: .extraAnimationBeforeOpenNewPanels)
+//        let stageGeo = transition.geometry(for: .extraAnimationBeforeOpenNewPanels)
+//        log.verbose("[\(transition.name)] Updating legacy FS window to show camera housing prior to entering windowed mode with windowFrame=\(stageGeo.windowFrame)")
+//        setFrameAndUpdateWindowSubviews(using: stageGeo)
       })
     }
 
@@ -274,16 +275,16 @@ extension PlayerWindowController {
     }))
 
     // (Only for Enter Legacy FS) Adds an extra animation to hide camera housing / menu bar / dock.
-    if useExtraAnimationForEnteringLegacyFullScreen {
-      let duration = endingAnimationDuration // * transition.windowedModeScreen.cameraHeightToFrameHeightRatio
-
-      tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
-        rebuildPanelConstraints(transition, stage: .postTransition)
-        let newGeo = transition.outputGeometry
-        log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock with windowFrame=\(newGeo.windowFrame)")
-        setFrameAndUpdateWindowSubviews(using: newGeo)
-      })
-    }
+//    if useExtraAnimationForEnteringLegacyFullScreen {
+//      let duration = endingAnimationDuration // * transition.windowedModeScreen.cameraHeightToFrameHeightRatio
+//
+//      tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
+//        rebuildPanelConstraints(transition, stage: .postTransition)
+//        let newGeo = transition.outputGeometry
+//        log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock with windowFrame=\(newGeo.windowFrame)")
+//        setFrameAndUpdateWindowSubviews(using: newGeo)
+//      })
+//    }
 
     // EndingAnimation 2: Fade in new views
     // If exiting FS, this task is skipped. It needs to run in a separate CATransaction so it is run down below.
@@ -431,7 +432,7 @@ extension PlayerWindowController.LayoutTransition {
   /// Builds `closeOldPanelsGeometry`.
   /// Currently there are 4 bars. Each can be either inside or outside, exclusively.
   func buildCloseOldPanelsGeometry() -> PWinGeometry? {
-    guard !isWindowInitialLayout else {
+    guard !isWindowInitialLayout, !isEnteringFullScreen else {
       // Not animated
       return nil
     }
@@ -486,9 +487,6 @@ extension PlayerWindowController.LayoutTransition {
 
     } else if isExitingMusicMode {
       // - Music Mode: Exit
-      if isEnteringFullScreen {
-        return nil
-      }
       // Only bottom bar needs to be closed. No need to constrain in screen
       return inputGeometry.withResizedBars(mode: .windowedNormal,
                                            outsideBottom: 0,
