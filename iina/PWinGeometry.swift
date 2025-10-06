@@ -934,7 +934,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                     leading: leading ?? outsideBars.leading)
 
     guard !mode.isFullScreen else {
-      let outputGeo = clone(outsideBars: newOutsideBars)
+      let outputGeo = clone(outsideBars: newOutsideBars, isMiddleTransition: isMiddleTransition)
       log.verbose{"[ResizeBars] Mode is FS (\(mode)): Returning same windowFrame but with closed bars"}
       return outputGeo
     }

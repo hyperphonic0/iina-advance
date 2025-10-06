@@ -579,16 +579,16 @@ extension PlayerWindowController.LayoutTransition {
                                         isMiddleTransition: true)
     }
 
-    let closedBarsGeo = outputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
-                                                       outsideTrailing: outsideTrailingBarWidth,
-                                                       outsideBottom: outsideBottomBarHeight,
-                                                       outsideLeading: outsideLeadingBarWidth,
-                                                       insideTop: insideTopBarHeight,
-                                                       insideTrailing: insideTrailingBarWidth,
-                                                       insideBottom: insideBottomBarHeight,
-                                                       insideLeading: insideLeadingBarWidth,
-                                                       pinWidthOrHeightIfAtMax: true,
-                                                       isMiddleTransition: true)
+    let closedBarsGeo = inputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
+                                                      outsideTrailing: outsideTrailingBarWidth,
+                                                      outsideBottom: outsideBottomBarHeight,
+                                                      outsideLeading: outsideLeadingBarWidth,
+                                                      insideTop: insideTopBarHeight,
+                                                      insideTrailing: insideTrailingBarWidth,
+                                                      insideBottom: insideBottomBarHeight,
+                                                      insideLeading: insideLeadingBarWidth,
+                                                      pinWidthOrHeightIfAtMax: true,
+                                                      isMiddleTransition: true)
     return closedBarsGeo.refitted()
   }
 }
