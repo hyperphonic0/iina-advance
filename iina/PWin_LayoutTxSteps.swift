@@ -94,7 +94,12 @@ extension PlayerWindowController {
 
       setWindowFloatingOnTop(false, from: transition.inputLayout, updateOnTopStatus: false)
 
-      if transition.outputLayout.isLegacyFullScreen {
+      if !player.isStopping {
+        player.mpv.setFlag(MPVOption.Window.fullscreen, true)
+        player.didEnterFullScreenViaUserToggle = true
+      }
+
+      if transition.isEnteringLegacyFullScreen {
         // stylemask
         let hasTitled = window.styleMask.contains(.titled)
         log.verbose{"[\(transition.name)] Entering legacy FS\(hasTitled ? ": removing window styleMask: .titled" : "")"}
@@ -115,10 +120,6 @@ extension PlayerWindowController {
         /// When restoring, it's possible this window is not actually topmost.
         /// Make sure to check before putting it on top.
         refreshKeyWindowStatus()
-      }
-      if !player.isStopping {
-        player.mpv.setFlag(MPVOption.Window.fullscreen, true)
-        player.didEnterFullScreenViaUserToggle = true
       }
 
     } else if transition.isExitingFullScreen {
@@ -158,16 +159,6 @@ extension PlayerWindowController {
       videoView.videoViewConstraints?.aspectRatio.isActive = false
     }
 
-    if transition.isWindowInitialLayout {
-      // Reset other views to initial minimums:
-      speedLabelBtmConstraint.isActive = false
-
-      /// Set `window.contentView`'s background to black so that the windows behind this one don't bleed through
-      /// when `lockViewportToVideoSize` is disabled, or when in legacy full screen on a Macbook screen  with a
-      /// notch and the preference `allowVideoToOverlapCameraHousing` is false. Also needed so that sidebars don't
-      /// bleed through during their show/hide animations.
-      setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
-    }
   }
 
   /// -------------------------------------------------
@@ -297,7 +288,8 @@ extension PlayerWindowController {
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
     log.verbose("Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)")
 
-    // TODO: incorporate this into closeOldPanelsGeometry for cleaner code
+    // - OSC Subviews
+    // TODO: incorporate controlBarGeo into closeOldPanelsGeometry for cleaner code
     if isOpeningBarOSC || isClosingBarOSC {
       // Shrink all the buttons vertically to create cool animated effect.
       // Don't worry about horizontal.
@@ -373,26 +365,14 @@ extension PlayerWindowController {
       updateToolbarHStack(iconSpacing: toolSpacing)
     }
 
+    rebuildPanelConstraints(transition, stage: .closeOldPanels)
+
     // - Middle Geometry
-
-    if let middleGeo = transition.closeOldPanelsGeometry {
+    if let closeOldPanelsGeo = transition.closeOldPanelsGeometry {
       if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
-        controlBarFloating.moveToLocationRatio(parentGeo: middleGeo)
-      }
-
-      // Do not do this when first opening the window though, because it will cause the window location restore to be incorrect.
-      // Also do not apply when toggling fullscreen because it is not relevant at this stage and will look glitchy because the
-      // animation has zero duration.
-      log.debug("Applying middleGeo windowFrame=\(middleGeo.windowFrame)")
-      if transition.isTogglingMusicMode {
-        // Don't add or remove aspect constraint while animating music mode toggle!
-        setFrameAndUpdateWindowSubviews(using: middleGeo, updateVideoView: false)
-      } else if !transition.isTogglingFullScreen {
-        setFrameAndUpdateWindowSubviews(using: middleGeo, updateVideoView: true)
+        controlBarFloating.moveToLocationRatio(parentGeo: closeOldPanelsGeo)
       }
     }
-    
-    rebuildPanelConstraints(transition, stage: .closeOldPanels)
   }
 
   /// -------------------------------------------------
@@ -402,15 +382,7 @@ extension PlayerWindowController {
   /// This animation moves & resizes the video frame for a nice effect.
   /// May execute either before or after `updateHiddenViewsAndConstraints`.
   func moveAndScaleVideoFrame(_ transition: LayoutTransition) {
-    let log = log.withPreamble(transition.logPreamble(for: .moveAndScale))
-    let geo = transition.moveAndScaleGeometry!
-    log.verbose{"Moving & scaling video window to middleGeo2=\(geo)"}
-
     rebuildPanelConstraints(transition, stage: .moveAndScale)
-
-    // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
-    // It's not needed until the next step anyway.
-    setFrameAndUpdateWindowSubviews(using: geo, updateVideoView: false)
   }
 
   /// -------------------------------------------------
@@ -934,7 +906,6 @@ extension PlayerWindowController {
       log.verbose{"Skipped applyThemeMaterial due to missing window or screen"}
     }
 
-
     // Other misc views
     updateVolumeUI()
     playSlider.needsDisplay = true
@@ -954,9 +925,6 @@ extension PlayerWindowController {
       /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
       updatePresentationOptions(windowIsLegacyFS: false)
     }
-
-    // Need to update OSD vertical offset when exiting from legacy FS due to previous special animations
-    updateOSDTopOffsetConstraints(for: transition.outputGeometry)
 
     if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
@@ -998,40 +966,37 @@ extension PlayerWindowController {
       }
       // FIXME: add toolbar height constraint
       updateToolbarHStack(iconSpacing: newGeo.toolIconSpacing)
+
+      if outputLayout.hasFloatingOSC {
+        // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs
+        let topRowView = controlBarFloating.topRowView
+        if transition.isWindowInitialLayout || !transition.inputLayout.hasFloatingOSC {
+          controlBarFloating.playButtonsContainerView.addView(fragPlaybackBtnsView, in: .center)
+          // There sweems to be a race condition when adding to these StackViews.
+          // Sometimes it still contains the old view, and then trying to add again will cause a crash.
+          // Must check if it already contains the view before adding.
+          if !topRowView.views(in: .leading).contains(fragVolumeView) {
+            topRowView.addView(fragVolumeView, in: .leading)
+            fragVolumeView.isHidden = false
+          }
+          topRowView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
+
+          topRowView.setClippingResistancePriority(.defaultLow, for: .horizontal)
+
+          addSubviewsToPlaySliderAndTimeLabelsView(using: transition.outputLayout.controlBarGeo)
+          controlBarFloating.bottomRowView.addSubview(playSliderAndTimeLabelsView)
+          playSliderAndTimeLabelsView.isHidden = false
+          playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
+        }
+        updateSpeedLabelFont(for: transition)
+
+        // Update floating control bar position
+        controlBarFloating.moveToLocationRatio(parentGeo: transition.outputGeometry)
+      }
+
     }
 
     rebuildPanelConstraints(transition, stage: .openNewPanels)
-
-    let openNewPanelsGeo: PWinGeometry = transition.geometry(for: .openNewPanels)
-    log.verbose("Calling setFrame from OpenNewPanels (\(openNewPanelsGeo.mode)): \(openNewPanelsGeo.windowFrame)")
-    setFrameAndUpdateWindowSubviews(using: openNewPanelsGeo, updateVideoView: openNewPanelsGeo.mode != .musicMode)
-
-    if outputLayout.hasFloatingOSC {
-      // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs
-      let topRowView = controlBarFloating.topRowView
-      if transition.isWindowInitialLayout || !transition.inputLayout.hasFloatingOSC {
-        controlBarFloating.playButtonsContainerView.addView(fragPlaybackBtnsView, in: .center)
-        // There sweems to be a race condition when adding to these StackViews.
-        // Sometimes it still contains the old view, and then trying to add again will cause a crash.
-        // Must check if it already contains the view before adding.
-        if !topRowView.views(in: .leading).contains(fragVolumeView) {
-          topRowView.addView(fragVolumeView, in: .leading)
-          fragVolumeView.isHidden = false
-        }
-        topRowView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
-
-        topRowView.setClippingResistancePriority(.defaultLow, for: .horizontal)
-
-        addSubviewsToPlaySliderAndTimeLabelsView(using: transition.outputLayout.controlBarGeo)
-        controlBarFloating.bottomRowView.addSubview(playSliderAndTimeLabelsView)
-        playSliderAndTimeLabelsView.isHidden = false
-        playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
-      }
-      updateSpeedLabelFont(for: transition)
-
-      // Update floating control bar position
-      controlBarFloating.moveToLocationRatio(parentGeo: transition.outputGeometry)
-    }
 
     log.verbose{"Done"}
   }
@@ -1225,7 +1190,6 @@ extension PlayerWindowController {
     }
 
     rebuildPanelConstraints(transition, stage: .postTransition)
-    setFrameAndUpdateWindowSubviews(using: transition.outputGeometry)
 
     if transition.isTogglingMusicMode {
       if Preference.bool(for: .playlistShowMetadataInMusicMode) {

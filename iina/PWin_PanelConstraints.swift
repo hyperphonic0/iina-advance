@@ -75,48 +75,25 @@ extension PlayerWindowController {
   func rebuildPanelConstraints(_ transition: LayoutTransition, stage: LayoutTransition.Stage) {
     let contentView = window!.contentView!
     let p = panelConstraints
-    let logPre = transition.logPreamble(for: stage)
-    let log = self.log.withPreamble(logPre)
+    let log = self.log.withPreamble(transition.logPreamble(for: stage))
     let outputGeo = transition.outputGeometry
     let stageGeo = transition.geometry(for: stage)
     let isFinalStage: Bool = stage == .postTransition
 
     // Need to always have viewportView during animations (when toggling music mode with video off)
     let useViewport = (!isFinalStage && transition.inputGeometry.isViewportShown) || outputGeo.isViewportShown
-    let useBottomBar: Bool
-    let useTopBar: Bool
-    let useLeadingSidebar: Bool
-    let useTrailingSidebar: Bool
 
-    let layout: LayoutState
-    switch stage {
-    case .preTransitionSetup, .closeOldPanels:
-      // Closing or preparing to close: use existing layout
-      layout = transition.inputLayout
-      useTopBar = layout.hasTopBar
-    case .moveAndScale:
-      if transition.isMoveAndScaleStepBeforeMidpoint {
-        layout = transition.inputLayout
-      } else {
-        layout = transition.outputLayout
-      }
-      if transition.isTogglingFullScreen {
-        useTopBar = transition.inputLayout.hasTopBar || transition.outputLayout.hasTopBar
-      } else  {
-        useTopBar = layout.hasTopBar
-      }
-    case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
-      // About to apply output geometry, or applying output geometry: use output layout
-      layout = transition.outputLayout
-      if transition.isTogglingFullScreen {
-        useTopBar = (!isFinalStage && transition.inputLayout.hasTopBar) || transition.outputLayout.hasTopBar
-      } else {
-        useTopBar = layout.hasTopBar
-      }
+    let stageLayout: LayoutState = transition.targetLayout(for: stage)
+    // We need to include constraints for some panels in multiple stages if they are open at any point
+    let useLeadingSidebar = stageLayout.isLeadingSidebarVisible
+    let useTrailingSidebar = stageLayout.isTrailingSidebarVisible
+    let useBottomBar = stageLayout.hasBottomBar
+    let useTopBar: Bool
+    if transition.isTogglingFullScreen {
+      useTopBar = (!isFinalStage && transition.inputLayout.hasTopBar) || transition.outputLayout.hasTopBar
+    } else {
+      useTopBar = stageLayout.hasTopBar
     }
-    useBottomBar = layout.hasBottomBar
-    useLeadingSidebar = layout.isLeadingSidebarVisible
-    useTrailingSidebar = layout.isTrailingSidebarVisible
 
     log.verbose("RebuildPanels: Viewport=\(useViewport.yn) BottomBar=\(useBottomBar.yn) TopBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSB=\(useTrailingSidebar.yn)")
 
@@ -199,7 +176,7 @@ extension PlayerWindowController {
           topBarView.titleBarHeightConstraint.animateToConstant(0)
         }
       } else {
-        let titleHeight = min(layout.titleBarHeight, abs(constant1 - constant2))  // do not make titleBar larger than top bar
+        let titleHeight = min(stageLayout.titleBarHeight, abs(constant1 - constant2))  // do not make titleBar larger than top bar
         log.verbose("Updating titleHeight=\(titleHeight)")
         topBarView.titleBarHeightConstraint.animateToConstant(titleHeight)
       }
@@ -238,7 +215,7 @@ extension PlayerWindowController {
     // - Bottom Bar
     if useBottomBar {
       // Handle leading & trailing constraints
-      updateBottomBarHorizontalContraints(bottomBarPlacement: layout.bottomBarPlacement,
+      updateBottomBarHorizontalContraints(bottomBarPlacement: stageLayout.bottomBarPlacement,
                                           useLeadingSidebar: useLeadingSidebar,
                                           useTrailingSidebar: useTrailingSidebar, log)
 
@@ -380,7 +357,34 @@ extension PlayerWindowController {
     updateOSDConstraints(stageGeo)
 
     // Must execute this *before* sidebars logic below, which may alter their orders
-    sortContentViewSubviews(for: layout, in: transition)
+    sortContentViewSubviews(for: stageLayout, in: transition)
+
+    updateWindowFrameIfNeeded(for: stage, stageGeo, in: transition, log)
+  }
+
+  private func updateWindowFrameIfNeeded(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry, in transition: LayoutTransition, _ log: Logger.Subsystem) {
+    let updateVideoView: Bool
+    switch stage {
+    case .preTransitionSetup:
+      return
+    case .closeOldPanels:
+      assert(!transition.isWindowInitialLayout && !transition.isEnteringFullScreen)
+      // Don't add or remove aspect constraint while animating music mode toggle!
+      updateVideoView = !transition.isTogglingMusicMode
+    case .moveAndScale:
+      // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
+      // It's not needed until the next step anyway.
+      updateVideoView = false
+    case .midTransitionHiddenUpdates:
+      return
+    case .openNewPanels:
+      updateVideoView = stageGeo.mode != .musicMode
+    case .postTransition:
+      updateVideoView = true
+    }
+
+    log.verbose("Calling setFrame: \(stageGeo.windowFrame)")
+    setFrameAndUpdateWindowSubviews(using: stageGeo, updateVideoView: updateVideoView)
   }
 
   private func prepareSidebarsForOpening(_ transition: LayoutTransition) -> Bool {

@@ -379,6 +379,23 @@ extension PlayerWindowController {
       "[\(name)-\(stage)]"
     }
 
+    func targetLayout(for stage: Stage) -> LayoutState {
+      switch stage {
+      case .preTransitionSetup, .closeOldPanels:
+        // Closing or preparing to close: use existing layout
+        return inputLayout
+      case .moveAndScale:
+        if isMoveAndScaleStepBeforeMidpoint {
+          return inputLayout
+        } else {
+          return outputLayout
+        }
+      case .midTransitionHiddenUpdates, .openNewPanels, .postTransition:
+        // About to apply output geometry, or applying output geometry: use output layout
+        return outputLayout
+      }
+    }
+
     func geometry(for stage: Stage) -> PWinGeometry {
       switch stage {
       case .preTransitionSetup:
