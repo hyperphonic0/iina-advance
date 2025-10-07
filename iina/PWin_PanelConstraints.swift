@@ -69,7 +69,6 @@ extension PlayerWindowController {
 
   // MARK: - Bars Layout
 
-  // FIXME: 1. Exit Custom FS bad animation
   // FIXME: 4. Delogo broken
   func rebuildPanelConstraints(_ transition: LayoutTransition, stage: LayoutTransition.Stage) {
     let contentView = window!.contentView!
@@ -418,7 +417,8 @@ extension PlayerWindowController {
     let updateVideoView: Bool
     switch stage {
     case .preTransitionSetup:
-      return
+      // Should be a no op, but why not
+      updateVideoView = false
     case .closeOldPanels:
       assert(!transition.isWindowInitialLayout && !transition.isEnteringFullScreen)
       // Don't add or remove aspect constraint while animating music mode toggle!
@@ -428,7 +428,8 @@ extension PlayerWindowController {
       // It's not needed until the next step anyway.
       updateVideoView = false
     case .midTransitionHiddenUpdates:
-      return
+      // Should be a no op, but why not
+      updateVideoView = true
     case .extraAnimationBeforeOpenNewPanels:
       updateVideoView = false
     case .openNewPanels:

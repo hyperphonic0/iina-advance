@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24128" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24128"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -2047,7 +2047,7 @@ For smoothest results, also enable custom full screen.</string>
                                                 <rect key="frame" x="16" y="11" width="416" height="160"/>
                                                 <subviews>
                                                     <button horizontalHuggingPriority="252" translatesAutoresizingMaskIntoConstraints="NO" id="z4a-Gk-7vu">
-                                                        <rect key="frame" x="-2" y="143" width="138" height="18"/>
+                                                        <rect key="frame" x="-2" y="143" width="161" height="18"/>
                                                         <buttonCell key="cell" type="check" title="Round corners of bars" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="fHb-AB-HeE">
                                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                             <font key="font" metaFont="system"/>
@@ -2889,22 +2889,6 @@ For smoothest results, also enable custom full screen.</string>
                                 <constraint firstAttribute="width" id="Ifa-3Y-9ix"/>
                                 <constraint firstAttribute="height" constant="1" id="tTw-Ay-QRO"/>
                             </constraints>
-                            <connections>
-                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="OJM-gz-TWt" id="KaR-WZ-Iwy">
-                                    <dictionary key="options">
-                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
-                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
-                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
-                                        <integer key="NSNullPlaceholder" value="-1"/>
-                                        <string key="NSValueTransformerName">NSIsNotNil</string>
-                                    </dictionary>
-                                </binding>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="OJM-gz-TWt">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                            </connections>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iaL-Nb-KRK" userLabel="OSDTimeAndBattery HStack View">
                             <rect key="frame" x="0.0" y="0.0" width="315" height="16"/>
@@ -2926,22 +2910,6 @@ For smoothest results, also enable custom full screen.</string>
                             <customSpacing>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
-                            <connections>
-                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="tmh-CY-fka" id="QfQ-73-cas">
-                                    <dictionary key="options">
-                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
-                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
-                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
-                                        <integer key="NSNullPlaceholder" value="-1"/>
-                                        <string key="NSValueTransformerName">NSIsNotNil</string>
-                                    </dictionary>
-                                </binding>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="tmh-CY-fka">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                            </connections>
                         </stackView>
                     </subviews>
                     <constraints>

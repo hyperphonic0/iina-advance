@@ -181,8 +181,6 @@ extension PlayerWindowController {
       closeOldPanelsDuration *= cameraHeightToFrameHeightRatio
       let nonCameraHeightToFrameHeightRatio = transition.windowedModeScreen.nonCameraHeightToFrameHeightRatio
       openFinalPanelsDuration *= nonCameraHeightToFrameHeightRatio
-//      closeOldPanelsDuration = 1.0
-//      openFinalPanelsDuration = 1.0
       fadeInNewViewsDuration = 0
     } else if useExtraAnimationForEnteringLegacyFullScreen {
       let cameraHeightToFrameHeightRatio = transition.windowedModeScreen.cameraHeightToFrameHeightRatio

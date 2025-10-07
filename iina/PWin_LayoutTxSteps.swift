@@ -288,6 +288,11 @@ extension PlayerWindowController {
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
     log.verbose("Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)")
 
+    if transition.isExitingLegacyFullScreen {
+      /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
+      updatePresentationOptions(windowIsLegacyFS: false)
+    }
+
     // - OSC Subviews
     // TODO: incorporate controlBarGeo into closeOldPanelsGeometry for cleaner code
     if isOpeningBarOSC || isClosingBarOSC {
@@ -887,11 +892,6 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     let log = log.withPreamble(transition.logPreamble(for: .openNewPanels))
     log.verbose{"Start: TitleBar_H=\(outputLayout.titleBarHeight) TopOSC_H=\(outputLayout.topOSCHeight)"}
-
-    if transition.isExitingLegacyFullScreen {
-      /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
-      updatePresentationOptions(windowIsLegacyFS: false)
-    }
 
     if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
