@@ -25,6 +25,43 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     }
   }
 
+  class VolumePopoverContentViewController: NSViewController {
+    let volumeSliderView = VolumeSliderView()
+    
+    override func loadView() {
+      view = volumeSliderView
+      super.loadView()
+    }
+
+  }
+
+  class VolumeSliderView: NSView {
+    let volumeLabel = NSTextField(labelWithString: "50")
+
+    init() {
+      super.init(frame: .zero)
+      idString = "VolumeSliderView"
+      translatesAutoresizingMaskIntoConstraints = false
+      heightAnchor.constraint(equalToConstant: 36).isActive = true
+
+      volumeLabel.translatesAutoresizingMaskIntoConstraints = false
+      volumeLabel.setContentHuggingPriority(.init(249), for: .horizontal)
+      volumeLabel.textColor = .labelColor
+      volumeLabel.font = .systemFont(ofSize: 13)
+      addSubview(volumeLabel)
+      volumeLabel.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
+      let trailingEqCon = trailingAnchor.constraint(equalTo: volumeLabel.leadingAnchor, constant: 32)
+      trailingEqCon.priority = .defaultHigh
+      trailingEqCon.isActive = true
+      let trailingGTCon = trailingAnchor.constraint(greaterThanOrEqualTo: volumeLabel.trailingAnchor)
+      trailingGTCon.isActive = true
+    }
+
+    @MainActor required init?(coder: NSCoder) {
+      fatalError("init(coder:) has not been implemented")
+    }
+  }
+
   override var nibName: NSNib.Name {
     return NSNib.Name("MiniPlayerViewController")
   }
@@ -38,8 +75,14 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBOutlet weak var positionSliderWrapperView: NSView!
 
   @IBOutlet weak var volumeButton: SymButton!
-  @IBOutlet var volumePopover: NSPopover!
-  @IBOutlet weak var volumeSliderView: NSView!
+  let volumePopover = NSPopover()
+  fileprivate let volumePopoverViewController = VolumePopoverContentViewController()
+  var volumeSliderView: VolumeSliderView {
+    volumePopoverViewController.view as! VolumeSliderView
+  }
+  fileprivate var volumeLabel: NSTextField {
+    volumeSliderView.volumeLabel
+  }
   @IBOutlet weak var volumePopoverAlignmentView: NSView!
   @IBOutlet weak var musicModeControlBarView: NSVisualEffectView!
   fileprivate let playlistWrapperView = PlaylistWrapperView()
@@ -48,7 +91,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBOutlet weak var titleLabel: ScrollingTextField!
   @IBOutlet weak var titleLabelTopConstraint: NSLayoutConstraint!
   @IBOutlet weak var artistAlbumLabel: ScrollingTextField!
-  @IBOutlet weak var volumeLabel: NSTextField!
   @IBOutlet weak var togglePlaylistButton: SymButton!
   @IBOutlet weak var toggleAlbumArtButton: SymButton!
   @IBOutlet weak var volumeButtonLeadingConstraint: NSLayoutConstraint!
@@ -79,6 +121,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    volumePopover.contentViewController = volumePopoverViewController
 
     titleLabel.idString = "TitleLabel"
     artistAlbumLabel.idString = "ArtistAlbumLabel"
@@ -141,6 +184,12 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     volumePopover.delegate = self
 
     log.verbose("MiniPlayer viewDidLoad done")
+  }
+
+  func updatePopupVolumeUI(volume: Double, _ volumeImage: NSImage?) {
+    loadIfNeeded()
+    volumeLabel.intValue = Int32(volume)
+    volumeButton.image = volumeImage
   }
 
   // MARK: - UI: Controller
@@ -241,7 +290,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   // MARK: - Volume UI
 
   /// Executed when `hideVolumePopoverTimer` fires.
-  @objc private func hideVolumePopover() {
+  @objc func hideVolumePopover() {
     volumePopover.animates = true
     volumePopover.performClose(self)
   }

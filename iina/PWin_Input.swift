@@ -277,7 +277,7 @@ extension PlayerWindowController {
   /// which neither it nor any of its ancestors are hidden.
   ///
   /// This method is meant as a substitute from `NSView.hitTest`, which seems to only return the first responder.
-  func visibleViewForMouseEvent(_ event: NSEvent, in views: [NSView?]) -> NSView? {
+  fileprivate func visibleViewForMouseEvent(_ event: NSEvent, in views: [NSView?]) -> NSView? {
     let pointInWindow = event.locationInWindow
     for view in views {
       guard let view else { continue }
@@ -680,7 +680,7 @@ extension PlayerWindowController {
     }
 
     // Update mouse cursor
-    guard  !currentLayout.mode.mustShowCursorAlways else { return }
+    guard !currentLayout.mode.mustShowCursorAlways else { return }
 
     // FIXME: need to use global logic instead
     if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||

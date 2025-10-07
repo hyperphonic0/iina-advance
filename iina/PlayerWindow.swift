@@ -59,11 +59,8 @@ class PlayerWindow: NSWindow {
 
     guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.keyDown()!") }
 
-    if pwc.isInInteractiveMode, let cropController = pwc.cropSettingsView {
-      if keyCode == "ESC" || keyCode == "ENTER" {
-        cropController.handleKeyDown(mpvKeyCode: keyCode)
-        return
-      }
+    if processForImmediateView(keyCode: keyCode, pwc) {
+      return
     }
     pwc.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
 
@@ -102,6 +99,10 @@ class PlayerWindow: NSWindow {
     keyUpCount += 1
     let keyCode: String = KeyCodeHelper.mpvKeyCode(from: event)
 
+    if processForImmediateView(keyCode: keyCode, pwc) {
+      return
+    }
+
     // The user expects certain keys to end editing of text fields. But all the other controls in the sidebar refuse first responder
     // status, so we cannot rely on the key-view-loop to end editing. Need to do this explicitly.
     if let textView = firstResponder as? NSTextView {
@@ -127,11 +128,8 @@ class PlayerWindow: NSWindow {
     guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.performKeyEquivalent!") }
     let keyCode: String = KeyCodeHelper.mpvKeyCode(from: event)
 
-    if pwc.isInInteractiveMode, let cropController = pwc.cropSettingsView {
-      if keyCode == "ESC" || keyCode == "ENTER" {
-        cropController.handleKeyDown(mpvKeyCode: keyCode)
-        return true
-      }
+    if processForImmediateView(keyCode: keyCode, pwc) {
+      return true
     }
 
     let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
@@ -178,6 +176,20 @@ class PlayerWindow: NSWindow {
     // Apparently it is important to return false here, for some system shortcuts to be handled,
     // e.g. ⌘` (command+grave), which cycles application windows
     log.verbose("KeyEquiv: key is unrecognized")
+    return false
+  }
+
+  private func processForImmediateView(keyCode: String, _ pwc: PlayerWindowController) -> Bool {
+    if keyCode == "ESC" || keyCode == "ENTER" {
+      if pwc.isInInteractiveMode, let cropController = pwc.cropSettingsView {
+        cropController.handleKeyDown(mpvKeyCode: keyCode)
+        return true
+      } else if pwc.isInMiniPlayer, pwc.miniPlayer.volumePopover.isShown {
+        log.verbose{"Hiding miniPlayer volume popover"}
+        pwc.miniPlayer.hideVolumePopover()
+        return true
+      }
+    }
     return false
   }
 
