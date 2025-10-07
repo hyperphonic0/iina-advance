@@ -222,16 +222,6 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     tableView.dataSource = self
     completionTableView.delegate = self
     completionTableView.dataSource = self
-    
-    // It seems that on Tahoe RC, the sytstem will force to draw titlebar background if there's a scrollview
-    // that overlaps with the titlebar area. We just add an ugly workaround for now and wait for the new settings window.
-    if #available(macOS 26, *) {
-      scrollViewTopConstraint.constant = 32
-      searchFieldTopConstraint.constant = 40
-      searchFieldBottomConstraint.constant = 8
-    } else {
-      scrollViewTopConstraint.constant = 28
-    }
 
     detailViewBottomConstraint = prefDetailContentView.bottomAnchor.constraint(equalTo: prefDetailContentView.superview!.bottomAnchor)
 
@@ -310,6 +300,10 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
       }
     }
 
+#if compiler(>=6.2) // only when using Xcode 26+
+    // replace with split view when all subviews are properly loaded
+    setupForLiquidGlass()
+#endif
   }
 
   override func mouseDown(with event: NSEvent) {
@@ -597,6 +591,98 @@ extension PreferenceWindowController: NSTableViewDelegate, NSTableViewDataSource
 
 }
 
+#if compiler(>=6.2)
+extension PreferenceWindowController {
+  func setupForLiquidGlass() {
+    if #available(macOS 26.0, *) {
+      window?.styleMask = [.titled, .miniaturizable, .closable, .resizable, .fullSizeContentView]
+      window?.titlebarAppearsTransparent = false
+      window?.collectionBehavior = .fullScreenAuxiliary
+      let toolbar = NSToolbar(identifier: "preference.window.toolbar") // dummy toolbar to make sidebar merge with titlebar
+      toolbar.delegate = self
+      toolbar.displayMode = .iconOnly
+      toolbar.allowsDisplayModeCustomization = false
+      toolbar.allowsUserCustomization = false
+      window?.toolbar = toolbar
+      let detailView = NSView()
+      for v in [maskView!, prefDetailScrollView!] {
+        detailView.addSubview(v)
+        v.constraints.forEach(v.removeConstraint(_:))
+      }
+      NSLayoutConstraint.activate([
+        prefDetailScrollView.topAnchor.constraint(equalTo: detailView.topAnchor),
+        prefDetailScrollView.leadingAnchor.constraint(equalTo: detailView.safeAreaLayoutGuide.leadingAnchor),
+        prefDetailScrollView.trailingAnchor.constraint(equalTo: detailView.trailingAnchor),
+        prefDetailScrollView.bottomAnchor.constraint(equalTo: detailView.bottomAnchor),
+
+        maskView.topAnchor.constraint(equalTo: detailView.topAnchor),
+        maskView.leadingAnchor.constraint(equalTo: detailView.leadingAnchor), // stretch all the way under sidebar
+        maskView.trailingAnchor.constraint(equalTo: detailView.trailingAnchor),
+        maskView.bottomAnchor.constraint(equalTo: detailView.bottomAnchor),
+      ])
+      if let top = window?.contentView?.safeAreaInsets.top {
+        // a little hack to xib's settings
+        prefDetailScrollView.contentInsets.top = top
+      }
+      prefDetailScrollView.contentView.automaticallyAdjustsContentInsets = true
+      let splitController = NSSplitViewController()
+      splitController.splitViewItems = [
+        NSSplitViewItem(sidebarWithViewController: SimpleViewController(wrapped: tableView.enclosingScrollView!)),
+        NSSplitViewItem(viewController: SimpleViewController(wrapped: detailView)),
+      ]
+      splitController.splitViewItems.forEach {
+        $0.automaticallyAdjustsSafeAreaInsets = true // allow mask to stretch under side bar
+      }
+      tableView.enclosingScrollView?.contentView.automaticallyAdjustsContentInsets = true
+      NSLayoutConstraint.activate([
+        tableView.enclosingScrollView!.widthAnchor.constraint(equalToConstant: 200),
+      ])
+      splitController.splitViewItems[0].canCollapse = false
+      window?.contentViewController = splitController
+    }
+  }
+}
+
+// MARK: - Toolbar for macOS 26+
+@available(macOS 26.0, *)
+private extension NSToolbarItem.Identifier {
+  static let preferenceSearchItem = NSToolbarItem.Identifier("PreferenceSearchItem")
+}
+
+@available(macOS 26.0, *)
+extension PreferenceWindowController: NSToolbarDelegate {
+  func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    [
+      .sidebarTrackingSeparator,
+      .flexibleSpace,
+      .preferenceSearchItem,
+    ]
+  }
+
+  func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+    switch itemIdentifier {
+    case .preferenceSearchItem:
+      let item = NSSearchToolbarItem(itemIdentifier: itemIdentifier)
+      item.searchField.target = self
+      item.searchField.action = #selector(searchFieldAction(_:))
+      // replace the on in xib
+      searchField = item.searchField
+      return item
+    default:
+      return nil
+    }
+  }
+
+  func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    toolbarDefaultItemIdentifiers(toolbar)
+  }
+
+  func toolbar(_ toolbar: NSToolbar, itemIdentifier: NSToolbarItem.Identifier, canBeInsertedAt index: Int) -> Bool {
+    true
+  }
+}
+#endif // compiler(>=6.2)
+
 class PrefSearchResultMaskView: NSView {
 
   var maskRect: NSRect?
@@ -657,5 +743,21 @@ class PrefTabTitleLabelCell: NSTextFieldCell {
         self.textColor = NSColor.controlTextColor
       }
     }
+  }
+}
+
+fileprivate class SimpleViewController: NSViewController {
+  let wrappedView: NSView
+
+  init(wrapped wrappedView: NSView) {
+    self.wrappedView = wrappedView
+    super.init(nibName: nil, bundle: nil)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+  override func loadView() {
+    view = wrappedView
   }
 }
