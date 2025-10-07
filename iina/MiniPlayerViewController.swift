@@ -9,6 +9,21 @@
 import Cocoa
 
 class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
+  fileprivate class PlaylistWrapperView: NSVisualEffectView {
+    init() {
+      super.init(frame: .zero)
+      idString = "PlaylistWrapperView"
+      blendingMode = .behindWindow
+      material = .underWindowBackground
+      state = .active
+      wantsLayer = true
+      translatesAutoresizingMaskIntoConstraints = false
+    }
+
+    @MainActor required init?(coder: NSCoder) {
+      fatalError("init(coder:) has not been implemented")
+    }
+  }
 
   override var nibName: NSNib.Name {
     return NSNib.Name("MiniPlayerViewController")
@@ -27,7 +42,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBOutlet weak var volumeSliderView: NSView!
   @IBOutlet weak var volumePopoverAlignmentView: NSView!
   @IBOutlet weak var musicModeControlBarView: NSVisualEffectView!
-  @IBOutlet weak var playlistWrapperView: NSVisualEffectView!
+  fileprivate let playlistWrapperView = PlaylistWrapperView()
   @IBOutlet weak var mediaInfoView: NSView!
   @IBOutlet weak var controllerButtonsPanelView: NSView!
   @IBOutlet weak var titleLabel: ScrollingTextField!
@@ -37,6 +52,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBOutlet weak var togglePlaylistButton: SymButton!
   @IBOutlet weak var toggleAlbumArtButton: SymButton!
   @IBOutlet weak var volumeButtonLeadingConstraint: NSLayoutConstraint!
+
+  let playlistWrapperTopBorder = BorderLineView(id: "MusicMode-PL-Wrapper-TopBorder", fillColor: .quaternaryLabelColor)
 
   private var hideVolumePopoverTimer: Timer?
 
@@ -106,8 +123,20 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     pwc.closeButtonVE.toolTip = NSLocalizedString("mini_player.close", comment: "close")
     pwc.backButtonVE.toolTip = NSLocalizedString("mini_player.back", comment: "back")
 
-    playlistWrapperView.identifier = .init("PlaylistWrapperView")
-    playlistWrapperView.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(playlistWrapperView, positioned: .above, relativeTo: musicModeControlBarView)
+    // Bottom constraint of playlist wrapper must be lower priority than window resize, to avoid constraint violations
+    playlistWrapperView.addConstraintsToFillSuperview(bottom: 0, .init(499),
+                                                      leading: 0, trailing: 0)
+    playlistWrapperView.topAnchor.constraint(equalTo: musicModeControlBarView.bottomAnchor).isActive = true
+
+    view.addSubview(playlistWrapperTopBorder, positioned: .above, relativeTo: playlistWrapperView)
+    playlistWrapperTopBorder.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+    playlistWrapperTopBorder.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+    let playlistSeparator_TopConstraint = playlistWrapperTopBorder.topAnchor.constraint(equalTo: playlistWrapperView.topAnchor)
+    playlistSeparator_TopConstraint.isActive = true
+    let playlistSeparator_BtmConstraint = playlistWrapperTopBorder.bottomAnchor.constraint(equalTo: playlistWrapperView.topAnchor, constant: 0.5)
+        playlistSeparator_BtmConstraint.priorityInt = 499
+    playlistSeparator_BtmConstraint.isActive = true
 
     volumePopover.delegate = self
 
@@ -141,8 +170,10 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     let playlistView = pwc.playlistView.view
     guard !playlistWrapperView.containsSubview(playlistView) else { return }
     log.verbose("MiniPlayer: adding playlistView")
-    playlistWrapperView.addSubview(playlistView)
+    // Place below horizontal separator line
+    playlistWrapperView.addSubview(playlistView, positioned: .below, relativeTo: nil)
     playlistView.addAllConstraintsToFillSuperview()
+    playlistWrapperTopBorder.isHidden = false
   }
 
   func removePlaylistViewIfPresent() {
@@ -150,6 +181,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     guard playlistWrapperView.containsSubview(playlistView) else { return }
     log.verbose("MiniPlayer: removing playlistView")
     playlistView.removeFromSuperview()
+    playlistWrapperTopBorder.isHidden = true
   }
 
   private func showControl() {

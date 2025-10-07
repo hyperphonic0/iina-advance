@@ -76,12 +76,10 @@ extension PlayerWindowController {
     let contentView = window!.contentView!
     let p = panelConstraints
     let log = self.log.withPreamble(transition.logPreamble(for: stage))
-    let outputGeo = transition.outputGeometry
     let stageGeo = transition.geometry(for: stage)
-    let isFinalStage: Bool = stage == .postTransition
 
     // Need to always have viewportView during animations (when toggling music mode with video off)
-    let useViewport = (!isFinalStage && transition.inputGeometry.isViewportShown) || outputGeo.isViewportShown
+    let useViewport = (!stage.isFinalStage && transition.inputGeometry.isViewportShown) || transition.outputGeometry.isViewportShown
 
     let stageLayout: LayoutState = transition.targetLayout(for: stage)
     // We need to include constraints for some panels in multiple stages if they are open at any point
@@ -90,7 +88,7 @@ extension PlayerWindowController {
     let useBottomBar = stageLayout.hasBottomBar
     let useTopBar: Bool
     if transition.isTogglingFullScreen {
-      useTopBar = (!isFinalStage && transition.inputLayout.hasTopBar) || transition.outputLayout.hasTopBar
+      useTopBar = (!stage.isFinalStage && transition.inputLayout.hasTopBar) || transition.outputLayout.hasTopBar
     } else {
       useTopBar = stageLayout.hasTopBar
     }
@@ -98,6 +96,167 @@ extension PlayerWindowController {
     log.verbose("RebuildPanels: Viewport=\(useViewport.yn) BottomBar=\(useBottomBar.yn) TopBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSB=\(useTrailingSidebar.yn)")
 
     // - Add window subviews in a well-defined order (before adding constraints between them)
+    addOrRemoveViews(for: stageGeo, useViewport: useViewport,
+                     useTopBar: useTopBar,
+                     useBottomBar: useBottomBar,
+                     useLeadingSidebar: useLeadingSidebar,
+                     useTrailingSidebar: useTrailingSidebar)
+
+    // - Constraints
+
+    log.verbose("RebuildPanels: ViewportH=\(viewportView.frame.height) BottomBarH=\(bottomBarView.frame.height) TopBar=\(topBarView.frame.height)")
+    let outputGeo = transition.outputGeometry
+
+    if useTopBar {
+      assert(useViewport, "Cannot use topBarView without viewportView")
+      let constant1 = stageGeo.vpTopOffsetFromTopBarTop
+      let constant2 = stageGeo.topBarBtmOffsetFromVPTop
+      log.verbose("Updating topBar: vpTopOffsetFromTopBarTop=\(constant1) topBarBtmOffsetFromVPTop=\(constant2)")
+
+      p.vpTopOffsetFromTopBarTop.createOrUpdate(to: constant1, log) { [self] c in
+        viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
+      }
+
+      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: constant2, log) { [self] c in
+        topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
+      }
+
+      if stage == .closeOldPanels {
+        if let middleGeo = transition.closeOldPanelsGeometry, middleGeo.topBarHeight == 0 {
+          log.verbose("Updating titleHeight=\(0)")
+          topBarView.titleBarHeightConstraint.animateToConstant(0)
+        }
+      } else {
+        let titleHeight = min(stageLayout.titleBarHeight, abs(constant1 - constant2))  // do not make titleBar larger than top bar
+        log.verbose("Updating titleHeight=\(titleHeight)")
+        topBarView.titleBarHeightConstraint.animateToConstant(titleHeight)
+      }
+    }
+
+    let isAnimatingVideoViewOpen = transition.isOpeningViewport && !stage.isFinalStage  // Music Mode: opening video
+    if useBottomBar && (!outputGeo.isViewportShown || isAnimatingVideoViewOpen) {
+      let constant1 = stageGeo.bottomBarTopOffsetFromCVTop
+      // Do not use "required" priority - can cause errors leaving music mode when video was hidden
+      p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1, priorityInt: 999, log) { [self] c in
+        bottomBarView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
+      }
+    } else {
+      // Need to manually remove this one because it doesn't depend on viewportView, & thus won't get removed if/when viewport gets removed.
+      p.bottomBarTopOffsetFromCVTop.remove(log)
+    }
+
+    // BottomBar + Viewport
+    if useBottomBar && useViewport && !isAnimatingVideoViewOpen {
+      let constant1 = stageGeo.vpBtmOffsetFromTopOfBottomBar
+      let constant2 = stageGeo.bottomBarBtmOffsetFromVPBtm
+      log.verbose("Updating bottomBar & viewport: vpBtmOffsetFromTopOfBottomBar=\(Int(constant1)) bottomBarBtmOffsetFromVPBtm=\(Int(constant2))")
+
+      p.vpBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1, log) { [self] c in
+        viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
+      }
+
+      p.bottomBarBtmOffsetFromVPBtm.createOrUpdate(to: constant2, priorityInt: 260, log) { [self] c in
+        let con = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
+        // In music mode, need to be lower priority than VideoView constraints. Otherwise live resize of window will break.
+        // Leave as lower priority always - doesn't seem to hurt, and prevent conflicting constraints
+        return con
+      }
+    }
+
+    // - Bottom Bar
+    if useBottomBar {
+      // Handle leading & trailing constraints
+      updateBottomBarHorizontalContraints(bottomBarPlacement: stageLayout.bottomBarPlacement,
+                                          useLeadingSidebar: useLeadingSidebar,
+                                          useTrailingSidebar: useTrailingSidebar, log)
+
+      // enable for animations or if in music mode & neither playlist nor video is open
+      if !stage.isFinalStage || (outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown) {
+        let constant1 = stageGeo.bottomBarBtmOffsetFromCVTop
+        p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1, priorityInt: 999, log) { [self] c in
+          bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
+        }
+      } else {
+        // remove
+        p.bottomBarBtmOffsetFromCVTop.remove(log)
+      }
+
+      // This will always have constant: 0
+      p.cvBtmOffsetFromBottomBarBtm.createOrUpdate(to: 0, log) { [self] c in
+        contentView.bottomAnchor.constraint(equalTo: bottomBarView.bottomAnchor, constant: c)
+      }
+
+    }
+
+    // - Viewport View
+
+    if useBottomBar,
+       (stage.isFinalStage && !stageGeo.isViewportShown && !stageGeo.isMusicModePlaylistShown)  // Is only showing music mode OSC. Keep height fixed
+        || (transition.isTogglingViewport && !stage.isFinalStage) // Is animating show/hide of viewport in music mode. Keep OSC & playlist height fixed
+    {
+      let bottomBarHeight = stageGeo.bottomBarHeight
+      p.cvBtmOffsetFromBottomBarTop.createOrUpdate(to: bottomBarHeight, priorityInt: 1000, log) { [self] c in
+        contentView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
+      }
+    } else {
+      p.cvBtmOffsetFromBottomBarTop.remove(log)
+    }
+
+    // This constraint is only used during the animation. Do not use priority=1000 because it may be off by a pixel...
+    if useViewport, (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode), !stage.isFinalStage {
+      let constant3 = stageGeo.vpBtmOffsetFromCVTop
+
+      p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3, priorityInt: 999, log) { [self] c in
+        viewportView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
+      }
+    } else {
+      p.vpBtmOffsetFromCVTop.remove(log)
+    }
+
+    if useViewport {
+      let constant1 = stageGeo.vpTopOffsetFromCVTop
+      let constant2 = stageGeo.cvBtmOffsetFromVPBtm
+      log.verbose("Updating viewport: vpTopOffsetFromCVTop=\(Int(constant1)) cvBtmOffsetFromVPBtm=\(Int(constant2)) vpLeadingOffsetFromCVLeading=0 vpTrailingOffsetFromCVTrailing=0")
+
+      p.vpTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
+        viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
+      }
+
+      if stage.isFinalStage && outputGeo.mode == .musicMode && outputGeo.isMusicModePlaylistShown {
+        p.cvBtmOffsetFromVPBtm.remove(log)
+      } else {
+        p.cvBtmOffsetFromVPBtm.createOrUpdate(to: constant2, log) { [self] c in
+          contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
+        }
+      }
+
+      // Leading
+      p.vpLeadingOffsetFromCVLeading.createIfMissing(log) { [self] in
+        viewportView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+      }
+
+      // Trailing
+      p.vpTrailingOffsetFromCVTrailing.createIfMissing(log) { [self] in
+        contentView.trailingAnchor.constraint(equalTo: viewportView.trailingAnchor, constant: 0)
+      }
+    }
+
+    updateSidebarConstraints(for: stage, stageGeo, in: transition, log)
+
+    // OSD constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
+    updateOSDConstraints(stageGeo)
+
+
+    // Must execute this *before* sidebars logic below, which may alter their orders
+    sortContentViewSubviews(for: stageLayout, in: transition)
+
+    updateWindowFrameIfNeeded(for: stage, stageGeo, in: transition, log)
+  }
+
+  private func addOrRemoveViews(for stageGeo: PWinGeometry, useViewport: Bool,
+                                useTopBar: Bool, useBottomBar: Bool,
+                                useLeadingSidebar: Bool, useTrailingSidebar: Bool) {
+    let contentView = window!.contentView!
 
     // Add/remove viewportView if needed
     if useViewport {
@@ -150,146 +309,9 @@ extension PlayerWindowController {
 
     // Need to add additionalInfo, OSD before changing sidebars
     addOrRemoveOSDViews(stageGeo)
+  }
 
-    // - Done adding / removing views
-
-    log.verbose("RebuildPanels: ViewportH=\(viewportView.frame.height) BottomBarH=\(bottomBarView.frame.height) TopBar=\(topBarView.frame.height)")
-
-    // - Add constraints between subviews
-    if useTopBar {
-      assert(useViewport, "Cannot use topBarView without viewportView")
-      let constant1 = stageGeo.vpTopOffsetFromTopBarTop
-      let constant2 = stageGeo.topBarBtmOffsetFromVPTop
-      log.verbose("Updating topBar: vpTopOffsetFromTopBarTop=\(constant1) topBarBtmOffsetFromVPTop=\(constant2)")
-
-      p.vpTopOffsetFromTopBarTop.createOrUpdate(to: constant1, log) { [self] c in
-        viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
-      }
-
-      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: constant2, log) { [self] c in
-        topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
-      }
-
-      if stage == .closeOldPanels {
-        if let middleGeo = transition.closeOldPanelsGeometry, middleGeo.topBarHeight == 0 {
-          log.verbose("Updating titleHeight=\(0)")
-          topBarView.titleBarHeightConstraint.animateToConstant(0)
-        }
-      } else {
-        let titleHeight = min(stageLayout.titleBarHeight, abs(constant1 - constant2))  // do not make titleBar larger than top bar
-        log.verbose("Updating titleHeight=\(titleHeight)")
-        topBarView.titleBarHeightConstraint.animateToConstant(titleHeight)
-      }
-    }
-
-    let isAnimatingVideoViewOpen = transition.isOpeningViewport && !isFinalStage  // Music Mode: opening video
-    if useBottomBar && (!outputGeo.isViewportShown || isAnimatingVideoViewOpen) {
-      let constant1 = stageGeo.bottomBarTopOffsetFromCVTop
-      // Do not use "required" priority - can cause errors leaving music mode when video was hidden
-      p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1, priorityInt: 999, log) { [self] c in
-        bottomBarView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
-      }
-    } else {
-      // Need to manually remove this one because it doesn't depend on viewportView, & thus won't get removed if/when viewport gets removed.
-      p.bottomBarTopOffsetFromCVTop.remove(log)
-    }
-
-    // BottomBar + Viewport
-    if useBottomBar && useViewport && !isAnimatingVideoViewOpen {
-      let constant1 = stageGeo.vpBtmOffsetFromTopOfBottomBar
-      let constant2 = stageGeo.bottomBarBtmOffsetFromVPBtm
-      log.verbose("Updating bottomBar & viewport: vpBtmOffsetFromTopOfBottomBar=\(Int(constant1)) bottomBarBtmOffsetFromVPBtm=\(Int(constant2))")
-
-      p.vpBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1, log) { [self] c in
-        viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
-      }
-
-      p.bottomBarBtmOffsetFromVPBtm.createOrUpdate(to: constant2, priorityInt: 260, log) { [self] c in
-        let con = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
-        // In music mode, need to be lower priority than VideoView constraints. Otherwise live resize of window will break.
-        // Leave as lower priority always - doesn't seem to hurt, and prevent conflicting constraints
-        return con
-      }
-    }
-
-    // - Bottom Bar
-    if useBottomBar {
-      // Handle leading & trailing constraints
-      updateBottomBarHorizontalContraints(bottomBarPlacement: stageLayout.bottomBarPlacement,
-                                          useLeadingSidebar: useLeadingSidebar,
-                                          useTrailingSidebar: useTrailingSidebar, log)
-
-      // enable for animations or if in music mode & neither playlist nor video is open
-      if !isFinalStage || (outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown) {
-        let constant1 = stageGeo.bottomBarBtmOffsetFromCVTop
-        p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1, priorityInt: 999, log) { [self] c in
-          bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
-        }
-      } else {
-        // remove
-        p.bottomBarBtmOffsetFromCVTop.remove(log)
-      }
-
-      // This will always have constant: 0
-      p.cvBtmOffsetFromBottomBarBtm.createOrUpdate(to: 0, log) { [self] c in
-        contentView.bottomAnchor.constraint(equalTo: bottomBarView.bottomAnchor, constant: c)
-      }
-
-    }
-
-    // - Viewport View
-
-    if useBottomBar,
-        (isFinalStage && !stageGeo.isViewportShown && !stageGeo.isMusicModePlaylistShown)  // Is only showing music mode OSC. Keep height fixed
-        || (transition.isTogglingViewport && !isFinalStage) // Is animating show/hide of viewport in music mode. Keep OSC & playlist height fixed
-    {
-      let bottomBarHeight = stageGeo.bottomBarHeight
-      p.cvBtmOffsetFromBottomBarTop.createOrUpdate(to: bottomBarHeight, priorityInt: 1000, log) { [self] c in
-        contentView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
-      }
-    } else {
-      p.cvBtmOffsetFromBottomBarTop.remove(log)
-    }
-
-    // This constraint is only used during the animation. Do not use priority=1000 because it may be off by a pixel...
-    if useViewport, (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode), !isFinalStage {
-      let constant3 = stageGeo.vpBtmOffsetFromCVTop
-
-      p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3, priorityInt: 999, log) { [self] c in
-        viewportView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
-      }
-    } else {
-      p.vpBtmOffsetFromCVTop.remove(log)
-    }
-
-    if useViewport {
-      let constant1 = stageGeo.vpTopOffsetFromCVTop
-      let constant2 = stageGeo.cvBtmOffsetFromVPBtm
-      log.verbose("Updating viewport: vpTopOffsetFromCVTop=\(Int(constant1)) cvBtmOffsetFromVPBtm=\(Int(constant2)) vpLeadingOffsetFromCVLeading=0 vpTrailingOffsetFromCVTrailing=0")
-
-      p.vpTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
-        viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
-      }
-
-      if isFinalStage && outputGeo.mode == .musicMode && outputGeo.isMusicModePlaylistShown {
-        p.cvBtmOffsetFromVPBtm.remove(log)
-      } else {
-        p.cvBtmOffsetFromVPBtm.createOrUpdate(to: constant2, log) { [self] c in
-          contentView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
-        }
-      }
-
-      // Leading
-      p.vpLeadingOffsetFromCVLeading.createIfMissing(log) { [self] in
-        viewportView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
-      }
-
-      // Trailing
-      p.vpTrailingOffsetFromCVTrailing.createIfMissing(log) { [self] in
-        contentView.trailingAnchor.constraint(equalTo: viewportView.trailingAnchor, constant: 0)
-      }
-    }
-
+  private func updateSidebarConstraints(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry, in transition: LayoutTransition, _ log: Logger.Subsystem) {
     let hasSidebarAtAnyStage = transition.inputGeometry.isMusicModePlaylistShown || transition.outputGeometry.isMusicModePlaylistShown
     || transition.inputLayout.isAnySidebarVisible || transition.outputLayout.isAnySidebarVisible
 
@@ -300,23 +322,25 @@ extension PlayerWindowController {
 
     case .closeOldPanels:
       assert(!transition.isWindowInitialLayout)
-      // Sidebars (if closing)
-      let ΔWindowWidth = stageGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
-      animateShowOrHideSidebars(transition.inputGeometry,
-                                leadingVisible: transition.isClosingLeadingSidebar ? false : nil,
-                                trailingVisible: transition.isClosingTrailingSidebar ? false : nil,
-                                ΔWindowWidth: ΔWindowWidth, log)
+      if hasSidebarAtAnyStage {
+        // Sidebars (if closing)
+        let ΔWindowWidth = stageGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
+        animateShowOrHideSidebars(transition.inputGeometry,
+                                  leadingVisible: transition.isClosingLeadingSidebar ? false : nil,
+                                  trailingVisible: transition.isClosingTrailingSidebar ? false : nil,
+                                  ΔWindowWidth: ΔWindowWidth, log)
 
-      if transition.isExitingMusicMode {
-        // Use music mode tab height
-        updateSidebarVerticalConstraints(tabHeight: transition.inputGeometry.sidebarTabHeight, downshift: transition.inputGeometry.sidebarDownshift)
-      } else if hasSidebarAtAnyStage {
-        // Update sidebar vertical alignments to match top bar:
-        updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
+        if transition.isExitingMusicMode {
+          // Use music mode tab height
+          updateSidebarVerticalConstraints(tabHeight: transition.inputGeometry.sidebarTabHeight, downshift: transition.inputGeometry.sidebarDownshift)
+        } else {
+          // Update sidebar vertical alignments to match top bar:
+          updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
+        }
       }
 
     case .moveAndScale:
-        break
+      break
 
     case .midTransitionHiddenUpdates:
       let outputLayout = transition.outputLayout
@@ -371,9 +395,11 @@ extension PlayerWindowController {
       break
 
     case .openNewPanels:
-      if transition.isWindowInitialLayout || hasSidebarAtAnyStage {
+      if transition.isWindowInitialLayout {
         // Need to run this now because intiial layout doesn't run the midTransitionHiddenUpdates step
         prepareSidebarsForOpening(transition)
+      }
+      if hasSidebarAtAnyStage {
         // Sidebars (if opening)
         let ΔWindowWidth = transition.ΔWindowWidth
         animateShowOrHideSidebars(transition.outputGeometry,
@@ -387,14 +413,6 @@ extension PlayerWindowController {
     case .postTransition:
       break
     }
-
-    // OSD constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
-    updateOSDConstraints(stageGeo)
-
-    // Must execute this *before* sidebars logic below, which may alter their orders
-    sortContentViewSubviews(for: stageLayout, in: transition)
-
-    updateWindowFrameIfNeeded(for: stage, stageGeo, in: transition, log)
   }
 
   private func updateWindowFrameIfNeeded(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry, in transition: LayoutTransition, _ log: Logger.Subsystem) {

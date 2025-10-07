@@ -49,6 +49,10 @@ extension PlayerWindowController {
       
       func isAtLeast(_ minStatus: Stage) -> Bool { rawValue >= minStatus.rawValue }
       func isNotYet(_ status: Stage) -> Bool { rawValue < status.rawValue }
+
+      var isFinalStage: Bool {
+        self == .postTransition
+      }
     }
     
     let name: String  // just used to improve logging

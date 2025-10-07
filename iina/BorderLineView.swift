@@ -30,7 +30,7 @@ class BorderLineView: NSBox {
       self.fillColor = fillColor
     }
     translatesAutoresizingMaskIntoConstraints = false
-    setContentHugging(h: 1, v: 1000)
-    setCCResistance(h: 1, v: 1000)
+    setContentHugging(h: 1, v: 1)
+    setCCResistance(h: 1, v: 1)
   }
 }

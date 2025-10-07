@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24128" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24128"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -13,7 +13,6 @@
                 <outlet property="mediaInfoView" destination="Cef-Fd-eDH" id="ngB-gq-f49"/>
                 <outlet property="musicModeControlBarView" destination="Q6R-eL-qkW" id="2OU-bR-LVG"/>
                 <outlet property="playbackBtnsWrapperView" destination="EqE-sr-ba8" id="6m3-ha-kK2"/>
-                <outlet property="playlistWrapperView" destination="2bL-q1-qry" id="acd-8i-uDw"/>
                 <outlet property="positionSliderWrapperView" destination="e1r-vi-5HY" id="nU3-cx-gOS"/>
                 <outlet property="titleLabel" destination="jAX-WD-i2a" id="ZF9-1k-67p"/>
                 <outlet property="titleLabelTopConstraint" destination="gHa-e1-bbE" id="Mem-0n-QB9"/>
@@ -145,35 +144,17 @@
                         <constraint firstAttribute="bottom" secondItem="e1r-vi-5HY" secondAttribute="bottom" id="yds-qi-gcy"/>
                     </constraints>
                 </visualEffectView>
-                <visualEffectView identifier="PlaylistWrapperView" autoresizesSubviews="NO" wantsLayer="YES" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="2bL-q1-qry" userLabel="Playlist-Wrapper View">
-                    <rect key="frame" x="0.0" y="0.0" width="260" height="100"/>
-                    <subviews>
-                        <box identifier="PlaylistWrapper-TopBorder" autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="9gg-yc-YXV">
-                            <rect key="frame" x="0.0" y="98" width="260" height="4"/>
-                        </box>
-                    </subviews>
-                    <constraints>
-                        <constraint firstItem="9gg-yc-YXV" firstAttribute="top" secondItem="2bL-q1-qry" secondAttribute="top" id="Pb0-8U-TWU"/>
-                        <constraint firstItem="9gg-yc-YXV" firstAttribute="leading" secondItem="2bL-q1-qry" secondAttribute="leading" id="UM4-GW-RDN"/>
-                        <constraint firstItem="9gg-yc-YXV" firstAttribute="bottom" secondItem="2bL-q1-qry" secondAttribute="top" constant="0.5" id="tm7-vI-WsI"/>
-                        <constraint firstAttribute="trailing" secondItem="9gg-yc-YXV" secondAttribute="trailing" id="xxm-Yf-dG4"/>
-                    </constraints>
-                </visualEffectView>
             </subviews>
             <constraints>
                 <constraint firstItem="Q6R-eL-qkW" firstAttribute="leading" secondItem="98Q-Fi-3N5" secondAttribute="leading" id="7rj-tJ-Dbv"/>
-                <constraint firstItem="2bL-q1-qry" firstAttribute="top" secondItem="Q6R-eL-qkW" secondAttribute="bottom" id="CBE-jt-ewJ"/>
                 <constraint firstItem="Q6R-eL-qkW" firstAttribute="top" secondItem="98Q-Fi-3N5" secondAttribute="top" id="HKs-Rq-hwV"/>
                 <constraint firstAttribute="trailing" relation="lessThanOrEqual" secondItem="qHK-Ae-PRZ" secondAttribute="trailing" priority="501" id="I7R-Jj-KYD"/>
-                <constraint firstAttribute="trailing" secondItem="2bL-q1-qry" secondAttribute="trailing" id="J3U-a2-f9B"/>
                 <constraint firstAttribute="trailing" relation="lessThanOrEqual" secondItem="jAX-WD-i2a" secondAttribute="trailing" priority="501" id="aAr-pk-xUd"/>
                 <constraint firstAttribute="trailing" secondItem="Q6R-eL-qkW" secondAttribute="trailing" id="aFO-ag-c2T"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="qHK-Ae-PRZ" secondAttribute="trailing" priority="499" id="mvA-Hm-ujy"/>
                 <constraint firstItem="qHK-Ae-PRZ" firstAttribute="leading" secondItem="98Q-Fi-3N5" secondAttribute="leading" id="n4z-DE-xyQ"/>
-                <constraint firstAttribute="bottom" secondItem="2bL-q1-qry" secondAttribute="bottom" priority="750" identifier="MiniPlayerBtmExpansionConstraint" id="rXy-cV-9EW"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="jAX-WD-i2a" secondAttribute="trailing" priority="499" id="red-gP-AmK"/>
                 <constraint firstItem="jAX-WD-i2a" firstAttribute="leading" secondItem="98Q-Fi-3N5" secondAttribute="leading" id="uDk-4s-KAt"/>
-                <constraint firstItem="2bL-q1-qry" firstAttribute="leading" secondItem="98Q-Fi-3N5" secondAttribute="leading" id="yJm-hm-4s8"/>
             </constraints>
             <point key="canvasLocation" x="-125" y="24"/>
         </view>
