@@ -158,8 +158,8 @@ extension PlayerWindowController {
     // - Add constraints between subviews
     if useTopBar {
       assert(useViewport, "Cannot use topBarView without viewportView")
-      let constant1 = transition.vpTopOffsetFromTopBarTop(for: stage)
-      let constant2 = transition.topBarBtmOffsetFromVPTop(for: stage)
+      let constant1 = stageGeo.vpTopOffsetFromTopBarTop
+      let constant2 = stageGeo.topBarBtmOffsetFromVPTop
       log.verbose("Updating topBar: vpTopOffsetFromTopBarTop=\(constant1) topBarBtmOffsetFromVPTop=\(constant2)")
 
       p.vpTopOffsetFromTopBarTop.createOrUpdate(to: constant1, log) { [self] c in
@@ -184,7 +184,7 @@ extension PlayerWindowController {
 
     let isAnimatingVideoViewOpen = transition.isOpeningViewport && !isFinalStage  // Music Mode: opening video
     if useBottomBar && (!outputGeo.isViewportShown || isAnimatingVideoViewOpen) {
-      let constant1 = transition.bottomBarTopOffsetFromCVTop(for: stage)
+      let constant1 = stageGeo.bottomBarTopOffsetFromCVTop
       // Do not use "required" priority - can cause errors leaving music mode when video was hidden
       p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1, priorityInt: 999, log) { [self] c in
         bottomBarView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
@@ -196,8 +196,8 @@ extension PlayerWindowController {
 
     // BottomBar + Viewport
     if useBottomBar && useViewport && !isAnimatingVideoViewOpen {
-      let constant1 = transition.vpBtmOffsetFromTopOfBottomBar(for: stage)
-      let constant2 = transition.bottomBarBtmOffsetFromVPBtm(for: stage)
+      let constant1 = stageGeo.vpBtmOffsetFromTopOfBottomBar
+      let constant2 = stageGeo.bottomBarBtmOffsetFromVPBtm
       log.verbose("Updating bottomBar & viewport: vpBtmOffsetFromTopOfBottomBar=\(Int(constant1)) bottomBarBtmOffsetFromVPBtm=\(Int(constant2))")
 
       p.vpBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1, log) { [self] c in
@@ -221,7 +221,7 @@ extension PlayerWindowController {
 
       // enable for animations or if in music mode & neither playlist nor video is open
       if !isFinalStage || (outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown) {
-        let constant1 = transition.bottomBarBtmOffsetFromCVTop(for: stage)
+        let constant1 = stageGeo.bottomBarBtmOffsetFromCVTop
         p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1, priorityInt: 999, log) { [self] c in
           bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
         }
@@ -243,7 +243,7 @@ extension PlayerWindowController {
         (isFinalStage && !stageGeo.isViewportShown && !stageGeo.isMusicModePlaylistShown)  // Is only showing music mode OSC. Keep height fixed
         || (transition.isTogglingViewport && !isFinalStage) // Is animating show/hide of viewport in music mode. Keep OSC & playlist height fixed
     {
-      let bottomBarHeight = transition.bottomBarHeight(for: stage)
+      let bottomBarHeight = stageGeo.bottomBarHeight
       p.cvBtmOffsetFromBottomBarTop.createOrUpdate(to: bottomBarHeight, priorityInt: 1000, log) { [self] c in
         contentView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
       }
@@ -253,7 +253,7 @@ extension PlayerWindowController {
 
     // This constraint is only used during the animation. Do not use priority=1000 because it may be off by a pixel...
     if useViewport, (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode), !isFinalStage {
-      let constant3 = transition.vpBtmOffsetFromCVTop(for: stage)
+      let constant3 = stageGeo.vpBtmOffsetFromCVTop
 
       p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3, priorityInt: 999, log) { [self] c in
         viewportView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
@@ -263,8 +263,8 @@ extension PlayerWindowController {
     }
 
     if useViewport {
-      let constant1 = transition.vpTopOffsetFromCVTop(for: stage)
-      let constant2 = transition.cvBtmOffsetFromVPBtm(for: stage)
+      let constant1 = stageGeo.vpTopOffsetFromCVTop
+      let constant2 = stageGeo.cvBtmOffsetFromVPBtm
       log.verbose("Updating viewport: vpTopOffsetFromCVTop=\(Int(constant1)) cvBtmOffsetFromVPBtm=\(Int(constant2)) vpLeadingOffsetFromCVLeading=0 vpTrailingOffsetFromCVTrailing=0")
 
       p.vpTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in

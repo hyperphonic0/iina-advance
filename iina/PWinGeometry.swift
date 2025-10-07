@@ -225,7 +225,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return extraHeightNeededForNotch + 8
   }
 
-  /// Only if leading sidebar is open
+  /// Only nonzero if leading sidebar is open
   var leadingSidebarWidth: CGFloat {
     assert(outsideBars.trailing == 0 || insideBars.trailing == 0)
     return outsideBars.leading + insideBars.leading
@@ -244,7 +244,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return nil
   }
 
-  /// Only if trailing sidebar is open
+  /// Only nonzero if trailing sidebar is open
   var trailingSidebarWidth: CGFloat {
     assert(outsideBars.trailing == 0 || insideBars.trailing == 0)
     return outsideBars.trailing + insideBars.trailing
@@ -268,12 +268,41 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     topMarginHeight
   }
 
+  var topBarBtmOffsetFromVPTop: CGFloat {
+    return insideBars.top
+  }
+
   var vpTopOffsetFromTopBarTop: CGFloat {
     return outsideBars.top
   }
 
   var vpTopOffsetFromCVTop: CGFloat {
     vpTopOffsetFromTopBarTop + cameraHousingOffset
+  }
+
+  var vpBtmOffsetFromCVTop: CGFloat {
+    return viewportSize.height + vpTopOffsetFromCVTop
+  }
+
+  var bottomBarTopOffsetFromCVTop: CGFloat {
+    return vpBtmOffsetFromCVTop - insideBars.bottom
+  }
+
+  var bottomBarBtmOffsetFromCVTop: CGFloat {
+    return windowFrame.height
+  }
+
+  var vpBtmOffsetFromTopOfBottomBar: CGFloat {
+    return insideBars.bottom
+  }
+
+  var bottomBarBtmOffsetFromVPBtm: CGFloat {
+    return outsideBars.bottom
+  }
+
+  /// Same as `bottomBarBtmOffsetFromVPBtm`.
+  var cvBtmOffsetFromVPBtm: CGFloat {
+    return bottomBarBtmOffsetFromVPBtm
   }
 
   /// Can only be `true` while in music mode.
