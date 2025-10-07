@@ -33,6 +33,7 @@ class CustomWindowBorderBox: NSBox {
     titlePosition = .noTitle
     cornerRadius = 0
     translatesAutoresizingMaskIntoConstraints = false
+    fillColor = .clear
 
     if let borderWidth {
       self.borderWidth = borderWidth
