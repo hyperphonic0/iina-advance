@@ -469,10 +469,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   ///
   /// Top bar always spans the whole width of the window (unlike the bottom bar) so we need to add space for it.
   var sidebarDownshift: CGFloat {
-    if insideBars.top > 0 {
-      return insideBars.top
-    }
-    return Constants.Sidebar.defaultDownshift
+    return insideBars.top
   }
   /// Sidebar tab height
   ///

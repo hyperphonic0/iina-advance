@@ -362,10 +362,11 @@ extension PlayerWindowController {
         switchToTabInTabGroup(tab: visibleTab)
       }
 
-      if prepareSidebarsForOpening(transition) {
-        updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
-      } else if transition.isEnteringMusicMode {
+      prepareSidebarsForOpening(transition)
+      if transition.isEnteringMusicMode {
         updateSidebarVerticalConstraints(tabHeight: transition.outputGeometry.sidebarTabHeight, downshift: transition.outputGeometry.sidebarDownshift)
+      } else {
+        updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
       }
 
       // Update bottom bar constraints *after* sidebars are added
@@ -390,7 +391,9 @@ extension PlayerWindowController {
       }
 
     case .extraAnimationBeforeOpenNewPanels:
-      break
+      if hasSidebarAtAnyStage {
+        updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
+      }
 
     case .openNewPanels:
       if transition.isWindowInitialLayout {
