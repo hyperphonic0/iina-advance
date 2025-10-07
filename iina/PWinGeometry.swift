@@ -324,6 +324,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// of the final `videoSize`. Very limited utility. In most cases `video.videoAspectDisplay` should be used, as it is the target.
   var videoViewAspect: CGFloat {
     // Just use videoSizeDisplay for now because it's a consistent value
+//    return video.videoSizeDisplay.mpvAspect
+
+    // Use most precise value possible. This is crucial when toggling interactive mode
     return video.videoSizeDisplay.mpvAspect
   }
 
