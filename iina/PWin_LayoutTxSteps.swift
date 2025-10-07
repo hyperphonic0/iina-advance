@@ -689,8 +689,6 @@ extension PlayerWindowController {
           newX.isActive = true
         }
 
-        controlBarFloating.addOrUpdateMarginConstraints(for: transition.outputLayout)
-
         let floatingUpperView = controlBarFloating.topRowView
         if !floatingUpperView.views.contains(fragToolbarView) {
           floatingUpperView.addView(fragToolbarView, in: .trailing)
@@ -893,6 +891,8 @@ extension PlayerWindowController {
     let log = log.withPreamble(transition.logPreamble(for: .openNewPanels))
     log.verbose{"Start: TitleBar_H=\(outputLayout.titleBarHeight) TopOSC_H=\(outputLayout.topOSCHeight)"}
 
+    rebuildPanelConstraints(transition, stage: .openNewPanels)
+
     if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
       let newGeo = outputLayout.controlBarGeo
@@ -935,6 +935,9 @@ extension PlayerWindowController {
       updateToolbarHStack(iconSpacing: newGeo.toolIconSpacing)
 
       if outputLayout.hasFloatingOSC {
+        // Must execute this *after* rebuildPanelConstraints: needs constraints to have been added
+        controlBarFloating.addOrUpdateMarginConstraints(for: transition.outputLayout)
+
         // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs
         let topRowView = controlBarFloating.topRowView
         if transition.isWindowInitialLayout || !transition.inputLayout.hasFloatingOSC {
@@ -962,8 +965,6 @@ extension PlayerWindowController {
       }
 
     }
-
-    rebuildPanelConstraints(transition, stage: .openNewPanels)
 
     log.verbose{"Done"}
   }
