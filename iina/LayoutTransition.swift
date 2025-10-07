@@ -440,18 +440,22 @@ extension PlayerWindowController {
       assert(isTogglingLegacyFullScreen, "buildGeoForExtraLegacyFSAnimation should not be called unless toggling legacy full screen")
       let screen = NSScreen.getScreenOrDefault(screenID: fsGeometry.screenID)
 
+      // Need to use a windowed mode for the transition. Transient stages are considered not to be full screen.
+      // This is important for certain views; for example: additionalInfoView must only be shown while in full screen.
+      let targetMode: PlayerWindowMode = fsGeometry.mode == .fullScreenInteractive ? .windowedInteractive : .windowedNormal
+
       // Use extra animation to deal with possible top margin needed to hide camera housing
       if fsGeometry.hasTopPaddingForCameraHousing {
         /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
         /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
         /// (If entering FS: will expand window to cover `cameraHousingHeight` in final animation)
-        return fsGeometry.clone(windowFrame: screen.frameWithoutCameraHousing, screenID: screen.screenID, topMarginHeight: 0)
+        return fsGeometry.clone(windowFrame: screen.frameWithoutCameraHousing, screenID: screen.screenID, mode: targetMode, topMarginHeight: 0, isMiddleTransition: true)
       } else {
         /// `Use entire Macbook screen` is checked in Settings. As of MacOS before Sonoma 14.4, Apple has been making improvements
         /// but we still need to use  a separate animation to give the OS time to show/hide the menu bar - otherwise there will be a flicker.
         let cameraHeight = screen.cameraHousingHeight ?? 0
         let margins = fsGeometry.viewportMargins.addingTo(top: -cameraHeight)
-        return fsGeometry.clone(windowFrame: fsGeometry.windowFrame.addingTo(top: -cameraHeight), viewportMargins: margins, isMiddleTransition: true)
+        return fsGeometry.clone(windowFrame: fsGeometry.windowFrame.addingTo(top: -cameraHeight), mode: targetMode, viewportMargins: margins, isMiddleTransition: true)
       }
     }
 
