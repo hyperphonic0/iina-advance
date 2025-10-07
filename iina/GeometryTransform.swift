@@ -673,15 +673,6 @@ struct GeometryTransform {
           pwc.updateDefaultArtVisibility(to: showDefaultArt)
         }
 
-        // Reset other views to initial minimums:
-        pwc.speedLabelBtmConstraint.isActive = false
-
-        /// Set `window.contentView`'s background to black so that the windows behind this one don't bleed through
-        /// when `lockViewportToVideoSize` is disabled, or when in legacy full screen on a Macbook screen  with a
-        /// notch and the preference `allowVideoToOverlapCameraHousing` is false. Also needed so that sidebars don't
-        /// bleed through during their show/hide animations.
-        pwc.setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
-        pwc.hideSeekPreviewImmediately()
         pwc.updateTitle()
         pwc.playlistView.needsScrollToCurrentItem = true  // reset flag for when it does open
 
@@ -778,6 +769,19 @@ extension PlayerWindowController {
         }
       } catch {
         log.error{"[GTF:\(ctx.name)] Failed to run initial layout tasks: \(error)"}
+      }
+
+      // Reset other views to initial minimums:
+      speedLabelBtmConstraint.isActive = false
+
+      hideSeekPreviewImmediately()
+
+      if !ctx.outputLayout.mode.isInteractiveMode {
+        /// Set `window.contentView`'s background to black so that the windows behind this one don't bleed through
+        /// when `lockViewportToVideoSize` is disabled, or when in legacy full screen on a Macbook screen  with a
+        /// notch and the preference `allowVideoToOverlapCameraHousing` is false. Also needed so that sidebars don't
+        /// bleed through during their show/hide animations.
+        setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
       }
 
       if !isRestoring {
