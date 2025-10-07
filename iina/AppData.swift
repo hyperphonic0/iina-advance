@@ -652,8 +652,10 @@ struct DebugConfig {
   /// Can toggle at run time by updating boolean pref key `logKeyBindingsRebuild`.
   static var logBindingsRebuild: Bool { Preference.bool(for: .logKeyBindingsRebuild) }
 
+  static var useMpvKeepaspectWindow = true
+
 #if DEBUG
-  static let validatePWinGeometry = true
+  static let validatePWinGeometry = false
 
   /// Skip the Approve Restore prompt and retry restore if a failed previous restore was detected.
   static let alwaysApproveRestore = true

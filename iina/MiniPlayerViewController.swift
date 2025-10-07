@@ -66,11 +66,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     return NSNib.Name("MiniPlayerViewController")
   }
 
-  @objc let monospacedFont: NSFont = {
-    let fontSize = NSFont.systemFontSize(for: .mini)
-    return NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .regular)
-  }()
-
   @IBOutlet weak var playbackBtnsWrapperView: NSView!
   @IBOutlet weak var positionSliderWrapperView: NSView!
 

@@ -323,8 +323,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// Final aspect ratio of `videoView`. Very close to `video.videoAspectCAR`, except it is calculated from the actual pixels
   /// of the final `videoSize`. Very limited utility. In most cases `video.videoAspectDisplay` should be used, as it is the target.
   var videoViewAspect: CGFloat {
-    // Just use videoAspectDisplay for now because it's a consistent value
-    return videoSize.mpvAspect
+    // Just use videoSizeDisplay for now because it's a consistent value
+    return video.videoSizeDisplay.mpvAspect
   }
 
   let videoSize: NSSize

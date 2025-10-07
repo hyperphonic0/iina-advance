@@ -423,7 +423,7 @@ extension PlayerWindowController {
           return geometry(for: .closeOldPanels)
         }
       case .extraAnimationBeforeOpenNewPanels:
-        if isTogglingLegacyFullScreen {
+        if isEnteringLegacyFullScreen {
           assert(!isWindowInitialLayout && IINAAnimation.isAnimationEnabled)
           return buildGeoForExtraLegacyFSAnimation(fsGeometry: outputGeometry)
         } else {

@@ -176,11 +176,20 @@ extension PlayerWindowController {
 
     var fadeInNewViewsDuration = endingAnimationDuration * 0.5
     var openFinalPanelsDuration = endingAnimationDuration
-    if transition.isExitingFullScreen {
+    if useExtraAnimationForExitingLegacyFullScreen {
+      let cameraHeightToFrameHeightRatio = transition.windowedModeScreen.cameraHeightToFrameHeightRatio
+      closeOldPanelsDuration *= cameraHeightToFrameHeightRatio
+      let nonCameraHeightToFrameHeightRatio = transition.windowedModeScreen.nonCameraHeightToFrameHeightRatio
+      openFinalPanelsDuration *= nonCameraHeightToFrameHeightRatio
+//      closeOldPanelsDuration = 1.0
+//      openFinalPanelsDuration = 1.0
       fadeInNewViewsDuration = 0
-    } else if useExtraAnimationForEnteringLegacyFullScreen || useExtraAnimationForExitingLegacyFullScreen {
-      let frameWithoutCameraRatio = transition.windowedModeScreen.nonCameraHeightToFrameHeightRatio
-      openFinalPanelsDuration *= frameWithoutCameraRatio
+    } else if useExtraAnimationForEnteringLegacyFullScreen {
+      let cameraHeightToFrameHeightRatio = transition.windowedModeScreen.cameraHeightToFrameHeightRatio
+      openFinalPanelsDuration *= cameraHeightToFrameHeightRatio
+      fadeInNewViewsDuration = 0
+    } else if transition.isExitingFullScreen {
+      fadeInNewViewsDuration = 0
     } else if transition.isEnteringInteractiveMode {
       openFinalPanelsDuration *= 0.5
       fadeInNewViewsDuration *= 0.5
@@ -254,17 +263,14 @@ extension PlayerWindowController {
 
     // - Ending animations:
 
-    // (Only for Exit Legacy FS) Extra animation for camera housing. In Big Sur, AppKit needed an extra transaction & more
+    // (Only for Enter Legacy FS) Extra animation for camera housing. In Big Sur, AppKit needed an extra transaction & more
     // time when animating around the camera housing, especially if also changing window `titled` style. This may no longer
     // be the case, but it's not harming anything to leave this as-is for now.
-    if useExtraAnimationForEnteringLegacyFullScreen || useExtraAnimationForExitingLegacyFullScreen {
-      let duration = endingAnimationDuration // * transition.windowedModeScreen.cameraHeightToFrameHeightRatio
+    if useExtraAnimationForEnteringLegacyFullScreen {
+      let duration = endingAnimationDuration * transition.windowedModeScreen.nonCameraHeightToFrameHeightRatio
 
       tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
         rebuildPanelConstraints(transition, stage: .extraAnimationBeforeOpenNewPanels)
-//        let stageGeo = transition.geometry(for: .extraAnimationBeforeOpenNewPanels)
-//        log.verbose("[\(transition.name)] Updating legacy FS window to show camera housing prior to entering windowed mode with windowFrame=\(stageGeo.windowFrame)")
-//        setFrameAndUpdateWindowSubviews(using: stageGeo)
       })
     }
 
@@ -273,18 +279,6 @@ extension PlayerWindowController {
       // If toggling fullscreen, this also changes the window frame:
       openNewPanelsAndFinalizeOffsets(transition)
     }))
-
-    // (Only for Enter Legacy FS) Adds an extra animation to hide camera housing / menu bar / dock.
-//    if useExtraAnimationForEnteringLegacyFullScreen {
-//      let duration = endingAnimationDuration // * transition.windowedModeScreen.cameraHeightToFrameHeightRatio
-//
-//      tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
-//        rebuildPanelConstraints(transition, stage: .postTransition)
-//        let newGeo = transition.outputGeometry
-//        log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock with windowFrame=\(newGeo.windowFrame)")
-//        setFrameAndUpdateWindowSubviews(using: newGeo)
-//      })
-//    }
 
     // EndingAnimation 2: Fade in new views
     // If exiting FS, this task is skipped. It needs to run in a separate CATransaction so it is run down below.
@@ -439,7 +433,9 @@ extension PlayerWindowController.LayoutTransition {
 
     let log = inputGeometry.log
 
-    if isTogglingInteractiveMode {
+    if isExitingLegacyFullScreen {
+      return buildGeoForExtraLegacyFSAnimation(fsGeometry: inputGeometry).clone(isMiddleTransition: true)
+    } else if isTogglingInteractiveMode {
       // - Interactive Mode
 
       let mustUncropFirst = (outputLayout.interactiveMode == .crop) && (inputGeometry.video.cropFilter != nil)

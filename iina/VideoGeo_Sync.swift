@@ -196,7 +196,8 @@ extension GeometryTransform.ContextStage2 {
       videoSizeDisplay = CGSize(width: dwidth, height: dheight)
     }
 
-    if Logger.isErrorEnabled {
+#if DEBUG
+    if Logger.isErrorEnabled, DebugConfig.validatePWinGeometry {
       let ours = outputVideoGeo.videoSizeCA
       // Allow for almost 1% variance from mpv due to rounding or error margin
       let wDiff = abs(1 - (ours.width / CGFloat(dwidth)))
@@ -205,6 +206,7 @@ extension GeometryTransform.ContextStage2 {
         player.log.error{"[\(name)] ❌ SanityCheck-B failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours))! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect) videoSizeD=\(videoSizeDisplay)|\(videoSizeDisplay.mpvAspect) (from \(useDSizeFromDecParams ? "dec-params" : "out-params"))"}
       }
     }
+#endif
 
     outputVideoGeo = outputVideoGeo.clone(videoSizeDisplayOverride: videoSizeDisplay)
 

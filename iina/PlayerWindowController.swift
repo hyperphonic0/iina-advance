@@ -1408,15 +1408,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func windowDidMove(_ notification: Notification) {
+    guard let window = window else { return }
+    guard !window.inLiveResize, !isAnimatingLayoutTransition, !isMagnifying, !sessionState.isRestoring else { return }
+    guard !isAnimating else { return }
+
     // Do not allow scrolling if window recently moved! By default, multi-touch gestures can trigger scrolling
     // either before or after the gesture if not all fingers are down/up at precisely the same time.
     windowScrollWheel.delegate?.endScrollSessionIfExists()
     restartWindowScrollDenialPeriod()
-
-    guard !isAnimatingLayoutTransition, !isMagnifying, !sessionState.isRestoring else { return }
-    guard let window = window else { return }
-
-    guard !isAnimating else { return }
 
     // We can get here if external calls from accessibility APIs change the window location.
     // Inserting a small delay seems to help to avoid race conditions as the window seems to need time to "settle"
@@ -1492,46 +1491,45 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
+  /// Should be run inside an animation task!
   func refreshKeyWindowStatus() {
-    animationPipeline.submitInstantTask { [self] in
-      guard let window else { return }
-      guard !isClosing else { return }
+    guard let window else { return }
+    guard !isClosing else { return }
 
-      let isKey = window.isKeyWindow
-      lastKeyWindowStatus = isKey
-      log.trace{"Window isKey=\(isKey.yesno)"}
-      updateColorsForKeyWindowStatus(isKey: isKey)
+    let isKey = window.isKeyWindow
+    lastKeyWindowStatus = isKey
+    log.trace{"Window isKey=\(isKey.yesno)"}
+    updateColorsForKeyWindowStatus(isKey: isKey)
 
-      if isKey {
-        PlayerManager.shared.lastActivePlayer = player
-        MediaPlayerIntegration.shared.update()
-        AppDelegate.shared.menuController?.updatePluginMenu()
+    if isKey {
+      PlayerManager.shared.lastActivePlayer = player
+      MediaPlayerIntegration.shared.update()
+      AppDelegate.shared.menuController?.updatePluginMenu()
 
-        if isFullScreen && Preference.bool(for: .blackOutMonitor) {
-          blackOutOtherMonitors()
-        }
+      if isFullScreen && Preference.bool(for: .blackOutMonitor) {
+        blackOutOtherMonitors()
+      }
 
-        if currentLayout.isLegacyFullScreen && window.level != .iinaFloating {
-          log.verbose("Window is key: resuming legacy FS window level")
-          window.level = .iinaFloating
-        }
+      if currentLayout.isLegacyFullScreen && window.level != .iinaFloating {
+        log.verbose("Window is key: resuming legacy FS window level")
+        window.level = .iinaFloating
+      }
 
-        // If focus changed from a different window, need to recalculate the current bindings
-        // so that this window's input sections are included and the other window's are not:
-        if AppInputConfig.current.associatedPlayerLabel != player.label {
-          AppInputConfig.rebuildCurrent()
-        }
+      // If focus changed from a different window, need to recalculate the current bindings
+      // so that this window's input sections are included and the other window's are not:
+      if AppInputConfig.current.associatedPlayerLabel != player.label {
+        AppInputConfig.rebuildCurrent()
+      }
 
-      } else {
-        /// Always restore window level from `floating` to `normal`, so other windows aren't blocked & cause confusion
-        if currentLayout.isLegacyFullScreen && window.level != .normal {
-          log.verbose("Window is not key: restoring legacy FS window level to normal")
-          window.level = .normal
-        }
+    } else {
+      /// Always restore window level from `floating` to `normal`, so other windows aren't blocked & cause confusion
+      if currentLayout.isLegacyFullScreen && window.level != .normal {
+        log.verbose("Window is not key: restoring legacy FS window level to normal")
+        window.level = .normal
+      }
 
-        if Preference.bool(for: .blackOutMonitor) {
-          removeBlackWindows()
-        }
+      if Preference.bool(for: .blackOutMonitor) {
+        removeBlackWindows()
       }
     }
   }
@@ -2262,7 +2260,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func refreshHidesOnDeactivateStatus() {
     guard let window else { return }
-    window.hidesOnDeactivate = currentLayout.isWindowed && Preference.bool(for: .hideWindowsWhenInactive)
+    let hideOnDeactivate = currentLayout.isWindowed && Preference.bool(for: .hideWindowsWhenInactive)
+    if window.hidesOnDeactivate != hideOnDeactivate {
+      window.hidesOnDeactivate = hideOnDeactivate
+    }
   }
 
   /// All args are optional overrides

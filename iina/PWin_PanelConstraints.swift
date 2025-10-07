@@ -65,7 +65,6 @@ extension PlayerWindowController {
     let bottomBarLeadingSpace = OptionalConstraint("BottomBar.leading-space")
     // Needs to be changed to align with either sidepanel or trailing edge of window:
     let bottomBarTrailingSpace = OptionalConstraint("BottomBar.trailing-space")
-
   }
 
   // MARK: - Bars Layout

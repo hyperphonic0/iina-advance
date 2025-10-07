@@ -447,8 +447,12 @@ extension MPVController {
     if !player.isPresentInUserOptions(MPVEncoding.o) {
       applyHardwareAccelerationWorkaround()
 
-      chkErr(setString(MPVOption.Window.keepaspect, yes, level: .verbose))
-      chkErr(setString(MPVOption.Window.keepaspectWindow, no, level: .verbose))
+      if DebugConfig.useMpvKeepaspectWindow {
+        chkErr(setString(MPVOption.Window.keepaspect, yes, level: .verbose))
+        chkErr(setString(MPVOption.Window.keepaspectWindow,  no, level: .verbose))
+      } else {
+        chkErr(setString(MPVOption.Window.keepaspect, no, level: .verbose))
+      }
 
       if player.videoView.useOpenGL {
         if !player.isPresentInUserOptions(MPVOption.Video.vo) {

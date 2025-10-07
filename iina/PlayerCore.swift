@@ -794,6 +794,7 @@ class PlayerCore: NSObject {
   func setMpvKeepaspectWindow(to enable: Bool) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard isActive else { return }
+    guard DebugConfig.useMpvKeepaspectWindow else { return }
     guard info.mpvKeepaspectWindow != enable else { return }
     mpv.setFlag(MPVOption.Window.keepaspectWindow, enable, level: .verbose)
   }
@@ -801,6 +802,7 @@ class PlayerCore: NSObject {
   /// __CAUTION:__ this call uses `sync` to mpv queue.
   func updateMpvKeepaspectWindowSynchronously() {
     assert(DispatchQueue.isExecutingIn(DispatchQueue.main))
+    guard DebugConfig.useMpvKeepaspectWindow else { return }
     log.verbose{"Updating mpv keepaspect-window synchronously"}
     mpv.queue.sync {
       setMpvKeepaspectWindow(to: pwc.currentLayout.mode.needsMpvKeepaspectWindow)

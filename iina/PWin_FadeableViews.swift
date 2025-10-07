@@ -122,7 +122,7 @@ extension PlayerWindowController {
     /// Default `showTopBarTrigger` setting to `.windowHover` if advanced settings not enabled
     let wantsTopBarVisible = forceShowTopBar || (!Preference.isAdvancedEnabled || Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.windowHover)
 
-    guard wantsTopBarVisible || fadeableViews.animationState == .hidden else {
+    guard (wantsTopBarVisible && fadeableViews.topBarAnimationState == .hidden) || (fadeableViews.animationState == .hidden) else {
       if restartFadeTimer {
         fadeableViews.hideTimer.restart()
       } else {

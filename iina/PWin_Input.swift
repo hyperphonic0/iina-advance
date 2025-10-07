@@ -623,34 +623,31 @@ extension PlayerWindowController {
   }
 
   override func mouseExited(with event: NSEvent) {
-    // Encase in Task to ensure this doesn't fire at weird times & cause race conditions, like when entering interactive mode
-    animationPipeline.submitInstantTask{ [self] in
-      guard !isValidDragInProgress() else { return }
-      // Currently, the same modes are able to show fadeable views as being able to hide the cursor
-      guard !currentLayout.mode.mustShowCursorAlways else { return }
+    guard !isValidDragInProgress() else { return }
+    // Currently, the same modes are able to show fadeable views as being able to hide the cursor
+    guard !currentLayout.mode.mustShowCursorAlways else { return }
 
-      guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
-        log.warn("MouseExited: no data for tracking area!")
-        return
+    guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
+      log.warn("MouseExited: no data for tracking area!")
+      return
+    }
+
+    switch area {
+    case .playerWindow:
+      // Show cursor if not already shown
+      // FIXME: only if mouse is not inside any window
+      log.trace("MouseExited from playerWindow: showing (normal) cursor")
+      setCursorToNormalAlwaysShown()
+
+      if !isAnimatingLayoutTransition, Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
+        log.verbose("MouseExited from playerWindow: hiding fadeableViews")
+        hideFadeableViews()
+      } else {
+        // Closes loophole in case cursor hovered over OSC before exiting (in which case timer was destroyed)
+        fadeableViews.hideTimer.restart()
       }
-
-      switch area {
-      case .playerWindow:
-        // Show cursor if not already shown
-        // FIXME: only if mouse is not inside any window
-        log.trace("MouseExited from playerWindow: showing (normal) cursor")
-        setCursorToNormalAlwaysShown()
-
-        if !isAnimatingLayoutTransition, Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
-          log.verbose("MouseExited from playerWindow: hiding fadeableViews")
-          hideFadeableViews()
-        } else {
-          // Closes loophole in case cursor hovered over OSC before exiting (in which case timer was destroyed)
-          fadeableViews.hideTimer.restart()
-        }
-      default:
-        break
-      }
+    default:
+      break
     }
   }
 

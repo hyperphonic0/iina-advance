@@ -132,6 +132,35 @@ struct VideoViewConstraints {
                           spacerMin: QuadConstraint,
                           spacerPreferred: QuadConstraint,
                           center: Constraint) {
+    let topSpacersSame = (topSpacerConnection.isActive == connectSpacers.active) && (!topSpacerConnection.isActive || (topSpacerConnection.priority == connectSpacers.priority))
+    let aspectSame = (aspectRatio.isActive == aspect.active) && (!aspect.active || (aspectRatio.priority.rawValue == aspect.priority.rawValue))
+    let spacersMaxSame = (topSpacerMax.isActive == spacerMax.active) && (!spacerMax.active || (topSpacerMax.priority == spacerMax.priority))
+    let whMaxSame = (widthMax.isActive == (wMax != nil)) && (heightMax.isActive == (hMax != nil)) && ((wMax == nil) || (whMax_Priority == widthMax.priority))
+    let centerSame = centerX.isActive == center.active && (!center.active || (centerX.priority == center.priority))
+    let spacerPreferredSame = (topSpacerPreferred.isActive == spacerPreferred.active) && (!spacerPreferred.active || (topSpacerPreferred.priority == spacerPreferred.priority))
+    && ((spacerPreferred.values == nil) || (
+      spacerPreferred.values!.top == topSpacerPreferred.constant ||
+      spacerPreferred.values!.bottom == bottomSpacerPreferred.constant ||
+      spacerPreferred.values!.leading == leadingSpacerPreferred.constant ||
+      spacerPreferred.values!.trailing == trailingSpacerPreferred.constant))
+    let spacerMinSame = (spacerMin.active == topSpacerMin.isActive) && (!spacerMin.active || (spacerMin.priority == topSpacerMin.priority)) &&
+    ((spacerMin.values == nil) || (
+      spacerMin.values!.top == topSpacerMin.constant ||
+      spacerMin.values!.bottom == bottomSpacerMin.constant ||
+      spacerMin.values!.leading == leadingSpacerMin.constant ||
+      spacerMin.values!.trailing == trailingSpacerMin.constant))
+
+    if topSpacersSame,
+       aspectSame,
+       spacersMaxSame,
+       whMaxSame,
+       centerSame,
+       spacerPreferredSame,
+       spacerMinSame {
+      log.verbose{"Δ VideoViewConstraints: all same; aborting"}
+      return
+    }
+
 
     log.verbose{"Δ VideoViewConstraints ≔ MaxSize:{W=super.w-\(wMax?.description ?? "nil") H=super.h-\(hMax?.description ?? "nil")}@\(whMax_Priority.rawValue) SpcMax=\(spacerMax) SpcMin=\(spacerMin) SpcPref=\(spacerPreferred) Center=\(center) Aspect=\(aspect)"}
 
@@ -370,18 +399,18 @@ extension VideoView {
 
     let aspect: NSLayoutConstraint
     if let existing {
-      if videoViewAspect != existing.aspectRatio.multiplier {
+      if videoViewAspect == existing.aspectRatio.multiplier {
+        aspect = existing.aspectRatio
+      } else {
         // cannot reuse aspect constraint
         existing.aspectRatio.isActive = false
         aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: videoViewAspect, constant: 0)
-      } else {
-        aspect = existing.aspectRatio
       }
     } else {
       aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: videoViewAspect, constant: 0)
     }
 
-    log.trace("VideoView updating constraints: aspect=\(videoViewAspect) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) vidSizeIdeal=\(geometry.videoSizeIdeal) mode=\(geometry.mode)")
+    log.verbose("VideoView updating constraints: aspect=\(videoViewAspect) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) vidSizeIdeal=\(geometry.videoSizeIdeal) mode=\(geometry.mode)")
 
     let topSpacer = pwc.viewportView.topSpacer
     let bottomSpacer = pwc.viewportView.bottomSpacer
@@ -484,7 +513,7 @@ extension VideoView {
 
     videoViewConstraints = cons
     needsUpdateConstraints = true
-    superview.layout()
+    superview.needsLayout = true
   }
 
 #if TEST_VIDEO_CONSTRAINTS
