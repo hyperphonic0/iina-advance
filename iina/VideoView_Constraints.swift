@@ -66,6 +66,7 @@ fileprivate struct QuadConstraint: CustomStringConvertible {
   }
 }
 
+
 struct VideoViewConstraints {
   let log: Logger.Subsystem
 
@@ -402,8 +403,8 @@ extension VideoView {
                 // For interactive mode, these need to be higher priority than video max
                 spacerMin: QuadConstraint(active: true, priority: 496, spacerMinValues),
 
-                // TODO: split into vertical & horizontal components. Enable only when aspect goes above/below certain value
-                spacerPreferred: QuadConstraint(active: false, priority: 481, keepVideoAwayFromBars ? geometry.insideBars : nil),
+                // Need to calculate these values ourselves now that we are relying on mpv to calculate margins for us via keepaspect=yes
+                spacerPreferred: QuadConstraint(active: keepVideoAwayFromBars, priority: 497, keepVideoAwayFromBars ? geometry.offsetsToKeepVideoAwayFromInsideBars : nil),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
                 center: Constraint(active: (interactiveMode || musicMode) || geometry.isMiddleTransition, priority: 480)

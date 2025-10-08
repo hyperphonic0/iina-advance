@@ -334,6 +334,71 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return NSSize(width: videoSize.width, height: (videoSize.width / videoViewAspect).rounded())
   }
 
+  var offsetsToKeepVideoAwayFromInsideBars: MarginQuad {
+    assert(max(0, viewportSize.height - videoSize.height) == viewportMargins.totalHeight)
+    assert(max(0, viewportSize.width - videoSize.width) == viewportMargins.totalWidth)
+
+    let isLetterboxed = viewportMargins.totalHeight > viewportMargins.totalWidth
+    if isLetterboxed {
+      // We have black margins on top and bottom. No free space on the sides.
+
+      var top: CGFloat = 0
+      var btm: CGFloat = 0
+
+      var heightToWorkWith = viewportMargins.totalHeight
+      var heightToDonate = max(0, viewportMargins.totalHeight - insideBars.totalHeight)
+
+      let overlapTop = max(0, -(viewportMargins.top - insideBars.top))
+      let overlapBtm = max(0, -(viewportMargins.bottom - insideBars.bottom))
+//      let totalOverlap = overlapTop + overlapBtm
+
+      let overlapDifference = overlapTop - overlapBtm
+      let correctionOffset = min(overlapDifference * 0.5, heightToWorkWith)
+      top += correctionOffset
+      btm -= correctionOffset
+      heightToWorkWith -= correctionOffset
+      heightToDonate = max(0, heightToDonate - correctionOffset)
+
+//      let minRemainingOverlap = max(0, min(overlapTop, overlapBtm) - overlapDifference)
+//      let smallerTopOrBottomBar = min(insideBars.top, insideBars.bottom)
+//      let targetOverlapToCenterVideo = totalOverlap * 0.5
+
+      // TODO: distribute remaining free space
+
+      return MarginQuad(top: top,
+                        trailing: 0,
+                        bottom: btm,
+                        leading: 0)
+    } else {
+      // Pillar box. We have black margins on leading & trailing. No free space on the top or bottom.
+
+      var leading: CGFloat = 0
+      var trailing: CGFloat = 0
+
+      var widthToWorkWith = viewportMargins.totalWidth
+      var widthToDonate = max(0, viewportMargins.totalWidth - insideBars.totalWidth)
+
+      let overlapLeading = max(0, -(viewportMargins.leading - insideBars.leading))
+      let overlapTrailing = max(0, -(viewportMargins.trailing - insideBars.trailing))
+
+      let overlapDifference = overlapLeading - overlapTrailing
+      let correctionOffset = min(overlapDifference * 0.5, widthToWorkWith)
+      leading += correctionOffset
+      trailing -= correctionOffset
+      widthToWorkWith -= correctionOffset
+      widthToDonate = max(0, widthToDonate - correctionOffset)
+
+//      let minRemainingOverlap = max(0, min(overlapLeading, overlapTrailing) - overlapDifference)
+
+      // TODO: distribute remaining free space
+
+      return MarginQuad(top: 0,
+                        trailing: trailing,
+                        bottom: 0,
+                        leading: leading)
+    }
+  }
+
   /// `MPVProperty.currentWindowScale`: see `mp_property_current_window_scale()` in mpv's `player/command.c`
   func mpvWindowScale() -> CGFloat {
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
