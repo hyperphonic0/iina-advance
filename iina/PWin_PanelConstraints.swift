@@ -11,7 +11,7 @@ extension PlayerWindowController {
   /// Add, remove, or modify each of the bars & their constraints based on the given stage of the layout transition.
   ///
   /// # Diagram: Vertical contraints in relation to `PWinGeometry` panels
-  /// Note the consistent direction between anchors. (Created with https://asciip.dev/, then hand-edited.)
+  /// Note the consistent direction between anchors. (Created with https://asciip.dev/.)
   ///```
   /// ┌─ Top                                                                ┬  ┬  ┬  ┬
   /// │                                                                     │  │  │  │
@@ -69,7 +69,6 @@ extension PlayerWindowController {
 
   // MARK: - Bars Layout
 
-  // FIXME: 4. Delogo broken
   func rebuildPanelConstraints(_ transition: LayoutTransition, stage: LayoutTransition.Stage) {
     let contentView = window!.contentView!
     let p = panelConstraints

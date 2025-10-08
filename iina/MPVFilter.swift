@@ -62,7 +62,7 @@ class MPVFilter: NSObject {
           str += "="
           // special tweak for lavfi filters
           if name == "lavfi" {
-            str += "\(params!["graph"]!)"
+            str += "[\(params!["graph"]!)]"
           } else {
             str += params!.map { "\($0)=\($1.mpvQuotedFilterValue)" } .joined(separator: ":")
           }
@@ -121,16 +121,16 @@ class MPVFilter: NSObject {
   }
 
   convenience init(lavfiName: String, label: String?, params: [String]) {
-    var ffmpegGraph = "\(lavfiName)="
+    var ffmpegGraph = "[\(lavfiName)="
     ffmpegGraph += params.joined(separator: ":")
-    ffmpegGraph += ""
+    ffmpegGraph += "]"
     self.init(name: "lavfi", label: label, paramString: ffmpegGraph)
   }
 
   convenience init(lavfiName: String, label: String?, paramDict: [String: String]) {
-    var ffmpegGraph = "\(lavfiName)="
+    var ffmpegGraph = "[\(lavfiName)="
     ffmpegGraph += paramDict.map { "\($0)=\($1)" }.joined(separator: ":")
-    ffmpegGraph += ""
+    ffmpegGraph += "]"
     self.init(name: "lavfi", label: label, paramString: ffmpegGraph)
   }
 
@@ -358,9 +358,9 @@ class MPVFilter: NSObject {
    - parameter amount: Amount for la and ca. Should be in [-1.5, 1.5].
    */
   static func unsharp(amount: Float, msize: Int = 5) -> MPVFilter {
-    let amoutStr = amount.description
+    let amountStr = amount.description
     let msizeStr = msize.description
-    return MPVFilter(lavfiName: "unsharp", label: nil, params: [msizeStr, msizeStr, amoutStr, msizeStr, msizeStr, amoutStr])
+    return MPVFilter(lavfiName: "unsharp", label: nil, params: [msizeStr, msizeStr, amountStr, msizeStr, msizeStr, amountStr])
   }
 
 }

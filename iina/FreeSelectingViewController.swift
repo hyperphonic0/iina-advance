@@ -14,23 +14,25 @@ class FreeSelectingViewController: CropBoxViewController {
   @IBAction func doneBtnAction(_ sender: AnyObject) {
     let player = pwc.player
 
-    pwc.exitInteractiveMode {
-      let filter = MPVFilter.init(lavfiName: "delogo", label: Constants.FilterLabel.delogo, paramDict: [
-        "x": String(self.cropx),
-        "y": String(self.cropy),
-        "w": String(self.cropw),
-        "h": String(self.croph)
-      ])
-      player.mpv.queue.async {
-        if let existingFilter = player.info.delogoFilter {
-          player.removeVideoFilter(existingFilter)
-        } else if !player.addVideoFilter(filter) {
-          DispatchQueue.main.async {
-            Utility.showAlert("filter.incorrect")
-          }
-          return
+    let filter = MPVFilter.init(lavfiName: "delogo", label: Constants.FilterLabel.delogo, paramDict: [
+      "x": String(self.cropx),
+      "y": String(self.cropy),
+      "w": String(self.cropw),
+      "h": String(self.croph)
+    ])
+    player.mpv.queue.async {
+      if let existingFilter = player.info.delogoFilter {
+        player.removeVideoFilter(existingFilter)
+      }
+      guard player.addVideoFilter(filter) else {
+        DispatchQueue.main.async {
+          Utility.showAlert("filter.incorrect")
         }
-        player.info.delogoFilter = filter
+        return
+      }
+      player.info.delogoFilter = filter
+      DispatchQueue.main.async { [self] in
+        pwc.exitInteractiveMode()
       }
     }
   }
