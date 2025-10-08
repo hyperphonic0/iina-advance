@@ -282,13 +282,15 @@ class VideoView: NSView {
       logHDR.verbose("Not using ICC profile due to user preference")
     } else if let screenColorSpace {
       let name = screenColorSpace.localizedName ?? "unnamed"
-      logHDR.verbose{"Using the ICC profile of color space \(name.quoted)"}
+      logHDR.verbose{"Using the ICC profile of the color space \(name.quoted)"}
       // This MUST be locked via openGLContext
 
       guard lockAndSetOpenGLContext() else { return }
       defer { unlockOpenGLContext() }
       $isUninited.withLock() { isUninited in
         guard !isUninited else { return }
+        // Set MPV_RENDER_PARAM_ICC_PROFILE before enabling icc-profile-auto to true as mpv requires
+        // that parameter be set in the render context when icc-profile-auto is in use.
         glLayer.setRenderICCProfile(screenColorSpace)
       }
 
@@ -306,7 +308,7 @@ class VideoView: NSView {
 
     player.mpv.queue.async { [self] in
       guard player.isActive, player.info.isFileLoaded else { return }
-      let useAutoICC = Preference.bool(for: .loadIccProfile) &&  screenColorSpace != nil
+      let useAutoICC = Preference.bool(for: .loadIccProfile) && screenColorSpace != nil
       player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, useAutoICC)
 
       player.mpv.setString(MPVOption.GPURendererOptions.targetTrc, "auto")
