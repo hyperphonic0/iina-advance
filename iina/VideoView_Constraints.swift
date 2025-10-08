@@ -66,7 +66,6 @@ fileprivate struct QuadConstraint: CustomStringConvertible {
   }
 }
 
-/// struct VideoViewConstraints
 struct VideoViewConstraints {
   let log: Logger.Subsystem
 
@@ -95,34 +94,14 @@ struct VideoViewConstraints {
   let widthMax: NSLayoutConstraint
   let heightMax: NSLayoutConstraint
 
-  // Use aspect ratio constraint + weak center constraints to improve the video resize animation when
-  // tiling the window while lockViewportToVideoSize is enabled.
-  // Previously the video would get squeezed during resize. This became more noticable with the introduction
-  // of MacOS Sequoia 15.0.
+  // Use aspect ratio constraint + weak center constraints to improve the video resize animation when tiling the window while
+  // lockViewportToVideoSize is enabled.
+  // Previously the video would get squeezed during resize. This became more noticable with the introduction of MacOS Sequoia 15.0.
   // These can be adjusted to keep VideoView away from "inside" bars.
   let centerX: NSLayoutConstraint
   let centerY: NSLayoutConstraint
 
   let aspectRatio: NSLayoutConstraint
-
-#if TEST_VIDEO_CONSTRAINTS
-  // Margins should most want to equal 0:
-  let eqOffsetTop: NSLayoutConstraint
-  let eqOffsetTrailing: NSLayoutConstraint
-  let eqOffsetBottom: NSLayoutConstraint
-  let eqOffsetLeading: NSLayoutConstraint
-
-  let ltOffsetTop: NSLayoutConstraint
-  let ltOffsetTrailing: NSLayoutConstraint
-  let ltOffsetBottom: NSLayoutConstraint
-  let ltOffsetLeading: NSLayoutConstraint
-
-  let centerX2: NSLayoutConstraint
-  let centerY2: NSLayoutConstraint
-
-  let widthMin: NSLayoutConstraint
-  let heightMin: NSLayoutConstraint
-#endif
 
   /// UPDATE FUNC
   fileprivate func update(connectSpacers: Constraint,
@@ -132,6 +111,7 @@ struct VideoViewConstraints {
                           spacerMin: QuadConstraint,
                           spacerPreferred: QuadConstraint,
                           center: Constraint) {
+    /*
     let topSpacersSame = (topSpacerConnection.isActive == connectSpacers.active) && (!topSpacerConnection.isActive || (topSpacerConnection.priority == connectSpacers.priority))
     let aspectSame = (aspectRatio.isActive == aspect.active) && (!aspect.active || (aspectRatio.priority.rawValue == aspect.priority.rawValue))
     let spacersMaxSame = (topSpacerMax.isActive == spacerMax.active) && (!spacerMax.active || (topSpacerMax.priority == spacerMax.priority))
@@ -159,53 +139,10 @@ struct VideoViewConstraints {
        spacerMinSame {
       log.verbose{"Δ VideoViewConstraints: all same; aborting"}
       return
-    }
-
+    }*/
 
     log.verbose{"Δ VideoViewConstraints ≔ MaxSize:{W=super.w-\(wMax?.description ?? "nil") H=super.h-\(hMax?.description ?? "nil")}@\(whMax_Priority.rawValue) SpcMax=\(spacerMax) SpcMin=\(spacerMin) SpcPref=\(spacerPreferred) Center=\(center) Aspect=\(aspect)"}
 
-#if TEST_VIDEO_CONSTRAINTS
-    // Margin should ideally be 0, causing the video to expand to fill the window as much as possible while keeping aspect.
-    let eqPriority: NSLayoutConstraint.Priority = .init(8)
-    let eqIsActive = false
-
-    let center2Priority: NSLayoutConstraint.Priority = .init(481)
-    let center2Active = true
-
-    let marginLT_Priority: NSLayoutConstraint.Priority = .init(311)
-    let marginLT_Active = false
-
-    let whMin_Priority: NSLayoutConstraint.Priority = .init(499)
-    let whMinActive = false
-
-    widthMin.priority = whMin_Priority
-    heightMin.priority = whMin_Priority
-    widthMin.isActive = whMinActive
-    heightMin.isActive = whMinActive
-
-    eqOffsetTop.priority = eqPriority
-    eqOffsetTrailing.priority = eqPriority
-    eqOffsetBottom.priority = eqPriority
-    eqOffsetLeading.priority = eqPriority
-    eqOffsetTop.isActive = eqIsActive
-    eqOffsetTrailing.isActive = eqIsActive
-    eqOffsetBottom.isActive = eqIsActive
-    eqOffsetLeading.isActive = eqIsActive
-
-    ltOffsetTop.priority = marginLT_Priority
-    ltOffsetTrailing.priority = marginLT_Priority
-    ltOffsetBottom.priority = marginLT_Priority
-    ltOffsetLeading.priority = marginLT_Priority
-    ltOffsetTop.isActive = marginLT_Active
-    ltOffsetTrailing.isActive = marginLT_Active
-    ltOffsetBottom.isActive = marginLT_Active
-    ltOffsetLeading.isActive = marginLT_Active
-
-    centerX2.priority = center2Priority
-    centerY2.priority = center2Priority
-    centerX2.isActive = center2Active
-    centerY2.isActive = center2Active
-#endif
     // - Priorities, Constants
 
     topSpacerConnection.priority = connectSpacers.priority
@@ -319,24 +256,6 @@ struct VideoViewConstraints {
     centerY.isActive = false
 
     aspectRatio.isActive = false
-
-#if TEST_VIDEO_CONSTRAINTS
-    eqOffsetTop.isActive = false
-    eqOffsetTrailing.isActive = false
-    eqOffsetBottom.isActive = false
-    eqOffsetLeading.isActive = false
-
-    ltOffsetTop.isActive = false
-    ltOffsetTrailing.isActive = false
-    ltOffsetBottom.isActive = false
-    ltOffsetLeading.isActive = false
-
-    widthMin.isActive = false
-    heightMin.isActive = false
-
-    centerX2.isActive = false
-    centerY2.isActive = false
-#endif
   }
 
 }  // end struct VideoViewConstraints
@@ -452,26 +371,6 @@ extension VideoView {
       centerY: existing?.centerY ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor, constant: 0),
 
       aspectRatio: aspect
-/*
-      #if TEST_VIDEO_CONSTRAINTS
-      // If need to create new, just use 0 for all constants now; may update below
-      eqOffsetTop: existing?.eqOffsetTop ?? topSpacer.heightAnchor.constraint(equalToConstant: 0),
-      eqOffsetTrailing: existing?.eqOffsetTrailing ?? trailingSpacer.widthAnchor.constraint(equalToConstant: 0),
-      eqOffsetBottom: existing?.eqOffsetBottom ?? bottomSpacer.heightAnchor.constraint(equalToConstant: 0),
-      eqOffsetLeading: existing?.eqOffsetLeading ?? leadingSpacer.widthAnchor.constraint(equalToConstant: 0),
-
-      ltOffsetTop: existing?.ltOffsetTop ?? topSpacer.heightAnchor.constraint(lessThanOrEqualToConstant: 0),
-      ltOffsetTrailing: existing?.ltOffsetTrailing ?? trailingSpacer.widthAnchor.constraint(lessThanOrEqualToConstant: 0),
-      ltOffsetBottom: existing?.ltOffsetBottom ?? bottomSpacer.heightAnchor.constraint(lessThanOrEqualToConstant: 0),
-      ltOffsetLeading: existing?.ltOffsetLeading ?? leadingSpacer.widthAnchor.constraint(lessThanOrEqualToConstant: 0),
-
-      centerX2: existing?.centerX2 ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor, constant: 0),
-      centerY2: existing?.centerY2 ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor, constant: 0),
-
-      widthMin: existing?.widthMin ?? widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
-      heightMin: existing?.heightMin ?? heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
-      #endif
- */
     )
 
     // - Configuration
@@ -515,19 +414,5 @@ extension VideoView {
     needsUpdateConstraints = true
     superview.needsLayout = true
   }
-
-#if TEST_VIDEO_CONSTRAINTS
-  func loosenConstraints() {
-    guard let cons = videoViewConstraints else { return }
-
-    cons.update(connectSpacers_Active: true, connectSpacers_Priority: .init(100),
-                videoViewAspect: cons.aspectRatio.multiplier, aspect_Priority: .init(50),
-                wMax: 0, hMax: 0, whMax_Priority: .init(99),
-                spacerMax_Active: true, spacerMax_Priority: .init(98),
-                spacerMin: nil, spacerMin_Priority: .init(97),
-                spacerPreferred: nil, spacerPreferred_Priority: .init(97),
-                center_Active: true, center_Priority: .init(96))
-  }
-#endif
 
 }
