@@ -114,7 +114,8 @@ extension PlayerWindowController {
         viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
       }
 
-      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: constant2, log) { [self] c in
+      // Don't use required priority, as sometimes this causes constraint violations
+      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: constant2, priorityInt: 999, log) { [self] c in
         topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
