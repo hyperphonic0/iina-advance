@@ -92,6 +92,11 @@ struct VideoViewConstraints {
   let bottomSpacerPreferred: NSLayoutConstraint
   let leadingSpacerPreferred: NSLayoutConstraint
 
+  let topSpacerExact: NSLayoutConstraint
+  let trailingSpacerExact: NSLayoutConstraint
+  let bottomSpacerExact: NSLayoutConstraint
+  let leadingSpacerExact: NSLayoutConstraint
+
   let widthMax: NSLayoutConstraint
   let heightMax: NSLayoutConstraint
 
@@ -111,6 +116,7 @@ struct VideoViewConstraints {
                           spacerMax: Constraint,
                           spacerMin: QuadConstraint,
                           spacerPreferred: QuadConstraint,
+                          spacerExact: QuadConstraint,
                           center: Constraint) {
     /*
     let topSpacersSame = (topSpacerConnection.isActive == connectSpacers.active) && (!topSpacerConnection.isActive || (topSpacerConnection.priority == connectSpacers.priority))
@@ -169,6 +175,17 @@ struct VideoViewConstraints {
     trailingSpacerPreferred.priority = spacerPreferred.priority
     leadingSpacerPreferred.priority = spacerPreferred.priority
 
+    if let spacerExactQuad = spacerExact.values {
+      topSpacerExact.animateToConstant(spacerExactQuad.top)
+      bottomSpacerExact.animateToConstant(spacerExactQuad.bottom)
+      leadingSpacerExact.animateToConstant(spacerExactQuad.leading)
+      trailingSpacerExact.animateToConstant(spacerExactQuad.trailing)
+    }
+    topSpacerExact.priority = spacerExact.priority
+    bottomSpacerExact.priority = spacerExact.priority
+    trailingSpacerExact.priority = spacerExact.priority
+    leadingSpacerExact.priority = spacerExact.priority
+
     if let wMax {
       widthMax.animateToConstant(wMax)
       widthMax.priority = whMax_Priority
@@ -199,6 +216,11 @@ struct VideoViewConstraints {
     bottomSpacerPreferred.isActive = spacerPreferred.active
     trailingSpacerPreferred.isActive = spacerPreferred.active
     leadingSpacerPreferred.isActive = spacerPreferred.active
+
+    topSpacerExact.isActive = spacerExact.active
+    bottomSpacerExact.isActive = spacerExact.active
+    trailingSpacerExact.isActive = spacerExact.active
+    leadingSpacerExact.isActive = spacerExact.active
 
     // TODO: improvements for music mode
     widthMax.isActive = wMax != nil
@@ -249,6 +271,11 @@ struct VideoViewConstraints {
     trailingSpacerPreferred.isActive = false
     bottomSpacerPreferred.isActive = false
     leadingSpacerPreferred.isActive = false
+
+    topSpacerExact.isActive = false
+    trailingSpacerExact.isActive = false
+    bottomSpacerExact.isActive = false
+    leadingSpacerExact.isActive = false
 
     widthMax.isActive = false
     heightMax.isActive = false
@@ -364,6 +391,12 @@ extension VideoView {
       bottomSpacerPreferred: existing?.bottomSpacerPreferred ?? bottomSpacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
       leadingSpacerPreferred: existing?.leadingSpacerPreferred ?? leadingSpacer.widthAnchor.constraint(greaterThanOrEqualToConstant: 0),
 
+      // Exact spacer sizes:
+      topSpacerExact: existing?.topSpacerExact ?? topSpacer.heightAnchor.constraint(equalToConstant: 0),
+      trailingSpacerExact: existing?.trailingSpacerExact ?? trailingSpacer.widthAnchor.constraint(equalToConstant: 0),
+      bottomSpacerExact: existing?.bottomSpacerExact ?? bottomSpacer.heightAnchor.constraint(equalToConstant: 0),
+      leadingSpacerExact: existing?.leadingSpacerExact ?? leadingSpacer.widthAnchor.constraint(equalToConstant: 0),
+
       // These maximize video size
       widthMax: existing?.widthMax ?? widthAnchor.constraint(equalTo: superview.widthAnchor),
       heightMax: existing?.heightMax ?? heightAnchor.constraint(equalTo: superview.heightAnchor),
@@ -404,7 +437,10 @@ extension VideoView {
                 spacerMin: QuadConstraint(active: true, priority: 496, spacerMinValues),
 
                 // Need to calculate these values ourselves now that we are relying on mpv to calculate margins for us via keepaspect=yes
-                spacerPreferred: QuadConstraint(active: keepVideoAwayFromBars, priority: 497, keepVideoAwayFromBars ? geometry.offsetsToKeepVideoAwayFromInsideBars : nil),
+                spacerPreferred: QuadConstraint(active: false, priority: 481, keepVideoAwayFromBars ? geometry.offsetsToKeepVideoAwayFromInsideBars : nil),
+
+                // Need to calculate these values ourselves now that we are relying on mpv to calculate margins for us via keepaspect=yes
+                spacerExact: QuadConstraint(active: keepVideoAwayFromBars, priority: 497, keepVideoAwayFromBars ? geometry.offsetsToKeepVideoAwayFromInsideBars : nil),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
                 center: Constraint(active: (interactiveMode || musicMode) || geometry.isMiddleTransition, priority: 480)

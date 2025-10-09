@@ -334,69 +334,126 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return NSSize(width: videoSize.width, height: (videoSize.width / videoViewAspect).rounded())
   }
 
+  /// Calculates the margin adjustments needed to:
+  /// 1. Minimize the overlap between inside bars & `videoView`, by donating unuused margin from one side to its opposite.
+  /// 2. If bars on both sides overlap with `videoView`, then center `videoView` between them.
+  /// Both pairs of sides are calculated independently (top/bottom & leading/trailing).
+  ///
+  /// Shown here is an example `PWinGeometry` with a large bottom bar which overlaps the video. But there is extra space
+  /// between the top bar & the top of the video which can be donated to the bottom.
+  ///
+  /// See also: `VideoView_Constraints.swift`.
+  /// ```
+  /// windowFrame.top
+  /// +--┌──────────────────┐+  ▲
+  /// |  │                  │|  │vpMargins.top
+  /// |  │   inside.top     │|  │
+  /// |  │                  │|  │
+  /// |  └──────────────────┘|  │  ▲
+  /// |                      |  │  │
+  /// |                      |  │  │TopDeficit = -3
+  /// | ╔═════════════════╗  |  ▼  ▼
+  /// | ║                 ║  |
+  /// | ║                 ║  |
+  /// | ║                 ║  |
+  /// | ║    VideoView    ║  |
+  /// | ║                 ║  |
+  /// | ║ ┌───────────────║─┐|     ▲
+  /// | ║ │               ║ │|     │
+  /// | ║ │               ║ │|     │BtmDeficit = 3
+  /// | ╚═════════════════╝ │| ▲   ▼
+  /// |   │                 │| │
+  /// |   │   inside.btm    │| │
+  /// |   │                 │| │
+  /// |   │                 │| │
+  /// |   │                 │| │vpMargins.btm
+  /// |   │                 │| │
+  /// +---└─────────────────┘+ ▼
+  /// windowFrame.btm
+  /// ```
+  ///
   var offsetsToKeepVideoAwayFromInsideBars: MarginQuad {
-    assert(max(0, viewportSize.height - videoSize.height) == viewportMargins.totalHeight)
-    assert(max(0, viewportSize.width - videoSize.width) == viewportMargins.totalWidth)
+    assert(max(0, viewportSize.height - videoSize.height) == viewportMargins.totalHeight,
+           "Inconsistent viewportSize=\(viewportSize) videoSize=\(videoSize) viewportMargins=\(viewportMargins)")
+    assert(max(0, viewportSize.width - videoSize.width) == viewportMargins.totalWidth,
+           "Inconsistent viewportSize=\(viewportSize) videoSize=\(videoSize) viewportMargins=\(viewportMargins)")
 
-    let isLetterboxed = viewportMargins.totalHeight > viewportMargins.totalWidth
+    let top: CGFloat
+    let btm: CGFloat
+    let leading: CGFloat
+    let trailing: CGFloat
+
+    let unusedWidth = max(0, viewportSize.width - videoSize.width)
+    let unusedHeight = max(0, viewportSize.height - videoSize.height)
+    let isLetterboxed = unusedHeight > unusedWidth
     if isLetterboxed {
       // We have black margins on top and bottom. No free space on the sides.
+      leading = 0
+      trailing = 0
 
-      var top: CGFloat = 0
-      var btm: CGFloat = 0
+      // Start with equal margins for calculation, despite whatever the actual distribution is
+      let viewportMarginsTop = viewportMargins.totalHeight * 0.5
+      let viewportMarginsBtm = viewportMarginsTop
+      let topDeficit = max(0, insideBars.top - viewportMarginsTop)
+      let btmDeficit = max(0, insideBars.bottom - viewportMarginsBtm)
 
-      var heightToWorkWith = viewportMargins.totalHeight
-      var heightToDonate = max(0, viewportMargins.totalHeight - insideBars.totalHeight)
+      let topSurplus = max(0, viewportMarginsTop - insideBars.top)
+      let btmSurplus = max(0, viewportMarginsBtm - insideBars.bottom)
+      let needsMoreAtBtm = btmDeficit > topDeficit
 
-      let overlapTop = max(0, -(viewportMargins.top - insideBars.top))
-      let overlapBtm = max(0, -(viewportMargins.bottom - insideBars.bottom))
-//      let totalOverlap = overlapTop + overlapBtm
-
-      let overlapDifference = overlapTop - overlapBtm
-      let correctionOffset = min(overlapDifference * 0.5, heightToWorkWith)
-      top += correctionOffset
-      btm -= correctionOffset
-      heightToWorkWith -= correctionOffset
-      heightToDonate = max(0, heightToDonate - correctionOffset)
-
-//      let minRemainingOverlap = max(0, min(overlapTop, overlapBtm) - overlapDifference)
-//      let smallerTopOrBottomBar = min(insideBars.top, insideBars.bottom)
-//      let targetOverlapToCenterVideo = totalOverlap * 0.5
-
-      // TODO: distribute remaining free space
-
-      return MarginQuad(top: top,
-                        trailing: 0,
-                        bottom: btm,
-                        leading: 0)
+      // We are actually returning a single offset which represents both the subtraction of donor's & the donation values.
+      // So need to multiply the returned offset by 2.
+      if topDeficit > 0 && btmDeficit > 0 {
+        let avgDeficitTimes2 = min((topDeficit + btmDeficit), viewportMargins.totalHeight)
+        if needsMoreAtBtm {
+          top = 0
+          btm = avgDeficitTimes2
+        } else {
+          top = avgDeficitTimes2
+          btm = 0
+        }
+      } else if needsMoreAtBtm {
+        // Adding to btm (shifting upwards). Use surplus from top
+        top = 0
+        btm = min(btmDeficit, topSurplus) * 2
+      } else {
+        top = min(topDeficit, btmSurplus) * 2
+        btm = 0
+      }
     } else {
-      // Pillar box. We have black margins on leading & trailing. No free space on the top or bottom.
+      // Pillar boxed. We have black margins on leading & trailing. No free space on the top or bottom.
+      top = 0
+      btm = 0
 
-      var leading: CGFloat = 0
-      var trailing: CGFloat = 0
+      // Start with equal margins for calculation, despite whatever the actual distribution is
+      let viewportMarginsLeading = viewportMargins.totalWidth * 0.5
+      let viewportMarginsTrailing = viewportMarginsLeading
+      let leadingDeficit = max(0, insideBars.leading - viewportMarginsLeading)
+      let trailingDeficit = max(0, insideBars.trailing - viewportMarginsTrailing)
 
-      var widthToWorkWith = viewportMargins.totalWidth
-      var widthToDonate = max(0, viewportMargins.totalWidth - insideBars.totalWidth)
+      let leadingSurplus = max(0, viewportMarginsLeading - insideBars.leading)
+      let trailingSurplus = max(0, viewportMarginsTrailing - insideBars.trailing)
+      let needsMoreAtTrailing = trailingDeficit > leadingDeficit
 
-      let overlapLeading = max(0, -(viewportMargins.leading - insideBars.leading))
-      let overlapTrailing = max(0, -(viewportMargins.trailing - insideBars.trailing))
-
-      let overlapDifference = overlapLeading - overlapTrailing
-      let correctionOffset = min(overlapDifference * 0.5, widthToWorkWith)
-      leading += correctionOffset
-      trailing -= correctionOffset
-      widthToWorkWith -= correctionOffset
-      widthToDonate = max(0, widthToDonate - correctionOffset)
-
-//      let minRemainingOverlap = max(0, min(overlapLeading, overlapTrailing) - overlapDifference)
-
-      // TODO: distribute remaining free space
-
-      return MarginQuad(top: 0,
-                        trailing: trailing,
-                        bottom: 0,
-                        leading: leading)
+      if leadingDeficit > 0 && trailingDeficit > 0 {
+        let avgDeficitTimes2 = min((leadingDeficit + trailingDeficit), (viewportMargins.totalWidth))
+        if needsMoreAtTrailing {
+          leading = 0
+          trailing = avgDeficitTimes2
+        } else {
+          leading = avgDeficitTimes2
+          trailing = 0
+        }
+      } else if needsMoreAtTrailing {
+        // Adding to trailing (shifting leading-wards). Use surplus from leading
+        leading = 0
+        trailing = min(trailingDeficit, leadingSurplus) * 2
+      } else {
+        leading = min(leadingDeficit, trailingSurplus) * 2
+        trailing = 0
+      }
     }
+    return MarginQuad(top: top, trailing: trailing, bottom: btm, leading: leading)
   }
 
   /// `MPVProperty.currentWindowScale`: see `mp_property_current_window_scale()` in mpv's `player/command.c`

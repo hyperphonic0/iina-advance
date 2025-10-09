@@ -135,6 +135,8 @@ struct GeoUtil {
     return videoSize
   }
 
+  /// These do not respect `Preference.bool(for: .keepVideoAwayFromBars)`. For that see `PWinGeometry.offsetsToKeepVideoAwayFromInsideBars`.
+  /// The values returned here will be (nearly) symmetrical between leading & trailing & between top & bottom, but may be different by 1.
   static func computeBestViewportMargins(viewportSize: NSSize, videoSize: NSSize, insideBars: MarginQuad, mode: PlayerWindowMode) -> MarginQuad {
     guard viewportSize.width > 0 && viewportSize.height > 0 else {
       return MarginQuad.zero
@@ -143,131 +145,17 @@ struct GeoUtil {
       // Viewport size is always equal to video size in music mode
       return MarginQuad.zero
     }
-    var leadingMargin: CGFloat = 0
-    var trailingMargin: CGFloat = 0
 
-    var unusedWidth = max(0, viewportSize.width - videoSize.width)
-    if unusedWidth > 0 {
-
-      if mode == .fullScreenNormal {
-        leadingMargin += (unusedWidth * 0.5)
-        trailingMargin += (unusedWidth * 0.5)
-      } else {
-        let leadingSidebarWidth = insideBars.leading
-        let trailingSidebarWidth = insideBars.trailing
-
-        let viewportMidpointX = viewportSize.width * 0.5
-        let leadingVideoIdealX = viewportMidpointX - (videoSize.width * 0.5)
-        let trailingVideoIdealX = viewportMidpointX + (videoSize.width * 0.5)
-
-        let leadingSidebarClearance = leadingVideoIdealX - leadingSidebarWidth
-        let trailingSidebarClearance = viewportSize.width - trailingVideoIdealX - trailingSidebarWidth
-        let freeViewportWidthTotal = viewportSize.width - videoSize.width - leadingSidebarWidth - trailingSidebarWidth
-
-        if leadingSidebarClearance >= 0 && trailingSidebarClearance >= 0 {
-          /*
-           Ideal case: there is enough width to center video in viewport while clearing both inside sidebars.
-           Just center the video in the viewport. L==T (+/- 1pt)
-
-           Leading margin (L)           Window Center          Trailing margin (T)
-           |◄────────────────────►|             |             |◄────────────────────►|
-           ┌───────────┬────────────────────────|─────────────────┬──────────────────┐
-           │           │                        |                 │                  │
-           │           │          ┌─────────────|─────────────┐   │                  │
-           │Leading    │          │                           │   │ Trailing         │
-           │ InsideBar │          │         VideoView         │   │  InsideBar       │
-           │           │          │    (centered in window)   │   │                  │
-           │           │          │                           │   │                  │
-           │           │          │                           │   │                  │
-           │           │          └─────────────|─────────────┘   │                  │
-           │           │                        |                 │                  │
-           └───────────┴────────────────────────|─────────────────┴──────────────────┘
-           |◄─────────────────────────────Viewport─width────────────────────────────►|
-
-           */
-          leadingMargin += (unusedWidth * 0.5)
-          trailingMargin += (unusedWidth * 0.5)
-        } else if freeViewportWidthTotal >= 0 {
-          // We have enough space to realign video to fit within sidebars
-          leadingMargin += leadingSidebarWidth
-          trailingMargin += trailingSidebarWidth
-          unusedWidth = unusedWidth - (leadingSidebarWidth + trailingSidebarWidth)
-          let differenceBetweenLeadingAndTrailing = leadingSidebarWidth - trailingSidebarWidth
-          if differenceBetweenLeadingAndTrailing > 0 {
-            // Leading is wider. Give extra width to trailing to ideally even them out
-            let extraForTrailing = min(unusedWidth, differenceBetweenLeadingAndTrailing)
-            trailingMargin += extraForTrailing
-            unusedWidth -= extraForTrailing
-          } else if differenceBetweenLeadingAndTrailing < 0 {
-            // Trailing is wider. Give extra width to leading to ideally even them out
-            let extraForLeading = min(unusedWidth, -differenceBetweenLeadingAndTrailing)
-            leadingMargin += extraForLeading
-            unusedWidth -= extraForLeading
-          }
-          // If sidebars are equal widths, then margins are equal. Now just distribute remaining space equally to keep video centered.
-          leadingMargin += (unusedWidth * 0.5)
-          trailingMargin += (unusedWidth * 0.5)
-
-        } else if leadingSidebarWidth == 0 {
-          // Not enough margin to fit both sidebar and video, & only trailing sidebar visible.
-          // Allocate all margin to trailing sidebar
-          trailingMargin += unusedWidth
-        } else if trailingSidebarWidth == 0 {
-          // Not enough margin to fit both sidebar and video, & only leading sidebar visible.
-          // Allocate all margin to leading sidebar
-          leadingMargin += unusedWidth
-        } else {
-          // Not enough space for everything. Just center video between sidebars
-          let leadingSidebarTrailingX = leadingSidebarWidth
-          let trailingSidebarLeadingX = viewportSize.width - trailingSidebarWidth
-          let midpointBetweenSidebarsX = ((trailingSidebarLeadingX - leadingSidebarTrailingX) * 0.5) + leadingSidebarTrailingX
-          var leadingMarginNeededToCenter = midpointBetweenSidebarsX - (videoSize.width * 0.5)
-          var trailingMarginNeededToCenter = viewportSize.width - (midpointBetweenSidebarsX + (videoSize.width * 0.5))
-          // Do not allow negative margins. They would cause the video to move outside the viewport bounds
-          if leadingMarginNeededToCenter < 0 {
-            // Give the margin back to the other sidebar
-            trailingMarginNeededToCenter -= leadingMarginNeededToCenter
-            leadingMarginNeededToCenter = 0
-          }
-          if trailingMarginNeededToCenter < 0 {
-            leadingMarginNeededToCenter -= trailingMarginNeededToCenter
-            trailingMarginNeededToCenter = 0
-          }
-          // Allocate the scarce amount of unusedWidth proportionately to the demand:
-          let allocationFactor = unusedWidth / (leadingMarginNeededToCenter + trailingMarginNeededToCenter)
-
-          leadingMargin += leadingMarginNeededToCenter * allocationFactor
-          trailingMargin += trailingMarginNeededToCenter * allocationFactor
-        }
-      }
-
-      // Round to integers for a smoother animation
-      let leadingMarginRounded = leadingMargin.rounded(.down)
-      let trailingMarginRounded = trailingMargin.rounded()
-      let excessWidth = leadingMarginRounded + trailingMarginRounded - leadingMargin - trailingMargin
-      assert(excessWidth <= 1.0, "Excess width (\(excessWidth)) cardinality <= 1.0! LeadingMargin=\(leadingMargin) TrailingMargin=\(trailingMargin)")
-      leadingMargin = leadingMarginRounded
-      trailingMargin = trailingMarginRounded
-      trailingMargin -= excessWidth
-    }
-
-    Logger.log.trace {
-      let remainingWidthForVideo = viewportSize.width - (leadingMargin + trailingMargin)
-      return "[geo] Viewport width=\(viewportSize.width): Sidebars=[lead:\(insideBars.leading) trail:\(insideBars.trailing)] Margins=[lead:\(leadingMargin) trail:\(trailingMargin)] remainingWidthForVideo: \(remainingWidthForVideo), videoWidth: \(videoSize.width)"
-    }
-    let unusedHeight = viewportSize.height - videoSize.height
-    var topMargin = (unusedHeight * 0.5).rounded()
-    let btmMargin = topMargin
-    let excessHeight = topMargin + btmMargin - unusedHeight
-    if excessHeight != 0 {
-      topMargin -= excessHeight
-    }
-    let computedMargins = MarginQuad(top: topMargin, trailing: trailingMargin,
-                                     bottom: btmMargin, leading: leadingMargin)
-    assert(videoSize.height + computedMargins.totalHeight == viewportSize.height, "Bad VP margin height! V-Size=\(videoSize) + VP-width(computed)=\(computedMargins) != VP-width(actual)=\(viewportSize.height)")
-    assert(videoSize.width + computedMargins.totalWidth == viewportSize.width,
-           "Bad VP margin width! V-width=\(videoSize.width) + VP-Margins[leading=\(computedMargins.leading), trailing=\(computedMargins.trailing)] → VP-width(computed)=\(videoSize.width + computedMargins.totalWidth) != VP-width(actual)=\(viewportSize.width)")
-    return computedMargins
+    let unusedWidth = max(0, viewportSize.width - videoSize.width)
+    let unusedHeight = max(0, viewportSize.height - videoSize.height)
+    let leadingMargin = (unusedWidth * 0.5).rounded(.down)
+    let topMargin = (unusedHeight * 0.5).rounded(.down)
+    // We need to return full integer values.
+    // Use difference from total for remaining dimensions to avoid losing/gaining a point due to the rounding above.
+    return MarginQuad(top: topMargin,
+                      trailing: unusedWidth - leadingMargin,
+                      bottom: unusedHeight - topMargin,
+                      leading: leadingMargin)
   }
 
 }
