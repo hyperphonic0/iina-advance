@@ -444,9 +444,9 @@ extension PlayerWindowController.LayoutTransition {
 
         if inputLayout.isFullScreen {
           return uncroppedNaiveGeo.clone(topMarginHeight: 0,
-                                          outsideBars: .zero, insideBars: .zero,
-                                          viewportMargins: .zero,
-                                          isMiddleTransition: true)
+                                         outsideBars: .zero, insideBars: .zero,
+                                         viewportMargins: .zero,
+                                         isMiddleTransition: true)
         }
 
         let intermediateWindowFrame = uncroppedNaiveGeo.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords
@@ -454,6 +454,7 @@ extension PlayerWindowController.LayoutTransition {
                                             topMarginHeight: 0,
                                             outsideBars: .zero, insideBars: .zero,
                                             viewportMargins: .zero,
+                                            video: uncroppedNaiveGeo.video,
                                             isMiddleTransition: true)
         return middleGeo
       }

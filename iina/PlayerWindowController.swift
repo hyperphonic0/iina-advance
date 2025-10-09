@@ -1832,10 +1832,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
             // TODO: support animation in full screen once again
             let cropAnimationDuration = 0.0
             tasks.append(.init(duration: cropAnimationDuration) { [self] in
-              log.verbose{"Start exiting interactive mode: animating crop using: \(croppedIMGeo)"}
-              setFrameAndUpdateWindowSubviews(using: croppedIMGeo)
+              let croppedAnimationGeo = croppedIMGeo.clone(isMiddleTransition: true)
+              log.verbose{"Start exiting interactive mode: animating crop using: \(croppedAnimationGeo)"}
+              setFrameAndUpdateWindowSubviews(using: croppedAnimationGeo)
               // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
-              videoView.videoViewConstraints?.updateSpacerMin(to: croppedIMGeo.viewportMargins, .init(1000))
+              videoView.videoViewConstraints?.updateSpacerMin(to: croppedAnimationGeo.viewportMargins, .init(1000))
 
               // Fade out cropBox selection rect
               cropController.cropBoxView.isHidden = true
