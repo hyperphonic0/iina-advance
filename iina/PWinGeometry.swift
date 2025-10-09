@@ -350,8 +350,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// |  │   inside.top     │|  │
   /// |  │                  │|  │
   /// |  └──────────────────┘|  │  ▲
-  /// |                      |  │  │
-  /// |                      |  │  │TopDeficit = -3
+  /// |                      |  │  │TopSurplus = 3
+  /// |                      |  │  │TopDeficit = 0
   /// | ╔═════════════════╗  |  ▼  ▼
   /// | ║                 ║  |
   /// | ║                 ║  |
@@ -359,7 +359,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// | ║    VideoView    ║  |
   /// | ║                 ║  |
   /// | ║ ┌───────────────║─┐|     ▲
-  /// | ║ │               ║ │|     │
+  /// | ║ │               ║ │|     │BtmSurplus = 0
   /// | ║ │               ║ │|     │BtmDeficit = 3
   /// | ╚═════════════════╝ │| ▲   ▼
   /// |   │                 │| │
@@ -373,87 +373,63 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// ```
   ///
   var offsetsToKeepVideoAwayFromInsideBars: MarginQuad {
-    assert(max(0, viewportSize.height - videoSize.height) == viewportMargins.totalHeight,
-           "Inconsistent viewportSize=\(viewportSize) videoSize=\(videoSize) viewportMargins=\(viewportMargins)")
-    assert(max(0, viewportSize.width - videoSize.width) == viewportMargins.totalWidth,
+    assert((max(0, viewportSize.height - videoSize.height) == viewportMargins.totalHeight) &&
+           (max(0, viewportSize.width - videoSize.width) == viewportMargins.totalWidth),
            "Inconsistent viewportSize=\(viewportSize) videoSize=\(videoSize) viewportMargins=\(viewportMargins)")
 
-    let top: CGFloat
-    let btm: CGFloat
-    let leading: CGFloat
-    let trailing: CGFloat
+    // Start with equal margins for calculation, despite whatever the actual distribution is
+    let vpMarginsTotalWidth = max(0, viewportSize.width - videoSize.width)
+    let vpMarginsTotalHeight = max(0, viewportSize.height - videoSize.height)
+    let isLetterboxed = vpMarginsTotalHeight > vpMarginsTotalWidth
 
-    let unusedWidth = max(0, viewportSize.width - videoSize.width)
-    let unusedHeight = max(0, viewportSize.height - videoSize.height)
-    let isLetterboxed = unusedHeight > unusedWidth
     if isLetterboxed {
-      // We have black margins on top and bottom. No free space on the sides.
-      leading = 0
-      trailing = 0
+      // Has black margins on top and bottom. No free space on the sides.
+      let vpMarginForTopOrBtm = vpMarginsTotalHeight * 0.5
+      let topDeficit = max(0, insideBars.top - vpMarginForTopOrBtm)
+      let btmDeficit = max(0, insideBars.bottom - vpMarginForTopOrBtm)
 
-      // Start with equal margins for calculation, despite whatever the actual distribution is
-      let viewportMarginsTop = viewportMargins.totalHeight * 0.5
-      let viewportMarginsBtm = viewportMarginsTop
-      let topDeficit = max(0, insideBars.top - viewportMarginsTop)
-      let btmDeficit = max(0, insideBars.bottom - viewportMarginsBtm)
-
-      let topSurplus = max(0, viewportMarginsTop - insideBars.top)
-      let btmSurplus = max(0, viewportMarginsBtm - insideBars.bottom)
       let needsMoreAtBtm = btmDeficit > topDeficit
 
-      // We are actually returning a single offset which represents both the subtraction of donor's & the donation values.
-      // So need to multiply the returned offset by 2.
       if topDeficit > 0 && btmDeficit > 0 {
-        let avgDeficitTimes2 = min((topDeficit + btmDeficit), viewportMargins.totalHeight)
+        let avgDeficit = min((topDeficit + btmDeficit), vpMarginsTotalHeight) * 0.5
         if needsMoreAtBtm {
-          top = 0
-          btm = avgDeficitTimes2
+          return .init(bottom: avgDeficit)
         } else {
-          top = avgDeficitTimes2
-          btm = 0
+          return .init(top: avgDeficit)
         }
       } else if needsMoreAtBtm {
         // Adding to btm (shifting upwards). Use surplus from top
-        top = 0
-        btm = min(btmDeficit, topSurplus) * 2
+        let topSurplus = max(0, vpMarginForTopOrBtm - insideBars.top)
+        return .init(bottom: min(btmDeficit, topSurplus) * 2)
       } else {
-        top = min(topDeficit, btmSurplus) * 2
-        btm = 0
+        let btmSurplus = max(0, vpMarginForTopOrBtm - insideBars.bottom)
+        return .init(top: min(topDeficit, btmSurplus) * 2)
       }
-    } else {
-      // Pillar boxed. We have black margins on leading & trailing. No free space on the top or bottom.
-      top = 0
-      btm = 0
 
-      // Start with equal margins for calculation, despite whatever the actual distribution is
-      let viewportMarginsLeading = viewportMargins.totalWidth * 0.5
-      let viewportMarginsTrailing = viewportMarginsLeading
-      let leadingDeficit = max(0, insideBars.leading - viewportMarginsLeading)
-      let trailingDeficit = max(0, insideBars.trailing - viewportMarginsTrailing)
+    } else {  // Pillar boxed
+      // Has black margins on leading & trailing. No free space on the top or bottom.
+      let vpMarginForLeadingOrTrailing = vpMarginsTotalWidth * 0.5
+      let leadingDeficit = max(0, insideBars.leading - vpMarginForLeadingOrTrailing)
+      let trailingDeficit = max(0, insideBars.trailing - vpMarginForLeadingOrTrailing)
 
-      let leadingSurplus = max(0, viewportMarginsLeading - insideBars.leading)
-      let trailingSurplus = max(0, viewportMarginsTrailing - insideBars.trailing)
       let needsMoreAtTrailing = trailingDeficit > leadingDeficit
 
       if leadingDeficit > 0 && trailingDeficit > 0 {
-        let avgDeficitTimes2 = min((leadingDeficit + trailingDeficit), (viewportMargins.totalWidth))
+        let avgDeficit = min((leadingDeficit + trailingDeficit), vpMarginsTotalWidth) * 0.5
         if needsMoreAtTrailing {
-          leading = 0
-          trailing = avgDeficitTimes2
+          return .init(trailing: avgDeficit)
         } else {
-          leading = avgDeficitTimes2
-          trailing = 0
+          return .init(leading: avgDeficit)
         }
       } else if needsMoreAtTrailing {
         // Adding to trailing (shifting leading-wards). Use surplus from leading
-        leading = 0
-        trailing = min(trailingDeficit, leadingSurplus) * 2
+        let leadingSurplus = max(0, vpMarginForLeadingOrTrailing - insideBars.leading)
+        return .init(trailing: min(trailingDeficit, leadingSurplus) * 2)
       } else {
-        leading = min(leadingDeficit, trailingSurplus) * 2
-        trailing = 0
+        let trailingSurplus = max(0, vpMarginForLeadingOrTrailing - insideBars.trailing)
+        return .init(leading: min(leadingDeficit, trailingSurplus) * 2)
       }
     }
-    return MarginQuad(top: top, trailing: trailing, bottom: btm, leading: leading)
   }
 
   /// `MPVProperty.currentWindowScale`: see `mp_property_current_window_scale()` in mpv's `player/command.c`
