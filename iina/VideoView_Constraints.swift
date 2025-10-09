@@ -222,7 +222,6 @@ struct VideoViewConstraints {
     trailingSpacerExact.isActive = spacerExact.active
     leadingSpacerExact.isActive = spacerExact.active
 
-    // TODO: improvements for music mode
     widthMax.isActive = wMax != nil
     heightMax.isActive = hMax != nil
 
@@ -410,15 +409,15 @@ extension VideoView {
     // - Configuration
 
     let interactiveMode = geometry.mode.isInteractiveMode
+    let musicMode = geometry.mode == .musicMode && geometry.isViewportShown
 
     // spacerMin == viewport min margins
     let spacerMinValues: MarginQuad = (interactiveMode && !geometry.isMiddleTransition) ? Constants.InteractiveMode.viewportMargins : .zero
 
-    // FIXME: keepVideoAwayFromBars is broken with keepaspect-window=no
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
-    let keepVideoAwayFromBars = Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
+    let keepVideoAwayFromBars = !interactiveMode && !musicMode && Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
+    let spacerExactValues: MarginQuad? = keepVideoAwayFromBars ? geometry.offsetsToKeepVideoAwayFromInsideBars : nil
 
-    let musicMode = geometry.mode == .musicMode && geometry.isViewportShown // TODO: improvements for music mode (search for this)
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers: Constraint(active: true, priority: 1000),
                 // The desired aspect must always be honored. All constraints are secondary to this.
@@ -437,10 +436,10 @@ extension VideoView {
                 spacerMin: QuadConstraint(active: true, priority: 496, spacerMinValues),
 
                 // Need to calculate these values ourselves now that we are relying on mpv to calculate margins for us via keepaspect=yes
-                spacerPreferred: QuadConstraint(active: false, priority: 481, keepVideoAwayFromBars ? geometry.offsetsToKeepVideoAwayFromInsideBars : nil),
+                spacerPreferred: QuadConstraint(active: false, priority: 481, spacerExactValues),
 
                 // Need to calculate these values ourselves now that we are relying on mpv to calculate margins for us via keepaspect=yes
-                spacerExact: QuadConstraint(active: keepVideoAwayFromBars, priority: 497, keepVideoAwayFromBars ? geometry.offsetsToKeepVideoAwayFromInsideBars : nil),
+                spacerExact: QuadConstraint(active: keepVideoAwayFromBars, priority: 497, spacerExactValues),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
                 center: Constraint(active: (interactiveMode || musicMode) || geometry.isMiddleTransition, priority: 480)

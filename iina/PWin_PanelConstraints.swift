@@ -420,11 +420,10 @@ extension PlayerWindowController {
     switch stage {
     case .preTransitionSetup:
       // Should be a no op, but why not
-      updateVideoView = false
+      updateVideoView = true
     case .closeOldPanels:
       assert(!transition.isWindowInitialLayout && !transition.isEnteringFullScreen)
-      // Don't add or remove aspect constraint while animating music mode toggle!
-      updateVideoView = !transition.isTogglingMusicMode
+      updateVideoView = true
     case .moveAndScale:
       // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
       // It's not needed until the next step anyway.
@@ -440,7 +439,7 @@ extension PlayerWindowController {
       updateVideoView = true
     }
 
-    log.verbose("Calling setFrame: \(stageGeo.windowFrame)")
+    log.verbose("Calling setFrame with \(stageGeo.windowFrame), updateVV=\(updateVideoView.yn) isTransient=\(stageGeo.isMiddleTransition)")
     setFrameAndUpdateWindowSubviews(using: stageGeo, updateVideoView: updateVideoView)
   }
 
