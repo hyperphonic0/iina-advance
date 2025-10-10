@@ -1843,7 +1843,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           })
         }
 
-        // FIXME: animation is broken when !Preference.bool(for: .lockViewportToVideoSize)
+        // FIXME: animation is broken when !Preference.bool(for: . )
         let newLayoutState = LayoutState.fromPreferences(andMode: newMode, fillingInFrom: lastLayout)
         let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: ctx.inputLayout, to: newLayoutState, geoSet)
         let transitionTasks = buildTasks(for: transition, totalStartingDuration: startDuration, totalEndingDuration: endDuration)

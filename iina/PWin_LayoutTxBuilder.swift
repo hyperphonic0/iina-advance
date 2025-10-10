@@ -19,7 +19,7 @@ extension PlayerWindowController {
   /// which contains all the information needed to animate the UI changes from the current `LayoutState` to the new one.
   @discardableResult
   func buildLayoutTransition(named transitionName: String,
-                             from inputLayout: LayoutState, inputGeo inputGeoExplicit: PWinGeometry? = nil,
+                             from inputLayout: LayoutState,
                              to outputLayout: LayoutState, outputGeo outputGeoExplicit: PWinGeometry? = nil,
                              isWindowInitialLayout: Bool = false,
                              _ geoSet: GeometrySet? = nil) -> LayoutTransition {
@@ -41,8 +41,8 @@ extension PlayerWindowController {
     let windowedModeScreen = NSScreen.getScreenOrDefault(screenID: inputGeoSet.windowed.screenID)
 
     // InputGeometry
-    let inputGeometry = inputGeoExplicit ?? buildInputGeometry(from: inputLayout, transitionName: transitionName,
-                                                               inputGeoSet, windowedModeScreen: windowedModeScreen)
+    let inputGeometry = buildInputGeometry(from: inputLayout, transitionName: transitionName,
+                                           inputGeoSet, windowedModeScreen: windowedModeScreen)
 
     // OutputGeometry
     let outputGeometry = outputGeoExplicit ?? buildOutputGeometry(inputLayout: inputLayout, inputGeometry: inputGeometry,
@@ -81,7 +81,7 @@ extension PlayerWindowController {
                                       isWindowInitialLayout: isWindowInitialLayout)
 
 
-    log.verbose("[\(transitionName)] INPUT_GEO\(inputGeoExplicit == nil ? "" : "(given)"):  \(inputGeometry)")
+    log.verbose("[\(transitionName)] INPUT_GEO:  \(inputGeometry)")
     log.verbose("[\(transitionName)] CLOSE_OLD:  \(transition.closeOldPanelsGeometry?.description ?? "nil")")
     log.verbose("[\(transitionName)] MOVE_SCALE: \(transition.moveAndScaleGeometry?.description ?? "nil")")
     log.verbose("[\(transitionName)] OUTPUT_GEO\(outputGeoExplicit == nil ? "" : "(given)"): \(outputGeometry)")
@@ -315,10 +315,9 @@ extension PlayerWindowController {
       return inputLayout.buildFullScreenGeometry(in: windowedModeScreen, inputGeoSet.video)
     case .windowedInteractive:
       /// `.inputGeoSet.windowed` should already be correct for interactiveWindowed mode
-      let inputGeo = inputGeoSet.windowed
-      return inputGeo
+      return inputGeoSet.windowed
     case .musicMode:
-      /// `musicModeGeo` should have already been deserialized and set.
+      /// When restoring, `musicModeGeo` should have already been deserialized and set.
       /// But make sure we correct any size problems.
       return inputGeoSet.musicMode.clone(video: inputGeoSet.video).refitted()
     }

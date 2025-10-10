@@ -412,7 +412,8 @@ extension VideoView {
     let musicMode = geometry.mode == .musicMode && geometry.isViewportShown
 
     // spacerMin == viewport min margins
-    let spacerMinValues: MarginQuad = (interactiveMode && !geometry.isMiddleTransition) ? Constants.InteractiveMode.viewportMargins : .zero
+    let enableSpacerMin = interactiveMode && !geometry.isMiddleTransition
+    let spacerMinValues: MarginQuad = interactiveMode && !geometry.isMiddleTransition ? GeoUtil.minViewportMargins(forMode: geometry.mode) : .zero
 
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
     let keepVideoAwayFromBars = !interactiveMode && !musicMode && Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
@@ -442,7 +443,7 @@ extension VideoView {
                 spacerExact: QuadConstraint(active: keepVideoAwayFromBars, priority: 497, spacerExactValues),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-                center: Constraint(active: interactiveMode || musicMode, priority: 480)
+                center: Constraint(active: (interactiveMode || musicMode) && !geometry.isMiddleTransition, priority: 480)
                 )
 
 
