@@ -558,10 +558,6 @@ extension PlayerWindowController {
     tasks.append(.instantTask{ [self] in
       isAnimatingLayoutTransition = false
 
-      // Need to wait until after isAnimatingLayoutTransition=NO before calling this, or it will be ignored
-      log.verbose{"ApplyPWinGeo: Calling sendWindowScaleToMPV, viewportSize=\(outputGeo.viewportSize)"}
-//      sendWindowScaleToMPV(basedOn: outputGeo)
-
       // OSD messages may have been supressed because isAnimatingLayoutTransition was set.
       // Display now if needed (see note about OSD in `buildApplyPWinGeoTasks`)
       updateUI(pullUpdatesFromMpv: true)

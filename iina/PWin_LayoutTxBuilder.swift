@@ -56,7 +56,7 @@ extension PlayerWindowController {
                                            isWindowInitialLayout: isWindowInitialLayout)
 
     let closeOldPanelsGeometry = protoTransition.buildCloseOldPanelsGeometry()
-    assert(closeOldPanelsGeometry == nil || closeOldPanelsGeometry!.isMiddleTransition)
+    assert(closeOldPanelsGeometry == nil || (closeOldPanelsGeometry!.viewportLayoutMode == .transientAnimation))
 
     let moveAndScaleGeometry: PWinGeometry?
     if protoTransition.needsMoveAndScaleVideoFrameStep {
@@ -67,7 +67,7 @@ extension PlayerWindowController {
                                                   topMarginHeight: 0,
                                                   outsideBars: .zero, insideBars: .zero,
                                                   viewportMargins: .zero,
-                                                  isMiddleTransition: true)
+                                                  viewportLayoutMode: .transientAnimation)
     } else {
       moveAndScaleGeometry = nil
     }
@@ -412,7 +412,7 @@ extension PlayerWindowController.LayoutTransition {
     let log = inputGeometry.log
 
     if isExitingLegacyFullScreen {
-      return buildGeoForExtraLegacyFSAnimation(fsGeometry: inputGeometry).clone(isMiddleTransition: true)
+      return buildGeoForExtraLegacyFSAnimation(fsGeometry: inputGeometry).clone(viewportLayoutMode: .transientAnimation)
     } else if isTogglingInteractiveMode {
       // - Interactive Mode
 
@@ -432,7 +432,7 @@ extension PlayerWindowController.LayoutTransition {
       if inputLayout.isFullScreen {
         return baseGeo.clone(topMarginHeight: 0,
                              outsideBars: .zero, insideBars: .zero,
-                             isMiddleTransition: true)
+                             viewportLayoutMode: .transientAnimation)
       } else {  // Windowed
 
         // FIXME: For very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
@@ -443,7 +443,7 @@ extension PlayerWindowController.LayoutTransition {
                                       outsideBars: .zero, insideBars: .zero,
                                       viewportMargins: .zero,
                                       video: baseGeo.video,
-                                      isMiddleTransition: true)
+                                      viewportLayoutMode: .transientAnimation)
         return middleGeo
       }
 
@@ -455,7 +455,7 @@ extension PlayerWindowController.LayoutTransition {
       return PWinGeometry(windowFrame: middleWindowFrame, screenID: baseGeo.screenID,
                           screenFit: baseGeo.screenFit, mode: .windowedNormal, topMarginHeight: 0,
                           outsideBars: .zero, insideBars: .zero, video: baseGeo.video,
-                          isMiddleTransition: true)
+                          viewportLayoutMode: .transientAnimation)
 
     } else if isExitingMusicMode {
       // - Music Mode: Exit
@@ -463,11 +463,11 @@ extension PlayerWindowController.LayoutTransition {
       return inputGeometry.withResizedBars(mode: .windowedNormal,
                                            outsideBottom: 0,
                                            pinWidthOrHeightIfAtMax: false,
-                                           isMiddleTransition: true)
+                                           viewportLayoutMode: .transientAnimation)
     } else if inputGeometry.mode == .musicMode, outputGeometry.mode == .musicMode {
       // - Music Mode: Continuing
       if isTogglingViewport {
-        return outputGeometry.cloneMusicMode(isMiddleTransition: true)
+        return outputGeometry.cloneMusicMode(viewportLayoutMode: .transientAnimation)
       } else {
         return nil
       }
@@ -546,7 +546,7 @@ extension PlayerWindowController.LayoutTransition {
                                         insideBars: insideBars,
                                         video: outputGeometry.video,
                                         hasTopPaddingForCameraHousing: outputLayout.hasTopPaddingForCameraHousing,
-                                        isMiddleTransition: true)
+                                        viewportLayoutMode: .transientAnimation)
     }
 
     let closedBarsGeo = inputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
@@ -558,7 +558,7 @@ extension PlayerWindowController.LayoutTransition {
                                                       insideBottom: insideBottomBarHeight,
                                                       insideLeading: insideLeadingBarWidth,
                                                       pinWidthOrHeightIfAtMax: true,
-                                                      isMiddleTransition: true)
+                                                      viewportLayoutMode: .transientAnimation)
     return closedBarsGeo.refitted()
   }
 }

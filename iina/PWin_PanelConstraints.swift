@@ -441,7 +441,7 @@ extension PlayerWindowController {
       updateVideoView = true
     }
 
-    log.verbose("Calling setFrame with \(stageGeo.windowFrame), updateVV=\(updateVideoView.yn) isTransient=\(stageGeo.isMiddleTransition)")
+    log.verbose("Calling setFrame with \(stageGeo.windowFrame) updateVV=\(updateVideoView.yn) vpLM=\(stageGeo.viewportLayoutMode)")
     setFrameAndUpdateWindowSubviews(using: stageGeo, updateVideoView: updateVideoView)
   }
 

@@ -118,35 +118,6 @@ struct VideoViewConstraints {
                           spacerPreferred: QuadConstraint,
                           spacerExact: QuadConstraint,
                           center: Constraint) {
-    /*
-    let topSpacersSame = (topSpacerConnection.isActive == connectSpacers.active) && (!topSpacerConnection.isActive || (topSpacerConnection.priority == connectSpacers.priority))
-    let aspectSame = (aspectRatio.isActive == aspect.active) && (!aspect.active || (aspectRatio.priority.rawValue == aspect.priority.rawValue))
-    let spacersMaxSame = (topSpacerMax.isActive == spacerMax.active) && (!spacerMax.active || (topSpacerMax.priority == spacerMax.priority))
-    let whMaxSame = (widthMax.isActive == (wMax != nil)) && (heightMax.isActive == (hMax != nil)) && ((wMax == nil) || (whMax_Priority == widthMax.priority))
-    let centerSame = centerX.isActive == center.active && (!center.active || (centerX.priority == center.priority))
-    let spacerPreferredSame = (topSpacerPreferred.isActive == spacerPreferred.active) && (!spacerPreferred.active || (topSpacerPreferred.priority == spacerPreferred.priority))
-    && ((spacerPreferred.values == nil) || (
-      spacerPreferred.values!.top == topSpacerPreferred.constant ||
-      spacerPreferred.values!.bottom == bottomSpacerPreferred.constant ||
-      spacerPreferred.values!.leading == leadingSpacerPreferred.constant ||
-      spacerPreferred.values!.trailing == trailingSpacerPreferred.constant))
-    let spacerMinSame = (spacerMin.active == topSpacerMin.isActive) && (!spacerMin.active || (spacerMin.priority == topSpacerMin.priority)) &&
-    ((spacerMin.values == nil) || (
-      spacerMin.values!.top == topSpacerMin.constant ||
-      spacerMin.values!.bottom == bottomSpacerMin.constant ||
-      spacerMin.values!.leading == leadingSpacerMin.constant ||
-      spacerMin.values!.trailing == trailingSpacerMin.constant))
-
-    if topSpacersSame,
-       aspectSame,
-       spacersMaxSame,
-       whMaxSame,
-       centerSame,
-       spacerPreferredSame,
-       spacerMinSame {
-      log.verbose{"Δ VideoViewConstraints: all same; aborting"}
-      return
-    }*/
 
     log.verbose{"Δ VideoViewConstraints ≔ MaxSize:{W=super.w-\(wMax?.description ?? "nil") H=super.h-\(hMax?.description ?? "nil")}@\(whMax_Priority.rawValue) SpcMax=\(spacerMax) SpcMin=\(spacerMin) SpcPref=\(spacerPreferred) Center=\(center) Aspect=\(aspect)"}
 
@@ -292,15 +263,6 @@ extension VideoView {
   /// Convenience property
   var videoViewAspect: CGFloat? {  videoViewConstraints?.aspectRatio.multiplier }
 
-  /// INIT constraints: Only called once, at VideoView init
-  func initVideoConstraints() {
-    translatesAutoresizingMaskIntoConstraints = false
-    setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-    setContentCompressionResistancePriority(.defaultLow, for: .vertical)
-    setContentHuggingPriority(.defaultLow, for: .horizontal)
-    setContentHuggingPriority(.defaultLow, for: .vertical)
-  }
-
   /// REMOVE constraints: Need to remove all constraints when in PiP: it will do layout based on the layer's `autoresizingMask`.
   func removeVideoConstraints() {
     guard let cons = videoViewConstraints else {
@@ -411,8 +373,10 @@ extension VideoView {
     let interactiveMode = geometry.mode.isInteractiveMode
     let musicMode = geometry.mode == .musicMode && geometry.isViewportShown
 
+    let isTransientAnimation = geometry.viewportLayoutMode == .transientAnimation
+
     // spacerMin == viewport min margins
-    let spacerMinValues: MarginQuad = interactiveMode && !geometry.isMiddleTransition ? GeoUtil.minViewportMargins(forMode: geometry.mode) : .zero
+    let spacerMinValues: MarginQuad = interactiveMode && !isTransientAnimation ? GeoUtil.minViewportMargins(forMode: geometry.mode) : .zero
 
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
     let keepVideoAwayFromBars = !interactiveMode && !musicMode && Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
@@ -421,7 +385,7 @@ extension VideoView {
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers: Constraint(active: true, priority: 1000),
                 // The desired aspect must always be honored. All constraints are secondary to this.
-                aspect: AspectConstraint(active: (interactiveMode || musicMode) && !geometry.isMiddleTransition,
+                aspect: AspectConstraint(active: (interactiveMode || musicMode) && !isTransientAnimation,
                                          priority: .required,
                                          multiplier: videoViewAspect),
 
@@ -442,7 +406,7 @@ extension VideoView {
                 spacerExact: QuadConstraint(active: keepVideoAwayFromBars, priority: 497, spacerExactValues),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-                center: Constraint(active: (interactiveMode || musicMode) && !geometry.isMiddleTransition, priority: 480)
+                center: Constraint(active: (interactiveMode || musicMode) && !isTransientAnimation && !keepVideoAwayFromBars, priority: 480)
                 )
 
 

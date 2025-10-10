@@ -65,9 +65,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   // MARK: Stored properties
 
-  /// If true, indicates that this `PWinGeometry` is meant to be a temporary window state used only for animation.
+  /// If `!= .normal`, indicates that this `PWinGeometry` is meant to be a temporary window state used only for animation.
   /// This just means that certain constraints should be given different priorities for the sake of the animation.
-  let isMiddleTransition: Bool
+  let viewportLayoutMode: ViewportLayoutMode
 
   // - Screen:
 
@@ -105,7 +105,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
        mode: PlayerWindowMode, topMarginHeight: CGFloat,
        outsideBars: MarginQuad, insideBars: MarginQuad,
        viewportMargins: MarginQuad? = nil, video: VideoGeometry,
-       isMiddleTransition: Bool = false) {
+       viewportLayoutMode: ViewportLayoutMode = .normal) {
 
     self.windowFrame = windowFrame
     self.screenID = screenID
@@ -115,7 +115,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     self.outsideBars = outsideBars
     self.insideBars = insideBars
     self.video = video
-    self.isMiddleTransition = isMiddleTransition
+    self.viewportLayoutMode = viewportLayoutMode
 
     let viewportSize = GeoUtil.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
     assert(viewportSize.width >= 0 && viewportSize.height >= 0, "viewportSize must not be negative! Found: \(viewportSize)")
@@ -148,7 +148,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                             outsideBars: MarginQuad, insideBars: MarginQuad,
                             video: VideoGeometry,
                             hasTopPaddingForCameraHousing: Bool,
-                            isMiddleTransition: Bool = false) -> PWinGeometry {
+                            viewportLayoutMode: ViewportLayoutMode = .normal) -> PWinGeometry {
 
     let windowFrame = fullScreenWindowFrame(in: screen, legacy: legacy)
     let screenFit: ScreenFit
@@ -163,7 +163,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     return PWinGeometry(windowFrame: windowFrame, screenID: screen.screenID, screenFit: screenFit, mode: mode,
                         topMarginHeight: topMarginHeight, outsideBars: outsideBars, insideBars: insideBars,
-                        video: video, isMiddleTransition: isMiddleTransition)
+                        video: video, viewportLayoutMode: viewportLayoutMode)
   }
 
   /// Makes a clone of `self` and returns it.
@@ -177,12 +177,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
              outsideBars: MarginQuad? = nil, insideBars: MarginQuad? = nil,
              viewportMargins: MarginQuad? = nil,
              video: VideoGeometry? = nil,
-             isMiddleTransition: Bool? = nil) -> PWinGeometry {
+             viewportLayoutMode: ViewportLayoutMode? = nil) -> PWinGeometry {
 
     let mode = mode ?? self.mode
+    let viewportLayoutMode = viewportLayoutMode ?? self.viewportLayoutMode
     if mode == .musicMode {
       // This might get ugly in the future... maybe fail instead to force developer to add explcit choice in all situations?
-      return cloneMusicMode(windowFrame: windowFrame, screenID: screenID, video: video, isMiddleTransition: isMiddleTransition)
+      return cloneMusicMode(windowFrame: windowFrame, screenID: screenID, video: video, viewportLayoutMode: viewportLayoutMode)
     }
 
     let newGeo = PWinGeometry(windowFrame: windowFrame ?? self.windowFrame,
@@ -194,14 +195,14 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                               insideBars: insideBars ?? self.insideBars,
                               viewportMargins: viewportMargins,
                               video: video ?? self.video,
-                              isMiddleTransition: isMiddleTransition ?? self.isMiddleTransition)
+                              viewportLayoutMode: viewportLayoutMode ?? self.viewportLayoutMode)
     return newGeo
   }
 
   // MARK: - Computed properties
 
   var description: String {
-    return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) tx=\(isMiddleTransition.yn) \(screenFit) \(isMusicModePlaylistShown ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=N") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidSize=\(videoSize) vidMargins=\(viewportMargins) \(video)}"
+    return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) vpM=\(viewportLayoutMode.rawValue) \(screenFit) \(isMusicModePlaylistShown ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=N") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidSize=\(videoSize) vidMargins=\(viewportMargins) \(video)}"
   }
 
   var log: Logger.Subsystem { video.log }
@@ -1073,7 +1074,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   func withResizedOutsideBars(top: CGFloat? = nil, trailing: CGFloat? = nil,
                               bottom: CGFloat? = nil, leading: CGFloat? = nil,
                               pinWidthOrHeightIfAtMax: Bool,
-                              isMiddleTransition: Bool? = nil) -> PWinGeometry {
+                              viewportLayoutMode: ViewportLayoutMode? = nil) -> PWinGeometry {
     assert((top ?? 0) >= 0)
     assert((trailing ?? 0) >= 0)
     assert((bottom ?? 0) >= 0)
@@ -1085,7 +1086,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                     leading: leading ?? outsideBars.leading)
 
     guard !mode.isFullScreen else {
-      let outputGeo = clone(outsideBars: newOutsideBars, isMiddleTransition: isMiddleTransition)
+      let outputGeo = clone(outsideBars: newOutsideBars, viewportLayoutMode: viewportLayoutMode)
       log.verbose{"[ResizeBars] Mode is FS (\(mode)): Returning same windowFrame but with closed bars"}
       return outputGeo
     }
@@ -1142,7 +1143,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let newScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: newWindowFrame, fallbackScreenID: screenID)
 
     let outputGeo = clone(windowFrame: newWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars,
-                          isMiddleTransition: isMiddleTransition)
+                          viewportLayoutMode: viewportLayoutMode)
     log.verbose{"[ResizeBars] ΔW=\(ΔW.logStr) ΔH=\(ΔH.logStr) pinMax=\(pinWidthOrHeightIfAtMax.yn) moveToKeepInScreen:\(screenFit.shouldMoveWindowToKeepInContainer.yesno)"}
     return outputGeo
   }
@@ -1155,7 +1156,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                        insideBottom: CGFloat? = nil, insideLeading: CGFloat? = nil,
                        video: VideoGeometry? = nil,
                        pinWidthOrHeightIfAtMax: Bool = false,
-                       isMiddleTransition: Bool? = nil) -> PWinGeometry {
+                       viewportLayoutMode: ViewportLayoutMode? = nil) -> PWinGeometry {
 
     // Inside bars
     let newInsideBars = MarginQuad(top: insideTop ?? insideBars.top,
@@ -1170,7 +1171,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                                        bottom: outsideBottom,
                                                        leading: outsideLeading,
                                                        pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax,
-                                                       isMiddleTransition: isMiddleTransition)
+                                                       viewportLayoutMode: viewportLayoutMode)
   }
 
   /// After changing to a new `PWinGeometry` with a different aspect ratio, we usually want to keep the
@@ -1386,7 +1387,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// The cropBox is the section of the video rect which remains after the crop. Its origin is the lower left of the video.
   /// This func assumes that the currently displayed video (`videoSize`) is uncropped. Returns a new geometry which expanding the margins
   /// while collapsing the viewable video down to the cropped portion. The window size does not change.
-  func cropVideo(using newVidGeo: VideoGeometry, isMiddleTransition: Bool? = nil) -> PWinGeometry {
+  func cropVideo(using newVidGeo: VideoGeometry, viewportLayoutMode: ViewportLayoutMode?) -> PWinGeometry {
     // First scale the cropBox to the current window scale
     let scaleRatio = videoSize.width / newVidGeo.videoSizeRaw.width
     guard let cropRect = newVidGeo.cropRect else {
@@ -1440,7 +1441,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let outputScreenFit = screenFit.changeDesiredFit()
     log.debug("[geo] Cropped PWinGeometry using: \(newVidGeo), screenID: \(screenID), screenFit: \(outputScreenFit)")
     return self.clone(screenFit: outputScreenFit, viewportMargins: newViewportMargins, video: newVidGeo,
-                      isMiddleTransition: isMiddleTransition)
+                      viewportLayoutMode: viewportLayoutMode)
   }
 
   // MARK: - Music Mode
@@ -1458,7 +1459,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
    This function will always return a `PWinGeometry` object which has `mode: .musicMode`.
    */
   static func forMusicMode(windowFrame: NSRect, screenID: String, video: VideoGeometry,
-                           isViewportShown: Bool, playlistShown: Bool, isMiddleTransition: Bool = false) -> PWinGeometry {
+                           isViewportShown: Bool, playlistShown: Bool, viewportLayoutMode: ViewportLayoutMode = .normal) -> PWinGeometry {
     let log = video.log
     var windowFrame = NSRect(origin: windowFrame.origin, size:
                               CGSize(width: windowFrame.width.rounded(), height: windowFrame.height.rounded()))
@@ -1491,7 +1492,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                               outsideBars: MarginQuad(bottom: Constants.Distance.MusicMode.oscHeight + musicModePlaylistHeight),
                               insideBars: MarginQuad.zero,
                               video: video,
-                              isMiddleTransition: isMiddleTransition)
+                              viewportLayoutMode: viewportLayoutMode)
 
     let isValidHeight = playlistShown ? (musicModePlaylistHeight >= Constants.Distance.MusicMode.minPlaylistHeight) : (musicModePlaylistHeight == 0)
     if !isValidHeight {
@@ -1501,7 +1502,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         let newWindowFrame = NSRect(origin: NSPoint(x: windowFrame.origin.x, y: windowFrame.origin.y + heightDiff), size: NSSize(width: windowFrame.width, height: windowFrame.height - heightDiff))
         return forMusicMode(windowFrame: newWindowFrame, screenID: screenID, video: video,
                             isViewportShown: isViewportShown, playlistShown: playlistShown,
-                            isMiddleTransition: isMiddleTransition)
+                            viewportLayoutMode: viewportLayoutMode)
       }
     } else {
       assert(isViewportShown == winGeo.isViewportShown,
@@ -1513,7 +1514,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   func cloneMusicMode(windowFrame: NSRect? = nil, screenID: String? = nil, video: VideoGeometry? = nil,
-                      isViewportShown: Bool? = nil, playlistShown: Bool? = nil, isMiddleTransition: Bool? =  nil) -> PWinGeometry {
+                      isViewportShown: Bool? = nil, playlistShown: Bool? = nil,
+                      viewportLayoutMode: ViewportLayoutMode? =  nil) -> PWinGeometry {
     guard mode == .musicMode else {
       log.error("Cannot call PWinGeometry.cloneMusicMode when mode ≠ music mode: \(self)")
       assert(false, "Cannot call PWinGeometry.cloneMusicMode when mode ≠ music mode: \(self)")  // fail fast when debugging
@@ -1527,7 +1529,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                      video: video ?? self.video,
                                      isViewportShown: showVideo,
                                      playlistShown: showPlaylist,
-                                     isMiddleTransition: isMiddleTransition ?? self.isMiddleTransition)
+                                     viewportLayoutMode: viewportLayoutMode ?? self.viewportLayoutMode)
   }
 
   /// Music mode only!

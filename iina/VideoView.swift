@@ -65,7 +65,11 @@ class VideoView: NSView {
 
     displayIdleTimer.action = displayIdleDidTimeout
 
-    initVideoConstraints()
+    translatesAutoresizingMaskIntoConstraints = false
+    setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+    setContentHuggingPriority(.defaultLow, for: .horizontal)
+    setContentHuggingPriority(.defaultLow, for: .vertical)
 
     // dragging init
     registerForDraggedTypes([.nsFilenames, .nsURL, .string])

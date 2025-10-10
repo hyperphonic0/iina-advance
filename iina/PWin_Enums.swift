@@ -375,3 +375,11 @@ enum ScreenFit: Int {
     }
   }
 }
+
+/// Used within a `PWinGeometry` to indicate how to configure `videoView`, `viewportView`, and the spacers between them.
+enum ViewportLayoutMode: Int {
+  /// Normal = not animating. Viewport & its subiews should follow their usual rules based on other `PWinGeometry` state vars.
+  case normal = 0
+
+  case transientAnimation = 1
+}

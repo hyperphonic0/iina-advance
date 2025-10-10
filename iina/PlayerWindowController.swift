@@ -1823,7 +1823,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
 
           let currentWindowedIMGeo = windowedGeoForCurrentFrame()
-          let croppedIMGeo = currentWindowedIMGeo.cropVideo(using: ctx.outputVidGeo, isMiddleTransition: false)
+          let croppedIMGeo = currentWindowedIMGeo.cropVideo(using: ctx.outputVidGeo, viewportLayoutMode: .normal)
 
           let newIMGeo = croppedIMGeo.scalingViewport(toSimilarSizeAs: currentWindowedIMGeo)
           geoSet = buildGeoSet(windowed: newIMGeo, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
@@ -1832,7 +1832,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           let cropAnimationDuration = 0.0
           tasks.append(.init(duration: cropAnimationDuration) { [self] in
             log.verbose{"Start exiting interactive mode: animating crop using: \(croppedIMGeo)"}
-            setFrameAndUpdateWindowSubviews(using: croppedIMGeo.clone(isMiddleTransition: true))
+            setFrameAndUpdateWindowSubviews(using: croppedIMGeo.clone(viewportLayoutMode: .transientAnimation))
             // #InteractiveModeAnimationKludge
             // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
             videoView.videoViewConstraints?.updateSpacerMin(to: croppedIMGeo.viewportMargins, .init(1000))
