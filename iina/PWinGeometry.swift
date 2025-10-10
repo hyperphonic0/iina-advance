@@ -1167,6 +1167,35 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                                        isMiddleTransition: isMiddleTransition)
   }
 
+  /// After changing to a new `PWinGeometry` with a different aspect ratio, we usually want to keep the
+  /// window at "roughly" the same size as before. This can be surprisingly difficult to do if
+  /// `lockViewportToVideoSize` is enabled, because the window may be forced to change from horizontal to vertical.
+  /// We also want to avoid shrinking the viewport to less than its minimum size, which can differ based the current
+  /// `mode`. This method uses a heuristic which does a decent job at meeting these goals.
+  func scalingViewport(toSimilarSizeAs referenceGeo: PWinGeometry) -> PWinGeometry {
+    var targetViewportSize: CGSize
+    if Preference.bool(for: .lockViewportToVideoSize) {
+      // Try to avoid shrinking the window too much if the aspect changes dramatically.
+      let containerSize = NSScreen.getScreenOrDefault(screenID: referenceGeo.screenID).visibleFrame.size
+      let useRatioW = (referenceGeo.viewportSize.width / containerSize.width).clamped(to: 0...1)
+      let useRatioH = (referenceGeo.viewportSize.height / containerSize.height).clamped(to: 0...1)
+      let useRatioMax = max(useRatioW, useRatioH)
+
+      targetViewportSize = containerSize * useRatioMax  // not rounded. Need to round below.
+    } else {
+      // Try to keep current viewportSize
+      targetViewportSize = referenceGeo.viewportSize
+    }
+
+    let minViewportSize = minViewportSize()
+    while (targetViewportSize.width < minViewportSize.width) || (targetViewportSize.height < minViewportSize.height) {
+      targetViewportSize = targetViewportSize * 2.0
+    }
+    targetViewportSize = targetViewportSize.rounded()
+
+    return scalingViewport(to: targetViewportSize)
+  }
+
   /// Calculate the window frame from a parsed struct of mpv's `geometry` option.
   func apply(mpvGeometry: MPVGeometryDef, desiredWindowSize: NSSize) -> PWinGeometry {
     guard let screenFrame: NSRect = getContainerFrame() else {

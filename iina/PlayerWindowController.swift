@@ -1765,8 +1765,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let videoTF: GeometryTransform.VideoGeometryTF = { [self] inputVidGeo, ctx -> VideoGeometry? in
       assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-      let outputVidGeo: VideoGeometry?
 
+      let vidGeoToSyncFrom: VideoGeometry
       if let cropController = cropSettingsView, let newVidGeo, let newCropFilter = newVidGeo.cropFilter {
         // If newVidGeo contains a crop, we must apply it
         log.verbose{"Cropping video from videoSizeRaw: \(inputVidGeo.videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(newVidGeo.cropRect?.description ?? "nil")"}
@@ -1777,7 +1777,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         // May need to re-enable mpv's keepaspect-window prematurely for a nicer animation
         ctx.player.setMpvKeepaspectWindow(to: PlayerWindowMode.windowedNormal.needsMpvKeepaspectWindow)
 
-        outputVidGeo = ctx.syncVideoParamsFromMpv(startingWith: newVidGeo)
+        vidGeoToSyncFrom = newVidGeo
       } else {
         // If no crop, remove any existing crop filter
         log.verbose{"Start exiting interactive mode: crop changing to none; removing crop filter"}
@@ -1785,8 +1785,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           // Still may need to bring UI up to date
           player.setQuickSettingsViewNeedsUpdate()
         }
-        outputVidGeo = ctx.syncVideoParamsFromMpv(startingWith: inputVidGeo)
+        vidGeoToSyncFrom = inputVidGeo
       }
+      let outputVidGeo = ctx.syncVideoParamsFromMpv(startingWith: vidGeoToSyncFrom)
       // Zap videoSizeDisplayOverride because it will probably be wrong at this stage due to mpv race condition
       return outputVidGeo?.clone(videoSizeDisplayOverride: nil)
     }
@@ -1794,70 +1795,62 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let buildPWinTransformTasks: (GeometryTransform.ContextStage3) -> [IINAAnimation.Task] = { [self] ctx -> [IINAAnimation.Task] in
       var tasks: [IINAAnimation.Task] = []
 
-      if ctx.inputLayout.isInteractiveMode {
-        let isInFullScreen = ctx.inputLayout.isFullScreen
-        var geoSet: GeometrySet = ctx.inputGeoSet
+      // Build exit animation tasks
+      if ctx.inputLayout.isInteractiveMode, let cropController = cropSettingsView {
+        let newMode: PlayerWindowMode = ctx.inputLayout.isFullScreen ? .fullScreenNormal : .windowedNormal
+        log.verbose("Exiting interactive mode, newMode=\(newMode)")
 
-        if let cropController = cropSettingsView {
-          let currentIMGeo = isInFullScreen ? ctx.inputLayout.buildFullScreenGeometry(inScreenID: ctx.inputGeoSet.windowed.screenID, ctx.outputVidGeo) : ctx.inputGeoSet.windowed
-          let croppedIMGeo = currentIMGeo.cropVideo(using: ctx.outputVidGeo, isMiddleTransition: false)
+        let lastLayout: LayoutState
+        let geoSet: GeometrySet
+        var startDuration: CGFloat = 0
+        var endDuration: CGFloat = 0
 
-          if isInFullScreen {
-            geoSet = buildGeoSet(windowed: croppedIMGeo, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
-          } else {
-            // Tag: #ViewportSizeHeuristic
-            var newViewportSize: CGSize
-            if Preference.bool(for: .lockViewportToVideoSize) {
-              // Try to avoid shrinking the window too much if the aspect changes dramatically.
-              let containerSize = NSScreen.getScreenOrDefault(screenID: currentIMGeo.screenID).visibleFrame.size
-              let useRatioW = (currentIMGeo.viewportSize.width / containerSize.width).clamped(to: 0...1)
-              let useRatioH = (currentIMGeo.viewportSize.height / containerSize.height).clamped(to: 0...1)
-              let useRatioMax = max(useRatioW, useRatioH)
+        if newMode.isFullScreen {
+          // FIXME: support last FS layout as we do for windowed
+          lastLayout = ctx.inputLayout
 
-              newViewportSize = containerSize * useRatioMax  // not rounded. Need to round below.
-            } else {
-              // Try to keep current viewportSize
-              newViewportSize = currentIMGeo.viewportSize
-            }
+          // TODO: support animation in full screen once again
 
-            while (newViewportSize.width < Constants.InteractiveMode.minViewportSize.width) || (newViewportSize.height < Constants.InteractiveMode.minViewportSize.height) {
-              newViewportSize = newViewportSize * 2.0
-            }
-            newViewportSize = newViewportSize.rounded()
-            let newIMGeo = croppedIMGeo.scalingViewport(to: newViewportSize)
+          geoSet = ctx.inputGeoSet.clone(video: ctx.outputVidGeo)
 
-            geoSet = buildGeoSet(windowed: newIMGeo, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
+        } else {  // Windowed mode
+          lastLayout = lastWindowedLayoutState
 
-            // Animate the crop to highlight the piece being cut out.
-            // TODO: support animation in full screen once again
-            let cropAnimationDuration = 0.0
-            tasks.append(.init(duration: cropAnimationDuration) { [self] in
-              let croppedAnimationGeo = croppedIMGeo.clone(isMiddleTransition: true)
-              log.verbose{"Start exiting interactive mode: animating crop using: \(croppedAnimationGeo)"}
-              setFrameAndUpdateWindowSubviews(using: croppedAnimationGeo)
-              // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
-              videoView.videoViewConstraints?.updateSpacerMin(to: croppedAnimationGeo.viewportMargins, .init(1000))
-
-              // Fade out cropBox selection rect
-              cropController.cropBoxView.isHidden = true
-              cropController.cropBoxView.alphaValue = 0
-            })
+          if !immediately {
+            startDuration = Constants.AnimationDuration.cropAnimation * 0.75
+            endDuration = Constants.AnimationDuration.cropAnimation * 0.25
           }
 
+
+          let currentWindowedIMGeo = windowedGeoForCurrentFrame()
+          let croppedIMGeo = currentWindowedIMGeo.cropVideo(using: ctx.outputVidGeo, isMiddleTransition: false)
+
+          let newIMGeo = croppedIMGeo.scalingViewport(toSimilarSizeAs: currentWindowedIMGeo)
+          geoSet = buildGeoSet(windowed: newIMGeo, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
+
+          // Animate the crop to highlight the piece being cut out.
+          let cropAnimationDuration = 0.0
+          tasks.append(.init(duration: cropAnimationDuration) { [self] in
+            log.verbose{"Start exiting interactive mode: animating crop using: \(croppedIMGeo)"}
+            setFrameAndUpdateWindowSubviews(using: croppedIMGeo.clone(isMiddleTransition: true))
+            // #InteractiveModeAnimationKludge
+            // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
+            videoView.videoViewConstraints?.updateSpacerMin(to: croppedIMGeo.viewportMargins, .init(1000))
+
+            // Fade out cropBox selection rect
+            cropController.cropBoxView.isHidden = true
+            cropController.cropBoxView.alphaValue = 0
+          })
         }
 
-        // Build exit animation
-        let newMode: PlayerWindowMode = isInFullScreen ? .fullScreenNormal : .windowedNormal
-        let lastLayout = isInFullScreen ? ctx.inputLayout : lastWindowedLayoutState
-        log.verbose("Exiting interactive mode, newMode=\(newMode)")
+        // FIXME: animation is broken when !Preference.bool(for: .lockViewportToVideoSize)
         let newLayoutState = LayoutState.fromPreferences(andMode: newMode, fillingInFrom: lastLayout)
-        let startDuration = immediately || isInFullScreen ? 0 : Constants.AnimationDuration.cropAnimation * 0.75
-        let endDuration = immediately || isInFullScreen ? 0 : Constants.AnimationDuration.cropAnimation * 0.25
         let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: ctx.inputLayout, to: newLayoutState, geoSet)
         let transitionTasks = buildTasks(for: transition, totalStartingDuration: startDuration, totalEndingDuration: endDuration)
         tasks.append(contentsOf: transitionTasks)
       }
 
+      // Build doAfter task
       if let doAfter {
         tasks.append(.instantTask({
           doAfter()

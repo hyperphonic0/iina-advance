@@ -371,29 +371,9 @@ extension PlayerWindowController {
         if outputLayout.interactiveMode == .crop {
           // Need to remove crop if it exists
           let uncroppedNaiveGeo = inputGeometry.clone(video: inputGeometry.video.removingCrop())
+          let uncroppedScaledGeo = uncroppedNaiveGeo.scalingViewport(toSimilarSizeAs: inputGeometry)
 
-          // Tag: #ViewportSizeHeuristic
-          var newViewportSize: CGSize
-          if Preference.bool(for: .lockViewportToVideoSize) {
-            // Try to avoid shrinking the window too much if the aspect changes dramatically.
-            let containerSize = NSScreen.getScreenOrDefault(screenID: inputGeometry.screenID).visibleFrame.size
-            let useRatioW = (inputGeometry.viewportSize.width / containerSize.width).clamped(to: 0...1)
-            let useRatioH = (inputGeometry.viewportSize.height / containerSize.height).clamped(to: 0...1)
-            let useRatioMax = max(useRatioW, useRatioH)
-
-            newViewportSize = containerSize * useRatioMax  // not rounded. Need to round below.
-          } else {
-            // Try to keep current viewportSize
-            newViewportSize = inputGeometry.viewportSize
-          }
-
-          while (newViewportSize.width < Constants.InteractiveMode.minViewportSize.width) || (newViewportSize.height < Constants.InteractiveMode.minViewportSize.height) {
-            newViewportSize = newViewportSize * 2.0
-          }
-          newViewportSize = newViewportSize.rounded()
-          let newIMGeo = uncroppedNaiveGeo.scalingViewport(to: newViewportSize)
-
-          return newIMGeo.toInteractiveMode()
+          return uncroppedScaledGeo.toInteractiveMode()
         }
         // Not cropping, but entering some other interactive mode mode
         return inputGeometry.toInteractiveMode()

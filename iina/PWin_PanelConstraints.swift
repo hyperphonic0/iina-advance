@@ -420,8 +420,9 @@ extension PlayerWindowController {
     let updateVideoView: Bool
     switch stage {
     case .preTransitionSetup:
-      // Should be a no op, but why not
-      updateVideoView = true
+      // #InteractiveModeAnimationKludge
+      // Needs to be no op for the Exit Interactive Mode kludge to work properly.
+      return
     case .closeOldPanels:
       assert(!transition.isWindowInitialLayout && !transition.isEnteringFullScreen)
       updateVideoView = true

@@ -464,7 +464,7 @@ extension PlayerWindowController {
       }
     }
 
-    if !transition.isExitingFullScreen && !transition.isEnteringInteractiveMode && transition.needsMpvKeepaspectUpdate {
+    if !transition.isExitingFullScreen && transition.needsMpvKeepaspectUpdate {
       player.updateMpvKeepaspectWindowSynchronously()
     }
 
