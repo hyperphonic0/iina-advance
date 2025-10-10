@@ -1273,10 +1273,12 @@ extension PWinGeometry {
             let insideTrailingBarWidth = Double(iter.next()!),
             let insideBottomBarHeight = Double(iter.next()!),
             let insideLeadingBarWidth = Double(iter.next()!),
-            let viewportMarginTop = Double(iter.next()!),
-            let viewportMarginTrailing = Double(iter.next()!),
-            let viewportMarginBottom = Double(iter.next()!),
-            let viewportMarginLeading = Double(iter.next()!),
+            // Viewport margins are persisted but no longer used (v1.4+).
+            // They can be derived from the other variables & it's safer to do that.
+            let _ /* viewportMarginTop */ = Double(iter.next()!),
+            let _ /* viewportMarginTrailing */ = Double(iter.next()!),
+            let _ /* viewportMarginBottom */ = Double(iter.next()!),
+            let _ /* viewportMarginLeading */ = Double(iter.next()!),
             let winOriginX = Double(iter.next()!),
             let winOriginY = Double(iter.next()!),
             let winWidth = Double(iter.next()!),
@@ -1301,8 +1303,6 @@ extension PWinGeometry {
         return nil
       }
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
-      let viewportMargins = MarginQuad(top: viewportMarginTop, trailing: viewportMarginTrailing,
-                                       bottom: viewportMarginBottom, leading: viewportMarginLeading)
       let outsideBars = MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
                                    bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
       let insideBars = MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
@@ -1313,9 +1313,11 @@ extension PWinGeometry {
         return nil
       }
 
-      return PWinGeometry(windowFrame: windowFrame, screenID: screenID, screenFit: screenFit, mode: mode, topMarginHeight: topMarginHeight,
+      return PWinGeometry(windowFrame: windowFrame, screenID: screenID, screenFit: screenFit, mode: mode,
+                          topMarginHeight: topMarginHeight,
                           outsideBars: outsideBars, insideBars: insideBars,
-                          viewportMargins: viewportMargins, video: videoGeo)
+                          viewportMargins: nil,
+                          video: videoGeo)
     }
     if let pwinGeo {
       return pwinGeo
@@ -1382,9 +1384,10 @@ extension PWinGeometry {
         video = defaultVideoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height), videoSizeDisplayOverride: nil)
       }
 
-      let pwinGeo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, screenFit: screenFit, mode: mode, topMarginHeight: topMarginHeight,
-                          outsideBars: outsideBars, insideBars: insideBars,
-                          viewportMargins: viewportMargins, video: video)
+      let pwinGeo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, screenFit: screenFit,
+                                 mode: mode, topMarginHeight: topMarginHeight,
+                                 outsideBars: outsideBars, insideBars: insideBars,
+                                 viewportMargins: viewportMargins, video: video)
       return pwinGeo
     }
   }

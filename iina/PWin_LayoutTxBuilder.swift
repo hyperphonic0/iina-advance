@@ -303,8 +303,8 @@ extension PlayerWindowController {
 
   // MARK: - Geometry
 
-  /// Builds `inputGeometry`.
-  private func buildInputGeometry(from inputLayout: LayoutState, transitionName: String, _ inputGeoSet: GeometrySet, 
+  /// INPUT GEOMETRY
+  private func buildInputGeometry(from inputLayout: LayoutState, transitionName: String, _ inputGeoSet: GeometrySet,
                                   windowedModeScreen: NSScreen) -> PWinGeometry {
     
     // Restore window size & position
@@ -323,8 +323,8 @@ extension PlayerWindowController {
     }
   }
 
-  /// Builds `outputGeometry`.
-  private func buildOutputGeometry(inputLayout: LayoutState, inputGeometry: PWinGeometry, 
+  /// OUTPUT GEOMETRY
+  private func buildOutputGeometry(inputLayout: LayoutState, inputGeometry: PWinGeometry,
                                    outputLayout: LayoutState, _ inputGeoSet: GeometrySet,
                                    isWindowInitialLayout: Bool) -> PWinGeometry {
 
@@ -352,6 +352,7 @@ extension PlayerWindowController {
         log.verbose("Already in interactive mode: reusing inputGeo for outputGeo")
         return inputGeometry
       } else if inputGeometry.mode == .fullScreenInteractive {
+        // FIXME: toggling FS while in interactive mode is broken
         if inputGeoSet.windowed.mode == .windowedInteractive {
           log.verbose("Converting windowedModeGeo with mode=windowedInteractive to fullScreenInteractive for outputGeo")
           return PWinGeometry.buildInteractiveModeWindow(windowFrame: inputGeometry.windowFrame,
@@ -401,7 +402,7 @@ extension PlayerWindowController {
 extension PlayerWindowController.LayoutTransition {
 
   /// Builds `closeOldPanelsGeometry`.
-  /// Currently there are 4 bars. Each can be either inside or outside, exclusively.
+  /// Currently there are 4 bars. Each can be either `inside` or `outside`, exclusively.
   func buildCloseOldPanelsGeometry() -> PWinGeometry? {
     guard !isWindowInitialLayout, !isEnteringFullScreen else {
       // Not animated
@@ -415,39 +416,36 @@ extension PlayerWindowController.LayoutTransition {
     } else if isTogglingInteractiveMode {
       // - Interactive Mode
 
-      let mustUncropFirst = (outputLayout.interactiveMode == .crop) && (inputGeometry.video.cropFilter != nil)
-      if mustUncropFirst, let cropFilter = inputGeometry.video.cropFilter {
-        assert(isEnteringInteractiveMode, "Expected to be entering interactive mode only when uncropping video")
-        let uncroppedNaiveGeo = inputGeometry.clone(video: inputGeometry.video.removingCrop())
-        log.verbose{"Uncropping video from cropRect=\(cropFilter.cropRect(origVideoSize: inputGeometry.video.videoSizeCAR, flipY: true)) to uncroppedVideo=\(uncroppedNaiveGeo.video.videoSizeDisplay)"}
-
-        if inputLayout.isFullScreen {
-          return uncroppedNaiveGeo.clone(topMarginHeight: 0,
-                                         outsideBars: .zero, insideBars: .zero,
-                                         viewportMargins: .zero,
-                                         isMiddleTransition: true)
+      let baseGeo: PWinGeometry
+      if isEnteringInteractiveMode {
+        if outputLayout.interactiveMode == .crop, let cropFilter = inputGeometry.video.cropFilter {
+          assert(isEnteringInteractiveMode, "Expected to be entering interactive mode only when uncropping video")
+          baseGeo = inputGeometry.clone(video: inputGeometry.video.removingCrop())
+          log.verbose{"Uncropping video from cropRect=\(cropFilter.cropRect(origVideoSize: inputGeometry.video.videoSizeCAR, flipY: true)) to uncroppedVideo=\(baseGeo.video.videoSizeDisplay)"}
+        } else {
+          baseGeo = inputGeometry
         }
-
-        let intermediateWindowFrame = uncroppedNaiveGeo.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords
-        let middleGeo = inputGeometry.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
-                                            topMarginHeight: 0,
-                                            outsideBars: .zero, insideBars: .zero,
-                                            viewportMargins: .zero,
-                                            video: uncroppedNaiveGeo.video,
-                                            isMiddleTransition: true)
-        return middleGeo
+      } else {
+        baseGeo = outputGeometry
       }
 
-      let baseGeo = isEnteringInteractiveMode ? inputGeometry : outputGeometry// inputGeometry.fromWindowedInteractiveMode()
-      // FIXME: For very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
-      let intermediateWindowFrame = baseGeo.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords
+      if inputLayout.isFullScreen {
+        return baseGeo.clone(topMarginHeight: 0,
+                             outsideBars: .zero, insideBars: .zero,
+                             isMiddleTransition: true)
+      } else {  // Windowed
 
-      let middleGeo = baseGeo.clone(windowFrame: intermediateWindowFrame, mode: .windowedNormal,
-                                    topMarginHeight: 0,
-                                    outsideBars: .zero, insideBars: .zero,
-                                    viewportMargins: .zero,
-                                    isMiddleTransition: true)
-      return middleGeo
+        // FIXME: For very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
+        let videoFrameInScreenCoords = baseGeo.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords
+
+        let middleGeo = baseGeo.clone(windowFrame: videoFrameInScreenCoords, mode: .windowedNormal,
+                                      topMarginHeight: 0,
+                                      outsideBars: .zero, insideBars: .zero,
+                                      viewportMargins: .zero,
+                                      video: baseGeo.video,
+                                      isMiddleTransition: true)
+        return middleGeo
+      }
 
     } else if isEnteringMusicMode {
       // - Music Mode: Enter

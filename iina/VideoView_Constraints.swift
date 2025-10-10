@@ -412,7 +412,6 @@ extension VideoView {
     let musicMode = geometry.mode == .musicMode && geometry.isViewportShown
 
     // spacerMin == viewport min margins
-    let enableSpacerMin = interactiveMode && !geometry.isMiddleTransition
     let spacerMinValues: MarginQuad = interactiveMode && !geometry.isMiddleTransition ? GeoUtil.minViewportMargins(forMode: geometry.mode) : .zero
 
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible

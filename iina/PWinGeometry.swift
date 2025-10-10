@@ -166,6 +166,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                         video: video, isMiddleTransition: isMiddleTransition)
   }
 
+  /// Makes a clone of `self` and returns it.
+  ///
+  /// - Each param which is `nil` or is not given will cause the clone to reuse the corresponding field from `self`.
+  ///   Otherwise any value given will be given to the clone. With one exception...
+  /// - The param `viewportMargins`, if `nil`, will result in viewport margins being recomputed for the new object.
+  ///   In other words, `self.viewportMargins` is never implicitly given to the clone.
   func clone(windowFrame: NSRect? = nil, screenID: String? = nil, screenFit: ScreenFit? = nil,
              mode: PlayerWindowMode? = nil, topMarginHeight: CGFloat? = nil,
              outsideBars: MarginQuad? = nil, insideBars: MarginQuad? = nil,
@@ -1493,7 +1499,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         log.warn{"[geo] MusicMode: playlistHeight (\(musicModePlaylistHeight)) is invalid (will try to correct); playlistShown=\(playlistShown.yn) minPlaylistH=\(Constants.Distance.MusicMode.minPlaylistHeight)"}
         let heightDiff = musicModePlaylistHeight
         let newWindowFrame = NSRect(origin: NSPoint(x: windowFrame.origin.x, y: windowFrame.origin.y + heightDiff), size: NSSize(width: windowFrame.width, height: windowFrame.height - heightDiff))
-        return forMusicMode(windowFrame: newWindowFrame, screenID: screenID, video: video, isViewportShown: isViewportShown, playlistShown: playlistShown, isMiddleTransition: isMiddleTransition)
+        return forMusicMode(windowFrame: newWindowFrame, screenID: screenID, video: video,
+                            isViewportShown: isViewportShown, playlistShown: playlistShown,
+                            isMiddleTransition: isMiddleTransition)
       }
     } else {
       assert(isViewportShown == winGeo.isViewportShown,
