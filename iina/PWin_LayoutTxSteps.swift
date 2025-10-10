@@ -156,7 +156,7 @@ extension PlayerWindowController {
       // Hiding video
 
       // [MusicModeKludge-A] Loosen constraints manually *before* the animation task below
-      videoView.videoViewConstraints?.aspectRatio.isActive = false
+      viewportView.viewportConstraints?.aspectRatio.isActive = false
     }
 
   }
@@ -448,13 +448,13 @@ extension PlayerWindowController {
 
     // Remove aspect constraint between animations (for some mode changes):
     if transition.isExitingMusicMode {
-      videoView.apply(transition.outputGeometry)
+      viewportView.apply(transition.outputGeometry)
     } else if transition.isOpeningViewport {
-      videoView.apply(transition.outputGeometry)
+      viewportView.apply(transition.outputGeometry)
       // Allow "stretch" effect when opening videoView
-      videoView.videoViewConstraints?.aspectRatio.isActive = false
+      viewportView.viewportConstraints?.aspectRatio.isActive = false
     } else if transition.isExitingInteractiveMode {
-      videoView.apply(transition.outputGeometry)
+      viewportView.apply(transition.outputGeometry)
     }
 
     if transition.isOpeningViewport {
@@ -599,7 +599,7 @@ extension PlayerWindowController {
       updateMusicModeButtonsVisibility(using: transition.outputGeometry)
 
       if !transition.outputGeometry.isViewportShown && pip.status == .notInPIP {
-        videoView.apply(nil)  // remove constraints
+        viewportView.apply(nil)  // remove constraints
         videoView.removeFromSuperview()
         viewportView.removeSpacers()
         updateDefaultArtVisibility(to: false)  // hide defaultAlbumArt
@@ -1203,7 +1203,7 @@ extension PlayerWindowController {
         /// (search for another instance of the UTF "X" like the one below).
         let wrong = "ⓧ"
         let lines = ["[\(transition.name)] ❌ SanityCheck-C failed!",
-                     "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect) Constraint=\(videoView.videoViewAspect?.logStr ?? "nil")",
+                     "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect) Constraint=\(viewportView.videoViewAspect?.logStr ?? "nil")",
                      "  VideoSize: Expect=\(enableVidCheck ? vidSizeE.description : "NA") Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
                      "  Viewport:  Expect=\(viewportSizeE) Actual=\(viewportSizeA)",
                      "  WinFrame:  Expect=\(transition.outputGeometry.windowFrame) Actual=\(window.frame)  \(isWrongWinSize ? wrong : "")",

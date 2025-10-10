@@ -195,7 +195,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                               insideBars: insideBars ?? self.insideBars,
                               viewportMargins: viewportMargins,
                               video: video ?? self.video,
-                              viewportLayoutMode: viewportLayoutMode ?? self.viewportLayoutMode)
+                              viewportLayoutMode: viewportLayoutMode)
     return newGeo
   }
 

@@ -10,6 +10,7 @@ import Foundation
 
 class ViewportView: NSView {
   unowned var player: PlayerCore!
+  var log: Logger.Subsystem { player.log }
 
   let topSpacer = SpacerView(id: "ViewportTopSpacer")
   let bottomSpacer = SpacerView(id: "ViewportBottomSpacer")
@@ -129,6 +130,10 @@ class ViewportView: NSView {
     trailingSpacer.removeFromSuperview()
   }
 
+  var viewportConstraints: ViewportConstraints? = nil
+
+  /// Convenience property
+  var videoViewAspect: CGFloat? {  viewportConstraints?.aspectRatio.multiplier }
 }
 
 extension PlayerWindowController {

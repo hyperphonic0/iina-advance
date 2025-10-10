@@ -109,14 +109,16 @@ struct GeoUtil {
                                     height: viewportSize.height - minMargins.totalHeight)
     let videoSize: NSSize
     /// Compute `videoSize` to fit within `viewportSize` while maintaining `videoAspect`:
-    let videoWidthNew = (usableViewportSize.height * videoAspect).rounded()
-    if videoWidthNew <= usableViewportSize.width {  // video aspect is taller than viewport: shrink its width
-      videoSize = NSSize(width: videoWidthNew, height: usableViewportSize.height)
-    } else {  // video is wider, shrink to meet width
-              // Make sure to end up with whole numbers here! Decimal values can be interpreted differently by
-              // mpv, Core Graphics, AppKit, which will cause animation glitches
-      let videoHeight = (usableViewportSize.width / videoAspect).rounded()
-      videoSize = NSSize(width: usableViewportSize.width, height: videoHeight)
+    // Make sure to end up with whole numbers here! Decimal values can be interpreted differently by
+    // mpv, Core Graphics, AppKit, which will cause animation glitches
+    let videoHeightComputed = (usableViewportSize.width / videoAspect).rounded()
+    if videoHeightComputed <= usableViewportSize.height {
+      // Video aspect is taller than viewport: shrink its width
+      videoSize = NSSize(width: usableViewportSize.width, height: videoHeightComputed)
+    } else {
+      // Video is wider, shrink to meet width
+      let videoWidthComputed = (usableViewportSize.height * videoAspect).rounded()
+      videoSize = NSSize(width: videoWidthComputed, height: usableViewportSize.height)
     }
 
 #if DEBUG

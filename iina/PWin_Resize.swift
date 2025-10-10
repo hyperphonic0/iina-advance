@@ -225,7 +225,7 @@ extension PlayerWindowController {
     if newGeometry.isViewportShown {
       if updateVideoView {
         // Not sure if this helps fix the aspect constraint transition
-        videoView.apply(newGeometry)
+        viewportView.apply(newGeometry)
       }
 
       // Update floating control bar position if applicable
@@ -532,7 +532,7 @@ extension PlayerWindowController {
         // Make sure video constraints are up to date, even in full screen.
         // Also remember that FS & windowed mode share the same screen.
         log.verbose{"ApplyPWinGeo: updating videoView for FS, videoSize=\(outputGeo.videoSize)"}
-        videoView.apply(outputGeo)
+        viewportView.apply(outputGeo)
 
       } else {
         assert(outputGeo.mode.isWindowed || outputGeo.mode == .musicMode, "Expected windowed or music mode: \(outputGeo.mode)")
@@ -542,7 +542,7 @@ extension PlayerWindowController {
         if !isWindowHidden {
           setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: save)
         } else {
-          videoView.apply(outputGeo)  // Update video constraints
+          viewportView.apply(outputGeo)  // Update video constraints
 
           // Mimicks logic in `setFrameAndUpdateWindowSubviews()`
           if save {

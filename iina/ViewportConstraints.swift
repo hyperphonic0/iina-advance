@@ -67,7 +67,7 @@ fileprivate struct QuadConstraint: CustomStringConvertible {
 }
 
 
-struct VideoViewConstraints {
+struct ViewportConstraints {
   let log: Logger.Subsystem
 
   let topSpacerConnection: NSLayoutConstraint
@@ -112,14 +112,15 @@ struct VideoViewConstraints {
   /// UPDATE FUNC
   fileprivate func update(connectSpacers: Constraint,
                           aspect: AspectConstraint,
-                          wMax: CGFloat? = nil, hMax: CGFloat? = nil, whMax_Priority: NSLayoutConstraint.Priority,
+                          wMax: CGFloat? = nil, hMax: CGFloat? = nil,
+                          whMax_Priority: NSLayoutConstraint.Priority,
                           spacerMax: Constraint,
                           spacerMin: QuadConstraint,
                           spacerPreferred: QuadConstraint,
                           spacerExact: QuadConstraint,
                           center: Constraint) {
 
-    log.verbose{"Δ VideoViewConstraints ≔ MaxSize:{W=super.w-\(wMax?.description ?? "nil") H=super.h-\(hMax?.description ?? "nil")}@\(whMax_Priority.rawValue) SpcMax=\(spacerMax) SpcMin=\(spacerMin) SpcPref=\(spacerPreferred) Center=\(center) Aspect=\(aspect)"}
+    log.verbose{"Δ ViewportConstraints ≔ MaxSize:{W=super.w-\(wMax?.description ?? "nil") H=super.h-\(hMax?.description ?? "nil")}@\(whMax_Priority.rawValue) SpcMax=\(spacerMax) SpcMin=\(spacerMin) SpcPref=\(spacerPreferred) Center=\(center) Aspect=\(aspect)"}
 
     // - Priorities, Constants
 
@@ -256,23 +257,20 @@ struct VideoViewConstraints {
     aspectRatio.isActive = false
   }
 
-}  // end struct VideoViewConstraints
+}  // end struct ViewportConstraints
 
-
-extension VideoView {
-  /// Convenience property
-  var videoViewAspect: CGFloat? {  videoViewConstraints?.aspectRatio.multiplier }
+extension ViewportView {
 
   /// REMOVE constraints: Need to remove all constraints when in PiP: it will do layout based on the layer's `autoresizingMask`.
-  func removeVideoConstraints() {
-    guard let cons = videoViewConstraints else {
+  func removeViewportConstraints() {
+    guard let cons = viewportConstraints else {
       log.verbose("VideoView: all video constraints already removed")
       return
     }
 
     log.verbose("VideoView: removing all video constraints")
     cons.disableAll()
-    videoViewConstraints = nil
+    viewportConstraints = nil
   }
 
   /// APPLY constraints: Add, update, or remove all constraints, based on the given geometry (or lack thereof).
@@ -282,7 +280,7 @@ extension VideoView {
 
     guard let geometry, geometry.isViewportShown else {
       log.verbose{"VideoView: \(geometry == nil ? "no geometry" : "video not visible"); will remove constraints"}
-      removeVideoConstraints()
+      removeViewportConstraints()
       return
     }
 
@@ -296,13 +294,14 @@ extension VideoView {
       return
     }
 
-    guard let superview else {
+    let vv = pwc.videoView
+    guard let vp = vv.superview else {
       // Can happen when in music mode with video disabled
       log.verbose("VideoView: no superview; skipping constraints update")
       return
     }
 
-    let existing = videoViewConstraints
+    let existing = viewportConstraints
     let videoViewAspect = geometry.videoViewAspect
 
     let aspect: NSLayoutConstraint
@@ -312,33 +311,28 @@ extension VideoView {
       } else {
         // cannot reuse aspect constraint
         existing.aspectRatio.isActive = false
-        aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: videoViewAspect, constant: 0)
+        aspect = vv.widthAnchor.constraint(equalTo: vv.heightAnchor, multiplier: videoViewAspect, constant: 0)
       }
     } else {
-      aspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: videoViewAspect, constant: 0)
+      aspect = vv.widthAnchor.constraint(equalTo: vv.heightAnchor, multiplier: videoViewAspect, constant: 0)
     }
 
     log.verbose("VideoView updating constraints: aspect=\(videoViewAspect) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) vidSizeIdeal=\(geometry.videoSizeIdeal) mode=\(geometry.mode)")
 
-    let topSpacer = pwc.viewportView.topSpacer
-    let bottomSpacer = pwc.viewportView.bottomSpacer
-    let leadingSpacer = pwc.viewportView.leadingSpacer
-    let trailingSpacer = pwc.viewportView.trailingSpacer
-
-    let cons = VideoViewConstraints(
+    let cons = ViewportConstraints(
       log: log,
 
       // Structural, don't need to revisit:
-      topSpacerConnection: existing?.topSpacerConnection ?? topAnchor.constraint(equalTo: topSpacer.bottomAnchor),
-      bottomSpacerConnection: existing?.bottomSpacerConnection ?? bottomAnchor.constraint(equalTo: bottomSpacer.topAnchor),
-      leadingSpacerConnection: existing?.leadingSpacerConnection ?? leadingAnchor.constraint(equalTo: leadingSpacer.trailingAnchor),
-      trailingSpacerConnection: existing?.trailingSpacerConnection ?? trailingAnchor.constraint(equalTo: trailingSpacer.leadingAnchor),
+      topSpacerConnection: existing?.topSpacerConnection ?? vv.topAnchor.constraint(equalTo: topSpacer.bottomAnchor),
+      bottomSpacerConnection: existing?.bottomSpacerConnection ?? vv.bottomAnchor.constraint(equalTo: bottomSpacer.topAnchor),
+      leadingSpacerConnection: existing?.leadingSpacerConnection ?? vv.leadingAnchor.constraint(equalTo: leadingSpacer.trailingAnchor),
+      trailingSpacerConnection: existing?.trailingSpacerConnection ?? vv.trailingAnchor.constraint(equalTo: trailingSpacer.leadingAnchor),
 
       // Maximize spacer sizes:
-      topSpacerMax: existing?.topSpacerMax ?? topSpacer.heightAnchor.constraint(equalTo: superview.heightAnchor),
-      trailingSpacerMax: existing?.trailingSpacerMax ?? trailingSpacer.widthAnchor.constraint(equalTo: superview.widthAnchor),
-      bottomSpacerMax: existing?.bottomSpacerMax ?? bottomSpacer.heightAnchor.constraint(equalTo: superview.heightAnchor),
-      leadingSpacerMax: existing?.leadingSpacerMax ?? leadingSpacer.widthAnchor.constraint(equalTo: superview.widthAnchor),
+      topSpacerMax: existing?.topSpacerMax ?? topSpacer.heightAnchor.constraint(equalTo: vp.heightAnchor),
+      trailingSpacerMax: existing?.trailingSpacerMax ?? trailingSpacer.widthAnchor.constraint(equalTo: vp.widthAnchor),
+      bottomSpacerMax: existing?.bottomSpacerMax ?? bottomSpacer.heightAnchor.constraint(equalTo: vp.heightAnchor),
+      leadingSpacerMax: existing?.leadingSpacerMax ?? leadingSpacer.widthAnchor.constraint(equalTo: vp.widthAnchor),
 
       // Min spacer sizes:
       topSpacerMin: existing?.topSpacerMin ?? topSpacer.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
@@ -359,11 +353,11 @@ extension VideoView {
       leadingSpacerExact: existing?.leadingSpacerExact ?? leadingSpacer.widthAnchor.constraint(equalToConstant: 0),
 
       // These maximize video size
-      widthMax: existing?.widthMax ?? widthAnchor.constraint(equalTo: superview.widthAnchor),
-      heightMax: existing?.heightMax ?? heightAnchor.constraint(equalTo: superview.heightAnchor),
+      widthMax: existing?.widthMax ?? vv.widthAnchor.constraint(equalTo: vp.widthAnchor),
+      heightMax: existing?.heightMax ?? vv.heightAnchor.constraint(equalTo: vp.heightAnchor),
 
-      centerX: existing?.centerX ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor, constant: 0),
-      centerY: existing?.centerY ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor, constant: 0),
+      centerX: existing?.centerX ?? vv.centerXAnchor.constraint(equalTo: vp.centerXAnchor, constant: 0),
+      centerY: existing?.centerY ?? vv.centerYAnchor.constraint(equalTo: vp.centerYAnchor, constant: 0),
 
       aspectRatio: aspect
     )
@@ -407,12 +401,11 @@ extension VideoView {
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
                 center: Constraint(active: (interactiveMode || musicMode) && !isTransientAnimation && !keepVideoAwayFromBars, priority: 480)
-                )
+    )
 
-
-    videoViewConstraints = cons
+    viewportConstraints = cons
     needsUpdateConstraints = true
-    superview.needsLayout = true
+    needsLayout = true
   }
 
 }

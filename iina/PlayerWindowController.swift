@@ -1835,7 +1835,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
             setFrameAndUpdateWindowSubviews(using: croppedIMGeo.clone(viewportLayoutMode: .transientAnimation))
             // #InteractiveModeAnimationKludge
             // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
-            videoView.videoViewConstraints?.updateSpacerMin(to: croppedIMGeo.viewportMargins, .init(1000))
+            viewportView.viewportConstraints?.updateSpacerMin(to: croppedIMGeo.viewportMargins, .init(1000))
 
             // Fade out cropBox selection rect
             cropController.cropBoxView.isHidden = true

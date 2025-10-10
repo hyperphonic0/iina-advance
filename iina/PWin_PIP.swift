@@ -153,7 +153,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       pip.videoController.view = videoView
 
       // Remove remaining constraints. The PiP superview will manage videoView's layout.
-      videoView.removeVideoConstraints()
+      viewportView.removeViewportConstraints()
       videoView.layer?.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
       viewportView.removeSpacers()
 
@@ -277,7 +277,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       let currentGeo = currentLayout.mode == .musicMode ? musicModeGeo : windowedModeGeo
       if currentGeo.isViewportShown {
         addViewportAndSubviewsToWindowIfNeeded()
-        videoView.apply(currentGeo)
+        viewportView.apply(currentGeo)
       }
 
       if isInMiniPlayer {

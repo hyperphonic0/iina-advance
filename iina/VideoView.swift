@@ -49,8 +49,6 @@ class VideoView: NSView {
   
   let displayIdleTimer = TimeoutTimer(timeout: Constants.TimeInterval.displayIdleTimeout)
 
-  var videoViewConstraints: VideoViewConstraints? = nil
-
   private let logHDR: Logger.Subsystem
 
   static let SRGB = CGColorSpaceCreateDeviceRGB()
