@@ -123,7 +123,7 @@ extension PlayerWindowController {
       /// within the same animation transaction as the code below. But the existing `VideoView` constraints should ensure
       /// that everything resizes properly.
       /// Update: need to update `VideoView` layout to ensure that cropbox in interactive mode is resized properly!
-      resizeWindowSubviews(using: newGeometry, updateVideoView: true)
+      resizeWindowSubviews(using: newGeometry)
       // fall through
 
     case .fullScreenNormal, .fullScreenInteractive:
@@ -135,7 +135,7 @@ extension PlayerWindowController {
       let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, geo.video)
       newWindowSize = newGeometry.windowFrame.size
 
-      resizeWindowSubviews(using: newGeometry, updateVideoView: true)
+      resizeWindowSubviews(using: newGeometry)
       // fall through
 
     case .musicMode:
@@ -153,7 +153,7 @@ extension PlayerWindowController {
       newWindowSize = newGeometry.windowFrame.size
 
       // Updates any necessary constraints & resize internal views (calls resizeWindowSubviews among other things)
-      resizeWindowSubviews(using: newGeometry, updateVideoView: true)
+      resizeWindowSubviews(using: newGeometry, .noTransition)
     }
 
     log.verbose{"[WinWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)"}
@@ -170,10 +170,11 @@ extension PlayerWindowController {
   /// • It will still animate if used inside an `NSAnimationContext` or `IINAAnimation.Task` with non-zero duration.
   func setFrameAndUpdateWindowSubviews(using geometry: PWinGeometry,
                                        updateVideoView: Bool = true,
+                                       _ transitionCategory: TransitionCategory = .noTransition,
                                        submitUpdate: Bool = false) {
     log.verbose{"[PWin.setFrame] Entered: updateVideoView=\(updateVideoView.yn) submit=\(submitUpdate.yn) geo=\(geometry)"}
 
-    resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView)
+    resizeWindowSubviews(using: geometry, transitionCategory)
 
     if geometry.isLegacyFullScreen {
       updateOSDTopOffsetConstraints(for: geometry)
@@ -215,7 +216,8 @@ extension PlayerWindowController {
   /// Resizes *only* the subviews in the window, not the window frame. May update other state needed relating to resize.
   ///
   /// This method cannot handle complex layout changes. For that, use a `LayoutTransition` (see `PWin_LayoutTxBuilder.swift`).
-  private func resizeWindowSubviews(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
+  private func resizeWindowSubviews(using newGeometry: PWinGeometry,
+                                    _ transitionCategory: TransitionCategory = .noTransition) {
     // Trigger forced draws so that mpv can [try its best to] redraw the video without distortion during window resize:
     videoView.activateForcedRedraws()
 
@@ -223,10 +225,8 @@ extension PlayerWindowController {
     hideSeekPreviewImmediately()
 
     if newGeometry.isViewportShown {
-      if updateVideoView {
-        // Not sure if this helps fix the aspect constraint transition
-        viewportView.apply(newGeometry)
-      }
+      // Not sure if this helps fix the aspect constraint transition
+      viewportView.apply(newGeometry, transitionCategory)
 
       // Update floating control bar position if applicable
       adjustFloatingControllerOrigin(for: newGeometry)

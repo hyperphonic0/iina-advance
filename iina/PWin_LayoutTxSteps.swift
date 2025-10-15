@@ -446,17 +446,6 @@ extension PlayerWindowController {
       addViewportAndSubviewsToWindowIfNeeded()
     }
 
-    // Remove aspect constraint between animations (for some mode changes):
-    if transition.isExitingMusicMode {
-      viewportView.apply(transition.outputGeometry)
-    } else if transition.isOpeningViewport {
-      viewportView.apply(transition.outputGeometry)
-      // Allow "stretch" effect when opening videoView
-      viewportView.viewportConstraints?.aspectRatio.isActive = false
-    } else if transition.isExitingInteractiveMode {
-      viewportView.apply(transition.outputGeometry)
-    }
-
     if transition.isOpeningViewport {
       // Show default album art if no video track selected
       if let currentPlayback = player.info.currentPlayback, currentPlayback.state.isAtLeast(.loaded), !player.info.isVideoTrackSelected {
@@ -529,6 +518,22 @@ extension PlayerWindowController {
     let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscBackgroundIsClear)
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
+    // FIXME: refactor to put this all inside `viewportView.apply`
+    if transition.isExitingMusicMode {
+      viewportView.apply(transition.outputGeometry)
+    } else if transition.isOpeningViewport {
+      viewportView.apply(transition.outputGeometry)
+      // Allow "stretch" effect when opening videoView
+      viewportView.viewportConstraints?.aspectRatio.isActive = false
+    } else if transition.isExitingInteractiveMode {
+      viewportView.apply(transition.outputGeometry)
+    }
+    //    viewportView.apply(transition.outputGeometry, transition, .midTransitionHiddenUpdates)
+    if transition.outputLayout.isMusicMode {
+      // Need to call this for initial layout also, or if toggling video:
+      updateMusicModeButtonsVisibility(using: transition.outputGeometry)
+    }
+
     if !transition.isWindowInitialLayout && !transition.isTogglingFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }
@@ -598,6 +603,7 @@ extension PlayerWindowController {
       // Need to call this for initial layout also, or if toggling video:
       updateMusicModeButtonsVisibility(using: transition.outputGeometry)
 
+      // FIXME: refactor to put most of this into `rebuildPanelConstraints`
       if !transition.outputGeometry.isViewportShown && pip.status == .notInPIP {
         viewportView.apply(nil)  // remove constraints
         videoView.removeFromSuperview()

@@ -555,13 +555,13 @@ struct LayoutState {
     return geo
   }
 
-  func buildFullScreenGeometry(inScreenID screenID: String, _ video: VideoGeometry) -> PWinGeometry {
+  func buildFullScreenGeometry(inScreenID screenID: String, _ video: VideoGeometry, tCategory: TransitionCategory = .noTransition) -> PWinGeometry {
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
-    return buildFullScreenGeometry(in: screen, video)
+    return buildFullScreenGeometry(in: screen, video, tCategory: tCategory)
   }
 
   /// Builds a new `PWinGeometry` from this `LayoutState` using the given params.
-  func buildFullScreenGeometry(in screen: NSScreen, _ video: VideoGeometry) -> PWinGeometry {
+  func buildFullScreenGeometry(in screen: NSScreen, _ video: VideoGeometry, tCategory: TransitionCategory = .noTransition) -> PWinGeometry {
     var modeToUse = mode
     if !modeToUse.isFullScreen {
       // Try to use analogue of last windowed mode.

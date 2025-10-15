@@ -70,13 +70,19 @@ extension PlayerWindowController {
   /// 2. For each of `windowed` & `musicMode`: if an object is not specified in the params (see 1), an updated object will be built
   /// using the updated `video` param (if given), and possibly using the latest windowFrame. (See code below for more details, bleh).
   func buildGeoSet(windowed: PWinGeometry? = nil, musicMode: PWinGeometry? = nil,
-                   video: VideoGeometry? = nil, layoutMode: PlayerWindowMode,
+                   video: VideoGeometry? = nil, layoutMode: PlayerWindowMode? = nil,
                    baseGeoSet: GeometrySet? = nil, forceWinFrameUpdate: Bool = false) -> GeometrySet {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    guard layoutMode == currentLayout.mode else {
-      log.warn{"Mode has changed (current=\(currentLayout.mode), provided=\(layoutMode)): will reuse existing GeometrySet instead of updating"}
-      return geo
+    let mode: PlayerWindowMode
+    if let layoutMode {
+      guard layoutMode == currentLayout.mode else {
+        log.warn{"Mode has changed (current=\(currentLayout.mode), provided=\(layoutMode)): will reuse existing GeometrySet instead of updating"}
+        return geo
+      }
+      mode = layoutMode
+    } else {
+      mode = currentLayout.mode
     }
 
     let geo = baseGeoSet ?? geo
@@ -92,14 +98,14 @@ extension PlayerWindowController {
     // Windowed, full screen
     if let windowed {
       windowedNew = windowed
-    } else if layoutMode.isWindowed {
+    } else if mode.isWindowed {
       if geo.windowed.mode != layoutMode {
         // If this message is seen, could be a corrupted pref key, or a code bug
-        log.error("buildGeoSet: geo.windowed.mode (\(geo.windowed.mode)) != layout.mode (\(layoutMode))! Will change geo mode to match the latter; hope it doesn't break anything...")
+        log.error("buildGeoSet: geo.windowed.mode (\(geo.windowed.mode)) != layout.mode (\(mode))! Will change geo mode to match the latter; hope it doesn't break anything...")
       }
       windowedNew = geo.windowed.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, mode: layoutMode, video: videoNew)
 
-    } else if layoutMode.isFullScreen {
+    } else if mode.isFullScreen {
       // may have changed screen while in FS
       windowedNew = geo.windowed.clone(screenID: latestScreenID, video: videoNew)
     } else {
@@ -145,5 +151,5 @@ extension PlayerWindowController {
     }
     return geo.musicMode.cloneMusicMode(video: newVidGeo)
   }
-
+  
 }

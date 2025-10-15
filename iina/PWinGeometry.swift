@@ -65,10 +65,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   // MARK: Stored properties
 
-  /// If `!= .normal`, indicates that this `PWinGeometry` is meant to be a temporary window state used only for animation.
-  /// This just means that certain constraints should be given different priorities for the sake of the animation.
-  let viewportLayoutMode: ViewportLayoutMode
-
   // - Screen:
 
   /// The ID of the screen on which this window is displayed
@@ -104,8 +100,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   init(windowFrame: NSRect, screenID: String, screenFit: ScreenFit,
        mode: PlayerWindowMode, topMarginHeight: CGFloat,
        outsideBars: MarginQuad, insideBars: MarginQuad,
-       viewportMargins: MarginQuad? = nil, video: VideoGeometry,
-       viewportLayoutMode: ViewportLayoutMode = .normal) {
+       viewportMargins: MarginQuad? = nil, video: VideoGeometry) {
 
     self.windowFrame = windowFrame
     self.screenID = screenID
@@ -115,7 +110,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     self.outsideBars = outsideBars
     self.insideBars = insideBars
     self.video = video
-    self.viewportLayoutMode = viewportLayoutMode
 
     let viewportSize = GeoUtil.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
     assert(viewportSize.width >= 0 && viewportSize.height >= 0, "viewportSize must not be negative! Found: \(viewportSize)")
@@ -147,8 +141,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   static func forFullScreen(in screen: NSScreen, legacy: Bool, mode: PlayerWindowMode,
                             outsideBars: MarginQuad, insideBars: MarginQuad,
                             video: VideoGeometry,
-                            hasTopPaddingForCameraHousing: Bool,
-                            viewportLayoutMode: ViewportLayoutMode = .normal) -> PWinGeometry {
+                            hasTopPaddingForCameraHousing: Bool) -> PWinGeometry {
 
     let windowFrame = fullScreenWindowFrame(in: screen, legacy: legacy)
     let screenFit: ScreenFit
@@ -162,8 +155,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
 
     return PWinGeometry(windowFrame: windowFrame, screenID: screen.screenID, screenFit: screenFit, mode: mode,
-                        topMarginHeight: topMarginHeight, outsideBars: outsideBars, insideBars: insideBars,
-                        video: video, viewportLayoutMode: viewportLayoutMode)
+                        topMarginHeight: topMarginHeight, outsideBars: outsideBars, insideBars: insideBars, video: video)
   }
 
   /// Makes a clone of `self` and returns it.
@@ -176,14 +168,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
              mode: PlayerWindowMode? = nil, topMarginHeight: CGFloat? = nil,
              outsideBars: MarginQuad? = nil, insideBars: MarginQuad? = nil,
              viewportMargins: MarginQuad? = nil,
-             video: VideoGeometry? = nil,
-             viewportLayoutMode: ViewportLayoutMode? = nil) -> PWinGeometry {
+             video: VideoGeometry? = nil) -> PWinGeometry {
 
     let mode = mode ?? self.mode
-    let viewportLayoutMode = viewportLayoutMode ?? self.viewportLayoutMode
     if mode == .musicMode {
       // This might get ugly in the future... maybe fail instead to force developer to add explcit choice in all situations?
-      return cloneMusicMode(windowFrame: windowFrame, screenID: screenID, video: video, viewportLayoutMode: viewportLayoutMode)
+      return cloneMusicMode(windowFrame: windowFrame, screenID: screenID, video: video)
     }
 
     let newGeo = PWinGeometry(windowFrame: windowFrame ?? self.windowFrame,
@@ -194,15 +184,14 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                               outsideBars: outsideBars ?? self.outsideBars,
                               insideBars: insideBars ?? self.insideBars,
                               viewportMargins: viewportMargins,
-                              video: video ?? self.video,
-                              viewportLayoutMode: viewportLayoutMode)
+                              video: video ?? self.video)
     return newGeo
   }
 
   // MARK: - Computed properties
 
   var description: String {
-    return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) vpM=\(viewportLayoutMode.rawValue) \(screenFit) \(isMusicModePlaylistShown ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=N") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidSize=\(videoSize) vidMargins=\(viewportMargins) \(video)}"
+    return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) \(screenFit) \(isMusicModePlaylistShown ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=N") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidSize=\(videoSize) vidMargins=\(viewportMargins) \(video)}"
   }
 
   var log: Logger.Subsystem { video.log }
@@ -380,13 +369,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// ```
   ///
   var offsetsToKeepVideoAwayFromInsideBars: MarginQuad {
-    assert((max(0, viewportSize.height - videoSize.height) == viewportMargins.totalHeight) &&
-           (max(0, viewportSize.width - videoSize.width) == viewportMargins.totalWidth),
-           "Inconsistent viewportSize=\(viewportSize) videoSize=\(videoSize) viewportMargins=\(viewportMargins)")
-
     // Start with equal margins for calculation, despite whatever the actual distribution is
-    let vpMarginsTotalWidth = max(0, viewportSize.width - videoSize.width)
-    let vpMarginsTotalHeight = max(0, viewportSize.height - videoSize.height)
+    let vpMarginsTotalWidth = viewportMargins.totalWidth
+    let vpMarginsTotalHeight = viewportMargins.totalHeight
     let isLetterboxed = vpMarginsTotalHeight > vpMarginsTotalWidth
 
     if isLetterboxed {
@@ -1073,8 +1058,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// This should be more intuitive to the user which is expecting "near" full screen behavior when maximized.
   func withResizedOutsideBars(top: CGFloat? = nil, trailing: CGFloat? = nil,
                               bottom: CGFloat? = nil, leading: CGFloat? = nil,
-                              pinWidthOrHeightIfAtMax: Bool,
-                              viewportLayoutMode: ViewportLayoutMode? = nil) -> PWinGeometry {
+                              pinWidthOrHeightIfAtMax: Bool) -> PWinGeometry {
     assert((top ?? 0) >= 0)
     assert((trailing ?? 0) >= 0)
     assert((bottom ?? 0) >= 0)
@@ -1086,7 +1070,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                     leading: leading ?? outsideBars.leading)
 
     guard !mode.isFullScreen else {
-      let outputGeo = clone(outsideBars: newOutsideBars, viewportLayoutMode: viewportLayoutMode)
+      let outputGeo = clone(outsideBars: newOutsideBars)
       log.verbose{"[ResizeBars] Mode is FS (\(mode)): Returning same windowFrame but with closed bars"}
       return outputGeo
     }
@@ -1142,8 +1126,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     // Also fall back to default screen if current screenID is defunct:
     let newScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: newWindowFrame, fallbackScreenID: screenID)
 
-    let outputGeo = clone(windowFrame: newWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars,
-                          viewportLayoutMode: viewportLayoutMode)
+    let outputGeo = clone(windowFrame: newWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars)
     log.verbose{"[ResizeBars] ΔW=\(ΔW.logStr) ΔH=\(ΔH.logStr) pinMax=\(pinWidthOrHeightIfAtMax.yn) moveToKeepInScreen:\(screenFit.shouldMoveWindowToKeepInContainer.yesno)"}
     return outputGeo
   }
@@ -1155,8 +1138,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                        insideTop: CGFloat? = nil, insideTrailing: CGFloat? = nil,
                        insideBottom: CGFloat? = nil, insideLeading: CGFloat? = nil,
                        video: VideoGeometry? = nil,
-                       pinWidthOrHeightIfAtMax: Bool = false,
-                       viewportLayoutMode: ViewportLayoutMode? = nil) -> PWinGeometry {
+                       pinWidthOrHeightIfAtMax: Bool = false) -> PWinGeometry {
 
     // Inside bars
     let newInsideBars = MarginQuad(top: insideTop ?? insideBars.top,
@@ -1170,8 +1152,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                                        trailing: outsideTrailing,
                                                        bottom: outsideBottom,
                                                        leading: outsideLeading,
-                                                       pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax,
-                                                       viewportLayoutMode: viewportLayoutMode)
+                                                       pinWidthOrHeightIfAtMax: pinWidthOrHeightIfAtMax)
   }
 
   /// After changing to a new `PWinGeometry` with a different aspect ratio, we usually want to keep the
@@ -1387,7 +1368,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// The cropBox is the section of the video rect which remains after the crop. Its origin is the lower left of the video.
   /// This func assumes that the currently displayed video (`videoSize`) is uncropped. Returns a new geometry which expanding the margins
   /// while collapsing the viewable video down to the cropped portion. The window size does not change.
-  func cropVideo(using newVidGeo: VideoGeometry, viewportLayoutMode: ViewportLayoutMode?) -> PWinGeometry {
+  func cropVideo(using newVidGeo: VideoGeometry) -> PWinGeometry {
     // First scale the cropBox to the current window scale
     let scaleRatio = videoSize.width / newVidGeo.videoSizeRaw.width
     guard let cropRect = newVidGeo.cropRect else {
@@ -1440,8 +1421,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     log.debug("[geo] Cropping from cropRect \(cropRect) x videoScale (\(scaleRatio)), windowSize=\(windowFrame.size), → newVideoSize:\(cropRectScaledToWindow.size), newVideoAspect:\(croppedVideoAspect), newViewportMargins:\(newViewportMargins)")
     let outputScreenFit = screenFit.changeDesiredFit()
     log.debug("[geo] Cropped PWinGeometry using: \(newVidGeo), screenID: \(screenID), screenFit: \(outputScreenFit)")
-    return self.clone(screenFit: outputScreenFit, viewportMargins: newViewportMargins, video: newVidGeo,
-                      viewportLayoutMode: viewportLayoutMode)
+    return self.clone(screenFit: outputScreenFit, viewportMargins: newViewportMargins, video: newVidGeo)
   }
 
   // MARK: - Music Mode
@@ -1459,7 +1439,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
    This function will always return a `PWinGeometry` object which has `mode: .musicMode`.
    */
   static func forMusicMode(windowFrame: NSRect, screenID: String, video: VideoGeometry,
-                           isViewportShown: Bool, playlistShown: Bool, viewportLayoutMode: ViewportLayoutMode = .normal) -> PWinGeometry {
+                           isViewportShown: Bool, playlistShown: Bool) -> PWinGeometry {
     let log = video.log
     var windowFrame = NSRect(origin: windowFrame.origin, size:
                               CGSize(width: windowFrame.width.rounded(), height: windowFrame.height.rounded()))
@@ -1491,8 +1471,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                               topMarginHeight: 0,
                               outsideBars: MarginQuad(bottom: Constants.Distance.MusicMode.oscHeight + musicModePlaylistHeight),
                               insideBars: MarginQuad.zero,
-                              video: video,
-                              viewportLayoutMode: viewportLayoutMode)
+                              video: video)
 
     let isValidHeight = playlistShown ? (musicModePlaylistHeight >= Constants.Distance.MusicMode.minPlaylistHeight) : (musicModePlaylistHeight == 0)
     if !isValidHeight {
@@ -1501,8 +1480,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         let heightDiff = musicModePlaylistHeight
         let newWindowFrame = NSRect(origin: NSPoint(x: windowFrame.origin.x, y: windowFrame.origin.y + heightDiff), size: NSSize(width: windowFrame.width, height: windowFrame.height - heightDiff))
         return forMusicMode(windowFrame: newWindowFrame, screenID: screenID, video: video,
-                            isViewportShown: isViewportShown, playlistShown: playlistShown,
-                            viewportLayoutMode: viewportLayoutMode)
+                            isViewportShown: isViewportShown, playlistShown: playlistShown)
       }
     } else {
       assert(isViewportShown == winGeo.isViewportShown,
@@ -1514,8 +1492,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   func cloneMusicMode(windowFrame: NSRect? = nil, screenID: String? = nil, video: VideoGeometry? = nil,
-                      isViewportShown: Bool? = nil, playlistShown: Bool? = nil,
-                      viewportLayoutMode: ViewportLayoutMode? =  nil) -> PWinGeometry {
+                      isViewportShown: Bool? = nil, playlistShown: Bool? = nil) -> PWinGeometry {
     guard mode == .musicMode else {
       log.error("Cannot call PWinGeometry.cloneMusicMode when mode ≠ music mode: \(self)")
       assert(false, "Cannot call PWinGeometry.cloneMusicMode when mode ≠ music mode: \(self)")  // fail fast when debugging
@@ -1528,8 +1505,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                      screenID: screenID ?? self.screenID,
                                      video: video ?? self.video,
                                      isViewportShown: showVideo,
-                                     playlistShown: showPlaylist,
-                                     viewportLayoutMode: viewportLayoutMode ?? self.viewportLayoutMode)
+                                     playlistShown: showPlaylist)
   }
 
   /// Music mode only!

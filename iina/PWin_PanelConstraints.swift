@@ -433,15 +433,19 @@ extension PlayerWindowController {
     case .midTransitionHiddenUpdates:
       // Should be a no op, but why not
       updateVideoView = true
+      // FIXME: 
     case .extraAnimationBeforeOpenNewPanels:
       updateVideoView = false
     case .openNewPanels:
       updateVideoView = stageGeo.mode != .musicMode
     case .postTransition:
       updateVideoView = true
+      log.verbose("Calling setFrame with \(stageGeo.windowFrame) updateVV=\(updateVideoView.yn)")
+      setFrameAndUpdateWindowSubviews(using: stageGeo, updateVideoView: updateVideoView)
+      return
     }
 
-    log.verbose("Calling setFrame with \(stageGeo.windowFrame) updateVV=\(updateVideoView.yn) vpLM=\(stageGeo.viewportLayoutMode)")
+    log.verbose("Calling setFrame with \(stageGeo.windowFrame) updateVV=\(updateVideoView.yn)")
     setFrameAndUpdateWindowSubviews(using: stageGeo, updateVideoView: updateVideoView)
   }
 

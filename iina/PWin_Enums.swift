@@ -377,9 +377,22 @@ enum ScreenFit: Int {
 }
 
 /// Used within a `PWinGeometry` to indicate how to configure `videoView`, `viewportView`, and the spacers between them.
-enum ViewportLayoutMode: Int {
+enum TransitionCategory: Int {
   /// Normal = not animating. Viewport & its subiews should follow their usual rules based on other `PWinGeometry` state vars.
-  case normal = 0
+  case noTransition = 0
 
-  case transientAnimation = 1
+  /// All other transition animations which does not need a special case / special handling.
+  case general
+
+  // - Special Cases
+  
+  case openingViewportInMusicMode
+  case enteringMusicMode
+  case exitingMusicMode
+
+  case enteringInteractiveMode
+  case exitingInteractiveMode
+  case enteringLegacyFullScreen
+  case exitingLegacyFullScreen
+
 }

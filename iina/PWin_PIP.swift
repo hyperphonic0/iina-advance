@@ -229,8 +229,8 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     }
 
     // Set frame to animate back to
-    let geo = currentLayout.mode == .musicMode ? musicModeGeo : windowedModeGeo
-    pipController.replacementRect = geo.videoFrameInWindowCoords
+    let currentGeo = currentLayout.mode == .musicMode ? musicModeGeoForCurrentFrame() : windowedGeoForCurrentFrame()
+    pipController.replacementRect = currentGeo.videoFrameInWindowCoords
     pipController.replacementWindow = window
 
     // Bring the window to the front and deminiaturize it
@@ -274,7 +274,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       /// Must set this before calling `addViewportAndSubviewsToWindowIfNeeded()`
       pip.status = .notInPIP
 
-      let currentGeo = currentLayout.mode == .musicMode ? musicModeGeo : windowedModeGeo
+      let currentGeo = currentLayout.mode == .musicMode ? musicModeGeoForCurrentFrame() : windowedGeoForCurrentFrame()
       if currentGeo.isViewportShown {
         addViewportAndSubviewsToWindowIfNeeded()
         viewportView.apply(currentGeo)

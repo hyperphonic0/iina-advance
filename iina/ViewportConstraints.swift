@@ -274,7 +274,8 @@ extension ViewportView {
   }
 
   /// APPLY constraints: Add, update, or remove all constraints, based on the given geometry (or lack thereof).
-  func apply(_ geometry: PWinGeometry?) {
+  func apply(_ geometry: PWinGeometry?,
+             _ transitionCategory: TransitionCategory = .noTransition) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let pwc else { return }
 
@@ -367,19 +368,17 @@ extension ViewportView {
     let interactiveMode = geometry.mode.isInteractiveMode
     let musicMode = geometry.mode == .musicMode && geometry.isViewportShown
 
-    let isTransientAnimation = geometry.viewportLayoutMode == .transientAnimation
-
     // spacerMin == viewport min margins
-    let spacerMinValues: MarginQuad = interactiveMode && !isTransientAnimation ? GeoUtil.minViewportMargins(forMode: geometry.mode) : .zero
+    let spacerMinValues: MarginQuad = interactiveMode ? GeoUtil.minViewportMargins(forMode: geometry.mode) : .zero
 
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
-    let keepVideoAwayFromBars = !interactiveMode && !musicMode && Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize)
+    let keepVideoAwayFromBars = !interactiveMode && !musicMode && Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize) && (transitionCategory != .exitingInteractiveMode)
     let spacerExactValues: MarginQuad? = keepVideoAwayFromBars ? geometry.offsetsToKeepVideoAwayFromInsideBars : nil
 
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers: Constraint(active: true, priority: 1000),
                 // The desired aspect must always be honored. All constraints are secondary to this.
-                aspect: AspectConstraint(active: (interactiveMode || musicMode) && !isTransientAnimation,
+                aspect: AspectConstraint(active: (interactiveMode || musicMode) && (transitionCategory == .noTransition),
                                          priority: .required,
                                          multiplier: videoViewAspect),
 
@@ -400,7 +399,7 @@ extension ViewportView {
                 spacerExact: QuadConstraint(active: keepVideoAwayFromBars, priority: 497, spacerExactValues),
 
                 // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
-                center: Constraint(active: (interactiveMode || musicMode) && !isTransientAnimation && !keepVideoAwayFromBars, priority: 480)
+                center: Constraint(active: (interactiveMode || musicMode) && (transitionCategory == .noTransition) && !keepVideoAwayFromBars, priority: 480)
     )
 
     viewportConstraints = cons

@@ -1009,12 +1009,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       /// Prepare window for possible reuse: restore default geometry, close sidebars, etc.
       /// Need to use `force` to bypass the normal checks for player state, etc, because we're closing.
       /// Setting these vars is especially important for copying to windowedModeGeoLastClosed, etc, below.
-      if currentLayout.mode == .musicMode {
-        musicModeGeo = musicModeGeoForCurrentFrame(force: true)
-      } else if currentLayout.mode.isWindowed {
-        // Update frame since it may have moved
-        windowedModeGeo = windowedGeoForCurrentFrame(force: true)
-      }
+      geo = buildGeoSet(forceWinFrameUpdate: true)
 
       // Reset layout & its state (or at least the big stuff) for reopen: close sidebars, disable OSC
       let currentLayout = currentLayout
@@ -1823,7 +1818,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
 
           let currentWindowedIMGeo = windowedGeoForCurrentFrame()
-          let croppedIMGeo = currentWindowedIMGeo.cropVideo(using: ctx.outputVidGeo, viewportLayoutMode: .normal)
+          let croppedIMGeo = currentWindowedIMGeo.cropVideo(using: ctx.outputVidGeo)
 
           let newIMGeo = croppedIMGeo.scalingViewport(toSimilarSizeAs: currentWindowedIMGeo)
           geoSet = buildGeoSet(windowed: newIMGeo, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
@@ -1832,7 +1827,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           let cropAnimationDuration = 0.0
           tasks.append(.init(duration: cropAnimationDuration) { [self] in
             log.verbose{"Start exiting interactive mode: animating crop using: \(croppedIMGeo)"}
-            setFrameAndUpdateWindowSubviews(using: croppedIMGeo.clone(viewportLayoutMode: .transientAnimation))
+            setFrameAndUpdateWindowSubviews(using: croppedIMGeo)
             // #InteractiveModeAnimationKludge
             // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
             viewportView.viewportConstraints?.updateSpacerMin(to: croppedIMGeo.viewportMargins, .init(1000))
