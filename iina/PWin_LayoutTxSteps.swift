@@ -51,6 +51,12 @@ extension PlayerWindowController {
 
     guard let window = window else { return }
 
+    // Call this early! Before rebuildPanelConstraints
+    if transition.isExitingPiP {
+      exitPIP(force: true)
+      pip.showOrHidePipOverlayView()
+    }
+
     if transition.outputLayout.isInteractiveMode || transition.outputLayout.isFullScreen {
       // Disable; can cause problems in interactive mode. Set this ASAP because there is sometimes a small delay
       window.isMovableByWindowBackground = false
@@ -434,23 +440,14 @@ extension PlayerWindowController {
     }
 
 
-    if transition.isWindowInitialLayout || transition.isOpeningViewport {
-      if !transition.isWindowInitialLayout, pip.status == .inPIP {
-        // We are about to steal its video; close it:
-        exitPIP()
-      }
-    }
-
-    if transition.outputGeometry.isViewportShown {
-      // This adds videoView, viewportView & spacers if not already added
-      addViewportAndSubviewsToWindowIfNeeded()
-    }
-
     if transition.isOpeningViewport {
+      videoView.activateForcedRedraws()
+
       // Show default album art if no video track selected
       if let currentPlayback = player.info.currentPlayback, currentPlayback.state.isAtLeast(.loaded), !player.info.isVideoTrackSelected {
         updateDefaultArtVisibility(to: true)
       }
+      pip.showOrHidePipOverlayView()
     }
 
     if !transition.isExitingFullScreen && transition.needsMpvKeepaspectUpdate {
@@ -546,16 +543,17 @@ extension PlayerWindowController {
       miniPlayer.addPlaylistViewIfMissing()
     }
 
-    // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
     if transition.isWindowInitialLayout || transition.isTogglingMusicMode {
       pip.showOrHidePipOverlayView()
 
       if transition.isEnteringMusicMode {
+        // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
         log.verbose{"Entering music mode: adding miniPlayer view to bottomBarView"}
         miniPlayer.loadIfNeeded()
         bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
         miniPlayer.view.addAllConstraintsToFillSuperview()
 
+        // Now confiure various subviews
         playSlider.customCell.knobHeight = Constants.Distance.Slider.musicModeKnobHeight
 
         // move playback buttons
@@ -604,7 +602,7 @@ extension PlayerWindowController {
       updateMusicModeButtonsVisibility(using: transition.outputGeometry)
 
       // FIXME: refactor to put most of this into `rebuildPanelConstraints`
-      if !transition.outputGeometry.isViewportShown && pip.status == .notInPIP {
+      if !transition.outputGeometry.isViewportShown && !transition.outputLayout.isInPiP {
         viewportView.apply(nil)  // remove constraints
         videoView.removeFromSuperview()
         viewportView.removeSpacers()
@@ -1094,11 +1092,6 @@ extension PlayerWindowController {
 
       player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: true)
 
-      // Exit PIP when entering full screen
-      if pip.status == .inPIP {
-        exitPIP()
-      }
-
       player.events.emit(.windowFullscreenChanged, data: true)
 
     } else if transition.isExitingFullScreen {
@@ -1185,7 +1178,7 @@ extension PlayerWindowController {
 #if DEBUG
     // Do not run sanity checks for initial layout, because in that case all task funcs combined into a single
     // animation task, which means that frames will not be updated yet & can't be measured correctly
-    if Logger.isEnabled(.error), DebugConfig.validatePWinGeometry, !transition.isWindowInitialLayout, pip.status == .notInPIP,
+    if Logger.isEnabled(.error), DebugConfig.validatePWinGeometry, !transition.isWindowInitialLayout, !transition.outputLayout.isInPiP,
        player.state.isNotYet(.stopping), player.info.isVideoTrackSelected {
       let vidSizeA = videoView.frame.size
       let vidSizeE = transition.outputGeometry.videoSize

@@ -657,10 +657,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard let window else { return }
     assert(loaded, "Must not be called if not done loading the window!")
 
-    guard pip.status == .notInPIP else {
-      log.debug{"Aborting add of videoView to window: PiP status=\(pip.status)"}
-      return
-    }
     var didAddSubviewToViewport = false
     do {
       let hasOpenGL = videoView.lockAndSetOpenGLContext()
@@ -675,13 +671,17 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           window.contentView!.addSubview(viewportView)
         }
         if !viewportView.subviews.contains(videoView) {
-          log.verbose{"Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)"}
-          viewportView.addSubview(videoView)
-          // Reset this in case it was changed for PiP. (Need to use optional to support initial load)
-          videoView.layer?.autoresizingMask = []
-          /// Add constraints. These get removed each time `videoView` changes superviews.
-          videoView.translatesAutoresizingMaskIntoConstraints = false
-          didAddSubviewToViewport = true
+          if currentLayout.isInPiP {
+            log.debug{"Aborting add of videoView to window: isInPiP=\(currentLayout.isInPiP)"}
+          } else {
+            log.verbose{"Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)"}
+            viewportView.addSubview(videoView)
+            // Reset this in case it was changed for PiP. (Need to use optional to support initial load)
+            videoView.layer?.autoresizingMask = []
+            /// Add constraints. These get removed each time `videoView` changes superviews.
+            videoView.translatesAutoresizingMaskIntoConstraints = false
+            didAddSubviewToViewport = true
+          }
         }
 
         let didAddSpacers = viewportView.addSpacers()
@@ -754,21 +754,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let isOnTop = priorState.bool(for: .isOnTop) ?? false
     setWindowFloatingOnTop(isOnTop, from: currentLayout, updateOnTopStatus: true)
 
-    guard let stateString = priorState.string(for: .miscWindowBools) else {
-      log.error{"Failed to restore from miscWindowBools: pref not found! Will default to visible window."}
+    guard let (isMiniaturized, isHidden, isInPip,
+               isWindowMiniaturizedDueToPip,
+               isPausedPriorToInteractiveMode) = PlayerSaveState.parseMiscWindowBools(priorState.properties) else {
+      log.debug{"Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted); defaulting to visible window"}
       window.orderOut(self)  // order out until load is complete
-      return
-    }
-
-    let splitted: [String] = stateString.split(separator: ",").map{String($0)}
-    guard splitted.count >= 5,
-       let isMiniaturized = Bool.yn(splitted[0]),
-       let isHidden = Bool.yn(splitted[1]),
-       let isInPip = Bool.yn(splitted[2]),
-       let isWindowMiniaturizedDueToPip = Bool.yn(splitted[3]),
-          let isPausedPriorToInteractiveMode = Bool.yn(splitted[4]) else {
-      log.error{"Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)! Will default to visible window."}
-      window.orderOut(self)
       return
     }
 
@@ -979,8 +969,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     removeAllObservers()
 
-    // Close PIP
-    if pip.status == .inPIP {
+    if currentLayout.isInPiP {
+      // Close PiP. This should update currentLayout synchronously, though it may not completely finish until after we return.
       exitPIP()
     }
 
@@ -1015,6 +1005,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let currentLayout = currentLayout
       let newLayoutState = currentLayout.clone(leadingSidebar: currentLayout.leadingSidebar.clone(visibility: .closed),
                                                trailingSidebar: currentLayout.trailingSidebar.clone(visibility: .closed),
+                                               isInPiP: false,
                                                enableOSC: false)
       let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutState)
       let tasks = buildTasks(for: resetTransition, totalStartingDuration: 0, totalEndingDuration: 0)
@@ -1681,14 +1672,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // MARK: - UI: Interactive Mode
 
-  // FIXME: Delogo is broken
   func enterInteractiveMode(_ mode: InteractiveMode) {
     // Can't work with PiP. For now just exit it and don't wait. The animation could be better but it's better
     // than entering a buggy state.
     animationPipeline.submitInstantTask{ [self] in
-      if pip.status != .notInPIP {
-        exitPIP()
-      }
+      exitPIP()
     }
 
     let videoTF: GeometryTransform.VideoGeometryTF = { [self] inputVidGeo, ctx -> VideoGeometry? in
@@ -1751,9 +1739,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// • If there is to be an active crop, `newVidGeo` must be present and must contain it. Otherwise crop of "None" will be applied.
   /// • This method can be run safely even if not in interactive mode.
   func exitInteractiveMode(immediately: Bool = false, newVidGeo: VideoGeometry? = nil, then doAfter: (() -> Void)? = nil) {
+
     guard currentLayout.isInteractiveMode else {
       if let doAfter {
-        doAfter()
+        animationPipeline.submitInstantTask{
+          doAfter()
+        }
       }
       return
     }
@@ -2472,11 +2463,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     case .musicMode:
       player.enterMusicMode()
     case .pip:
-      if pip.status == .inPIP {
-        exitPIP()
-      } else if pip.status == .notInPIP {
-        enterPIP()
-      }
+      menuTogglePIP(sender)
     case .playlist:
       showSidebar(forTabGroup: .playlist)
     case .settings:
@@ -2493,14 +2480,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   // MARK: - Utility
-
-  func resetRotationPreview() {
-    guard pip.status == .notInPIP else { return }
-
-    // Seems that this looks better if done before updating the window frame...
-    // FIXME: this isn't perfect - a bad frame briefly appears during transition
-    rotationHandler.rotateVideoView(toDegrees: 0, animate: false)
-  }
 
   func setEmptySpaceColor(to newColor: CGColor) {
     guard let window else { return }

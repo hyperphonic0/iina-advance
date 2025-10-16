@@ -502,13 +502,12 @@ extension PlayerWindowController {
   }
 
   @objc func menuTogglePIP(_ sender: AnyObject) {
-    switch pip.status {
-    case .notInPIP:
-      enterPIP()
-    case .inPIP:
-      exitPIP()
-    default:
-      return
+    animationPipeline.submitInstantTask{ [self] in
+      if currentLayout.isInPiP {
+        exitPIP()
+      } else {
+        enterPIP()
+      }
     }
   }
 

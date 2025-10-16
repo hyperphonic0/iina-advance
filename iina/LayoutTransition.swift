@@ -159,6 +159,10 @@ extension PlayerWindowController {
       || (inputLayout.enableOSC && (inputLayout.oscPosition.rawValue != outputLayout.oscPosition.rawValue))
     }
 
+    var isExitingPiP: Bool {
+      inputLayout.isInPiP && !outputLayout.isInPiP
+    }
+
     var isAddingLegacyStyle: Bool {
       return !inputLayout.isLegacyStyle && outputLayout.isLegacyStyle
     }

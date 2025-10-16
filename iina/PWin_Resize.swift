@@ -523,7 +523,13 @@ extension PlayerWindowController {
       if outputGeo.isViewportShown {
         updateDefaultArtVisibility(to: showDefaultArt)
       }
-      resetRotationPreview()
+
+      if !currentLayout.isInPiP {
+        // Reset the rotation preview, if any.
+        // Seems that this looks better if done before updating the window frame...
+        // FIXME: this isn't perfect - a bad frame briefly appears during transition
+        rotationHandler.rotateVideoView(toDegrees: 0, animate: false)
+      }
     })
 
     // TASK 2: Apply animation

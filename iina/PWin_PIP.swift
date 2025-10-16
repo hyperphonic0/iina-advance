@@ -59,12 +59,6 @@ extension PlayerWindowController {
     var log: Logger.Subsystem { player.log }
     var pwc: PlayerWindowController { player.pwc }
 
-    var status = PIPStatus.notInPIP {
-      didSet {
-        log.verbose("Updated pip.status to: \(status)")
-      }
-    }
-
     /// Needs to be retained during PiP, but cannot be reused
     var videoController: NSViewController!
 
@@ -84,7 +78,7 @@ extension PlayerWindowController {
     /// Hide PiP overlay if in PiP and during animation. Show overlay if PiP shown.
     func showOrHidePipOverlayView() {
       let mustHide: Bool
-      if status == .inPIP {
+      if pwc.currentLayout.isInPiP {
         mustHide = pwc.isInMiniPlayer && !pwc.musicModeGeo.isViewportShown
       } else {
         mustHide = true
@@ -107,43 +101,53 @@ extension PlayerWindowController {
 
 extension PlayerWindowController: PIPViewControllerDelegate {
 
-  func enterPIP(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil, then doOnSuccess: (() -> Void)? = nil) {
+  func enterPIP(usePipBehavior preferredPipBehavior: Preference.WindowBehaviorWhenPip? = nil, then doOnSuccess: (() -> Void)? = nil) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     // Exit interactive mode before even entering intermediate status
     exitInteractiveMode(then: { [self] in
-      log.verbose("About to enter PIP")
-      // Must not try to enter PiP if already in PiP - will crash!
-      guard pip.status == .notInPIP else { return }
-      pip.status = .intermediate
-
-      PlayerManager.shared.pipPlayer = player
-
-      guard player.info.isVideoTrackSelected else {
-        log.debug("Aborting request for PIP entry: no video track selected!")
-        pip.status = .notInPIP
-        return
-      }
-      
-      if isInMiniPlayer {
-        miniPlayer.loadIfNeeded()
-        if !miniPlayer.isViewportShown {
-          // need to re-enable video to enter PiP
-          player.setVideoTrackEnabled(thenDoAction: .showViewportInMusicMode)
-        }
-      }
-
-      doPIPEntry(usePipBehavior: usePipBehavior)
-      if let doOnSuccess {
-        doOnSuccess()
-      }
+      _enterPIP(usePipBehavior: preferredPipBehavior, then: doOnSuccess)
     })
   }
 
-  private func doPIPEntry(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil,
-                          then doAfter: (() -> Void)? = nil) {
+  private func _enterPIP(usePipBehavior: Preference.WindowBehaviorWhenPip?, then doOnSuccess: (() -> Void)?) {
+    // Must not try to enter PiP if already in PiP - will crash!
     guard let window else { return }
-    pip.status = .inPIP
+
+    if !player.info.isVideoTrackSelected {
+      log.debug("Aborting request for PIP entry: no video track selected!")
+      return
+    }
+
+    if isInMiniPlayer {
+      miniPlayer.loadIfNeeded()
+      if !miniPlayer.isViewportShown {
+        log.debug("Aborting request for PIP entry: in music mode with viewport disabled")
+        return
+      }
+    }
+
+    let isRestoring = player.isRestoring
+    if isRestoring {
+      log.debug("Skipping validation & state updates prior to entering PiP due to restore")
+    } else {
+      let inputLayout = currentLayout
+      guard !inputLayout.isInPiP else {
+        log.debug("Aborting request for PIP entry: already in PiP")
+        return
+      }
+
+      let outputLayout = inputLayout.clone(isInPiP: true)
+      guard outputLayout.isInPiP else {
+        log.debug("Aborting request for PIP entry: current layout does not support PiP")
+        return
+      }
+
+      currentLayout = outputLayout
+    }
+
+    log.verbose("Entering PiP")
+    PlayerManager.shared.pipPlayer = player
 
     do {
       videoView.lockAndSetOpenGLContext()
@@ -196,28 +200,40 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     videoView.forceDraw()
     player.saveState()
     player.events.emit(.pipChanged, data: true)
+
+    if let doOnSuccess {
+      doOnSuccess()
+    }
   }
 
-  func exitPIP() {
-    guard pip.status == .inPIP else { return }
-    log.verbose("Exiting PIP")
-    if pipShouldClose(pip.controller) {
-      // Prod Swift to pick the dismiss(_ viewController: NSViewController)
-      // overload over dismiss(_ sender: Any?). A change in the way implicitly
-      // unwrapped optionals are handled in Swift means that the wrong method
-      // is chosen in this case. See https://bugs.swift.org/browse/SR-8956.
-      pip.controller.dismiss(pip.videoController!)
+  /// Need to use `force: true` when calling this from within a `LayoutTransition`, because it will independently
+  /// update `currentLayout` with `isInPiP==false` prior to calling this.
+  func exitPIP(force: Bool = false) {
+    guard force || currentLayout.isInPiP else { return }
+    guard !player.isRestoring else {
+      log.verbose("Skipping PIP exit because we are still restoring")
+      return
     }
+    log.verbose("Exiting PIP, forced=\(force.yn)")
+    prepareForPIPClosure(pip.controller)
+
+    // Prod Swift to pick the dismiss(_ viewController: NSViewController)
+    // overload over dismiss(_ sender: Any?). A change in the way implicitly
+    // unwrapped optionals are handled in Swift means that the wrong method
+    // is chosen in this case. See https://bugs.swift.org/browse/SR-8956.
+    pip.controller.dismiss(pip.videoController!)
     player.events.emit(.pipChanged, data: false)
   }
 
-  func prepareForPIPClosure(_ pipController: PIPViewController) {
-    guard pip.status == .inPIP else { return }
+  /// This is called right before we're about to close the PIP.
+  private func prepareForPIPClosure(_ pipController: PIPViewController) {
     guard let window = window else { return }
-    log.verbose("Preparing for PIP closure")
-    // This is called right before we're about to close the PIP
-    pip.status = .intermediate
-
+    let inputLayout = currentLayout
+    log.verbose("Preparing for PIP closure (will update currentLayout: \(inputLayout.isInPiP.yn))")
+    if inputLayout.isInPiP {
+      let outputLayout = inputLayout.clone(isInPiP: false)
+      currentLayout = outputLayout
+    }
     // Hide the overlay view preemptively, to prevent any issues where it does
     // not hide in time and ends up covering the video view (which will be added
     // to the window under everything else, including the overlay).
@@ -243,10 +259,12 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     }
   }
 
+  /// Called from PiP controller?
   func pipWillClose(_ pip: PIPViewController) {
     prepareForPIPClosure(pip)
   }
 
+  /// Called from PiP controller?
   func pipShouldClose(_ pip: PIPViewController) -> Bool {
     prepareForPIPClosure(pip)
     return true
@@ -254,6 +272,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
   func pipDidClose(_ pipController: PIPViewController) {
     guard !AppDelegate.shared.isTerminating else { return }
+    guard !isClosing else { return }  // if window is closing, let windowWillClose handle it
     guard let window else { return }
 
     // seems to require separate animation blocks to work properly
@@ -271,9 +290,6 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     }
 
     tasks.append(.instantTask { [self] in
-      /// Must set this before calling `addViewportAndSubviewsToWindowIfNeeded()`
-      pip.status = .notInPIP
-
       let currentGeo = currentLayout.mode == .musicMode ? musicModeGeoForCurrentFrame() : windowedGeoForCurrentFrame()
       if currentGeo.isViewportShown {
         addViewportAndSubviewsToWindowIfNeeded()

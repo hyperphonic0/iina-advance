@@ -129,15 +129,17 @@ extension PlayerWindowController {
         .init(NSWorkspace.activeSpaceDidChangeNotification) { [self] _ in
           // FIXME: this is not ready for production yet! Need to fix issues with freezing video
           guard Preference.bool(for: .togglePipWhenSwitchingSpaces) else { return }
-          if !window.isOnActiveSpace && pip.status == .notInPIP {
+          if !window.isOnActiveSpace {
             animationPipeline.submitInstantTask({ [self] in
+              guard !currentLayout.isInPiP else { return }
               log.debug("Window is no longer in active space; entering PIP")
               enterPIP(then: { [self] in
                 isWindowPipDueToInactiveSpace = true
               })
             })
-          } else if window.isOnActiveSpace && isWindowPipDueToInactiveSpace && pip.status == .inPIP {
+          } else if window.isOnActiveSpace && isWindowPipDueToInactiveSpace {
             animationPipeline.submitInstantTask({ [self] in
+              guard currentLayout.isInPiP else { return }
               log.debug("Window is in active space again; exiting PIP")
               isWindowPipDueToInactiveSpace = false
               exitPIP()

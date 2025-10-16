@@ -258,9 +258,9 @@ extension PlayerWindowController {
 
     // Add/remove viewportView if needed
     if useViewport {
-      if !contentView.containsSubview(viewportView) {
-        contentView.addSubview(viewportView, positioned: .below, relativeTo: seekPreview.timeLabel)
-      }
+      // This adds videoView, viewportView & spacers if not already added
+      addViewportAndSubviewsToWindowIfNeeded()
+
     } else {
       viewportView.removeFromSuperview()
     }

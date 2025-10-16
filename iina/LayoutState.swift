@@ -28,6 +28,7 @@ struct LayoutState {
   let trailingSidebar: Sidebar
 
   let mode: PlayerWindowMode
+  let isInPiP: Bool
   let isLegacyStyle: Bool
 
   let topBarPlacement: Preference.PanelPlacement
@@ -56,7 +57,8 @@ struct LayoutState {
 
   // MARK: Init / Factory
 
-  init(leadingSidebar: Sidebar, trailingSidebar: Sidebar, mode: PlayerWindowMode, isLegacyStyle: Bool,
+  init(leadingSidebar: Sidebar, trailingSidebar: Sidebar, mode: PlayerWindowMode,
+       isInPiP: Bool, isLegacyStyle: Bool,
        topBarPlacement: Preference.PanelPlacement, bottomBarPlacement: Preference.PanelPlacement,
        enableOSC: Bool, oscPosition: Preference.OSCPosition,
        oscColorScheme: Preference.OSCColorScheme,
@@ -74,6 +76,8 @@ struct LayoutState {
     }
     self.mode = mode
     self.oscColorScheme = oscColorScheme
+
+    self.isInPiP = (mode == .windowedNormal || mode == .musicMode) ? isInPiP : false
 
     switch mode {
     case .windowedNormal, .fullScreenNormal:
@@ -109,6 +113,7 @@ struct LayoutState {
   func clone(leadingSidebar: Sidebar? = nil,
              trailingSidebar: Sidebar? = nil,
              mode: PlayerWindowMode? = nil,
+             isInPiP: Bool? = nil,
              isLegacyStyle: Bool? = nil,
              topBarPlacement: Preference.PanelPlacement? = nil,
              bottomBarPlacement: Preference.PanelPlacement? = nil,
@@ -126,6 +131,7 @@ struct LayoutState {
     return LayoutState(leadingSidebar: leadingSidebar ?? self.leadingSidebar,
                        trailingSidebar: trailingSidebar ?? self.trailingSidebar,
                        mode: mode ?? self.mode,
+                       isInPiP: isInPiP ?? self.isInPiP,
                        isLegacyStyle: isLegacyStyle ?? self.isLegacyStyle,
                        topBarPlacement: topBarPlacement ?? self.topBarPlacement,
                        bottomBarPlacement: bottomBarPlacement ?? self.bottomBarPlacement,
@@ -496,6 +502,7 @@ struct LayoutState {
     let hasTopPaddingForCameraHousing = isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
     return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
                        mode: mode,
+                       isInPiP: oldSpec?.isInPiP ?? false,
                        isLegacyStyle: isLegacyStyle,
                        topBarPlacement: Preference.enum(for: .topBarPlacement),
                        bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),

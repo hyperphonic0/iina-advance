@@ -516,7 +516,7 @@ class MenuController: NSObject, NSMenuDelegate {
     quickSettingsVideo?.title = isDisplayingSettings ? Constants.String.hideVideoPanel :
         Constants.String.videoPanel
     let isInFullScreen = player.pwc.isFullScreen
-    let isInPIP = player.pwc.pip.status == .inPIP
+    let isInPIP = player.pwc.currentLayout.isInPiP
     let isOnTop = player.pwc.isOnTop
     let isDelogo = player.info.delogoFilter != nil
     alwaysOnTop.state = isOnTop ? .on : .off

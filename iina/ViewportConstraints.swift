@@ -285,13 +285,9 @@ extension ViewportView {
       return
     }
 
-    guard pwc.pip.status == .notInPIP else {
-      if pwc.pip.status == .inPIP {
-        log.verbose("VideoView: currently in PiP. Skipping constraints update & setting aspectRatio in PiP controller ≔ \(geometry.video.videoSizeCAR)")
-        pwc.pip.controller.aspectRatio = geometry.video.videoSizeCAR
-      } else {
-        log.debug("VideoView: currently in PiP; skipping constraints update")
-      }
+    guard !pwc.currentLayout.isInPiP else {
+      log.verbose("VideoView: currently in PiP. Skipping constraints update & setting aspectRatio in PiP controller ≔ \(geometry.video.videoSizeCAR)")
+      pwc.pip.controller.aspectRatio = geometry.video.videoSizeCAR
       return
     }
 

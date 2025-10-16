@@ -124,7 +124,16 @@ struct PlayerSaveState: CustomStringConvertible {
     self.log = Logger.subsystem(forPlayerID: playerID)
 
     let layoutStateCSV = PlayerSaveState.string(for: .layoutState, props)
-    let layoutState = LayoutState.fromCSV(layoutStateCSV)
+
+    // A bit clunky in v1.4 now that PiP status was moved into LayoutState
+    let isWindowInPiP: Bool
+    if let (_, _, isInPip,  _, _) = PlayerSaveState.parseMiscWindowBools(props) {
+      isWindowInPiP = isInPip
+    } else {
+      Logger.log.error{"Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted); will assume window is not in PiP"}
+      isWindowInPiP = false
+    }
+    let layoutState = LayoutState.fromCSV(layoutStateCSV, isInPiP: isWindowInPiP)
     self.layoutState = layoutState
     self.geoSet = PlayerSaveState.geoSet(from: props, log)
 
@@ -262,7 +271,7 @@ struct PlayerSaveState: CustomStringConvertible {
     props[PropName.miscWindowBools.rawValue] = [
       pwc.isWindowMiniturized.yn,
       pwc.isWindowHidden.yn,
-      (pwc.pip.status == .inPIP).yn,
+      layout.isInPiP.yn,  // stored here for historical reasons. MOved into LayoutState in v1.4
       pwc.isWindowMiniaturizedDueToPip.yn,
       pwc.isPausedPriorToInteractiveMode.yn
     ].joined(separator: ",")
@@ -482,6 +491,27 @@ struct PlayerSaveState: CustomStringConvertible {
   func mpvFilterList(for name: PropName) -> [MPVFilter]? {
     guard let filterListCSV = string(for: name) else { return nil }
     return filterListCSV.split(separator: ",").compactMap({MPVFilter(rawString: String($0))})
+  }
+
+  static func parseMiscWindowBools(_ properties: [String: Any]) -> (isMiniaturized: Bool, isHidden: Bool, isInPip: Bool,
+                                                                    isWindowMiniaturizedDueToPip: Bool, isPausedPriorToInteractiveMode: Bool)? {
+    guard let stateString = PlayerSaveState.string(for: .miscWindowBools, properties) else {
+      log.error{"Failed to restore from miscWindowBools: pref not found!"}
+      return nil
+    }
+
+
+    let splitted: [String] = stateString.split(separator: ",").map{String($0)}
+    guard splitted.count >= 5,
+          let isMiniaturized = Bool.yn(splitted[0]),
+          let isHidden = Bool.yn(splitted[1]),
+          let isInPip = Bool.yn(splitted[2]),
+          let isWindowMiniaturizedDueToPip = Bool.yn(splitted[3]),
+          let isPausedPriorToInteractiveMode = Bool.yn(splitted[4]) else {
+      log.error{"Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)!"}
+      return nil
+    }
+    return (isMiniaturized, isHidden, isInPip, isWindowMiniaturizedDueToPip, isPausedPriorToInteractiveMode)
   }
 
   static private func string(for name: PropName, _ properties: [String: Any]) -> String? {
@@ -1425,7 +1455,7 @@ extension LayoutState {
   }
 
   /// `String` -> `LayoutState`
-  static func fromCSV(_ csv: String?) -> LayoutState? {
+  static func fromCSV(_ csv: String?, isInPiP: Bool) -> LayoutState? {
     guard let csv, !csv.isEmpty else {
       Logger.log.debug("CSV is empty; returning nil for LayoutState")
       return nil
@@ -1493,7 +1523,11 @@ extension LayoutState {
       }
       let isLegacyFullScreen = mode.isFullScreen && isLegacyStyle
       let hasTopPaddingForCameraHousing = isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
+
+
+
       return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar, mode: mode,
+                         isInPiP: isInPiP,
                          isLegacyStyle: isLegacyStyle, topBarPlacement: topBarPlacement,
                          bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition,
                          oscColorScheme: Preference.enum(for: .oscColorScheme),

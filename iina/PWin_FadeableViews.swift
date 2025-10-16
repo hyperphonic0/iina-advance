@@ -246,8 +246,10 @@ extension PlayerWindowController {
   func hideFadeableViews(targetLayout givenLayout: LayoutState? = nil, hideCursorToo: Bool = false) {
     // Don't hide overlays when in PIP or when they are not actually shown
     let isWindowMinimized = window?.isMiniaturized ?? false
-    guard pip.status == .notInPIP, !isWindowMinimized else {
-      log.trace{"Aborting hide of fadeable views: pipStatus=\(pip.status), windowMinimized=\(isWindowMinimized)"}
+    let targetLayout = givenLayout ?? currentLayout
+
+    guard !targetLayout.isInPiP, !isWindowMinimized else {
+      log.trace{"Aborting hide of fadeable views: isInPiP=\(targetLayout.isInPiP.yn), windowMinimized=\(isWindowMinimized)"}
       return
     }
 
@@ -261,7 +263,6 @@ extension PlayerWindowController {
       return $0
     }
 
-    let targetLayout = givenLayout ?? currentLayout
 
     // Seek time & thumbnail can only be shown if the OSC is visible.
     // Need to hide them because the OSC is being hidden:

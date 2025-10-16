@@ -19,10 +19,11 @@ class PlayerManager {
 
   var pipPlayer: PlayerCore? = nil {
     willSet {
-      if let pipPlayer, let wc = pipPlayer.pwc, wc.pip.status == .inPIP {
-        wc.animationPipeline.submit(.instantTask {
-          pipPlayer.log.debug("PlayerManager: another player wants PiP; exiting PiP")
-          wc.exitPIP()
+      let usurperPlayer = newValue
+      if let prevPlayer = pipPlayer, prevPlayer != usurperPlayer, let prevPWC = prevPlayer.pwc, prevPWC.currentLayout.isInPiP {
+        prevPWC.animationPipeline.submit(.instantTask {
+          prevPlayer.log.debug("PlayerManager: another player wants PiP; exiting PiP")
+          prevPWC.exitPIP()
         })
       }
     }

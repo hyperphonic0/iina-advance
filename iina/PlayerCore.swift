@@ -1422,7 +1422,7 @@ class PlayerCore: NSObject {
       } else {  // resume
         videoView.displayActive()
       }
-      if pwc.pip.status == .inPIP {
+      if pwc.currentLayout.isInPiP {
         pwc.pip.controller.playing = !paused
       }
 
