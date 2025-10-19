@@ -48,6 +48,12 @@ struct Preference {
 
     static let actionAfterLaunch = Key("actionAfterLaunch")
     static let alwaysOpenInNewWindow = Key("alwaysOpenInNewWindow")
+    /// • This setting only applies when `alwaysOpenInNewWindow` is `true`.
+    /// • By default, when manually opening (e.g. double-clicking from the Finder, or dragging onto the IINA icon)
+    ///   a file that's already loaded in an IINA window, IINA conforms the the standard MacOS behavior: a new window
+    ///   is not opened, and instead the existing window which contains it is brought to the front. This setting, if
+    ///   `true`, disables this behavior.
+    static let allowDuplicatePlayers = Key("allowDuplicatePlayers")
     /// If set to `true`, makes the menu item `File` > `New Window` visible:
     static let enableCmdN = Key("enableCmdN")
 
@@ -1315,6 +1321,7 @@ struct Preference {
     .receiveBetaUpdate: false,
     .actionAfterLaunch: ActionAfterLaunch.welcomeWindow.rawValue,
     .alwaysOpenInNewWindow: true,
+    .allowDuplicatePlayers: false,
     .enableCmdN: true,
     .animationDurationDefault: 0.25,
     // Native duration (as of MacOS 13.4) is 0.5s, which is quite sluggish. Speed it up a bit

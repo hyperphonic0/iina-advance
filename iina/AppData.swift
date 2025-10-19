@@ -200,6 +200,14 @@ struct Constants {
 
     static let keyDownHandlingTimeout = 1.0
 
+    /// How long to wait after the last call to `application(_:openFiles:)` before deciding that all files have been received.
+    ///
+    /// When a user opens multiple files simultaneously, sometimes the system will make one call to `application(_:openFiles:)`
+    /// per file (i.e., it will send multiple arrays each with 1 item), and we have no way to know when the calls are done.
+    /// The need for this list, & `openFilesTimer`, is described here:
+    /// https://stackoverflow.com/questions/37623734/why-nsapplicationdelegate-method-openfiles-is-being-called-multiple-times-on-a 
+    static let applicationOpenFilesRepeatTimeout = 0.2
+
     /// There's a lot going on at startup, so wait a bit, to give other queues some time before fetching durations, since
     /// they are a lot less important.
     static let initialPlaylistDelayBeforePrefetch = 2.0

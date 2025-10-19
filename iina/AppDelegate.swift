@@ -642,41 +642,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: - Open file(s)
 
+
   func application(_ sender: NSApplication, openFiles filePaths: [String]) {
-    let shouldIgnoreOpenFile = startupHandler.shouldIgnoreOpenFile
-    Logger.log.debug("application(openFiles:) called with: \(filePaths.map{$0.pii})\(shouldIgnoreOpenFile ? ". Ignoring; launched from CLI" : "")")
-    // if launched from command line, should ignore openFile during launch
-    guard !shouldIgnoreOpenFile else { return }
-    let urls = filePaths.map { URL(fileURLWithPath: $0) }
-
-    DispatchQueue.main.async { [self] in
-      // If launched non-interactively, load all the UI stuff now
-      if !AppDelegate.isInteractiveLaunch {
-        // TODO: remove this when problems fixed...
-        Utility.showAlert("OpenFiles: Launch is not interactive!", style: .critical, logAlert: true)
-        return
-      }
-      ensureInteractiveLaunchEnabled()
-
-      // if installing a plugin package
-      if let pluginPackageURL = urls.first(where: { $0.pathExtension == "iinaplgz" }) {
-        Logger.log.debug("Opening plugin URL: \(pluginPackageURL.absoluteString.pii.quoted)")
-        showPreferencesWindow(self)
-        preferenceWindowController.performAction(.installPlugin(url: pluginPackageURL))
-        return
-      }
-
-      let openedSomething = startupHandler.openFiles(urls, applyingCLI: nil) > 0
-      if openedSomething {
-        Logger.log.verbose("Replying to NSApp: success")
-        NSApp.reply(toOpenOrPrint: .success)
-
-        startupHandler.showWindowsIfReady()
-      } else {
-        Logger.log.verbose("Replying to NSApp: fail")
-        NSApp.reply(toOpenOrPrint: .failure)
-      }
-    }
+    startupHandler.applicationOpenFilesWasReceived(with: filePaths)
   }
 
   // MARK: - Accept dropped URL string on Dock icon
@@ -687,7 +655,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard let url = pboard.string(forType: .string) else { return }
 
     guard let player = PlayerCore.active else { return }
-    startupHandler.isOpeningNewWindowsForOpenedFiles = true
+    startupHandler.isAwaitingNewWindowsForOpenedFile = true
     if player.openURLString(url) == 0 {
       startupHandler.abortWaitForOpenFilePlayerStartup()
     } else {
@@ -728,8 +696,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     if parsed.scheme != "iina" {
       // try to open the URL directly
-      let player = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
-      startupHandler.isOpeningNewWindowsForOpenedFiles = true
+      let player = PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: false)
+      startupHandler.isAwaitingNewWindowsForOpenedFile = true
       if player.openURLString(url) == 0 {
         startupHandler.abortWaitForOpenFilePlayerStartup()
       } else {
@@ -758,7 +726,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if let newWindowValue = queryDict["new_window"], newWindowValue == "1" {
         player = PlayerManager.shared.getIdleOrCreateNew()
       } else {
-        player = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
+        player = PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: false)
       }
 
       // enqueue
@@ -767,7 +735,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
          !lastActivePlayer.info.playlist.isEmpty {
         lastActivePlayer.appendToPlaylist(urlValue)
       } else {
-        startupHandler.isOpeningNewWindowsForOpenedFiles = true
+        startupHandler.isAwaitingNewWindowsForOpenedFile = true
         if player.openURLString(urlValue) == 0 {
           startupHandler.abortWaitForOpenFilePlayerStartup()
         } else {
@@ -1034,7 +1002,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             HistoryController.shared.noteNewRecentDocumentURLs(urls)
           }
         }
-        let playerCore = PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: isAlternativeAction)
+        let playerCore = PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: isAlternativeAction)
         if playerCore.openURLs(panel.urls) == 0 {
           Logger.log("OpenFile: notifying user there is nothing to open", level: .verbose)
           Utility.showAlert("nothing_to_open")
@@ -1050,7 +1018,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func showOpenURLWindow(isAlternativeAction: Bool) {
     Logger.log.verbose("Showing OpenURLWindow: isAltAction=\(isAlternativeAction.yn)")
-    openURLWindow.isAlternativeAction = isAlternativeAction
+    openURLWindow.inverseOpenInNewWindowPref = isAlternativeAction
     openURLWindow.openWindow(self)
   }
 

@@ -26,7 +26,7 @@ class OpenURLWindowController: WindowController, NSWindowDelegate, NSTextFieldDe
   @IBOutlet weak var overlayView: NSVisualEffectView!
   @IBOutlet weak var loadingMediaProgressIndicator: NSProgressIndicator!
 
-  var isAlternativeAction = false
+  var inverseOpenInNewWindowPref = false
 
   var playerCore: PlayerCore?
   var loadingURL: String?
@@ -124,7 +124,7 @@ class OpenURLWindowController: WindowController, NSWindowDelegate, NSTextFieldDe
                                   port: url.port)
       }
       window?.close()
-      PlayerManager.shared.getActiveOrNewForMenuAction(isAlternative: isAlternativeAction).openURL(url)
+      PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: inverseOpenInNewWindowPref).openURL(url)
     } else {
       Utility.showAlert("wrong_url_format")
     }

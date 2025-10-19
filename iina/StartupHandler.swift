@@ -9,7 +9,8 @@
 
 import Foundation
 
-/// Encapsulates code for opening/restoring windows at application startup.
+/// Encapsulates code for opening/restoring windows at application startup...and, um, also opening windows when files or URLs
+/// are opened manually.
 /// See also: `AppDelegate`
 class StartupHandler {
 
@@ -27,14 +28,22 @@ class StartupHandler {
 
   var isDoneLaunching: Bool { state == .doneOpening }
 
-  /**
-   Mainly used to distinguish normal launches from others triggered by drag & drop or double-click from Finder.
+  // - Opening Files Manually
 
-   Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called with file(s).
-   See also `pwcsForOpenFiles` which is expected be set to a non-nil (and non-empty) value after this variable
-   becomes true. If needing to abort the new windows, `isOpeningNewWindowsForOpenedFiles` should be set to false again.
-   */
-  var isOpeningNewWindowsForOpenedFiles = false
+  /// Serves as a queue to store file paths received across multiple invocations of `application(_:openFiles:)` within a short interval.
+  private var pendingFilesForApplicationOpenFiles: [String] = []
+  /// The timer for `OpenFileRepeatTime` and `application(_:openFiles:)`.
+  private let openFilesTimer = TimeoutTimer(timeout: Constants.TimeInterval.applicationOpenFilesRepeatTimeout)
+
+  // TODO: clean up messy & confusing logic for `isAwaitingNewWindowsForOpenedFile` & `pwcsForOpenFiles`
+  /// When launching, this variable indicates that the UI needs to wait for opened file(s) to finish loading before showing all windows.
+  ///
+  /// Should be set to `true` when `application(_:openFiles:)`, `handleURLEvent()` or `droppedText()` is called with file(s),
+  /// & shortly afterwards, `pwcsForOpenFiles` is expected be set to a non-nil (and non-empty) value.
+  /// If needing to abort the wait for new windows for any reason, this variable should be reset to `false`.
+  ///
+  /// This variable has evolved from its original incarnation in upstream IINA, where it is still named `openFileCalled`.
+  var isAwaitingNewWindowsForOpenedFile = false
   var pwcsForOpenFiles: [PlayerWindowController]? = nil
   var pwcsDoneWithFileOpen: [PlayerWindowController] = []
 
@@ -70,6 +79,7 @@ class StartupHandler {
 
   init() {
     restoreTimer.action = restoreDidTimeOut
+    openFilesTimer.action = handleOpenFilesTimeout
   }
 
   func doStartup() {
@@ -93,6 +103,51 @@ class StartupHandler {
     showWindowsIfReady()
   }
 
+  func applicationOpenFilesWasReceived(with filePaths: [String]) {
+    openFilesTimer.restart()
+    pendingFilesForApplicationOpenFiles.append(contentsOf: filePaths)
+  }
+
+  private func handleOpenFilesTimeout() {
+    assert(DispatchQueue.isExecutingIn(.main))
+
+    let filePaths = pendingFilesForApplicationOpenFiles
+    pendingFilesForApplicationOpenFiles = []
+
+    let shouldIgnoreOpenFile = shouldIgnoreOpenFile
+    Logger.log.debug("application(openFiles:) called with: \(filePaths.map{$0.pii})\(shouldIgnoreOpenFile ? ". Ignoring; launched from CLI" : "")")
+    // if launched from command line, should ignore openFile during launch
+    guard !shouldIgnoreOpenFile else { return }
+    let urls = filePaths.map { URL(fileURLWithPath: $0) }
+
+    // If launched non-interactively, load all the UI stuff now
+    if !AppDelegate.isInteractiveLaunch {
+      // TODO: remove this when problems fixed...
+      Utility.showAlert("OpenFiles: Launch is not interactive!", style: .critical, logAlert: true)
+      return
+    }
+    AppDelegate.shared.ensureInteractiveLaunchEnabled()
+
+    // if installing a plugin package
+    if let pluginPackageURL = urls.first(where: { $0.pathExtension == "iinaplgz" }) {
+      Logger.log.debug("Opening plugin URL: \(pluginPackageURL.absoluteString.pii.quoted)")
+      AppDelegate.shared.showPreferencesWindow(self)
+      AppDelegate.shared.preferenceWindowController.performAction(.installPlugin(url: pluginPackageURL))
+      return
+    }
+
+    let openedSomething = openFiles(urls, applyingCLI: nil) > 0
+    if openedSomething {
+      Logger.log.verbose("Replying to NSApp: success")
+      NSApp.reply(toOpenOrPrint: .success)
+
+      showWindowsIfReady()
+    } else {
+      Logger.log.verbose("Replying to NSApp: fail")
+      NSApp.reply(toOpenOrPrint: .failure)
+    }
+  }
+
   private func openFilesFromCommandLine() {
     guard let cli = commandLineState else { return }
     let validFileURLs: [URL] = cli.filenames.compactMap { filename in
@@ -111,34 +166,53 @@ class StartupHandler {
 
   /// Open files either from `application(_ ,openFiles:)`, or via command line interface (CLI).
   @discardableResult
-  func openFiles(_ urls: [URL], applyingCLI cli: CommandLineState?) -> Int {
-    let openingMultipleWindows: Bool
-    if urls.count <= 1 {
-      openingMultipleWindows = false
-    } else if let separateWindowsCLI = cli?.openSeparateWindows {
+  private func openFiles(_ urls: [URL], applyingCLI cli: CommandLineState?) -> Int {
+    let shouldOpenMultipleWindows: Bool
+    if let separateWindowsCLI = cli?.openSeparateWindows {
       // Can force --separate-windows via CLI in addition to pref, for both yes/no
-      openingMultipleWindows = separateWindowsCLI
+      shouldOpenMultipleWindows = separateWindowsCLI
     } else {
-      openingMultipleWindows = Preference.bool(for: .alwaysOpenInNewWindow)
+      shouldOpenMultipleWindows = Preference.bool(for: .alwaysOpenInNewWindow)
     }
 
-    if !openingMultipleWindows {
+    if !shouldOpenMultipleWindows {
       // Use only if opening single window.
       // If multiple windows, don't wait; open each as soon as it loads
-      isOpeningNewWindowsForOpenedFiles = true
+      isAwaitingNewWindowsForOpenedFile = true
     }
 
-    Logger.log.debug("Opening URLs: count=\(urls.count) cli=\((cli != nil).yn) multipleWindows=\(openingMultipleWindows.yn)")
     var totalFilesOpened = 0
 
     var lastPlayer: PlayerCore? = nil
     var pwcsForOpenFiles: [PlayerWindowController] = []
-    if openingMultipleWindows {
-      if urls.count > 10 {
-        // TODO: put up a confirmation prompt
-        Logger.log.warn("User requested to open a large number of windows (count: \(urls.count))")
+
+    if shouldOpenMultipleWindows {
+      Logger.log.debug("Opening multiple windows for URLs: count=\(urls.count) cli=\((cli != nil).yn)")
+
+      let urlsToOpen: [URL]
+      if Preference.bool(for: .allowDuplicatePlayers) {
+        urlsToOpen = urls
+      } else {
+        urlsToOpen = urls.filter{ url in
+          // skip if url is already open in some player
+          let activePlayerCores = PlayerManager.shared.playerCores.filter { !$0.isIdleOrUnused }
+          let relevantActivePlayerCore = activePlayerCores.first { $0.info.currentURL == url }
+
+          if let relevantActivePlayerCore {
+            Logger.log.debug{"Requested URL is already playing in open window; will show it instead: \(url.path.pii.quoted)"}
+            relevantActivePlayerCore.pwc.showWindow(nil)
+            return false
+          }
+          return true
+        }
       }
-      for url in urls {
+
+      if urlsToOpen.count > 10 {
+        // TODO: put up a confirmation prompt
+        Logger.log.warn("User requested to open a large number of windows (count: \(urlsToOpen.count))")
+      }
+
+      for url in urlsToOpen {
         // open one window per file
         let player = PlayerManager.shared.getIdleOrCreateNew()
         if let cli {
@@ -152,6 +226,7 @@ class StartupHandler {
         totalFilesOpened += playerFilesOpened
         lastPlayer = player
       }
+
     } else {
       // open pending files in single window
       let player = PlayerManager.shared.getActiveOrCreateNew()
@@ -186,7 +261,7 @@ class StartupHandler {
         self.pwcsForOpenFiles = pwcsForOpenFiles
       } else {
         // Clear this flag to avoid waiting on opened files
-        isOpeningNewWindowsForOpenedFiles = false
+        isAwaitingNewWindowsForOpenedFile = false
       }
 
       if let cli, let lastPlayer {
@@ -495,7 +570,7 @@ class StartupHandler {
   func abortWaitForOpenFilePlayerStartup() {
     assert(DispatchQueue.isExecutingIn(.main))
     Logger.log.verbose("Aborting wait for open files")
-    isOpeningNewWindowsForOpenedFiles = false
+    isAwaitingNewWindowsForOpenedFile = false
     pwcsForOpenFiles = nil
     pwcsDoneWithFileOpen.removeAll()
     showWindowsIfReady()
@@ -526,10 +601,10 @@ class StartupHandler {
         return
       }
       // If an new player window was opened at startup (i.e. not a restored window), wait for this also.
-      if isOpeningNewWindowsForOpenedFiles {
-        // If isOpeningNewWindowsForOpenedFiles is true, the check below will only pass once pwcsForOpenFiles becomes non-nil.
+      if isAwaitingNewWindowsForOpenedFile {
         guard let pwcsForOpenFiles else {
-          log.verbose("Startup: isOpeningNewWindowsForOpenedFiles=Y but pwcsForOpenFiles is nil; returning")
+          // Probably still building the list. Return for now.
+          log.verbose("Startup: isAwaitingNewWindowsForOpenedFile=Y but pwcsForOpenFiles is nil; returning")
           return
         }
 

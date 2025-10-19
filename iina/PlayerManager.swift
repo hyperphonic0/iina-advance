@@ -117,9 +117,9 @@ class PlayerManager {
     }
   }
 
-  /// `isAlternative` means to negate the current value of pref `.alwaysOpenInNewWindow`
-  func getActiveOrNewForMenuAction(isAlternative: Bool) -> PlayerCore {
-    let useNew = Preference.bool(for: .alwaysOpenInNewWindow) != isAlternative
+  /// `inverseOpenInNewWindowPref` means to negate the current value of pref `.alwaysOpenInNewWindow`
+  func getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: Bool) -> PlayerCore {
+    let useNew = Preference.bool(for: .alwaysOpenInNewWindow) != inverseOpenInNewWindowPref
     if !useNew, let activePlayer {
       return activePlayer
     }
