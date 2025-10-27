@@ -121,6 +121,9 @@ extension MPVController {
         handlePropertyChange(property)
       }
 
+    case MPV_EVENT_QUEUE_OVERFLOW:
+      player.log.errorDebugAlert("An mpv event queue overflow was reported!")
+
     case MPV_EVENT_CLIENT_MESSAGE:
       let dataOpaquePtr = OpaquePointer(event.pointee.data)
       let msg = UnsafeMutablePointer<mpv_event_client_message>(dataOpaquePtr)
