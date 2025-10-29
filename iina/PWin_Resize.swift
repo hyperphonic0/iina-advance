@@ -172,9 +172,9 @@ extension PlayerWindowController {
                                        updateVideoView: Bool = true,
                                        _ transitionCategory: TransitionCategory = .noTransition,
                                        submitUpdate: Bool = false) {
-    log.verbose{"[PWin.setFrame] Entered: updateVideoView=\(updateVideoView.yn) submit=\(submitUpdate.yn) geo=\(geometry)"}
+    log.verbose{"[PWin.setFrame] Entered: updateViewportConstraints=\(updateVideoView.yn) cat=\(transitionCategory) submit=\(submitUpdate.yn) geo=\(geometry)"}
 
-    resizeWindowSubviews(using: geometry, transitionCategory)
+    resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView, transitionCategory)
 
     if geometry.isLegacyFullScreen {
       updateOSDTopOffsetConstraints(for: geometry)
@@ -217,6 +217,7 @@ extension PlayerWindowController {
   ///
   /// This method cannot handle complex layout changes. For that, use a `LayoutTransition` (see `PWin_LayoutTxBuilder.swift`).
   private func resizeWindowSubviews(using newGeometry: PWinGeometry,
+                                    updateVideoView: Bool = true,
                                     _ transitionCategory: TransitionCategory = .noTransition) {
     // Trigger forced draws so that mpv can [try its best to] redraw the video without distortion during window resize:
     videoView.activateForcedRedraws()
@@ -224,13 +225,12 @@ extension PlayerWindowController {
     // These may no longer be aligned correctly. Just hide them
     hideSeekPreviewImmediately()
 
-    if newGeometry.isViewportShown {
-      // Not sure if this helps fix the aspect constraint transition
+    if updateVideoView {
       viewportView.apply(newGeometry, transitionCategory)
-
-      // Update floating control bar position if applicable
-      adjustFloatingControllerOrigin(for: newGeometry)
     }
+    
+    // Update floating control bar position if applicable
+    adjustFloatingControllerOrigin(for: newGeometry)
 
     if newGeometry.mode.isInteractiveMode, !isAnimatingLayoutTransition {
       // Update interactive mode selectable box size. Origin is relative to viewport origin.

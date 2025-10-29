@@ -370,6 +370,7 @@ extension PlayerWindowController {
     guard controlBarFloating.superview != nil else { return }
 
     let parentGeo = targetGeometry ?? windowedModeGeo
+    guard parentGeo.isViewportShown else { return }
     controlBarFloating.moveToLocationRatio(parentGeo: parentGeo)
 
     // Detach the views in topRowView manually on macOS 11 only; as it will cause freeze

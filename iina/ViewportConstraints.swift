@@ -261,7 +261,7 @@ struct ViewportConstraints {
 
 extension ViewportView {
 
-  /// REMOVE constraints: Need to remove all constraints when in PiP: it will do layout based on the layer's `autoresizingMask`.
+  /// __REMOVE constraints__: When in PiP, need to remove all constraints; it will instead calculate layout based on the layer's `autoresizingMask`.
   func removeViewportConstraints() {
     guard let cons = viewportConstraints else {
       log.verbose("VideoView: all video constraints already removed")
@@ -273,14 +273,14 @@ extension ViewportView {
     viewportConstraints = nil
   }
 
-  /// APPLY constraints: Add, update, or remove all constraints, based on the given geometry (or lack thereof).
-  func apply(_ geometry: PWinGeometry?,
+  /// __Add / Remove / Update Constraints__, based on the given `geometry` (or lack thereof).
+  func apply(_ geometry: PWinGeometry,
              _ transitionCategory: TransitionCategory = .noTransition) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let pwc else { return }
 
-    guard let geometry, geometry.isViewportShown else {
-      log.verbose{"VideoView: \(geometry == nil ? "no geometry" : "video not visible"); will remove constraints"}
+    guard geometry.isViewportShown else {
+      log.verbose{"VideoView: video not visible; will remove constraints"}
       removeViewportConstraints()
       return
     }

@@ -418,6 +418,7 @@ extension PlayerWindowController {
 
   private func updateWindowFrameIfNeeded(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry, in transition: LayoutTransition, _ log: Logger.Subsystem) {
     let updateVideoView: Bool
+    var category: TransitionCategory = .noTransition
     switch stage {
     case .preTransitionSetup:
       // #InteractiveModeAnimationKludge
@@ -431,22 +432,30 @@ extension PlayerWindowController {
       // It's not needed until the next step anyway.
       updateVideoView = false
     case .midTransitionHiddenUpdates:
-      // Should be a no op, but why not
       updateVideoView = true
-      // FIXME: 
+      if transition.isEnteringMusicMode {
+        category = .enteringMusicMode
+      } else if transition.isExitingMusicMode {
+        category = .exitingMusicMode
+      } else if transition.isOpeningViewport {
+        category = .openingViewportInMusicMode
+      } else if transition.isClosingViewport {
+        category = .closingViewportInMusicMode
+      } else if transition.isEnteringInteractiveMode {
+        category = .enteringInteractiveMode
+      } else if transition.isExitingInteractiveMode {
+        category = .exitingInteractiveMode
+      }
     case .extraAnimationBeforeOpenNewPanels:
       updateVideoView = false
     case .openNewPanels:
       updateVideoView = stageGeo.mode != .musicMode
     case .postTransition:
       updateVideoView = true
-      log.verbose("Calling setFrame with \(stageGeo.windowFrame) updateVV=\(updateVideoView.yn)")
-      setFrameAndUpdateWindowSubviews(using: stageGeo, updateVideoView: updateVideoView)
-      return
     }
 
     log.verbose("Calling setFrame with \(stageGeo.windowFrame) updateVV=\(updateVideoView.yn)")
-    setFrameAndUpdateWindowSubviews(using: stageGeo, updateVideoView: updateVideoView)
+    setFrameAndUpdateWindowSubviews(using: stageGeo, updateVideoView: updateVideoView, category)
   }
 
   @discardableResult

@@ -387,6 +387,7 @@ enum TransitionCategory: Int {
   // - Special Cases
   
   case openingViewportInMusicMode
+  case closingViewportInMusicMode
   case enteringMusicMode
   case exitingMusicMode
 
