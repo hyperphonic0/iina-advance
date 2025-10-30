@@ -17,7 +17,8 @@ extension PlayerWindowController {
   /// PRE TRANSITION
   /// Setup work. Always immediate (i.e., not animated).
   func doPreTransitionWork(_ transition: LayoutTransition) {
-    log.verbose{"[\(transition.name)] DoPreTransitionWork"}
+    let log = log.withPreamble(transition.logPreamble(for: .preTransitionSetup))
+    log.verbose("[\(transition.name)] Start")
     isAnimatingLayoutTransition = true
     // When playback is paused the display link is stopped in order to avoid wasting energy on
     // needless processing. It must be running while transitioning to/from full screen mode.
@@ -968,7 +969,7 @@ extension PlayerWindowController {
   /// Expected to be animated.
   func fadeInNewViews(_ transition: LayoutTransition) {
     guard let window = window else { return }
-    let logPre = "[\(transition.name):FadeInNewViews"
+    let logPre = "[\(transition.name)-FadeInNewViews"
     let outputLayout = transition.outputLayout
     log.verbose("\(logPre) Start")
 

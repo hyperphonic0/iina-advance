@@ -196,20 +196,24 @@ extension PlayerWindowController {
     }
 
     if submitUpdate {
-      if geometry.mode == .musicMode {
-        musicModeGeo = geometry
-        // Update defaults:
-        Preference.set(geometry.isViewportShown, for: .musicModeShowAlbumArt)
-        Preference.set(geometry.isMusicModePlaylistShown, for: .musicModeShowPlaylist)
-      } else if geometry.mode.isWindowed {
-        windowedModeGeo = geometry
-      }
-
-      log.verbose{"[PWin.setFrame] Calling sendWindowScaleToMPV"}
-      sendWindowScaleToMPV(basedOn: geometry)
-
-      player.saveState()
+      submit(geometry)
     }
+  }
+
+  fileprivate func submit(_ geometry: PWinGeometry) {
+    if geometry.mode == .musicMode {
+      musicModeGeo = geometry
+      // Update defaults:
+      Preference.set(geometry.isViewportShown, for: .musicModeShowAlbumArt)
+      Preference.set(geometry.isMusicModePlaylistShown, for: .musicModeShowPlaylist)
+    } else if geometry.mode.isWindowed {
+      windowedModeGeo = geometry
+    }
+
+    log.verbose{"Submit: Calling sendWindowScaleToMPV"}
+    sendWindowScaleToMPV(basedOn: geometry)
+
+    player.saveState()
   }
 
   /// Intended to be used only for resizing one or more of PlayerWindow's subviews, or to accomodate a window resize.
@@ -228,7 +232,7 @@ extension PlayerWindowController {
     if updateVideoView {
       viewportView.apply(newGeometry, transitionCategory)
     }
-    
+
     // Update floating control bar position if applicable
     adjustFloatingControllerOrigin(for: newGeometry)
 
@@ -534,26 +538,25 @@ extension PlayerWindowController {
 
     // TASK 2: Apply animation
     tasks.append(.init(duration: duration, timing: timing, { [self] in
-      if outputGeo.mode.isFullScreen {
+      switch outputGeo.mode {
+      case .fullScreenNormal, .fullScreenInteractive:
         // Make sure video constraints are up to date, even in full screen.
         // Also remember that FS & windowed mode share the same screen.
         log.verbose{"ApplyPWinGeo: updating videoView for FS, videoSize=\(outputGeo.videoSize)"}
         viewportView.apply(outputGeo)
 
-      } else {
-        assert(outputGeo.mode.isWindowed || outputGeo.mode == .musicMode, "Expected windowed or music mode: \(outputGeo.mode)")
+      case .windowedNormal, .windowedInteractive, .musicMode:
         // This is only needed to achieve "fade-in" effect when opening window:
         updateWindowBorderAndOpacity()
 
         if !isWindowHidden {
+          log.verbose{"ApplyPWinGeo: calling update frame"}
           setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: save)
         } else {
           viewportView.apply(outputGeo)  // Update video constraints
-
           // Mimicks logic in `setFrameAndUpdateWindowSubviews()`
           if save {
-            windowedModeGeo = outputGeo
-            player.saveState()
+            submit(outputGeo)
           }
         }
       }

@@ -120,8 +120,11 @@ class ViewportView: NSView {
       trailingSpacer.addConstraintsToFillSuperview(top: 0, trailing: 0)
       spacersAdded += 1
     }
-    player.log.verbose("[Load] Added \(spacersAdded) spacers to viewportView")
-    return spacersAdded > 0
+    if spacersAdded > 0 {
+      player.log.verbose("[Load] Added \(spacersAdded) spacers to viewportView")
+      return true
+    }
+    return false
   }
 
   func removeSpacers() {

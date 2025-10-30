@@ -90,7 +90,7 @@ extension PlayerWindowController {
       useTopBar = stageLayout.hasTopBar
     }
 
-    log.verbose("RebuildPanels: Viewport=\(useViewport.yn) BottomBar=\(useBottomBar.yn) TopBar=\(useTopBar.yn) LeadingSB=\(useLeadingSidebar.yn) TrailingSB=\(useTrailingSidebar.yn)")
+    log.verbose("RebuildPanels: VP=\(useViewport.yn) Bottom=\(useBottomBar.yn) Top=\(useTopBar.yn) Leading=\(useLeadingSidebar.yn) Trailing=\(useTrailingSidebar.yn)")
 
     // - Add window subviews in a well-defined order (before adding constraints between them)
     addOrRemoveViews(for: stageGeo, useViewport: useViewport,
@@ -101,7 +101,7 @@ extension PlayerWindowController {
 
     // - Constraints
 
-    log.verbose("RebuildPanels: ViewportH=\(viewportView.frame.height) BottomBarH=\(bottomBarView.frame.height) TopBar=\(topBarView.frame.height)")
+    log.verbose("RebuildPanels: VP=\(Int(viewportView.frame.height)) BottomH=\(Int(bottomBarView.frame.height)) Top=\(Int(topBarView.frame.height))")
     let outputGeo = transition.outputGeometry
 
     if useTopBar {
@@ -126,7 +126,7 @@ extension PlayerWindowController {
         }
       } else {
         let titleHeight = min(stageLayout.titleBarHeight, abs(constant1 - constant2))  // do not make titleBar larger than top bar
-        log.verbose("Updating titleHeight=\(titleHeight)")
+        log.verbose("Updating titleHeight=\(Int(titleHeight))")
         topBarView.titleBarHeightConstraint.animateToConstant(titleHeight)
       }
     }

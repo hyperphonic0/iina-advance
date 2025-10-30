@@ -2120,10 +2120,10 @@ class PlayerCore: NSObject {
     }
   }
 
-  func reloadQuickSettingsViewNow() {
+  fileprivate func reloadQuickSettingsViewNow() {
     guard pwc.loaded else { return }
     guard !isStopping else { return }
-    log.trace("Reloading QuickSettigsView")
+    log.verbose("Reloading QuickSettigsView")
 
     // Easiest place to put this - need to call it when setting equalizers
     videoView.displayActive()

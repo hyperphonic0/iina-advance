@@ -321,25 +321,17 @@ extension IINAAnimation {
     /// Currently this "work" is always just a reload of the current QuickSettings tab, if shown.
     /// Flattening all requests to this single instance works as a debouncer for reload requests.
     private var pendingWorkAfterGTFs: TaskFunc? = nil
-
+    
     // TODO: replace this logic with a simple flag
     func doAfterGTFs(_ work: @escaping TaskFunc) {
-      let canRunNow = gtfLock.withLock{ [self] in
-        if isDoneWithAllGTFs {
-          pendingWorkAfterGTFs = nil  // do not allow duplicates
-          return true
-        } else {
-          pendingWorkAfterGTFs = work
-          return false
-        }
+      gtfLock.withLock{ [self] in
+        pendingWorkAfterGTFs = work
       }
-
-      if canRunNow {
-        log.verbose{"[Pipeline] Submitting ReloadQuickSettings task"}
-        submitInstantTask(work)
-      }
+      
+      log.verbose{"[Pipeline] Submitting ReloadQuickSettings task"}
+      submitInstantTask{}
     }
-
+    
     /// Checks that the last GeometryTransform is done, and if there is an enqueued GeometryTransform waiting.
     /// If so, pops & returns it.
     private func popNextReadyGTF() -> GeometryTransform? {
@@ -350,7 +342,7 @@ extension IINAAnimation {
           log.verbose{"[Pipeline] Starting GTF: \(nextGTF.name.quoted); queue size: \(gtfQueue.count)"}
           return nextGTF
         }
-        if wantsVideoGeoSync, let player {
+        if isDoneWithAllGTFs, wantsVideoGeoSync, let player {
           wantsVideoGeoSync = false
           let gtf = GeometryTransform("SyncVidGeo", id: nextID_NoLock(), player)
           return gtf
