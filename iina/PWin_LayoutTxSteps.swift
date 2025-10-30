@@ -43,7 +43,8 @@ extension PlayerWindowController {
       case .windowedNormal, .windowedInteractive:
         windowedModeGeo = transition.outputGeometry
       case .fullScreenNormal, .fullScreenInteractive:
-        break  // Not applicable
+        // Close loophole when changing crop to None via FS interactive mode
+        windowedModeGeo = windowedModeGeo.clone(video: transition.outputGeometry.video)
       case .musicMode:
         musicModeGeo = transition.outputGeometry
       }
@@ -404,7 +405,7 @@ extension PlayerWindowController {
     guard let window = window else { return }
     let log = log.withPreamble(transition.logPreamble(for: .midTransitionHiddenUpdates))
     let outputLayout = transition.outputLayout
-    log.verbose{"Start"}
+    log.verbose("Start")
 
     if outputLayout.topBarView == .showAlways {
       // This is apparently missed
@@ -873,7 +874,7 @@ extension PlayerWindowController {
     updateVolumeUI()
     playSlider.needsDisplay = true
 
-    log.verbose{"Done"}
+    log.verbose("Done")
   }  /// end `updateHiddenViewsAndConstraints`
 
 
@@ -882,7 +883,7 @@ extension PlayerWindowController {
   func openNewPanelsAndFinalizeOffsets(_ transition: LayoutTransition) {
     let outputLayout = transition.outputLayout
     let log = log.withPreamble(transition.logPreamble(for: .openNewPanels))
-    log.verbose{"Start: TitleBar_H=\(outputLayout.titleBarHeight) TopOSC_H=\(outputLayout.topOSCHeight)"}
+    log.verbose("Start: TitleBar_H=\(outputLayout.titleBarHeight) TopOSC_H=\(outputLayout.topOSCHeight)")
 
     rebuildPanelConstraints(transition, stage: .openNewPanels)
 
@@ -959,7 +960,7 @@ extension PlayerWindowController {
 
     }
 
-    log.verbose{"Done"}
+    log.verbose("Done")
   }
 
   /// -------------------------------------------------
@@ -1033,7 +1034,7 @@ extension PlayerWindowController {
   /// Cleanup & variable state updates. Always instantaneous (not animated).
   func doPostTransitionWork(_ transition: LayoutTransition) {
     let log = log.withPreamble(transition.logPreamble(for: .postTransition))
-    log.verbose{"Start"}
+    log.verbose("Start")
 
     // Update blending mode:
     updatePanelBlendingModes(to: transition.outputLayout)

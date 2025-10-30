@@ -675,7 +675,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     updateTabActiveStatus(for: subTabBtn, isActive: currentTab == .sub)
   }
 
-  func reloadVideoTabIfShown(using videoGeo: VideoGeometry) {
+  private func reloadVideoTabIfShown(using videoGeo: VideoGeometry) {
     guard isViewLoaded else { return }
     guard currentTab == .video else { return }
     guard pwc.isOpen(sidebarTab: .video) else { return }
