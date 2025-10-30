@@ -427,6 +427,9 @@ extension PlayerWindowController {
     case .closeOldPanels:
       assert(!transition.isWindowInitialLayout && !transition.isEnteringFullScreen)
       updateVideoView = true
+      if transition.isExitingInteractiveMode {
+        category = .exitingInteractiveMode
+      }
     case .moveAndScale:
       // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
       // It's not needed until the next step anyway.

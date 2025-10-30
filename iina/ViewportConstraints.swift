@@ -365,7 +365,16 @@ extension ViewportView {
     let musicMode = geometry.mode == .musicMode && geometry.isViewportShown
 
     // spacerMin == viewport min margins
-    let spacerMinValues: MarginQuad = interactiveMode ? GeoUtil.minViewportMargins(forMode: geometry.mode) : .zero
+    let spacerMinPriority: Int
+    let spacerMinValues: MarginQuad
+    if transitionCategory == .cropBeforeExitingInteractiveMode {
+      // #InteractiveModeAnimationKludge
+      spacerMinPriority = 1000
+      spacerMinValues = geometry.viewportMargins
+    } else {
+      spacerMinPriority = 496
+      spacerMinValues = interactiveMode ? GeoUtil.minViewportMargins(forMode: geometry.mode) : .zero
+    }
 
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
     let keepVideoAwayFromBars = !interactiveMode && !musicMode && Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize) && (transitionCategory != .exitingInteractiveMode)
@@ -386,7 +395,7 @@ extension ViewportView {
                 spacerMax: Constraint(active: !interactiveMode && !musicMode, priority: 490),
 
                 // For interactive mode, these need to be higher priority than video max
-                spacerMin: QuadConstraint(active: true, priority: 496, spacerMinValues),
+                spacerMin: QuadConstraint(active: true, priority: spacerMinPriority, spacerMinValues),
 
                 // Need to calculate these values ourselves now that we are relying on mpv to calculate margins for us via keepaspect=yes
                 spacerPreferred: QuadConstraint(active: false, priority: 481, spacerExactValues),

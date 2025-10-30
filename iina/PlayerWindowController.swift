@@ -1811,17 +1811,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           let currentWindowedIMGeo = windowedGeoForCurrentFrame()
           let croppedIMGeo = currentWindowedIMGeo.cropVideo(using: ctx.outputVidGeo)
 
-          let newIMGeo = croppedIMGeo.scalingViewport(toSimilarSizeAs: currentWindowedIMGeo)
-          geoSet = buildGeoSet(windowed: newIMGeo, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
+          let croppedIMGeoWithNoViewportMargins = croppedIMGeo.scalingViewport(toSimilarSizeAs: currentWindowedIMGeo)
+          geoSet = buildGeoSet(windowed: croppedIMGeoWithNoViewportMargins, video: ctx.outputVidGeo, layoutMode: ctx.inputLayout.mode)
 
           // Animate the crop to highlight the piece being cut out.
           let cropAnimationDuration = 0.0
           tasks.append(.init(duration: cropAnimationDuration) { [self] in
             log.verbose{"Start exiting interactive mode: animating crop using: \(croppedIMGeo)"}
-            setFrameAndUpdateWindowSubviews(using: croppedIMGeo)
             // #InteractiveModeAnimationKludge
-            // TODO: A bit klugey. Need a cleaner way to *require* the given margins when specifying the geometry
-            viewportView.viewportConstraints?.updateSpacerMin(to: croppedIMGeo.viewportMargins, .init(1000))
+            setFrameAndUpdateWindowSubviews(using: croppedIMGeo, .cropBeforeExitingInteractiveMode)
 
             // Fade out cropBox selection rect
             cropController.cropBoxView.isHidden = true
@@ -1829,7 +1827,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           })
         }
 
-        // FIXME: animation is broken when !Preference.bool(for: . )
         let newLayoutState = LayoutState.fromPreferences(andMode: newMode, fillingInFrom: lastLayout)
         let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: ctx.inputLayout, to: newLayoutState, geoSet)
         let transitionTasks = buildTasks(for: transition, totalStartingDuration: startDuration, totalEndingDuration: endDuration)

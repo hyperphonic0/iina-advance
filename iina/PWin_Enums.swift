@@ -392,6 +392,7 @@ enum TransitionCategory: Int {
   case exitingMusicMode
 
   case enteringInteractiveMode
+  case cropBeforeExitingInteractiveMode
   case exitingInteractiveMode
   case enteringLegacyFullScreen
   case exitingLegacyFullScreen
