@@ -377,8 +377,8 @@ extension ViewportView {
     }
 
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
-    let keepVideoAwayFromBars = !interactiveMode && !musicMode && Preference.bool(for: .keepVideoAwayFromBars) && (transitionCategory == .noTransition)
-    let spacerExactValues: MarginQuad? = keepVideoAwayFromBars ? geometry.offsetsToKeepVideoAwayFromInsideBars : nil
+    let keepVideoAwayFromBars = !interactiveMode && !musicMode && Preference.bool(for: .keepVideoAwayFromBars) && (transitionCategory != .exitingInteractiveMode)
+    let spacerExactValues: MarginQuad = keepVideoAwayFromBars ? geometry.offsetsToKeepVideoAwayFromInsideBars : .zero
 
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers: Constraint(active: true, priority: 1000),
@@ -398,13 +398,12 @@ extension ViewportView {
                 // For interactive mode, these need to be higher priority than video max
                 spacerMin: QuadConstraint(active: true, priority: spacerMinPriority, spacerMinValues),
 
-                // Need to calculate these values ourselves now that we are relying on mpv to calculate margins for us via keepaspect=yes
+                // If configured, try to prevent overlap with the inner bars, if possible. But this is a lower priority.
                 spacerPreferred: QuadConstraint(active: false, priority: 481, spacerExactValues),
 
                 // Need to calculate these values ourselves now that we are relying on mpv to calculate margins for us via keepaspect=yes
                 spacerExact: QuadConstraint(active: keepVideoAwayFromBars, priority: 497, spacerExactValues),
 
-                // Try to prevent overlap with the inner bars, if possible. But this is a lower priority.
                 center: Constraint(active: (interactiveMode || musicMode) && (transitionCategory == .noTransition) && !keepVideoAwayFromBars, priority: 480)
     )
 

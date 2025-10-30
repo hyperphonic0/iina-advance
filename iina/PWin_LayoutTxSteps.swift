@@ -520,7 +520,7 @@ extension PlayerWindowController {
       updateMusicModeButtonsVisibility(using: transition.outputGeometry)
     }
 
-    if !transition.isWindowInitialLayout && !transition.isTogglingFullScreen {
+    if !transition.isWindowInitialLayout {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }
 

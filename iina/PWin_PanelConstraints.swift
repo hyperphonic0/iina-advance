@@ -435,6 +435,11 @@ extension PlayerWindowController {
       // It's not needed until the next step anyway.
       updateVideoView = false
     case .midTransitionHiddenUpdates:
+      if transition.isEnteringFullScreen {
+        // If entering FS, wait until next stage
+        return
+      }
+
       updateVideoView = true
       if transition.isEnteringMusicMode {
         category = .enteringMusicMode
@@ -450,7 +455,7 @@ extension PlayerWindowController {
         category = .exitingInteractiveMode
       }
     case .extraAnimationBeforeOpenNewPanels:
-      updateVideoView = false
+      updateVideoView = true
     case .openNewPanels:
       updateVideoView = stageGeo.mode != .musicMode
     case .postTransition:

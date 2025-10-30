@@ -338,7 +338,7 @@ enum ScreenFit: Int {
 
   /// Constrains inside `screen.frameWithoutCameraHousing`. Provided here for completeness, but not used at present.
   case nativeFullScreen
-  
+
   static var musicMode: ScreenFit = .stayInside
 
   var isFullScreen: Bool {
@@ -396,7 +396,5 @@ enum TransitionCategory: Int {
   case enteringInteractiveMode
   case cropBeforeExitingInteractiveMode
   case exitingInteractiveMode
-  case enteringLegacyFullScreen
-  case exitingLegacyFullScreen
 
 }
