@@ -982,23 +982,22 @@ extension PlayerWindowController {
     case .leadingSidebar:
       let newWidth = (videoView.userInterfaceLayoutDirection == .rightToLeft ?
                       window!.frame.width - dragEvent.locationInWindow.x : dragEvent.locationInWindow.x) - 2
-      (newCursor, newGeo) = resizeLeadingSidebar(from: oldGeo, desiredWidth: newWidth)
+      (newCursor, newGeo) = resizeLeadingSidebar(from: oldGeo, desiredWidth: newWidth, isFS: currentLayout.mode.isFullScreen)
     case .trailingSidebar:
       let newWidth = (videoView.userInterfaceLayoutDirection == .rightToLeft ?
                       dragEvent.locationInWindow.x : window!.frame.width - dragEvent.locationInWindow.x) - 2
-      (newCursor, newGeo) = resizeTrailingSidebar(from: oldGeo, desiredWidth: newWidth)
+      (newCursor, newGeo) = resizeTrailingSidebar(from: oldGeo, desiredWidth: newWidth, isFS: currentLayout.mode.isFullScreen)
     }
 
     if let newGeo {
-      setFrameAndUpdateWindowSubviews(using: newGeo)
-
       switch currentLayout.mode {
       case .windowedNormal:
+        setFrameAndUpdateWindowSubviews(using: newGeo)
         // Need to update windowedModeGeo for future operations.
         // New geo will have fit=.noConstraints, but we don't want to keep it
-        windowedModeGeo = newGeo.clone(screenFit: .stayInside)
+        windowedModeGeo = newGeo.clone(screenFit: windowedModeGeo.screenFit)
       case .fullScreenNormal:
-        break
+        setFrameAndUpdateWindowSubviews(using: newGeo)
       case .musicMode, .windowedInteractive, .fullScreenInteractive:
         Logger.fatal("ResizeSidebar: current mode unexpected: \(currentLayout.mode)")
       }
@@ -1007,12 +1006,12 @@ extension PlayerWindowController {
     applyCustomCursor(newCursor)
   }
 
-  private func resizeLeadingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> (CursorType, PWinGeometry?) {
+  private func resizeLeadingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat, isFS: Bool) -> (CursorType, PWinGeometry?) {
     let newPlaylistWidth: CGFloat
     let newGeo: PWinGeometry
     let currentLayout = currentLayout
-
     let desiredPlaylistWidth = clampPlaylistWidth(desiredWidth)
+    let outputScreenFit: ScreenFit = isFS ? oldGeo.screenFit : .noConstraints
 
     if currentLayout.leadingSidebar.placement == .insideViewport {
       // Stop sidebar from resizing when the viewportView is not wide enough to fit it.
@@ -1040,16 +1039,16 @@ extension PlayerWindowController {
       if Preference.bool(for: .lockViewportToVideoSize) {
         let desiredViewportSize = NSSize(width: newViewportWidth, height: round(newViewportWidth / viewportSize.aspect))
         // Do not try to move the window if it's slightly off screen; it looks weird. Use .noConstraints
-        newGeo = resizedPlaylistGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
+        newGeo = resizedPlaylistGeo.scalingViewport(to: desiredViewportSize, screenFit: outputScreenFit)
       } else {
         /// If `lockViewportToVideoSize` is `false`, window size won't change.
         /// But call `refit` to recalculate videoSize or other internal vars
-        newGeo = resizedPlaylistGeo.refitted(using: .noConstraints)
+        newGeo = resizedPlaylistGeo.refitted(using: outputScreenFit)
       }
     } else {  /// `.insideViewport`: needs to refit in case window is so small that the viewport is larger than the video
       let insideBarsNew = oldGeo.insideBars.clone(leading: newPlaylistWidth)
       let resizedPlaylistGeo = oldGeo.clone(insideBars: insideBarsNew)
-      newGeo = resizedPlaylistGeo.refitted(using: .noConstraints)
+      newGeo = resizedPlaylistGeo.refitted(using: outputScreenFit)
     }
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)
@@ -1066,15 +1065,15 @@ extension PlayerWindowController {
     return (.resizing_BothDirections, newGeo)
   }
 
-  private func resizeTrailingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> (CursorType, PWinGeometry?) {
+  private func resizeTrailingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat, isFS: Bool) -> (CursorType, PWinGeometry?) {
     let newPlaylistWidth: CGFloat
     let newGeo: PWinGeometry
     let currentLayout = currentLayout
-    let viewportSize = oldGeo.viewportSize
     let desiredPlaylistWidth = clampPlaylistWidth(desiredWidth)
+    let outputScreenFit: ScreenFit = isFS ? oldGeo.screenFit : .noConstraints
 
     if currentLayout.trailingSidebar.placement == .insideViewport {
-      let negativeDeficit = min(0, oldGeo.getExcessSpaceBetweenInsideSidebars(trailingSidebarWidth: desiredPlaylistWidth, in: viewportSize.width))
+      let negativeDeficit = min(0, oldGeo.getExcessSpaceBetweenInsideSidebars(trailingSidebarWidth: desiredPlaylistWidth, in: oldGeo.viewportSize.width))
 
       newPlaylistWidth = desiredPlaylistWidth + negativeDeficit
       if newPlaylistWidth < Constants.Sidebar.minPlaylistWidth {
@@ -1088,18 +1087,19 @@ extension PlayerWindowController {
     /// See comments in `resizeLeadingSidebar()` above
     if currentLayout.trailingSidebar.placement == .outsideViewport {
       let playlistWidthDifference = newPlaylistWidth - oldGeo.outsideBars.trailing
+      let viewportSize = oldGeo.viewportSize
       let newViewportWidth = viewportSize.width - playlistWidthDifference
       let resizedPlaylistGeo = oldGeo.clone(outsideBars: oldGeo.outsideBars.clone(trailing: newPlaylistWidth))
 
       if Preference.bool(for: .lockViewportToVideoSize) {
         let desiredViewportSize = NSSize(width: newViewportWidth, height: round(newViewportWidth / viewportSize.aspect))
-        newGeo = resizedPlaylistGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
+        newGeo = resizedPlaylistGeo.scalingViewport(to: desiredViewportSize, screenFit: outputScreenFit)
       } else {
-        newGeo = resizedPlaylistGeo.refitted(using: .noConstraints)
+        newGeo = resizedPlaylistGeo.refitted(using: outputScreenFit)
       }
     } else {  /// `.insideViewport`
       let resizedPlaylistGeo = oldGeo.clone(insideBars: oldGeo.insideBars.clone(trailing: newPlaylistWidth))
-      newGeo = resizedPlaylistGeo.refitted(using: .noConstraints)
+      newGeo = resizedPlaylistGeo.refitted(using: outputScreenFit)
     }
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)

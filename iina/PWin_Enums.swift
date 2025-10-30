@@ -338,6 +338,8 @@ enum ScreenFit: Int {
 
   /// Constrains inside `screen.frameWithoutCameraHousing`. Provided here for completeness, but not used at present.
   case nativeFullScreen
+  
+  static var musicMode: ScreenFit = .stayInside
 
   var isFullScreen: Bool {
     switch self {

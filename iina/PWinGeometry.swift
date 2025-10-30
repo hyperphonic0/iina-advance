@@ -670,9 +670,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         }
 
         var outputWindowFrame = NSRect(origin: windowFrame.origin,
-                                    size: NSSize(width: newWindowWidth, height: newWindowHeight))
+                                       size: NSSize(width: newWindowWidth, height: newWindowHeight))
 
-        if ScreenFit.stayInside.shouldMoveWindowToKeepInContainer {
+        if ScreenFit.musicMode.shouldMoveWindowToKeepInContainer {
           outputWindowFrame = outputWindowFrame.constrainOrigin(in: containerFrame)
         }
         outputGeo = cloneMusicMode(windowFrame: outputWindowFrame)
@@ -776,7 +776,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     // -- Viewport size calculation
 
-    if lockViewportToVideoSize {
+    if lockViewportToVideoSize, !mode.isFullScreen {
       /// Make sure viewport size is at least as large as min.
       /// This is especially important when inside sidebars are taking up most of the space & `lockViewportToVideoSize` is `true`.
       /// Take min viewport margins into acocunt
@@ -958,8 +958,11 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
       let newWindowOrigin = NSPoint(x: newOriginX, y: windowFrame.origin.y)
       let newWindowSize = NSSize(width: newWindowWidth, height: newWindowHeight)
-      let naiveOriginWindowFrame = NSRect(origin: newWindowOrigin, size: newWindowSize)
-      let outputWindowFrame = naiveOriginWindowFrame.constrainOrigin(in: containerFrame)
+
+      var outputWindowFrame = NSRect(origin: newWindowOrigin, size: newWindowSize)
+      if ScreenFit.musicMode.shouldMoveWindowToKeepInContainer {
+        outputWindowFrame = outputWindowFrame.constrainOrigin(in: containerFrame)
+      }
 
       let outputGeo = cloneMusicMode(windowFrame: outputWindowFrame)
       assert(isViewportShown == outputGeo.isViewportShown,

@@ -377,14 +377,15 @@ extension ViewportView {
     }
 
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
-    let keepVideoAwayFromBars = !interactiveMode && !musicMode && Preference.bool(for: .keepVideoAwayFromBars) && !Preference.bool(for: .lockViewportToVideoSize) && (transitionCategory != .exitingInteractiveMode)
+    let keepVideoAwayFromBars = !interactiveMode && !musicMode && Preference.bool(for: .keepVideoAwayFromBars) && (transitionCategory == .noTransition)
     let spacerExactValues: MarginQuad? = keepVideoAwayFromBars ? geometry.offsetsToKeepVideoAwayFromInsideBars : nil
 
     // Need to keep priorities under 500 or the window will not resize!
     cons.update(connectSpacers: Constraint(active: true, priority: 1000),
-                // The desired aspect must always be honored. All constraints are secondary to this.
+
+                // The desired aspect (if enabled) is given top priority
                 aspect: AspectConstraint(active: (interactiveMode || musicMode) && (transitionCategory == .noTransition),
-                                         priority: .required,
+                                         priority: .init(499),
                                          multiplier: videoViewAspect),
 
                 /// For interactive mode, max width should equal superview's width minus minMargins

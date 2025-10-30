@@ -24,6 +24,7 @@ class ViewportView: NSView {
     clipsToBounds = true
     translatesAutoresizingMaskIntoConstraints = false
     autoresizesSubviews = false
+    setCCResistance(h: 250, v: 250)  // unclear if this is ever necessary, but lower it to be safe
     initVideoViewSpacers()
   }
 
