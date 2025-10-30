@@ -153,11 +153,10 @@ extension PlayerWindowController {
         viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
       }
 
+      // In music mode, need to be lower priority than VideoView constraints. Otherwise live resize of window will break.
+      // Leave as lower priority always - doesn't seem to hurt, and prevent conflicting constraints
       p.bottomBarBtmOffsetFromVPBtm.createOrUpdate(to: constant2, priorityInt: 260, log) { [self] c in
-        let con = bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
-        // In music mode, need to be lower priority than VideoView constraints. Otherwise live resize of window will break.
-        // Leave as lower priority always - doesn't seem to hurt, and prevent conflicting constraints
-        return con
+        bottomBarView.bottomAnchor.constraint(equalTo: viewportView.bottomAnchor, constant: c)
       }
     }
 
@@ -417,7 +416,7 @@ extension PlayerWindowController {
   }
 
   private func updateWindowFrameIfNeeded(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry, in transition: LayoutTransition, _ log: Logger.Subsystem) {
-    let updateVideoView: Bool
+    let updateVP: Bool
     var category: TransitionCategory = .noTransition
     switch stage {
     case .preTransitionSetup:
@@ -426,21 +425,21 @@ extension PlayerWindowController {
       return
     case .closeOldPanels:
       assert(!transition.isWindowInitialLayout && !transition.isEnteringFullScreen)
-      updateVideoView = true
+      updateVP = true
       if transition.isExitingInteractiveMode {
         category = .exitingInteractiveMode
       }
     case .moveAndScale:
-      // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVideoView: false).
+      // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVP: false).
       // It's not needed until the next step anyway.
-      updateVideoView = false
+      updateVP = false
     case .midTransitionHiddenUpdates:
       if transition.isEnteringFullScreen {
         // If entering FS, wait until next stage
         return
       }
 
-      updateVideoView = true
+      updateVP = true
       if transition.isEnteringMusicMode {
         category = .enteringMusicMode
       } else if transition.isExitingMusicMode {
@@ -455,15 +454,15 @@ extension PlayerWindowController {
         category = .exitingInteractiveMode
       }
     case .extraAnimationBeforeOpenNewPanels:
-      updateVideoView = true
+      updateVP = true
     case .openNewPanels:
-      updateVideoView = stageGeo.mode != .musicMode
+      updateVP = stageGeo.mode != .musicMode
     case .postTransition:
-      updateVideoView = true
+      updateVP = true
     }
 
-    log.verbose("Calling setFrame with \(stageGeo.windowFrame) updateVV=\(updateVideoView.yn)")
-    setFrameAndUpdateWindowSubviews(using: stageGeo, updateVideoView: updateVideoView, category)
+    log.verbose("Calling setFrame with \(stageGeo.windowFrame) mode=\(stageGeo.mode) updateVP\(updateVP.yn) cat=\(category)")
+    setFrameAndUpdateWindowSubviews(using: stageGeo, updateViewportConstraints: updateVP, category)
   }
 
   @discardableResult

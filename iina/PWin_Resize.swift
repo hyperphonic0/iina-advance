@@ -169,12 +169,12 @@ extension PlayerWindowController {
   /// • Also resizes window subviews.
   /// • It will still animate if used inside an `NSAnimationContext` or `IINAAnimation.Task` with non-zero duration.
   func setFrameAndUpdateWindowSubviews(using geometry: PWinGeometry,
-                                       updateVideoView: Bool = true,
+                                       updateViewportConstraints: Bool = true,
                                        _ transitionCategory: TransitionCategory = .noTransition,
                                        submitUpdate: Bool = false) {
-    log.verbose{"[PWin.setFrame] Entered: updateViewportConstraints=\(updateVideoView.yn) cat=\(transitionCategory) submit=\(submitUpdate.yn) geo=\(geometry)"}
+    log.verbose{"[PWin.setFrame] Entered: updateViewportConstraints=\(updateViewportConstraints.yn) cat=\(transitionCategory) submit=\(submitUpdate.yn) geo=\(geometry)"}
 
-    resizeWindowSubviews(using: geometry, updateVideoView: updateVideoView, transitionCategory)
+    resizeWindowSubviews(using: geometry, updateViewportConstraints: updateViewportConstraints, transitionCategory)
 
     if geometry.isLegacyFullScreen {
       updateOSDTopOffsetConstraints(for: geometry)
@@ -221,7 +221,7 @@ extension PlayerWindowController {
   ///
   /// This method cannot handle complex layout changes. For that, use a `LayoutTransition` (see `PWin_LayoutTxBuilder.swift`).
   private func resizeWindowSubviews(using newGeometry: PWinGeometry,
-                                    updateVideoView: Bool = true,
+                                    updateViewportConstraints: Bool = true,
                                     _ transitionCategory: TransitionCategory = .noTransition) {
     // Trigger forced draws so that mpv can [try its best to] redraw the video without distortion during window resize:
     videoView.activateForcedRedraws()
@@ -229,7 +229,7 @@ extension PlayerWindowController {
     // These may no longer be aligned correctly. Just hide them
     hideSeekPreviewImmediately()
 
-    if updateVideoView {
+    if updateViewportConstraints {
       viewportView.apply(newGeometry, transitionCategory)
     }
 
