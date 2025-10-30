@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24128" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24128"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -108,15 +108,15 @@ DQ
                 </button>
             </subviews>
             <constraints>
+                <constraint firstItem="EC9-NQ-gwl" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="24" id="1OK-Te-oLD"/>
                 <constraint firstItem="7a4-Wz-kzd" firstAttribute="leading" secondItem="yrf-Aq-Gy6" secondAttribute="trailing" constant="4" id="Aza-sO-BYU"/>
                 <constraint firstItem="hsz-Wv-zHe" firstAttribute="leading" secondItem="EC9-NQ-gwl" secondAttribute="trailing" constant="10" id="C2y-Zz-xI5"/>
                 <constraint firstItem="99r-Th-YSz" firstAttribute="centerY" secondItem="sHe-JW-Elk" secondAttribute="centerY" id="CYO-k8-qKy"/>
                 <constraint firstItem="99r-Th-YSz" firstAttribute="firstBaseline" secondItem="yrf-Aq-Gy6" secondAttribute="firstBaseline" id="FSv-Cr-xkP"/>
-                <constraint firstItem="yrf-Aq-Gy6" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="24" id="Gnw-C5-HOK"/>
+                <constraint firstItem="yrf-Aq-Gy6" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" priority="499" constant="24" id="Gnw-C5-HOK"/>
                 <constraint firstItem="sHe-JW-Elk" firstAttribute="leading" secondItem="99r-Th-YSz" secondAttribute="trailing" constant="8" id="KrU-2L-Jcb"/>
-                <constraint firstItem="yrf-Aq-Gy6" firstAttribute="leading" secondItem="EC9-NQ-gwl" secondAttribute="leading" id="XDZ-cH-ha3"/>
                 <constraint firstItem="EC9-NQ-gwl" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" constant="8" id="a0X-o8-wnM"/>
-                <constraint firstAttribute="trailing" secondItem="sHe-JW-Elk" secondAttribute="trailing" priority="499" constant="24" id="b0k-Ij-6vn"/>
+                <constraint firstAttribute="trailing" secondItem="sHe-JW-Elk" secondAttribute="trailing" constant="24" id="b0k-Ij-6vn"/>
                 <constraint firstItem="hsz-Wv-zHe" firstAttribute="firstBaseline" secondItem="EC9-NQ-gwl" secondAttribute="firstBaseline" id="bwy-R7-vsC"/>
                 <constraint firstItem="99r-Th-YSz" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="7a4-Wz-kzd" secondAttribute="trailing" constant="8" id="cQK-Sp-AJP"/>
                 <constraint firstItem="7a4-Wz-kzd" firstAttribute="firstBaseline" secondItem="yrf-Aq-Gy6" secondAttribute="firstBaseline" id="kMf-8L-TjQ"/>
