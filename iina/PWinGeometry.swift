@@ -474,7 +474,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   var hasTopPaddingForCameraHousing: Bool {
-    return topMarginHeight > 0
+    return topMarginHeight > GeoUtil.legacyFSBorderClip
   }
 
   var isLegacyFullScreen: Bool {
