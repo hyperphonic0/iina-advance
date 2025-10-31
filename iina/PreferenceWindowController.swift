@@ -152,7 +152,6 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var tableView: NSTableView!
   @IBOutlet weak var maskView: PrefSearchResultMaskView!
   @IBOutlet weak var prefDetailScrollView: NSScrollView!  // contains the prefs detail panel (on right)
-  // Check `prefDetailContentView` constraints in the XIB for window content insets
   @IBOutlet weak var prefDetailContentView: NSView!       // contains the sections stack
   @IBOutlet var completionPopover: NSPopover!
   @IBOutlet weak var completionTableView: NSTableView!
@@ -377,7 +376,6 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
 
     let isScrollable = vc.preferenceContentIsScrollable
     detailViewBottomConstraint?.isActive = !isScrollable
-    prefDetailScrollView.verticalScrollElasticity = .none
 
     // find label
     if let title = title, let label = findLabel(titled: title, in: vc.view) {

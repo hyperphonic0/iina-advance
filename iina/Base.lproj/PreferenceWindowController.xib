@@ -22,7 +22,7 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <window title="Settings" allowsToolTipsWhenApplicationIsInactive="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="F0z-JX-Cv5" userLabel="Preferences Window">
+        <window title="Settings" separatorStyle="none" allowsToolTipsWhenApplicationIsInactive="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="F0z-JX-Cv5" userLabel="Preferences Window">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="820" height="480"/>
@@ -150,7 +150,7 @@
                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="mpW-1b-ztU" userLabel="PrefSearchResult Mask View" customClass="PrefSearchResultMaskView" customModule="IINA_Advance" customModuleProvider="target">
                         <rect key="frame" x="200" y="0.0" width="620" height="480"/>
                     </customView>
-                    <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="VYU-tb-v3l" userLabel="PrefDetailPanel Scroll View">
+                    <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" findBarPosition="aboveHorizontalRuler" translatesAutoresizingMaskIntoConstraints="NO" id="VYU-tb-v3l" userLabel="PrefDetailPanel Scroll View">
                         <rect key="frame" x="200" y="0.0" width="620" height="480"/>
                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="fAk-o1-RBn" userLabel="PrefDetailPanel Clip View">
                             <rect key="frame" x="0.0" y="0.0" width="620" height="480"/>
@@ -188,10 +188,10 @@
                     <constraint firstItem="anY-kd-ix3" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" id="IPO-JP-XJz"/>
                     <constraint firstAttribute="bottom" secondItem="AO2-1e-7F6" secondAttribute="bottom" id="Iae-jL-Lbe"/>
                     <constraint firstItem="anY-kd-ix3" firstAttribute="leading" secondItem="AO2-1e-7F6" secondAttribute="trailing" constant="-1" id="MfE-Gd-IRb"/>
+                    <constraint firstItem="VYU-tb-v3l" firstAttribute="top" secondItem="mpW-1b-ztU" secondAttribute="top" id="Q5q-tt-fwu"/>
                     <constraint firstAttribute="trailing" secondItem="mpW-1b-ztU" secondAttribute="trailing" id="TaF-ES-bGg"/>
                     <constraint firstItem="AO2-1e-7F6" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" id="Yag-r7-077"/>
                     <constraint firstAttribute="bottom" secondItem="mpW-1b-ztU" secondAttribute="bottom" id="ZFX-8N-eqw"/>
-                    <constraint firstItem="VYU-tb-v3l" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" id="gJS-on-Kmb"/>
                     <constraint firstItem="mpW-1b-ztU" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" id="zpa-gD-im9"/>
                 </constraints>
             </view>
