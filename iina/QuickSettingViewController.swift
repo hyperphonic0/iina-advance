@@ -82,6 +82,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   @IBOutlet weak var tabHeightConstraint: NSLayoutConstraint!
 
+  @IBOutlet weak var videoTabScrollView: NSScrollView!
+  @IBOutlet weak var audioTabScrollView: NSScrollView!
+  @IBOutlet weak var subtitlesTabScrollView: NSScrollView!
+
   @IBOutlet weak var videoTabBtn: NSButton!
   @IBOutlet weak var audioTabBtn: NSButton!
   @IBOutlet weak var subTabBtn: NSButton!
@@ -225,6 +229,11 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       tableView.dataSource = self
       tableView.superview?.superview?.layer?.cornerRadius = 4
       tableView.backgroundColor = NSColor.sidebarTableBackground
+    }
+
+    let tabScrollViews = [videoTabScrollView, audioTabScrollView, subtitlesTabScrollView]
+    for (view, item) in zip(tabScrollViews, tabView.tabViewItems) {
+      item.view = view
     }
 
     updateVerticalConstraints()
