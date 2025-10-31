@@ -64,7 +64,7 @@ extension PlayerWindowController {
       window.isMovableByWindowBackground = false
     }
 
-    if transition.isEnteringFullScreen, let customTitleBar {
+    if let customTitleBar, transition.isEnteringFullScreen || transition.isTogglingLegacyStyle {
       // Workaround: for some reason, rebuildPanelConstraints() causes custom title bar's title text to lose centering. Just get rid of it now.
       customTitleBar.removeAndCleanUp()
       self.customTitleBar = nil
@@ -220,9 +220,11 @@ extension PlayerWindowController {
       let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
       if onTopButtonVisibility == .hidden {
         onTopButton.alphaValue = 0
+        onTopButton.isHidden = true
 
         if let customTitleBar {
           customTitleBar.onTopButton.alphaValue = 0
+          customTitleBar.onTopButton.isHidden = true
         }
       }
     }

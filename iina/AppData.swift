@@ -429,7 +429,13 @@ struct Constants {
 
     /// Distance between traffic light buttons (their alignment rects, which does not include some extra padding around
     /// their images)
-    static let titleBarIconHSpacing: CGFloat = 6
+    static var titleBarIconHSpacing: CGFloat = {
+      if #available(macOS 26.0, *) {
+        // Icon spacing increased in Tahoe
+        return 9
+      }
+      return 6
+    }()
 
     // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
     // (with no bar gradient or shading).
