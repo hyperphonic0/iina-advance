@@ -230,7 +230,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Oz4-Vq-YmU" userLabel="WindowOpacity Slider">
-                                    <rect key="frame" x="109" y="2" width="240" height="16"/>
+                                    <rect key="frame" x="109" y="3" width="240" height="16"/>
                                     <constraints>
                                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="150" id="0Ss-3d-jQk"/>
                                         <constraint firstAttribute="width" relation="lessThanOrEqual" priority="900" constant="240" id="ddJ-ex-oMD"/>
@@ -317,8 +317,8 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="16" y="-1051.5"/>
         </customView>
-        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2Pv-Ut-0kz" userLabel="Prefs &gt; UI &gt; Full Screen" propertyAccessControl="all">
-            <rect key="frame" x="0.0" y="2" width="579" height="136"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="2Pv-Ut-0kz" userLabel="Prefs &gt; UI &gt; Full Screen" propertyAccessControl="all">
+            <rect key="frame" x="0.0" y="0.0" width="579" height="136"/>
             <subviews>
                 <textField identifier="SectionTitleFullScreen" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fkF-Rz-sk3">
                     <rect key="frame" x="-2" y="112" width="81" height="16"/>
@@ -375,11 +375,11 @@ For smoothest results, also enable custom full screen.</string>
                                                                 </constraints>
                                                             </customView>
                                                             <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1oZ-lo-QsR" userLabel="ToggleAnimationSpeed Horizontal Slider">
-                                                                <rect key="frame" x="156" y="2" width="195" height="16"/>
+                                                                <rect key="frame" x="156" y="3" width="195" height="16"/>
                                                                 <constraints>
                                                                     <constraint firstAttribute="width" constant="195" id="8g7-LI-2hr"/>
                                                                 </constraints>
-                                                                <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" userInterfaceLayoutDirection="rightToLeft" alignment="left" maxValue="0.75" doubleValue="0.25" tickMarkPosition="below" numberOfTickMarks="13" allowsTickMarkValuesOnly="YES" sliderType="linear" id="fc5-xy-pnP"/>
+                                                                <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" maxValue="0.75" doubleValue="0.25" tickMarkPosition="below" numberOfTickMarks="13" allowsTickMarkValuesOnly="YES" sliderType="linear" id="fc5-xy-pnP"/>
                                                                 <connections>
                                                                     <binding destination="lH7-Vv-0M1" name="value" keyPath="values.animationDurationFullScreen" id="uPJ-wT-miW"/>
                                                                 </connections>
@@ -531,11 +531,11 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstAttribute="trailing" secondItem="d9m-Hf-6wE" secondAttribute="trailing" id="ofv-rX-MTT"/>
                 <constraint firstAttribute="bottom" secondItem="d9m-Hf-6wE" secondAttribute="bottom" constant="8" id="zrl-6c-0VQ"/>
             </constraints>
-            <point key="canvasLocation" x="19" y="-874"/>
+            <point key="canvasLocation" x="21" y="-884"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="lH7-Vv-0M1"/>
-        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="D77-Iw-nrY" userLabel="Prefs &gt; UI &gt; Window Geometry" propertyAccessControl="all">
-            <rect key="frame" x="0.0" y="-22" width="582" height="447"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="D77-Iw-nrY" userLabel="Prefs &gt; UI &gt; Window Geometry" propertyAccessControl="all">
+            <rect key="frame" x="0.0" y="0.0" width="582" height="447"/>
             <subviews>
                 <textField identifier="SectionTitleWindow" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="751" verticalCompressionResistancePriority="751" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RFk-nU-SGL">
                     <rect key="frame" x="-2" y="407" width="124" height="32"/>
@@ -2259,10 +2259,10 @@ For smoothest results, also enable custom full screen.</string>
                 <box title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="0eU-xI-byi" userLabel="Hide-Inside-Video-Controls Box">
                     <rect key="frame" x="120" y="8" width="450" height="88"/>
                     <view key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="s79-ch-C1D" userLabel="Hide-Inside-Video-Controls Box View">
-                        <rect key="frame" x="1" y="1" width="408" height="86"/>
+                        <rect key="frame" x="0.0" y="0.0" width="450" height="88"/>
                         <subviews>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IvI-R5-Sdu">
-                                <rect key="frame" x="16" y="59" width="116" height="16"/>
+                                <rect key="frame" x="16" y="61" width="116" height="16"/>
                                 <buttonCell key="cell" type="check" title="Auto hide after:" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="XOh-46-9Jf">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -2296,7 +2296,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </connections>
                             </textField>
                             <textField identifier="AccessoryLabelOSCAutoHide" focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hkU-0W-pJb">
-                                <rect key="frame" x="200" y="59" width="11" height="16"/>
+                                <rect key="frame" x="200" y="61" width="11" height="16"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="s" id="S8H-Xr-uVa">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2304,7 +2304,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </textFieldCell>
                             </textField>
                             <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="kw0-f3-qrz">
-                                <rect key="frame" x="16" y="35" width="376" height="16"/>
+                                <rect key="frame" x="16" y="37" width="376" height="16"/>
                                 <buttonCell key="cell" type="check" title="Hide when cursor leaves window" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ZJL-Jz-cNh">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -2314,7 +2314,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </connections>
                             </button>
                             <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="Tue-oY-6da">
-                                <rect key="frame" x="16" y="11" width="392" height="16"/>
+                                <rect key="frame" x="16" y="13" width="392" height="16"/>
                                 <buttonCell key="cell" type="check" title="Move video into empty space (as available) to reduce overlap" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="nLH-m0-W5I">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -2378,7 +2378,7 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="18" y="-219"/>
         </customView>
-        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="c8m-G4-or8" userLabel="Prefs &gt; UI &gt; OSD" propertyAccessControl="all">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="c8m-G4-or8" userLabel="Prefs &gt; UI &gt; OSD" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="640" height="284"/>
             <subviews>
                 <textField identifier="SectionTitleOSD" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zyi-J3-lSp">
@@ -2934,8 +2934,8 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="-18" y="563"/>
         </customView>
-        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars" propertyAccessControl="all">
-            <rect key="frame" x="0.0" y="-6" width="619" height="362"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars" propertyAccessControl="all">
+            <rect key="frame" x="0.0" y="0.0" width="619" height="360"/>
             <subviews>
                 <textField identifier="SectionTitleSidebars" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="E6K-jW-Lzn">
                     <rect key="frame" x="-2" y="338" width="66" height="16"/>
@@ -3427,7 +3427,7 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="-20" y="976"/>
         </customView>
-        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="all">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="-20" width="547" height="320"/>
             <subviews>
                 <textField identifier="SectionTitleThumb" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="maZ-e8-1vw" userLabel="Thumbnail Preview Section Label">
@@ -4248,7 +4248,7 @@ Picture:</string>
             </constraints>
             <point key="canvasLocation" x="-30" y="1655"/>
         </customView>
-        <customView misplaced="YES" id="k9o-rY-z6u" userLabel="Prefs &gt; UI &gt; Accessibility" propertyAccessControl="all">
+        <customView id="k9o-rY-z6u" userLabel="Prefs &gt; UI &gt; Accessibility" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="-2" width="550" height="96"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
