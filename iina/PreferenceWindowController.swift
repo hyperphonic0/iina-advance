@@ -373,6 +373,7 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
 
   // MARK: - Tabs
 
+  /// Opens the tab at the given index.
   @discardableResult
   private func loadTab(at index: Int, thenFindLabelTitled title: String? = nil) -> PreferenceWindowEmbeddable? {
     // load view

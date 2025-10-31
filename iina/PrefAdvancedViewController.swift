@@ -121,6 +121,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   }
 
   override func viewWillDisappear() {
+    super.viewWillDisappear()
     Logger.log.trace("Advanced pref pane will disappear")
     notiHandler.removeAllObservers()
   }

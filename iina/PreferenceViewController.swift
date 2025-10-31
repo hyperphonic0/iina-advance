@@ -27,16 +27,18 @@ class PreferenceViewController: NSViewController {
 
     let views = sectionViews.flatMap { [$0, NSBox.horizontalLine()] }.dropLast()
 
-    stackView = NSStackView(views: Array(views))
-    stackView.orientation = .vertical
-    stackView.alignment = .leading
-    stackView.spacing = 16
-    stackView.distribution = .fill
+    if let embeddable = self as? PreferenceWindowEmbeddable, embeddable.preferenceContentIsScrollable || !sectionViews.isEmpty {
+      stackView = NSStackView(views: Array(views))
+      stackView.orientation = .vertical
+      stackView.alignment = .leading
+      stackView.spacing = 16
+      stackView.distribution = .fill
+      stackView.idString = "PreferenceViewController.stackView"
+      view.addSubview(stackView)
+      Utility.quickConstraints(["H:|[v]|", "V:|[v]|"], ["v": stackView])
+      stackView.views.forEach { Utility.quickConstraints(["H:|[v]|"], ["v": $0]) }
+    }
 
-    view.addSubview(stackView)
-    Utility.quickConstraints(["H:|[v]|", "V:|[v]|"], ["v": stackView])
-
-    stackView.views.forEach { Utility.quickConstraints(["H:|[v]|"], ["v": $0]) }
 
   }
 
