@@ -58,6 +58,14 @@ struct GeoUtil {
     return true
   }
 
+  static var legacyFSBorderClip: CGFloat {
+    if #available(macOS 26.0, *) {
+      return Constants.Window.borderClip
+    } else {
+      return 0
+    }
+  }
+
   static func fullScreenWindowFrame(in screen: NSScreen, legacy: Bool) -> NSRect {
     if legacy {
       let f = screen.frame
@@ -67,7 +75,7 @@ struct GeoUtil {
 
       let bc = Constants.Window.borderClip
       return NSRect(origin: NSPoint(x: f.origin.x - bc, y: f.origin.y - bc), size: NSSize(width: f.width + bc + bc, height: f.height + bc + bc))
-      
+
     } else {
       return screen.frameWithoutCameraHousing
     }
