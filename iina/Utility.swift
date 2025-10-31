@@ -304,7 +304,9 @@ class Utility {
     input.cell?.isScrollable = true
     input.isBezeled = true
     input.bezelStyle = .roundedBezel
-    input.controlSize = .large
+    if #available(macOS 11.0, *) {
+      input.controlSize = .large
+    }
     if let inputValue = inputValue {
       input.stringValue = inputValue
     }
