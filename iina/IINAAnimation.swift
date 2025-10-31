@@ -277,9 +277,9 @@ extension IINAAnimation {
         // do not want to allow other tasks to execute in between.
         guard let task = popNextValidTask() else { return }
         nextTask = task
-      } else if let nextGTF = popNextReadyGTF() {
+      } else if let gtfTask = popNextReadyGTF() {
         // Kick-start the GTF via a Task
-        nextTask = Task.instantTask(nextGTF.execute)
+        nextTask = gtfTask
       } else {
         guard let task = popNextValidTask() else { return }
         nextTask = task
@@ -334,18 +334,23 @@ extension IINAAnimation {
     
     /// Checks that the last GeometryTransform is done, and if there is an enqueued GeometryTransform waiting.
     /// If so, pops & returns it.
-    private func popNextReadyGTF() -> GeometryTransform? {
+    private func popNextReadyGTF() -> Task? {
       gtfLock.withLock{ [self] in
         guard gtfCurrentlyRunningID == nil else { return nil }
         if let nextGTF = gtfQueue.removeFirst() {
           gtfCurrentlyRunningID = nextGTF.id
           log.verbose{"[Pipeline] Starting GTF: \(nextGTF.name.quoted); queue size: \(gtfQueue.count)"}
-          return nextGTF
+          return Task.instantTask(nextGTF.execute)
         }
-        if isDoneWithAllGTFs, wantsVideoGeoSync, let player {
-          wantsVideoGeoSync = false
-          let gtf = GeometryTransform("SyncVidGeo", id: nextID_NoLock(), player)
-          return gtf
+        if isDoneWithAllGTFs {
+          if wantsVideoGeoSync, let player {
+            wantsVideoGeoSync = false
+            let gtf = GeometryTransform("SyncVidGeo", id: nextID_NoLock(), player)
+            return Task.instantTask(gtf.execute)
+          } else if let workAfterGTFs = pendingWorkAfterGTFs {
+            pendingWorkAfterGTFs = nil
+            return Task.instantTask(workAfterGTFs)
+          }
         }
 
         return nil
