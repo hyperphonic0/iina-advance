@@ -33,10 +33,11 @@ class PreferenceViewController: NSViewController {
     stackView.spacing = 16
     stackView.distribution = .fill
 
-    stackView.views.forEach { Utility.quickConstraints(["H:|[v]|"], ["v": $0]) }
-
     view.addSubview(stackView)
     Utility.quickConstraints(["H:|[v]|", "V:|[v]|"], ["v": stackView])
+
+    stackView.views.forEach { Utility.quickConstraints(["H:|[v]|"], ["v": $0]) }
+
   }
 
 }

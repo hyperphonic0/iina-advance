@@ -154,7 +154,6 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var prefDetailScrollView: NSScrollView!  // contains the prefs detail panel (on right)
   // Check `prefDetailContentView` constraints in the XIB for window content insets
   @IBOutlet weak var prefDetailContentView: NSView!       // contains the sections stack
-  @IBOutlet weak var prefSectionsStackView: NSStackView!  // add prefs sections to this
   @IBOutlet var completionPopover: NSPopover!
   @IBOutlet weak var completionTableView: NSTableView!
   @IBOutlet weak var noResultLabel: NSTextField!
@@ -214,9 +213,6 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
       // Make more easily accessible for other components
       windowUndoManager = undoManager
     }
-
-    window?.titlebarAppearsTransparent = true
-    window?.titleVisibility = .hidden
     window?.isMovableByWindowBackground = true
 
     tableView.delegate = self
@@ -374,10 +370,10 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     if index != tableView.selectedRow {
       tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
     }
-    prefSectionsStackView.removeAllSubviews()
+    prefDetailContentView.removeAllSubviews()
     guard let vc = viewControllers[at: index] else { return nil }
-    prefSectionsStackView.addSubview(vc.view)
-    Utility.quickConstraints(["H:|-0-[v]-0-|", "V:|-0-[v]-0-|"], ["v": vc.view])
+    prefDetailContentView.addSubview(vc.view)
+    Utility.quickConstraints(["H:|-28-[v]-28-|", "V:|-28-[v]-28-|"], ["v": vc.view])
 
     let isScrollable = vc.preferenceContentIsScrollable
     detailViewBottomConstraint?.isActive = !isScrollable
