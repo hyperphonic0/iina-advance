@@ -58,6 +58,21 @@ struct GeoUtil {
     return true
   }
 
+  static func fullScreenWindowFrame(in screen: NSScreen, legacy: Bool) -> NSRect {
+    if legacy {
+      let f = screen.frame
+      if #unavailable(macOS 26.0) {
+        return f
+      }
+
+      let bc = Constants.Window.borderClip
+      return NSRect(origin: NSPoint(x: f.origin.x - bc, y: f.origin.y - bc), size: NSSize(width: f.width + bc + bc, height: f.height + bc + bc))
+      
+    } else {
+      return screen.frameWithoutCameraHousing
+    }
+  }
+
   /// Returns the limiting frame for the given `screenFit`, inside which the player window must fit.
   /// If no fit needed, returns `nil`.
   static func getContainerFrame(forScreenID screenID: String, screenFit: ScreenFit) -> NSRect? {
@@ -69,9 +84,9 @@ struct GeoUtil {
     case .stayInside, .centerInside:
       return screen.visibleFrame
     case .legacyFullScreen:
-      return screen.frame
+      return fullScreenWindowFrame(in: screen, legacy: true)
     case .nativeFullScreen:
-      return screen.frameWithoutCameraHousing
+      return fullScreenWindowFrame(in: screen, legacy: false)
     }
   }
 

@@ -2253,8 +2253,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let newOpacity: Float = layout.isFullScreen || !layout.isLegacyStyle ? 1.0 : newOpacity ?? (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0)
     // Native window removes the border if winodw background is transparent.
     // Try to match this behavior for legacy window
-    let wantsShown = layout.isLegacyStyle && !layout.isFullScreen && newOpacity == 1.0
-    if wantsShown {
+    var wantsBorderShown = false
+    if #unavailable(macOS 26) {  // Border is drawn on all window styles starting with MacOS 26
+      wantsBorderShown = layout.isLegacyStyle && !layout.isFullScreen && newOpacity == 1.0
+    }
+    if wantsBorderShown {
       let contentView = window!.contentView!
       if customWindowBorderBox.superview == nil {
         contentView.addSubview(customWindowBorderBox, positioned: .above, relativeTo: contentView.containsSubview(topBarView) ? topBarView : viewportView)
@@ -2279,6 +2282,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         contentView.needsLayout = true
       }
     } else {
+      // Hide border
       customWindowBorderBox.removeFromSuperview()
       customWindowBorderTopHighlightBox.removeFromSuperview()
     }

@@ -129,21 +129,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert(!mode.isFullScreen || screenFit.isFullScreen, "screenFit must be fullScreen when mode is fullScreen")
   }
 
-  static func fullScreenWindowFrame(in screen: NSScreen, legacy: Bool) -> NSRect {
-    if legacy {
-      return screen.frame
-    } else {
-      return screen.frameWithoutCameraHousing
-    }
-  }
-
   /// See also `LayoutState.buildFullScreenGeometry()`.
   static func forFullScreen(in screen: NSScreen, legacy: Bool, mode: PlayerWindowMode,
                             outsideBars: MarginQuad, insideBars: MarginQuad,
                             video: VideoGeometry,
                             hasTopPaddingForCameraHousing: Bool) -> PWinGeometry {
 
-    let windowFrame = fullScreenWindowFrame(in: screen, legacy: legacy)
+    let windowFrame = GeoUtil.fullScreenWindowFrame(in: screen, legacy: legacy)
     let screenFit: ScreenFit
     let topMarginHeight: CGFloat
     if legacy {
