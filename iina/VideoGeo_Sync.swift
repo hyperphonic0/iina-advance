@@ -73,8 +73,9 @@ extension GeometryTransform.ContextStage2 {
       return nil
     }
 
-    if currentMediaAudioStatus.isAudio || vidTrackID == 0 {
-      // Square album art
+    // FIXME: audioStatus==notAudio for playlist which auto-plays audio
+    if (currentMediaAudioStatus == .isAudioWithoutArt || currentMediaAudioStatus == .isAudioWithArtHidden) || vidTrackID == 0 {
+      // Default album art is square
       log.debug{"[GTF:\(name)] Using albumArtGeometry ∵ isAudio=\(currentMediaAudioStatus.isAudio.yn) vid=\(vidTrackID)"}
       return VideoGeometry.albumArtGeometry(log)
     }
@@ -167,10 +168,6 @@ extension GeometryTransform.ContextStage2 {
                                              userRotation: userRotation,
                                              selectedCropLabel: cropLabel,
                                              videoSizeDisplayOverride: nil)
-
-    // FIXME: audioStatus==notAudio for playlist which auto-plays audio
-    assert(!currentMediaAudioStatus.isAudio && (vidTrackID != 0),
-           "Unexpected currentMediaAudioStatus=\(currentMediaAudioStatus) for vidTrackID=\(vidTrackID)")
 
     // dw, dh: the actual displayed dimensions. Usually we can grab these from video-out-params, but sometimes it can be wrong,
     // so then try to infer from video-dec-params.
