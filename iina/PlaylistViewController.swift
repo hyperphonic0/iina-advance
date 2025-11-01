@@ -185,12 +185,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     withAllTableViews { $0.backgroundColor = NSColor.sidebarTableBackground }
 
     // handle pending switch tab request
-    if pendingSwitchRequest != nil {
+    if pendingSwitchRequest == nil {
+      // Initial display: need to draw highlight for currentTab
+      updateTabButtonSelection()
+    } else {
       switchToTab(pendingSwitchRequest!)
       pendingSwitchRequest = nil
-    } else {
-      // Initial display: need to draw highlight for currentTab
-      updateTabButtons()
     }
 
     updateVerticalConstraints()
@@ -441,12 +441,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     tabView.selectTabViewItem(at: buttonTag)
 
     currentTab = tab
-    updateTabButtons()
+    updateTabButtonSelection()
     pwc.didChangeTab(to: tab)
   }
 
   // Updates display of all tabs buttons to indicate that the given tab is active and the rest are not
-  private func updateTabButtons() {
+  private func updateTabButtonSelection() {
     updateTabActiveStatus(for: playlistBtn, isActive: currentTab == .playlist)
     updateTabActiveStatus(for: chaptersBtn, isActive: currentTab == .chapters)
   }
