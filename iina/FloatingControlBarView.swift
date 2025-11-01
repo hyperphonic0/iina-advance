@@ -51,7 +51,9 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
     material = .popover
     state = .active
 
+    wantsLayer = true
     if #available(macOS 26, *) {
+      // MacOS Tahoe's style favors rounder corners. Try to fit in
       roundCorners(withRadius: 10)
     } else {
       roundCorners(withRadius: 6)

@@ -173,7 +173,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     let playlistSeparator_TopConstraint = playlistWrapperTopBorder.topAnchor.constraint(equalTo: playlistWrapperView.topAnchor)
     playlistSeparator_TopConstraint.isActive = true
     let playlistSeparator_BtmConstraint = playlistWrapperTopBorder.bottomAnchor.constraint(equalTo: playlistWrapperView.topAnchor, constant: 0.5)
-        playlistSeparator_BtmConstraint.priorityInt = 499
     playlistSeparator_BtmConstraint.isActive = true
 
     volumePopover.delegate = self

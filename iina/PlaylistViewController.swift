@@ -260,15 +260,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     player.log.verbose{"PlaylistView viewDidLoad done"}
   }
 
-  override func viewDidAppear() {
-    scrollPlaylistToCurrentItem()
-    updateLoopBtnStatus()
-    /// The observer for `iinaPlaylistChanged` may not have loaded in time to be triggered; kick it off manually.
-    PlayerCore.playlistQueue.asyncAfter(deadline: .now() + Constants.TimeInterval.initialPlaylistDelayBeforePrefetch) { [self] in
-      updateCachesForAllItems()
-    }
-  }
-
   deinit {
     ObjcUtils.silenced { [self] in
       for observer in distObservers {
@@ -428,12 +419,21 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
     assert(pwc.isInMiniPlayer || pwc.isOpen(sidebarTabGroup: .playlist),
            "switchToTab should not be called when playlist TabGroup is not shown or not in music mode")
+    guard currentTab != tab else { return }
     let buttonTag: Int
     switch tab {
     case .playlist:
+      reloadData(playlist: true, chapters: false)
+      scrollPlaylistToCurrentItem()
+      updateLoopBtnStatus()
+      /// The observer for `iinaPlaylistChanged` may not have loaded in time to be triggered; kick it off manually.
+      PlayerCore.playlistQueue.asyncAfter(deadline: .now() + Constants.TimeInterval.initialPlaylistDelayBeforePrefetch) { [self] in
+        updateCachesForAllItems()
+      }
       refreshNowPlayingIndex(thenScrollToVisible: true)
       buttonTag = 0
     case .chapters:
+      reloadData(playlist: false, chapters: true)
       buttonTag = 1
     default:
       Logger.fatal("PlaylistViewController: invalid tab requested for switching: \(tab)")

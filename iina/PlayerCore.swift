@@ -1938,7 +1938,9 @@ class PlayerCore: NSObject {
       // windowDidLoad will not be called. If playback is not paused make sure the display link is
       // active.
       if !shouldPause, pwc.loaded {
-        pwc.videoView.displayActive()
+        DispatchQueue.main.async { [self] in
+          pwc.videoView.displayActive()
+        }
       }
     }
     log.verbose{"FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")"}
