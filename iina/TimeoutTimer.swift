@@ -64,6 +64,8 @@ class TimeoutTimer {
 
   @objc private func timeoutReached() {
     cancel()
-    action!()
+    if let action {
+      action()
+    }
   }
 }
