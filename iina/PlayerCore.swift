@@ -1438,7 +1438,7 @@ class PlayerCore: NSObject {
         videoView.displayActive()
       }
       if pwc.currentLayout.isInPiP {
-        pwc.pip.controller.playing = !paused
+        pwc.pip.controller?.playing = !paused
       }
 
       if pwc.loaded, Preference.bool(for: .alwaysFloatOnTop) {

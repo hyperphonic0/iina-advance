@@ -244,6 +244,7 @@ struct Constants {
     static let denyWindowScrollTimeout = 0.2
     static let musicModePopoverMinTimeout = 2.0
     static let hideCursorMinTimeoutMS: CGFloat = 1
+    static let pipDidCloseTimeout = 1.0
 
     // This should match what is in Settings > UI
     static let osdTimeoutMin = 0.1

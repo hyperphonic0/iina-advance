@@ -59,17 +59,16 @@ extension PlayerWindowController {
     var log: Logger.Subsystem { player.log }
     var pwc: PlayerWindowController { player.pwc }
 
-    /// Needs to be retained during PiP, but cannot be reused
-    var videoController: NSViewController!
-
     let overlayView = PIPOverlayView()
 
-    var controller: PIPViewController { _pip }
-    lazy var _pip: PIPViewController = {
-      let pip = VideoPIPViewController()
-      pip.delegate = pwc
-      return pip
-    }()
+    var controller: PIPViewController?
+    /// Needs to be retained during PiP, but cannot be reused
+    var videoController: NSViewController?
+
+    /// When true, window is currently entering or exiting PiP.
+    var isInTransition: Bool = false
+    /// In certain situations we will not get `pipDidClose` callback. Use this timer as a fallback
+    let pipDidCloseTimer = TimeoutTimer(timeout: Constants.TimeInterval.pipDidCloseTimeout)
 
     init(_ player: PlayerCore) {
       self.player = player
@@ -106,6 +105,8 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
     // Exit interactive mode before even entering intermediate status
     exitInteractiveMode(then: { [self] in
+      guard !pip.isInTransition else { return }
+      pip.isInTransition = true
 
       if Preference.bool(for: .lockViewportToVideoSize) {
         _enterPIP(usePipBehavior: preferredPipBehavior, then: doOnSuccess)
@@ -172,21 +173,25 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       videoView.lockAndSetOpenGLContext()
       defer { videoView.unlockOpenGLContext() }
 
-      pip.videoController = NSViewController()
-      pip.videoController.view = videoView
+      let videoController = NSViewController()
+      videoController.view = videoView
+      pip.videoController = videoController
 
       // Remove remaining constraints. The PiP superview will manage videoView's layout.
       viewportView.removeViewportConstraints()
       videoView.layer?.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
       viewportView.removeSpacers()
 
-      pip.controller.playing = player.info.isPlaying
-      pip.controller.title = window.title
+      let pipController = VideoPIPViewController()
+      pipController.delegate = self
+      pipController.playing = player.info.isPlaying
+      pipController.title = window.title
       let aspectRatioSize = player.videoGeo.videoSizeCAR
       log.verbose{"Setting PiP aspect to \(aspectRatioSize.aspect)"}
-      pip.controller.aspectRatio = aspectRatioSize
+      pipController.aspectRatio = aspectRatioSize
+      pip.controller = pipController
 
-      pip.controller.presentAsPicture(inPicture: pip.videoController)
+      pipController.presentAsPicture(inPicture: videoController)
       pip.showOrHidePipOverlayView()
     }
 
@@ -218,6 +223,8 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
     videoView.forceDraw()
     player.saveState()
+
+    pip.isInTransition = false
     player.events.emit(.pipChanged, data: true)
 
     if let doOnSuccess {
@@ -233,30 +240,32 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       log.verbose("Skipping PIP exit because we are still restoring")
       return
     }
+    guard !pip.isInTransition else {
+      return
+    }
+    guard let pipController = pip.controller, let videoController = pip.videoController else { return }
     log.verbose("Exiting PIP, forced=\(force.yn)")
-    prepareForPIPClosure(pip.controller)
+    prepareForPIPClosure(pipController)
 
     // Prod Swift to pick the dismiss(_ viewController: NSViewController)
     // overload over dismiss(_ sender: Any?). A change in the way implicitly
     // unwrapped optionals are handled in Swift means that the wrong method
     // is chosen in this case. See https://bugs.swift.org/browse/SR-8956.
-    pip.controller.dismiss(pip.videoController!)
+    pipController.dismiss(videoController)
     player.events.emit(.pipChanged, data: false)
   }
 
   /// This is called right before we're about to close the PIP.
   private func prepareForPIPClosure(_ pipController: PIPViewController) {
     guard let window = window else { return }
-    let inputLayout = currentLayout
-    log.verbose("Preparing for PIP closure (will update currentLayout: \(inputLayout.isInPiP.yn))")
-    if inputLayout.isInPiP {
-      let outputLayout = inputLayout.clone(isInPiP: false)
-      currentLayout = outputLayout
+    guard currentLayout.isInPiP, !pip.isInTransition else {
+      return
     }
-    // Hide the overlay view preemptively, to prevent any issues where it does
-    // not hide in time and ends up covering the video view (which will be added
-    // to the window under everything else, including the overlay).
-    pip.showOrHidePipOverlayView()
+    pip.isInTransition = true
+    log.verbose("Preparing for PIP closure")
+
+    pip.controller = nil
+    pip.videoController = nil
 
     if AppDelegate.shared.isTerminating {
       // Don't bother restoring window state past this point
@@ -276,16 +285,23 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       // Bring to front so it is more obvious which window is relevant:
       window.makeKeyAndOrderFront(pipController)
     }
+
+    // Add timer to call pipDidClose, in case we never receive it
+    pip.pipDidCloseTimer.action = { [self] in
+      log.debug("Timed out waiting for pipDidClose; calling it now")
+      pipDidClose(pipController)
+    }
+    pip.pipDidCloseTimer.restart()
   }
 
   /// Called from PiP controller?
-  func pipWillClose(_ pip: PIPViewController) {
-    prepareForPIPClosure(pip)
+  func pipWillClose(_ pipController: PIPViewController) {
+    prepareForPIPClosure(pipController)
   }
 
   /// Called from PiP controller?
-  func pipShouldClose(_ pip: PIPViewController) -> Bool {
-    prepareForPIPClosure(pip)
+  func pipShouldClose(_ pipController: PIPViewController) -> Bool {
+    prepareForPIPClosure(pipController)
     return true
   }
 
@@ -293,6 +309,15 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     guard !AppDelegate.shared.isTerminating else { return }
     guard !isClosing else { return }  // if window is closing, let windowWillClose handle it
     guard let window else { return }
+    log.verbose{"Got pipDidClose: isInPiP=\(currentLayout.isInPiP.yn) isInTransition=\(pip.isInTransition.yn)"}
+
+    guard currentLayout.isInPiP, pip.isInTransition else { return }
+    pip.pipDidCloseTimer.cancel()
+
+    let outputLayout = currentLayout.clone(isInPiP: false)
+    currentLayout = outputLayout
+
+    pip.showOrHidePipOverlayView()
 
     // seems to require separate animation blocks to work properly
     var tasks: [IINAAnimation.Task] = []
@@ -340,6 +365,9 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
       isWindowMiniaturizedDueToPip = false
       player.saveState()
+
+      log.verbose{"PIP did close: done"}
+      pip.isInTransition = false
     })
 
     animationPipeline.submit(tasks)
