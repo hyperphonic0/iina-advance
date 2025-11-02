@@ -139,9 +139,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let screenFit: ScreenFit
     let topMarginHeight: CGFloat
     if legacy {
-      // Account for the extra clipping area in the top for legacy FS.
-      // FIXME: add margin for the other 3 sides! Currently we are clipping off 2 pixels from each of those sides when in legacy FS!
-      topMarginHeight = (hasTopPaddingForCameraHousing ? (screen.cameraHousingHeight ?? 0) : 0) + GeoUtil.legacyFSBorderClip
+      topMarginHeight = hasTopPaddingForCameraHousing ? (screen.cameraHousingHeight ?? 0) : 0
       screenFit = .legacyFullScreen
     } else {
       topMarginHeight = 0
@@ -474,7 +472,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   var hasTopPaddingForCameraHousing: Bool {
-    return topMarginHeight > GeoUtil.legacyFSBorderClip
+    return topMarginHeight > 0
   }
 
   var isLegacyFullScreen: Bool {

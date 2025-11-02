@@ -353,10 +353,6 @@ struct Constants {
     /// This needs to fit floating OSC + the margin around it
     static let minWidthBetweenInsideSidebars: CGFloat = 220
     static let minHeightBetweenInsideSidebars: CGFloat = 40
-
-    /// MacOS Tahoe (26.0) started adding borders around windows which do not have the `titled` style, and this is distracting when using Legacy Full Screen.
-    /// Workaround: make the window larger in every direction.
-    static let borderClip: CGFloat = 2.0
   }
   struct InteractiveMode {
     // Need enough space to display all the buttons and field at the bottom:

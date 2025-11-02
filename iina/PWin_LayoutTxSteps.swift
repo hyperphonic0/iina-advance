@@ -116,6 +116,7 @@ extension PlayerWindowController {
             window.styleMask.remove(.titled)
           }
           window.styleMask.insert(.borderless)
+          window.hasShadow = false
         } else {
           window.styleMask.insert(.fullScreen)
         }
@@ -428,9 +429,7 @@ extension PlayerWindowController {
       // Set legacy style
       setWindowStyleToLegacy()
 
-      if transition.outputLayout.isLegacyFullScreen {
-        window.styleMask.insert(.borderless)
-      } else {
+      if !transition.outputLayout.isLegacyFullScreen {
         window.styleMask.remove(.borderless)
       }
 
@@ -1097,6 +1096,7 @@ extension PlayerWindowController {
       if transition.inputLayout.isLegacyFullScreen {
         if #available(macOS 10.16, *) {
           window.level = .normal
+          window.hasShadow = true
         } else {
           window.styleMask.remove(.fullScreen)
         }
@@ -1273,6 +1273,7 @@ extension PlayerWindowController {
       window.styleMask.remove(.borderless)
       window.styleMask.insert(.titled)
     }
+    window.hasShadow = true
   }
 
   // MARK: - Support Functions: Interactive Mode Controls
