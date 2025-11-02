@@ -106,6 +106,44 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     // Exit interactive mode before even entering intermediate status
     exitInteractiveMode(then: { [self] in
       guard !pip.isInTransition else { return }
+
+      // Must not try to enter PiP if already in PiP - will crash!
+
+      if !player.info.isVideoTrackSelected {
+        log.debug("Aborting request for PIP entry: no video track selected!")
+        return
+      }
+
+      if isInMiniPlayer {
+        miniPlayer.loadIfNeeded()
+        if !miniPlayer.isViewportShown {
+          log.debug("Aborting request for PIP entry: in music mode with viewport disabled")
+          return
+        }
+      }
+
+      let isRestoring = player.isRestoring
+      if isRestoring {
+        log.debug("Skipping validation & state updates prior to entering PiP due to restore")
+      } else {
+        let inputLayout = currentLayout
+        guard !inputLayout.isInPiP else {
+          log.debug("Aborting request for PIP entry: already in PiP")
+          return
+        }
+
+        let outputLayout = inputLayout.clone(isInPiP: true)
+        guard outputLayout.isInPiP else {
+          log.debug("Aborting request for PIP entry: current layout does not support PiP")
+          return
+        }
+
+        currentLayout = outputLayout
+      }
+
+      log.verbose("Entering PiP")
+      PlayerManager.shared.pipPlayer = player
+
       pip.isInTransition = true
 
       if Preference.bool(for: .lockViewportToVideoSize) {
@@ -131,43 +169,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
   }
 
   private func _enterPIP(usePipBehavior: Preference.WindowBehaviorWhenPip?, then doOnSuccess: (() -> Void)?) {
-    // Must not try to enter PiP if already in PiP - will crash!
     guard let window else { return }
-
-    if !player.info.isVideoTrackSelected {
-      log.debug("Aborting request for PIP entry: no video track selected!")
-      return
-    }
-
-    if isInMiniPlayer {
-      miniPlayer.loadIfNeeded()
-      if !miniPlayer.isViewportShown {
-        log.debug("Aborting request for PIP entry: in music mode with viewport disabled")
-        return
-      }
-    }
-
-    let isRestoring = player.isRestoring
-    if isRestoring {
-      log.debug("Skipping validation & state updates prior to entering PiP due to restore")
-    } else {
-      let inputLayout = currentLayout
-      guard !inputLayout.isInPiP else {
-        log.debug("Aborting request for PIP entry: already in PiP")
-        return
-      }
-
-      let outputLayout = inputLayout.clone(isInPiP: true)
-      guard outputLayout.isInPiP else {
-        log.debug("Aborting request for PIP entry: current layout does not support PiP")
-        return
-      }
-
-      currentLayout = outputLayout
-    }
-
-    log.verbose("Entering PiP")
-    PlayerManager.shared.pipPlayer = player
 
     do {
       videoView.lockAndSetOpenGLContext()
@@ -307,12 +309,12 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
   func pipDidClose(_ pipController: PIPViewController) {
     guard !AppDelegate.shared.isTerminating else { return }
-    guard !isClosing else { return }  // if window is closing, let windowWillClose handle it
     guard let window else { return }
     log.verbose{"Got pipDidClose: isInPiP=\(currentLayout.isInPiP.yn) isInTransition=\(pip.isInTransition.yn)"}
 
-    guard currentLayout.isInPiP, pip.isInTransition else { return }
     pip.pipDidCloseTimer.cancel()
+
+    guard currentLayout.isInPiP, pip.isInTransition else { return }
 
     let outputLayout = currentLayout.clone(isInPiP: false)
     currentLayout = outputLayout
