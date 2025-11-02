@@ -1930,6 +1930,9 @@
 		D1AF71432DEA6977000FA9B8 /* GeoUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoUtil.swift; sourceTree = "<group>"; };
 		D1AF71452DED7079000FA9B8 /* BufferIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BufferIndicatorView.swift; sourceTree = "<group>"; };
 		D1B106672D424448009D58F5 /* Debouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debouncer.swift; sourceTree = "<group>"; };
+		D1B1D6552EB847BD0057D999 /* he */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = he; path = he.lproj/PlayerWindowController.strings; sourceTree = "<group>"; };
+		D1B1D6572EB847C00057D999 /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/PlayerWindowController.strings; sourceTree = "<group>"; };
+		D1B1D6592EB847C20057D999 /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/PlayerWindowController.strings; sourceTree = "<group>"; };
 		D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagGestureHandler.swift; sourceTree = "<group>"; };
 		D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinPreviewImgBuilder.swift; sourceTree = "<group>"; };
 		D1BE7BCE2D4B7CD20085539F /* TwoRowBarOSCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoRowBarOSCView.swift; sourceTree = "<group>"; };
@@ -3890,6 +3893,9 @@
 				348BFFB328DC64F90045F683 /* hu */,
 				348BFFD528DC657C0045F683 /* pt */,
 				348BFFF728DC688C0045F683 /* sr-Latn */,
+				D1B1D6552EB847BD0057D999 /* he */,
+				D1B1D6572EB847C00057D999 /* id */,
+				D1B1D6592EB847C20057D999 /* hr */,
 			);
 			name = PlayerWindowController.xib;
 			sourceTree = "<group>";
