@@ -693,6 +693,7 @@ struct GeometryTransform {
 
         /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready. Post this always.
         log.verbose("[GTF:\(name)] Done with initial layout: posting windowIsReadyToShow")
+        pwc.videoView.activateForcedRedraws()  // needed if restoring while paused
         pwc.postWindowIsReadyToShow()
       }
     }

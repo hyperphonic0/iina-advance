@@ -691,7 +691,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if player.openURLString(url) == 0 {
       startupHandler.abortWaitForOpenFilePlayerStartup()
     } else {
-      startupHandler.wcsForOpenFiles = [player.pwc]
+      startupHandler.pwcsForOpenFiles = [player.pwc]
     }
     startupHandler.showWindowsIfReady()
   }
@@ -733,7 +733,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if player.openURLString(url) == 0 {
         startupHandler.abortWaitForOpenFilePlayerStartup()
       } else {
-        startupHandler.wcsForOpenFiles = [player.pwc]
+        startupHandler.pwcsForOpenFiles = [player.pwc]
       }
       startupHandler.showWindowsIfReady()
       return
@@ -771,7 +771,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         if player.openURLString(urlValue) == 0 {
           startupHandler.abortWaitForOpenFilePlayerStartup()
         } else {
-          startupHandler.wcsForOpenFiles = [player.pwc]
+          startupHandler.pwcsForOpenFiles = [player.pwc]
         }
       }
 

@@ -340,7 +340,6 @@ extension PlayerWindowController {
       break
 
     case .midTransitionHiddenUpdates:
-      let outputLayout = transition.outputLayout
       /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
       if transition.isClosingLeadingSidebar, let tabGroupToHide = transition.inputLayout.leadingSidebar.visibleTabGroup {
         /// Finish closing (if closing)

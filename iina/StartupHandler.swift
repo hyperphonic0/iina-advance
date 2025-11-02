@@ -31,12 +31,12 @@ class StartupHandler {
    Mainly used to distinguish normal launches from others triggered by drag & drop or double-click from Finder.
 
    Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called with file(s).
-   See also `wcsForOpenFiles` which is expected be set to a non-nil (and non-empty) value after this variable
+   See also `pwcsForOpenFiles` which is expected be set to a non-nil (and non-empty) value after this variable
    becomes true. If needing to abort the new windows, `isOpeningNewWindowsForOpenedFiles` should be set to false again.
    */
   var isOpeningNewWindowsForOpenedFiles = false
-  var wcsForOpenFiles: [PlayerWindowController]? = nil
-  var wcsDoneWithFileOpen: [PlayerWindowController] = []
+  var pwcsForOpenFiles: [PlayerWindowController]? = nil
+  var pwcsDoneWithFileOpen: [PlayerWindowController] = []
 
   // - Restore
 
@@ -132,7 +132,7 @@ class StartupHandler {
     var totalFilesOpened = 0
 
     var lastPlayer: PlayerCore? = nil
-    var wcsForOpenFiles: [PlayerWindowController] = []
+    var pwcsForOpenFiles: [PlayerWindowController] = []
     if openingMultipleWindows {
       if urls.count > 10 {
         // TODO: put up a confirmation prompt
@@ -147,8 +147,8 @@ class StartupHandler {
         let playerFilesOpened = player.openURLs([url])
 
         guard playerFilesOpened > 0 else { continue }
-        player.openedWindowsSetIndex = wcsForOpenFiles.count
-        wcsForOpenFiles.append(player.pwc)
+        player.openedWindowsSetIndex = pwcsForOpenFiles.count
+        pwcsForOpenFiles.append(player.pwc)
         totalFilesOpened += playerFilesOpened
         lastPlayer = player
       }
@@ -160,7 +160,7 @@ class StartupHandler {
       }
       let playerFilesOpened = player.openURLs(urls)
       if playerFilesOpened > 0 {
-        wcsForOpenFiles.append(player.pwc)
+        pwcsForOpenFiles.append(player.pwc)
         totalFilesOpened += playerFilesOpened
         lastPlayer = player
       }
@@ -180,10 +180,10 @@ class StartupHandler {
       Logger.log.verbose("Notifying user nothing was opened")
       Utility.showAlert("nothing_to_open")
     } else {
-      Logger.log.verbose{"Total new players opening: \(wcsForOpenFiles.count), with \(totalFilesOpened) files"}
+      Logger.log.verbose{"Total new players opening: \(pwcsForOpenFiles.count), with \(totalFilesOpened) files"}
       if AppDelegate.isInteractiveLaunch {
-        // Set wcsForOpenFiles so they can be tracked & shown when ready:
-        self.wcsForOpenFiles = wcsForOpenFiles
+        // Set pwcsForOpenFiles so they can be tracked & shown when ready:
+        self.pwcsForOpenFiles = pwcsForOpenFiles
       } else {
         // Clear this flag to avoid waiting on opened files
         isOpeningNewWindowsForOpenedFiles = false
@@ -496,8 +496,8 @@ class StartupHandler {
     assert(DispatchQueue.isExecutingIn(.main))
     Logger.log.verbose("Aborting wait for open files")
     isOpeningNewWindowsForOpenedFiles = false
-    wcsForOpenFiles = nil
-    wcsDoneWithFileOpen.removeAll()
+    pwcsForOpenFiles = nil
+    pwcsDoneWithFileOpen.removeAll()
     showWindowsIfReady()
   }
 
@@ -515,8 +515,8 @@ class StartupHandler {
       guard wcsDoneWithRestore.count == wcsToRestore.count else {
         log.verbose{
           let openStr: String
-          if let wcsForOpenFiles {
-            openStr = " & opening \(wcsDoneWithFileOpen.count) / \(wcsForOpenFiles.count)"
+          if let pwcsForOpenFiles {
+            openStr = " & opening \(pwcsDoneWithFileOpen.count) / \(pwcsForOpenFiles.count)"
           } else {
             openStr = ""
           }
@@ -527,20 +527,20 @@ class StartupHandler {
       }
       // If an new player window was opened at startup (i.e. not a restored window), wait for this also.
       if isOpeningNewWindowsForOpenedFiles {
-        // If isOpeningNewWindowsForOpenedFiles is true, the check below will only pass once wcsForOpenFiles becomes non-nil.
-        guard let wcsForOpenFiles else {
-          log.verbose{"Startup: isOpeningNewWindowsForOpenedFiles=Y but wcsForOpenFiles is nil; returning"}
+        // If isOpeningNewWindowsForOpenedFiles is true, the check below will only pass once pwcsForOpenFiles becomes non-nil.
+        guard let pwcsForOpenFiles else {
+          log.verbose{"Startup: isOpeningNewWindowsForOpenedFiles=Y but pwcsForOpenFiles is nil; returning"}
           return
         }
 
         // If opening more than 1 file, proceed immediately. Otherwise wait for it to be ready.
-        guard wcsForOpenFiles.count > 1 || (wcsForOpenFiles.count == wcsDoneWithFileOpen.count) else {
+        guard pwcsForOpenFiles.count > 1 || (pwcsForOpenFiles.count == pwcsDoneWithFileOpen.count) else {
           log.verbose{"Startup: still waiting for opened file"}
           return
         }
       }
 
-      let newWindCount = wcsForOpenFiles?.count ?? 0
+      let newWindCount = pwcsForOpenFiles?.count ?? 0
       if newWindCount == 0 && wcsToRestore.count == 0 {
         log.verbose{"No windows exist to wait for; finishing startup"}
       } else {
@@ -548,9 +548,7 @@ class StartupHandler {
       }
       restoreTimer.cancel()
 
-      // Bring this app to the front, possibly annoying the user who got bored waiting & is now doing something else.
-      Logger.log.debug("Activating app")
-      NSApp.activate(ignoringOtherApps: true)
+      Thread.sleep(forTimeInterval: 2.0)
 
       var prevWindowNumber: Int? = nil
       for wc in wcsToRestore {
@@ -568,17 +566,17 @@ class StartupHandler {
 
       // Windows for opened files (if any).
       // Don't wait for these to be ready. But at least ensure that their ordering is correct.
-      if let wcsForOpenFiles {
-        for wc in wcsForOpenFiles {
-          let wndName = wc.window!.savedStateName
+      if let pwcsForOpenFiles {
+        for pwc in pwcsForOpenFiles {
+          let wndName = pwc.window!.savedStateName
           log.verbose{"Showing new window: \(wndName)"}
 
           // Make this topmost
           if let prevWindowNumber {
-            wc.window?.order(.above, relativeTo: prevWindowNumber)
+            pwc.window?.order(.above, relativeTo: prevWindowNumber)
           }
-          prevWindowNumber = wc.window?.windowNumber
-          wc.showWindow(self)
+          prevWindowNumber = pwc.window?.windowNumber
+          pwc.showWindow(self)
         }
       }
 
@@ -586,6 +584,10 @@ class StartupHandler {
         // TODO: persist isAlternativeAction too
         AppDelegate.shared.showOpenFileWindow(isAlternativeAction: false)
       }
+
+      // Bring this app to the front, possibly annoying the user who got bored waiting & is now doing something else.
+      Logger.log.debug("Activating app")
+      NSApp.activate(ignoringOtherApps: true)
 
       if Preference.bool(for: .isRestoreInProgress) {
         log.verbose{"Done restoring windows (\(wcsToRestore.count))"}
@@ -604,7 +606,7 @@ class StartupHandler {
       initAppUI()
 
       let didRestoreSomething = !wcsToRestore.isEmpty || restoreOpenFileWindow
-      let didShowSomething = didRestoreSomething || (wcsForOpenFiles != nil)
+      let didShowSomething = didRestoreSomething || (pwcsForOpenFiles != nil)
       if !isCommandLine, !didShowSomething, AppDelegate.isInteractiveLaunch {
         // Fall back to default action:
         AppDelegate.shared.doLaunchOrReopenAction()
@@ -681,8 +683,8 @@ class StartupHandler {
       if Preference.bool(for: .isRestoreInProgress), wcsToRestore.contains(wc) {
         wcsDoneWithRestore.insert(wc)
         log.verbose{"Restored window is ready: \(savedStateName.quoted). Progress: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")"}
-      } else if let wcsForOpenFiles, wcsForOpenFiles.contains(where: {$0.window!.savedStateName == savedStateName}) {
-        wcsDoneWithFileOpen.append(wc as! PlayerWindowController)
+      } else if let pwcsForOpenFiles, pwcsForOpenFiles.contains(where: {$0.window!.savedStateName == savedStateName}) {
+        pwcsDoneWithFileOpen.append(wc as! PlayerWindowController)
         log.verbose{"OpenedFile window is ready: \(savedStateName.quoted)"}
       }
       // Else may be multiple files opened at launch
@@ -706,11 +708,11 @@ class StartupHandler {
       wc.window!.savedStateName == window.savedStateName
     })
 
-    let toOpenFileCountOld = wcsForOpenFiles?.count ?? 0
-    wcsForOpenFiles?.removeAll(where: { wc in
-      wc.window!.savedStateName == window.savedStateName
+    let toOpenFileCountOld = pwcsForOpenFiles?.count ?? 0
+    pwcsForOpenFiles?.removeAll(where: { pwc in
+      pwc.window!.savedStateName == window.savedStateName
     })
-    let toOpenFileCountNew = wcsForOpenFiles?.count ?? 0
+    let toOpenFileCountNew = pwcsForOpenFiles?.count ?? 0
 
     let toRestoreCountNew = wcsToRestore.count
     let removedFromRestoreCount = toRestoreCountOld - toRestoreCountNew
