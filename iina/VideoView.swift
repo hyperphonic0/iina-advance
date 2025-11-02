@@ -214,7 +214,6 @@ class VideoView: NSView {
   func needsForcedRedraws() -> Bool {
     guard player.pwc.loaded, player.isActive else { return false }
     guard player.videoView.isVidEnabled, player.videoView.isVidAlbumArt || player.info.isPaused else { return false }
-    guard !player.pwc.sessionState.isRestoring else { return false }
     return true
   }
 
