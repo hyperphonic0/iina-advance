@@ -150,9 +150,9 @@ extension PlayerCore {
     guard !isStopping else { return }
     _ = updateVideoFiltersFromMpv()
 
+    syncVideoParamsFromMpv()
     postNotification(.iinaVFChanged)
     saveState()
-    setQuickSettingsViewNeedsUpdate()
   }
 
   /// `vf`: gets up-to-date list of video filters
@@ -245,11 +245,7 @@ extension PlayerCore {
     var didSucceed = true
     didSucceed = mpv.command(.vf, args: ["add", filter], checkError: false) >= 0
     log.debug{"Add filter: \(didSucceed ? "Succeeded" : "Failed")"}
-
-    if didSucceed {
-      // Bring UI up to date ASAP
-      syncVideoParamsFromMpv()
-    }
+    // Do not update UI here, because it may take a second for the VF to show up in the mpv state, and it may be wrong
     return didSucceed
   }
 
@@ -302,7 +298,6 @@ extension PlayerCore {
         log.debug("Cannot remove video filter: could not find filter with label \(label.quoted) in mpv list. Will try refreshing filters & resyncing video params…")
         // Something fell out of date. Try refreshing
         vfChanged()
-        syncVideoParamsFromMpv()
         return false
       }
 
