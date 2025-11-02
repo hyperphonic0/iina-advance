@@ -367,7 +367,7 @@ extension ViewportView {
     // spacerMin == viewport min margins
     let spacerMinPriority: Int
     let spacerMinValues: MarginQuad
-    if transitionCategory == .cropBeforeExitingInteractiveMode {
+    if transitionCategory == .cropBeforeExitingInteractiveMode || transitionCategory == .enteringPIP {
       // #InteractiveModeAnimationKludge
       spacerMinPriority = 1000
       spacerMinValues = geometry.viewportMargins

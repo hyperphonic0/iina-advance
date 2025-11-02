@@ -163,13 +163,20 @@ struct GeometryTransform {
 
       /// 2b: Sync video params from mpv, if `syncVideoParams` is true.
       if syncVideoParams {
-        log.verbose{"[GTF:\(name)] Calling syncVideoParamsFromMpv as configured"}
-        guard let syncedVideoGeo = ctxStage2.syncVideoParamsFromMpv(startingWith: outputVideoGeo) else {
-          return abort("syncVideoParamsFromMpv returned nil")
+        if player.isRestoring {
+          // If restoring, can assume the saved video params are still correct.
+          // Moreover, sometimes mpv returns nil for video-out-params, which will result in the GTF aborting
+          // & the "windowIsReadyToShow" signal not being sent, which will cause restore to hang forever
+          log.verbose{"[GTF:\(name)] Skipping syncVideoParamsFromMpv ∵ we're restoring"}
+        } else {
+          log.verbose{"[GTF:\(name)] Calling syncVideoParamsFromMpv as configured"}
+          guard let syncedVideoGeo = ctxStage2.syncVideoParamsFromMpv(startingWith: outputVideoGeo) else {
+            return abort("syncVideoParamsFromMpv returned nil")
+          }
+          log.verbose{"[GTF:\(name)] Result of video sync: \(syncedVideoGeo)"}
+          /// The result is the new `outputVideoGeo`
+          outputVideoGeo = syncedVideoGeo
         }
-        log.verbose{"[GTF:\(name)] Result of video sync: \(syncedVideoGeo)"}
-        /// The result is the new `outputVideoGeo`
-        outputVideoGeo = syncedVideoGeo
       }
 
       /// 2c: Apply `videoTransform` if present.

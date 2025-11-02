@@ -106,7 +106,26 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
     // Exit interactive mode before even entering intermediate status
     exitInteractiveMode(then: { [self] in
-      _enterPIP(usePipBehavior: preferredPipBehavior, then: doOnSuccess)
+
+      if Preference.bool(for: .lockViewportToVideoSize) {
+        _enterPIP(usePipBehavior: preferredPipBehavior, then: doOnSuccess)
+      } else {
+        // The PiP entry animation uses the size of the VideoView to determine what to show going to PiP.
+        // But if lockViewportToVideoSize==true, VideoView may also include black margins. So first silently
+        // reduce the size of VideoView to the size of the video.
+        let taskDuration = Constants.AnimationDuration.enterPIPTask
+        let tx = IINAAnimation.Transaction()
+        tx.append(duration: taskDuration) { [self] in
+          videoView.activateForcedRedraws()
+          let currentGeo = currentLayout.mode == .musicMode ? musicModeGeoForCurrentFrame() : windowedGeoForCurrentFrame()
+          setFrameAndUpdateWindowSubviews(using: currentGeo, .enteringPIP)
+        }
+        tx.append(duration: taskDuration) { [self] in
+          _enterPIP(usePipBehavior: preferredPipBehavior, then: doOnSuccess)
+        }
+        animationPipeline.submit(tx)
+      }
+
     })
   }
 

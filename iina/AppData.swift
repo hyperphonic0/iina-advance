@@ -290,6 +290,7 @@ struct Constants {
     static var btnLayoutChange: CGFloat = standard * 0.25
     static var osdAnimation: CGFloat = Preference.double(for: .animationDurationOSD)
     static var cropAnimation: CGFloat = Preference.double(for: .animationDurationCrop)
+    static var enterPIPTask: CGFloat = standard * 0.1
     static var musicModeShowButtons: CGFloat = 0.2
     static var hideSeekPreview: CGFloat = osdAnimation * 0.5
   }

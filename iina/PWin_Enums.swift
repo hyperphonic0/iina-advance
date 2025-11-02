@@ -397,4 +397,6 @@ enum TransitionCategory: Int {
   case cropBeforeExitingInteractiveMode
   case exitingInteractiveMode
 
+  case enteringPIP
+
 }

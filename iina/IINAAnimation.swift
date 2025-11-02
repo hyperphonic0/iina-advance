@@ -127,6 +127,12 @@ extension IINAAnimation {
     func append(_ task: Task) {
       tasks.append(task)
     }
+
+    /// Append a Task (convenience func)
+    func append(duration: CGFloat? = nil, timing timingName: CAMediaTimingFunctionName? = nil,
+                _ runFunc: @escaping TaskFunc) {
+      tasks.append(Task(duration: duration, timing: timingName, runFunc))
+    }
   }
 }
 
@@ -181,6 +187,10 @@ extension IINAAnimation {
     /// Convenience function. Same as `submit([Task])`, but for a single animation.
     func submit(_ task: Task, then doAfter: TaskFunc? = nil) {
       submit([task], then: doAfter)
+    }
+
+    func submit(_ tx: Transaction, then doAfter: TaskFunc? = nil) {
+      submit(tx.tasks, then: doAfter)
     }
 
     /// Recursive function which enqueues each of the given `AnimationTask`s for execution, one after another.
