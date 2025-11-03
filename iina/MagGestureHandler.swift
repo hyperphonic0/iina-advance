@@ -164,19 +164,9 @@ extension PlayerWindowController {
 
     } else {
       let originalGeo = windowedModeGeo
-
+      
       let newViewportSize = originalGeo.viewportSize.multiplyThenRound(targetScale)
-
-      /// Using `noConstraints` here has the bonus effect of allowing viewport to be resized via pinch when the video is already maximized
-      /// (only useful when in windowed mode and `lockViewportToVideoSize` is disabled)
-      let intendedGeo = originalGeo.scalingViewport(to: newViewportSize, screenFit: .noConstraints, mode: currentMode)
-      if submitResult {
-        // User has actively resized the video. Assume this is the new intended resolution, even if it is outside the current screen size.
-        // This is useful for various features such as resizing without "lockViewportToVideoSize", or toggling visibility of outside bars.
-        player.info.intendedViewportSize = intendedGeo.viewportSize
-      }
-
-      outputGeo = intendedGeo.refitted(using: .stayInside)
+      outputGeo = originalGeo.scalingViewport(to: newViewportSize, screenFit: .stayInside, mode: currentMode)
       log.verbose("Scaling pinched video in windowed mode, scale=\(targetScale) → result=\(outputGeo)")
     }
     setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: submitResult)

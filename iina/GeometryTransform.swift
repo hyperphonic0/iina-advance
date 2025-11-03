@@ -466,7 +466,7 @@ struct GeometryTransform {
         log.verbose("[GTF:\(name)] Building 'apply' tasks for FS mode: defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(fsGeo)")
         tasks = pwc.buildApplyPWinGeoTasks(from: fsGeo, to: fsGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
         tasks.append(.instantTask {
-          /// Update this even if not currently in windowed mode, as it will be needed when exiting other modes
+          /// Update this even if not currently in windowed mode, as it is used to store the (updated) VideoGeometry
           pwc.windowedModeGeo = newWindowedGeo
         })
 
@@ -639,7 +639,8 @@ struct GeometryTransform {
         var preferredGeo = windowGeo
         if Preference.bool(for: .lockViewportToVideoSize), gtfSessionState.canUseIntendedViewportSize,
            let intendedViewportSize = player.info.intendedViewportSize {
-          log.verbose("[GTF:\(name)] Using intendedViewportSize \(intendedViewportSize)")
+          // There is some fuzziness for window size when lockViewportToVideoSize==true. Use intendedViewportSize as a strong hint
+          log.verbose("[GTF:\(name)] Minimal resize: using intendedViewportSize \(intendedViewportSize)")
           preferredGeo = windowGeo.scalingViewport(to: intendedViewportSize)
         }
         log.verbose("[GTF:\(name)] Applying mpv \(mpvGeometry) within screen \(screenVisibleFrame)")
@@ -655,8 +656,6 @@ struct GeometryTransform {
           let scaledVideoWidth = (outputVidGeo.videoSizeCAR.width * resizeRatio).rounded()
           log.verbose("[GTF:\(name)] Applied resizeRatio (\(resizeRatio)) to newVideoWidth → \(scaledVideoWidth)")
           let centeredScaledGeo = windowGeo.scalingVideo(toWidth: scaledVideoWidth, screenFit: .centerInside, mode: outputLayout.mode)
-          // User has actively resized the video. Assume this is the new preferred resolution
-          player.info.intendedViewportSize = centeredScaledGeo.viewportSize
           log.verbose("[GTF:\(name)] After scaleVideo: \(centeredScaledGeo)")
           return centeredScaledGeo
         }
@@ -795,8 +794,6 @@ extension PlayerWindowController {
 
       if !isRestoring {
         if ctx.outputLayout.mode == .windowedNormal {
-          player.info.intendedViewportSize = initialTransition.outputGeometry.viewportSize
-
           // Set window opacity to 0 initially to start fade-in effect
           updateWindowBorderAndOpacity(using: ctx.outputLayout, windowOpacity: 0.0)
         }

@@ -97,34 +97,23 @@ extension PlayerWindowController {
       log.verbose("[WinWillResize] choseWidth=\(self.isLiveResizingWidth?.yn ?? "nil")")
     }
 
-    let newWindowSize: NSSize
+    let newGeo: PWinGeometry
     let isLiveResizingWidth = isLiveResizingWidth ?? true
-    switch currentLayout.mode {
-    case .windowedNormal, .windowedInteractive:
 
+    switch currentLayout.mode {
+
+    case .windowedNormal, .windowedInteractive:
       guard !sessionState.isRestoring else {
         log.error("[WinWillResize] Still restoring; returning existing geo=\(windowedModeGeo.windowFrame.size)")
         return windowedModeGeo.windowFrame.size
       }
+
       let currentGeo = windowedGeoForCurrentFrame()
       assert(currentGeo.mode == currentLayout.mode,
              "[WinWillResize] currentGeo.mode (\(currentGeo.mode)) != currentLayout.mode (\(currentLayout.mode))")
 
-      let newGeometry = currentGeo.resizingWindow(to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize,
-                                                  inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
-      newWindowSize = newGeometry.windowFrame.size
-
-      if currentLayout.mode == .windowedNormal {
-        // User has resized the video. Assume this is the new preferred resolution until told otherwise. Do not constrain.
-        player.info.intendedViewportSize = newGeometry.viewportSize
-      }
-
-      /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
-      /// within the same animation transaction as the code below. But the existing `VideoView` constraints should ensure
-      /// that everything resizes properly.
-      /// Update: need to update `VideoView` layout to ensure that cropbox in interactive mode is resized properly!
-      resizeWindowSubviews(using: newGeometry)
-      // fall through
+      newGeo = currentGeo.resizingWindow(to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize,
+                                         inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
 
     case .fullScreenNormal, .fullScreenInteractive:
       if currentLayout.isNativeFullScreen {
@@ -132,11 +121,7 @@ extension PlayerWindowController {
         return requestedSize
       }
 
-      let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, geo.video)
-      newWindowSize = newGeometry.windowFrame.size
-
-      resizeWindowSubviews(using: newGeometry)
-      // fall through
+      newGeo = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, geo.video)
 
     case .musicMode:
       guard !sessionState.isRestoring else {
@@ -148,14 +133,17 @@ extension PlayerWindowController {
       // current we can end up with small imprecisions which could alter their values.
       let currentGeo = musicModeGeoForCurrentFrame().cloneMusicMode(isViewportShown: musicModeGeo.isViewportShown,
                                                                     playlistShown: musicModeGeo.isMusicModePlaylistShown)
-      let newGeometry = currentGeo.resizingWindowInMusicMode(to: requestedSize,
-                                                             inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
-      newWindowSize = newGeometry.windowFrame.size
-
-      // Updates any necessary constraints & resize internal views (calls resizeWindowSubviews among other things)
-      resizeWindowSubviews(using: newGeometry, .noTransition)
+      newGeo = currentGeo.resizingWindowInMusicMode(to: requestedSize,
+                                                    inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
     }
 
+    /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
+    /// within the same animation transaction as the code below. But the existing `VideoView` constraints should ensure
+    /// that everything resizes properly.
+    /// Update: need to update `VideoView` layout to ensure that cropbox in interactive mode is resized properly!
+    resizeWindowSubviews(using: newGeo)
+
+    let newWindowSize = newGeo.windowFrame.size
     log.verbose("[WinWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)")
     return newWindowSize
   }
@@ -311,9 +299,7 @@ extension PlayerWindowController {
       let videoSizeCAR = oldWindowedGeo.video.videoSizeCAR
       let videoWidthScaled = (videoSizeCAR.width * adjustedVideoScale).rounded()
 
-      let newGeoUnconstrained = oldWindowedGeo.scalingVideo(toWidth: videoWidthScaled, screenFit: .noConstraints)
-      player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
-      let newGeo = newGeoUnconstrained.refitted(using: .stayInside)
+      let newGeo = oldWindowedGeo.scalingVideo(toWidth: videoWidthScaled, screenFit: .stayInside)
       log.verbose("SetVideoScale: desired=\(desiredVideoScale) adjusted=\(adjustedVideoScale) videoCAR=\(videoSizeCAR) → videoWidthScaled=\(videoWidthScaled) → windowScale=\(newGeo.mpvWindowScale())")
       sendWindowScaleToMPV(basedOn: newGeo)
       return newGeo
@@ -434,14 +420,8 @@ extension PlayerWindowController {
     switch currentLayout.mode {
     case .windowedNormal, .windowedInteractive:
       inputGeo = windowedGeoForCurrentFrame()
-      let newGeoUnconstrained = inputGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
-      if inputGeo.mode == .windowedNormal {
-        // User has actively resized the video. Assume this is the new preferred resolution
-        player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
-      }
-
       let screenFit: ScreenFit = centerOnScreen ? .centerInside : .stayInside
-      outputGeo = newGeoUnconstrained.refitted(using: screenFit)
+      outputGeo = inputGeo.scalingViewport(to: desiredViewportSize, screenFit: screenFit)
       log.verbose("Calling applyPWinGeo from resizeViewport (center=\(centerOnScreen.yn)), to: \(outputGeo.windowFrame)")
     case .musicMode:
       /// In music mode, `viewportSize==videoSize` always. Will get `nil` here if video is not visible
