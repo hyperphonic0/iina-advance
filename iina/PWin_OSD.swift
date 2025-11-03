@@ -122,7 +122,7 @@ final class OSDState {
   init(log: Logger.Subsystem) {
     self.log = log
 
-    log.verbose{"Init OSD"}
+    log.verbose("Init OSD")
     osdHStackView.idString = "OSD-HStackView"
     osdHStackView.wantsLayer = true
     osdHStackView.orientation = .horizontal
@@ -354,21 +354,21 @@ extension PlayerWindowController {
   func addOrRemoveOSDViews(_ stageGeo: PWinGeometry) {
     if stageGeo.shouldHaveOSD {
       if !viewportView.subviews.contains(osd.osdView) {
-        log.verbose{"[OSD] Adding osdView to viewportView"}
+        log.verbose("[OSD] Adding osdView to viewportView")
         viewportView.addSubview(osd.osdView)  // will sort below
         osd.osdView.roundCorners()
       }
 
     } else {
       if osd.osdView.superview != nil {
-        log.verbose{"[OSD] Removing osdView from superview"}
+        log.verbose("[OSD] Removing osdView from superview")
         osd.osdView.removeFromSuperview()
       }
     }
 
     if stageGeo.shouldHaveAdditionalInfo {
       if !viewportView.subviews.contains(additionalInfoView) {
-        log.verbose{"[OSD] Adding additionalInfoView to viewportView"}
+        log.verbose("[OSD] Adding additionalInfoView to viewportView")
         viewportView.addSubview(additionalInfoView)  // will sort below
         additionalInfoView.roundCorners()
         fadeableViews.applyVisibility(.hidden, additionalInfoView)  // hide for now. Will show in later stage
@@ -377,7 +377,7 @@ extension PlayerWindowController {
 
     } else {
       if additionalInfoView.superview != nil {
-        log.verbose{"[OSD] Removing additionalInfoView from superview"}
+        log.verbose("[OSD] Removing additionalInfoView from superview")
         additionalInfoView.removeFromSuperview()
       }
     }
@@ -400,7 +400,7 @@ extension PlayerWindowController {
     let hasLeadingSidebar = stageGeo.insideBars.leading > 0
     let hasTrailingSidebar = stageGeo.insideBars.trailing > 0
 
-    log.verbose{"[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) offsetFromTop=\(offsetFromTop)"}
+    log.verbose("[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) offsetFromTop=\(offsetFromTop)")
 
     let leadingView = osdPosition == .topLeading ? (hasOSD ? osd.osdView : nil) :  (hasAdditionalInfo ? additionalInfoView : nil)
     let trailingView = osdPosition == .topLeading ? (hasAdditionalInfo ? additionalInfoView : nil) :  (hasOSD ? osd.osdView : nil)
@@ -476,7 +476,7 @@ extension PlayerWindowController {
   func updateOSDTopOffsetConstraints(for geometry: PWinGeometry) {
     let newOffsetFromTop = geometry.osdOffsetFromTopOfViewport()
 
-    log.verbose{"[OSD] Updating top constraint to: \(newOffsetFromTop)"}
+    log.verbose("[OSD] Updating top constraint to: \(newOffsetFromTop)")
     osd.leadingSide_TopOffsetConstraint.constraint?.animateToConstant(newOffsetFromTop)
     osd.trailingSide_TopOffsetConstraint.constraint?.animateToConstant(newOffsetFromTop)
   }
@@ -702,7 +702,7 @@ extension PlayerWindowController {
     if case .debug = osd.currentlyDisplayedMsg {
       if case .debug = msg {
       } else {
-        log.verbose{"[OSD] Discarding '\(msg)' because a debug msg is visible"}
+        log.verbose("[OSD] Discarding '\(msg)' because a debug msg is visible")
         return
       }
     }
@@ -764,7 +764,7 @@ extension PlayerWindowController {
       /// prior to the `seek` msg. With some smart logic, the info from the two messages can be combined to display
       /// the most appropriate "jump" icon in the OSD in addition to the time display & progress bar.
       if case .seekRelative(let stepString) = msg, let step = Double(stepString) {
-        log.verbose{"[OSD] Showing '\(msg)'"}
+        log.verbose("[OSD] Showing '\(msg)'")
 
         let isBackward = step < 0
         let accDescription = "Relative Seek \(isBackward ? "Backward" : "Forward")"
@@ -810,10 +810,10 @@ extension PlayerWindowController {
 
     if autoHide {
       let timeout: Double = forcedTimeout ?? OSDState.osdTimeoutFromPrefs()
-      log.verbose{"[OSD] Showing '\(msg)' timeout=\(timeout)\(forcedTimeout != nil ? " (forced)" : "")"}
+      log.verbose("[OSD] Showing '\(msg)' timeout=\(timeout)\(forcedTimeout != nil ? " (forced)" : "")")
       osd.hideOSDTimer.restart(withNewTimeout: timeout)
     } else {
-      log.verbose{"[OSD] Showing '\(msg)', no timeout"}
+      log.verbose("[OSD] Showing '\(msg)', no timeout")
     }
 
     updateOSDTextSize()

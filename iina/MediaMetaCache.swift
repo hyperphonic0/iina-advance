@@ -105,22 +105,22 @@ class MediaMetaCache {
 
   func fillInVideoSizes(_ videoFiles: [FileInfo], onBehalfOf player: PlayerCore) {
     guard Preference.bool(for: .prefetchPlaylistVideoGeometry) else {
-      log.verbose{"Prefetching video sizes is disabled (prefetchPlaylistVideoGeometry=NO), skipping…"}
+      log.verbose("Prefetching video sizes is disabled (prefetchPlaylistVideoGeometry=NO), skipping…")
       return
     }
-    log.verbose{"Prefetching video sizes for \(videoFiles.count) files for player \(player.label)…"}
+    log.verbose("Prefetching video sizes for \(videoFiles.count) files for player \(player.label)…")
     let sw = Utility.Stopwatch()
     var updateCount = 0
     for fileInfo in videoFiles {
       guard player.state.isNotYet(.stopping) else {
-        log.verbose{"Stopping after \(updateCount)/\(videoFiles.count) video sizes due to player \(player.label) stopping"}
+        log.verbose("Stopping after \(updateCount)/\(videoFiles.count) video sizes due to player \(player.label) stopping")
         return
       }
       if getOrReadVideoMeta(id: fileInfo.id, player.log) != nil {
         updateCount += 1
       }
     }
-    log.verbose{"Filled in \(updateCount)/\(videoFiles.count) video sizes for \(player.label) in \(sw) ms"}
+    log.verbose("Filled in \(updateCount)/\(videoFiles.count) video sizes for \(player.label) in \(sw) ms")
   }
 
 
@@ -271,7 +271,7 @@ class MediaMetaCache {
     guard id.isFile else { return }
     guard id.path != "stdin" else { return }  // do not cache stdin!
     guard Utility.playableFileExt.contains(id.path.lowercasedPathExtension) else {
-      log.verbose{"Cannot update videoMeta, not a playable file: \(id.path.pii.quoted)"}
+      log.verbose("Cannot update videoMeta, not a playable file: \(id.path.pii.quoted)")
       return
     }
 
@@ -299,16 +299,16 @@ class MediaMetaCache {
     let path = id.path
     guard path != "stdin" else { return nil }  // do not cache stdin!
     guard id.isFile else {
-      log.verbose{"Cannot read videoMeta, not a file URL: \(id.url.absoluteString.pii.quoted)"}
+      log.verbose("Cannot read videoMeta, not a file URL: \(id.url.absoluteString.pii.quoted)")
       return nil
     }
     guard Utility.playableFileExt.contains(path.lowercasedPathExtension) else {
-      log.verbose{"Cannot read videoMeta, not a playable file: \(path.pii.quoted)"}
+      log.verbose("Cannot read videoMeta, not a playable file: \(path.pii.quoted)")
       return nil
     }
 
     guard FileManager.default.fileExists(atPath: path) else {
-      log.verbose{"Skipping videoMeta update, file does not exist: \(path.pii.quoted)"}
+      log.verbose("Skipping videoMeta update, file does not exist: \(path.pii.quoted)")
       return nil
     }
 
@@ -319,7 +319,7 @@ class MediaMetaCache {
 //      metaLock.withLock {
 //        // Don't let this get too big
 //        if cachedFFMeta.count > Constants.maxCachedVideoSizes {
-//          log.debug{"Too many cached FF meta entries (count=\(cachedFFMeta.count); maximum=\(Constants.maxCachedVideoSizes)). Clearing cached FF meta..."}
+//          log.debug("Too many cached FF meta entries (count=\(cachedFFMeta.count); maximum=\(Constants.maxCachedVideoSizes)). Clearing cached FF meta...")
 //          cachedFFMeta.removeAll()
 //        }
 //        cachedFFMeta[id.url] = ffMeta
@@ -327,7 +327,7 @@ class MediaMetaCache {
 //      return ffMeta
 //    } else {
 //      // Not a serious error. Can happen for audio files.
-//      log.debug{"FFmpeg could not read video size for \(path.pii.quoted)"}
+//      log.debug("FFmpeg could not read video size for \(path.pii.quoted)")
 //    }
     return nil
   }
@@ -347,10 +347,10 @@ class MediaMetaCache {
     }
 
     guard let videoMeta else {
-      log.error{"Unable to find videoMeta from either cache or probe for \(id.path.pii.quoted)"}
+      log.error("Unable to find videoMeta from either cache or probe for \(id.path.pii.quoted)")
       return nil
     }
-    log.verbose{"Found videoMeta via \(missed ? "probe" : "cache"): \(videoMeta), for \(id.path.pii.quoted)"}
+    log.verbose("Found videoMeta via \(missed ? "probe" : "cache"): \(videoMeta), for \(id.path.pii.quoted)")
     return videoMeta
   }
 

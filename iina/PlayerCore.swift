@@ -325,7 +325,7 @@ class PlayerCore: NSObject {
 
   init(_ label: String, isDemoPlayer: Bool = false, commandLineArgs: [(String, String)] = []) {
     let log = Logger.subsystem(forPlayerID: label)
-    log.debug{"PlayerCore init: starting"}
+    log.debug("PlayerCore init: starting")
     self.label = label
     self.subsystem = log
     self.info = PlaybackInfo(log: log)
@@ -345,7 +345,7 @@ class PlayerCore: NSObject {
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeFnModes)
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeGlobal)
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModePerApp)
-    log.verbose{"PlayerCore init: done"}
+    log.verbose("PlayerCore init: done")
   }
 
 
@@ -423,7 +423,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard !urls.isEmpty else { return 0 }
-    log.debug{"OpenURLs: \(urls.map{PlaybackID.path(from: $0).pii})"}
+    log.debug("OpenURLs: \(urls.map{PlaybackID.path(from: $0).pii})")
     // Reset:
     openedWindowsSetIndex = 0
 
@@ -446,7 +446,7 @@ class PlayerCore: NSObject {
     // Filter URL args for playable files (video/audio), because mpv will "play" image files, text files (anything?)
     let playableFiles = getPlayableFiles(in: urls, organizeList: true)
 
-    log.verbose{"Found \(playableFiles.count) playable files for \(urls.count) requested URLs"}
+    log.verbose("Found \(playableFiles.count) playable files for \(urls.count) requested URLs")
     // check playable files count
     guard playableFiles.count > 0 else {
       return 0
@@ -529,7 +529,7 @@ class PlayerCore: NSObject {
     mpv.queue.sync { [self] in
       let path = playback.path
       info.currentPlayback = playback
-      log.debug{"Opening player (window=\(isInteractivePlayer.yn)) for \(path.pii.quoted), playerState=\(state), sessionState=\(pwc.sessionState)"}
+      log.debug("Opening player (window=\(isInteractivePlayer.yn)) for \(path.pii.quoted), playerState=\(state), sessionState=\(pwc.sessionState)")
 
       if state == .stopping || state == .idle {
         // Player was previously started, but closed & is now being reopened
@@ -573,7 +573,7 @@ class PlayerCore: NSObject {
           }
 
           if pauseUntilWindowOpen {
-            log.debug{"Pausing playback until window is done opening"}
+            log.debug("Pausing playback until window is done opening")
             // Pause until window opens, to avoid blips or other loading unpleasantness
             mpv.setFlag(MPVOption.PlaybackControl.pause, true)
             // ...or stay paused if configured
@@ -583,7 +583,7 @@ class PlayerCore: NSObject {
           // Not restoring
 
           if urls.count > 1 {
-            log.verbose{"Adding \(urls.count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)"}
+            log.verbose("Adding \(urls.count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)")
             let urls = urls.map({PlaybackID.path(from: $0)})
             _addAllToPlaylist(pathListIncludingCurrent: urls, indexOfCurrentItem: 0)
           } else {
@@ -647,12 +647,12 @@ class PlayerCore: NSObject {
       path = customYtdlPath + ":" + path
     }
     setenv("PATH", path, 1)
-    log.debug{"Set env path to \(path.pii)"}
+    log.debug("Set env path to \(path.pii)")
 
     // set http proxy
     if let proxy = Preference.string(for: .httpProxy), !proxy.isEmpty {
       setenv("http_proxy", "http://" + proxy, 1)
-      log.debug{"Set env http_proxy to \(proxy.pii)"}
+      log.debug("Set env http_proxy to \(proxy.pii)")
     }
 
     mpv.mpvInit()
@@ -711,7 +711,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
     let isMPVInitiated = state.isAtLeast(.started) && state.isNotYet(.shuttingDown)
     let suffix = isMPVInitiated ? " (initiated by mpv)" : ""
-    log.debug{"Player has shut down\(suffix)"}
+    log.debug("Player has shut down\(suffix)")
     // If mpv shutdown was initiated by mpv then the player state has not been saved.
     if isMPVInitiated {
       state = .shuttingDown  // Make sure to indicate shutdown before calling `refreshSyncUITimer`
@@ -739,12 +739,12 @@ class PlayerCore: NSObject {
   }
 
   func enterMusicMode(automatically: Bool = false, withNewVidGeo newVidGeo: VideoGeometry? =  nil) {
-    log.debug{"Switch to music mode, automatically=\(automatically.yesno)"}
+    log.debug("Switch to music mode, automatically=\(automatically.yesno)")
     pwc.enterMusicMode(automatically: automatically)
   }
 
   func exitMusicMode(automatically: Bool = false, withNewVidGeo newVidGeo: VideoGeometry? =  nil) {
-    log.debug{"Switch to normal window from music mode, automatically=\(automatically.yesno)"}
+    log.debug("Switch to normal window from music mode, automatically=\(automatically.yesno)")
     pwc.exitMusicMode(automatically: automatically)
   }
 
@@ -756,7 +756,7 @@ class PlayerCore: NSObject {
   }
 
   func clearPlugins() {
-    log.verbose{"Clearing plugins"}
+    log.verbose("Clearing plugins")
     pluginMap.removeAll()
     plugins.removeAll()
 
@@ -765,10 +765,10 @@ class PlayerCore: NSObject {
 
   func loadPlugins() {
     guard AppDelegate.iinaPluginSystemEnabled else {
-      log.verbose{"Plugin system disabled; skipping load of plugins"}
+      log.verbose("Plugin system disabled; skipping load of plugins")
       return
     }
-    log.verbose{"Loading plugins"}
+    log.verbose("Loading plugins")
     pluginMap.removeAll()
     plugins = JavascriptPlugin.plugins.compactMap { plugin in
       guard plugin.enabled else { return nil }
@@ -784,7 +784,7 @@ class PlayerCore: NSObject {
     guard AppDelegate.iinaPluginSystemEnabled else { return }
 
     let id = plugin.identifier
-    log.verbose{"Reloading plugin: \(id.quoted)"}
+    log.verbose("Reloading plugin: \(id.quoted)")
     if let _ = pluginMap[id] {
       if plugin.enabled {
         // no need to reload, unless forced
@@ -818,11 +818,11 @@ class PlayerCore: NSObject {
   func updateMpvKeepaspectWindowSynchronously() {
     assert(DispatchQueue.isExecutingIn(DispatchQueue.main))
     guard DebugConfig.useMpvKeepaspectWindow else { return }
-    log.verbose{"Updating mpv keepaspect-window synchronously"}
+    log.verbose("Updating mpv keepaspect-window synchronously")
     mpv.queue.sync {
       setMpvKeepaspectWindow(to: pwc.currentLayout.mode.needsMpvKeepaspectWindow)
     }
-    log.verbose{"Updating mpv keepaspect-window synchronously: done"}
+    log.verbose("Updating mpv keepaspect-window synchronously: done")
   }
 
   func togglePause() {
@@ -1114,7 +1114,7 @@ class PlayerCore: NSObject {
       return false
     }
 
-    log.debug{"Screenshot requested by user\(keyBinding == nil ? "" : " (rawAction: \(keyBinding!.rawAction?.quoted ?? "nil"))")"}
+    log.debug("Screenshot requested by user\(keyBinding == nil ? "" : " (rawAction: \(keyBinding!.rawAction?.quoted ?? "nil"))")")
 
     var commandFlags: [String] = []
 
@@ -1124,7 +1124,7 @@ class PlayerCore: NSObject {
       guard let rawAction = keyBinding.rawAction, let action = keyBinding.action,
             let commandName = keyBinding.action?.first,
               (commandName == MPVCommand.screenshotRaw.rawValue || commandName == MPVCommand.screenshot.rawValue) else {
-        log.error{"Cannot take screenshot: unexpected first token in key binding action: \(keyBinding.rawAction?.quoted ?? "nil")"}
+        log.error("Cannot take screenshot: unexpected first token in key binding action: \(keyBinding.rawAction?.quoted ?? "nil")")
         return false
       }
       isRaw = commandName == MPVCommand.screenshotRaw.rawValue
@@ -1145,7 +1145,7 @@ class PlayerCore: NSObject {
             canUseIINAScreenshot = false
           default:
             // Unexpected flag. Let mpv decide how to handle
-            log.warn{"Taking screenshot: Unrecognized flag for mpv '\(commandName)' command: '\(flag)'"}
+            log.warn("Taking screenshot: Unrecognized flag for mpv '\(commandName)' command: '\(flag)'")
             canUseIINAScreenshot = false
           }
         }
@@ -1187,7 +1187,7 @@ class PlayerCore: NSObject {
     // The following internal property was added to provide a way to disable the FFmpeg image
     // decoder should a problem be discovered by users running old versions of macOS.
     guard Preference.bool(for: .enableFFmpegImageDecoder) else { return nil }
-    log.debug{"Using FFmpeg to decode screenshot: \(url)"}
+    log.debug("Using FFmpeg to decode screenshot: \(url)")
     return FFmpegController.createNSImage(withContentsOf: url)
   }
 
@@ -1195,7 +1195,7 @@ class PlayerCore: NSObject {
     let saveToFile = Preference.bool(for: .screenshotSaveToFile)
     let saveToClipboard = Preference.bool(for: .screenshotCopyToClipboard)
     guard saveToFile || saveToClipboard else { return }
-    log.verbose{"Screenshot done: saveToFile=\(saveToFile), saveToClipboard=\(saveToClipboard)"}
+    log.verbose("Screenshot done: saveToFile=\(saveToFile), saveToClipboard=\(saveToClipboard)")
 
     guard let imageFolder = mpv.getString(MPVOption.Screenshot.screenshotDir) else { return }
     guard let lastScreenshotURL = Utility.getLatestScreenshot(from: imageFolder) else { return }
@@ -1273,7 +1273,7 @@ class PlayerCore: NSObject {
         // The B loop point is set without the A loop point having been set. This is allowed by mpv
         // but IINA is not supposed to allow mpv to get into this state, so something has gone
         // wrong. This is an internal error. Log it and pretend that just the A loop point is set.
-        log.error{"Unexpected A-B loop state, ab-loop-a is \(a) ab-loop-b is \(b)"}
+        log.error("Unexpected A-B loop state, ab-loop-a is \(a) ab-loop-b is \(b)")
         info.abLoopStatus = .aSet
       }
     } else {
@@ -1282,14 +1282,14 @@ class PlayerCore: NSObject {
     }
 
     // The play slider has knobs representing the loop points, make insure the slider is in sync.
-    log.verbose{"Synchronized info.abLoopStatus=\(info.abLoopStatus) (changed=\(didChange.yn))"}
+    log.verbose("Synchronized info.abLoopStatus=\(info.abLoopStatus) (changed=\(didChange.yn))")
 
     if didChange {
       sendOSD(.abLoop(info.abLoopStatus))
     }
 
     DispatchQueue.main.async { [self] in
-      log.verbose{"Syncing player slider AB loop: a=\(a), b=\(b)"}
+      log.verbose("Syncing player slider AB loop: a=\(a), b=\(b)")
       pwc.playSlider.syncABLoop(info, a: a, b: b)
     }
   }
@@ -1498,7 +1498,7 @@ class PlayerCore: NSObject {
       // but that does not work properly for some videos.
       mpvValue = "-1.0"
     }
-    log.verbose{"Setting mpv video-aspect-override ≔ \(mpvValue.quoted)"}
+    log.verbose("Setting mpv video-aspect-override ≔ \(mpvValue.quoted)")
     mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
   }
 
@@ -1672,7 +1672,7 @@ class PlayerCore: NSObject {
 
   @discardableResult
   func playChapter(_ pos: Int) -> MPVChapter? {
-    log.verbose{"Seeking to chapter \(pos)"}
+    log.verbose("Seeking to chapter \(pos)")
     let chapters = info.chapters
     guard pos < chapters.count else {
       return nil
@@ -1834,17 +1834,17 @@ class PlayerCore: NSObject {
     let playback: Playback
     if let existingPlayback = info.currentPlayback, existingPlayback.url == playbackFromPath.url {
       guard existingPlayback.state.isNotYet(.started) else {
-        log.warn{"FileStarted: found existing playback for \(existingPlayback.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'notYetStarted', found: \(existingPlayback.state.rawValue))"}
+        log.warn("FileStarted: found existing playback for \(existingPlayback.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'notYetStarted', found: \(existingPlayback.state.rawValue))")
         return
       }
       playback = existingPlayback
       // update existing entry
       existingPlayback.playlistPos = playbackFromPath.playlistPos
       existingPlayback.state = playbackFromPath.state
-      log.verbose{"FileStarted: existing playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))"}
+      log.verbose("FileStarted: existing playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
     } else {
       // New media, perhaps initiated by mpv
-      log.verbose{"FileStarted: new playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))"}
+      log.verbose("FileStarted: new playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
       info.currentPlayback = playbackFromPath
       playback = playbackFromPath
     }
@@ -1890,7 +1890,7 @@ class PlayerCore: NSObject {
       let playlistPathList = priorState.getPlaylistPathList()
       if !playlistPathList.isEmpty {
         let playlistPos: Int? = priorState.int(for: .playlistPos)
-        log.debug{"Restoring \(playlistPathList.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")"}
+        log.debug("Restoring \(playlistPathList.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")")
         _addAllToPlaylist(pathListIncludingCurrent: playlistPathList, indexOfCurrentItem: playlistPos)
 
         /// Launches background task which scans video files and collects video size metadata using ffmpeg
@@ -1943,7 +1943,7 @@ class PlayerCore: NSObject {
         }
       }
     }
-    log.verbose{"FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")"}
+    log.verbose("FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")")
 
     let duration = mpv.getDouble(MPVProperty.duration)
     info.playbackDurationSec = duration
@@ -1951,7 +1951,7 @@ class PlayerCore: NSObject {
       if let id = PlaybackID(path: path) {
         MediaMetaCache.shared.updateCacheEntry(id, newDuration: duration)
       } else {
-        log.error{"MediaMetaCache: could not create URL for path, skipping: \(path)"}
+        log.error("MediaMetaCache: could not create URL for path, skipping: \(path)")
       }
     }
     let playbackPosition = mpv.getDouble(MPVProperty.timePos)
@@ -1980,7 +1980,7 @@ class PlayerCore: NSObject {
     }
 
     guard currentPlayback.state.isNotYet(.loaded) else {
-      log.warn{"FileLoaded: aborting - state of \(currentPlayback.path.pii.quoted) is \(currentPlayback.state.description.quoted)"}
+      log.warn("FileLoaded: aborting - state of \(currentPlayback.path.pii.quoted) is \(currentPlayback.state.description.quoted)")
       return
     }
 
@@ -2028,7 +2028,7 @@ class PlayerCore: NSObject {
     let gtf = GeometryTransform("FileLoaded", self,
                                 sessionState: { [self] prevSessionState, ctx in
       guard ctx.currentPlayback.state == .loaded else {
-        log.verbose{"[GTF:\(ctx.name)] Expected currentPlayback.state == .loaded, but found: \(ctx.currentPlayback.state)"}
+        log.verbose("[GTF:\(ctx.name)] Expected currentPlayback.state == .loaded, but found: \(ctx.currentPlayback.state)")
         return nil
       }
 
@@ -2084,7 +2084,7 @@ class PlayerCore: NSObject {
     }
     // auto load matched subtitles
     if let matchedSubs = self.info.getMatchedSubs(currentPlayback.path) {
-      log.debug{"Found \(matchedSubs.count) external subs for current file"}
+      log.debug("Found \(matchedSubs.count) external subs for current file")
       var loadedSubs = Set<URL>()
       for sub in matchedSubs {
         // filter duplicated matched subtitles, see https://github.com/iina/iina/issues/5399
@@ -2137,7 +2137,7 @@ class PlayerCore: NSObject {
     guard isActive else { return }
     let chapter = Int(mpv.getInt(MPVProperty.chapter))
     info.chapter = chapter
-    log.verbose{"Δ mpv prop: 'chapter' = \(info.chapter)"}
+    log.verbose("Δ mpv prop: 'chapter' = \(info.chapter)")
     syncUI(.chapterList)
     mediaTitleChanged()
   }
@@ -2153,10 +2153,10 @@ class PlayerCore: NSObject {
   func idleActiveChanged() {
     let isFileLoaded = info.isFileLoaded
     let errorMsg = errorWhileLoading
-    log.verbose{"Got mpv 'idle-active': isFileLoaded=\(isFileLoaded.yn) error=\(errorMsg?.quoted ?? "nil") playerState=\(state)"}
+    log.verbose("Got mpv 'idle-active': isFileLoaded=\(isFileLoaded.yn) error=\(errorMsg?.quoted ?? "nil") playerState=\(state)")
     /// Make sure to check that `info.currentPlayback != nil` before outputting error
     if let errorMsg, let playback = info.currentPlayback, playback.state.isNotYet(.loaded) {
-      log.error{"Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted)! Will stop player\(isInteractivePlayer ? " & close window" : "")"}
+      log.error("Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted)! Will stop player\(isInteractivePlayer ? " & close window" : "")")
       DispatchQueue.main.async { [self] in
         let errorDetail = errorMsg.isEmpty ? "" : "\n\n\(errorMsg)"
         Utility.showAlert("error_open_name", arguments: ["\(playback.path.quoted)\(errorDetail)"])
@@ -2250,7 +2250,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard pwc.loaded else { return }
     let ontop = mpv.getFlag(MPVOption.Window.ontop)
-    log.verbose{"Δ mpv prop: 'ontop' = \(ontop.yesno)"}
+    log.verbose("Δ mpv prop: 'ontop' = \(ontop.yesno)")
     if ontop != pwc.isOnTop {
       DispatchQueue.main.async { [self] in
         pwc.setWindowFloatingOnTop(ontop, from: pwc.currentLayout)
@@ -2453,13 +2453,13 @@ class PlayerCore: NSObject {
     guard !pwc.sessionState.isRestoring, !isStopping else { return }
     let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
     guard info.isFileLoaded else {
-      log.verbose{"SID changed to \(sid) but file is not loaded; ignoring"}
+      log.verbose("SID changed to \(sid) but file is not loaded; ignoring")
       return
     }
     guard sid != info.sid else { return }
     info.sid = sid
 
-    log.verbose{"Δ mpv prop: `sid`=\(sid)"}
+    log.verbose("Δ mpv prop: `sid`=\(sid)")
     if !silent {
       sendOSD(.track(info.currentTrack(.sub) ?? .noneSubTrack))
     }
@@ -2473,13 +2473,13 @@ class PlayerCore: NSObject {
     guard !isRestoring, !isStopping else { return }
     let ssid = Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
     guard info.isFileLoaded else {
-      log.verbose{"SSID changed to \(ssid) but file is not loaded; ignoring"}
+      log.verbose("SSID changed to \(ssid) but file is not loaded; ignoring")
       return
     }
     guard ssid != info.secondSid else { return }
     info.secondSid = ssid
 
-    log.verbose{"Δ mpv prop: `ssid` = \(ssid)"}
+    log.verbose("Δ mpv prop: `ssid` = \(ssid)")
     if !silent {
       sendOSD(.track(info.currentTrack(.secondSub) ?? .noneSecondSubTrack))
     }
@@ -2517,7 +2517,7 @@ class PlayerCore: NSObject {
   func subDelayChanged(_ delay: Double) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     if info.subDelay != delay {
-      log.verbose{"Δ mpv prop: `sub-delay` = \(delay)"}
+      log.verbose("Δ mpv prop: `sub-delay` = \(delay)")
       info.subDelay = delay
       sendOSD(.subDelay(delay))
       saveState()
@@ -2560,7 +2560,7 @@ class PlayerCore: NSObject {
   private func startWatchingSubFile() {
     guard let currentSubTrack = info.currentTrack(.sub) else { return }
     guard let externalFilename = currentSubTrack.externalFilename else {
-      log.verbose{"Sub \(currentSubTrack.id) is not an external file"}
+      log.verbose("Sub \(currentSubTrack.id) is not an external file")
       return
     }
 
@@ -2572,18 +2572,18 @@ class PlayerCore: NSObject {
     fileMonitor.fileDidChange = { [self] in
       let code = mpv.command(.subReload, args: ["\(currentSubTrack.id)"], checkError: false)
       if code < 0 {
-        log.error{"Failed reloading sub track \(currentSubTrack.id): error code \(code)"}
+        log.error("Failed reloading sub track \(currentSubTrack.id): error code \(code)")
       }
     }
     subFileMonitor = fileMonitor
-    log.verbose{"Starting FS watch of sub file \(subURL.path.pii.quoted)"}
+    log.verbose("Starting FS watch of sub file \(subURL.path.pii.quoted)")
     fileMonitor.startMonitoring()
   }
 
   private func stopWatchingSubFile() {
     guard let subFileMonitor else { return }
 
-    log.verbose{"Stopping FS watch of sub file \(PlaybackID.path(from: subFileMonitor.url).pii.quoted)"}
+    log.verbose("Stopping FS watch of sub file \(PlaybackID.path(from: subFileMonitor.url).pii.quoted)")
     subFileMonitor.stopMonitoring()
     self.subFileMonitor = nil
   }
@@ -2617,7 +2617,7 @@ class PlayerCore: NSObject {
     syncFullScreenState()
     let ontop = mpv.getFlag(MPVOption.Window.ontop)
     if ontop != pwc.isOnTop {
-      log.verbose{"IINA OnTop state (\(pwc.isOnTop.yn)) does not match mpv (\(ontop.yn)). Will change to match mpv state"}
+      log.verbose("IINA OnTop state (\(pwc.isOnTop.yn)) does not match mpv (\(ontop.yn)). Will change to match mpv state")
       DispatchQueue.main.async { [self] in
         pwc.setWindowFloatingOnTop(ontop, from: pwc.currentLayout, updateOnTopStatus: false)
       }
@@ -2630,7 +2630,7 @@ class PlayerCore: NSObject {
     
     let mpvFS = mpv.getFlag(MPVOption.Window.fullscreen)
     let iinaFS = pwc.isFullScreen
-    log.verbose{"FullScreen state: IINA=\(iinaFS.yn) mpv=\(mpvFS.yn)"}
+    log.verbose("FullScreen state: IINA=\(iinaFS.yn) mpv=\(mpvFS.yn)")
     if mpvFS != iinaFS {
       if mpvFS && didEnterFullScreenViaUserToggle {
         didEnterFullScreenViaUserToggle = false
@@ -2868,7 +2868,7 @@ class PlayerCore: NSObject {
   func syncUI(_ option: SyncUIOption) {
     // if window not loaded, ignore
     guard pwc.loaded else { return }
-    log.verbose{"Syncing UI \(option)"}
+    log.verbose("Syncing UI \(option)")
 
     switch option {
 
@@ -2922,7 +2922,7 @@ class PlayerCore: NSObject {
   func sendOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
                accessoryViewController: NSViewController? = nil, external: Bool = false) {
     if case .debug = msg {
-      log.verbose{"DebugOSD: \(msg)"}
+      log.verbose("DebugOSD: \(msg)")
     }
 
     /// Check `isFileLoadedAndSized` early to prevent race condition
@@ -2986,7 +2986,7 @@ class PlayerCore: NSObject {
       }
       let videoTrackID = info.vid
       guard let videoTrackID, videoTrackID > 0 else {
-        log.debug{"Thumbnails reload stopped: invalid/missing video track: \(String(videoTrackID))"}
+        log.debug("Thumbnails reload stopped: invalid/missing video track: \(String(videoTrackID))")
         clearExistingThumbnails(for: currentPlayback)
         return
       }
@@ -3033,7 +3033,7 @@ class PlayerCore: NSObject {
           if !oldThumbs.isCancelled, oldThumbs.mediaFilePath == currentPlayback.url.path,
              oldThumbs.videoTrackID == videoTrackID,
              thumbnailWidth == oldThumbs.thumbnailWidth {
-            log.debug{"Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for vid\(videoTrackID) @ \(thumbnailWidth)px; nothing to do"}
+            log.debug("Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for vid\(videoTrackID) @ \(thumbnailWidth)px; nothing to do")
             return
           } else {
             clearExistingThumbnails(for: currentPlayback)
@@ -3228,7 +3228,7 @@ class PlayerCore: NSObject {
     }
 
     info.replaceTracks(audio: audioTracks, video: videoTracks, sub: subTracks)
-    log.debug{"Reloaded tracklist from mpv (\(trackCount) tracks)"}
+    log.debug("Reloaded tracklist from mpv (\(trackCount) tracks)")
     return true
   }
 
@@ -3241,7 +3241,7 @@ class PlayerCore: NSObject {
     guard info.isFileLoaded else { return }
     log.debug("Track list changed")
     guard reloadTrackInfo() else { return }
-    log.verbose{"Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) sid=\(String(info.sid))"}
+    log.verbose("Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) sid=\(String(info.sid))")
     postNotification(.iinaTracklistChanged)
   }
 
@@ -3251,12 +3251,12 @@ class PlayerCore: NSObject {
     let aid = Int(mpv.getInt(MPVOption.TrackSelection.aid))
     guard aid != info.aid else { return }
     guard info.isFileLoaded else {
-      log.verbose{"Audio track changed to \(aid) but file is not loaded; ignoring"}
+      log.verbose("Audio track changed to \(aid) but file is not loaded; ignoring")
       return
     }
     info.aid = aid
 
-    log.verbose{"Audio track changed to: \(aid)"}
+    log.verbose("Audio track changed to: \(aid)")
     syncUI(.volume)
     postNotification(.iinaAIDChanged)
     if !silent {
@@ -3316,19 +3316,19 @@ class PlayerCore: NSObject {
       } else {
         returnValue = nil  // abort
       }
-      log.verbose{"[GTF:\(ctx.name)] Changing sessionState for vid change, vidNew=\(ctx.vidTrackID) pendingAction=\(pendingAction): \(prevSessionState) → \(returnValue?.description ?? "nil")"}
+      log.verbose("[GTF:\(ctx.name)] Changing sessionState for vid change, vidNew=\(ctx.vidTrackID) pendingAction=\(pendingAction): \(prevSessionState) → \(returnValue?.description ?? "nil")")
       return returnValue
     }
 
     let videoGeoTF: GeometryTransform.VideoGeometryTF = { [self] inputVidGeo, ctx -> VideoGeometry? in
       guard ctx.currentPlayback.state.isAtLeast(.loaded) else {
-        log.verbose{"[GTF:\(ctx.name)] vid changed to \(vid) but file is not loaded"}
+        log.verbose("[GTF:\(ctx.name)] vid changed to \(vid) but file is not loaded")
         return nil
       }
 
       var outputVidGeo = ctx.syncVideoParamsFromMpv(startingWith: inputVidGeo)
       if outputVidGeo == nil && hasPendingAction {
-        log.verbose{"[GTF:\(ctx.name)] syncVideoParams returned nil but pending miniplayer show video. Assuming no video tracks; will show default art"}
+        log.verbose("[GTF:\(ctx.name)] syncVideoParams returned nil but pending miniplayer show video. Assuming no video tracks; will show default art")
         outputVidGeo = inputVidGeo
         // (kludge): ideally we'd want to include this in our window transform, but need refactor to get there from here. This should work ok.
         pwc.animationPipeline.submitInstantTask{ [self] in
@@ -3365,7 +3365,7 @@ class PlayerCore: NSObject {
                               windowed: { [self] ctx -> PWinGeometry? in
         guard ctx.outputLayout.isMusicMode else { return nil }
         let inputMusicModeGeo = ctx.inputGeoSet.musicMode
-        log.verbose{"[GTF:\(ctx.name)] Showing viewport in music mode (visibleNow=\(inputMusicModeGeo.isViewportShown.yesno))"}
+        log.verbose("[GTF:\(ctx.name)] Showing viewport in music mode (visibleNow=\(inputMusicModeGeo.isViewportShown.yesno))")
         miniPlayerShowVideoTimer.cancel()
         guard ctx.inputLayout.isMusicMode && !inputMusicModeGeo.isViewportShown else { return nil }
         let newGeo = inputMusicModeGeo.clone(video: ctx.outputVidGeo).withVideoViewVisible(true)
@@ -3380,7 +3380,7 @@ class PlayerCore: NSObject {
                                buildPWinTransformTasks: { [self] ctx -> [IINAAnimation.Task] in
         
         let inputMusicModeGeo = ctx.inputGeoSet.musicMode
-        log.verbose{"[GTF:\(ctx.name)] Showing viewport & exiting music mode (visibleNow=\(inputMusicModeGeo.isViewportShown.yesno))"}
+        log.verbose("[GTF:\(ctx.name)] Showing viewport & exiting music mode (visibleNow=\(inputMusicModeGeo.isViewportShown.yesno))")
         miniPlayerShowVideoTimer.cancel()
         guard ctx.inputLayout.isMusicMode && !inputMusicModeGeo.isViewportShown else { return [] }
 
@@ -3440,12 +3440,12 @@ class PlayerCore: NSObject {
         pendingActionOnVidChange = action
         // In most cases, mpv will async'ly notify when the video track is done changing. But it is not guaranteed in all cases.
         // Give it a chance to load but use a timer as fallback to guarantee the videoView will open.
-        log.verbose{"Will show music mode video after enabling video track, timeout=\(miniPlayerShowVideoTimer.timeout)s"}
+        log.verbose("Will show music mode video after enabling video track, timeout=\(miniPlayerShowVideoTimer.timeout)s")
         DispatchQueue.main.async { [self] in
           miniPlayerShowVideoTimer.restart()
         }
       }
-      log.verbose{"Enabling video track: changing vid from \(vidNow) → \(vidToSet) vidTrackCount=\(vidTrackCount) pnedingAction=\(action)"}
+      log.verbose("Enabling video track: changing vid from \(vidNow) → \(vidToSet) vidTrackCount=\(vidTrackCount) pnedingAction=\(action)")
       let hasVidTrack = vidTrackCount > 0
       guard hasVidTrack else {
         info.vidDisabled = nil  // clear saved track
@@ -3458,7 +3458,7 @@ class PlayerCore: NSObject {
         return
       }
       guard info.vid! != vidToSet else {
-        log.verbose{"Enabling video track: no change to vid (pendingAction=\(action))"}
+        log.verbose("Enabling video track: no change to vid (pendingAction=\(action))")
         if hasPendingAction {
           // Still need to call this to show videoView
           vidChanged(silent: true)
@@ -3482,7 +3482,7 @@ class PlayerCore: NSObject {
       let vidNow = Int(mpv.getInt(MPVOption.TrackSelection.vid))
 
       if info.vidDisabled == nil {
-        log.verbose{"Disabling video track: setting vidDisabled to \(vidNow) before setting vid=0"}
+        log.verbose("Disabling video track: setting vidDisabled to \(vidNow) before setting vid=0")
         info.vidDisabled = vidNow
       }
       guard vidNow != 0 else {
@@ -3501,7 +3501,7 @@ class PlayerCore: NSObject {
   }
 
   func _setTrack(_ index: Int, forType trackType: MPVTrack.TrackType, silent: Bool = false) {
-    log.verbose{"Setting \(trackType) track to \(index)"}
+    log.verbose("Setting \(trackType) track to \(index)")
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard isActive else { return }
 

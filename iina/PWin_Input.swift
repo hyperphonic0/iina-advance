@@ -38,7 +38,7 @@ extension PlayerWindowController {
     }
 
     if let fallbackAction {
-      log.verbose{"Executing fallback action for key \(normalizedMpvKey)"}
+      log.verbose("Executing fallback action for key \(normalizedMpvKey)")
       fallbackAction()
       return true
     }
@@ -61,19 +61,19 @@ extension PlayerWindowController {
 
     if keyBinding.isIgnored {
       // if "ignore", just swallow the event. Do not forward; do not beep
-      log.verbose{"Binding is ignored for key: \(keyBinding.normalizedMpvKey.quoted)"}
+      log.verbose("Binding is ignored for key: \(keyBinding.normalizedMpvKey.quoted)")
       return true
     }
 
     if let menuItem = keyBinding.menuItem, let action = menuItem.action {
-      log.verbose{"Key binding is attached to menu item: \(menuItem.title.quoted) but was not handled by MenuController. Calling it manually"}
+      log.verbose("Key binding is attached to menu item: \(menuItem.title.quoted) but was not handled by MenuController. Calling it manually")
       // Send to nil to allow for greatest search scope
       NSApp.sendAction(action, to: nil, from: menuItem)
       return true
     }
 
     guard let rawAction = keyBinding.rawAction, let action = keyBinding.action else {
-      log.error{"Expected key binding to have an mpv action, aborting: \(keyBinding)"}
+      log.error("Expected key binding to have an mpv action, aborting: \(keyBinding)")
       return false
     }
 
@@ -88,7 +88,7 @@ extension PlayerWindowController {
         executeIINACommand(iinaCommand)
         return true
       } else {
-        log.error{"Unrecognized IINA command: \(rawAction.quoted)"}
+        log.error("Unrecognized IINA command: \(rawAction.quoted)")
         return false
       }
     }
@@ -111,7 +111,7 @@ extension PlayerWindowController {
       // to mpv and instead trigger the normal app termination sequence.
       RunLoop.main.perform(inModes: [.common]) { [self] in
         if !AppDelegate.shared.isTerminating {
-          log.verbose{"Received MPVCommand.quit: calling NSApp.terminate"}
+          log.verbose("Received MPVCommand.quit: calling NSApp.terminate")
           NSApp.terminate(nil)
         }
       }
@@ -135,13 +135,13 @@ extension PlayerWindowController {
       }
       let waitResult = dispatchGroup.wait(timeout: .now() + Constants.TimeInterval.keyDownHandlingTimeout)
       if waitResult == .timedOut {
-        log.debug{"Command timed out: \(rawAction.quoted)"}
+        log.debug("Command timed out: \(rawAction.quoted)")
         return false
       }
     }
 
     guard returnValue == 0 else {
-      log.error{"Return value \(returnValue) when executing key command \(rawAction.quoted)"}
+      log.error("Return value \(returnValue) when executing key command \(rawAction.quoted)")
       return false
     }
     return true
@@ -203,7 +203,7 @@ extension PlayerWindowController {
     }
 
     customTitleBar?.addTrackingAreas()
-    log.verbose{"Added \(addedCount) tracking areas"}
+    log.verbose("Added \(addedCount) tracking areas")
   }
 
   func removeTrackingAreas() {
@@ -217,7 +217,7 @@ extension PlayerWindowController {
       }
     }
     customTitleBar?.removeTrackingAreas()
-    log.verbose{"Removed \(removedCount) tracking areas"}
+    log.verbose("Removed \(removedCount) tracking areas")
   }
 
   /// Checks if an object is marked as being dragged, and if it is, whether the drag is still valid.
@@ -318,12 +318,12 @@ extension PlayerWindowController {
   override func mouseDown(with event: NSEvent) {
     guard event.eventNumber != lastMouseDownEventID else { return }
     lastMouseDownEventID = event.eventNumber
-    log.verbose{"PWin MouseDown @ \(event.locationInWindow) clickCount=\(event.clickCount) eventNum=\(event.eventNumber)"}
+    log.verbose("PWin MouseDown @ \(event.locationInWindow) clickCount=\(event.clickCount) eventNum=\(event.eventNumber)")
 
     if let clickedButton = visibleViewForMouseEvent(event, in: symButtons) {
       // When titlebar is "inside" the viewport, clicking on one of its SymButtons goes here first. Unclear why...
       // So check for this and route the click to the button explicitly.
-      log.verbose{"MouseDown: clicked button=\(clickedButton.idString) hidden=\(clickedButton.isHidden.yn)"}
+      log.verbose("MouseDown: clicked button=\(clickedButton.idString) hidden=\(clickedButton.isHidden.yn)")
       clickedButton.mouseDown(with: event)
       return
     }
@@ -382,7 +382,7 @@ extension PlayerWindowController {
       let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
       guard dragDistance > Constants.Window.minInitialDragThreshold else { return }
 
-      log.verbose{"PWin MouseDrag: minimum dragging distance was met (\(dragDistance))"}
+      log.verbose("PWin MouseDrag: minimum dragging distance was met (\(dragDistance))")
       isDragging = true
     }
 
@@ -401,7 +401,7 @@ extension PlayerWindowController {
     // Adapted from: https://stackoverflow.com/a/1946223
     let dX = (currentLocation.x - mouseDownLocation.x)
     let dY = (currentLocation.y - mouseDownLocation.y)
-    log.verbose{"PWin MouseDrag: \(dX), \(dY)"}
+    log.verbose("PWin MouseDrag: \(dX), \(dY)")
     var newOrigin = NSPoint(x: windowFrameAtMouseDown.origin.x + dX,
                             y: windowFrameAtMouseDown.origin.y + dY)
 
@@ -434,7 +434,7 @@ extension PlayerWindowController {
   override func mouseUp(with event: NSEvent) {
     guard event.eventNumber != lastMouseUpEventID else { return }
     lastMouseUpEventID = event.eventNumber
-    log.verbose{"PWin MouseUp @ \(event.locationInWindow) clickCount=\(event.clickCount) dragging=\(isDragging.yn) eventNum=\(event.eventNumber)"}
+    log.verbose("PWin MouseUp @ \(event.locationInWindow) clickCount=\(event.clickCount) dragging=\(isDragging.yn) eventNum=\(event.eventNumber)")
 
     // Always do these:
     hideCursorTimer.restart()
@@ -479,7 +479,7 @@ extension PlayerWindowController {
       let titleBarMinY = window!.frame.height - Constants.Distance.standardTitleBarHeight
       if !isFullScreen && (event.locationInWindow.y >= titleBarMinY) {
         if let userDefault = UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
-          log.verbose{"Double-click occurred in title bar. Executing \(userDefault.quoted)"}
+          log.verbose("Double-click occurred in title bar. Executing \(userDefault.quoted)")
           if userDefault == "Minimize" {
             window?.performMiniaturize(nil)
           } else if userDefault == "Maximize" {
@@ -490,12 +490,12 @@ extension PlayerWindowController {
           log.verbose("Double-click occurred in title bar, but no action for AppleActionOnDoubleClick")
         }
       } else {
-        log.verbose{"Double-click did not occur inside title bar (minY: \(titleBarMinY)) or is full screen (\(isFullScreen))"}
+        log.verbose("Double-click did not occur inside title bar (minY: \(titleBarMinY)) or is full screen (\(isFullScreen))")
       }
     }
 
     guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else {
-      log.verbose{"PWin MouseUp: click occurred in a disabled view; ignoring"}
+      log.verbose("PWin MouseUp: click occurred in a disabled view; ignoring")
       super.mouseUp(with: event)
       return
     }
@@ -508,7 +508,7 @@ extension PlayerWindowController {
           let singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
           if singleClickAction == .hideOSC && !wasKeyWindowAtMouseDown {
             // Don't hide OSC
-            log.verbose{"Window was not key at mouseDown; skipping mouseAction: \(singleClickAction)"}
+            log.verbose("Window was not key at mouseDown; skipping mouseAction: \(singleClickAction)")
             return false
           }
           if doubleClickAction == .none {
@@ -589,7 +589,7 @@ extension PlayerWindowController {
   }
 
   func performMouseAction(_ action: Preference.MouseClickAction) {
-    log.verbose{"Performing mouseAction: \(action)"}
+    log.verbose("Performing mouseAction: \(action)")
     switch action {
     case .pause:
       player.togglePause()
@@ -781,7 +781,7 @@ extension PlayerWindowController {
     switch newCursorType {
     case .normalCursor:
       if customCursor != .normalCursor {
-        log.verbose{"Setting cursor back to normal"}
+        log.verbose("Setting cursor back to normal")
         NSCursor.current.pop()
         customCursor = .normalCursor
       }
@@ -816,13 +816,13 @@ extension PlayerWindowController {
     // This solution works for any non-main window while the app is frontmost, and works for regular dead NSViews for main window.
     // Combined, using cursorUpdate works for sliders when window is main, and this method picks up the work for them when non-main.
     if customCursor == .normalCursor {
-      log.verbose{"Pushing cursor to \(newCursorType)"}
+      log.verbose("Pushing cursor to \(newCursorType)")
       newCursor.push()
     } else if (customCursor != newCursorType) || (NSCursor.current != newCursor) {
       // There seems to be a race condition in Apple's code which causes push() or set()
       // to get ignored, so we cannot assume they succeeded.
       // Partial workaround: add the extra check against NSCursor.current above.
-      log.verbose{"Setting cursor to \(newCursorType)"}
+      log.verbose("Setting cursor to \(newCursorType)")
       newCursor.set()
     }
     customCursor = newCursorType

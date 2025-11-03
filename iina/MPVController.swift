@@ -319,10 +319,10 @@ class MPVController: NSObject {
 
   func setNode(_ name: String, _ value: Any) {
     guard var node = try? MPVNode.create(value) else {
-      log.error{"setNode: cannot encode value for \(name)"}
+      log.error("setNode: cannot encode value for \(name)")
       return
     }
-    log.debug{"Set property: \(name)=<a mpv node>"}
+    log.debug("Set property: \(name)=<a mpv node>")
     mpv_set_property(mpv, name, MPV_FORMAT_NODE, &node)
     MPVNode.free(node)
   }
@@ -491,18 +491,18 @@ class MPVController: NSObject {
     let subscriptionLevel = mpvLogScanner.mpvEventLogLevel.shouldLog(severity: Constants.minMpvEventLogLevel.rawValue) ? mpvLogScanner.mpvEventLogLevel : Constants.minMpvEventLogLevel
 
     // Receive MPV_EVENT_LOG messages at given level of verbosity.
-    log.verbose{"Updating mpv log event subscription level to \(subscriptionLevel.string.quoted)"}
+    log.verbose("Updating mpv log event subscription level to \(subscriptionLevel.string.quoted)")
     chkErr(mpv_request_log_messages(mpv, subscriptionLevel.string))
   }
 
   func getInputBindings(filterCommandsBy filter: ((Substring) -> Bool)? = nil) -> [KeyMapping] {
-    player.log.verbose{"Requesting from mpv: \(MPVProperty.inputBindings)"}
+    player.log.verbose("Requesting from mpv: \(MPVProperty.inputBindings)")
     let parsed = getNode(MPVProperty.inputBindings)
     return toKeyMappings(parsed)
   }
 
   func getInputKeyList() -> [String] {
-    player.log.verbose{"Requesting from mpv: \(MPVProperty.inputKeyList)"}
+    player.log.verbose("Requesting from mpv: \(MPVProperty.inputKeyList)")
     if let csv = getString(MPVProperty.inputKeyList) {
       return csv.split(separator: ",").map{String($0)}
     }
@@ -537,7 +537,7 @@ class MPVController: NSObject {
     }
     let stringArgs: [String] = [MPVCommand.scriptMessageTo.rawValue, scriptName] + args.map{ String($0)}
     guard var argsNode = try? MPVNode.create(stringArgs) else {
-      log.error{"sendMsgToScript: cannot encode value for \(stringArgs)"}
+      log.error("sendMsgToScript: cannot encode value for \(stringArgs)")
       return
     }
     log.verbose("Sending to script: \(stringArgs)")
@@ -624,7 +624,7 @@ class MPVController: NSObject {
     // This can be called during init
     guard !player.isStopping else { return }
     let useMpvOSD = !player.isDemoPlayer && Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .useMpvOsd)
-    log.verbose{"Derived isUsingMpvOSD: \(useMpvOSD.yn)"}
+    log.verbose("Derived isUsingMpvOSD: \(useMpvOSD.yn)")
     player.isUsingMpvOSD = useMpvOSD
     if useMpvOSD {
       // If using mpv OSD, then disable IINA's OSD
@@ -649,16 +649,16 @@ class MPVController: NSObject {
     static func fromJSON(_ json: String?, _ log: Logger.Subsystem) -> ThumbfastInfo? {
       do {
         guard let json else {
-          log.error{"Failed to parse thumbfast-info: obj is nil"}
+          log.error("Failed to parse thumbfast-info: obj is nil")
           return nil
         }
         guard let jsonData = json.data(using: .utf8) else {
-          log.error{"Failed create JSON data for thumbfast-info"}
+          log.error("Failed create JSON data for thumbfast-info")
           return nil
         }
         return try JSONDecoder().decode(ThumbfastInfo.self, from: jsonData)
       } catch {
-        log.error{"Failed to get or parse thumbfast-info from mpv: \(error)"}
+        log.error("Failed to get or parse thumbfast-info from mpv: \(error)")
         return nil
       }
     }
@@ -908,7 +908,7 @@ class MPVController: NSObject {
   func chkErr(_ returnCode: Int32!) {
     guard returnCode < 0 else { return }
     let message = "mpv API error: \"\(errorString(returnCode))\", Return value: \(returnCode!)."
-    player.log.error{message}
+    player.log.error(message)
 
     DispatchQueue.main.async { [self] in
       Utility.showAlert("fatal_error", arguments: [message])
@@ -921,7 +921,7 @@ class MPVController: NSObject {
   func logError(_ returnCode: Int32) -> Int32 {
     guard returnCode < 0 else { return returnCode }
     guard player.log.isErrorEnabled else { return returnCode }
-    player.log.error{"mpv API error: \"\(errorString(returnCode))\", Return value: \(returnCode)"}
+    player.log.error("mpv API error: \"\(errorString(returnCode))\", Return value: \(returnCode)")
     return returnCode
   }
 

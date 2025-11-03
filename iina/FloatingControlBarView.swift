@@ -106,7 +106,7 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
   /// Adds margin constraints if missing
   func addOrUpdateMarginConstraints(for layout: LayoutState) {
     guard let pwc = playerWindowController, let contentView = pwc.window?.contentView else { return }
-    pwc.log.verbose{"Updating floating OSC constraints: leadingSidebarVisible=\(layout.leadingSidebar.isVisible.yn) traillingSidebarVisible=\(layout.leadingSidebar.isVisible.yn)"}
+    pwc.log.verbose("Updating floating OSC constraints: leadingSidebarVisible=\(layout.leadingSidebar.isVisible.yn) traillingSidebarVisible=\(layout.leadingSidebar.isVisible.yn)")
 
     let leadingConstraintSecondAnchor = layout.leadingSidebar.isVisible ? pwc.leadingSidebarView.trailingAnchor : contentView.leadingAnchor
     if leadingMarginConstraint == nil || !leadingMarginConstraint.isActive || (leadingMarginConstraint?.secondAnchor != leadingConstraintSecondAnchor) {
@@ -227,7 +227,7 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
     if !minDragDistanceMet {
       let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
       guard dragDistance >= Constants.Window.minInitialDragThreshold else { return }
-      pwc.log.verbose{"FloatingOSC mouseDrag: minimum dragging distance was met"}
+      pwc.log.verbose("FloatingOSC mouseDrag: minimum dragging distance was met")
       minDragDistanceMet = true
     }
     assert(isDragging, "Something's wrong: isDragging should be true here")

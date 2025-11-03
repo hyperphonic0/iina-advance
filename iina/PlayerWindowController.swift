@@ -88,13 +88,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // While true, disable window geometry listeners so they don't overwrite cache with intermediate data
   var isAnimatingLayoutTransition: Bool = false {
     didSet {
-      log.verbose{"Δ isAnimatingLayoutTransition ≔ \(isAnimatingLayoutTransition.yesno)"}
+      log.verbose("Δ isAnimatingLayoutTransition ≔ \(isAnimatingLayoutTransition.yesno)")
     }
   }
 
   var sessionState: PWinSessionState = .noSession {
     willSet {
-      log.verbose{"Δ sessionState: \(sessionState) → \(newValue)"}
+      log.verbose("Δ sessionState: \(sessionState) → \(newValue)")
       assert(DispatchQueue.isExecutingIn(DispatchQueue.main))
     }
   }
@@ -121,7 +121,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   var isDragging: Bool = false
   var currentDragObject: NSView? = nil {
     didSet {
-      log.verbose{"Δ currentDragObject ≔ \(currentDragObject?.idString.quoted ?? "nil")"}
+      log.verbose("Δ currentDragObject ≔ \(currentDragObject?.idString.quoted ?? "nil")")
       assert(currentDragObject == nil || (currentDragObject as? DraggableObject != nil),
              "Expected currentDragObject to conform to DraggableObject: id=\(currentDragObject?.idString.quoted ?? "nil"), obj=\(currentDragObject?.description ?? "nil")")
     }
@@ -293,7 +293,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       return geo.windowed
     } set {
       geo = geo.clone(windowed: newValue)
-      log.verbose{"Δ windowedModeGeo ≔ \(newValue)"}
+      log.verbose("Δ windowedModeGeo ≔ \(newValue)")
       assert(newValue.mode.isWindowed, "windowedModeGeo has unexpected mode: \(newValue.mode)")
       assert(!newValue.screenFit.isFullScreen, "windowedModeGeo has invalid screenFit: \(newValue.screenFit)")
     }
@@ -304,7 +304,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       return geo.musicMode
     } set {
       geo = geo.clone(musicMode: newValue)
-      log.verbose{"Updated musicModeGeo ≔ \(newValue)"}
+      log.verbose("Updated musicModeGeo ≔ \(newValue)")
     }
   }
 
@@ -313,13 +313,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   static var windowedModeGeoLastClosed: PWinGeometry = {
     let csv = Preference.string(for: .uiLastClosedWindowedModeGeometry)
     if csv?.isEmpty ?? true {
-      Logger.log.debug{"Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty or could not be parsed. Falling back to default geometry"}
+      Logger.log.debug("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty or could not be parsed. Falling back to default geometry")
     } else if let savedGeo = PWinGeometry.fromCSV(csv, Logger.log) {
       if savedGeo.mode.isWindowed && !savedGeo.screenFit.isFullScreen {
-        Logger.log.verbose{"Loaded pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)): \(savedGeo)"}
+        Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)): \(savedGeo)")
         return savedGeo
       } else {
-        Logger.log.error{"Saved pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is invalid. Falling back to default geometry (found: \(savedGeo))"}
+        Logger.log.error("Saved pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is invalid. Falling back to default geometry (found: \(savedGeo))")
       }
     }
     // Compute default geometry for main screen
@@ -332,7 +332,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         return
       }
       Preference.set(windowedModeGeoLastClosed.toCSV(), for: .uiLastClosedWindowedModeGeometry)
-      Logger.log.verbose{"Updated pref uiLastClosedWindowedModeGeometry ≔ \(windowedModeGeoLastClosed)"}
+      Logger.log.verbose("Updated pref uiLastClosedWindowedModeGeometry ≔ \(windowedModeGeoLastClosed)")
     }
   }
 
@@ -342,13 +342,13 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let csv = Preference.string(for: .uiLastClosedMusicModeGeometry)
     // Try to parse as modern CSV first. If it fails, try legacy music mode CSV
     if let savedGeo = PWinGeometry.fromCSV(csv, Logger.log) {
-      Logger.log.verbose{"Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)): \(savedGeo)"}
+      Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)): \(savedGeo)")
       return savedGeo
     } else if let savedGeo = PWinGeometry.fromMusicModeCSV(csv, Logger.log) {
-      Logger.log.verbose{"Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) from legacy music mode CSV: \(savedGeo)"}
+      Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) from legacy music mode CSV: \(savedGeo)")
       return savedGeo
     }
-    Logger.log.debug{"Pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty or could not be parsed. Falling back to default music mode geometry"}
+    Logger.log.debug("Pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty or could not be parsed. Falling back to default music mode geometry")
     let defaultScreen = NSScreen.screens[0]
     let defaultGeo = MiniPlayerViewController.buildMusicModeGeometryFromPrefs(screen: defaultScreen,
                                                                               video: VideoGeometry.defaultGeometry())
@@ -356,7 +356,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }() {
     didSet {
       Preference.set(musicModeGeoLastClosed.toCSV(), for: .uiLastClosedMusicModeGeometry)
-      Logger.log.verbose{"Updated musicModeGeoLastClosed ≔ \(musicModeGeoLastClosed)"}
+      Logger.log.verbose("Updated musicModeGeoLastClosed ≔ \(musicModeGeoLastClosed)")
     }
   }
 
@@ -372,11 +372,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     willSet {
       // - Remove old constraints:
       if let old = leadingSidebarConstraints {
-        log.verbose{"Disabling old leading sidebar constraints"}
+        log.verbose("Disabling old leading sidebar constraints")
         old.setActive(active: false)
       }
       if let newCons = newValue {
-        log.verbose{"Enabling new leading sidebar constraints"}
+        log.verbose("Enabling new leading sidebar constraints")
         newCons.setActive(active: true)
       }
     }
@@ -407,11 +407,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     willSet {
       // - Remove old constraints:
       if let old = trailingSidebarConstraints {
-        log.verbose{"Disabling old trailing sidebar constraints"}
+        log.verbose("Disabling old trailing sidebar constraints")
         old.setActive(active: false)
       }
       if let newCons = newValue {
-        log.verbose{"Enabling new trailing sidebar constraints"}
+        log.verbose("Enabling new trailing sidebar constraints")
         newCons.setActive(active: true)
       }
     }
@@ -620,7 +620,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     self.fadeableViews = FadeableViewsHandler(player.log)
     self.osd = OSDState(log: player.log)
     self.pip = PIPState(player)
-    player.log.verbose{"PlayerWindowController init: using lastClosed geometries for now"}
+    player.log.verbose("PlayerWindowController init: using lastClosed geometries for now")
     self.geo = GeometrySet(windowed: PlayerWindowController.windowedModeGeoLastClosed,
                            musicMode: PlayerWindowController.musicModeGeoLastClosed,
                            video: VideoGeometry.defaultGeometry(player.log))
@@ -667,14 +667,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
       videoView.$isUninited.withLock() { isUninited in
         if !window.contentView!.containsSubview(viewportView) {
-          log.verbose{"Adding viewportView to window"}
+          log.verbose("Adding viewportView to window")
           window.contentView!.addSubview(viewportView)
         }
         if !viewportView.subviews.contains(videoView) {
           if currentLayout.isInPiP {
-            log.debug{"Aborting add of videoView to window: isInPiP=\(currentLayout.isInPiP)"}
+            log.debug("Aborting add of videoView to window: isInPiP=\(currentLayout.isInPiP)")
           } else {
-            log.verbose{"Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)"}
+            log.verbose("Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)")
             viewportView.addSubview(videoView)
             // Reset this in case it was changed for PiP. (Need to use optional to support initial load)
             videoView.layer?.autoresizingMask = []
@@ -702,7 +702,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Make sure this is running inside an animation task too!
   func applyThemeMaterial(using layoutState: LayoutState? = nil, _ window: NSWindow, _ screen: NSScreen) {
     assert(DispatchQueue.isExecutingIn(.main))
-    log.verbose{"Applying theme material for screen \(screen.screenID.pii.quoted)"}
+    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted)")
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance:
     let newAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
@@ -757,7 +757,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard let (isMiniaturized, isHidden, isInPip,
                isWindowMiniaturizedDueToPip,
                isPausedPriorToInteractiveMode) = PlayerSaveState.parseMiscWindowBools(priorState.properties) else {
-      log.debug{"Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted); defaulting to visible window"}
+      log.debug("Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted); defaulting to visible window")
       window.orderOut(self)  // order out until load is complete
       return
     }
@@ -917,7 +917,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let pendingTasks = pendingVideoGeoUpdateTasks
       pendingVideoGeoUpdateTasks = []
       if !pendingTasks.isEmpty {
-        log.verbose{"After opening window: will run \(pendingTasks.count) pending vidGeo update tasks"}
+        log.verbose("After opening window: will run \(pendingTasks.count) pending vidGeo update tasks")
         animationTasks += pendingTasks
       }
 
@@ -1060,7 +1060,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let oldLayout = currentLayout
 
     let newMode: PlayerWindowMode = oldLayout.mode == .windowedInteractive ? .fullScreenInteractive : .fullScreenNormal
-    log.verbose{"Animating \(duration)s entry from \(oldLayout.mode) → \(isLegacy ? "legacy " : "native ")\(newMode)"}
+    log.verbose("Animating \(duration)s entry from \(oldLayout.mode) → \(isLegacy ? "legacy " : "native ")\(newMode)")
     // May be in interactive mode, with some panels hidden. Honor existing layout but change value of isFullScreen
     let fullscreenLayout = LayoutState.fromPreferences(andMode: newMode, isLegacyStyle: isLegacy, fillingInFrom: oldLayout)
 
@@ -1110,7 +1110,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
     let windowedLayoutState = LayoutState.fromPreferences(andMode: nextMode, fillingInFrom: oldLayout)
 
-    log.verbose{"Animating \(duration)s exit from \(isLegacy ? "legacy " : "")\(oldLayout.mode) → \(windowedLayoutState.mode)"}
+    log.verbose("Animating \(duration)s exit from \(isLegacy ? "legacy " : "")\(oldLayout.mode) → \(windowedLayoutState.mode)")
     assert(!windowedLayoutState.isFullScreen, "Cannot exit full screen into mode \(windowedLayoutState.mode)! Spec: \(windowedLayoutState)")
     /// Split the duration between `openNewPanels` animation and `fadeInNewViews` animation
     let exitFSTransition = buildLayoutTransition(named: "Exit\(isLegacy ? "Legacy" : "Native")FullScreen",
@@ -1145,7 +1145,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard let window = self.window else { fatalError("make sure the window exists before animating") }
     let isLegacy: Bool = legacy ?? Preference.bool(for: .useLegacyFullScreen)
     let isFullScreen = NSApp.presentationOptions.contains(.fullScreen)
-    log.verbose{"EnterFullScreen called. Legacy=\(isLegacy.yn) isNativeFullScreenNow=\(isFullScreen.yn)"}
+    log.verbose("EnterFullScreen called. Legacy=\(isLegacy.yn) isNativeFullScreenNow=\(isFullScreen.yn)")
 
     if isLegacy {
       animationPipeline.submitInstantTask({ [self] in
@@ -1164,14 +1164,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let isLegacyFS = currentLayout.isLegacyFullScreen
 
     if isLegacyFS {
-      log.verbose{"ExitFullScreen called, legacy=\(isLegacyFS.yn)"}
+      log.verbose("ExitFullScreen called, legacy=\(isLegacyFS.yn)")
       animationPipeline.submitInstantTask({ [self] in
         // If "legacy" pref was toggled while in fullscreen, still need to exit native FS
         animateExitFromFullScreen(withDuration: Constants.AnimationDuration.fullScreenTransition, isLegacy: true)
       })
     } else {
       let isActuallyNativeFullScreen = NSApp.presentationOptions.contains(.fullScreen)
-      log.verbose{"ExitFullScreen called, legacy=\(isLegacyFS.yn), isNativeFullScreenNow=\(isActuallyNativeFullScreen.yn)"}
+      log.verbose("ExitFullScreen called, legacy=\(isLegacyFS.yn), isNativeFullScreenNow=\(isActuallyNativeFullScreen.yn)")
       guard isActuallyNativeFullScreen else { return }
       window.toggleFullScreen(self)
     }
@@ -1191,7 +1191,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       return
     }
 
-    log.verbose{"Updating presentationOptions: legacyFS=\(appIsLegacyFS.yn)"}
+    log.verbose("Updating presentationOptions: legacyFS=\(appIsLegacyFS.yn)")
     if appIsLegacyFS {
       // Unfortunately, the check for native FS can return false if the window is in full screen but not the active space.
       // Fall back to checking this one
@@ -1225,7 +1225,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let outputLayoutState = LayoutState.fromPreferences(fillingInFrom: oldLayout)
     if oldLayout.isLegacyStyle != outputLayoutState.isLegacyStyle {
       DispatchQueue.main.async { [self] in
-        log.verbose{"User toggled legacy FS pref to \(outputLayoutState.isLegacyStyle.yesno) while in FS. Will try to exit FS"}
+        log.verbose("User toggled legacy FS pref to \(outputLayoutState.isLegacyStyle.yesno) while in FS. Will try to exit FS")
         exitFullScreen()
       }
     }
@@ -1233,7 +1233,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func window(_ window: NSWindow, willUseFullScreenContentSize proposedSize: NSSize) -> NSSize {
     let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, geo.video)
-    log.verbose{"Full screen content size proposed=\(proposedSize), returning=\(fsGeo.windowFrame.size)"}
+    log.verbose("Full screen content size proposed=\(proposedSize), returning=\(fsGeo.windowFrame.size)")
     return fsGeo.windowFrame.size
   }
 
@@ -1288,7 +1288,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
 
       animationPipeline.submitInstantTask({ [self] in
-        log.verbose{"WindowDidChangeScreen wNum=\(window.windowNumber): frame=\(window.frame) screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)"}
+        log.verbose("WindowDidChangeScreen wNum=\(window.windowNumber): frame=\(window.frame) screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
         applyThemeMaterial(window, screen)  // scaleFactor may have changed
         videoView.refreshAllVideoDisplayState()
         player.events.emit(.windowScreenChanged)
@@ -1296,7 +1296,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       let blackWindows = self.blackWindows
       if isFullScreen && Preference.bool(for: .blackOutMonitor) && blackWindows.compactMap({$0.screen?.displayId}).contains(displayId) {
-        log.verbose{"WindowDidChangeScreen: black windows contains window's displayId \(displayId); removing & regenerating black windows"}
+        log.verbose("WindowDidChangeScreen: black windows contains window's displayId \(displayId); removing & regenerating black windows")
         // Window changed screen: adjust black windows accordingly
         removeBlackWindows()
         blackOutOtherMonitors()
@@ -1314,7 +1314,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         if currentLayout.isLegacyFullScreen {
           let layout = currentLayout
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
-          log.verbose{"WindowDidChangeScreen: updating legacy FS window"}
+          log.verbose("WindowDidChangeScreen: updating legacy FS window")
           let fsGeo = layout.buildFullScreenGeometry(inScreenID: screenID, geo.video)
           setFrameAndUpdateWindowSubviews(using: fsGeo)
           // Update screenID at least, so that window won't go back to other screen when exiting FS
@@ -1333,7 +1333,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
               // top of the screen after every move, which results an unpleasant UX).
               if !isLeftMouseButtonDown || !oldWindowFrame.size.canFitInside(screenFrame.size) {
                 let newGeo = windowedModeGeo.clone(windowFrame: newWindowFrame, screenID: screenID).refitted()
-                log.verbose{"WindowDidChangeScreen: updating windowFrame to fit screen: \(oldWindowFrame) → \(newGeo.windowFrame)"}
+                log.verbose("WindowDidChangeScreen: updating windowFrame to fit screen: \(oldWindowFrame) → \(newGeo.windowFrame)")
                 windowedModeGeo = newGeo
                 setFrameAndUpdateWindowSubviews(using: newGeo)
               }
@@ -1366,7 +1366,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         if UIState.shared.isSaveEnabled {
           UIState.shared.updateCachedScreens()
         }
-        log.verbose{"WndDidChangeScreenParams: Rebuilt cached screen meta: \(UIState.shared.cachedScreens.values)"}
+        log.verbose("WndDidChangeScreenParams: Rebuilt cached screen meta: \(UIState.shared.cachedScreens.values)")
         // Put this inside a Task. It will cause hiccups in other animations if run outside
         videoView.refreshAllVideoDisplayState()
 
@@ -1386,7 +1386,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
             log.verbose("WndDidChangeScreenParams: in windowed mode; no change to windowFrame")
             return
           }
-          log.verbose{"WndDidChangeScreenParams: calling setFrame with wf=\(newGeo.windowFrame) vidSize=\(newGeo.videoSize)"}
+          log.verbose("WndDidChangeScreenParams: calling setFrame with wf=\(newGeo.windowFrame) vidSize=\(newGeo.videoSize)")
           setFrameAndUpdateWindowSubviews(using: newGeo)
         }
       })
@@ -1414,7 +1414,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           // and the user is changing focus between windows or apps. This can also happen if the user is using a third-party
           // window management app such as Amethyst. If this happens, move the window back to its proper place:
           let bestScreen = bestScreen
-          log.verbose{"WindowDidMove: Updating legacy full screen window in response to unexpected windowDidMove to frame=\(window.frame), screen=\(bestScreen.screenID.quoted)"}
+          log.verbose("WindowDidMove: Updating legacy full screen window in response to unexpected windowDidMove to frame=\(window.frame), screen=\(bestScreen.screenID.quoted)")
           let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, geo.video)
           setFrameAndUpdateWindowSubviews(using: fsGeo)
         } else {
@@ -1451,7 +1451,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let anotherPlayerWindowIsActive = otherPlayerWindow != nil
       if wholeAppIsInactive || anotherPlayerWindowIsActive {
         if Preference.bool(for: .pauseWhenInactive), player.info.isPlaying {
-          log.verbose{"WindowDidResignKey: pausing cuz either wholeAppIsInactive (\(wholeAppIsInactive.yn)) or anotherPlayerWindowIsActive (\(anotherPlayerWindowIsActive.yn))"}
+          log.verbose("WindowDidResignKey: pausing cuz either wholeAppIsInactive (\(wholeAppIsInactive.yn)) or anotherPlayerWindowIsActive (\(anotherPlayerWindowIsActive.yn))")
           player.pause()
           isPausedDueToInactive = true
         }
@@ -1680,14 +1680,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
 
     let videoTF: GeometryTransform.VideoGeometryTF = { [self] inputVidGeo, ctx -> VideoGeometry? in
-      log.verbose{"Entering interactive mode: \(mode)"}
+      log.verbose("Entering interactive mode: \(mode)")
 
       if inputVidGeo.streamRotation != 0 {
         log.warn("FIXME: Video codec rotation is not yet supported in interactive mode! Any selection chosen will be completely wrong!")
       }
 
       if mode == .crop, let cropFilter = inputVidGeo.cropFilter {
-        log.debug{"Crop mode requested. Will remove existing crop filter: \(cropFilter.stringFormat.quoted)"}
+        log.debug("Crop mode requested. Will remove existing crop filter: \(cropFilter.stringFormat.quoted)")
         let uncroppedVidGeo = inputVidGeo.removingCrop()
 
         // A crop is already set. Need to temporarily remove it so that the whole video can be seen again,
@@ -1695,7 +1695,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         // Change this pre-emptively so that removeVideoFilter doesn't trigger a window geometry change
         player.info.videoFiltersDisabled[cropFilter.label!] = cropFilter
         if !player.removeVideoFilter(cropFilter) {
-          log.error{"Failed to remove prev crop filter: (\(cropFilter.stringFormat.quoted)) for some reason. Will ignore and try to proceed anyway"}
+          log.error("Failed to remove prev crop filter: (\(cropFilter.stringFormat.quoted)) for some reason. Will ignore and try to proceed anyway")
         }
 
         return uncroppedVidGeo
@@ -1755,7 +1755,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let vidGeoToSyncFrom: VideoGeometry
       if let cropController = cropSettingsView, let newVidGeo, let newCropFilter = newVidGeo.cropFilter {
         // If newVidGeo contains a crop, we must apply it
-        log.verbose{"Cropping video from videoSizeRaw: \(inputVidGeo.videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(newVidGeo.cropRect?.description ?? "nil")"}
+        log.verbose("Cropping video from videoSizeRaw: \(inputVidGeo.videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(newVidGeo.cropRect?.description ?? "nil")")
 
         /// Set the filter. This will result in `transformGeometry` getting called, which will trigger an exit from interactive mode.
         /// But that task can only happen once we return and relinquish the main queue.
@@ -1766,7 +1766,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         vidGeoToSyncFrom = newVidGeo
       } else {
         // If no crop, remove any existing crop filter
-        log.verbose{"Start exiting interactive mode: crop changing to none; removing crop filter"}
+        log.verbose("Start exiting interactive mode: crop changing to none; removing crop filter")
         if !player.removeCrop() {
           // Still may need to bring UI up to date
           player.setQuickSettingsViewNeedsUpdate()
@@ -1817,7 +1817,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           // Animate the crop to highlight the piece being cut out.
           let cropAnimationDuration = 0.0
           tasks.append(.init(duration: cropAnimationDuration) { [self] in
-            log.verbose{"Start exiting interactive mode: animating crop using: \(croppedIMGeo)"}
+            log.verbose("Start exiting interactive mode: animating crop using: \(croppedIMGeo)")
             // #InteractiveModeAnimationKludge
             setFrameAndUpdateWindowSubviews(using: croppedIMGeo, .cropBeforeExitingInteractiveMode)
 
@@ -1880,7 +1880,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       if !automatically {
         // Toggle manual override
         player.overrideAutoMusicMode = !player.overrideAutoMusicMode
-        log.verbose{"Changed overrideAutoMusicMode to \(player.overrideAutoMusicMode.yesno)"}
+        log.verbose("Changed overrideAutoMusicMode to \(player.overrideAutoMusicMode.yesno)")
       }
 
       player.events.emit(.musicModeChanged, data: true)
@@ -1917,7 +1917,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       transitionTasks.append(.instantTask { [self] in
         if !automatically {
           player.overrideAutoMusicMode = !player.overrideAutoMusicMode
-          log.verbose{"Changed overrideAutoMusicMode to \(player.overrideAutoMusicMode.yesno)"}
+          log.verbose("Changed overrideAutoMusicMode to \(player.overrideAutoMusicMode.yesno)")
         }
       })
     }
@@ -1943,7 +1943,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       blackWindow.orderFront(nil)
     }
     self.blackWindows = blackWindows
-    log.verbose{"Added black windows for screens \((blackWindows.compactMap({$0.screen?.displayId}).map{String($0)}))"}
+    log.verbose("Added black windows for screens \((blackWindows.compactMap({$0.screen?.displayId}).map{String($0)}))")
   }
 
   func removeBlackWindows() {
@@ -1953,15 +1953,15 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     for window in blackWindows {
       window.orderOut(self)
     }
-    log.verbose{"Removed black windows for screens \(blackWindows.compactMap({$0.screen?.displayId}).map{String($0)})"}
+    log.verbose("Removed black windows for screens \(blackWindows.compactMap({$0.screen?.displayId}).map{String($0)})")
   }
 
   func setWindowFloatingOnTop(_ onTop: Bool, from layout: LayoutState, updateOnTopStatus: Bool = true) {
     guard !layout.isFullScreen else {
-      log.verbose{"Ignoring request to set onTop=\(onTop.yn): currently in full screen"}
+      log.verbose("Ignoring request to set onTop=\(onTop.yn): currently in full screen")
       return
     }
-    log.verbose{"Setting window onTop ≔ \(onTop.yn), updateStatus=\(updateOnTopStatus.yn)"}
+    log.verbose("Setting window onTop ≔ \(onTop.yn), updateStatus=\(updateOnTopStatus.yn)")
 
     window?.level = onTop ? .iinaFloating : .normal
     if updateOnTopStatus {
@@ -2115,7 +2115,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     case 67...1000:
       return Images.volume3
     default:
-      log.error{"Volume level \(volume) is invalid"}
+      log.error("Volume level \(volume) is invalid")
       return nil
     }
   }
@@ -2294,7 +2294,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard let window else { return }
     let existingOpacity = window.contentView?.layer?.opacity ?? -1
     guard existingOpacity != newOpacity else { return }
-    log.debug{"Changing window opacity: \(existingOpacity) → \(newOpacity)"}
+    log.debug("Changing window opacity: \(existingOpacity) → \(newOpacity)")
     window.backgroundColor = newOpacity < 1.0 ? .clear : .black
     window.contentView?.layer?.opacity = newOpacity
   }
@@ -2317,7 +2317,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       miniPlayer.showVolumePopover()
     }
     let value = slider.doubleValue
-    log.verbose{"VolumeSlider: changing volume to \(value)"}
+    log.verbose("VolumeSlider: changing volume to \(value)")
     if Preference.double(for: .maxVolume) > 100, value > 100 && value < 101 {
       NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
     }
@@ -2349,7 +2349,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /** handle action of either left or right arrow button */
   func arrowButtonAction(left: Bool, clickPressure: Int) {
     let didRelease = clickPressure == 0
-    log.verbose{"ArrowButton \(left ? "left" : "right"): \(didRelease ? "released" : "pressed, clickPressure=\(clickPressure)")"}
+    log.verbose("ArrowButton \(left ? "left" : "right"): \(didRelease ? "released" : "pressed, clickPressure=\(clickPressure)")")
 
     let arrowBtnFunction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
     switch arrowBtnFunction {
@@ -2416,7 +2416,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   @IBAction func toggleOnTop(_ sender: AnyObject) {
     let wasOnTop = isOnTop
-    log.verbose{"Toggling onTop: \(wasOnTop.yn) → \((!wasOnTop).yn)"}
+    log.verbose("Toggling onTop: \(wasOnTop.yn) → \((!wasOnTop).yn)")
     if Preference.bool(for: .alwaysFloatOnTop) {
       let isPlaying = wasOnTop
       if isPlaying {
@@ -2502,7 +2502,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
     guard let window else { return }
     let useLegacy = Preference.bool(for: .useLegacyFullScreen)
-    log.verbose{"Resetting collection behavior for full screen, legacy=\(useLegacy.yn)"}
+    log.verbose("Resetting collection behavior for full screen, legacy=\(useLegacy.yn)")
     if useLegacy {
       window.collectionBehavior.remove(.fullScreenPrimary)
       window.collectionBehavior.insert(.fullScreenAuxiliary)

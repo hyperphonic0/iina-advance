@@ -159,10 +159,10 @@ class PWinScrollWheel: VirtualScrollWheel {
       let distY = deltaY.magnitude
       if distX > distY {
         scrollAction = Preference.enum(for: .horizontalScrollAction)
-        log.verbose{"Scroll direction is horizontal (\(distX) > \(distY)): action=\(scrollAction?.rawValue.description ?? "nil")"}
+        log.verbose("Scroll direction is horizontal (\(distX) > \(distY)): action=\(scrollAction?.rawValue.description ?? "nil")")
       } else {
         scrollAction =  Preference.enum(for: .verticalScrollAction)
-        log.verbose{"Scroll direction is vertical (\(distX) ≤ \(distY)): action=\(scrollAction?.rawValue.description ?? "nil")"}
+        log.verbose("Scroll direction is vertical (\(distX) ≤ \(distY)): action=\(scrollAction?.rawValue.description ?? "nil")")
       }
     }
 

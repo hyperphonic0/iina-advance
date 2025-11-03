@@ -463,7 +463,7 @@ extension PlayerWindowController {
 
     // Update bottom bar constraints *after* sidebars are added
     if transition.isOpeningAnySidebar {
-      log.verbose{"Sidebars will be open: LeadingSidebar=\(outputLayout.leadingSidebar.isVisible.yn) TrailingSidebar=\(outputLayout.trailingSidebar.isVisible.yn)"}
+      log.verbose("Sidebars will be open: LeadingSidebar=\(outputLayout.leadingSidebar.isVisible.yn) TrailingSidebar=\(outputLayout.trailingSidebar.isVisible.yn)")
 
       if outputLayout.leadingSidebar.isVisible {
         if outputLayout.leadingSidebarPlacement == .insideViewport {

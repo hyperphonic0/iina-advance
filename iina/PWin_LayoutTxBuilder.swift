@@ -419,7 +419,7 @@ extension PlayerWindowController.LayoutTransition {
         if outputLayout.interactiveMode == .crop, let cropFilter = inputGeometry.video.cropFilter {
           assert(isEnteringInteractiveMode, "Expected to be entering interactive mode only when uncropping video")
           baseGeo = inputGeometry.clone(video: inputGeometry.video.removingCrop())
-          log.verbose{"Uncropping video from cropRect=\(cropFilter.cropRect(origVideoSize: inputGeometry.video.videoSizeCAR, flipY: true)) to uncroppedVideo=\(baseGeo.video.videoSizeDisplay)"}
+          log.verbose("Uncropping video from cropRect=\(cropFilter.cropRect(origVideoSize: inputGeometry.video.videoSizeCAR, flipY: true)) to uncroppedVideo=\(baseGeo.video.videoSizeDisplay)")
         } else {
           baseGeo = inputGeometry
         }

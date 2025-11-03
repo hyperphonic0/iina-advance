@@ -36,7 +36,7 @@ class PlaybackInfo {
   var isPaused: Bool = false {
     didSet {
       if oldValue != isPaused {
-        log.verbose{"Playback is \(isPaused ? "PAUSED" : "PLAYING")"}
+        log.verbose("Playback is \(isPaused ? "PAUSED" : "PLAYING")")
         SleepPreventer.updateSleepPrevention()
       }
     }
@@ -50,7 +50,7 @@ class PlaybackInfo {
 
   var currentPlayback: Playback? = nil {
     didSet {
-      log.verbose{"Updated currentPlayback to \(currentPlayback?.description ?? "nil")"}
+      log.verbose("Updated currentPlayback to \(currentPlayback?.description ?? "nil")")
     }
   }
 
@@ -223,7 +223,7 @@ class PlaybackInfo {
   /// Used to keep track of previously selected vid track if video track is disabled due to hiding videoView in music mode.
   var vidDisabled: Int? {
     didSet {
-      log.verbose{"vidDisabled changed: \(String(oldValue)) → \(String(vidDisabled))"}
+      log.verbose("vidDisabled changed: \(String(oldValue)) → \(String(vidDisabled))")
     }
   }
 
@@ -234,7 +234,7 @@ class PlaybackInfo {
   var shouldShowDefaultArt: Bool? {
     if let currentPlayback {
       // Don't show art if currently loading
-      log.verbose{"shouldShowDefaultArt: loaded=\(currentPlayback.state.isAtLeast(.loaded).yn) vidSelected=\(isVideoTrackSelected.yn) vid=\(vid?.description ?? "nil")"}
+      log.verbose("shouldShowDefaultArt: loaded=\(currentPlayback.state.isAtLeast(.loaded).yn) vidSelected=\(isVideoTrackSelected.yn) vid=\(vid?.description ?? "nil")")
       if currentPlayback.state.isAtLeast(.loaded) {
         return !isVideoTrackSelected
       }

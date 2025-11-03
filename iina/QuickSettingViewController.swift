@@ -524,7 +524,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     guard isViewLoaded else { return }
 
     guard videoGeo.hasCrop else {
-      player.log.verbose{"Selecting crop preset segment: None"}
+      player.log.verbose("Selecting crop preset segment: None")
       cropPresetsSegment.selectSegment(withTag: 0)
       customCropTextField.isHidden = true
       return
@@ -534,13 +534,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     cropPresetsSegment.selectSegment(withLabel: cropLabel)
     let isCropInPanel = cropPresetsSegment.selectedSegment >= 0
     if isCropInPanel {
-      player.log.verbose{"Selected crop preset segment matching label \(cropLabel.quoted)"}
+      player.log.verbose("Selected crop preset segment matching label \(cropLabel.quoted)")
     } else {
-      player.log.verbose{"Selecting crop preset segment: Custom (for mpvLabel \(cropLabel.quoted))"}
+      player.log.verbose("Selecting crop preset segment: Custom (for mpvLabel \(cropLabel.quoted))")
       cropPresetsSegment.selectSegment(withTag: cropPresetsSegment.segmentCount - 1)
       if let cropRect = videoGeo.cropRect {
         let customCropString = MPVFilter.makeCropBoxDisplayString(from: cropRect)
-        player.log.verbose{"Setting custom crop label string: \(customCropString.quoted)"}
+        player.log.verbose("Setting custom crop label string: \(customCropString.quoted)")
         customCropTextField.stringValue = customCropString
         customCropTextField.isHidden = false
         return
@@ -671,7 +671,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
            "switchToTab should not be called when settings TabGroup is not shown")
     guard currentTab != tab else { return }
     guard tab.group == .settings else {
-      player.log.error{"QuickSettings: cannot switch to tab: \(tab)"}
+      player.log.error("QuickSettings: cannot switch to tab: \(tab)")
       return
     }
 
@@ -703,7 +703,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     switch currentTab {
     case .audio:
       guard pwc.isOpen(sidebarTab: .audio) else { return }
-      player.log.verbose{"QuickSettings: reloading tab \(currentTab.name.quoted)"}
+      player.log.verbose("QuickSettings: reloading tab \(currentTab.name.quoted)")
       audioTableView.reloadData()
       updateAudioTabControls()
       updateAudioEqState()
@@ -711,12 +711,12 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       reloadVideoTabIfShown(using: player.videoGeo)
     case .sub:
       guard pwc.isOpen(sidebarTab: .sub) else { return }
-      player.log.verbose{"QuickSettings: reloading tab \(currentTab.name.quoted)"}
+      player.log.verbose("QuickSettings: reloading tab \(currentTab.name.quoted)")
       subTableView.reloadData()
       secSubTableView.reloadData()
       updateSubTabControls()
     default:
-      player.log.error{"QuickSettings.reload(): currentTab is invalid: \(currentTab)"}
+      player.log.error("QuickSettings.reload(): currentTab is invalid: \(currentTab)")
     }
   }
 
@@ -732,7 +732,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     guard isViewLoaded else { return }
     guard currentTab == .video else { return }
     guard pwc.isOpen(sidebarTab: .video) else { return }
-    player.log.verbose{"QuickSettings: reloading video tab"}
+    player.log.verbose("QuickSettings: reloading video tab")
     videoTableView.reloadData()
     updateVideoTabControls(using: videoGeo)
     updateVideoEqState()
@@ -1020,26 +1020,26 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   @IBAction func aspectChangedAction(_ sender: NSSegmentedControl) {
     guard let aspect = sender.label(forSegment: sender.selectedSegment) else {
-      player.log.error{"Bad aspect segment: \(sender.selectedSegment)"}
+      player.log.error("Bad aspect segment: \(sender.selectedSegment)")
       return
     }
-    player.log.verbose{"Setting aspect from segmented control: \(aspect.quoted)"}
+    player.log.verbose("Setting aspect from segmented control: \(aspect.quoted)")
     player.mpv.queue.async { [self] in
       player.setVideoAspectOverride(aspect)
     }
   }
 
   @IBAction func cropChangedAction(_ sender: NSSegmentedControl) {
-    player.log.verbose{"QuickSettings cropChangedAction entered"}
+    player.log.verbose("QuickSettings cropChangedAction entered")
     if sender.selectedSegment == sender.segmentCount - 1 {
       // User clicked on "Custom...": show custom crop UI
       pwc.enterInteractiveMode(.crop)
     } else {
       guard let selectedCropString = sender.label(forSegment: sender.selectedSegment) else {
-        player.log.error{"Bad crop segment: \(sender.selectedSegment)"}
+        player.log.error("Bad crop segment: \(sender.selectedSegment)")
         return
       }
-      player.log.verbose{"Setting crop from segmented control: \(selectedCropString.quoted)"}
+      player.log.verbose("Setting crop from segmented control: \(selectedCropString.quoted)")
       player.setCrop(fromLabel: selectedCropString)
     }
   }
@@ -1052,7 +1052,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   @IBAction func customAspectEditFinishedAction(_ sender: AnyObject?) {
     let aspectString = customAspectTextField.stringValue
-    player.log.verbose{"Setting aspect from text field: \(aspectString.quoted)"}
+    player.log.verbose("Setting aspect from text field: \(aspectString.quoted)")
     if aspectString != "" {
       player.mpv.queue.async { [self] in
         player.setVideoAspectOverride(aspectString)

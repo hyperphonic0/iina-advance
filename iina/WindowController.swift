@@ -21,15 +21,15 @@ class WindowController: NSWindowController {
   func openWindow(_ sender: Any?) {
     if !AppDelegate.isInteractiveLaunch {
       guard AppDelegate.shared.isDoneLaunching else {
-        Logger.log.verbose{"Aborting openWindow (\(window?.savedStateName ?? "nil")): non-interactive launch is still starting"}
+        Logger.log.verbose("Aborting openWindow (\(window?.savedStateName ?? "nil")): non-interactive launch is still starting")
         return
       }
 
-      Logger.log.verbose{"OpenWindow (\(window?.savedStateName ?? "nil")) requested for non-interactive launch; will make interactive"}
+      Logger.log.verbose("OpenWindow (\(window?.savedStateName ?? "nil")) requested for non-interactive launch; will make interactive")
       AppDelegate.shared.ensureInteractiveLaunchEnabled()
     }
     guard let window else {
-      Logger.log.error{"Cannot open window: no window object!"}
+      Logger.log.error("Cannot open window: no window object!")
       return
     }
     assert(window.windowController as? PlayerWindowController == nil,
@@ -53,27 +53,27 @@ class WindowController: NSWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard let window, window.savedStateName != "" else {
-      Logger.log.verbose{"WindowOpenCloseAnimation: empty savedStateName for window; skipping"}
+      Logger.log.verbose("WindowOpenCloseAnimation: empty savedStateName for window; skipping")
       return
     }
 
     let savedStateName = window.savedStateName
     guard IINAAnimation.isAnimationEnabled else {
-      Logger.log.verbose{"WindowOpenCloseAnimation: animation disabled or motion reduction enabled; using .none for \(savedStateName.quoted)"}
+      Logger.log.verbose("WindowOpenCloseAnimation: animation disabled or motion reduction enabled; using .none for \(savedStateName.quoted)")
       window.animationBehavior = .none
       return
     }
 
     guard !AppDelegate.shared.isTerminating else {
       // Just terminate ASAP
-      Logger.log.verbose{"WindowOpenCloseAnimation: app is terminating; using .none for \(savedStateName.quoted)"}
+      Logger.log.verbose("WindowOpenCloseAnimation: app is terminating; using .none for \(savedStateName.quoted)")
       window.animationBehavior = .none
       return
     }
 
     guard var autosaveEnum = WindowAutosaveName(savedStateName) else {
       assert(false, "Expected guaranteed match for savedStateName \(savedStateName)")
-      Logger.log.error{"WindowOpenCloseAnimation: no match for savedStateName \(savedStateName). Skipping"}
+      Logger.log.error("WindowOpenCloseAnimation: no match for savedStateName \(savedStateName). Skipping")
       return
     }
 
@@ -108,13 +108,13 @@ class WindowController: NSWindowController {
 
       guard let behaviorFound = UIState.shared.windowOpenCloseAnimations[autosaveEnum] else {
         assert(false, "Expected guaranteed match for WindowAutosaveName \(autosaveEnum)")
-        Logger.log.error{"WindowOpenCloseAnimation: no match for WindowAutosaveName \(autosaveEnum); skipping"}
+        Logger.log.error("WindowOpenCloseAnimation: no match for WindowAutosaveName \(autosaveEnum); skipping")
         return
       }
       behavior = behaviorFound
     }
 
-    Logger.log.verbose{"WindowOpenCloseAnimation: setting behavior for \(savedStateName) to \(behavior)"}
+    Logger.log.verbose("WindowOpenCloseAnimation: setting behavior for \(savedStateName) to \(behavior)")
     window.animationBehavior = behavior
   }
 

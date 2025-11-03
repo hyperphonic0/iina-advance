@@ -212,7 +212,7 @@ extension PlayerWindowController {
   /// The `bottomBarView` may need to be completely rebuilt if the style changes.
   /// This also removes the previous `bottomBarView` from `contentView`.
   func rebuildBottomBarView(style: Preference.OSCColorScheme) {
-    log.verbose{"[Load] Rebuilding bottomBarView: style=\(style)"}
+    log.verbose("[Load] Rebuilding bottomBarView: style=\(style)")
     bottomBarView.removeAllSubviews()
     bottomBarView.removeFromSuperview()
 
@@ -249,7 +249,7 @@ extension PlayerWindowController {
   }
 
   private func initSidebars() {
-    log.verbose{"[Load] Init sidebars"}
+    log.verbose("[Load] Init sidebars")
 
     // - Leading sidebar
 
@@ -297,7 +297,7 @@ extension PlayerWindowController {
 
   /// Init `fragPlaybackBtnsView` & its subviews
   private func initPlaybackBtnsView(using oscGeo: ControlBarGeometry) {
-    log.verbose{"[Load] Init playback buttons"}
+    log.verbose("[Load] Init playback buttons")
 
     // Play button
     playButton.image = Images.play
@@ -429,7 +429,7 @@ extension PlayerWindowController {
   }
 
   private func initPlaySliderAndTimeLabelsView() {
-    log.verbose{"[Load] Init play slider & time labels"}
+    log.verbose("[Load] Init play slider & time labels")
     // - Configure playSliderAndTimeLabelsView
     playSliderAndTimeLabelsView.idString = "PlaySliderAndTimeLabelsView"
     playSliderAndTimeLabelsView.translatesAutoresizingMaskIntoConstraints = false

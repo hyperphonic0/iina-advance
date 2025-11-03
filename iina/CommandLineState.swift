@@ -87,12 +87,12 @@ class CommandLineState {
   }
 
   func applyCommandLineArgs(to playerCore: PlayerCore) {
-    playerCore.log.debug{"Setting mpv properties from arguments: \(mpvArguments)"}
+    playerCore.log.debug("Setting mpv properties from arguments: \(mpvArguments)")
     var cmdLineArgs: [(String, String)] = []
     for argPair in mpvArguments {
       if argPair.0 == MPVOption.PlaybackControl.shuffle && argPair.1 == Constants.String.mpvYes {
         // Special handling for this one
-        playerCore.log.debug{"Found \"shuffle\" request in command-line args. Adding mpv hook to shuffle playlist"}
+        playerCore.log.debug("Found \"shuffle\" request in command-line args. Adding mpv hook to shuffle playlist")
         playerCore.addShufflePlaylistHook()
       } else {
         cmdLineArgs.append(argPair)
@@ -102,7 +102,7 @@ class CommandLineState {
     if playerCore.log.isDebugEnabled {
       for cmdLineArgPair in cmdLineArgs {
         if playerCore.userOptions.contains(where: { $0.0 == cmdLineArgPair.0 }) {
-          playerCore.log.debug{"CLI arg has same name as a prev option & may override it: \(cmdLineArgPair.0)=\(cmdLineArgPair.1)"}
+          playerCore.log.debug("CLI arg has same name as a prev option & may override it: \(cmdLineArgPair.0)=\(cmdLineArgPair.1)")
         }
       }
     }

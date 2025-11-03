@@ -66,7 +66,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   private func updateVerticalConstraints() {
     // May not be available until after load
     let tabHeight: CGFloat = hasTab ? 36 : 0
-    player.log.verbose{"PluginSidebar: updating downshift=\(downshift), tabHeight=\(tabHeight)"}
+    player.log.verbose("PluginSidebar: updating downshift=\(downshift), tabHeight=\(tabHeight)")
     buttonTopConstraint?.animateToConstant(downshift)
     pluginTabsViewHeightConstraint?.animateToConstant(tabHeight)
     view.needsLayout = true
@@ -111,7 +111,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     let plugins = player.plugins
     for plugin in plugins {
       guard let name = plugin.plugin.sidebarTabName else {
-        player.log.debug{"Skipping sidebar tab for pluginID=\(plugin.plugin.identifier.quoted) name=\(plugin.plugin.name.quoted): it has no sidebarTabName"}
+        player.log.debug("Skipping sidebar tab for pluginID=\(plugin.plugin.identifier.quoted) name=\(plugin.plugin.name.quoted): it has no sidebarTabName")
         continue
       }
       let tab = SidebarTabView()
@@ -157,10 +157,10 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     } else {
       let plugins = player.plugins
       guard let plugin = plugins.first(where: { $0.plugin.identifier == tabID }) else {
-        player.log.error{"Cannot switch to tab: failed to find plugin with ID \(tabID)"}
+        player.log.error("Cannot switch to tab: failed to find plugin with ID \(tabID)")
         return
       }
-      player.log.verbose{"Switching to plugin tab: \(plugin.plugin.identifier)"}
+      player.log.verbose("Switching to plugin tab: \(plugin.plugin.identifier)")
       pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
       pluginContentContainerView.addSubview(plugin.sidebarTabView)
       plugin.sidebarTabView.addAllConstraintsToFillSuperview()

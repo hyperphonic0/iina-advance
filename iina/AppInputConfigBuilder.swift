@@ -25,7 +25,7 @@ class AppInputConfigBuilder {
 
   func build(version: Int) -> AppInputConfig {
     if DebugConfig.logBindingsRebuild {
-      log.verbose{"Starting rebuild of AppInputConfig v\(version) (player-\(playerLabel))"}
+      log.verbose("Starting rebuild of AppInputConfig v\(version) (player-\(playerLabel))")
     }
 
     /// Build the list of `InputBinding`s, including redundancies. We're not done setting each's `isEnabled` field though.
@@ -53,7 +53,7 @@ class AppInputConfigBuilder {
         // Wildcard binding
         prevSameKeyBinding = anyUnicodeBinding
         if let prevSameKeyBinding {
-          log.warn{"Multiple ANY_UNICODE bindings found in input conf! Overriding action \(prevSameKeyBinding.keyMapping.rawAction?.quoted ?? "nil") with \(binding.keyMapping.rawAction?.quoted ?? "nil")"}
+          log.warn("Multiple ANY_UNICODE bindings found in input conf! Overriding action \(prevSameKeyBinding.keyMapping.rawAction?.quoted ?? "nil") with \(binding.keyMapping.rawAction?.quoted ?? "nil")")
         }
         anyUnicodeBinding = binding
 
@@ -71,7 +71,7 @@ class AppInputConfigBuilder {
         // Wildcard binding
         prevSameKeyBinding = unmappedBinding
         if let prevSameKeyBinding {
-          log.warn{"Multiple UNMAPPED bindings found in input conf! Overriding action \(prevSameKeyBinding.keyMapping.rawAction?.quoted ?? "nil") with \(binding.keyMapping.rawAction?.quoted ?? "nil")"}
+          log.warn("Multiple UNMAPPED bindings found in input conf! Overriding action \(prevSameKeyBinding.keyMapping.rawAction?.quoted ?? "nil") with \(binding.keyMapping.rawAction?.quoted ?? "nil")")
         }
         unmappedBinding = binding
       } else {
@@ -107,7 +107,7 @@ class AppInputConfigBuilder {
                                         anyUnicode: anyUnicodeBinding, unmapped: unmappedBinding, duplicateKeys: duplicateKeys,
                                         userConfSectionStartIndex: userConfSectionStartIndex!, userConfSectionEndIndex: userConfSectionEndIndex!)
     if DebugConfig.logBindingsRebuild {
-      log.verbose{"Finished AppInputConfig rebuild with \(appInputConfig.resolverDict.count) bindings"}
+      log.verbose("Finished AppInputConfig rebuild with \(appInputConfig.resolverDict.count) bindings")
     }
     appInputConfig.logEnabledBindings()
 
@@ -128,11 +128,11 @@ class AppInputConfigBuilder {
     // Iterate from bottom to the top of the "stack":
     for enabledSectionMeta in sectionStack.sectionsEnabled {
       if DebugConfig.logBindingsRebuild {
-        log.verbose{"RebuildBindings: examining enabled section: \(enabledSectionMeta.name.quoted)"}
+        log.verbose("RebuildBindings: examining enabled section: \(enabledSectionMeta.name.quoted)")
       }
       guard let inputSection = sectionStack.sectionsDefined[enabledSectionMeta.name] else {
         // indicates serious internal error
-        log.error{"RebuildBindings: failed to find section: \(enabledSectionMeta.name.quoted)"}
+        log.error("RebuildBindings: failed to find section: \(enabledSectionMeta.name.quoted)")
         continue
       }
 
@@ -145,11 +145,11 @@ class AppInputConfigBuilder {
       addAllBindings(from: inputSection, to: &linkedList)
 
       if DebugConfig.logBindingsRebuild {
-        log.verbose{"RebuildBindings: CandidateList in increasing priority: \(linkedList.map({$0.keyMapping.normalizedMpvKey}).joined(separator: ", "))"}
+        log.verbose("RebuildBindings: CandidateList in increasing priority: \(linkedList.map({$0.keyMapping.normalizedMpvKey}).joined(separator: ", "))")
       }
 
       if enabledSectionMeta.isExclusive {
-        log.verbose{"RebuildBindings: section \(inputSection.name.quoted) was enabled exclusively"}
+        log.verbose("RebuildBindings: section \(inputSection.name.quoted) was enabled exclusively")
         return Array<InputBinding>(linkedList)
       }
     }
@@ -166,14 +166,14 @@ class AppInputConfigBuilder {
   private func addAllBindings(from inputSection: InputSection, to linkedList: inout LinkedList<InputBinding>) {
     guard !inputSection.keyMappingList.isEmpty else {
       if DebugConfig.logBindingsRebuild {
-        log.verbose{"RebuildBindings: skipping section \(inputSection.name.quoted) as it has no bindings"}
+        log.verbose("RebuildBindings: skipping section \(inputSection.name.quoted) as it has no bindings")
       }
       return
     }
 
     if inputSection.isForce {
       if DebugConfig.logBindingsRebuild {
-        log.verbose{"RebuildBindings: adding bindings from \(inputSection) to tail of list"}
+        log.verbose("RebuildBindings: adding bindings from \(inputSection) to tail of list")
       }
       // Strong section: Iterate from top of section to bottom (increasing priority) and add to end of list
       for keyMapping in inputSection.keyMappingList {
@@ -183,7 +183,7 @@ class AppInputConfigBuilder {
     } else {
       // Weak section: Iterate from top of section to bottom (decreasing priority) and add backwards to beginning of list
       if DebugConfig.logBindingsRebuild {
-        log.verbose{"RebuildBindings: adding bindings from \(inputSection) to head of list, in reverse order"}
+        log.verbose("RebuildBindings: adding bindings from \(inputSection) to head of list, in reverse order")
       }
       for keyMapping in inputSection.keyMappingList.reversed() {
         let activeBinding = buildNewInputBinding(from: keyMapping, section: inputSection)
@@ -217,9 +217,9 @@ class AppInputConfigBuilder {
           /// Drop "{section}" because it is unnecessary and will get in the way of libmpv command execution
           let newRawAction = Array(action.dropFirst()).joined(separator: " ")
           finalMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, comment: keyMapping.comment)
-          log.verbose{"Modifying binding to remove redundant section specifier (\(destinationSectionName.quoted)) for key: \(keyMapping.rawKey.quoted)"}
+          log.verbose("Modifying binding to remove redundant section specifier (\(destinationSectionName.quoted)) for key: \(keyMapping.rawKey.quoted)")
         } else {
-          log.verbose{"Skipping binding which specifies section \(destinationSectionName.quoted) for key: \(keyMapping.rawKey.quoted)"}
+          log.verbose("Skipping binding which specifies section \(destinationSectionName.quoted) for key: \(keyMapping.rawKey.quoted)")
           displayMessage = "Adding bindings to other input sections is not supported"  // TODO: localize
           isEnabled = false
         }

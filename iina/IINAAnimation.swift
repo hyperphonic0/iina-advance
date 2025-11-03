@@ -243,12 +243,12 @@ extension IINAAnimation {
           }
           if canDisable || (submittedTasks >= lastLoggedTaskCount + 20) {
             lastLoggedTaskCount = submittedTasks
-            log.verbose{"[Pipeline] TaskQueue size: \(taskQueueSize), totalSubmits: \(submittedTasks)"}
+            log.verbose("[Pipeline] TaskQueue size: \(taskQueueSize), totalSubmits: \(submittedTasks)")
           }
         } else if taskQueue.count >= IINAAnimation.Pipeline.alarmStartWatermark {
           alarmActivated = true
           lastLoggedTaskCount = submitCounter
-          log.verbose{"[Pipeline] TaskQueue is falling behind! Size: \(taskQueueSize), submitCount: \(submitCounter)"}
+          log.verbose("[Pipeline] TaskQueue is falling behind! Size: \(taskQueueSize), submitCount: \(submitCounter)")
         }
       }
 
@@ -338,7 +338,7 @@ extension IINAAnimation {
         pendingWorkAfterGTFs = work
       }
       
-      log.verbose{"[Pipeline] Submitting ReloadQuickSettings task"}
+      log.verbose("[Pipeline] Submitting ReloadQuickSettings task")
       submitInstantTask{}
     }
     
@@ -349,7 +349,7 @@ extension IINAAnimation {
         guard gtfCurrentlyRunningID == nil else { return nil }
         if let nextGTF = gtfQueue.removeFirst() {
           gtfCurrentlyRunningID = nextGTF.id
-          log.verbose{"[Pipeline] Starting GTF: \(nextGTF.name.quoted); queue size: \(gtfQueue.count)"}
+          log.verbose("[Pipeline] Starting GTF: \(nextGTF.name.quoted); queue size: \(gtfQueue.count)")
           return Task.instantTask(nextGTF.execute)
         }
         if isDoneWithAllGTFs {
@@ -379,7 +379,7 @@ extension IINAAnimation {
     func submitGTF(_ gtf: GeometryTransform) {
       gtfLock.withLock{ [self] in
         gtfQueue.append(gtf)
-        log.verbose{"[Pipeline] Enqueued GTF: \(gtf.name.quoted); queue size: \(gtfQueue.count)"}
+        log.verbose("[Pipeline] Enqueued GTF: \(gtf.name.quoted); queue size: \(gtfQueue.count)")
       }
 
       // Kick the queue if it's idle:
@@ -389,7 +389,7 @@ extension IINAAnimation {
     func enqueueVideoSyncTaskIfNeeded(_ player: PlayerCore) {
       gtfLock.withLock{ [self] in
         guard !wantsVideoGeoSync else { return }
-        log.verbose{"Setting wantsVideoGeoSync = YES"}
+        log.verbose("Setting wantsVideoGeoSync = YES")
         wantsVideoGeoSync = true
       }
 
@@ -400,12 +400,12 @@ extension IINAAnimation {
       let postWork: TaskFunc? = gtfLock.withLock{ [self] in
         gtfCurrentlyRunningID =  nil
         if success {
-          log.verbose{"[Pipeline] GTF done: \(gtf.name.quoted); queue size: \(gtfQueue.count)"}
+          log.verbose("[Pipeline] GTF done: \(gtf.name.quoted); queue size: \(gtfQueue.count)")
         }
 
         if let workFunc = pendingWorkAfterGTFs, isDoneWithAllGTFs {
           pendingWorkAfterGTFs = nil
-          log.verbose{"[Pipeline] Running pending post-GTF work…"}
+          log.verbose("[Pipeline] Running pending post-GTF work…")
           return workFunc
         } else {
           return nil

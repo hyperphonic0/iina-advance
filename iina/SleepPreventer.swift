@@ -43,12 +43,12 @@ class SleepPreventer: NSObject {
   static private func preventSleep(allowScreenSaver: Bool = false) {
     if activityToken != nil {
       guard self.allowScreenSaver != allowScreenSaver else {
-        Logger.log.verbose{"[sleep] Skipping preventSleep; activity token exists & no change to allowScreenSaver=\(allowScreenSaver.yn)"}
+        Logger.log.verbose("[sleep] Skipping preventSleep; activity token exists & no change to allowScreenSaver=\(allowScreenSaver.yn)")
         return
       }
       // The outstanding activity does not match what is requested. End the current activity and
       // create a new one.
-      Logger.log.verbose{"[sleep] Found existing activity token via preventSleep. Calling allowSleep to end it before creating new one"}
+      Logger.log.verbose("[sleep] Found existing activity token via preventSleep. Calling allowSleep to end it before creating new one")
       allowSleep()
     }
     SleepPreventer.allowScreenSaver = allowScreenSaver
@@ -65,7 +65,7 @@ class SleepPreventer: NSObject {
 
   static private func allowSleep() {
     guard let activityToken else {
-      Logger.log.verbose{"[sleep] Skipping allowSleep; no activity token"}
+      Logger.log.verbose("[sleep] Skipping allowSleep; no activity token")
       return
     }
     Logger.log.verbose{
@@ -97,7 +97,7 @@ class SleepPreventer: NSObject {
             return
           }
         }
-        Logger.log.verbose{"[sleep] None of the \(activePlayers.count) active players are playing"}
+        Logger.log.verbose("[sleep] None of the \(activePlayers.count) active players are playing")
       } else {
         Logger.log.trace{"[sleep] Skipping: pref preventScreenSaver=N"}
       }

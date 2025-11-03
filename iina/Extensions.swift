@@ -1581,7 +1581,7 @@ extension NSSegmentedControl {
         return true
       }
     }
-    Logger.log.verbose{"Could not find segment with label \(label.quoted). Setting selection to -1"}
+    Logger.log.verbose("Could not find segment with label \(label.quoted). Setting selection to -1")
     self.selectedSegment = -1
     return false
   }
@@ -1670,7 +1670,7 @@ extension NSScreen {
       x = viewRect.maxX
       ownerScreenID = getOwnerScreenID(forPoint: NSPoint(x: x, y: y))
     }
-    Logger.log.verbose{"ViewRect=\(viewRect) → point=(\(x), \(y)) → owner screen is \(ownerScreenID?.debugDescription ?? "nil")"}
+    Logger.log.verbose("ViewRect=\(viewRect) → point=(\(x), \(y)) → owner screen is \(ownerScreenID?.debugDescription ?? "nil")")
     return ownerScreenID
   }
 
@@ -1700,11 +1700,11 @@ extension NSScreen {
     if let screen = forDisplayID(displayID) {
       // TODO: better matching logic. There is no guarantee that displayId will be consistent for the same screen across launches
       if screen.screenID != screenID {
-        Logger.log.error{"NSScreen with displayID \(displayID) is not exact match! Search target was \(screenID.quoted), but found \(screen.screenID.quoted). It is possible the wrong screen is being returned"}
+        Logger.log.error("NSScreen with displayID \(displayID) is not exact match! Search target was \(screenID.quoted), but found \(screen.screenID.quoted). It is possible the wrong screen is being returned")
       }
       return screen
     }
-    Logger.log.error{"Failed to find an NSScreen for screenID \(screenID.quoted); returning nil"}
+    Logger.log.error("Failed to find an NSScreen for screenID \(screenID.quoted); returning nil")
     return nil
   }
 
@@ -1722,7 +1722,7 @@ extension NSScreen {
       return screen
     }
 
-    Logger.log.debug{"Failed to find an NSScreen for screenID \(screenID.quoted); returning default screen"}
+    Logger.log.debug("Failed to find an NSScreen for screenID \(screenID.quoted); returning default screen")
     return NSScreen.screens[0]
   }
 
@@ -1781,7 +1781,7 @@ extension NSScreen {
   var nativeResolution: CGSize? {
     // if there's a native resolution found in this method, that's more accurate than above
     guard let displayModes = CGDisplayCopyAllDisplayModes(displayId, nil) as? [CGDisplayMode] else {
-      Logger.log.warn{"Failed to get CGDisplayModes for displayID \(displayId)! Returning nil"}
+      Logger.log.warn("Failed to get CGDisplayModes for displayID \(displayId)! Returning nil")
       return nil
     }
     for mode in displayModes {
@@ -1861,7 +1861,7 @@ extension NSWindow {
         return false
       }
     }
-    Logger.log.verbose{"Window is the only window currently open: \(savedStateName.quoted)"}
+    Logger.log.verbose("Window is the only window currently open: \(savedStateName.quoted)")
     return true
   }
 
@@ -1889,7 +1889,7 @@ extension NSScrollView {
   func restoreVerticalScroll(key: Preference.Key) -> Bool {
     if UIState.shared.isRestoreEnabled {
       if let offsetY: Double = Preference.value(for: key) as? Double {
-        Logger.log.verbose{"Restoring vertical scroll to: \(offsetY)"}
+        Logger.log.verbose("Restoring vertical scroll to: \(offsetY)")
         // Note: *MUST* use scroll(to:), not scroll(_)! Weird that the latter doesn't always work
         self.contentView.scroll(to: NSPoint(x: 0, y: offsetY))
         return true
@@ -1914,7 +1914,7 @@ extension NSScrollView {
   // Combines the previous 2 functions into one
   func restoreAndObserveVerticalScroll(key: Preference.Key, defaultScrollAction: () -> Void) -> NSObjectProtocol {
     if !restoreVerticalScroll(key: key) {
-      Logger.log.verbose{"Did not restore scroll (key: \(key.rawValue.quoted), isRestoreEnabled: \(UIState.shared.isRestoreEnabled)); will use default scroll action"}
+      Logger.log.verbose("Did not restore scroll (key: \(key.rawValue.quoted), isRestoreEnabled: \(UIState.shared.isRestoreEnabled)); will use default scroll action")
       defaultScrollAction()
     }
     return addVerticalScrollObserver(key: key)
@@ -2260,7 +2260,7 @@ extension DispatchQueue {
   public static func isExecutingIn(_ dq: DispatchQueue, logError: Bool = true) -> Bool {
     let isExpected = DispatchQueue.current == dq
     if !isExpected && logError {
-      Logger.log.error{"ERROR We are in the wrong queue: '\(DispatchQueue.currentQueueLabel ?? "nil")' (expected: \(dq.label))"}
+      Logger.log.error("ERROR We are in the wrong queue: '\(DispatchQueue.currentQueueLabel ?? "nil")' (expected: \(dq.label))")
     }
     return isExpected
   }

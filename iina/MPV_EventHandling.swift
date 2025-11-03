@@ -363,12 +363,12 @@ extension MPVController {
       player.syncUI(.loop)
 
     case MPVOption.PlaybackControl.abLoopA, MPVOption.PlaybackControl.abLoopB:
-      player.log.verbose{"Δ mpv prop: `\(name)`"}
+      player.log.verbose("Δ mpv prop: `\(name)`")
       player.syncAbLoop()
 
     case MPVOption.OSD.osdLevel:
       guard let level = UnsafePointer<Int>(OpaquePointer(property.data))?.pointee else { break }
-      player.log.verbose{"Δ mpv prop: `osdLevel` = \(level)"}
+      player.log.verbose("Δ mpv prop: `osdLevel` = \(level)")
       let isUsingMpvOSD: Bool = level != 0
       player.isUsingMpvOSD = isUsingMpvOSD
       if isUsingMpvOSD {
@@ -380,7 +380,7 @@ extension MPVController {
       guard let data = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else { break }
       // this property will fire a change event at file start
       if player.info.deinterlace != data {
-        player.log.verbose{"Δ mpv prop: `deinterlace` = \(data.yesno)"}
+        player.log.verbose("Δ mpv prop: `deinterlace` = \(data.yesno)")
         player.info.deinterlace = data
         player.sendOSD(.deinterlace(data))
       }
@@ -389,7 +389,7 @@ extension MPVController {
     case MPVOption.Video.hwdec:
       let data = String(cString: property.data.assumingMemoryBound(to: UnsafePointer<UInt8>.self).pointee)
       if player.info.hwdec != data {
-        player.log.verbose{"Δ mpv prop: `hwdec` = \(data)"}
+        player.log.verbose("Δ mpv prop: `hwdec` = \(data)")
         player.info.hwdec = data
         player.sendOSD(.hwdec(player.info.hwdecEnabled))
       }
@@ -423,7 +423,7 @@ extension MPVController {
       }
       let delay = delayUnrounded.roundedTo6()
       if player.info.audioDelay != delay {
-        player.log.verbose{"Δ mpv prop: `audio-delay` = \(delay)"}
+        player.log.verbose("Δ mpv prop: `audio-delay` = \(delay)")
         player.info.audioDelay = delay
         player.sendOSD(.audioDelay(delay))
         player.setQuickSettingsViewNeedsUpdate()
@@ -452,7 +452,7 @@ extension MPVController {
         logPropertyValueError(name, property.format)
         break
       }
-      player.log.verbose{"Δ mpv prop: `secondary-sub-delay` = \(data)"}
+      player.log.verbose("Δ mpv prop: `secondary-sub-delay` = \(data)")
 
       player.secondarySubDelayChanged(data)
 
@@ -615,13 +615,13 @@ extension MPVController {
 
     case MPVOption.Window.cursorAutohide:
       guard let cursorAutohide = getString(MPVOption.Window.cursorAutohide) else { break }
-      log.verbose{"Δ mpv prop: 'cursor-autohide' ≔ \(cursorAutohide)"}
+      log.verbose("Δ mpv prop: 'cursor-autohide' ≔ \(cursorAutohide)")
       player.updateCursorAutohideState()
       player.pwc.hideCursorTimer.restart()
 
     case MPVOption.Window.cursorAutohideFsOnly:
       let cursorAutohideFS = getFlag(MPVOption.Window.cursorAutohideFsOnly)
-      log.verbose{"Δ mpv prop: 'cursor-autohide-fs-only' ≔ \(cursorAutohideFS.yn)"}
+      log.verbose("Δ mpv prop: 'cursor-autohide-fs-only' ≔ \(cursorAutohideFS.yn)")
       player.updateCursorAutohideState()
       player.pwc.hideCursorTimer.restart()
 
@@ -631,7 +631,7 @@ extension MPVController {
         break
       }
 
-      log.verbose{"Δ mpv prop: 'window-scale' ≔ \(windowScale)"}
+      log.verbose("Δ mpv prop: 'window-scale' ≔ \(windowScale)")
       DispatchQueue.main.async { [self] in
         player.pwc.mpvWindowScaleDidUpdate(to: windowScale.roundedTo6())
       }

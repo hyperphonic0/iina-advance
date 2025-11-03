@@ -252,17 +252,17 @@ class VideoView: NSView {
     let oldScaleFactor = videoLayer.contentsScale
     let newScaleFactor = window.backingScaleFactor
     if oldScaleFactor != newScaleFactor {
-      log.verbose{"Window backingScaleFactor changed: \(oldScaleFactor) → \(newScaleFactor)"}
+      log.verbose("Window backingScaleFactor changed: \(oldScaleFactor) → \(newScaleFactor)")
       videoLayer.contentsScale = newScaleFactor
       return true
     }
-    log.verbose{"No change to window backingScaleFactor (\(oldScaleFactor))"}
+    log.verbose("No change to window backingScaleFactor (\(oldScaleFactor))")
     return false
   }
 
   func refreshAllVideoDisplayState() {
     guard player.pwc.loaded, player.isActive && !player.isRestoring else { return }
-    log.verbose{"Refreshing all VideoView display state"}
+    log.verbose("Refreshing all VideoView display state")
     updateDisplayLink()
     refreshContentsScale()
     refreshEdrMode()
@@ -330,7 +330,7 @@ class VideoView: NSView {
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
 
-    log.debug{"Refreshing HDR @ screen \(NSScreen.forDisplayID(displayId)?.screenID.quoted ?? "nil")"}
+    log.debug("Refreshing HDR @ screen \(NSScreen.forDisplayID(displayId)?.screenID.quoted ?? "nil")")
     requestEdrMode(then: { [self] edrEnabled in
       DispatchQueue.main.execOrAsync { [self] in
         let edrAvailable = edrEnabled != false

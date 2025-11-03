@@ -24,7 +24,7 @@ extension MPVController {
     // Create a new mpv instance and an associated client API handle to control the mpv instance.
     mpv = mpv_create()
     guard mpv != nil else {
-      player.log.error{"Failed to create mpv instance"}
+      player.log.error("Failed to create mpv instance")
       return
     }
 
@@ -77,7 +77,7 @@ extension MPVController {
     // FIXME: allow hot toggling of log
     if Logger.enabled {
       let path = Logger.logDirectory.appendingPathComponent("mpv-\(player.label).log").path
-      player.log.debug{"Path of mpv log: \(path.quoted)"}
+      player.log.debug("Path of mpv log: \(path.quoted)")
       chkErr(setOptionString(MPVOption.ProgramBehavior.logFile, path, level: .verbose))
     }
 
@@ -364,12 +364,12 @@ extension MPVController {
     // Set user-defined options.
     let userOptions = player.userOptions
     if !userOptions.isEmpty {
-      log.debug{"Setting \(userOptions.count) user-configured mpv options"}
+      log.debug("Setting \(userOptions.count) user-configured mpv options")
       for (opName, opValue) in userOptions {
         // Ignore these options if specified; they are hard-coded above & will result in visual bugs if overridden
         guard opName != MPVOption.Window.keepaspect,
               opName != MPVOption.Window.keepaspectWindow else {
-          log.debug{"Ignoring user option: \(opName.quoted)"}
+          log.debug("Ignoring user option: \(opName.quoted)")
           continue
         }
 

@@ -59,7 +59,7 @@ extension VideoView {
       log.trace{"No need to update DisplayLink; currentDisplayID (\(displayId)) is unchanged"}
       return
     }
-    log.verbose{"DisplayLink: updating for displayID \(displayId)"}
+    log.verbose("DisplayLink: updating for displayID \(displayId)")
     currentDisplay = displayId
 
     checkResult(CVDisplayLinkSetCurrentCGDisplay(link, displayId), "CVDisplayLinkSetCurrentCGDisplay")
@@ -75,11 +75,11 @@ extension VideoView {
       }
 
       if abs(actualFps - nominalFps) > 1 {
-        log.debug{"Switching to nominal display refresh rate: \(actualFps) → \(nominalFps)"}
+        log.debug("Switching to nominal display refresh rate: \(actualFps) → \(nominalFps)")
         actualFps = nominalFps
       }
     } else {
-      log.debug{"Switching standard display refresh rate: \(actualFps) → 60"}
+      log.debug("Switching standard display refresh rate: \(actualFps) → 60")
       actualFps = 60
     }
     player.mpv.queue.async { [self] in

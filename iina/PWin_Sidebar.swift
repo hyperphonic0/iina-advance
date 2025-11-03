@@ -191,7 +191,7 @@ struct Sidebar {
     let newTabGroups = tabGroups ?? self.tabGroups
     var newVisibility = visibility ?? self.visibility
     if let newVisibleTab = newVisibility.visibleTab, !newTabGroups.contains(newVisibleTab.group) {
-      Logger.log.verbose{"Can no longer show visible tab \(newVisibleTab.name) in \(self.locationID). The sidebar will close."}
+      Logger.log.verbose("Can no longer show visible tab \(newVisibleTab.name) in \(self.locationID). The sidebar will close.")
       newVisibility = .closed
     }
 
@@ -244,7 +244,7 @@ struct Sidebar {
   var defaultTabToShow: Sidebar.Tab? {
     // Use last visible tab if still valid:
     if let lastVisibleTab = lastVisibleTab, tabGroups.contains(lastVisibleTab.group) {
-      Logger.log.verbose{"Returning last visible tab for \(locationID): \(lastVisibleTab.name.quoted)"}
+      Logger.log.verbose("Returning last visible tab for \(locationID): \(lastVisibleTab.name.quoted)")
       return lastVisibleTab
     }
 
@@ -261,7 +261,7 @@ struct Sidebar {
     }
 
     // If sidebar has no tab groups, can't show anything:
-    Logger.log.verbose{"No tab groups found for \(locationID); returning nil for defaultTab"}
+    Logger.log.verbose("No tab groups found for \(locationID); returning nil for defaultTab")
     return nil
   }
 
@@ -296,7 +296,7 @@ extension PlayerWindowController {
       guard currentLayout.canShowSidebars else { return }
       let sidebar = currentLayout.sidebar(withID: sidebarID)
       let isCurrentlyVisible = sidebar.isVisible
-      log.verbose{"Toggling visibility of sidebar \(sidebarID): \(isCurrentlyVisible.yn) → \((!isCurrentlyVisible).yn)"}
+      log.verbose("Toggling visibility of sidebar \(sidebarID): \(isCurrentlyVisible.yn) → \((!isCurrentlyVisible).yn)")
       // Do nothing if sidebar has no configured tabs
       guard let tab = sidebar.defaultTabToShow else { return }
 
@@ -310,7 +310,7 @@ extension PlayerWindowController {
 
   /// Shows or toggles visibility of given `tabGroup`
   func showSidebar(forTabGroup tabGroup: Sidebar.TabGroup, force: Bool = false, hideIfAlreadyShown: Bool = true) {
-    log.verbose{"ShowSidebar for tabGroup=\(tabGroup.rawValue.quoted) force=\(force.yn) hideIfAlreadyShown=\(hideIfAlreadyShown.yn)"}
+    log.verbose("ShowSidebar for tabGroup=\(tabGroup.rawValue.quoted) force=\(force.yn) hideIfAlreadyShown=\(hideIfAlreadyShown.yn)")
     switch tabGroup {
     case .playlist:
       showSidebar(tab: playlistView.currentTab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
@@ -327,7 +327,7 @@ extension PlayerWindowController {
 
   /// Shows or toggles visibility of given `tab`
   func showSidebar(tab: Sidebar.Tab, force: Bool = false, hideIfAlreadyShown: Bool = true) {
-    log.verbose{"ShowSidebar for tab=\(tab.name.quoted) force=\(force.yn) hideIfAlreadyShown=\(hideIfAlreadyShown.yn)"}
+    log.verbose("ShowSidebar for tab=\(tab.name.quoted) force=\(force.yn) hideIfAlreadyShown=\(hideIfAlreadyShown.yn)")
 
     animationPipeline.submitInstantTask { [self] in
       if currentLayout.isMusicMode && tab.group == .playlist {
@@ -349,7 +349,7 @@ extension PlayerWindowController {
 
       if destinationSidebar.visibleTab == tab {
         if hideIfAlreadyShown {
-          log.verbose{"Will hide \(destinationSidebar.locationID) instead because it is in state \(destinationSidebar.visibility)"}
+          log.verbose("Will hide \(destinationSidebar.locationID) instead because it is in state \(destinationSidebar.visibility)")
           changeVisibility(forTab: tab, to: false)
         }
       } else {
@@ -380,7 +380,7 @@ extension PlayerWindowController {
 
   /// Hides all visible sidebars
   func hideAllSidebars(animate: Bool = true) {
-    player.log.verbose{"Hiding all sidebars"}
+    player.log.verbose("Hiding all sidebars")
 
     animationPipeline.submitInstantTask { [self] in
       let oldLayout = currentLayout
@@ -422,7 +422,7 @@ extension PlayerWindowController {
         // Otherwise need to change tab group. Drop through.
       } else {
         // Drop request if already animating
-        log.verbose{"Skipping \(shouldShow ? "SHOW" : "HIDE") for \(tab.name.quoted) because leadingSidebar isShown=\(isShown.yn)"}
+        log.verbose("Skipping \(shouldShow ? "SHOW" : "HIDE") for \(tab.name.quoted) because leadingSidebar isShown=\(isShown.yn)")
         return
       }
       leadingSidebar = oldLayout.leadingSidebar.clone(visibility: newVisibilty)
@@ -440,7 +440,7 @@ extension PlayerWindowController {
         // Otherwise need to change tab group. Drop through.
       } else {
         // Drop request if already animating or already in desired state
-        log.verbose{"Skipping \(shouldShow ? "SHOW" : "HIDE") for \(tab.name.quoted) because trailingSidebar isShown=\(isShown.yn)"}
+        log.verbose("Skipping \(shouldShow ? "SHOW" : "HIDE") for \(tab.name.quoted) because trailingSidebar isShown=\(isShown.yn)")
         return
       }
       leadingSidebar = oldLayout.leadingSidebar
@@ -467,7 +467,7 @@ extension PlayerWindowController {
 
     if let leadingVisible, let leadingSidebarPlacement = geo.leadingSidebarPlacement {
       let sidebarWidth = geo.leadingSidebarWidth
-      log.verbose{"Toggling leadingSidebar visibility to \(leadingVisible.yn), width=\(sidebarWidth)"}
+      log.verbose("Toggling leadingSidebar visibility to \(leadingVisible.yn), width=\(sidebarWidth)")
       updateLeadingSidebarWidthConstraints(to: sidebarWidth, visible: leadingVisible, leadingSidebarPlacement,
                                            ΔWindowWidth: ΔWindowWidth)
       if leadingSidebarPlacement == .outsideViewport {
@@ -477,7 +477,7 @@ extension PlayerWindowController {
 
     if let trailingVisible, let trailingSidebarPlacement = geo.trailingSidebarPlacement {
       let sidebarWidth = geo.trailingSidebarWidth
-      log.verbose{"Toggling trailingSidebar visibility to \(trailingVisible.yn), width=\(sidebarWidth)"}
+      log.verbose("Toggling trailingSidebar visibility to \(trailingVisible.yn), width=\(sidebarWidth)")
       updateTrailingSidebarWidthConstraints(to: sidebarWidth, visible: trailingVisible, placement: trailingSidebarPlacement,
                                             ΔWindowWidth: ΔWindowWidth)
       if trailingSidebarPlacement == .outsideViewport {
@@ -560,7 +560,7 @@ extension PlayerWindowController {
                                                           viewportLeadingClipTrailing: viewportLeadingClipTrailing,
                                                           top: topConstraint, bottom: bottomConstraint)
 
-    log.verbose{"Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(leadingSidebar.locationID)"}
+    log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(leadingSidebar.locationID)")
     addTabGroupView(for: tabGroupToShow, to: tabContainerView)
   }
 
@@ -595,7 +595,7 @@ extension PlayerWindowController {
 
   private func updateLeadingSidebarWidthConstraints(to newWidth: CGFloat, visible: Bool, _ placement: Preference.PanelPlacement,
                                                     ΔWindowWidth: CGFloat) {
-    log.verbose{"Updating leadingSidebar constraints for \(visible ? "OPEN" : "CLOSED"), width=\(newWidth), \(placement), ΔWindowWidth=\(ΔWindowWidth)"}
+    log.verbose("Updating leadingSidebar constraints for \(visible ? "OPEN" : "CLOSED"), width=\(newWidth), \(placement), ΔWindowWidth=\(ΔWindowWidth)")
     let coefficients = getLeadingSidebarWidthCoefficients(visible: visible, placement, ΔWindowWidth: ΔWindowWidth)
 
     if let cons = leadingSidebarConstraints {
@@ -674,7 +674,7 @@ extension PlayerWindowController {
                                                             viewportTrailingClipLeading: viewportTrailingClipLeading,
                                                             top: topCon, bottom: bottomCon)
 
-    log.verbose{"Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(trailingSidebar.locationID)"}
+    log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(trailingSidebar.locationID)")
     addTabGroupView(for: tabGroupToShow, to: tabContainerView)
   }
 
@@ -710,7 +710,7 @@ extension PlayerWindowController {
   private func updateTrailingSidebarWidthConstraints(to newWidth: CGFloat, visible: Bool,
                                                      placement: Preference.PanelPlacement,
                                                      ΔWindowWidth: CGFloat) {
-    log.verbose{"Updating trailingSidebar constraints for \(visible ? "OPEN" : "CLOSED"), width=\(newWidth), \(placement), ΔWindowWidth=\(ΔWindowWidth)"}
+    log.verbose("Updating trailingSidebar constraints for \(visible ? "OPEN" : "CLOSED"), width=\(newWidth), \(placement), ΔWindowWidth=\(ΔWindowWidth)")
     let coefficients = getTrailingSidebarWidthCoefficients(visible: visible, placement, ΔWindowWidth: ΔWindowWidth)
 
     if let cons = trailingSidebarConstraints {
@@ -780,7 +780,7 @@ extension PlayerWindowController {
         return
       }
 
-      log.verbose{"Switching to tab \(pluginID.quoted) in pluginView"}
+      log.verbose("Switching to tab \(pluginID.quoted) in pluginView")
       pluginView.pleaseSwitchToTab(pluginID)
     }
   }
@@ -788,7 +788,7 @@ extension PlayerWindowController {
   // This is so that sidebar controllers can notify when they changed tabs in their tab groups, so that
   // the tracking information here can be updated.
   func didChangeTab(to tab: Sidebar.Tab, then doAfter: (() -> Void)? = nil) {
-    log.verbose{"Changing to sidebar tab: \(tab.name.quoted)"}
+    log.verbose("Changing to sidebar tab: \(tab.name.quoted)")
 
     // Try to avoid race conditions if possible
     animationPipeline.submitInstantTask { [self] in
@@ -818,7 +818,7 @@ extension PlayerWindowController {
         return sidebar
       }
     }
-    log.error{"No sidebar found for tab group \(tabGroup.rawValue.quoted)!"}
+    log.error("No sidebar found for tab group \(tabGroup.rawValue.quoted)!")
     return nil
   }
 
@@ -937,7 +937,7 @@ extension PlayerWindowController {
   /// Returns `true` if mouse was within either sidebar's resize rect, and resize was started.
   func startResizingSidebar(with event: NSEvent) -> Bool {
     if let currentDragObject  {
-      log.warn{"Not going to start resizing sidebar(s); already dragging: \(currentDragObject.idString.quoted)"}
+      log.warn("Not going to start resizing sidebar(s); already dragging: \(currentDragObject.idString.quoted)")
       return false
     }
     let pointInWindow = mouseLocationInWindow
@@ -1019,7 +1019,7 @@ extension PlayerWindowController {
       newPlaylistWidth = desiredPlaylistWidth + negativeDeficit
       if newPlaylistWidth < Constants.Sidebar.minPlaylistWidth {
         // should not happen in theory, because playlist shouldn't have been shown when resize started
-        log.error{"Cannot resize playlist: desired width \(desiredPlaylistWidth) is below minimum!"}
+        log.error("Cannot resize playlist: desired width \(desiredPlaylistWidth) is below minimum!")
         return (.resized_AtLeftMin, nil)
       }
     } else {  /// `placement == .outsideViewport`
@@ -1077,7 +1077,7 @@ extension PlayerWindowController {
 
       newPlaylistWidth = desiredPlaylistWidth + negativeDeficit
       if newPlaylistWidth < Constants.Sidebar.minPlaylistWidth {
-        log.error{"Cannot resize playlist: desired width \(desiredPlaylistWidth) is below minimum!"}
+        log.error("Cannot resize playlist: desired width \(desiredPlaylistWidth) is below minimum!")
         return (.resized_AtRightMax, nil)
       }
     } else {  /// `placement == .outsideViewport`
@@ -1144,7 +1144,7 @@ extension PlayerWindowController {
     } else {
       applyCustomCursor(.normalCursor)
     }
-    log.verbose{"Finished resize of \(id) sidebar; playlistWidth is now \(newPlaylistWidth)"}
+    log.verbose("Finished resize of \(id) sidebar; playlistWidth is now \(newPlaylistWidth)")
   }
 
   // MARK: - Other mouse events

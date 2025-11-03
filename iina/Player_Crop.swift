@@ -12,24 +12,24 @@ extension PlayerCore {
 
   func deriveCropLabel(x: Int?, y: Int?, w: Int, h: Int, rawVideoSize: CGSize) -> String? {
     guard w != 0, h != 0 else {
-      log.error{"Cannot derive crop label: w or h is 0! (x=\(x?.description ?? "nil") y=\(y?.description ?? "nil") w=\(w) h=\(h))"}
+      log.error("Cannot derive crop label: w or h is 0! (x=\(x?.description ?? "nil") y=\(y?.description ?? "nil") w=\(w) h=\(h))")
       return nil
     }
 
     let xForAspectCrop = Int((rawVideoSize.width - CGFloat(w)) * 0.5)
     let yForAspectCrop = Int((rawVideoSize.height - CGFloat(h)) * 0.5)
-    log.verbose{"Checking for aspect-based crop. Expect: x=\(xForAspectCrop) y=\(yForAspectCrop) | Actual: x=\(x?.description ?? "nil") y=\(y?.description ?? "nil") w=\(w) h=\(h)"}
+    log.verbose("Checking for aspect-based crop. Expect: x=\(xForAspectCrop) y=\(yForAspectCrop) | Actual: x=\(x?.description ?? "nil") y=\(y?.description ?? "nil") w=\(w) h=\(h)")
     if (x == nil && y == nil) || (xForAspectCrop == x && yForAspectCrop == y) {   // Aspect-based crop?
       // Truncate to 2 decimal places precision for comparison.
       let selectedAspect = Aspect(size: NSSize(width: w, height: h))
-      log.verbose{"Determined aspect=\(selectedAspect.value) from: x=\(x?.description ?? "nil") y=\(y?.description ?? "nil") w=\(w) h=\(h)"}
+      log.verbose("Determined aspect=\(selectedAspect.value) from: x=\(x?.description ?? "nil") y=\(y?.description ?? "nil") w=\(w) h=\(h)")
       // Probably a selection from the Quick Settings panel. See if there are any matches.
       if let knownAspectLabel = Aspect.findLabelForAspectRatio(selectedAspect.value, isCrop: true, strict: false) {
-        log.verbose{"Found known aspect label \(knownAspectLabel.quoted) from: w=\(w) h=\(h)"}
+        log.verbose("Found known aspect label \(knownAspectLabel.quoted) from: w=\(w) h=\(h)")
         return knownAspectLabel  // Known aspect-based crop
       }
       let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: NSSize(width: w, height: h))
-      log.verbose{"Unrecognized aspect-based crop from: w=\(w) h=\(h). Generated label: \(customCropBoxLabel.quoted)"}
+      log.verbose("Unrecognized aspect-based crop from: w=\(w) h=\(h). Generated label: \(customCropBoxLabel.quoted)")
       return customCropBoxLabel  // Custom aspect-based crop
     } else {
       // Probably a custom crop. Use mpv formatting
@@ -37,7 +37,7 @@ extension PlayerCore {
       let y = y!
       let cropBoxRect = NSRect(x: x, y: y, width: w, height: h)
       let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: cropBoxRect)
-      log.verbose{"Looks like custom crop: x=\(x) y=\(y) w=\(w) h=\(h). Generated label: \(customCropBoxLabel.quoted)"}
+      log.verbose("Looks like custom crop: x=\(x) y=\(y) w=\(w) h=\(h). Generated label: \(customCropBoxLabel.quoted)")
       return customCropBoxLabel  // Custom cropBox rect crop
     }
   }
@@ -49,7 +49,7 @@ extension PlayerCore {
       return nil
     }
     guard w != 0, h != 0 else {
-      log.error{"Cannot get crop from filter \(filter.label?.quoted ?? ""): w or h is 0"}
+      log.error("Cannot get crop from filter \(filter.label?.quoted ?? ""): w or h is 0")
       return nil
     }
 
@@ -74,13 +74,13 @@ extension PlayerCore {
 
     mpv.queue.async { [self] in
       if newCropLabel == AppData.noneCropIdentifier {
-        log.verbose{"Setting crop to None"}
+        log.verbose("Setting crop to None")
         removeCrop()
         return
       }
 
       guard let vf = videoGeo.buildCropFilter(from: newCropLabel) else {
-        log.error{"Failed build crop filter from \(newCropLabel.quoted); setting crop to None"}
+        log.error("Failed build crop filter from \(newCropLabel.quoted); setting crop to None")
         removeCrop()
         return
       }
@@ -88,7 +88,7 @@ extension PlayerCore {
       /// Add the filter. Will wait for mpv to send a property change event for `dw` or `dy` before updating UI.
       let addSucceeded = addVideoFilter(vf)
       if !addSucceeded {
-        log.error{"Failed to add crop filter \(newCropLabel.quoted); setting crop to None"}
+        log.error("Failed to add crop filter \(newCropLabel.quoted); setting crop to None")
         removeCrop()
       }
     }
@@ -105,7 +105,7 @@ extension PlayerCore {
       syncVideoParamsFromMpv()
       return false
     }
-    log.verbose{"Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter"}
+    log.verbose("Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
     return removeVideoFilter(cropFilter, verify: false, notify: false)
   }
 

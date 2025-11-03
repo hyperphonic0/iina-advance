@@ -35,7 +35,7 @@ class InputConfFileCache {
   @discardableResult
   func getOrLoadConfFile(confName: String) -> InputConfFile {
     if let cachedConfFile = self.getConfFile(confName: confName) {
-      Logger.log.verbose{"Found InputConf \(confName.pii.quoted) in memory cache"}
+      Logger.log.verbose("Found InputConf \(confName.pii.quoted) in memory cache")
       return cachedConfFile
     }
     let defaultConfFile = Constants.InputConf.defaults[confName]
@@ -48,7 +48,7 @@ class InputConfFileCache {
       storage[confName] = confFile
     }
 
-    Logger.log.verbose{"Updating memory cache entry for InputConf \(confName.pii.quoted), loadedOK=\((!confFile.failedToLoad).yn)"}
+    Logger.log.verbose("Updating memory cache entry for InputConf \(confName.pii.quoted), loadedOK=\((!confFile.failedToLoad).yn)")
     return confFile
   }
 
@@ -57,10 +57,10 @@ class InputConfFileCache {
   fileprivate func saveFile(_ inputConfFile: InputConfFile) throws {
     switch inputConfFile.status {
     case .readOnly:
-      Logger.log.error{"Aborting saveFile() for \(inputConfFile.filePath.pii.quoted): isReadOnly==Y!"}
+      Logger.log.error("Aborting saveFile() for \(inputConfFile.filePath.pii.quoted): isReadOnly==Y!")
       throw IINAError.confFileIsReadOnly
     case .failedToLoad:
-      Logger.log.error{"Aborting saveFile() for \(inputConfFile.filePath.pii.quoted): invalid operation: file never loaded properly!"}
+      Logger.log.error("Aborting saveFile() for \(inputConfFile.filePath.pii.quoted): invalid operation: file never loaded properly!")
       throw IINAError.confFileIsReadOnly
     case .normal:
       break
@@ -68,20 +68,20 @@ class InputConfFileCache {
 
     storageLock.withLock {
       if DebugConfig.logBindingsRebuild {
-        Logger.log.verbose{"Updating memory cache entry for InputConf: \(inputConfFile.confName.pii.quoted)"}
+        Logger.log.verbose("Updating memory cache entry for InputConf: \(inputConfFile.confName.pii.quoted)")
       }
       InputConfFile.cache.storage[inputConfFile.confName] = inputConfFile
     }
 
     InputConfFileCache.fileDQ.async {
       if DebugConfig.logBindingsRebuild {
-        Logger.log.verbose{"Saving InputConf \(inputConfFile.confName.pii.quoted) to file path \(inputConfFile.filePath.pii.quoted)"}
+        Logger.log.verbose("Saving InputConf \(inputConfFile.confName.pii.quoted) to file path \(inputConfFile.filePath.pii.quoted)")
       }
       do {
         let newFileContent: String = inputConfFile.lines.joined(separator: "\n")
         try newFileContent.write(toFile: inputConfFile.filePath, atomically: true, encoding: .utf8)
       } catch {
-        Logger.log.error{"Write to disk failed for file \(inputConfFile.filePath.pii.quoted): \(error)"}
+        Logger.log.error("Write to disk failed for file \(inputConfFile.filePath.pii.quoted): \(error)")
         // TODO: more appropriate message, with file name
         sendErrorAlert(key: "config.cannot_create", args: ["config"])
       }
@@ -95,10 +95,10 @@ class InputConfFileCache {
 
     storageLock.withLock {
       if DebugConfig.logBindingsRebuild {
-        Logger.log.verbose{"Updating memory cache: renaming/moving InputConf \(oldConfName.pii.quoted) -> \(newConfName.pii.quoted)"}
+        Logger.log.verbose("Updating memory cache: renaming/moving InputConf \(oldConfName.pii.quoted) -> \(newConfName.pii.quoted)")
       }
       guard let inputConfFile = storage.removeValue(forKey: oldConfName) else {
-        Logger.log.error{"Cannot move InputConf file: no entry in cache for \(oldConfName.pii.quoted). This should never happen!"}
+        Logger.log.error("Cannot move InputConf file: no entry in cache for \(oldConfName.pii.quoted). This should never happen!")
         sendErrorAlert(key: "error_finding_file", args: ["config"])
         return
       }
@@ -111,22 +111,22 @@ class InputConfFileCache {
       let newExists = FileManager.default.fileExists(atPath: newFilePath)
 
       if !oldExists && newExists {
-        Logger.log.debug{"Looks like file has already moved: \(oldFilePath.pii.quoted)"}
+        Logger.log.debug("Looks like file has already moved: \(oldFilePath.pii.quoted)")
       } else {
         if !oldExists {
-          Logger.log.error{"Can't rename InputConf: could not find file: \(oldFilePath.pii.quoted)"}
+          Logger.log.error("Can't rename InputConf: could not find file: \(oldFilePath.pii.quoted)")
           sendErrorAlert(key: "error_finding_file", args: ["config"])
         } else if newExists {
-          Logger.log.error{"Can't rename InputConf: a file already exists at the destination: \(newFilePath.pii.quoted)"}
+          Logger.log.error("Can't rename InputConf: a file already exists at the destination: \(newFilePath.pii.quoted)")
           // TODO: more appropriate message
           sendErrorAlert(key: "config.cannot_create", args: ["config"])
         } else {
           // - Move file on disk
           do {
-            Logger.log.debug{"Attempting to move InputConf file \(oldFilePath.pii.quoted) to \(newFilePath.pii.quoted)"}
+            Logger.log.debug("Attempting to move InputConf file \(oldFilePath.pii.quoted) to \(newFilePath.pii.quoted)")
             try FileManager.default.moveItem(atPath: oldFilePath, toPath: newFilePath)
           } catch let error {
-            Logger.log.error{"Failed to rename InputConf file: \(error)"}
+            Logger.log.error("Failed to rename InputConf file: \(error)")
             // TODO: more appropriate message
             sendErrorAlert(key: "config.cannot_create", args: ["config"])
           }
@@ -145,7 +145,7 @@ class InputConfFileCache {
 
     for confName in confNamesToRemove {
       guard let removedConfFile = removeFromCache(confName: confName) else {
-        Logger.log.error{"Cannot remove InputConf file: no entry in cache for \(confName.pii.quoted). This should never happen!"}
+        Logger.log.error("Cannot remove InputConf file: no entry in cache for \(confName.pii.quoted). This should never happen!")
         sendErrorAlert(key: "error_finding_file", args: ["config"])
         continue
       }
@@ -157,11 +157,11 @@ class InputConfFileCache {
           try FileManager.default.removeItem(atPath: filePath)
         } catch {
           if FileManager.default.fileExists(atPath: filePath) {
-            Logger.log.error{"File exists but could not be deleted: \(filePath.pii.quoted)"}
+            Logger.log.error("File exists but could not be deleted: \(filePath.pii.quoted)")
             let fileName = URL(fileURLWithPath: filePath).lastPathComponent
             sendErrorAlert(key: "error_deleting_file", args: [fileName])
           } else {
-            Logger.log.debug{"Looks like file was already removed: \(filePath.pii.quoted)"}
+            Logger.log.debug("Looks like file was already removed: \(filePath.pii.quoted)")
           }
         }
       }
@@ -173,7 +173,7 @@ class InputConfFileCache {
   private func removeFromCache(confName: String) -> InputConfFile? {
     // Move file contents out of memory cache and into undo data:
     storageLock.withLock {
-      Logger.log.debug{"Removing from cache: \(confName.pii.quoted)"}
+      Logger.log.debug("Removing from cache: \(confName.pii.quoted)")
       return storage.removeValue(forKey: confName)
     }
   }

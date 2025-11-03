@@ -15,7 +15,7 @@ extension PlayerWindowController {
   func windowShouldZoom(_ window: NSWindow, toFrame newFrame: NSRect) -> NSRect {
     let newSize = resizeSubviews(of: window, to: newFrame.size)
     let newNewFrame = NSRect(origin: newFrame.origin, size: newSize)
-    log.verbose{"WindowWillZoom: \(window.frame) → \(newFrame) → \(newNewFrame)"}
+    log.verbose("WindowWillZoom: \(window.frame) → \(newFrame) → \(newNewFrame)")
     return newNewFrame
   }
 
@@ -48,17 +48,17 @@ extension PlayerWindowController {
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     guard !isAnimatingLayoutTransition else {
-      log.verbose{"[WinWillResize] Denying req=\(requestedSize): isAnimatingLayoutTransition=Y. Will stay at \(window.frame.size)"}
+      log.verbose("[WinWillResize] Denying req=\(requestedSize): isAnimatingLayoutTransition=Y. Will stay at \(window.frame.size)")
       return window.frame.size
     }
     guard !isInWindowResizeDenialPeriod() else {
-      log.verbose{"[WinWillResize] Denying req=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)"}
+      log.verbose("[WinWillResize] Denying req=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)")
       pendingResizeForScreenChange = false  // should be safe to reset this now
       return window.frame.size
     }
     if !window.inLiveResize && isLeftMouseButtonDown {
       // Looks like user is moving the window, but not resizing it. Prevent the system from trying to resize it..
-      log.verbose{"[WinWillResize] Denying req=\(requestedSize): left mouseBtn down, but not resizing"}
+      log.verbose("[WinWillResize] Denying req=\(requestedSize): left mouseBtn down, but not resizing")
       return window.frame.size
     }
 
@@ -71,7 +71,7 @@ extension PlayerWindowController {
     let inLiveResize = window.inLiveResize
 
     let lockViewportToVideoSize = currentLayout.mode.alwaysLockViewportToVideoSize || Preference.bool(for: .lockViewportToVideoSize)
-    log.verbose{"[WinWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)"}
+    log.verbose("[WinWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)")
 
     // Needed for snappy updates to floating OSC 
     CATransaction.setAnimationDuration(0)
@@ -94,7 +94,7 @@ extension PlayerWindowController {
           isLiveResizingWidth = true
         }
       }
-      log.verbose{"[WinWillResize] choseWidth=\(self.isLiveResizingWidth?.yn ?? "nil")"}
+      log.verbose("[WinWillResize] choseWidth=\(self.isLiveResizingWidth?.yn ?? "nil")")
     }
 
     let newWindowSize: NSSize
@@ -103,7 +103,7 @@ extension PlayerWindowController {
     case .windowedNormal, .windowedInteractive:
 
       guard !sessionState.isRestoring else {
-        log.error{"[WinWillResize] Still restoring; returning existing geo=\(windowedModeGeo.windowFrame.size)"}
+        log.error("[WinWillResize] Still restoring; returning existing geo=\(windowedModeGeo.windowFrame.size)")
         return windowedModeGeo.windowFrame.size
       }
       let currentGeo = windowedGeoForCurrentFrame()
@@ -140,7 +140,7 @@ extension PlayerWindowController {
 
     case .musicMode:
       guard !sessionState.isRestoring else {
-        log.error{"[WinWillResize] Still restoring; returning existing musicModeGeo=\(musicModeGeo.windowFrame.size)"}
+        log.error("[WinWillResize] Still restoring; returning existing musicModeGeo=\(musicModeGeo.windowFrame.size)")
         return musicModeGeo.windowFrame.size
       }
 
@@ -156,7 +156,7 @@ extension PlayerWindowController {
       resizeWindowSubviews(using: newGeometry, .noTransition)
     }
 
-    log.verbose{"[WinWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)"}
+    log.verbose("[WinWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)")
     return newWindowSize
   }
 
@@ -172,7 +172,7 @@ extension PlayerWindowController {
                                        updateViewportConstraints: Bool = true,
                                        _ transitionCategory: TransitionCategory = .noTransition,
                                        submitUpdate: Bool = false) {
-    log.verbose{"[PWin.setFrame] Entered: updateViewportConstraints=\(updateViewportConstraints.yn) cat=\(transitionCategory) submit=\(submitUpdate.yn) geo=\(geometry)"}
+    log.verbose("[PWin.setFrame] Entered: updateViewportConstraints=\(updateViewportConstraints.yn) cat=\(transitionCategory) submit=\(submitUpdate.yn) geo=\(geometry)")
 
     resizeWindowSubviews(using: geometry, updateViewportConstraints: updateViewportConstraints, transitionCategory)
 
@@ -185,7 +185,7 @@ extension PlayerWindowController {
     if window.frame.equalTo(geometry.windowFrame) {
       log.verbose("[PWin.setFrame] No change to windowFrame")
     } else {
-      log.verbose{"[PWin.setFrame] Setting frame=\(geometry.windowFrame)"}
+      log.verbose("[PWin.setFrame] Setting frame=\(geometry.windowFrame)")
       window.useZeroDurationForAnimationResize = true
       window.setFrame(geometry.windowFrame, display: true, animate: true)
       window.useZeroDurationForAnimationResize = false
@@ -210,7 +210,7 @@ extension PlayerWindowController {
       windowedModeGeo = geometry
     }
 
-    log.verbose{"Submit: Calling sendWindowScaleToMPV"}
+    log.verbose("Submit: Calling sendWindowScaleToMPV")
     sendWindowScaleToMPV(basedOn: geometry)
 
     player.saveState()
@@ -256,7 +256,7 @@ extension PlayerWindowController {
 
   func restartWindowResizeDenialPeriod(_ reason: String) {
     // Do not allow MacOS to change the window size
-    log.verbose{"Restarting window resize denial period due to: \(reason)"}
+    log.verbose("Restarting window resize denial period due to: \(reason)")
     denyWindowResizePeriodStartTime = Date()
   }
 
@@ -289,11 +289,11 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
     // Not supported in music mode at this time. Need to resolve backing scale bugs
     guard currentLayout.mode == .windowedNormal else {
-      log.error{"SetVideoScale: skipping; mode is unsupported: \(currentLayout.mode)"}
+      log.error("SetVideoScale: skipping; mode is unsupported: \(currentLayout.mode)")
       return
     }
     guard desiredVideoScale > 0.0 else {
-      log.error{"SetVideoScale: requested scale is invalid: \(desiredVideoScale)"}
+      log.error("SetVideoScale: requested scale is invalid: \(desiredVideoScale)")
       return
     }
 
@@ -314,7 +314,7 @@ extension PlayerWindowController {
       let newGeoUnconstrained = oldWindowedGeo.scalingVideo(toWidth: videoWidthScaled, screenFit: .noConstraints)
       player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
       let newGeo = newGeoUnconstrained.refitted(using: .stayInside)
-      log.verbose{"SetVideoScale: desired=\(desiredVideoScale) adjusted=\(adjustedVideoScale) videoCAR=\(videoSizeCAR) → videoWidthScaled=\(videoWidthScaled) → windowScale=\(newGeo.mpvWindowScale())"}
+      log.verbose("SetVideoScale: desired=\(desiredVideoScale) adjusted=\(adjustedVideoScale) videoCAR=\(videoSizeCAR) → videoWidthScaled=\(videoWidthScaled) → windowScale=\(newGeo.mpvWindowScale())")
       sendWindowScaleToMPV(basedOn: newGeo)
       return newGeo
     })
@@ -349,10 +349,10 @@ extension PlayerWindowController {
 
     cachedMpvWindowScale = desiredMpvWindowScale
 
-    log.verbose{"Sending window-scale to mpv: \(currentMpvWindowScale) → \(desiredMpvWindowScale)"}
+    log.verbose("Sending window-scale to mpv: \(currentMpvWindowScale) → \(desiredMpvWindowScale)")
     player.mpv.queue.async { [self] in
       guard player.isActive, player.info.isFileLoaded else {
-        log.debug{"Skipping send of window-scale to mpv: player not ready"}
+        log.debug("Skipping send of window-scale to mpv: player not ready")
         return
       }
 
@@ -379,7 +379,7 @@ extension PlayerWindowController {
      guard !isMagnifying else { return }
      guard currentLayout.mode == .windowedNormal || currentLayout.mode == .musicMode else {
      // Not supported in music mode at this time. Need to resolve backing scale bugs
-     log.error{"mpv→SetWindowScale: skipping; unsupported mode: \(currentLayout.mode)"}
+     log.error("mpv→SetWindowScale: skipping; unsupported mode: \(currentLayout.mode)")
      return
      }
 
@@ -391,7 +391,7 @@ extension PlayerWindowController {
      }
      // Need to update this right away in case mpv sends duplicate requests
      cachedMpvWindowScale = newMpvWindowScale
-     log.verbose{"Got updated window-scale from mpv: \(currentMpvWindowScale) → \(newMpvWindowScale)"}
+     log.verbose("Got updated window-scale from mpv: \(currentMpvWindowScale) → \(newMpvWindowScale)")
 
      let gtf = GeometryTransform("SetWindowScaleFromMPV", player,
      windowed: { [self] ctx -> PWinGeometry? in
@@ -407,10 +407,10 @@ extension PlayerWindowController {
      let newGeo = newGeoUnconstrained.refitted(using: .stayInside)
      let finalMpvWindowScale = newGeo.mpvWindowScale()
      if newMpvWindowScale == finalMpvWindowScale {
-     log.verbose{"mpv→SetWindowScale: cached=\(currentMpvWindowScale) → \(finalMpvWindowScale)"}
+     log.verbose("mpv→SetWindowScale: cached=\(currentMpvWindowScale) → \(finalMpvWindowScale)")
      } else {
      // Could not match desired value. Notify mpv of value used
-     log.verbose{"mpv→SetWindowScale: cached=\(currentMpvWindowScale) desired=\(newMpvWindowScale) → ACTUAL=\(finalMpvWindowScale)"}
+     log.verbose("mpv→SetWindowScale: cached=\(currentMpvWindowScale) desired=\(newMpvWindowScale) → ACTUAL=\(finalMpvWindowScale)")
      sendWindowScaleToMPV(finalMpvWindowScale)
      }
      return newGeo
@@ -442,12 +442,12 @@ extension PlayerWindowController {
 
       let screenFit: ScreenFit = centerOnScreen ? .centerInside : .stayInside
       outputGeo = newGeoUnconstrained.refitted(using: screenFit)
-      log.verbose{"Calling applyPWinGeo from resizeViewport (center=\(centerOnScreen.yn)), to: \(outputGeo.windowFrame)"}
+      log.verbose("Calling applyPWinGeo from resizeViewport (center=\(centerOnScreen.yn)), to: \(outputGeo.windowFrame)")
     case .musicMode:
       /// In music mode, `viewportSize==videoSize` always. Will get `nil` here if video is not visible
       inputGeo = musicModeGeoForCurrentFrame()
       outputGeo = inputGeo.scalingViewport(to: desiredViewportSize)
-      log.verbose{"Calling applyPWinGeo from resizeViewport, to: \(outputGeo.windowFrame)"}
+      log.verbose("Calling applyPWinGeo from resizeViewport, to: \(outputGeo.windowFrame)")
     default:
       return []
     }
@@ -479,13 +479,13 @@ extension PlayerWindowController {
         let inputViewportSize = inputGeo.viewportSize
         guard inputGeo.isViewportShown else { return nil }
         let desiredViewportSize = scaleByWidthStep(inputViewportSize)
-        log.verbose{"Stepping viewport scale: mode=\(mode) stepW=\(widthStep)pt → \(desiredViewportSize)"}
+        log.verbose("Stepping viewport scale: mode=\(mode) stepW=\(widthStep)pt → \(desiredViewportSize)")
         return inputGeo.scalingViewport(to: desiredViewportSize)
 
       case .windowedNormal, .windowedInteractive:
         let inputGeo = ctx.inputGeoSet.windowed
         let desiredViewportSize = scaleByWidthStep(inputGeo.viewportSize)
-        log.verbose{"Stepping viewport scale: mode=\(mode) stepW=\(widthStep)pt → \(desiredViewportSize)"}
+        log.verbose("Stepping viewport scale: mode=\(mode) stepW=\(widthStep)pt → \(desiredViewportSize)")
         let scaledGeoUnconstrained = inputGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
         // User has actively resized the video. Assume this is the new preferred resolution
         player.info.intendedViewportSize = scaledGeoUnconstrained.viewportSize
@@ -512,7 +512,7 @@ extension PlayerWindowController {
                               showDefaultArt: Bool? = nil,
                               thenRun: Bool = false) -> [IINAAnimation.Task] {
 
-    log.verbose{"ApplyPWinGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) save=\(save.yn) \(outputGeo)"}
+    log.verbose("ApplyPWinGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) save=\(save.yn) \(outputGeo)")
 
     var tasks: [IINAAnimation.Task] = []
 
@@ -542,7 +542,7 @@ extension PlayerWindowController {
       case .fullScreenNormal, .fullScreenInteractive:
         // Make sure video constraints are up to date, even in full screen.
         // Also remember that FS & windowed mode share the same screen.
-        log.verbose{"ApplyPWinGeo: updating videoView for FS, videoSize=\(outputGeo.videoSize)"}
+        log.verbose("ApplyPWinGeo: updating videoView for FS, videoSize=\(outputGeo.videoSize)")
         viewportView.apply(outputGeo)
 
       case .windowedNormal, .windowedInteractive, .musicMode:
@@ -550,7 +550,7 @@ extension PlayerWindowController {
         updateWindowBorderAndOpacity()
 
         if !isWindowHidden {
-          log.verbose{"ApplyPWinGeo: calling update frame"}
+          log.verbose("ApplyPWinGeo: calling update frame")
           setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: save)
         } else {
           viewportView.apply(outputGeo)  // Update video constraints

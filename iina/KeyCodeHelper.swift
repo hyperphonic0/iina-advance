@@ -558,7 +558,7 @@ class KeyCodeHelper {
     }
     let keystrokeList = splitKeystrokes(normalizedMpvKey)
     guard keystrokeList.count == 1 else {
-      AppInputConfig.log.verbose{"MacOSKeyEquivalent: string has >1 keystroke; returning nil for: \(normalizedMpvKey.quoted)"}
+      AppInputConfig.log.verbose("MacOSKeyEquivalent: string has >1 keystroke; returning nil for: \(normalizedMpvKey.quoted)")
       return nil
     }
     let splitted = keystrokeList[0].components(separatedBy: "+")

@@ -194,7 +194,7 @@ class MPVLogScanner {
       guard tokens.count >= 3 && tokens.count <= 4 && (tokens[tokens.count-2] == MPVCommand.scriptBinding.rawValue) else {
         // "This command can be used to dispatch arbitrary keys to a script or a client API user".
         // Need to figure out whether to add support for these as well.
-        player.log.warn{"Unrecognized mpv command in `define-section`; skipping line: \(line.quoted)"}
+        player.log.warn("Unrecognized mpv command in `define-section`; skipping line: \(line.quoted)")
         continue
       }
 
@@ -210,7 +210,7 @@ class MPVLogScanner {
           "nonscalable":
           break
         default:
-          player.log.warn{"Unrecognized mpv input command prefix in `define-section`; ignoring: \(String(prefix).quoted)"}
+          player.log.warn("Unrecognized mpv input command prefix in `define-section`; ignoring: \(String(prefix).quoted)")
         }
         rawAction = tokens[2...].joined(separator: " ")
       } else {
@@ -220,7 +220,7 @@ class MPVLogScanner {
       keyMappings.append(KeyMapping(rawKey: normalizedMpvKey, rawAction: rawAction))
 
       if Logger.enabled, KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey) == nil {
-        player.log.error{"Unrecognized key in input binding: \(normalizedMpvKey.quoted), from line: \(line)"}
+        player.log.error("Unrecognized key in input binding: \(normalizedMpvKey.quoted), from line: \(line)")
       }
     }
     return keyMappings
@@ -265,7 +265,7 @@ class MPVLogScanner {
     let mappings = parseMappingsFromDefineSectionContents(content)
     let section = MPVInputSection(name: name, mappings, isForce: isForce, origin: .libmpv)
     if Logger.enabled {
-      player.log.verbose{"Got 'define-section' from mpv: \"\(section.name)\", keyMappings=\(section.keyMappingList.count), force=\(section.isForce) "}
+      player.log.verbose("Got 'define-section' from mpv: \"\(section.name)\", keyMappings=\(section.keyMappingList.count), force=\(section.isForce) ")
 
       let keyMappingList: [String] = section.keyMappingList.map{ keyMapping in
         "\t{\(section.name)} \(keyMapping.rawKey) -> \(keyMapping.rawAction ?? "nil")"
@@ -276,7 +276,7 @@ class MPVLogScanner {
       } else {
         bindingsString = "\n\(keyMappingList.joined(separator: "\n"))"
       }
-      player.log.verbose{"Bindings for section \"\(section.name)\":\(bindingsString)"}
+      player.log.verbose("Bindings for section \"\(section.name)\":\(bindingsString)")
     }
     player.keyBindingContext.defineSection(section)
   }

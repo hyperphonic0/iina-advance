@@ -55,7 +55,7 @@ class PlayerWindow: NSWindow {
     if !event.isARepeat {
       keyDownCount += 1
     }
-    log.verbose{"KEYDN #\(keyDownCount)\(event.isARepeat ? " (repeat)" : ""): \(normalizedKeyCode.quoted)"}
+    log.verbose("KEYDN #\(keyDownCount)\(event.isARepeat ? " (repeat)" : ""): \(normalizedKeyCode.quoted)")
 
     guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.keyDown()!") }
 
@@ -113,7 +113,7 @@ class PlayerWindow: NSWindow {
     }
 
     let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-    log.verbose{"KEYUP #\(keyUpCount): \(normalizedKeyCode.quoted)"}
+    log.verbose("KEYUP #\(keyUpCount): \(normalizedKeyCode.quoted)")
 
     PluginInputManager.handle(
       input: normalizedKeyCode, event: .keyUp, player: pwc.player,
@@ -133,7 +133,7 @@ class PlayerWindow: NSWindow {
     }
 
     let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-    log.verbose{"KEY Equiv: \(normalizedKeyCode.quoted)"}
+    log.verbose("KEY Equiv: \(normalizedKeyCode.quoted)")
 
     /// AppKit by default will prioritize menu item key equivalents over arrow key navigation
     /// (although for some reason it is the opposite for `ESC`, `TAB`, `ENTER` or `RETURN`).
@@ -185,7 +185,7 @@ class PlayerWindow: NSWindow {
         cropController.handleKeyDown(mpvKeyCode: keyCode)
         return true
       } else if pwc.isInMiniPlayer, pwc.miniPlayer.volumePopover.isShown {
-        log.verbose{"Hiding miniPlayer volume popover"}
+        log.verbose("Hiding miniPlayer volume popover")
         pwc.miniPlayer.hideVolumePopover()
         return true
       }

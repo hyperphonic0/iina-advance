@@ -638,7 +638,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
       for item in menuItems {
         if counter == 5 {
-          Logger.log.warn{"Please avoid adding too many first-level menu items. IINA will only display the first 5 of them."}
+          Logger.log.warn("Please avoid adding too many first-level menu items. IINA will only display the first 5 of them.")
           let moreItem = NSMenuItem()
           moreItem.title = NSLocalizedString("menu.more_plugin", comment: "More…")
           rootMenu = NSMenu()
@@ -680,7 +680,7 @@ class MenuController: NSObject, NSMenuDelegate {
       return item
     }
 
-    Logger.log.verbose{"Adding Plugin menu item: \"\(item.title)\", key=\"\(item.keyBinding ?? "")\""}
+    Logger.log.verbose("Adding Plugin menu item: \"\(item.title)\", key=\"\(item.keyBinding ?? "")\"")
 
     let menuItem: NSMenuItem
     if item.action == nil {
@@ -727,7 +727,7 @@ class MenuController: NSObject, NSMenuDelegate {
     if let titles = titles {
       // options and objects must be same
       guard objects == nil || titles.count == objects?.count else {
-        Logger.log.error{"different object count when binding menu"}
+        Logger.log.error("different object count when binding menu")
         return
       }
       // add menu items
@@ -778,7 +778,7 @@ class MenuController: NSObject, NSMenuDelegate {
   // MARK: - Menu delegate
 
   func menuWillOpen(_ menu: NSMenu) {
-    Logger.log.verbose{"Updating menu: \(menu.title.quoted)"}
+    Logger.log.verbose("Updating menu: \(menu.title.quoted)")
 
     // If all menu items are disabled do not update the menus.
     guard !isDisabled else { return }
@@ -855,7 +855,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
       if DebugConfig.logBindingsRebuild {
         let readableKey = KeyCodeHelper.readableString(fromKey: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
-        Logger.log.verbose{"Updating menuItem for \(isVideo ? "VF" : "AF") \(filter.name.quoted) with keyEquiv: \(readableKey.quoted)"}
+        Logger.log.verbose("Updating menuItem for \(isVideo ? "VF" : "AF") \(filter.name.quoted) with keyEquiv: \(readableKey.quoted)")
       }
 
       let rawKey = KeyCodeHelper.macOSToMpv(key: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
@@ -962,17 +962,17 @@ class MenuController: NSObject, NSMenuDelegate {
         menuItem.keyEquivalentModifierMask = kMdf
         binding.displayMessage = "This key binding will activate the menu item:\n\(menuItem.menuPathDescription)"
         if DebugConfig.logBindingsRebuild {
-          Logger.log.verbose{"Set menu keyEquiv: \(mpvKey.quoted) → \(menuItem.menuPathDescription)"}
+          Logger.log.verbose("Set menu keyEquiv: \(mpvKey.quoted) → \(menuItem.menuPathDescription)")
         }
       } else {
-        Logger.log.error{"Failed to get MacOS menu item key equivalent for \(mpvKey.quoted)"}
+        Logger.log.error("Failed to get MacOS menu item key equivalent for \(mpvKey.quoted)")
       }
     } else {
       // Conflict! Key binding already reserved
       menuItem.keyEquivalent = ""
       menuItem.keyEquivalentModifierMask = []
       if DebugConfig.logBindingsRebuild {
-        Logger.log.verbose{"Unset menu keyEquiv: \(menuItem.title.quoted)"}
+        Logger.log.verbose("Unset menu keyEquiv: \(menuItem.title.quoted)")
       }
     }
   }

@@ -77,7 +77,7 @@ extension PlayerWindowController {
     let mode: PlayerWindowMode
     if let layoutMode {
       guard layoutMode == currentLayout.mode else {
-        log.warn{"Mode has changed (current=\(currentLayout.mode), provided=\(layoutMode)): will reuse existing GeometrySet instead of updating"}
+        log.warn("Mode has changed (current=\(currentLayout.mode), provided=\(layoutMode)): will reuse existing GeometrySet instead of updating")
         return geo
       }
       mode = layoutMode

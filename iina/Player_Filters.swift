@@ -17,14 +17,14 @@ extension PlayerCore {
     postNotification(.iinaVFChanged)
     let audioFilters = updateAudioFiltersFromMpv()
     postNotification(.iinaAFChanged)
-    log.verbose{"Total filters from mpv: \(videoFilters.count) vf, \(audioFilters.count) af"}
+    log.verbose("Total filters from mpv: \(videoFilters.count) vf, \(audioFilters.count) af")
   }
 
   private func logRemoveFilter(type: String, result: Bool, name: String) {
     if !result {
-      log.warn{"Failed to remove \(type) filter \(name)"}
+      log.warn("Failed to remove \(type) filter \(name)")
     } else {
-      log.debug{"Successfully removed \(type) filter \(name)"}
+      log.debug("Successfully removed \(type) filter \(name)")
     }
   }
 
@@ -42,7 +42,7 @@ extension PlayerCore {
   func updateAudioFiltersFromMpv() -> [MPVFilter] {
     let audioFilters = mpv.getFilters(MPVProperty.af)
     for filter in audioFilters {
-      log.verbose{"Got mpv af, name: \(filter.name.quoted), label: \(filter.label?.quoted ?? "nil"), params: \(filter.params ?? [:])"}
+      log.verbose("Got mpv af, name: \(filter.name.quoted), label: \(filter.label?.quoted ?? "nil"), params: \(filter.params ?? [:])")
       guard let label = filter.label else { continue }
       if label.hasPrefix(Constants.FilterLabel.audioEq) {
         info.audioEqFilter = filter
@@ -80,10 +80,10 @@ extension PlayerCore {
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
   @discardableResult
   func addAudioFilter(_ filter: String) -> Bool {
-    log.debug{"Adding audio filter \(filter)…"}
+    log.debug("Adding audio filter \(filter)…")
     var result = true
     result = mpv.command(.af, args: ["add", filter], checkError: false) >= 0
-    log.debug{result ? "Succeeded" : "Failed"}
+    log.debug(result ? "Succeeded" : "Failed")
     return result
   }
 
@@ -104,7 +104,7 @@ extension PlayerCore {
   /// - Parameter index: The index of the filter to be removed.
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   func removeAudioFilter(_ filter: String, _ index: Int) -> Bool {
-    log.debug{"Removing audio filter \(filter)…"}
+    log.debug("Removing audio filter \(filter)…")
     let result = mpv.removeFilter(MPVProperty.af, index)
     logRemoveFilter(type: "audio", result: result, name: filter)
     return result
@@ -136,9 +136,9 @@ extension PlayerCore {
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   @discardableResult
   func removeAudioFilter(_ filter: String) -> Bool {
-    log.debug{"Removing audio filter \(filter)…"}
+    log.debug("Removing audio filter \(filter)…")
     let returnCode = mpv.command(.af, args: ["remove", filter], checkError: false) >= 0
-    log.debug{returnCode ? "Succeeded" : "Failed"}
+    log.debug(returnCode ? "Succeeded" : "Failed")
     return returnCode
   }
 
@@ -160,14 +160,14 @@ extension PlayerCore {
   func updateVideoFiltersFromMpv() -> [MPVFilter] {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     let videoFilters = mpv.getFilters(MPVProperty.vf)
-    log.verbose{"Found \(videoFilters.count) VFs"}
+    log.verbose("Found \(videoFilters.count) VFs")
 
     // Clear cached filters first:
     info.flipFilter = nil
     info.mirrorFilter = nil
     info.delogoFilter = nil
     for (filterIndex, filter) in videoFilters.enumerated() {
-      log.verbose{"VF-\(filterIndex): name=\(filter.name.quoted) label=\(filter.label?.quoted ?? "nil") params=\(filter.params ?? [:])"}
+      log.verbose("VF-\(filterIndex): name=\(filter.name.quoted) label=\(filter.label?.quoted ?? "nil") params=\(filter.params ?? [:])")
 
       switch filter.label {
       case Constants.FilterLabel.flip:
@@ -195,7 +195,7 @@ extension PlayerCore {
     // TODO: refactor to execute mpv commands only on mpv queue. Make this async!
     let success = addVideoFilter(filter.stringFormat)
     if !success {
-      log.verbose{"Video filter \(filter.stringFormat) was not added"}
+      log.verbose("Video filter \(filter.stringFormat) was not added")
     }
     return success
   }
@@ -206,13 +206,13 @@ extension PlayerCore {
   /// - Parameter filter: The filter to add.
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
   func addVideoFilter(_ filter: String) -> Bool {
-    log.debug{"Adding video filter \(filter.quoted)..."}
+    log.debug("Adding video filter \(filter.quoted)...")
 
     // FIXME: make this an async task!
     // check hwdec
     let hwdec = mpv.getString(MPVProperty.hwdec)
     if hwdec == "auto" {
-      log.debug{"Prompting user whether to change hwdec from 'auto'"}
+      log.debug("Prompting user whether to change hwdec from 'auto'")
       // if not on main thread, post the alert in main thread
       let canContinue: Bool = DispatchQueue.main.execOrSync{ [self] in
         let panel = NSAlert()
@@ -236,7 +236,7 @@ extension PlayerCore {
       }
 
       guard canContinue else {
-        log.debug{"Cannot add filter: hwdec==auto & user chose not to change it"}
+        log.debug("Cannot add filter: hwdec==auto & user chose not to change it")
         return false
       }
     }
@@ -244,7 +244,7 @@ extension PlayerCore {
     // try apply filter
     var didSucceed = true
     didSucceed = mpv.command(.vf, args: ["add", filter], checkError: false) >= 0
-    log.debug{"Add filter: \(didSucceed ? "Succeeded" : "Failed")"}
+    log.debug("Add filter: \(didSucceed ? "Succeeded" : "Failed")")
     // Do not update UI here, because it may take a second for the VF to show up in the mpv state, and it may be wrong
     return didSucceed
   }
@@ -267,7 +267,7 @@ extension PlayerCore {
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   func removeVideoFilter(_ filter: String, _ index: Int) -> Bool {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    log.debug{"Removing video filter \(filter)..."}
+    log.debug("Removing video filter \(filter)...")
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     let result = mpv.removeFilter(MPVProperty.vf, index)
     logRemoveFilter(type: "video", result: result, name: filter)

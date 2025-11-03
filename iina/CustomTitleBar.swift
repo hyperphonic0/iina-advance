@@ -142,7 +142,7 @@ class CustomTitleBarViewController: NSViewController {
 
     view.configureSubtreeForCoreAnimation()
 
-    pwc.log.verbose{"CustomTitleBar viewDidLoad done"}
+    pwc.log.verbose("CustomTitleBar viewDidLoad done")
   }
 
 

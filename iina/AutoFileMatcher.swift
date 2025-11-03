@@ -68,7 +68,7 @@ class AutoFileMatcher {
       }
     }
 
-    log.debug{"Got all media files: video=\(videoFiles.count), audio=\(audioFiles.count)"}
+    log.debug("Got all media files: video=\(videoFiles.count), audio=\(audioFiles.count)")
 
     // natural sort
     videoFiles.sort { $0.filename.localizedStandardCompare($1.filename) == .orderedAscending }
@@ -114,8 +114,8 @@ class AutoFileMatcher {
       }
     }
 
-    log.debug{"Searching subtitles from \(subDirs.count) directories..."}
-    log.verbose{"Sub search dirs: \(subDirs)"}
+    log.debug("Searching subtitles from \(subDirs.count) directories...")
+    log.verbose("Sub search dirs: \(subDirs)")
     // get all possible sub files
     var subtitles = subFiles
 
@@ -126,7 +126,7 @@ class AutoFileMatcher {
       }
     }
 
-    log.debug{"Got \(subtitles.count) subtitles"}
+    log.debug("Got \(subtitles.count) subtitles")
     return subtitles
   }
 
@@ -138,7 +138,7 @@ class AutoFileMatcher {
     let moviesDirPaths = FileManager.default.urls(for: .moviesDirectory, in: .allDomainsMask).compactMap{$0.path}
     for moviesDirPath in moviesDirPaths {
       if filePath.hasPrefix(moviesDirPath) {
-        log.verbose{"Skipping \(filePath.pii.quoted) because it is inside \(moviesDirPath.pii.quoted)"}
+        log.verbose("Skipping \(filePath.pii.quoted) because it is inside \(moviesDirPath.pii.quoted)")
         return true
       }
     }
@@ -150,7 +150,7 @@ class AutoFileMatcher {
     try checkTicket()
     
     player.mpv.queue.async { [self] in
-      log.debug{"Adding \(videoFiles.count) video files & \(audioFiles.count) audio files to playlist"}
+      log.debug("Adding \(videoFiles.count) video files & \(audioFiles.count) audio files to playlist")
       player._addAllToPlaylist(pathListIncludingCurrent: pathList)
     }
   }
@@ -229,7 +229,7 @@ class AutoFileMatcher {
               nameMatched = vn == sn
             }
             if nameMatched {
-              log.verbose{"Matched by IINA: \(video.filename.pii.quoted) (\(vn)) & \(sub.filename.pii.quoted) (\(sn)) ..."}
+              log.verbose("Matched by IINA: \(video.filename.pii.quoted) (\(vn)) & \(sub.filename.pii.quoted) (\(sn)) ...")
               video.relatedSubs.append(sub)
               if sub.prefix == matchedSubPrefix {
                 try checkTicket()
@@ -250,7 +250,7 @@ class AutoFileMatcher {
           $0.filename.contains(video.filename) && !$0.isMatched
         }.forEach { sub in
           try checkTicket()
-          log.verbose{"Matched by name: \(sub.filename.pii.quoted) & \(video.filename.pii.quoted)"}
+          log.verbose("Matched by name: \(sub.filename.pii.quoted) & \(video.filename.pii.quoted)")
           player.info.$matchedSubs.withLock { $0[video.path, default: []].append(sub.url) }
           sub.isMatched = true
           matchedSubs.insert(sub)
@@ -263,7 +263,7 @@ class AutoFileMatcher {
         log.trace{"No matched subs for \(video.filename.pii.quoted)"}
         unmatchedVideos.append(video)
       } else {
-        log.debug{"Matched \(matchedSubs.count) subtitles for \(video.filename.pii.quoted)"}
+        log.debug("Matched \(matchedSubs.count) subtitles for \(video.filename.pii.quoted)")
       }
 
       // move the sub to front if it contains priority strings
@@ -309,7 +309,7 @@ class AutoFileMatcher {
       return
     }
 
-    log.verbose{"Force matching unmatched videos, video=\(unmatchedVideos.count), sub=\(unmatchedSubs.count)..."}
+    log.verbose("Force matching unmatched videos, video=\(unmatchedVideos.count), sub=\(unmatchedSubs.count)...")
     if unmatchedSubs.count > 0 && unmatchedVideos.count > 0 {
       // calculate edit distance
       log.debug("Calculating edit distance...")
@@ -346,11 +346,11 @@ class AutoFileMatcher {
 
   func startMatching() {
     let shouldAutoLoad = Preference.bool(for: .playlistAutoAdd)
-    log.debug{"**Start matching: autoLoad=\(shouldAutoLoad.yesno)"}
+    log.debug("**Start matching: autoLoad=\(shouldAutoLoad.yesno)")
 
     do {
       guard let folder = player.info.currentURL?.deletingLastPathComponent(), folder.isFileURL else {
-        log.verbose{"Aborting: parent is not a filesystem folder URL"}
+        log.verbose("Aborting: parent is not a filesystem folder URL")
         return
       }
       currentFolder = folder

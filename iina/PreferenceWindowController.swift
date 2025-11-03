@@ -212,7 +212,7 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     tableView.allowsEmptySelection = true
 
     if let undoManager = window?.undoManager {
-      Logger.log.verbose{"PreferenceWindow loaded: setting UndoManager"}
+      Logger.log.verbose("PreferenceWindow loaded: setting UndoManager")
       // Make more easily accessible for other components
       windowUndoManager = undoManager
     }
@@ -251,7 +251,7 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     })
     self.observers.append(observer)
 
-    Logger.log.verbose{"PreferenceWindowController windowDidLoad done"}
+    Logger.log.verbose("PreferenceWindowController windowDidLoad done")
   }
 
   // Need to wait until window is in focus before trying to show the completion popup (if restoring).

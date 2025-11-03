@@ -83,7 +83,7 @@ extension PlayerWindowController {
         mustHide = true
       }
 
-      log.verbose{"\(mustHide ? "Hiding" : "Showing") PiP overlay"}
+      log.verbose("\(mustHide ? "Hiding" : "Showing") PiP overlay")
       if mustHide {
         overlayView.removeFromSuperview()
       } else {
@@ -189,7 +189,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       pipController.playing = player.info.isPlaying
       pipController.title = window.title
       let aspectRatioSize = player.videoGeo.videoSizeCAR
-      log.verbose{"Setting PiP aspect to \(aspectRatioSize.aspect)"}
+      log.verbose("Setting PiP aspect to \(aspectRatioSize.aspect)")
       pipController.aspectRatio = aspectRatioSize
       pip.controller = pipController
 
@@ -199,14 +199,14 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
     if !window.styleMask.contains(.fullScreen) && !window.isMiniaturized {
       let pipBehavior = usePipBehavior ?? Preference.enum(for: .windowBehaviorWhenPip) as Preference.WindowBehaviorWhenPip
-      log.verbose{"Entering PIP with behavior: \(pipBehavior)"}
+      log.verbose("Entering PIP with behavior: \(pipBehavior)")
       switch pipBehavior {
       case .doNothing:
         break
       case .hide:
         isWindowHidden = true
         window.orderOut(self)
-        log.verbose{"PIP entered; adding player to hidden windows list: \(window.savedStateName.quoted)"}
+        log.verbose("PIP entered; adding player to hidden windows list: \(window.savedStateName.quoted)")
         if player.isRestoring, AppDelegate.shared.startupHandler.wcsToRestore.contains(self) {
           // patch logic hole here
           AppDelegate.shared.startupHandler.wcsDoneWithRestore.insert(self)
@@ -310,7 +310,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
   func pipDidClose(_ pipController: PIPViewController) {
     guard !AppDelegate.shared.isTerminating else { return }
     guard let window else { return }
-    log.verbose{"Got pipDidClose: isInPiP=\(currentLayout.isInPiP.yn) isInTransition=\(pip.isInTransition.yn)"}
+    log.verbose("Got pipDidClose: isInPiP=\(currentLayout.isInPiP.yn) isInTransition=\(pip.isInTransition.yn)")
 
     pip.pipDidCloseTimer.cancel()
 
@@ -325,12 +325,12 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     var tasks: [IINAAnimation.Task] = []
 
     if isWindowHidden {
-      log.verbose{"PIP did close: appending extra tasks for hidden window"}
+      log.verbose("PIP did close: appending extra tasks for hidden window")
       tasks.append(contentsOf: buildApplyPWinGeoTasks(from: windowedModeGeo, to: windowedModeGeo)) // may have skipped updates while hidden
       tasks.append(IINAAnimation.Task({ [self] in
         showWindow(self)
 
-        log.verbose{"PIP did close; removing player from hidden windows list: \(window.savedStateName.quoted)"}
+        log.verbose("PIP did close; removing player from hidden windows list: \(window.savedStateName.quoted)")
         isWindowHidden = false
       }))
     }
@@ -368,7 +368,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       isWindowMiniaturizedDueToPip = false
       player.saveState()
 
-      log.verbose{"PIP did close: done"}
+      log.verbose("PIP did close: done")
       pip.isInTransition = false
     })
 

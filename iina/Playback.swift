@@ -168,7 +168,7 @@ struct PlaybackID: Equatable, Hashable {
     do {
       return try url.bookmarkData(options: .securityScopeAllowOnlyReadAccess, includingResourceValuesForKeys: nil, relativeTo: nil)
     } catch {
-      log.error{"Failed to create bookmark data from URL \(path(from: url).pii.quoted): \(error)"}
+      log.error("Failed to create bookmark data from URL \(path(from: url).pii.quoted): \(error)")
       return nil
     }
   }
@@ -178,7 +178,7 @@ struct PlaybackID: Equatable, Hashable {
     do {
       return try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale)
     } catch {
-      log.error{"Failed to restore bookmark data: \(error)"}
+      log.error("Failed to restore bookmark data: \(error)")
       return nil
     }
   }

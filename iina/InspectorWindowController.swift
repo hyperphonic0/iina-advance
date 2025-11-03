@@ -213,7 +213,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
     // Restore tab selection
     let selectTabIndex: Int = UIState.shared.getSavedValue(for: .uiInspectorWindowTabIndex)
-    Logger.log.verbose{"Restoring tab selection to index \(selectTabIndex)"}
+    Logger.log.verbose("Restoring tab selection to index \(selectTabIndex)")
     tabButtonGroup.selectSegment(withTag: selectTabIndex)
     tabView.selectTabViewItem(at: selectTabIndex)
     // Do not select tab by default
@@ -494,7 +494,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
       }
       return cell
     default:
-      Logger.log.error{"Unrecognized column: '\(identifier.rawValue)'"}
+      Logger.log.error("Unrecognized column: '\(identifier.rawValue)'")
       return nil
     }
   }
@@ -700,13 +700,13 @@ extension InspectorWindowController: EditableTableViewDelegate {
   }
 
   func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool {
-    Logger.log.verbose{"Enter key: Edit requested for row \(rowIndex) in Watch table"}
+    Logger.log.verbose("Enter key: Edit requested for row \(rowIndex) in Watch table")
     watchTableView.editCell(row: rowIndex, column: 0)
     return true
   }
 
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
-    Logger.log.verbose{"Watch table: user finished editing value for row \(rowIndex), col \(columnIndex): \(newValue.quoted)"}
+    Logger.log.verbose("Watch table: user finished editing value for row \(rowIndex), col \(columnIndex): \(newValue.quoted)")
     guard columnIndex == 0 else { return false }
     guard rowIndex < watchProperties.count else { return false }
 

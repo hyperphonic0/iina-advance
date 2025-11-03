@@ -199,7 +199,7 @@ class HistoryController {
     }
     let sw = Utility.Stopwatch()
 
-    log.verbose{"ReloadAll starting, from \(plistURL.path.pii.quoted)"}
+    log.verbose("ReloadAll starting, from \(plistURL.path.pii.quoted)")
 
     // Resetting this will also reset watch-later status, which is needed for live update after
     // `PK.resumeLastPosition` is toggled.
@@ -210,13 +210,13 @@ class HistoryController {
     lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
     historyListDidUpdate()
 
-    log.verbose{"ReloadAll: done reading history file. Loading recentDocumentURLs"}
+    log.verbose("ReloadAll: done reading history file. Loading recentDocumentURLs")
     cachedRecentDocumentURLs = NSDocumentController.shared.recentDocumentURLs
 
-    log.verbose{"ReloadAll: posting recentDocumentsDidChange"}
+    log.verbose("ReloadAll: posting recentDocumentsDidChange")
     postNotification(Notification(name: .recentDocumentsDidChange))
 
-    log.verbose{"ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)"}
+    log.verbose("ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
   }
 
   @discardableResult
@@ -237,7 +237,7 @@ class HistoryController {
   func remove(_ entries: [PlaybackHistory]) {
     assert(DispatchQueue.isExecutingIn(workDQ))
 
-    log.debug{"Clearing \(entries.count) history entries"}
+    log.debug("Clearing \(entries.count) history entries")
     history = history.filter { !entries.contains($0) }
     historyListDidUpdate()
     saveHistoryToFile()
@@ -245,7 +245,7 @@ class HistoryController {
 
   func removeAll() {
     self.async { [self] in
-      log.debug{"Clearing all history"}
+      log.debug("Clearing all history")
       try? FileManager.default.removeItem(atPath: Utility.playbackHistoryURL.path)
       clearRecentDocuments(nil)
       Preference.set(nil, for: .iinaLastPlayedFilePath)
@@ -261,7 +261,7 @@ class HistoryController {
     }
     let historyList = history
     fileExistsDQ.async { [self] in
-      log.verbose{"Starting fileExists work for \(historyList.count) entries, historyVersion=\(historyListVersion)"}
+      log.verbose("Starting fileExists work for \(historyList.count) entries, historyVersion=\(historyListVersion)")
       reloadFileExistsAndProgress(forList: historyList, startingAt: 0, withVersion: historyListVersion)
     }
 
@@ -365,7 +365,7 @@ class HistoryController {
       saveRecentDocuments()
     }
 
-    log.debug{"Done restoring list of recent documents (\(newRecentDocuments.count)). Posting recentDocumentsDidChange"}
+    log.debug("Done restoring list of recent documents (\(newRecentDocuments.count)). Posting recentDocumentsDidChange")
     postNotification(Notification(name: .recentDocumentsDidChange))
   }
 
@@ -465,7 +465,7 @@ class HistoryController {
     // FIXME: remove `iinaLastPlayedFilePath` and `iinaLastPlayedFilePosition` - they are not compatible with welcome window list
     Preference.set(id.url, for: .iinaLastPlayedFilePath)
     if let position {
-      log.verbose{"Saving iinaLastPlayedFilePosition: \(position)s"}
+      log.verbose("Saving iinaLastPlayedFilePosition: \(position)s")
       Preference.set(position, for: .iinaLastPlayedFilePosition)
     } else {
       log.warn("No position found for file; writing 0 to iinaLastPlayedFilePosition")
@@ -536,7 +536,7 @@ class HistoryController {
 
     guard historyVersion == self.historyListVersion else {
       // Assume work will be enqueued for the new version. Don't process stale data
-      log.verbose{"Aborting fileExists task: historyVersion (\(historyVersion)) is not latest (\(self.historyListVersion))"}
+      log.verbose("Aborting fileExists task: historyVersion (\(historyVersion)) is not latest (\(self.historyListVersion))")
       return
     }
 
@@ -584,14 +584,14 @@ class HistoryController {
     }
 
     guard !isAppTerminating else {
-      log.verbose{"App is terminating; stopping fileExists work early"}
+      log.verbose("App is terminating; stopping fileExists work early")
       return
     }
 
     let newStartIndex = examinedCount + startIndex
     let completed = newStartIndex == historyList.count
     if completed {
-      log.verbose{"Done filling in fileExists map, \(fileExistsMap.count) entries. Notifying UI"}
+      log.verbose("Done filling in fileExists map, \(fileExistsMap.count) entries. Notifying UI")
       postNotification(Notification(name: .iinaFileExistsInfoDidUpdate))
     } else {
       // Don't hog the queue; allow other tasks to finish & enqueue behind them:

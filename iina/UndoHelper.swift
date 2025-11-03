@@ -31,13 +31,13 @@ class UndoHelper {
   @discardableResult
   func register(_ actionName: String? = nil, undo undoAction: @escaping ActionBody, redo redoAction: ActionBody? = nil) -> Bool {
     guard let undoMan = self.undoManager else {
-      Logger.log.verbose{"Cannot register for undo: undoManager is nil"}
+      Logger.log.verbose("Cannot register for undo: undoManager is nil")
       return false
     }
 
     let origActionName: String? = UndoHelper.getOrSetOriginalActionName(actionName, undoMan)
 
-    Logger.log.verbose{"[\(UndoHelper.formatAction(origActionName, undoMan))] Registering for \(undoMan.isRedoing ? UndoHelper.REDO : UndoHelper.UNDO)"}
+    Logger.log.verbose("[\(UndoHelper.formatAction(origActionName, undoMan))] Registering for \(undoMan.isRedoing ? UndoHelper.REDO : UndoHelper.UNDO)")
 
     undoMan.registerUndo(withTarget: self, handler: { [self] manager in
       guard let undoMan = undoManager else {
@@ -45,7 +45,7 @@ class UndoHelper {
         return
       }
       // Undo starts here. Or: undo of the undo (redo)
-      Logger.log.verbose{"[\(UndoHelper.formatAction(origActionName, undoMan))] Starting \(UndoHelper.currentOp(undoMan)) (\(UndoHelper.extraDebug(undoMan)))"}
+      Logger.log.verbose("[\(UndoHelper.formatAction(origActionName, undoMan))] Starting \(UndoHelper.currentOp(undoMan)) (\(UndoHelper.extraDebug(undoMan)))")
 
       willUndoOrRedo()
       undoAction()

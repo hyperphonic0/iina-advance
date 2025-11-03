@@ -334,7 +334,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
         let inputMusicModeGeo = ctx.inputGeoSet.musicMode
         let outputMusicModeGeo = inputMusicModeGeo.withPlaylistShown(!inputMusicModeGeo.isMusicModePlaylistShown)
-        log.verbose{"MusicMode: toggling playlist visibility: \(inputMusicModeGeo.isMusicModePlaylistShown.yesno) → \(outputMusicModeGeo.isMusicModePlaylistShown.yesno), H=\(outputMusicModeGeo.musicModePlaylistHeight)"}
+        log.verbose("MusicMode: toggling playlist visibility: \(inputMusicModeGeo.isMusicModePlaylistShown.yesno) → \(outputMusicModeGeo.isMusicModePlaylistShown.yesno), H=\(outputMusicModeGeo.musicModePlaylistHeight)")
         return outputMusicModeGeo
       })
       gtf.submit()
@@ -345,7 +345,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBAction func toggleVideoViewVisibleState(_ sender: AnyObject?) {
     pwc.animationPipeline.submitInstantTask({ [self] in
       let showVideoView = !isViewportShown
-      log.verbose{"MusicMode: user clicked btn: toggling viewport visibility: \((!showVideoView).yn) → \(showVideoView.yn)"}
+      log.verbose("MusicMode: user clicked btn: toggling viewport visibility: \((!showVideoView).yn) → \(showVideoView.yn)")
 
       if showVideoView {
         /// If showing video, call `setVideoTrackEnabled()`, then do animations, for a nicer effect.
@@ -364,7 +364,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
           let inputMusicModeGeo = ctx.inputGeoSet.musicMode
           let outputMusicModeGeo = inputMusicModeGeo.withVideoViewVisible(false)
-          log.verbose{"MusicMode: changing viewport visibility: \(inputMusicModeGeo.isViewportShown.yesno) → \(outputMusicModeGeo.isViewportShown.yesno), H=\(outputMusicModeGeo.videoHeight)"}
+          log.verbose("MusicMode: changing viewport visibility: \(inputMusicModeGeo.isViewportShown.yesno) → \(outputMusicModeGeo.isViewportShown.yesno), H=\(outputMusicModeGeo.videoHeight)")
           return outputMusicModeGeo
         })
         gtf.submit()

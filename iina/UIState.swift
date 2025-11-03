@@ -319,7 +319,7 @@ class UIState {
         openWindowsCacheSet.remove(windName)
       }
       // Add missing windows to end of list (front):
-      log.verbose{"Assuming windows are still opening; appending \(openWindowsCacheSet) to saved windows list: \(openWindowNames)"}
+      log.verbose("Assuming windows are still opening; appending \(openWindowsCacheSet) to saved windows list: \(openWindowNames)")
       for windName in openWindowsCacheSet {
         openWindowNames.append(windName)
       }
@@ -332,7 +332,7 @@ class UIState {
     if UserDefaults.standard.integer(forKey: currentLaunchName) != LaunchLifecycleState.stillRunning.rawValue {
       // The entry will be missing if the user cleared saved state but then re-enabled save in the same launch.
       // We can easily add the missing lifecycleState again.
-      log.debug{"Pref entry for \(currentLaunchName.quoted) was missing or incorrect. Setting it to \(LaunchLifecycleState.stillRunning.rawValue)"}
+      log.debug("Pref entry for \(currentLaunchName.quoted) was missing or incorrect. Setting it to \(LaunchLifecycleState.stillRunning.rawValue)")
       UserDefaults.standard.setValue(LaunchLifecycleState.stillRunning.rawValue, forKey: currentLaunchName)
     }
   }
@@ -593,7 +593,7 @@ class UIState {
               if let prevLaunch = launchDict[playerLaunchID],
                  let playerKeyFromPrev = prevLaunch.playerKeys.remove(savedWindow.saveName.string) {
                 assert(playerLaunchID < launch.id, "Expected playerLaunchID (\(playerLaunchID)) to be less than launch.id (\(launch.id))")
-                log.verbose{"Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID) but is now part of launch \(launch.id)"}
+                log.verbose("Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID) but is now part of launch \(launch.id)")
                 launch.playerKeys.insert(playerKeyFromPrev)
               }
             }
@@ -638,7 +638,7 @@ class UIState {
     }
 
     let culledLaunches = launchesNewestToOldest.filter{ $0.hasAnyData }
-    log.verbose{"Found saved launches (current=\(currentLaunchID)): \(culledLaunches)"}
+    log.verbose("Found saved launches (current=\(currentLaunchID)): \(culledLaunches)")
     return culledLaunches
   }
 

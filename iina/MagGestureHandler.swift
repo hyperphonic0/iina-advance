@@ -160,7 +160,7 @@ extension PlayerWindowController {
       let inputWidth = musicModeGeo.windowFrame.width
       let desiredWidth = (inputWidth * targetScale).rounded()
       outputGeo = musicModeGeo.scalingVideo(toWidth: desiredWidth)
-      log.verbose{"Scaling pinched video in music mode, scale=\(targetScale) reqWidth=\(desiredWidth) → result=\(outputGeo)"}
+      log.verbose("Scaling pinched video in music mode, scale=\(targetScale) reqWidth=\(desiredWidth) → result=\(outputGeo)")
 
     } else {
       let originalGeo = windowedModeGeo
@@ -177,7 +177,7 @@ extension PlayerWindowController {
       }
 
       outputGeo = intendedGeo.refitted(using: .stayInside)
-      log.verbose{"Scaling pinched video in windowed mode, scale=\(targetScale) → result=\(outputGeo)"}
+      log.verbose("Scaling pinched video in windowed mode, scale=\(targetScale) → result=\(outputGeo)")
     }
     setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: submitResult)
   }

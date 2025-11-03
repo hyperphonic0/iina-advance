@@ -130,7 +130,7 @@ struct PlayerSaveState: CustomStringConvertible {
     if let (_, _, isInPip,  _, _) = PlayerSaveState.parseMiscWindowBools(props) {
       isWindowInPiP = isInPip
     } else {
-      Logger.log.error{"Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted); will assume window is not in PiP"}
+      Logger.log.error("Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted); will assume window is not in PiP")
       isWindowInPiP = false
     }
     let layoutState = LayoutState.fromCSV(layoutStateCSV, isInPiP: isWindowInPiP)
@@ -194,7 +194,7 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     guard playlistPathList.count == playlistBookmarks.count else {
-      log.error{"Cannot use bookmarks for restore: found \(playlistBookmarks.count) bookmarks but \(playlistPathList.count) paths! Returning paths as-is"}
+      log.error("Cannot use bookmarks for restore: found \(playlistBookmarks.count) bookmarks but \(playlistPathList.count) paths! Returning paths as-is")
       return playlistPathList
     }
 
@@ -206,13 +206,13 @@ struct PlayerSaveState: CustomStringConvertible {
         restoredPlaylistPaths.append(resolvedPath)
         resolvedCount += 1
         if resolvedPath != storedPath {
-          log.debug{"Playlist item from bookmark resolved to a new path than previously stored: \(resolvedPath.pii.quoted) vs. \(storedPath.pii.quoted)"}
+          log.debug("Playlist item from bookmark resolved to a new path than previously stored: \(resolvedPath.pii.quoted) vs. \(storedPath.pii.quoted)")
         }
       } else {
         restoredPlaylistPaths.append(storedPath)
       }
     }
-    log.debug{"Resolved \(resolvedCount)/\(playlistPathList.count) playlist items from bookmarks"}
+    log.debug("Resolved \(resolvedCount)/\(playlistPathList.count) playlist items from bookmarks")
     return restoredPlaylistPaths
      */
   }
@@ -496,7 +496,7 @@ struct PlayerSaveState: CustomStringConvertible {
   static func parseMiscWindowBools(_ properties: [String: Any]) -> (isMiniaturized: Bool, isHidden: Bool, isInPip: Bool,
                                                                     isWindowMiniaturizedDueToPip: Bool, isPausedPriorToInteractiveMode: Bool)? {
     guard let stateString = PlayerSaveState.string(for: .miscWindowBools, properties) else {
-      log.error{"Failed to restore from miscWindowBools: pref not found!"}
+      log.error("Failed to restore from miscWindowBools: pref not found!")
       return nil
     }
 
@@ -508,7 +508,7 @@ struct PlayerSaveState: CustomStringConvertible {
           let isInPip = Bool.yn(splitted[2]),
           let isWindowMiniaturizedDueToPip = Bool.yn(splitted[3]),
           let isPausedPriorToInteractiveMode = Bool.yn(splitted[4]) else {
-      log.error{"Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)!"}
+      log.error("Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)!")
       return nil
     }
     return (isMiniaturized, isHidden, isInPip, isWindowMiniaturizedDueToPip, isPausedPriorToInteractiveMode)

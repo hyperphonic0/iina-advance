@@ -131,7 +131,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
           guard !AppDelegate.shared.isTerminating else { return }
           let sw = Utility.Stopwatch()
           self.refreshUI()  // async!
-          Logger.log.verbose{"Total time for WelcomeWindow initial reload: \(sw) ms. Showing window"}
+          Logger.log.verbose("Total time for WelcomeWindow initial reload: \(sw) ms. Showing window")
           super.openWindow(sender)
           // Do this after super.openWindow, to ensure zoom animation is activated
           self.isFirstLoad = false
@@ -275,7 +275,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     }
 
     guard FileManager.default.fileExists(atPath: lastFile.path) else {
-      Logger.log.debug{"File does not exist at lastPlaybackURL: \(lastFile.path.pii.quoted)"}
+      Logger.log.debug("File does not exist at lastPlaybackURL: \(lastFile.path.pii.quoted)")
       return nil
     }
     return lastFile
@@ -302,7 +302,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
         recentDocuments = recentsUnfiltered
       }
 
-      Logger.log.verbose{"[ReloadWelcomeWindow] Resolved \(self.recentDocuments.count) recentDocuments in \(sw) ms"}
+      Logger.log.verbose("[ReloadWelcomeWindow] Resolved \(self.recentDocuments.count) recentDocuments in \(sw) ms")
 
       // Refresh UI:
 
@@ -316,10 +316,10 @@ class InitialWindowController: WindowController, NSWindowDelegate {
       // Debug logging:
       if Logger.isEnabled(.verbose) {
         let last = lastPlaybackURL?.path.pii.quoted ?? "nil"
-        Logger.log.verbose{"[ReloadWelcomeWindow] Recents displayed=\(recentDocuments.count)/\(recentsUnfiltered.count) lastPlaybackURL=\(last)"}
+        Logger.log.verbose("[ReloadWelcomeWindow] Recents displayed=\(recentDocuments.count)/\(recentsUnfiltered.count) lastPlaybackURL=\(last)")
 
         for (index, url) in recentDocuments.enumerated() {
-          Logger.log.verbose{"Recents[\(index)]: \(url.path.pii.quoted)"}
+          Logger.log.verbose("Recents[\(index)]: \(url.path.pii.quoted)")
         }
       }
     }
@@ -331,7 +331,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
   // Need to add special logic around `close()` so that it doesn't think the last window is being closed, and decide to quit.
   func closePriorToOpeningPlayerWindow() {
     guard let window, window.isOpen else { return }
-    Logger.log.verbose{"Welcome window closing prior to opening player window"}
+    Logger.log.verbose("Welcome window closing prior to opening player window")
     self.close()
   }
 }

@@ -128,7 +128,7 @@ class StartupHandler {
       isOpeningNewWindowsForOpenedFiles = true
     }
 
-    Logger.log.debug{"Opening URLs: count=\(urls.count) cli=\((cli != nil).yn) multipleWindows=\(openingMultipleWindows.yn)"}
+    Logger.log.debug("Opening URLs: count=\(urls.count) cli=\((cli != nil).yn) multipleWindows=\(openingMultipleWindows.yn)")
     var totalFilesOpened = 0
 
     var lastPlayer: PlayerCore? = nil
@@ -136,7 +136,7 @@ class StartupHandler {
     if openingMultipleWindows {
       if urls.count > 10 {
         // TODO: put up a confirmation prompt
-        Logger.log.warn{"User requested to open a large number of windows (count: \(urls.count))"}
+        Logger.log.warn("User requested to open a large number of windows (count: \(urls.count))")
       }
       for url in urls {
         // open one window per file
@@ -180,7 +180,7 @@ class StartupHandler {
       Logger.log.verbose("Notifying user nothing was opened")
       Utility.showAlert("nothing_to_open")
     } else {
-      Logger.log.verbose{"Total new players opening: \(pwcsForOpenFiles.count), with \(totalFilesOpened) files"}
+      Logger.log.verbose("Total new players opening: \(pwcsForOpenFiles.count), with \(totalFilesOpened) files")
       if AppDelegate.isInteractiveLaunch {
         // Set pwcsForOpenFiles so they can be tracked & shown when ready:
         self.pwcsForOpenFiles = pwcsForOpenFiles
@@ -214,7 +214,7 @@ class StartupHandler {
     }
 
     let pastLaunches: [UIState.LaunchState] = UIState.shared.collectLaunchStateForRestore()
-    log.verbose{"Found \(pastLaunches.count) past launches to restore"}
+    log.verbose("Found \(pastLaunches.count) past launches to restore")
     if pastLaunches.isEmpty {
       return false
     }
@@ -254,19 +254,19 @@ class StartupHandler {
       if (onlyWindow == WindowAutosaveName.welcome && action == .welcomeWindow)
           || (onlyWindow == WindowAutosaveName.openURL && action == .openPanel)
           || (onlyWindow == WindowAutosaveName.playbackHistory && action == .historyWindow) {
-        log.verbose{"Nothing to restore: the only open window was identical to launch action (\(action))"}
+        log.verbose("Nothing to restore: the only open window was identical to launch action (\(action))")
         // Skip the prompts below because they are just unnecessary nagging
         return false
       }
     }
 
-    log.verbose{"Starting restore of \(savedWindowsBackToFront.count) windows"}
+    log.verbose("Starting restore of \(savedWindowsBackToFront.count) windows")
     Preference.set(true, for: .isRestoreInProgress)
 
     let app = AppDelegate.shared
     // Show windows one by one, starting at back and iterating to front:
     for savedWindow in savedWindowsBackToFront {
-      log.verbose{"Starting restore of window: \(savedWindow.saveName)\(savedWindow.isMinimized ? " (minimized)" : "")"}
+      log.verbose("Starting restore of window: \(savedWindow.saveName)\(savedWindow.isMinimized ? " (minimized)" : "")")
 
       switch savedWindow.saveName {
       case .playbackHistory:
@@ -306,11 +306,11 @@ class StartupHandler {
       case .playerWindow(let id):
         restorePlayerWindowFromPriorLaunch(savedWindow, playerID: id)
       case .newFilter, .editFilter, .saveFilter:
-        log.debug{"Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping"}
+        log.debug("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping")
         continue
       default:
         // Note: Guide is not saved
-        log.error{"Cannot restore unrecognized autosave enum: \(savedWindow.saveName)"}
+        log.error("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)")
         continue
       }
 
@@ -324,7 +324,7 @@ class StartupHandler {
     assert(DispatchQueue.isExecutingIn(.main))
 
     let log = UIState.shared.log
-    log.debug{"Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)"}
+    log.debug("Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
 
     guard let savedState = UIState.shared.getPlayerSaveState(forPlayerID: id) else {
       log.errorDebugAlert{"Cannot restore window: could not find saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)"}
@@ -390,7 +390,7 @@ class StartupHandler {
     assert(DispatchQueue.isExecutingIn(.main))
     let log = Logger.Subsystem.restore
     guard state == .doneEnqueuing else {
-      log.error{"Restore timed out but state is \(state)"}
+      log.error("Restore timed out but state is \(state)")
       return
     }
 
@@ -414,8 +414,8 @@ class StartupHandler {
       namesStalled.append(str)
     }
 
-    log.debug{"Restore timed out. Progress: \(namesReady.count)/\(wcsToRestore.count). Stalled: \(namesStalled)"}
-    log.debug{"Prompting user whether to discard them & continue, or quit"}
+    log.debug("Restore timed out. Progress: \(namesReady.count)/\(wcsToRestore.count). Stalled: \(namesStalled)")
+    log.debug("Prompting user whether to discard them & continue, or quit")
 
     let countStalled = "\(wcsStalled.count)"
     let countTotal = "\(wcsToRestore.count)"
@@ -529,22 +529,22 @@ class StartupHandler {
       if isOpeningNewWindowsForOpenedFiles {
         // If isOpeningNewWindowsForOpenedFiles is true, the check below will only pass once pwcsForOpenFiles becomes non-nil.
         guard let pwcsForOpenFiles else {
-          log.verbose{"Startup: isOpeningNewWindowsForOpenedFiles=Y but pwcsForOpenFiles is nil; returning"}
+          log.verbose("Startup: isOpeningNewWindowsForOpenedFiles=Y but pwcsForOpenFiles is nil; returning")
           return
         }
 
         // If opening more than 1 file, proceed immediately. Otherwise wait for it to be ready.
         guard pwcsForOpenFiles.count > 1 || (pwcsForOpenFiles.count == pwcsDoneWithFileOpen.count) else {
-          log.verbose{"Startup: still waiting for opened file"}
+          log.verbose("Startup: still waiting for opened file")
           return
         }
       }
 
       let newWindCount = pwcsForOpenFiles?.count ?? 0
       if newWindCount == 0 && wcsToRestore.count == 0 {
-        log.verbose{"No windows exist to wait for; finishing startup"}
+        log.verbose("No windows exist to wait for; finishing startup")
       } else {
-        log.verbose{"All \(wcsToRestore.count) restored \(newWindCount > 0 ? " & \(newWindCount) new windows ready. Showing all" : "")"}
+        log.verbose("All \(wcsToRestore.count) restored \(newWindCount > 0 ? " & \(newWindCount) new windows ready. Showing all" : "")")
       }
       restoreTimer.cancel()
 
@@ -554,7 +554,7 @@ class StartupHandler {
       for wc in wcsToRestore {
         let wndName = wc.window!.savedStateName
         let windowIsMinimized = UIState.shared.windowsMinimized.contains(wndName)
-        log.verbose{"Showing restored window: \(wndName)\(windowIsMinimized ? " (minimized)" : "")"}
+        log.verbose("Showing restored window: \(wndName)\(windowIsMinimized ? " (minimized)" : "")")
         guard !windowIsMinimized else { continue }
 
         if let prevWindowNumber {
@@ -569,7 +569,7 @@ class StartupHandler {
       if let pwcsForOpenFiles {
         for pwc in pwcsForOpenFiles {
           let wndName = pwc.window!.savedStateName
-          log.verbose{"Showing new window: \(wndName)"}
+          log.verbose("Showing new window: \(wndName)")
 
           // Make this topmost
           if let prevWindowNumber {
@@ -590,7 +590,7 @@ class StartupHandler {
       NSApp.activate(ignoringOtherApps: true)
 
       if Preference.bool(for: .isRestoreInProgress) {
-        log.verbose{"Done restoring windows (\(wcsToRestore.count))"}
+        log.verbose("Done restoring windows (\(wcsToRestore.count))")
         Preference.set(false, for: .isRestoreInProgress)
       } else {
         log.verbose("Done opening windows")
@@ -614,12 +614,12 @@ class StartupHandler {
     }
 
     let timeElapsed: Double = CFAbsoluteTimeGetCurrent() - launchStartTime
-    Logger.log.verbose{"Done with startup (\(timeElapsed.stringMaxFrac2)s)"}
+    Logger.log.verbose("Done with startup (\(timeElapsed.stringMaxFrac2)s)")
   }
 
 
   func initAppUI() {
-    Logger.log.debug{"Init app UI"}
+    Logger.log.debug("Init app UI")
     if NSApp.activationPolicy() != .regular {
       NSApp.setActivationPolicy(.regular)
     }
@@ -664,28 +664,28 @@ class StartupHandler {
 
     guard let window = notification.object as? NSWindow else { return }
     guard let wc = window.windowController as? WindowController else {
-      log.error{"Restored window is ready, but no WindowController for window: \(window.savedStateName.quoted)!"}
+      log.error("Restored window is ready, but no WindowController for window: \(window.savedStateName.quoted)!")
       return
     }
     let savedStateName = window.savedStateName
 
     if isDoneLaunching {
       if window.isMiniaturized {
-        Logger.log.verbose{"OpenWindow: deminiaturizing window \(window.savedStateName.quoted)"}
+        Logger.log.verbose("OpenWindow: deminiaturizing window \(window.savedStateName.quoted)")
         // Need to call this instead of showWindow if minimized (otherwise there are visual glitches)
         window.deminiaturize(self)
       } else {
-        Logger.log.verbose{"OpenWindow: showing window \(window.savedStateName.quoted)"}
+        Logger.log.verbose("OpenWindow: showing window \(window.savedStateName.quoted)")
         wc.showWindow(window)
       }
 
     } else { // Not done launching
       if Preference.bool(for: .isRestoreInProgress), wcsToRestore.contains(wc) {
         wcsDoneWithRestore.insert(wc)
-        log.verbose{"Restored window is ready: \(savedStateName.quoted). Progress: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")"}
+        log.verbose("Restored window is ready: \(savedStateName.quoted). Progress: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")")
       } else if let pwcsForOpenFiles, pwcsForOpenFiles.contains(where: {$0.window!.savedStateName == savedStateName}) {
         pwcsDoneWithFileOpen.append(wc as! PlayerWindowController)
-        log.verbose{"OpenedFile window is ready: \(savedStateName.quoted)"}
+        log.verbose("OpenedFile window is ready: \(savedStateName.quoted)")
       }
       // Else may be multiple files opened at launch
 
@@ -718,7 +718,7 @@ class StartupHandler {
     let removedFromRestoreCount = toRestoreCountOld - toRestoreCountNew
     let removedFromOpenCount = toOpenFileCountOld - toOpenFileCountNew
 
-    log.verbose{"Canceled wait for window: \(window.savedStateName.quoted) (restore=\(removedFromRestoreCount), open=\(removedFromOpenCount)). Progress is now: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")"}
+    log.verbose("Canceled wait for window: \(window.savedStateName.quoted) (restore=\(removedFromRestoreCount), open=\(removedFromOpenCount)). Progress is now: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")")
 
     showWindowsIfReady()
   }

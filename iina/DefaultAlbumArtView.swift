@@ -72,11 +72,11 @@ extension PlayerWindowController {
     guard let showDefaultArt else { return }
 
     if showDefaultArt {
-      log.verbose{"Showing defaultAlbumArt"}
+      log.verbose("Showing defaultAlbumArt")
       defaultAlbumArtView.addToThenLayout(inside: viewportView)
       sortViewportViewSubviews()
     } else {
-      log.verbose{"Hiding defaultAlbumArt"}
+      log.verbose("Hiding defaultAlbumArt")
       defaultAlbumArtView.removeFromLayout()
     }
   }

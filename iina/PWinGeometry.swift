@@ -736,7 +736,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                        lockViewportToVideoSize: Bool? = nil,
                        mode: PlayerWindowMode? = nil) -> PWinGeometry {
     guard videoViewAspect >= 0 else {
-      log.error{"[geo] PWinGeometry cannot scale viewport: videoViewAspect (\(videoViewAspect)) is invalid!"}
+      log.error("[geo] PWinGeometry cannot scale viewport: videoViewAspect (\(videoViewAspect)) is invalid!")
       assert(false)
       return self
     }
@@ -1062,7 +1062,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     guard !mode.isFullScreen else {
       let outputGeo = clone(outsideBars: newOutsideBars)
-      log.verbose{"[ResizeBars] Mode is FS (\(mode)): Returning same windowFrame but with closed bars"}
+      log.verbose("[ResizeBars] Mode is FS (\(mode)): Returning same windowFrame but with closed bars")
       return outputGeo
     }
 
@@ -1118,7 +1118,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let newScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: outputWindowFrame, fallbackScreenID: screenID)
 
     let outputGeo = clone(windowFrame: outputWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars)
-    log.verbose{"[ResizeBars] ΔW=\(ΔW.logStr) ΔH=\(ΔH.logStr) pinMax=\(pinWidthOrHeightIfAtMax.yn) moveToKeepInScreen:\(screenFit.shouldMoveWindowToKeepInContainer.yesno)"}
+    log.verbose("[ResizeBars] ΔW=\(ΔW.logStr) ΔH=\(ΔH.logStr) pinMax=\(pinWidthOrHeightIfAtMax.yn) moveToKeepInScreen:\(screenFit.shouldMoveWindowToKeepInContainer.yesno)")
     return outputGeo
   }
 
@@ -1439,14 +1439,14 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     let extraWidthNeeded = Constants.Distance.MusicMode.minWindowWidth - windowFrame.width
     if extraWidthNeeded > 0 {
-      log.verbose{"MusicModeGeoInit: width too small; adding: \(extraWidthNeeded)"}
+      log.verbose("MusicModeGeoInit: width too small; adding: \(extraWidthNeeded)")
       windowFrame = NSRect(origin: windowFrame.origin, size: CGSize(width: windowFrame.width + extraWidthNeeded, height: windowFrame.height))
     }
 
     if playlistShown {
       let extraHeightNeeded = Constants.Distance.MusicMode.minPlaylistHeight - musicModePlaylistHeight
       if extraHeightNeeded > 0 {
-        log.verbose{"MusicModeGeoInit: height too small for playlist; adding: \(extraHeightNeeded)"}
+        log.verbose("MusicModeGeoInit: height too small for playlist; adding: \(extraHeightNeeded)")
         windowFrame = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - extraHeightNeeded,
                              width: windowFrame.width, height: windowFrame.height + extraHeightNeeded)
       }
@@ -1467,7 +1467,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let isValidHeight = playlistShown ? (musicModePlaylistHeight >= Constants.Distance.MusicMode.minPlaylistHeight) : (musicModePlaylistHeight == 0)
     if !isValidHeight {
       if !playlistShown {
-        log.warn{"[geo] MusicMode: playlistHeight (\(musicModePlaylistHeight)) is invalid (will try to correct); playlistShown=\(playlistShown.yn) minPlaylistH=\(Constants.Distance.MusicMode.minPlaylistHeight)"}
+        log.warn("[geo] MusicMode: playlistHeight (\(musicModePlaylistHeight)) is invalid (will try to correct); playlistShown=\(playlistShown.yn) minPlaylistH=\(Constants.Distance.MusicMode.minPlaylistHeight)")
         let heightDiff = musicModePlaylistHeight
         let outputWindowFrame = NSRect(origin: NSPoint(x: windowFrame.origin.x, y: windowFrame.origin.y + heightDiff), size: NSSize(width: windowFrame.width, height: windowFrame.height - heightDiff))
         return forMusicMode(windowFrame: outputWindowFrame, screenID: screenID, video: video,
@@ -1522,13 +1522,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   func withPlaylistShown(_ shown: Bool) -> PWinGeometry {
     guard shown != self.isMusicModePlaylistShown else { return self }
     guard mode == .musicMode else {
-      log.error{"Cannot toggle playlist visibility: not in music mode: \(self)"}
+      log.error("Cannot toggle playlist visibility: not in music mode: \(self)")
       return self
     }
 
     let inputPlistHeight = musicModePlaylistHeight
     let showPlaylist = !isMusicModePlaylistShown
-    log.verbose{"Toggling playlist visibility: \((!showPlaylist).yn) → \(showPlaylist.yn)"}
+    log.verbose("Toggling playlist visibility: \((!showPlaylist).yn) → \(showPlaylist.yn)")
 
     let outputWindowHeight: CGFloat
     if showPlaylist {

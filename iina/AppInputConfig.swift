@@ -119,7 +119,7 @@ struct AppInputConfig {
       let notification = Notification(name: .iinaAppInputConfigDidChange,
                                       object: nil, userInfo: data)
       if DebugConfig.logBindingsRebuild {
-        log.verbose{"Completed AppInputConfig v\(appInputConfigNew.version); posting notification: \(notification.name.rawValue.quoted)"}
+        log.verbose("Completed AppInputConfig v\(appInputConfigNew.version); posting notification: \(notification.name.rawValue.quoted)")
       }
       NotificationCenter.default.post(notification)
     }
@@ -137,7 +137,7 @@ struct AppInputConfig {
     let confManager = ConfTableState.manager
     let inputConfFile = confManager.loadConfFile()
     guard !inputConfFile.failedToLoad else {
-      log.error{"Cannot get bindings from \(inputConfFile.confName.pii.quoted): file failed to load"}
+      log.error("Cannot get bindings from \(inputConfFile.confName.pii.quoted): file failed to load")
       let fileName = URL(fileURLWithPath: inputConfFile.filePath).lastPathComponent
       confManager.sendErrorAlert(key: "keybinding_config.error", args: [fileName])
       ConfTableState.current.fallBackToDefaultConf()
@@ -220,7 +220,7 @@ struct AppInputConfig {
   func logEnabledBindings() {
     if DebugConfig.logBindingsRebuild, Logger.enabled && Logger.Level.preferred >= .verbose {
       let bindingList = bindingCandidateList.filter({ $0.isEnabled })
-      AppInputConfig.log.verbose{"Currently enabled bindings (\(bindingList.count)):\n\(bindingList.map { "\t\($0)" }.joined(separator: "\n"))"}
+      AppInputConfig.log.verbose("Currently enabled bindings (\(bindingList.count)):\n\(bindingList.map { "\t\($0)" }.joined(separator: "\n"))")
     }
   }
 

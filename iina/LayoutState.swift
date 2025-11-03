@@ -557,7 +557,7 @@ struct LayoutState {
         // TODO: be more sophisticated
         geo = geo.clone(windowFrame: newWindowFrame).refitted(using: .stayInside)
       }
-      log.verbose{"Applied windowedGeo offsetIndex=\(offsetIndex) for multi-window open: \(resizedBarsGeo.windowFrame) → \(geo.windowFrame)"}
+      log.verbose("Applied windowedGeo offsetIndex=\(offsetIndex) for multi-window open: \(resizedBarsGeo.windowFrame) → \(geo.windowFrame)")
     }
     return geo
   }

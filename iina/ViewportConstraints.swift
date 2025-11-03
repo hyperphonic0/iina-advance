@@ -120,7 +120,7 @@ struct ViewportConstraints {
                           spacerExact: QuadConstraint,
                           center: Constraint) {
 
-    log.verbose{"Δ ViewportConstraints ≔ MaxSize:{W=super.w-\(wMax?.description ?? "nil") H=super.h-\(hMax?.description ?? "nil")}@\(whMax_Priority.rawValue) SpcMax=\(spacerMax) SpcMin=\(spacerMin) SpcPref=\(spacerPreferred) Center=\(center) Aspect=\(aspect)"}
+    log.verbose("Δ ViewportConstraints ≔ MaxSize:{W=super.w-\(wMax?.description ?? "nil") H=super.h-\(hMax?.description ?? "nil")}@\(whMax_Priority.rawValue) SpcMax=\(spacerMax) SpcMin=\(spacerMin) SpcPref=\(spacerPreferred) Center=\(center) Aspect=\(aspect)")
 
     // - Priorities, Constants
 
@@ -280,7 +280,7 @@ extension ViewportView {
     guard let pwc else { return }
 
     guard geometry.isViewportShown else {
-      log.verbose{"VideoView: video not visible; will remove constraints"}
+      log.verbose("VideoView: video not visible; will remove constraints")
       removeViewportConstraints()
       return
     }

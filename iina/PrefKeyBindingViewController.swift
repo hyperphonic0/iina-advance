@@ -75,13 +75,13 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   }
 
   override func viewWillAppear() {
-    Logger.log.verbose{"Key Bindings pref pane will appear"}
+    Logger.log.verbose("Key Bindings pref pane will appear")
     super.viewWillAppear()
     BindingTableState.manager.applyStateUpdate(AppInputConfig.current)  // bring up to date
     BindingTableState.manager.enableObservers()
     if DebugConfig.logBindingsRebuild {
       let keyList = PlayerManager.shared.getOrCreateDemo().mpv.getInputKeyList()
-      Logger.log.debug{"Key List (count=\(keyList.count)): \(keyList)"}
+      Logger.log.debug("Key List (count=\(keyList.count)): \(keyList)")
     }
   }
 
@@ -104,13 +104,13 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
     // But do not load them unless the user navigates to the Key Bindings preference pane.
     InputConfFileCache.fileDQ.async {
       let defaults = Constants.InputConf.defaults
-      AppInputConfig.log.debug{"Loading \(defaults.count) builtin conf files into cache"}
+      AppInputConfig.log.debug("Loading \(defaults.count) builtin conf files into cache")
       for confName in defaults.keys {
         InputConfFile.cache.getOrLoadConfFile(confName: confName)
       }
 
       let currentState = ConfTableState.current
-      AppInputConfig.log.debug{"Loading \(currentState.userConfDict.count) user conf files into cache"}
+      AppInputConfig.log.debug("Loading \(currentState.userConfDict.count) user conf files into cache")
       for confName in currentState.userConfDict.keys {
         InputConfFile.cache.getOrLoadConfFile(confName: confName)
       }
@@ -134,7 +134,7 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
 
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingSearchFieldShouldUpdate, object: nil, queue: .main) { notification in
       guard let newStringValue = notification.object as? String else {
-        Logger.log.error{"Received \(notification.name.rawValue.quoted) with invalid object: \(type(of: notification.object))"}
+        Logger.log.error("Received \(notification.name.rawValue.quoted) with invalid object: \(type(of: notification.object))")
         return
       }
       guard self.bindingSearchField.stringValue != newStringValue else {

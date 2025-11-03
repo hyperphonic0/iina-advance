@@ -58,7 +58,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     case .scaleWithViewport:
       let rawSizePercentage = CGFloat(min(max(0, Preference.integer(for: .thumbnailRawSizePercentage)), 100))
       let thumbWidth = Int(round(videoSizeRaw.width * rawSizePercentage / 100))
-      log.verbose{"Thumbnail native width will be \(Int(videoSizeRaw.width))px * \(Int(rawSizePercentage))% → \(thumbWidth)px"}
+      log.verbose("Thumbnail native width will be \(Int(videoSizeRaw.width))px * \(Int(rawSizePercentage))% → \(thumbWidth)px")
       return thumbWidth
     case .fixedSize:
       let requestedLength = CGFloat(Preference.integer(for: .thumbnailFixedLength))
@@ -68,22 +68,22 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
         if requestedLength > videoSizeRaw.height {
           // Do not go bigger than video's native width
           thumbWidth = videoSizeRaw.width
-          log.debug{"Video's height is longer than its width, & thumbLength (\(requestedLength)) is larger than video's native height (\(videoSizeRaw.height)); clamping thumbWidth to \(videoSizeRaw.width)"}
+          log.debug("Video's height is longer than its width, & thumbLength (\(requestedLength)) is larger than video's native height (\(videoSizeRaw.height)); clamping thumbWidth to \(videoSizeRaw.width)")
         } else {
           thumbWidth = round(requestedLength * videoSizeRaw.aspect)
-          log.debug{"Video's height (\(videoSizeRaw.height)) is longer than its width (\(videoSizeRaw.width)); scaling down thumbWidth to \(thumbWidth)"}
+          log.debug("Video's height (\(videoSizeRaw.height)) is longer than its width (\(videoSizeRaw.width)); scaling down thumbWidth to \(thumbWidth)")
         }
       } else {
         // Match requested size to video width
         if requestedLength > videoSizeRaw.width {
-          log.debug{"Requested thumblLength (\(requestedLength)) is larger than video's native width; clamping thumbWidth to \(videoSizeRaw.width)"}
+          log.debug("Requested thumblLength (\(requestedLength)) is larger than video's native width; clamping thumbWidth to \(videoSizeRaw.width)")
           thumbWidth = videoSizeRaw.width
         } else {
           thumbWidth = requestedLength
         }
       }
       let thumbWidthInt = Int(thumbWidth)
-      log.verbose{"Using fixed thumbnail width of \(thumbWidthInt)"}
+      log.verbose("Using fixed thumbnail width of \(thumbWidthInt)")
       return thumbWidthInt
     }
   }
@@ -92,7 +92,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     assert(DispatchQueue.isExecutingIn(PlayerCore.thumbnailQueue))
 
     guard FileManager.default.fileExists(atPath: mediaFilePath) else {
-      log.debug{"Aborting thumbnails load. File does not exist: \(mediaFilePath.pii.quoted)"}
+      log.debug("Aborting thumbnails load. File does not exist: \(mediaFilePath.pii.quoted)")
       return
     }
 
@@ -108,14 +108,14 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
           }
           return
         } else {
-          log.error{"Expected at least \(AppData.minThumbnailsPerFile) thumbnails, but found only \(thumbnails.count) (width \(thumbnailWidth)px). Will try to regenerate"}
+          log.error("Expected at least \(AppData.minThumbnailsPerFile) thumbnails, but found only \(thumbnails.count) (width \(thumbnailWidth)px). Will try to regenerate")
         }
       } else {
-        log.error{"Cannot read thumbnails from cache \(cacheName.quoted), width \(thumbnailWidth)px. Will try to regenerate"}
+        log.error("Cannot read thumbnails from cache \(cacheName.quoted), width \(thumbnailWidth)px. Will try to regenerate")
       }
     }
 
-    log.debug{"Generating new thumbnails for file \(mediaFilePath.pii.quoted), width=\(thumbnailWidth)"}
+    log.debug("Generating new thumbnails for file \(mediaFilePath.pii.quoted), width=\(thumbnailWidth)")
     ffmpegController.generateThumbnail(forFile: mediaFilePath, thumbWidth:Int32(thumbnailWidth))
   }
 
@@ -158,11 +158,11 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     // quick & dirty workaround for indexing method discrepancy: just add 1
     let progress = progress + 1
     guard !isCancelled else {
-      log.debug{"Discarding thumbnails update (\(width)px width, progress \(progress)) due to cancel"}
+      log.debug("Discarding thumbnails update (\(width)px width, progress \(progress)) due to cancel")
       return
     }
     guard mediaFilePath == filename, width == thumbnailWidth else {
-      log.warn{"Discarding thumbnails update (\(width)px width, progress \(progress)): either sourcePath or thumbnailWidth does not match expected"}
+      log.warn("Discarding thumbnails update (\(width)px width, progress \(progress)): either sourcePath or thumbnailWidth does not match expected")
       return
     }
     let targetCount = ffmpegController.thumbnailCount + 1
@@ -174,7 +174,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
       if let thumbnails = thumbnails, thumbnails.count > 0 {
         addThumbnails(thumbnails)
       }
-      log.debug{"Got \(thumbnails?.count ?? 0) more \(width)px thumbs (\(self.thumbnails.count) so far), progress: \(progress) / \(targetCount)"}
+      log.debug("Got \(thumbnails?.count ?? 0) more \(width)px thumbs (\(self.thumbnails.count) so far), progress: \(progress) / \(targetCount)")
       thumbnailsProgress = Double(progress) / Double(targetCount)
       DispatchQueue.main.async { [self] in
         // TODO: this call is currently unnecessary. But should add code to make thumbnails displayable as they come in.
@@ -185,11 +185,11 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
 
   func didGenerate(_ thumbnails: [FFThumbnail], forFile filename: String, thumbWidth width: Int32, succeeded: Bool) {
     guard !isCancelled else {
-      log.debug{"Discarding thumbnails (\(width)px), due to cancel"}
+      log.debug("Discarding thumbnails (\(width)px), due to cancel")
       return
     }
     guard mediaFilePath == filename, width == thumbnailWidth else {
-      log.error{"Ignoring generated thumbnails (\(width)px width): either filePath or thumbnailWidth does not match expected"}
+      log.error("Ignoring generated thumbnails (\(width)px width): either filePath or thumbnailWidth does not match expected")
       return
     }
 
@@ -202,7 +202,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
         log.trace{"Got final count of \(thumbnails.count) thumbs, width=\(width)px"}
         addThumbnails(thumbnails)
       }
-      log.debug{"Done generating thumbnails, success=\(succeeded.yn) count=\(self.thumbnails.count) width=\(width)px"}
+      log.debug("Done generating thumbnails, success=\(succeeded.yn) count=\(self.thumbnails.count) width=\(width)px")
       guard succeeded else { return }
 
       player.refreshTouchBarSlider()

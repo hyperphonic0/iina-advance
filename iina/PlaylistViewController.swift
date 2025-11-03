@@ -96,7 +96,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private var enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration)
 
   func updateTableColors() {
-    player.log.verbose{"Playlist sidebar: updating table colors"}
+    player.log.verbose("Playlist sidebar: updating table colors")
     // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
     let effectiveAppearance = view.window?.effectiveAppearance ?? view.effectiveAppearance
     effectiveAppearance.applyAppearanceFor {
@@ -118,7 +118,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   private func updateVerticalConstraints() {
     // may not be available until after load
-    player.log.verbose{"Playlist: updating downshift=\(downshift), tabHeight=\(tabHeight)"}
+    player.log.verbose("Playlist: updating downshift=\(downshift), tabHeight=\(tabHeight)")
     self.buttonTopConstraint?.animateToConstant(downshift)
     self.tabHeightConstraint?.animateToConstant(tabHeight)
     view.needsLayout = true
@@ -223,11 +223,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     // Set up notification observers last
     playlistChangeObserver = NotificationCenter.default.addObserver(forName: .iinaPlaylistChanged, object: player, queue: .main) { [self] _ in
       guard player.playlistShown else {
-        player.log.verbose{"Got iinaPlaylistChanged, but playlist is not visible. Ignoring"}
+        player.log.verbose("Got iinaPlaylistChanged, but playlist is not visible. Ignoring")
         return
       }
 
-      player.log.verbose{"Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…"}
+      player.log.verbose("Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…")
       playlistTotalLengthIsReady = false
       reloadData(playlist: true, chapters: false)
     }
@@ -257,7 +257,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     // not including the Playlist table. See note in QuickSettingsViewController.viewDidLoad().
     view.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
 
-    player.log.verbose{"PlaylistView viewDidLoad done"}
+    player.log.verbose("PlaylistView viewDidLoad done")
   }
 
   deinit {
@@ -283,9 +283,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     pwc.animationPipeline.submitInstantTask{ [self] in
       guard let playlistTableView else { return }
       if let entryIndex = player.info.currentPlayback?.playlistPos {
-        player.log.verbose{"Scrolling playlist table to index \(entryIndex)"}
+        player.log.verbose("Scrolling playlist table to index \(entryIndex)")
         guard isViewLoaded else {
-          player.log.verbose{"Playlist table not loaded yet, skipping scroll"}
+          player.log.verbose("Playlist table not loaded yet, skipping scroll")
           return
         }
         playlistTableView.scrollRowToVisible(entryIndex)
@@ -308,7 +308,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     if chapters {
       pwc.animationPipeline.submitInstantTask { [self] in
-        player.log.verbose{"Reloading chapters table for \(player.info.chapters.count) entries"}
+        player.log.verbose("Reloading chapters table for \(player.info.chapters.count) entries")
         chapterTableView.reloadData()
       }
     }
@@ -339,7 +339,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           doAfterReload()
         }
       })
-      player.log.verbose{"Updating playlist table via diff"}
+      player.log.verbose("Updating playlist table via diff")
       playlistTableView.post(tableUIChange)
     } else {
       pwc.animationPipeline.submitInstantTask { [self] in
@@ -377,7 +377,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       playlistTotalLengthIsReady = true
       playlistTotalLength = totalDuration
     } else {
-      player.log.verbose{"Playlist: failed to recaculate total duration; hiding length label"}
+      player.log.verbose("Playlist: failed to recaculate total duration; hiding length label")
     }
     pwc.animationPipeline.submitInstantTask {
       self.showTotalLength()
@@ -414,7 +414,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   /** Switch tab (for internal call) */
   private func switchToTab(_ tab: Sidebar.Tab) {
     guard tab.group == .playlist else {
-      player.log.error{"PlaylistViewController: cannot switch to tab: \(tab)"}
+      player.log.error("PlaylistViewController: cannot switch to tab: \(tab)")
       return
     }
     assert(pwc.isInMiniPlayer || pwc.isOpen(sidebarTabGroup: .playlist),
@@ -506,7 +506,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   private func copyPlaylistRowsToPasteboard(_ rowIndexes: IndexSet, to pboard: NSPasteboard) {
-    player.log.verbose{"Copying playlist indexes to pasteboard: \(rowIndexes.toArray())"}
+    player.log.verbose("Copying playlist indexes to pasteboard: \(rowIndexes.toArray())")
     do {
       let indexesData = try NSKeyedArchiver.archivedData(withRootObject: rowIndexes, requiringSecureCoding: true)
       let playlist = displayedPlaylist
@@ -541,7 +541,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   @discardableResult
   func pasteFromPasteboard(from pboard: NSPasteboard) -> Bool {
     let playlistItems = readPlaylistItemsFromPasteboard(pboard)
-    player.log.verbose{"User pasted \(playlistItems.count) items from pasteboard into playlist"}
+    player.log.verbose("User pasted \(playlistItems.count) items from pasteboard into playlist")
 
     guard !playlistItems.isEmpty else {
       return false
@@ -704,7 +704,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let oldNowPlayingIndex = lastNowPlayingIndex
     let newNowPlayingIndex = newNowPlayingIndex ?? player.info.currentPlayback?.playlistPos ?? oldNowPlayingIndex
     if newNowPlayingIndex != oldNowPlayingIndex {
-      player.log.verbose{"Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)"}
+      player.log.verbose("Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)")
       self.lastNowPlayingIndex = newNowPlayingIndex
     } else if !forceRedraw {
       return
@@ -813,7 +813,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   /// Rebuilds playlist table's `Track Name` column cell
   private func updateCellForPlaylistTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
     guard let cachedMeta = loadCachedItem(forRowIndex: rowIndex) else {
-      player.log.error{"No playlist item found for rowIndex \(rowIndex). Skipping cell update"}
+      player.log.error("No playlist item found for rowIndex \(rowIndex). Skipping cell update")
       return
     }
 
@@ -933,7 +933,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       guard player.isActive else { return }
       let playlistItems = displayedPlaylist
       var titles: [String?] = []
-      player.log.verbose{"Playlist: updating caches for \(playlistItems.count) rows…"}
+      player.log.verbose("Playlist: updating caches for \(playlistItems.count) rows…")
 
       for rowIndex in 0..<playlistItems.count {
         // Get updated title from mpv
@@ -957,7 +957,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         }
 
         // Finally, append a task to recalculate the total length. Do not show it until it is done!
-        player.log.verbose{"Playlist: finished cache updates for \(playlistItems.count) rows in \(sw.secElapsedString)"}
+        player.log.verbose("Playlist: finished cache updates for \(playlistItems.count) rows in \(sw.secElapsedString)")
         refreshTotalLength()
       }
     }
@@ -999,12 +999,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @IBAction func contextMenuRemove(_ sender: ContextMenuItem) {
-    player.log.verbose{"User chose to remove rows \(sender.targetRows.map{$0}) from playlist"}
+    player.log.verbose("User chose to remove rows \(sender.targetRows.map{$0}) from playlist")
     player.removePlaylistRows(sender.targetRows, .registerUndoRedo)
   }
 
   @IBAction func contextMenuDeleteFile(_ sender: ContextMenuItem) {
-    player.log.debug{"User chose to delete files from playlist at indexes: \(sender.targetRows.map{$0})"}
+    player.log.debug("User chose to delete files from playlist at indexes: \(sender.targetRows.map{$0})")
 
     let playlistItems = displayedPlaylist
     var successes = IndexSet()
@@ -1013,7 +1013,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       guard !playlistItems[index].isNetworkResource else { continue }
       let url = playlistItems[index].url
       do {
-        player.log.debug{"Trashing row \(index): \(url.standardizedFileURL)"}
+        player.log.debug("Trashing row \(index): \(url.standardizedFileURL)")
         try FileManager.default.trashItem(at: url, resultingItemURL: nil)
         successes.insert(index)
       } catch let error {
@@ -1046,7 +1046,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   @IBAction func contextMenuShowInFinder(_ sender: ContextMenuItem) {
     let urls: [URL] = getFiles(fromPlaylistRows: sender.targetRows)
     guard !urls.isEmpty else {
-      player.log.error{"Show in Finder failed: found no files in \(sender.targetRows.count) provided rows!"}
+      player.log.error("Show in Finder failed: found no files in \(sender.targetRows.count) provided rows!")
       return
     }
     playlistTableView.deselectAll(nil)
@@ -1104,7 +1104,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private func buildContextMenu(_ menu: NSMenu) {
     let playlistItems = displayedPlaylist
     let rows = getTargetRowsForContextMenu()
-    player.log.verbose{"Building context menu for rows: \(rows.map{ $0 })"}
+    player.log.verbose("Building context menu for rows: \(rows.map{ $0 })")
 
     menu.removeAllItems()
 

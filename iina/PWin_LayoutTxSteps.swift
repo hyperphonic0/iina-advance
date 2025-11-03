@@ -83,7 +83,7 @@ extension PlayerWindowController {
 
     if transition.isEnteringFullScreen {
       /// `windowedModeGeo` should already be kept up to date. Might be hard to track down bugs...
-      log.verbose{"[\(transition.name)] Entering full screen; priorWindowedGeometry = \(windowedModeGeo)"}
+      log.verbose("[\(transition.name)] Entering full screen; priorWindowedGeometry = \(windowedModeGeo)")
 
       // Hide traffic light buttons & title during the animation.
       // Do not move this block. It needs to go here.
@@ -110,7 +110,7 @@ extension PlayerWindowController {
       if transition.isEnteringLegacyFullScreen {
         // stylemask
         let hasTitled = window.styleMask.contains(.titled)
-        log.verbose{"[\(transition.name)] Entering legacy FS\(hasTitled ? ": removing window styleMask: .titled" : "")"}
+        log.verbose("[\(transition.name)] Entering legacy FS\(hasTitled ? ": removing window styleMask: .titled" : "")")
         if #available(macOS 10.16, *) {
           if hasTitled {
             window.styleMask.remove(.titled)
@@ -175,7 +175,7 @@ extension PlayerWindowController {
   /// Expected to be animated.
   func fadeOutOldViews(_ transition: LayoutTransition) {
     let outputLayout = transition.outputLayout
-    log.verbose{"[\(transition.name)] FadeOutOldViews"}
+    log.verbose("[\(transition.name)] FadeOutOldViews")
 
     fadeableViews.clearFadeableSets()
 
@@ -274,13 +274,13 @@ extension PlayerWindowController {
       // Fade out OSC
       if !outputLayout.enableOSC || outputLayout.controlBarGeo.isTwoRowBarOSC {
         if oscOneRowView.superview != nil {
-          log.verbose{"[\(transition.name)] Removing oscOneRowView from window"}
+          log.verbose("[\(transition.name)] Removing oscOneRowView from window")
           oscOneRowView.dispose()
         }
       }
       if !outputLayout.enableOSC || !outputLayout.controlBarGeo.isTwoRowBarOSC {
         if oscTwoRowView.superview != nil {
-          log.verbose{"[\(transition.name)] Removing oscTwoRowView from window"}
+          log.verbose("[\(transition.name)] Removing oscTwoRowView from window")
           oscTwoRowView.dispose()
         }
       }
@@ -540,7 +540,7 @@ extension PlayerWindowController {
 
       if transition.isEnteringMusicMode {
         // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
-        log.verbose{"Entering music mode: adding miniPlayer view to bottomBarView"}
+        log.verbose("Entering music mode: adding miniPlayer view to bottomBarView")
         miniPlayer.loadIfNeeded()
         bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
         miniPlayer.view.addAllConstraintsToFillSuperview()
@@ -580,7 +580,7 @@ extension PlayerWindowController {
 
       } else if transition.isExitingMusicMode {
         // If exiting music mode, need to restore views early in this step
-        log.verbose{"Cleaning up for music mode exit"}
+        log.verbose("Cleaning up for music mode exit")
         miniPlayer.loadIfNeeded()
         miniPlayer.view.removeFromSuperview()
 
@@ -609,7 +609,7 @@ extension PlayerWindowController {
     // [Re-]add OSC:
     if outputLayout.enableOSC {
       let newGeo = outputLayout.controlBarGeo
-      log.verbose{"Setting up OSC: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(newGeo.playIconSize) playIconSpacing=\(newGeo.playIconSpacing)"}
+      log.verbose("Setting up OSC: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(newGeo.playIconSize) playIconSpacing=\(newGeo.playIconSpacing)")
 
       rebuildOSCToolbar(transition, .midTransitionHiddenUpdates)
 
@@ -621,11 +621,11 @@ extension PlayerWindowController {
         let oscContentView: NSView
         if newGeo.isTwoRowBarOSC {
           oscContentView = oscTwoRowView
-          log.verbose{"Adding subviews to oscTwoRowView for top bar, topBarHeight=\(outputLayout.topBarHeight)"}
+          log.verbose("Adding subviews to oscTwoRowView for top bar, topBarHeight=\(outputLayout.topBarHeight)")
           oscTwoRowView.updateSubviews(from: self, newGeo)
         } else {
           oscContentView = oscOneRowView
-          log.verbose{"Adding subviews to oscOneRowView for top bar"}
+          log.verbose("Adding subviews to oscOneRowView for top bar")
           oscOneRowView.updateSubviews(from: self, newGeo)
         }
 
@@ -643,11 +643,11 @@ extension PlayerWindowController {
         let oscContentView: NSView
         if newGeo.isTwoRowBarOSC {
           oscContentView = oscTwoRowView
-          log.verbose{"Adding subviews to oscTwoRowView for bottom bar, bottomBarHeight=\(outputLayout.bottomBarHeight)"}
+          log.verbose("Adding subviews to oscTwoRowView for bottom bar, bottomBarHeight=\(outputLayout.bottomBarHeight)")
           oscTwoRowView.updateSubviews(from: self, newGeo)
         } else {
           oscContentView = oscOneRowView
-          log.verbose{"Adding subviews to oscOneRowView for bottom bar"}
+          log.verbose("Adding subviews to oscOneRowView for bottom bar")
           oscOneRowView.updateSubviews(from: self, newGeo)
         }
 
@@ -662,7 +662,7 @@ extension PlayerWindowController {
       case .floating:
         currentControlBar = controlBarFloating
         if !viewportView.containsSubview(controlBarFloating) {
-          log.verbose{"Adding controlBarFloating to contentView"}
+          log.verbose("Adding controlBarFloating to contentView")
           viewportView.addSubview(controlBarFloating)
           sortViewportViewSubviews()
 
@@ -748,7 +748,7 @@ extension PlayerWindowController {
 
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging || transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight {
         let hasClearBG = transition.outputLayout.oscBackgroundIsClear
-        log.verbose{"Updating OSC colors: hasClearBG=\(hasClearBG.yn)"}
+        log.verbose("Updating OSC colors: hasClearBG=\(hasClearBG.yn)")
 
         playButton.setOSCColors(hasClearBG: hasClearBG)
         leftArrowButton.setOSCColors(hasClearBG: hasClearBG)
@@ -824,10 +824,10 @@ extension PlayerWindowController {
         case .crop:
           if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
             selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-            log.verbose{"Setting crop box selectedRect from prevFilter: \(selectedRect)"}
+            log.verbose("Setting crop box selectedRect from prevFilter: \(selectedRect)")
           } else {
             selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
-            log.verbose{"Setting crop box selectedRect to default whole videoSize: \(selectedRect)"}
+            log.verbose("Setting crop box selectedRect to default whole videoSize: \(selectedRect)")
           }
         case .freeSelecting, .none:
           selectedRect = .zero
@@ -869,7 +869,7 @@ extension PlayerWindowController {
       // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
       // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
       // be called via windowDidChangeScreen.
-      log.verbose{"Skipped applyThemeMaterial due to missing window or screen"}
+      log.verbose("Skipped applyThemeMaterial due to missing window or screen")
     }
 
     // Other misc views

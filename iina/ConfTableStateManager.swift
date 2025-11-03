@@ -116,13 +116,13 @@ class ConfTableStateManager: NSObject {
   func appendBindingsToUserConfFile(_ mappingsToAppend: [KeyMapping], targetConfName: String) {
     guard targetConfName != ConfTableState.current.selectedConfName else {
       // Should use BindingTableState instead
-      AppInputConfig.log.verbose{"appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\(targetConfName.quoted))! Ignoring."}
+      AppInputConfig.log.verbose("appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\(targetConfName.quoted))! Ignoring.")
       return
     }
 
     let inputConfFile = fileCache.getOrLoadConfFile(confName: targetConfName)
     guard !inputConfFile.failedToLoad else {
-      AppInputConfig.log.error{"Cannot append to conf: \(targetConfName.quoted): file was not loaded properly!"}
+      AppInputConfig.log.error("Cannot append to conf: \(targetConfName.quoted): file was not loaded properly!")
       return
     }
 
@@ -330,7 +330,7 @@ class ConfTableStateManager: NSObject {
     let currentState = ConfTableState.current
     let targetConfName = confName ?? currentState.selectedConfName
 
-    AppInputConfig.log.debug{"Loading InputConf file for \(targetConfName.pii.quoted)"}
+    AppInputConfig.log.debug("Loading InputConf file for \(targetConfName.pii.quoted)")
     return fileCache.getOrLoadConfFile(confName: targetConfName)
   }
 }

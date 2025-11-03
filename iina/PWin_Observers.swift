@@ -211,7 +211,7 @@ extension PlayerWindowController {
         if let window, let screen = window.screen {
           applyThemeMaterial(window, screen)
         } else {
-          log.debug{"Could not apply theme change: no window or screen!"}
+          log.debug("Could not apply theme change: no window or screen!")
         }
       }
     case .playerWindowOpacity:
@@ -275,7 +275,7 @@ extension PlayerWindowController {
         .roundSliderBarRects,
         .sliderBarDoneColor:
 
-      log.verbose{"Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted) = \(String(describing: newValue))"}
+      log.verbose("Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted) = \(String(describing: newValue))")
       updateTitleBarAndOSC()
     case .alwaysShowSliderKnob:
       playSlider.needsDisplay = true
@@ -285,7 +285,7 @@ extension PlayerWindowController {
     case .lockViewportToVideoSize:
       animationPipeline.submitInstantTask { [self] in
         if let isLocked = newValue as? Bool, isLocked {
-          log.debug{"Pref \(key.rawValue.quoted) changed to \(isLocked): resizing viewport to remove any excess space"}
+          log.debug("Pref \(key.rawValue.quoted) changed to \(isLocked): resizing viewport to remove any excess space")
           var tasks = buildResizeViewportTasks()
 
           tasks.append(.instantTask { [self] in  // do after resize tasks
@@ -312,7 +312,7 @@ extension PlayerWindowController {
         .enableThumbnailForRemoteFiles,
         .enableThumbnailForMusicMode:
 
-      log.verbose{"Pref \(key.rawValue.quoted) changed: requesting thumbs regen"}
+      log.verbose("Pref \(key.rawValue.quoted) changed: requesting thumbs regen")
       // May need to remove thumbs or generate new ones: let method below figure it out:
       player.reloadThumbnails()
 
@@ -395,14 +395,14 @@ extension PlayerWindowController {
       guard let window else { return }
       let effectiveAppearanceName = window.effectiveAppearance.name.rawValue
       guard cachedEffectiveAppearanceName != effectiveAppearanceName else { return }
-      log.verbose{"Window appearance changed to: \(effectiveAppearanceName)"}
+      log.verbose("Window appearance changed to: \(effectiveAppearanceName)")
       cachedEffectiveAppearanceName = effectiveAppearanceName
 
       animationPipeline.submitInstantTask { [self] in
         if let screen = window.screen {
           applyThemeMaterial(window, screen)
         } else {
-          log.debug{"Could not apply appearance change: no screen!"}
+          log.debug("Could not apply appearance change: no screen!")
         }
       }
     default:

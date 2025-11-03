@@ -526,7 +526,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   private func updateOSCSliders(from newGeo: ControlBarGeometry) {
     guard newGeo.isValid else {
-      Logger.log.error{"Cannot update Settings UI; OSC geometry is invalid: \(newGeo)"}
+      Logger.log.error("Cannot update Settings UI; OSC geometry is invalid: \(newGeo)")
       return
     }
     toolIconSizeSlider.intValue = Int32(newGeo.toolIconSizeTicks)
@@ -551,7 +551,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
                                         playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
     let previewTotalToolbarWidth = previewGeo.totalToolbarWidth
 
-    Logger.log.verbose{"Updating OSC toolbar preview geometry: origBarHeight=\(newGeo.barHeight) toolIconSize=\(previewGeo.toolIconSize), toolIconSpacing=\(previewGeo.toolIconSpacing) previewToolbarWidth=\(previewTotalToolbarWidth) previewToolbarHeight=\(previewGeo.fullIconHeight)"}
+    Logger.log.verbose("Updating OSC toolbar preview geometry: origBarHeight=\(newGeo.barHeight) toolIconSize=\(previewGeo.toolIconSize), toolIconSpacing=\(previewGeo.toolIconSpacing) previewToolbarWidth=\(previewTotalToolbarWidth) previewToolbarHeight=\(previewGeo.fullIconHeight)")
 
     // Prevent constraint violations by lowering these briefly...
     oscToolbarStackViewHeightConstraint.priority = .defaultHigh
@@ -626,7 +626,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     animationPipeline.submitInstantTask { [self] in
       let newBarHeight = sender.doubleValue
       guard newBarHeight != Preference.double(for: .oscBarHeight) else {
-        Logger.log.verbose{"No change to oscBarHeight (\(newBarHeight)); aborting oscBarHeightAction"}
+        Logger.log.verbose("No change to oscBarHeight (\(newBarHeight)); aborting oscBarHeightAction")
         return
       }
       let geo = ControlBarGeometry(mode: .windowedNormal, barHeight: sender.doubleValue)

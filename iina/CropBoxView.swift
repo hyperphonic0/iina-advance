@@ -137,7 +137,7 @@ class CropBoxView: NSView, DraggableObject {
     if isDraggingToResize || isDraggingNew {
       settingsViewController.pwc.currentDragObject = self
     }
-    pwc.log.verbose{"CropBoxView mouseDown, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)"}
+    pwc.log.verbose("CropBoxView mouseDown, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)")
   }
 
   override func mouseDragged(with event: NSEvent) {
@@ -189,7 +189,7 @@ class CropBoxView: NSView, DraggableObject {
   }
 
   override func mouseUp(with event: NSEvent) {
-    Logger.log.verbose{"CropBoxView mouseUp, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)"}
+    Logger.log.verbose("CropBoxView mouseUp, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)")
     guard let pwc = settingsViewController.pwc else { return }
 
     if isDraggingToResize || isDraggingNew {
@@ -207,7 +207,7 @@ class CropBoxView: NSView, DraggableObject {
   }
 
   func cancelDrag() {
-    Logger.log.verbose{"CropBoxView: cancelling drag"}
+    Logger.log.verbose("CropBoxView: cancelling drag")
     isDraggingToResize = false
     isDraggingNew = false
   }

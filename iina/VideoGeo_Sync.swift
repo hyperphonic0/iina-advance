@@ -31,19 +31,19 @@ extension GeometryTransform.ContextStage2 {
 
     static func fromJSON(_ json: String?, _ objName: String, _ log: Logger.Subsystem) -> MpvVideoParams? {
       guard let json else {
-        log.error{"Failed to parse \(objName): obj is nil"}
+        log.error("Failed to parse \(objName): obj is nil")
         return nil
       }
       let jsonModified = json.replacingOccurrences(of: "crop-", with: "crop_")  // make palatable for decoder default strategy
       guard let jsonData = jsonModified.data(using: .utf8) else {
-        log.error{"Failed create JSON data for \(objName)"}
+        log.error("Failed create JSON data for \(objName)")
         return nil
       }
       do {
         let decoder = JSONDecoder()
         return try decoder.decode(MpvVideoParams.self, from: jsonData)
       } catch {
-        log.error{"Failed to get or parse \(objName) from mpv: \(error)"}
+        log.error("Failed to get or parse \(objName) from mpv: \(error)")
         return nil
       }
     }
@@ -64,19 +64,19 @@ extension GeometryTransform.ContextStage2 {
   /// updates.
   func syncVideoParamsFromMpv(startingWith inputVideoGeo: VideoGeometry) -> VideoGeometry? {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-    log.verbose{"[GTF:\(name)] Syncing videoGeo from mpv for \(currentPlayback.url.lastPathComponent.pii.quoted) vid=\(String(vidTrackID))|\(currentMediaAudioStatus)"}
+    log.verbose("[GTF:\(name)] Syncing videoGeo from mpv for \(currentPlayback.url.lastPathComponent.pii.quoted) vid=\(String(vidTrackID))|\(currentMediaAudioStatus)")
 
 
     let vid = Int(player.mpv.getInt(MPVOption.TrackSelection.vid))
     guard vid == vidTrackID else {
-      log.verbose{"[GTF:\(name)] Aborting: current mpv video track (\(vid)) does not match expected (\(vidTrackID))"}
+      log.verbose("[GTF:\(name)] Aborting: current mpv video track (\(vid)) does not match expected (\(vidTrackID))")
       return nil
     }
 
     // FIXME: audioStatus==notAudio for playlist which auto-plays audio
     if (currentMediaAudioStatus == .isAudioWithoutArt || currentMediaAudioStatus == .isAudioWithArtHidden) || vidTrackID == 0 {
       // Default album art is square
-      log.debug{"[GTF:\(name)] Using albumArtGeometry ∵ isAudio=\(currentMediaAudioStatus.isAudio.yn) vid=\(vidTrackID)"}
+      log.debug("[GTF:\(name)] Using albumArtGeometry ∵ isAudio=\(currentMediaAudioStatus.isAudio.yn) vid=\(vidTrackID)")
       return VideoGeometry.albumArtGeometry(log)
     }
 
@@ -86,7 +86,7 @@ extension GeometryTransform.ContextStage2 {
     // Fortunately we are already in the mpv queue. So we shouldn't block the UI, but we will be blocking mpv from processing
     // more user requests which would only add to the burden.
     guard let videoDecParams: MpvVideoParams = getWithRetries(propName: MPVProperty.videoDecParams) else {
-      log.verbose{"[GTF:\(name)] Aborting: could not get video-dec-params for playback"}
+      log.verbose("[GTF:\(name)] Aborting: could not get video-dec-params for playback")
       return nil
     }
 
@@ -94,13 +94,13 @@ extension GeometryTransform.ContextStage2 {
     /// This is known to return `nil` during startup, when loading a media file on a remote volume.
     /// Just wait for it as well.
     guard let videoOutParams: MpvVideoParams = getWithRetries(propName: MPVProperty.videoOutParams) else {
-      log.verbose{"[GTF:\(name)] Aborting: could not get video-out-params for playback"}
+      log.verbose("[GTF:\(name)] Aborting: could not get video-out-params for playback")
       return nil
     }
 
     player.pwc.animationPipeline.gtfLock.withLock{ [self] in
       guard player.pwc.animationPipeline.wantsVideoGeoSync else { return }
-      log.verbose{"Setting wantsVideoGeoSync = NO"}
+      log.verbose("Setting wantsVideoGeoSync = NO")
       player.pwc.animationPipeline.wantsVideoGeoSync = false
     }
 
@@ -120,7 +120,7 @@ extension GeometryTransform.ContextStage2 {
       rawHeight = videoDecParams.h
     } else {
       assert(vidTrackID != 0, "[GTF:\(name)]: vidTrackID is 0, but we expected it to be non-zero")
-      log.warn{"[GTF:\(name)]: mpv \(MPVProperty.videoDecParams) has 0 for w or h. Using cached size instead"}
+      log.warn("[GTF:\(name)]: mpv \(MPVProperty.videoDecParams) has 0 for w or h. Using cached size instead")
       rawWidth = nil
       rawHeight = nil
     }
@@ -135,11 +135,11 @@ extension GeometryTransform.ContextStage2 {
     if let vfCrop = player.getIINACropFilter(),
        let cropLabelFromIINACrop = player.deriveCropLabel(from: vfCrop, rawVideoSize: inputVideoGeo.videoSizeRaw) {
       cropLabel = cropLabelFromIINACrop
-      log.verbose{"[GTF:\(name)] Determined crop label from iina_crop filter: \(cropLabel.quoted)"}
+      log.verbose("[GTF:\(name)] Determined crop label from iina_crop filter: \(cropLabel.quoted)")
       isNotCropped = false  // override this...it is still not perfect
     } else if isNotCropped {
       cropLabel = AppData.noneCropIdentifier
-      log.verbose{"[GTF:\(name)] Looks like video is not cropped"}
+      log.verbose("[GTF:\(name)] Looks like video is not cropped")
     } else {
       // Check for other sources of crop.
       // Try to calculate the label from the raw values, working backwards.
@@ -153,7 +153,7 @@ extension GeometryTransform.ContextStage2 {
       cropLabel = player.deriveCropLabel(x: videoOutParams.crop_x, y: videoOutParams.crop_y,
                                          w: videoOutParams.crop_w, h: videoOutParams.crop_h,
                                          rawVideoSize: rawVideoSize)!
-      log.verbose{"[GTF:\(name)] Determined crop label from mpv params: \(cropLabel.quoted)"}
+      log.verbose("[GTF:\(name)] Determined crop label from mpv params: \(cropLabel.quoted)")
     }
 
     let streamRotation = videoDecParams.rotate
@@ -200,7 +200,7 @@ extension GeometryTransform.ContextStage2 {
       let wDiff = abs(1 - (ours.width / CGFloat(dwidth)))
       let hDiff = abs(1 - (ours.height / CGFloat(dheight)))
       if wDiff >= 0.01 || hDiff >= 0.01 {
-        player.log.error{"[\(name)] ❌ SanityCheck-B failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours))! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect) videoSizeD=\(videoSizeDisplay)|\(videoSizeDisplay.mpvAspect) (from \(useDSizeFromDecParams ? "dec-params" : "out-params"))"}
+        player.log.error("[\(name)] ❌ SanityCheck-B failed: mpv dsize (\(dwidth)x\(dheight)) ≠ our videoSizeCA (\(ours))! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect) videoSizeD=\(videoSizeDisplay)|\(videoSizeDisplay.mpvAspect) (from \(useDSizeFromDecParams ? "dec-params" : "out-params"))")
       }
     }
 #endif
@@ -217,21 +217,21 @@ extension GeometryTransform.ContextStage2 {
     let newCustomAspectValue = Aspect(string: userAspectLabel)?.value ?? 0.0
     if oldCustomAspectValue != newCustomAspectValue {
       // FIXME: Default aspect needs i18n
-      log.verbose{"[GTF:\(name)] Changing userAspectLabel: \(inputVideoGeo.userAspectLabel.quoted) → \(userAspectLabel.quoted)"}
+      log.verbose("[GTF:\(name)] Changing userAspectLabel: \(inputVideoGeo.userAspectLabel.quoted) → \(userAspectLabel.quoted)")
       player.sendOSD(.aspect(userAspectLabel))
     } else if userRotation != inputVideoGeo.userRotation {
       // Favor rotation OSD message over crop, because rotation increments < 90° will also trigger crop
-      log.verbose{"[GTF:\(name)] Changing rotation: \(userRotation)"}
+      log.verbose("[GTF:\(name)] Changing rotation: \(userRotation)")
       player.sendOSD(.rotation(userRotation))
     } else if inputVideoGeo.selectedCropLabel != cropLabel,
               !pwc.isAnimatingLayoutTransition {
       // Don't show crop OSD when disabling it for entering interactive mode (layout transition)
-      log.verbose{"[GTF:\(name)] Changing selectedCropLabel: \(inputVideoGeo.selectedCropLabel.quoted) → \(cropLabel.quoted)"}
+      log.verbose("[GTF:\(name)] Changing selectedCropLabel: \(inputVideoGeo.selectedCropLabel.quoted) → \(cropLabel.quoted)")
       let osdLabel = cropLabel.isEmpty ? AppData.customCropIdentifier : cropLabel
       player.sendOSD(.crop(osdLabel))
     }
 
-    log.debug{"[GTF:\(name)] Derived videoGeo from mpv video-params: \(outputVideoGeo)"}
+    log.debug("[GTF:\(name)] Derived videoGeo from mpv video-params: \(outputVideoGeo)")
     return outputVideoGeo
   }
 
@@ -252,23 +252,23 @@ extension GeometryTransform.ContextStage2 {
       let pathFound = mpv.getString(MPVProperty.path)
 
       guard pathFound == pathExpected else {
-        log.warn{"[GTF:\(name)] Path mismatch! Will abort transform; mpv is likely backed up. Expected=\(pathExpected.pii.quoted); Actual: \(pathFound?.pii.quoted ?? "<nil>")"}
+        log.warn("[GTF:\(name)] Path mismatch! Will abort transform; mpv is likely backed up. Expected=\(pathExpected.pii.quoted); Actual: \(pathFound?.pii.quoted ?? "<nil>")")
         return nil
       }
 
       if let json = mpv.getString(mpvPropertyName) {
-        log.verbose{"[GTF:\(name)] VidTrack-\(vidTrackID) mpv \(mpvPropertyName): \(json)"}
+        log.verbose("[GTF:\(name)] VidTrack-\(vidTrackID) mpv \(mpvPropertyName): \(json)")
         let videoParams = MpvVideoParams.fromJSON(json, mpvPropertyName, log)
         return videoParams
       }
 
       retryNum += 1
       guard retryNum <= maxRetries else {
-        log.verbose{"[GTF:\(name)] Vid \(vidTrackID) has mpv \(mpvPropertyName): nil"}
+        log.verbose("[GTF:\(name)] Vid \(vidTrackID) has mpv \(mpvPropertyName): nil")
         return nil
       }
       let pauseDuration = Constants.TimeInterval.videoParamsRetryInterval
-      log.debug{"[GTF:\(name)] Could not get \(mpvPropertyName) from mpv. Will retry in \(pauseDuration)s (tries remaining: \(maxRetries - retryNum + 1))"}
+      log.debug("[GTF:\(name)] Could not get \(mpvPropertyName) from mpv. Will retry in \(pauseDuration)s (tries remaining: \(maxRetries - retryNum + 1))")
       Thread.sleep(forTimeInterval: pauseDuration)
     }
   }

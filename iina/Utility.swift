@@ -94,7 +94,7 @@ class Utility {
       alert.beginSheetModal(for: sheetWindow)
     } else {
       let response = alert.runModal()
-      Logger.log.verbose{"Alert response: \(response.rawValue)"}
+      Logger.log.verbose("Alert response: \(response.rawValue)")
 
     }
     if disableMenus {
@@ -153,7 +153,7 @@ class Utility {
       return false
     } else {
       let response = panel.runModal()
-      Logger.log.verbose{"Ask panel response: \(response)"}
+      Logger.log.verbose("Ask panel response: \(response)")
       return response == .alertFirstButtonReturn
     }
   }
@@ -449,7 +449,7 @@ class Utility {
     // check exist
     if !FileManager.default.fileExists(atPath: path) {
       do {
-        Logger.log.debug{"Creating directory: \(url.path.pii.quoted)"}
+        Logger.log.debug("Creating directory: \(url.path.pii.quoted)")
       try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
       } catch {
         Logger.fatal("Cannot create directory: \(url)")
@@ -521,7 +521,7 @@ class Utility {
   static let thumbnailCacheURL: URL = {
     let appThumbnailCacheUrl = cacheURL.appendingPathComponent(AppData.thumbnailCacheFolder, isDirectory: true)
     createDirIfNotExist(url: appThumbnailCacheUrl)
-    Logger.log.debug{"Using thumb cache dir: \(appThumbnailCacheUrl.path.pii.quoted)"}
+    Logger.log.debug("Using thumb cache dir: \(appThumbnailCacheUrl.path.pii.quoted)")
     return appThumbnailCacheUrl
   }()
 

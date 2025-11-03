@@ -397,7 +397,7 @@ class GLVideoLayer: CAOpenGLLayer {
     guard let renderContext = mpvRenderContext else { return }
     guard var iccData = profile.iccProfileData else {
       let name = profile.localizedName ?? "unnamed"
-      player.log.warn{"Color space \(name) does not contain ICC profile data"}
+      player.log.warn("Color space \(name) does not contain ICC profile data")
       return
     }
     iccData.withUnsafeMutableBytes { (ptr: UnsafeMutableRawBufferPointer) in

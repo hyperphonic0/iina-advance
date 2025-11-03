@@ -48,11 +48,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func addTabForPlayer(_ pwc: PlayerWindowController) {
     if let tabService, let mainWindow = tabService.mainWindow {
-      Logger.log.debug{"Adding tab for PlayerWindow \(pwc.player.label.quoted)"}
+      Logger.log.debug("Adding tab for PlayerWindow \(pwc.player.label.quoted)")
       tabService.createTab(newWindowController: pwc, inWindow: mainWindow, ordered: .above)
     } else {
       // If either tabService or mainWindow is nil, there are no prev tabbed windows
-      Logger.log.debug{"Creating new TabService with initial PlayerWindow \(pwc.player.label.quoted)"}
+      Logger.log.debug("Creating new TabService with initial PlayerWindow \(pwc.player.label.quoted)")
       tabService = TabService(initialWindowController: pwc)
     }
   }
@@ -221,12 +221,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.initLogging()
     AppDetailsLogging.shared.logAllAppDetails()
 
-    Logger.log.debug{"App will launch\(AppDelegate.isInteractiveLaunch ? "" : " (non-interactive)"). LaunchID: \(UIState.shared.currentLaunchID)"}
+    Logger.log.debug("App will launch\(AppDelegate.isInteractiveLaunch ? "" : " (non-interactive)"). LaunchID: \(UIState.shared.currentLaunchID)")
 
-    Logger.log.debug{"All app arguments: \(cmdLineArgs)"}
+    Logger.log.debug("All app arguments: \(cmdLineArgs)")
     if let cli = startupHandler.commandLineState {
-      Logger.log.debug{"Parsed IINA CLI args: stdin=\(cli.isStdin.yn) separateWindows=\(cli.openSeparateWindows?.yn ?? "-") musicMode=\(cli.enterMusicMode.yn) pip=\(cli.enterPIP.yn). Filenames from arguments: \(cli.filenames.map{$0.pii})"}
-      Logger.log.debug{"Derived mpv properties from args: \(cli.mpvArguments)"}
+      Logger.log.debug("Parsed IINA CLI args: stdin=\(cli.isStdin.yn) separateWindows=\(cli.openSeparateWindows?.yn ?? "-") musicMode=\(cli.enterMusicMode.yn) pip=\(cli.enterPIP.yn). Filenames from arguments: \(cli.filenames.map{$0.pii})")
+      Logger.log.debug("Derived mpv properties from args: \(cli.mpvArguments)")
     }
 
     // Catch SIGINT signal and stop subprocess gracefully
@@ -261,7 +261,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       ncDefaultObservers.append(.init(NSWindow.didChangeScreenNotification, { noti in
         let window = noti.object as! NSWindow
         let screenID = window.screen?.screenID.quoted ?? "nil"
-        Logger.log.verbose{"WindowDidChangeScreen \(window.windowNumber): \(screenID)"}
+        Logger.log.verbose("WindowDidChangeScreen \(window.windowNumber): \(screenID)")
       }))
     }
 #endif
@@ -346,7 +346,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   func applicationDidFinishLaunching(_ aNotification: Notification) {
-    Logger.log.verbose{"App did finish launching"}
+    Logger.log.verbose("App did finish launching")
     startupHandler.doStartup()
   }
 
@@ -369,7 +369,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       guard let sheetNames = UIState.shared.openSheetsDict[activeWindowName] else { return }
 
       for sheetName in sheetNames {
-        Logger.log.verbose{"Sheet opened: \(sheetName.quoted)"}
+        Logger.log.verbose("Sheet opened: \(sheetName.quoted)")
         UIState.shared.windowsOpen.insert(sheetName)
       }
       UIState.shared.saveCurrentOpenWindowList()
@@ -393,7 +393,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       UIState.shared.removeOpenSheets(fromWindow: activeWindowName)
 
       for sheetName in sheetNames {
-        Logger.log.verbose{"Sheet closed: \(sheetName.quoted)"}
+        Logger.log.verbose("Sheet closed: \(sheetName.quoted)")
         UIState.shared.windowsOpen.remove(sheetName)
       }
 
@@ -419,7 +419,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       // This notification can also happen after windowDidClose notification,
       // so make sure this a window which is recognized.
       if UIState.shared.windowsMinimized.remove(activeWindowName) != nil {
-        Logger.log.verbose{"Minimized window become main; adding to open windows list: \(activeWindowName.quoted)"}
+        Logger.log.verbose("Minimized window become main; adding to open windows list: \(activeWindowName.quoted)")
         UIState.shared.windowsOpen.insert(activeWindowName)
       } else {
         // Do not process. Another listener will handle it
@@ -441,10 +441,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       guard !isTerminating else {
         return
       }
-      Logger.log.verbose{"Window did minimize; adding to minimized windows list: \(savedStateName.quoted)"}
+      Logger.log.verbose("Window did minimize; adding to minimized windows list: \(savedStateName.quoted)")
       if !AppDelegate.shared.startupHandler.isDoneLaunching, let wc = window.windowController as? WindowController,
          AppDelegate.shared.startupHandler.wcsToRestore.contains(wc) {
-        Logger.log.verbose{"Marking window as done with restore: \(savedStateName.quoted)"}
+        Logger.log.verbose("Marking window as done with restore: \(savedStateName.quoted)")
         AppDelegate.shared.startupHandler.wcsDoneWithRestore.insert(wc)
         AppDelegate.shared.startupHandler.showWindowsIfReady()
       }
@@ -464,7 +464,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       guard !isTerminating else {
         return
       }
-      Logger.log.verbose{"App window did deminiaturize; removing from minimized windows list: \(savedStateName.quoted)"}
+      Logger.log.verbose("App window did deminiaturize; removing from minimized windows list: \(savedStateName.quoted)")
       UIState.shared.windowsOpen.insert(savedStateName)
       UIState.shared.windowsMinimized.remove(savedStateName)
       UIState.shared.saveCurrentOpenWindowList()
@@ -487,7 +487,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let windowName = window.savedStateName
     guard !windowName.isEmpty else { return }
 
-    Logger.log.verbose{"Window will close: \(windowName)"}
+    Logger.log.verbose("Window will close: \(windowName)")
 
     let wasOpen = UIState.shared.windowsOpen.remove(windowName) != nil
     let wasMinimized = UIState.shared.windowsMinimized.remove(windowName) != nil
@@ -500,7 +500,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       /// the user closes a window which is not in the foreground.
       UIState.shared.saveCurrentOpenWindowList(excludingWindowName: window.savedStateName)
     } else {
-      Logger.log.verbose{"Window was not listed as open or minimized; skipping state update for \(windowName.quoted)"}
+      Logger.log.verbose("Window was not listed as open or minimized; skipping state update for \(windowName.quoted)")
     }
 
     (window.windowController as? WindowController)?.refreshWindowOpenCloseAnimation()
@@ -523,7 +523,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return false }
     guard startupHandler.state == .doneOpening else {
-      Logger.log.verbose{"App will not terminate due to window closed: not yet done launching (state: \(startupHandler.state))"}
+      Logger.log.verbose("App will not terminate due to window closed: not yet done launching (state: \(startupHandler.state))")
       return false
     }
 
@@ -532,23 +532,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     /// For these reasons we must keep a list of windows which meet our definition of "open", which
     /// may not match Apple's definition which is more closely tied to `window.isVisible`.
     guard UIState.shared.windowsOpen.isEmpty else {
-      Logger.log.verbose{"App will not terminate: \(UIState.shared.windowsOpen.count) windows are still in open list: \(UIState.shared.windowsOpen)"}
+      Logger.log.verbose("App will not terminate: \(UIState.shared.windowsOpen.count) windows are still in open list: \(UIState.shared.windowsOpen)")
       return false
     }
 
     // Window hidden for PiP? Need special check becuase it will not be in windowsOpen set
     if let activePlayer = PlayerManager.shared.activePlayer, activePlayer.pwc.isWindowHidden {
-      Logger.log.verbose{"App will not terminate: found active but hidden player (\(activePlayer.label))"}
+      Logger.log.verbose("App will not terminate: found active but hidden player (\(activePlayer.label))")
       return false
     }
 
     guard AppDelegate.isInteractiveLaunch else {
-      Logger.log.verbose{"Received `'ast window closed' notifiation for non-interactive launch. App will quit"}
+      Logger.log.verbose("Received `'ast window closed' notifiation for non-interactive launch. App will quit")
       return true
     }
 
     guard Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit else {
-      Logger.log.verbose{"Last window was closed. Will do configured action"}
+      Logger.log.verbose("Last window was closed. Will do configured action")
       doActionWhenLastWindowWillClose()
       return false
     }
@@ -556,19 +556,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     assert(Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit,
            "Unexpected actionWhenNoOpenWindow for quit: \(Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow).debugDescription)")
     UIState.shared.clearSavedLaunchForThisLaunch()
-    Logger.log.verbose{"Last window was closed. App will quit as configured via pref"}
+    Logger.log.verbose("Last window was closed. App will quit as configured via pref")
     return true
   }
 
   private func doActionWhenLastWindowWillClose() {
     assert(DispatchQueue.isExecutingIn(.main))
     guard AppDelegate.isInteractiveLaunch else {
-      Logger.log.debug{"Aborting action when last window closed: app-wide UI is disabled"}
+      Logger.log.debug("Aborting action when last window closed: app-wide UI is disabled")
       return
     }
     guard !isTerminating else { return }
     guard let noOpenWindowAction = Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) else { return }
-    Logger.log.verbose{"ActionWhenNoOpenWindow: \(noOpenWindowAction). LastClosedWindowName: \(lastClosedWindowName.quoted)"}
+    Logger.log.verbose("ActionWhenNoOpenWindow: \(noOpenWindowAction). LastClosedWindowName: \(lastClosedWindowName.quoted)")
     var shouldTerminate: Bool = false
 
     switch noOpenWindowAction {
@@ -590,7 +590,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         case .welcome:
           let windowsOpen = UIState.shared.windowsOpen
           guard windowsOpen.isEmpty else {
-            Logger.log.verbose{"LastWindowClosed == ActionWhenNoOpenWindow == welcomeWindow, but \(windowsOpen.count) other windows are open(ing): ignoring"}
+            Logger.log.verbose("LastWindowClosed == ActionWhenNoOpenWindow == welcomeWindow, but \(windowsOpen.count) other windows are open(ing): ignoring")
             return
           }
           quitForAction = .welcomeWindow
@@ -600,7 +600,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       }
 
       if launchAction == quitForAction {
-        Logger.log.debug{"Last window closed was the configured ActionWhenNoOpenWindow. Will quit instead of re-opening it."}
+        Logger.log.debug("Last window closed was the configured ActionWhenNoOpenWindow. Will quit instead of re-opening it.")
         shouldTerminate = true
       } else {
         switch launchAction {
@@ -617,7 +617,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     if shouldTerminate {
-      Logger.log.debug{"Clearing all state for this launch because all windows have closed!"}
+      Logger.log.debug("Clearing all state for this launch because all windows have closed!")
       UIState.shared.clearSavedLaunchForThisLaunch()
       NSApp.terminate(nil)
     }
@@ -644,7 +644,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func application(_ sender: NSApplication, openFiles filePaths: [String]) {
     let shouldIgnoreOpenFile = startupHandler.shouldIgnoreOpenFile
-    Logger.log.debug{"application(openFiles:) called with: \(filePaths.map{$0.pii})\(shouldIgnoreOpenFile ? ". Ignoring; launched from CLI" : "")"}
+    Logger.log.debug("application(openFiles:) called with: \(filePaths.map{$0.pii})\(shouldIgnoreOpenFile ? ". Ignoring; launched from CLI" : "")")
     // if launched from command line, should ignore openFile during launch
     guard !shouldIgnoreOpenFile else { return }
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
@@ -660,7 +660,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       // if installing a plugin package
       if let pluginPackageURL = urls.first(where: { $0.pathExtension == "iinaplgz" }) {
-        Logger.log.debug{"Opening plugin URL: \(pluginPackageURL.absoluteString.pii.quoted)"}
+        Logger.log.debug("Opening plugin URL: \(pluginPackageURL.absoluteString.pii.quoted)")
         showPreferencesWindow(self)
         preferenceWindowController.performAction(.installPlugin(url: pluginPackageURL))
         return
@@ -668,12 +668,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       let openedSomething = startupHandler.openFiles(urls, applyingCLI: nil) > 0
       if openedSomething {
-        Logger.log.verbose{"Replying to NSApp: success"}
+        Logger.log.verbose("Replying to NSApp: success")
         NSApp.reply(toOpenOrPrint: .success)
 
         startupHandler.showWindowsIfReady()
       } else {
-        Logger.log.verbose{"Replying to NSApp: fail"}
+        Logger.log.verbose("Replying to NSApp: fail")
         NSApp.reply(toOpenOrPrint: .failure)
       }
     }
@@ -683,7 +683,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   @objc
   func droppedText(_ pboard: NSPasteboard, userData: String, error: NSErrorPointer) {
-    Logger.log.verbose{"Text dropped on app's Dock icon"}
+    Logger.log.verbose("Text dropped on app's Dock icon")
     guard let url = pboard.string(forType: .string) else { return }
 
     guard let player = PlayerCore.active else { return }
@@ -700,7 +700,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   @objc func handleURLEvent(event: NSAppleEventDescriptor, withReplyEvent replyEvent: NSAppleEventDescriptor) {
     guard let url = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue else { return }
-    Logger.log.debug{"Handling URL event: \(url)"}
+    Logger.log.debug("Handling URL event: \(url)")
     parsePendingURL(url)
   }
 
@@ -847,7 +847,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     let action: Preference.ActionAfterLaunch = Preference.enum(for: .actionAfterLaunch)
-    Logger.log.verbose{"Doing actionAfterLaunch: \(action)"}
+    Logger.log.verbose("Doing actionAfterLaunch: \(action)")
 
     switch action {
     case .welcomeWindow:
@@ -1010,7 +1010,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   func showOpenFileWindow(isAlternativeAction: Bool) {
-    Logger.log.verbose{"Showing OpenFileWindow: isAltAction=\(isAlternativeAction.yesno)"}
+    Logger.log.verbose("Showing OpenFileWindow: isAltAction=\(isAlternativeAction.yesno)")
     guard !isShowingOpenFileWindow else {
       // Do not allow more than one open file window at a time
       Logger.log.debug("Ignoring request to show OpenFileWindow: already showing one")
@@ -1027,7 +1027,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     panel.begin(completionHandler: { [self] result in
       if result == .OK {  /// OK
-        Logger.log.verbose{"OpenFile: user chose \(panel.urls.count) files"}
+        Logger.log.verbose("OpenFile: user chose \(panel.urls.count) files")
         if Preference.bool(for: .recordRecentFiles) && HistoryController.shared.historyEnabled {
           let urls = panel.urls  // must call this on the main thread
           HistoryController.shared.async {
@@ -1049,7 +1049,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   func showOpenURLWindow(isAlternativeAction: Bool) {
-    Logger.log.verbose{"Showing OpenURLWindow: isAltAction=\(isAlternativeAction.yn)"}
+    Logger.log.verbose("Showing OpenURLWindow: isAltAction=\(isAlternativeAction.yn)")
     openURLWindow.isAlternativeAction = isAlternativeAction
     openURLWindow.openWindow(self)
   }

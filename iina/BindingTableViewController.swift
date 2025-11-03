@@ -42,7 +42,7 @@ class BindingTableViewController: NSObject {
   fileprivate var builtinMenuItemIconColor: NSColor = .textColor
 
   init(_ bindingTableView: EditableTableView, selectionDidChangeHandler: @escaping () -> Void) {
-    Logger.log.verbose{"BindingTableViewController init"}
+    Logger.log.verbose("BindingTableViewController init")
     self.tableView = bindingTableView
     self.selectionDidChangeHandler = selectionDidChangeHandler
 
@@ -707,7 +707,7 @@ extension BindingTableViewController: EditableTableViewDelegate {
     }
 
     if rows.isEmpty {
-      Logger.log.verbose{"No bindings to copy: not touching clipboard"}
+      Logger.log.verbose("No bindings to copy: not touching clipboard")
       return false
     }
 
@@ -715,17 +715,17 @@ extension BindingTableViewController: EditableTableViewDelegate {
 
     NSPasteboard.general.clearContents()
     NSPasteboard.general.writeObjects(mappings)
-    Logger.log.verbose{"Copied \(rows.count) bindings to the clipboard"}
+    Logger.log.verbose("Copied \(rows.count) bindings to the clipboard")
     return true
   }
 
   private func pasteFromClipboard(relativeTo rowIndex: Int, isAfterNotAt: Bool = false) {
     let mappingsToInsert = readBindingsFromClipboard()
     guard !mappingsToInsert.isEmpty else {
-      Logger.log.warn{"Aborting Paste action because there is nothing to paste"}
+      Logger.log.warn("Aborting Paste action because there is nothing to paste")
       return
     }
-    Logger.log.verbose{"Pasting \(mappingsToInsert.count) bindings \(isAfterNotAt ? "after" : "at") index \(rowIndex)"}
+    Logger.log.verbose("Pasting \(mappingsToInsert.count) bindings \(isAfterNotAt ? "after" : "at") index \(rowIndex)")
     bindingTableState.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, mappingsToInsert)
   }
 

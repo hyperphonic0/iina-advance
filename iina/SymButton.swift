@@ -88,7 +88,7 @@ class SymButton: NSImageView, NSAccessibilityButton, DraggableObject {
       return
     }
     let isInsideBounds = isInsideBounds(event)
-    pwc?.log.verbose{"SymButton \(idString.quoted): mouseUp insideBounds=\(isInsideBounds.yn)"}
+    pwc?.log.verbose("SymButton \(idString.quoted): mouseUp insideBounds=\(isInsideBounds.yn)")
     if isInsideBounds {
       pressureStage = 0
       pwc?.currentDragObject = nil
@@ -100,14 +100,14 @@ class SymButton: NSImageView, NSAccessibilityButton, DraggableObject {
                         animated: true)
       }
 
-      pwc?.player.log.verbose{"Calling action: \(action?.description ?? "nil")"}
+      pwc?.player.log.verbose("Calling action: \(action?.description ?? "nil")")
       sendAction(action, to: target)
       updateHighlight(isInsideBounds: false)
     }
   }
 
   func cancelDrag() {
-    pwc?.log.verbose{"SymButton \(idString.quoted): cancelling drag"}
+    pwc?.log.verbose("SymButton \(idString.quoted): cancelling drag")
     updateHighlight(isInsideBounds: false)
   }
 

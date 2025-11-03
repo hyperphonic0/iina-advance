@@ -55,7 +55,7 @@ class RotationGestureHandler {
         // Zero degree rotation: no change.
         // Don't "unwind" if more than 360° rotated; just take shortest partial circle back to origin
         cgCurrentRotationDegrees -= completeCircleDegrees(of: cgCurrentRotationDegrees)
-        log.verbose{"Rotation gesture of \(recognizer.rotationInDegrees)° will not change video rotation. Snapping back from: \(cgCurrentRotationDegrees)°"}
+        log.verbose("Rotation gesture of \(recognizer.rotationInDegrees)° will not change video rotation. Snapping back from: \(cgCurrentRotationDegrees)°")
         rotateVideoView(toDegrees: 0)
         self.mpvRotationAtStart = nil
         return
@@ -66,7 +66,7 @@ class RotationGestureHandler {
       // Need to convert snap-to location back to CG, to feed to animation
       let cgSnapToDegrees = findNearestCGQuarterRotation(forCGRotation: recognizer.rotationInDegrees,
                                                          equalToMpvRotation: mpvClosestQuarterRotation - Int(mpvRotationAtStart))
-      log.verbose{"User's gesture of \(recognizer.rotationInDegrees)° is equivalent to mpv \(mpvNormalizedRotationDegrees)°, which is closest to \(mpvClosestQuarterRotation)°. Changing mpv rotation (\(mpvRotationAtStart)°) → \(mpvNewRotation)° (cgSnapToDegrees=\(cgSnapToDegrees))"}
+      log.verbose("User's gesture of \(recognizer.rotationInDegrees)° is equivalent to mpv \(mpvNormalizedRotationDegrees)°, which is closest to \(mpvClosestQuarterRotation)°. Changing mpv rotation (\(mpvRotationAtStart)°) → \(mpvNewRotation)° (cgSnapToDegrees=\(cgSnapToDegrees))")
       let tasks: [IINAAnimation.Task] = [
         .init({ [self] in
           player.setVideoRotate(Int(mpvNewRotation))
@@ -118,7 +118,7 @@ class RotationGestureHandler {
       // negative direction:
       cgSnapToDegrees = cgCompleteCirclesTotalDegrees + (cgClosestQuarterRotation - 360)
     }
-    log.verbose{"mpvQuarterRotation: \(mpvQuarterRotation) cgCompleteCirclesTotalDegrees: \(cgCompleteCirclesTotalDegrees)° cgLessThanWholeRotation: \(cgLessThanWholeRotation); cgClosestQuarterRotation: \(cgClosestQuarterRotation)° -> cgSnapToDegrees: \(cgSnapToDegrees)°"}
+    log.verbose("mpvQuarterRotation: \(mpvQuarterRotation) cgCompleteCirclesTotalDegrees: \(cgCompleteCirclesTotalDegrees)° cgLessThanWholeRotation: \(cgLessThanWholeRotation); cgClosestQuarterRotation: \(cgClosestQuarterRotation)° -> cgSnapToDegrees: \(cgSnapToDegrees)°")
     return cgSnapToDegrees
   }
 
@@ -133,7 +133,7 @@ class RotationGestureHandler {
     }
 
     guard let videoLayer = videoView.layer else {
-      log.warn{"Aborting rotation of videoView: videoView.layer is nil!"}
+      log.warn("Aborting rotation of videoView: videoView.layer is nil!")
       return
     }
 
@@ -147,7 +147,7 @@ class RotationGestureHandler {
     videoLayer.position = centerPoint
     videoLayer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
 
-    log.verbose{"Rotating from \(fromDegrees)° to \(toDegrees)°, animated=\(animate.yn)"}
+    log.verbose("Rotating from \(fromDegrees)° to \(toDegrees)°, animated=\(animate.yn)")
     if animate {
       CATransaction.begin()
       // This will show an animation but doesn't change its permanent state.

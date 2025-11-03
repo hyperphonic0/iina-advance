@@ -102,13 +102,13 @@ struct BindingTableState {
                     afterComplete: TableUIChange.CompletionHandler? = nil) -> Int {
 
     let insertIndex = getClosestValidInsertIndex(from: index, returnUnfilteredIndex: true)
-    Logger.log.verbose{"Moving \(rowIndexes.count) bindings to \(isFiltered ? "filtered" : "unfiltered") index \(index), which equates to insert at unfiltered index \(insertIndex)"}
+    Logger.log.verbose("Moving \(rowIndexes.count) bindings to \(isFiltered ? "filtered" : "unfiltered") index \(index), which equates to insert at unfiltered index \(insertIndex)")
 
     let srcIndexes = ensureUnfilteredIndexes(forRowIndexes: rowIndexes)  // guarantees unfiltered indexes
     let (tableUIChange, allRowsUpdated) = TableUIChange.builder.buildMove(rowIndexes, to: insertIndex, in: allRows,
                                                                           completionHandler: afterComplete)
 
-    Logger.log.verbose{"Generated \(tableUIChange.toMove!.count) movePairs: \(tableUIChange.toMove!); will change selection: \(srcIndexes.map{$0}) → \(tableUIChange.newSelectedRowIndexes!.map{$0})"}
+    Logger.log.verbose("Generated \(tableUIChange.toMove!.count) movePairs: \(tableUIChange.toMove!); will change selection: \(srcIndexes.map{$0}) → \(tableUIChange.newSelectedRowIndexes!.map{$0})")
     doAction(allRowsUpdated, tableUIChange)
     return insertIndex
   }
@@ -120,9 +120,9 @@ struct BindingTableState {
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ mappingList: [KeyMapping],
                          afterComplete: TableUIChange.CompletionHandler? = nil) {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt, returnUnfilteredIndex: true)
-    Logger.log.verbose{"Inserting \(mappingList.count) bindings \(isAfterNotAt ? "after" : "into") \(isFiltered ? "filtered" : "unfiltered") rowIndex \(index) → insert at \(insertIndex)"}
+    Logger.log.verbose("Inserting \(mappingList.count) bindings \(isAfterNotAt ? "after" : "into") \(isFiltered ? "filtered" : "unfiltered") rowIndex \(index) → insert at \(insertIndex)")
     guard canModifyCurrentConf else {
-      Logger.log.error{"Aborting: cannot modify current conf!"}
+      Logger.log.error("Aborting: cannot modify current conf!")
       return
     }
 
@@ -227,7 +227,7 @@ struct BindingTableState {
 
     // If there is an active filter, convert the filtered index to unfiltered index
     if let unfilteredIndex = getUnfilteredIndex(fromFiltered: requestedIndex) {
-      Logger.log.verbose{"Translated filtered index \(requestedIndex) to unfiltered index \(unfilteredIndex)"}
+      Logger.log.verbose("Translated filtered index \(requestedIndex) to unfiltered index \(unfilteredIndex)")
       insertIndex = unfilteredIndex
       didUnfilter = true
     }
@@ -282,7 +282,7 @@ struct BindingTableState {
   }
 
   func applyFilter(_ searchString: String) {
-    Logger.log.verbose{"Updating Bindings UI filter to \(searchString.quoted)"}
+    Logger.log.verbose("Updating Bindings UI filter to \(searchString.quoted)")
     manager.applyFilter(newFilterString: searchString)
   }
 
