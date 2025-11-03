@@ -246,7 +246,8 @@ class VideoView: NSView {
   /// Returns `true` if screenScaleFactor changed
   @discardableResult
   func refreshContentsScale() -> Bool {
-    guard let window else { return false }
+    // Grab window from PlayerWindowController! Don't assume VideoView is currently attached.
+    guard let window = player.pwc.window else { return false }
     guard player.isActive else { return false }
     guard let videoLayer = layer else { return false }
     let oldScaleFactor = videoLayer.contentsScale
@@ -389,7 +390,8 @@ class VideoView: NSView {
       }
 
       DispatchQueue.main.async { [self] in
-        let maxRangeEDR = window?.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0
+        guard let window = player.pwc.window else { return }
+        let maxRangeEDR = window.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0
         guard maxRangeEDR > 1.0 else {
           logHDR.debug{"HDR video was found but the display does not support EDR mode (maxEDR=\(maxRangeEDR))"}
           return doAfter(false)

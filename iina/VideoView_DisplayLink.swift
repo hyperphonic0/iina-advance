@@ -52,7 +52,8 @@ extension VideoView {
   /// This should be called at start or if the window has changed displays
   func updateDisplayLink() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard let link, let displayId = window?.screen?.displayId else { return }
+    // Get window from pwc! Don't assume VideoView is attached to window yet
+    guard let link, let displayId = player.pwc.window?.screen?.displayId else { return }
 
     // Do nothing if on the same display
     guard currentDisplay != displayId else {
