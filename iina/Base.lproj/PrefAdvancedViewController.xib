@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24128" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24128"/>
         <capability name="System colors introduced in macOS 10.14" minToolsVersion="10.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -22,11 +22,11 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customView id="vDK-ld-vAF" userLabel="Prefs &gt; Advanced: Top Section">
-            <rect key="frame" x="0.0" y="0.0" width="480" height="44"/>
+            <rect key="frame" x="0.0" y="0.0" width="480" height="46"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField identifier="SectionTitleTop" hidden="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" id="ySI-Io-yr8" userLabel="Top">
-                    <rect key="frame" x="211" y="10" width="57" height="16"/>
+                    <rect key="frame" x="211" y="12" width="57" height="16"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Top" id="Qeu-Jp-bNP">
                         <font key="font" metaFont="system"/>
@@ -43,7 +43,7 @@
                     </textFieldCell>
                 </textField>
                 <button horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="3Gg-Io-SlS">
-                    <rect key="frame" x="456" y="16" width="25" height="25"/>
+                    <rect key="frame" x="455" y="18" width="24" height="24"/>
                     <buttonCell key="cell" type="help" bezelStyle="helpButton" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="jZ3-bn-f9w">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -53,13 +53,13 @@
                     </connections>
                 </button>
                 <switch horizontalHuggingPriority="750" verticalHuggingPriority="750" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="Tik-eR-DDp">
-                    <rect key="frame" x="-2" y="20" width="42" height="25"/>
+                    <rect key="frame" x="0.0" y="22" width="54" height="24"/>
                     <connections>
                         <binding destination="nyg-fH-Pug" name="value" keyPath="values.enableAdvancedSettings" id="35P-rV-aLo"/>
                     </connections>
                 </switch>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zdc-Lf-XU2">
-                    <rect key="frame" x="44" y="25" width="160" height="16"/>
+                    <rect key="frame" x="60" y="26" width="160" height="16"/>
                     <textFieldCell key="cell" lineBreakMode="clipping" title="Enable advanced settings" id="ZBO-c2-bo9">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -84,11 +84,11 @@
         </customView>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customView id="co6-LF-8Q2" userLabel="Prefs &gt; Advanced: Logging Section">
-            <rect key="frame" x="0.0" y="0.0" width="486" height="96"/>
+            <rect key="frame" x="0.0" y="-12" width="486" height="108"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="upp-mq-cio">
-                    <rect key="frame" x="-1" y="71" width="192" height="16"/>
+                    <rect key="frame" x="-1" y="80" width="192" height="16"/>
                     <textFieldCell key="cell" lineBreakMode="clipping" title="Log level:" id="nFf-vh-bNd">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -96,7 +96,7 @@
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Moa-ah-XjY">
-                    <rect key="frame" x="194" y="64" width="109" height="25"/>
+                    <rect key="frame" x="197" y="76" width="115" height="24"/>
                     <popUpButtonCell key="cell" type="push" title="Debug" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="hGq-ek-VHd" id="gTP-IE-Lyn">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" usesAppearanceFont="YES"/>
@@ -120,7 +120,7 @@
                     </connections>
                 </popUpButton>
                 <button identifier="FunctionalButtonShowLog" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XBa-zS-RVU">
-                    <rect key="frame" x="304" y="61" width="153" height="32"/>
+                    <rect key="frame" x="324" y="76" width="143" height="24"/>
                     <buttonCell key="cell" type="push" title="Show Log Viewer" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Owx-92-Ogg">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -131,7 +131,7 @@
                     </connections>
                 </button>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="OgN-cA-cof">
-                    <rect key="frame" x="19" y="43" width="172" height="16"/>
+                    <rect key="frame" x="19" y="48" width="172" height="16"/>
                     <textFieldCell key="cell" lineBreakMode="clipping" title="mpv &quot;log-message&quot; events:" id="elw-zF-oHx">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -139,7 +139,7 @@
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="wok-OV-b6N">
-                    <rect key="frame" x="194" y="36" width="109" height="25"/>
+                    <rect key="frame" x="197" y="44" width="115" height="24"/>
                     <popUpButtonCell key="cell" type="push" title="𐄒 Warn" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="4" imageScaling="proportionallyDown" inset="2" selectedItem="Ls0-AF-7w8" id="xeN-4l-Fiu">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" usesAppearanceFont="YES"/>
@@ -170,7 +170,7 @@
                     </connections>
                 </popUpButton>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="SHQ-mh-jeX">
-                    <rect key="frame" x="-1" y="10" width="300" height="18"/>
+                    <rect key="frame" x="1" y="12" width="311" height="16"/>
                     <buttonCell key="cell" type="check" title="Enable logging to file" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="LCd-uY-Yze">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -184,7 +184,7 @@
                     </connections>
                 </button>
                 <button identifier="FunctionalButtonLogDirectory" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="shz-CZ-kqM">
-                    <rect key="frame" x="304" y="1" width="153" height="32"/>
+                    <rect key="frame" x="324" y="8" width="143" height="24"/>
                     <buttonCell key="cell" type="push" title="Open Log Directory" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="JDA-g3-RNX">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -203,7 +203,7 @@
                     </connections>
                 </button>
                 <textField identifier="SectionTitleLogging" hidden="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="JVL-Sw-TcX" userLabel="Logging">
-                    <rect key="frame" x="435" y="80" width="53" height="16"/>
+                    <rect key="frame" x="435" y="92" width="53" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Logging" id="BK9-mL-ip5">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -249,7 +249,7 @@
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="zKI-kU-PWr">
-                    <rect key="frame" x="-1" y="271" width="121" height="18"/>
+                    <rect key="frame" x="1" y="272" width="117" height="16"/>
                     <buttonCell key="cell" type="check" title="Use mpv's OSD" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="phK-g9-Vbg">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -260,7 +260,7 @@
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="ZQt-93-Phc">
-                    <rect key="frame" x="134" y="271" width="288" height="18"/>
+                    <rect key="frame" x="134" y="272" width="284" height="16"/>
                     <buttonCell key="cell" type="check" title="Integrate with thumbfast for thumbnails 🧪" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="h9W-uB-KRd">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -271,7 +271,7 @@
                     </connections>
                 </button>
                 <button hidden="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ogw-ry-4bY" userLabel="Thumbfast-Help Button">
-                    <rect key="frame" x="423" y="266" width="25" height="25"/>
+                    <rect key="frame" x="422" y="268" width="24" height="24"/>
                     <buttonCell key="cell" type="help" bezelStyle="helpButton" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="bEu-i9-N5x">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -281,7 +281,7 @@
                     </connections>
                 </button>
                 <textField identifier="ThumbfastStatusLabel" focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="dPV-Ix-902">
-                    <rect key="frame" x="154" y="255" width="121" height="13"/>
+                    <rect key="frame" x="152" y="255" width="121" height="13"/>
                     <textFieldCell key="cell" selectable="YES" title="Thumbfast-Status Label" id="97B-WH-f35">
                         <font key="font" textStyle="caption1" name=".SFNS-Regular"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -292,13 +292,13 @@
                     </connections>
                 </textField>
                 <scrollView autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bA7-7o-Vd0">
-                    <rect key="frame" x="0.0" y="91" width="480" height="141"/>
+                    <rect key="frame" x="0.0" y="97" width="480" height="135"/>
                     <clipView key="contentView" id="aL1-v5-nLY">
-                        <rect key="frame" x="1" y="1" width="478" height="139"/>
+                        <rect key="frame" x="1" y="1" width="478" height="133"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="mpvOptionsTable" rowHeight="18" rowSizeStyle="automatic" headerView="wiq-g9-ouS" viewBased="YES" id="LPs-2B-Pt0" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="478" height="116"/>
+                                <rect key="frame" x="0.0" y="0.0" width="478" height="110"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="4" height="2"/>
                                 <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="calibratedRGB"/>
@@ -406,20 +406,20 @@
                     </textFieldCell>
                 </textField>
                 <box boxType="custom" borderType="line" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="1NU-Lr-cuR">
-                    <rect key="frame" x="0.0" y="70" width="480" height="22"/>
+                    <rect key="frame" x="0.0" y="72" width="480" height="26"/>
                     <view key="contentView" id="HB1-1I-BjW">
-                        <rect key="frame" x="1" y="1" width="478" height="20"/>
+                        <rect key="frame" x="1" y="1" width="478" height="24"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="RY9-rr-eGr">
-                                <rect key="frame" x="0.0" y="-1.5" width="20.5" height="24"/>
+                                <rect key="frame" x="0.0" y="-1.5" width="24.5" height="28"/>
                                 <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSAddTemplate" imagePosition="only" alignment="center" inset="2" id="un3-1k-6jk">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
                                 <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="20" id="XfO-xd-O4d"/>
+                                    <constraint firstAttribute="height" constant="24" id="4DY-1V-3h1"/>
                                     <constraint firstAttribute="width" secondItem="RY9-rr-eGr" secondAttribute="height" multiplier="1:1" id="zHQ-Qh-S3o"/>
                                 </constraints>
                                 <connections>
@@ -432,7 +432,7 @@
                                 </connections>
                             </button>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="EU2-5a-Lpj">
-                                <rect key="frame" x="20" y="3" width="20.5" height="15"/>
+                                <rect key="frame" x="24" y="3" width="24.5" height="19"/>
                                 <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRemoveTemplate" imagePosition="only" alignment="center" inset="2" id="fPD-uF-WvG">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -440,6 +440,7 @@
                                 <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                 <constraints>
                                     <constraint firstAttribute="width" secondItem="EU2-5a-Lpj" secondAttribute="height" multiplier="1:1" id="Rtd-NO-VuP"/>
+                                    <constraint firstAttribute="height" constant="24" id="ytq-9J-xxg"/>
                                 </constraints>
                                 <connections>
                                     <action selector="removeOptionBtnAction:" target="-2" id="5ff-xC-dEc"/>
@@ -448,19 +449,20 @@
                             </button>
                         </subviews>
                         <constraints>
-                            <constraint firstItem="EU2-5a-Lpj" firstAttribute="top" secondItem="HB1-1I-BjW" secondAttribute="top" id="2vz-cd-R7u"/>
+                            <constraint firstItem="EU2-5a-Lpj" firstAttribute="centerY" secondItem="HB1-1I-BjW" secondAttribute="centerY" id="17G-Y4-zc0"/>
+                            <constraint firstItem="RY9-rr-eGr" firstAttribute="centerY" secondItem="HB1-1I-BjW" secondAttribute="centerY" id="BfN-U1-y20"/>
                             <constraint firstItem="RY9-rr-eGr" firstAttribute="leading" secondItem="HB1-1I-BjW" secondAttribute="leading" id="Bld-7U-mG9"/>
-                            <constraint firstItem="RY9-rr-eGr" firstAttribute="top" secondItem="HB1-1I-BjW" secondAttribute="top" id="HiM-cM-W3K"/>
                             <constraint firstItem="EU2-5a-Lpj" firstAttribute="leading" secondItem="RY9-rr-eGr" secondAttribute="trailing" id="Vvh-ed-KGh"/>
-                            <constraint firstAttribute="bottom" secondItem="RY9-rr-eGr" secondAttribute="bottom" id="WZF-HV-uSg"/>
-                            <constraint firstAttribute="bottom" secondItem="EU2-5a-Lpj" secondAttribute="bottom" id="hjJ-mb-hIo"/>
                         </constraints>
                     </view>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="26" id="0Ip-xa-94Q"/>
+                    </constraints>
                     <color key="borderColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
                     <color key="fillColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                 </box>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="Gf8-9e-wu7">
-                    <rect key="frame" x="-1" y="37" width="153" height="18"/>
+                    <rect key="frame" x="1" y="40" width="149" height="16"/>
                     <buttonCell key="cell" type="check" title="Use config directory:" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ehL-8Y-G8h">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -474,7 +476,7 @@
                     </connections>
                 </button>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hbF-n4-jl3">
-                    <rect key="frame" x="395" y="28" width="91" height="32"/>
+                    <rect key="frame" x="399" y="36" width="80" height="24"/>
                     <buttonCell key="cell" type="push" title="Choose…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MRT-u8-xTX">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -493,7 +495,7 @@
                     </connections>
                 </button>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jsf-pn-h6s">
-                    <rect key="frame" x="19" y="8" width="461" height="22"/>
+                    <rect key="frame" x="19" y="8" width="461" height="24"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="~/.config/mpv/" bezelStyle="round" id="gWN-ya-xRD">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
