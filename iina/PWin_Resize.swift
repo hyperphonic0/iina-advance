@@ -295,12 +295,12 @@ extension PlayerWindowController {
 
       let screen = NSScreen.getScreenOrDefault(screenID: oldWindowedGeo.screenID)
       let backingScaleFactor = screen.backingScaleFactor
-      let adjustedVideoScale = desiredVideoScale
+      let adjustedVideoScale = desiredVideoScale / backingScaleFactor
       let videoSizeCAR = oldWindowedGeo.video.videoSizeCAR
-      let videoWidthScaled = (videoSizeCAR.width * adjustedVideoScale).rounded()
+      let videoSizeScaled = (videoSizeCAR * adjustedVideoScale).rounded()
 
-      let newGeo = oldWindowedGeo.scalingVideo(toWidth: videoWidthScaled, screenFit: .stayInside)
-      log.verbose("SetVideoScale: desired=\(desiredVideoScale) adjusted=\(adjustedVideoScale) videoCAR=\(videoSizeCAR) → videoWidthScaled=\(videoWidthScaled) → windowScale=\(newGeo.mpvWindowScale())")
+      let newGeo = oldWindowedGeo.scalingViewport(to: videoSizeScaled, screenFit: .stayInside)
+      log.verbose("SetVideoScale: desired=\(desiredVideoScale) adjusted=\(adjustedVideoScale) videoCAR=\(videoSizeCAR) → videoSizeScaled=\(videoSizeScaled) → windowScale=\(newGeo.mpvWindowScale())")
       sendWindowScaleToMPV(basedOn: newGeo)
       return newGeo
     })
@@ -319,7 +319,7 @@ extension PlayerWindowController {
   func sendWindowScaleToMPV(basedOn geometry: PWinGeometry) {
     assert(DispatchQueue.isExecutingIn(.main))
     // Do not call while resizing the window, as doing so has race conditions.
-    guard loaded, let window, !window.inLiveResize, !isAnimatingLayoutTransition else { return }
+    guard loaded, let window, !window.inLiveResize else { return }
 
     let desiredMpvWindowScale = geometry.mpvWindowScale()
     guard desiredMpvWindowScale > 0.0 else {
@@ -359,7 +359,6 @@ extension PlayerWindowController {
   /// See also: `PWinGeometry.mpvWindowScale`.
   func mpvWindowScaleDidUpdate(to newMpvWindowScale: CGFloat) {
     assert(DispatchQueue.isExecutingIn(.main))
-    /* FIXME: this is all broken
      // Do not call while resizing the window, as doing so has race conditions.
      guard loaded, let window, !window.inLiveResize, !isAnimatingLayoutTransition else { return }
      guard !isMagnifying else { return }
@@ -376,39 +375,37 @@ extension PlayerWindowController {
      return
      }
      // Need to update this right away in case mpv sends duplicate requests
-     cachedMpvWindowScale = newMpvWindowScale
-     log.verbose("Got updated window-scale from mpv: \(currentMpvWindowScale) → \(newMpvWindowScale)")
+    cachedMpvWindowScale = newMpvWindowScale
+    log.verbose("Got updated window-scale from mpv: \(currentMpvWindowScale) → \(newMpvWindowScale)")
 
-     let gtf = GeometryTransform("SetWindowScaleFromMPV", player,
-     windowed: { [self] ctx -> PWinGeometry? in
-     let oldWindowedGeo = ctx.oldGeo.windowed
-     // TODO: if Preference.bool(for: .usePhysicalResolution) {}
+    let gtf = GeometryTransform("SetWindowScaleFromMPV", player,
+                                windowed: { [self] ctx -> PWinGeometry? in
+      let oldWindowedGeo = ctx.inputGeoSet.windowed
+      // TODO: if Preference.bool(for: .usePhysicalResolution) {}
 
-     /// This logic needs to match the function `mp_property_current_window_scale` in mpv's `player.command.c`
-     // mpv uses viewport size for calculation when keepaspect-window=no, which we always use in our operation.
-     let videoSizeCAR = oldWindowedGeo.video.videoSizeCAR
-     let viewportSizeScaled = (fix_me * newMpvWindowScale).rounded()
-     let newGeo = oldWindowedGeo.scalingViewport(to: viewportSizeScaled, screenFit: .stayInside)
-     let finalMpvWindowScale = newGeo.mpvWindowScale()
-     if newMpvWindowScale == finalMpvWindowScale {
-     log.verbose("mpv→SetWindowScale: cached=\(currentMpvWindowScale) → \(finalMpvWindowScale)")
-     } else {
-     // Could not match desired value. Notify mpv of value used
-     log.verbose("mpv→SetWindowScale: cached=\(currentMpvWindowScale) desired=\(newMpvWindowScale) → ACTUAL=\(finalMpvWindowScale)")
-     sendWindowScaleToMPV(finalMpvWindowScale)
-     }
-     return newGeo
-     })
-     animationPipeline.submitGTF(gtf)
-     */
+      /// This logic needs to match the function `mp_property_current_window_scale` in mpv's `player.command.c`
+      // mpv uses viewport size for calculation when keepaspect-window=no, which we always use in our operation.
+      let videoSizeCAR = oldWindowedGeo.video.videoSizeCAR
+      // FIXME: Need to scale *current* viewport including margins
+      let viewportSizeScaled = (videoSizeCAR * newMpvWindowScale).rounded()
+      let newGeo = oldWindowedGeo.scalingViewport(to: viewportSizeScaled, screenFit: .stayInside)
+      let finalMpvWindowScale = newGeo.mpvWindowScale()
+      if newMpvWindowScale == finalMpvWindowScale {
+        log.verbose("mpv→SetWindowScale: cached=\(currentMpvWindowScale) → \(finalMpvWindowScale)")
+      } else {
+        // Could not match desired value. Notify mpv of value used
+        log.verbose("mpv→SetWindowScale: cached=\(currentMpvWindowScale) desired=\(newMpvWindowScale) → ACTUAL=\(finalMpvWindowScale)")
+        sendWindowScaleToMPV(basedOn: newGeo)
+      }
+      return newGeo
+    })
+    animationPipeline.submitGTF(gtf)
   }
 
-  /**
-   Resizes and repositions the window, attempting to match `desiredViewportSize`, but the actual resulting
-   video size will be scaled if needed so it is `<= screen.visibleFrame`.
-   The window's position will also be updated to maintain its current center if possible, but also to
-   ensure it is placed entirely inside `screen.visibleFrame`.
-   */
+  /// Resizes and repositions the window, attempting to match `desiredViewportSize`, but the actual resulting
+  /// video size will be scaled if needed so it is `<= screen.visibleFrame`.
+  /// The window's position will also be updated to maintain its current center if possible, but also to
+  /// ensure it is placed entirely inside `screen.visibleFrame`.
   func buildResizeViewportTasks(to desiredViewportSize: CGSize? = nil, centerOnScreen: Bool = false,
                                 duration: CGFloat = Constants.AnimationDuration.standard) -> [IINAAnimation.Task] {
     assert(DispatchQueue.isExecutingIn(.main))
