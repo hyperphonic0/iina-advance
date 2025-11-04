@@ -2078,35 +2078,42 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(PlayerCore.backgroundQueue))
     let isRestoring = priorStateIfRestoring != nil
 
-    // add files in same folder
+    // Auto-load: add files in same folder to playlist (if configured)
     if shouldAutoLoadFiles {
       assert(!isRestoring, "shouldAutoLoadFiles should not be true when restoring!")
       log.debug("Started auto load of files in current folder")
-      self.autoLoadFilesInCurrentFolder(ticket: currentTicket)
+      autoLoadFilesInCurrentFolder(ticket: currentTicket)
     }
-    // auto load matched subtitles
-    if let matchedSubs = self.info.getMatchedSubs(currentPlayback.path) {
+
+    // Search for external subtitles on disk, auto-load if found
+    if let matchedSubs = info.getMatchedSubs(currentPlayback.path) {
       log.debug("Found \(matchedSubs.count) external subs for current file")
       var loadedSubs = Set<URL>()
       for sub in matchedSubs {
         // filter duplicated matched subtitles, see https://github.com/iina/iina/issues/5399
         guard !loadedSubs.contains(sub) else { continue }
         loadedSubs.insert(sub)
-        guard currentTicket == self.backgroundQueueTicket else { return }
-        self.loadExternalSubFile(sub)
+        guard currentTicket == backgroundQueueTicket else { return }
+        loadExternalSubFile(sub)
       }
       if !isRestoring {
         // set sub to the first one
         // TODO: why?
         log.debug("Setting subtitle track to because an external sub was found")
-        guard currentTicket == self.backgroundQueueTicket, self.mpv.mpv != nil else { return }
-        self.setTrack(1, forType: .sub)
+        guard currentTicket == backgroundQueueTicket, mpv.mpv != nil else { return }
+        setTrack(1, forType: .sub)
       }
     }
 
-    self.autoSearchOnlineSub()
+    // Search for online subtitles, auto-load if found
+    if Preference.bool(for: .autoSearchOnlineSub) &&
+        !info.isNetworkResource &&
+        info.subTracks.isEmpty &&
+        (info.playbackDurationSec ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
+      pwc.menuFindOnlineSub(pwc)
+    }
 
-    guard currentTicket == self.backgroundQueueTicket, self.mpv.mpv != nil else { return }
+    guard currentTicket == backgroundQueueTicket, mpv.mpv != nil else { return }
 
     // Set SID & S2ID now that all subs are available
     if let priorState = priorStateIfRestoring {
@@ -2549,14 +2556,6 @@ class PlayerCore: NSObject {
     sendOSD(.secondSubPos(position))
     saveState()
     setQuickSettingsViewNeedsUpdate()
-  }
-
-  private func autoSearchOnlineSub() {
-    if Preference.bool(for: .autoSearchOnlineSub) &&
-      !info.isNetworkResource && info.subTracks.isEmpty &&
-      (info.playbackDurationSec ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
-      pwc.menuFindOnlineSub(pwc)
-    }
   }
 
   private func startWatchingSubFile() {

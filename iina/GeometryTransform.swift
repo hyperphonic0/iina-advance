@@ -219,8 +219,7 @@ struct GeometryTransform {
     var immediateTasks: [IINAAnimation.Task] = buildInitialLayoutTasks(&ctx)
 
     var remainingTasks: [IINAAnimation.Task]
-    /// 4. Build tasks which apply `windowedTransform` (if it exists), as well as any needed adjustments for
-    /// `outputVidGeo`.
+    /// 4. Build tasks which apply `windowedTransform` (if it exists), as well as any needed adjustments for `outputVidGeo`.
     /// Important: must be called *after* building the initial layout tasks!
     /// (expects `ctx.outputLayout`, `ctx.needsNativeFullScreen` to have been set)
     if let buildPWinTransformTasks {
