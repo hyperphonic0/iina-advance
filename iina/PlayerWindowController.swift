@@ -922,6 +922,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
 
       animationTasks.append(.instantTask { [self] in
+        // Launch to resume as the final task, right after window is finally shown:
+        player.mpv.queue.async { [self] in
+          resumeIfNeededForShowingWindow()
+        }
+
         // Make sure to save after opening (possibly new) window
         player.saveState()
         // Especially need to save the updated windows list!
@@ -930,10 +935,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       })
 
       animationPipeline.submit(animationTasks)
-
-      player.mpv.queue.async { [self] in
-        resumeIfNeededForShowingWindow()
-      }
     }
   }
 
