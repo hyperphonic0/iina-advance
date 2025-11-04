@@ -447,9 +447,7 @@ struct GeometryTransform {
           Logger.fatal("[GTF:\(name)] Invalid gtfSessionState: \(gtfSessionState)")
         }
 
-        let intendedViewportSize: CGSize? = gtfSessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
-        let outputGeo = resizedGeo ?? inputGeoSet.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
-                                                                   intendedViewportSize: intendedViewportSize)
+        let outputGeo = resizedGeo ?? inputGeoSet.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo)
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose("[GTF:\(name)] Building 'apply' tasks for windowed mode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputGeo)")
@@ -457,9 +455,7 @@ struct GeometryTransform {
                                            duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
       case .fullScreenNormal:
-        let intendedViewportSize: CGSize? = gtfSessionState.canUseIntendedViewportSize ? player.info.intendedViewportSize : nil
-        let newWindowedGeo = inputGeoSet.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo,
-                                                        intendedViewportSize: intendedViewportSize)
+        let newWindowedGeo = inputGeoSet.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo)
         let fsGeo = outputLayout.buildFullScreenGeometry(inScreenID: newWindowedGeo.screenID, outputVidGeo)
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
@@ -637,11 +633,9 @@ struct GeometryTransform {
         }
 
         var preferredGeo = windowGeo
-        if Preference.bool(for: .lockViewportToVideoSize), gtfSessionState.canUseIntendedViewportSize,
-           let intendedViewportSize = player.info.intendedViewportSize {
-          // There is some fuzziness for window size when lockViewportToVideoSize==true. Use intendedViewportSize as a strong hint
-          log.verbose("[GTF:\(name)] Minimal resize: using intendedViewportSize \(intendedViewportSize)")
-          preferredGeo = windowGeo.scalingViewport(to: intendedViewportSize)
+        if Preference.bool(for: .lockViewportToVideoSize) {
+          // There is some fuzziness for window size when lockViewportToVideoSize==true. Try to provide a strong hint
+          preferredGeo = inputGeoSet.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo)
         }
         log.verbose("[GTF:\(name)] Applying mpv \(mpvGeometry) within screen \(screenVisibleFrame)")
         return windowGeo.apply(mpvGeometry: mpvGeometry, desiredWindowSize: preferredGeo.windowFrame.size)

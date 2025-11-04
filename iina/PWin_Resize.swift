@@ -388,9 +388,7 @@ extension PlayerWindowController {
      // mpv uses viewport size for calculation when keepaspect-window=no, which we always use in our operation.
      let videoSizeCAR = oldWindowedGeo.video.videoSizeCAR
      let viewportSizeScaled = (fix_me * newMpvWindowScale).rounded()
-     let newGeoUnconstrained = oldWindowedGeo.scalingViewport(to: viewportSizeScaled, screenFit: .noConstraints)
-     player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
-     let newGeo = newGeoUnconstrained.refitted(using: .stayInside)
+     let newGeo = oldWindowedGeo.scalingViewport(to: viewportSizeScaled, screenFit: .stayInside)
      let finalMpvWindowScale = newGeo.mpvWindowScale()
      if newMpvWindowScale == finalMpvWindowScale {
      log.verbose("mpv→SetWindowScale: cached=\(currentMpvWindowScale) → \(finalMpvWindowScale)")
@@ -466,10 +464,7 @@ extension PlayerWindowController {
         let inputGeo = ctx.inputGeoSet.windowed
         let desiredViewportSize = scaleByWidthStep(inputGeo.viewportSize)
         log.verbose("Stepping viewport scale: mode=\(mode) stepW=\(widthStep)pt → \(desiredViewportSize)")
-        let scaledGeoUnconstrained = inputGeo.scalingViewport(to: desiredViewportSize, screenFit: .noConstraints)
-        // User has actively resized the video. Assume this is the new preferred resolution
-        player.info.intendedViewportSize = scaledGeoUnconstrained.viewportSize
-        return scaledGeoUnconstrained.refitted(using: .stayInside)
+        return inputGeo.scalingViewport(to: desiredViewportSize, screenFit: .stayInside)
 
       case .fullScreenInteractive, .fullScreenNormal:
         return nil

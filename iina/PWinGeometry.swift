@@ -1010,31 +1010,26 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// Adjusts the window frame (& possibly its subviews) as needed to accomodate the given `VideoGeometry`.
   ///
   /// - Param `newVidGeo` will be used as the `video` field in the returned `PWinGeometry`S.
-  /// - Param `intendedViewportSize` is only used when `lockViewportToVideoSize` is enabled.
-  /// When the user is navigating in playlist or changes crop or aspect, try to retain same window width.
-  /// This often isn't possible for vertical videos, which will end up shrinking the width.
-  /// So try to remember the preferred width so it can be restored when possible.
-  /// (If not locking viewport, don't need this. We can just reuse the existing viewport size.)
-  func resizeMinimally(forNewVideoGeo newVidGeo: VideoGeometry, intendedViewportSize: NSSize? = nil) -> PWinGeometry {
-    var desiredViewportSize = viewportSize
+  /// - The viewport will only change size when `lockViewportToVideoSize` is enabled.
+  func resizeMinimally(forNewVideoGeo newVidGeo: VideoGeometry) -> PWinGeometry {
+    let targetViewportSize: NSSize
     let log = newVidGeo.log
 
     if Preference.bool(for: .lockViewportToVideoSize) {
-      if let intendedViewportSize  {
-        // Just use existing size in this case:
-        desiredViewportSize = intendedViewportSize
-        log.verbose("[geo] Using intendedViewportSize \(intendedViewportSize)")
-      }
+      // Try to avoid shrinking the window too much if the aspect changes dramatically.
+      let containerSize = NSScreen.getScreenOrDefault(screenID: screenID).visibleFrame.size
+      let useRatioW = (viewportSize.width / containerSize.width).clamped(to: 0...1)
+      let useRatioH = (viewportSize.height / containerSize.height).clamped(to: 0...1)
+      let useRatioMax = max(useRatioW, useRatioH)
 
-      let minNewViewportHeight = round(desiredViewportSize.width / newVidGeo.videoAspectDisplay)
-      if desiredViewportSize.height < minNewViewportHeight {
-        // Try to increase height if possible, though it may still be shrunk to fit screen
-        desiredViewportSize = NSSize(width: desiredViewportSize.width, height: minNewViewportHeight)
-      }
+      targetViewportSize = (containerSize * useRatioMax).rounded()
+    } else {
+      // Try to keep current viewportSize
+      targetViewportSize = viewportSize
     }
 
-    log.verbose("[geo] Minimal resize: applying desiredViewportSize \(desiredViewportSize)")
-    return clone(video: newVidGeo).scalingViewport(to: desiredViewportSize)
+    log.verbose("[geo] Minimal resize: applying desiredViewportSize \(targetViewportSize)")
+    return clone(video: newVidGeo).scalingViewport(to: targetViewportSize)
   }
 
   // MARK: - Naive Resize Functions

@@ -23,7 +23,7 @@ struct PlayerSaveState: CustomStringConvertible {
     case playlistSubtitles = "playlistSubs"
     case matchedSubtitles = "matchedSubs"
 
-    case intendedViewportSize = "intendedViewportSize"
+    case intendedViewportSize = "intendedViewportSize"  // No longer used in v1.4
     case layoutState = "layoutSpec"     /// Class `LayoutSpec` was merged into `LayoutState` in v1.4
     case videoGeo = "videoGeo"          /// Added in v1.2
     case windowedModeGeo = "windowedModeGeo"
@@ -245,11 +245,6 @@ struct PlayerSaveState: CustomStringConvertible {
 
     let screenMetaCSVList: [String] = UIState.shared.cachedScreens.values.map{$0.toCSV()}
     props[PropName.screens.rawValue] = screenMetaCSVList
-
-    if let size = info.intendedViewportSize {
-      let sizeString = [size.width.stringMaxFrac2, size.height.stringMaxFrac2].joined(separator: ",")
-      props[PropName.intendedViewportSize.rawValue] = sizeString
-    }
 
     if pwc.isOnTop {
       props[PropName.isOnTop.rawValue] = true.yn
@@ -749,10 +744,6 @@ struct PlayerSaveState: CustomStringConvertible {
     }
     if let paused = bool(for: .paused) {
       info.isPaused = paused
-    }
-
-    if let size = nsSize(for: .intendedViewportSize) {
-      info.intendedViewportSize = size
     }
 
     if let videoURLListString = string(for: .playlistVideos) {

@@ -943,11 +943,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     player.pendingResumeWhenShowingWindow = false
 
     if !player.isRestoring {  // if restoring, all logic has already been evaluated.
-      for option in player.userOptions.reversed() {
-        if option.0 == MPVOption.PlaybackControl.pause, option.1.isEmpty || option.1 == Constants.String.mpvYes {
-          // User option overrides
-          return
-        }
+      if player.userOptions.contains(where: { $0.0 == MPVOption.PlaybackControl.pause }) {
+        // User option overrides
+        return
       }
       guard !Preference.bool(for: .pauseWhenOpen) else { return }
     }

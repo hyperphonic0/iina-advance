@@ -142,13 +142,6 @@ enum PWinSessionState: CustomStringConvertible {
     }
     return false
   }
-
-  var canUseIntendedViewportSize: Bool {
-    if case .existingSession_startingNewPlayback = self {
-      return true
-    }
-    return false
-  }
 }
 
 

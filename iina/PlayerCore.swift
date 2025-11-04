@@ -578,6 +578,8 @@ class PlayerCore: NSObject {
             mpv.setFlag(MPVOption.PlaybackControl.pause, true)
             // ...or stay paused if configured
             pendingResumeWhenShowingWindow = true
+          } else {
+            pendingResumeWhenShowingWindow = false
           }
 
           // Not restoring

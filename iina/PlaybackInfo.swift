@@ -76,24 +76,6 @@ class PlaybackInfo {
     return false
   }
 
-  // MARK: - Geometry
-
-  // When navigating in playlist, and user does not have any other predefined resizing strategy, try to maintain the same window width
-  // even for different video sizes and aspect ratios. Since it may not be possible to fit all videos onscreen, some videos will need to
-  // be shrunk down, and over time this would lead to the window shrinking into the smallest size. Instead, remember the last window size
-  // which the user manually chose, and try to match that across videos.
-  //
-  // This is also useful when opening outside sidebars:
-  // When opening a sidebar and there is not enough space on screen, the viewport will be shrunk so that the sidebar can open while
-  // keeping the window fully within the bounds of the screen. But when the sidebar is closed again, the viewport / window wiil be
-  // expanded again to the preferred container size.
-  // FIXME: this currently barely does anything useful. Needs to be re-evaluated (or replaced)
-  var intendedViewportSize: NSSize? = nil {
-    didSet {
-      log.trace{"Updated intendedViewportSize ≔ \(intendedViewportSize?.description ?? "nil")"}
-    }
-  }
-
   // MARK: - Filters & Equalizers
 
   var videoFilters: [MPVFilter] = []
