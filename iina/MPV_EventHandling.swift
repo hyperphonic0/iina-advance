@@ -632,7 +632,7 @@ extension MPVController {
       }
 
       log.verbose("Δ mpv prop: 'window-scale' ≔ \(windowScale)")
-      DispatchQueue.main.async { [self] in
+      player.pwc.animationPipeline.submitInstantTask{ [self] in
         player.pwc.mpvWindowScaleDidUpdate(to: windowScale.roundedTo6())
       }
 

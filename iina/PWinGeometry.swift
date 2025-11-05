@@ -416,6 +416,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
   }
 
+  var videoScale: CGFloat {
+    videoSize.width / video.videoSizeCAR.width
+  }
+
   /// `MPVProperty.currentWindowScale`: see `mp_property_current_window_scale()` in mpv's `player/command.c`
   func mpvWindowScale() -> CGFloat {
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
@@ -423,8 +427,24 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let viewportSize = viewportSize
     let videoSize = video.videoSizeCAR
     let mpvWindScale = (((viewportSize.width / videoSize.width) + (viewportSize.height / videoSize.height)) / 2 * backingScaleFactor).roundedTo6()
-    log.verbose("[geo] Derived mpv window-scale from cached vidGeo: Viewport=\(viewportSize) * [screen=\(screen.displayId)] BSF=\(backingScaleFactor) / videoSizeCAR=\(videoSize) → \(mpvWindScale)")
     return mpvWindScale
+  }
+
+  func scalingViewport(fromMpvWindowScale wndScale: CGFloat) -> PWinGeometry {
+    let screen = NSScreen.getScreenOrDefault(screenID: screenID)
+    let backingScaleFactor = screen.backingScaleFactor
+    let videoSize = video.videoSizeCAR
+
+    // vpW / vW + vpH / vH = S
+    // But: vpW == (vpH * vpAspect), so:
+    // vpH * vH * vpAspect / vW + vpH = S * vH
+    // ((vpH * vpAspect) / vW) + (vpH / vH) = S
+    // vpH * ((vpAspect / vW) + (1 / vH)) = S
+    // vpH = S / ((vpAspect / vW) + (1 / vH))
+    let vpH = (wndScale / backingScaleFactor * 2) / ((viewportSize.aspect / videoSize.width) + (1 / videoSize.height))
+    let vpW = vpH * viewportSize.aspect
+    let outputViewportSize = NSSize(width: vpW, height: vpH).rounded()
+    return scalingViewport(to: outputViewportSize)
   }
 
   /// Like `videoSizeCAR`, but after applying `scale`.
@@ -716,6 +736,27 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   func refitted(using desiredScreenFit: ScreenFit? = nil, lockViewportToVideoSize: Bool? = nil) -> PWinGeometry {
     return scalingViewport(screenFit: desiredScreenFit, lockViewportToVideoSize: lockViewportToVideoSize)
+  }
+
+  /// See also: `mpvWindowScale()`
+  func scalingViewport(toVideoScale mpvWindowScale: CGFloat) -> PWinGeometry {
+    assert(!screenFit.isFullScreen)
+
+    // Need to first determine the unscaled viewport size
+    let videoSizeCAR = video.videoSizeCAR
+    let viewportAspect = viewportSize.aspect
+    let aspectRatio = videoSizeCAR.aspect / viewportAspect
+    let vpSizeUnscaled: NSSize
+    if aspectRatio > 1.0 {
+      // Video is wider than viewport; letter boxed: need to expand height
+      vpSizeUnscaled = NSSize(width: videoSizeCAR.width, height: videoSizeCAR.height * aspectRatio)
+    } else {
+      // Video is taller than viewport (or same size); pillar boxed: need to expand width
+      vpSizeUnscaled = NSSize(width: videoSizeCAR.width / aspectRatio, height: videoSizeCAR.height)
+    }
+
+    let viewportSizeScaled = (vpSizeUnscaled * mpvWindowScale).rounded()
+    return scalingViewport(to: viewportSizeScaled, screenFit: .stayInside)
   }
 
   /// Computes a new, valid `PWinGeometry` from this one, resized appropriately using the given params.

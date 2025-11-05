@@ -9,7 +9,6 @@
 import Cocoa
 
 // TODO: gpu-next
-// FIXME: multiple issues with crop rendering
 // TODO: persist mpv properties in saved player state
 // TODO: support parent playlist
 // TODO: auto-adjust window size when Dock shown/hidden
@@ -76,8 +75,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   var barFactory: BarFactory?
   let knobFactory = KnobFactory()
-
-  var cachedMpvWindowScale: CGFloat = 1.0
 
   // MARK: - Vars: State
 

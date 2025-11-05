@@ -272,39 +272,24 @@ extension PlayerWindowController {
 
   // MARK: - Other window resize methods
 
-  /// Changes video scale to `desiredVideoScale`, where a value of `1.0` is the video's native scale.
-  func setVideoScale(to desiredVideoScale: Double) {
+  /// Changes video scale to `targetVideoScale`, where a value of `1.0` is the video's native scale.
+  /// This actually scales the entire viewport, if pref `lockViewportToVideoSize` is enabled, but the size of the displayed video should match
+  /// the desired scale.
+  func setVideoScale(to targetVideoScale: Double) {
     assert(DispatchQueue.isExecutingIn(.main))
     // Not supported in music mode at this time. Need to resolve backing scale bugs
     guard currentLayout.mode == .windowedNormal else {
       log.error("SetVideoScale: skipping; mode is unsupported: \(currentLayout.mode)")
       return
     }
-    guard desiredVideoScale > 0.0 else {
-      log.error("SetVideoScale: requested scale is invalid: \(desiredVideoScale)")
+    guard targetVideoScale > 0.0 else {
+      log.error("SetVideoScale: requested scale is invalid: \(targetVideoScale)")
       return
     }
 
-    let gtf = GeometryTransform("SetVideoScale", player,
-                                windowed: { [self] ctx -> PWinGeometry? in
-      let oldWindowedGeo = ctx.inputGeoSet.windowed.clone(video: ctx.inputVidGeo)  // may need to sub from syncVideoParams
-
-      // TODO: if Preference.bool(for: .usePhysicalResolution) {}
-      // Not supported in music mode at this time. Need to resolve backing scale bugs
-      // FIXME: regression: viewport keeps expanding when video runs into screen boundary
-
-      let screen = NSScreen.getScreenOrDefault(screenID: oldWindowedGeo.screenID)
-      let backingScaleFactor = screen.backingScaleFactor
-      let adjustedVideoScale = desiredVideoScale / backingScaleFactor
-      let videoSizeCAR = oldWindowedGeo.video.videoSizeCAR
-      let videoSizeScaled = (videoSizeCAR * adjustedVideoScale).rounded()
-
-      let newGeo = oldWindowedGeo.scalingViewport(to: videoSizeScaled, screenFit: .stayInside)
-      log.verbose("SetVideoScale: desired=\(desiredVideoScale) adjusted=\(adjustedVideoScale) videoCAR=\(videoSizeCAR) → videoSizeScaled=\(videoSizeScaled) → windowScale=\(newGeo.mpvWindowScale())")
-      sendWindowScaleToMPV(basedOn: newGeo)
-      return newGeo
-    })
-    animationPipeline.submitGTF(gtf)
+    let oldWindowedGeo = windowedModeGeo
+    let newGeo = oldWindowedGeo.scalingViewport(toVideoScale: targetVideoScale)
+    sendWindowScaleToMPV(basedOn: newGeo)
   }
 
   /// Scales the viewport (which is equivalent to mpv's concept of a window) to the given `desiredMpvWindowScale`.
@@ -321,28 +306,20 @@ extension PlayerWindowController {
     // Do not call while resizing the window, as doing so has race conditions.
     guard loaded, let window, !window.inLiveResize else { return }
 
-    let desiredMpvWindowScale = geometry.mpvWindowScale()
-    guard desiredMpvWindowScale > 0.0 else {
-      log.verbose("SetWindowScale: desiredMpvWindowScale (\(desiredMpvWindowScale)) is invalid; aborting")
+    let scaleFromGeo = geometry.mpvWindowScale()
+    guard scaleFromGeo > 0.0 else {
+      log.verbose("SetWindowScale: desiredMpvWindowScale (\(scaleFromGeo)) is invalid; aborting")
       return
     }
 
-    let currentMpvWindowScale = cachedMpvWindowScale
-    guard desiredMpvWindowScale != currentMpvWindowScale else {
-      log.verbose("SetWindowScale: skipping; same as cached value (\(desiredMpvWindowScale))")
-      return
-    }
-
-    cachedMpvWindowScale = desiredMpvWindowScale
-
-    log.verbose("Sending window-scale to mpv: \(currentMpvWindowScale) → \(desiredMpvWindowScale)")
+    log.verbose("Sending mpvWindowScale to mpv: \(windowedGeoForCurrentFrame().mpvWindowScale()) → \(scaleFromGeo)")
     player.mpv.queue.async { [self] in
       guard player.isActive, player.info.isFileLoaded else {
         log.debug("Skipping send of window-scale to mpv: player not ready")
         return
       }
 
-      player.mpv.setDouble(MPVProperty.windowScale, desiredMpvWindowScale)
+      player.mpv.setDouble(MPVProperty.windowScale, scaleFromGeo)
     }
   }
 
@@ -359,42 +336,37 @@ extension PlayerWindowController {
   /// See also: `PWinGeometry.mpvWindowScale`.
   func mpvWindowScaleDidUpdate(to newMpvWindowScale: CGFloat) {
     assert(DispatchQueue.isExecutingIn(.main))
-     // Do not call while resizing the window, as doing so has race conditions.
-     guard loaded, let window, !window.inLiveResize, !isAnimatingLayoutTransition else { return }
-     guard !isMagnifying else { return }
-     guard currentLayout.mode == .windowedNormal || currentLayout.mode == .musicMode else {
-     // Not supported in music mode at this time. Need to resolve backing scale bugs
-     log.error("mpv→SetWindowScale: skipping; unsupported mode: \(currentLayout.mode)")
-     return
-     }
-
-     let currentMpvWindowScale = cachedMpvWindowScale
-
-     guard newMpvWindowScale != currentMpvWindowScale else {
-     log.verbose("mpv→SetWindowScale: skipping; same as cached value (\(newMpvWindowScale))")
-     return
-     }
-     // Need to update this right away in case mpv sends duplicate requests
-    cachedMpvWindowScale = newMpvWindowScale
-    log.verbose("Got updated window-scale from mpv: \(currentMpvWindowScale) → \(newMpvWindowScale)")
+    // Do not call while resizing the window, as doing so has race conditions.
+    guard loaded, let window, !window.inLiveResize, !isAnimatingLayoutTransition else { return }
+    guard !isMagnifying else { return }
+    guard currentLayout.mode == .windowedNormal || currentLayout.mode == .musicMode else {
+      // Not supported in music mode at this time. Need to resolve backing scale bugs
+      log.error("mpvWindowScaleDidUpdate: Skipping; unsupported mode: \(currentLayout.mode)")
+      return
+    }
 
     let gtf = GeometryTransform("SetWindowScaleFromMPV", player,
                                 windowed: { [self] ctx -> PWinGeometry? in
-      let oldWindowedGeo = ctx.inputGeoSet.windowed
+      let oldGeo = ctx.inputGeoSet.windowed
+
+      let currentMpvWindowScale = windowedGeoForCurrentFrame().mpvWindowScale()
+
+      guard newMpvWindowScale != currentMpvWindowScale else {
+        log.verbose("mpvWindowScaleDidUpdate: Skipping; same as cached value (\(newMpvWindowScale))")
+        return nil
+      }
+      // Need to update this right away in case mpv sends duplicate requests
+      log.verbose("mpvWindowScaleDidUpdate: Got updated window-scale from mpv: \(currentMpvWindowScale) → \(newMpvWindowScale)")
+
       // TODO: if Preference.bool(for: .usePhysicalResolution) {}
 
-      /// This logic needs to match the function `mp_property_current_window_scale` in mpv's `player.command.c`
-      // mpv uses viewport size for calculation when keepaspect-window=no, which we always use in our operation.
-      let videoSizeCAR = oldWindowedGeo.video.videoSizeCAR
-      // FIXME: Need to scale *current* viewport including margins
-      let viewportSizeScaled = (videoSizeCAR * newMpvWindowScale).rounded()
-      let newGeo = oldWindowedGeo.scalingViewport(to: viewportSizeScaled, screenFit: .stayInside)
+      let newGeo = oldGeo.scalingViewport(fromMpvWindowScale: newMpvWindowScale)
       let finalMpvWindowScale = newGeo.mpvWindowScale()
       if newMpvWindowScale == finalMpvWindowScale {
-        log.verbose("mpv→SetWindowScale: cached=\(currentMpvWindowScale) → \(finalMpvWindowScale)")
+        log.verbose("mpvWindowScaleDidUpdate: cached=\(currentMpvWindowScale) → \(finalMpvWindowScale)")
       } else {
-        // Could not match desired value. Notify mpv of value used
-        log.verbose("mpv→SetWindowScale: cached=\(currentMpvWindowScale) desired=\(newMpvWindowScale) → ACTUAL=\(finalMpvWindowScale)")
+        // Could not match desired value (e.g. window would be larger than screen). Notify mpv of updated value:
+        log.verbose("mpvWindowScaleDidUpdate: cached=\(currentMpvWindowScale) desired=\(newMpvWindowScale) → sending corrected=\(finalMpvWindowScale)")
         sendWindowScaleToMPV(basedOn: newGeo)
       }
       return newGeo
