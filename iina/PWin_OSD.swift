@@ -37,7 +37,7 @@ final class OSDState {
   /// Use label constructor (even with empty string) to ensure proper styling
   fileprivate let osdLabel = NSTextField(labelWithString: "")
   fileprivate let osdAccessoryText = NSTextField(labelWithString: "")
-  fileprivate let osdAccessoryProgress = NSProgressIndicator()
+  fileprivate let osdAccessoryProgress = FixedProgressBar()
 
   // - Internal constraints (not actually optional)
 
@@ -49,6 +49,8 @@ final class OSDState {
   fileprivate let osdTrailingPaddingConstraint = OptionalConstraint("OSD-TrailingPadding")
   fileprivate let osdLeadingPaddingConstraint = OptionalConstraint("OSD-LeadingPadding")
   fileprivate let osdBtmPaddingConstraint = OptionalConstraint("OSD-BtmPadding")
+
+  fileprivate let osdProgressHeightConstraint = OptionalConstraint("OSDProgress.height")
 
   // - Optional constraints
 
@@ -167,14 +169,7 @@ final class OSDState {
 
     osdAccessoryProgress.idString = "OSD-ProgressBar"
     osdAccessoryProgress.translatesAutoresizingMaskIntoConstraints = false
-    osdAccessoryProgress.usesThreadedAnimation = false
-    osdAccessoryProgress.isIndeterminate = false
-    osdAccessoryProgress.wantsLayer = true
     osdAccessoryProgress.setContentHuggingPriority(.init(270), for: .horizontal)
-    osdAccessoryProgress.style = .bar
-    osdAccessoryProgress.minValue = 0
-    osdAccessoryProgress.maxValue = 1
-    osdAccessoryProgress.isDisplayedWhenStopped = true
 
     osdView.subviews = [osdHStackView]
     osdHStackView.addView(osdIconImageView, in: .leading)
@@ -214,7 +209,15 @@ final class OSDState {
     osdTrailingPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
       osdView.trailingAnchor.constraint(equalTo: osdHStackView.trailingAnchor, constant: c)
     }
+    osdProgressHeightConstraint.createOrUpdate(to: 0, log) { [self] c in
+      osdAccessoryProgress.heightAnchor.constraint(equalToConstant: c)
+    }
+  }
 
+  func updateAppearance(_ appearance: NSAppearance, _ barFactory: BarFactory) {
+    osdAccessoryProgress.barFactory = barFactory
+    let height = barFactory.maxVolBarHeightNeeded
+    osdProgressHeightConstraint.constraint!.animateToConstant(height)
   }
 
   static func osdTimeoutFromPrefs() -> Double {
@@ -566,6 +569,7 @@ extension PlayerWindowController {
       osd.osdVStackView.setVisibilityPriority(.notVisible, for: osd.osdAccessoryText)
       osd.osdVStackView.setVisibilityPriority(.mustHold, for: osd.osdAccessoryProgress)
       osd.osdAccessoryProgress.doubleValue = value
+      osd.osdAccessoryProgress.needsDisplay = true
     case .withLeftToRightText(let text):
       // OSD messages displaying the playback position must always be displayed left to right.
       osd.osdAccessoryText.baseWritingDirection = .leftToRight
@@ -923,15 +927,6 @@ extension PlayerWindowController {
 
     let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
     osd.osdLabel.font = osdLabelFont
-
-    if #available(macOS 11.0, *) {
-      switch osdTextSize {
-      case 32...:
-        osd.osdAccessoryProgress.controlSize = .regular
-      default:
-        osd.osdAccessoryProgress.controlSize = .small
-      }
-    }
 
     if #available(macOS 11.0, *) {
       // Use dimensions of a dummy image to keep the height fixed. Because all the components are vertically aligned

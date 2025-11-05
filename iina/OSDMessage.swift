@@ -308,11 +308,11 @@ enum OSDMessage {
 
     case .mute(let volume):
       return (NSLocalizedString("osd.mute", comment: "Mute"),
-        .withProgress(Double(volume) / Double(Preference.integer(for: .maxVolume))))
+        .withProgress(Double(volume) / Preference.double(for: .maxVolume)))
 
     case .unMute(let volume):
       return (NSLocalizedString("osd.unmute", comment: "Unmute"),
-              .withProgress(Double(volume) / Double(Preference.integer(for: .maxVolume))))
+              .withProgress(Double(volume) / Preference.double(for: .maxVolume)))
 
     case .screenshot:
       return (NSLocalizedString("osd.screenshot", comment: "Screenshot Captured"), .normal)

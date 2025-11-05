@@ -720,8 +720,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let sliderAppearance = layoutState.effectiveOSCColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
     sliderAppearance.applyAppearanceFor {
-      barFactory = BarFactory(effectiveAppearance: effectiveAppearance, layoutState)
+      let barFactory = BarFactory(effectiveAppearance: effectiveAppearance, layoutState)
+      self.barFactory = barFactory
       knobFactory.invalidateCachedKnobs()
+      osd.updateAppearance(effectiveAppearance, barFactory)
       playSlider.abLoopA.updateKnobImage(to: .loopKnob)
       playSlider.abLoopB.updateKnobImage(to: .loopKnob)
 

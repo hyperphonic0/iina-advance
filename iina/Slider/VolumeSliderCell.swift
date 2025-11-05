@@ -49,6 +49,7 @@ class VolumeSliderCell: ScrollableSliderCell {
 
     appearance.applyAppearanceFor {
       let drawShadow = hasClearBG
+      
       let volBarImg = bf.buildVolumeBarImage(useFocusEffect: wantsFocusEffect,
                                              barWidth: barRect.width,
                                              scaleFactor: scaleFactor, knobRect: knobRect,
