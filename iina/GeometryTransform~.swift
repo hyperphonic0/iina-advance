@@ -438,6 +438,10 @@ struct GeometryTransform {
             resizedGeo = nil
           }
 
+//          if !inputGeoSet.windowed.mode.lockViewportToVideoSize {
+//            duration = 0.0
+//          }
+
         case .noSession:
           Logger.fatal("[GTF:\(name)] Invalid gtfSessionState: \(gtfSessionState)")
         }
