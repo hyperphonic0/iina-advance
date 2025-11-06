@@ -1590,6 +1590,7 @@ extension NSSegmentedControl {
 
 extension NSVisualEffectView {
   func roundCorners(withRadius cornerRadius: CGFloat) {
+    wantsLayer = true
     layer?.cornerRadius = cornerRadius
   }
 

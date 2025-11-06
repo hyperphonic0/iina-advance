@@ -347,9 +347,19 @@ extension PlayerWindowController {
 
     let gtf = GeometryTransform("SetWindowScaleFromMPV", player,
                                 windowed: { [self] ctx -> PWinGeometry? in
-      let oldGeo = ctx.inputGeoSet.windowed
+      let oldGeo: PWinGeometry
 
-      let currentMpvWindowScale = windowedGeoForCurrentFrame().mpvWindowScale()
+      switch ctx.inputLayout.mode {
+      case .musicMode:
+        oldGeo = ctx.inputGeoSet.musicMode
+      case .windowedNormal, .windowedInteractive:
+        oldGeo = ctx.inputGeoSet.windowed
+      default:
+        log.verbose("mpvWindowScaleDidUpdate: Skipping; wrong mode (\(ctx.inputLayout.mode))")
+        return nil
+      }
+
+      let currentMpvWindowScale = oldGeo.mpvWindowScale()
 
       guard newMpvWindowScale != currentMpvWindowScale else {
         log.verbose("mpvWindowScaleDidUpdate: Skipping; same as cached value (\(newMpvWindowScale))")
