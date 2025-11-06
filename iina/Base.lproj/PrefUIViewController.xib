@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24128" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24128"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -2272,7 +2272,7 @@ For smoothest results, also enable custom full screen.</string>
                 <box title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="0eU-xI-byi" userLabel="Hide-Inside-Video-Controls Box">
                     <rect key="frame" x="120" y="8" width="450" height="88"/>
                     <view key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="s79-ch-C1D" userLabel="Hide-Inside-Video-Controls Box View">
-                        <rect key="frame" x="1" y="1" width="408" height="86"/>
+                        <rect key="frame" x="0.0" y="0.0" width="450" height="88"/>
                         <subviews>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IvI-R5-Sdu">
                                 <rect key="frame" x="16" y="59" width="116" height="16"/>
@@ -2288,7 +2288,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </connections>
                             </button>
                             <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Abq-vA-BcZ" userLabel="Overlay-Auto-Hide-Timeout Text Field">
-                                <rect key="frame" x="140" y="55" width="58" height="24"/>
+                                <rect key="frame" x="140" y="57" width="58" height="24"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="58" id="asW-La-UC2"/>
                                 </constraints>
@@ -2309,7 +2309,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </connections>
                             </textField>
                             <textField identifier="AccessoryLabelOSCAutoHide" focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hkU-0W-pJb">
-                                <rect key="frame" x="200" y="59" width="11" height="16"/>
+                                <rect key="frame" x="200" y="61" width="11" height="16"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="s" id="S8H-Xr-uVa">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2561,22 +2561,174 @@ For smoothest results, also enable custom full screen.</string>
                                 </binding>
                             </connections>
                         </stackView>
-                        <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="1l9-NL-hzn" userLabel="0pt Spacer">
+                        <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="99z-FK-9pF" userLabel="0pt Spacer">
                             <rect key="frame" x="0.0" y="223" width="0.0" height="1"/>
                             <constraints>
-                                <constraint firstAttribute="height" constant="1" id="rIc-h6-YLH"/>
-                                <constraint firstAttribute="width" id="wyZ-mY-geX"/>
+                                <constraint firstAttribute="height" constant="1" id="ige-xv-5tZ"/>
+                                <constraint firstAttribute="width" id="nEi-sW-vMt"/>
                             </constraints>
                             <connections>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="lwy-Yr-cAC">
+                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="awJ-X1-cYv" id="agD-GO-dOn">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="awJ-X1-cYv">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
                                     </dictionary>
                                 </binding>
                             </connections>
                         </customView>
+                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="g8g-yT-A16" userLabel="AutoHideOSD HStack View">
+                            <rect key="frame" x="0.0" y="195" width="175" height="24"/>
+                            <subviews>
+                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bGH-kO-7Rd">
+                                    <rect key="frame" x="-2" y="4" width="98" height="16"/>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Auto hide after:" id="NUr-hY-gfo">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qNv-Yk-nvp" userLabel="AutoHideAfter Text Field">
+                                    <rect key="frame" x="102" y="0.0" width="58" height="24"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" constant="58" id="J5e-Bd-2ub"/>
+                                    </constraints>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="left" drawsBackground="YES" id="ZES-n7-9GN">
+                                        <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" minimumIntegerDigits="1" maximumIntegerDigits="2000000000" maximumFractionDigits="3" id="til-Jn-vQj">
+                                            <real key="minimum" value="0.10000000000000001"/>
+                                        </numberFormatter>
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                    <connections>
+                                        <binding destination="lH7-Vv-0M1" name="value" keyPath="values.osdAutoHideTimeout" id="sru-Ih-Fn0">
+                                            <dictionary key="options">
+                                                <bool key="NSContinuouslyUpdatesValue" value="YES"/>
+                                            </dictionary>
+                                        </binding>
+                                    </connections>
+                                </textField>
+                                <textField identifier="AccessoryLabelOSDAutoHide" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="oz1-yC-uZC">
+                                    <rect key="frame" x="166" y="4" width="11" height="16"/>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="s" id="ObY-7B-NTO">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                            </subviews>
+                            <visibilityPriorities>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
+                            </visibilityPriorities>
+                            <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                            </customSpacing>
+                            <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="IeJ-Qo-VTI" id="tBd-5F-lJN">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="IeJ-Qo-VTI">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </stackView>
+                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hGI-7p-dqG" userLabel="OSDTextSize HStack View">
+                            <rect key="frame" x="0.0" y="167" width="181" height="24"/>
+                            <subviews>
+                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="63o-gu-DxA">
+                                    <rect key="frame" x="-2" y="4" width="98" height="16"/>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Text size:" id="suy-e8-j4i">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="wDT-XM-dyY" userLabel="TextSize Text Field">
+                                    <rect key="frame" x="102" y="0.0" width="58" height="24"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" constant="58" id="rtB-DT-Hgf"/>
+                                    </constraints>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="left" drawsBackground="YES" id="FTd-qk-X5R">
+                                        <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" minimumIntegerDigits="1" maximumIntegerDigits="2000000000" maximumFractionDigits="3" id="Uva-ww-Iw6">
+                                            <real key="minimum" value="5"/>
+                                        </numberFormatter>
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                    <connections>
+                                        <binding destination="lH7-Vv-0M1" name="value" keyPath="values.osdTextSize" id="BAp-xF-a68">
+                                            <dictionary key="options">
+                                                <bool key="NSContinuouslyUpdatesValue" value="YES"/>
+                                            </dictionary>
+                                        </binding>
+                                    </connections>
+                                </textField>
+                                <textField identifier="AccessoryLabelTextSize" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HcO-CN-3qi">
+                                    <rect key="frame" x="166" y="4" width="17" height="16"/>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="pt" id="I8t-ey-016">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                            </subviews>
+                            <visibilityPriorities>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
+                            </visibilityPriorities>
+                            <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                            </customSpacing>
+                            <connections>
+                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="RZw-Si-IR5" id="a4c-9S-ij5">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSIsNotNil</string>
+                                    </dictionary>
+                                </binding>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="RZw-Si-IR5">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </stackView>
+                        <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="twE-W6-MHM" userLabel="0pt Spacer">
+                            <rect key="frame" x="0.0" y="162" width="0.0" height="1"/>
+                            <constraints>
+                                <constraint firstAttribute="width" id="Ifa-3Y-9ix"/>
+                                <constraint firstAttribute="height" constant="1" id="tTw-Ay-QRO"/>
+                            </constraints>
+                        </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Yfc-Gq-NE4" userLabel="SuppressMessages HStack View">
-                            <rect key="frame" x="0.0" y="86" width="366" height="133"/>
+                            <rect key="frame" x="0.0" y="25" width="366" height="133"/>
                             <subviews>
                                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nbb-vz-BDi" userLabel="SuppressMessages View" customClass="CollapseView" customModule="IINA_Advance" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="366" height="133"/>
@@ -2719,171 +2871,19 @@ For smoothest results, also enable custom full screen.</string>
                                 </binding>
                             </connections>
                         </stackView>
-                        <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="99z-FK-9pF" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="81" width="0.0" height="1"/>
-                            <constraints>
-                                <constraint firstAttribute="height" constant="1" id="ige-xv-5tZ"/>
-                                <constraint firstAttribute="width" id="nEi-sW-vMt"/>
-                            </constraints>
-                            <connections>
-                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="awJ-X1-cYv" id="agD-GO-dOn">
-                                    <dictionary key="options">
-                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
-                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
-                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
-                                        <integer key="NSNullPlaceholder" value="-1"/>
-                                        <string key="NSValueTransformerName">NSIsNotNil</string>
-                                    </dictionary>
-                                </binding>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="awJ-X1-cYv">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                            </connections>
-                        </customView>
-                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="g8g-yT-A16" userLabel="AutoHideOSD HStack View">
-                            <rect key="frame" x="0.0" y="53" width="175" height="24"/>
-                            <subviews>
-                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bGH-kO-7Rd">
-                                    <rect key="frame" x="-2" y="4" width="98" height="16"/>
-                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Auto hide after:" id="NUr-hY-gfo">
-                                        <font key="font" metaFont="system"/>
-                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                    </textFieldCell>
-                                </textField>
-                                <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qNv-Yk-nvp" userLabel="AutoHideAfter Text Field">
-                                    <rect key="frame" x="102" y="0.0" width="58" height="24"/>
-                                    <constraints>
-                                        <constraint firstAttribute="width" constant="58" id="J5e-Bd-2ub"/>
-                                    </constraints>
-                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="left" drawsBackground="YES" id="ZES-n7-9GN">
-                                        <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" minimumIntegerDigits="1" maximumIntegerDigits="2000000000" maximumFractionDigits="3" id="til-Jn-vQj">
-                                            <real key="minimum" value="0.10000000000000001"/>
-                                        </numberFormatter>
-                                        <font key="font" metaFont="system"/>
-                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                    </textFieldCell>
-                                    <connections>
-                                        <binding destination="lH7-Vv-0M1" name="value" keyPath="values.osdAutoHideTimeout" id="sru-Ih-Fn0">
-                                            <dictionary key="options">
-                                                <bool key="NSContinuouslyUpdatesValue" value="YES"/>
-                                            </dictionary>
-                                        </binding>
-                                    </connections>
-                                </textField>
-                                <textField identifier="AccessoryLabelOSDAutoHide" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="oz1-yC-uZC">
-                                    <rect key="frame" x="166" y="4" width="11" height="16"/>
-                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="s" id="ObY-7B-NTO">
-                                        <font key="font" metaFont="system"/>
-                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                    </textFieldCell>
-                                </textField>
-                            </subviews>
-                            <visibilityPriorities>
-                                <integer value="1000"/>
-                                <integer value="1000"/>
-                                <integer value="1000"/>
-                            </visibilityPriorities>
-                            <customSpacing>
-                                <real value="3.4028234663852886e+38"/>
-                                <real value="3.4028234663852886e+38"/>
-                                <real value="3.4028234663852886e+38"/>
-                            </customSpacing>
-                            <connections>
-                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="IeJ-Qo-VTI" id="tBd-5F-lJN">
-                                    <dictionary key="options">
-                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
-                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
-                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
-                                        <integer key="NSNullPlaceholder" value="-1"/>
-                                        <string key="NSValueTransformerName">NSIsNotNil</string>
-                                    </dictionary>
-                                </binding>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="IeJ-Qo-VTI">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                            </connections>
-                        </stackView>
-                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hGI-7p-dqG" userLabel="OSDTextSize HStack View">
-                            <rect key="frame" x="0.0" y="25" width="181" height="24"/>
-                            <subviews>
-                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="63o-gu-DxA">
-                                    <rect key="frame" x="-2" y="4" width="98" height="16"/>
-                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Text size:" id="suy-e8-j4i">
-                                        <font key="font" metaFont="system"/>
-                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                    </textFieldCell>
-                                </textField>
-                                <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="wDT-XM-dyY" userLabel="TextSize Text Field">
-                                    <rect key="frame" x="102" y="0.0" width="58" height="24"/>
-                                    <constraints>
-                                        <constraint firstAttribute="width" constant="58" id="rtB-DT-Hgf"/>
-                                    </constraints>
-                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="left" drawsBackground="YES" id="FTd-qk-X5R">
-                                        <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" minimumIntegerDigits="1" maximumIntegerDigits="2000000000" maximumFractionDigits="3" id="Uva-ww-Iw6">
-                                            <real key="minimum" value="5"/>
-                                        </numberFormatter>
-                                        <font key="font" metaFont="system"/>
-                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                    </textFieldCell>
-                                    <connections>
-                                        <binding destination="lH7-Vv-0M1" name="value" keyPath="values.osdTextSize" id="BAp-xF-a68">
-                                            <dictionary key="options">
-                                                <bool key="NSContinuouslyUpdatesValue" value="YES"/>
-                                            </dictionary>
-                                        </binding>
-                                    </connections>
-                                </textField>
-                                <textField identifier="AccessoryLabelTextSize" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HcO-CN-3qi">
-                                    <rect key="frame" x="166" y="4" width="17" height="16"/>
-                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="pt" id="I8t-ey-016">
-                                        <font key="font" metaFont="system"/>
-                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                    </textFieldCell>
-                                </textField>
-                            </subviews>
-                            <visibilityPriorities>
-                                <integer value="1000"/>
-                                <integer value="1000"/>
-                                <integer value="1000"/>
-                            </visibilityPriorities>
-                            <customSpacing>
-                                <real value="3.4028234663852886e+38"/>
-                                <real value="3.4028234663852886e+38"/>
-                                <real value="3.4028234663852886e+38"/>
-                            </customSpacing>
-                            <connections>
-                                <binding destination="-2" name="hidden2" keyPath="usingMpvOSD" previousBinding="RZw-Si-IR5" id="a4c-9S-ij5">
-                                    <dictionary key="options">
-                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
-                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
-                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
-                                        <integer key="NSNullPlaceholder" value="-1"/>
-                                        <string key="NSValueTransformerName">NSIsNotNil</string>
-                                    </dictionary>
-                                </binding>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="RZw-Si-IR5">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                            </connections>
-                        </stackView>
-                        <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="twE-W6-MHM" userLabel="0pt Spacer">
+                        <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="1l9-NL-hzn" userLabel="0pt Spacer">
                             <rect key="frame" x="0.0" y="20" width="0.0" height="1"/>
                             <constraints>
-                                <constraint firstAttribute="width" id="Ifa-3Y-9ix"/>
-                                <constraint firstAttribute="height" constant="1" id="tTw-Ay-QRO"/>
+                                <constraint firstAttribute="height" constant="1" id="rIc-h6-YLH"/>
+                                <constraint firstAttribute="width" id="wyZ-mY-geX"/>
                             </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="lwy-Yr-cAC">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iaL-Nb-KRK" userLabel="OSDTimeAndBattery HStack View">
                             <rect key="frame" x="0.0" y="0.0" width="313" height="16"/>
@@ -2947,7 +2947,7 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="-18" y="563"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars" propertyAccessControl="all">
+        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="619" height="362"/>
             <subviews>
                 <textField identifier="SectionTitleSidebars" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="E6K-jW-Lzn">

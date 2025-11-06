@@ -944,18 +944,23 @@ extension PlayerWindowController {
     osd.textSizeLast = osdTextSize
     log.verbose("[OSD] Δ textSize: \(osd.textSizeLast) → \(osdTextSize)")
 
+
     // Also update progress bar height based on text size
     let sliderBarHeight = osd.updateProgressBarStyle(window.effectiveAppearance, effectiveOSCColorScheme: currentLayout.effectiveOSCColorScheme)
 
     let osdAccessoryTextSize = (osdTextSize * 0.75).clamped(to: 11...25)
     osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
 
+    // Just manually
+    let stackViewMargin = osdTextSize * 0.2
+    osd.osdVStackView.edgeInsets.bottom = stackViewMargin
+
     // Update padding around edges
     let marginScaled = 8 + (osdTextSize * 0.06)
     osd.osdTopPaddingConstraint.constraint?.animateToConstant(marginScaled)
     osd.osdBtmPaddingConstraint.constraint?.animateToConstant(marginScaled)
-    osd.osdTrailingPaddingConstraint.constraint?.animateToConstant(marginScaled)
-    osd.osdLeadingPaddingConstraint.constraint?.animateToConstant(marginScaled)
+    osd.osdTrailingPaddingConstraint.constraint?.animateToConstant(marginScaled + stackViewMargin)
+    osd.osdLeadingPaddingConstraint.constraint?.animateToConstant(marginScaled + (stackViewMargin * 0.5))
 
     // Update OSD label
     let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
