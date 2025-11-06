@@ -31,7 +31,6 @@ final class OSDState {
   // - Views
 
   let osdView = OSDView()
-  fileprivate let osdHStackView = ClickThroughStackView()
   fileprivate let osdVStackView = ClickThroughStackView()
   fileprivate let osdIconImageView = NSImageView()
   /// Use label constructor (even with empty string) to ensure proper styling
@@ -125,15 +124,6 @@ final class OSDState {
     self.log = log
 
     log.verbose("Init OSD")
-    osdHStackView.idString = "OSD-HStackView"
-    osdHStackView.wantsLayer = true
-    osdHStackView.orientation = .horizontal
-    osdHStackView.alignment = .centerY
-    osdHStackView.spacing = 4
-    osdHStackView.detachesHiddenViews = true
-    osdHStackView.setHuggingPriority(.init(902), for: .horizontal)
-    osdHStackView.setHuggingPriority(.init(902), for: .vertical)
-    osdHStackView.translatesAutoresizingMaskIntoConstraints = false
 
     osdIconImageView.idString = "OSDIconImageView"
     osdIconImageView.imageScaling = .scaleProportionallyUpOrDown
@@ -174,9 +164,7 @@ final class OSDState {
     osdAccessoryProgress.setContentHuggingPriority(.init(270), for: .horizontal)
     osdAccessoryProgress.setContentCompressionResistancePriority(.required, for: .vertical)
 
-    osdView.subviews = [osdHStackView]
-    osdHStackView.addView(osdIconImageView, in: .leading)
-    osdHStackView.addView(osdVStackView, in: .leading)
+    osdView.subviews = [osdIconImageView, osdVStackView]
 
     osdVStackView.idString = "OSD-VStackView"
     osdVStackView.wantsLayer = true
@@ -185,8 +173,6 @@ final class OSDState {
     osdVStackView.distribution = .fillProportionally
     osdVStackView.spacing = 0
     osdVStackView.detachesHiddenViews = true
-    osdVStackView.setHuggingPriority(.init(250), for: .horizontal)
-    osdVStackView.setHuggingPriority(.init(500), for: .vertical)
     osdVStackView.translatesAutoresizingMaskIntoConstraints = false
 
     osdVStackView.addView(osdLabel, in: .leading)
@@ -202,40 +188,53 @@ final class OSDState {
     }
 
     osdTopPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
-      osdHStackView.topAnchor.constraint(equalTo: osdView.topAnchor, constant: c)
+      osdVStackView.topAnchor.constraint(equalTo: osdView.topAnchor, constant: c)
     }
     osdBtmPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
-      osdView.bottomAnchor.constraint(equalTo: osdHStackView.bottomAnchor, constant: c)
+      osdView.bottomAnchor.constraint(equalTo: osdVStackView.bottomAnchor, constant: c)
     }
     osdLeadingPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
-      osdHStackView.leadingAnchor.constraint(equalTo: osdView.leadingAnchor, constant: c)
+      osdIconImageView.leadingAnchor.constraint(equalTo: osdView.leadingAnchor, constant: c)
     }
     osdTrailingPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
-      osdView.trailingAnchor.constraint(equalTo: osdHStackView.trailingAnchor, constant: c)
+      osdView.trailingAnchor.constraint(equalTo: osdVStackView.trailingAnchor, constant: c)
     }
     osdProgressHeightConstraint.createOrUpdate(to: 0, log) { [self] c in
       osdAccessoryProgress.heightAnchor.constraint(equalToConstant: c)
     }
+
+    // [osdIconImageView]-4-[osdVStackView]
+    osdVStackView.leadingAnchor.constraint(equalTo: osdIconImageView.trailingAnchor, constant: 4).isActive = true
+
+    // Center the icon vertically
+    osdIconImageView.centerYAnchor.constraint(equalTo: osdView.centerYAnchor).isActive = true
   }
 
-  func updateAppearance(_ appearance: NSAppearance, effectiveOSCColorScheme: Preference.OSCColorScheme) {
+  fileprivate func updateIconWidth(fromHeight iconHeight: CGFloat) {
+    guard let icon = osdIconImageView.image else { return }
+    let iconWidth = round(icon.size.aspect * iconHeight)
+    osdIconWidthConstraint.constraint?.constant = iconWidth
+  }
+
+  @discardableResult
+  func updateProgressBarStyle(_ appearance: NSAppearance, effectiveOSCColorScheme: Preference.OSCColorScheme) -> CGFloat {
     let osdTextSize = textSizeLast
-    guard osdTextSize > 0 else { return }
+    guard osdTextSize > 0 else { return 0 }
     let sliderBarHeight: CGFloat
 
     switch osdTextSize {
     case ..<30:
       sliderBarHeight = 3
-    case 30..<70:
-      sliderBarHeight = 6
     default:
-      sliderBarHeight = 9
+      sliderBarHeight = (osdTextSize / 10).rounded()
     }
     osdAccessoryProgress.barFactory = BarFactory(effectiveAppearance: appearance,
                                                  effectiveOSCColorScheme: effectiveOSCColorScheme,
                                                  sliderBarHeight_Normal: sliderBarHeight)
     osdProgressHeightConstraint.constraint!.animateToConstant(sliderBarHeight * 2)
     osdView.needsLayout = true
+
+    return sliderBarHeight
   }
 
   static func osdTimeoutFromPrefs() -> Double {
@@ -671,13 +670,17 @@ extension PlayerWindowController {
       }
     }
 
-    if let icon, let heightConstraint = osd.osdIconHeightConstraint.constraint {
-      let finalheight = heightConstraint.constant
-      let finalWidth = round(icon.size.aspect * finalheight)
-      osd.osdIconWidthConstraint.constraint?.constant = finalWidth
-
-      osd.osdIconImageView.image =  icon
+    if let icon {
+      osd.osdIconImageView.image = icon
       osd.osdIconImageView.contentTintColor = isIconGrayedOut ? .disabledControlTextColor : .controlTextColor
+
+      // New icon may have a different aspect than old one. Update its width
+      osd.updateIconWidth(fromHeight: osd.osdIconHeightConstraint.constraint!.constant)
+      osd.osdIconImageView.isHidden = false
+    } else {
+      // Set width to 0 so that VStackView can use its space
+      osd.osdIconWidthConstraint.constraint?.constant = 0
+      osd.osdIconImageView.isHidden = true
     }
     let isIconVisible = icon != nil
     // Need this only for OSD messages which use the icon
@@ -941,20 +944,24 @@ extension PlayerWindowController {
     osd.textSizeLast = osdTextSize
     log.verbose("[OSD] Δ textSize: \(osd.textSizeLast) → \(osdTextSize)")
 
-    osd.updateAppearance(window.effectiveAppearance, effectiveOSCColorScheme: currentLayout.effectiveOSCColorScheme)
+    // Also update progress bar height based on text size
+    let sliderBarHeight = osd.updateProgressBarStyle(window.effectiveAppearance, effectiveOSCColorScheme: currentLayout.effectiveOSCColorScheme)
 
     let osdAccessoryTextSize = (osdTextSize * 0.75).clamped(to: 11...25)
     osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
 
+    // Update padding around edges
     let marginScaled = 8 + (osdTextSize * 0.06)
     osd.osdTopPaddingConstraint.constraint?.animateToConstant(marginScaled)
     osd.osdBtmPaddingConstraint.constraint?.animateToConstant(marginScaled)
     osd.osdTrailingPaddingConstraint.constraint?.animateToConstant(marginScaled)
     osd.osdLeadingPaddingConstraint.constraint?.animateToConstant(marginScaled)
 
+    // Update OSD label
     let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
     osd.osdLabel.font = osdLabelFont
 
+    // Update icon height & width
     if #available(macOS 11.0, *) {
       // Use dimensions of a dummy image to keep the height fixed. Because all the components are vertically aligned
       // and each icon has a different height, this is needed to prevent the progress bar from jumping up and down
@@ -962,12 +969,13 @@ extension PlayerWindowController {
       let attachment = NSTextAttachment()
       attachment.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "")!
       let iconString = NSMutableAttributedString(attachment: attachment)
-      let osdIconTextSize = osdTextSize + (osd.osdAccessoryProgress.fittingSize.height)
+      let osdIconTextSize = osdTextSize + sliderBarHeight
       let osdIconFont = NSFont.monospacedDigitSystemFont(ofSize: osdIconTextSize, weight: .regular)
       iconString.addAttribute(.font, value: osdIconFont, range: NSRange(location: 0, length: iconString.length))
       let iconHeight = iconString.size().height
 
       osd.osdIconHeightConstraint.constraint?.animateToConstant(iconHeight)
+      osd.updateIconWidth(fromHeight: iconHeight)
     }
   }
 }

@@ -720,7 +720,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let barFactory = BarFactory(effectiveAppearance: effectiveAppearance, effectiveOSCColorScheme: layoutState.effectiveOSCColorScheme, sliderBarHeight_Normal: layoutState.controlBarGeo.sliderBarHeightNormal)
       self.barFactory = barFactory
       knobFactory.invalidateCachedKnobs()
-      osd.updateAppearance(effectiveAppearance, effectiveOSCColorScheme: layoutState.effectiveOSCColorScheme)
+      osd.updateProgressBarStyle(effectiveAppearance, effectiveOSCColorScheme: layoutState.effectiveOSCColorScheme)
       playSlider.abLoopA.updateKnobImage(to: .loopKnob)
       playSlider.abLoopB.updateKnobImage(to: .loopKnob)
 
