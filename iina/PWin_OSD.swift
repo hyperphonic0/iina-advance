@@ -147,6 +147,7 @@ final class OSDState {
     osdLabel.translatesAutoresizingMaskIntoConstraints = false
     osdLabel.setContentHuggingPriority(.init(251), for: .horizontal)
     osdLabel.setContentCompressionResistancePriority(.init(499), for: .horizontal)
+    osdLabel.setContentCompressionResistancePriority(.init(1000), for: .vertical)
     osdLabel.focusRingType = .none
     osdLabel.lineBreakMode = .byTruncatingTail
     osdLabel.alignment = .left
@@ -159,6 +160,7 @@ final class OSDState {
     osdAccessoryText.setContentHuggingPriority(.init(251), for: .horizontal)
     osdAccessoryText.setContentHuggingPriority(.init(750), for: .vertical)
     osdAccessoryText.setContentCompressionResistancePriority(.init(499), for: .horizontal)
+    osdAccessoryText.setContentCompressionResistancePriority(.init(1000), for: .vertical)
     osdAccessoryText.focusRingType = .none
     osdAccessoryText.lineBreakMode = .byClipping
     osdAccessoryText.alignment = .justified
@@ -170,6 +172,7 @@ final class OSDState {
     osdAccessoryProgress.idString = "OSD-ProgressBar"
     osdAccessoryProgress.translatesAutoresizingMaskIntoConstraints = false
     osdAccessoryProgress.setContentHuggingPriority(.init(270), for: .horizontal)
+    osdAccessoryProgress.setContentCompressionResistancePriority(.required, for: .vertical)
 
     osdView.subviews = [osdHStackView]
     osdHStackView.addView(osdIconImageView, in: .leading)
@@ -179,7 +182,8 @@ final class OSDState {
     osdVStackView.wantsLayer = true
     osdVStackView.orientation = .vertical
     osdVStackView.alignment = .leading
-    osdVStackView.spacing = 2
+    osdVStackView.distribution = .fillProportionally
+    osdVStackView.spacing = 0
     osdVStackView.detachesHiddenViews = true
     osdVStackView.setHuggingPriority(.init(250), for: .horizontal)
     osdVStackView.setHuggingPriority(.init(500), for: .vertical)
@@ -214,15 +218,56 @@ final class OSDState {
     }
   }
 
-  func updateAppearance(_ appearance: NSAppearance, _ barFactory: BarFactory) {
-    osdAccessoryProgress.barFactory = barFactory
-    let height = barFactory.maxVolBarHeightNeeded
-    osdProgressHeightConstraint.constraint!.animateToConstant(height)
+  func updateAppearance(_ appearance: NSAppearance, effectiveOSCColorScheme: Preference.OSCColorScheme) {
+    let osdTextSize = textSizeLast
+    guard osdTextSize > 0 else { return }
+    let sliderBarHeight: CGFloat
+
+    switch osdTextSize {
+    case ..<30:
+      sliderBarHeight = 3
+    case 30..<70:
+      sliderBarHeight = 6
+    default:
+      sliderBarHeight = 9
+    }
+    osdAccessoryProgress.barFactory = BarFactory(effectiveAppearance: appearance,
+                                                 effectiveOSCColorScheme: effectiveOSCColorScheme,
+                                                 sliderBarHeight_Normal: sliderBarHeight)
+    osdProgressHeightConstraint.constraint!.animateToConstant(sliderBarHeight * 2)
+    osdView.needsLayout = true
   }
 
   static func osdTimeoutFromPrefs() -> Double {
     // Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
     return max(Constants.TimeInterval.osdTimeoutMin, Double(Preference.float(for: .osdAutoHideTimeout)))
+  }
+
+  fileprivate func getOSDTextSize(from givenGeo: PWinGeometry) -> CGFloat {
+    let availableSpaceForOSD = givenGeo.widthBetweenInsideSidebars
+
+    // Reduce text size if horizontal space is tight
+    var osdTextSize = max(8.0, CGFloat(Preference.float(for: .osdTextSize)))
+    switch availableSpaceForOSD {
+    case ..<300:
+      osdTextSize = min(osdTextSize, 18)
+    case 300..<400:
+      osdTextSize = min(osdTextSize, 28)
+    case 400..<500:
+      osdTextSize = min(osdTextSize, 36)
+    case 500..<700:
+      osdTextSize = min(osdTextSize, 50)
+    case 700..<900:
+      osdTextSize = min(osdTextSize, 72)
+    case 900..<1200:
+      osdTextSize = min(osdTextSize, 96)
+    case 1200..<1500:
+      osdTextSize = min(osdTextSize, 120)
+    default:
+      osdTextSize = min(osdTextSize, 150)
+    }
+
+    return osdTextSize
   }
 
 }
@@ -469,6 +514,8 @@ extension PlayerWindowController {
     }
 
     if hasOSD || hasAdditionalInfo {
+      updateOSDTextSize(from: stageGeo)
+
       sortViewportViewSubviews()
       window?.contentView?.needsLayout = true
     }
@@ -873,8 +920,8 @@ extension PlayerWindowController {
   }
 
   func updateOSDTextSize(from givenGeo: PWinGeometry? = nil) {
-    guard player.info.isFileLoadedAndSized else { return }
-
+    guard let window else { return }
+    let currentLayout = currentLayout
     let pwGeo: PWinGeometry
     if let givenGeo {
       pwGeo = givenGeo
@@ -889,32 +936,12 @@ extension PlayerWindowController {
       }
     }
 
-    let availableSpaceForOSD = pwGeo.widthBetweenInsideSidebars
-
-    // Reduce text size if horizontal space is tight
-    var osdTextSize = max(8.0, CGFloat(Preference.float(for: .osdTextSize)))
-    switch availableSpaceForOSD {
-    case ..<300:
-      osdTextSize = min(osdTextSize, 18)
-    case 300..<400:
-      osdTextSize = min(osdTextSize, 28)
-    case 400..<500:
-      osdTextSize = min(osdTextSize, 36)
-    case 500..<700:
-      osdTextSize = min(osdTextSize, 50)
-    case 700..<900:
-      osdTextSize = min(osdTextSize, 72)
-    case 900..<1200:
-      osdTextSize = min(osdTextSize, 96)
-    case 1200..<1500:
-      osdTextSize = min(osdTextSize, 120)
-    default:
-      osdTextSize = min(osdTextSize, 150)
-    }
-
+    let osdTextSize = osd.getOSDTextSize(from: pwGeo)
     guard osdTextSize != osd.textSizeLast else { return }
-
+    osd.textSizeLast = osdTextSize
     log.verbose("[OSD] Δ textSize: \(osd.textSizeLast) → \(osdTextSize)")
+
+    osd.updateAppearance(window.effectiveAppearance, effectiveOSCColorScheme: currentLayout.effectiveOSCColorScheme)
 
     let osdAccessoryTextSize = (osdTextSize * 0.75).clamped(to: 11...25)
     osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
@@ -942,6 +969,5 @@ extension PlayerWindowController {
 
       osd.osdIconHeightConstraint.constraint?.animateToConstant(iconHeight)
     }
-    osd.textSizeLast = osdTextSize
   }
 }

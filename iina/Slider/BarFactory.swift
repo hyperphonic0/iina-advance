@@ -46,9 +46,9 @@ class BarFactory {
   private var leftCachedColor: CGColor
   private var rightCachedColor: CGColor
 
-  init(effectiveAppearance: NSAppearance, _ layout: LayoutState) {
+  init(effectiveAppearance: NSAppearance, effectiveOSCColorScheme: Preference.OSCColorScheme, sliderBarHeight_Normal barHeight_Normal: CGFloat) {
     // If clear BG, can mostly reuse dark theme, but some things need tweaks (e.g. barColorRight needs extra alpha)
-    let hasClearBG = layout.effectiveOSCColorScheme == .clearGradient
+    let hasClearBG = effectiveOSCColorScheme == .clearGradient
     let barAppearance = hasClearBG ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
 
     let (barColorLeft, barColorRight) = barAppearance.applyAppearanceFor {
@@ -87,8 +87,6 @@ class BarFactory {
 
     // - Secondary Vars - PlaySlider & VolumeSlider both:
 
-    let oscGeo = layout.controlBarGeo
-    let barHeight_Normal: CGFloat = oscGeo.sliderBarHeightNormal
     updateCurvature(using: barHeight_Normal)
     let barCornerRadius_Normal = cornerRadius(for: barHeight_Normal)
 
