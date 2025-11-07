@@ -218,13 +218,17 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
       tabButtonGroup.wantsLayer = true
       tabButtonGroup.layer?.backgroundColor = watchTableBackgroundColor.cgColor
-      tabButtonGroup.borderShape = .roundedRectangle
+      tabButtonGroup.borderShape = .capsule
       tabButtonGroup.layer?.cornerRadius = inspectorCornerRadius
+      tabButtonGroup.segmentStyle = .capsule
 
       watchTableContainerView.layer?.cornerRadius = inspectorCornerRadius
+
+      trackPopup.borderShape = .capsule
     } else {
       tabButtonGroupBottomLine.isHidden = false
     }
+
 
     // Other UI init
 

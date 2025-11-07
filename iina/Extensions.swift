@@ -1588,19 +1588,6 @@ extension NSSegmentedControl {
 }
 
 
-extension NSVisualEffectView {
-  func roundCorners(withRadius cornerRadius: CGFloat) {
-    wantsLayer = true
-    layer?.cornerRadius = cornerRadius
-  }
-
-  func roundCorners() {
-    wantsLayer = true
-    let radius = suggestedRoundedCornerRadius()
-    roundCorners(withRadius: radius)
-  }
-}
-
 
 extension NSBox {
   static func horizontalLine() -> NSBox {
@@ -2001,6 +1988,17 @@ extension NSView {
     }
   }
 
+  func roundCorners(withRadius cornerRadius: CGFloat) {
+    wantsLayer = true
+    layer?.cornerRadius = cornerRadius
+  }
+
+  func roundCorners() {
+    wantsLayer = true
+    let radius = suggestedRoundedCornerRadius()
+    roundCorners(withRadius: radius)
+  }
+  
   func suggestedRoundedCornerRadius() -> CGFloat {
     // Set corner radius to betwen 10 and 20
     return 10 + min(10, max(0, (frame.height - 400) * 0.01))
