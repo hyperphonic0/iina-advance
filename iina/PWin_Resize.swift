@@ -233,9 +233,6 @@ extension PlayerWindowController {
 
     if osd.animationState == .shown {
       updateOSDTextSize(from: newGeometry)
-      if player.info.isFileLoadedAndSized {
-        setOSDViews()
-      }
     }
   }
 

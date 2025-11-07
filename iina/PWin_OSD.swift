@@ -210,31 +210,51 @@ final class OSDState {
     osdIconImageView.centerYAnchor.constraint(equalTo: osdView.centerYAnchor).isActive = true
   }
 
-  fileprivate func updateIconWidth(fromHeight iconHeight: CGFloat) {
-    guard let icon = osdIconImageView.image else { return }
-    let iconWidth = round(icon.size.aspect * iconHeight)
-    osdIconWidthConstraint.constraint?.constant = iconWidth
+  fileprivate func updateIconSize(fromOSDTextSize osdTextSize: CGFloat) {
+    guard #available(macOS 11.0, *) else { return }
+    let iconHeight, iconWidth: CGFloat
+
+    // Don't want to animate the following
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    CATransaction.setAnimationDuration(0.0)
+
+    if let icon = osdIconImageView.image {
+      let sliderBarHeight = getSliderBarHeight(forOSDTextSize: osdTextSize)
+
+      // Use dimensions of a dummy image to keep the height fixed. Because all the components are vertically aligned
+      // and each icon has a different height, this is needed to prevent the progress bar from jumping up and down
+      // each time the OSD message changes.
+      let attachment = NSTextAttachment()
+      attachment.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "")!
+      let iconString = NSMutableAttributedString(attachment: attachment)
+      let osdIconTextSize = osdTextSize + sliderBarHeight
+      let osdIconFont = NSFont.monospacedDigitSystemFont(ofSize: osdIconTextSize, weight: .regular)
+      iconString.addAttribute(.font, value: osdIconFont, range: NSRange(location: 0, length: iconString.length))
+      iconHeight = iconString.size().height
+      iconWidth = (icon.size.aspect * iconHeight)
+
+    } else {
+      iconHeight = 0.0
+      iconWidth = 0.0
+    }
+
+    osdIconHeightConstraint.constraint?.animateToConstant(iconHeight)
+    osdIconWidthConstraint.constraint?.animateToConstant(iconWidth)
+
+    CATransaction.commit()
   }
 
-  @discardableResult
-  func updateProgressBarStyle(_ appearance: NSAppearance, effectiveOSCColorScheme: Preference.OSCColorScheme) -> CGFloat {
+  func updateProgressBarStyle(_ appearance: NSAppearance, effectiveOSCColorScheme: Preference.OSCColorScheme) {
     let osdTextSize = textSizeLast
-    guard osdTextSize > 0 else { return 0 }
-    let sliderBarHeight: CGFloat
+    guard osdTextSize > 0 else { return }
 
-    switch osdTextSize {
-    case ..<30:
-      sliderBarHeight = 3
-    default:
-      sliderBarHeight = (osdTextSize / 10).rounded()
-    }
+    let sliderBarHeight = getSliderBarHeight(forOSDTextSize: osdTextSize)
     osdAccessoryProgress.barFactory = BarFactory(effectiveAppearance: appearance,
                                                  effectiveOSCColorScheme: effectiveOSCColorScheme,
                                                  sliderBarHeight_Normal: sliderBarHeight)
     osdProgressHeightConstraint.constraint!.animateToConstant(sliderBarHeight * 2)
     osdView.needsLayout = true
-
-    return sliderBarHeight
   }
 
   static func osdTimeoutFromPrefs() -> Double {
@@ -246,7 +266,7 @@ final class OSDState {
     let availableSpaceForOSD = givenGeo.widthBetweenInsideSidebars
 
     // Reduce text size if horizontal space is tight
-    var osdTextSize = max(8.0, CGFloat(Preference.float(for: .osdTextSize)))
+    var osdTextSize = max(Constants.OSD.minTextSize, CGFloat(Preference.float(for: .osdTextSize)))
     switch availableSpaceForOSD {
     case ..<300:
       osdTextSize = min(osdTextSize, 18)
@@ -269,6 +289,16 @@ final class OSDState {
     return osdTextSize
   }
 
+  fileprivate func getSliderBarHeight(forOSDTextSize osdTextSize: CGFloat) -> CGFloat {
+    guard osdTextSize > 0 else { return 0 }
+
+    switch osdTextSize {
+    case ..<30:
+      return 3
+    default:
+      return (osdTextSize / 10).rounded()
+    }
+  }
 }
 
 class OSDView: ClickThroughVisualEffectView {
@@ -398,12 +428,24 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
 
 // PlayerWindow UI: OSD
 extension PlayerWindowController {
+  fileprivate func updateCornerRoundness(fromOSDTextSize osdTextSize: CGFloat) {
+    if #available(macOS 26, *) {
+      // MacOS Tahoe's style favors rounder corners. Try to fit in
+      let cornerRadius = 10 + (osdTextSize * 0.25).rounded()
+      osd.osdView.roundCorners(withRadius: cornerRadius)
+      additionalInfoView.roundCorners(withRadius: cornerRadius)
+    } else {
+      // Pre-Tahoe
+      osd.osdView.roundCorners()
+      additionalInfoView.roundCorners()
+    }
+  }
+
   func addOrRemoveOSDViews(_ stageGeo: PWinGeometry) {
     if stageGeo.shouldHaveOSD {
       if !viewportView.subviews.contains(osd.osdView) {
         log.verbose("[OSD] Adding osdView to viewportView")
         viewportView.addSubview(osd.osdView)  // will sort below
-        osd.osdView.roundCorners()
       }
 
     } else {
@@ -417,7 +459,6 @@ extension PlayerWindowController {
       if !viewportView.subviews.contains(additionalInfoView) {
         log.verbose("[OSD] Adding additionalInfoView to viewportView")
         viewportView.addSubview(additionalInfoView)  // will sort below
-        additionalInfoView.roundCorners()
         fadeableViews.applyVisibility(.hidden, additionalInfoView)  // hide for now. Will show in later stage
       }
       updateAdditionalInfoContent()  // update content
@@ -580,20 +621,22 @@ extension PlayerWindowController {
       message = nil
     }
 
+    defer {
+      osd.osdView.needsLayout = true
+      osd.osdView.needsDisplay = true
+    }
+
+    if let displayedMesg = message ?? osd.lastDisplayedMsg {
+      updateOSDIcon(from: displayedMesg)
+    }
+
     guard let message else {
       // Often this method was called in response to a layout change.
       // For some reason the text wrap of the following is not recomputed or the text may be smashed/stretched,
-      // so mark it expclitly as needing redisplay here:
-      osd.osdLabel.needsDisplay = true
-      osd.osdAccessoryText.needsDisplay = true
+      // so mark it expclitly as needing layout above before returning.
       return
     }
 
-    defer {
-      osd.osdView.layout()
-    }
-
-    updateOSDIcon(from: message)
 
     let (osdText, osdType) = message.details()
     osd.osdLabel.stringValue = osdText
@@ -675,11 +718,11 @@ extension PlayerWindowController {
       osd.osdIconImageView.contentTintColor = isIconGrayedOut ? .disabledControlTextColor : .controlTextColor
 
       // New icon may have a different aspect than old one. Update its width
-      osd.updateIconWidth(fromHeight: osd.osdIconHeightConstraint.constraint!.constant)
+      osd.updateIconSize(fromOSDTextSize: osd.textSizeLast)
       osd.osdIconImageView.isHidden = false
     } else {
       // Set width to 0 so that VStackView can use its space
-      osd.osdIconWidthConstraint.constraint?.constant = 0
+      osd.updateIconSize(fromOSDTextSize: 0)
       osd.osdIconImageView.isHidden = true
     }
     let isIconVisible = icon != nil
@@ -729,7 +772,7 @@ extension PlayerWindowController {
     // Enqueue first, in case main queue is blocked
     osd.queueLock.withLock {
       osd.queue.append({ [self] in
-        // DO NOT use animation pipeline here. It is not needed, and will cause OSD to block
+        // DO NOT use animationPipeline here. It is not needed, and will cause OSD to block
         _displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController)
       })
     }
@@ -870,8 +913,7 @@ extension PlayerWindowController {
       log.verbose("[OSD] Showing '\(msg)', no timeout")
     }
 
-    updateOSDTextSize()
-    setOSDViews(fromMessage: msg)
+    updateOSDTextSize(andSetViewsFrom: msg)
 
     let existingAccessoryViews = osd.osdVStackView.views(in: .bottom)
     if !existingAccessoryViews.isEmpty {
@@ -922,7 +964,7 @@ extension PlayerWindowController {
     })
   }
 
-  func updateOSDTextSize(from givenGeo: PWinGeometry? = nil) {
+  func updateOSDTextSize(from givenGeo: PWinGeometry? = nil, andSetViewsFrom msg: OSDMessage? = nil) {
     guard let window else { return }
     let currentLayout = currentLayout
     let pwGeo: PWinGeometry
@@ -940,47 +982,41 @@ extension PlayerWindowController {
     }
 
     let osdTextSize = osd.getOSDTextSize(from: pwGeo)
-    guard osdTextSize != osd.textSizeLast else { return }
-    osd.textSizeLast = osdTextSize
-    log.verbose("[OSD] Δ textSize: \(osd.textSizeLast) → \(osdTextSize)")
+    if osdTextSize != osd.textSizeLast {
+      osd.textSizeLast = osdTextSize
+      log.verbose("[OSD] Δ textSize: \(osd.textSizeLast) → \(osdTextSize)")
 
+      // Update rounded corners
+      player.pwc.updateCornerRoundness(fromOSDTextSize: osdTextSize)
 
-    // Also update progress bar height based on text size
-    let sliderBarHeight = osd.updateProgressBarStyle(window.effectiveAppearance, effectiveOSCColorScheme: currentLayout.effectiveOSCColorScheme)
+      // Also update progress bar height based on text size
+      osd.updateProgressBarStyle(window.effectiveAppearance, effectiveOSCColorScheme: currentLayout.effectiveOSCColorScheme)
 
-    let osdAccessoryTextSize = (osdTextSize * 0.75).clamped(to: 11...25)
-    osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
+      let osdAccessoryTextSize = (osdTextSize * 0.75).clamped(to: 11...25)
+      osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
 
-    // Just manually
-    let stackViewMargin = osdTextSize * 0.2
-    osd.osdVStackView.edgeInsets.bottom = stackViewMargin
+      // Just manually
+      let stackViewMargin = osdTextSize * 0.2
+      osd.osdVStackView.edgeInsets.bottom = stackViewMargin
 
-    // Update padding around edges
-    let marginScaled = 8 + (osdTextSize * 0.06)
-    osd.osdTopPaddingConstraint.constraint?.animateToConstant(marginScaled)
-    osd.osdBtmPaddingConstraint.constraint?.animateToConstant(marginScaled)
-    osd.osdTrailingPaddingConstraint.constraint?.animateToConstant(marginScaled + stackViewMargin)
-    osd.osdLeadingPaddingConstraint.constraint?.animateToConstant(marginScaled + (stackViewMargin * 0.5))
+      // Update padding around edges
+      let marginScaled = 8 + (osdTextSize * 0.06)
+      osd.osdTopPaddingConstraint.constraint?.animateToConstant(marginScaled)
+      osd.osdBtmPaddingConstraint.constraint?.animateToConstant(marginScaled)
+      osd.osdTrailingPaddingConstraint.constraint?.animateToConstant(marginScaled + stackViewMargin)
+      osd.osdLeadingPaddingConstraint.constraint?.animateToConstant(marginScaled + (stackViewMargin * 0.5))
 
-    // Update OSD label
-    let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
-    osd.osdLabel.font = osdLabelFont
+      // Update OSD label
+      let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
+      osd.osdLabel.font = osdLabelFont
 
-    // Update icon height & width
-    if #available(macOS 11.0, *) {
-      // Use dimensions of a dummy image to keep the height fixed. Because all the components are vertically aligned
-      // and each icon has a different height, this is needed to prevent the progress bar from jumping up and down
-      // each time the OSD message changes.
-      let attachment = NSTextAttachment()
-      attachment.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "")!
-      let iconString = NSMutableAttributedString(attachment: attachment)
-      let osdIconTextSize = osdTextSize + sliderBarHeight
-      let osdIconFont = NSFont.monospacedDigitSystemFont(ofSize: osdIconTextSize, weight: .regular)
-      iconString.addAttribute(.font, value: osdIconFont, range: NSRange(location: 0, length: iconString.length))
-      let iconHeight = iconString.size().height
-
-      osd.osdIconHeightConstraint.constraint?.animateToConstant(iconHeight)
-      osd.updateIconWidth(fromHeight: iconHeight)
+      // Update icon height & width
+      if #available(macOS 11.0, *) {
+        osd.updateIconSize(fromOSDTextSize: osdTextSize)
+      }
     }
+
+    // Always call this afterwards
+    setOSDViews(fromMessage: msg)
   }
 }

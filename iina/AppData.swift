@@ -372,6 +372,11 @@ struct Constants {
     static let rawWidth: Int = 1600
     static let rawHeight: Int = 1600
   }
+
+  struct OSD {
+    static let minTextSize = 8.0
+  }
+
   struct Distance {
     // This multiplied by available window width → snap to center
     static let floatingControllerSnapToCenterThresholdMultiplier = 0.05
