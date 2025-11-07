@@ -163,6 +163,8 @@ extension PlayerWindowController {
       menuSavePlaylist(self)
     case .deleteCurrentFile:
       menuDeleteCurrentFile(self)
+    case .deleteCurrentFileHard:
+      menuDeleteCurrentFileHard(self)
     case .findOnlineSubs:
       menuFindOnlineSub(self)
     case .saveDownloadedSub:

@@ -47,7 +47,7 @@ extension PlayerWindowController {
   }
 
   // currently only being used for key command
-  @objc func menuDeleteCurrentFileHard(_ sender: NSMenuItem) {
+  @objc func menuDeleteCurrentFileHard(_ sender: AnyObject) {
     guard let url = player.info.currentURL, !player.info.isNetworkResource else { return }
     do {
       let index = player.mpv.getInt(MPVProperty.playlistPos)
