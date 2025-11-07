@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24128" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24128"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -1045,19 +1045,19 @@
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                 <subviews>
                     <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" userLabel="AudioTab Flipped View" customClass="FlippedView" customModule="IINA_Advance" customModuleProvider="target">
-                        <rect key="frame" x="0.0" y="7" width="360" height="529"/>
+                        <rect key="frame" x="0.0" y="9" width="360" height="527"/>
                         <subviews>
                             <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="my2-5o-bNb" userLabel="AudioTab CONTENT VIEW">
-                                <rect key="frame" x="0.0" y="0.0" width="360" height="529"/>
+                                <rect key="frame" x="0.0" y="0.0" width="360" height="527"/>
                                 <subviews>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="TA9-9G-tIE" userLabel="PANEL EDGE INSETS">
-                                        <rect key="frame" x="20" y="529" width="320" height="0.0"/>
+                                        <rect key="frame" x="20" y="527" width="320" height="0.0"/>
                                         <constraints>
                                             <constraint firstAttribute="height" id="jt3-qe-0KY"/>
                                         </constraints>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="E4v-kh-61H">
-                                        <rect key="frame" x="18" y="505" width="324" height="16"/>
+                                        <rect key="frame" x="18" y="503" width="324" height="16"/>
                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Audio track:" id="x39-62-7KC">
                                             <font key="font" metaFont="systemBold"/>
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1065,7 +1065,7 @@
                                         </textFieldCell>
                                     </textField>
                                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Qal-0X-4kS" userLabel="AudioTrackTable Scroll View">
-                                        <rect key="frame" x="0.0" y="422" width="360" height="75"/>
+                                        <rect key="frame" x="0.0" y="420" width="360" height="75"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="vgF-KN-yHf" userLabel="AudioTrackTable Clip View">
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="75"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -1218,7 +1218,7 @@
                                         </scroller>
                                     </scrollView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kvu-fg-olx">
-                                        <rect key="frame" x="18" y="386" width="324" height="16"/>
+                                        <rect key="frame" x="18" y="384" width="324" height="16"/>
                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="External audio:" id="Lnu-kz-cql">
                                             <font key="font" metaFont="systemBold"/>
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1706,7 +1706,7 @@
                                     <constraint firstItem="eOZ-KM-xLa" firstAttribute="top" secondItem="EDx-YH-ofM" secondAttribute="top" id="fUd-pm-IiH"/>
                                     <constraint firstItem="xtT-Or-HjR" firstAttribute="trailing" secondItem="W8L-56-yE9" secondAttribute="trailing" id="g7m-yN-bs2"/>
                                     <constraint firstItem="aOD-Qz-oE3" firstAttribute="top" secondItem="EDx-YH-ofM" secondAttribute="top" id="gOd-gW-hDD"/>
-                                    <constraint firstItem="XdF-fV-DCz" firstAttribute="top" secondItem="kvu-fg-olx" secondAttribute="bottom" constant="10" id="gud-hM-Hf0"/>
+                                    <constraint firstItem="XdF-fV-DCz" firstAttribute="top" secondItem="kvu-fg-olx" secondAttribute="bottom" constant="8" id="gud-hM-Hf0"/>
                                     <constraint firstItem="TA9-9G-tIE" firstAttribute="leading" secondItem="XdF-fV-DCz" secondAttribute="leading" id="hKL-gp-ucV"/>
                                     <constraint firstItem="vl8-xk-OxH" firstAttribute="centerY" secondItem="ZPW-fz-5Oi" secondAttribute="centerY" id="iCO-gC-mCC"/>
                                     <constraint firstItem="uUe-VB-wyv" firstAttribute="centerX" secondItem="JaQ-EH-K1U" secondAttribute="centerX" id="iT9-ha-L66"/>
@@ -1728,7 +1728,7 @@
                                     <constraint firstItem="wvc-3m-7dA" firstAttribute="centerX" secondItem="TKd-tg-Xtc" secondAttribute="centerX" id="vsl-Na-7AB"/>
                                     <constraint firstItem="E4v-kh-61H" firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" id="vxi-gU-jaJ"/>
                                     <constraint firstItem="kvu-fg-olx" firstAttribute="top" secondItem="Qal-0X-4kS" secondAttribute="bottom" constant="20" id="wOv-GA-HuD"/>
-                                    <constraint firstItem="u9C-Fk-Aag" firstAttribute="top" secondItem="IHl-Ks-v7I" secondAttribute="bottom" constant="8" symbolic="YES" id="xMS-fe-cqp"/>
+                                    <constraint firstItem="u9C-Fk-Aag" firstAttribute="top" secondItem="IHl-Ks-v7I" secondAttribute="bottom" constant="8" id="xMS-fe-cqp"/>
                                     <constraint firstItem="kvu-fg-olx" firstAttribute="leading" secondItem="TA9-9G-tIE" secondAttribute="leading" id="xkY-DB-G0z"/>
                                     <constraint firstItem="gfz-yF-41J" firstAttribute="centerX" secondItem="iDT-gu-k7t" secondAttribute="centerX" id="xnf-hN-6Hv"/>
                                     <constraint firstItem="vl8-xk-OxH" firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" id="y2Z-pk-F7U"/>
