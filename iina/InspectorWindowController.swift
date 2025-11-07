@@ -74,6 +74,9 @@ class InspectorTabSegmentedCell: NSSegmentedCell {
   }
 }
 */
+
+fileprivate let inspectorCornerRadius: CGFloat = 14
+
 class InspectorWindowController: WindowController, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource {
 
   override var windowNibName: NSNib.Name {
@@ -88,6 +91,7 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
   @IBOutlet weak var tabView: NSTabView!
   @IBOutlet weak var tabButtonGroup: NSSegmentedControl!
+  @IBOutlet weak var tabButtonGroupBottomLine: NSBox!
   @IBOutlet weak var trackPopup: NSPopUpButton!
 
   @IBOutlet weak var pathField: NSTextField!
@@ -208,6 +212,19 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
     watchTableContainerView.wantsLayer = true
     watchTableContainerView.layer?.backgroundColor = watchTableBackgroundColor.cgColor
+
+    if #available(macOS 26.0, *) {
+      tabButtonGroupBottomLine.isHidden = true
+
+      tabButtonGroup.wantsLayer = true
+      tabButtonGroup.layer?.backgroundColor = watchTableBackgroundColor.cgColor
+      tabButtonGroup.borderShape = .roundedRectangle
+      tabButtonGroup.layer?.cornerRadius = inspectorCornerRadius
+
+      watchTableContainerView.layer?.cornerRadius = inspectorCornerRadius
+    } else {
+      tabButtonGroupBottomLine.isHidden = false
+    }
 
     // Other UI init
 
