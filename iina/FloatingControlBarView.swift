@@ -203,8 +203,7 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
     window?.isMovableByWindowBackground = false
     mousePosRelatedToView = self.convert(event.locationInWindow, from: nil)
     mouseDownLocationInWindow = event.locationInWindow
-    assert(pwc.currentLayout.isWindowed, "FloatingOSC mouseDown called in non-windowed mode!")
-    let windowedGeo = pwc.windowedGeoForCurrentFrame()
+    let windowedGeo = pwc.isFullScreen ? pwc.fullScreenGeo() : pwc.windowedGeoForCurrentFrame()
     let geometry = FloatingControlBarGeometry(parentGeo: windowedGeo)
     let originInViewport = pwc.viewportView.convert(frame.origin, from: nil)
     let threshold = geometry.availableWidth * Constants.Distance.floatingControllerSnapToCenterThresholdMultiplier

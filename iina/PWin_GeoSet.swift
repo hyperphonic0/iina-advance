@@ -151,5 +151,8 @@ extension PlayerWindowController {
     }
     return geo.musicMode.cloneMusicMode(video: newVidGeo)
   }
-  
+
+  func fullScreenGeo() -> PWinGeometry {
+    return currentLayout.buildFullScreenGeometry(in: bestScreen, geo.video)
+  }
 }

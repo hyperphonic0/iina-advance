@@ -1230,7 +1230,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func window(_ window: NSWindow, willUseFullScreenContentSize proposedSize: NSSize) -> NSSize {
-    let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, geo.video)
+    let fsGeo = fullScreenGeo()
     log.verbose("Full screen content size proposed=\(proposedSize), returning=\(fsGeo.windowFrame.size)")
     return fsGeo.windowFrame.size
   }
@@ -1310,10 +1310,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         /// But looks like the OS will try to reposition the window on its own and can't be stopped...
         /// Just wait until after it does its thing before calling `setFrame()`.
         if currentLayout.isLegacyFullScreen {
-          let layout = currentLayout
-          guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
+          guard currentLayout.isLegacyFullScreen else { return }  // check again now that we are inside animation
           log.verbose("WindowDidChangeScreen: updating legacy FS window")
-          let fsGeo = layout.buildFullScreenGeometry(inScreenID: screenID, geo.video)
+          let fsGeo = fullScreenGeo()
           setFrameAndUpdateWindowSubviews(using: fsGeo)
           // Update screenID at least, so that window won't go back to other screen when exiting FS
           windowedModeGeo = windowedModeGeo.clone(screenID: screenID)
@@ -1372,7 +1371,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         if layout.isLegacyFullScreen {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
           log.verbose("WndDidChangeScreenParams: updating legacy full screen window")
-          let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, geo.video)
+          let fsGeo = fullScreenGeo()
           setFrameAndUpdateWindowSubviews(using: fsGeo)
         } else if layout.mode == .windowedNormal {
           /// In certain corner cases (e.g., exiting legacy full screen after changing screens while in full screen),
@@ -1411,9 +1410,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           // MacOS (as of 14.0 Sonoma) sometimes moves the window around when there are multiple screens
           // and the user is changing focus between windows or apps. This can also happen if the user is using a third-party
           // window management app such as Amethyst. If this happens, move the window back to its proper place:
-          let bestScreen = bestScreen
           log.verbose("WindowDidMove: Updating legacy full screen window in response to unexpected windowDidMove to frame=\(window.frame), screen=\(bestScreen.screenID.quoted)")
-          let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, geo.video)
+          let fsGeo = fullScreenGeo()
           setFrameAndUpdateWindowSubviews(using: fsGeo)
         } else {
           player.saveState()
