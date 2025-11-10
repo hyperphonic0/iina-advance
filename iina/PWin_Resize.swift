@@ -463,7 +463,7 @@ extension PlayerWindowController {
                               showDefaultArt: Bool? = nil,
                               thenRun: Bool = false) -> [IINAAnimation.Task] {
 
-    log.verbose("ApplyPWinGeo: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) save=\(save.yn) \(outputGeo)")
+    log.verbose("ApplyPWinGeo entered: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) save=\(save.yn) \(outputGeo)")
 
     var tasks: [IINAAnimation.Task] = []
 
@@ -500,15 +500,16 @@ extension PlayerWindowController {
         // This is only needed to achieve "fade-in" effect when opening window:
         updateWindowBorderAndOpacity()
 
-        if !isWindowHidden {
-          log.verbose("ApplyPWinGeo: calling update frame")
-          setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: save)
-        } else {
+        if isWindowHidden {
+          log.verbose("ApplyPWinGeo: window is hidden; updating videoView constraints but not setFrame")
           viewportView.apply(outputGeo)  // Update video constraints
-          // Mimicks logic in `setFrameAndUpdateWindowSubviews()`
+                                         // Mimicks logic in `setFrameAndUpdateWindowSubviews()`
           if save {
             submit(outputGeo)
           }
+        } else {
+          log.verbose("ApplyPWinGeo: calling setFrameAndUpdateWindowSubviews")
+          setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: save)
         }
       }
 

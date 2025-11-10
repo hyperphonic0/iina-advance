@@ -302,6 +302,9 @@ extension PlayerWindowController {
   }
 
   override func pressureChange(with event: NSEvent) {
+    // Prevent from triggering during a drag
+    guard currentDragObject == nil else { return }
+
     if let clickedButton = visibleViewForMouseEvent(event, in: symButtons) {
       // Allow these controls to handle the event
       log.trace{"PressureChange: clicked button=\(clickedButton.idString) hidden=\(clickedButton.isHidden.yn) stage=\(event.stage) stageTransition=\(event.stageTransition)"}
