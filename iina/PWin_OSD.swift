@@ -98,6 +98,9 @@ final class OSDState {
   func didShowLastMsgRecently() -> Bool {
     return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.25
   }
+  func didShowLastMsgSomewhatRecently() -> Bool {
+    return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.5
+  }
 
   // Need to keep a reference to NSViewController here in order for its Objective-C selectors to work
   var context: NSViewController? = nil {
@@ -804,6 +807,16 @@ extension PlayerWindowController {
       }
     }
 
+      if case .fileStart = osd.lastDisplayedMsg {
+        if case .fileStart = msg {
+          // Allow replacement if changing playbacks quickly
+        } else {
+          // Lots of junk messages are spewed at start. Ignore all but other .fileStart messages
+          if !player.info.isFileLoaded
+              || osd.didShowLastMsgSomewhatRecently() { return }
+        }
+      }
+
     var msg = msg
     switch msg {
     case .seek(_, _):
@@ -818,9 +831,9 @@ extension PlayerWindowController {
         // Is redundant msg; discard
         return
       }
+
     case .pause, .resume:
-      // do not show pause/resume when done for seek
-      // TODO: this does not cover resume after slider seek ended. Need better solution
+      // Do not show pause/resume during seek
       if isScrollingOrDraggingPlaySlider { return }
 
       if osd.didShowLastMsgRecently() {
@@ -828,9 +841,11 @@ extension PlayerWindowController {
         if case .frameStep = osd.lastDisplayedMsg { return }
         if case .frameStepBack = osd.lastDisplayedMsg { return }
       }
+
       player.updatePlaybackTimeInfo()  // need to call this to update info.playbackPositionSec, info.playbackDurationSec
       osd.lastPlaybackPosition = player.info.playbackPositionSec
       osd.lastPlaybackDuration = player.info.playbackDurationSec
+
     case .crop(let newCropLabel):
       if newCropLabel == AppData.noneCropIdentifier && !isInInteractiveMode && player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
         log.verbose("[OSD] Ignoring request for Crop 'None': looks like user starting to edit an existing crop")
@@ -840,6 +855,7 @@ extension PlayerWindowController {
         // As of v1.4, partial rotations can trigger "crop" messages as a side effect. Show rotation msg only.
         if case .rotation = osd.lastDisplayedMsg { return }
       }
+
     case .resumeFromWatchLater:
       if case .fileStart(let filename, _) = osd.lastDisplayedMsg {
         // Append details msg indicating restore state to existing msg
