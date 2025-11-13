@@ -5,6 +5,8 @@
 //  Created by Matt Svoboda on 2025-05-24.
 //  Copyright © 2025 lhc. All rights reserved.
 //
+// This file encapsulates relevant code for `syncVideoParamsFromMpv()` which is executed as part of most (all?)
+// `GeometryTransform`s. See header comments for `syncVideoParamsFromMpv`.
 
 fileprivate let maxAttemptsForGetVideoParams = 6
 

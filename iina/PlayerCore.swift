@@ -380,6 +380,19 @@ class PlayerCore: NSObject {
     }
   }
 
+  /// Search mpv user options list for `pause` command; return last (i.e. the active) value. Useful when opening window and/or file.
+  func getPauseFromUserOptions() -> Bool? {
+    for option in userOptions.reversed() {
+      if option.0 == MPVOption.PlaybackControl.pause {
+        // User option or cmd line option, if provided, takes priority over pauseOnOpen pref
+        let shouldPause = option.1.isEmpty || option.1 == Constants.String.mpvYes
+        log.debug("Found in user options: pause=\(shouldPause.yesno)")
+        return shouldPause
+      }
+    }
+    return nil
+  }
+
   /// Searches the list of user configured `mpv` options and returns `true` if the given option is present.
   /// - Parameter option: Option to look for.
   /// - Returns: `true` if the `mpv` option is found, `false` otherwise.
@@ -521,6 +534,7 @@ class PlayerCore: NSObject {
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
 
+    // This should apply all the mpv user options as well
     start()
 
     /// Need to use `sync` so that:
@@ -544,8 +558,7 @@ class PlayerCore: NSObject {
           pwc.sessionState = pwc.sessionState.newSession()
         }
 
-        /// This doesn't apply to restore. That is handled in `mpvRestoreWorkItem`.
-        let pauseUntilWindowOpen = isInteractivePlayer && !pwc.isOpen
+        let isInteractivePlayer = isInteractivePlayer
 
         if isInteractivePlayer {
           pwc.openWindow(nil)
@@ -569,16 +582,29 @@ class PlayerCore: NSObject {
 
           if case .restoring(let priorState) = pwc.sessionState {
             priorState.restoreMpvProperties(to: self)
-            return
-          }
 
-          if pauseUntilWindowOpen {
+            /// Player was already paused in `PlayerSaveState.restoreTo()`.
+            if Preference.bool(for: .alwaysPauseMediaWhenRestoringAtLaunch) {
+              pendingResumeWhenShowingWindow = false
+            } else if let wasPaused = priorState.bool(for: .paused) {
+              pendingResumeWhenShowingWindow = !wasPaused
+            } else {
+              pendingResumeWhenShowingWindow = !Preference.bool(for: .pauseWhenOpen)
+            }
+
+            return
+
+          } else if isInteractivePlayer {
             log.debug("Pausing playback until window is done opening")
-            // Pause until window opens, to avoid blips or other loading unpleasantness
+            // Pause until window opens, to avoid blips or other loading unpleasantness.
             mpv.setFlag(MPVOption.PlaybackControl.pause, true)
-            // ...or stay paused if configured
-            pendingResumeWhenShowingWindow = true
+
+            let shouldStayPaused = getPauseFromUserOptions() ?? Preference.bool(for: .pauseWhenOpen)
+            log.debug("Setting pendingResumeWhenShowingWindow = \(pendingResumeWhenShowingWindow.yn)")
+            pendingResumeWhenShowingWindow = !shouldStayPaused
+
           } else {
+            log.verbose("Player is non-interactive; skipping playback pause prior to window open")
             pendingResumeWhenShowingWindow = false
           }
 
@@ -1919,33 +1945,31 @@ class PlayerCore: NSObject {
     // note: player may be "stopped" here
     guard !isStopping else { return }
 
-    // mpv will play when loaded by default.
-    // If restoring, playback was already paused (and will not be unpaused until window is ready to show)
+    log.verbose("FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")")
+
+    // mpv will play when loaded by default. But if we are opening a new window or starting a new session in an existing window,
+    // we will have told mpv to pause the playback, and we should not unpause the playback until we are ready to show the window.
     if isRestoring {
+      // If restoring, playback was already paused, & will not be unpaused until window is ready to show (see `showWindow`)
       // Finally call this to update info.vid & related video track state in VideoView:
       updateVidStateFromMpv()
-    } else {
-      var shouldPause = Preference.bool(for: .pauseWhenOpen)
-      for option in userOptions.reversed() {
-        if option.0 == MPVOption.PlaybackControl.pause {
-          // User option or cmd line option, if provided, takes priority over pref
-          shouldPause = option.1.isEmpty || option.1 == Constants.String.mpvYes
-          break
-        }
-      }
-      mpv.setFlag(MPVOption.PlaybackControl.pause, shouldPause)
+    } else if pwc.loaded, pwc.sessionState.hasOpenSession {
+      let shouldPause = getPauseFromUserOptions() ?? Preference.bool(for: .pauseWhenOpen)
+      if shouldPause {
+        log.verbose("FileLoaded: in existing session + configured to pause -> pausing")
+        mpv.setFlag(MPVOption.PlaybackControl.pause, shouldPause)
 
-      // Normally the display link is started when MainWindowController.windowDidLoad calls initVideo.
-      // However if this player is being reused then the window will have already been loaded and
-      // windowDidLoad will not be called. If playback is not paused make sure the display link is
-      // active.
-      if !shouldPause, pwc.loaded {
+      } else {
+
+        // Normally the display link is started when MainWindowController.windowDidLoad calls initVideo.
+        // However if this player is being reused then the window will have already been loaded and
+        // windowDidLoad will not be called. If playback is not paused make sure the display link is
+        // active.
         DispatchQueue.main.async { [self] in
           pwc.videoView.displayActive()
         }
       }
     }
-    log.verbose("FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")")
 
     let duration = mpv.getDouble(MPVProperty.duration)
     info.playbackDurationSec = duration

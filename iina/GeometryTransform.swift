@@ -225,10 +225,10 @@ struct GeometryTransform {
     if let buildPWinTransformTasks {
       assert(windowedTransform == nil, "buildPWinTransformTasks & windowedTransform cannot both be set")
       remainingTasks = buildPWinTransformTasks(ctx)
-      remainingTasks.append(.instantTask(ctx.doPostApplyWork))
     } else {
       remainingTasks = ctx.buildPWinTransformTasks()
     }
+    remainingTasks.append(.instantTask(ctx.doPostApplyWork))
 
     /// 5. Need to switch to/from music mode, or enter full screen (if not done elsewhere)?
     /// If so, append to "remaining" tasks.
@@ -398,19 +398,18 @@ struct GeometryTransform {
       // There's no good animation for rotation (yet), so just do as little animation as possible in this case
       var duration: CGFloat = Constants.AnimationDuration.videoReconfig
       var timing = CAMediaTimingFunctionName.easeInEaseOut
-      var tasks: [IINAAnimation.Task]
 
       switch outputLayout.mode {
 
       case .windowedNormal:
+
         let resizedGeo: PWinGeometry?
 
         switch gtfSessionState {
         case .restoring(_):
           log.verbose("[GTF:\(name)] Restore is in progress: no 'apply' tasks needed for windowed mode")
           assert(tf.windowedTransform == nil)
-          // still need post-transition task
-          return [.instantTask(doPostApplyWork)]
+          return []
 
         case .creatingNew:
           // Just opened new window. Use a longer duration for this one, because the window starts small & will zoom into place.
@@ -419,7 +418,11 @@ struct GeometryTransform {
           timing = .linear
           resizedGeo = applyResizePrefsForNewPlaybackInWindowedMode()
 
-        case .newReplacingExisting, .existingSession_startingNewPlayback:
+        case .newReplacingExisting:
+          duration = Constants.AnimationDuration.initialVideoReconfig
+          fallthrough
+
+        case .existingSession_startingNewPlayback:
           assert(tf.windowedTransform == nil)
           resizedGeo = applyResizePrefsForNewPlaybackInWindowedMode()
           if let resizedGeo, resizedGeo.windowFrame != inputGeoSet.windowed.windowFrame {
@@ -446,8 +449,8 @@ struct GeometryTransform {
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose("[GTF:\(name)] Building 'apply' tasks for windowed mode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputGeo)")
-        tasks = pwc.buildApplyPWinGeoTasks(from: inputGeoSet.windowed, to: outputGeo,
-                                           duration: duration, timing: timing, showDefaultArt: showDefaultArt)
+        return pwc.buildApplyPWinGeoTasks(from: inputGeoSet.windowed, to: outputGeo,
+                                          duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
       case .fullScreenNormal:
         let newWindowedGeo = inputGeoSet.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo)
@@ -455,18 +458,18 @@ struct GeometryTransform {
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose("[GTF:\(name)] Building 'apply' tasks for FS mode: defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(fsGeo)")
-        tasks = pwc.buildApplyPWinGeoTasks(from: fsGeo, to: fsGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
+        var tasks = pwc.buildApplyPWinGeoTasks(from: fsGeo, to: fsGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
         tasks.append(.instantTask {
           /// Update this even if not currently in windowed mode, as it is used to store the (updated) VideoGeometry
           pwc.windowedModeGeo = newWindowedGeo
         })
+        return tasks
 
       case .musicMode:
         if case .creatingNew = gtfSessionState,
            case .restoring(_) = gtfSessionState {
           log.verbose("[GTF:\(name)] No 'apply' tasks needed; music mode already handled for sessState=\(gtfSessionState): \(inputGeoSet.musicMode)")
-          tasks = []
-          break
+          return []
         }
         let inputMusicModeGeo = inputGeoSet.musicMode  // has updated windowFrame
         let outputMusicModeGeo: PWinGeometry
@@ -499,25 +502,19 @@ struct GeometryTransform {
           // Need to use LayoutTransition for complex layout changes
           let transition = pwc.buildLayoutTransition(named: name, from: inputLayout,
                                                      to: outputLayout, outputGeo: outputMusicModeGeo, inputGeoSet)
-          tasks = pwc.buildTasks(for: transition, totalStartingDuration: startingDuration, totalEndingDuration: endingDuration)
+          return pwc.buildTasks(for: transition, totalStartingDuration: startingDuration, totalEndingDuration: endingDuration)
         } else {
           let showDefaultArt: Bool? = shouldChangeDefaultArt
           log.verbose("[GTF:\(name)] Building 'apply' tasks for musicMode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputMusicModeGeo)")
-          tasks = pwc.buildApplyPWinGeoTasks(from: inputMusicModeGeo, to: outputMusicModeGeo, duration: duration,
+          return pwc.buildApplyPWinGeoTasks(from: inputMusicModeGeo, to: outputMusicModeGeo, duration: duration,
                                              showDefaultArt: showDefaultArt)
         }
 
       default:
         // Interactive mode. Should be handled by its special code. Don't step on it.
         log.warn("[GTF:\(name)] Invalid mode for 'apply': \(outputLayout.mode). Doing nothing")
-        tasks = []
-        // Fall through and add post-work task
+        return []
       }
-
-      // Task: post-transform work
-      tasks.append(.instantTask(doPostApplyWork))
-
-      return tasks
     }
 
     /// Conforms to `IINAnimation.TaskFunc`. Does cleanup, updates state vars & UI.

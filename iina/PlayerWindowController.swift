@@ -942,14 +942,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard player.pendingResumeWhenShowingWindow else { return }
     player.pendingResumeWhenShowingWindow = false
 
-    if !player.isRestoring {  // if restoring, all logic has already been evaluated.
-      if player.userOptions.contains(where: { $0.0 == MPVOption.PlaybackControl.pause }) {
-        // User option overrides
-        return
-      }
-      guard !Preference.bool(for: .pauseWhenOpen) else { return }
-    }
-
     log.verbose("Resuming playback after window was shown")
     player.mpv.setFlag(MPVOption.PlaybackControl.pause, false)
   }

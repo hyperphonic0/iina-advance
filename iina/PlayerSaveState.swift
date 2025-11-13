@@ -721,14 +721,6 @@ struct PlayerSaveState: CustomStringConvertible {
 
     log.verbose("Screens from prior launch: \(self.screens)")
 
-    if Preference.bool(for: .alwaysPauseMediaWhenRestoringAtLaunch) {
-      player.pendingResumeWhenShowingWindow = false
-    } else if let wasPaused = bool(for: .paused) {
-      player.pendingResumeWhenShowingWindow = !wasPaused
-    } else {
-      player.pendingResumeWhenShowingWindow = !Preference.bool(for: .pauseWhenOpen)
-    }
-
     // TODO: map current geometry to prior screen. Deal with mismatch
 
     if let hdrEnabled = bool(for: .hdrEnabled) {
@@ -823,6 +815,7 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     // Better to always pause when starting, because there may be a slight delay before it can be enforced later
+    // See also: `PlayerCore.pendingResumeWhenShowingWindow`
     mpv.setFlag(MPVOption.PlaybackControl.pause, true)
 
     if let hwdec = string(for: .hwdec) {
