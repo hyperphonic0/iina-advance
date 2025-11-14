@@ -819,7 +819,7 @@ extension PlayerWindowController {
     if isRestoring {
       /// Stored window state may not be consistent with global IINA prefs.
       /// To check this, build another `LayoutState` from the global prefs, then compare it to the player's.
-      let prefsSpec = LayoutState.fromPreferences(fillingInFrom: ctx.outputLayout)
+      let prefsSpec = LayoutState.fromPrefs(fillingInFrom: ctx.outputLayout)
       if ctx.outputLayout.hasSamePrefsValues(as: prefsSpec) {
         log.verbose("[GTF:\(ctx.name)] Saved layout is consistent with IINA global prefs")
       } else {
@@ -869,7 +869,7 @@ extension PlayerWindowController {
     } else {
       log.error("[GTF:\(ctx.name)] Failed to read LayoutState object for restore! Will try to assemble window from prefs instead")
       modeToRestore = .windowedNormal
-      ctx.outputLayout = LayoutState.fromPreferences(andMode: modeToRestore, fillingInFrom: lastWindowedLayoutState)
+      ctx.outputLayout = LayoutState.fromPrefs(andMode: modeToRestore, fillingInFrom: lastWindowedLayoutState)
     }
 
     let outputGeoSet: GeometrySet = fixingErrorsInSavedGeoSet(priorState, &ctx, modeToRestore: modeToRestore)
@@ -951,7 +951,7 @@ extension PlayerWindowController {
     }
 
     // Set to default layout, but use existing aspect ratio & video size for now, because we don't have that info yet for the new video
-    ctx.outputLayout = LayoutState.fromPreferences(andMode: mode, fillingInFrom: lastWindowedLayoutState)
+    ctx.outputLayout = LayoutState.fromPrefs(andMode: mode, fillingInFrom: lastWindowedLayoutState)
 
     let outputGeoSet = buildGeoSetForNewWindow(ctx)
     return buildTransitionTasksToInitialLayout(ctx, outputGeoSet: outputGeoSet)

@@ -254,18 +254,18 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // MARK: - Vars: Window Layout State
 
-  var currentLayout: LayoutState = LayoutState.fromPreferences() {
+  var currentLayout: LayoutState = LayoutState.fromPrefs() {
     didSet {
       if currentLayout.mode == .windowedNormal {
         lastWindowedLayoutState = currentLayout
       } else if currentLayout.mode == .fullScreenNormal {
-        lastWindowedLayoutState = LayoutState.fromPreferences(andMode: .windowedNormal, fillingInFrom: currentLayout)
+        lastWindowedLayoutState = LayoutState.fromPrefs(andMode: .windowedNormal, fillingInFrom: currentLayout)
       }
     }
   }
   /// For restoring windowed mode layout from music mode or other mode which does not support sidebars.
   /// Also used to preserve layout if a new file is dragged & dropped into this window
-  var lastWindowedLayoutState: LayoutState = LayoutState.fromPreferences()
+  var lastWindowedLayoutState: LayoutState = LayoutState.fromPrefs()
 
   // Only used for debug logging:
   @Atomic var layoutTransitionCounter: Int = 0
@@ -323,7 +323,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
     // Compute default geometry for main screen
     let defaultScreen = NSScreen.screens[0]
-    return LayoutState.fromPreferences().buildDefaultInitialGeometry(screen: defaultScreen)
+    return LayoutState.fromPrefs().buildDefaultInitialGeometry(screen: defaultScreen)
   }() {
     didSet {
       guard windowedModeGeoLastClosed.mode.isWindowed, !windowedModeGeoLastClosed.screenFit.isFullScreen else {
@@ -743,7 +743,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     titleBarAndOSCUpdateDebouncer.run { [self] in
       animationPipeline.submitInstantTask { [self] in
         let oldLayout = currentLayout
-        let newLayoutState = LayoutState.fromPreferences(fillingInFrom: oldLayout)
+        let newLayoutState = LayoutState.fromPrefs(fillingInFrom: oldLayout)
         let transition = buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutState)
         buildTasks(for: transition, thenRun: true)
       }
@@ -1054,7 +1054,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let newMode: PlayerWindowMode = oldLayout.mode == .windowedInteractive ? .fullScreenInteractive : .fullScreenNormal
     log.verbose("Animating \(duration)s entry from \(oldLayout.mode) → \(isLegacy ? "legacy " : "native ")\(newMode)")
     // May be in interactive mode, with some panels hidden. Honor existing layout but change value of isFullScreen
-    let fullscreenLayout = LayoutState.fromPreferences(andMode: newMode, isLegacyStyle: isLegacy, fillingInFrom: oldLayout)
+    let fullscreenLayout = LayoutState.fromPrefs(andMode: newMode, isLegacyStyle: isLegacy, fillingInFrom: oldLayout)
 
     let transition = buildLayoutTransition(named: "Enter\(isLegacy ? "Legacy" : "Native")FullScreen", from: oldLayout, to: fullscreenLayout)
     buildTasks(for: transition, totalStartingDuration: 0, totalEndingDuration: duration, thenRun: true)
@@ -1100,7 +1100,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     } else {
       nextMode = .windowedNormal
     }
-    let windowedLayoutState = LayoutState.fromPreferences(andMode: nextMode, fillingInFrom: oldLayout)
+    let windowedLayoutState = LayoutState.fromPrefs(andMode: nextMode, fillingInFrom: oldLayout)
 
     log.verbose("Animating \(duration)s exit from \(isLegacy ? "legacy " : "")\(oldLayout.mode) → \(windowedLayoutState.mode)")
     assert(!windowedLayoutState.isFullScreen, "Cannot exit full screen into mode \(windowedLayoutState.mode)! Spec: \(windowedLayoutState)")
@@ -1214,7 +1214,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
     // Exit from legacy FS only. Native FS will fail if not the active space
     guard oldLayout.isLegacyFullScreen else { return }
-    let outputLayoutState = LayoutState.fromPreferences(fillingInFrom: oldLayout)
+    let outputLayoutState = LayoutState.fromPrefs(fillingInFrom: oldLayout)
     if oldLayout.isLegacyStyle != outputLayoutState.isLegacyStyle {
       DispatchQueue.main.async { [self] in
         log.verbose("User toggled legacy FS pref to \(outputLayoutState.isLegacyStyle.yesno) while in FS. Will try to exit FS")
@@ -1783,7 +1783,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
         if newMode == .fullScreenNormal {
           // Can derive last layout from lastWindowedLayoutState
-          lastLayout = LayoutState.fromPreferences(andMode: newMode, fillingInFrom: lastWindowedLayoutState)
+          lastLayout = LayoutState.fromPrefs(andMode: newMode, fillingInFrom: lastWindowedLayoutState)
 
           // TODO: support animation in full screen once again
 
@@ -1817,7 +1817,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
           })
         }
 
-        let newLayoutState = LayoutState.fromPreferences(andMode: newMode, fillingInFrom: lastLayout)
+        let newLayoutState = LayoutState.fromPrefs(andMode: newMode, fillingInFrom: lastLayout)
         let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: ctx.inputLayout, to: newLayoutState, geoSet)
         let transitionTasks = buildTasks(for: transition, totalStartingDuration: startDuration, totalEndingDuration: endDuration)
         tasks.append(contentsOf: transitionTasks)
@@ -1900,7 +1900,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func buildTasksToExitMusicMode(automatically: Bool = false,
                                  from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
-    let windowedLayout = LayoutState.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutState)
+    let windowedLayout = LayoutState.fromPrefs(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutState)
     let transition = buildLayoutTransition(named: "ExitMusicMode", from: oldLayout, to: windowedLayout, geo)
     var transitionTasks = buildTasks(for: transition)
     if !automatically {

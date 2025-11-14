@@ -108,8 +108,10 @@ struct LayoutState {
     self.hasTopPaddingForCameraHousing = hasTopPaddingForCameraHousing
   }
 
-  /// Specify any properties to override; if nil, will use self's property values -
-  /// EXCEPT for `oscColorScheme`, which is computed.
+  /// Specify any properties to override; if nil, will use self's property values.
+  ///
+  /// Also see: `LayoutState.fromPrefs(fillingInFrom:)`, which (unlike this method) contains extra logic to ensure
+  /// the consistency of the created object.
   func clone(leadingSidebar: Sidebar? = nil,
              trailingSidebar: Sidebar? = nil,
              mode: PlayerWindowMode? = nil,
@@ -119,6 +121,7 @@ struct LayoutState {
              bottomBarPlacement: Preference.PanelPlacement? = nil,
              enableOSC: Bool? = nil,
              oscPosition: Preference.OSCPosition? = nil,
+             oscColorScheme: Preference.OSCColorScheme? = nil,
              controlBarGeo: ControlBarGeometry? = nil,
              hasTopPaddingForCameraHousing: Bool? = nil,
              interactiveMode: InteractiveMode? = nil,
@@ -136,8 +139,8 @@ struct LayoutState {
                        topBarPlacement: topBarPlacement ?? self.topBarPlacement,
                        bottomBarPlacement: bottomBarPlacement ?? self.bottomBarPlacement,
                        enableOSC: enableOSC ?? self.enableOSC,
-                       oscPosition: self.oscPosition,
-                       oscColorScheme: self.oscColorScheme,
+                       oscPosition: oscPosition ?? self.oscPosition,
+                       oscColorScheme: oscColorScheme ?? self.oscColorScheme,
                        controlBarGeo: controlBarGeo,
                        interactiveMode: interactiveMode ?? self.interactiveMode,
                        moreSidebarState: moreSidebarState ?? self.moreSidebarState,
@@ -147,6 +150,57 @@ struct LayoutState {
   func withSidebarsHidden() -> LayoutState {
     return clone(leadingSidebar: leadingSidebar.clone(visibility: .closed),
                  trailingSidebar: trailingSidebar.clone(visibility: .closed))
+  }
+
+  /// Factory method which builds a new `LayoutState` instance largely from current prefs values, but fields which are
+  /// not stored in prefs will be filled in (A) from given arg(s) if they are non-nil, or (B) default values if nothing
+  /// is given via args.
+  static func fromPrefs(andMode newMode: PlayerWindowMode? = nil,
+                        isLegacyStyle: Bool? = nil,
+                        fillingInFrom oldSpec: LayoutState? = nil) -> LayoutState {
+
+    let oldLeadingSidebar = oldSpec?.leadingSidebar
+    let oldTrailingSidebar = oldSpec?.trailingSidebar
+
+    let leadingSidebar =  Sidebar(.leadingSidebar,
+                                  tabGroups: Sidebar.TabGroup.fromPrefs(for: .leadingSidebar),
+                                  placement: Preference.enum(for: .leadingSidebarPlacement),
+                                  visibility: oldLeadingSidebar?.visibility ?? .closed,
+                                  lastVisibleTab: oldLeadingSidebar?.lastVisibleTab)
+    let trailingSidebar = Sidebar(.trailingSidebar,
+                                  tabGroups: Sidebar.TabGroup.fromPrefs(for: .trailingSidebar),
+                                  placement: Preference.enum(for: .trailingSidebarPlacement),
+                                  visibility: oldTrailingSidebar?.visibility ?? .closed,
+                                  lastVisibleTab: oldTrailingSidebar?.lastVisibleTab)
+    let mode = newMode ?? oldSpec?.mode ?? .windowedNormal
+    // Tricky need for parantheses here! Would be great as an interview question
+    let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen)
+                                          : Preference.bool(for: .useLegacyWindowedMode))
+    let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
+
+    let isLegacyFullScreen = mode.isFullScreen && isLegacyStyle
+    let hasTopPaddingForCameraHousing = isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
+
+    let effectiveOSCColorSchemeFromPrefs: Preference.OSCColorScheme
+    if Preference.bool(for: .enableOSC), Preference.enum(for: .oscPosition) == Preference.OSCPosition.bottom,
+       Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
+      effectiveOSCColorSchemeFromPrefs = Preference.enum(for: .oscColorScheme)
+    } else {
+      effectiveOSCColorSchemeFromPrefs = .visualEffectView
+    }
+
+    return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
+                       mode: mode,
+                       isInPiP: oldSpec?.isInPiP ?? false,
+                       isLegacyStyle: isLegacyStyle,
+                       topBarPlacement: Preference.enum(for: .topBarPlacement),
+                       bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
+                       enableOSC: Preference.bool(for: .enableOSC),
+                       oscPosition: Preference.enum(for: .oscPosition),
+                       oscColorScheme: effectiveOSCColorSchemeFromPrefs,
+                       interactiveMode: interactiveMode,
+                       moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs(),
+                       hasTopPaddingForCameraHousing: hasTopPaddingForCameraHousing)
   }
 
   // MARK: - Computed Properties
@@ -454,69 +508,19 @@ struct LayoutState {
     return .showAlways
   }
 
-  /// Returns `true` if `otherSpec` has the same values which are configured from IINA app-wide prefs
-  func hasSamePrefsValues(as otherSpec: LayoutState) -> Bool {
-    return otherSpec.enableOSC == enableOSC
-    && otherSpec.oscPosition == oscPosition
-    && otherSpec.isLegacyStyle == isLegacyStyle
-    && otherSpec.topBarPlacement == topBarPlacement
-    && otherSpec.bottomBarPlacement == bottomBarPlacement
-    && otherSpec.leadingSidebarPlacement == leadingSidebarPlacement
-    && otherSpec.trailingSidebarPlacement == trailingSidebarPlacement
-    && otherSpec.leadingSidebar.tabGroups == leadingSidebar.tabGroups
-    && otherSpec.trailingSidebar.tabGroups == trailingSidebar.tabGroups
-    && otherSpec.moreSidebarState.playlistSidebarWidth == moreSidebarState.playlistSidebarWidth
-  }
-
-  // MARK: Static
-
-  /// Factory method which builds a new `LayoutState` instance largely from current prefs values,
-  /// but fields which are not stored in prefs will be filled in (A) from given arg(s) if they are
-  /// non-nil, or (B) default values if nothing is given via args.
-  static func fromPreferences(andMode newMode: PlayerWindowMode? = nil,
-                              isLegacyStyle: Bool? = nil,
-                              fillingInFrom oldSpec: LayoutState? = nil) -> LayoutState {
-
-    let oldLeadingSidebar = oldSpec?.leadingSidebar
-    let oldTrailingSidebar = oldSpec?.trailingSidebar
-
-    let leadingSidebar =  Sidebar(.leadingSidebar,
-                                  tabGroups: Sidebar.TabGroup.fromPrefs(for: .leadingSidebar),
-                                  placement: Preference.enum(for: .leadingSidebarPlacement),
-                                  visibility: oldLeadingSidebar?.visibility ?? .closed,
-                                  lastVisibleTab: oldLeadingSidebar?.lastVisibleTab)
-    let trailingSidebar = Sidebar(.trailingSidebar,
-                                  tabGroups: Sidebar.TabGroup.fromPrefs(for: .trailingSidebar),
-                                  placement: Preference.enum(for: .trailingSidebarPlacement),
-                                  visibility: oldTrailingSidebar?.visibility ?? .closed,
-                                  lastVisibleTab: oldTrailingSidebar?.lastVisibleTab)
-    let mode = newMode ?? oldSpec?.mode ?? .windowedNormal
-    // Tricky need for parantheses here! Would be great as an interview question
-    let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen) : Preference.bool(for: .useLegacyWindowedMode))
-    let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
-
-    let isLegacyFullScreen = mode.isFullScreen && isLegacyStyle
-    let hasTopPaddingForCameraHousing = isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
-    return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
-                       mode: mode,
-                       isInPiP: oldSpec?.isInPiP ?? false,
-                       isLegacyStyle: isLegacyStyle,
-                       topBarPlacement: Preference.enum(for: .topBarPlacement),
-                       bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
-                       enableOSC: Preference.bool(for: .enableOSC),
-                       oscPosition: Preference.enum(for: .oscPosition),
-                       oscColorScheme: effectiveOSCColorSchemeFromPrefs,
-                       interactiveMode: interactiveMode,
-                       moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs(),
-                       hasTopPaddingForCameraHousing: hasTopPaddingForCameraHousing)
-  }
-
-  static var effectiveOSCColorSchemeFromPrefs: Preference.OSCColorScheme {
-    if Preference.bool(for: .enableOSC), Preference.enum(for: .oscPosition) == Preference.OSCPosition.bottom,
-       Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
-      return Preference.enum(for: .oscColorScheme)
-    }
-    return .visualEffectView
+  /// Returns `true` if `other` has the same values which are configured from IINA app-wide prefs
+  func hasSamePrefsValues(as other: LayoutState) -> Bool {
+    return other.enableOSC == enableOSC
+    && other.oscPosition == oscPosition
+    && other.oscColorScheme == oscColorScheme
+    && other.isLegacyStyle == isLegacyStyle
+    && other.topBarPlacement == topBarPlacement
+    && other.bottomBarPlacement == bottomBarPlacement
+    && other.leadingSidebarPlacement == leadingSidebarPlacement
+    && other.trailingSidebarPlacement == trailingSidebarPlacement
+    && other.leadingSidebar.tabGroups == leadingSidebar.tabGroups
+    && other.trailingSidebar.tabGroups == trailingSidebar.tabGroups
+    // Allow different values for `moreSidebarState.playlistSidebarWidth` in different windows even though it's in prefs
   }
 
   // MARK: - Geometry
