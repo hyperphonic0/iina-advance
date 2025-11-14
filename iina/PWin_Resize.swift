@@ -100,6 +100,7 @@ extension PlayerWindowController {
     let newGeo: PWinGeometry
     let isLiveResizingWidth = isLiveResizingWidth ?? true
 
+    // TODO: Consolidate duplicate code [#PWinGeoForAnyMode]
     switch currentLayout.mode {
 
     case .windowedNormal, .windowedInteractive:
@@ -276,16 +277,17 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
     // Not supported in music mode at this time. Need to resolve backing scale bugs
     guard currentLayout.mode == .windowedNormal else {
-      log.error("SetVideoScale: skipping; mode is unsupported: \(currentLayout.mode)")
+      log.error("[mpv-window-scale] SetVideoScale: skipping; mode is unsupported: \(currentLayout.mode)")
       return
     }
     guard targetVideoScale > 0.0 else {
-      log.error("SetVideoScale: requested scale is invalid: \(targetVideoScale)")
+      log.error("[mpv-window-scale] SetVideoScale: requested scale is invalid: \(targetVideoScale)")
       return
     }
 
     let oldWindowedGeo = windowedModeGeo
     let newGeo = oldWindowedGeo.scalingViewport(toVideoScale: targetVideoScale)
+    log.error("[mpv-window-scale] SetVideoScale: from targetVideoScale=\(targetVideoScale) → sending derived mpvWindowScale=\(newGeo.mpvWindowScale())")
     sendWindowScaleToMPV(basedOn: newGeo)
   }
 
@@ -305,14 +307,14 @@ extension PlayerWindowController {
 
     let scaleFromGeo = geometry.mpvWindowScale()
     guard scaleFromGeo > 0.0 else {
-      log.verbose("SetWindowScale: desiredMpvWindowScale (\(scaleFromGeo)) is invalid; aborting")
+      log.verbose("[mpv-window-scale] SendWindowScaleToMPV: scaleFromGeo (\(scaleFromGeo)) is invalid; aborting")
       return
     }
 
-    log.verbose("Sending mpvWindowScale to mpv: \(windowedGeoForCurrentFrame().mpvWindowScale()) → \(scaleFromGeo)")
+    log.verbose("[mpv-window-scale] SendWindowScaleToMPV: sending scaleFromGeo=\(scaleFromGeo)")
     player.mpv.queue.async { [self] in
       guard player.isActive, player.info.isFileLoaded else {
-        log.debug("Skipping send of window-scale to mpv: player not ready")
+        log.debug("[mpv-window-scale] SendWindowScaleToMPV: aborting; player not ready")
         return
       }
 
@@ -338,7 +340,7 @@ extension PlayerWindowController {
     guard !isMagnifying else { return }
     guard currentLayout.mode == .windowedNormal || currentLayout.mode == .musicMode else {
       // Not supported in music mode at this time. Need to resolve backing scale bugs
-      log.error("mpvWindowScaleDidUpdate: Skipping; unsupported mode: \(currentLayout.mode)")
+      log.error("[mpv-window-scale] mpvWindowScaleDidUpdate: aborting; unsupported mode: \(currentLayout.mode)")
       return
     }
 
@@ -351,39 +353,36 @@ extension PlayerWindowController {
     }
 
     let windowedTF: GeometryTransform.PWinGeometryTF = { [self] ctx -> PWinGeometry? in
-      let oldGeo: PWinGeometry
+      let inputGeo: PWinGeometry
 
+      // TODO: Consolidate duplicate code [#PWinGeoForAnyMode]
       switch ctx.inputLayout.mode {
       case .musicMode:
-        oldGeo = ctx.inputGeoSet.musicMode
+        inputGeo = ctx.inputGeoSet.musicMode
       case .windowedNormal, .windowedInteractive:
-        oldGeo = ctx.inputGeoSet.windowed
+        inputGeo = ctx.inputGeoSet.windowed
       default:
-        log.verbose("mpvWindowScaleDidUpdate: Skipping; wrong mode (\(ctx.inputLayout.mode))")
+        log.verbose("[mpv-window-scale] mpvWindowScaleDidUpdate: Skipping; wrong mode (\(ctx.inputLayout.mode))")
         return nil
       }
 
-      let currentMpvWindowScale = oldGeo.mpvWindowScale()
+      let currentMpvWindowScale = inputGeo.mpvWindowScale()
 
       guard newMpvWindowScale != currentMpvWindowScale else {
-        log.verbose("mpvWindowScaleDidUpdate: Skipping; same as cached value (\(newMpvWindowScale))")
+        log.verbose("[mpv-window-scale] mpvWindowScaleDidUpdate: No action needed; same as current scale (\(newMpvWindowScale))")
         return nil
       }
-      // Need to update this right away in case mpv sends duplicate requests
-      log.verbose("mpvWindowScaleDidUpdate: Got updated window-scale from mpv: \(currentMpvWindowScale) → \(newMpvWindowScale)")
 
       // TODO: if Preference.bool(for: .usePhysicalResolution) {}
 
-      let newGeo = oldGeo.scalingViewport(fromMpvWindowScale: newMpvWindowScale)
-      let finalMpvWindowScale = newGeo.mpvWindowScale()
-      if newMpvWindowScale == finalMpvWindowScale {
-        log.verbose("mpvWindowScaleDidUpdate: cached=\(currentMpvWindowScale) → \(finalMpvWindowScale)")
-      } else {
+      let rescaledGeo = inputGeo.scalingViewport(fromMpvWindowScale: newMpvWindowScale)
+      let newComputedScale = rescaledGeo.mpvWindowScale()
+      log.verbose("[mpv-window-scale] mpvWindowScaleDidUpdate: current=\(currentMpvWindowScale) fromMPV=\(newMpvWindowScale) newComputedScale=\(newComputedScale)\(newMpvWindowScale == newComputedScale ? "" : " → mismatch! Will send newComputedScale to mpv")")
+      if newMpvWindowScale != newComputedScale {
         // Could not match desired value (e.g. window would be larger than screen). Notify mpv of updated value:
-        log.verbose("mpvWindowScaleDidUpdate: cached=\(currentMpvWindowScale) desired=\(newMpvWindowScale) → sending corrected=\(finalMpvWindowScale)")
-        sendWindowScaleToMPV(basedOn: newGeo)
+        sendWindowScaleToMPV(basedOn: rescaledGeo)
       }
-      return newGeo
+      return rescaledGeo
     }
 
     let gtf = GeometryTransform("MPVWindowScaleDidUpdate", player,
@@ -400,6 +399,7 @@ extension PlayerWindowController {
                                 duration: CGFloat = Constants.AnimationDuration.standard) -> [IINAAnimation.Task] {
     assert(DispatchQueue.isExecutingIn(.main))
 
+    // TODO: Consolidate duplicate code [#PWinGeoForAnyMode]
     let inputGeo: PWinGeometry
     let outputGeo: PWinGeometry
     switch currentLayout.mode {

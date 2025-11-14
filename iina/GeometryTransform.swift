@@ -547,7 +547,9 @@ struct GeometryTransform {
           if currentPlayback.state == .loaded {
             log.debug("[GTF:\(name)] Updating playback.state = .loadedAndSized; will emit fileLoaded")
             currentPlayback.state = .loadedAndSized
+
             pwc.animationPipeline.submitInstantTask {
+              sendInitialWindowScaleToMpv()
               // Should refresh EDR each time switching files
               pwc.videoView.refreshAllVideoDisplayState()
               // If is network resource, may not be loaded yet. If file, it will be.
@@ -577,6 +579,26 @@ struct GeometryTransform {
       }
 
       pwc.animationPipeline.geoTransformDidFinish(tf, success: true)
+    }
+
+    /// This should only be called in response to start of new window session, or video track change
+    private func sendInitialWindowScaleToMpv() {
+      let basisGeo: PWinGeometry
+
+      // TODO: Consolidate duplicate code [#PWinGeoForAnyMode]
+      switch outputLayout.mode {
+      case .windowedNormal:
+        basisGeo = pwc.windowedModeGeo
+      case .musicMode:
+        basisGeo = pwc.musicModeGeo
+      case .fullScreenNormal:
+        basisGeo = outputLayout.buildFullScreenGeometry(inScreenID: pwc.windowedModeGeo.screenID, outputVidGeo)
+      default:
+        return
+      }
+
+      log.verbose("[mpv-window-scale] Calling sendWindowScaleToMPV for initial geometry")
+      pwc.sendWindowScaleToMPV(basedOn: basisGeo)
     }
 
     /// Applies the prefs `.resizeWindowTiming` & `resizeWindowScheme`, if applicable.

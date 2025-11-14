@@ -1206,7 +1206,9 @@ extension PlayerWindowController {
     }
 #endif
 
-    if transition.outputGeometry.mode.isWindowed || transition.isTogglingFullScreen || transition.isTogglingMusicMode {
+    if !transition.isWindowInitialLayout,  // The initial layout case is covered in `GeometryTransform.doPostApplyWork`
+        transition.outputGeometry.mode.isWindowed || transition.isTogglingFullScreen || transition.isTogglingMusicMode {
+      log.verbose("[\(transition.name)] Calling sendWindowScaleToMPV for output mode=\(currentLayout.mode)")
       sendWindowScaleToMPV(basedOn: transition.outputGeometry)
     }
 

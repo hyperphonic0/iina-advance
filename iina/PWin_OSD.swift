@@ -987,6 +987,7 @@ extension PlayerWindowController {
     if let givenGeo {
       pwGeo = givenGeo
     } else {
+      // TODO: Consolidate duplicate code [#PWinGeoForAnyMode]
       switch currentLayout.mode {
       case .windowedNormal, .windowedInteractive:
         pwGeo = windowedGeoForCurrentFrame()

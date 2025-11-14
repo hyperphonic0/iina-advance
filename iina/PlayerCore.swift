@@ -551,14 +551,14 @@ class PlayerCore: NSObject {
       }
 
       DispatchQueue.main.async { [self] in
+        let isInteractivePlayer = isInteractivePlayer
+        
         if !pwc.sessionState.isRestoring {
           if isInteractivePlayer {
             pwc.osd.clearQueuedOSDs()
           }
           pwc.sessionState = pwc.sessionState.newSession()
         }
-
-        let isInteractivePlayer = isInteractivePlayer
 
         if isInteractivePlayer {
           pwc.openWindow(nil)
