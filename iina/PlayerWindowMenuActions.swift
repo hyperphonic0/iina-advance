@@ -180,7 +180,7 @@ extension PlayerWindowController {
     }
   }
 
-// MARK: - Video
+  // MARK: - Video
 
   @objc func menuChangeAspect(_ sender: NSMenuItem) {
     if let aspectStr = sender.representedObject as? String {

@@ -470,12 +470,9 @@ struct LayoutState {
 
   // MARK: Static
 
-  /// Factory method. Fills in most from app singleton preferences, and the rest from default values.
-  static func fromPrefsAndDefaults() -> LayoutState {
-    return fromPreferences()
-  }
-
-  /// Factory method. Init from preferences, except for `mode` and tab params
+  /// Factory method which builds a new `LayoutState` instance largely from current prefs values,
+  /// but fields which are not stored in prefs will be filled in (A) from given arg(s) if they are
+  /// non-nil, or (B) default values if nothing is given via args.
   static func fromPreferences(andMode newMode: PlayerWindowMode? = nil,
                               isLegacyStyle: Bool? = nil,
                               fillingInFrom oldSpec: LayoutState? = nil) -> LayoutState {

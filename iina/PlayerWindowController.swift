@@ -254,16 +254,18 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // MARK: - Vars: Window Layout State
 
-  var currentLayout: LayoutState = LayoutState.fromPrefsAndDefaults() {
+  var currentLayout: LayoutState = LayoutState.fromPreferences() {
     didSet {
       if currentLayout.mode == .windowedNormal {
         lastWindowedLayoutState = currentLayout
+      } else if currentLayout.mode == .fullScreenNormal {
+        lastWindowedLayoutState = LayoutState.fromPreferences(andMode: .windowedNormal, fillingInFrom: currentLayout)
       }
     }
   }
   /// For restoring windowed mode layout from music mode or other mode which does not support sidebars.
   /// Also used to preserve layout if a new file is dragged & dropped into this window
-  var lastWindowedLayoutState: LayoutState = LayoutState.fromPrefsAndDefaults()
+  var lastWindowedLayoutState: LayoutState = LayoutState.fromPreferences()
 
   // Only used for debug logging:
   @Atomic var layoutTransitionCounter: Int = 0
@@ -321,7 +323,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
     // Compute default geometry for main screen
     let defaultScreen = NSScreen.screens[0]
-    return LayoutState.fromPrefsAndDefaults().buildDefaultInitialGeometry(screen: defaultScreen)
+    return LayoutState.fromPreferences().buildDefaultInitialGeometry(screen: defaultScreen)
   }() {
     didSet {
       guard windowedModeGeoLastClosed.mode.isWindowed, !windowedModeGeoLastClosed.screenFit.isFullScreen else {
@@ -1779,9 +1781,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         var startDuration: CGFloat = 0
         var endDuration: CGFloat = 0
 
-        if newMode.isFullScreen {
-          // FIXME: support last FS layout as we do for windowed
-          lastLayout = ctx.inputLayout
+        if newMode == .fullScreenNormal {
+          // Can derive last layout from lastWindowedLayoutState
+          lastLayout = LayoutState.fromPreferences(andMode: newMode, fillingInFrom: lastWindowedLayoutState)
 
           // TODO: support animation in full screen once again
 
