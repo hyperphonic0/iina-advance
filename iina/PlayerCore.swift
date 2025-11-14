@@ -552,7 +552,7 @@ class PlayerCore: NSObject {
 
       DispatchQueue.main.async { [self] in
         let isInteractivePlayer = isInteractivePlayer
-        
+
         if !pwc.sessionState.isRestoring {
           if isInteractivePlayer {
             pwc.osd.clearQueuedOSDs()
@@ -1514,7 +1514,6 @@ class PlayerCore: NSObject {
     guard videoGeo.userAspectLabel != aspectLabel else { return }
 
     sendVideoAspectOverrideToMpv(aspectLabel: aspectLabel)
-    syncVideoParamsFromMpv()
   }
 
   func sendVideoAspectOverrideToMpv(aspectLabel: String) {

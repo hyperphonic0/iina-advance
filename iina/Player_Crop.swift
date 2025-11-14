@@ -102,7 +102,6 @@ extension PlayerCore {
     // Don't care about state of videoGeo. Need to remove the crop filter if there is one.
     guard let cropFilter = getIINACropFilter() else {
       log.debug("Cannot remove crop: no filter found with label \(Constants.FilterLabel.crop.quoted). Will try to resync from mpv")
-      syncVideoParamsFromMpv()
       return false
     }
     log.verbose("Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")

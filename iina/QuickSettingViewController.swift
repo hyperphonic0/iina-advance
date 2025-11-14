@@ -1019,6 +1019,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       return
     }
     player.log.verbose("Setting aspect from segmented control: \(aspect.quoted)")
+
     player.mpv.queue.async { [self] in
       player.setVideoAspectOverride(aspect)
     }
@@ -1034,6 +1035,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
         player.log.error("Bad crop segment: \(sender.selectedSegment)")
         return
       }
+
       player.log.verbose("Setting crop from segmented control: \(selectedCropString.quoted)")
       player.setCrop(fromLabel: selectedCropString)
     }
@@ -1047,11 +1049,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   @IBAction func customAspectEditFinishedAction(_ sender: AnyObject?) {
     let aspectString = customAspectTextField.stringValue
+    guard aspectString != "" else { return }
     player.log.verbose("Setting aspect from text field: \(aspectString.quoted)")
-    if aspectString != "" {
-      player.mpv.queue.async { [self] in
-        player.setVideoAspectOverride(aspectString)
-      }
+    player.mpv.queue.async { [self] in
+      player.setVideoAspectOverride(aspectString)
     }
   }
 

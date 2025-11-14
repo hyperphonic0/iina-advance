@@ -271,7 +271,6 @@ extension PlayerCore {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     let result = mpv.removeFilter(MPVProperty.vf, index)
     logRemoveFilter(type: "video", result: result, name: filter)
-    syncVideoParamsFromMpv()
     return result
   }
 
@@ -313,7 +312,6 @@ extension PlayerCore {
     }
 
     let updatedFilterList = updateVideoFiltersFromMpv()
-    syncVideoParamsFromMpv()  // call this *after* updating filter list
     /// `updateVideoFiltersFromMpv` will ensure various filter caches will stay up to date
     let didRemoveSuccessfully = !updatedFilterList.compactMap({$0.label}).contains(label)
     guard !verify || didRemoveSuccessfully else {
