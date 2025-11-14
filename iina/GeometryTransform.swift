@@ -18,7 +18,7 @@
 ///   - If `nil`, the transform will proceed with the existing `VideoGeometry`.
 ///   - If non-`nil`: t is given the current window's `VideoGeometry` (and other context), & is expected to output a new, possibly
 ///     transformed ` VideoGeometry`. But if it returns `nil`, then transform will be cancelled and no state will be changed.
-/// - `windowedTransform`: optional operator function which if provided, will run in the main queue.
+/// - `pWinGeoTransform`: optional operator function which if provided, will run in the main queue.
 ///   - If non-nil, and if in music mode, this function is given the `PWinGeometry` which would otherwise be applied and is
 ///     is expected to output a ` PWinGeometry` containing further transforms which should be applied. If it returns `nil`,
 ///     the transform will ignore it and will proceed with its calculated values.
@@ -58,13 +58,13 @@ struct GeometryTransform {
 
   /// Can be used for custom logic for building `PWinGeometryTF`.
   ///
-  /// See also `buildPWinTransformTasks`.
-  private let windowedTransform: PWinGeometryTF?
+  /// See also `buildPWinGeoTransformTasks`.
+  private let pWinGeoTransform: PWinGeometryTF?
 
   /// If provided, overrides all logic for generating the window geometry transform tasks.
   ///
-  /// This option is mutually exclusive with the `windowedTransform` option; both should not both be provided in the same GTF.
-  private let buildPWinTransformTasks: ((GeometryTransform.ContextStage3) -> [IINAAnimation.Task])?
+  /// This option is mutually exclusive with the `pWinGeoTransform` option; both should not both be provided in the same GTF.
+  private let buildPWinGeoTransformTasks: ((GeometryTransform.ContextStage3) -> [IINAAnimation.Task])?
 
   private let onSuccess: (() -> Void)?
 
@@ -75,7 +75,7 @@ struct GeometryTransform {
        sessionState: PWinSessionStateTF? = nil,
        video: VideoGeometryTF? = nil,
        windowed: PWinGeometryTF? = nil,
-       buildPWinTransformTasks: ((GeometryTransform.ContextStage3) -> [IINAAnimation.Task])? = nil,
+       buildPWinGeoTransformTasks: ((GeometryTransform.ContextStage3) -> [IINAAnimation.Task])? = nil,
        onSuccess: (() -> Void)? = nil) {
     let pipeline = player.pwc.animationPipeline
     self.id = pregeneratedID ?? pipeline.gtfLock.withLock {
@@ -86,8 +86,8 @@ struct GeometryTransform {
     self.syncVideoParams = syncVideoParams
     self.sessionStateTransform = sessionState
     self.videoTransform = video
-    self.windowedTransform = windowed
-    self.buildPWinTransformTasks = buildPWinTransformTasks
+    self.pWinGeoTransform = windowed
+    self.buildPWinGeoTransformTasks = buildPWinGeoTransformTasks
     self.onSuccess = onSuccess
   }
 
@@ -219,14 +219,14 @@ struct GeometryTransform {
     var immediateTasks: [IINAAnimation.Task] = buildInitialLayoutTasks(&ctx)
 
     var remainingTasks: [IINAAnimation.Task]
-    /// 4. Build tasks which apply `windowedTransform` (if it exists), as well as any needed adjustments for `outputVidGeo`.
+    /// 4. Build tasks which apply `pWinGeoTransform` (if it exists), as well as any needed adjustments for `outputVidGeo`.
     /// Important: must be called *after* building the initial layout tasks!
     /// (expects `ctx.outputLayout`, `ctx.needsNativeFullScreen` to have been set)
-    if let buildPWinTransformTasks {
-      assert(windowedTransform == nil, "buildPWinTransformTasks & windowedTransform cannot both be set")
-      remainingTasks = buildPWinTransformTasks(ctx)
+    if let buildPWinGeoTransformTasks {
+      assert(pWinGeoTransform == nil, "buildPWinGeoTransformTasks & pWinGeoTransform cannot both be set")
+      remainingTasks = buildPWinGeoTransformTasks(ctx)
     } else {
-      remainingTasks = ctx.buildPWinTransformTasks()
+      remainingTasks = ctx.buildPWinGeoTransformTasks()
     }
     remainingTasks.append(.instantTask(ctx.doPostApplyWork))
 
@@ -389,11 +389,11 @@ struct GeometryTransform {
       return nil
     }
 
-    /// Applies the `windowedTransform` (if it exists), and generates tasks which animate any changes caused
+    /// Applies the `pWinGeoTransform` (if it exists), and generates tasks which animate any changes caused
     /// by the transform  or by changes in `outputVidGeo`.
     /// Only `transformGeometry` should call this.
-    fileprivate func buildPWinTransformTasks() -> [IINAAnimation.Task] {
-      log.verbose("[GTF:\(name)] Building 'apply' tasks, mode=\(outputLayout.mode), vidTrackID=\(vidTrackID)")
+    fileprivate func buildPWinGeoTransformTasks() -> [IINAAnimation.Task] {
+      log.verbose("[GTF:\(name)] Building 'applyPWin' tasks, mode=\(outputLayout.mode) vidTrackID=\(vidTrackID) sess=\(gtfSessionState)")
 
       // There's no good animation for rotation (yet), so just do as little animation as possible in this case
       var duration: CGFloat = Constants.AnimationDuration.videoReconfig
@@ -408,12 +408,12 @@ struct GeometryTransform {
         switch gtfSessionState {
         case .restoring(_):
           log.verbose("[GTF:\(name)] Restore is in progress: no 'apply' tasks needed for windowed mode")
-          assert(tf.windowedTransform == nil)
+          assert(tf.pWinGeoTransform == nil)
           return []
 
         case .creatingNew:
           // Just opened new window. Use a longer duration for this one, because the window starts small & will zoom into place.
-          assert(tf.windowedTransform == nil)
+          assert(tf.pWinGeoTransform == nil)
           duration = Constants.AnimationDuration.initialVideoReconfig
           timing = .linear
           resizedGeo = applyResizePrefsForNewPlaybackInWindowedMode()
@@ -423,7 +423,7 @@ struct GeometryTransform {
           fallthrough
 
         case .existingSession_startingNewPlayback:
-          assert(tf.windowedTransform == nil)
+          assert(tf.pWinGeoTransform == nil)
           resizedGeo = applyResizePrefsForNewPlaybackInWindowedMode()
           if let resizedGeo, resizedGeo.windowFrame != inputGeoSet.windowed.windowFrame {
           } else {
@@ -433,9 +433,9 @@ struct GeometryTransform {
 
         case .existingSession_videoTrackChangedForSamePlayback, .existingSession_continuing:
           // Not a new file. Some other change to a video geo property. Use TF func if it exists.
-          if let windowedTransform = tf.windowedTransform {
-            log.verbose("[GTF:\(name)] Calling windowedTransform")
-            resizedGeo = windowedTransform(self)
+          if let pWinGeoTransform = tf.pWinGeoTransform {
+            log.verbose("[GTF:\(name)] Calling pWinGeoTransform")
+            resizedGeo = pWinGeoTransform(self)
           } else {
             // Will resize minimally
             resizedGeo = nil
@@ -474,7 +474,7 @@ struct GeometryTransform {
         let inputMusicModeGeo = inputGeoSet.musicMode  // has updated windowFrame
         let outputMusicModeGeo: PWinGeometry
         /// Use transformed music mode geo if provided. Otherwise update minimally for new `VideoGeometry`:
-        if let windowedTransform = tf.windowedTransform, let transformedGeo = windowedTransform(self) {
+        if let pWinGeoTransform = tf.pWinGeoTransform, let transformedGeo = pWinGeoTransform(self) {
           assert(transformedGeo.mode == .musicMode, "[GTF:\(name)] Tranform expected to return geometry with mode=.musicMode, but got: \(transformedGeo) ")
 
           outputMusicModeGeo = transformedGeo

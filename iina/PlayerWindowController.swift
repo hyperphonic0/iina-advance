@@ -1692,7 +1692,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       }
     }
 
-    let buildPWinTransformTasks: (GeometryTransform.ContextStage3) -> [IINAAnimation.Task] = { [self] ctx -> [IINAAnimation.Task] in
+    let buildPWinGeoTransformTasks: (GeometryTransform.ContextStage3) -> [IINAAnimation.Task] = { [self] ctx -> [IINAAnimation.Task] in
 
       guard ctx.inputLayout.canEnterInteractiveMode else {
         log.debug("Aborting entry into interactive mode as it is not possible for this input layout")
@@ -1719,7 +1719,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let gtf = GeometryTransform("EnterInteractiveMode", player,
                                 syncVideoParams: false,  // already done by videoTF
                                 video: videoTF,
-                                buildPWinTransformTasks: buildPWinTransformTasks)
+                                buildPWinGeoTransformTasks: buildPWinGeoTransformTasks)
     gtf.submit()
   }
 
@@ -1766,7 +1766,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       return outputVidGeo?.clone(videoSizeDisplayOverride: nil)
     }
 
-    let buildPWinTransformTasks: (GeometryTransform.ContextStage3) -> [IINAAnimation.Task] = { [self] ctx -> [IINAAnimation.Task] in
+    let buildPWinGeoTransformTasks: (GeometryTransform.ContextStage3) -> [IINAAnimation.Task] = { [self] ctx -> [IINAAnimation.Task] in
       var tasks: [IINAAnimation.Task] = []
 
       // Build exit animation tasks
@@ -1832,7 +1832,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
 
     let gtf = GeometryTransform("ExitInteractiveMode", player, syncVideoParams: false,
-                                video: videoTF, buildPWinTransformTasks: buildPWinTransformTasks)
+                                video: videoTF, buildPWinGeoTransformTasks: buildPWinGeoTransformTasks)
     gtf.submit()
   }
 

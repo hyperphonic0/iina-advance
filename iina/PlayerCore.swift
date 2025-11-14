@@ -3402,7 +3402,7 @@ class PlayerCore: NSObject {
                                syncVideoParams: false,   // does the syncing itself
                                sessionState: sessionStateTF,
                                video: videoGeoTF,
-                               buildPWinTransformTasks: { [self] ctx -> [IINAAnimation.Task] in
+                               buildPWinGeoTransformTasks: { [self] ctx -> [IINAAnimation.Task] in
         
         let inputMusicModeGeo = ctx.inputGeoSet.musicMode
         log.verbose("[GTF:\(ctx.name)] Showing viewport & exiting music mode (visibleNow=\(inputMusicModeGeo.isViewportShown.yesno))")
