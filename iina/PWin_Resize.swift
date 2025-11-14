@@ -342,8 +342,15 @@ extension PlayerWindowController {
       return
     }
 
-    let gtf = GeometryTransform("SetWindowScaleFromMPV", player,
-                                windowed: { [self] ctx -> PWinGeometry? in
+    let sessionStateTF: GeometryTransform.PWinSessionStateTF = { prevSessionState, ctx -> PWinSessionState? in
+      if case .existingSession_continuing = prevSessionState, ctx.currentPlayback.state.isAtLeast(.loadedAndSized) {
+        return prevSessionState
+      } else {
+        return nil  // abort
+      }
+    }
+
+    let windowedTF: GeometryTransform.PWinGeometryTF = { [self] ctx -> PWinGeometry? in
       let oldGeo: PWinGeometry
 
       switch ctx.inputLayout.mode {
@@ -377,7 +384,11 @@ extension PlayerWindowController {
         sendWindowScaleToMPV(basedOn: newGeo)
       }
       return newGeo
-    })
+    }
+
+    let gtf = GeometryTransform("MPVWindowScaleDidUpdate", player,
+                                sessionState: sessionStateTF,
+                                windowed: windowedTF)
     animationPipeline.submitGTF(gtf)
   }
 
