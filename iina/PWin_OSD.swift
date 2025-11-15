@@ -302,6 +302,7 @@ final class OSDState {
       return (osdTextSize / 10).rounded()
     }
   }
+
 }
 
 class OSDView: ClickThroughVisualEffectView {
@@ -734,31 +735,6 @@ extension PlayerWindowController {
     log.trace{"[OSD] Icon=\(isIconVisible.yn) for msg: \(message)"}
   }
 
-  /// If `position` and `duration` are different than their previously cached values, overwrites the cached values and
-  /// returns `true`. Returns `false` if the same or one of the values is `nil`.
-  ///
-  /// Lots of redundant `seek` messages which are emitted at all sorts of different times, and each triggers a call to show
-  /// a `seek` OSD. To prevent duplicate OSDs, call this method to compare against the previous seek position.
-  private func compareAndSetIfNewPlaybackTime(position: Double?, duration: Double?) -> Bool {
-    guard let position, let duration else {
-      log.verbose("[OSD] Ignoring request for Seek: position or duration is missing")
-      return false
-    }
-    // There seem to be precision errors which break equality when comparing values beyond 6 decimal places.
-    // Just round to nearest 1/1000000 sec for comparison.
-    let newPosRounded = round(position * AppData.osdSeekSubSecPrecisionComparison)
-    let newDurRounded = round(duration * AppData.osdSeekSubSecPrecisionComparison)
-    let oldPosRounded = round((osd.lastPlaybackPosition ?? -1) * AppData.osdSeekSubSecPrecisionComparison)
-    let oldDurRounded = round((osd.lastPlaybackDuration ?? -1) * AppData.osdSeekSubSecPrecisionComparison)
-    guard newPosRounded != oldPosRounded || newDurRounded != oldDurRounded else {
-      log.verbose("[OSD] Ignoring request for Seek; position/duration has not changed")
-      return false
-    }
-    osd.lastPlaybackPosition = position
-    osd.lastPlaybackDuration = duration
-    return true
-  }
-
   /// Do not call `displayOSD` directly. Call `PlayerCore.sendOSD` instead.
   ///
   /// There is a timing issue that can occur when the user holds down a key to rapidly repeat a key binding or menu item equivalent,
@@ -819,18 +795,34 @@ extension PlayerWindowController {
 
     var msg = msg
     switch msg {
+
     case .seek(_, _):
-      // Many redundant messages are sent from mpv. Try to filter them out here
+      /// Ignore `seek` in favor of these more important messages:
       if osd.didShowLastMsgRecently() {
         if case .speed = osd.lastDisplayedMsg { return }
         if case .frameStep = osd.lastDisplayedMsg { return }
         if case .frameStepBack = osd.lastDisplayedMsg { return }
       }
-      player.updatePlaybackTimeInfo()  // need to call this to update info.playbackPositionSec, info.playbackDurationSec
-      guard compareAndSetIfNewPlaybackTime(position: player.info.playbackPositionSec, duration: player.info.playbackDurationSec) else {
-        // Is redundant msg; discard
+      /// Call this first to update `info.playbackPositionSec`, `info.playbackDurationSec`, needed below.
+      player.updatePlaybackTimeInfo()
+
+      /// Many redundant `MPV_EVENT_SEEK` messages are emitted from mpv at different times, and each triggers a call to
+      /// show a `seek` OSD message. Show it only if either `position` or `duration` actually changed from their
+      /// previously cached values.
+      guard let position = player.info.playbackPositionSec,
+            let duration = player.info.playbackDurationSec else {
+        log.verbose("[OSD] Ignoring request for 'seek': position or duration is missing")
         return
       }
+      let positionDelta = abs(position - (osd.lastPlaybackPosition ?? Double.infinity))
+      let durationDelta = abs(duration - (osd.lastPlaybackDuration ?? Double.infinity))
+      guard positionDelta > Constants.OSD.osdSeekMinDeltaSec,
+            durationDelta > Constants.OSD.osdSeekMinDeltaSec else {
+        log.verbose("[OSD] Ignoring redundant request for 'seek'; neither position or duration has changed")
+        return
+      }
+      osd.lastPlaybackPosition = position
+      osd.lastPlaybackDuration = duration
 
     case .pause, .resume:
       // Do not show pause/resume during seek

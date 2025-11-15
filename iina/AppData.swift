@@ -30,8 +30,6 @@ struct AppData {
   /// Lowest possible speed allowed by mpv (0.01x)
   static let mpvMinPlaybackSpeed = 0.01
 
-  static let osdSeekSubSecPrecisionComparison: Double = 1000000
-
   static let mpvArgNone = "none"
 
   // Used internally as identifiers when communicating with mpv. Should not be displayed because they are not localized:
@@ -383,6 +381,9 @@ struct Constants {
 
   struct OSD {
     static let minTextSize = 8.0
+    /// There seem to be precision errors which break equality when comparing values beyond 6 decimal places.
+    /// Just round to nearest 1/1000000 sec for comparing playback postion & duration.
+    static let osdSeekMinDeltaSec: Double = 0.000001
   }
 
   struct Distance {

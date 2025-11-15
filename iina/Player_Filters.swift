@@ -190,9 +190,11 @@ extension PlayerCore {
   /// This method will prompt the user to change IINA's video preferences if hardware decoding is set to `auto`.
   /// - Parameter filter: The filter to add.
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
-  /// Can run on either mpv or main DispatchQueue.
+  /// 
+  /// *MUST* be executed in the `mpv` DispatchQueue.
   func addVideoFilter(_ filter: MPVFilter) -> Bool {
-    // TODO: refactor to execute mpv commands only on mpv queue. Make this async!
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+
     let success = addVideoFilter(filter.stringFormat)
     if !success {
       log.verbose("Video filter \(filter.stringFormat) was not added")
@@ -206,9 +208,9 @@ extension PlayerCore {
   /// - Parameter filter: The filter to add.
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
   func addVideoFilter(_ filter: String) -> Bool {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.debug("Adding video filter \(filter.quoted)...")
 
-    // FIXME: make this an async task!
     // check hwdec
     let hwdec = mpv.getString(MPVProperty.hwdec)
     if hwdec == "auto" {
