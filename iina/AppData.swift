@@ -213,6 +213,11 @@ struct Constants {
     /// Seeks are expensive; limit them to this frequency. (note that 1/60 == 0.017 fps)
     static let sliderSeekThrottlingInterval = 0.01
 
+    /// After a user changes a setting via a control in Quick Settings, how long to wait before allowing Quick Settings to
+    /// refresh via an external request. Some time is needed for mpv to update its state with the new value, otherwise any
+    /// updates made using data pulled from mpv might be out of date.
+    static let quickSettingsUpdateGracePeriod = 0.5
+
     static let windowScaleUpdateThrottlingInterval = 0.01
 
     /// Time in seconds to wait before regenerating thumbnails.

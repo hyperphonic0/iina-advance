@@ -41,36 +41,26 @@ class PlaybackInfo {
       }
     }
   }
-  var isPlaying: Bool {
-    return !isPaused
-  }
+  var isPlaying: Bool { !isPaused }
   var pauseStateWasChangedLocally = false
 
+  /// Should only be updated in `DispatchQueue.main`
   var isSeeking: Bool = false
 
+  /// Should only be updated in the `mpv` DispatchQueue
   var currentPlayback: Playback? = nil {
     didSet {
       log.verbose("Updated currentPlayback to \(currentPlayback?.description ?? "nil")")
     }
   }
 
-  var nowPlayingIndex: Int? {
-    return currentPlayback?.playlistPos
-  }
-
-  var currentURL: URL? {
-    return currentPlayback?.url
-  }
-
-  var isNetworkResource: Bool {
-    return currentPlayback?.isNetworkResource ?? false
-  }
-  var mpvMd5: String? {
-    return currentPlayback?.mpvMD5
-  }
+  var nowPlayingIndex: Int? { currentPlayback?.playlistPos }
+  var currentURL: URL? { currentPlayback?.url }
+  var isNetworkResource: Bool { currentPlayback?.isNetworkResource ?? false }
+  var mpvMd5: String? { currentPlayback?.mpvMD5 }
 
   var isMediaOnRemoteDrive: Bool {
-    if let attrs = try? currentURL?.resourceValues(forKeys: Set([.volumeIsLocalKey])), !attrs.volumeIsLocal! {
+    if let attrs = try? currentPlayback?.url.resourceValues(forKeys: Set([.volumeIsLocalKey])), !attrs.volumeIsLocal! {
       return true
     }
     return false
@@ -93,9 +83,7 @@ class PlaybackInfo {
 
   var deinterlace: Bool = false
   var hwdec: String = "no"
-  var hwdecEnabled: Bool {
-    hwdec != "no"
-  }
+  var hwdecEnabled: Bool { hwdec != "no" }
   var hdrAvailable: Bool = false
   var hdrEnabled: Bool = true
 

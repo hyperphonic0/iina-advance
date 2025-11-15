@@ -31,13 +31,17 @@ fileprivate let speedFormatter: NumberFormatter = {
   return fmt
 }()
 
+fileprivate let speedSliderStepCount = 24.0
+
 class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, SidebarTabGroupViewController {
 
   override var nibName: NSNib.Name {
     return NSNib.Name("QuickSettingViewController")
   }
 
-  let sliderSteps = 24.0
+  /// Calls `refreshDenialPeriodDidEnd` at timeout
+  private let refreshDenialPeriodTimer = TimeoutTimer(timeout: Constants.TimeInterval.quickSettingsUpdateGracePeriod)
+  private var isInRefreshDenialPeriod = true
 
   /**
    Similar to the one in `PlaylistViewController`.
@@ -236,6 +240,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   override func viewDidLoad() {
     super.viewDidLoad()
+
+    refreshDenialPeriodTimer.action = refreshDenialPeriodDidEnd
 
     updateVerticalConstraints()
 
@@ -468,7 +474,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   /// - Parameter speed: Playback speed.
   /// - Returns: Appropriate slider value.
   private func convertSpeedToSliderValue(_ speed: Double) -> Double {
-    log(speed / AppData.minSpeed) / log(AppData.maxSpeed / AppData.minSpeed) * sliderSteps
+    log(speed / AppData.minSpeed) / log(AppData.maxSpeed / AppData.minSpeed) * speedSliderStepCount
   }
 
   // TODO: should probably call this to change crop label every time a change to custom crop filter is detected
@@ -566,8 +572,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     deinterlaceLabel.stringValue = NSLocalizedString("quicksetting.deinterlace", comment: "Deinterlace")
     hdrLabel.stringValue = NSLocalizedString("quicksetting.hdr", comment: "HDR")
 
-    let speed = player.info.playSpeed
-    updateSpeed(to: speed)
+    updateSpeedControls(to: player.info.playSpeed)
   }
 
   /// Reload `Audio` tab
@@ -645,6 +650,15 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
   }
 
+  private func updateSpeedControls(to newSpeed: Double) {
+    let newSpeed = constrainSpeed(newSpeed)
+    speedSlider.doubleValue = convertSpeedToSliderValue(newSpeed)
+    customSpeedTextField.doubleValue = newSpeed
+    speedResetBtn.isHidden = newSpeed == 1.0
+    /// Use `customSpeedTextField.stringValue` to take advantage of its formatter
+    /// (e.g. `16` will be displayed instead of `16.0`)
+    redraw(indicator: speedSliderIndicator, constraint: speedSliderConstraint, slider: speedSlider, value: "\(customSpeedTextField.stringValue)x")
+  }
 
   private func updateVideoEqState() {
     brightnessSlider.intValue = Int32(player.info.brightness)
@@ -658,6 +672,17 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     saturationResetBtn.isHidden = player.info.saturation == 0
     gammaResetBtn.isHidden = player.info.gamma == 0
     hueResetBtn.isHidden = player.info.hue == 0
+  }
+
+  private func startRefreshDenialPeriod() {
+    refreshDenialPeriodTimer.restart()
+    isInRefreshDenialPeriod = true
+  }
+
+  /// Called by `refreshDenialPeriodTimer`.
+  private func refreshDenialPeriodDidEnd() {
+    isInRefreshDenialPeriod = false
+    player.setQuickSettingsViewNeedsUpdate()
   }
 
   private func switchToTab(_ tab: Sidebar.Tab) {
@@ -695,6 +720,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   /// Do not call this directly. Call `player.setQuickSettingsViewNeedsUpdate()` instead.
   func reloadCurrentTab() {
     guard isViewLoaded else { return }
+    guard !isInRefreshDenialPeriod else { return }
+
     switch currentTab {
     case .audio:
       guard pwc.isOpen(sidebarTab: .audio) else { return }
@@ -821,7 +848,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     return nil
   }
 
-  func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+  func tableView(_ tableView: NSTableView,
+                 validateDrop info: NSDraggingInfo, proposedRow row: Int,
+                 proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
     if (tableView == subTableView || tableView == secSubTableView) {
       // Subtitles / Secondary Subtitles tables
 
@@ -894,8 +923,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     return [] // NSDragOperationNone
   }
 
-  func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool
-  {
+  func tableView(_ tableView: NSTableView,
+                 acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
     if (tableView == subTableView || tableView == secSubTableView) {
 
       let pb = info.draggingPasteboard
@@ -1019,6 +1048,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       return
     }
     player.log.verbose("Setting aspect from segmented control: \(aspect.quoted)")
+    startRefreshDenialPeriod()
 
     player.mpv.queue.async { [self] in
       player.setVideoAspectOverride(aspect)
@@ -1037,12 +1067,14 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       }
 
       player.log.verbose("Setting crop from segmented control: \(selectedCropString.quoted)")
+      startRefreshDenialPeriod()
       player.setCrop(fromLabel: selectedCropString)
     }
   }
 
   // Sets mpv's `MPVOption.Video.videoRotate` property if it is one of the 4 `AppData.rotations` values
   @IBAction func rotationChangedAction(_ sender: NSSegmentedControl) {
+    startRefreshDenialPeriod()
     let value = AppData.rotations[sender.selectedSegment]
     player.setVideoRotate(value)
   }
@@ -1078,7 +1110,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   @IBAction func resetSpeedAction(_ sender: AnyObject) {
-    player.setSpeed(1.0)
+    updateSpeed(to: 1.0)
   }
 
   @IBAction func speedChangedAction(_ sender: NSSlider) {
@@ -1095,7 +1127,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     let sliderValue = sender.doubleValue
     // Attempt to round speed to 2 decimal places. If user is using the slider, any more
     // precision than that is just a distraction
-    let newSpeed = (AppData.minSpeed * pow(AppData.maxSpeed / AppData.minSpeed, sliderValue / sliderSteps)).roundedTo2()
+    let newSpeed = (AppData.minSpeed * pow(AppData.maxSpeed / AppData.minSpeed, sliderValue / speedSliderStepCount)).roundedTo2()
     player.log.verbose("Speed slider changed to \(sliderValue) → newSpeed = \(newSpeed)")
     updateSpeed(to: newSpeed)
   }
@@ -1126,15 +1158,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   private func updateSpeed(to inputSpeed: Double) {
     let newSpeed = constrainSpeed(inputSpeed)
-    speedSlider.doubleValue = convertSpeedToSliderValue(newSpeed)
-    customSpeedTextField.doubleValue = newSpeed
-    speedResetBtn.isHidden = newSpeed == 1.0
+    updateSpeedControls(to: newSpeed)
     if player.info.playSpeed != newSpeed {
       player.setSpeed(newSpeed)
     }
-    /// Use `customSpeedTextField.stringValue` to take advantage of its formatter
-    /// (e.g. `16` will be displayed instead of `16.0`)
-    redraw(indicator: speedSliderIndicator, constraint: speedSliderConstraint, slider: speedSlider, value: "\(customSpeedTextField.stringValue)x")
   }
 
   @IBAction func equalizerSliderAction(_ sender: NSSlider) {

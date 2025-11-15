@@ -12,6 +12,7 @@ extension PlayerCore {
   /** Check if there are IINA filters saved in watch_later file. */
   func reloadSavedIINAfilters() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard isActive else { return }
 
     let videoFilters = updateVideoFiltersFromMpv()
     postNotification(.iinaVFChanged)
@@ -80,6 +81,7 @@ extension PlayerCore {
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
   @discardableResult
   func addAudioFilter(_ filter: String) -> Bool {
+    guard isActive else { return false }
     log.debug("Adding audio filter \(filter)…")
     var result = true
     result = mpv.command(.af, args: ["add", filter], checkError: false) >= 0
@@ -104,6 +106,7 @@ extension PlayerCore {
   /// - Parameter index: The index of the filter to be removed.
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   func removeAudioFilter(_ filter: String, _ index: Int) -> Bool {
+    guard isActive else { return false }
     log.debug("Removing audio filter \(filter)…")
     let result = mpv.removeFilter(MPVProperty.af, index)
     logRemoveFilter(type: "audio", result: result, name: filter)
@@ -147,7 +150,7 @@ extension PlayerCore {
   /// Reloads filter list from mpv & uses it to update local state, then reload UI.
   func vfChanged() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isStopping else { return }
+    guard isActive else { return }
     _ = updateVideoFiltersFromMpv()
 
     syncVideoParamsFromMpv()

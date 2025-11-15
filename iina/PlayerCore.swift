@@ -2264,7 +2264,9 @@ class PlayerCore: NSObject {
   }
 
   func seeking() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.trace("Seeking")
+
     DispatchQueue.main.async { [self] in
       info.isSeeking = true
       // When playback is paused the display link may be shutdown in order to not waste energy.
@@ -2310,9 +2312,9 @@ class PlayerCore: NSObject {
 
       // End of seeking? Set short timer to hide seek time & thumbnail
       pwc.seekPreview.restartHideTimer()
-    }
 
-    saveState()
+      saveState()
+    }
   }
 
   func refreshEdrMode() {
