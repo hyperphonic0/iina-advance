@@ -91,8 +91,14 @@ class ThumbnailPeekView: NSImageView {
   }
 
   private func roundedCornerRadius(forHeight frameHeight: CGFloat) -> CGFloat {
-    // Set corner radius to betwen 10 and 20
-    return 10 + min(10, max(0, (frameHeight - 400) * 0.01))
+    let cornerRadius = 10 + min(10, max(0, (frameHeight - 400) * 0.01))
+
+    if #available(macOS 26.0, *) {
+      // Curvature much increased in Tahoe
+      return cornerRadius + ((frameHeight - 200) * 0.3).clamped(to: 0...25)
+    } else {
+      return cornerRadius
+    }
   }
 
   private func shadowRadius(forHeight frameHeight: CGFloat) -> CGFloat {

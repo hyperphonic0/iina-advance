@@ -820,6 +820,7 @@
                 }; do
                   candidate="$archroot/$relpath"
                   if [ -f "$candidate" ]; then
+                    echo "Adding arch candidate: $candidate"
                     inputs+=(candidate)
                   else
                     echo "⚠️ Missing candidate in archroot $archroot: $candidate"
@@ -842,8 +843,15 @@
                 done
 
                 # if only one arch available, leave it alone
-                if [ -z "$arm64" ] || [ -z "$x86_64" ]; then
-                  echo "✅ Skipping single-arch bin: $dep"
+                if [ -z "$arm64" ] && [ -z "$x86_64" ]; then
+                  echo "❌ No arch found for $dep"
+                  continue
+                elif [ -z "$arm64" ] || [ -z "$x86_64" ]; then
+                  if [ -z "$arm64" ]; then
+                    echo "✅ Only x86_64 found; skipping: $dep"
+                  else
+                    echo "✅ Only arm64 found; skipping: $dep"
+                  fi
                   continue
                 fi
 

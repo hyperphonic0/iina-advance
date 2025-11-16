@@ -77,6 +77,10 @@ class BarFactory {
         // At larger sizes, too much rounding can hurt the usability of the slider as a measure of quantity.
         cornerCurvature = 0.35
       }
+      if #available(macOS 26.0, *) {
+        // Curvature much increased in Tahoe
+        cornerCurvature = cornerCurvature * 1.75
+      }
     }
     func cornerRadius(for barHeight: CGFloat) -> CGFloat {
       return (barHeight * cornerCurvature).rounded()
