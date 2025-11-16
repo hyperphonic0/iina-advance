@@ -468,7 +468,7 @@
               echo "🔍 Scanning app for dylib + executable dependencies…"
 
               # executables + loadable libs
-              find "$app/" -type f \( -perm -111 -o -name "*.dylib" -o -name "*.so" \) | while read -r bin; do
+              find "$app" -type f \( -perm -111 -o -name "*.dylib" -o -name "*.so" \) -not -name "*.strings" | while read -r bin; do
                 echo "———"
                 echo "🔍 Inspecting: $bin"
                 ensure_writable "$bin"
@@ -640,7 +640,12 @@
 
               echo "✏️ Rewriting install names to use @rpath"
               find "deps/lib" -type f \( -perm -111 -o -name "*.dylib" -o -name "*.so" \) | while read -r dep; do
-                chmod +w "$dep" # ensure_writable "$dep"
+                if ! is_macho "$dep"; then
+                  echo "✅ Skipping non-Mach-O file: $dep"
+                  return
+                fi
+
+                ensure_writable "$dep"
 
                 # Change its ID to @rpath/<filename>
                 depID="@rpath/$(basename "$dep")"
@@ -790,7 +795,7 @@
               }
 
               echo "🔍 Merging binaries across architectures"
-              find "$app" -type f \( -perm -111 -o -name "*.dylib" -o -name "*.so" \) | while read -r dep; do
+              find "$app" -type f \( -perm -111 -o -name "*.dylib" -o -name "*.so" \) -not -name "*.strings" | while read -r dep; do
                 if [[ -L "$dep" ]] || [[ ! -f "$dep" ]]; then
                   echo "✅ Skipping non-file $dep"
                   continue

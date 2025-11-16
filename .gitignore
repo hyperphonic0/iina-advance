@@ -112,3 +112,5 @@ deps/executable/youtube-dl
 deps/plugins
 deps/lib*
 
+# Nix
+result/
