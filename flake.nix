@@ -410,7 +410,7 @@
                 done
 
                 # bare dylibs (no /, no @) → @rpath/<basename>
-                otool -L "$bin" | sed -nE 's/^[[:space:]]*(.+)[[:space:]]\(.*\)$/\1/p' || true | { grep -e ".dylib$" || true; } | { grep -e "^[^@/]" || true; } | while read -r bare
+                otool -L "$bin" | sed -nE 's/^[[:space:]]*(.+)[[:space:]]\(.*\)$/\1/p'| { grep -e ".dylib$" || true; } | { grep -e "^[^@/]" || true; } | while read -r bare
                 do
                   base="$(basename "$bare")"
                   echo "  🔁 bare → @rpath: $bare → @rpath/$base"
@@ -471,13 +471,14 @@
               find "$app" -type f \( -perm -111 -o -name "*.dylib" -o -name "*.so" \) -not -name "*.strings" | while read -r bin; do
                 echo "———"
                 echo "🔍 Inspecting: $bin"
-                ensure_writable "$bin"
-                ensure_rpath "$bin"
 
                 if ! is_macho "$bin"; then
-                  echo "🧾 Non-Mach-O target has no dylib deps to bundle"
+                  echo "🧾 Non-Mach-O target has no dylib deps to bundle: $bin"
                   continue
                 fi
+
+                ensure_writable "$bin"
+                ensure_rpath "$bin"
 
                 # bundle remaining absolute /nix/store deps
                 otool -L "$bin" | sed -nE 's/^[[:space:]]*(.+)[[:space:]]\(.*\)$/\1/p' | { grep -e "^/nix/store/" || true; } | while read -r dep
@@ -591,6 +592,8 @@
             ];
 
             buildPhase = ''
+              appName="IINA Advance.app"
+              activeArch="$(uname -m)"
               echo "🔧 Setting up build environment"
               export HOME=$PWD/.home
               export CFFIXED_USER_HOME="$HOME"
@@ -625,9 +628,9 @@
 
               mkdir -p deps/include deps/lib deps/executable
 
-              cp -RL ${depsInc}/.               deps/include
-              cp -RL ${depsLib}/.               deps/lib
-              cp -RL ${depsExecutable}/.        deps/executable/
+              cp -RL "${depsInc}/."               deps/include
+              cp -RL "${depsLib}/."               deps/lib
+              cp -RL "${depsExecutable}/."        deps/executable/
 
               echo "🔃 Fixing compatibility"
               cp deps/executable/yt-dlp             deps/executable/youtube-dl
@@ -672,8 +675,7 @@
               fi
 
               # Build IINA Advance
-              activeArch="$(uname -m)"
-              echo "🔨 Building IINA Advance $activeArch"
+              echo "🔨 Building $appName ($activeArch)"
               xcodebuild \
                 -workspace iina.xcodeproj/project.xcworkspace \
                 -scheme iina \
@@ -714,13 +716,15 @@
               mkdir -p "$frameworks"
               mkdir -p "$resources"
 
-              echo "📦 Bundling frameworks from ${depsIndirect} into $appName"
+              activeArch="$(uname -m)"
+
+              echo "📦 Bundling frameworks from ${depsIndirect} into $appName (\(activeArch))"
               cp -RL ${depsIndirect}/. "$frameworks/"
 
-              echo "📦 Bundling executables from ${depsExecutable} into $appName"
+              echo "📦 Bundling executables from ${depsExecutable} into $appName (\(activeArch))"
               cp -RL ${depsExecutable}/. "$macos/"
 
-              echo "🐍 Bundling ${pkgs.python3} into $appName"
+              echo "🐍 Bundling ${pkgs.python3} into $appName (\(activeArch))"
 
               # Pick the single pythonX.Y dir from Nix’s python3
               python_src_dir=$(echo ${pkgs.python3}/lib/python* | awk '{print $1}')
@@ -737,7 +741,7 @@
               echo "📦 Copying VapourSynth Python package"
               cp -RL "$vapoursynth_site_src"/. "$python_site/"
 
-              echo "📦 Deep-bundling dynamic dependencies into $appName"
+              echo "📦 Deep-bundling dynamic dependencies into $appName (\(activeArch))"
               ${normalizer}/bin/iina-normalize-app "$app"
 
               echo "✏️ Canonicalize Lib Groups"
@@ -755,7 +759,7 @@
               /usr/libexec/PlistBuddy -c 'Add :LSEnvironment:IINA_EXECUTABLE    string "@executable_path"'                                    "$plist" 2>/dev/null || true
               /usr/libexec/PlistBuddy -c 'Set :LSEnvironment:IINA_EXECUTABLE           "@executable_path"'                                    "$plist"
 
-              echo "🔏 Re-signing $appName..."
+              echo "🔏 Re-signing $appName (\(activeArch))..."
               ${resign}/bin/iina-resign "$app"
             '';
           };
@@ -810,42 +814,36 @@
                 relpath=$(${pkgs.coreutils}/bin/realpath --relative-to="$app" "$dep")
 
                 # collect candidate files from each arch build
-                inputs=""
+                inputs=()
                 for archroot in ${
                   builtins.concatStringsSep " " (map (a: "\"${a}/Applications/$appName\"") self.archApps)
                 }; do
                   candidate="$archroot/$relpath"
                   if [ -f "$candidate" ]; then
-                    inputs="$inputs $candidate"
+                    inputs+=(candidate)
                   else
                     echo "⚠️ Missing candidate in archroot $archroot: $candidate"
                   fi
                 done
 
                 # pick at most one file per arch to avoid duplicates
-                arm64=""
-                x86_64=""
-                for f in $inputs; do
-                  info=$(lipo -info "$f" 2>/dev/null || true)
+                local arm64=""
+                local x86_64=""
+                for f in inputs; do
+                  info="$(lipo -info "$f" 2>/dev/null || true)"
 
-                  if echo "$info" | grep -qw arm64 && [ -z "$arm64" ]; then
+                  if [[ "$info" == *"arm64"* ]] && [ -z "$arm64" ]; then
                     arm64="$f"
                   fi
 
-                  if echo "$info" | grep -qw x86_64 && [ -z "$x86_64" ]; then
+                  if [[ "$info" == *"x86_64"* ]] && [ -z "$x86_64" ]; then
                     x86_64="$f"
-                  fi
-
-                  # if we ever see a fat that already has both, just use it as-is
-                  if echo "$info" | grep -q 'Architectures in the fat file' && \
-                     echo "$info" | grep -qw arm64 && echo "$info" | grep -qw x86_64; then
-                    arm64="$f"; x86_64="$f"; break
                   fi
                 done
 
                 # if only one arch available, leave it alone
                 if [ -z "$arm64" ] || [ -z "$x86_64" ]; then
-                  echo "✅ Skipping single-arch $dep"
+                  echo "✅ Skipping single-arch bin: $dep"
                   continue
                 fi
 
@@ -857,8 +855,10 @@
 
                 # Guard against already universal binaries
                 if [ "$arm64" = "$x86_64" ]; then
+                  echo "Using universal bin: $arm64"
                   cp -p "$arm64" "$tmp"
                 else
+                  echo "Merging bins for $dep"
                   lipo -create -arch arm64 "$arm64" -arch x86_64 "$x86_64" -output "$tmp"
                 fi
 
