@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22689"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="PrefUtilsViewController" customModule="IINA" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="PrefUtilsViewController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="restoreAlertsRestoredLabel" destination="KAc-Jd-4LW" id="pj1-lx-MEz"/>
                 <outlet property="sectionBrowserExtView" destination="lOp-07-Z6M" id="UYs-O3-l9R"/>
@@ -26,10 +26,10 @@
             <point key="canvasLocation" x="676" y="630"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="qu5-4u-ozP" userLabel="Prefs &gt; Utils &gt; Default Application">
-            <rect key="frame" x="0.0" y="0.0" width="420" height="68"/>
+            <rect key="frame" x="0.0" y="0.0" width="420" height="76"/>
             <subviews>
                 <textField identifier="SectionTitleDefaultApp" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jnk-en-c84">
-                    <rect key="frame" x="-2" y="44" width="129" height="16"/>
+                    <rect key="frame" x="-2" y="52" width="129" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Default Application" id="ORO-lK-yK5">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -37,8 +37,8 @@
                     </textFieldCell>
                 </textField>
                 <button identifier="FunctionalButtonDefaultApp" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="9bz-Mj-bPf">
-                    <rect key="frame" x="-6" y="1" width="253" height="32"/>
-                    <buttonCell key="cell" type="push" title="Set IINA as the Default Application…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="e1p-Aa-WFG">
+                    <rect key="frame" x="1" y="8" width="247" height="28"/>
+                    <buttonCell key="cell" type="push" title="Set IINA as the Default Application…" bezelStyle="rounded" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="e1p-Aa-WFG">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -59,10 +59,10 @@
             <point key="canvasLocation" x="139" y="464"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="Bem-Ss-PQZ" userLabel="Prefs &gt; Utils &gt; Alerts">
-            <rect key="frame" x="0.0" y="0.0" width="420" height="104"/>
+            <rect key="frame" x="0.0" y="0.0" width="420" height="112"/>
             <subviews>
                 <textField identifier="SectionTitleRestoreAlert" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2lD-HN-fmS">
-                    <rect key="frame" x="-2" y="80" width="97" height="16"/>
+                    <rect key="frame" x="-2" y="88" width="97" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Restore Alerts" id="AAD-Db-Acs">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -70,8 +70,8 @@
                     </textFieldCell>
                 </textField>
                 <button identifier="FunctionalButtonRestoreAlerts" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="y5P-5X-X4x">
-                    <rect key="frame" x="-6" y="1" width="206" height="32"/>
-                    <buttonCell key="cell" type="push" title="Restore Suppressed Alerts…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="XAz-xa-LVo">
+                    <rect key="frame" x="1" y="8" width="200" height="28"/>
+                    <buttonCell key="cell" type="push" title="Restore Suppressed Alerts…" bezelStyle="rounded" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="XAz-xa-LVo">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                         <connections>
@@ -80,7 +80,7 @@
                     </buttonCell>
                 </button>
                 <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="xmX-IR-h5j">
-                    <rect key="frame" x="-2" y="36" width="424" height="28"/>
+                    <rect key="frame" x="-2" y="44" width="424" height="28"/>
                     <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="The button below will restore all alerts that have been suppressed using the &quot;Do not show this message again&quot; checkbox." id="F5i-KF-2SW">
                         <font key="font" metaFont="smallSystem"/>
                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -88,7 +88,7 @@
                     </textFieldCell>
                 </textField>
                 <textField hidden="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="KAc-Jd-4LW">
-                    <rect key="frame" x="199" y="11" width="55" height="14"/>
+                    <rect key="frame" x="207" y="14" width="55" height="14"/>
                     <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Restored." id="Wdh-me-hdC">
                         <font key="font" metaFont="smallSystem"/>
                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -114,10 +114,10 @@
             <point key="canvasLocation" x="139" y="600"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="lOp-07-Z6M" userLabel="Prefs &gt; Utils &gt; Browser Extension">
-            <rect key="frame" x="0.0" y="0.0" width="420" height="102"/>
+            <rect key="frame" x="0.0" y="0.0" width="420" height="106"/>
             <subviews>
                 <textField identifier="SectionTitleBrowserExt" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Al6-1d-mCg">
-                    <rect key="frame" x="-2" y="78" width="211" height="16"/>
+                    <rect key="frame" x="-2" y="82" width="211" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Get Browser Extensions for IINA" id="zCe-1f-tkF">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -125,8 +125,8 @@
                     </textFieldCell>
                 </textField>
                 <button identifier="FunctionalButtonChrome" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="HRq-fs-0uo">
-                    <rect key="frame" x="0.0" y="8" width="70" height="18"/>
-                    <buttonCell key="cell" type="inline" title="Chrome" bezelStyle="inline" image="forward" imagePosition="left" alignment="center" borderStyle="border" inset="2" id="yuw-2i-ICd">
+                    <rect key="frame" x="0.0" y="8" width="64" height="18"/>
+                    <buttonCell key="cell" type="inline" title="Chrome" bezelStyle="inline" image="forward" imagePosition="left" alignment="center" controlSize="large" borderStyle="border" inset="2" id="yuw-2i-ICd">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="smallSystemBold"/>
                     </buttonCell>
@@ -135,8 +135,8 @@
                     </connections>
                 </button>
                 <button identifier="FunctionalButtonFirefox" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="G58-js-HgZ">
-                    <rect key="frame" x="82" y="8" width="65" height="18"/>
-                    <buttonCell key="cell" type="inline" title="Firefox" bezelStyle="inline" image="forward" imagePosition="left" alignment="center" borderStyle="border" inset="2" id="f9i-sS-MJN">
+                    <rect key="frame" x="76" y="8" width="59" height="18"/>
+                    <buttonCell key="cell" type="inline" title="Firefox" bezelStyle="inline" image="forward" imagePosition="left" alignment="center" controlSize="large" borderStyle="border" inset="2" id="f9i-sS-MJN">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="smallSystemBold"/>
                     </buttonCell>
@@ -145,9 +145,9 @@
                     </connections>
                 </button>
                 <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="DZn-sK-pTY">
-                    <rect key="frame" x="-2" y="34" width="424" height="28"/>
+                    <rect key="frame" x="-2" y="34" width="424" height="32"/>
                     <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="Open links or current webpage in IINA with one click. The website must be supported by youtube-dl." id="GAo-fx-NG0">
-                        <font key="font" metaFont="smallSystem"/>
+                        <font key="font" metaFont="system"/>
                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
@@ -173,43 +173,46 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="163" y="199" width="448" height="192"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1415"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="937"/>
             <view key="contentView" id="HNy-Eo-3UU">
-                <rect key="frame" x="0.0" y="0.0" width="448" height="192"/>
+                <rect key="frame" x="0.0" y="0.0" width="448" height="212"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="2JS-Ar-lM8">
-                        <rect key="frame" x="18" y="140" width="412" height="32"/>
+                        <rect key="frame" x="18" y="160" width="412" height="32"/>
                         <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Please select the media types that you want to make IINA as the default Application for." id="uvK-Y1-dZr">
                             <font key="font" metaFont="system"/>
                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
-                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dhO-nq-Edx">
-                        <rect key="frame" x="26" y="107" width="61" height="18"/>
+                    <button translatesAutoresizingMaskIntoConstraints="NO" id="dhO-nq-Edx">
+                        <rect key="frame" x="28" y="124" width="57" height="20"/>
                         <buttonCell key="cell" type="check" title="Video" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="8wH-Gi-mRV">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                             <font key="font" metaFont="system"/>
                         </buttonCell>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="20" id="OQk-M6-bKS"/>
+                        </constraints>
                     </button>
                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bjj-u6-vYB">
-                        <rect key="frame" x="26" y="83" width="61" height="18"/>
+                        <rect key="frame" x="28" y="96" width="57" height="20"/>
                         <buttonCell key="cell" type="check" title="Audio" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="jFt-2a-nmc">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                             <font key="font" metaFont="system"/>
                         </buttonCell>
                     </button>
                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="MC6-FT-IVG">
-                        <rect key="frame" x="26" y="59" width="69" height="18"/>
+                        <rect key="frame" x="28" y="68" width="65" height="20"/>
                         <buttonCell key="cell" type="check" title="Playlist" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="MGo-J8-zWE">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                             <font key="font" metaFont="system"/>
                         </buttonCell>
                     </button>
                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Lh7-1a-rsH">
-                        <rect key="frame" x="359" y="13" width="76" height="32"/>
-                        <buttonCell key="cell" type="push" title="OK" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="IkF-qG-s4j">
+                        <rect key="frame" x="358" y="20" width="70" height="28"/>
+                        <buttonCell key="cell" type="push" title="OK" bezelStyle="rounded" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="IkF-qG-s4j">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                             <font key="font" metaFont="system"/>
                             <string key="keyEquivalent" base64-UTF8="YES">
@@ -221,8 +224,8 @@ DQ
                         </connections>
                     </button>
                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ak8-rh-mxC">
-                        <rect key="frame" x="289" y="13" width="76" height="32"/>
-                        <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="kbP-VI-dmT">
+                        <rect key="frame" x="280" y="20" width="70" height="28"/>
+                        <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="kbP-VI-dmT">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                             <font key="font" metaFont="system"/>
                             <string key="keyEquivalent" base64-UTF8="YES">
@@ -244,12 +247,14 @@ Gw
                     <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="dhO-nq-Edx" secondAttribute="trailing" constant="20" symbolic="YES" id="Rhm-ow-91d"/>
                     <constraint firstItem="bjj-u6-vYB" firstAttribute="top" secondItem="dhO-nq-Edx" secondAttribute="bottom" constant="8" id="XWv-9W-BXl"/>
                     <constraint firstItem="2JS-Ar-lM8" firstAttribute="top" secondItem="HNy-Eo-3UU" secondAttribute="top" constant="20" id="YgB-Yc-VSQ"/>
+                    <constraint firstItem="bjj-u6-vYB" firstAttribute="height" secondItem="dhO-nq-Edx" secondAttribute="height" id="Ynl-Ec-uEk"/>
                     <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="MC6-FT-IVG" secondAttribute="trailing" constant="20" symbolic="YES" id="at1-py-ImQ"/>
                     <constraint firstItem="dhO-nq-Edx" firstAttribute="leading" secondItem="HNy-Eo-3UU" secondAttribute="leading" constant="28" id="bdF-xS-ZLj"/>
                     <constraint firstAttribute="bottom" secondItem="Lh7-1a-rsH" secondAttribute="bottom" constant="20" id="h66-B2-syQ"/>
                     <constraint firstItem="Lh7-1a-rsH" firstAttribute="leading" secondItem="ak8-rh-mxC" secondAttribute="trailing" constant="8" id="kVf-wV-Oej"/>
                     <constraint firstItem="2JS-Ar-lM8" firstAttribute="leading" secondItem="HNy-Eo-3UU" secondAttribute="leading" constant="20" id="kty-rd-Imz"/>
                     <constraint firstAttribute="trailing" secondItem="Lh7-1a-rsH" secondAttribute="trailing" constant="20" id="nl0-1Y-0mg"/>
+                    <constraint firstItem="MC6-FT-IVG" firstAttribute="height" secondItem="dhO-nq-Edx" secondAttribute="height" id="q8U-vS-fgG"/>
                     <constraint firstItem="dhO-nq-Edx" firstAttribute="top" secondItem="2JS-Ar-lM8" secondAttribute="bottom" constant="16" id="rN2-DP-FXq"/>
                     <constraint firstItem="ak8-rh-mxC" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="HNy-Eo-3UU" secondAttribute="leading" constant="20" symbolic="YES" id="wgX-oS-kwi"/>
                     <constraint firstItem="MC6-FT-IVG" firstAttribute="top" secondItem="bjj-u6-vYB" secondAttribute="bottom" constant="8" id="yfk-6H-Xqu"/>

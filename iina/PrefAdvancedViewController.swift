@@ -89,7 +89,13 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
                                                     removeFunc: removeOptionRows)
 
     optionsTableView.sizeLastColumnToFit()
-    
+
+    if #available(macOS 26.0, *) {
+      chooseConfigDirBtn.borderShape = .capsule
+      chooseConfigDirBtn.wantsLayer = true
+      chooseConfigDirBtn.layer?.cornerRadius = 12
+    }
+
     enableAdvancedSettingsLabel.stringValue = NSLocalizedString("preference.enable_adv_settings",
                                                                 comment: "Enable advanced settings")
 
