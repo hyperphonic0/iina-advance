@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23086.1" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23086.1"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="AboutWindowController" customModule="IINA" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="AboutWindowController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="buildBranchButton" destination="4og-gN-tB4" id="I0h-jO-imV"/>
                 <outlet property="buildDateLabel" destination="O3G-Ax-VRU" id="ExO-hI-ZRf"/>
@@ -33,7 +33,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="937"/>
             <view key="contentView" wantsLayer="YES" id="se5-gp-TjO" userLabel="Window Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -111,10 +111,10 @@
                                             </customSpacing>
                                         </stackView>
                                         <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="0.0" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="y6B-pc-JRB" userLabel="BuildInfo Vertical Stack View">
-                                            <rect key="frame" x="20" y="149" width="180" height="22"/>
+                                            <rect key="frame" x="20" y="160" width="180" height="11"/>
                                             <subviews>
-                                                <textField hidden="YES" verticalHuggingPriority="750" mirrorLayoutDirectionWhenInternationalizing="never" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="O3G-Ax-VRU" userLabel="Date">
-                                                    <rect key="frame" x="-2" y="11" width="184" height="11"/>
+                                                <textField hidden="YES" focusRingType="none" verticalHuggingPriority="750" mirrorLayoutDirectionWhenInternationalizing="never" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="O3G-Ax-VRU" userLabel="Date">
+                                                    <rect key="frame" x="-2" y="0.0" width="29" height="11"/>
                                                     <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" selectable="YES" refusesFirstResponder="YES" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="center" title="Date" usesSingleLineMode="YES" id="hp8-K0-WQf">
                                                         <font key="font" metaFont="miniSystem"/>
                                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -138,7 +138,7 @@
                                                 <real value="3.4028234663852886e+38"/>
                                             </customSpacing>
                                         </stackView>
-                                        <button focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="tKq-yl-nhe" customClass="AboutWindowButton" customModule="IINA" customModuleProvider="target">
+                                        <button focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="tKq-yl-nhe" customClass="AboutWindowButton" customModule="IINA_Advance" customModuleProvider="target">
                                             <rect key="frame" x="40" y="94" width="140" height="28"/>
                                             <buttonCell key="cell" type="square" title="License" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" state="on" focusRingType="none" imageScaling="proportionallyDown" inset="2" id="jEf-xN-6xb">
                                                 <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
@@ -151,7 +151,7 @@
                                                 <action selector="sectionBtnAction:" target="-2" id="yrQ-4k-u0g"/>
                                             </connections>
                                         </button>
-                                        <button focusRingType="none" tag="1" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ZI5-MK-cHL" customClass="AboutWindowButton" customModule="IINA" customModuleProvider="target">
+                                        <button focusRingType="none" tag="1" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ZI5-MK-cHL" customClass="AboutWindowButton" customModule="IINA_Advance" customModuleProvider="target">
                                             <rect key="frame" x="40" y="62" width="140" height="28"/>
                                             <buttonCell key="cell" type="square" title="Contributors" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" focusRingType="none" imageScaling="proportionallyDown" inset="2" id="XWg-VQ-fRV">
                                                 <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
@@ -161,7 +161,7 @@
                                                 <action selector="sectionBtnAction:" target="-2" id="gh3-w5-Jno"/>
                                             </connections>
                                         </button>
-                                        <button focusRingType="none" tag="2" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XuI-3z-cJF" customClass="AboutWindowButton" customModule="IINA" customModuleProvider="target">
+                                        <button focusRingType="none" tag="2" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XuI-3z-cJF" customClass="AboutWindowButton" customModule="IINA_Advance" customModuleProvider="target">
                                             <rect key="frame" x="40" y="30" width="140" height="28"/>
                                             <buttonCell key="cell" type="square" title="Credits" bezelStyle="shadowlessSquare" alignment="center" focusRingType="none" imageScaling="proportionallyDown" inset="2" id="zCH-uO-acx">
                                                 <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
@@ -306,7 +306,7 @@
                                                             <action selector="translatorsBtnAction:" target="-2" id="Jzp-8V-nU9"/>
                                                         </connections>
                                                     </button>
-                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="lR7-ma-7xF">
+                                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="lR7-ma-7xF">
                                                         <rect key="frame" x="-2" y="38" width="246" height="16"/>
                                                         <textFieldCell key="cell" lineBreakMode="clipping" title="IINA localization is powered by Crowdin." id="HLj-vT-kNp">
                                                             <font key="font" metaFont="system"/>

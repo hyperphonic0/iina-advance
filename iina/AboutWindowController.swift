@@ -200,7 +200,15 @@ extension AboutWindowController: NSCollectionViewDataSource {
 class AboutWindowButton: NSButton {
 
   override func awakeFromNib() {
-    layer?.cornerRadius = 4
+    wantsLayer = true
+    if #available(macOS 26.0, *) {
+      setButtonType(.momentaryPushIn)
+      controlSize = .extraLarge
+      borderShape = .capsule
+      layer?.cornerRadius = 12
+    } else {
+      layer?.cornerRadius = 4
+    }
     updateState()
   }
 
