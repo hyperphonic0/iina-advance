@@ -163,8 +163,6 @@
 		512B8FDD2BC2376E00AF41BF /* OutlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512B8FDC2BC2376E00AF41BF /* OutlineView.swift */; };
 		513A4FFA29B53F8100A8EA7D /* Atomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513A4FF929B53F8100A8EA7D /* Atomic.swift */; };
 		515B5E5A2A579903001FCD49 /* iina-plugin in Copy Executables */ = {isa = PBXBuildFile; fileRef = E38558872A484A2D0083772D /* iina-plugin */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		518376DD2C23DD2300574F00 /* libgcc_s.1.1.dylib in Copy Dylibs */ = {isa = PBXBuildFile; fileRef = 518376D92C23DB1400574F00 /* libgcc_s.1.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		518376DE2C23DD2300574F00 /* libstdc++.6.dylib in Copy Dylibs */ = {isa = PBXBuildFile; fileRef = 518376DB2C23DB2F00574F00 /* libstdc++.6.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		51854CDA2A1C489300C40B78 /* FFmpegLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51854CD92A1C489300C40B78 /* FFmpegLogger.swift */; };
 		5196819A29EC963F00B05D55 /* CoreDisplay.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5196819929EC963F00B05D55 /* CoreDisplay.framework */; };
 		519872FF26879B9B00F84BCC /* AccessibilityPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 519872FE26879B9B00F84BCC /* AccessibilityPreferences.swift */; };
@@ -551,8 +549,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				518376DD2C23DD2300574F00 /* libgcc_s.1.1.dylib in Copy Dylibs */,
-				518376DE2C23DD2300574F00 /* libstdc++.6.dylib in Copy Dylibs */,
 				34ACABB72C142A0C00F871A0 /* libarchive.13.dylib in Copy Dylibs */,
 				34ACABB82C142A0C00F871A0 /* libass.9.dylib in Copy Dylibs */,
 				34ACABB92C142A0C00F871A0 /* libavcodec.61.dylib in Copy Dylibs */,
@@ -1290,8 +1286,6 @@
 		513A4FF929B53F8100A8EA7D /* Atomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Atomic.swift; sourceTree = "<group>"; };
 		51537C7229FA26DD00F9A472 /* Nightly.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Nightly.xcconfig; sourceTree = "<group>"; };
 		515B5E592A579782001FCD49 /* iina-plugin.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "iina-plugin.xcconfig"; sourceTree = "<group>"; };
-		518376D92C23DB1400574F00 /* libgcc_s.1.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgcc_s.1.1.dylib; path = deps/lib/libgcc_s.1.1.dylib; sourceTree = "<group>"; };
-		518376DB2C23DB2F00574F00 /* libstdc++.6.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libstdc++.6.dylib"; path = "deps/lib/libstdc++.6.dylib"; sourceTree = "<group>"; };
 		51854CD92A1C489300C40B78 /* FFmpegLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegLogger.swift; sourceTree = "<group>"; };
 		5196819929EC963F00B05D55 /* CoreDisplay.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreDisplay.framework; path = /System/Library/Frameworks/CoreDisplay.framework; sourceTree = "<group>"; };
 		519872FE26879B9B00F84BCC /* AccessibilityPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPreferences.swift; sourceTree = "<group>"; };
@@ -1975,6 +1969,7 @@
 		D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogScanner.swift; sourceTree = "<group>"; };
 		D1FD2DDB28533EE700CF7B35 /* InputSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSection.swift; sourceTree = "<group>"; };
 		D1FD62AD2CBF6F8100FFCF21 /* NotificationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationHandler.swift; sourceTree = "<group>"; };
+		D1FE0E392EC997EC00DC94D3 /* flake.nix */ = {isa = PBXFileReference; lastKnownFileType = text; path = flake.nix; sourceTree = "<group>"; };
 		D1FF15742A7E072200C0CE86 /* PlayerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerManager.swift; sourceTree = "<group>"; };
 		D1FF15762A7E35F300C0CE86 /* WindowAutosaveName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowAutosaveName.swift; sourceTree = "<group>"; };
 		D1FF15782A7FA6A300C0CE86 /* PlayerSaveState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerSaveState.swift; sourceTree = "<group>"; };
@@ -2496,7 +2491,6 @@
 				34ACAB452C142A0300F871A0 /* libfontconfig.1.dylib */,
 				34ACAB6D2C142A0500F871A0 /* libfreetype.6.dylib */,
 				34ACAB3B2C142A0300F871A0 /* libfribidi.0.dylib */,
-				518376D92C23DB1400574F00 /* libgcc_s.1.1.dylib */,
 				34ACAB4F2C142A0400F871A0 /* libglib-2.0.0.dylib */,
 				34ACAB6B2C142A0500F871A0 /* libgmp.10.dylib */,
 				34ACAB312C142A0300F871A0 /* libgnutls.30.dylib */,
@@ -2530,7 +2524,6 @@
 				34ACAB622C142A0400F871A0 /* libsodium.26.dylib */,
 				34ACAB5E2C142A0400F871A0 /* libsoxr.0.dylib */,
 				34ACAB702C142A0500F871A0 /* libspeex.1.dylib */,
-				518376DB2C23DB2F00574F00 /* libstdc++.6.dylib */,
 				34ACAB6C2C142A0500F871A0 /* libswresample.5.dylib */,
 				34ACAB432C142A0300F871A0 /* libswscale.8.dylib */,
 				34ACAB4D2C142A0400F871A0 /* libtasn1.6.dylib */,
@@ -2863,6 +2856,7 @@
 				84EB1ED71D2F51D3004FA5A1 /* Products */,
 				8461BA641E42344D008BB852 /* Executables */,
 				848290731D95978100C3C76C /* Frameworks */,
+				D1FE0E392EC997EC00DC94D3 /* flake.nix */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
