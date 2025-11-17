@@ -41,7 +41,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   /// Calls `refreshDenialPeriodDidEnd` at timeout
   private let refreshDenialPeriodTimer = TimeoutTimer(timeout: Constants.TimeInterval.quickSettingsUpdateGracePeriod)
-  private var isInRefreshDenialPeriod = true
+  private var isInRefreshDenialPeriod: Bool {
+    refreshDenialPeriodTimer.isValid
+  }
 
   /**
    Similar to the one in `PlaylistViewController`.
@@ -277,8 +279,12 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
     if #available(macOS 26, *) {
       speedSlider.neutralValue = 8
-      (audioEQSliders + videoEQSliders + [audioDelaySlider, subDelaySlider, subScaleSlider]).forEach {
-        $0.neutralValue = 0
+      speedSlider.controlSize = .mini
+      subPosSlider.controlSize = .mini
+      for slider in audioEQSliders + videoEQSliders + [audioDelaySlider, subDelaySlider, subScaleSlider] {
+        guard let slider else { continue }
+        slider.controlSize = .mini
+        slider.neutralValue = 0
       }
 
       subPosSlider.tintProminence = .none
@@ -676,12 +682,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   private func startRefreshDenialPeriod() {
     refreshDenialPeriodTimer.restart()
-    isInRefreshDenialPeriod = true
   }
 
   /// Called by `refreshDenialPeriodTimer`.
   private func refreshDenialPeriodDidEnd() {
-    isInRefreshDenialPeriod = false
     player.setQuickSettingsViewNeedsUpdate()
   }
 
