@@ -148,7 +148,7 @@ extension BindingTableViewController: NSTableViewDelegate {
       setFormattedText(for: cell, to: stringValue,
                        isEnabled: bindingRow.isEnabled,
                        origin: bindingRow.origin,
-                       userFixedPitchFont: isRaw)
+                       monospacedFont: isRaw)
       return cell
 
     case "actionColumn":
@@ -158,7 +158,7 @@ extension BindingTableViewController: NSTableViewDelegate {
                        isEnabled: bindingRow.isEnabled,
                        origin: bindingRow.origin,
                        italic: !bindingRow.canBeModified,
-                       userFixedPitchFont: isRaw && hasRawAction)
+                       monospacedFont: isRaw && hasRawAction)
       return cell
 
     case "statusColumn":
@@ -210,11 +210,11 @@ extension BindingTableViewController: NSTableViewDelegate {
 
   private func setFormattedText(for cell: NSTableCellView, to stringValue: String,
                                 isEnabled: Bool, origin: InputBindingOrigin, italic: Bool = false,
-                                userFixedPitchFont: Bool) {
+                                monospacedFont: Bool) {
     guard let textField = cell.textField else { return }
 
-    if userFixedPitchFont {
-      textField.font = .userFixedPitchFont(ofSize: tableCellFontSize)
+    if monospacedFont {
+      textField.font = .monospacedSystemFont(ofSize: tableCellFontSize, weight: .regular)
     } else {
       textField.font = .systemFont(ofSize: tableCellFontSize)
     }

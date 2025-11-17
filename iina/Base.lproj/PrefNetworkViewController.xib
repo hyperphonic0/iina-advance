@@ -24,10 +24,10 @@
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="KNf-nq-d77"/>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="dQy-nE-EW3" userLabel="Prefs &gt; Network &gt; Cache">
-            <rect key="frame" x="0.0" y="0.0" width="480" height="144"/>
+            <rect key="frame" x="0.0" y="0.0" width="480" height="155"/>
             <subviews>
                 <textField identifier="SectionTitleCache" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2xw-S1-tBi">
-                    <rect key="frame" x="-2" y="120" width="50" height="16"/>
+                    <rect key="frame" x="-2" y="131" width="50" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Cache:" id="LNk-io-MM7">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -35,8 +35,8 @@
                     </textFieldCell>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="1Nn-zY-Z5N">
-                    <rect key="frame" x="120" y="118" width="103" height="18"/>
-                    <buttonCell key="cell" type="check" title="Enable cache" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="fpV-al-bn7">
+                    <rect key="frame" x="120" y="130" width="105" height="18"/>
+                    <buttonCell key="cell" type="check" title="Enable cache" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="fpV-al-bn7">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -45,7 +45,7 @@
                     </connections>
                 </button>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jlx-wF-OsB">
-                    <rect key="frame" x="118" y="90" width="164" height="16"/>
+                    <rect key="frame" x="118" y="102" width="164" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Seconds to prefetch:" id="J96-32-M9A">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -53,7 +53,7 @@
                     </textFieldCell>
                 </textField>
                 <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="8qr-PT-G7W" userLabel="SecsToPrefetch Text Field">
-                    <rect key="frame" x="288" y="86" width="95" height="24"/>
+                    <rect key="frame" x="288" y="98" width="95" height="24"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="95" id="U1O-ic-Ats"/>
                     </constraints>
@@ -75,7 +75,7 @@
                     </connections>
                 </textField>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Aw2-n0-Y53">
-                    <rect key="frame" x="389" y="90" width="84" height="14"/>
+                    <rect key="frame" x="389" y="102" width="84" height="14"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Default: 36000" id="fab-7d-mMQ">
                         <font key="font" metaFont="message" size="11"/>
                         <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
@@ -83,7 +83,7 @@
                     </textFieldCell>
                 </textField>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="d3H-1Y-XVT">
-                    <rect key="frame" x="118" y="60" width="164" height="16"/>
+                    <rect key="frame" x="118" y="72" width="164" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Maximum cache size (KB):" id="0yu-5Q-363">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -91,7 +91,7 @@
                     </textFieldCell>
                 </textField>
                 <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="DH1-5d-J02" userLabel="DefaultCacheSize Text Field">
-                    <rect key="frame" x="288" y="56" width="95" height="24"/>
+                    <rect key="frame" x="288" y="68" width="95" height="24"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="95" id="eM2-0L-joY"/>
                     </constraints>
@@ -113,7 +113,7 @@
                     </connections>
                 </textField>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="VFl-PR-eId">
-                    <rect key="frame" x="389" y="60" width="89" height="14"/>
+                    <rect key="frame" x="389" y="72" width="89" height="14"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Default: 153600" id="0bT-f6-rXb">
                         <font key="font" metaFont="message" size="11"/>
                         <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
@@ -121,8 +121,8 @@
                     </textFieldCell>
                 </textField>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2lB-EV-a9t">
-                    <rect key="frame" x="120" y="32" width="326" height="16"/>
-                    <buttonCell key="cell" type="check" title="Show throbber when paused waiting for the cache" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="SyQ-2U-zu8">
+                    <rect key="frame" x="120" y="34" width="328" height="18"/>
+                    <buttonCell key="cell" type="check" title="Show throbber when paused waiting for the cache" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="SyQ-2U-zu8">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                         <connections>
@@ -131,8 +131,8 @@
                     </buttonCell>
                 </button>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jDD-iC-RTd">
-                    <rect key="frame" x="120" y="8" width="198" height="16"/>
-                    <buttonCell key="cell" type="check" title="Show throbber when seeking" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="39x-Jr-gsA">
+                    <rect key="frame" x="120" y="8" width="200" height="18"/>
+                    <buttonCell key="cell" type="check" title="Show throbber when seeking" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="39x-Jr-gsA">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -165,7 +165,7 @@
                 <constraint firstItem="8qr-PT-G7W" firstAttribute="top" secondItem="1Nn-zY-Z5N" secondAttribute="bottom" constant="8" id="o3z-dI-6At"/>
                 <constraint firstItem="2xw-S1-tBi" firstAttribute="leading" secondItem="dQy-nE-EW3" secondAttribute="leading" id="ouH-0a-jhg"/>
                 <constraint firstItem="8qr-PT-G7W" firstAttribute="baseline" secondItem="jlx-wF-OsB" secondAttribute="baseline" id="pEU-Gj-mK5"/>
-                <constraint firstItem="2lB-EV-a9t" firstAttribute="top" secondItem="DH1-5d-J02" secondAttribute="bottom" constant="8" id="s5Y-6e-DG5"/>
+                <constraint firstItem="2lB-EV-a9t" firstAttribute="top" secondItem="DH1-5d-J02" secondAttribute="bottom" constant="16" id="s5Y-6e-DG5"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="2lB-EV-a9t" secondAttribute="trailing" id="spL-7i-MB9"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="VFl-PR-eId" secondAttribute="trailing" id="tne-hD-A8r"/>
                 <constraint firstItem="1Nn-zY-Z5N" firstAttribute="leading" secondItem="2lB-EV-a9t" secondAttribute="leading" id="tsd-k5-KiH"/>
@@ -308,7 +308,7 @@
             <rect key="frame" x="0.0" y="0.0" width="480" height="152"/>
             <subviews>
                 <textField identifier="SectionTitleYtdl" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="mRg-vm-guk">
-                    <rect key="frame" x="-2" y="128" width="48" height="16"/>
+                    <rect key="frame" x="-2" y="127" width="48" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="yt-dlp:" id="1Ex-0X-pjo">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -335,8 +335,8 @@
                     </connections>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="iwI-aJ-5PQ">
-                    <rect key="frame" x="120" y="128" width="103" height="16"/>
-                    <buttonCell key="cell" type="check" title="Enable yt-dlp" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="cyH-Md-FAD">
+                    <rect key="frame" x="120" y="128" width="105" height="16"/>
+                    <buttonCell key="cell" type="check" title="Enable yt-dlp" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="cyH-Md-FAD">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -406,7 +406,7 @@
                     </textFieldCell>
                 </textField>
                 <button horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1hj-6T-EBw">
-                    <rect key="frame" x="231" y="124" width="24" height="24"/>
+                    <rect key="frame" x="233" y="124" width="24" height="24"/>
                     <buttonCell key="cell" type="help" bezelStyle="helpButton" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="nVU-MZ-yE4">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>

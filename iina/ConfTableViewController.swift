@@ -156,6 +156,36 @@ extension ConfTableViewController: NSTableViewDelegate {
       return nil
     }
   }
+
+  // Add this method to your existing NSTableViewDelegate extension
+  func tableView(_ tableView: NSTableView,
+                 shouldEdit tableColumn: NSTableColumn?,
+                 row: Int) -> Bool {
+    // Customize after a short delay to let the field editor appear
+    DispatchQueue.main.async { [weak self] in
+      self?.customizeFieldEditor(for: tableView, row: row)
+    }
+    return true
+  }
+
+  private func customizeFieldEditor(for tableView: NSTableView, row: Int) {
+    guard let window = tableView.window else { return }
+
+    // Get the currently editing text field
+    let view = tableView.view(atColumn: tableView.editedColumn,
+                              row: tableView.editedRow,
+                              makeIfNecessary: false)
+    guard let cellView = view as? NSTableCellView,
+          let textField = cellView.textField else { return }
+
+    // Get and customize the field editor
+    if let fieldEditor = window.fieldEditor(true, for: textField) {
+      var frame = fieldEditor.frame
+      frame.size.height = 26  // Adjust as needed
+      fieldEditor.frame = frame
+    }
+  }
+
 }
 
 // MARK: EditableTableViewDelegate

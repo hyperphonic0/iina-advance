@@ -191,7 +191,7 @@
                     </connections>
                 </button>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nuY-oY-ief">
-                    <rect key="frame" x="138" y="90" width="80" height="16"/>
+                    <rect key="frame" x="142" y="90" width="80" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Target peak:" id="xVk-OA-kOf">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -199,7 +199,7 @@
                     </textFieldCell>
                 </textField>
                 <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="w2K-eR-xqK">
-                    <rect key="frame" x="224" y="86" width="58" height="24"/>
+                    <rect key="frame" x="228" y="86" width="58" height="24"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="58" id="eGm-nT-ceU"/>
                     </constraints>
@@ -217,7 +217,7 @@
                     </connections>
                 </textField>
                 <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bL4-aH-JLz">
-                    <rect key="frame" x="284" y="90" width="26" height="16"/>
+                    <rect key="frame" x="288" y="90" width="26" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="nits" id="baO-xy-7hD">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -225,7 +225,7 @@
                     </textFieldCell>
                 </textField>
                 <button horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IGa-h9-bKr" userLabel="Target Peak Help Button">
-                    <rect key="frame" x="316" y="86" width="24" height="24"/>
+                    <rect key="frame" x="320" y="86" width="24" height="24"/>
                     <buttonCell key="cell" type="help" bezelStyle="helpButton" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="npo-66-j8t">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -235,7 +235,7 @@
                     </connections>
                 </button>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="6Tu-h1-NQu">
-                    <rect key="frame" x="138" y="40" width="308" height="42"/>
+                    <rect key="frame" x="142" y="40" width="304" height="42"/>
                     <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" id="aTt-aZ-rjK">
                         <font key="font" metaFont="label" size="11"/>
                         <string key="title">Measured peak brightness of the display. If set to 0, IINA detects this value. If detection fails, IINA sets the target peak to 400.</string>
@@ -244,7 +244,7 @@
                     </textFieldCell>
                 </textField>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="wqd-66-Fxt">
-                    <rect key="frame" x="138" y="10" width="67" height="16"/>
+                    <rect key="frame" x="142" y="10" width="67" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Algorithm:" id="qzI-rq-PqO">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -252,7 +252,7 @@
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="A2r-Qf-VPp">
-                    <rect key="frame" x="211" y="4" width="120" height="28"/>
+                    <rect key="frame" x="215" y="4" width="120" height="28"/>
                     <popUpButtonCell key="cell" type="push" title="auto" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="uey-Ao-wwZ" id="Z8Y-Nt-nBs">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="message"/>
@@ -278,7 +278,7 @@
                     </connections>
                 </popUpButton>
                 <button horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="AR5-D6-Fjf" userLabel="Algorithm Help Button">
-                    <rect key="frame" x="339" y="6" width="24" height="24"/>
+                    <rect key="frame" x="343" y="6" width="24" height="24"/>
                     <buttonCell key="cell" type="help" bezelStyle="helpButton" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="heO-a7-miP">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -330,7 +330,7 @@
                 <constraint firstItem="xXS-nP-Chk" firstAttribute="top" secondItem="0Re-PY-hmC" secondAttribute="bottom" constant="12" id="fO3-5j-FCq"/>
                 <constraint firstItem="paR-ax-h5M" firstAttribute="leading" secondItem="gZf-gF-XoY" secondAttribute="leading" constant="120" id="fWo-4I-DAC"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="jf6-xG-UF1" secondAttribute="trailing" constant="12" id="fvX-Px-0Pz"/>
-                <constraint firstItem="nuY-oY-ief" firstAttribute="leading" secondItem="Ty3-Qg-ysu" secondAttribute="leading" constant="20" id="g4g-Y8-WSC"/>
+                <constraint firstItem="nuY-oY-ief" firstAttribute="leading" secondItem="Ty3-Qg-ysu" secondAttribute="leading" constant="24" id="g4g-Y8-WSC"/>
                 <constraint firstItem="A2r-Qf-VPp" firstAttribute="leading" secondItem="wqd-66-Fxt" secondAttribute="trailing" constant="8" id="h3S-Yh-vwA"/>
                 <constraint firstItem="NZA-64-tXh" firstAttribute="baseline" secondItem="paR-ax-h5M" secondAttribute="baseline" id="hly-ga-NBA"/>
                 <constraint firstItem="EWs-Ib-pVZ" firstAttribute="leading" secondItem="NZA-64-tXh" secondAttribute="leading" id="k0a-vZ-1e2"/>
@@ -743,7 +743,7 @@
                     <accessibility identifier="Adjust"/>
                 </textField>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="epR-j5-E90">
-                    <rect key="frame" x="138" y="145" width="84" height="16"/>
+                    <rect key="frame" x="142" y="145" width="84" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Preamp gain:" id="9Q0-hw-PdU">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -752,7 +752,7 @@
                     <accessibility identifier="PreAmp"/>
                 </textField>
                 <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="T1N-iU-Ec6">
-                    <rect key="frame" x="228" y="141" width="58" height="24"/>
+                    <rect key="frame" x="232" y="141" width="58" height="24"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="58" id="WxQ-OC-Na1"/>
                     </constraints>
@@ -772,7 +772,7 @@
                     </connections>
                 </textField>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="C8e-fu-Grk">
-                    <rect key="frame" x="288" y="145" width="21" height="16"/>
+                    <rect key="frame" x="292" y="145" width="21" height="16"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="dB" id="ovT-D3-3jS">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -781,7 +781,7 @@
                     <accessibility identifier="DB1"/>
                 </textField>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Svi-0e-5LL">
-                    <rect key="frame" x="138" y="125" width="308" height="14"/>
+                    <rect key="frame" x="142" y="125" width="304" height="14"/>
                     <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="Pre-amplification gain to apply to the ReplayGain gain." id="rIW-XP-zGZ">
                         <font key="font" metaFont="label" size="11"/>
                         <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
@@ -790,7 +790,7 @@
                     <accessibility identifier="Pre-ampl"/>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="zaK-0m-hxd">
-                    <rect key="frame" x="140" y="95" width="197" height="18"/>
+                    <rect key="frame" x="144" y="95" width="197" height="18"/>
                     <buttonCell key="cell" type="check" title="Allow the volume gain to clip" bezelStyle="regularSquare" imagePosition="left" controlSize="large" inset="2" id="J3e-oT-fy9">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -802,7 +802,7 @@
                     </connections>
                 </button>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Rhk-iA-JJw">
-                    <rect key="frame" x="138" y="63" width="308" height="28"/>
+                    <rect key="frame" x="142" y="63" width="304" height="28"/>
                     <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="If this option is not enabled, clipping will be prevented by lowering the gain." id="HQV-tY-NMj">
                         <font key="font" metaFont="label" size="11"/>
                         <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
@@ -873,7 +873,7 @@
                 <constraint firstItem="HNU-lP-c21" firstAttribute="centerY" secondItem="FnS-3W-02x" secondAttribute="centerY" id="NtZ-GL-la4"/>
                 <constraint firstItem="C8e-fu-Grk" firstAttribute="baseline" secondItem="T1N-iU-Ec6" secondAttribute="baseline" id="OBo-fZ-82w"/>
                 <constraint firstItem="zaK-0m-hxd" firstAttribute="top" secondItem="Svi-0e-5LL" secondAttribute="bottom" constant="12" id="Ogd-ae-SEf"/>
-                <constraint firstItem="epR-j5-E90" firstAttribute="leading" secondItem="NKd-e0-059" secondAttribute="leading" constant="20" identifier="indent" id="QhD-HJ-lD3"/>
+                <constraint firstItem="epR-j5-E90" firstAttribute="leading" secondItem="NKd-e0-059" secondAttribute="leading" constant="24" identifier="indent" id="QhD-HJ-lD3"/>
                 <constraint firstItem="y59-b5-Qko" firstAttribute="centerY" secondItem="HNU-lP-c21" secondAttribute="centerY" id="RmE-pJ-kJm"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="fBa-He-qTk" secondAttribute="trailing" id="SYe-SU-9nk"/>
                 <constraint firstItem="epR-j5-E90" firstAttribute="baseline" secondItem="T1N-iU-Ec6" secondAttribute="baseline" id="TIp-wI-8dt"/>

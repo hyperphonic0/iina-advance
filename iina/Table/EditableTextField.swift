@@ -8,6 +8,30 @@
 
 import Foundation
 
+class EditableTableCellView : NSTableCellView {
+  /// Workaround for an AppKit quirk which would otherwise result in the cell's text and/or image to be set to a different
+  /// size than what is in the XIB.
+  override func viewWillDraw() {
+    let imageViewFrame = imageView?.frame
+    let textFieldFrame = textField?.frame
+
+    super.viewWillDraw()
+
+    if let imageView, let imageViewFrame, imageViewFrame.origin.x != imageView.frame.origin.x {
+      imageView.setFrameOrigin(NSPoint(x: imageViewFrame.origin.x, y: imageView.frame.origin.y))
+    }
+
+    if let textField, let textFieldFrame {
+      if textFieldFrame.origin.x != textField.frame.origin.x {
+        textField.setFrameOrigin(NSPoint(x: textFieldFrame.origin.x, y: textField.frame.origin.y))
+      }
+      if textFieldFrame.size.width != textField.frame.size.width {
+        textField.setFrameSize(NSSize(width: textFieldFrame.size.width, height: textField.frame.size.height))
+      }
+    }
+  }
+}
+
 /*
  Should only be used within cells of `EditableTableView`.
  */
