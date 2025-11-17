@@ -30,6 +30,9 @@
             withSoxr = true;
             soxr = pkgs.soxr;
 
+            withBs2b = true;
+            libbs2b = pkgs.libbs2b;
+
             withRubberband = true;
             rubberband = pkgs.rubberband;
 
