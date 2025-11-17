@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22690"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="PrefDataViewController" customModule="IINA" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="PrefDataViewController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
                 <outlet property="clearHistoryBtn" destination="SSk-Rd-BxH" id="nRg-In-B1g"/>
                 <outlet property="clearSavedWindowDataBtn" destination="DRV-Dv-gti" id="Gfd-NK-vSv"/>
@@ -32,10 +32,10 @@
         </customView>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="M9c-Ak-HmK" userLabel="Prefs &gt; Saved Data &gt; Open Windows" propertyAccessControl="none">
-            <rect key="frame" x="0.0" y="0.0" width="552" height="130"/>
+            <rect key="frame" x="0.0" y="0.0" width="552" height="142"/>
             <subviews>
                 <textField identifier="SectionTitleOpenWindows" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="APB-Nm-aTA">
-                    <rect key="frame" x="-2" y="106" width="68" height="16"/>
+                    <rect key="frame" x="-2" y="118" width="68" height="16"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Windows:" id="mM7-1Q-FyL">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -43,23 +43,23 @@
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="251.99998474121094" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VWZ-zT-vZx" userLabel="RightColumn Stack View">
-                    <rect key="frame" x="120" y="8" width="432" height="114"/>
+                    <rect key="frame" x="120" y="9" width="432" height="126"/>
                     <subviews>
                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Uoo-aD-AGe">
-                            <rect key="frame" x="-2" y="97" width="434" height="18"/>
-                            <buttonCell key="cell" type="check" title="Save &amp; restore open windows between launches" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="6a1-KK-71r">
+                            <rect key="frame" x="0.0" y="108" width="432" height="18"/>
+                            <buttonCell key="cell" type="check" title="Save &amp; restore open windows between launches" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="6a1-KK-71r">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
                             <constraints>
-                                <constraint firstAttribute="height" constant="16" id="LhM-kp-B10"/>
+                                <constraint firstAttribute="height" constant="18" id="LhM-kp-B10"/>
                             </constraints>
                             <connections>
                                 <binding destination="lH7-Vv-0M1" name="value" keyPath="values.enableRestoreUIState" id="THz-g2-dcG"/>
                             </connections>
                         </button>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="7lB-cp-VGF" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="94" width="1" height="0.0"/>
+                            <rect key="frame" x="0.0" y="104" width="1" height="0.0"/>
                             <constraints>
                                 <constraint firstAttribute="height" id="h6o-7X-Gw5"/>
                                 <constraint firstAttribute="width" constant="1" id="jVv-fj-Ab7"/>
@@ -73,8 +73,8 @@
                             </connections>
                         </customView>
                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="uvD-Yb-sTj">
-                            <rect key="frame" x="18" y="73" width="414" height="18"/>
-                            <buttonCell key="cell" type="check" title="Disable save &amp; restore for command line launches" bezelStyle="regularSquare" imagePosition="left" inset="2" id="5UU-FV-Cgm">
+                            <rect key="frame" x="20" y="82" width="412" height="18"/>
+                            <buttonCell key="cell" type="check" title="Disable save &amp; restore for command line launches" bezelStyle="regularSquare" imagePosition="left" controlSize="large" inset="2" id="5UU-FV-Cgm">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
@@ -92,7 +92,7 @@
                             </connections>
                         </button>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="n3V-lN-Sta" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="70" width="1" height="0.0"/>
+                            <rect key="frame" x="0.0" y="78" width="1" height="0.0"/>
                             <constraints>
                                 <constraint firstAttribute="height" id="A5j-Nv-1L3"/>
                                 <constraint firstAttribute="width" constant="1" id="OrK-fS-Eu0"/>
@@ -106,8 +106,8 @@
                             </connections>
                         </customView>
                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="p4K-NC-yZB">
-                            <rect key="frame" x="18" y="49" width="414" height="18"/>
-                            <buttonCell key="cell" type="check" title="Always pause all media when restoring" bezelStyle="regularSquare" imagePosition="left" inset="2" id="BGb-Bp-m3h">
+                            <rect key="frame" x="20" y="56" width="412" height="18"/>
+                            <buttonCell key="cell" type="check" title="Always pause all media when restoring" bezelStyle="regularSquare" imagePosition="left" controlSize="large" inset="2" id="BGb-Bp-m3h">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
@@ -121,7 +121,7 @@
                             </connections>
                         </button>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="Hx0-CU-d8d" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="46" width="1" height="0.0"/>
+                            <rect key="frame" x="0.0" y="52" width="1" height="0.0"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="1" id="AAb-Pg-cVC"/>
                                 <constraint firstAttribute="height" id="Xb5-DA-aAd"/>
@@ -135,8 +135,8 @@
                             </connections>
                         </customView>
                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="DN6-fa-2cc">
-                            <rect key="frame" x="18" y="25" width="414" height="18"/>
-                            <buttonCell key="cell" type="check" title="Always ask before restoring" bezelStyle="regularSquare" imagePosition="left" inset="2" id="IYc-ki-ceb">
+                            <rect key="frame" x="20" y="30" width="412" height="18"/>
+                            <buttonCell key="cell" type="check" title="Always ask before restoring" bezelStyle="regularSquare" imagePosition="left" controlSize="large" inset="2" id="IYc-ki-ceb">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
@@ -149,18 +149,18 @@
                                 </binding>
                             </connections>
                         </button>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="rB2-Zr-Mw8" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="18" width="1" height="4"/>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="rB2-Zr-Mw8" userLabel="8pt Spacer">
+                            <rect key="frame" x="0.0" y="18" width="1" height="8"/>
                             <constraints>
-                                <constraint firstAttribute="height" constant="4" id="BzT-Ir-sXy"/>
+                                <constraint firstAttribute="height" constant="8" id="BzT-Ir-sXy"/>
                                 <constraint firstAttribute="width" constant="1" id="bgE-5m-Wvi"/>
                             </constraints>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" spacing="6" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gYO-Tq-byJ" userLabel="SavedLaunchData HStack View">
-                            <rect key="frame" x="0.0" y="0.0" width="228" height="14"/>
+                            <rect key="frame" x="0.0" y="0.0" width="231" height="14"/>
                             <subviews>
                                 <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="HfC-oH-fCc">
-                                    <rect key="frame" x="-2" y="0.0" width="232" height="14"/>
+                                    <rect key="frame" x="-2" y="0.0" width="235" height="14"/>
                                     <textFieldCell key="cell" controlSize="small" title="No data found." id="ywA-fG-GuO">
                                         <font key="font" metaFont="smallSystem"/>
                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -208,10 +208,10 @@
                     </customSpacing>
                 </stackView>
                 <button identifier="FunctionalButtonClearSavedLaunchData" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="DRV-Dv-gti">
-                    <rect key="frame" x="347" y="-2" width="212" height="32"/>
-                    <buttonCell key="cell" type="push" title="Clear Saved Window Data…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="L2H-PQ-HJF">
+                    <rect key="frame" x="357" y="2" width="195" height="28"/>
+                    <buttonCell key="cell" type="push" title="Clear Saved Window Data…" bezelStyle="rounded" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="L2H-PQ-HJF">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="systemBold"/>
+                        <font key="font" metaFont="system"/>
                     </buttonCell>
                     <connections>
                         <action selector="clearSavedWindowDataBtnAction:" target="-2" id="irE-re-7aP"/>
@@ -222,23 +222,22 @@
                 <constraint firstItem="APB-Nm-aTA" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="M9c-Ak-HmK" secondAttribute="leading" constant="120" id="5zd-Vc-WIq"/>
                 <constraint firstItem="APB-Nm-aTA" firstAttribute="top" secondItem="M9c-Ak-HmK" secondAttribute="top" constant="8" id="9dZ-2B-yS8"/>
                 <constraint firstItem="VWZ-zT-vZx" firstAttribute="leading" secondItem="M9c-Ak-HmK" secondAttribute="leading" constant="120" id="IKL-bX-2GS"/>
+                <constraint firstAttribute="bottom" secondItem="DRV-Dv-gti" secondAttribute="bottom" constant="2" id="M2E-B3-9tn"/>
                 <constraint firstItem="APB-Nm-aTA" firstAttribute="leading" secondItem="M9c-Ak-HmK" secondAttribute="leading" id="Q4K-PC-JeY"/>
-                <constraint firstItem="DRV-Dv-gti" firstAttribute="firstBaseline" secondItem="HfC-oH-fCc" secondAttribute="firstBaseline" id="Zed-2v-iMO"/>
+                <constraint firstItem="DRV-Dv-gti" firstAttribute="centerY" secondItem="HfC-oH-fCc" secondAttribute="centerY" id="Zed-2v-iMO"/>
                 <constraint firstItem="DRV-Dv-gti" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="HfC-oH-fCc" secondAttribute="trailing" constant="6" id="eT1-Tb-yNs"/>
-                <constraint firstItem="VWZ-zT-vZx" firstAttribute="top" secondItem="M9c-Ak-HmK" secondAttribute="top" constant="8" id="et5-qR-7xc"/>
                 <constraint firstAttribute="trailing" secondItem="VWZ-zT-vZx" secondAttribute="trailing" id="ffA-BM-6pC"/>
-                <constraint firstAttribute="bottom" secondItem="VWZ-zT-vZx" secondAttribute="bottom" constant="8" id="sFy-x0-8Yn"/>
                 <constraint firstItem="DRV-Dv-gti" firstAttribute="trailing" secondItem="VWZ-zT-vZx" secondAttribute="trailing" id="se0-uy-L8K"/>
                 <constraint firstItem="Uoo-aD-AGe" firstAttribute="firstBaseline" secondItem="APB-Nm-aTA" secondAttribute="firstBaseline" id="t96-21-r66"/>
             </constraints>
             <point key="canvasLocation" x="-87" y="-1231"/>
         </customView>
         <customView id="Oic-pc-Cvg" userLabel="Prefs &gt; Saved Data &gt; History" propertyAccessControl="none">
-            <rect key="frame" x="0.0" y="0.0" width="534" height="148"/>
+            <rect key="frame" x="0.0" y="0.0" width="534" height="157"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField identifier="SectionTitleHistory" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sqR-ex-tn6">
-                    <rect key="frame" x="-2" y="124" width="57" height="16"/>
+                    <rect key="frame" x="-2" y="133" width="57" height="16"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="History:" id="VXd-v8-ypz">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -246,34 +245,34 @@
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="JOH-xx-V8Z" userLabel="RightColumn Stack View">
-                    <rect key="frame" x="120" y="8" width="414" height="132"/>
+                    <rect key="frame" x="120" y="8" width="414" height="142"/>
                     <subviews>
                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Iet-3p-cfj">
-                            <rect key="frame" x="-2" y="115" width="170" height="18"/>
-                            <buttonCell key="cell" type="check" title="Enable playback history" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="WMt-z1-YYz">
+                            <rect key="frame" x="0.0" y="124" width="168" height="18"/>
+                            <buttonCell key="cell" type="check" title="Enable playback history" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="WMt-z1-YYz">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
                             <constraints>
-                                <constraint firstAttribute="height" constant="16" id="9xR-X4-OIz"/>
+                                <constraint firstAttribute="height" constant="18" id="9xR-X4-OIz"/>
                             </constraints>
                             <connections>
                                 <binding destination="lH7-Vv-0M1" name="value" keyPath="values.recordPlaybackHistory" id="Oof-Z5-Afd"/>
                             </connections>
                         </button>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="oGh-8n-hHn" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="108" width="1" height="4"/>
+                            <rect key="frame" x="0.0" y="116" width="1" height="4"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="4" id="G5K-mx-zYo"/>
                                 <constraint firstAttribute="width" constant="1" id="k5g-5j-pef"/>
                             </constraints>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" spacing="16" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="h56-Kv-2Gu" userLabel="OpenRecent HStack View">
-                            <rect key="frame" x="0.0" y="88" width="197" height="16"/>
+                            <rect key="frame" x="0.0" y="94" width="197" height="18"/>
                             <subviews>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="R2V-zU-Jpv">
-                                    <rect key="frame" x="-2" y="-1" width="199" height="18"/>
-                                    <buttonCell key="cell" type="check" title="Enable &quot;Open Recent&quot; menu" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="8Kn-4Y-nDN">
+                                    <rect key="frame" x="0.0" y="0.0" width="197" height="18"/>
+                                    <buttonCell key="cell" type="check" title="Enable &quot;Open Recent&quot; menu" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="8Kn-4Y-nDN">
                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                         <font key="font" metaFont="system"/>
                                     </buttonCell>
@@ -291,7 +290,7 @@
                             </customSpacing>
                         </stackView>
                         <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ur4-37-RFU">
-                            <rect key="frame" x="18" y="70" width="184" height="14"/>
+                            <rect key="frame" x="18" y="76" width="184" height="14"/>
                             <textFieldCell key="cell" controlSize="small" title="Current number of recent items: X" id="E3s-CR-cqr">
                                 <font key="font" metaFont="smallSystem"/>
                                 <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -299,7 +298,7 @@
                             </textFieldCell>
                         </textField>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="o79-eG-jRM" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="66" width="1" height="0.0"/>
+                            <rect key="frame" x="0.0" y="72" width="1" height="0.0"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="1" id="NCX-5f-hSw"/>
                                 <constraint firstAttribute="height" id="pTE-tI-i0e"/>
@@ -313,8 +312,8 @@
                             </connections>
                         </customView>
                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="7mI-lM-Xa3">
-                            <rect key="frame" x="18" y="45" width="295" height="18"/>
-                            <buttonCell key="cell" type="check" title="Track all played files in &quot;Open Recent&quot; menu" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="lid-TB-LgP">
+                            <rect key="frame" x="20" y="50" width="293" height="18"/>
+                            <buttonCell key="cell" type="check" title="Track all played files in &quot;Open Recent&quot; menu" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="lid-TB-LgP">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
@@ -328,7 +327,7 @@
                             </connections>
                         </button>
                         <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="8br-IJ-ynv">
-                            <rect key="frame" x="38" y="28" width="361" height="14"/>
+                            <rect key="frame" x="38" y="32" width="361" height="14"/>
                             <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="Otherwise only files that opened manually will show up in this menu." id="YTU-LI-zlm">
                                 <font key="font" metaFont="message" size="11"/>
                                 <color key="textColor" name="tertiaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -342,18 +341,18 @@
                                 </binding>
                             </connections>
                         </textField>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="xiz-Oz-v8z" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="20" width="1" height="4"/>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="xiz-Oz-v8z" userLabel="8pt Spacer">
+                            <rect key="frame" x="0.0" y="20" width="1" height="8"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="1" id="LeS-BF-ur2"/>
-                                <constraint firstAttribute="height" constant="4" id="qYh-hb-dSZ"/>
+                                <constraint firstAttribute="height" constant="8" id="qYh-hb-dSZ"/>
                             </constraints>
                         </customView>
-                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" spacing="6" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="B6j-P2-fkd" userLabel="PlaybackHistoryCount HStack View">
+                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="centerY" spacing="6" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="B6j-P2-fkd" userLabel="PlaybackHistoryCount HStack View">
                             <rect key="frame" x="0.0" y="0.0" width="161" height="16"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="cRf-v0-eXQ">
-                                    <rect key="frame" x="-2" y="2" width="143" height="14"/>
+                                    <rect key="frame" x="-2" y="1" width="143" height="14"/>
                                     <textFieldCell key="cell" controlSize="small" title="History exists for N media." id="kAH-0h-Fc1">
                                         <font key="font" metaFont="smallSystem"/>
                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -362,7 +361,7 @@
                                 </textField>
                                 <button horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="s69-xc-GKJ" userLabel="ShowPlaybackHistory Button">
                                     <rect key="frame" x="145" y="-3" width="16" height="22"/>
-                                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrowshape.turn.up.right.circle.fill" catalog="system" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="wfG-7e-gzH">
+                                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="arrowshape.turn.up.right.circle.fill" catalog="system" imagePosition="only" alignment="center" controlSize="large" imageScaling="proportionallyUpOrDown" inset="2" id="wfG-7e-gzH">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
                                     </buttonCell>
@@ -375,6 +374,9 @@
                                     </connections>
                                 </button>
                             </subviews>
+                            <constraints>
+                                <constraint firstItem="s69-xc-GKJ" firstAttribute="centerY" secondItem="cRf-v0-eXQ" secondAttribute="centerY" id="Wmm-WH-lF0"/>
+                            </constraints>
                             <visibilityPriorities>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
@@ -414,10 +416,10 @@
                     </customSpacing>
                 </stackView>
                 <button identifier="FunctionalButtonClearHistory" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="SSk-Rd-BxH">
-                    <rect key="frame" x="382" y="0.0" width="159" height="32"/>
-                    <buttonCell key="cell" type="push" title="Delete All History…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MP6-Em-Lp4">
+                    <rect key="frame" x="392" y="2" width="142" height="28"/>
+                    <buttonCell key="cell" type="push" title="Delete All History…" bezelStyle="rounded" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MP6-Em-Lp4">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="systemBold"/>
+                        <font key="font" metaFont="system"/>
                     </buttonCell>
                     <connections>
                         <action selector="clearHistoryBtnAction:" target="-2" id="IpD-Hy-YLH"/>
@@ -425,14 +427,14 @@
                 </button>
             </subviews>
             <constraints>
-                <constraint firstAttribute="bottom" secondItem="JOH-xx-V8Z" secondAttribute="bottom" constant="8" id="Dxk-Tv-ubU"/>
+                <constraint firstItem="Iet-3p-cfj" firstAttribute="firstBaseline" secondItem="sqR-ex-tn6" secondAttribute="firstBaseline" id="CfX-aD-Fx1"/>
                 <constraint firstItem="sqR-ex-tn6" firstAttribute="leading" secondItem="Oic-pc-Cvg" secondAttribute="leading" id="NGf-Tw-Uya"/>
                 <constraint firstItem="sqR-ex-tn6" firstAttribute="top" secondItem="Oic-pc-Cvg" secondAttribute="top" constant="8" id="OTC-aB-Azg"/>
                 <constraint firstItem="SSk-Rd-BxH" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="s69-xc-GKJ" secondAttribute="trailing" constant="6" id="buY-SX-k2w"/>
-                <constraint firstItem="SSk-Rd-BxH" firstAttribute="firstBaseline" secondItem="cRf-v0-eXQ" secondAttribute="firstBaseline" id="g0t-8n-weE"/>
+                <constraint firstItem="SSk-Rd-BxH" firstAttribute="centerY" secondItem="cRf-v0-eXQ" secondAttribute="centerY" id="g0t-8n-weE"/>
+                <constraint firstAttribute="bottom" secondItem="SSk-Rd-BxH" secondAttribute="bottom" constant="2" id="gcq-ak-OkZ"/>
                 <constraint firstItem="sqR-ex-tn6" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="Oic-pc-Cvg" secondAttribute="leading" constant="120" id="hA3-8o-0vC"/>
                 <constraint firstItem="JOH-xx-V8Z" firstAttribute="leading" secondItem="Oic-pc-Cvg" secondAttribute="leading" constant="120" id="kV7-t7-Zjn"/>
-                <constraint firstItem="JOH-xx-V8Z" firstAttribute="top" secondItem="Oic-pc-Cvg" secondAttribute="top" constant="8" id="oH3-Ed-DtQ"/>
                 <constraint firstItem="SSk-Rd-BxH" firstAttribute="trailing" secondItem="Oic-pc-Cvg" secondAttribute="trailing" id="uF4-J8-STz"/>
                 <constraint firstAttribute="trailing" secondItem="JOH-xx-V8Z" secondAttribute="trailing" id="zPD-c6-0L7"/>
             </constraints>
@@ -440,11 +442,11 @@
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="lH7-Vv-0M1"/>
         <customView id="jUz-iq-ZTl" userLabel="Prefs &gt; Saved Data &gt; Watch Later" propertyAccessControl="none">
-            <rect key="frame" x="0.0" y="0.0" width="602" height="114"/>
+            <rect key="frame" x="0.0" y="0.0" width="602" height="120"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField identifier="SectionTitleAppearance" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="63k-Uq-7mO">
-                    <rect key="frame" x="-2" y="90" width="87" height="16"/>
+                    <rect key="frame" x="-2" y="96" width="87" height="16"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Watch Later:" id="IN1-C4-M6I">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -452,23 +454,23 @@
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="251" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Nw7-8o-DuP" userLabel="RightColumn Stack View">
-                    <rect key="frame" x="120" y="8" width="482" height="98"/>
+                    <rect key="frame" x="120" y="9" width="482" height="104"/>
                     <subviews>
                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Yjd-qe-uAR">
-                            <rect key="frame" x="-2" y="81" width="484" height="18"/>
-                            <buttonCell key="cell" type="check" title="Save &amp; restore media playback using mpv's &quot;watch later&quot; feature" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="9Km-CX-nig">
+                            <rect key="frame" x="0.0" y="86" width="482" height="18"/>
+                            <buttonCell key="cell" type="check" title="Save &amp; restore media playback using mpv's &quot;watch later&quot; feature" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="9Km-CX-nig">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
                             <constraints>
-                                <constraint firstAttribute="height" constant="16" id="R5s-9K-ueG"/>
+                                <constraint firstAttribute="height" constant="18" id="R5s-9K-ueG"/>
                             </constraints>
                             <connections>
                                 <binding destination="lH7-Vv-0M1" name="value" keyPath="values.resumeLastPosition" id="8d7-SM-k9K"/>
                             </connections>
                         </button>
                         <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="YK3-5n-O3u">
-                            <rect key="frame" x="-2" y="50" width="486" height="28"/>
+                            <rect key="frame" x="-2" y="54" width="486" height="28"/>
                             <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" id="Hb4-FS-V34">
                                 <font key="font" metaFont="message" size="11"/>
                                 <string key="title">Saves playback &amp; other settings for the current media when a window is closed. The next time the media is opened, re-applies &amp; immediately deletes the saved settings.</string>
@@ -477,7 +479,7 @@
                             </textFieldCell>
                         </textField>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="lo1-Ka-8Vw" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="46" width="1" height="0.0"/>
+                            <rect key="frame" x="0.0" y="50" width="1" height="0.0"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="1" id="c5f-G8-i5Z"/>
                                 <constraint firstAttribute="height" id="h7v-2a-Z6a"/>
@@ -491,7 +493,7 @@
                             </connections>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="749" verticalStackHuggingPriority="749" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Dl5-oM-qdP" userLabel="WatchLaterOptions HStack View">
-                            <rect key="frame" x="0.0" y="28" width="482" height="14"/>
+                            <rect key="frame" x="0.0" y="32" width="482" height="14"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1VF-nN-dKr">
                                     <rect key="frame" x="-2" y="0.0" width="82" height="14"/>
@@ -526,18 +528,18 @@
                                 </binding>
                             </connections>
                         </stackView>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="RKT-6b-am9" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="20" width="1" height="4"/>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="RKT-6b-am9" userLabel="8pt Spacer">
+                            <rect key="frame" x="0.0" y="20" width="1" height="8"/>
                             <constraints>
-                                <constraint firstAttribute="height" constant="4" id="DnT-D4-vlE"/>
+                                <constraint firstAttribute="height" constant="8" id="DnT-D4-vlE"/>
                                 <constraint firstAttribute="width" constant="1" id="wQu-Qa-3Yo"/>
                             </constraints>
                         </customView>
-                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" spacing="6" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HgT-L8-Tb3" userLabel="WatchLaterFiles HStack View">
+                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="centerY" spacing="6" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HgT-L8-Tb3" userLabel="WatchLaterFiles HStack View">
                             <rect key="frame" x="0.0" y="0.0" width="213" height="16"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="RuB-bf-lqy">
-                                    <rect key="frame" x="-2" y="2" width="195" height="14"/>
+                                    <rect key="frame" x="-2" y="0.0" width="195" height="14"/>
                                     <textFieldCell key="cell" controlSize="small" title="Watch Later exists for M media files." id="yyK-HL-0eD">
                                         <font key="font" metaFont="smallSystem"/>
                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -587,10 +589,10 @@
                     </customSpacing>
                 </stackView>
                 <button identifier="FunctionalButtonClearProg" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bHj-vX-uFl">
-                    <rect key="frame" x="406" y="0.0" width="203" height="32"/>
-                    <buttonCell key="cell" type="push" title="Delete Watch Later Data…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="4nM-C4-9oM">
+                    <rect key="frame" x="416" y="2" width="186" height="28"/>
+                    <buttonCell key="cell" type="push" title="Delete Watch Later Data…" bezelStyle="rounded" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="4nM-C4-9oM">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="systemBold"/>
+                        <font key="font" metaFont="system"/>
                     </buttonCell>
                     <connections>
                         <action selector="clearWatchLaterBtnAction:" target="-2" id="oL3-bX-caO"/>
@@ -600,23 +602,22 @@
             <constraints>
                 <constraint firstItem="63k-Uq-7mO" firstAttribute="top" secondItem="jUz-iq-ZTl" secondAttribute="top" constant="8" id="1hk-eH-vw6"/>
                 <constraint firstItem="Nw7-8o-DuP" firstAttribute="leading" secondItem="jUz-iq-ZTl" secondAttribute="leading" constant="120" id="BK0-cl-KCY"/>
-                <constraint firstItem="Nw7-8o-DuP" firstAttribute="top" secondItem="jUz-iq-ZTl" secondAttribute="top" constant="8" id="Kzo-8u-ydO"/>
                 <constraint firstItem="bHj-vX-uFl" firstAttribute="trailing" secondItem="Nw7-8o-DuP" secondAttribute="trailing" id="gAZ-eY-gsB"/>
-                <constraint firstAttribute="bottom" secondItem="Nw7-8o-DuP" secondAttribute="bottom" constant="8" id="j4S-RW-7KS"/>
                 <constraint firstAttribute="trailing" secondItem="Nw7-8o-DuP" secondAttribute="trailing" id="nvS-B4-Xsw"/>
+                <constraint firstAttribute="bottom" secondItem="bHj-vX-uFl" secondAttribute="bottom" constant="2" id="qaQ-Im-kX0"/>
                 <constraint firstItem="63k-Uq-7mO" firstAttribute="leading" secondItem="jUz-iq-ZTl" secondAttribute="leading" id="rX2-gM-zB2"/>
                 <constraint firstItem="Yjd-qe-uAR" firstAttribute="firstBaseline" secondItem="63k-Uq-7mO" secondAttribute="firstBaseline" id="tJE-59-UOx"/>
-                <constraint firstItem="bHj-vX-uFl" firstAttribute="firstBaseline" secondItem="RuB-bf-lqy" secondAttribute="firstBaseline" id="usn-KA-8dH"/>
+                <constraint firstItem="bHj-vX-uFl" firstAttribute="centerY" secondItem="RuB-bf-lqy" secondAttribute="centerY" id="usn-KA-8dH"/>
                 <constraint firstItem="63k-Uq-7mO" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="jUz-iq-ZTl" secondAttribute="leading" constant="120" id="wAv-bF-08M"/>
                 <constraint firstItem="bHj-vX-uFl" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="sIv-DY-eFx" secondAttribute="trailing" constant="6" id="xgY-Ox-cv4"/>
             </constraints>
             <point key="canvasLocation" x="-68" y="-755"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="ve7-5i-dg4" userLabel="Prefs &gt; Saved Data &gt; Thumbnail Cache">
-            <rect key="frame" x="0.0" y="0.0" width="633" height="67"/>
+            <rect key="frame" x="0.0" y="0.0" width="633" height="63"/>
             <subviews>
                 <textField identifier="SectionTitleClearCache" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="ggb-jX-7Sf">
-                    <rect key="frame" x="-2" y="27" width="116" height="32"/>
+                    <rect key="frame" x="-2" y="23" width="116" height="32"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Thumbnail Cache:" id="QHA-tO-oSn">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -624,13 +625,13 @@
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="252" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6qQ-Hy-u5O" userLabel="RightColumn Stack View">
-                    <rect key="frame" x="120" y="8" width="513" height="53"/>
+                    <rect key="frame" x="120" y="9" width="231" height="50"/>
                     <subviews>
                         <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="CSP-AY-4r5" userLabel="MaxCacheSize HStack View">
-                            <rect key="frame" x="0.0" y="32" width="513" height="21"/>
+                            <rect key="frame" x="0.0" y="26" width="231" height="24"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Pbd-eK-FXl">
-                                    <rect key="frame" x="-2" y="3" width="134" height="16"/>
+                                    <rect key="frame" x="-2" y="4" width="134" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Maximum cache size:" id="q8Z-Is-viX">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -638,11 +639,11 @@
                                     </textFieldCell>
                                 </textField>
                                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6iS-oH-Qm6" userLabel="MaxThumbnailCacheSize-Entry Text Field">
-                                    <rect key="frame" x="138" y="0.0" width="58" height="21"/>
+                                    <rect key="frame" x="138" y="0.0" width="58" height="24"/>
                                     <constraints>
                                         <constraint firstAttribute="width" constant="58" id="Od8-6c-A5B"/>
                                     </constraints>
-                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="lP2-ab-uSr">
+                                    <textFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="lP2-ab-uSr">
                                         <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" usesGroupingSeparator="NO" groupingSize="0" minimumIntegerDigits="0" maximumIntegerDigits="42" id="bX7-ft-OPG">
                                             <real key="minimum" value="0.0"/>
                                         </numberFormatter>
@@ -656,7 +657,7 @@
                                     </connections>
                                 </textField>
                                 <textField identifier="MaximumCacheSizeMb" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="aFi-Z0-p5x" userLabel="MB Label">
-                                    <rect key="frame" x="202" y="3" width="313" height="16"/>
+                                    <rect key="frame" x="202" y="4" width="31" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="MB" id="YQN-aZ-drh">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -676,7 +677,7 @@
                             </customSpacing>
                         </stackView>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="9kU-xG-BQS" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="24" width="0.0" height="4"/>
+                            <rect key="frame" x="0.0" y="18" width="0.0" height="4"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="4" id="44W-7G-VAi"/>
                                 <constraint firstAttribute="width" id="qhZ-PB-Kkl"/>
@@ -690,10 +691,10 @@
                             </connections>
                         </customView>
                         <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" spacing="6" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AjT-o2-tvj" userLabel="CurrentCacheSize HStack View">
-                            <rect key="frame" x="0.0" y="0.0" width="513" height="20"/>
+                            <rect key="frame" x="0.0" y="0.0" width="231" height="14"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2nt-Ax-K1T">
-                                    <rect key="frame" x="-2" y="3" width="161" height="14"/>
+                                    <rect key="frame" x="-2" y="0.0" width="161" height="14"/>
                                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="justified" title="Current thumbnail cache size:" id="uV3-aF-UB7">
                                         <font key="font" metaFont="smallSystem"/>
                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -701,31 +702,19 @@
                                     </textFieldCell>
                                 </textField>
                                 <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="H1t-lX-s9l">
-                                    <rect key="frame" x="161" y="3" width="176" height="14"/>
+                                    <rect key="frame" x="161" y="0.0" width="72" height="14"/>
                                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Calculating…" id="tRq-eU-AV3">
                                         <font key="font" metaFont="smallSystem"/>
                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                 </textField>
-                                <button identifier="FunctionalButtonClearThumb" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="aCe-0n-uch">
-                                    <rect key="frame" x="334" y="-7" width="186" height="32"/>
-                                    <buttonCell key="cell" type="push" title="Clear Thumbnail Cache…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="hsG-JB-TT9">
-                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                        <font key="font" metaFont="system"/>
-                                    </buttonCell>
-                                    <connections>
-                                        <action selector="clearCacheBtnAction:" target="-2" id="iaH-Og-4Os"/>
-                                    </connections>
-                                </button>
                             </subviews>
                             <visibilityPriorities>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
-                                <integer value="1000"/>
                             </visibilityPriorities>
                             <customSpacing>
-                                <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
@@ -742,15 +731,27 @@
                         <real value="3.4028234663852886e+38"/>
                     </customSpacing>
                 </stackView>
+                <button identifier="FunctionalButtonClearThumb" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="aCe-0n-uch">
+                    <rect key="frame" x="454" y="2" width="179" height="28"/>
+                    <buttonCell key="cell" type="push" title="Clear Thumbnail Cache…" bezelStyle="rounded" alignment="center" controlSize="large" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="hsG-JB-TT9">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="clearCacheBtnAction:" target="-2" id="iaH-Og-4Os"/>
+                    </connections>
+                </button>
             </subviews>
             <constraints>
                 <constraint firstItem="6iS-oH-Qm6" firstAttribute="firstBaseline" secondItem="ggb-jX-7Sf" secondAttribute="firstBaseline" id="1oz-E8-M9b"/>
                 <constraint firstItem="ggb-jX-7Sf" firstAttribute="leading" secondItem="ve7-5i-dg4" secondAttribute="leading" id="8Wx-mc-D3G"/>
-                <constraint firstAttribute="bottom" secondItem="6qQ-Hy-u5O" secondAttribute="bottom" constant="8" id="Gkw-zQ-dX4"/>
+                <constraint firstItem="aCe-0n-uch" firstAttribute="centerY" secondItem="2nt-Ax-K1T" secondAttribute="centerY" id="97e-YA-lh7"/>
+                <constraint firstAttribute="bottom" secondItem="aCe-0n-uch" secondAttribute="bottom" constant="2" id="HFl-ar-q5g"/>
+                <constraint firstItem="aCe-0n-uch" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="6qQ-Hy-u5O" secondAttribute="trailing" constant="8" id="KlN-0H-Xv6"/>
+                <constraint firstAttribute="trailing" secondItem="aCe-0n-uch" secondAttribute="trailing" id="QMu-dB-kDf"/>
                 <constraint firstItem="6qQ-Hy-u5O" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="ggb-jX-7Sf" secondAttribute="trailing" constant="8" id="bmh-Ky-JTi"/>
                 <constraint firstItem="6qQ-Hy-u5O" firstAttribute="leading" secondItem="ve7-5i-dg4" secondAttribute="leading" constant="120" id="oae-6P-pFJ"/>
                 <constraint firstItem="ggb-jX-7Sf" firstAttribute="top" secondItem="ve7-5i-dg4" secondAttribute="top" constant="8" id="t2W-Wg-LbY"/>
-                <constraint firstAttribute="trailing" secondItem="aCe-0n-uch" secondAttribute="trailing" id="xjs-lz-RIv"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="6qQ-Hy-u5O" secondAttribute="trailing" id="yHP-z0-mg5"/>
             </constraints>
             <point key="canvasLocation" x="-80" y="-531"/>
