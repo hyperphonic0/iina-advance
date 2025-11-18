@@ -8,6 +8,14 @@
 
 import Cocoa
 
+fileprivate let cornerRadius: CGFloat = {
+  if #available(macOS 26.0, *) {
+    return 12
+  } else {
+    return 4
+  }
+}()
+
 fileprivate extension NSUserInterfaceItemIdentifier {
   static let openFile = NSUserInterfaceItemIdentifier("openFile")
   static let openURL = NSUserInterfaceItemIdentifier("openURL")
@@ -17,21 +25,22 @@ fileprivate class GrayHighlightRowView: NSTableRowView {
 
   override func drawSelection(in dirtyRect: NSRect) {
     if self.selectionHighlightStyle != .none {
-      let selectionRect = NSInsetRect(self.bounds, 0, 0)
       NSColor.initialWindowLastFileBackground.setFill()
-      let selectionPath = NSBezierPath.init(roundedRect: selectionRect, xRadius: 4, yRadius: 4)
+      let selectionPath = NSBezierPath.init(roundedRect: bounds, xRadius: cornerRadius, yRadius: cornerRadius)
       selectionPath.fill()
     }
   }
 
-  func setHoverHighlight() {
-    self.layer?.cornerRadius = 6
+  fileprivate func setHoverHighlight() {
+    layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to redraw the background properly
     self.layer?.backgroundColor = NSColor.initialWindowActionButtonBackgroundHover.cgColor
+    needsDisplay = true
   }
 
-  func unsetHoverHighlight() {
-    self.layer?.cornerRadius = 6
+  fileprivate func unsetHoverHighlight() {
+    layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
     self.layer?.backgroundColor = NSColor.initialWindowActionButtonBackground.cgColor
+    needsDisplay = true
   }
 }
 
@@ -60,7 +69,11 @@ extension InitialWindowController: EditableTableViewDelegate {
   var parentTableView: EditableTableView! { recentFilesTableView }
 
   func handleMouseDown(with event: NSEvent) -> Bool {
-    onTableClicked()
+    return true
+  }
+
+  func handleMouseUp(with event: NSEvent) -> Bool {
+    onMouseUpInTable()
     return true
   }
 }
@@ -175,7 +188,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     recentFilesTableView.delegate = self
     recentFilesTableView.editableDelegate = self
     recentFilesTableView.dataSource = self
-    recentFilesTableView.action = #selector(self.onTableClicked)
+    recentFilesTableView.action = #selector(onMouseUpInTable)
     updateTrackingAreas()
     setMaterial()
 
@@ -236,7 +249,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     PlayerManager.shared.getIdleOrCreateNew().openURL(url)
   }
 
-  @objc func onTableClicked() {
+  @objc func onMouseUpInTable() {
     // Do not use recentFilesTableView.clickedRow. It always returns -1 when window is not main
     let clickedPoint = recentFilesTableView.convert(mouseLocationInWindow, from: nil)
     let clickedRow = recentFilesTableView.row(at: clickedPoint)
@@ -435,6 +448,7 @@ extension InitialWindowController: NSTableViewDelegate, NSTableViewDataSource {
   }
 
   func updateLastFileButtonHighlight() {
+    lastFileContainerView.layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
     if recentFilesTableView.selectedRow >= 0 {
       // remove "LastFile" button highlight
       lastFileContainerView.layer?.backgroundColor = NSColor.initialWindowActionButtonBackground.cgColor
@@ -468,18 +482,23 @@ class InitialWindowViewActionButton: NSView {
 
   var normalBackground = NSColor.initialWindowActionButtonBackground {
     didSet {
+      layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
       self.layer?.backgroundColor = normalBackground.cgColor
     }
   }
   var hoverBackground = NSColor.initialWindowActionButtonBackgroundHover
   var pressedBackground = NSColor.initialWindowActionButtonBackgroundPressed
 
+  override var mouseDownCanMoveWindow: Bool {
+    false
+  }
+
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
     true
   }
 
   override func awakeFromNib() {
-    self.layer?.cornerRadius = 6  // Round highlights
+    layer?.cornerRadius = cornerRadius
     self.layer?.backgroundColor = normalBackground.cgColor
     self.addTrackingArea(NSTrackingArea(rect: self.bounds, options: [.activeAlways, .mouseEnteredAndExited, .cursorUpdate], owner: self, userInfo: nil))
   }
@@ -491,6 +510,7 @@ class InitialWindowViewActionButton: NSView {
   override func mouseEntered(with event: NSEvent) {
     setCustomCursor(to: .pointingHand)
     if let windowController = window?.windowController as? InitialWindowController {
+      layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
       if windowController.recentFilesTableView.selectedRow >= 0 {
         self.layer?.backgroundColor = NSColor.initialWindowActionButtonBackgroundHover.cgColor
       } else {
@@ -501,6 +521,7 @@ class InitialWindowViewActionButton: NSView {
 
   override func mouseExited(with event: NSEvent) {
     setCustomCursor(to: nil)
+    layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
     self.layer?.backgroundColor = normalBackground.cgColor
     if let windowController = window?.windowController as? InitialWindowController {
       windowController.updateLastFileButtonHighlight()
@@ -508,7 +529,14 @@ class InitialWindowViewActionButton: NSView {
   }
 
   override func mouseDown(with event: NSEvent) {
+    layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
     self.layer?.backgroundColor = pressedBackground.cgColor
+  }
+
+  override func mouseUp(with event: NSEvent) {
+    layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
+    self.layer?.backgroundColor = hoverBackground.cgColor
+
     if self.identifier == .openFile {
       Logger.log("User clicked the Open File button", level: .verbose)
       AppDelegate.shared.openFile(self)
@@ -516,7 +544,6 @@ class InitialWindowViewActionButton: NSView {
       Logger.log("User clicked the Open URL button", level: .verbose)
       AppDelegate.shared.openURL(self)
     } else {
-
       // Make sure to load the same file which is displayed: get from window controller.
       // Do not load from prefs because that may have changed since the window was opened (by another IINA instance, most likely)
       if let windowController = window?.windowController as? InitialWindowController,
@@ -525,10 +552,6 @@ class InitialWindowViewActionButton: NSView {
         PlayerManager.shared.getIdleOrCreateNew().openURL(lastURL)
       }
     }
-  }
-
-  override func mouseUp(with event: NSEvent) {
-    self.layer?.backgroundColor = hoverBackground.cgColor
   }
 
 }

@@ -149,6 +149,13 @@ class EditableTableView: NSTableView {
     super.mouseDown(with: event)
   }
 
+  override func mouseUp(with event: NSEvent) {
+    if let editableDelegate, editableDelegate.handleMouseUp(with: event) {
+      return
+    }
+    super.mouseUp(with: event)
+  }
+
   override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
     if let event = event, event.type == .leftMouseDown, event.modifierFlags.isEmpty {
       if let editableTextField = responder as? EditableTextField, let cellEditTracker = cellEditTracker {

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24128" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24128"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -20,10 +20,7 @@
             <rect key="frame" x="0.0" y="0.0" width="550" height="72"/>
             <subviews>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EC9-NQ-gwl">
-                    <rect key="frame" x="22" y="47" width="34" height="17"/>
-                    <constraints>
-                        <constraint firstAttribute="height" constant="17" id="Pp5-qS-eKN"/>
-                    </constraints>
+                    <rect key="frame" x="22" y="48" width="34" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Crop" id="6tX-fN-Gm2">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -42,7 +39,7 @@
                     </textFieldCell>
                 </textField>
                 <segmentedControl autoresizesSubviews="NO" focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="yrf-Aq-Gy6">
-                    <rect key="frame" x="22" y="16" width="274" height="24"/>
+                    <rect key="frame" x="24" y="16" width="270" height="24"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="270" id="qav-yS-38r"/>
                     </constraints>
@@ -65,10 +62,9 @@
                 <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7a4-Wz-kzd" userLabel="CustomCropEntry Text Field">
                     <rect key="frame" x="298" y="16" width="58" height="24"/>
                     <constraints>
-                        <constraint firstAttribute="height" constant="24" id="oWX-hh-nYk"/>
                         <constraint firstAttribute="width" constant="58" id="pNn-1d-GJj"/>
                     </constraints>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" id="fmj-Zk-xbC">
+                    <textFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" id="fmj-Zk-xbC">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -78,8 +74,8 @@
                     </connections>
                 </textField>
                 <button focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="99r-Th-YSz">
-                    <rect key="frame" x="397" y="11" width="76" height="32"/>
-                    <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" refusesFirstResponder="YES" borderStyle="border" focusRingType="none" imageScaling="proportionallyDown" inset="2" id="BtO-vw-tiy">
+                    <rect key="frame" x="388" y="14" width="70" height="28"/>
+                    <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" controlSize="large" refusesFirstResponder="YES" borderStyle="border" focusRingType="none" imageScaling="proportionallyDown" inset="2" id="BtO-vw-tiy">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                         <string key="keyEquivalent" base64-UTF8="YES">
@@ -91,17 +87,14 @@ Gw
                     </connections>
                 </button>
                 <button focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sHe-JW-Elk">
-                    <rect key="frame" x="467" y="12" width="66" height="30"/>
-                    <buttonCell key="cell" type="push" title="Done" bezelStyle="rounded" alignment="center" refusesFirstResponder="YES" borderStyle="border" focusRingType="none" imageScaling="proportionallyDown" inset="2" id="eu5-yH-hHg">
+                    <rect key="frame" x="466" y="14" width="60" height="28"/>
+                    <buttonCell key="cell" type="push" title="Done" bezelStyle="rounded" alignment="center" controlSize="large" refusesFirstResponder="YES" borderStyle="border" focusRingType="none" imageScaling="proportionallyDown" inset="2" id="eu5-yH-hHg">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                         <string key="keyEquivalent" base64-UTF8="YES">
 DQ
 </string>
                     </buttonCell>
-                    <constraints>
-                        <constraint firstAttribute="height" constant="18" id="Pt7-22-dpN"/>
-                    </constraints>
                     <connections>
                         <action selector="doneBtnAction:" target="-2" id="y1L-6G-8iz"/>
                     </connections>
