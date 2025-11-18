@@ -238,9 +238,6 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       visualEffectCV.autoresizingMask = [.width, .height]
     }
 
-    outlineView.headerView?.wantsLayer = true
-    outlineView.headerView?.layer?.backgroundColor = NSColor.clear.cgColor
-
     // Workaround for problem: "group by" popup getting highlighted when window opens: make table first responder
     window.makeFirstResponder(outlineView)
 
