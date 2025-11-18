@@ -277,7 +277,7 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
     // Not supported in music mode at this time. Need to resolve backing scale bugs
     guard currentLayout.mode == .windowedNormal else {
-      log.error("[mpv-window-scale] SetVideoScale: skipping; mode is unsupported: \(currentLayout.mode)")
+      log.verbose("[mpv-window-scale] SetVideoScale: skipping; mode is unsupported: \(currentLayout.mode)")
       return
     }
     guard targetVideoScale > 0.0 else {
@@ -287,8 +287,8 @@ extension PlayerWindowController {
 
     let oldWindowedGeo = windowedModeGeo
     let newGeo = oldWindowedGeo.scalingViewport(toVideoScale: targetVideoScale)
-    log.error("[mpv-window-scale] SetVideoScale: from targetVideoScale=\(targetVideoScale) → sending derived mpvWindowScale=\(newGeo.mpvWindowScale())")
-    sendWindowScaleToMPV(basedOn: newGeo)
+    log.verbose("[mpv-window-scale] SetVideoScale: from targetVideoScale=\(targetVideoScale) → sending derived mpvWindowScale=\(newGeo.mpvWindowScale())")
+    buildApplyPWinGeoTasks(to: newGeo, thenRun: true)
   }
 
   /// Scales the viewport (which is equivalent to mpv's concept of a window) to the given `desiredMpvWindowScale`.
@@ -317,7 +317,14 @@ extension PlayerWindowController {
         log.debug("[mpv-window-scale] SendWindowScaleToMPV: aborting; player not ready")
         return
       }
+      let mpvWindowScaleExisting = player.mpv.getWindowScale()
+      guard mpvWindowScaleExisting != scaleFromGeo else {
+        log.verbose("[mpv-window-scale] SendWindowScaleToMPV: aborting; mpv already has window-scale: \(scaleFromGeo)")
+        return
+      }
 
+      player.mpv.windowScalesExpected.append(scaleFromGeo)
+      log.debug("[mpv-window-scale] SendWindowScaleToMPV: size of windowScalesExpected = \(player.mpv.windowScalesExpected.count)")
       player.mpv.setDouble(MPVProperty.windowScale, scaleFromGeo)
     }
   }
@@ -417,7 +424,7 @@ extension PlayerWindowController {
       return []
     }
     // windowed or music mode
-    return buildApplyPWinGeoTasks(from: inputGeo, to: outputGeo, duration: duration)
+    return buildApplyPWinGeoTasks(to: outputGeo, duration: duration)
   }
 
 
@@ -467,7 +474,7 @@ extension PlayerWindowController {
   ///
   /// Also updates cached `windowedModeGeo` and saves updated state.
   @discardableResult
-  func buildApplyPWinGeoTasks(from inputGeo: PWinGeometry, to outputGeo: PWinGeometry,
+  func buildApplyPWinGeoTasks(to outputGeo: PWinGeometry,
                               duration: CGFloat = Constants.AnimationDuration.standard,
                               timing: CAMediaTimingFunctionName = .easeInEaseOut,
                               save: Bool = true,

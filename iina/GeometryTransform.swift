@@ -449,8 +449,7 @@ struct GeometryTransform {
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose("[GTF:\(name)] Building 'apply' tasks for windowed mode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputGeo)")
-        return pwc.buildApplyPWinGeoTasks(from: inputGeoSet.windowed, to: outputGeo,
-                                          duration: duration, timing: timing, showDefaultArt: showDefaultArt)
+        return pwc.buildApplyPWinGeoTasks(to: outputGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
       case .fullScreenNormal:
         let newWindowedGeo = inputGeoSet.windowed.resizeMinimally(forNewVideoGeo: outputVidGeo)
@@ -458,7 +457,7 @@ struct GeometryTransform {
         let showDefaultArt: Bool? = shouldChangeDefaultArt
 
         log.verbose("[GTF:\(name)] Building 'apply' tasks for FS mode: defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) \(fsGeo)")
-        var tasks = pwc.buildApplyPWinGeoTasks(from: fsGeo, to: fsGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
+        var tasks = pwc.buildApplyPWinGeoTasks(to: fsGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
         tasks.append(.instantTask {
           /// Update this even if not currently in windowed mode, as it is used to store the (updated) VideoGeometry
           pwc.windowedModeGeo = newWindowedGeo
@@ -506,8 +505,7 @@ struct GeometryTransform {
         } else {
           let showDefaultArt: Bool? = shouldChangeDefaultArt
           log.verbose("[GTF:\(name)] Building 'apply' tasks for musicMode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputMusicModeGeo)")
-          return pwc.buildApplyPWinGeoTasks(from: inputMusicModeGeo, to: outputMusicModeGeo, duration: duration,
-                                             showDefaultArt: showDefaultArt)
+          return pwc.buildApplyPWinGeoTasks(to: outputMusicModeGeo, duration: duration, showDefaultArt: showDefaultArt)
         }
 
       default:

@@ -626,14 +626,24 @@ extension MPVController {
       player.pwc.hideCursorTimer.restart()
 
     case MPVProperty.windowScale:
-      guard let windowScale = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
+      guard let windowScaleRaw = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
         logPropertyValueError(MPVProperty.windowScale, property.format)
         break
+      }
+      let windowScale = windowScaleRaw.roundedTo6()
+      if let nextScaleExpected = windowScalesExpected.first, windowScale == nextScaleExpected {
+        log.verbose("[mpv-window-scale] Received expected 'window-scale'=\(windowScale); discarding")
+        windowScalesExpected.removeFirst()
+        return
+      }
+
+      if !windowScalesExpected.isEmpty {
+        log.error("[mpv-window-scale] Received unexpected 'window-scale' from mpv with \(windowScalesExpected.count) updates still expected!")
       }
 
       log.verbose("Δ mpv prop: 'window-scale' ≔ \(windowScale)")
       player.pwc.animationPipeline.submitInstantTask{ [self] in
-        player.pwc.mpvWindowScaleDidUpdate(to: windowScale.roundedTo6())
+        player.pwc.mpvWindowScaleDidUpdate(to: windowScale)
       }
 
     case MPVProperty.mediaTitle:

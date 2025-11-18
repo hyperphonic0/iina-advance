@@ -99,7 +99,7 @@ class PlayerCore: NSObject {
 
   private var subFileMonitor: FileMonitor? = nil
 
-  // Concurrency
+  // - Concurrency
 
   /// This ticket will be increased each time before a new task being submitted to `backgroundQueue`.
   ///
@@ -113,7 +113,7 @@ class PlayerCore: NSObject {
   let thumbReloadDebouncer = Debouncer(delay: Constants.TimeInterval.thumbnailRegenerationDelay, queue: PlayerCore.thumbnailQueue)
   let sliderSeekDebouncer = Debouncer(delay: Constants.TimeInterval.sliderSeekThrottlingInterval)
 
-  // Plugins
+  // - Plugins
 
   var isManagedByPlugin = false
   var userLabel: String?
@@ -124,7 +124,7 @@ class PlayerCore: NSObject {
   private var pluginMap: [String: JavascriptPluginInstance] = [:]
   var events = EventController()
 
-  // Touch Bar
+  // - Touch Bar
 
   var touchBarSupport: TouchBarSupport!
 
@@ -159,7 +159,7 @@ class PlayerCore: NSObject {
 
   var syncUITimer: Timer?
 
-  // Playlist
+  // - Playlist
 
   var displayedPlaylist: [PlaybackID] {
     get { pwc.playlistView.displayedPlaylist }
@@ -173,7 +173,7 @@ class PlayerCore: NSObject {
     isInMiniPlayer ? pwc.miniPlayer.playlistShown : pwc.isOpen(sidebarTab: .playlist)
   }
 
-  // Player lifecycle state
+  // - Player lifecycle state
 
   var state: LifecycleState = .notYetStarted {
     didSet {
@@ -192,7 +192,7 @@ class PlayerCore: NSObject {
   /// An unused player is one which does not have a playback (`!hasPlayback`)
   var isIdleOrUnused: Bool { state == .idle || (state == .notYetStarted && !hasPlayback) }
 
-  // Window controller convenience
+  // - Window controller convenience
 
   var isRestoring: Bool { pwc.sessionState.isRestoring }
   var isFullScreen: Bool { pwc.isFullScreen }
@@ -201,7 +201,7 @@ class PlayerCore: NSObject {
   /// Exists to avoid refactoring legacy code
   var videoGeo: VideoGeometry { pwc.geo.video }
 
-  // Music mode
+  // - Music mode
 
   /// For explicit request via command line
   var startInMusicModeRequested = false

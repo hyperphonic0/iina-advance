@@ -40,11 +40,13 @@ final class LinkedList<T> {
     }
   }
 
-  /// The first element of the LinkedList (index `0`).
+  /// The first element of the LinkedList (index `0`).  AKA the `head`.
   var firstNode: Node?
+  var head: Node? { firstNode }
 
-  /// The last element of the LinkedList (index `count - 1`)
+  /// The last element of the LinkedList (index `count - 1`), AKA the `tail`.
   var lastNode: Node?
+  var tail: Node? { lastNode }
 
   /// Computed property to check if the linked list is empty. O(1) operation.
   var isEmpty: Bool {
@@ -291,7 +293,9 @@ final class LinkedList<T> {
     }
     return remove(node: firstNode!)
   }
-  
+  @discardableResult
+  func removeHead() -> T? { removeFirst() }
+
   /// Function to remove the last node/value in the list. Returns nil if the list is empty
   /// - Returns: The data value contained in the deleted node.
   @discardableResult
@@ -301,6 +305,8 @@ final class LinkedList<T> {
     }
     return remove(node: lastNode!)
   }
+  @discardableResult
+  func removeTail() -> T? { removeLast() }
 
   /// Function to remove a node/value at a specific index. Returns nil if index is out of bounds (0...self.count)
   /// - Parameter index: Integer value of the index of the node to be removed
@@ -378,7 +384,7 @@ extension LinkedList {
 
 // Extension to enable initialization from an Array
 extension LinkedList {
-  convenience init(array: Array<T>) {
+  convenience init(_ array: Array<T>) {
     self.init()
     array.forEach { append($0) }
   }

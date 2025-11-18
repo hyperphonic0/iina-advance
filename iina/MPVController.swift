@@ -96,6 +96,11 @@ class MPVController: NSObject {
     }
   }
 
+  /// Running list of `window-scale` values which were sent to mpv but not yet received back from mpv as
+  /// property change events. This helps to distinguish actual changes coming from mpv (which we care
+  /// about) vs. the changes we already made which are getting echoed back at us (which we don't care about).
+  var windowScalesExpected = LinkedList<CGFloat>([1.0])
+
   var log: Logger.Subsystem { mpvLogScanner.mpvLogSubsystem }
 
   /// Creates a `MPVController` object.

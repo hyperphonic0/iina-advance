@@ -326,7 +326,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
     if isWindowHidden {
       log.verbose("PIP did close: appending extra tasks for hidden window")
-      tasks.append(contentsOf: buildApplyPWinGeoTasks(from: windowedModeGeo, to: windowedModeGeo)) // may have skipped updates while hidden
+      tasks.append(contentsOf: buildApplyPWinGeoTasks(to: windowedModeGeo)) // may have skipped updates while hidden
       tasks.append(IINAAnimation.Task({ [self] in
         showWindow(self)
 
