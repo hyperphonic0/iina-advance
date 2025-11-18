@@ -123,9 +123,6 @@ extension PlayerWindowController {
 
         window.styleMask.remove(.resizable)
 
-        // auto hide menubar and dock (this will freeze all other animations, so must do it last)
-        updatePresentationOptions(windowIsLegacyFS: true)
-
         /// When restoring, it's possible this window is not actually topmost.
         /// Make sure to check before putting it on top.
         refreshKeyWindowStatus()
@@ -298,11 +295,6 @@ extension PlayerWindowController {
     let isClosingBarOSC = transition.isClosingBarOSC
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
     log.verbose("Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)")
-
-    if transition.isExitingLegacyFullScreen {
-      /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
-      updatePresentationOptions(windowIsLegacyFS: false)
-    }
 
     // - OSC Subviews
     // TODO: incorporate controlBarGeo into closeOldPanelsGeometry for cleaner code
@@ -1057,6 +1049,11 @@ extension PlayerWindowController {
 
     guard let window else { return }
 
+    if transition.isExitingMusicMode || transition.isClosingPlaylistInMusicMode {
+      // move playist view
+      miniPlayer.removePlaylistViewIfPresent()
+    }
+
     if transition.isEnteringFullScreen {
       // Entered FS
 
@@ -1083,6 +1080,11 @@ extension PlayerWindowController {
       }
 
       player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: true)
+
+      if transition.isEnteringLegacyFullScreen {
+        // auto hide menubar and dock (this will freeze all other animations, so must do it last)
+        updatePresentationOptions(windowIsLegacyFS: true)
+      }
 
       player.events.emit(.windowFullscreenChanged, data: true)
 
@@ -1141,14 +1143,13 @@ extension PlayerWindowController {
         videoView.displayIdle()
       }
 
+      /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
+      updatePresentationOptions(windowIsLegacyFS: false)
+
       player.events.emit(.windowFullscreenChanged, data: false)
     }
 
-    if transition.isExitingMusicMode || transition.isClosingPlaylistInMusicMode {
-      // move playist view
-      miniPlayer.removePlaylistViewIfPresent()
-    }
-
+    // Need to execute this *after* calling updatePresentationOptions (if calling it)
     rebuildPanelConstraints(transition, stage: .postTransition)
 
     if transition.isTogglingMusicMode {
@@ -1262,8 +1263,12 @@ extension PlayerWindowController {
       log.verbose("Removing window styleMask.titled")
       window.styleMask.remove(.titled)
     }
-    window.styleMask.insert(.closable)
-    window.styleMask.insert(.miniaturizable)
+    if !window.styleMask.contains(.closable) {
+      window.styleMask.insert(.closable)
+    }
+    if !window.styleMask.contains(.miniaturizable) {
+      window.styleMask.insert(.miniaturizable)
+    }
   }
 
   /// "Native" == `.titled` style mask
