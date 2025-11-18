@@ -231,6 +231,8 @@ struct ControlBarGeometry {
     return true
   }
 
+  var hasArrowButtons: Bool { arrowIconWidth > 0 }
+
   var isTwoRowBarOSC: Bool { !forceSingleRowStyle && ControlBarGeometry.qualifiesForMultiLineOSC(barHeight: barHeight, position, mode) }
 
   // MARK: - Sliders
@@ -414,7 +416,7 @@ struct ControlBarGeometry {
   }
 
   var rightArrowCenterXOffset: CGFloat {
-     (playIconSize + arrowIconWidth) * 0.5 + playIconSpacing
+    hasArrowButtons ? (playIconSize + arrowIconWidth) * 0.5 + playIconSpacing : 0.0
   }
 
   // MARK: - Toolbar

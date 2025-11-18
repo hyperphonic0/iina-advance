@@ -421,10 +421,6 @@ extension PlayerWindowController {
       // Set legacy style
       setWindowStyleToLegacy()
 
-      if !transition.outputLayout.isLegacyFullScreen {
-        window.styleMask.remove(.borderless)
-      }
-
       /// if `isTogglingLegacyStyle==true && isExitingFullScreen==true`, we are toggling out of legacy FS
       /// -> don't change `styleMask` to `.titled` here - it will look bad if screen has camera housing. Change at end of animation
     } else {
@@ -711,7 +707,7 @@ extension PlayerWindowController {
 
       rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 
-      let hideArrowBtns = newGeo.arrowIconWidth == 0
+      let hideArrowBtns = !newGeo.hasArrowButtons
       leftArrowButton.isHidden = hideArrowBtns
       rightArrowButton.isHidden = hideArrowBtns
 
@@ -1054,6 +1050,11 @@ extension PlayerWindowController {
       miniPlayer.removePlaylistViewIfPresent()
     }
 
+    if !transition.outputLayout.isLegacyFullScreen {
+      // Legacy windowed mode
+      window.styleMask.remove(.borderless)
+    }
+
     if transition.isEnteringFullScreen {
       // Entered FS
 
@@ -1108,7 +1109,6 @@ extension PlayerWindowController {
 
       if transition.outputLayout.isLegacyStyle {  // legacy windowed
         setWindowStyleToLegacy()
-        window.styleMask.remove(.borderless)
         if let customTitleBar {
           customTitleBar.view.alphaValue = 1
         }
