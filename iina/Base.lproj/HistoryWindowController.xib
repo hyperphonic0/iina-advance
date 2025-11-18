@@ -19,24 +19,23 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <window title="Playback History" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" titlebarAppearsTransparent="YES" id="F0z-JX-Cv5" userLabel="Playback History Window">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
-            <windowPositionMask key="initialPositionMask" leftStrut="YES"/>
-            <rect key="contentRect" x="200" y="240" width="600" height="400"/>
+            <rect key="contentRect" x="0.0" y="240" width="600" height="400"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1496" height="937"/>
-            <value key="minSize" type="size" width="500" height="200"/>
+            <value key="minSize" type="size" width="580" height="200"/>
             <view key="contentView" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PlaybackHistoryWindow Content View" customClass="NSVisualEffectView">
-                <rect key="frame" x="0.0" y="0.0" width="600" height="300"/>
+                <rect key="frame" x="0.0" y="0.0" width="600" height="200"/>
                 <subviews>
-                    <scrollView horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="251" verticalCompressionResistancePriority="251" autohidesScrollers="YES" horizontalLineScroll="26" horizontalPageScroll="10" verticalLineScroll="26" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="II4-dF-AGa" userLabel="PlaybackHistoryTable Scroll View">
-                        <rect key="frame" x="0.0" y="0.0" width="600" height="272"/>
-                        <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="IB5-0J-8sn" userLabel="PlaybackHistoryTable Clip View">
-                            <rect key="frame" x="1" y="1" width="598" height="270"/>
+                    <scrollView wantsLayer="YES" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="249" autohidesScrollers="YES" horizontalLineScroll="26" horizontalPageScroll="10" verticalLineScroll="26" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="II4-dF-AGa" userLabel="PlaybackHistoryTable Scroll View">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="172"/>
+                        <clipView key="contentView" wantsLayer="YES" drawsBackground="NO" copiesOnScroll="NO" id="IB5-0J-8sn" userLabel="PlaybackHistoryTable Clip View">
+                            <rect key="frame" x="1" y="1" width="598" height="170"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <outlineView verticalHuggingPriority="750" misplaced="YES" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="HistoryWindowTable" rowHeight="24" rowSizeStyle="large" headerView="MiB-ow-W6T" viewBased="YES" indentationPerLevel="13" indentationMarkerFollowsCell="NO" outlineTableColumn="DIC-tR-R2F" translatesAutoresizingMaskIntoConstraints="NO" id="6jR-CS-fgx" userLabel="PlaybackHistoryTable Outline View" customClass="HistoryOutlineView" customModule="IINA_Advance" customModuleProvider="target">
-                                    <rect key="frame" x="0.0" y="0.0" width="606" height="247"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="606" height="147"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <size key="intercellSpacing" width="8" height="2"/>
-                                    <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" red="0.11764705882352941" green="0.11764705882352941" blue="0.11764705882352941" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                     <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                     <tableColumns>
                                         <tableColumn identifier="Filename" editable="NO" width="408" minWidth="200" maxWidth="5000" id="DIC-tR-R2F" userLabel="File Column">
@@ -93,7 +92,7 @@
                                                             <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="left" title="Group Table View Cell" id="vDR-ax-UJb">
                                                                 <font key="font" metaFont="system"/>
                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                                             </textFieldCell>
                                                             <connections>
                                                                 <binding destination="RoJ-be-42E" name="value" keyPath="objectValue" id="JuQ-U6-fxI"/>
@@ -201,10 +200,9 @@
                                     </connections>
                                 </outlineView>
                             </subviews>
-                            <nil key="backgroundColor"/>
                         </clipView>
                         <scroller key="horizontalScroller" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="Hfw-fb-gd5">
-                            <rect key="frame" x="1" y="254" width="598" height="17"/>
+                            <rect key="frame" x="1" y="154" width="598" height="17"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
                         <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="dwA-h7-ch3">
@@ -219,10 +217,10 @@
                 </subviews>
                 <constraints>
                     <constraint firstAttribute="trailing" secondItem="II4-dF-AGa" secondAttribute="trailing" id="2el-lQ-ebS"/>
-                    <constraint firstAttribute="height" constant="300" placeholder="YES" id="Dqr-GP-aT1"/>
+                    <constraint firstAttribute="height" constant="200" placeholder="YES" id="7MC-R6-j1Z"/>
                     <constraint firstItem="II4-dF-AGa" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" id="He6-cF-muG"/>
                     <constraint firstItem="II4-dF-AGa" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="28" id="XOI-47-M8S"/>
-                    <constraint firstAttribute="width" constant="600" placeholder="YES" id="j6I-3G-1Fu"/>
+                    <constraint firstAttribute="width" constant="600" placeholder="YES" id="rh0-0p-Qhm"/>
                     <constraint firstItem="II4-dF-AGa" firstAttribute="bottom" secondItem="se5-gp-TjO" secondAttribute="bottom" id="yDA-3c-2eZ"/>
                 </constraints>
             </view>
@@ -298,19 +296,19 @@
         </menu>
         <userDefaultsController representsSharedInstance="YES" id="Pxd-7n-Ym5"/>
         <customView autoresizesSubviews="NO" wantsLayer="YES" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" id="OQZ-Pk-zUa" userLabel="TitleBarAccessoryContentView">
-            <rect key="frame" x="0.0" y="0.0" width="300" height="40"/>
-            <autoresizingMask key="autoresizingMask" flexibleMinX="YES" heightSizable="YES"/>
+            <rect key="frame" x="0.0" y="0.0" width="361" height="34"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ob0-Up-S1q" userLabel="GroupBy Label">
-                    <rect key="frame" x="6" y="12" width="56" height="14"/>
+                    <rect key="frame" x="6" y="10" width="56" height="14"/>
                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Group by:" id="z6c-c4-dgd">
                         <font key="font" metaFont="smallSystem"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dcE-VR-Vxk" userLabel="GroupBy Popup">
-                    <rect key="frame" x="64" y="9" width="73" height="20"/>
+                <popUpButton horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dcE-VR-Vxk" userLabel="GroupBy Popup">
+                    <rect key="frame" x="64" y="7" width="73" height="20"/>
                     <popUpButtonCell key="cell" type="push" title="Date" bezelStyle="rounded" alignment="center" controlSize="small" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" selectedItem="QBO-JS-dNV" id="geF-qk-cXT">
                         <behavior key="behavior" lightByContents="YES"/>
                         <font key="font" metaFont="smallSystem"/>
@@ -325,12 +323,21 @@
                         <binding destination="Pxd-7n-Ym5" name="selectedTag" keyPath="values.uiHistoryTableGroupBy" id="qVE-Da-4Hb"/>
                     </connections>
                 </popUpButton>
-                <searchField wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="251" preferredMaxLayoutWidth="200" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nfA-G1-DVj">
-                    <rect key="frame" x="153" y="8" width="143" height="24"/>
-                    <searchFieldCell key="cell" selectable="YES" editable="YES" borderStyle="bezel" alignment="left" usesSingleLineMode="YES" bezelStyle="round" sendsSearchStringImmediately="YES" recentsAutosaveName="IINAHistorySearchField" id="k5B-TS-AUl">
-                        <font key="font" metaFont="system"/>
+                <customView horizontalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="mYx-kd-jow" userLabel="Spacer View">
+                    <rect key="frame" x="141" y="0.0" width="8" height="34"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="8" id="aek-hA-Txf"/>
+                    </constraints>
+                </customView>
+                <searchField wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="751" horizontalCompressionResistancePriority="251" verticalCompressionResistancePriority="749" preferredMaxLayoutWidth="200" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nfA-G1-DVj">
+                    <rect key="frame" x="153" y="7" width="200" height="20"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="200" id="0h1-9O-Stw"/>
+                    </constraints>
+                    <searchFieldCell key="cell" controlSize="small" selectable="YES" editable="YES" borderStyle="bezel" alignment="left" usesSingleLineMode="YES" bezelStyle="round" sendsSearchStringImmediately="YES" recentsAutosaveName="IINAHistorySearchField" id="k5B-TS-AUl">
+                        <font key="font" metaFont="smallSystem"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" red="0.11764705882352941" green="0.11764705882352941" blue="0.11764705882352941" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                     </searchFieldCell>
                     <connections>
                         <action selector="searchFieldAction:" target="-2" id="GHt-cO-ckm"/>
@@ -339,13 +346,16 @@
                 </searchField>
             </subviews>
             <constraints>
-                <constraint firstItem="nfA-G1-DVj" firstAttribute="centerY" secondItem="OQZ-Pk-zUa" secondAttribute="centerY" id="Dhq-rL-XCu"/>
-                <constraint firstAttribute="trailing" secondItem="nfA-G1-DVj" secondAttribute="trailing" constant="4" id="Jnt-On-mRa"/>
+                <constraint firstAttribute="centerY" secondItem="nfA-G1-DVj" secondAttribute="centerY" id="Dhq-rL-XCu"/>
+                <constraint firstItem="mYx-kd-jow" firstAttribute="leading" secondItem="dcE-VR-Vxk" secondAttribute="trailing" constant="4" id="JZa-Yt-a47"/>
+                <constraint firstAttribute="trailing" secondItem="nfA-G1-DVj" secondAttribute="trailing" constant="8" id="Jnt-On-mRa"/>
                 <constraint firstItem="ob0-Up-S1q" firstAttribute="leading" secondItem="OQZ-Pk-zUa" secondAttribute="leading" constant="8" id="REb-L2-Oxj"/>
                 <constraint firstItem="dcE-VR-Vxk" firstAttribute="leading" secondItem="ob0-Up-S1q" secondAttribute="trailing" constant="4" id="ULk-Yl-s8T"/>
-                <constraint firstItem="nfA-G1-DVj" firstAttribute="leading" secondItem="dcE-VR-Vxk" secondAttribute="trailing" constant="16" id="YJw-Fw-ho7"/>
+                <constraint firstAttribute="bottom" secondItem="mYx-kd-jow" secondAttribute="bottom" id="bz7-NO-uvO"/>
                 <constraint firstItem="nfA-G1-DVj" firstAttribute="firstBaseline" secondItem="dcE-VR-Vxk" secondAttribute="firstBaseline" id="db5-J0-qk0"/>
+                <constraint firstItem="mYx-kd-jow" firstAttribute="top" secondItem="OQZ-Pk-zUa" secondAttribute="top" id="pLo-lE-vlA"/>
                 <constraint firstItem="dcE-VR-Vxk" firstAttribute="firstBaseline" secondItem="ob0-Up-S1q" secondAttribute="firstBaseline" id="xQW-ER-WYS"/>
+                <constraint firstItem="nfA-G1-DVj" firstAttribute="leading" secondItem="mYx-kd-jow" secondAttribute="trailing" constant="4" id="z97-af-iFz"/>
             </constraints>
             <point key="canvasLocation" x="181" y="9"/>
         </customView>

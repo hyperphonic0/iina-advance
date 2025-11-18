@@ -219,10 +219,11 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     accessory.layoutAttribute = .trailing
     window.addTitlebarAccessoryViewController(accessory)
     // Add this to prevent overlap with title
-    accessory.fullScreenMinHeight = 0  // Prevents showing in full screen if desired
+    accessory.fullScreenMinHeight = 4  // Prevents showing in full screen if desired
 
     if #available(macOS 11.0, *) {
       window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
+      accessory.automaticallyAdjustsSize = false
     }
 
     window.backgroundColor = .clear
@@ -231,16 +232,28 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
     // Move your existing content into it
     if let visualEffectCV = window.contentView as? NSVisualEffectView {
-      visualEffectCV.material = .underWindowBackground
-      visualEffectCV.blendingMode = .behindWindow
+      visualEffectCV.material = .titlebar
+      visualEffectCV.blendingMode = .withinWindow
       visualEffectCV.state = .active
       visualEffectCV.autoresizingMask = [.width, .height]
     }
+
+    outlineView.headerView?.wantsLayer = true
+    outlineView.headerView?.layer?.backgroundColor = NSColor.clear.cgColor
 
     // Workaround for problem: "group by" popup getting highlighted when window opens: make table first responder
     window.makeFirstResponder(outlineView)
 
     log.verbose("History windowDidLoad done")
+  }
+
+  class OutlineColumnHeaderCell: NSTableHeaderCell {
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+      // Override background color
+      drawsBackground = false
+
+      super.draw(withFrame: cellFrame, in: controlView)
+    }
   }
 
   override func openWindow(_ sender: Any?) {
@@ -483,10 +496,22 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     return item
   }
 
+  func outlineView(_ outlineView: NSOutlineView, didAdd rowView: NSTableRowView, forRow row: Int) {
+    /// The background color for a `NSTableRowView` will default to the parent's background color, which results in an
+    /// unwanted additive effect for translucent backgrounds. Just make each row transparent.
+    rowView.backgroundColor = .clear
+  }
+
   func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
     guard let tableColumn else {
       // group header
       guard let groupCell: NSTableCellView = outlineView.makeView(withIdentifier: .group, owner: nil) as? NSTableCellView else { return nil }
+      groupCell.wantsLayer = true
+      groupCell.layer?.backgroundColor = .clear
+      for subview in groupCell.subviews {
+        subview.wantsLayer = true
+        subview.layer?.backgroundColor = .clear
+      }
       return groupCell
     }
 
