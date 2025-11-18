@@ -67,8 +67,11 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     return NSNib.Name("HistoryWindowController")
   }
 
+  @IBOutlet weak var titleBarAccessoryContentView: NSView!
   @IBOutlet weak var outlineView: OutlineView!
   @IBOutlet weak var historySearchField: NSSearchField!
+
+  @IBOutlet weak var historyTableVerticalOffsetConstraint: NSLayoutConstraint!
 
   private var fileExistsMap: [URL: Bool] = [:]
 
@@ -199,6 +202,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
   override func windowDidLoad() {
     super.windowDidLoad()
+    guard let window else { return }
     historySearchField.stringValue = searchString
     outlineView.delegate = self
     outlineView.dataSource = self
@@ -206,6 +210,36 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     outlineView.target = self
     outlineView.doubleAction = #selector(doubleAction)
     outlineView.sizeLastColumnToFit()
+
+    historyTableVerticalOffsetConstraint.constant = Constants.Distance.standardTitleBarHeight
+
+    // Add the visual effect as a title bar accessory
+    let accessory = NSTitlebarAccessoryViewController()
+    accessory.view = titleBarAccessoryContentView
+    accessory.layoutAttribute = .trailing
+    window.addTitlebarAccessoryViewController(accessory)
+    // Add this to prevent overlap with title
+    accessory.fullScreenMinHeight = 0  // Prevents showing in full screen if desired
+
+    if #available(macOS 11.0, *) {
+      window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
+    }
+
+    window.backgroundColor = .clear
+    window.titlebarAppearsTransparent = true
+    window.styleMask.insert(.fullSizeContentView)
+
+    // Move your existing content into it
+    if let visualEffectCV = window.contentView as? NSVisualEffectView {
+      visualEffectCV.material = .underWindowBackground
+      visualEffectCV.blendingMode = .behindWindow
+      visualEffectCV.state = .active
+      visualEffectCV.autoresizingMask = [.width, .height]
+    }
+
+    // Workaround for problem: "group by" popup getting highlighted when window opens: make table first responder
+    window.makeFirstResponder(outlineView)
+
     log.verbose("History windowDidLoad done")
   }
 
