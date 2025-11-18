@@ -68,9 +68,9 @@ class PlayerCore: NSObject {
   static var mouseLocationAtLastOpen: NSPoint? = nil
 
   /// A DispatchQueue for auto load feature.
-  static let backgroundQueue = DispatchQueue.newDQ(label: "IINAPlayerCoreTask", qos: .background)
-  static let playlistQueue = DispatchQueue.newDQ(label: "IINAPlaylistTask", qos: .utility)
-  static let thumbnailQueue = DispatchQueue.newDQ(label: "IINAPlayerCoreThumbnailTask", qos: .utility)
+  static let backgroundQueue = DispatchQueue.newDQ(label: "IINAA-PlayerBG", qos: .background)
+  static let playlistQueue = DispatchQueue.newDQ(label: "IINAA-Playlist", qos: .utility)
+  static let thumbnailQueue = DispatchQueue.newDQ(label: "IINA-PlayerThumbnail", qos: .utility)
 
   // MARK: - Instance Fields
 

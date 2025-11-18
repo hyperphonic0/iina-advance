@@ -197,14 +197,12 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
   }
 
   override func mouseDown(with event: NSEvent) {
-    guard let pwc = playerWindowController else { return }
+    guard let pwc = playerWindowController, let geometry = buildFloatingGeometry() else { return }
 
     pwc.log.verbose("FloatingOSC mouseDown")
     window?.isMovableByWindowBackground = false
     mousePosRelatedToView = self.convert(event.locationInWindow, from: nil)
     mouseDownLocationInWindow = event.locationInWindow
-    let windowedGeo = pwc.isFullScreen ? pwc.fullScreenGeo() : pwc.windowedGeoForCurrentFrame()
-    let geometry = FloatingControlBarGeometry(parentGeo: windowedGeo)
     let originInViewport = pwc.viewportView.convert(frame.origin, from: nil)
     let threshold = geometry.availableWidth * Constants.Distance.floatingControllerSnapToCenterThresholdMultiplier
     isAlignFeedbackSent = abs(originInViewport.x - (pwc.viewportView.frame.width - frame.width) / 2) <= threshold
@@ -218,7 +216,8 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
   override func mouseDragged(with event: NSEvent) {
     guard let mousePosRelatedToView,
           let mouseDownLocationInWindow,
-          let pwc = playerWindowController else {
+          let pwc = playerWindowController,
+          let geometry = buildFloatingGeometry() else {
       return
     }
     assert(xConstraint != nil && yConstraint != nil, "xConstraint or yConstraint is nil!")
@@ -230,9 +229,6 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
       minDragDistanceMet = true
     }
     assert(isDragging, "Something's wrong: isDragging should be true here")
-
-    let windowedGeo = pwc.windowedGeoForCurrentFrame()
-    let geometry = FloatingControlBarGeometry(parentGeo: windowedGeo)
 
     let currentLocInViewport = pwc.viewportView.convert(event.locationInWindow, from: nil)
     let xxx = currentLocInViewport.x - mousePosRelatedToView.x
@@ -261,16 +257,13 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
   }
 
   override func mouseUp(with event: NSEvent) {
-    guard let pwc = playerWindowController else { return }
+    guard let pwc = playerWindowController, let geometry = buildFloatingGeometry()  else { return }
     if isDragging {
       pwc.log.verbose("FloatingOSC mouseUp: ending drag")
       pwc.currentDragObject = nil
     } else {
       pwc.log.verbose("FloatingOSC mouseUp")
     }
-
-    let geo = pwc.windowedGeoForCurrentFrame()
-    let geometry = FloatingControlBarGeometry(parentGeo: geo)
 
     if event.clickCount == 2 {
       // Double-clicked: center the OSC
@@ -287,15 +280,21 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
   }
 
   func cancelDrag() {
-    guard let pwc = playerWindowController else { return }
-    let geo = pwc.windowedGeoForCurrentFrame()
-    let geometry = FloatingControlBarGeometry(parentGeo: geo)
+    guard let geometry = buildFloatingGeometry() else { return }
     updateRatios(xConst: xConstraint.constant, yConst: yConstraint.constant, geometry)
   }
 
   // MARK: - Coordinates in Viewport
 
-  struct FloatingControlBarGeometry {
+  fileprivate func buildFloatingGeometry() -> FloatingControlBarGeometry? {
+    guard let pwc = playerWindowController else { return nil }
+    guard pwc.currentLayout.hasFloatingOSC else { return nil }
+    // TODO: Consolidate duplicate code [#PWinGeoForAnyMode]
+    let pwinGeo = pwc.isFullScreen ? pwc.fullScreenGeo() : pwc.windowedGeoForCurrentFrame()
+    return FloatingControlBarGeometry(parentGeo: pwinGeo)
+  }
+
+  fileprivate struct FloatingControlBarGeometry {
     let parentGeo: PWinGeometry
 
     // "available" == space to move OSC within
