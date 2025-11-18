@@ -511,21 +511,6 @@ struct LayoutState {
     return .showAlways
   }
 
-  /// Returns `true` if `other` has the same values which are configured from IINA app-wide prefs
-  func hasSamePrefsValues(as other: LayoutState) -> Bool {
-    return other.enableOSC == enableOSC
-    && other.oscPosition == oscPosition
-    && other.oscColorScheme == oscColorScheme
-    && other.isLegacyStyle == isLegacyStyle
-    && other.topBarPlacement == topBarPlacement
-    && other.bottomBarPlacement == bottomBarPlacement
-    && other.leadingSidebarPlacement == leadingSidebarPlacement
-    && other.trailingSidebarPlacement == trailingSidebarPlacement
-    && other.leadingSidebar.tabGroups == leadingSidebar.tabGroups
-    && other.trailingSidebar.tabGroups == trailingSidebar.tabGroups
-    // Allow different values for `moreSidebarState.playlistSidebarWidth` in different windows even though it's in prefs
-  }
-
   // MARK: - Geometry
 
   /// Converts & updates existing geometry to this layout.

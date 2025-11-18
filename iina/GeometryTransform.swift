@@ -819,19 +819,15 @@ extension PlayerWindowController {
     if isRestoring {
       /// Stored window state may not be consistent with global IINA prefs.
       /// To check this, build another `LayoutState` from the global prefs, then compare it to the player's.
-      let prefsSpec = LayoutState.fromPrefs(fillingInFrom: ctx.outputLayout)
-      if ctx.outputLayout.hasSamePrefsValues(as: prefsSpec) {
+      let prefsLayout = LayoutState.fromPrefs(fillingInFrom: ctx.outputLayout)
+      if validateLayoutFields(from: ctx.outputLayout, matchLayoutFromPrefs: prefsLayout) {
         log.verbose("[GTF:\(ctx.name)] Saved layout is consistent with IINA global prefs")
       } else {
         // Not consistent. But we already have the correct spec, so just build a layout from it and transition to correct layout
-#if DEBUG
-        log.errorDebugAlert{"Player's saved layout does not match IINA app prefs; will fix & apply corrected layout"}
-#else
-        log.warn("Player's saved layout does not match IINA app prefs; will fix & apply corrected layout")
-#endif
-        log.debug("[GTF:\(ctx.name)] SavedLayout=\(currentLayout). LayoutFromPrefs=\(prefsSpec)")
+        log.errorDebugAlert{"Player's saved layout does not match IINA app prefs! Will attempt to fix & apply a corrected layout"}
+        log.debug("[GTF:\(ctx.name)] SavedLayout=\(currentLayout). LayoutFromPrefs=\(prefsLayout)")
         let repairTransition = buildLayoutTransition(named: "FixInvalidInitialLayout",
-                                                     from: initialTransition.outputLayout, to: prefsSpec)
+                                                     from: initialTransition.outputLayout, to: prefsLayout)
 
         tasks.append(contentsOf: buildTasks(for: repairTransition))
       }
@@ -846,6 +842,30 @@ extension PlayerWindowController {
     tasks.append(ctx.buildFinalInitialLayoutTask())
 
     return tasks
+  }
+
+  /// Returns `true` if `other` has the same values which are configured from IINA app-wide prefs
+  fileprivate func validateLayoutFields(from tgt: LayoutState, matchLayoutFromPrefs pref: LayoutState) -> Bool {
+    func cmpAndLogError(_ expected: AnyHashable, _ actual: AnyHashable, _ fieldName: String) -> Bool {
+      if expected == actual {
+        return true
+      }
+      log.warn("Field \(fieldName.quoted) does not match prefs value! Expected=\(expected) Actual=\(actual)")
+      return false
+    }
+    var allEqual = true
+    allEqual = allEqual && cmpAndLogError(pref.enableOSC, tgt.enableOSC, "enableOSC")
+    allEqual = allEqual && cmpAndLogError(pref.oscPosition, tgt.oscPosition, "oscPosition")
+    allEqual = allEqual && cmpAndLogError(pref.oscColorScheme, tgt.oscColorScheme, "oscColorScheme")
+    allEqual = allEqual && cmpAndLogError(pref.isLegacyStyle, tgt.isLegacyStyle, "isLegacyStyle")
+    allEqual = allEqual && cmpAndLogError(pref.topBarPlacement, tgt.topBarPlacement, "topBarPlacement")
+    allEqual = allEqual && cmpAndLogError(pref.bottomBarPlacement, tgt.bottomBarPlacement, "bottomBarPlacement")
+    allEqual = allEqual && cmpAndLogError(pref.leadingSidebarPlacement, tgt.leadingSidebarPlacement, "leadingSidebarPlacement")
+    allEqual = allEqual && cmpAndLogError(pref.trailingSidebarPlacement, tgt.trailingSidebarPlacement, "trailingSidebarPlacement")
+    allEqual = allEqual && cmpAndLogError(pref.leadingSidebar.tabGroups, tgt.leadingSidebar.tabGroups, "leadingSidebar.tabGroups")
+    allEqual = allEqual && cmpAndLogError(pref.trailingSidebar.tabGroups, tgt.trailingSidebar.tabGroups, "trailingSidebar.tabGroups")
+    // Allow different values for `moreSidebarState.playlistSidebarWidth` in different windows even though it's in prefs
+    return allEqual
   }
 
   /// Creates tasks which transition to initial layout for a window which is being restored (`PWinSessionState.restoring`).
