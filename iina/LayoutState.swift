@@ -180,14 +180,7 @@ struct LayoutState {
 
     let isLegacyFullScreen = mode.isFullScreen && isLegacyStyle
     let hasTopPaddingForCameraHousing = isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
-
-    let effectiveOSCColorSchemeFromPrefs: Preference.OSCColorScheme
-    if Preference.bool(for: .enableOSC), Preference.enum(for: .oscPosition) == Preference.OSCPosition.bottom,
-       Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
-      effectiveOSCColorSchemeFromPrefs = Preference.enum(for: .oscColorScheme)
-    } else {
-      effectiveOSCColorSchemeFromPrefs = .visualEffectView
-    }
+    let oscColorScheme = effectiveOSCColorSchemeFromPrefs
 
     return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
                        mode: mode,
@@ -197,10 +190,20 @@ struct LayoutState {
                        bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
                        enableOSC: Preference.bool(for: .enableOSC),
                        oscPosition: Preference.enum(for: .oscPosition),
-                       oscColorScheme: effectiveOSCColorSchemeFromPrefs,
+                       oscColorScheme: oscColorScheme,
                        interactiveMode: interactiveMode,
                        moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs(),
                        hasTopPaddingForCameraHousing: hasTopPaddingForCameraHousing)
+  }
+
+  static var effectiveOSCColorSchemeFromPrefs: Preference.OSCColorScheme {
+    if Preference.bool(for: .enableOSC),
+       Preference.enum(for: .oscPosition) == Preference.OSCPosition.bottom,
+       Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
+      return Preference.enum(for: .oscColorScheme)
+    } else {
+      return .visualEffectView
+    }
   }
 
   // MARK: - Computed Properties
