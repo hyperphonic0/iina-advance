@@ -8,6 +8,7 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="HistoryWindowController" customModule="IINA_Advance" customModuleProvider="target">
             <connections>
+                <outlet property="groupByButton" destination="dcE-VR-Vxk" id="lPg-6u-MWp"/>
                 <outlet property="historySearchField" destination="nfA-G1-DVj" id="ySQ-Ee-v7t"/>
                 <outlet property="historyTableVerticalOffsetConstraint" destination="XOI-47-M8S" id="We5-sN-Qxs"/>
                 <outlet property="outlineView" destination="6jR-CS-fgx" id="kxD-T8-Xoo"/>

@@ -70,6 +70,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   @IBOutlet weak var titleBarAccessoryContentView: NSView!
   @IBOutlet weak var outlineView: OutlineView!
   @IBOutlet weak var historySearchField: NSSearchField!
+  @IBOutlet weak var groupByButton: NSPopUpButton!
 
   @IBOutlet weak var historyTableVerticalOffsetConstraint: NSLayoutConstraint!
 
@@ -221,6 +222,12 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
     // Add this to prevent vertical overlap with title
     historyTableVerticalOffsetConstraint.constant = Constants.Distance.standardTitleBarHeight
+
+    if #available(macOS 26.0, *) {
+      groupByButton.wantsLayer = true
+      groupByButton.borderShape = .capsule
+      groupByButton.layer?.cornerRadius = 10
+    }
 
     // Add the visual effect as a title bar accessory
     let accessory = NSTitlebarAccessoryViewController()
