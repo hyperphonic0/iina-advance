@@ -214,19 +214,10 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
     watchTableContainerView.layer?.backgroundColor = watchTableBackgroundColor.cgColor
 
     if #available(macOS 26.0, *) {
-      tabButtonGroupBottomLine.isHidden = true
-
-      tabButtonGroup.wantsLayer = true
-      tabButtonGroup.layer?.backgroundColor = watchTableBackgroundColor.cgColor
-      tabButtonGroup.borderShape = .capsule
-      tabButtonGroup.layer?.cornerRadius = inspectorCornerRadius
-      tabButtonGroup.segmentStyle = .capsule
-
       watchTableContainerView.layer?.cornerRadius = inspectorCornerRadius
 
       trackPopup.borderShape = .capsule
-    } else {
-      tabButtonGroupBottomLine.isHidden = false
+      trackPopup.controlSize = .large
     }
 
 
@@ -581,10 +572,6 @@ class InspectorWindowController: WindowController, NSWindowDelegate, NSTableView
 
     // Notify Watch table of update:
     watchTableView.post(tableUIChange)
-  }
-
-  private func sanitizeRows(_ stringList: [String]) -> [String] {
-    return stringList.compactMap { String($0.split(separator: "=").first!) }
   }
 
   func moveWatchRows(from rowIndexes: IndexSet, at targetRowIndex: Int) {
