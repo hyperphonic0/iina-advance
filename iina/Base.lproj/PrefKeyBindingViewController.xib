@@ -422,7 +422,7 @@
                             <button horizontalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="ogR-hg-OWq" userLabel="Show bindings from all sources Button">
                                 <rect key="frame" x="49" y="0.0" width="140" height="24"/>
                                 <string key="toolTip">Shows the complete set of key bindings which are active in the most recent player window, in addition to the current configuration. When this is checked, the list can include key bindings which cannot be changed or can only be configured elsewhere, such as filter shortcuts, built-in menu items, and bindings set by Lua scripts.</string>
-                                <buttonCell key="cell" type="check" title="Show all other bindings" bezelStyle="regularSquare" imagePosition="left" controlSize="small" lineBreakMode="truncatingTail" state="on" imageScaling="proportionallyUpOrDown" inset="2" id="ofM-Fl-e5N">
+                                <buttonCell key="cell" type="check" title="Show all other bindings" bezelStyle="regularSquare" imagePosition="left" controlSize="small" lineBreakMode="truncatingTail" state="on" inset="2" id="ofM-Fl-e5N">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="smallSystem"/>
                                 </buttonCell>
