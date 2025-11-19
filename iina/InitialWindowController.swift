@@ -31,6 +31,12 @@ fileprivate class GrayHighlightRowView: NSTableRowView {
     }
   }
 
+  fileprivate func setPressedHighlight() {
+    layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to redraw the background properly
+    self.layer?.backgroundColor = NSColor.initialWindowActionButtonBackgroundPressed.cgColor
+    needsDisplay = true
+  }
+
   fileprivate func setHoverHighlight() {
     layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to redraw the background properly
     self.layer?.backgroundColor = NSColor.initialWindowActionButtonBackgroundHover.cgColor
@@ -69,6 +75,7 @@ extension InitialWindowController: EditableTableViewDelegate {
   var parentTableView: EditableTableView! { recentFilesTableView }
 
   func handleMouseDown(with event: NSEvent) -> Bool {
+    onMouseDownInTable()
     return true
   }
 
@@ -220,7 +227,8 @@ class InitialWindowController: WindowController, NSWindowDelegate {
   private func addTrackingAreasIfMissing() {
     if recentFilesTableView.trackingAreas.isEmpty {
       recentFilesTableView.addTrackingArea(NSTrackingArea(rect: recentFilesTableView.bounds,
-                                                          options: [.activeAlways, .mouseMoved, .mouseEnteredAndExited], owner: self, userInfo: nil))
+                                                          options: [.activeAlways, .mouseMoved, .mouseEnteredAndExited], owner: self,
+                                                          userInfo: ["key" : "recentFilesTable"]))
 
     }
   }
@@ -249,11 +257,32 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     PlayerManager.shared.getIdleOrCreateNew().openURL(url)
   }
 
+  fileprivate func onMouseDownInTable() {
+    let clickedPoint = recentFilesTableView.convert(mouseLocationInWindow, from: nil)
+    let clickedRow = recentFilesTableView.row(at: clickedPoint)
+    if clickedRow >= 0 {
+      guard let rowView = recentFilesTableView.rowView(atRow: clickedRow, makeIfNecessary: false) as? GrayHighlightRowView else {
+        return
+      }
+      rowView.setPressedHighlight()
+      if let prevHoveredRow = currentlyHoveredRow {
+        if prevHoveredRow != rowView {
+          currentlyHoveredRow?.unsetHoverHighlight()
+        }
+      }
+      currentlyHoveredRow = rowView
+    }
+  }
+
   @objc func onMouseUpInTable() {
     // Do not use recentFilesTableView.clickedRow. It always returns -1 when window is not main
     let clickedPoint = recentFilesTableView.convert(mouseLocationInWindow, from: nil)
     let clickedRow = recentFilesTableView.row(at: clickedPoint)
-    openRecentItemFromTable(clickedRow)
+    if clickedRow >= 0 {
+      openRecentItemFromTable(clickedRow)
+    } else {
+      mouseDidExitRowHover()
+    }
   }
 
   private func openRecentItemFromTable(_ rowIndex: Int) {
@@ -374,7 +403,10 @@ extension InitialWindowController: NSTableViewDelegate, NSTableViewDataSource {
 
   // facilitates highlight on hover
   override func mouseMoved(with event: NSEvent) {
-    let mouseLocation = event.locationInWindow
+    guard !isLeftMouseButtonDown else { return }
+
+    // Do not use `event.locationInWindow`: it can be very stale
+    let mouseLocation = mouseLocationInWindow
     let point = recentFilesTableView.convert(mouseLocation, from: nil)
     let rowIndex = recentFilesTableView.row(at: point)
 
@@ -384,7 +416,7 @@ extension InitialWindowController: NSTableViewDelegate, NSTableViewDataSource {
         return
       }
 
-      if (currentlyHoveredRow == rowView) {
+      if currentlyHoveredRow == rowView {
         return
       }
 
@@ -392,16 +424,21 @@ extension InitialWindowController: NSTableViewDelegate, NSTableViewDataSource {
       currentlyHoveredRow?.unsetHoverHighlight()
       currentlyHoveredRow = rowView
     } else {
-      setCustomCursor(to: nil)
-      currentlyHoveredRow?.unsetHoverHighlight()
-      currentlyHoveredRow = nil
+      mouseDidExitRowHover()
     }
   }
 
   override func mouseExited(with event: NSEvent) {
-    setCustomCursor(to: nil)
+    guard let area = event.trackingArea?.userInfo?["key"] as? String, area == "recentFilesTable" else { return }
+    guard !isLeftMouseButtonDown else { return }
+
+    mouseDidExitRowHover()
+  }
+
+  fileprivate func mouseDidExitRowHover() {
     currentlyHoveredRow?.unsetHoverHighlight()
     currentlyHoveredRow = nil
+    setCustomCursor(to: nil)
   }
 
   override func keyDown(with event: NSEvent) {
@@ -448,13 +485,12 @@ extension InitialWindowController: NSTableViewDelegate, NSTableViewDataSource {
   }
 
   func updateLastFileButtonHighlight() {
-    lastFileContainerView.layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
     if recentFilesTableView.selectedRow >= 0 {
       // remove "LastFile" button highlight
-      lastFileContainerView.layer?.backgroundColor = NSColor.initialWindowActionButtonBackground.cgColor
+      lastFileContainerView.setBackgroundColor(.initialWindowActionButtonBackground)
     } else {
       // re-highlight "LastFile" button
-      lastFileContainerView.layer?.backgroundColor = NSColor.initialWindowLastFileBackground.cgColor
+      lastFileContainerView.setBackgroundColor(.initialWindowLastFileBackground)
     }
   }
 
@@ -478,16 +514,21 @@ class InitialWindowContentView: NSView {
 }
 
 
+/// "Open…" and "Open URL…" buttons
 class InitialWindowViewActionButton: NSView {
 
   var normalBackground = NSColor.initialWindowActionButtonBackground {
     didSet {
-      layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
-      self.layer?.backgroundColor = normalBackground.cgColor
+      setBackgroundColor(normalBackground)
     }
   }
-  var hoverBackground = NSColor.initialWindowActionButtonBackgroundHover
-  var pressedBackground = NSColor.initialWindowActionButtonBackgroundPressed
+  fileprivate var hoverBackground = NSColor.initialWindowActionButtonBackgroundHover
+  fileprivate var pressedBackground = NSColor.initialWindowActionButtonBackgroundPressed
+
+  fileprivate func setBackgroundColor(_ color: NSColor) {
+    layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
+    self.layer?.backgroundColor = color.cgColor
+  }
 
   override var mouseDownCanMoveWindow: Bool {
     false
@@ -500,7 +541,7 @@ class InitialWindowViewActionButton: NSView {
   override func awakeFromNib() {
     layer?.cornerRadius = cornerRadius
     self.layer?.backgroundColor = normalBackground.cgColor
-    self.addTrackingArea(NSTrackingArea(rect: self.bounds, options: [.activeAlways, .mouseEnteredAndExited, .cursorUpdate], owner: self, userInfo: nil))
+    self.addTrackingArea(NSTrackingArea(rect: self.bounds, options: [.activeAlways, .mouseEnteredAndExited, .cursorUpdate], owner: self, userInfo: ["key": self.idString]))  // make sure identifier is set in the XIB for each button!
   }
 
   override func cursorUpdate(with event: NSEvent) {
@@ -508,34 +549,50 @@ class InitialWindowViewActionButton: NSView {
   }
 
   override func mouseEntered(with event: NSEvent) {
+    guard let area = event.trackingArea?.userInfo?["key"] as? String, area == idString else { return }
+    if let wc = window?.windowController as? WindowController, wc.isLeftMouseButtonDown {
+      setBackgroundColor(pressedBackground)
+      return
+    }
     setCustomCursor(to: .pointingHand)
     if let windowController = window?.windowController as? InitialWindowController {
-      layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
       if windowController.recentFilesTableView.selectedRow >= 0 {
-        self.layer?.backgroundColor = NSColor.initialWindowActionButtonBackgroundHover.cgColor
+        setBackgroundColor(.initialWindowActionButtonBackgroundHover)
       } else {
-        self.layer?.backgroundColor = hoverBackground.cgColor
+        setBackgroundColor(hoverBackground)
       }
     }
   }
 
   override func mouseExited(with event: NSEvent) {
+    guard let area = event.trackingArea?.userInfo?["key"] as? String, area == idString else { return }
+    mouseDidExit()
+  }
+
+  fileprivate func mouseDidExit() {
+    if let wc = window?.windowController as? WindowController, wc.isLeftMouseButtonDown {
+      setBackgroundColor(hoverBackground)
+      return
+    }
     setCustomCursor(to: nil)
-    layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
-    self.layer?.backgroundColor = normalBackground.cgColor
+    setBackgroundColor(normalBackground)
     if let windowController = window?.windowController as? InitialWindowController {
       windowController.updateLastFileButtonHighlight()
     }
   }
 
   override func mouseDown(with event: NSEvent) {
-    layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
-    self.layer?.backgroundColor = pressedBackground.cgColor
+    setBackgroundColor(pressedBackground)
   }
 
   override func mouseUp(with event: NSEvent) {
-    layer?.cornerRadius = cornerRadius  // not sure why but this needs to be set again to draw the background properly
-    self.layer?.backgroundColor = hoverBackground.cgColor
+    guard let wc = window?.windowController as? WindowController, isInsideViewFrame(pointInWindow: wc.mouseLocationInWindow) else {
+      // Click did not end up over button: cancel action
+      mouseDidExit()
+      return
+    }
+
+    setBackgroundColor(hoverBackground)
 
     if self.identifier == .openFile {
       Logger.log("User clicked the Open File button", level: .verbose)
@@ -582,15 +639,17 @@ class BetaIndicatorView: NSView {
     text2.setHTMLValue(NSLocalizedString("initial.bug_report", comment: "Bug report desc"))
 
     self.layer?.cornerRadius = 4
-    self.addTrackingArea(NSTrackingArea(rect: self.bounds, options: [.activeInKeyWindow, .mouseEnteredAndExited], owner: self, userInfo: nil))
+    self.addTrackingArea(NSTrackingArea(rect: self.bounds, options: [.activeInKeyWindow, .mouseEnteredAndExited], owner: self, userInfo: ["key": "beta"]))
   }
 
   override func mouseEntered(with event: NSEvent) {
+    guard let area = event.trackingArea?.userInfo?["key"] as? String, area == "beta" else { return }
     guard InfoDictionary.shared.buildType != .debug else { return }
     setCustomCursor(to: .pointingHand)
   }
 
   override func mouseExited(with event: NSEvent) {
+    guard let area = event.trackingArea?.userInfo?["key"] as? String, area == "beta" else { return }
     guard InfoDictionary.shared.buildType != .debug else { return }
     setCustomCursor(to: nil)
   }
