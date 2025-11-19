@@ -61,7 +61,7 @@ class HistoryOutlineView: OutlineView {
 }
 
 class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlineViewDataSource,
-                               NSMenuDelegate, NSMenuItemValidation {
+                               NSMenuDelegate, NSMenuItemValidation, NSWindowDelegate {
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("HistoryWindowController")
@@ -200,6 +200,14 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     reloadHistoryData()
   }
 
+  func windowWillEnterFullScreen(_ notification: Notification) {
+    historyTableVerticalOffsetConstraint.constant = 0
+  }
+
+  func windowDidExitFullScreen(_ notification: Notification) {
+    historyTableVerticalOffsetConstraint.constant = Constants.Distance.standardTitleBarHeight
+  }
+
   override func windowDidLoad() {
     super.windowDidLoad()
     guard let window else { return }
@@ -211,6 +219,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     outlineView.doubleAction = #selector(doubleAction)
     outlineView.sizeLastColumnToFit()
 
+    // Add this to prevent vertical overlap with title
     historyTableVerticalOffsetConstraint.constant = Constants.Distance.standardTitleBarHeight
 
     // Add the visual effect as a title bar accessory
@@ -218,8 +227,6 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     accessory.view = titleBarAccessoryContentView
     accessory.layoutAttribute = .trailing
     window.addTitlebarAccessoryViewController(accessory)
-    // Add this to prevent overlap with title
-    accessory.fullScreenMinHeight = 4  // Prevents showing in full screen if desired
 
     if #available(macOS 11.0, *) {
       window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
