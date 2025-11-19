@@ -16,18 +16,6 @@ fileprivate extension NSUserInterfaceItemIdentifier {
   static let contextMenu = NSUserInterfaceItemIdentifier("ContextMenu")
 }
 
-fileprivate class LoadingPlaceholder: PlaybackHistory {
-  init() {
-    super.init(id: PlaybackID(URL(fileURLWithPath: "/dev/null")), duration: 0)
-  }
-
-  required init?(coder aDecoder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-
-  static let shared = LoadingPlaceholder()
-}
-
 // MARK: Constants
 
 fileprivate let loadingKey = "Loading..."
@@ -48,20 +36,10 @@ fileprivate let timeColMinWidths: [Preference.HistoryGroupBy: CGFloat] = [
   .parentFolder: 145
 ]
 
-class HistoryOutlineView: OutlineView {
-  override func frameOfOutlineCell(atRow row: Int) -> NSRect {
-    if row == 0 {
-      // Disable disclosure triangle if showing No Results msg (which has no children)
-      if let firstItem = item(atRow: row), numberOfChildren(ofItem: firstItem) == 0 {
-        return .zero
-      }
-    }
-    return super.frameOfOutlineCell(atRow: row)
-  }
-}
-
 class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlineViewDataSource,
                                NSMenuDelegate, NSMenuItemValidation, NSWindowDelegate {
+
+  // - XIB
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("HistoryWindowController")
@@ -74,18 +52,20 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
   @IBOutlet weak var historyTableVerticalOffsetConstraint: NSLayoutConstraint!
 
-  private var fileExistsMap: [URL: Bool] = [:]
+  // - Service objects
 
   private let log: Logger.Subsystem
   private var notiHandler: NotificationHandler!
 
-  @Atomic private var reloadTicketCounter: Int = 0
-  private var isInitialLoadDone = false
+  private var backgroundQueue = DispatchQueue.newDQ(label: "HistoryWindow-BG", qos: .background)
 
   /// Calls `self.showLoadingUI` on timeout.
   private let showLoadingMsgTimer = TimeoutTimer(timeout: Constants.TimeInterval.historyTableDelayBeforeLoadingMsgDisplay)
 
-  private var backgroundQueue = DispatchQueue.newDQ(label: "HistoryWindow-BG", qos: .background)
+  // - State
+
+  @Atomic private var reloadTicketCounter: Int = 0
+  private var isInitialLoadDone = false
 
   // How the data is sorted
   var groupBy: Preference.HistoryGroupBy
@@ -98,116 +78,32 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   private var historyData: [String: [URL]] = loadingData
   private var historyDataKeys: [String] = [loadingKey]
 
+  /// List of "file exists" metadata from `HistoryController`. Cached to prevent races.
+  private var fileExistsMap: [URL: Bool] = [:]
+
+  /// Cached list of selected items in table. Only for use by menus!
+  ///
+  /// Populated when menu needs to be shown, then referenced in `validateMenuItem` & menu item actions.
   private var selectedEntries: [PlaybackHistory] = []
+
+  // MARK: - Init
 
   init() {
     log = HistoryController.shared.log
-
     groupBy = HistoryWindowController.getGroupByFromPrefs() ?? Preference.HistoryGroupBy.defaultValue
     searchType = HistoryWindowController.getHistorySearchTypeFromPrefs() ?? Preference.HistorySearchType.defaultValue
     searchString = HistoryWindowController.getSearchStringFromPrefs() ?? ""
-
     super.init(window: nil)
-    windowFrameAutosaveName = WindowAutosaveName.playbackHistory.string
 
+    windowFrameAutosaveName = WindowAutosaveName.playbackHistory.string
     showLoadingMsgTimer.action = showLoadingUI
 
-    notiHandler = NotificationHandler(log, prefDidChange: prefDidChange, [
-      .uiHistoryTableGroupBy,
-      .uiHistoryTableSearchType,
-      .uiHistoryTableSearchString,
-      .resumeLastPosition,
-    ], [
-      .default: [
-        .init(.iinaHistoryListUpdated, self.onHistoryListUpdated),
-        .init(.iinaFileHistoryDidUpdate, self.onFileHistoryDidUpdate),
-        .init(.iinaFileExistsInfoDidUpdate, self.onFileExistsInfoDidUpdate)
-      ]
-    ])
+    initNotificationHandler()
   }
 
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-  // History changed in a big or ambiguous way, requiring a full table reload
-  private func onHistoryListUpdated(_ note: Notification) {
-    log.verbose("History window received iinaHistoryListUpdated; will reload data")
-    reloadHistoryData(useLoadingMsg: false)
-  }
-
-  // Individual history added or updated
-  private func onFileHistoryDidUpdate(_ note: Notification) {
-    assert(DispatchQueue.isExecutingIn(.main))
-    guard !AppDelegate.shared.isTerminating else { return }
-
-    guard let url = note.userInfo?["url"] as? URL else {
-      log.error("Cannot update file history: no url found in userInfo!")
-      return
-    }
-
-    // Enqueue in backgroundQueue to ensure happens-before relationship
-    backgroundQueue.async { [self] in
-      guard let entry = HistoryController.shared.history(forURL: url) else {
-        log.error("Cannot update file history: no entry found for URL: \(url)")
-        return
-      }
-
-      DispatchQueue.main.async { [self] in
-        // Now trigger UI to update
-        let rowKey = getKey(entry)
-        // Update our copy
-        historyLookup[url] = entry
-        let itemRow = outlineView.row(forItem: rowKey)
-        if itemRow != NSNotFound {
-          // This will reload the parent of the target row. Not ideal, but still much faster than full table reload
-          outlineView.reloadItem(rowKey, reloadChildren: true)
-        }
-      }
-    }
-  }
-
-  private func onFileExistsInfoDidUpdate(_ note: Notification) {
-    assert(DispatchQueue.isExecutingIn(.main))
-    guard !AppDelegate.shared.isTerminating else { return }
-
-    // Reload table again to refresh statuses
-    log.verbose("Reloading History table with updated fileExists data")
-    self.fileExistsMap = HistoryController.shared.fileExistsMap
-    outlineView.reloadExistingRows(reselectRowsAfter: true)
-    log.verbose("Reloaded History table with fileExists data: done")
-  }
-
-  /// Called each time a pref `key`'s value is set
-  private func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
-    switch key {
-    case .uiHistoryTableGroupBy:
-      guard let groupByNew = HistoryWindowController.getGroupByFromPrefs(), groupByNew != groupBy else { return }
-      groupBy = groupByNew
-    case .uiHistoryTableSearchType:
-      guard let searchTypeNew = HistoryWindowController.getHistorySearchTypeFromPrefs(), searchTypeNew != searchType else { return }
-      searchType = searchTypeNew
-    case .uiHistoryTableSearchString:
-      guard let searchStringNew = HistoryWindowController.getSearchStringFromPrefs(), searchStringNew != searchString else { return }
-      searchString = searchStringNew
-      historySearchField.stringValue = searchString
-    case .resumeLastPosition:
-      updateProgressColumnVisibility()
-
-    default:
-      break
-    }
-    guard isWindowLoaded else { return }
-    reloadHistoryData()
-  }
-
-  func windowWillEnterFullScreen(_ notification: Notification) {
-    historyTableVerticalOffsetConstraint.constant = 0
-  }
-
-  func windowDidExitFullScreen(_ notification: Notification) {
-    historyTableVerticalOffsetConstraint.constant = Constants.Distance.standardTitleBarHeight
-  }
+  // MARK: - Window lifecycle
 
   override func windowDidLoad() {
     super.windowDidLoad()
@@ -258,15 +154,6 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     log.verbose("History windowDidLoad done")
   }
 
-  class OutlineColumnHeaderCell: NSTableHeaderCell {
-    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
-      // Override background color
-      drawsBackground = false
-
-      super.draw(withFrame: cellFrame, in: controlView)
-    }
-  }
-
   override func openWindow(_ sender: Any?) {
     guard let _ = window else { return }  // load window
     assert(isWindowLoaded, "Expected History window to be loaded!")
@@ -300,11 +187,21 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     notiHandler.removeAllObservers()
   }
 
+  func windowWillEnterFullScreen(_ notification: Notification) {
+    historyTableVerticalOffsetConstraint.constant = 0
+  }
+
+  func windowDidExitFullScreen(_ notification: Notification) {
+    historyTableVerticalOffsetConstraint.constant = Constants.Distance.standardTitleBarHeight
+  }
+
+  // MARK: - History (re)-loading
+
   private func isTicketStillValid(_ ticket: Int) -> Bool {
     return ticket == reloadTicketCounter && !HistoryController.shared.isAppTerminating
   }
 
-  func invalidateTicket() {
+  private func invalidateTicket() {
     $reloadTicketCounter.withLock { $0 += 1 }
   }
 
@@ -414,27 +311,93 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     outlineView.expandItem(nil, expandChildren: true)
   }
 
-  private func removeAfterConfirmation(_ entries: [PlaybackHistory]) {
-    Utility.quickAskPanel("delete_history", sheetWindow: window) { respond in
-      guard respond == .alertFirstButtonReturn else { return }
-      HistoryController.shared.async {
-        HistoryController.shared.remove(entries)
+  // MARK: - Notifications
+
+  private func initNotificationHandler() {
+    notiHandler = NotificationHandler(log, prefDidChange: prefDidChange, [
+      .uiHistoryTableGroupBy,
+      .uiHistoryTableSearchType,
+      .uiHistoryTableSearchString,
+      .resumeLastPosition,
+    ], [
+      .default: [
+        .init(.iinaHistoryListUpdated, self.onHistoryListUpdated),
+        .init(.iinaFileHistoryDidUpdate, self.onFileHistoryDidUpdate),
+        .init(.iinaFileExistsInfoDidUpdate, self.onFileExistsInfoDidUpdate)
+      ]
+    ])
+  }
+
+  /// Notification callback: History changed in a big or ambiguous way, requiring a full table reload
+  private func onHistoryListUpdated(_ note: Notification) {
+    log.verbose("History window received iinaHistoryListUpdated; will reload data")
+    reloadHistoryData(useLoadingMsg: false)
+  }
+
+  /// Notification callback: Individual history added or updated
+  private func onFileHistoryDidUpdate(_ note: Notification) {
+    assert(DispatchQueue.isExecutingIn(.main))
+    guard !AppDelegate.shared.isTerminating else { return }
+
+    guard let url = note.userInfo?["url"] as? URL else {
+      log.error("Cannot update file history: no url found in userInfo!")
+      return
+    }
+
+    /// Notification callback: Enqueue in backgroundQueue to ensure happens-before relationship
+    backgroundQueue.async { [self] in
+      guard let entry = HistoryController.shared.history(forURL: url) else {
+        log.error("Cannot update file history: no entry found for URL: \(url)")
+        return
+      }
+
+      DispatchQueue.main.async { [self] in
+        // Now trigger UI to update
+        let rowKey = getKey(entry)
+        // Update our copy
+        historyLookup[url] = entry
+        let itemRow = outlineView.row(forItem: rowKey)
+        if itemRow != NSNotFound {
+          // This will reload the parent of the target row. Not ideal, but still much faster than full table reload
+          outlineView.reloadItem(rowKey, reloadChildren: true)
+        }
       }
     }
   }
 
-  func updateProgressColumnVisibility() {
-    let showProgressCol = Preference.bool(for: .resumeLastPosition)
-    let progressColIndex = outlineView.column(withIdentifier: .progress)
-    guard progressColIndex >= 0 else { return }
-    outlineView.tableColumns[progressColIndex].isHidden = !showProgressCol
+  /// Notification callback
+  private func onFileExistsInfoDidUpdate(_ note: Notification) {
+    assert(DispatchQueue.isExecutingIn(.main))
+    guard !AppDelegate.shared.isTerminating else { return }
+
+    // Reload table again to refresh statuses
+    log.verbose("Reloading History table with updated fileExists data")
+    self.fileExistsMap = HistoryController.shared.fileExistsMap
+    outlineView.reloadExistingRows(reselectRowsAfter: true)
+    log.verbose("Reloaded History table with fileExists data: done")
   }
 
-  @objc func doubleAction() {
-    if let selected = outlineView.item(atRow: outlineView.clickedRow) as? PlaybackHistory {
-      let player = PlayerManager.shared.getActiveOrCreateNew()
-      player.openURL(selected.url)
+  /// Called each time a pref `key`'s value is set
+  private func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
+    switch key {
+    case .uiHistoryTableGroupBy:
+      guard let groupByNew = HistoryWindowController.getGroupByFromPrefs(), groupByNew != groupBy else { return }
+      groupBy = groupByNew
+    case .uiHistoryTableSearchType:
+      guard let searchTypeNew = HistoryWindowController.getHistorySearchTypeFromPrefs(), searchTypeNew != searchType else { return }
+      searchType = searchTypeNew
+    case .uiHistoryTableSearchString:
+      guard let searchStringNew = HistoryWindowController.getSearchStringFromPrefs(), searchStringNew != searchString else { return }
+      searchString = searchStringNew
+      historySearchField.stringValue = searchString
+    case .resumeLastPosition:
+      updateProgressColumnVisibility()
+
+    default:
+      break
     }
+    guard isWindowLoaded else { return }
+    reloadHistoryData()
   }
 
   // MARK: Key event
@@ -459,7 +422,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     }
   }
 
-  // MARK: NSOutlineViewDelegate
+  // MARK: - NSOutlineViewDelegate
 
   func outlineView(_ outlineView: NSOutlineView, shouldSelectItem item: Any) -> Bool {
     return isInitialLoadDone
@@ -634,6 +597,13 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
   // MARK: - IBActions
 
+  @objc func doubleAction() {
+    if let selected = outlineView.item(atRow: outlineView.clickedRow) as? PlaybackHistory {
+      let player = PlayerManager.shared.getActiveOrCreateNew()
+      player.openURL(selected.url)
+    }
+  }
+
   @IBAction func playAction(_ sender: AnyObject) {
     guard let firstEntry = selectedEntries.first else { return }
     PlayerManager.shared.getActiveOrCreateNew().openURL(firstEntry.url)
@@ -661,14 +631,6 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     setSearchType(.fullPath)
   }
 
-  private func setSearchType(_ newValue: Preference.HistorySearchType) {
-    // avoid reload if no change:
-    guard searchType != newValue else { return }
-    searchType = newValue
-    UIState.shared.set(newValue.rawValue, for: .uiHistoryTableSearchType)
-    reloadHistoryData()
-  }
-
   @IBAction func searchFieldAction(_ sender: NSSearchField) {
     // avoid reload if no change:
     guard searchString != sender.stringValue else { return }
@@ -678,6 +640,22 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   }
 
   // MARK: Misc support functions
+
+  private func setSearchType(_ newValue: Preference.HistorySearchType) {
+    // avoid reload if no change:
+    guard searchType != newValue else { return }
+    searchType = newValue
+    UIState.shared.set(newValue.rawValue, for: .uiHistoryTableSearchType)
+    reloadHistoryData()
+  }
+  private func removeAfterConfirmation(_ entries: [PlaybackHistory]) {
+    Utility.quickAskPanel("delete_history", sheetWindow: window) { respond in
+      guard respond == .alertFirstButtonReturn else { return }
+      HistoryController.shared.async {
+        HistoryController.shared.remove(entries)
+      }
+    }
+  }
 
   private static func getGroupByFromPrefs() -> Preference.HistoryGroupBy? {
     return UIState.shared.isRestoreEnabled ? Preference.enum(for: .uiHistoryTableGroupBy) : nil
@@ -689,6 +667,13 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
   private static func getSearchStringFromPrefs() -> String? {
     return UIState.shared.isRestoreEnabled ? Preference.string(for: .uiHistoryTableSearchString) : nil
+  }
+
+  private func updateProgressColumnVisibility() {
+    let showProgressCol = Preference.bool(for: .resumeLastPosition)
+    let progressColIndex = outlineView.column(withIdentifier: .progress)
+    guard progressColIndex >= 0 else { return }
+    outlineView.tableColumns[progressColIndex].isHidden = !showProgressCol
   }
 
   // Change min width of "Played at" column
@@ -738,14 +723,23 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
 // MARK: - Other classes
 
+class HistoryOutlineView: OutlineView {
+  override func frameOfOutlineCell(atRow row: Int) -> NSRect {
+    if row == 0 {
+      // Disable disclosure triangle if showing No Results msg (which has no children)
+      if let firstItem = item(atRow: row), numberOfChildren(ofItem: firstItem) == 0 {
+        return .zero
+      }
+    }
+    return super.frameOfOutlineCell(atRow: row)
+  }
+}
+
 class HistoryFilenameCellView: NSTableCellView {
-
   @IBOutlet var docImage: NSImageView!
-
 }
 
 class HistoryProgressCellView: NSTableCellView {
-
   @IBOutlet var indicator: NSProgressIndicator!
 
   /// Prepares the receiver for service after it has been loaded from an Interface Builder archive, or nib file.
@@ -754,4 +748,16 @@ class HistoryProgressCellView: NSTableCellView {
   override func awakeFromNib() {
     indicator.userInterfaceLayoutDirection = .leftToRight
   }
+}
+
+fileprivate class LoadingPlaceholder: PlaybackHistory {
+  init() {
+    super.init(id: PlaybackID(URL(fileURLWithPath: "/dev/null")), duration: 0)
+  }
+
+  required init?(coder aDecoder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  static let shared = LoadingPlaceholder()
 }
