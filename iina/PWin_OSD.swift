@@ -816,9 +816,9 @@ extension PlayerWindowController {
       }
       let positionDelta = abs(position - (osd.lastPlaybackPosition ?? Double.infinity))
       let durationDelta = abs(duration - (osd.lastPlaybackDuration ?? Double.infinity))
-      guard positionDelta > Constants.OSD.osdSeekMinDeltaSec,
+      guard positionDelta > Constants.OSD.osdSeekMinDeltaSec ||
             durationDelta > Constants.OSD.osdSeekMinDeltaSec else {
-        log.verbose("[OSD] Ignoring redundant request for 'seek'; neither position or duration has changed")
+        log.verbose("[OSD] Ignoring redundant request for 'seek'; neither position or duration has changed (\(positionDelta), \(durationDelta))")
         return
       }
       osd.lastPlaybackPosition = position
