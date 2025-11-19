@@ -341,8 +341,8 @@
 
             # Copy everything — keep full structure (SPM state, caches, workspace, etc.)
             installPhase = ''
-              mkdir -p $out
-              cp -R . $out/
+              mkdir -p "$out"
+              cp -R . "$out/"
             '';
           };
 
@@ -490,9 +490,9 @@
                 rewrite_deps_to_rpath "$canonical"
 
                 # Recurse into transitive deps based on their /nix/store path
-                otool -L "$canonical" | sed -nE 's/^[[:space:]]*(.+)[[:space:]]\(.*\)$/\1/p' | { grep -e "^/nix/store/" || true; } | while read -r sub
+                otool -L "$canonical" | sed -nE 's/^[[:space:]]*(.+)[[:space:]]\(.*\)$/\1/p' | { grep -e "^/nix/store/" || true; } | while read -r sub; do
                   local subbase
-                  subbase=$(basename "$sub")
+                  subbase="$(basename "$sub")"
                   echo "  🔗 Repointing subdep for $real_base: $sub → @rpath/$subbase"
                   install_name_tool -change "$sub" "@rpath/$subbase" "$canonical" || true
                   bundle_dep "$sub"
@@ -655,7 +655,7 @@
                 # true for thin/fat Mach-O; false for scripts/text
                 file -b "$1" 2>/dev/null | grep -Eq 'Mach-O (universal binary|64-bit|arm64|x86_64)'
               }
-              
+
               ensure_writable() { chmod u+rw "$1" 2>/dev/null || true; }
 
               echo "📦 Copying external deps"
@@ -683,8 +683,7 @@
                 install_name_tool -id "$depID" "$dep" || true
 
                 # Rewrite dependencies that still point to /nix/store
-                otool -L "$dep" | sed -nE 's/^[[:space:]]*(.+)[[:space:]]\(.*\)$/\1/p' | { grep -e "^/nix/store/" || true; } | while read -r nixdep
-                do
+                otool -L "$dep" | sed -nE 's/^[[:space:]]*(.+)[[:space:]]\(.*\)$/\1/p' | { grep -e "^/nix/store/" || true; } | while read -r nixdep; do
                   base="$(basename "$nixdep")"
                   install_name_tool -change "$nixdep" "@rpath/$base" "$dep" || true
                 done
@@ -831,7 +830,7 @@
                   echo "✅ Skipping non-file $dep"
                   continue
                 fi
-                
+
                 if ! is_macho "$dep"; then
                   echo "✅ Skipping non-Mach-O $dep"
                   continue
