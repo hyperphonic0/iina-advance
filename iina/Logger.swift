@@ -19,7 +19,7 @@ import Foundation
 /// - Important: The `createDirIfNotExist` method in `Utilities` **must not** be used by the logger. If an error occurs
 ///     that method will attempt to report it using the logger. If the logger is still being initialized this will result in a crash. For that reason
 ///     the logger uses its own similar method.
-class Logger: NSObject {
+struct Logger {
 
   // MARK: - Level
 
