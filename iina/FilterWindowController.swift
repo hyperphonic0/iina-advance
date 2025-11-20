@@ -134,25 +134,34 @@ class FilterWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  func addFilter(_ filter: MPVFilter) -> Bool {
+  @MainActor
+  func addFilter(_ filter: MPVFilter, onSuccess: @escaping () -> Void) {
     guard let player = PlayerCore.lastActive else {
       Utility.showAlert("filter.no_player", sheetWindow: window)
-      return false
+      return
     }
-    if filterType == MPVProperty.vf {
-      guard player.addVideoFilter(filter) else {
-        Utility.showAlert("filter.incorrect", sheetWindow: window)
-        return false
+    player.mpv.queue.async { [self] in
+      if filterType == MPVProperty.vf {
+        guard player.addVideoFilter(filter) else {
+          DispatchQueue.main.async { [self] in
+            Utility.showAlert("filter.incorrect", sheetWindow: window)
+          }
+          return
+        }
+      } else {
+        guard player.addAudioFilter(filter) else {
+          DispatchQueue.main.async { [self] in
+            Utility.showAlert("filter.incorrect", sheetWindow: window)
+          }
+          return
+        }
       }
-    } else {
-      guard player.addAudioFilter(filter) else {
-        Utility.showAlert("filter.incorrect", sheetWindow: window)
-        return false
+      DispatchQueue.main.async { [self] in
+        filters.append(filter)
+        reloadTable()
+        onSuccess()
       }
     }
-    filters.append(filter)
-    reloadTable()
-    return true
   }
 
   func saveFilter(_ filter: MPVFilter) {
@@ -583,9 +592,11 @@ class NewFilterSheetViewController: NSViewController, NSTableViewDelegate, NSTab
     }
     let instance = FilterPresetInstance(from: preset, params: params)
     // create filter
-    if filterWindow.addFilter(preset.transformer(instance)) {
-      PlayerCore.lastActive?.sendOSD(.addFilter(preset.localizedName))
-    }
+    filterWindow.addFilter(preset.transformer(instance), onSuccess: {
+      DispatchQueue.main.async {
+        PlayerCore.lastActive?.sendOSD(.addFilter(preset.localizedName))
+      }
+    })
   }
 
   @IBAction func sheetCancelBtnAction(_ sender: Any) {

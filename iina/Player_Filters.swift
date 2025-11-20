@@ -246,12 +246,12 @@ extension PlayerCore {
       }
     }
 
-    // try apply filter
-    var didSucceed = true
-    didSucceed = mpv.command(.vf, args: ["add", filter], checkError: false) >= 0
-    log.debug("Add filter: \(didSucceed ? "Succeeded" : "Failed")")
+    // Note: when failures happen the often happen after a second or two, despite returning 0.
+    // We scan the mpv log to detect those.
+    let returnCode = mpv.command(.vf, args: ["add", filter], checkError: false)
+    log.debug("Add video filter returned \(returnCode): \(returnCode == 0 ? "no error" : "error")")
     // Do not update UI here, because it may take a second for the VF to show up in the mpv state, and it may be wrong
-    return didSucceed
+    return returnCode == 0
   }
 
   /// Remove a video filter based on its position in the list of filters.
