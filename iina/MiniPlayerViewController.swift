@@ -97,7 +97,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   unowned var pwc: PlayerWindowController!
   var player: PlayerCore {  pwc.player }
   var window: NSWindow? { pwc.window }
-  var log: Logger.Subsystem {  pwc.log }
+  var log: any Logger.Subsystem {  pwc.log }
 
   var playlistShown: Bool { pwc.musicModeGeo.isMusicModePlaylistShown }
   var isViewportShown: Bool {  pwc.musicModeGeo.isViewportShown }

@@ -23,7 +23,7 @@ class PlayerWindow: NSWindow {
     return windowController as? PlayerWindowController
   }
 
-  var log: Logger.Subsystem {
+  var log: any Logger.Subsystem {
     return (windowController as! PlayerWindowController).player.log
   }
 

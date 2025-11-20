@@ -10,9 +10,9 @@ import Foundation
 
 /// Current state of player's mpv core. Reused between playbacks. For a single playback, see class `Playback`.
 class PlaybackInfo {
-  unowned var log: Logger.Subsystem
+  let log: any Logger.Subsystem
 
-  init(log: Logger.Subsystem) {
+  init(log: any Logger.Subsystem) {
     self.log = log
   }
 

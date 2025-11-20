@@ -82,6 +82,7 @@ class StartupHandler {
     openFilesTimer.action = handleOpenFilesTimeout
   }
 
+  @MainActor
   func doStartup() {
     // Register to restore for successive launches. Set status to currently running so that it isn't restored immediately by the next launch.
     // Do this *before* restoring, because the cleanup task will reassign windows to this launch
@@ -108,9 +109,8 @@ class StartupHandler {
     pendingFilesForApplicationOpenFiles.append(contentsOf: filePaths)
   }
 
+  @MainActor
   private func handleOpenFilesTimeout() {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     let filePaths = pendingFilesForApplicationOpenFiles
     pendingFilesForApplicationOpenFiles = []
 
@@ -148,6 +148,7 @@ class StartupHandler {
     }
   }
 
+  @MainActor
   private func openFilesFromCommandLine() {
     guard let cli = commandLineState else { return }
     let validFileURLs: [URL] = cli.filenames.compactMap { filename in
@@ -165,6 +166,7 @@ class StartupHandler {
   }
 
   /// Open files either from `application(_ ,openFiles:)`, or via command line interface (CLI).
+  @MainActor
   @discardableResult
   private func openFiles(_ urls: [URL], applyingCLI cli: CommandLineState?) -> Int {
     let shouldOpenMultipleWindows: Bool
@@ -199,7 +201,7 @@ class StartupHandler {
           let relevantActivePlayerCore = activePlayerCores.first { $0.info.currentURL == url }
 
           if let relevantActivePlayerCore {
-            Logger.log.debug{"Requested URL is already playing in open window; will show it instead: \(url.path.pii.quoted)"}
+            Logger.log.debug("Requested URL is already playing in open window; will show it instead: \(url.path.pii.quoted)")
             relevantActivePlayerCore.pwc.showWindow(nil)
             return false
           }
@@ -250,10 +252,11 @@ class StartupHandler {
     }
 
     if totalFilesOpened == 0 {
-      abortWaitForOpenFilePlayerStartup()
-
-      Logger.log.verbose("Notifying user nothing was opened")
-      Utility.showAlert("nothing_to_open")
+      DispatchQueue.main.async { [self] in
+        abortWaitForOpenFilePlayerStartup()
+        Logger.log.verbose("Notifying user nothing was opened")
+        Utility.showAlert("nothing_to_open")
+      }
     } else {
       Logger.log.verbose("Total new players opening: \(pwcsForOpenFiles.count), with \(totalFilesOpened) files")
       if AppDelegate.isInteractiveLaunch {
@@ -272,10 +275,10 @@ class StartupHandler {
   }
 
   /// Returns `true` if any windows were restored; `false` otherwise.
+  @MainActor
   @discardableResult
   private func restoreWindowsFromPreviousLaunch() -> Bool {
-    assert(DispatchQueue.isExecutingIn(.main))
-    let log = Logger.Subsystem.restore
+    let log = Logger.restore
 
     guard UIState.shared.isRestoreEnabled else {
       log.debug("Restore is disabled. Skipping restore")
@@ -394,7 +397,8 @@ class StartupHandler {
     return !wcsToRestore.isEmpty || restoreOpenFileWindow
   }
 
-  // Attempt to exactly restore play state & UI from last run of IINA (for given player)
+  /// Attempt to exactly restore play state & UI from last run of IINA (for given player)
+  @MainActor
   private func restorePlayerWindowFromPriorLaunch(_ savedWindow: SavedWindow, playerID id: String) {
     assert(DispatchQueue.isExecutingIn(.main))
 
@@ -402,7 +406,7 @@ class StartupHandler {
     log.debug("Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
 
     guard let savedState = UIState.shared.getPlayerSaveState(forPlayerID: id) else {
-      log.errorDebugAlert{"Cannot restore window: could not find saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)"}
+      log.errorDebugAlert("Cannot restore window: could not find saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
       return
     }
 
@@ -419,7 +423,7 @@ class StartupHandler {
 
 
   private func addWindowToRestore(_ savedWindow: SavedWindow, _ wc: WindowController) {
-    Logger.Subsystem.restore.verbose{"Adding window to restore: \(savedWindow.saveName.string.quoted), minimized=\(savedWindow.isMinimized.yn)"}
+    Logger.restore.verbose("Adding window to restore: \(savedWindow.saveName.string.quoted), minimized=\(savedWindow.isMinimized.yn)")
 
     // Rebuild UIState window sets as we go:
     if savedWindow.isMinimized {
@@ -446,15 +450,15 @@ class StartupHandler {
     if Preference.bool(for: .isRestoreInProgress) {
       // If this flag is still set, the last restore probably failed. If it keeps failing, launch will be impossible.
       // Let user decide whether to try again or delete saved state.
-      Logger.Subsystem.restore.debug{"Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip"}
+      Logger.restore.debug("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
       return Utility.quickAskPanel("restore_prev_error", useCustomButtons: true)
 
     } else if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
-      Logger.Subsystem.restore.verbose{"Prompting user whether to restore app state, per pref"}
+      Logger.restore.verbose("Prompting user whether to restore app state, per pref")
       return Utility.quickAskPanel("restore_confirm", useCustomButtons: true)
 
     } else {
-      Logger.Subsystem.restore.trace{"No approval for restore required"}
+      Logger.restore.trace{"No approval for restore required"}
       return true
     }
   }
@@ -463,7 +467,7 @@ class StartupHandler {
   /// the user to discard the stored state, or keep waiting.
   private func restoreDidTimeOut() {
     assert(DispatchQueue.isExecutingIn(.main))
-    let log = Logger.Subsystem.restore
+    let log = Logger.restore
     guard state == .doneEnqueuing else {
       log.error("Restore timed out but state is \(state)")
       return
@@ -567,8 +571,8 @@ class StartupHandler {
 
   /// Call this if the user opened a new file at startup but we want to discard the state for it
   /// (for example if it couldn't be opened).
+  @MainActor
   func abortWaitForOpenFilePlayerStartup() {
-    assert(DispatchQueue.isExecutingIn(.main))
     Logger.log.verbose("Aborting wait for open files")
     isAwaitingNewWindowsForOpenedFile = false
     pwcsForOpenFiles = nil
@@ -576,9 +580,9 @@ class StartupHandler {
     showWindowsIfReady()
   }
 
+  @MainActor
   func showWindowsIfReady() {
-    assert(DispatchQueue.isExecutingIn(.main))
-    let log = Logger.Subsystem.restore
+    let log = Logger.restore
     let isInteractiveLaunch = AppDelegate.isInteractiveLaunch
 
     if isInteractiveLaunch {
@@ -588,14 +592,15 @@ class StartupHandler {
       }
 
       guard wcsDoneWithRestore.count == wcsToRestore.count else {
-        log.verbose{
+        log.verbose({
           let openStr: String
           if let pwcsForOpenFiles {
             openStr = " & opening \(pwcsDoneWithFileOpen.count) / \(pwcsForOpenFiles.count)"
           } else {
             openStr = ""
           }
-          return "Restarting restore timer: only done restoring \(wcsDoneWithRestore.count) / \(wcsToRestore.count)\(openStr)"}
+          return "Restarting restore timer: only done restoring \(wcsDoneWithRestore.count) / \(wcsToRestore.count)\(openStr)"
+        }())
         dismissTimeoutAlertPanel()
         restoreTimer.restart()
         return
@@ -693,6 +698,7 @@ class StartupHandler {
   }
 
 
+  @MainActor
   func initAppUI() {
     Logger.log.debug("Init app UI")
     if NSApp.activationPolicy() != .regular {
@@ -733,9 +739,9 @@ class StartupHandler {
   /// Window is done loading and is ready to show.
   /// If the application has already finished launching, this simply calls `showWindow` for the calling window.
   /// If restoring, this should not be fired at all if the window being restored is minimized or hidden due to PiP.
+  @MainActor
   func windowIsReadyToShow(_ notification: Notification) {
-    assert(DispatchQueue.isExecutingIn(.main))
-    let log = Logger.Subsystem.restore
+    let log = Logger.restore
 
     guard let window = notification.object as? NSWindow else { return }
     guard let wc = window.windowController as? WindowController else {
@@ -770,10 +776,10 @@ class StartupHandler {
   }
 
   /// Window failed to load or is hidden. Stop waiting for it
+  @MainActor
   func windowMustCancelShow(_ notification: Notification) {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard let window = notification.object as? NSWindow else { return }
-    let log = Logger.Subsystem.restore
+    let log = Logger.restore
 
     guard !isDoneLaunching else { return }
 

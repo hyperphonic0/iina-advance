@@ -265,7 +265,7 @@ class KeyCodeHelper {
     "KP9": "9",
   ]
 
-  private static var reversedKeyMapForShift: [String: String] = keyMap.reduce([:]) { partial, keyMap in
+  private static let reversedKeyMapForShift: [String: String] = keyMap.reduce([:]) { partial, keyMap in
     var partial = partial
     if let value = keyMap.value.1 {
       partial[value] = keyMap.value.0
@@ -273,7 +273,7 @@ class KeyCodeHelper {
     return partial
   }
 
-  private static var lowerToUpperKeyMap: [String: String] = keyMap.reduce([:]) { partial, keyValuePair in
+  private static let lowerToUpperKeyMap: [String: String] = keyMap.reduce([:]) { partial, keyValuePair in
     var partial = partial
     let (upper, lower): (String, String?) = keyValuePair.value
     if let lower = lower {
@@ -283,7 +283,7 @@ class KeyCodeHelper {
   }
 
   /** Also includes symbols (e.g., `uppercaseMpvKeySet["4"] == "$"`)  */
-  private static var uppercaseMpvKeySet: Set<String> = Set(lowerToUpperKeyMap.values)
+  private static let uppercaseMpvKeySet: Set<String> = Set(lowerToUpperKeyMap.values)
 
   static func isTypedUnicodeChar(normalizedMpvKey: String) -> Bool {
     if let (key, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey),

@@ -186,6 +186,7 @@ extension PlayerCore {
      - sender: The `NSDraggingInfo` object received in `performDragOperation(_:)`.
    - Returns: The result for `performDragOperation(_:)`.
    */
+  @MainActor
   func openFromPasteboard(_ sender: NSDraggingInfo) -> Bool {
     // get info
     let pb = sender.draggingPasteboard

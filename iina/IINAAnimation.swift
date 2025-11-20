@@ -9,7 +9,7 @@
 import Foundation
 
 class IINAAnimation {
-  typealias TaskFunc = (() throws -> Void)
+  typealias TaskFunc = (@MainActor () throws -> Void)
 
   // MARK: Misc static stuff
 
@@ -168,7 +168,7 @@ extension IINAAnimation {
 
     unowned var player: PlayerCore?
     var pwc: PlayerWindowController? { player?.pwc }
-    unowned var log: Logger.Subsystem
+    var log: any Logger.Subsystem
 
     // Convenience function. Run the task with no animation / zero duration.
     // Useful for updating constraints, etc., which cannot be animated or do not look good animated.

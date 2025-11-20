@@ -408,7 +408,6 @@ extension PlayerWindowController {
   @objc func saveDownloadedSub(_ sender: AnyObject) {
     guard let sub = player.info.selectedSub else {
       Utility.showAlert("sub.no_selected")
-
       return
     }
     // make sure it's a downloaded sub

@@ -16,7 +16,7 @@ class Aspect: NSObject {
   static let aspectsInMenu: [String] = ["4:3", "5:4", "16:9", "16:10", "1:1", "3:2", "2.21:1", "2.35:1", "2.39:1",
                                         "3:4", "4:5", "9:16", "10:16", "2:3", "1:2.35", "1:2.39", "21:9"]
 
-  static var allKnownLabels: [String] = {
+  static let allKnownLabels: [String] = {
     var all: Set<String> = Set<String>()
     for ratio in aspectsInMenu {
       all.insert(ratio)

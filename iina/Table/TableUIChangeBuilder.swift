@@ -31,7 +31,7 @@ class TableUIChangeBuilder {
 
     case .none, .reloadAll, .wholeTableDiff:
       // Will not cause a failure. But can't think of a reason to ever invert these types
-      Logger.log.warn{"Calling inverted() on content change type '\(original.changeType)': was this intentional?"}
+      Logger.log.warn("Calling inverted() on content change type '\(original.changeType)': was this intentional?")
       inverted = TableUIChange(original.changeType, completionHandler: completionHandler)
     }
 
@@ -46,17 +46,17 @@ class TableUIChangeBuilder {
       for insertIndex in toInsert {
         inverted.newSelectedRowIndexes?.insert(insertIndex)
       }
-      Logger.log.verbose{"Invert: changed removes=\(removed.toArray()) into inserts=\(toInsert.toArray())"}
+      Logger.log.verbose("Invert: changed removes=\(removed.toArray()) into inserts=\(toInsert.toArray())")
     }
     if let inserted = original.toInsert {
       let toRemove = IndexSet(inserted.map({ $0 + indexAdjustment }))
       inverted.toRemove = toRemove
-      Logger.log.verbose{"Invert: changed inserts=\(inserted.toArray()) into removes=\(toRemove.toArray())"}
+      Logger.log.verbose("Invert: changed inserts=\(inserted.toArray()) into removes=\(toRemove.toArray())")
     }
     if let updated = original.toUpdate {
       let toUpdate = IndexSet(updated.map({ $0 + indexAdjustment }))
       inverted.toUpdate = toUpdate
-      Logger.log.verbose{"Invert: changed updates=\(updated.toArray()) into updates=\(toUpdate.toArray())"}
+      Logger.log.verbose("Invert: changed updates=\(updated.toArray()) into updates=\(toUpdate.toArray())")
       // Add updated lines to selection
       for updateIndex in toUpdate {
         inverted.newSelectedRowIndexes?.insert(updateIndex)
@@ -79,7 +79,7 @@ class TableUIChangeBuilder {
          let origEndingSelection = original.newSelectedRowIndexes, inverted.changeType == .moveRows {
         inverted.newSelectedRowIndexes = origBeginningSelection
         inverted.oldSelectedRowIndexes = origEndingSelection
-        Logger.log.verbose{"Invert: changed movePairs from \(movedPairs) to \(movePairsInverted.map{$0}); changed selection from \(origEndingSelection.map{$0}) to \(origBeginningSelection.map{$0})"}
+        Logger.log.verbose("Invert: changed movePairs from \(movedPairs) to \(movePairsInverted.map{$0}); changed selection from \(origEndingSelection.map{$0}) to \(origBeginningSelection.map{$0})")
       }
     }
 
@@ -118,7 +118,7 @@ class TableUIChangeBuilder {
     // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
 
     let steps = newRows.difference(from: oldRows).steps
-    Logger.log.verbose{"Computing TableUIChange from diff: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows"}
+    Logger.log.verbose("Computing TableUIChange from diff: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
 
     // If overrideSingleRowMove==true, override default behavior for single row: treat del + ins as move.
     // This results in a more pleasant animation in cases such as when an inline edit is finished.
@@ -129,11 +129,11 @@ class TableUIChangeBuilder {
         case let .insert(_, indexToInsert):
           if indexToRemove == indexToInsert {
             diff.toUpdate = IndexSet(integer: indexToInsert)
-            Logger.log.verbose{"Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 update: \(indexToInsert)"}
+            Logger.log.verbose("Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 update: \(indexToInsert)")
             return diff
           }
           diff.toMove?.append((indexToRemove, indexToInsert))
-          Logger.log.verbose{"Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 move: from \(indexToRemove) to \(indexToInsert)"}
+          Logger.log.verbose("Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 move: from \(indexToRemove) to \(indexToInsert)")
           return diff
         default: break
         }

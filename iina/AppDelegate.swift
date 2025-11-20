@@ -32,6 +32,7 @@ fileprivate let AlternativeMenuItemTag = 1
 class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   /// The `AppDelegate` singleton object.
+  @MainActor
   static var shared: AppDelegate { NSApp.delegate as! AppDelegate }
 
   // MARK: Properties
@@ -46,6 +47,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   // TODO: finish adding support for tabbing windows
   var tabService: TabService? = nil
 
+  @MainActor
   func addTabForPlayer(_ pwc: PlayerWindowController) {
     if let tabService, let mainWindow = tabService.mainWindow {
       Logger.log.debug("Adding tab for PlayerWindow \(pwc.player.label.quoted)")
@@ -98,8 +100,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   private var lastClosedWindowName: String = ""
   var isShowingOpenFileWindow = false
 
+  @MainActor
   func ensureInteractiveLaunchEnabled() {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard !AppDelegate.isInteractiveLaunch else { return }
 
     AppDelegate.isInteractiveLaunch = true
@@ -138,7 +140,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       }
 
     case PK.useMediaKeys:
-      MediaPlayerIntegration.shared.update()
+      DispatchQueue.main.async {
+        MediaPlayerIntegration.shared.update()
+      }
 
     // TODO: #1, see above
 //    case PK.hideWindowsWhenInactive:
@@ -209,6 +213,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     startupHandler.isDoneLaunching
   }
 
+  @MainActor
   func applicationWillFinishLaunching(_ notification: Notification) {
     // Must setup preferences before logging so log level is set correctly.
     registerUserDefaultValues()
@@ -219,6 +224,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     startupHandler.processCommandLine(cmdLineArgs)  /// may update `isInteractiveLaunch`
 
     Logger.initLogging()
+
+    // This will also start the demo player
+    let demoPlayer = PlayerManager.shared.getOrCreateDemo()
+    // Init MPVOptionDefaults: we need this for logAllAppDetails()
+    MPVOptionDefaults.shared = MPVOptionDefaults(demoPlayer: demoPlayer)
+
     AppDetailsLogging.shared.logAllAppDetails()
 
     Logger.log.debug("App will launch\(AppDelegate.isInteractiveLaunch ? "" : " (non-interactive)"). LaunchID: \(UIState.shared.currentLaunchID)")
@@ -473,6 +484,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: - Window Close
 
+  @MainActor
   private func windowWillClose(_ notification: Notification) {
     guard let window = notification.object as? NSWindow else { return }
     windowWillClose(window)
@@ -480,8 +492,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   /// This method can be called multiple times safely because it always runs on the main thread and does not
   /// continue unless the window is found to be in an existing list
+  @MainActor
   func windowWillClose(_ window: NSWindow) {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return }
 
     let windowName = window.savedStateName
@@ -654,14 +666,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log.verbose("Text dropped on app's Dock icon")
     guard let url = pboard.string(forType: .string) else { return }
 
-    guard let player = PlayerCore.active else { return }
-    startupHandler.isAwaitingNewWindowsForOpenedFile = true
-    if player.openURLString(url) == 0 {
-      startupHandler.abortWaitForOpenFilePlayerStartup()
-    } else {
-      startupHandler.pwcsForOpenFiles = [player.pwc]
+    DispatchQueue.main.async { [self] in
+      guard let player = PlayerCore.active else { return }
+      startupHandler.isAwaitingNewWindowsForOpenedFile = true
+      if player.openURLString(url) == 0 {
+        startupHandler.abortWaitForOpenFilePlayerStartup()
+      } else {
+        startupHandler.pwcsForOpenFiles = [player.pwc]
+      }
+      startupHandler.showWindowsIfReady()
     }
-    startupHandler.showWindowsIfReady()
   }
 
   // MARK: - URL Scheme
@@ -694,76 +708,78 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return
     }
 
-    if parsed.scheme != "iina" {
-      // try to open the URL directly
-      let player = PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: false)
-      startupHandler.isAwaitingNewWindowsForOpenedFile = true
-      if player.openURLString(url) == 0 {
-        startupHandler.abortWaitForOpenFilePlayerStartup()
-      } else {
-        startupHandler.pwcsForOpenFiles = [player.pwc]
-      }
-      startupHandler.showWindowsIfReady()
-      return
-    }
-
-    // handle url scheme
-    guard let host = parsed.host else { return }
-
-    if host == "open" || host == "weblink" {
-      // open a file or link
-      guard let queries = parsed.queryItems else { return }
-      let queryDict = [String: String](uniqueKeysWithValues: queries.map { ($0.name, $0.value ?? "") })
-
-      // url
-      guard let urlValue = queryDict["url"], !urlValue.isEmpty else {
-        Logger.log("Cannot find parameter \"url\", stopped")
-        return
-      }
-
-      // new_window
-      let player: PlayerCore
-      if let newWindowValue = queryDict["new_window"], newWindowValue == "1" {
-        player = PlayerManager.shared.getIdleOrCreateNew()
-      } else {
-        player = PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: false)
-      }
-
-      // enqueue
-      if let enqueueValue = queryDict["enqueue"], enqueueValue == "1",
-         let lastActivePlayer = PlayerManager.shared.lastActivePlayer,
-         !lastActivePlayer.info.playlist.isEmpty {
-        lastActivePlayer.appendToPlaylist(urlValue)
-      } else {
+    DispatchQueue.main.async { [self] in
+      if parsed.scheme != "iina" {
+        // try to open the URL directly
+        let player = PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: false)
         startupHandler.isAwaitingNewWindowsForOpenedFile = true
-        if player.openURLString(urlValue) == 0 {
+        if player.openURLString(url) == 0 {
           startupHandler.abortWaitForOpenFilePlayerStartup()
         } else {
           startupHandler.pwcsForOpenFiles = [player.pwc]
         }
+        startupHandler.showWindowsIfReady()
+        return
       }
 
-      // presentation options
-      if let fsValue = queryDict["full_screen"], fsValue == "1" {
-        // full_screen
-        player.mpv.setFlag(MPVOption.Window.fullscreen, true)
-      } else if let pipValue = queryDict["pip"], pipValue == "1" {
-        // pip
-        player.pwc.enterPIP()
-      }
+      // handle url scheme
+      guard let host = parsed.host else { return }
 
-      // mpv options
-      for query in queries {
-        if query.name.hasPrefix("mpv_") {
-          let mpvOptionName = String(query.name.dropFirst(4))
-          guard let mpvOptionValue = query.value else { continue }
-          Logger.log("Setting \(mpvOptionName) to \(mpvOptionValue)")
-          player.mpv.setString(mpvOptionName, mpvOptionValue)
+      if host == "open" || host == "weblink" {
+        // open a file or link
+        guard let queries = parsed.queryItems else { return }
+        let queryDict = [String: String](uniqueKeysWithValues: queries.map { ($0.name, $0.value ?? "") })
+
+        // url
+        guard let urlValue = queryDict["url"], !urlValue.isEmpty else {
+          Logger.log("Cannot find parameter \"url\", stopped")
+          return
         }
-      }
 
-      Logger.log("Finished URL scheme handling")
-      startupHandler.showWindowsIfReady()
+        // new_window
+        let player: PlayerCore
+        if let newWindowValue = queryDict["new_window"], newWindowValue == "1" {
+          player = PlayerManager.shared.getIdleOrCreateNew()
+        } else {
+          player = PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: false)
+        }
+
+        // enqueue
+        if let enqueueValue = queryDict["enqueue"], enqueueValue == "1",
+           let lastActivePlayer = PlayerManager.shared.lastActivePlayer,
+           !lastActivePlayer.info.playlist.isEmpty {
+          lastActivePlayer.appendToPlaylist(urlValue)
+        } else {
+          startupHandler.isAwaitingNewWindowsForOpenedFile = true
+          if player.openURLString(urlValue) == 0 {
+            startupHandler.abortWaitForOpenFilePlayerStartup()
+          } else {
+            startupHandler.pwcsForOpenFiles = [player.pwc]
+          }
+        }
+
+        // presentation options
+        if let fsValue = queryDict["full_screen"], fsValue == "1" {
+          // full_screen
+          player.mpv.setFlag(MPVOption.Window.fullscreen, true)
+        } else if let pipValue = queryDict["pip"], pipValue == "1" {
+          // pip
+          player.pwc.enterPIP()
+        }
+
+        // mpv options
+        for query in queries {
+          if query.name.hasPrefix("mpv_") {
+            let mpvOptionName = String(query.name.dropFirst(4))
+            guard let mpvOptionValue = query.value else { continue }
+            Logger.log("Setting \(mpvOptionName) to \(mpvOptionValue)")
+            player.mpv.setString(mpvOptionName, mpvOptionValue)
+          }
+        }
+
+        Logger.log("Finished URL scheme handling")
+        startupHandler.showWindowsIfReady()
+      }
     }
   }
 

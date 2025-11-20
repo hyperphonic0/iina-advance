@@ -73,7 +73,7 @@ class PlayerInputContext {
 
   // MARK: - Single player instance
 
-  private let log: Logger.Subsystem
+  private let log: any Logger.Subsystem
 
   private unowned let player: PlayerCore
 
@@ -89,7 +89,7 @@ class PlayerInputContext {
 
   init(playerCore: PlayerCore) {
     self.player = playerCore
-    self.log = Logger.Subsystem(rawValue: "\(playerCore.log.rawValue)/\(Logger.Subsystem.input.rawValue)")
+    self.log = Logger.makeSubsystem("\(playerCore.log.rawValue)/\(Logger.input.rawValue)")
 
     // Default to adding the static shared sections
     sectionStack = InputSectionStack(initialEnabledSections: AppInputConfig.sharedSections)

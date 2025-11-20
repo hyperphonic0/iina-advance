@@ -186,7 +186,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) \(screenFit) \(isMusicModePlaylistShown ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=N") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidSize=\(videoSize) vidMargins=\(viewportMargins) \(video)}"
   }
 
-  var log: Logger.Subsystem { video.log }
+  var log: any Logger.Subsystem { video.log }
 
   /// Can only be `false` while in music mode. All other modes should return `true` always.
   var isViewportShown: Bool {

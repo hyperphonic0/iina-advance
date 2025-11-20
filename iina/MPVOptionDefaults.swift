@@ -21,7 +21,7 @@ import Foundation
 /// start of the log file. So this class also provides the version numbers.
 class MPVOptionDefaults {
   /// The `MPVDefaults` singleton object.
-  static let shared = MPVOptionDefaults()
+  static var shared: MPVOptionDefaults!
 
   /// Version number of the libass library.
   ///
@@ -47,9 +47,9 @@ class MPVOptionDefaults {
   private let mpvCore: MPVController
   private var mpv: OpaquePointer? { mpvCore.mpv }
 
-  private init() {
+  init(demoPlayer: PlayerCore) {
     // Quick & dirty bridge code: just get reference to demo player's MPVController
-    mpvCore = PlayerManager.shared.getOrCreateDemo().mpv
+    mpvCore = demoPlayer.mpv
     Logger.log.verbose("MPVOptionDefaults init done")
   }
 

@@ -14,12 +14,11 @@ class MediaPlayerIntegration {
   @Atomic private var enabled = false
   private let remoteCommand = MPRemoteCommandCenter.shared()
 
+  @MainActor
   func update() {
-    DispatchQueue.main.execOrAsync{ [self] in
-      guard !AppDelegate.shared.isTerminating else { return }
-      let newEnablement = Preference.bool(for: .useMediaKeys)
-      updateEnablement(to: newEnablement)
-    }
+    guard !AppDelegate.shared.isTerminating else { return }
+    let newEnablement = Preference.bool(for: .useMediaKeys)
+    updateEnablement(to: newEnablement)
   }
 
   private func updateEnablement(to newEnablement: Bool) {

@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWriting {
+class PrefOSCToolbarDraggingItemViewController: NSViewController, @MainActor NSPasteboardWriting {
 
   override var nibName: NSNib.Name {
     return NSNib.Name("PrefOSCToolbarDraggingItemViewController")
@@ -52,10 +52,12 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
     descriptionLabel.stringValue = buttonType.description()
   }
 
+  @MainActor
   func writableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
     return [.iinaOSCAvailableToolbarButtonType]
   }
 
+  @MainActor
   func pasteboardPropertyList(forType type: NSPasteboard.PasteboardType) -> Any? {
     if type == .iinaOSCAvailableToolbarButtonType {
       return buttonType.rawValue

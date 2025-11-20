@@ -373,7 +373,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       audioTableView.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
     }
 
-    player.log.verbose { "QuickSettings viewDidLoad done" }
+    player.log.verbose("QuickSettings viewDidLoad done")
   }
 
   // MARK: - Right to Left Constraints

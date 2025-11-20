@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Regex {
+struct Regex {
 
   static let aspect = Regex("\\A\\d+(\\.\\d+)?:\\d+(\\.\\d+)?\\Z")
   static let httpFileName = Regex("attachment; filename=(.+?)\\Z")

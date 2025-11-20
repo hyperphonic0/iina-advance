@@ -10,6 +10,7 @@ import Foundation
 
 // Adds optional methods for use in conjunction with `EditableTableView`
 // (which will itself hopefully become an extension of `NSTableView` at some point).
+@MainActor
 protocol EditableTableViewDelegate {
   /// Implementors need to provide this
   var parentTableView: EditableTableView! { get }

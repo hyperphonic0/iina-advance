@@ -28,45 +28,49 @@ class JavascriptAPIGlobalController: JavascriptAPI, JavascriptAPIGlobalControlle
   private var instanceCounter = 0
 
   override func cleanUp(_ instance: JavascriptPluginInstance) {
-    instances.values.forEach {
-      $0.pwc.close()
-      $0.shutdown()
+    DispatchQueue.main.async { [self] in
+      instances.values.forEach {
+        $0.pwc.close()
+        $0.shutdown()
+      }
+      instances.removeAll()
+      childAPIs.removeAll()
     }
-    instances.removeAll()
-    childAPIs.removeAll()
   }
 
   func createPlayerInstance(_ options: [String: Any]) -> Any {
     instanceCounter += 1
-    // create the `PlayerCore` manually since it's managed directly by the plugin
-    let pc = PlayerCore("\(instanceCounter)-\(pluginInstance.plugin.identifier)")
-    pc.isManagedByPlugin = true
-    pc.start()
-    if options["disableWindowAnimation"] as? Bool == true {
-      pc.disableWindowAnimation = true
-    }
-    if options["disableUI"] as? Bool == true {
-      pc.disableUI = true
-    }
-    if let label = options["label"] as? String {
-      pc.userLabel = label
-    }
-    if options["enablePlugins"] as? Bool == false {
-      // load the current plugin only.
-      // `reloadPlugin` will create a plugin instance if it's not loaded.
-      pc.reloadPlugin(pluginInstance.plugin)
-    }
+    DispatchQueue.main.async { [self] in
+      // create the `PlayerCore` manually since it's managed directly by the plugin
+      let pc = PlayerCore("\(instanceCounter)-\(pluginInstance.plugin.identifier)")
+      pc.isManagedByPlugin = true
+      pc.start()
+      if options["disableWindowAnimation"] as? Bool == true {
+        pc.disableWindowAnimation = true
+      }
+      if options["disableUI"] as? Bool == true {
+        pc.disableUI = true
+      }
+      if let label = options["label"] as? String {
+        pc.userLabel = label
+      }
+      if options["enablePlugins"] as? Bool == false {
+        // load the current plugin only.
+        // `reloadPlugin` will create a plugin instance if it's not loaded.
+        pc.reloadPlugin(pluginInstance.plugin)
+      }
 
-    // associate child plugin
-    let childPluginInstance = pc.plugins.first { $0.plugin == pluginInstance.plugin }!
-    let childAPI = childPluginInstance.apis["global"] as! JavascriptAPIGlobalChild
-    childAPI.parentAPI = self
-    instances[instanceCounter] = pc
-    childAPIs[instanceCounter] = childAPI
+      // associate child plugin
+      let childPluginInstance = pc.plugins.first { $0.plugin == pluginInstance.plugin }!
+      let childAPI = childPluginInstance.apis["global"] as! JavascriptAPIGlobalChild
+      childAPI.parentAPI = self
+      instances[instanceCounter] = pc
+      childAPIs[instanceCounter] = childAPI
 
-    // open file
-    if let url = options["url"] as? String, let url = parsePath(url, forceLocalPath: false).path  {
-      pc.openURLString(url)
+      // open file
+      if let url = options["url"] as? String, let url = parsePath(url, forceLocalPath: false).path  {
+        pc.openURLString(url)
+      }
     }
 
     return instanceCounter

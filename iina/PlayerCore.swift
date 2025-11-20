@@ -74,8 +74,8 @@ class PlayerCore: NSObject {
 
   // MARK: - Instance Fields
 
-  let subsystem: Logger.Subsystem
-  var log: Logger.Subsystem { self.subsystem }
+  let subsystem: any Logger.Subsystem
+  var log: any Logger.Subsystem { self.subsystem }
   var label: String
   let isDemoPlayer: Bool
 
@@ -322,7 +322,7 @@ class PlayerCore: NSObject {
     abLoopA != 0 && abLoopB != 0 && mpv.getString(MPVOption.PlaybackControl.abLoopCount) != "0"
   }
 
-
+  @MainActor
   init(_ label: String, isDemoPlayer: Bool = false, commandLineArgs: [(String, String)] = []) {
     let log = Logger.subsystem(forPlayerID: label)
     log.debug("PlayerCore init: starting")
@@ -431,10 +431,9 @@ class PlayerCore: NSObject {
    - Returns: `nil` if no further action is needed, like opened a BD Folder; otherwise the count of playable files.
      `0` if no playable files were found & the player window was not opened.
    */
+  @MainActor
   @discardableResult
   func openURLs(_ urls: [URL]) -> Int {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     guard !urls.isEmpty else { return 0 }
     log.debug("OpenURLs: \(urls.map{PlaybackID.path(from: $0).pii})")
     // Reset:
@@ -472,12 +471,14 @@ class PlayerCore: NSObject {
     return playableFiles.count
   }
 
+  @MainActor
   @discardableResult
   func openURL(_ url: URL) -> Int? {
     return openURLs([url])
   }
 
   /// Returns number of playable URLs opened. If `0`, no player window was opened.
+  @MainActor
   @discardableResult
   func openURLString(_ str: String) -> Int? {
     if str == "-" {
@@ -516,8 +517,8 @@ class PlayerCore: NSObject {
 
   /// Loads the first URL into the player, and adds any remaining URLs to playlist.
   /// The caller must ensure that `urls` is *never* empty!
+  @MainActor
   private func openPlayerWindow(_ urls: [URL]) {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard !isDemoPlayer else {
       log.fatalError("Cannot open player window for demo player!")
     }
@@ -645,8 +646,8 @@ class PlayerCore: NSObject {
   // MARK: - Startup / Shutdown
 
   // Does nothing if already started
+  @MainActor
   func start() {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard state == .notYetStarted else { return }
     log.verbose("Player start")
 
@@ -665,9 +666,8 @@ class PlayerCore: NSObject {
     state = .started
   }
 
+  @MainActor
   private func startMPV() {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     // set path for youtube-dl
     let oldPath = String(cString: getenv("PATH")!)
     var path = Utility.exeDirURL.path + ":" + oldPath
@@ -708,8 +708,8 @@ class PlayerCore: NSObject {
   ///     that happens while IINA is quitting then this method may be called with the background task still running. If the background
   ///     task is still running this method only changes the player state. When the background task ends it will notice that shutting
   ///     down was in progress and will call this method again to continue the process of shutting down..
+  @MainActor
   func shutdown() {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard state.isNotYet(.shuttingDown) else {
       log.verbose("Player is already shutting down")
       return
@@ -778,6 +778,7 @@ class PlayerCore: NSObject {
 
   // MARK: - Plugins
 
+  @MainActor
   static func reloadPluginForAll(_ plugin: JavascriptPlugin, forced: Bool = false) {
     PlayerManager.shared.playerCores.forEach { $0.reloadPlugin(plugin, forced: forced) }
     AppDelegate.shared.menuController?.updatePluginMenu()
@@ -2750,10 +2751,10 @@ class PlayerCore: NSObject {
         if useTimer {
           summary += ", every \(timerConfig.interval)s"
         }
-        log.verbose {
+        log.verbose({
           let logMsg = logMsg.isEmpty ? logMsg : "\(logMsg)- "
           return "\(logMsg)SyncUITimer \(summary), paused:\(info.isPaused.yn) net:\(info.isNetworkResource.yn) mini:\(isInMiniPlayer.yn) touchBar:\(needsTouchBar.yn) state:\(state)"
-        }
+        }())
       }
     }
 
@@ -2984,8 +2985,8 @@ class PlayerCore: NSObject {
   /// After closing the window, calls `AppDelegate.shared.windowWillClose` explicitly (AppKit should always call
   /// it via` NotificationCenter`, but this will dispel all doubt).
   /// This function can safely be called more than once without danger of side effects.
+  @MainActor
   private func _closeWindow() {
-    assert(DispatchQueue.isExecutingIn(.main))
     stop()
     guard isInteractivePlayer else {
       log.verbose("Called stop, but no window to close (player is non-interactive)")
@@ -3079,9 +3080,12 @@ class PlayerCore: NSObject {
     if currentPlayback.thumbnails != nil {
       currentPlayback.thumbnails = nil
     }
-    touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
+    DispatchQueue.main.async { [self] in
+      touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
+    }
   }
 
+  @MainActor
   func makeTouchBar() -> NSTouchBar {
     log.debug("Activating Touch Bar")
     needsTouchBar = true
@@ -3437,8 +3441,6 @@ class PlayerCore: NSObject {
   ///
   ///  See also: `setVideoTrackDisabled`
   func setVideoTrackEnabled(thenDoAction action: PendingActionOnVidChange = .none) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     mpv.queue.async { [self] in
       guard isActive else {
         log.verbose("Skipping enable video track: player is not active")

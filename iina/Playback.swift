@@ -159,7 +159,7 @@ struct PlaybackID: Equatable, Hashable {
     }
   }
 
-  static func bookmark(fromURL url: URL, _ log: Logger.Subsystem) -> Data? {
+  static func bookmark(fromURL url: URL, _ log: any Logger.Subsystem) -> Data? {
     guard url.isFileURL else { return nil }
     guard FileManager.default.fileExists(atPath: url.path) else {
       log.trace{"Cannot create bookmark data from URL \(url.path.pii.quoted): file does not exist"}
@@ -173,7 +173,7 @@ struct PlaybackID: Equatable, Hashable {
     }
   }
 
-  static func url(fromBookmark bookmarkData: Data, _ log: Logger.Subsystem) -> URL? {
+  static func url(fromBookmark bookmarkData: Data, _ log: any Logger.Subsystem) -> URL? {
     var isStale = false
     do {
       return try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale)

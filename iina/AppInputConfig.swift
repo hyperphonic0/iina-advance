@@ -14,7 +14,7 @@ struct AppInputConfig {
   /// Return true to send notifications; false otherwise
   typealias NotificationData = [AnyHashable : Any]
 
-  static var log: Logger.Subsystem { Logger.Subsystem.input }
+  static var log: any Logger.Subsystem { Logger.input }
 
   // MARK: Shared input sections
 
@@ -132,6 +132,7 @@ struct AppInputConfig {
   /// 2. Also triggered any time the selected conf is changed in the Configuration table (specifically, in response to
   /// the value of `ConfTableState.current.selectedConfName` being changed (ignoring case).
   /// Returns `true` if load was successful; `false` if not successful and the default IINA conf was used as a fallback.
+  @MainActor
   @discardableResult
   static func loadSelectedConfBindingsIntoAppConfig() -> Bool {
     let confManager = ConfTableState.manager

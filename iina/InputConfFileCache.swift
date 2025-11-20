@@ -40,7 +40,7 @@ class InputConfFileCache {
     }
     let defaultConfFile = Constants.InputConf.defaults[confName]
     let isReadOnly = defaultConfFile != nil
-    let confFilePath = defaultConfFile ?? ConfTableState.current.getFilePath(forConfName: confName)
+    let confFilePath = defaultConfFile ?? Utility.buildConfFilePath(for: confName)
     let confFile = loadFile(at: confFilePath, isReadOnly: isReadOnly, confName: confName)
 
     // read-through

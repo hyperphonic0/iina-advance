@@ -10,7 +10,7 @@ import Foundation
 class SliderScrollWheelDelegate: VirtualScrollWheel {
   let slider: ScrollableSlider
 
-  init(slider: ScrollableSlider, _ log: Logger.Subsystem) {
+  init(slider: ScrollableSlider, _ log: any Logger.Subsystem) {
     self.slider = slider
     super.init()
     self.log = log
@@ -75,7 +75,7 @@ class SliderScrollWheelDelegate: VirtualScrollWheel {
 #endif
   }
 
-  func configure(_ slider: ScrollableSlider, _ log: Logger.Subsystem) {
+  func configure(_ slider: ScrollableSlider, _ log: any Logger.Subsystem) {
     self.log = log
     slider.scrollWheelDelegate = self
   }

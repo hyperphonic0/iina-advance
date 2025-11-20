@@ -100,6 +100,8 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
     bindingTableView.animationPipeline = animationPipeline
     confTableView.animationPipeline = animationPipeline
 
+    let currentState = ConfTableState.current
+
     // Load files into cache all at once; it should be fast enough (and doing so on an as-needed basis was not originally tested...)
     // But do not load them unless the user navigates to the Key Bindings preference pane.
     InputConfFileCache.fileDQ.async {
@@ -109,7 +111,6 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
         InputConfFile.cache.getOrLoadConfFile(confName: confName)
       }
 
-      let currentState = ConfTableState.current
       AppInputConfig.log.debug("Loading \(currentState.userConfDict.count) user conf files into cache")
       for confName in currentState.userConfDict.keys {
         InputConfFile.cache.getOrLoadConfFile(confName: confName)

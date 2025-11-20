@@ -461,7 +461,7 @@ extension PlayerWindowController {
   func animateShowOrHideSidebars(_ geo: PWinGeometry,
                                  leadingVisible: Bool? = nil,
                                  trailingVisible: Bool? = nil,
-                                 ΔWindowWidth: CGFloat, _ log: Logger.Subsystem) {
+                                 ΔWindowWidth: CGFloat, _ log: any Logger.Subsystem) {
 
     guard leadingVisible != nil || trailingVisible != nil else { return }
 

@@ -15,9 +15,7 @@ import Cocoa
 // TODO: investigate generating thumbnails & Now Playing art from mpv screenshot cmd via RPC
 class PlayerWindowController: WindowController, NSWindowDelegate {
   unowned var player: PlayerCore
-  unowned var log: Logger.Subsystem {
-    return player.log
-  }
+  var log: any Logger.Subsystem { player.log }
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("PlayerWindowController")
@@ -327,7 +325,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }() {
     didSet {
       guard windowedModeGeoLastClosed.mode.isWindowed, !windowedModeGeoLastClosed.screenFit.isFullScreen else {
-        Logger.log.errorDebugAlert{"Will skip save of windowedModeGeoLastClosed because it is invalid: not in windowed mode! Found: \(windowedModeGeoLastClosed)"}
+        Logger.log.errorDebugAlert("Will skip save of windowedModeGeoLastClosed because it is invalid: not in windowed mode! Found: \(windowedModeGeoLastClosed)")
         return
       }
       Preference.set(windowedModeGeoLastClosed.toCSV(), for: .uiLastClosedWindowedModeGeometry)
@@ -613,6 +611,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// should be accessed without first checking `isLoaded`, otherwise a crash can occur. Do not use
   /// `isWindowLoaded` because that will cause `window` to be loaded (and will definitely crash if not
   /// accessed on the main thread).
+  @MainActor
   init(playerCore player: PlayerCore) {
     self.player = player
     self.animationPipeline = IINAAnimation.Pipeline(player)
@@ -632,6 +631,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     fatalError("init(coder:) has not been implemented")
   }
 
+  override func makeTouchBar() -> NSTouchBar? {
+    return player.makeTouchBar()
+  }
+  
   /// Returns the position in seconds for the given percent of the total duration of the video the percentage represents.
   ///
   /// The number of seconds returned must be considered an estimate that could change. The duration of the video is obtained from

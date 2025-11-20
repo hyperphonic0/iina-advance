@@ -517,7 +517,7 @@ struct LayoutState {
   ///
   /// Useful when restoring a saved layout and ironing out any inconsistencies between the given `PWinGeometry` & this `LayoutState`.
   func convertWindowedModeGeometry(from existingGeometry: PWinGeometry, video: VideoGeometry? = nil, pinWidthOrHeightIfAtMax: Bool,
-                                   applyOffsetIndex offsetIndex: Int = 0, _ log: Logger.Subsystem) -> PWinGeometry {
+                                   applyOffsetIndex offsetIndex: Int = 0, _ log: any Logger.Subsystem) -> PWinGeometry {
     assert(existingGeometry.mode.isWindowed, "Expected existingGeometry to be windowed: \(existingGeometry)")
     let insideBars = insideBars
     let outsideBars = outsideBars

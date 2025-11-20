@@ -11,6 +11,7 @@ import Foundation
 /**
  Responsible for changing the state of the Key Bindings table by building new versions of `BindingTableState`.
  */
+@MainActor
 class BindingTableStateManager: NSObject {
   let clearFilterWhenChangeMade = false
   let selectNextRowAfterDelete = false
@@ -155,6 +156,7 @@ class BindingTableStateManager: NSObject {
   }
 
   /// All table changes should go through this callback
+  @MainActor
   private func appInputConfigDidChange(_ notification: Notification) {
     Logger.log.verbose("BindingTableStateManager received \(notification.name.rawValue.quoted)")
     guard let userData = notification.userInfo else {

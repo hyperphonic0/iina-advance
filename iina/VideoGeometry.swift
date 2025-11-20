@@ -24,7 +24,7 @@ import Foundation
 ///               ➤ `videoSizeDisplayOverride` (if non-nil)
 struct VideoGeometry: Equatable, CustomStringConvertible {
 
-  static func defaultGeometry(_ log: Logger.Subsystem? = nil) -> VideoGeometry {
+  static func defaultGeometry(_ log: (any Logger.Subsystem)? = nil) -> VideoGeometry {
     let log = log ?? Logger.log
     return VideoGeometry(rawWidth: Constants.DefaultVideoSize.rawWidth,
                          rawHeight: Constants.DefaultVideoSize.rawHeight,
@@ -36,7 +36,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   }
 
   /// Uses Spotify's standard 1600x1600 dimensions, but the only important property is that its aspect ratio is square.
-  static func albumArtGeometry(_ log: Logger.Subsystem? = nil) -> VideoGeometry {
+  static func albumArtGeometry(_ log: (any Logger.Subsystem)? = nil) -> VideoGeometry {
     let log = log ?? Logger.log
     return VideoGeometry(rawWidth: Constants.AlbumArt.rawWidth, rawHeight: Constants.AlbumArt.rawHeight,
                          decodedAspectLabel: "1:1", userAspectLabel: "",
@@ -46,14 +46,14 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
                          log: log)
   }
 
-  let log: Logger.Subsystem
+  let log: any Logger.Subsystem
 
   init(rawWidth: Int, rawHeight: Int,
        decodedAspectLabel: String, userAspectLabel: String,
        streamRotation: Int, userRotation: Int,
        selectedCropLabel: String,
        videoSizeDisplayOverride: CGSize?,
-       log: Logger.Subsystem) {
+       log: any Logger.Subsystem) {
     self.rawWidth = rawWidth
     self.rawHeight = rawHeight
     self.decodedAspectLabel = decodedAspectLabel
@@ -103,7 +103,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
              streamRotation: Int? = nil, userRotation: Int? = nil,
              selectedCropLabel: String? = nil,
              videoSizeDisplayOverride: CGSize?,
-             _ log: Logger.Subsystem? = nil) -> VideoGeometry {
+             _ log: (any Logger.Subsystem)? = nil) -> VideoGeometry {
     return VideoGeometry(rawWidth: rawWidth ?? self.rawWidth, rawHeight: rawHeight ?? self.rawHeight,
                          decodedAspectLabel: decodedAspectLabel ?? self.decodedAspectLabel,
                          userAspectLabel: userAspectLabel ?? self.userAspectLabel,
@@ -348,7 +348,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     return nil
   }
 
-  static func makeCropRectNormalized(videoSizeRaw: CGSize, cropRect: CGRect, log: Logger.Subsystem) -> CGRect? {
+  static func makeCropRectNormalized(videoSizeRaw: CGSize, cropRect: CGRect, log: any Logger.Subsystem) -> CGRect? {
     let xNorm = cropRect.origin.x / videoSizeRaw.width
     let yNorm = cropRect.origin.y / videoSizeRaw.height
     let widthNorm = cropRect.width / videoSizeRaw.width

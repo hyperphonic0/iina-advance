@@ -51,9 +51,9 @@ class EditableTextField: NSTextField {
         return
       }
 
-      Logger.log.verbose{"EditableTextField: Got a double-cick"}
+      Logger.log.verbose("EditableTextField: Got a double-cick")
       let approved = editTracker.askUserToApproveDoubleClickEdit()
-      Logger.log.verbose{"Double-click approved: \(approved.yesno)"}
+      Logger.log.verbose("Double-click approved: \(approved.yesno)")
       if approved {
         self.window?.makeFirstResponder(self)
       }

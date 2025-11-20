@@ -13,23 +13,23 @@ fileprivate typealias PM = FilterParameter
 /**
  A filter preset or template, which contains the filter name and definitions of all parameters.
  */
-class FilterPreset {
-  typealias Transformer = (FilterPresetInstance) -> MPVFilter
+struct FilterPreset {
+  typealias Transformer = @Sendable (FilterPresetInstance) -> MPVFilter
 
   private static let defaultTransformer: Transformer = { instance in
     return MPVFilter(lavfiFilterFromPresetInstance: instance)
   }
 
-  var name: String
-  var params: [String: FilterParameter]
+  let name: String
+  let params: [String: FilterParameter]
 
   /// Order of the filter parameters.
   ///
   /// This dictates the order of parameters when the filter string is assembled as well as the order of controls presented to the user
   /// when adding a filter.
-  var paramOrder: [String]
+  let paramOrder: [String]
   /** Given an instance, create the corresponding `MPVFilter`. */
-  var transformer: Transformer
+  let transformer: Transformer
 
   var localizedName: String {
     return FilterPreset.l10nDic[name] ?? name
@@ -53,12 +53,13 @@ class FilterPreset {
 /**
  An instance of a filter preset, with concrete values for each parameter.
  */
-class FilterPresetInstance {
-  var preset: FilterPreset
-  var params: [String: FilterParameterValue] = [:]
+struct FilterPresetInstance {
+  let preset: FilterPreset
+  let params: [String: FilterParameterValue]
 
-  init(from preset: FilterPreset) {
+  init(from preset: FilterPreset, params: [String: FilterParameterValue] = [:]) {
     self.preset = preset
+    self.params = params
   }
 
   func value(for name: String) -> FilterParameterValue {
@@ -72,51 +73,48 @@ class FilterPresetInstance {
  - `int`: An int value with range. It will be rendered as a slider.
  - `float`: A float value with range. It will be rendered as a slider.
  */
-class FilterParameter {
+struct FilterParameter {
   enum ParamType {
     case text, int, float, choose
   }
-  var type: ParamType
-  var defaultValue: FilterParameterValue
+  let type: ParamType
+  let defaultValue: FilterParameterValue
   // for float
-  var min: Float?
-  var max: Float?
+  let min: Float?
+  let max: Float?
   // for int
-  var minInt: Int?
-  var maxInt: Int?
-  var step: Int?
+  let minInt: Int?
+  let maxInt: Int?
+  let step: Int?
   // for choose
-  var choices: [String] = []
+  let choices: [String]
 
   static func text(defaultValue: String = "") -> FilterParameter {
     return FilterParameter(.text, defaultValue: FilterParameterValue(string: defaultValue))
   }
 
   static func int(min: Int, max: Int, step: Int = 1, defaultValue: Int = 0) -> FilterParameter {
-    let pm = FilterParameter(.int, defaultValue: FilterParameterValue(int: defaultValue))
-    pm.minInt = min
-    pm.maxInt = max
-    pm.step = step
-    return pm
+    FilterParameter(.int, defaultValue: FilterParameterValue(int: defaultValue), minInt: min, maxInt: max, step: step)
   }
 
   static func float(min: Float, max: Float, defaultValue: Float = 0) -> FilterParameter {
-    let pm = FilterParameter(.float, defaultValue: FilterParameterValue(float: defaultValue))
-    pm.min = min
-    pm.max = max
-    return pm
+    FilterParameter(.float, defaultValue: FilterParameterValue(float: defaultValue), min: min, max: max)
   }
 
   static func choose(from choices: [String], defaultChoiceIndex: Int = 0) -> FilterParameter {
     guard !choices.isEmpty else { fatalError("FilterParameter: Choices cannot be empty") }
-    let pm = FilterParameter(.choose, defaultValue: FilterParameterValue(string: choices[defaultChoiceIndex]))
-    pm.choices = choices
-    return pm
+    return FilterParameter(.choose, defaultValue: FilterParameterValue(string: choices[defaultChoiceIndex]), choices: choices)
   }
 
-  private init(_ type: ParamType, defaultValue: FilterParameterValue) {
+  private init(_ type: ParamType, defaultValue: FilterParameterValue, min: Float? = nil, max: Float? = nil, minInt: Int? = nil, maxInt: Int? = nil, step: Int? = nil, choices: [String] = []) {
     self.type = type
     self.defaultValue = defaultValue
+    self.min = min
+    self.max = max
+    self.minInt = minInt
+    self.maxInt = maxInt
+    self.step = step
+    self.choices = choices
   }
 }
 
@@ -124,9 +122,9 @@ class FilterParameter {
  The structure to store values of different param types.
  */
 struct FilterParameterValue {
-  private var _stringValue: String?
-  private var _intValue: Int?
-  private var _floatValue: Float?
+  private let _stringValue: String?
+  private let _intValue: Int?
+  private let _floatValue: Float?
 
   var stringValue: String {
     return _stringValue ?? _intValue?.description ?? _floatValue?.description ?? ""
@@ -142,13 +140,19 @@ struct FilterParameterValue {
 
   init(string: String) {
     self._stringValue = string
+    self._intValue = nil
+    self._floatValue = nil
   }
 
   init(int: Int) {
+    self._stringValue = nil
     self._intValue = int
+    self._floatValue = nil
   }
 
   init(float: Float) {
+    self._stringValue = nil
+    self._intValue = nil
     self._floatValue = float
   }
 }

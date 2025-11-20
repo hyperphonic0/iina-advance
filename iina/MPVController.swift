@@ -101,7 +101,7 @@ class MPVController: NSObject {
   /// about) vs. the changes we already made which are getting echoed back at us (which we don't care about).
   var windowScalesExpected = LinkedList<CGFloat>([1.0])
 
-  var log: Logger.Subsystem { mpvLogScanner.mpvLogSubsystem }
+  var log: any Logger.Subsystem { mpvLogScanner.mpvLogSubsystem }
 
   /// Creates a `MPVController` object.
   /// - Parameters:
@@ -651,7 +651,7 @@ class MPVController: NSObject {
 
     var isReady: Bool { available && !disabled }
 
-    static func fromJSON(_ json: String?, _ log: Logger.Subsystem) -> ThumbfastInfo? {
+    static func fromJSON(_ json: String?, _ log: any Logger.Subsystem) -> ThumbfastInfo? {
       do {
         guard let json else {
           log.error("Failed to parse thumbfast-info: obj is nil")

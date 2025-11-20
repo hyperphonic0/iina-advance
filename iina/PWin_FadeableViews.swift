@@ -31,9 +31,9 @@ extension PlayerWindowController {
     @Atomic fileprivate(set) var showHideTicketCount: Int = 0
     /// Need to carry an extra bit of info for this
     fileprivate var pendingShowTopPanel: Bool = false
-    fileprivate var log: Logger.Subsystem
+    fileprivate var log: any Logger.Subsystem
 
-    init(_ log: Logger.Subsystem) {
+    init(_ log: any Logger.Subsystem) {
       self.log = log
     }
 
@@ -96,7 +96,7 @@ extension PlayerWindowController {
     let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(pointInWindow) && fadeableViews.topBarAnimationState == .hidden
     // Check whether mouse is in OSC
     let shouldRestartFadeTimer = !isMouseInsideFadeableView(pointInWindow)
-    log.trace{"ShouldRestartFadeTimer=\(shouldRestartFadeTimer.yesno) forceShowTopBar=\(forceShowTopBar.yesno)"}
+    log.trace("ShouldRestartFadeTimer=\(shouldRestartFadeTimer.yesno) forceShowTopBar=\(forceShowTopBar.yesno)")
     showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
   }
 
@@ -109,7 +109,7 @@ extension PlayerWindowController {
     guard let window = window, let contentView = window.contentView else { return false }
     let heightThreshold = contentView.frame.height - currentLayout.topBarHeight
     let isAboveThreshold = mouseLocInWindow.y >= heightThreshold
-    log.trace{"Is mouse in top bar? mouseHeight=\(mouseLocInWindow.y) heightThreshold=\(heightThreshold) → \(isAboveThreshold.yn)"}
+    log.trace("Is mouse in top bar? mouseHeight=\(mouseLocInWindow.y) heightThreshold=\(heightThreshold) → \(isAboveThreshold.yn)")
     return isAboveThreshold
   }
 

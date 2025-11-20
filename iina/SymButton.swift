@@ -6,7 +6,7 @@
 //
 
 /// Replacement for `NSButton` (which seems to be de-facto deprecated) because that class does not support using symbol animations in newer versions of MacOS.
-class SymButton: NSImageView, NSAccessibilityButton, DraggableObject {
+class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor DraggableObject {
   var bounceOnClick: Bool = false
 
   var regularColor: NSColor? = nil

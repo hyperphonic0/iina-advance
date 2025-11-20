@@ -54,7 +54,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
   // - Service objects
 
-  private let log: Logger.Subsystem
+  private let log: any Logger.Subsystem
   private var notiHandler: NotificationHandler!
 
   private var backgroundQueue = DispatchQueue.newDQ(label: "HistoryWindow-BG", qos: .background)

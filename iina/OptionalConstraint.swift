@@ -17,7 +17,7 @@ class OptionalConstraint {
     self.identifier = identifier
   }
 
-  func createIfMissing(_ log: Logger.Subsystem?,_ creationFunc: () -> NSLayoutConstraint) {
+  func createIfMissing(_ log: (any Logger.Subsystem)?,_ creationFunc: () -> NSLayoutConstraint) {
     guard !isActive else { return }
 
     let newConstraint = creationFunc()
@@ -28,7 +28,7 @@ class OptionalConstraint {
 
   /// This overload exists solely to fix a compiler error complaining about an ambiguous generic type
   func createOrUpdate(to constantToSet: CGFloat = 0, priorityInt: Int = defaultPriority,
-                      _ log: Logger.Subsystem?,
+                      _ log: (any Logger.Subsystem)?,
                       _ creationFunc: (CGFloat) -> NSLayoutConstraint) {
     let requiredFirstAnchor: NSLayoutAnchor<NSLayoutXAxisAnchor>? = nil  // needed to keep compiler happy
     createOrUpdate(to: constantToSet, priorityInt: priorityInt, requiredFirstAnchor: requiredFirstAnchor, requiredSecondAnchor: nil, log, creationFunc)
@@ -37,7 +37,7 @@ class OptionalConstraint {
   func createOrUpdate<AnchorType>(to constantToSet: CGFloat = 0, priorityInt: Int = defaultPriority,
                                   requiredFirstAnchor: NSLayoutAnchor<AnchorType>? = nil,
                                   requiredSecondAnchor: NSLayoutAnchor<AnchorType>? = nil,
-                                  _ log: Logger.Subsystem?,
+                                  _ log: (any Logger.Subsystem)?,
                                   _ creationFunc: (CGFloat) -> NSLayoutConstraint) {
 
     if let constraint, isActive,
@@ -57,7 +57,7 @@ class OptionalConstraint {
     }
   }
 
-  func remove(_ log: Logger.Subsystem?) {
+  func remove(_ log: (any Logger.Subsystem)?) {
     guard let constraint, constraint.isActive else { return }
     log?.verbose("Removing constraint \(identifier.quoted)")
     constraint.isActive = false

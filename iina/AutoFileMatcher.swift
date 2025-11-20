@@ -31,8 +31,8 @@ class AutoFileMatcher {
   private var subsGroupedBySeries: [String: [FileInfo]] = [:]
   private var unmatchedVideos: [FileInfo] = []
 
-  private let subsystem: Logger.Subsystem
-  private var log: Logger.Subsystem { subsystem }
+  private let subsystem: any Logger.Subsystem
+  private var log: any Logger.Subsystem { subsystem }
 
   init(player: PlayerCore, ticket: Int) {
     self.player = player

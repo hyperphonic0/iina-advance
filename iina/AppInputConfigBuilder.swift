@@ -9,7 +9,7 @@
 import Foundation
 
 class AppInputConfigBuilder {
-  private unowned var log = Logger.Subsystem.input
+  private let log = Logger.input
   private let sectionStack: InputSectionStack
   private let playerLabel: String
 
@@ -23,6 +23,8 @@ class AppInputConfigBuilder {
     self.playerLabel = playerLabel
   }
 
+  // Needs to be on main for MenuController
+  @MainActor
   func build(version: Int) -> AppInputConfig {
     if DebugConfig.logBindingsRebuild {
       log.verbose("Starting rebuild of AppInputConfig v\(version) (player-\(playerLabel))")

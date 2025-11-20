@@ -99,7 +99,7 @@ struct MediaMeta: CustomStringConvertible {
 class MediaMetaCache {
   static let shared = MediaMetaCache()
 
-  private let log: Logger.Subsystem = Logger.makeSubsystem("metaCache")
+  private let log: any Logger.Subsystem = Logger.makeSubsystem("metaCache")
   private let metaLock = Lock()
   private var cachedMeta: [URL: MediaMeta] = [:]
 
@@ -267,7 +267,7 @@ class MediaMetaCache {
 
   // MARK: - Video Meta
 
-  func updateCachedVideoMeta(id: PlaybackID, _ vidGeo: VideoGeometry, _ log: Logger.Subsystem) {
+  func updateCachedVideoMeta(id: PlaybackID, _ vidGeo: VideoGeometry, _ log: any Logger.Subsystem) {
     guard id.isFile else { return }
     guard id.path != "stdin" else { return }  // do not cache stdin!
     guard Utility.playableFileExt.contains(id.path.lowercasedPathExtension) else {
@@ -332,11 +332,11 @@ class MediaMetaCache {
     return nil
   }
 
-  func ensureVideoMetaIsCached(id: PlaybackID?, _ log: Logger.Subsystem) {
+  func ensureVideoMetaIsCached(id: PlaybackID?, _ log: any Logger.Subsystem) {
     _ = getOrReadVideoMeta(id: id, log)
   }
 
-  func getOrReadVideoMeta(id: PlaybackID?, _ log: Logger.Subsystem) -> VideoMeta? {
+  func getOrReadVideoMeta(id: PlaybackID?, _ log: any Logger.Subsystem) -> VideoMeta? {
     guard let id else { return nil }
 
     var missed = false

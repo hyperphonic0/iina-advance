@@ -17,9 +17,8 @@ extension MPVController {
   /// This is expected to be executed in the main DispatchQueue because of: reasons.
   /// But race conditions should not be a problem because it is not reusing resources.
   /// But once returned, all libmpv API calls should only be made via tasks on `mpv.queue`.
+  @MainActor
   func mpvInit() {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     player.log.verbose("Init mpv")
     // Create a new mpv instance and an associated client API handle to control the mpv instance.
     mpv = mpv_create()

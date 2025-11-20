@@ -37,7 +37,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     return controller
   }()
 
-  var log: Logger.Subsystem {
+  var log: any Logger.Subsystem {
     return player.log
   }
 
@@ -52,7 +52,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
 
   /// We want the requested length of thumbnail to correspond to whichever video dimension is longer, and then get the corresponding width.
   /// Example: if video's native size is 600 W x 800 H and requested thumbnail size is 100, then `thumbWidth` should be 75.
-  static func determineWidthOfThumbnail(from videoSizeRaw: NSSize, log: Logger.Subsystem) -> Int {
+  static func determineWidthOfThumbnail(from videoSizeRaw: NSSize, log: any Logger.Subsystem) -> Int {
     let sizeOption: Preference.ThumbnailSizeOption = Preference.enum(for: .thumbnailSizeOption)
     switch sizeOption {
     case .scaleWithViewport:

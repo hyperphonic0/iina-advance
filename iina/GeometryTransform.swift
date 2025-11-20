@@ -43,7 +43,7 @@ struct GeometryTransform {
 
   private let player: PlayerCore
   private var pwc: PlayerWindowController { player.pwc! }
-  private var log: Logger.Subsystem { player.log }
+  private var log: any Logger.Subsystem { player.log }
 
   // - mpv queue transforms
 
@@ -324,7 +324,7 @@ struct GeometryTransform {
     var name: String { tf.name }
     var player: PlayerCore { tf.player }
     var pwc: PlayerWindowController { player.pwc! }
-    var log: Logger.Subsystem { player.log }
+    var log: any Logger.Subsystem { player.log }
   }
 
   /// Builds on the `ContextStage2` state, adding the results from the `PWinSessionState` & `VideoGeometry` transforms,
@@ -365,7 +365,7 @@ struct GeometryTransform {
     var name: String { tf.name }
     var player: PlayerCore { tf.player }
     var pwc: PlayerWindowController { player.pwc! }
-    var log: Logger.Subsystem { player.log }
+    var log: any Logger.Subsystem { player.log }
 
     init(_ ctxStage2: ContextStage2, gtfSessionState: PWinSessionState,
          inputGeoSet: GeometrySet, outputVidGeo: VideoGeometry,
@@ -822,7 +822,7 @@ extension PlayerWindowController {
         log.verbose("[GTF:\(ctx.name)] Saved layout is consistent with IINA global prefs")
       } else {
         // Not consistent. But we already have the correct spec, so just build a layout from it and transition to correct layout
-        log.errorDebugAlert{"Player's saved layout does not match IINA app prefs! Will attempt to fix & apply a corrected layout"}
+        log.errorDebugAlert("Player's saved layout does not match IINA app prefs! Will attempt to fix & apply a corrected layout")
         log.debug("[GTF:\(ctx.name)] SavedLayout=\(currentLayout). LayoutFromPrefs=\(prefsLayout)")
         let repairTransition = buildLayoutTransition(named: "FixInvalidInitialLayout",
                                                      from: initialTransition.outputLayout, to: prefsLayout)

@@ -26,17 +26,17 @@ fileprivate let standardOffset: CGFloat = 8
 /// └───────────────────────┘
 /// ```
 final class OSDState {
-  let log: Logger.Subsystem
+  let log: any Logger.Subsystem
 
   // - Views
 
-  let osdView = OSDView()
-  fileprivate let osdVStackView = ClickThroughStackView()
-  fileprivate let osdIconImageView = NSImageView()
+  let osdView: OSDView
+  fileprivate let osdVStackView: ClickThroughStackView
+  fileprivate let osdIconImageView: NSImageView
   /// Use label constructor (even with empty string) to ensure proper styling
-  fileprivate let osdLabel = NSTextField(labelWithString: "")
-  fileprivate let osdAccessoryText = NSTextField(labelWithString: "")
-  fileprivate let osdAccessoryProgress = FixedProgressBar()
+  fileprivate let osdLabel: NSTextField
+  fileprivate let osdAccessoryText: NSTextField
+  fileprivate let osdAccessoryProgress: FixedProgressBar
 
   // - Internal constraints (not actually optional)
 
@@ -123,10 +123,19 @@ final class OSDState {
     }
   }
 
-  init(log: Logger.Subsystem) {
+  @MainActor
+  init(log: any Logger.Subsystem) {
     self.log = log
 
     log.verbose("Init OSD")
+
+    osdView = OSDView()
+    osdVStackView = ClickThroughStackView()
+    osdIconImageView = NSImageView()
+    /// Use label constructor (even with empty string) to ensure proper styling
+    osdLabel = NSTextField(labelWithString: "")
+    osdAccessoryText = NSTextField(labelWithString: "")
+    osdAccessoryProgress = FixedProgressBar()
 
     osdIconImageView.idString = "OSDIconImageView"
     osdIconImageView.imageScaling = .scaleProportionallyUpOrDown
@@ -599,9 +608,8 @@ extension PlayerWindowController {
 
   /// If `newMessage` is provided, the OSD will be updated to display it. Otherwise if the OSD is
   /// already shown and is displaying one of the message types which requires live updates, it will be updated.
+  @MainActor
   func setOSDViews(fromMessage newMessage: OSDMessage? = nil) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     let message: OSDMessage?
 
     if let newMessage {

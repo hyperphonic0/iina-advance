@@ -9,7 +9,7 @@
 import Foundation
 
 fileprivate let colorMap: [Int: NSColor] = [0: .lightGray, 1: .green, 2: .yellow, 3: .red]
-fileprivate var circleDict: [NSColor: NSImage] = [:]
+@MainActor fileprivate var circleDict: [NSColor: NSImage] = [:]
 fileprivate let kIconSize = 17.0
 fileprivate let kBorderWidth = 1.25
 
@@ -25,6 +25,8 @@ class LogWindowController: WindowController, NSMenuDelegate {
 
   @objc dynamic var logs: [Logger.Log] = []
   @objc dynamic var predicate = NSPredicate(value: true)
+
+  fileprivate var refreshTimer: Timer?
 
   init() {
     super.init(window: nil)
@@ -49,8 +51,23 @@ class LogWindowController: WindowController, NSMenuDelegate {
     }
     levelPopUpButton.selectItem(withTag: Logger.Level.preferred.rawValue)
     subsystemPopUpButton.menu!.delegate = self
+  }
 
-    syncLogs()
+  override func openWindow(_ sender: Any?) {
+    Logger.log.verbose("Log window will open")
+    super.openWindow(sender)
+
+    refreshTimer?.invalidate()
+    refreshTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { timer in
+      DispatchQueue.main.async { [self] in
+        syncLogs()
+      }
+    }
+  }
+
+  func windowWillClose(_ notification: Notification) {
+    Logger.log.verbose("Log window will close")
+    refreshTimer?.invalidate()
   }
 
   fileprivate static func indicatorIcon(withColor color: NSColor) -> NSImage {
@@ -80,14 +97,15 @@ class LogWindowController: WindowController, NSMenuDelegate {
   // MARK: - NSMenuDelegate
 
   func menuNeedsUpdate(_ menu: NSMenu) {
+    let subSystemNames = Logger.getSubsystems().map{ $0.rawValue }
+
     // The first menu item is "All"
-    let offset = 1
-    Logger.$subsystems.withLock() { subsystems in
-      for (index, subsystem) in subsystems.enumerated() {
-        guard !subsystem.added else { continue }
-        subsystem.added = true
-        menu.insertItem(withTitle: subsystem.rawValue, action: nil, keyEquivalent: "", at: index + offset)
-      }
+    guard let menuItemAll = menu.item(at: 0) else { fatalError("Missing menu item for 'All' in Log window!") }
+    menu.removeAllItems()
+    menu.addItem(menuItemAll)
+
+    for subSystemName in subSystemNames {
+      menu.addItem(withTitle: subSystemName, action: nil, keyEquivalent: "")
     }
   }
 
@@ -127,25 +145,23 @@ class LogWindowController: WindowController, NSMenuDelegate {
 
   // MARK: - Logs
 
+  @MainActor
   @objc func syncLogs() {
     guard isWindowLoaded else { return }
-    Logger.$logs.withLock() { logs in
-      guard !logs.isEmpty else { return }
-      var scroll = false
-      let range = logTableView.rows(in: logTableView.visibleRect)
-      if range.location + range.length >= self.logs.count {
-        scroll = true
-      }
+    let logs = Logger.popNewestLinesForLogWindow()
+    guard !logs.isEmpty else { return }
+    var scroll = false
+    let range = logTableView.rows(in: logTableView.visibleRect)
+    if range.location + range.length >= self.logs.count {
+      scroll = true
+    }
 
-      self.logs.append(contentsOf: logs)
-      logs.removeAll()
-      if scroll {
-        // macOS couldn't calculate the frame size correctly when the row height is variable and
-        // is not rendered. After the first scroll, all rows should be rendered, which makes the
-        // second frame size correct. Scroll the second time to correctly scroll to the last row.
-        logTableView.scroll(NSPoint(x: 0, y: logTableView.frame.size.height))
-        logTableView.scroll(NSPoint(x: 0, y: logTableView.frame.size.height))
-      }
+    if scroll {
+      // macOS couldn't calculate the frame size correctly when the row height is variable and
+      // is not rendered. After the first scroll, all rows should be rendered, which makes the
+      // second frame size correct. Scroll the second time to correctly scroll to the last row.
+      logTableView.scroll(NSPoint(x: 0, y: logTableView.frame.size.height))
+      logTableView.scroll(NSPoint(x: 0, y: logTableView.frame.size.height))
     }
   }
 }

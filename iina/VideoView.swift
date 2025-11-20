@@ -24,7 +24,7 @@ class VideoView: NSView {
   unowned var player: PlayerCore!
   var link: CVDisplayLink?
 
-  var log: Logger.Subsystem {
+  var log: any Logger.Subsystem {
     return player.log
   }
 
@@ -49,7 +49,7 @@ class VideoView: NSView {
   
   let displayIdleTimer = TimeoutTimer(timeout: Constants.TimeInterval.displayIdleTimeout)
 
-  private let logHDR: Logger.Subsystem
+  private let logHDR: any Logger.Subsystem
 
   static let SRGB = CGColorSpaceCreateDeviceRGB()
 
@@ -274,7 +274,7 @@ class VideoView: NSView {
   func setICCProfile() {
     guard let glLayer else {
       // TODO: is this relevant for Metal layer?
-      logHDR.verbose { "Skipping ICC profile: no OpenGL layer" }
+      logHDR.verbose("Skipping ICC profile: no OpenGL layer")
       return
     }
     let screenColorSpace = player.pwc.window?.screen?.colorSpace
@@ -282,7 +282,7 @@ class VideoView: NSView {
       logHDR.verbose("Not using ICC profile due to user preference")
     } else if let screenColorSpace {
       let name = screenColorSpace.localizedName ?? "unnamed"
-      logHDR.verbose{"Using the ICC profile of the color space \(name.quoted)"}
+      logHDR.verbose("Using the ICC profile of the color space \(name.quoted)")
       // This MUST be locked via openGLContext
 
       guard lockAndSetOpenGLContext() else { return }
@@ -301,7 +301,7 @@ class VideoView: NSView {
     let sdrColorSpace = screenColorSpace?.cgColorSpace ?? VideoView.SRGB
     if glLayer.colorspace != sdrColorSpace {
       let name = sdrColorSpace.name as? String ?? screenColorSpace?.localizedName ?? "Unspecified"
-      logHDR.verbose{"Setting layer color space to \(name.quoted)"}
+      logHDR.verbose("Setting layer color space to \(name.quoted)")
       glLayer.colorspace = sdrColorSpace
       glLayer.wantsExtendedDynamicRangeContent = false
     }
@@ -350,12 +350,12 @@ class VideoView: NSView {
       }
 
       guard let primaries = mpv.getString(MPVProperty.videoParamsPrimaries), let gamma = mpv.getString(MPVProperty.videoParamsGamma) else {
-        logHDR.debug{"Video gamma and primaries not available"}
+        logHDR.debug("Video gamma and primaries not available")
         return doAfter(false)
       }
 
       let peak = mpv.getDouble(MPVProperty.videoParamsSigPeak)
-      logHDR.debug{"Video gamma=\(gamma), primaries=\(primaries), sig_peak=\(peak)"}
+      logHDR.debug("Video gamma=\(gamma), primaries=\(primaries), sig_peak=\(peak)")
 
       // HDR videos use a Hybrid Log Gamma (HLG) or a Perceptual Quantization (PQ) transfer function.
       guard gamma == "hlg" || gamma == "pq" else {
@@ -385,7 +385,7 @@ class VideoView: NSView {
         return doAfter(false)
 
       default:
-        logHDR.warn{"Unsupported color space: gamma=\(gamma) primaries=\(primaries)"}
+        logHDR.warn("Unsupported color space: gamma=\(gamma) primaries=\(primaries)")
         return doAfter(false)
       }
 
@@ -393,7 +393,7 @@ class VideoView: NSView {
         guard let window = player.pwc.window else { return }
         let maxRangeEDR = window.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0
         guard maxRangeEDR > 1.0 else {
-          logHDR.debug{"HDR video was found but the display does not support EDR mode (maxEDR=\(maxRangeEDR))"}
+          logHDR.debug("HDR video was found but the display does not support EDR mode (maxEDR=\(maxRangeEDR))")
           return doAfter(false)
         }
 
@@ -403,11 +403,11 @@ class VideoView: NSView {
 
         guard let glLayer else {
           // TODO: is this relevant for Metal layer?
-          logHDR.verbose { "Aborting HDR mode: no OpenGL layer" }
+          logHDR.verbose("Aborting HDR mode: no OpenGL layer")
           return doAfter(nil)
         }
 
-        logHDR.debug{"Using HDR color space instead of ICC profile (maxEDR=\(maxRangeEDR))"}
+        logHDR.debug("Using HDR color space instead of ICC profile (maxEDR=\(maxRangeEDR))")
         glLayer.wantsExtendedDynamicRangeContent = true
         glLayer.colorspace = CGColorSpace(name: name)
 

@@ -10,7 +10,7 @@ import Foundation
 
 class ViewportView: NSView {
   unowned var player: PlayerCore!
-  var log: Logger.Subsystem { player.log }
+  var log: any Logger.Subsystem { player.log }
 
   let topSpacer = SpacerView(id: "ViewportTopSpacer")
   let bottomSpacer = SpacerView(id: "ViewportBottomSpacer")

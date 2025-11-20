@@ -68,7 +68,7 @@ fileprivate struct QuadConstraint: CustomStringConvertible {
 
 
 struct ViewportConstraints {
-  let log: Logger.Subsystem
+  let log: any Logger.Subsystem
 
   let topSpacerConnection: NSLayoutConstraint
   let bottomSpacerConnection: NSLayoutConstraint

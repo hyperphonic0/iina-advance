@@ -50,6 +50,7 @@ fileprivate let touchBarItemBinding: [NSTouchBarItem.Identifier: (NSImage.Name, 
   .fastForward: (NSImage.touchBarFastForwardTemplateName, 1, NSLocalizedString("touchbar.fast_forward", comment: "Fast Forward"))
 ]
 
+@MainActor
 class TouchBarSupport: NSObject, NSTouchBarDelegate {
 
   private var player: PlayerCore

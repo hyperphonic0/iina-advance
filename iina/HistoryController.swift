@@ -24,7 +24,7 @@ class HistoryController {
 
   let plistURL: URL
 
-  let log = Logger.Subsystem(rawValue: "history")
+  let log = Logger.makeSubsystem("history")
   let folderMonitor = FolderMonitor(url: Utility.watchLaterURL)
 
   private(set) var cachedRecentDocumentURLs: [URL]

@@ -142,10 +142,12 @@ extension PlayerCore {
           break
         case .clearUndoStack:
           log.debug("[Playlist] Clearing undo stack for playlist after 'insert'")
-          undoHelper.clearUndoes()
-        case .registerUndoRedo:
-          let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
           DispatchQueue.main.async { [self] in
+            undoHelper.clearUndoes()
+          }
+        case .registerUndoRedo:
+          DispatchQueue.main.async { [self] in
+            let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
             undoHelper.register(actionName, undo: { [self] in
               mpv.queue.async { [self] in
                 guard validateItemsAreEqual(displayedPlaylist, allItemsNew) else {
@@ -241,8 +243,10 @@ extension PlayerCore {
       case .ignoreUndoRedo:
         break
       case .clearUndoStack:
-        log.debug("[Playlist] Clearing undo stack after 'move'")
-        undoHelper.clearUndoes()
+        DispatchQueue.main.async { [self] in
+          log.debug("[Playlist] Clearing undo stack after 'move'")
+          undoHelper.clearUndoes()
+        }
       case .registerUndoRedo:
         DispatchQueue.main.async { [self] in
           undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
@@ -405,8 +409,10 @@ extension PlayerCore {
       case .ignoreUndoRedo:
         break
       case .clearUndoStack:
-        log.debug("[Playlist] Clearing undo stack after 'remove'")
-        undoHelper.clearUndoes()
+        DispatchQueue.main.async { [self] in
+          log.debug("[Playlist] Clearing undo stack after 'remove'")
+          undoHelper.clearUndoes()
+        }
       case .registerUndoRedo:
         DispatchQueue.main.async { [self] in  // Must reference UndoManager only in main(?)
           undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
@@ -485,10 +491,12 @@ extension PlayerCore {
       case .ignoreUndoRedo:
         break
       case .clearUndoStack:
-        log.debug("[Playlist] Clearing undo stack after 'remove'")
-        undoHelper.clearUndoes()
+        DispatchQueue.main.async { [self] in
+          log.debug("[Playlist] Clearing undo stack after 'remove'")
+          undoHelper.clearUndoes()
+        }
       case .registerUndoRedo:
-        DispatchQueue.main.async { [self] in  // Must reference UndoManager only in main(?)
+        DispatchQueue.main.async { [self] in
           undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
             mpv.queue.async { [self] in
               playlistReorder(newPlaylist: oldPlaylistRows, .ignoreUndoRedo)
@@ -561,8 +569,10 @@ extension PlayerCore {
       log.verbose("[Playlist] Sending 'playlist-clear' cmd to mpv")
       mpv.command(.playlistClear, checkError: false)
       _reloadPlaylist()
-      log.verbose("[Playlist] Clearing undo stack after 'playlist-clear' cmd")
-      undoHelper.clearUndoes()
+      DispatchQueue.main.async { [self] in
+        log.verbose("[Playlist] Clearing undo stack after 'playlist-clear' cmd")
+        undoHelper.clearUndoes()
+      }
     }
   }
 
@@ -634,9 +644,11 @@ extension PlayerCore {
   }
 
   private func playlistErrorDidOccur() {
-    undoHelper.clearUndoes()
-    _reloadPlaylist(savePlayerState: false)
-    // TODO: beep
+    DispatchQueue.main.async { [self] in
+      undoHelper.clearUndoes()
+      reloadPlaylist(savePlayerState: false)
+      // TODO: beep
+    }
   }
 
 }

@@ -47,7 +47,7 @@ class MPVLogScanner {
   private unowned let player: PlayerCore
 
   /// Only used for messages coming directly from the mpv log event stream
-  let mpvLogSubsystem: Logger.Subsystem
+  let mpvLogSubsystem: any Logger.Subsystem
 
   var mpvEventLogLevel: MPVLogLevel = .warn
 
@@ -62,9 +62,9 @@ class MPVLogScanner {
     let logLevelInt = Preference.integer(for: .mpvEventLogLevel)
     if let mpvLogLevel = MPVLogLevel(rawValue: logLevelInt) {
       mpvEventLogLevel = mpvLogLevel
-      mpvLogSubsystem.debug{"Will log mpv events in IINA log with level: \(mpvEventLogLevel)"}
+      mpvLogSubsystem.debug("Will log mpv events in IINA log with level: \(mpvEventLogLevel)")
     } else {
-      mpvLogSubsystem.error{"Invalid value for pref \(Preference.Key.mpvEventLogLevel.rawValue.quoted): \(logLevelInt). Will default to `warn` for mpv events in IINA log"}
+      mpvLogSubsystem.error("Invalid value for pref \(Preference.Key.mpvEventLogLevel.rawValue.quoted): \(logLevelInt). Will default to `warn` for mpv events in IINA log")
       mpvEventLogLevel = .warn
     }
   }

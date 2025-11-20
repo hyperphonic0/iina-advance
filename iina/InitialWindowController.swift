@@ -53,8 +53,10 @@ fileprivate class GrayHighlightRowView: NSTableRowView {
 // MARK: Cursor
 
 // TODO: make global
+@MainActor
 fileprivate var customCursor: NSCursor? = nil
 
+@MainActor
 fileprivate func setCustomCursor(to newCursor: NSCursor?) {
   assert(DispatchQueue.isExecutingIn(.main))
 

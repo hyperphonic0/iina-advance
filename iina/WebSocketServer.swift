@@ -27,9 +27,9 @@ class WebSocketServer {
   var timer: Timer?
 
   lazy var serverQueue = DispatchQueue(label: "com.iina_advance.WebSocketServer.\(self.label)")
-  let subsystem: Logger.Subsystem
+  let subsystem: any Logger.Subsystem
 
-  init?(port: UInt16, label: String, logger: Logger.Subsystem? = nil) {
+  init?(port: UInt16, label: String, logger: (any Logger.Subsystem)? = nil) {
     self.label = label
     self.subsystem = logger ?? Logger.makeSubsystem("ws-server")
     // TODO: Support TLS

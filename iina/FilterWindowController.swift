@@ -568,19 +568,20 @@ class NewFilterSheetViewController: NSViewController, NSTableViewDelegate, NSTab
     filterWindow.window!.endSheet(filterWindow.newFilterSheet, returnCode: .OK)
     guard let preset = currentPreset else { return }
     // create instance
-    let instance = FilterPresetInstance(from: preset)
+    var params: [String: FilterParameterValue] = [:]
     for (name, control) in currentBindings {
       switch preset.params[name]!.type {
       case .text:
-        instance.params[name] = FilterParameterValue(string: control.stringValue)
+        params[name] = FilterParameterValue(string: control.stringValue)
       case .int:
-        instance.params[name] = FilterParameterValue(int: Int(control.intValue))
+        params[name] = FilterParameterValue(int: Int(control.intValue))
       case .float:
-        instance.params[name] = FilterParameterValue(float: control.floatValue)
+        params[name] = FilterParameterValue(float: control.floatValue)
       case .choose:
-        instance.params[name] = FilterParameterValue(string: preset.params[name]!.choices[Int(control.intValue)])
+        params[name] = FilterParameterValue(string: preset.params[name]!.choices[Int(control.intValue)])
       }
     }
+    let instance = FilterPresetInstance(from: preset, params: params)
     // create filter
     if filterWindow.addFilter(preset.transformer(instance)) {
       PlayerCore.lastActive?.sendOSD(.addFilter(preset.localizedName))

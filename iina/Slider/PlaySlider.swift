@@ -104,7 +104,7 @@ final class PlaySlider: ScrollableSlider {
 
     guard let hoverIndicator else {
       // Probably init is done yet. If so, it should be soon enough to ignore for now
-      pwc.player.log.verbose{"PlaySlider.showHoverIndicator: hoverIndicator is nil, ignoring"}
+      pwc.player.log.verbose("PlaySlider.showHoverIndicator: hoverIndicator is nil, ignoring")
       return
     }
 

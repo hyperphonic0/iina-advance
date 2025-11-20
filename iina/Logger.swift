@@ -28,7 +28,8 @@ class Logger: NSObject {
       return lhs.rawValue < rhs.rawValue
     }
 
-    static var preferred: Level = .error
+    /// Don't really care about race conditions here; would rather have faster performance
+    nonisolated(unsafe) static var preferred: Level = .error
 
     case trace = -1
     case verbose
@@ -49,83 +50,74 @@ class Logger: NSObject {
 
   // MARK: Vars & More!
 
-  static var isTraceEnabled: Bool {
-    return Logger.isEnabled(.trace)
-  }
-  static var isVerboseEnabled: Bool {
-    return Logger.isEnabled(.verbose)
-  }
-  static var isDebugEnabled: Bool {
-    return Logger.isEnabled(.debug)
-  }
-  static var isErrorEnabled: Bool {
-    return Logger.isEnabled(.error)
-  }
+  static let general = Logger.makeSubsystem("iina")
+  static let input = Logger.makeSubsystem("input")
+  static let restore = Logger.makeSubsystem("restore")
+  private static let loggerSubsystem = Logger.makeSubsystem("logger")
 
-  fileprivate static let sessionDirName: String = {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd-HH-mm-ss"
-    let timeString  = formatter.string(from: Date())
-    let launchID = UIState.shared.currentLaunchID
-    return "\(timeString)_L\(launchID)"
-  }()
+  /// `playerID` → `Subsystem`
+  nonisolated(unsafe) fileprivate static var playerLogs: [String: any Subsystem] = [:]
+
+  /// Default Logger subsystem
+  static let log = Logger.general
 
   /// If true, strings which are indicated to contain personally identifiable information (PII) are replaced with a
   /// unique PII token (see `piiFormat` below) when they are logged to iina.log.
-  static var enablePiiMasking: Bool = {
-    return Preference.bool(for: .enablePiiMaskingInLog)
-  }()
+  static let enablePiiMasking: Bool = Preference.bool(for: .enablePiiMaskingInLog)
 
   /// Is ignored unless `Preference.enablePiiMaskingInLog` is true. If `writeUnmaskedPiiToFile` is true, each PII token and its value is written to
   /// a separate file which can be used to look up the PII tokens from the log; if it is false, then the values are not logged.
   static let writeUnmaskedPiiToFile = true
 
-  static let stdoutLogLevel = Level(rawValue: Preference.integer(for: .stdoutLogLevel).clamped(to: Level.trace.rawValue...Level.error.rawValue))!
-
-  // Try to prevent false positives duing search & replace by not allowing matches which are too short to
-  // be meaningful
-  static let minMatchLength = 4
+  /// Try to prevent false positives during search & replace of PII, by not allowing matches which are too short to
+  /// be meaningful.
+  fileprivate static let minMatchLength = 4
 
   fileprivate static let piiFormat: String = "{pii%@}"
   fileprivate static let piiFileVersion: Int = 0
   fileprivate static let piiFirstLineFormat = "# IINA_PII \(piiFileVersion) \(sessionDirName)\n"
 
-  /// `playerID` → `Subsystem`
-  fileprivate static var playerLogs: [String: Subsystem] = [:]
+  /// This should be accessed only while locked via `fsLock`.
+  nonisolated(unsafe) fileprivate static var piiDict: [String: Int] = [:]
 
-  static func subsystem(forPlayerID playerID: String) -> Subsystem {
-    lock.withLock {
+  /// Must coordinate writing & closing of log files to avoid simultaneous writing, & writing to a closed file handle.
+  private static let fsLock = Lock()
+
+  private static let structuresLock = Lock()
+  nonisolated(unsafe) private static var logsForLogWindow: [Logger.Log] = []
+  nonisolated(unsafe) private static var subsystems: [any Subsystem] = []
+
+  static func subsystem(forPlayerID playerID: String) -> any Subsystem {
+    structuresLock.withLock {
       if let subsystem = playerLogs[playerID] {
         return subsystem
       }
-      let subsystem = Logger.Subsystem(rawValue: String(format: Constants.String.iinaPlayerCategoryFmt, playerID))
+      let subsystem = SimpleSubsystem(rawValue: String(format: Constants.String.iinaPlayerCategoryFmt, playerID))
 
       playerLogs[playerID] = subsystem
       return subsystem
     }
   }
 
-  /// Default log
-  static let log = Subsystem.general
-
-  @Atomic static var logs: [Logger.Log] = []
-
-  private static let loggerSubsystem = Logger.makeSubsystem("logger")
-  @Atomic static var subsystems: [Subsystem] = [.general, .input, .restore]
-
-  fileprivate static var piiDict: [String: Int] = [:]
-
-  // Must coordinate closing of the log file to avoid writing to a closed file handle.
-  private static let lock = Lock()
-
   /// Global flag for all logs.
   ///
   /// If running in DEBUG mode, this flag is ignored, and logging is always enabled.
   /// If not running in DEBUG, and this flag is `false`, then all logging is disabled.
-  static private(set) var enabled: Bool = false
+  /// Don't really care about race conditions here; would rather have faster performance.
+  static nonisolated(unsafe) private(set) var enabled: Bool = false
 
   /// Updates global enablement flag
   static func updateEnablement() {
+    structuresLock.withLock {
+      _updateEnablement()
+    }
+
+    // In case this was previously disabled, mask library URL in subsequent logging
+    _ = getOrCreatePII(for: libraryDirectory.path)
+  }
+
+  /// Unlocked version.
+  private static func _updateEnablement() {
     let isInteractiveLaunch = AppDelegate.isInteractiveLaunch
     if !isInteractiveLaunch && !Preference.bool(for: .logNonInteractiveLaunches) {
       Logger.log("Logging disabled for non-interactive launch")
@@ -146,18 +138,19 @@ class Logger: NSObject {
       Logger.log("Log level updated to \(newLogLevel)")
     }
     Level.preferred = newLogLevel
-
-    // In case this is called at launch, mask library URL in subsequent logging
-    _ = getOrCreatePII(for: libraryDirectory.path)
   }
 
   static func isEnabled(_ level: Logger.Level) -> Bool {
-#if !DEBUG
-    guard enabled else { return false }
-#endif
-
-    return Logger.Level.preferred <= level
+    enabled && (Logger.Level.preferred <= level)
   }
+
+  static var isTraceEnabled: Bool   { Logger.isEnabled(.trace) }
+  static var isVerboseEnabled: Bool {  Logger.isEnabled(.verbose) }
+  static var isDebugEnabled: Bool   { Logger.isEnabled(.debug) }
+  static var isWarningEnabled: Bool   { Logger.isEnabled(.warning) }
+  static var isErrorEnabled: Bool   { Logger.isEnabled(.error) }
+
+  static let stdoutLogLevel = Level(rawValue: Preference.integer(for: .stdoutLogLevel).clamped(to: Level.trace.rawValue...Level.error.rawValue))!
 
   private static let dateFormatter: DateFormatter = {
     let formatter = DateFormatter()
@@ -166,7 +159,12 @@ class Logger: NSObject {
   }()
 
   static func initLogging() {
-    updateEnablement()
+    // Call unlocked version. This should be called at app start, on the main thread, and we haven't done any logging yet, so it should be safe.
+    // Moreover we are avoiding a deadlock as all the nestled static stuff gets triggered to initialize.
+    _updateEnablement()
+
+    // In case this was previously disabled, mask library URL in subsequent logging
+    _ = getOrCreatePII(for: libraryDirectory.path)
   }
 
   // MARK: - Log Class
@@ -186,108 +184,128 @@ class Logger: NSObject {
       self.logString = logString
     }
 
-    override var description: String {
-      return logString
-    }
+    override var description: String { logString }
   }
 
   // MARK: - Subsystem
 
   // TODO: this is kludgey! Investigate using a thread local var when time permits
-  class DecoratedSubsystem: Subsystem {
+  struct DecoratedSubsystem: Subsystem {
+    typealias RawValue = String
+    var rawValue: String { originalSS.rawValue }
+
     let preamble: String
+    let originalSS: any Subsystem
 
-    init(original: Subsystem, preamble: String) {
+    var isTraceEnabled: Bool { Logger.isTraceEnabled }
+    var isVerboseEnabled: Bool { Logger.isVerboseEnabled }
+    var isDebugEnabled: Bool { Logger.isDebugEnabled}
+    var isErrorEnabled: Bool { Logger.isErrorEnabled }
+
+    /// Do not use this. Use the constructor which includes preamble
+    init?(rawValue: String) {
+      Logger.loggerSubsystem.fatalError("init(rawValue:) has not been implemented")
+    }
+
+    init(original: any Subsystem, preamble: String) {
       self.preamble = preamble
-      super.init(rawValue: original.rawValue)
-    }
-
-    required init(rawValue: String) {
-      self.preamble = ""
-      super.init(rawValue: rawValue)
-    }
-
-    override func trace(_ rawMessage: @autoclosure () -> String) {
-      guard isTraceEnabled else { return }
-      Logger.log("\(preamble) \(rawMessage())", level: .trace, subsystem: self)
-    }
-
-    override func verbose(_ rawMessage: @autoclosure () -> String) {
-      Logger.log("\(preamble) \(rawMessage())", level: .verbose, subsystem: self)
-    }
-
-    override func debug(_ rawMessage: @autoclosure () -> String) {
-      Logger.log("\(preamble) \(rawMessage())", level: .debug, subsystem: self)
-    }
-
-    override func warn(_ rawMessage: @autoclosure () -> String) {
-      Logger.log("\(preamble) \(rawMessage())", level: .warning, subsystem: self)
-    }
-
-    override func error(_ rawMessage: @autoclosure () -> String) {
-      Logger.log("\(preamble) \(rawMessage())", level: .error, subsystem: self)
-    }
-
-    override func fatalError(_ rawMessage: @autoclosure () -> String) -> Never {
-      Logger.fatal("\(preamble) \(rawMessage())")
-    }
-
-    override func log(_ rawMessage: @autoclosure () -> String, level: Level = .debug) {
-      Logger.log("\(preamble) \(rawMessage())", level: level, subsystem: self)
-    }
-
-  }
-
-  class Subsystem: RawRepresentable {
-    let rawValue: String
-    var added = false
-
-    static let general = Subsystem(rawValue: "iina")
-    static let input = Logger.Subsystem(rawValue: "input")
-    static let restore = Logger.Subsystem(rawValue: "restore")
-
-    var isTraceEnabled: Bool {
-      return Logger.isTraceEnabled
-    }
-
-    var isVerboseEnabled: Bool {
-      return Logger.isVerboseEnabled
-    }
-
-    var isDebugEnabled: Bool {
-      return Logger.isDebugEnabled
-    }
-
-    var isErrorEnabled: Bool {
-      return Logger.isErrorEnabled
-    }
-
-    required init(rawValue: String) {
-      self.rawValue = rawValue
-    }
-
-    func withPreamble(_ preamble: String) -> Subsystem {
-      return DecoratedSubsystem(original: self, preamble: preamble)
+      originalSS = original
     }
 
     func trace(_ rawMessage: @autoclosure () -> String) {
-      guard isTraceEnabled else { return }
+      guard Logger.isTraceEnabled else { return }
+      originalSS.log("\(preamble) \(rawMessage())", level: .trace)
+    }
+
+    func verbose(_ rawMessage: @autoclosure () -> String) {
+      guard Logger.isVerboseEnabled else { return }
+      originalSS.log("\(preamble) \(rawMessage())", level: .verbose)
+    }
+
+    func debug(_ rawMessage: @autoclosure () -> String) {
+      guard Logger.isDebugEnabled else { return }
+      originalSS.log("\(preamble) \(rawMessage())", level: .debug)
+    }
+
+    func warn(_ rawMessage: @autoclosure () -> String) {
+      guard Logger.isWarningEnabled else { return }
+      originalSS.log("\(preamble) \(rawMessage())", level: .warning)
+    }
+
+    func error(_ rawMessage: @autoclosure () -> String) {
+      guard Logger.isErrorEnabled else { return }
+      originalSS.log("\(preamble) \(rawMessage())", level: .error)
+    }
+
+    func fatalError(_ rawMessage: @autoclosure () -> String) -> Never {
+      originalSS.fatalError("\(preamble) \(rawMessage())")
+    }
+
+    func log(_ rawMessage: @autoclosure () -> String, level: Level = .debug) {
+      guard Logger.isEnabled(level) else { return }
+      originalSS.log("\(preamble) \(rawMessage())", level: level)
+    }
+
+    func errorDebugAlert(_ rawMessage: @autoclosure () -> String) {
+      guard Logger.isErrorEnabled else { return }
+      originalSS.errorDebugAlert("\(preamble) \(rawMessage())")
+    }
+  }
+
+  protocol Subsystem: RawRepresentable<String>, Sendable {
+    var isTraceEnabled: Bool { get }
+    var isVerboseEnabled: Bool { get }
+    var isDebugEnabled: Bool { get }
+    var isErrorEnabled: Bool { get }
+
+    func trace(_ rawMessage: @autoclosure () -> String)
+    func verbose(_ rawMessage: @autoclosure () -> String)
+    func debug(_ rawMessage: @autoclosure () -> String)
+    func warn(_ rawMessage: @autoclosure () -> String)
+    func error(_ rawMessage: @autoclosure () -> String)
+    func fatalError(_ rawMessage: @autoclosure () -> String) -> Never
+    func log(_ rawMessage: @autoclosure () -> String, level: Level)
+    func errorDebugAlert(_ msg: @autoclosure () -> String)
+
+    // MARK: - Closure arg variants (DEPRECATED!)
+    func trace(_ msgFunc: () -> String)
+
+  }  // end protocol Subsystem
+
+  struct SimpleSubsystem: Subsystem {
+    let rawValue: String
+
+    var isTraceEnabled: Bool { Logger.isTraceEnabled }
+    var isVerboseEnabled: Bool { Logger.isVerboseEnabled }
+    var isDebugEnabled: Bool { Logger.isDebugEnabled}
+    var isErrorEnabled: Bool { Logger.isErrorEnabled }
+
+    init(rawValue: String) {
+      self.rawValue = rawValue
+    }
+
+    func trace(_ rawMessage: @autoclosure () -> String) {
+      guard Logger.isTraceEnabled else { return }
       Logger.log(rawMessage(), level: .trace, subsystem: self)
     }
 
     func verbose(_ rawMessage: @autoclosure () -> String) {
+      guard Logger.isVerboseEnabled else { return }
       Logger.log(rawMessage(), level: .verbose, subsystem: self)
     }
 
     func debug(_ rawMessage: @autoclosure () -> String) {
+      guard Logger.isDebugEnabled else { return }
       Logger.log(rawMessage(), level: .debug, subsystem: self)
     }
 
     func warn(_ rawMessage: @autoclosure () -> String) {
+      guard Logger.isWarningEnabled else { return }
       Logger.log(rawMessage(), level: .warning, subsystem: self)
     }
 
     func error(_ rawMessage: @autoclosure () -> String) {
+      guard Logger.isErrorEnabled else { return }
       Logger.log(rawMessage(), level: .error, subsystem: self)
     }
 
@@ -296,16 +314,16 @@ class Logger: NSObject {
     }
 
     func log(_ rawMessage: @autoclosure () -> String, level: Level = .debug) {
+      guard Logger.isEnabled(level) else { return }
       Logger.log(rawMessage(), level: level, subsystem: self)
     }
 
     // MARK: - Log Functions
 
     func errorDebugAlert(_ msg: @autoclosure () -> String) {
-      guard Logger.enabled else { return }
+      guard Logger.isErrorEnabled else { return }
       let rawMessage = msg()
 #if DEBUG
-
       DispatchQueue.main.async {
         Utility.showAlert(rawMessage, style: .critical, logAlert: false)
       }
@@ -313,69 +331,39 @@ class Logger: NSObject {
       Logger.log(rawMessage, level: .error, subsystem: self)
     }
 
-
-    // MARK: - Closure arg variants (DEPRECATED!)
-    typealias LogMsgFunc = () -> String
-
-    func trace(_ msgFunc: LogMsgFunc) {
-      guard Logger.isTraceEnabled else { return }
-      Logger.log(msgFunc(), level: .trace, subsystem: self)
-    }
-
-    func verbose(_ msgFunc: LogMsgFunc) {
-      guard Logger.isVerboseEnabled else { return }
-      Logger.log(msgFunc(), level: .verbose, subsystem: self)
-    }
-
-    func debug(_ msgFunc: LogMsgFunc) {
-      guard Logger.isDebugEnabled else { return }
-      Logger.log(msgFunc(), level: .debug, subsystem: self)
-    }
-
-    func warn(_ msgFunc: LogMsgFunc) {
-      guard Logger.enabled else { return }
-      Logger.log(msgFunc(), level: .warning, subsystem: self)
-    }
-
-    func error(_ msgFunc: LogMsgFunc) {
-      guard Logger.enabled else { return }
-      Logger.log(msgFunc(), level: .error, subsystem: self)
-    }
-
-    func errorDebugAlert(_ msgFunc: LogMsgFunc) {
-      guard Logger.enabled else { return }
-      let msg = msgFunc()
-#if DEBUG
-      DispatchQueue.main.async {
-        Utility.showAlert(msg, style: .critical, logAlert: false)
-      }
-#endif
-      Logger.log(msg, level: .error, subsystem: self)
-    }
-
   }  // end class Subsystem
 
-  static func makeSubsystem(_ player: PlayerCore, fmt: String) -> Subsystem {
+  static func makeSubsystem(_ player: PlayerCore, fmt: String) -> any Subsystem {
     return makeSubsystem(String(format: fmt, player.label))
   }
 
-  static func makeSubsystem(_ rawValue: String) -> Subsystem {
-    $subsystems.withLock() { subsystems in
+  static func makeSubsystem(_ rawValue: String) -> any Subsystem {
+    structuresLock.withLock {
       for (index, subsystem) in subsystems.enumerated() {
         // The first subsystem will always be "iina"
         if index == 0 { continue }
         if rawValue < subsystem.rawValue {
-          let newSubsystem = Subsystem(rawValue: rawValue)
+          let newSubsystem = SimpleSubsystem(rawValue: rawValue)
           subsystems.insert(newSubsystem, at: index)
           return newSubsystem
         } else if rawValue == subsystem.rawValue {
           return subsystem
         }
       }
-      let newSubsystem = Subsystem(rawValue: rawValue)
+      let newSubsystem = SimpleSubsystem(rawValue: rawValue)
       subsystems.append(newSubsystem)
       return newSubsystem
     }
+  }
+
+  static func getSubsystems() -> [any Subsystem] {
+    structuresLock.withLock {
+      subsystems
+    }
+  }
+
+  static func addPreamble(_ preamble: String, toSubsystem subsystem: any Subsystem) -> any Subsystem {
+    return DecoratedSubsystem(original: subsystem, preamble: preamble)
   }
 
   // MARK: - PII Masking
@@ -386,7 +374,7 @@ class Logger: NSObject {
     }
 
     var piiToken: String = ""
-    lock.withLock {
+    fsLock.withLock {
       if let piiID = piiDict[privateString] {
         // Reoccurrence
         piiToken = formatPIIToken(piiID)
@@ -426,7 +414,7 @@ class Logger: NSObject {
     guard enablePiiMasking else { return rawMessage }
 
     var maskedMessage: String = rawMessage
-    lock.withLock {
+    fsLock.withLock {
       for (piiString, piiID) in piiDict {
         maskedMessage = maskedMessage.replacingOccurrences(of: piiString, with: formatPIIToken(piiID))
       }
@@ -435,6 +423,14 @@ class Logger: NSObject {
   }
 
   // MARK: - File System
+
+  fileprivate static let sessionDirName: String = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd-HH-mm-ss"
+    let timeString  = formatter.string(from: Date())
+    let launchID = UIState.shared.currentLaunchID
+    return "\(timeString)_L\(launchID)"
+  }()
 
   static let libraryDirectory: URL = {
     let libraryURLs = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
@@ -445,7 +441,6 @@ class Logger: NSObject {
   }()
 
   static let logDirectory: URL = {
-    // get path
     let logsUrl = libraryDirectory.appendingPathComponent("Logs", isDirectory: true)
     let bundleID = Bundle.main.bundleIdentifier!
     let appLogsUrl = logsUrl.appendingPathComponent(bundleID, isDirectory: true)
@@ -465,7 +460,7 @@ class Logger: NSObject {
   // File for personally identifiable information lookup
   private static let piiFile: URL = logDirectory.appendingPathComponent("pii.txt")
 
-  private static var logFileHandle: FileHandle? = {
+  nonisolated(unsafe) private static var logFileHandle: FileHandle? = {
     FileManager.default.createFile(atPath: logFile.path, contents: nil, attributes: nil)
     do {
       return try FileHandle(forWritingTo: logFile)
@@ -474,7 +469,7 @@ class Logger: NSObject {
     }
   }()
 
-  private static var piiFileHandle: FileHandle? = {
+  nonisolated(unsafe) private static var piiFileHandle: FileHandle? = {
     FileManager.default.createFile(atPath: piiFile.path, contents: nil, attributes: nil)
     do {
       return try FileHandle(forWritingTo: piiFile)
@@ -491,7 +486,7 @@ class Logger: NSObject {
   static func closeLogFiles() {
     guard enabled else { return }
     // Lock to avoid closing the log file while another thread is writing to it.
-    lock.withLock {
+    fsLock.withLock {
       close(logFile, logFileHandle)
       /// Do not access `piiFileHandle` unless needed - will throw unnecessary error on app exit if log dir was deleted after launch
       /// (`logFileHandle` will not throw error becasue it was already opened?)
@@ -548,7 +543,7 @@ class Logger: NSObject {
 
   // MARK: - Message Formatting
 
-  private static func formatMessage(_ message: String, _ level: Level, _ subsystem: Subsystem,
+  private static func formatMessage(_ message: String, _ level: Level, _ subsystem: any Subsystem,
                                     _ appendNewlineAtTheEnd: Bool, _ date: Date = Date()) -> String {
     let time = dateFormatter.string(from: date)
     return "\(time) |\(subsystem.rawValue) \(level.description)| \(message)\(appendNewlineAtTheEnd ? "\n" : "")"
@@ -567,7 +562,7 @@ class Logger: NSObject {
   ///   - level: The log level of the message.
   ///   - subsystem: The subsystem emitting this message.
   static func log(_ message: @autoclosure () -> String, level: Level = .debug,
-                  subsystem: Subsystem = .general) {
+                  subsystem: any Subsystem = Logger.general) {
     log(message, level: level, subsystem: subsystem)
   }
 
@@ -584,7 +579,7 @@ class Logger: NSObject {
   ///   - message: A closure that when executed gives the message to log.
   ///   - level: The log level of the message.
   ///   - subsystem: The subsystem emitting this message.
-  static func log(_ message: () -> String, level: Level = .debug, subsystem: Subsystem = .general) {
+  static func log(_ message: () -> String, level: Level = .debug, subsystem: any Subsystem = Logger.general) {
     #if !DEBUG
     guard enabled else { return }
     #endif
@@ -593,18 +588,12 @@ class Logger: NSObject {
     // string to log.
     let message = maskAnyPII(message())
 
+    // Record the log line for use in the Logs window...j/
     let date = Date()
     let string = formatMessage(message, level, subsystem, true, date)
     let log = Log(subsystem: subsystem.rawValue, level: level.rawValue, message: message, date: dateFormatter.string(from: date), logString: string)
-    $logs.withLock() { logs in
-      if logs.isEmpty {
-        DispatchQueue.main.async {
-          Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { timer in
-            AppDelegate.shared.logWindow.syncLogs()
-          }
-        }
-      }
-      logs.append(log)
+    structuresLock.withLock {
+      logsForLogWindow.append(log)
     }
 
 #if DEBUG
@@ -620,10 +609,19 @@ class Logger: NSObject {
       return
     }
     // Lock to prevent the log file from being closed by another thread while writing to it.
-    lock.withLock() {
+    fsLock.withLock() {
       writeToFile(logFileHandle, data)
     }
   }
+
+  static func popNewestLinesForLogWindow() -> [Log] {
+    structuresLock.withLock {
+      let latestLogs = logsForLogWindow
+      logsForLogWindow.removeAll()
+      return latestLogs
+    }
+  }
+
 
   // MARK: - Failure
 

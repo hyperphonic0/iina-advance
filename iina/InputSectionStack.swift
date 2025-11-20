@@ -45,7 +45,7 @@ class InputSectionStack {
    */
   var sectionsEnabled = LinkedList<EnabledSectionMeta>()
 
-  var log: Logger.Subsystem { Logger.Subsystem.input }
+  var log: any Logger.Subsystem { Logger.input }
 
   init(initialEnabledSections: [InputSection]? = nil) {
     let sections: [InputSection]

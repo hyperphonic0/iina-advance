@@ -14,6 +14,7 @@ import Foundation
 /// • Provides create/remove/update/delete operations on the table, and also completely handles filtering,  but is decoupled from UI code
 ///   so that everything is cleaner.
 /// • Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
+@MainActor
 struct BindingTableState {
   static var current: BindingTableState = BindingTableState.manager.initialState()
   static let manager: BindingTableStateManager = BindingTableStateManager()

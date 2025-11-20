@@ -91,7 +91,7 @@ class UIState {
   }  /// end `class LaunchState`
 
 
-  let log = Logger.Subsystem.restore
+  let log = Logger.restore
 
   /// Each instance of IINA, when it starts, grabs the previous launch count from the prefs and increments it by 1,
   /// which becomes its launchID.
@@ -303,8 +303,8 @@ class UIState {
     return orderNamePairs.sorted(by: { (left, right) in left.0 > right.0}).map{ $0.1 }
   }
 
+  @MainActor
   func saveCurrentOpenWindowList(excludingWindowName nameToExclude: String? = nil) {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard !AppDelegate.shared.isTerminating else { return }
     guard AppDelegate.shared.isDoneLaunching else { return }
     guard UIState.shared.isSaveEnabled else { return }
@@ -325,7 +325,7 @@ class UIState {
       }
     }
 
-    log.trace{"Saving window list: open=\(openWindowNames), minimized=\(minimizedWindowNames)"}
+    log.trace("Saving window list: open=\(openWindowNames), minimized=\(minimizedWindowNames)")
     let minimizedStrings = minimizedWindowNames.map({ "\(SavedWindow.minimizedPrefix)\($0)" })
     saveOpenWindowList(windowNamesBackToFront: minimizedStrings + openWindowNames)
 
@@ -393,6 +393,7 @@ class UIState {
     }
   }
 
+  @MainActor
   func clearAllSavedLaunches(force: Bool = false) {
     guard !AppDelegate.shared.isTerminating else { return }
     guard isSaveEnabled || force else {

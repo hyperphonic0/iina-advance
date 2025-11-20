@@ -114,7 +114,7 @@ class ScrollSession {
 /// from the `notScrolling` state to the `didStepScroll` state, then keeping a `TimeoutTimer` so that the session ends when no
 /// events are received for `stepScrollSessionTimeout` seconds.
 class VirtualScrollWheel {
-  var log: Logger.Subsystem = Logger.log
+  var log: any Logger.Subsystem = Logger.log
 
   /// Contains data for the current scroll session.
   ///
@@ -220,7 +220,7 @@ class VirtualScrollWheel {
     lastSessionEndTime = Date().timeIntervalSince1970
 #if DEBUG
     if DebugConfig.enableScrollWheelDebug {
-      log.verbose{"ScrollWheel session ended"}
+      log.verbose("ScrollWheel session ended")
     }
 #endif
   }
@@ -230,7 +230,7 @@ class VirtualScrollWheel {
 
 #if DEBUG
     if DebugConfig.enableScrollWheelDebug {
-      log.verbose{"ScrollWheel phases: \(event.phase.name)/\(event.momentumPhase.name) State: \(state) → \(newState)"}
+      log.verbose("ScrollWheel phases: \(event.phase.name)/\(event.momentumPhase.name) State: \(state) → \(newState)")
     }
 #endif
 
@@ -275,13 +275,13 @@ class VirtualScrollWheel {
         let timeElapsedSinceLastSessionEnd = now - lastSessionEndTime
         if timeElapsedSinceLastSessionEnd < Constants.TimeInterval.instantConsecutiveScrollStartWindow {
           startScrolling = true
-          log.verbose{"Time elapsed since last scroll (\(timeElapsedSinceLastSessionEnd.stringTrunc3f)) < instantConsecutiveScrollStartWindow (\(timeElapsedSinceLastSessionEnd.logStr)): starting new scroll session immediately"}
+          log.verbose("Time elapsed since last scroll (\(timeElapsedSinceLastSessionEnd.stringTrunc3f)) < instantConsecutiveScrollStartWindow (\(timeElapsedSinceLastSessionEnd.logStr)): starting new scroll session immediately")
         } else {
           let timeElapsedSinceIntentStart = Date().timeIntervalSince1970 - intentStartTime
           if timeElapsedSinceIntentStart >= Constants.TimeInterval.minQualifyingScrollWheelDuration {
             if scrollSessionShouldBegin(currentSession) {
               startScrolling = true
-              log.verbose{"Time elapsed (\(timeElapsedSinceIntentStart.stringTrunc3f)) ≥ minQualifyingScrollWheelDuration (\(Constants.TimeInterval.minQualifyingScrollWheelDuration)): starting scroll session"}
+              log.verbose("Time elapsed (\(timeElapsedSinceIntentStart.stringTrunc3f)) ≥ minQualifyingScrollWheelDuration (\(Constants.TimeInterval.minQualifyingScrollWheelDuration)): starting scroll session")
             }
           }
         }
@@ -346,7 +346,7 @@ class VirtualScrollWheel {
 
   /// Executed when `scrollSessionTimer` fires.
   private func scrollSessionDidTimeOut() {
-    Logger.log.verbose{"ScrollWheel timed out: state=\(state)"}
+    Logger.log.verbose("ScrollWheel timed out: state=\(state)")
     guard isScrolling() else { return }
     endScrollSession()
   }

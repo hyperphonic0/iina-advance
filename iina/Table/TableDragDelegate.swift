@@ -46,7 +46,7 @@ class TableDragDelegate<TableItem> {
 
   private var draggedRowInfo: (Int, IndexSet)? = nil
 
-  var log: Logger.Subsystem { targetTable.log }
+  var log: any Logger.Subsystem { targetTable.log }
 
   var defaultDragOperation: NSDragOperation {
     return defaultDragOpStatic
@@ -69,7 +69,7 @@ class TableDragDelegate<TableItem> {
   /// Drag start: set session variables.
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
                        willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
-    log.verbose{"Drag session \(session.draggingSequenceNumber) starting from \(tableLoggingName) table"}
+    log.verbose("Drag session \(session.draggingSequenceNumber) starting from \(tableLoggingName) table")
     draggedRowInfo = (session.draggingSequenceNumber, rowIndexes)
     targetTable.setDraggingImageToAllColumns(session, screenPoint, rowIndexes)
   }
@@ -85,11 +85,11 @@ class TableDragDelegate<TableItem> {
 
     guard let (sequenceNumber, draggedRowIndexes) = self.draggedRowInfo,
           session.draggingSequenceNumber == sequenceNumber && itemList.count == draggedRowIndexes.count else {
-      log.error{"Cancelling drop into \(tableLoggingName) table: dragged data does not match!"}
+      log.error("Cancelling drop into \(tableLoggingName) table: dragged data does not match!")
       return
     }
     
-    log.verbose{"User dragged from \(tableLoggingName) to the trash: \(itemList)"}
+    log.verbose("User dragged from \(tableLoggingName) to the trash: \(itemList)")
     // TODO: this is the wrong animation
     NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: 50.0, height: 50.0),
                                                    completionHandler: { [self] in
@@ -147,12 +147,12 @@ class TableDragDelegate<TableItem> {
                        dropOperation: NSTableView.DropOperation) -> Bool {
     
     guard dropOperation == .above else {
-      log.error{"\(tableLoggingName) Table: expected dropOperaion==.above but got: \(dropOperation); aborting drop"}
+      log.error("\(tableLoggingName) Table: expected dropOperaion==.above but got: \(dropOperation); aborting drop")
       return false
     }
     
     let itemList = getFromPasteboard(info.draggingPasteboard)
-    log.debug{"User dropped \(itemList.count) text rows into \(tableLoggingName) table \(dropOperation == .on ? "on" : "above") rowIndex \(targetRowIndex)"}
+    log.debug("User dropped \(itemList.count) text rows into \(tableLoggingName) table \(dropOperation == .on ? "on" : "above") rowIndex \(targetRowIndex)")
     guard !itemList.isEmpty else {
       return false
     }
@@ -188,7 +188,7 @@ class TableDragDelegate<TableItem> {
       return true
     }
     
-    log.debug{"Rejecting drop into \(tableLoggingName) table: got unexpected drag mask: \(dragMask)"}
+    log.debug("Rejecting drop into \(tableLoggingName) table: got unexpected drag mask: \(dragMask)")
     return false
   }
   

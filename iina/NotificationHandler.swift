@@ -26,12 +26,12 @@ class NotificationHandler: NSObject {
   private var activeObservers: [NotificationCenter: [NSObjectProtocol]] = [:]
 
   private let observedPrefKeys: [Preference.Key]
-  private let log: Logger.Subsystem
+  private let log: any Logger.Subsystem
   var prefDidChangeCallback: PrefDidChangeCallback?
   private let legacyPrefKeyObserver: NSObject?
   private let ncObserverSpecs: [NotificationCenter: [NCObserver]]
 
-  init(_ log: Logger.Subsystem,
+  init(_ log: any Logger.Subsystem,
        prefDidChange: PrefDidChangeCallback? = nil,
        legacyPrefKeyObserver: NSObject? = nil,
        _ observedPrefKeys: [Preference.Key],

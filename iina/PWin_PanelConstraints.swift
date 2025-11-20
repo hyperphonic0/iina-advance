@@ -72,7 +72,7 @@ extension PlayerWindowController {
   func rebuildPanelConstraints(_ transition: LayoutTransition, stage: LayoutTransition.Stage) {
     let contentView = window!.contentView!
     let p = panelConstraints
-    let log = self.log.withPreamble(transition.logPreamble(for: stage))
+    let log = Logger.addPreamble(transition.logPreamble(for: stage), toSubsystem: self.log)
     let stageGeo = transition.geometry(for: stage)
 
     // Need to always have viewportView during animations (when toggling music mode with video off)
@@ -308,7 +308,7 @@ extension PlayerWindowController {
     addOrRemoveOSDViews(stageGeo)
   }
 
-  private func updateSidebarConstraints(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry, in transition: LayoutTransition, _ log: Logger.Subsystem) {
+  private func updateSidebarConstraints(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry, in transition: LayoutTransition, _ log: any Logger.Subsystem) {
     let hasSidebarAtAnyStage = transition.inputGeometry.isMusicModePlaylistShown || transition.outputGeometry.isMusicModePlaylistShown
     || transition.inputLayout.isAnySidebarVisible || transition.outputLayout.isAnySidebarVisible
 
@@ -379,7 +379,7 @@ extension PlayerWindowController {
     }
   }
 
-  private func updateWindowFrameIfNeeded(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry, in transition: LayoutTransition, _ log: Logger.Subsystem) {
+  private func updateWindowFrameIfNeeded(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry, in transition: LayoutTransition, _ log: any Logger.Subsystem) {
     let updateVP: Bool
     var category: TransitionCategory = .noTransition
     switch stage {
@@ -499,7 +499,7 @@ extension PlayerWindowController {
   // - Bottom bar
 
   private func updateBottomBarHorizontalContraints(bottomBarPlacement: Preference.PanelPlacement,
-                                                   useLeadingSidebar: Bool, useTrailingSidebar: Bool, _ log: Logger.Subsystem) {
+                                                   useLeadingSidebar: Bool, useTrailingSidebar: Bool, _ log: any Logger.Subsystem) {
     guard let window = window, let contentView = window.contentView else { return }
     let p = panelConstraints
 

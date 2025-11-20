@@ -17,7 +17,7 @@ extension PlayerWindowController {
   /// PRE TRANSITION
   /// Setup work. Always immediate (i.e., not animated).
   func doPreTransitionWork(_ transition: LayoutTransition) {
-    let log = log.withPreamble(transition.logPreamble(for: .preTransitionSetup))
+    let log = Logger.addPreamble(transition.logPreamble(for: .preTransitionSetup), toSubsystem: log)
     log.verbose("[\(transition.name)] Start")
     isAnimatingLayoutTransition = true
     // When playback is paused the display link is stopped in order to avoid wasting energy on
@@ -290,7 +290,7 @@ extension PlayerWindowController {
   /// Expected to be animated.
   func closeOldPanels(_ transition: LayoutTransition) {
     assert(!transition.isWindowInitialLayout)
-    let log = log.withPreamble(transition.logPreamble(for: .closeOldPanels))
+    let log = Logger.addPreamble(transition.logPreamble(for: .closeOldPanels), toSubsystem: log)
     let outputLayout = transition.outputLayout
     let isClosingBarOSC = transition.isClosingBarOSC
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
@@ -399,7 +399,7 @@ extension PlayerWindowController {
   /// there is not an appropriate animation which should be seen.
   func updateHiddenViewsAndConstraints(_ transition: LayoutTransition) {
     guard let window = window else { return }
-    let log = log.withPreamble(transition.logPreamble(for: .midTransitionHiddenUpdates))
+    let log = Logger.addPreamble(transition.logPreamble(for: .midTransitionHiddenUpdates), toSubsystem: log)
     let outputLayout = transition.outputLayout
     log.verbose("Start")
 
@@ -872,7 +872,7 @@ extension PlayerWindowController {
   /// OPEN PANELS & FINALIZE OFFSETS
   func openNewPanelsAndFinalizeOffsets(_ transition: LayoutTransition) {
     let outputLayout = transition.outputLayout
-    let log = log.withPreamble(transition.logPreamble(for: .openNewPanels))
+    let log = Logger.addPreamble(transition.logPreamble(for: .openNewPanels), toSubsystem: log)
     log.verbose("Start: TitleBar_H=\(outputLayout.titleBarHeight) TopOSC_H=\(outputLayout.topOSCHeight)")
 
     rebuildPanelConstraints(transition, stage: .openNewPanels)
@@ -1023,7 +1023,7 @@ extension PlayerWindowController {
   /// POST TRANSITION: UPDATE INVISIBLES
   /// Cleanup & variable state updates. Always instantaneous (not animated).
   func doPostTransitionWork(_ transition: LayoutTransition) {
-    let log = log.withPreamble(transition.logPreamble(for: .postTransition))
+    let log = Logger.addPreamble(transition.logPreamble(for: .postTransition), toSubsystem: log)
     log.verbose("Start")
 
     // Update blending mode:
@@ -1037,11 +1037,11 @@ extension PlayerWindowController {
     hideCursorTimer.restart()  // may need to re-evaluate
     fadeableViews.hideTimer.restart()  // start new fadeable countdown
 
-    log.verbose{
+    log.verbose({
       let fadeableIDs = fadeableViews.fadeables.map{$0.idString}
       let fadeablesTopBarIDs = fadeableViews.fadeablesInTopBar.map{$0.idString}
       return "FadeableViews=\(fadeableIDs) InTopBar=\(fadeablesTopBarIDs)"
-    }
+    }())
 
     guard let window else { return }
 

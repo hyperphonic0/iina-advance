@@ -16,6 +16,7 @@ fileprivate let changeSelectedConfActionName: String = "Change Active Config"
  the associated preferences, and handle undo & redo on the Conf table. `ConfTableStateManager` can be thought of as a repository
  for the Conf table, and `ConfTableState` as a single revision of its data.
  */
+@MainActor
 class ConfTableStateManager: NSObject {
   private var undoHelper = PrefKeyBindingUndoHelper()
   private var observers: [NSObjectProtocol] = []

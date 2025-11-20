@@ -57,10 +57,7 @@ class SleepPreventer: NSObject {
     activityToken = ProcessInfo.processInfo.beginActivity(options: options,
                                                           reason: "IINA playback is in progress")
 
-    Logger.log.verbose{
-      let msg = allowScreenSaver ? "Preventing system from sleeping" : "Preventing screen saver from starting"
-      return "[sleep] \(msg)"
-    }
+    Logger.log.verbose("[sleep] \(allowScreenSaver ? "Preventing system from sleeping" : "Preventing screen saver from starting")")
   }
 
   static private func allowSleep() {
@@ -68,10 +65,7 @@ class SleepPreventer: NSObject {
       Logger.log.verbose("[sleep] Skipping allowSleep; no activity token")
       return
     }
-    Logger.log.verbose{
-      let msg = allowScreenSaver ? "Allowing system to sleep when inactive" : "Allowing screen saver to start when inactive"
-      return "[sleep] \(msg)"
-    }
+    Logger.log.verbose("[sleep] \(allowScreenSaver ? "Allowing system to sleep when inactive" : "Allowing screen saver to start when inactive")")
 
     ProcessInfo.processInfo.endActivity(activityToken)
     SleepPreventer.activityToken = nil

@@ -31,7 +31,7 @@ extension GeometryTransform.ContextStage2 {
     let crop_w: Int
     let crop_h: Int
 
-    static func fromJSON(_ json: String?, _ objName: String, _ log: Logger.Subsystem) -> MpvVideoParams? {
+    static func fromJSON(_ json: String?, _ objName: String, _ log: any Logger.Subsystem) -> MpvVideoParams? {
       guard let json else {
         log.error("Failed to parse \(objName): obj is nil")
         return nil
@@ -185,7 +185,7 @@ extension GeometryTransform.ContextStage2 {
       dheight = videoOutParams.dh
     }
     guard dwidth > 0, dheight > 0 else {
-      player.log.errorDebugAlert{"[\(name)] ❌ SanityCheck-A failed: dw (\(dwidth)) or dh (\(dheight)) is 0 in \(useDSizeFromDecParams ? "video-dec-params" : "video-out-params")! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect)"}
+      player.log.errorDebugAlert("[\(name)] ❌ SanityCheck-A failed: dw (\(dwidth)) or dh (\(dheight)) is 0 in \(useDSizeFromDecParams ? "video-dec-params" : "video-out-params")! vid=\(vidTrackID) \(currentMediaAudioStatus) codecAspect=\(codecAspect)")
       return inputVideoGeo
     }
     let videoSizeDisplay: CGSize

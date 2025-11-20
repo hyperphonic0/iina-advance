@@ -202,7 +202,7 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
   }
 
   func cancelDrag() {
-    pwc?.log.verbose{"PlaySliderLoopKnob: cancelling drag"}
+    pwc?.log.verbose("PlaySliderLoopKnob: cancelling drag")
     updateKnobImage(to: .loopKnob)
   }
 

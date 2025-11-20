@@ -18,9 +18,8 @@ class ShutdownHandler {
 
   private var observers: [NSObjectProtocol] = []
 
+  @MainActor
   func beginShutdown() -> Bool {
-    assert(DispatchQueue.isExecutingIn(.main))
-    
     guard !isTerminating else {
       Logger.log("Ignoring shutdown request - already started shutting down")
       return false

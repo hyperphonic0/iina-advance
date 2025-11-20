@@ -8,7 +8,8 @@
 
 import Foundation
 
-// Just a bunch of boilerplate code for actionName, logging
+/// Just a bunch of boilerplate code for actionName, logging
+@MainActor
 class UndoHelper {
   static let DO = "Do"
   static let UNDO = "Undo"

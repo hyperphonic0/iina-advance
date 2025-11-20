@@ -32,7 +32,7 @@ extension PlayerWindowController {
 
     unowned var player: PlayerCore!
     var pwc: PlayerWindowController! { player.pwc }
-    var log: Logger.Subsystem { player.log }
+    var log: any Logger.Subsystem { player.log }
 
     var animationState: UIAnimationState = .shown {
       didSet {

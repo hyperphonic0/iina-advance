@@ -22,7 +22,7 @@ import Foundation
 ///
 ///- Warning: This isn’t a recursive lock. Attempting to lock an object more than once from the same thread without unlocking in
 ///    between will either trigger a runtime exception (macOS 10.12+) or will block your thread permanently (macOS 10.11).
-class Lock {
+class Lock: @unchecked Sendable {
 
   private let lock = OSUnfairLockImpl()
 

@@ -59,8 +59,10 @@ class JavascriptPlugin: NSObject {
       } else {
         removeSubProviders()
       }
-      reloadGlobalInstance()
-      PlayerCore.reloadPluginForAll(self)
+      DispatchQueue.main.async { [self] in
+        reloadGlobalInstance()
+        PlayerCore.reloadPluginForAll(self)
+      }
       NotificationCenter.default.post(Notification(name: .iinaPluginChanged))
     }
   }

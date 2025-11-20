@@ -106,7 +106,7 @@ struct PlayerSaveState: CustomStringConvertible {
   static let log = Logger.log
 
   /// The player's log
-  let log: Logger.Subsystem
+  let log: any Logger.Subsystem
 
   let properties: [String: Any]
 
@@ -544,7 +544,7 @@ struct PlayerSaveState: CustomStringConvertible {
     return int(for: .buildNumber, properties) ?? Constants.BuildNumber.V1_1
   }
 
-  static private func geoSet(from props: [String: Any], _ log: Logger.Subsystem) -> GeometrySet {
+  static private func geoSet(from props: [String: Any], _ log: any Logger.Subsystem) -> GeometrySet {
     // VideoGeometry is needed to quickly calculate & restore video dimensions instead of waiting for mpv to provide it
     let buildNumber = buildNumber(from: props)
     let videoGeo: VideoGeometry
@@ -555,7 +555,7 @@ struct PlayerSaveState: CustomStringConvertible {
         // Older than IINA 1.2
         log.debug("Failed to restore VideoGeometry from CSV (build \(buildNumber) properties). Will attempt to build it from legacy properties instead")
       } else {
-        log.errorDebugAlert{"Failed to restore VideoGeometry from CSV (build \(buildNumber) properties)! Possible tampering occurred with the prefs, or a backwards-incompatible version of of IINA Advance was run. Will attempt to build VideoGeometry from legacy properties instead..."}
+        log.errorDebugAlert("Failed to restore VideoGeometry from CSV (build \(buildNumber) properties)! Possible tampering occurred with the prefs, or a backwards-incompatible version of of IINA Advance was run. Will attempt to build VideoGeometry from legacy properties instead...")
       }
       let defaultGeo = VideoGeometry.defaultGeometry(log)
       let totalRotation = PlayerSaveState.int(for: .totalRotation, props)
@@ -579,7 +579,7 @@ struct PlayerSaveState: CustomStringConvertible {
     if let savedWindowedGeo {
       windowedGeo = savedWindowedGeo
     } else {
-      log.errorDebugAlert{"Failed to restore PWinGeometry from CSV! Will fall back to last closed geometry"}
+      log.errorDebugAlert("Failed to restore PWinGeometry from CSV! Will fall back to last closed geometry")
       windowedGeo = PlayerWindowController.windowedModeGeoLastClosed
     }
 
@@ -609,7 +609,7 @@ struct PlayerSaveState: CustomStringConvertible {
       // v1.3 and earlier
       musicModeGeo = savedLegacyMusicModeGeo
     } else {
-      log.errorDebugAlert{"Failed to restore music mode PWinGeometry from CSV! Will fall back to last closed geometry"}
+      log.errorDebugAlert("Failed to restore music mode PWinGeometry from CSV! Will fall back to last closed geometry")
       musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
     }
 
@@ -700,9 +700,8 @@ struct PlayerSaveState: CustomStringConvertible {
   }
 
   /// Restore player state from prior launch
+  @MainActor
   func restoreTo(_ player: PlayerCore) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     let log = player.log
 
     guard let urlString = string(for: .url), let url = URL(string: urlString) else {
@@ -1027,7 +1026,7 @@ extension VideoGeometry {
   /// `String`, `Logger.Subsystem` -> `VideoGeometry`
   /// Note to maintainers: if compiler is complaining with the message "nil is not compatible with closure result type VideoGeometry",
   /// check the arguments to the `VideoGeometry` constructor. For some reason the error lands in the wrong place.
-  static func fromCSV(_ csv: String?, _ log: Logger.Subsystem, separator: Character = ",") -> VideoGeometry? {
+  static func fromCSV(_ csv: String?, _ log: any Logger.Subsystem, separator: Character = ",") -> VideoGeometry? {
     guard let csv, !csv.isEmpty else {
       log.debug("CSV is empty; returning nil for VideoGeometry")
       return nil
@@ -1110,7 +1109,7 @@ extension VideoGeometry {
   }
 
   /// Assumes embedded CSV is current version (but will fall back & try to parse as prev version if that fails)
-  static func fromEmbeddedCSV(_ csvEmbedded: String?, _ log: Logger.Subsystem) -> VideoGeometry? {
+  static func fromEmbeddedCSV(_ csvEmbedded: String?, _ log: any Logger.Subsystem) -> VideoGeometry? {
     guard let csvEmbedded, !csvEmbedded.isEmpty else {
       log.debug("CSV is empty; returning nil for embedded VideoGeometry")
       return nil
@@ -1135,7 +1134,7 @@ extension PWinGeometry {
   /// v1: (`String`, `VideoGeometry`) -> `MusicModeGeometry` (v1.4+: same note as above).
   /// Note to maintainers: if compiler is complaining with the message "nil is not compatible with closure result type PWinGeometry",
   /// check the arguments to the `PWinGeometry` constructor. For some reason the error lands in the wrong place.
-  static func fromMusicModeCSV(_ csv: String?, videoGeoFallback: VideoGeometry? = nil, _ log: Logger.Subsystem) -> PWinGeometry? {
+  static func fromMusicModeCSV(_ csv: String?, videoGeoFallback: VideoGeometry? = nil, _ log: any Logger.Subsystem) -> PWinGeometry? {
     guard let csv, !csv.isEmpty else {
       log.debug("CSV is empty; returning nil for music mode PWinGeometry")
       return nil
@@ -1266,7 +1265,7 @@ extension PWinGeometry {
   /// (`String`, `VideoGeometry`) -> `PWinGeometry`
   /// `log` is needed to construct embedded `VideoGeometry`.
   /// `videoGeoFallback` is only used if CSV is legacy version
-  static func fromCSV(_ csv: String?, videoGeoFallback: VideoGeometry? = nil, _ log: Logger.Subsystem) -> PWinGeometry? {
+  static func fromCSV(_ csv: String?, videoGeoFallback: VideoGeometry? = nil, _ log: any Logger.Subsystem) -> PWinGeometry? {
     guard let csv, !csv.isEmpty else {
       log.debug("CSV is empty; returning nil for geometry")
       return nil

@@ -9,7 +9,7 @@
 import Foundation
 
 class PlayerManager {
-  static var shared = PlayerManager()
+  static let shared = PlayerManager()
 
   private let lock = Lock()
   private var playerCoreCounter = 0
@@ -85,6 +85,7 @@ class PlayerManager {
     return false
   }
 
+  @MainActor
   private func _getOrCreateFirst() -> PlayerCore {
     if _playerCores.isEmpty {
       return _createNewPlayerCore()
@@ -92,12 +93,14 @@ class PlayerManager {
     return _playerCores[0]
   }
 
+  @MainActor
   func getOrCreateFirst() -> PlayerCore {
     lock.withLock {
       _getOrCreateFirst()
     }
   }
 
+  @MainActor
   func getActiveOrCreateNew() -> PlayerCore {
     lock.withLock {
       if _playerCores.isEmpty {
@@ -118,6 +121,7 @@ class PlayerManager {
   }
 
   /// `inverseOpenInNewWindowPref` means to negate the current value of pref `.alwaysOpenInNewWindow`
+  @MainActor
   func getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: Bool) -> PlayerCore {
     let useNew = Preference.bool(for: .alwaysOpenInNewWindow) != inverseOpenInNewWindowPref
     if !useNew, let activePlayer {
@@ -146,6 +150,7 @@ class PlayerManager {
     }
   }
 
+  @MainActor
   private func _getIdleOrCreateNew() -> PlayerCore {
     if let idleCore = _findIdlePlayerCore() {
       Logger.log.debug("Found idle player: #\(idleCore.label)")
@@ -155,6 +160,7 @@ class PlayerManager {
     return _createNewPlayerCore()
   }
 
+  @MainActor
   func getIdleOrCreateNew() -> PlayerCore {
     lock.withLock {
       _getIdleOrCreateNew()
@@ -178,6 +184,7 @@ class PlayerManager {
   }
 
   /// Demo player is a redundant player which is used for app-wide things such as configuring audio devices or input bindings in prefs
+  @MainActor
   func getOrCreateDemo() -> PlayerCore {
     let player = lock.withLock {
       if let _demoPlayer {
@@ -199,6 +206,7 @@ class PlayerManager {
     return exists
   }
 
+  @MainActor
   private func _createNewPlayerCore(withLabel label: String? = nil) -> PlayerCore {
     Logger.log.debug("Creating PlayerCore instance with ID \(label?.quoted ?? "nil")")
     let pc: PlayerCore
@@ -221,6 +229,7 @@ class PlayerManager {
     return pc
   }
 
+  @MainActor
   func createNewPlayerCore(withLabel label: String? = nil) -> PlayerCore {
     var pc: PlayerCore? = nil
     lock.withLock {

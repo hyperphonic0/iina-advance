@@ -18,7 +18,7 @@ class RotationGestureHandler {
   unowned var pwc: PlayerWindowController! = nil
   private var player: PlayerCore { pwc.player }
   private var videoView: VideoView { pwc.videoView }
-  private var log: Logger.Subsystem { player.log }
+  private var log: any Logger.Subsystem { player.log }
 
   lazy var rotationGestureRecognizer: NSRotationGestureRecognizer = {
     return NSRotationGestureRecognizer(target: self, action: #selector(PlayerWindowController.handleRotationGesture(recognizer:)))

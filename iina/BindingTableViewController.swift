@@ -21,6 +21,7 @@ fileprivate let tableCellFontSize: CGFloat = 13
 /// - Any user action which makes an atomic change to the table's state requires a new `BindingTableState`, and any action
 /// (whether new, or undo, or redo) must go through `BindingTableStateManager` which keeps track of `BindingTableState`
 /// instances & applies the relevant changes.
+@MainActor
 class BindingTableViewController: NSObject {
 
   private unowned var tableView: EditableTableView!

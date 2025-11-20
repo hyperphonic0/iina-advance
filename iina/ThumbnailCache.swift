@@ -8,14 +8,14 @@
 
 import Cocoa
 
-fileprivate let subsystem = Logger.makeSubsystem("thumbcache")
+fileprivate let thumbCacheSubsystem = Logger.makeSubsystem("thumbcache")
 
 class ThumbnailCache {
   private typealias CacheVersion = UInt8
   private typealias FileSize = UInt64
   private typealias FileTimestamp = Int64
 
-  static let log = Logger.Subsystem(rawValue: "thumbcache")
+  static let log = thumbCacheSubsystem
 
   private static let version: CacheVersion = 2
   

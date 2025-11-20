@@ -38,72 +38,76 @@ class Utility {
   typealias InputValidator<T> = (T) -> ValidationResult
 
   // MARK: - Logs, alerts
-  static func showAlert(_ key: String, comment: String? = nil, arguments: [CVarArg]? = nil, style: NSAlert.Style = .critical, sheetWindow: NSWindow? = nil, suppressionKey: PK? = nil, disableMenus: Bool = false, logAlert: Bool = true) {
-    let alert = NSAlert()
-    if let suppressionKey = suppressionKey {
-      // This alert includes a suppression button that allows the user to suppress the alert.
-      // Do not show the alert if it has been suppressed.
-      guard !Preference.bool(for: suppressionKey) else { return }
-      alert.showsSuppressionButton = true
-    }
 
-    switch style {
-    case .critical:
-      alert.messageText = NSLocalizedString("alert.title_error", comment: "Error")
-    case .informational:
-      alert.messageText = NSLocalizedString("alert.title_info", comment: "Information")
-    case .warning:
-      alert.messageText = NSLocalizedString("alert.title_warning", comment: "Warning")
-    @unknown default:
-      assertionFailure("Unknown \(type(of: style)) \(style)")
-    }
-
-    var format: String
-    if let stringComment = comment {
-      format = NSLocalizedString("alert." + key, comment: stringComment)
-    } else {
-      let alertString = NSLocalizedString("alert." + key, comment: key)
-      if alertString.starts(with: "alert.") {
-        // Kludge to allow printing of non-localized strings. Should be cleaned up at some point...
-        format = key
-      } else {
-        format = alertString
+  static func showAlert(_ key: String, comment: String? = nil, arguments: [CVarArg]? = nil, style: NSAlert.Style = .critical,
+                        sheetWindow: NSWindow? = nil, suppressionKey: PK? = nil, disableMenus: Bool = false, logAlert: Bool = true) {
+    DispatchQueue.main.async {
+      let alert = NSAlert()
+      if let suppressionKey = suppressionKey {
+        // This alert includes a suppression button that allows the user to suppress the alert.
+        // Do not show the alert if it has been suppressed.
+        guard !Preference.bool(for: suppressionKey) else { return }
+        alert.showsSuppressionButton = true
       }
-    }
 
-    if let stringArguments = arguments {
-      alert.informativeText = String(format: format, arguments: stringArguments)
-    } else {
-      alert.informativeText = String(format: format)
-    }
+      switch style {
+      case .critical:
+        alert.messageText = NSLocalizedString("alert.title_error", comment: "Error")
+      case .informational:
+        alert.messageText = NSLocalizedString("alert.title_info", comment: "Information")
+      case .warning:
+        alert.messageText = NSLocalizedString("alert.title_warning", comment: "Warning")
+      @unknown default:
+        assertionFailure("Unknown \(type(of: style)) \(style)")
+      }
 
-    if logAlert {
-      Logger.log("Showing alert: \"\(alert.informativeText)\"")
-    }
+      var format: String
+      if let stringComment = comment {
+        format = NSLocalizedString("alert." + key, comment: stringComment)
+      } else {
+        let alertString = NSLocalizedString("alert." + key, comment: key)
+        if alertString.starts(with: "alert.") {
+          // Kludge to allow printing of non-localized strings. Should be cleaned up at some point...
+          format = key
+        } else {
+          format = alertString
+        }
+      }
 
-    alert.alertStyle = style
+      if let stringArguments = arguments {
+        alert.informativeText = String(format: format, arguments: stringArguments)
+      } else {
+        alert.informativeText = String(format: format)
+      }
 
-    // If an alert occurs early during startup when the first player core is being created then
-    // menus must be disabled while the alert is shown as opening certain menus will cause the menu
-    // controller to attempt to access the player core while it is being initialized resulting in a
-    // crash. See issue #5250.
-    if disableMenus {
-      AppDelegate.shared.menuController.disableAllMenus()
-    }
-    if let sheetWindow = sheetWindow {
-      alert.beginSheetModal(for: sheetWindow)
-    } else {
-      let response = alert.runModal()
-      Logger.log.verbose("Alert response: \(response.rawValue)")
+      if logAlert {
+        Logger.log("Showing alert: \"\(alert.informativeText)\"")
+      }
 
-    }
-    if disableMenus {
-      AppDelegate.shared.menuController.enableAllMenus()
-    }
+      alert.alertStyle = style
 
-    // If the user asked for this alert to be suppressed set the associated preference.
-    if let suppressionButton = alert.suppressionButton, suppressionButton.state == .on {
-      Preference.set(true, for: suppressionKey!)
+      // If an alert occurs early during startup when the first player core is being created then
+      // menus must be disabled while the alert is shown as opening certain menus will cause the menu
+      // controller to attempt to access the player core while it is being initialized resulting in a
+      // crash. See issue #5250.
+      if disableMenus {
+        AppDelegate.shared.menuController.disableAllMenus()
+      }
+      if let sheetWindow = sheetWindow {
+        alert.beginSheetModal(for: sheetWindow)
+      } else {
+        let response = alert.runModal()
+        Logger.log.verbose("Alert response: \(response.rawValue)")
+
+      }
+      if disableMenus {
+        AppDelegate.shared.menuController.enableAllMenus()
+      }
+
+      // If the user asked for this alert to be suppressed set the associated preference.
+      if let suppressionButton = alert.suppressionButton, suppressionButton.state == .on {
+        Preference.set(true, for: suppressionKey!)
+      }
     }
   }
 
@@ -436,6 +440,7 @@ class Utility {
    - parameters:
      - callback: A closure accepting the font name.
    */
+  @MainActor
   static func quickFontPickerWindow(callback: @escaping (String?) -> Void) {
     let appDelegate = AppDelegate.shared
     appDelegate.fontPicker.finishedPicking = callback

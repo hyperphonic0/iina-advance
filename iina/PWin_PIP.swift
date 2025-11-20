@@ -56,7 +56,7 @@ extension PlayerWindowController {
   /// `PIPState`: Encapsulates all state for PiP.
   class PIPState {
     unowned var player: PlayerCore
-    var log: Logger.Subsystem { player.log }
+    var log: any Logger.Subsystem { player.log }
     var pwc: PlayerWindowController { player.pwc }
 
     let overlayView = PIPOverlayView()
