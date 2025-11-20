@@ -425,7 +425,7 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   // MARK: - NSOutlineViewDelegate
 
   func outlineView(_ outlineView: NSOutlineView, shouldSelectItem item: Any) -> Bool {
-    return isInitialLoadDone
+    return item as? PlaybackHistory != nil
   }
 
   func outlineView(_ outlineView: NSOutlineView, isItemExpandable item: Any) -> Bool {
@@ -473,19 +473,13 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   func outlineView(_ outlineView: NSOutlineView, didAdd rowView: NSTableRowView, forRow row: Int) {
     /// The background color for a `NSTableRowView` will default to the parent's background color, which results in an
     /// unwanted additive effect for translucent backgrounds. Just make each row transparent.
-    rowView.backgroundColor = .clear
+//    rowView.backgroundColor = .clear
   }
 
   func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
     guard let tableColumn else {
       // group header
       guard let groupCell: NSTableCellView = outlineView.makeView(withIdentifier: .group, owner: nil) as? NSTableCellView else { return nil }
-      groupCell.wantsLayer = true
-      groupCell.layer?.backgroundColor = .clear
-      for subview in groupCell.subviews {
-        subview.wantsLayer = true
-        subview.layer?.backgroundColor = .clear
-      }
       return groupCell
     }
 
@@ -718,6 +712,17 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     }
   }
 
+  func outlineView(_ outlineView: NSOutlineView, selectionIndexesForProposedSelection proposedSelectionIndexes: IndexSet) -> IndexSet {
+    var approvedSelectionIndexes = IndexSet()
+    for index in proposedSelectionIndexes {
+      let item = outlineView.item(atRow: index)
+      // Allow selection only if item is a PlaybackHistory entry (not a String group header)
+      if item is PlaybackHistory {
+        approvedSelectionIndexes.insert(index)
+      }
+    }
+    return approvedSelectionIndexes
+  }
 }
 
 
@@ -733,6 +738,7 @@ class HistoryOutlineView: OutlineView {
     }
     return super.frameOfOutlineCell(atRow: row)
   }
+
 }
 
 class HistoryFilenameCellView: NSTableCellView {
