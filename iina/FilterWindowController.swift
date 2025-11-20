@@ -420,7 +420,7 @@ extension FilterWindowController {
 
 
 class NewFilterSheetViewController: NSViewController, NSTableViewDelegate, NSTableViewDataSource {
-  private static let textAndTableWidthDifference = 20.0
+  private static let textAndTableWidthDifference = 40.0
 
   @IBOutlet weak var filterWindow: FilterWindowController!
   @IBOutlet weak var tableView: NSTableView!
