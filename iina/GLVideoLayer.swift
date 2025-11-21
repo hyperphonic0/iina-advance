@@ -216,8 +216,8 @@ class GLVideoLayer: CAOpenGLLayer {
   /// We want `isAsynchronous = true` while executing any animation which causes the layer to resize.
   /// But we don't want to leave this on full-time, because it will result in extra draw requests and may
   /// throw off the timing of each draw.
+  @MainActor
   func enterAsynchronousMode() {
-    assert(DispatchQueue.isExecutingIn(.main))
     asychronousModeTimer?.invalidate()
     if !isAsynchronous {
       videoView.player.log.trace("Entering asynchronous mode")
@@ -238,10 +238,12 @@ class GLVideoLayer: CAOpenGLLayer {
     asychronousModeTimer?.tolerance = Constants.TimeInterval.asynchronousModeTimeout * 0.2
   }
 
+  @MainActor
   @objc func exitAsynchronousMode() {
-    assert(DispatchQueue.isExecutingIn(.main))
-    videoView.player.log.verbose("Exiting asynchronous mode")
     asychronousModeTimer?.invalidate()
+    if isAsynchronous {
+      videoView.player.log.verbose("Exiting asynchronous mode")
+    }
     /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
     /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.
     isAsynchronous = false

@@ -53,12 +53,12 @@ class LogWindowController: WindowController, NSMenuDelegate {
     subsystemPopUpButton.menu!.delegate = self
   }
 
-  override func openWindow(_ sender: Any?) {
-    Logger.log.verbose("Log window will open")
-    super.openWindow(sender)
+  override func showWindow(_ sender: Any?) {
+    Logger.log.verbose("Log window will show")
+    super.showWindow(sender)
 
     refreshTimer?.invalidate()
-    refreshTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { timer in
+    refreshTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
       DispatchQueue.main.async { [self] in
         syncLogs()
       }
@@ -148,13 +148,14 @@ class LogWindowController: WindowController, NSMenuDelegate {
   @MainActor
   @objc func syncLogs() {
     guard isWindowLoaded else { return }
-    let logs = Logger.popNewestLinesForLogWindow()
-    guard !logs.isEmpty else { return }
+    let newLogs = Logger.popNewestLinesForLogWindow()
+    guard !newLogs.isEmpty else { return }
     var scroll = false
     let range = logTableView.rows(in: logTableView.visibleRect)
-    if range.location + range.length >= self.logs.count {
+    if range.location + range.length >= logs.count {
       scroll = true
     }
+    logs.append(contentsOf: newLogs)
 
     if scroll {
       // macOS couldn't calculate the frame size correctly when the row height is variable and

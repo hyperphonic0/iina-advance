@@ -338,7 +338,7 @@ extension IINAAnimation {
         pendingWorkAfterGTFs = work
       }
       
-      log.verbose("[Pipeline] Submitting ReloadQuickSettings task")
+      log.trace("[Pipeline] Submitting ReloadQuickSettings task")
       submitInstantTask{}
     }
     
