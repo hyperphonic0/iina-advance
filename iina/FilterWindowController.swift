@@ -84,6 +84,9 @@ class FilterWindowController: WindowController, NSWindowDelegate {
     updateButtonStatus()
 
     reloadTableInMainThread()
+
+    // Now that all views are added:
+    window?.recalculateKeyViewLoop()
   }
 
   @objc

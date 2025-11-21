@@ -21,18 +21,18 @@
         <window title="Playback History" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" titlebarAppearsTransparent="YES" id="F0z-JX-Cv5" userLabel="Playback History Window">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <rect key="contentRect" x="0.0" y="240" width="600" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="937"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1083"/>
             <value key="minSize" type="size" width="580" height="200"/>
             <view key="contentView" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PlaybackHistoryWindow Content View" customClass="NSVisualEffectView">
                 <rect key="frame" x="0.0" y="0.0" width="600" height="200"/>
                 <subviews>
-                    <scrollView wantsLayer="YES" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="249" autohidesScrollers="YES" horizontalLineScroll="24" horizontalPageScroll="10" verticalLineScroll="24" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="II4-dF-AGa" userLabel="PlaybackHistoryTable Scroll View">
+                    <scrollView autoresizesSubviews="NO" wantsLayer="YES" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="249" autohidesScrollers="YES" horizontalLineScroll="24" horizontalPageScroll="10" verticalLineScroll="24" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="II4-dF-AGa" userLabel="PlaybackHistoryTable Scroll View">
                         <rect key="frame" x="0.0" y="0.0" width="600" height="172"/>
-                        <clipView key="contentView" wantsLayer="YES" drawsBackground="NO" copiesOnScroll="NO" id="IB5-0J-8sn" userLabel="PlaybackHistoryTable Clip View">
+                        <clipView key="contentView" autoresizesSubviews="NO" wantsLayer="YES" drawsBackground="NO" copiesOnScroll="NO" id="IB5-0J-8sn" userLabel="PlaybackHistoryTable Clip View">
                             <rect key="frame" x="1" y="1" width="598" height="170"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <outlineView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="sourceList" selectionHighlightStyle="sourceList" columnReordering="NO" autosaveName="HistoryWindowTable" rowHeight="24" rowSizeStyle="small" headerView="MiB-ow-W6T" viewBased="YES" floatsGroupRows="NO" indentationPerLevel="13" indentationMarkerFollowsCell="NO" outlineTableColumn="DIC-tR-R2F" translatesAutoresizingMaskIntoConstraints="NO" id="6jR-CS-fgx" userLabel="PlaybackHistoryTable Outline View" customClass="HistoryOutlineView" customModule="IINA_Advance" customModuleProvider="target">
+                                <outlineView autoresizesSubviews="NO" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" tableStyle="sourceList" selectionHighlightStyle="sourceList" columnReordering="NO" autosaveName="HistoryWindowTable" rowHeight="24" rowSizeStyle="small" headerView="MiB-ow-W6T" viewBased="YES" floatsGroupRows="NO" indentationPerLevel="13" indentationMarkerFollowsCell="NO" outlineTableColumn="DIC-tR-R2F" translatesAutoresizingMaskIntoConstraints="NO" id="6jR-CS-fgx" userLabel="PlaybackHistoryTable Outline View" customClass="HistoryOutlineView" customModule="IINA_Advance" customModuleProvider="target">
                                     <rect key="frame" x="0.0" y="0.0" width="598" height="147"/>
                                     <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
                                     <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
@@ -88,7 +88,7 @@
                                                     <subviews>
                                                         <textField autoresizesSubviews="NO" focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Nf6-hw-AKB" userLabel="Group Text Field">
                                                             <rect key="frame" x="-2" y="2" width="386" height="14"/>
-                                                            <textFieldCell key="cell" controlSize="small" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="left" title="Group" id="vDR-ax-UJb">
+                                                            <textFieldCell key="cell" controlSize="small" lineBreakMode="truncatingTail" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" alignment="left" title="Group" id="vDR-ax-UJb">
                                                                 <font key="font" metaFont="smallSystem"/>
                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>

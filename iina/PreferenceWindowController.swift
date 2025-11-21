@@ -251,6 +251,9 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     })
     self.observers.append(observer)
 
+    // Focus on searchField first
+    window?.initialFirstResponder = searchField
+
     Logger.log.verbose("PreferenceWindowController windowDidLoad done")
   }
 
@@ -405,8 +408,11 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     // As per Apple's Human Interface Guidelines update the window’s title to reflect the currently
     // visible tab. Although the window's title is hidden it still can be seen in the Window menu
     // and in the dock menu.
-    vc.view.window?.title = vc.preferenceTabTitle
-    
+    window?.title = vc.preferenceTabTitle
+
+    // Now that new views have been added, need to regenerate the chain of views for keyboard navigation
+    window?.recalculateKeyViewLoop()
+
     return vc
   }
 

@@ -148,8 +148,12 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       visualEffectCV.autoresizingMask = [.width, .height]
     }
 
-    // Workaround for problem: "group by" popup getting highlighted when window opens: make table first responder
-    window.makeFirstResponder(outlineView)
+    // Override the automatic key-view loop to ensure correct order
+    self.outlineView.nextKeyView = self.groupByButton
+    self.groupByButton.nextKeyView = self.historySearchField
+    self.historySearchField.nextKeyView = self.outlineView
+    // Focus on table when window opens, becuase the other views show a glaring ring when focused
+    window.initialFirstResponder = self.outlineView
 
     log.verbose("History windowDidLoad done")
   }
@@ -281,6 +285,9 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
 
       showLoadingMsgTimer.cancel()
 
+      // Save selection to restore later
+      let prevSelectedItems = outlineView.selectedRowIndexes.compactMap { outlineView.item(atRow: $0) as? PlaybackHistory }
+
       // Store latest history in lookup table. Do not remove any entries, to ensure that lookup will never fail
       for entry in unfilteredHistory {
         historyLookup[entry.url] = entry
@@ -292,6 +299,13 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       adjustTimeColumnMinWidth()
       outlineView.reloadData()
       outlineView.expandItem(nil, expandChildren: true)
+      // Restore selection
+      let newSelectionIndexes = prevSelectedItems.map{ outlineView.row(forItem: $0) }.filter{ $0 >= 0 }
+      var newSelectionIndexSet = IndexSet()
+      for rowIndex in newSelectionIndexes {
+        newSelectionIndexSet.insert(rowIndex)
+      }
+      outlineView.selectRowIndexes(newSelectionIndexSet, byExtendingSelection: false)
 
       log.verbose("Reloaded history table: \(historyList.count) entries, filter=\(searchString.quoted) in \(sw.secElapsedString) (tkt \(reloadTicketCounter))")
 
@@ -408,8 +422,10 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       switch event.charactersIgnoringModifiers! {
       case "f":
         window!.makeFirstResponder(historySearchField)
+        return
       case "a":
         outlineView.selectAll(nil)
+        return
       default:
         break
       }
@@ -418,8 +434,11 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
       if key == "DEL" || key == "BS" {
         let entries = outlineView.selectedRowIndexes.compactMap { outlineView.item(atRow: $0) as? PlaybackHistory }
         removeAfterConfirmation(entries)
+        return
       }
     }
+
+    super.keyDown(with: event)
   }
 
   // MARK: - NSOutlineViewDelegate

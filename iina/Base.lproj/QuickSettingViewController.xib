@@ -622,7 +622,7 @@
                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="irB-DE-8Zo" userLabel="HWDecodingSwitch Custom View">
                                             <rect key="frame" x="0.0" y="72" width="318" height="36"/>
                                             <subviews>
-                                                <switch horizontalHuggingPriority="750" verticalHuggingPriority="750" controlSize="mini" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="AbD-ap-nO5" userLabel="Hardware Decoding Switch">
+                                                <switch horizontalHuggingPriority="750" verticalHuggingPriority="750" controlSize="mini" refusesFirstResponder="YES" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="AbD-ap-nO5" userLabel="Hardware Decoding Switch">
                                                     <rect key="frame" x="262" y="10" width="36" height="16"/>
                                                     <connections>
                                                         <action selector="hardwareDecodingAction:" target="-2" id="Fv6-2y-odN"/>
@@ -652,7 +652,7 @@
                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="LQa-o5-Uqp" userLabel="DeinterlaceSwitch Custom View">
                                             <rect key="frame" x="0.0" y="36" width="318" height="36"/>
                                             <subviews>
-                                                <switch horizontalHuggingPriority="750" verticalHuggingPriority="750" controlSize="mini" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="UKk-rD-n2A" userLabel="Deinterlace Switch">
+                                                <switch horizontalHuggingPriority="750" verticalHuggingPriority="750" controlSize="mini" refusesFirstResponder="YES" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="UKk-rD-n2A" userLabel="Deinterlace Switch">
                                                     <rect key="frame" x="262" y="10" width="36" height="16"/>
                                                     <connections>
                                                         <action selector="deinterlaceAction:" target="-2" id="Wks-al-3dq"/>
@@ -682,7 +682,7 @@
                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="X9R-a9-lhc" userLabel="HDRSwitch Custom View">
                                             <rect key="frame" x="0.0" y="0.0" width="318" height="36"/>
                                             <subviews>
-                                                <switch horizontalHuggingPriority="750" verticalHuggingPriority="750" controlSize="mini" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="TNg-iM-cVP" userLabel="HDR Switch">
+                                                <switch horizontalHuggingPriority="750" verticalHuggingPriority="750" controlSize="mini" refusesFirstResponder="YES" baseWritingDirection="leftToRight" alignment="left" translatesAutoresizingMaskIntoConstraints="NO" id="TNg-iM-cVP" userLabel="HDR Switch">
                                                     <rect key="frame" x="262" y="10" width="36" height="16"/>
                                                     <connections>
                                                         <action selector="hdrAction:" target="-2" id="caQ-5H-pX4"/>
@@ -1617,7 +1617,7 @@
                                     </stackView>
                                     <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="u9C-Fk-Aag">
                                         <rect key="frame" x="20" y="179" width="250" height="24"/>
-                                        <popUpButtonCell key="cell" type="push" title="Save the current EQ as a preset…" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" tag="-3" imageScaling="proportionallyDown" inset="2" autoenablesItems="NO" altersStateOfSelectedItem="NO" selectedItem="sE0-LN-T8i" id="WKa-AJ-OEZ">
+                                        <popUpButtonCell key="cell" type="push" title="Save the current EQ as a preset…" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" refusesFirstResponder="YES" borderStyle="borderAndBezel" tag="-3" imageScaling="proportionallyDown" inset="2" autoenablesItems="NO" altersStateOfSelectedItem="NO" selectedItem="sE0-LN-T8i" id="WKa-AJ-OEZ">
                                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="message"/>
                                             <menu key="menu" autoenablesItems="NO" id="7k5-w9-dRQ">
@@ -2301,7 +2301,7 @@
                                     </textField>
                                     <segmentedControl verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="uSx-qN-Wxd">
                                         <rect key="frame" x="32" y="500" width="298" height="20"/>
-                                        <segmentedCell key="cell" controlSize="small" borderStyle="border" alignment="left" segmentDistribution="fillEqually" style="rounded" trackingMode="selectOne" id="88M-pi-2Hc">
+                                        <segmentedCell key="cell" controlSize="small" refusesFirstResponder="YES" borderStyle="border" alignment="left" segmentDistribution="fillEqually" style="rounded" trackingMode="selectOne" id="88M-pi-2Hc">
                                             <font key="font" metaFont="smallSystem"/>
                                             <segments>
                                                 <segment label="Primary Subtitles" selected="YES"/>
