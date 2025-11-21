@@ -23,9 +23,9 @@ fileprivate let useSeparateColorForBuiltinConfs = true
 /// Table View Controller for the `Configuration` (aka "Conf") table (a subview of `PrefKeyBindingViewController`).
 ///
 /// Each row of the Conf table represents an mpv "input config file" (`*.conf` file).
-@MainActor
 class ConfTableViewController: NSObject {
   private unowned var tableView: EditableTableView!
+  @MainActor
   private var confTableState: ConfTableState {
     return ConfTableState.current
   }
@@ -39,12 +39,15 @@ class ConfTableViewController: NSObject {
   }
 
   /// Can be overridden: see `PrefKeyBindingViewController.setCustomTableColors()`
+  @MainActor
   fileprivate var builtInConfTextColor: NSColor = .textColor
 
+  @MainActor
   func setCustomColors(builtInItemTextColor: NSColor) {
     builtInConfTextColor = builtInItemTextColor
   }
 
+  @MainActor
   let configNameValidator: Utility.InputValidator<String> = { input in
     if input.isEmpty {
       return .valueIsEmpty
@@ -55,6 +58,7 @@ class ConfTableViewController: NSObject {
     return .ok
   }
 
+  @MainActor
   init(_ inputConfTableView: EditableTableView, _ bindingTableViewController: BindingTableViewController,
        selectionDidChangeHandler: @escaping () -> Void) {
     self.tableView = inputConfTableView
@@ -95,6 +99,7 @@ class ConfTableViewController: NSObject {
     observers = []
   }
 
+  @MainActor
   func selectCurrentConfRow() {
     let confName = self.confTableState.selectedConfName
     guard let index = confTableState.confTableRows.firstIndex(of: confName) else {
@@ -225,6 +230,7 @@ extension ConfTableViewController: EditableTableViewDelegate {
     }
   }
 
+  @MainActor
   private func completeInlineAdd(newName: String) -> Bool {
     guard !self.confTableState.isRow(newName) else {
       // Disallow overwriting another entry in list
@@ -248,6 +254,7 @@ extension ConfTableViewController: EditableTableViewDelegate {
     return true
   }
 
+  @MainActor
   private func moveFileAndRenameCurrentConf(newName: String) -> Bool {
     // Validate name change
     guard !self.confTableState.selectedConfName.equalsIgnoreCase(newName) else {
@@ -327,7 +334,8 @@ extension ConfTableViewController: EditableTableViewDelegate {
     ConfTableViewController.extractConfFileList(from: NSPasteboard.general)
   }
 
-  // Convert conf file path to URL and put it in clipboard
+  /// Convert conf file path to URL and put it in clipboard
+  @MainActor
   private func copyConfFileToClipboard(confName: String) {
     let filePath = confTableState.getFilePath(forConfName: confName)
     let url = NSURL(fileURLWithPath: filePath)
@@ -518,6 +526,7 @@ extension ConfTableViewController:  NSMenuDelegate {
   }
 
   // Builds context menu each time a row is right-clicked
+  @MainActor
   @objc func menuNeedsUpdate(_ contextMenu: NSMenu) {
     // This will prevent menu from showing if no items are added
     contextMenu.removeAllItems()
@@ -554,6 +563,7 @@ extension ConfTableViewController:  NSMenuDelegate {
     mib.likeEasyDelete().butWith(.enabled(didClickOnUserConf)).addItem(#selector(self.deleteConfFromMenu(_:)))
   }
 
+  @MainActor
   private func addPasteMenuItem(_ mib: CascadingMenuItemBuilder, didClickOnUserConf: Bool) {
     let pasteBuilder = mib.likeEditPaste().butWith(.action(#selector(self.pasteFromMenu(_:))))
     var didAdd = false
@@ -573,10 +583,12 @@ extension ConfTableViewController:  NSMenuDelegate {
     }
   }
 
+  @MainActor
   @objc fileprivate func copyConfFromMenu(_ sender: InputConfMenuItem) {
     self.copyConfFileToClipboard(confName: sender.confName)
   }
 
+  @MainActor
   @objc fileprivate func pasteFromMenu(_ sender: InputConfMenuItem) {
     // Conf files?
     let confFilePathList = readConfFilesFromClipboard()
@@ -603,20 +615,24 @@ extension ConfTableViewController:  NSMenuDelegate {
     }
   }
 
+  @MainActor
   @objc fileprivate func deleteConfFromMenu(_ sender: InputConfMenuItem) {
     self.deleteConf(sender.confName)
   }
 
+  @MainActor
   @objc fileprivate func showInFinderFromMenu(_ sender: InputConfMenuItem) {
     self.showInFinder(sender.confName)
   }
 
+  @MainActor
   @objc fileprivate func renameFromMenu(_ sender: InputConfMenuItem) {
     if let targetRowIndex = confTableState.confTableRows.firstIndex(of: sender.confName) {
       tableView.editCell(row: targetRowIndex, column: nameColumnIndex)
     }
   }
 
+  @MainActor
   @objc fileprivate func duplicateConfFromMenu(_ sender: InputConfMenuItem) {
     self.duplicateConf(sender.confName)
   }
@@ -624,6 +640,7 @@ extension ConfTableViewController:  NSMenuDelegate {
   // MARK: Reusable UI actions
 
   // Action: Delete Conf
+  @MainActor
   @objc public func deleteConf(_ confName: String) {
     guard confTableState.isRow(confName) else {
       return
@@ -633,6 +650,7 @@ extension ConfTableViewController:  NSMenuDelegate {
     confTableState.removeConf(confName)
   }
 
+  @MainActor
   @objc func showInFinder(_ confName: String) {
     let confFilePath = confTableState.getFilePath(forConfName: confName)
     let url = URL(fileURLWithPath: confFilePath)
@@ -640,6 +658,7 @@ extension ConfTableViewController:  NSMenuDelegate {
   }
 
   // Action: New Conf
+  @MainActor
   @objc func createNewConf() {
     if enableInlineCreate {
       // Add a new conf with no name, and immediately open an editor for it.
@@ -670,6 +689,7 @@ extension ConfTableViewController:  NSMenuDelegate {
   }
 
   // Action: Duplicate Conf
+  @MainActor
   @objc func duplicateConf(_ confName: String) {
     let currFilePath = confTableState.getFilePath(forConfName: confName)
 
@@ -709,11 +729,12 @@ extension ConfTableViewController:  NSMenuDelegate {
     }
   }
 
+  @MainActor
   private func duplicateConfFile(forConfName confName: String) -> (String, String)? {
     guard confTableState.isRow(confName) else { return nil }
     let origFilePath = confTableState.getFilePath(forConfName: confName)
 
-    let (newConfName, newFilePath) = findNewNameForDuplicate(originalName: confName)
+    let (newConfName, newFilePath) = ConfTableViewController.findNewNameForDuplicate(originalName: confName, compareWith: confTableState)
 
     do {
       Logger.log("Duplicating file: \(origFilePath.pii.quoted) -> \(newFilePath.pii.quoted)")
@@ -728,6 +749,7 @@ extension ConfTableViewController:  NSMenuDelegate {
     }
   }
 
+  @MainActor
   private func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {
     let newFilePath =  Utility.buildConfFilePath(for: newName)
 
@@ -753,8 +775,11 @@ extension ConfTableViewController:  NSMenuDelegate {
 
    If successful, adds new rows to the UI, with the last added row being selected as the new current conf.
    */
+  @MainActor
   func importConfFiles(_ fileList: [String], renameDuplicates: Bool = false) {
     // Return immediately, and import (or fail to) asynchronously
+    let confTableState = confTableState
+    let window = tableView.window
     DispatchQueue.global(qos: .userInitiated).async {
       Logger.log("Importing input conf files: \(fileList)", level: .verbose)
 
@@ -764,12 +789,12 @@ extension ConfTableViewController:  NSMenuDelegate {
       for filePath in fileList {
         let url = URL(fileURLWithPath: filePath)
         // If conf is builtin, its name won't match its filename exactly, so need to look it up
-        let confName = self.confTableState.getBuiltinConfName(forFilePath: filePath) ?? url.deletingPathExtension().lastPathComponent
+        let confName = ConfTableState.getBuiltinConfName(forFilePath: filePath) ?? url.deletingPathExtension().lastPathComponent
 
         guard InputConfFile.tryLoadingFile(at: filePath) else {
           DispatchQueue.main.async {
             Logger.log("Error reading conf file \(filePath.pii.quoted); aborting import", level: .error)
-            Utility.showAlert("keybinding_config.error", arguments: [url.lastPathComponent], sheetWindow: self.tableView.window)
+            Utility.showAlert("keybinding_config.error", arguments: [url.lastPathComponent], sheetWindow: window)
           }
           // Do not import any files if we can't parse one.
           // This probably means the user doesn't know what they are doing, or something is very wrong
@@ -777,10 +802,10 @@ extension ConfTableViewController:  NSMenuDelegate {
         }
         var newName = confName
         var newFilePath: String
-        if let filePath = self.getFilePathIfValid(forConfName: newName) {
+        if let filePath = ConfTableViewController.getFilePathIfValid(forConfName: newName, compareWith: confTableState) {
           newFilePath = filePath
         } else if renameDuplicates {
-          (newName, newFilePath) = self.findNewNameForDuplicate(originalName: newName)
+          (newName, newFilePath) = ConfTableViewController.findNewNameForDuplicate(originalName: newName, compareWith: confTableState)
         } else {
           // Looks like file exists, but renameDuplicates is disabled
           newFilePath = Utility.buildConfFilePath(for: newName)
@@ -827,12 +852,15 @@ extension ConfTableViewController:  NSMenuDelegate {
       Logger.log("Successfully imported: \(confsToAdd.count) input conf files")
 
       // update prefs & refresh UI
-      self.confTableState.addUserConfs(confsToAdd)
+      DispatchQueue.main.async {
+        confTableState.addUserConfs(confsToAdd)
+      }
     }
   }
 
   // Check whether file already exists at `filePath`.
   // If it does, prompt the user to overwrite it or show it in Finder. Return true if user agrees, false otherwise
+  @MainActor
   private func handlePossibleExistingFile(filePath: String) -> Bool {
     let fm = FileManager.default
     if fm.fileExists(atPath: filePath) {
@@ -863,7 +891,7 @@ extension ConfTableViewController:  NSMenuDelegate {
   // MARK: Calculate name of duplicate file
 
   // Attempt to match Finder's algorithm for file name of copy
-  private func findNewNameForDuplicate(originalName: String) -> (String, String) {
+  private static func findNewNameForDuplicate(originalName: String, compareWith confTableState: ConfTableState) -> (String, String) {
     // Strip any copy suffix off of it. Start with no copy suffix and check upwards to see if there's a gap
     var (newConfName, _) = parseBaseAndCopyCount(from: originalName)
 
@@ -872,13 +900,13 @@ extension ConfTableViewController:  NSMenuDelegate {
       Logger.log("Checking potential new file name: \(nextName.pii.quoted)", level: .verbose)
       newConfName = nextName
 
-      if let newFilePath = getFilePathIfValid(forConfName: newConfName) {
+      if let newFilePath = ConfTableViewController.getFilePathIfValid(forConfName: newConfName, compareWith: confTableState) {
         return (newConfName, newFilePath)
       }
     }
   }
 
-  private func getFilePathIfValid(forConfName newConfName: String) -> String? {
+  private static func getFilePathIfValid(forConfName newConfName: String, compareWith confTableState: ConfTableState) -> String? {
     // Entry with same name already exists in conf list?
     guard !confTableState.isRow(newConfName) else {
       return nil
@@ -892,11 +920,11 @@ extension ConfTableViewController:  NSMenuDelegate {
     return newFilePath
   }
 
-  private func matchRegex(_ regex: NSRegularExpression, _ msg: String) -> NSTextCheckingResult? {
+  private static func matchRegex(_ regex: NSRegularExpression, _ msg: String) -> NSTextCheckingResult? {
     return regex.firstMatch(in: msg, options: [], range: NSRange(location: 0, length: msg.count))
   }
 
-  private func parseBaseAndCopyCount(from name: String) -> (String, Int) {
+  private static func parseBaseAndCopyCount(from name: String) -> (String, Int) {
     if let match = matchRegex(COPY_COUNT_REGEX, name) {
       if let baseNameRange = Range(match.range(at: 1), in: name) {
         // Found
@@ -915,7 +943,7 @@ extension ConfTableViewController:  NSMenuDelegate {
     return (name, 0)
   }
 
-  private func incrementCopyName(confName: String) -> String {
+  private static func incrementCopyName(confName: String) -> String {
     // Check for copy count number first
     let (baseName, copyCount) = parseBaseAndCopyCount(from: confName)
     if copyCount == 0 {

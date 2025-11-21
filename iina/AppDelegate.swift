@@ -59,10 +59,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  // Need to store these somewhere which isn't only inside a struct.
-  // Swift doesn't seem to count them as strong references
-  private let bindingTableStateManger: BindingTableStateManager = BindingTableState.manager
-  private let confTableStateManager: ConfTableStateManager = ConfTableState.manager
+  // Need to store these somewhere which isn't only inside a struct
+  private var bindingTableStateManger: BindingTableStateManager!
+  private var confTableStateManager: ConfTableStateManager!
 
   // MARK: Window controllers
 
@@ -251,6 +250,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // Wait until after logging is done to run this (need PII):
     UIState.shared.updateCachedScreens()
+
+
+    bindingTableStateManger = BindingTableState.manager
+    confTableStateManager = ConfTableState.manager
 
     // Set up observers
 
@@ -572,8 +575,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     return true
   }
 
+  @MainActor
   private func doActionWhenLastWindowWillClose() {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard AppDelegate.isInteractiveLaunch else {
       Logger.log.debug("Aborting action when last window closed: app-wide UI is disabled")
       return
@@ -809,6 +812,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   /// Returns `true` if app termination was initiated.
+  @MainActor
   private func terminateIfNotInteractiveLaunch() -> Bool {
     if AppDelegate.isInteractiveLaunch {
       return false
@@ -824,6 +828,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     return true
   }
 
+  @MainActor
   func doLaunchOrReopenAction() {
     guard startupHandler.isDoneLaunching else {
       Logger.log.verbose("Still starting up; skipping actionAfterLaunch")
@@ -993,6 +998,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     initialWindow.openWindow(self)
   }
 
+  @MainActor
   func showOpenFileWindow(isAlternativeAction: Bool) {
     Logger.log.verbose("Showing OpenFileWindow: isAltAction=\(isAlternativeAction.yesno)")
     guard !isShowingOpenFileWindow else {

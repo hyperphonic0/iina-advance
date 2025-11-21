@@ -16,13 +16,15 @@ import Foundation
  refer to ConfTableState.current each time for an up-to-date version.
  Tries to be model-focused and decoupled from UI code so that everything is cleaner.
  */
-@MainActor
 struct ConfTableState {
   // current read-only snapshot:
+  @MainActor
   static var current: ConfTableState = ConfTableState.manager.initialState()
   // this decides the lifecycle of snapshots:
+  @MainActor
   static let manager: ConfTableStateManager = ConfTableStateManager()
 
+  @MainActor
   var manager: ConfTableStateManager { ConfTableState.manager }
 
   enum SpecialState {
@@ -121,6 +123,10 @@ struct ConfTableState {
   }
 
   func getBuiltinConfName(forFilePath filePath: String) -> String? {
+    return ConfTableState.getBuiltinConfName(forFilePath: filePath)
+  }
+
+  static func getBuiltinConfName(forFilePath filePath: String) -> String? {
     let filePathLower = filePath.lowercased()
     for (builtinConfName, builtinFilePath) in Constants.InputConf.defaults {
       if builtinFilePath.lowercased() == filePathLower {
@@ -168,6 +174,7 @@ struct ConfTableState {
 
   // Adds (or updates) conf file with the given name into the user confs list preference, and sets it as the selected conf.
   // Posts update notification
+  @MainActor
   func addUserConf(confName: String, filePath: String, completionHandler: TableUIChange.CompletionHandler? = nil) {
     Logger.log("Adding user conf: \(confName.pii.quoted) (filePath: \(filePath.pii.quoted))")
     var userConfDictUpdated = userConfDict
@@ -175,6 +182,7 @@ struct ConfTableState {
     manager.changeState(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
   }
 
+  @MainActor
   func addNewUserConfInline(completionHandler: TableUIChange.CompletionHandler? = nil) {
     guard !isAddingNewConfInline else {
       Logger.log("Already adding new user conf inline! Returning.", level: .verbose)
@@ -185,6 +193,7 @@ struct ConfTableState {
     manager.changeState(specialState: .addingNewInline, completionHandler: completionHandler)
   }
 
+  @MainActor
   func completeInlineAdd(confName: String, filePath: String,
                          completionHandler: TableUIChange.CompletionHandler? = nil) {
     guard isAddingNewConfInline else {
@@ -198,6 +207,7 @@ struct ConfTableState {
     manager.changeState(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
   }
 
+  @MainActor
   func cancelInlineAdd(selectedConfNew: String? = nil) {
     guard isAddingNewConfInline else {
       Logger.log("cancelInlineAdd() called but isAddingNewConfInline is false!", level: .error)
@@ -207,6 +217,7 @@ struct ConfTableState {
     manager.changeState(selectedConfName: selectedConfNew)
   }
 
+  @MainActor
   func addUserConfs(_ userConfsToAdd: [String: String]) {
     Logger.log("Adding user confs: \(userConfsToAdd.map{ ($0.key.pii, $0.value.pii) })")
     guard let firstConf = userConfsToAdd.first else {
@@ -226,6 +237,7 @@ struct ConfTableState {
     manager.changeState(userConfDictUpdated, selectedConfName: selectedConfNew)
   }
 
+  @MainActor
   func removeConf(_ confName: String) {
     let isCurrentConf: Bool = confName == selectedConfName
     Logger.log("Removing conf: \(confName.pii.quoted) (isCurrentConf: \(isCurrentConf))")
@@ -249,6 +261,7 @@ struct ConfTableState {
     manager.changeState(userConfDictUpdated, selectedConfName: selectedConfNameNew)
   }
 
+  @MainActor
   func renameSelectedConf(newName: String) -> Bool {
     var userConfDictUpdated = userConfDict
     Logger.log("Renaming conf in prefs: \(selectedConfName.pii.quoted) -> \(newName.pii.quoted)")
@@ -274,6 +287,7 @@ struct ConfTableState {
     return true
   }
 
+  @MainActor
   func appendBindingsToUserConfFile(_ bindings: [KeyMapping], targetConfName: String) {
     let isReadOnly = ConfTableState.isBuiltinConf(targetConfName)
     guard !isReadOnly else { return }
@@ -288,11 +302,13 @@ struct ConfTableState {
 
   // MARK: Change Selection
 
+  @MainActor
   func fallBackToDefaultConf() {
     Logger.log("Changing selected conf to default", level: .verbose)
     manager.changeState(selectedConfName: manager.defaultConfName, specialState: .fallBackToDefaultConf)
   }
 
+  @MainActor
   func changeSelectedConf(_ newIndex: Int) {
     Logger.log("Changing conf selection index to: \(newIndex)", level: .verbose)
     guard let selectedConfNew = getConfName(at: newIndex) else {
@@ -305,6 +321,7 @@ struct ConfTableState {
     changeSelectedConf(selectedConfNew)
   }
 
+  @MainActor
   func changeSelectedConf(_ selectedConfNew: String, skipSaveToPrefs: Bool = false) {
     guard !selectedConfNew.equalsIgnoreCase(self.selectedConfName) else {
       return
