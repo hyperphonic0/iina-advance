@@ -9,7 +9,7 @@
 import Foundation
 
 class IINAAnimation {
-  typealias TaskFunc = (@MainActor () throws -> Void)
+  typealias TaskFunc = (() throws -> Void)
 
   // MARK: Misc static stuff
 

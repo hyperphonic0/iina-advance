@@ -676,7 +676,9 @@ struct GeometryTransform {
         pwc.videoView.refreshAllVideoDisplayState()
 
         player.refreshSyncUITimer()
-        player.touchBarSupport.setupTouchBarUI()
+        DispatchQueue.main.async { [self] in
+          player.touchBarSupport.setupTouchBarUI()
+        }
 
         // At this point it is safe to assume that `musicModeGeo` will have be set
         let shouldDecideDefaultArtStatus = !outputLayout.isMusicMode || pwc.musicModeGeo.isViewportShown
