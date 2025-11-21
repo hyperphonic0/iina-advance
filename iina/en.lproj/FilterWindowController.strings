@@ -47,7 +47,7 @@
 "ljR-R1-mo7.title" = "Add";
 
 /* Class = "NSTextFieldCell"; title = "Saved filters"; ObjectID = "m5X-Zl-aOj"; */
-"m5X-Zl-aOj.title" = "Saved filters";
+"m5X-Zl-aOj.title" = "Saved Filters:";
 
 /* Class = "NSTextFieldCell"; title = "Filter string:"; ObjectID = "t9F-EU-fKj"; */
 "t9F-EU-fKj.title" = "Filter string:";

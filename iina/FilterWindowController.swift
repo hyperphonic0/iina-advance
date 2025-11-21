@@ -41,8 +41,8 @@ class FilterWindowController: WindowController, NSWindowDelegate {
   var savedFilters: [SavedFilter] = []
   private var filterIsSaved: [Bool] = []
 
-  private var currentFilter: MPVFilter?
-  private var currentSavedFilter: SavedFilter?
+  private var currentFilterEditIndex: Int?
+  private var currentSavedFilterEditIndex: Int?
 
   init(filterType: String, _ autosaveName: WindowAutosaveName) {
     self.filterType = filterType
@@ -66,7 +66,7 @@ class FilterWindowController: WindowController, NSWindowDelegate {
     // Double-click saved filter to edit
     savedFiltersTableView.doubleAction = #selector(self.editSavedFilterAction(_:))
 
-    savedFilters = (Preference.array(for: filterType == MPVProperty.af ? .savedAudioFilters : .savedVideoFilters) ?? []).compactMap(SavedFilter.init(dict:))
+    loadSavedFiltersFromPrefs()
 
     // notifications
     let notiName: Notification.Name = filterType == MPVProperty.af ? .iinaAFChanged : .iinaVFChanged
@@ -96,9 +96,14 @@ class FilterWindowController: WindowController, NSWindowDelegate {
     }
   }
 
+  @MainActor
   @objc
   func reloadTable() {
-    guard let pc = PlayerCore.lastActive else { return }
+    guard let pc = PlayerCore.lastActive else {
+      // No player. But it's still useful to reload saved filters table
+      savedFiltersTableView.reloadData()
+      return
+    }
     pc.log.verbose("Reloading \(filterType) table")
     let savedFilters = self.savedFilters
     pc.mpv.queue.async { [self] in
@@ -107,22 +112,24 @@ class FilterWindowController: WindowController, NSWindowDelegate {
       // method. Thus this method may be called after IINA has commanded mpv to shutdown. Once mpv has
       // been told to shutdown mpv APIs must not be called as it can trigger a crash in mpv.
       guard !pc.isStopping else { return }
-      let freshFilters = (filterType == MPVProperty.af) ? pc.updateAudioFiltersFromMpv() : pc.updateVideoFiltersFromMpv()
-      var filterIsSaved = [Bool](repeatElement(false, count: freshFilters.count))
+      let latestActiveFilters = (filterType == MPVProperty.af) ? pc.updateAudioFiltersFromMpv() : pc.updateVideoFiltersFromMpv()
+
+      var filterIsSavedUpdated = [Bool](repeatElement(false, count: latestActiveFilters.count))
 
       var savedFiltersUpdated: [SavedFilter] = []
       for savedFilter in savedFilters {
         if let savedMpvFilter = MPVFilter(rawString: savedFilter.filterString),
-           let freshIndex = freshFilters.firstIndex(of: savedMpvFilter) {
-          filterIsSaved[freshIndex] = true
+           let freshIndex = latestActiveFilters.firstIndex(of: savedMpvFilter) {
+          filterIsSavedUpdated[freshIndex] = true
           savedFiltersUpdated.append(savedFilter.clone(enabled: true))
         } else {
           savedFiltersUpdated.append(savedFilter.clone(enabled: false))
         }
       }
       DispatchQueue.main.async { [self] in
-        self.filters = freshFilters
-        self.filterIsSaved = filterIsSaved
+        Logger.log.verbose("Reloading filters UI: active=\(latestActiveFilters.count) saved=\(savedFilters.count) checkboxes=\(filterIsSavedUpdated.map(\.description).joined(separator: "-"))")
+        self.filters = latestActiveFilters
+        self.filterIsSaved = filterIsSavedUpdated
         self.savedFilters = savedFiltersUpdated
         currentFiltersTableView.reloadData()
         savedFiltersTableView.reloadData()
@@ -146,19 +153,22 @@ class FilterWindowController: WindowController, NSWindowDelegate {
       Utility.showAlert("filter.no_player", sheetWindow: window)
       return
     }
+
     player.mpv.queue.async { [self] in
+      func onFailure() {
+        DispatchQueue.main.async { [self] in
+          Utility.showAlert("filter.incorrect", sheetWindow: window)
+          reloadTable()
+        }
+      }
       if filterType == MPVProperty.vf {
         guard player.addVideoFilter(filter) else {
-          DispatchQueue.main.async { [self] in
-            Utility.showAlert("filter.incorrect", sheetWindow: window)
-          }
+          onFailure()
           return
         }
       } else {
         guard player.addAudioFilter(filter) else {
-          DispatchQueue.main.async { [self] in
-            Utility.showAlert("filter.incorrect", sheetWindow: window)
-          }
+          onFailure()
           return
         }
       }
@@ -170,14 +180,11 @@ class FilterWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  func saveFilter(_ filter: MPVFilter) {
-    guard let window else { return }
-    currentFilter = filter
-    UIState.shared.addOpenSheet(saveFilterSheet.savedStateName, toWindow: window.frameAutosaveName)
-    window.beginSheet(saveFilterSheet)
+  private func loadSavedFiltersFromPrefs() {
+    savedFilters = (Preference.array(for: filterType == MPVProperty.af ? .savedAudioFilters : .savedVideoFilters) ?? []).compactMap(SavedFilter.init(dict:))
   }
 
-  private func syncSavedFilter() {
+  private func syncSavedFiltersToPrefsAndKeyBindings() {
     Preference.set(savedFilters.map { $0.toDict() }, for: filterType == MPVProperty.af ? .savedAudioFilters : .savedVideoFilters)
     AppDelegate.shared.menuController?.updateSavedFilters(forType: filterType, from: savedFilters)
     UserDefaults.standard.synchronize()
@@ -241,7 +248,10 @@ class FilterWindowController: WindowController, NSWindowDelegate {
 
   @IBAction func saveFilterAction(_ sender: NSButton) {
     let row = currentFiltersTableView.row(for: sender)
-    saveFilter(filters[row])
+    currentFilterEditIndex = row
+    guard let window else { return }
+    UIState.shared.addOpenSheet(saveFilterSheet.savedStateName, toWindow: window.frameAutosaveName)
+    window.beginSheet(saveFilterSheet)
   }
 
   /// User activates or deactivates previously saved audio or video filter
@@ -251,6 +261,11 @@ class FilterWindowController: WindowController, NSWindowDelegate {
     let savedFilter = savedFilters[row]
     guard let pc = PlayerCore.lastActive else {
       Utility.showAlert("filter.no_player", sheetWindow: window)
+      DispatchQueue.main.async { [self] in
+        // savedFilter was already updated with toggled state. Reset from prefs:
+        loadSavedFiltersFromPrefs()
+        reloadTable()
+      }
       return
     }
     let toggleOn = sender.state == .on
@@ -311,7 +326,7 @@ class FilterWindowController: WindowController, NSWindowDelegate {
     let row = savedFiltersTableView.row(for: sender)
     savedFilters.remove(at: row)
     reloadTable()
-    syncSavedFilter()
+    syncSavedFiltersToPrefsAndKeyBindings()
   }
 
   @IBAction func editSavedFilterAction(_ sender: NSButton) {
@@ -325,12 +340,14 @@ class FilterWindowController: WindowController, NSWindowDelegate {
       return
     }
     Logger.log("Editing saved filter for row \(row)", level: .verbose)
-    currentSavedFilter = savedFilters[row]
-    editFilterNameTextField.stringValue = currentSavedFilter!.name
-    editFilterStringTextField.stringValue = currentSavedFilter!.filterString
-    editFilterKeyRecordView.currentKey = currentSavedFilter!.shortcutKey
-    editFilterKeyRecordView.currentKeyModifiers = currentSavedFilter!.shortcutKeyModifiers
-    editFilterKeyRecordViewLabel.stringValue = currentSavedFilter!.readableShortCutKey
+    let currentSavedFilter = savedFilters[row]
+    currentSavedFilterEditIndex = row
+
+    editFilterNameTextField.stringValue = currentSavedFilter.name
+    editFilterStringTextField.stringValue = currentSavedFilter.filterString
+    editFilterKeyRecordView.currentKey = currentSavedFilter.shortcutKey
+    editFilterKeyRecordView.currentKeyModifiers = currentSavedFilter.shortcutKeyModifiers
+    editFilterKeyRecordViewLabel.stringValue = currentSavedFilter.readableShortCutKey
     UIState.shared.addOpenSheet(editFilterSheet.savedStateName, toWindow: window.frameAutosaveName)
     window.beginSheet(editFilterSheet)
   }
@@ -400,14 +417,14 @@ extension FilterWindowController: KeyRecordViewDelegate {
 extension FilterWindowController {
 
   @IBAction func addSavedFilterAction(_ sender: Any) {
-    if let currentFilter = currentFilter {
-      let filter = SavedFilter(name: saveFilterNameTextField.stringValue,
-                               filterString: currentFilter.stringFormat,
-                               shortcutKey: keyRecordView.currentKey,
-                               modifiers: keyRecordView.currentKeyModifiers)
-      savedFilters.append(filter)
+    if let filterIndex = currentFilterEditIndex, let filter = filters.indices.contains(filterIndex) ? filters[filterIndex] : nil {
+      let savedFilter = SavedFilter(name: saveFilterNameTextField.stringValue,
+                                    filterString: filter.stringFormat,
+                                    shortcutKey: keyRecordView.currentKey,
+                                    modifiers: keyRecordView.currentKeyModifiers)
+      savedFilters.append(savedFilter)
       reloadTable()
-      syncSavedFilter()
+      syncSavedFiltersToPrefsAndKeyBindings()
     }
     window!.endSheet(saveFilterSheet)
   }
@@ -417,15 +434,16 @@ extension FilterWindowController {
   }
 
   @IBAction func saveEditedFilterAction(_ sender: Any) {
-    if let oldSavedFilter = currentSavedFilter {
-      currentSavedFilter = SavedFilter(name: editFilterNameTextField.stringValue,
-                                       filterString: editFilterStringTextField.stringValue,
-                                       shortcutKey: editFilterKeyRecordView.currentKey,
-                                       modifiers: editFilterKeyRecordView.currentKeyModifiers,
-                                       enabled: oldSavedFilter.isEnabled)
+    if let editIndex = currentSavedFilterEditIndex, let oldSavedFilter = savedFilters.indices.contains(editIndex) ? savedFilters[editIndex] : nil {
+      savedFilters[editIndex] = SavedFilter(name: editFilterNameTextField.stringValue,
+                                            filterString: editFilterStringTextField.stringValue,
+                                            shortcutKey: editFilterKeyRecordView.currentKey,
+                                            modifiers: editFilterKeyRecordView.currentKeyModifiers,
+                                            enabled: oldSavedFilter.isEnabled)
+      syncSavedFiltersToPrefsAndKeyBindings()
       reloadTable()
-      syncSavedFilter()
     }
+    currentSavedFilterEditIndex = nil
     window!.endSheet(editFilterSheet)
   }
 
