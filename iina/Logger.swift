@@ -105,39 +105,57 @@ struct Logger {
   /// If not running in DEBUG, and this flag is `false`, then all logging is disabled.
   /// Don't really care about race conditions here; would rather have faster performance.
   static nonisolated(unsafe) private(set) var enabled: Bool = false
+  /// True if logging to file is enabled. Irrelevant if `enabled` is false.
+  static nonisolated(unsafe) private(set) var enableLogToFile: Bool = false
 
   /// Updates global enablement flag
   static func updateEnablement() {
     let isInteractiveLaunch = AppDelegate.isInteractiveLaunch
     if !isInteractiveLaunch && !Preference.bool(for: .logNonInteractiveLaunches) {
-      logToStdout(.debug, "Logging disabled for non-interactive launch")
+      logToStdout(.debug, "Logging disabled for non-interactive launch (change pref `enableLogToFile` to enable)")
       enabled = false
+      enableLogToFile = false
       return
     }
-    let newValue = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableLogging)
+    let newValue = Preference.bool(for: .enableAdvancedSettings)
     let changeToEnablement = (enabled != newValue) ? newValue : nil
     enabled = newValue
+
+    let newLogToFileValue = newValue && Preference.bool(for: .enableLogging)
+    let changeToLogToFileEnablement = (enableLogToFile != newLogToFileValue) ? newLogToFileValue : nil
+    enableLogToFile = newLogToFileValue
 
     let newLogLevel = Level(rawValue: Preference.integer(for: .logLevel).clamped(to: Level.trace.rawValue...Level.error.rawValue))!
     let changeToLevel = Level.preferred != newLogLevel ? newLogLevel : nil
     Level.preferred = newLogLevel
 
-    if !enabled {
+    if enabled {
+      // Globally enabled
       if changeToEnablement != nil {
-        logToStdout(.debug, "Logging is now disabled")
-      } else {
-        if changeToEnablement != nil {
-          Logger.log.debug("Logging is now enabled")
-        }
+        Logger.log.debug("Logging is now enabled")
+      }
+      if let changeToLevel {
+        Logger.log.debug("Log level changed to: \(changeToLevel)")
+      }
+      if let changeToLogToFileEnablement {
+        Logger.log.debug("Log to file is now: \(changeToLogToFileEnablement ? "enabled" : "disabled")")
+      }
+    } else {
+      // Globally disabled
+      if changeToEnablement != nil {
+        logToStdout(.debug, "Logging is now completely disabled")
       }
       if let changeToLevel {
         logToStdout(.debug, "Log level changed to: \(changeToLevel)")
+      }
+      if let changeToLogToFileEnablement {
+        logToStdout(.debug, "Log to file is now: \(changeToLogToFileEnablement ? "enabled" : "disabled")")
       }
     }
   }
 
   static func isEnabled(_ level: Logger.Level) -> Bool {
-    enabled && (Logger.Level.preferred <= level)
+    enabled && ((Logger.Level.preferred <= level) || stdoutLogLevel <= level)
   }
 
   static var isTraceEnabled: Bool   { Logger.isEnabled(.trace) }
@@ -207,6 +225,8 @@ struct Logger {
       originalSS = original
     }
 
+    // Unfortunately we need to execute the closure so that we can prepend the preamble...
+    // At least use an extra check for enablement first
     func trace(_ rawMessage: @autoclosure () -> String) {
       guard Logger.isTraceEnabled else { return }
       originalSS.log("\(preamble) \(rawMessage())", level: .trace)
@@ -280,28 +300,23 @@ struct Logger {
     }
 
     func trace(_ rawMessage: @autoclosure () -> String) {
-      guard Logger.isTraceEnabled else { return }
-      Logger.log(rawMessage(), level: .trace, subsystem: self)
+      Logger.log(rawMessage, level: .trace, subsystem: self)
     }
 
     func verbose(_ rawMessage: @autoclosure () -> String) {
-      guard Logger.isVerboseEnabled else { return }
-      Logger.log(rawMessage(), level: .verbose, subsystem: self)
+      Logger.log(rawMessage, level: .verbose, subsystem: self)
     }
 
     func debug(_ rawMessage: @autoclosure () -> String) {
-      guard Logger.isDebugEnabled else { return }
-      Logger.log(rawMessage(), level: .debug, subsystem: self)
+      Logger.log(rawMessage, level: .debug, subsystem: self)
     }
 
     func warn(_ rawMessage: @autoclosure () -> String) {
-      guard Logger.isWarningEnabled else { return }
-      Logger.log(rawMessage(), level: .warning, subsystem: self)
+      Logger.log(rawMessage, level: .warning, subsystem: self)
     }
 
     func error(_ rawMessage: @autoclosure () -> String) {
-      guard Logger.isErrorEnabled else { return }
-      Logger.log(rawMessage(), level: .error, subsystem: self)
+      Logger.log(rawMessage, level: .error, subsystem: self)
     }
 
     func fatalError(_ rawMessage: @autoclosure () -> String) -> Never {
@@ -309,8 +324,7 @@ struct Logger {
     }
 
     func log(_ rawMessage: @autoclosure () -> String, level: Level = .debug) {
-      guard Logger.isEnabled(level) else { return }
-      Logger.log(rawMessage(), level: level, subsystem: self)
+      Logger.log(rawMessage, level: level, subsystem: self)
     }
 
     // MARK: - Log Functions
@@ -479,7 +493,7 @@ struct Logger {
   ///     to writing to a closed file handle. The logger now uses a lock to coordinate closing of the log file. If a log message is logged
   ///     after the log file is closed it will only be logged to the console.
   static func closeLogFiles() {
-    guard enabled else { return }
+    guard enableLogToFile else { return }
     // Lock to avoid closing the log file while another thread is writing to it.
     fsLock.withLock {
       close(logFile, logFileHandle)
@@ -540,6 +554,7 @@ struct Logger {
   /// Prints the given message to `stdout` with the same formatting that would be used for a log file.
   /// Useful as a fallback output mode when `Logger.log(...)` is disabled.
   fileprivate static func logToStdout(_ level: Level, _ message: String) {
+    guard level >= stdoutLogLevel else { return }
     print(formatMessage(message, level, Logger.loggerSubsystem, false))
   }
 
@@ -580,32 +595,43 @@ struct Logger {
   ///   - level: The log level of the message.
   ///   - subsystem: The subsystem emitting this message.
   static func log(_ message: () -> String, level: Level = .debug, subsystem: any Subsystem = Logger.general) {
+    // Always enabled logging when in debug
     #if !DEBUG
     guard enabled else { return }
     #endif
 
+
+#if DEBUG
+    let needsStdout = true
+#else
+    let needsStdout = level >= stdoutLogLevel
+#endif
+    let needsElsewhere = Logger.Level.preferred >= level
+    guard needsStdout || needsElsewhere else { return }
+
     // Now that we know the message will not be discarded, call the closure to construct the message
     // string to log.
     let message = maskAnyPII(message())
-
-    // Record the log line for use in the Logs window...j/
     let date = Date()
     let string = formatMessage(message, level, subsystem, true, date)
+
+    // Print to stdout (mostly for debugging)
+    if needsStdout {
+      print(string, terminator: "")
+    }
+
+    guard needsElsewhere else { return }
+
+    // Record the log line for use in the Logs window...
     let log = Log(subsystem: subsystem.rawValue, level: level.rawValue, message: message, date: dateFormatter.string(from: date), logString: string)
     structuresLock.withLock {
       logsForLogWindow.append(log)
     }
 
-#if DEBUG
-    print(string, terminator: "")
-#else
-    if level >= stdoutLogLevel {
-      print(string, terminator: "")
-    }
-#endif
+    guard enableLogToFile else { return }
 
     guard let data = string.data(using: .utf8) else {
-      logToStdout(.error, "Cannot encode log string!")
+      logToStdout(.error, "Cannot encode log string for writing to file!")
       return
     }
     // Lock to prevent the log file from being closed by another thread while writing to it.
