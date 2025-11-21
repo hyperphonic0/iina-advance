@@ -16,28 +16,29 @@ fileprivate let ModifierMap: [Character: NSEvent.ModifierFlags] = [
 ]
 
 
-class SavedFilter: NSObject {
+final class SavedFilter: NSObject, Sendable {
 
-  @objc var name: String
-  @objc var filterString: String
+  @objc let name: String
+  @objc let filterString: String
   @objc var readableShortCutKey: String {
     get {
       return KeyCodeHelper.readableString(fromKey: shortcutKey, modifiers: shortcutKeyModifiers)
     }
   }
-  @objc var isEnabled = false
-  var shortcutKey: String
-  var shortcutKeyModifiers: NSEvent.ModifierFlags
+  let shortcutKey: String
+  let shortcutKeyModifiers: NSEvent.ModifierFlags
+  @objc let isEnabled: Bool
 
   override var debugDescription: String {
     Mirror(reflecting: self).children.map({"\($0.label!)=\($0.value)"}).joined(separator: ", ")
   }
 
-  init(name: String, filterString: String, shortcutKey: String, modifiers: NSEvent.ModifierFlags) {
+  init(name: String, filterString: String, shortcutKey: String, modifiers: NSEvent.ModifierFlags, enabled: Bool = false) {
     self.name = name
     self.filterString = filterString
     self.shortcutKey = shortcutKey
     self.shortcutKeyModifiers = modifiers
+    self.isEnabled = enabled
   }
 
   init?(dict: Any) {
@@ -48,6 +49,7 @@ class SavedFilter: NSObject {
       let shortcutKeyModifiers = dict["shortcutKeyModifiers"] else { return nil }
     self.name = name
     self.filterString = filterString
+    self.isEnabled = false
     self.shortcutKey = shortcutKey
     self.shortcutKeyModifiers = shortcutKeyModifiers.compactMap { ModifierMap[$0] }.reduce([]) { $0.union($1) }
   }
@@ -59,5 +61,9 @@ class SavedFilter: NSObject {
       "shortcutKey": shortcutKey,
       "shortcutKeyModifiers": String(ModifierMap.enumerated().compactMap { shortcutKeyModifiers.contains($0.element.value) ? $0.element.key : nil })
     ]
+  }
+
+  func clone(enabled: Bool) -> SavedFilter {
+    SavedFilter(name: name, filterString: filterString, shortcutKey: shortcutKey, modifiers: shortcutKeyModifiers, enabled: enabled)
   }
 }

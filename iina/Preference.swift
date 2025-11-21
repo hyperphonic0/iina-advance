@@ -633,7 +633,7 @@ struct Preference {
     case none
     case historyWindow
 
-    static var defaultValue = ActionAfterLaunch.welcomeWindow
+    static let defaultValue = ActionAfterLaunch.welcomeWindow
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -645,7 +645,7 @@ struct Preference {
     case quit
     case none
 
-    static var defaultValue = ActionWhenNoOpenWindow.none
+    static let defaultValue = ActionWhenNoOpenWindow.none
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -658,7 +658,7 @@ struct Preference {
     case seek = 2
     case unused = 3
 
-    static var defaultValue = ArrowButtonAction.speed
+    static let defaultValue = ArrowButtonAction.speed
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -679,7 +679,7 @@ struct Preference {
     case useDefault = 1
     case zoomIn = 2
 
-    static var defaultValue = WindowOpenCloseAnimation.useDefault
+    static let defaultValue = WindowOpenCloseAnimation.useDefault
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -696,7 +696,7 @@ struct Preference {
     case mediumLight // 3
     case system // 4
 
-    static var defaultValue = Theme.dark
+    static let defaultValue = Theme.dark
 
     init?(key: Key) {
       let value = Preference.integer(for: key)
@@ -712,7 +712,7 @@ struct Preference {
     case dark
     case glow
 
-    static var defaultValue = Shadow.dark
+    static let defaultValue = Shadow.dark
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -729,7 +729,7 @@ struct Preference {
     case outlinePlusShadowSharpCorners
     case outlinePlusShadowRoundedCorners
 
-    static var defaultValue = ThumnailBorderStyle.shadowRoundedCorners
+    static let defaultValue = ThumnailBorderStyle.shadowRoundedCorners
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -751,7 +751,7 @@ struct Preference {
     /// Percentage of displayed video size
     case scaleWithViewport
 
-    static var defaultValue = ThumbnailSizeOption.scaleWithViewport
+    static let defaultValue = ThumbnailSizeOption.scaleWithViewport
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -762,7 +762,7 @@ struct Preference {
     case topLeading = 1
     case topTrailing
 
-    static var defaultValue = OSDPosition.topLeading
+    static let defaultValue = OSDPosition.topLeading
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -773,7 +773,7 @@ struct Preference {
     case leadingSidebar = 1
     case trailingSidebar
 
-    static var defaultValue = SidebarLocation.trailingSidebar
+    static let defaultValue = SidebarLocation.trailingSidebar
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -789,7 +789,7 @@ struct Preference {
     case insideViewport = 1
     case outsideViewport
 
-    static var defaultValue = PanelPlacement.insideViewport
+    static let defaultValue = PanelPlacement.insideViewport
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -813,7 +813,7 @@ struct Preference {
     /// Use clear background with slight alpha gradient
     case clearGradient
 
-    static var defaultValue = OSCColorScheme.clearGradient
+    static let defaultValue = OSCColorScheme.clearGradient
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -835,7 +835,7 @@ struct Preference {
     case windowHover = 1
     case topBarHover
 
-    static var defaultValue = ShowTopBarTrigger.windowHover
+    static let defaultValue = ShowTopBarTrigger.windowHover
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -847,7 +847,7 @@ struct Preference {
     case top
     case bottom
 
-    static var defaultValue = OSCPosition.bottom
+    static let defaultValue = OSCPosition.bottom
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -866,7 +866,7 @@ struct Preference {
     case controlAccentColor = 1
     case gray = 2
 
-    static var defaultValue = SliderBarLeftColor.controlAccentColor
+    static let defaultValue = SliderBarLeftColor.controlAccentColor
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -878,7 +878,7 @@ struct Preference {
     case exact
     case auto
 
-    static var defaultValue = SeekOption.exact
+    static let defaultValue = SeekOption.exact
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -895,7 +895,7 @@ struct Preference {
     case resetSpeed
     case contextMenu
 
-    static var defaultValue = MouseClickAction.none
+    static let defaultValue = MouseClickAction.none
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -910,7 +910,7 @@ struct Preference {
     case passToMpv
     case playbackSpeed
 
-    static var defaultValue = ScrollAction.volume
+    static let defaultValue = ScrollAction.volume
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -924,7 +924,7 @@ struct Preference {
     case none
     case windowSizeOrFullScreen
 
-    static var defaultValue = PinchAction.windowSize
+    static let defaultValue = PinchAction.windowSize
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -935,7 +935,7 @@ struct Preference {
     case none = 0
     case rotateVideoByQuarters
 
-    static var defaultValue = RotateAction.rotateVideoByQuarters
+    static let defaultValue = RotateAction.rotateVideoByQuarters
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -947,7 +947,7 @@ struct Preference {
     case mpvFuzzy
     case iina
 
-    static var defaultValue = IINAAutoLoadAction.iina
+    static let defaultValue = IINAAutoLoadAction.iina
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -968,7 +968,7 @@ struct Preference {
     case fuzzy
     case all
 
-    static var defaultValue = AutoLoadAction.fuzzy
+    static let defaultValue = AutoLoadAction.fuzzy
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -998,7 +998,7 @@ struct Preference {
     case scale
     case no
 
-    static var defaultValue = SubOverrideLevel.scale
+    static let defaultValue = SubOverrideLevel.scale
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1022,7 +1022,7 @@ struct Preference {
     case center
     case bottom  // right
 
-    static var defaultValue = SubAlign.center
+    static let defaultValue = SubAlign.center
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1055,7 +1055,7 @@ struct Preference {
     case udp
     case http
 
-    static var defaultValue = RTSPTransportation.tcp
+    static let defaultValue = RTSPTransportation.tcp
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1080,7 +1080,7 @@ struct Preference {
     case webp
     case jxl
 
-    static var defaultValue = ScreenshotFormat.png
+    static let defaultValue = ScreenshotFormat.png
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1104,7 +1104,7 @@ struct Preference {
     case auto
     case autoCopy
 
-    static var defaultValue = HardwareDecoderOption.autoCopy
+    static let defaultValue = HardwareDecoderOption.autoCopy
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1133,7 +1133,7 @@ struct Preference {
     case gamma
     case linear
 
-    static var defaultValue = ToneMappingAlgorithmOption.auto
+    static let defaultValue = ToneMappingAlgorithmOption.auto
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1157,7 +1157,7 @@ struct Preference {
     case simpleVideoSizeMultiple = 1
     case mpvGeometry
 
-    static var defaultValue = ResizeWindowScheme.simpleVideoSizeMultiple
+    static let defaultValue = ResizeWindowScheme.simpleVideoSizeMultiple
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1169,7 +1169,7 @@ struct Preference {
     case onlyWhenOpen
     case never
 
-    static var defaultValue = ResizeWindowTiming.onlyWhenOpen
+    static let defaultValue = ResizeWindowTiming.onlyWhenOpen
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1183,7 +1183,7 @@ struct Preference {
     case videoSize15
     case videoSize20
 
-    static var defaultValue = ResizeWindowOption.videoSize10
+    static let defaultValue = ResizeWindowOption.videoSize10
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1205,7 +1205,7 @@ struct Preference {
     case hide
     case minimize
 
-    static var defaultValue = WindowBehaviorWhenPip.doNothing
+    static let defaultValue = WindowBehaviorWhenPip.doNothing
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1270,7 +1270,7 @@ struct Preference {
     case lastPlayedDay = 0
     case parentFolder
 
-    static var defaultValue = HistoryGroupBy.lastPlayedDay
+    static let defaultValue = HistoryGroupBy.lastPlayedDay
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1281,7 +1281,7 @@ struct Preference {
     case fullPath = 0
     case filename
 
-    static var defaultValue = HistorySearchType.fullPath
+    static let defaultValue = HistorySearchType.fullPath
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1293,7 +1293,7 @@ struct Preference {
     case track
     case album
 
-    static var defaultValue = ReplayGainOption.no
+    static let defaultValue = ReplayGainOption.no
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1317,7 +1317,7 @@ struct Preference {
 
   // MARK: - Defaults
 
-  static let defaultPreference: [Preference.Key: Any] = [
+  static let defaultPreference: [Preference.Key: Any & Sendable] = [
     .receiveBetaUpdate: false,
     .actionAfterLaunch: ActionAfterLaunch.welcomeWindow.rawValue,
     .alwaysOpenInNewWindow: true,
@@ -1612,7 +1612,7 @@ struct Preference {
     .savedAudioFilters: [SavedFilter](),
 
     .enableRecentDocumentsWorkaround: false,
-    .recentDocuments: [Any](),
+    .recentDocuments: [Any & Sendable](),
 
     .aspectRatioPanelPresets: "4:3,16:9,16:10,21:9,5:4",
     .cropPanelPresets: "4:3,16:9,16:10,21:9,5:4",

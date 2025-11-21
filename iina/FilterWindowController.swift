@@ -107,20 +107,23 @@ class FilterWindowController: WindowController, NSWindowDelegate {
       // method. Thus this method may be called after IINA has commanded mpv to shutdown. Once mpv has
       // been told to shutdown mpv APIs must not be called as it can trigger a crash in mpv.
       guard !pc.isStopping else { return }
-      let filters = (filterType == MPVProperty.af) ? pc.updateAudioFiltersFromMpv() : pc.updateVideoFiltersFromMpv()
-      var filterIsSaved = [Bool](repeatElement(false, count: filters.count))
-      savedFilters.forEach { savedFilter in
-        if let asObject = MPVFilter(rawString: savedFilter.filterString),
-           let index = filters.firstIndex(of: asObject) {
-          savedFilter.isEnabled = true
-          filterIsSaved[index] = true
+      let freshFilters = (filterType == MPVProperty.af) ? pc.updateAudioFiltersFromMpv() : pc.updateVideoFiltersFromMpv()
+      var filterIsSaved = [Bool](repeatElement(false, count: freshFilters.count))
+
+      var savedFiltersUpdated: [SavedFilter] = []
+      for savedFilter in savedFilters {
+        if let savedMpvFilter = MPVFilter(rawString: savedFilter.filterString),
+           let freshIndex = freshFilters.firstIndex(of: savedMpvFilter) {
+          filterIsSaved[freshIndex] = true
+          savedFiltersUpdated.append(savedFilter.clone(enabled: true))
         } else {
-          savedFilter.isEnabled = false
+          savedFiltersUpdated.append(savedFilter.clone(enabled: false))
         }
       }
       DispatchQueue.main.async { [self] in
-        self.filters = filters
+        self.filters = freshFilters
         self.filterIsSaved = filterIsSaved
+        self.savedFilters = savedFiltersUpdated
         currentFiltersTableView.reloadData()
         savedFiltersTableView.reloadData()
       }
@@ -414,11 +417,12 @@ extension FilterWindowController {
   }
 
   @IBAction func saveEditedFilterAction(_ sender: Any) {
-    if let currentFilter = currentSavedFilter {
-      currentFilter.name = editFilterNameTextField.stringValue
-      currentFilter.filterString = editFilterStringTextField.stringValue
-      currentFilter.shortcutKey = editFilterKeyRecordView.currentKey
-      currentFilter.shortcutKeyModifiers = editFilterKeyRecordView.currentKeyModifiers
+    if let oldSavedFilter = currentSavedFilter {
+      currentSavedFilter = SavedFilter(name: editFilterNameTextField.stringValue,
+                                       filterString: editFilterStringTextField.stringValue,
+                                       shortcutKey: editFilterKeyRecordView.currentKey,
+                                       modifiers: editFilterKeyRecordView.currentKeyModifiers,
+                                       enabled: oldSavedFilter.isEnabled)
       reloadTable()
       syncSavedFilter()
     }
