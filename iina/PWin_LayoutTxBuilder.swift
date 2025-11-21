@@ -93,6 +93,7 @@ extension PlayerWindowController {
                   totalEndingDuration: CGFloat? = nil,
                   thenRun: Bool = false) -> [IINAAnimation.Task] {
 
+    let needsCloseOldPanelsStep = transition.needsCloseOldPanelsStep
     // - Timings Setup
 
     let closeOldPanelsTiming: CAMediaTimingFunctionName
@@ -152,9 +153,11 @@ extension PlayerWindowController {
       }
       if !transition.needsFadeOutOldViewsStep {
         fadeOutOldViewsDuration = 0
-      } else if !transition.needsCloseOldPanelsStep {
-        closeOldPanelsDuration = 0
       }
+    }
+
+    if !needsCloseOldPanelsStep {
+      closeOldPanelsDuration = 0
     }
 
     let endingAnimationDuration: CGFloat
@@ -192,7 +195,9 @@ extension PlayerWindowController {
     } else {
       if !transition.needsFadeInNewViewsStep {
         fadeInNewViewsDuration = 0
-      } else if !transition.needsAnimationForOpenFinalPanels {
+      }
+      if !transition.needsAnimationForOpenFinalPanels {
+        // Probably hiding a sidebar. We still need to execute the task, but will do it with no animation.
         openFinalPanelsDuration = 0
       }
     }
@@ -227,7 +232,7 @@ extension PlayerWindowController {
 
     // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies closeOldPanelsGeometry if it exists.
     // Not enabled for full screen transitions or if animation is disabled.
-    if transition.needsCloseOldPanelsStep {
+    if needsCloseOldPanelsStep {
       tasks.append(.init(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
         closeOldPanels(transition)
       }))
@@ -466,6 +471,7 @@ extension PlayerWindowController.LayoutTransition {
         return nil
       }
     }
+    guard self.needsCloseOldPanelsStep else { return nil }
 
     // TOP
     let insideTopBarHeight: CGFloat

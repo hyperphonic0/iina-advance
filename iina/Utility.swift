@@ -216,7 +216,7 @@ class Utility {
     panel.canChooseFiles = !chooseDir
     panel.canChooseDirectories = chooseDir
     panel.resolvesAliases = true
-    panel.allowedFileTypes = allowedFileTypes
+    setAllowedFileTypes(allowedFileTypes, in: panel)
     panel.allowsMultipleSelection = false
     panel.level = .modalPanel
     if let dir = dir {
@@ -267,7 +267,7 @@ class Utility {
     let panel = NSSavePanel()
     panel.title = title
     panel.canCreateDirectories = true
-    panel.allowedFileTypes = allowedFileExtensions
+    setAllowedFileTypes(allowedFileExtensions, in: panel)
     if filename != nil {
       panel.nameFieldStringValue = filename!
     }
@@ -281,6 +281,11 @@ class Utility {
     } else {
       panel.begin(completionHandler: handler)
     }
+  }
+
+  /// De-duplicates a seemingly unavoidable nuisance warning
+  static func setAllowedFileTypes(_ allowedFileExtensions: [String]? = nil, in panel: NSSavePanel) {
+    panel.allowedFileTypes = allowedFileExtensions
   }
 
   /**

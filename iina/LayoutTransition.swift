@@ -123,15 +123,14 @@ extension PlayerWindowController {
         // Avoid bounciness and possible unwanted video scaling animation (not needed for ->FS anyway)
         return false
       }
-      return closeOldPanelsGeometry != nil
-      || isClosingLeadingSidebar || isClosingTrailingSidebar
-      || inputLayout.hasTopPaddingForCameraHousing != outputLayout.hasTopPaddingForCameraHousing
-      || isClosingPlaylistInMusicMode || isClosingViewport
-      || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
-      || (inputLayout.isLegacyStyle != outputLayout.isLegacyStyle)
-      || (inputLayout.mode != outputLayout.mode)
+      return (inputLayout.mode != outputLayout.mode)
       || (inputLayout.enableOSC != outputLayout.enableOSC)
       || (inputLayout.enableOSC && (inputLayout.oscPosition.rawValue != outputLayout.oscPosition.rawValue))
+      || isClosingLeadingSidebar || isClosingTrailingSidebar
+      || (inputLayout.hasTopPaddingForCameraHousing != outputLayout.hasTopPaddingForCameraHousing)
+      || isClosingViewport  // notably, not currently using this step for closing playlist in music mode
+      || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
+      || (inputLayout.isLegacyStyle != outputLayout.isLegacyStyle)
     }
 
     var needsMoveAndScaleVideoFrameStep: Bool {

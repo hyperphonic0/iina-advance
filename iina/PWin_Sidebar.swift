@@ -453,7 +453,7 @@ extension PlayerWindowController {
 
     log.verbose("Transitioning to layout with \(leadingSidebar.locationID)=\(leadingSidebar.visibility) \(trailingSidebar.locationID)=\(trailingSidebar.visibility)")
     let newLayoutState = oldLayout.clone(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar)
-    let transition = buildLayoutTransition(named: "\(shouldShow ? "Show" : "Hide")Sidebar", from: oldLayout, to: newLayoutState)
+    let transition = buildLayoutTransition(named: shouldShow ? "Show Sidebar": "Hide Sidebar", from: oldLayout, to: newLayoutState)
     buildTasks(for: transition, thenRun: true)
   }
 

@@ -55,6 +55,11 @@ struct LayoutState {
   /// Only applies for legacy full screen
   let hasTopPaddingForCameraHousing: Bool
 
+  /// LeadingSidebar toggle button.
+  var leadingSidebarToggleButton: VisibilityMode
+  /// TrailingSidebar toggle button.
+  var trailingSidebarToggleButton: VisibilityMode
+
   // MARK: Init / Factory
 
   init(leadingSidebar: Sidebar, trailingSidebar: Sidebar, mode: PlayerWindowMode,
@@ -104,6 +109,12 @@ struct LayoutState {
     // Should be ok to fill in most of ControlBarGeometry from prefs if not given
     let controlBarGeo = givenControlBarGeo ?? ControlBarGeometry(mode: mode, oscPosition: oscPosition)
     self.controlBarGeo = controlBarGeo
+
+    let titleBarVisibility = LayoutState.titleBarVisibility(for: mode, topBarPlacement: topBarPlacement)
+    let hasLeadingSidebar = mode.canShowSidebars && !leadingSidebar.tabGroups.isEmpty
+    self.leadingSidebarToggleButton = hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) ? titleBarVisibility : .hidden
+    let hasTrailingSidebar = mode.canShowSidebars && !trailingSidebar.tabGroups.isEmpty
+    self.trailingSidebarToggleButton = hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) ? titleBarVisibility : .hidden
 
     self.hasTopPaddingForCameraHousing = hasTopPaddingForCameraHousing
   }
@@ -211,6 +222,10 @@ struct LayoutState {
   // - Visibility of views/categories
 
   var titleBar: VisibilityMode {
+    LayoutState.titleBarVisibility(for: mode, topBarPlacement: topBarPlacement)
+  }
+
+  fileprivate static func titleBarVisibility(for mode: PlayerWindowMode, topBarPlacement: Preference.PanelPlacement) -> VisibilityMode {
     switch mode {
     case .fullScreenNormal, .fullScreenInteractive, .musicMode:
       return .hidden
@@ -224,24 +239,6 @@ struct LayoutState {
   var titleIconAndText: VisibilityMode { titleBar }
   var trafficLightButtons: VisibilityMode { titleBar }
   var titlebarAccessoryViewControllers: VisibilityMode { isLegacyStyle ? .hidden : titleBar }
-
-  /// LeadingSidebar toggle button.
-  ///
-  /// Warning! This property can vary according to the value cooresponding to
-  /// `Preference.Key.showLeadingSidebarToggleButton` and is not cached or persisted (so far there has been no need).
-  var leadingSidebarToggleButton: VisibilityMode {
-    let hasLeadingSidebar = mode.canShowSidebars && !leadingSidebar.tabGroups.isEmpty
-    return hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) ? titleBar : .hidden
-  }
-
-  /// TrailingSidebar toggle button.
-  ///
-  /// Warning! This property can vary according to the value cooresponding to
-  /// `Preference.Key.showTrailingSidebarToggleButton` and is not cached or persisted (so far there has been no need).
-  var trailingSidebarToggleButton: VisibilityMode {
-    let hasTrailingSidebar = mode.canShowSidebars && !trailingSidebar.tabGroups.isEmpty
-    return hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) ? titleBar : .hidden
-  }
 
   var bottomBarView: VisibilityMode {
     switch mode {
