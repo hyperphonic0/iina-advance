@@ -33,6 +33,8 @@ class FilterWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var editFilterStringTextField: NSTextField!
   @IBOutlet weak var editFilterKeyRecordView: KeyRecordView!
   @IBOutlet weak var editFilterKeyRecordViewLabel: NSTextField!
+  @IBOutlet weak var activeFiltersLabel: NSTextField!
+  @IBOutlet weak var addActiveFilterButton: NSButton!
   @IBOutlet weak var removeButton: NSButton!
 
   let filterType: String
@@ -97,8 +99,7 @@ class FilterWindowController: WindowController, NSWindowDelegate {
   }
 
   @MainActor
-  @objc
-  func reloadTable() {
+  @objc func reloadTable() {
     guard let pc = PlayerCore.lastActive else {
       // No player. But it's still useful to reload saved filters table
       savedFiltersTableView.reloadData()
@@ -394,7 +395,12 @@ extension FilterWindowController: NSTableViewDelegate, NSTableViewDataSource {
     updateButtonStatus()
   }
 
-  func windowDidBecomeKey() {
+  @MainActor
+  func windowDidBecomeKey(_ notification: Notification) {
+    let hasPlayer = PlayerCore.lastActive != nil
+    currentFiltersTableView.isEnabled = hasPlayer
+    addActiveFilterButton.isEnabled = hasPlayer
+    activeFiltersLabel.textColor = hasPlayer ? .controlTextColor : .disabledControlTextColor
     updateButtonStatus()
   }
 

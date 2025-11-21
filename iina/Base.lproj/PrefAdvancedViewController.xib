@@ -84,8 +84,8 @@
             <point key="canvasLocation" x="-397" y="-167"/>
         </customView>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customView misplaced="YES" id="co6-LF-8Q2" userLabel="Prefs &gt; Advanced: Logging Section" propertyAccessControl="none">
-            <rect key="frame" x="0.0" y="0.0" width="490" height="116"/>
+        <customView id="co6-LF-8Q2" userLabel="Prefs &gt; Advanced: Logging Section" propertyAccessControl="none">
+            <rect key="frame" x="0.0" y="0.0" width="490" height="118"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="upp-mq-cio">
@@ -100,7 +100,7 @@
                     <rect key="frame" x="185" y="86" width="126" height="28"/>
                     <popUpButtonCell key="cell" type="push" title="Debug" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="hGq-ek-VHd" id="gTP-IE-Lyn">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="system"/>
+                        <font key="font" metaFont="message"/>
                         <menu key="menu" id="lA1-jW-Eyv">
                             <items>
                                 <menuItem title="Trace" tag="-1" id="pkg-Kg-F56"/>
@@ -143,7 +143,7 @@
                     <rect key="frame" x="185" y="52" width="126" height="28"/>
                     <popUpButtonCell key="cell" type="push" title="𐄒 Warn" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="4" imageScaling="proportionallyDown" inset="2" selectedItem="Ls0-AF-7w8" id="xeN-4l-Fiu">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="system"/>
+                        <font key="font" metaFont="message"/>
                         <menu key="menu" id="Rzc-Jt-6wZ">
                             <items>
                                 <menuItem title="𐄗 Trace" id="02t-Pl-pVS"/>

@@ -108,36 +108,32 @@ struct Logger {
 
   /// Updates global enablement flag
   static func updateEnablement() {
-    structuresLock.withLock {
-      _updateEnablement()
-    }
-
-    // In case this was previously disabled, mask library URL in subsequent logging
-    _ = getOrCreatePII(for: libraryDirectory.path)
-  }
-
-  /// Unlocked version.
-  private static func _updateEnablement() {
     let isInteractiveLaunch = AppDelegate.isInteractiveLaunch
     if !isInteractiveLaunch && !Preference.bool(for: .logNonInteractiveLaunches) {
-      Logger.log("Logging disabled for non-interactive launch")
+      logToStdout(.debug, "Logging disabled for non-interactive launch")
       enabled = false
       return
     }
     let newValue = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableLogging)
-    if enabled && !newValue {
-      Logger.log("Logging disabled")
-      enabled = newValue
-    } else if !enabled && newValue {
-      enabled = newValue
-      Logger.log("Logging enabled")
-    }
+    let changeToEnablement = (enabled != newValue) ? newValue : nil
+    enabled = newValue
 
     let newLogLevel = Level(rawValue: Preference.integer(for: .logLevel).clamped(to: Level.trace.rawValue...Level.error.rawValue))!
-    if Level.preferred != newLogLevel {
-      Logger.log("Log level updated to \(newLogLevel)")
-    }
+    let changeToLevel = Level.preferred != newLogLevel ? newLogLevel : nil
     Level.preferred = newLogLevel
+
+    if !enabled {
+      if changeToEnablement != nil {
+        logToStdout(.debug, "Logging is now disabled")
+      } else {
+        if changeToEnablement != nil {
+          Logger.log.debug("Logging is now enabled")
+        }
+      }
+      if let changeToLevel {
+        logToStdout(.debug, "Log level changed to: \(changeToLevel)")
+      }
+    }
   }
 
   static func isEnabled(_ level: Logger.Level) -> Bool {
@@ -160,8 +156,7 @@ struct Logger {
 
   static func initLogging() {
     // Call unlocked version. This should be called at app start, on the main thread, and we haven't done any logging yet, so it should be safe.
-    // Moreover we are avoiding a deadlock as all the nestled static stuff gets triggered to initialize.
-    _updateEnablement()
+    updateEnablement()
 
     // In case this was previously disabled, mask library URL in subsequent logging
     _ = getOrCreatePII(for: libraryDirectory.path)
@@ -390,14 +385,14 @@ struct Logger {
             if let data = piiFirstLineFormat.data(using: .utf8) {
               writeToFile(piiFileHandle, data)
             } else {
-              print(formatMessage("Could not encode pii header for writing!", .error, Logger.loggerSubsystem, false))
+              logToStdout(.error, "Could not encode pii header for writing!")
             }
           }
           let line = "\(piiToken)=\(escapedString)\n"
           if let data = line.data(using: .utf8) {
             writeToFile(piiFileHandle, data)
           } else {
-            print(formatMessage("Could not encode pii token (\(piiToken)) for writing!", .error, Logger.loggerSubsystem, false))
+            logToStdout(.error, "Could not encode pii token (\(piiToken)) for writing!")
           }
         }
       }
@@ -536,12 +531,17 @@ struct Logger {
       // to a closed channel was not picked up by the catch block.
       try ObjcUtils.catchException { fileHandle.write(data) }
     } catch {
-      print(formatMessage("Cannot write to log file: \(error.localizedDescription)", .error,
-                          Logger.loggerSubsystem, false))
+      logToStdout(.error, "Cannot write to log file: \(error.localizedDescription)")
     }
   }
 
   // MARK: - Message Formatting
+
+  /// Prints the given message to `stdout` with the same formatting that would be used for a log file.
+  /// Useful as a fallback output mode when `Logger.log(...)` is disabled.
+  fileprivate static func logToStdout(_ level: Level, _ message: String) {
+    print(formatMessage(message, level, Logger.loggerSubsystem, false))
+  }
 
   private static func formatMessage(_ message: String, _ level: Level, _ subsystem: any Subsystem,
                                     _ appendNewlineAtTheEnd: Bool, _ date: Date = Date()) -> String {
@@ -605,7 +605,7 @@ struct Logger {
 #endif
 
     guard let data = string.data(using: .utf8) else {
-      print(formatMessage("Cannot encode log string!", .error, Logger.loggerSubsystem, false))
+      logToStdout(.error, "Cannot encode log string!")
       return
     }
     // Lock to prevent the log file from being closed by another thread while writing to it.
