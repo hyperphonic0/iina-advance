@@ -21,7 +21,7 @@ fileprivate extension String {
 /**
  Represents a mpv filter. It can be either created by user or loaded from mpv.
  */
-class MPVFilter: NSObject {
+final class MPVFilter: NSObject, Sendable {
 
   enum FilterType: String {
     case crop = "crop"
@@ -33,11 +33,11 @@ class MPVFilter: NSObject {
 
   // MARK: - Members
 
-  var type: FilterType?
-  var name: String
-  var label: String?
-  var params: [String: String]?
-  var rawParamString: String?
+  let type: FilterType?
+  let name: String
+  let label: String?
+  let params: [String: String]?
+  let rawParamString: String?
 
   /** Convert the filter to a valid mpv filter string. */
   var stringFormat: String {
@@ -95,20 +95,25 @@ class MPVFilter: NSObject {
     } else {
       self.params = params
     }
+    self.rawParamString = nil
   }
 
   init?(rawString: String) {
     let splitted = rawString.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: true).map { String($0) }
     guard splitted.count == 1 || splitted.count == 2 else { return nil }
-    self.name = splitted[0]
+    var name = splitted[0]
     if name.hasPrefix("@") {
       // The name starts with a label. Separate them into the respected properties.
       name.removeFirst()
       let nameSplitted = name.split(separator: ":", maxSplits: 1).map { String($0) }
       guard nameSplitted.count == 2 else { return nil }
       self.label = nameSplitted[0]
-      self.name = nameSplitted[1]
+      name = nameSplitted[1]
+    } else {
+      self.label = nil
     }
+    self.name = name
+    self.type = nil
     self.rawParamString = splitted[at: 1]
     self.params = MPVFilter.parseRawParamString(name, rawParamString)
   }
@@ -118,6 +123,7 @@ class MPVFilter: NSObject {
     self.type = FilterType(rawValue: name)
     self.label = label
     self.rawParamString = paramString
+    self.params = nil
   }
 
   convenience init(lavfiName: String, label: String?, params: [String]) {
@@ -342,12 +348,12 @@ class MPVFilter: NSObject {
 
   // FIXME: use lavfi vflip
   static func flip() -> MPVFilter {
-    return MPVFilter(name: "vflip", label: nil, params: nil)
+    return MPVFilter(name: "vflip", label: Constants.FilterLabel.flip, params: nil)
   }
 
   // FIXME: use lavfi hflip
   static func mirror() -> MPVFilter {
-    return MPVFilter(name: "hflip", label: nil, params: nil)
+    return MPVFilter(name: "hflip", label: Constants.FilterLabel.mirror, params: nil)
   }
 
   /**

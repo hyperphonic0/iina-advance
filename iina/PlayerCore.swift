@@ -1590,7 +1590,6 @@ class PlayerCore: NSObject {
           return
         }
         let vf = MPVFilter.flip()
-        vf.label = Constants.FilterLabel.flip
         let _ = addVideoFilter(vf)
       } else {
         guard let vf = info.flipFilter else {
@@ -1613,7 +1612,6 @@ class PlayerCore: NSObject {
           return
         }
         let vf = MPVFilter.mirror()
-        vf.label = Constants.FilterLabel.mirror
         let _ = addVideoFilter(vf)
       } else {
         guard let vf = info.mirrorFilter else {
