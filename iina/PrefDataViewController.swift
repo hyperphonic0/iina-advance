@@ -98,6 +98,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   }
 
   // TODO: this can get called often. Add throttling
+  @MainActor
   private func refreshSavedLaunchSummary(_ notification: Notification) {
     let (hasData, launchDataSummary) = buildSavedLaunchSummary()
     Logger.log(launchDataSummary)
@@ -106,6 +107,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     clearSavedWindowDataBtn.isEnabled = hasData
   }
 
+  @MainActor
   private func buildSavedLaunchSummary() -> (Bool, String) {
     let launches = UIState.shared.collectLaunchState()
     if !launches.isEmpty {

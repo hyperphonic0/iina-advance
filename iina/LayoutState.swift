@@ -556,29 +556,18 @@ struct LayoutState {
     return geo
   }
 
-  func buildFullScreenGeometry(inScreenID screenID: String, _ video: VideoGeometry, tCategory: TransitionCategory = .noTransition) -> PWinGeometry {
+  func buildFullScreenGeometry(inScreenID screenID: String, _ video: VideoGeometry) -> PWinGeometry {
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
-    return buildFullScreenGeometry(in: screen, video, tCategory: tCategory)
+    return buildFullScreenGeometry(in: screen, video)
   }
 
   /// Builds a new `PWinGeometry` from this `LayoutState` using the given params.
-  func buildFullScreenGeometry(in screen: NSScreen, _ video: VideoGeometry, tCategory: TransitionCategory = .noTransition) -> PWinGeometry {
-    var modeToUse = mode
-    if !modeToUse.isFullScreen {
-      // Try to use analogue of last windowed mode.
-      if modeToUse == .windowedNormal {
-        modeToUse  = .fullScreenNormal
-      } else if modeToUse == .windowedInteractive {
-        modeToUse = .fullScreenInteractive
-      }
-      Logger.log.warn("Cannot build full screen geometry for non-FS mode (\(mode)); will use best guess: \(modeToUse)")
-      modeToUse = .fullScreenNormal
-    }
-    return PWinGeometry.forFullScreen(in: screen, legacy: isLegacyStyle, mode: modeToUse,
-                                      outsideBars: outsideBars,
-                                      insideBars: insideBars,
-                                      video: video,
-                                      hasTopPaddingForCameraHousing: hasTopPaddingForCameraHousing)
+  func buildFullScreenGeometry(in screen: NSScreen, _ video: VideoGeometry) -> PWinGeometry {
+    return GeoUtil.buildFullScreenGeometry(in: screen, legacy: isLegacyStyle, mode: mode,
+                                           outsideBars: outsideBars,
+                                           insideBars: insideBars,
+                                           video: video,
+                                           hasTopPaddingForCameraHousing: hasTopPaddingForCameraHousing)
   }
 
   /// Builds a new `PWinGeometry` from this `LayoutState` using the given params.

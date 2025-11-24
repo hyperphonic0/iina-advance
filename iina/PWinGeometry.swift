@@ -129,27 +129,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert(!mode.isFullScreen || screenFit.isFullScreen, "screenFit must be fullScreen when mode is fullScreen")
   }
 
-  /// See also `LayoutState.buildFullScreenGeometry()`.
-  static func forFullScreen(in screen: NSScreen, legacy: Bool, mode: PlayerWindowMode,
-                            outsideBars: MarginQuad, insideBars: MarginQuad,
-                            video: VideoGeometry,
-                            hasTopPaddingForCameraHousing: Bool) -> PWinGeometry {
-
-    let windowFrame = GeoUtil.fullScreenWindowFrame(in: screen, legacy: legacy)
-    let screenFit: ScreenFit
-    let topMarginHeight: CGFloat
-    if legacy {
-      topMarginHeight = hasTopPaddingForCameraHousing ? (screen.cameraHousingHeight ?? 0) : 0
-      screenFit = .legacyFullScreen
-    } else {
-      topMarginHeight = 0
-      screenFit = .nativeFullScreen
-    }
-
-    return PWinGeometry(windowFrame: windowFrame, screenID: screen.screenID, screenFit: screenFit, mode: mode,
-                        topMarginHeight: topMarginHeight, outsideBars: outsideBars, insideBars: insideBars, video: video)
-  }
-
   /// Makes a clone of `self` and returns it.
   ///
   /// - Each param which is `nil` or is not given will cause the clone to reuse the corresponding field from `self`.

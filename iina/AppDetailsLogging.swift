@@ -6,6 +6,7 @@
 //  Copyright © 2024 lhc. All rights reserved.
 //
 
+@MainActor
 struct AppDetailsLogging {
   static let shared = AppDetailsLogging()
 

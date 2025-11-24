@@ -12,13 +12,15 @@ import Foundation
 class PlaybackInfo {
   let log: any Logger.Subsystem
 
+  var priorStateBuildNumber: Int
+
+  @MainActor
   init(log: any Logger.Subsystem) {
     self.log = log
+    self.priorStateBuildNumber = Int(InfoDictionary.shared.version.1)!
   }
 
   // MARK: - Playback lifecycle state
-
-  var priorStateBuildNumber: Int = Int(InfoDictionary.shared.version.1)!
 
   var isFileLoaded: Bool {
     return currentPlayback?.state.isAtLeast(.loaded) ?? false

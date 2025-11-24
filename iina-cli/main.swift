@@ -14,6 +14,7 @@ guard let execURL = Bundle.main.executableURL?.resolvingSymlinksInPath() else {
   exit(1)
 }
 
+let infoDict = InfoDictionary()
 let iinaURL = execURL.deletingLastPathComponent().appendingPathComponent(InfoDictionary.executableName)
 
 guard FileManager.default.fileExists(atPath: iinaURL.path) else {
@@ -26,7 +27,7 @@ guard FileManager.default.fileExists(atPath: iinaURL.path) else {
 var userArgs = Array(ProcessInfo.processInfo.arguments.dropFirst())
 
 if userArgs.contains(where: { $0 == "--help" || $0 == "-h" }) {
-  print(InfoDictionary.iinaCLIUsageText)
+  print(infoDict.iinaCLIUsageText)
   exit(0)
 }
 

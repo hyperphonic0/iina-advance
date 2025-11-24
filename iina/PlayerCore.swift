@@ -414,14 +414,6 @@ class PlayerCore: NSObject {
     return false
   }
 
-  func saveState() {
-    PlayerSaveState.save(self)
-  }
-
-  func clearSavedState() {
-    UIState.shared.clearPlayerSaveState(forPlayerID: label)
-  }
-
   // MARK: - Opening Media
 
   /**
@@ -792,6 +784,7 @@ class PlayerCore: NSObject {
     pwc.pluginView.updatePluginTabs()
   }
 
+  @MainActor
   func loadPlugins() {
     guard AppDelegate.iinaPluginSystemEnabled else {
       log.verbose("Plugin system disabled; skipping load of plugins")
@@ -809,6 +802,7 @@ class PlayerCore: NSObject {
     pwc.pluginView.updatePluginTabs()
   }
 
+  @MainActor
   func reloadPlugin(_ plugin: JavascriptPlugin, forced: Bool = false) {
     guard AppDelegate.iinaPluginSystemEnabled else { return }
 
@@ -844,8 +838,8 @@ class PlayerCore: NSObject {
   }
 
   /// __CAUTION:__ this call uses `sync` to mpv queue.
+  @MainActor
   func updateMpvKeepaspectWindowSynchronously() {
-    assert(DispatchQueue.isExecutingIn(DispatchQueue.main))
     guard DebugConfig.useMpvKeepaspectWindow else { return }
     log.verbose("Updating mpv keepaspect-window synchronously")
     mpv.queue.sync {
@@ -876,7 +870,6 @@ class PlayerCore: NSObject {
   ///     asleep. Thus `setFlag` **must not** be called if the `mpv` core is idle or stopping. See issue
   ///     [#4520](https://github.com/iina/iina/issues/4520)
   func pause() {
-    assert(DispatchQueue.isExecutingIn(.main))
     mpv.queue.async { [self] in
       _pause()
     }

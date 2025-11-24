@@ -12,14 +12,24 @@ import Foundation
 ///
 /// This class exposes some of the entries contained in `Bundle.main.infoDictionary` as properties to provide for easier access
 /// to information contained in the dictionary from other classes.
-struct InfoDictionary {
+struct InfoDictionary: @unchecked Sendable {
   static let executableName = "IINA Advance"
+  static var shared: InfoDictionary!
+
   /// The usage message to be displayed for help on the command line.
-  static var iinaBinaryUsageText: String { buildUsageText(iinaCLI: false) }
-  static var iinaCLIUsageText: String { buildUsageText(iinaCLI: true) }
+  let iinaBinaryUsageText: String
+  let iinaCLIUsageText: String
+
+  let dictionary: [String: Any?]
+
+  init() {
+    dictionary = Bundle.main.infoDictionary!
+    iinaBinaryUsageText = InfoDictionary.buildUsageText(iinaCLI: false)
+    iinaCLIUsageText = InfoDictionary.buildUsageText(iinaCLI: true)
+  }
 
   private static func buildUsageText(iinaCLI: Bool) -> String {
-    let execName = iinaCLI ? "iina-cli" : executableName
+    let execName = iinaCLI ? "iina-cli" : InfoDictionary.executableName
     var text =
     """
     Usage: \(execName) [arguments] [files] [-- mpv_option [...]]
@@ -62,8 +72,6 @@ struct InfoDictionary {
 
     return text
   }
-
-  static let shared = InfoDictionary()
 
   var buildBranch: String? { dictionary["\(buildKeyPrefix).branch"] as? String }
   var buildConfiguration: String? { dictionary["\(buildKeyPrefix).configuration"] as? String }
@@ -142,8 +150,6 @@ struct InfoDictionary {
   var bundleIdentifier: String { dictionary["CFBundleIdentifier"] as! String }
 
   var copyright: String { dictionary["NSHumanReadableCopyright"] as! String }
-
-  let dictionary = Bundle.main.infoDictionary!
 
   /// A Boolean value that indicates whether this executable was an optimized (not debug) build.
   #if DEBUG

@@ -65,19 +65,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: Window controllers
 
-  lazy var initialWindow = InitialWindowController()
-  lazy var openURLWindow = OpenURLWindowController()
-  lazy var aboutWindow = AboutWindowController()
-  lazy var fontPicker = FontPickerWindowController()
-  lazy var inspector = InspectorWindowController()
-  lazy var historyWindow = HistoryWindowController()
-  lazy var guideWindow = GuideWindowController()
-  lazy var logWindow = LogWindowController()
+  @MainActor lazy var initialWindow = InitialWindowController()
+  @MainActor lazy var openURLWindow = OpenURLWindowController()
+  @MainActor lazy var aboutWindow = AboutWindowController()
+  @MainActor lazy var fontPicker = FontPickerWindowController()
+  @MainActor lazy var inspector = InspectorWindowController()
+  @MainActor lazy var historyWindow = HistoryWindowController()
+  @MainActor lazy var guideWindow = GuideWindowController()
+  @MainActor lazy var logWindow = LogWindowController()
 
-  lazy var vfWindow = FilterWindowController(filterType: MPVProperty.vf, .videoFilter)
-  lazy var afWindow = FilterWindowController(filterType: MPVProperty.af, .audioFilter)
+  @MainActor lazy var vfWindow = FilterWindowController(filterType: MPVProperty.vf, .videoFilter)
+  @MainActor lazy var afWindow = FilterWindowController(filterType: MPVProperty.af, .audioFilter)
 
-  lazy var preferenceWindowController = PreferenceWindowController()
+  @MainActor lazy var preferenceWindowController = PreferenceWindowController()
 
   // MARK: State
 
@@ -115,7 +115,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   /// Returns a `PlayerWindowController` array containing all currently open player windows.
-  var playerWindows: [PlayerWindowController] {
+  @MainActor var playerWindows: [PlayerWindowController] {
     return NSApp.windows.compactMap{ $0.windowController as? PlayerWindowController }.filter{ $0.isOpen }
   }
 
@@ -165,7 +165,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         Constants.AnimationDuration.standard = newValue
       }
     case .killRequest:
-      appDidReceiveKillRequest()
+      DispatchQueue.main.async { [self] in
+        appDidReceiveKillRequest()
+      }
 
     default:
       break
@@ -226,6 +228,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     Logger.initLogging()
 
+    InfoDictionary.shared = InfoDictionary()
     // This will also start the demo player
     let demoPlayer = PlayerManager.shared.getOrCreateDemo()
     // Init MPVOptionDefaults: we need this for logAllAppDetails()
@@ -852,6 +855,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
+  @MainActor
   private func appDidReceiveKillRequest() {
     guard Preference.bool(for: .killNonInteractiveLaunchesAtReopen) else {
       Logger.log.debug("Received killRequest but killNonInteractiveLaunchesAtReopen is disabled; ignoring")
@@ -907,21 +911,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: - Menu IBActions
 
+  @MainActor
   @IBAction func openFile(_ sender: AnyObject) {
     Logger.log("Menu - Open File")
     showOpenFileWindow(isAlternativeAction: sender.tag == AlternativeMenuItemTag)
   }
 
+  @MainActor
   @IBAction func openURL(_ sender: AnyObject) {
     Logger.log("Menu - Open URL")
     showOpenURLWindow(isAlternativeAction: sender.tag == AlternativeMenuItemTag)
   }
 
   /// Only used if `Preference.Key.enableCmdN` is set to `true`
+  @MainActor
   @IBAction func menuNewWindow(_ sender: AnyObject?) {
     showWelcomeWindow()
   }
 
+  @MainActor
   @IBAction func menuOpenScreenshotFolder(_ sender: NSMenuItem) {
     let screenshotPath = Preference.string(for: .screenshotFolder)!
     let absoluteScreenshotPath = NSString(string: screenshotPath).expandingTildeInPath
@@ -929,41 +937,49 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     NSWorkspace.shared.open(url)
   }
 
+  @MainActor
   @IBAction func menuSelectAudioDevice(_ sender: NSMenuItem) {
     if let name = sender.representedObject as? String {
       PlayerCore.active?.setAudioDevice(name)
     }
   }
 
+  @MainActor
   @IBAction func showPreferencesWindow(_ sender: AnyObject?) {
     Logger.log("Opening Preferences window", level: .verbose)
     preferenceWindowController.openWindow(nil)
   }
 
+  @MainActor
   @objc func showPluginPreferences(_ sender: NSMenuItem?) {
     preferenceWindowController.openPreferenceView(withNibName: "PrefPluginViewController")
   }
 
+  @MainActor
   @IBAction func showVideoFilterWindow(_ sender: AnyObject?) {
     Logger.log("Opening Video Filter window", level: .verbose)
     vfWindow.openWindow(nil)
   }
 
+  @MainActor
   @IBAction func showAudioFilterWindow(_ sender: AnyObject?) {
     Logger.log("Opening Audio Filter window", level: .verbose)
     afWindow.openWindow(nil)
   }
 
+  @MainActor
   @IBAction func showAboutWindow(_ sender: AnyObject?) {
     Logger.log("Opening About window", level: .verbose)
     aboutWindow.openWindow(nil)
   }
 
+  @MainActor
   @IBAction func showHistoryWindow(_ sender: AnyObject?) {
     Logger.log.verbose("Opening History window")
     historyWindow.openWindow(nil)
   }
 
+  @MainActor
   @objc func toggleInspectorWindow(_ sender: AnyObject?) {
     if inspector.window?.isOpen ?? false {
       inspector.close()
@@ -995,6 +1011,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: - Other window open methods
 
+  @MainActor
   func showWelcomeWindow() {
     Logger.log.verbose("Showing WelcomeWindow")
     initialWindow.openWindow(self)
@@ -1040,12 +1057,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     })
   }
 
+  @MainActor
   func showOpenURLWindow(isAlternativeAction: Bool) {
     Logger.log.verbose("Showing OpenURLWindow: isAltAction=\(isAlternativeAction.yn)")
     openURLWindow.inverseOpenInNewWindowPref = isAlternativeAction
     openURLWindow.openWindow(self)
   }
 
+  @MainActor
   func showInspectorWindow() {
     Logger.log("Showing Inspector window", level: .verbose)
     inspector.openWindow(self)

@@ -148,6 +148,7 @@ extension PlayerWindowController {
     seekPreview.hideTimer.action = self.seekPreviewTimeout
   }
 
+  @MainActor
   private func initTitleBar() {
     let builder = CustomTitleBar.shared
     let iconSpacingH = Constants.Distance.titleBarIconHSpacing

@@ -104,9 +104,9 @@ struct GeometryTransform {
 
   /// Do not call directly. Should only be called from an animation pipeline.
   /// Use `IINAAnimation.Pipeline.submit` to execute a `GeometryTransform`.
+  @MainActor
   func execute() {
     // MARK: - STAGE 1
-    assert(DispatchQueue.isExecutingIn(.main))
 
     // Get a copy of videoGeo inside animationPipeline to ensure serial access.
     // This is reused asynchronously down below, so some parts of it may fall out of date, but
@@ -194,24 +194,27 @@ struct GeometryTransform {
 
       // MARK: - STAGE 3
       // -- main queue -------------------------------------------------------------------------
-      pwc.animationPipeline.submitInstantTask { [self] in
-        // Do not reference these variables until inside this animation task to ensure serial access
-        let inputLayout = pwc.currentLayout
+      DispatchQueue.main.async { [self] in
+        pwc.animationPipeline.submitInstantTask { [self] in
+          // Do not reference these variables until inside this animation task to ensure serial access
+          let inputLayout = pwc.currentLayout
 
-        // Update context's geo with current window frame
-        let inputGeoSet = pwc.buildGeoSet(layoutMode: inputLayout.mode,
-                                          forceWinFrameUpdate: !gtfSessionState.isStartingSession)
-        log.verbose("[GTF:\(name)] Input geoSet=\(inputGeoSet)")
+          // Update context's geo with current window frame
+          let inputGeoSet = pwc.buildGeoSet(layoutMode: inputLayout.mode,
+                                            forceWinFrameUpdate: !gtfSessionState.isStartingSession)
+          log.verbose("[GTF:\(name)] Input geoSet=\(inputGeoSet)")
 
-        var ctxStage3 = GeometryTransform.ContextStage3(ctxStage2, gtfSessionState: gtfSessionState,
-                                                        inputGeoSet: inputGeoSet, outputVidGeo: outputVideoGeo,
-                                                        inputLayout: inputLayout)
+          var ctxStage3 = GeometryTransform.ContextStage3(ctxStage2, gtfSessionState: gtfSessionState,
+                                                          inputGeoSet: inputGeoSet, outputVidGeo: outputVideoGeo,
+                                                          inputLayout: inputLayout)
 
-        doMainQueueWork(&ctxStage3)
+          doMainQueueWork(&ctxStage3)
+        }
       }
     }
   }
 
+  @MainActor
   private func doMainQueueWork(_ ctx: inout GeometryTransform.ContextStage3) {
     log.trace{"[GTF:\(name)] Starting main thread work: startingSession=\(ctx.gtfSessionState.isStartingSession)"}
 
@@ -264,6 +267,7 @@ struct GeometryTransform {
   /// Returns empty list if no initial layout needed.
   ///
   /// This is in Stage 3 (main queue), and the value of `ctx.outputVidGeo` has already been determined.
+  @MainActor
   private func buildInitialLayoutTasks(_ ctx: inout GeometryTransform.ContextStage3) -> [IINAAnimation.Task] {
     let window = ctx.pwc.window!
 
@@ -392,6 +396,7 @@ struct GeometryTransform {
     /// Applies the `pWinGeoTransform` (if it exists), and generates tasks which animate any changes caused
     /// by the transform  or by changes in `outputVidGeo`.
     /// Only `transformGeometry` should call this.
+    @MainActor
     fileprivate func buildPWinGeoTransformTasks() -> [IINAAnimation.Task] {
       log.verbose("[GTF:\(name)] Building 'applyPWin' tasks, mode=\(outputLayout.mode) vidTrackID=\(vidTrackID) sess=\(gtfSessionState)")
 
@@ -516,6 +521,7 @@ struct GeometryTransform {
     }
 
     /// Conforms to `IINAnimation.TaskFunc`. Does cleanup, updates state vars & UI.
+    @MainActor
     fileprivate func doPostApplyWork() {
       log.verbose("[GTF:\(name)] Running final task, sess=\(gtfSessionState) vid=\(vidTrackID)")
       let pwc = player.pwc!
@@ -546,13 +552,15 @@ struct GeometryTransform {
             log.debug("[GTF:\(name)] Updating playback.state = .loadedAndSized; will emit fileLoaded")
             currentPlayback.state = .loadedAndSized
 
-            pwc.animationPipeline.submitInstantTask {
-              sendInitialWindowScaleToMpv()
-              // Should refresh EDR each time switching files
-              pwc.videoView.refreshAllVideoDisplayState()
-              // If is network resource, may not be loaded yet. If file, it will be.
-              player.postNotification(.iinaFileLoaded)
-              player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
+            DispatchQueue.main.async { [self] in
+              pwc.animationPipeline.submitInstantTask {
+                sendInitialWindowScaleToMpv()
+                // Should refresh EDR each time switching files
+                pwc.videoView.refreshAllVideoDisplayState()
+                // If is network resource, may not be loaded yet. If file, it will be.
+                player.postNotification(.iinaFileLoaded)
+                player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
+              }
             }
           }
         }
@@ -580,6 +588,7 @@ struct GeometryTransform {
     }
 
     /// This should only be called in response to start of new window session, or video track change
+    @MainActor
     private func sendInitialWindowScaleToMpv() {
       let basisGeo: PWinGeometry
 
@@ -601,6 +610,7 @@ struct GeometryTransform {
 
     /// Applies the prefs `.resizeWindowTiming` & `resizeWindowScheme`, if applicable.
     /// Returns `nil` if no applicable settings were found/applied, and should fall back to minimal resize.
+    @MainActor
     private func applyResizePrefsForNewPlaybackInWindowedMode() -> PWinGeometry? {
       // resize option applies
       let resizeTiming = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
@@ -670,6 +680,7 @@ struct GeometryTransform {
 
     /// Post-layout task: update various internal UI stuff, and finally (maybe) post `windowIsReadyToShow` or `windowMustCancelShow`.
     /// Requires `ctx.outputLayout`.
+    @MainActor
     fileprivate func buildFinalInitialLayoutTask() -> IINAAnimation.Task {
       return IINAAnimation.Task.instantTask{
         log.verbose("[GTF:\(name)] Running final initial layout task")
@@ -713,6 +724,7 @@ struct GeometryTransform {
       }
     }
 
+    @MainActor
     fileprivate func buildToggleMusicModeTasksIfNeeded() -> [IINAAnimation.Task]? {
       guard Preference.bool(for: .autoSwitchToMusicMode) else { return nil }
 
@@ -739,6 +751,7 @@ struct GeometryTransform {
       return nil
     }
 
+    @MainActor
     fileprivate func buildEnterFullScreenTaskIfNeeded() -> IINAAnimation.Task? {
       guard case .newReplacingExisting = gtfSessionState,
             Preference.bool(for: .fullScreenWhenOpen) else { return nil }

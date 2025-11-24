@@ -542,12 +542,12 @@ extension PlayerWindowController.LayoutTransition {
 
     if outputLayout.isFullScreen {
       let screen = NSScreen.getScreenOrDefault(screenID: inputGeometry.screenID)
-      return PWinGeometry.forFullScreen(in: screen, legacy: outputLayout.isLegacyFullScreen,
-                                        mode: outputLayout.mode,
-                                        outsideBars: outsideBars,
-                                        insideBars: insideBars,
-                                        video: outputGeometry.video,
-                                        hasTopPaddingForCameraHousing: outputLayout.hasTopPaddingForCameraHousing)
+      return GeoUtil.buildFullScreenGeometry(in: screen, legacy: outputLayout.isLegacyFullScreen,
+                                             mode: outputLayout.mode,
+                                             outsideBars: outsideBars,
+                                             insideBars: insideBars,
+                                             video: outputGeometry.video,
+                                             hasTopPaddingForCameraHousing: outputLayout.hasTopPaddingForCameraHousing)
     }
 
     let closedBarsGeo = inputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,

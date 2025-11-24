@@ -175,7 +175,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     appIcon.unregisterDraggedTypes()
     window?.contentView?.registerForDraggedTypes([.nsFilenames, .nsURL, .string])
 
-    let infoDict = InfoDictionary.shared
+    let infoDict = InfoDictionary.shared!
     let (version, build) = infoDict.version
 
     betaTextField.stringValue = infoDict.buildType.description

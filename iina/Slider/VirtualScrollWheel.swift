@@ -61,6 +61,7 @@ class ScrollSession {
   /// Extracts delta values from all pending events by interpreting them as scroll events to be
   /// executed on `slider`. Clears events after. Returns their sum adjusted by `sensitivity`.
   /// This number is independent of the slider's actual `doubleValue` and is open to interpretation.
+  @MainActor
   func consumePendingEvents(for slider: ScrollableSlider) -> CGFloat {
     // All the pending events need to be applied immediately.
     // Save CPU by adding them all together before calling action:
@@ -113,6 +114,7 @@ class ScrollSession {
 /// But this class tries to map them into the same model as smooth scrolling, by starting a scroll session when transitioning
 /// from the `notScrolling` state to the `didStepScroll` state, then keeping a `TimeoutTimer` so that the session ends when no
 /// events are received for `stepScrollSessionTimeout` seconds.
+@MainActor
 class VirtualScrollWheel {
   var log: any Logger.Subsystem = Logger.log
 

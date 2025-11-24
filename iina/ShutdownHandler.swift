@@ -26,8 +26,8 @@ class ShutdownHandler {
     }
 
     // Save UI state first:
-    for playerWindowController in AppDelegate.shared.playerWindows {
-      PlayerSaveState.saveSynchronously(playerWindowController.player)
+    for pwc in AppDelegate.shared.playerWindows {
+      pwc.player.saveSynchronously()
     }
     UIState.shared.saveCurrentOpenWindowList()
 

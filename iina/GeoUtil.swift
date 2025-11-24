@@ -62,7 +62,9 @@ struct GeoUtil {
     if legacy {
       return screen.frame
     } else {
-      return screen.frameWithoutCameraHousing
+      // MacOS native FS (in Tahoe at least) seems to subtract an extra pixel from the frame. Do the same to be consistent.
+      // (See `window(_:, willUseFullScreenContentSize:)` in `PlayerWindowController`).
+      return screen.frameWithoutCameraHousing.subtractingFrom(top: 1)
     }
   }
 
@@ -166,6 +168,40 @@ struct GeoUtil {
                       trailing: unusedWidth - leadingMargin,
                       bottom: unusedHeight - topMargin,
                       leading: leadingMargin)
+  }
+
+  /// See also `LayoutState.buildFullScreenGeometry()`.
+  static func buildFullScreenGeometry(in screen: NSScreen, legacy: Bool, mode: PlayerWindowMode,
+                                      outsideBars: MarginQuad, insideBars: MarginQuad,
+                                      video: VideoGeometry,
+                                      hasTopPaddingForCameraHousing: Bool) -> PWinGeometry {
+
+    let modeToUse: PlayerWindowMode
+    if mode.isFullScreen {
+      modeToUse = mode
+    } else {
+      // Try to use analogue of last windowed mode.
+      if mode == .windowedInteractive {
+        modeToUse = .fullScreenInteractive
+      } else {
+        modeToUse = .fullScreenNormal
+      }
+      Logger.log.warn("Cannot build full screen geometry for non-FS mode (\(mode)); will use best guess: \(modeToUse)")
+    }
+
+    let windowFrame = GeoUtil.fullScreenWindowFrame(in: screen, legacy: legacy)
+    let screenFit: ScreenFit
+    let topMarginHeight: CGFloat
+    if legacy {
+      topMarginHeight = hasTopPaddingForCameraHousing ? (screen.cameraHousingHeight ?? 0) : 0
+      screenFit = .legacyFullScreen
+    } else {
+      topMarginHeight = 0
+      screenFit = .nativeFullScreen
+    }
+
+    return PWinGeometry(windowFrame: windowFrame, screenID: screen.screenID, screenFit: screenFit, mode: modeToUse,
+                        topMarginHeight: topMarginHeight, outsideBars: outsideBars, insideBars: insideBars, video: video)
   }
 
 }

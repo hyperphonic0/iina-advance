@@ -809,9 +809,10 @@ class StartupHandler {
 
   // MARK: - Command Line
 
+  @MainActor
   func processCommandLine(_ cmdLineArgs: ArraySlice<String>) {
     if cmdLineArgs.contains(where: { $0 == "--help" || $0 == "-h" }) {
-      print(InfoDictionary.iinaBinaryUsageText)
+      print(InfoDictionary.shared.iinaBinaryUsageText)
       exit(0)
     }
 

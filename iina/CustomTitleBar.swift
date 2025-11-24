@@ -329,14 +329,9 @@ final class TitleBarButtonsContainerView: NSStackView {
   }
 }
 
+@MainActor
 final class CustomTitleBar {
   static let shared = CustomTitleBar()
-
-  func makeTitleBarButton(_ image: NSImage, identifier: String, target: AnyObject, action: Selector, bounceOnClick: Bool) -> SymButton {
-    let button = SymButton()
-    configureTitleBarButton(button, image, identifier: identifier, target: target, action: action, bounceOnClick: bounceOnClick)
-    return button
-  }
 
   func configureTitleBarButton(_ button: SymButton, _ image: NSImage, identifier: String, target: AnyObject, action: Selector, bounceOnClick: Bool) {
     button.image = image

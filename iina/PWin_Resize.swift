@@ -43,13 +43,13 @@ extension PlayerWindowController {
   /// NSWindowDelegate: `windowWillResize`: pretty important. Called by AppKit when it wants to resize the window.
   ///
   /// # Notes for other NSWindowDelegate notifications:
-  /// * `windowDidResize`: Called after window is resized from (almost) any cause. Ca be called many times during every call to
+  /// * `windowDidResize`: Called after window is resized from (almost) any cause. Can be called many times during every call to
   ///   `window.setFrame`. Do not use for anything too serious because it seems to sometimes fire during animations in progress.
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     guard !isAnimatingLayoutTransition else {
-      log.verbose("[WinWillResize] Denying req=\(requestedSize): isAnimatingLayoutTransition=Y. Will stay at \(window.frame.size)")
-      return window.frame.size
+      log.verbose("[WinWillResize] isAnimatingLayoutTransition=Y: will grant requestedSize=\(requestedSize)")
+      return requestedSize
     }
     guard !isInWindowResizeDenialPeriod() else {
       log.verbose("[WinWillResize] Denying req=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)")

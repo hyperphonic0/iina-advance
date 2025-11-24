@@ -426,11 +426,13 @@ class UIState {
     return ids
   }
 
+  @MainActor
   func getPlayerSaveState(forPlayerID playerID: String) -> PlayerSaveState? {
     let key = WindowAutosaveName.playerWindow(id: playerID).string
     return getPlayerSaveState(forPlayerKey: key)
   }
 
+  @MainActor
   func getPlayerSaveState(forPlayerKey key: String) -> PlayerSaveState? {
     guard isRestoreEnabled else { return nil }
     guard let propDict = UserDefaults.standard.dictionary(forKey: key) else {
@@ -446,7 +448,7 @@ class UIState {
 
   func saveState(forPlayerID playerID: String, properties: [String: Any]) {
     guard isSaveEnabled else { return }
-    guard properties[PlayerSaveState.PropName.url.rawValue] != nil else {
+    guard properties[PlayerSaveState.urlProp] != nil else {
       // This can happen if trying to save while changing tracks, or at certain brief periods during shutdown.
       // Do not save without a URL! The window cannot be restored.
       // Just assume there was already a good save made not too far back.
@@ -535,6 +537,7 @@ class UIState {
 
   /// Returns list of "launch name" identifiers for past launches of IINA which have saved state to restore.
   /// This omits launches which are detected as still running.
+  @MainActor
   func collectLaunchState(cleanUpAlongTheWay isCleanUpEnabled: Bool = false) -> [LaunchState] {
     let launchDict = buildLaunchDict(migrateLegacyPrefEntries: isCleanUpEnabled)
     let currentBuildNumber = Int(InfoDictionary.shared.version.1)!
@@ -569,13 +572,13 @@ class UIState {
             /// May want to reuse this data for different purposes in future versions. Do not blindly delete!
             /// Only delete data which is tagged with the current build or previous builds. The `buildNumber` field
             ///  was not present until the 1.2 release (buildNum 3), so assume previous release if not present.
-            let buildNumber = savedState.int(for: .buildNumber) ?? 0
+            let buildNumber = savedState.buildNumber ?? 0
             guard buildNumber <= currentBuildNumber else {
               log.verbose("Skipping delete of pref key \(playerKey.quoted): its buildNumber (\(buildNumber)) > currentBuildNumber (\(currentBuildNumber))")
               continue
             }
 
-            log.warn("Deleting orphaned pref entry: \(playerKey.quoted) with path \(PlaybackID.path(from: savedState.url(for: .url)).quoted)")
+            log.warn("Deleting orphaned pref entry: \(playerKey.quoted) with path \(PlaybackID.path(from: savedState.url).quoted)")
             UserDefaults.standard.removeObject(forKey: playerKey)
             countEntriesDeleted += 1
           }
@@ -643,6 +646,7 @@ class UIState {
     return culledLaunches
   }
 
+  @MainActor
   func collectLaunchStateForRestore() -> [LaunchState] {
     return collectLaunchState(cleanUpAlongTheWay: true).filter{ $0.lifecycleState != .stillRunning }
   }
@@ -650,6 +654,7 @@ class UIState {
   /// Consolidates all player windows (& others) from any past launches which are no longer running into the windows for this instance.
   /// Updates prefs to reflect new conslidated state.
   /// Returns all window names for this launch instance, back to front.
+  @MainActor
   func consolidateSavedWindowsFromPastLaunches(pastLaunches cachedLaunches: [LaunchState]? = nil) -> [SavedWindow] {
     // Could have been a long time since data was last collected. Get a fresh set of data:
     let launchesNewestToOldest = cachedLaunches ?? collectLaunchStateForRestore()

@@ -22,7 +22,7 @@ import Foundation
 ///           ➤ apply `totalRotation` (== `userRotation` + `streamRotation`)
 ///             ➤ `videoSizeCAR`
 ///               ➤ `videoSizeDisplayOverride` (if non-nil)
-struct VideoGeometry: Equatable, CustomStringConvertible {
+struct VideoGeometry: Equatable, CustomStringConvertible, Sendable {
 
   static func defaultGeometry(_ log: (any Logger.Subsystem)? = nil) -> VideoGeometry {
     let log = log ?? Logger.log

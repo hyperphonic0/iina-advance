@@ -21,7 +21,7 @@ class ThumbnailCache {
   
   private static let sizeofMetadata = MemoryLayout<CacheVersion>.size + MemoryLayout<FileSize>.size + MemoryLayout<FileTimestamp>.size
 
-  private static let imageProperties: [NSBitmapImageRep.PropertyKey: Any] = [
+  private static let imageProperties: [NSBitmapImageRep.PropertyKey: CGFloat] = [
     .compressionFactor: 0.75
   ]
 

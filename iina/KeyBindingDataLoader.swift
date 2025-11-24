@@ -15,60 +15,59 @@ fileprivate enum PropertyType {
 }
 
 struct KeyBindingDataLoader {
-  fileprivate static var commands: [KeyBindingItem] {
-    [
-      KBI("ignore"),
-      KBI.separator,
-      KBI("seek", type: .label, children:
-            KBI.chooseIn("forward|backward", children:
-                          KBI("value", type: .number, children:
-                                KBI.chooseIn("relative|relative-percent|relative+exact|relative-percent+exact")
-                             )
-                        )
-          +
-          KBI.chooseIn("seek-to", children:
+  @MainActor
+  fileprivate static let commands: [KeyBindingItem] = [
+    KBI("ignore"),
+    KBI.separator,
+    KBI("seek", type: .label, children:
+          KBI.chooseIn("forward|backward", children:
                         KBI("value", type: .number, children:
-                              KBI.chooseIn("absolute|absolute-percent|absolute+keyframe|absolute-percent+keyframe")
+                              KBI.chooseIn("relative|relative-percent|relative+exact|relative-percent+exact")
                            )
                       )
-         ),
-      KBI("frame-step"),
-      KBI("frame-back-step"),
-      KBI("ab-loop"),
-      KBI.separator,
-      KBI("set", type: .label, children: propertiesForSet()),
-      KBI("cycle", type: .label, children: propertiesForCycle()),
-      KBI("cycle-values", type: .label, children: propertiesForCycleValues()),
-      KBI("add", type: .label, children: propertiesForAdd()),
-      KBI("multiply", type: .label, children: propertiesForMultiply()),
-      KBI.separator,
-      KBI("playlist-next"),
-      KBI("playlist-prev"),
-      KBI("playlist-clear"),
-      KBI("playlist-remove"),
-      KBI("playlist-shuffle"),
-      KBI.separator,
-      KBI("video-panel", type: .iinaCmd),
-      KBI("audio-panel", type: .iinaCmd),
-      KBI("sub-panel", type: .iinaCmd),
-      KBI("playlist-panel", type: .iinaCmd),
-      KBI("chapter-panel", type: .iinaCmd),
-      KBI.separator,
-      KBI("open-file", type: .iinaCmd),
-      KBI("open-url", type: .iinaCmd),
-      KBI("save-playlist", type: .iinaCmd),
-      KBI("show-current-file-in-finder", type: .iinaCmd),
-      KBI("delete-current-file", type: .iinaCmd),
-      KBI("delete-current-file-hard", type: .iinaCmd),
-      KBI.separator,
-      KBI("find-online-subs", type: .iinaCmd),
-      KBI("save-downloaded-sub", type: .iinaCmd),
-      KBI.separator,
-      KBI("write-watch-later-config"),
-      KBI("stop"),
-      KBI("quit")
-    ]
-  }
+        +
+        KBI.chooseIn("seek-to", children:
+                      KBI("value", type: .number, children:
+                            KBI.chooseIn("absolute|absolute-percent|absolute+keyframe|absolute-percent+keyframe")
+                         )
+                    )
+       ),
+    KBI("frame-step"),
+    KBI("frame-back-step"),
+    KBI("ab-loop"),
+    KBI.separator,
+    KBI("set", type: .label, children: propertiesForSet()),
+    KBI("cycle", type: .label, children: propertiesForCycle()),
+    KBI("cycle-values", type: .label, children: propertiesForCycleValues()),
+    KBI("add", type: .label, children: propertiesForAdd()),
+    KBI("multiply", type: .label, children: propertiesForMultiply()),
+    KBI.separator,
+    KBI("playlist-next"),
+    KBI("playlist-prev"),
+    KBI("playlist-clear"),
+    KBI("playlist-remove"),
+    KBI("playlist-shuffle"),
+    KBI.separator,
+    KBI("video-panel", type: .iinaCmd),
+    KBI("audio-panel", type: .iinaCmd),
+    KBI("sub-panel", type: .iinaCmd),
+    KBI("playlist-panel", type: .iinaCmd),
+    KBI("chapter-panel", type: .iinaCmd),
+    KBI.separator,
+    KBI("open-file", type: .iinaCmd),
+    KBI("open-url", type: .iinaCmd),
+    KBI("save-playlist", type: .iinaCmd),
+    KBI("show-current-file-in-finder", type: .iinaCmd),
+    KBI("delete-current-file", type: .iinaCmd),
+    KBI("delete-current-file-hard", type: .iinaCmd),
+    KBI.separator,
+    KBI("find-online-subs", type: .iinaCmd),
+    KBI("save-downloaded-sub", type: .iinaCmd),
+    KBI.separator,
+    KBI("write-watch-later-config"),
+    KBI("stop"),
+    KBI("quit")
+  ]
 
   fileprivate static let propertyList: [(String, PropertyType)] = [
     ("pause", .bool),
@@ -172,6 +171,6 @@ struct KeyBindingDataLoader {
   static func load() -> [Criterion] {
     commands.map{ $0.toCriterion(l10nKey: "cmd") }
   }
-
 }
+
 

@@ -761,7 +761,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard let (isMiniaturized, isHidden, isInPip,
                isWindowMiniaturizedDueToPip,
                isPausedPriorToInteractiveMode) = PlayerSaveState.parseMiscWindowBools(priorState.properties) else {
-      log.debug("Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted); defaulting to visible window")
+      log.debug("Failed to restore from miscWindowBools; defaulting to visible window")
       window.orderOut(self)  // order out until load is complete
       return
     }

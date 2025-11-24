@@ -10,7 +10,23 @@ import Foundation
 
 fileprivate let embeddedSeparator: Character = "|"
 
-// Data structure for saving to prefs / restoring from prefs the UI state of a single player window
+/// Added "1" in v1.2
+fileprivate let videoGeometryPrefStringVersion1 = "1"
+/// Upgraded to "2" in v1.3
+fileprivate let videoGeometryPrefStringVersion2 = "2"
+
+fileprivate let specPrefStringVersion1 = "1"
+/// Upgraded to "2" in v1.3
+fileprivate let specPrefStringVersion2 = "2"
+/// Updated to "2" in v1.2
+fileprivate let windowGeometryPrefStringVersion = "2"
+/// Updated to "2" in v1.2
+fileprivate let musicModeGeoPrefStringVersion = "2"
+fileprivate let playlistVideosCSVVersion = "1"
+
+fileprivate typealias PropName = PlayerSaveState.PropName
+
+/// Data structure for saving to prefs / restoring from prefs the UI state of a single player window
 struct PlayerSaveState: CustomStringConvertible {
   enum PropName: String {
     case buildNumber = "buildNum"       /// Added in v1.2
@@ -86,24 +102,12 @@ struct PlayerSaveState: CustomStringConvertible {
     case loopFile = "loopFile"          /// `MPVOption.PlaybackControl.loopFile`
   }
 
-  /// Added "1" in v1.2
-  static fileprivate let videoGeometryPrefStringVersion1 = "1"
-  /// Upgraded to "2" in v1.3
-  static fileprivate let videoGeometryPrefStringVersion2 = "2"
-
-  static fileprivate let specPrefStringVersion1 = "1"
-  /// Upgraded to "2" in v1.3
-  static fileprivate let specPrefStringVersion2 = "2"
-  /// Updated to "2" in v1.2
-  static fileprivate let windowGeometryPrefStringVersion = "2"
-  /// Updated to "2" in v1.2
-  static fileprivate let musicModeGeoPrefStringVersion = "2"
-  static fileprivate let playlistVideosCSVVersion = "1"
-
   static let saveQueue = DispatchQueue(label: "com.iina_advance.PlayerSaveQueue", qos: .background)
 
   /// IINA general log
   static let log = Logger.log
+
+  static let urlProp: String = PropName.url.rawValue
 
   /// The player's log
   let log: any Logger.Subsystem
@@ -119,6 +123,7 @@ struct PlayerSaveState: CustomStringConvertible {
   let geoSet: GeometrySet
   let screens: [ScreenMeta]
 
+  @MainActor
   init(_ props: [String: Any], playerID: String) {
     self.properties = props
     self.log = Logger.subsystem(forPlayerID: playerID)
@@ -130,7 +135,7 @@ struct PlayerSaveState: CustomStringConvertible {
     if let (_, _, isInPip,  _, _) = PlayerSaveState.parseMiscWindowBools(props) {
       isWindowInPiP = isInPip
     } else {
-      Logger.log.error("Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted); will assume window is not in PiP")
+      Logger.log.error("Failed to restore property \(PropName.miscWindowBools.rawValue.quoted); will assume window is not in PiP")
       isWindowInPiP = false
     }
     let layoutState = LayoutState.fromCSV(layoutStateCSV, isInPiP: isWindowInPiP)
@@ -141,7 +146,7 @@ struct PlayerSaveState: CustomStringConvertible {
   }
 
   var description: String {
-    guard let urlString = string(for: .url), let url = URL(string: urlString) else {
+    guard let url else {
       return "PlayerSaveState(url=<ERROR>)"
     }
 
@@ -179,17 +184,25 @@ struct PlayerSaveState: CustomStringConvertible {
     return "PlayerSaveState(url=\(urlPath.pii.quoted) props=[\(propsString)])"
   }
 
+  var url: URL? {
+    url(for: .url)
+  }
+
+  var buildNumber: Int? {
+    int(for: .buildNumber)
+  }
+
   // MARK: - Save State / Serialize to prefs strings
 
   func getPlaylistPathList() -> [String] {
-    guard let playlistPathList = properties[PlayerSaveState.PropName.playlistPaths.rawValue] as? [String] else {
+    guard let playlistPathList = properties[PropName.playlistPaths.rawValue] as? [String] else {
       return []
     }
 
     return playlistPathList
     // TODO: resolve bookmarks
-    /*
-    guard let playlistBookmarks = properties[PlayerSaveState.PropName.playlistBookmarks.rawValue] as? [NSData?] else {
+/*
+    guard let playlistBookmarks = properties[PropName.playlistBookmarks.rawValue] as? [NSData?] else {
       return playlistPathList
     }
 
@@ -214,234 +227,7 @@ struct PlayerSaveState: CustomStringConvertible {
     }
     log.debug("Resolved \(resolvedCount)/\(playlistPathList.count) playlist items from bookmarks")
     return restoredPlaylistPaths
-     */
-  }
-
-  /// Generates a Dictionary of properties for storage into a Preference entry
-  static private func generatePropDict(from player: PlayerCore, _ geo: GeometrySet) -> [String: Any] {
-    var props: [String: Any] = [:]
-    let info = player.info
-    /// Must *not* access `window`: this is not the main thread
-    let pwc = player.pwc!
-    let layout = pwc.currentLayout
-
-    let buildNumber: Int = info.priorStateBuildNumber
-    props[PropName.buildNumber.rawValue] = buildNumber
-    props[PropName.launchID.rawValue] = UIState.shared.currentLaunchID
-
-    // - Window Layout & Geometry
-
-    /// `layoutSpec`
-    props[PropName.layoutState.rawValue] = layout.toCSV(buildNumber: buildNumber)
-
-    /// `windowedModeGeo`: use supplied GeometrySet for most up-to-date window frame
-    props[PropName.windowedModeGeo.rawValue] = geo.windowed.toCSV()
-
-    /// `musicModeGeo`: use supplied GeometrySet for most up-to-date window frame
-    props[PropName.musicModeGeo.rawValue] = geo.musicMode.toCSV()
-
-    /// `videoGeo`: use supplied GeometrySet for most up-to-date data (avoiding complex logic to derive it)
-    props[PropName.videoGeo.rawValue] = geo.video.toCSV()
-
-    let screenMetaCSVList: [String] = UIState.shared.cachedScreens.values.map{$0.toCSV()}
-    props[PropName.screens.rawValue] = screenMetaCSVList
-
-    if pwc.isOnTop {
-      props[PropName.isOnTop.rawValue] = true.yn
-    }
-
-    // - Misc window state
-
-    if Preference.bool(for: .autoSwitchToMusicMode) {
-      var overrideAutoMusicMode = player.overrideAutoMusicMode
-      let audioStatus = player.info.currentMediaAudioStatus
-      if (audioStatus == .notAudio && player.isInMiniPlayer) || (audioStatus.isAudio && !player.isInMiniPlayer) {
-        /// Need to set this so that when restoring, the player won't immediately overcorrect and auto-switch music mode.
-        /// This can happen because the `iinaFileLoaded` event will be fired by mpv very soon after restore is done, which is where it switches.
-        overrideAutoMusicMode = true
-      }
-      props[PropName.overrideAutoMusicMode.rawValue] = overrideAutoMusicMode.yn
-    }
-
-    props[PropName.miscWindowBools.rawValue] = [
-      pwc.isWindowMiniturized.yn,
-      pwc.isWindowHidden.yn,
-      layout.isInPiP.yn,  // stored here for historical reasons. MOved into LayoutState in v1.4
-      pwc.isWindowMiniaturizedDueToPip.yn,
-      pwc.isPausedPriorToInteractiveMode.yn
-    ].joined(separator: ",")
-
-    // - Playback State
-
-    if let urlString = info.currentURL?.absoluteString ?? nil {
-      props[PropName.url.rawValue] = urlString
-    }
-
-    let playlist = info.playlist
-    let playlistPaths: [String] = playlist.compactMap{ PlaybackID.path(from: $0.url) }
-    if !playlistPaths.isEmpty {
-      props[PropName.playlistPaths.rawValue] = playlistPaths
-    }
-    if let playlistPos = info.currentPlayback?.playlistPos {
-      props[PropName.playlistPos.rawValue] = playlistPos
-    }
-
-    if let playbackPositionSec = info.playbackPositionSec {
-      props[PropName.playPosition.rawValue] = playbackPositionSec.stringMaxFrac6
-    }
-    if let playbackDurationSec = info.playbackDurationSec {
-      props[PropName.playDuration.rawValue] = playbackDurationSec.stringMaxFrac6
-    }
-    props[PropName.paused.rawValue] = info.isPaused.yn
-
-    // - Video, Audio, Subtitles Settings
-
-    props[PropName.playlistVideos.rawValue] = Array(info.currentVideosInfo.map({
-      // Need to store the group prefix length (if any) to allow collapsing it in the playlist. Not easy to recompute
-      "\(playlistVideosCSVVersion),\($0.prefix.count),\($0.url.absoluteString)"
-    })).joined(separator: " ")
-    props[PropName.playlistSubtitles.rawValue] = Array(info.currentSubsInfo.map({$0.url.absoluteString}))
-    let matchedSubsArray = info.matchedSubs.map({key, value in (key, Array(value.map({$0.absoluteString})))})
-    let matchedSubs: [String: [String]] = Dictionary(uniqueKeysWithValues: matchedSubsArray)
-    props[PropName.matchedSubtitles.rawValue] = matchedSubs
-
-    props[PropName.deinterlace.rawValue] = info.deinterlace.yn
-    props[PropName.hwdec.rawValue] = info.hwdec
-    props[PropName.hdrEnabled.rawValue] = info.hdrEnabled.yn
-
-    if let intVal = info.vid {
-      props[PropName.vid.rawValue] = String(intVal)
-    }
-    if let intVal = info.aid {
-      props[PropName.aid.rawValue] = String(intVal)
-    }
-    if let intVal = info.sid {
-      props[PropName.sid.rawValue] = String(intVal)
-    }
-    if let intVal = info.secondSid {
-      props[PropName.s2id.rawValue] = String(intVal)
-    }
-    let vidDisabled = info.vidDisabled ?? -1
-    props[PropName.vidDisabled.rawValue] = String(vidDisabled)
-    props[PropName.brightness.rawValue] = String(info.brightness)
-    props[PropName.contrast.rawValue] = String(info.contrast)
-    props[PropName.saturation.rawValue] = String(info.saturation)
-    props[PropName.gamma.rawValue] = String(info.gamma)
-    props[PropName.hue.rawValue] = String(info.hue)
-
-    props[PropName.playSpeed.rawValue] = info.playSpeed.stringMaxFrac6
-    props[PropName.volume.rawValue] = info.volume.stringMaxFrac6
-    props[PropName.isMuted.rawValue] = info.isMuted.yn
-    props[PropName.audioDelay.rawValue] = info.audioDelay.stringMaxFrac6
-    props[PropName.subDelay.rawValue] = info.subDelay.stringMaxFrac6
-    props[PropName.sub2Delay.rawValue] = info.sub2Delay.stringMaxFrac6
-
-    props[PropName.subScale.rawValue] = player.info.subScale.stringMaxFrac2
-    props[PropName.subPos.rawValue] = player.info.subPos.stringMaxFrac2
-    props[PropName.sub2Pos.rawValue] = player.info.sub2Pos.stringMaxFrac2
-
-    props[PropName.isSubVisible.rawValue] = info.isSubVisible.yn
-    props[PropName.isSub2Visible.rawValue] = info.isSecondSubVisible.yn
-
-    let abLoopA: Double = player.info.abLoopA
-    if abLoopA != 0 {
-      props[PropName.abLoopA.rawValue] = abLoopA.stringMaxFrac6
-    }
-    let abLoopB: Double = player.info.abLoopB
-    if abLoopB != 0 {
-      props[PropName.abLoopB.rawValue] = abLoopB.stringMaxFrac6
-    }
-
-    props[PropName.loopPlaylist.rawValue] = info.loopFile
-    props[PropName.loopFile.rawValue] = info.loopPlaylist
-
-    let volumeMax = info.volumeMax
-    if volumeMax != 100 {
-      props[PropName.maxVolume.rawValue] = String(volumeMax)
-    }
-
-    let videoFiltersCSV = PlayerSaveState.toCSV(mpvFilters: player.info.videoFilters)
-    props[PropName.videoFilters.rawValue] = videoFiltersCSV
-    let audioFiltersCSV = PlayerSaveState.toCSV(mpvFilters: player.info.audioFilters)
-    props[PropName.audioFilters.rawValue] = audioFiltersCSV
-
-    // Remember: mpv itself uses comma as delimiter between filters in a serialized string (see the mpv docs).
-    let videoFiltersDisabled = PlayerSaveState.toCSV(mpvFilters: player.info.videoFiltersDisabled.values)
-    props[PropName.videoFiltersDisabled.rawValue] = videoFiltersDisabled
-
-    return props
-  }
-
-  // Saves this player's state asynchronously
-  static func save(_ player: PlayerCore) {
-    guard player.isSaveEnabled else { return }
-
-    /// Runs asynchronously in background queue to avoid blocking UI.
-    /// Cuts down on duplicate work via delay and ticket check.
-    player.saveUIStateDebouncer.run { [self] in
-      guard player.pwc.loaded else {
-        player.log.trace{"Skipping player state save: player window is not loaded"}
-        return
-      }
-      guard !player.isRestoring else {
-        player.log.trace{"Skipping player state save: still restoring previous state"}
-        return
-      }
-      guard !player.isShuttingDown else {
-        player.log.verbose("Skipping player state save: player is shutting down")
-        return
-      }
-      guard !player.pwc.isClosing else {
-        // mpv core is often still active even after closing, and will send events which
-        // can trigger save. Need to make sure we check for this so that we don't un-delete state
-        player.log.trace("Skipping player state save: window.isClosing is true")
-        return
-      }
-
-      DispatchQueue.main.async {
-        let pwc = player.pwc!
-        pwc.animationPipeline.submitInstantTask {
-          guard !pwc.isAnimatingLayoutTransition else {
-            /// The transition itself will call `save` when it is done. Just return
-            return
-          }
-          // Retrieve appropriate geometry values, updating to latest window frame if needed:
-          let geo = pwc.buildGeoSet(layoutMode: pwc.currentLayout.mode)
-          saveQueue.async {
-            guard !player.isShuttingDown else { return }
-
-            let properties = generatePropDict(from: player, geo)
-            if Logger.isTraceEnabled, Preference.bool(for: .logPlayerSave) {
-              player.log.trace{"Saving player state: \(properties)"}
-            }
-            UIState.shared.saveState(forPlayerID: player.label, properties: properties)
-          }
-        }
-      }
-    }
-  }
-
-  static func saveSynchronously(_ player: PlayerCore) {
-    guard player.isSaveEnabled else { return }
-    assert(DispatchQueue.isExecutingIn(.main))
-    player.log.debug("Saving player state synchronously")
-    let pwc = player.pwc!
-
-    // Retrieve appropriate geometry values, updating to latest window frame if needed:
-    let geo: GeometrySet
-    if pwc.isAnimatingLayoutTransition {
-      geo = pwc.geo
-    } else {
-      geo = pwc.buildGeoSet(layoutMode: pwc.currentLayout.mode)
-    }
-
-    /// Using `sync` here should delay shutdown & makes sure any existing async saves aren't killed mid-write!
-    saveQueue.sync {
-      let properties = generatePropDict(from: player, geo)
-      player.log.trace{"Saving player state: \(properties)"}
-      UIState.shared.saveState(forPlayerID: player.label, properties: properties)
-      player.log.debug("Done saving player state synchronously")
-    }
+*/
   }
 
   // MARK: - Restore State / Deserialize from prefs
@@ -476,14 +262,14 @@ struct PlayerSaveState: CustomStringConvertible {
     return nil
   }
 
-  func url(for name: PropName) -> URL? {
+  fileprivate func url(for name: PropName) -> URL? {
     if let string = string(for: name) {
       return URL(string: string)
     }
     return nil
   }
 
-  func mpvFilterList(for name: PropName) -> [MPVFilter]? {
+  fileprivate func mpvFilterList(for name: PropName) -> [MPVFilter]? {
     guard let filterListCSV = string(for: name) else { return nil }
     return filterListCSV.split(separator: ",").compactMap({MPVFilter(rawString: String($0))})
   }
@@ -503,7 +289,7 @@ struct PlayerSaveState: CustomStringConvertible {
           let isInPip = Bool.yn(splitted[2]),
           let isWindowMiniaturizedDueToPip = Bool.yn(splitted[3]),
           let isPausedPriorToInteractiveMode = Bool.yn(splitted[4]) else {
-      log.error("Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)!")
+      log.error("Failed to restore property \(PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)!")
       return nil
     }
     return (isMiniaturized, isHidden, isInPip, isWindowMiniaturizedDueToPip, isPausedPriorToInteractiveMode)
@@ -532,7 +318,7 @@ struct PlayerSaveState: CustomStringConvertible {
     return nil
   }
 
-  static private func toCSV(mpvFilters: any Collection<MPVFilter> ) -> String {
+  static fileprivate func toCSV(mpvFilters: any Collection<MPVFilter> ) -> String {
     mpvFilters.map({$0.stringFormat}).joined(separator: ",")
   }
 
@@ -544,6 +330,7 @@ struct PlayerSaveState: CustomStringConvertible {
     return int(for: .buildNumber, properties) ?? Constants.BuildNumber.V1_1
   }
 
+  @MainActor
   static private func geoSet(from props: [String: Any], _ log: any Logger.Subsystem) -> GeometrySet {
     // VideoGeometry is needed to quickly calculate & restore video dimensions instead of waiting for mpv to provide it
     let buildNumber = buildNumber(from: props)
@@ -705,7 +492,7 @@ struct PlayerSaveState: CustomStringConvertible {
     let log = player.log
 
     guard let urlString = string(for: .url), let url = URL(string: urlString) else {
-      log.error("Could not restore player window: no value for property \(PlayerSaveState.PropName.url.rawValue.quoted)")
+      log.error("Could not restore player window: no value for property \(PropName.url.rawValue.quoted)")
       return
     }
 
@@ -742,11 +529,11 @@ struct PlayerSaveState: CustomStringConvertible {
       info.currentVideosInfo = currentVideosInfo
     }
 
-    if let videoURLList = properties[PlayerSaveState.PropName.playlistSubtitles.rawValue] as? [String] {
+    if let videoURLList = properties[PropName.playlistSubtitles.rawValue] as? [String] {
       info.currentSubsInfo = videoURLList.compactMap({URL(string: $0)}).compactMap({FileInfo($0)})
     }
 
-    if let matchedSubs = properties[PlayerSaveState.PropName.matchedSubtitles.rawValue] as? [String: [String]] {
+    if let matchedSubs = properties[PropName.matchedSubtitles.rawValue] as? [String: [String]] {
       info.$matchedSubs.withLock {
         for (videoPath, subs) in matchedSubs {
           $0[videoPath] = subs.compactMap{urlString in URL(string: urlString)}
@@ -1032,7 +819,7 @@ extension VideoGeometry {
       return nil
     }
     if let vidGeoV2: VideoGeometry = PlayerSaveState.parseCSV(csv, separator: separator, expectedTokenCount: 8,
-                                                              expectedVersion: PlayerSaveState.videoGeometryPrefStringVersion2,
+                                                              expectedVersion: videoGeometryPrefStringVersion2,
                                                               targetObjName: "VideoGeometry v2", { errPreamble, iter in
 
       guard let rawWidth = Int(iter.next()!),
@@ -1059,7 +846,7 @@ extension VideoGeometry {
 
     log.debug("Failed to parse VideoGeometry v2; falling back to v1")
     return PlayerSaveState.parseCSV(csv, separator: separator, expectedTokenCount: 7,
-                                    expectedVersion: PlayerSaveState.videoGeometryPrefStringVersion1,
+                                    expectedVersion: videoGeometryPrefStringVersion1,
                                     targetObjName: "VideoGeometry v1") { errPreamble, iter in
 
       guard let rawWidth = Int(iter.next()!),
@@ -1086,7 +873,7 @@ extension VideoGeometry {
 
   /// `VideoGeometry` -> `String`
   func toCSV() -> String {
-    "\(PlayerSaveState.videoGeometryPrefStringVersion2),\(fieldStrings.joined(separator: ","))"
+    "\(videoGeometryPrefStringVersion2),\(fieldStrings.joined(separator: ","))"
   }
 
   // MARK: Embedded CSV
@@ -1114,12 +901,12 @@ extension VideoGeometry {
       log.debug("CSV is empty; returning nil for embedded VideoGeometry")
       return nil
     }
-    let csv2 = "\(PlayerSaveState.videoGeometryPrefStringVersion2)\(embeddedSeparator)\(csvEmbedded)"
+    let csv2 = "\(videoGeometryPrefStringVersion2)\(embeddedSeparator)\(csvEmbedded)"
     if let videoGeoV2 = fromCSV(csv2, log, separator: embeddedSeparator) {
       return videoGeoV2
     } else {
       log.debug("Could not parse embedded VideoGeometry v2; trying v1")
-      let csv1 = "\(PlayerSaveState.videoGeometryPrefStringVersion1)\(embeddedSeparator)\(csvEmbedded)"
+      let csv1 = "\(videoGeometryPrefStringVersion1)\(embeddedSeparator)\(csvEmbedded)"
       return fromCSV(csv1, log, separator: embeddedSeparator)
     }
   }
@@ -1142,7 +929,7 @@ extension PWinGeometry {
 
     // Try v2 first.
     let mmGeo: PWinGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: PWinGeometry.expectedMusicModeCSVTokenCount,
-                                                        expectedVersion: PlayerSaveState.musicModeGeoPrefStringVersion,
+                                                        expectedVersion: musicModeGeoPrefStringVersion,
                                                         targetObjName: "PWinGeometry musicMode v2") { errPreamble, iter in
 
       guard let winOriginX = Double(iter.next()!),
@@ -1213,7 +1000,7 @@ extension PWinGeometry {
   /// Deprecated: use `toCSV()`
   func toMusicModeCSV() -> String {
     precondition(mode == .musicMode, "PWinGeometry.toMusicModeCSV() called on non-musicMode geometry: \(self)")
-    let csv = [PlayerSaveState.musicModeGeoPrefStringVersion,
+    let csv = [musicModeGeoPrefStringVersion,
                self.windowFrame.origin.x.stringMaxFrac2,
                self.windowFrame.origin.y.stringMaxFrac2,
                self.windowFrame.width.stringMaxFrac2,
@@ -1234,7 +1021,7 @@ extension PWinGeometry {
 
   /// `PWinGeometry` -> `String`
   func toCSV() -> String {
-    let csv = [PlayerSaveState.windowGeometryPrefStringVersion,
+    let csv = [windowGeometryPrefStringVersion,
                self.topMarginHeight.stringMaxFrac2,
                self.outsideBars.top.stringMaxFrac2,
                self.outsideBars.trailing.stringMaxFrac2,
@@ -1274,7 +1061,7 @@ extension PWinGeometry {
     /// Try v2 first.
     /// Version 2 removes `videoAspect` field and adds 6 `videoGeometry` fields.
     let pwinGeo: PWinGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: PWinGeometry.expectedCSVTokenCount,
-                                                          expectedVersion: PlayerSaveState.windowGeometryPrefStringVersion,
+                                                          expectedVersion: windowGeometryPrefStringVersion,
                                                           targetObjName: "PWinGeometry v2") { errPreamble, iter ->  PWinGeometry? in
 
       guard let topMarginHeight = Double(iter.next()!),
@@ -1426,9 +1213,9 @@ extension LayoutState {
     ]
 
     if buildNumber < Constants.BuildNumber.V1_3 {
-      csvItems = [PlayerSaveState.specPrefStringVersion1] + csvItems
+      csvItems = [specPrefStringVersion1] + csvItems
     } else { // v1.3
-      csvItems = [PlayerSaveState.specPrefStringVersion2] + csvItems + [
+      csvItems = [specPrefStringVersion2] + csvItems + [
         String(moreSidebarState.selectedSubSegment),
         String(moreSidebarState.playlistSidebarWidth),
         moreSidebarState.selectedPluginTabID
@@ -1521,12 +1308,12 @@ extension LayoutState {
 
     do {
       if let specV2 = try PlayerSaveState.parseCSV(csv, expectedTokenCount: 15,
-                                                   expectedVersion: PlayerSaveState.specPrefStringVersion2,
+                                                   expectedVersion: specPrefStringVersion2,
                                                    targetObjName: "LayoutState v2", parsingFunc) {
         return specV2
       } else {
         let specV1 = try PlayerSaveState.parseCSV(csv, expectedTokenCount: 12,
-                                                  expectedVersion: PlayerSaveState.specPrefStringVersion1,
+                                                  expectedVersion: specPrefStringVersion1,
                                                   targetObjName: "LayoutState v1", parsingFunc)
         return specV1
       }
@@ -1536,4 +1323,239 @@ extension LayoutState {
     }
   }
 
+}
+
+extension PlayerCore {
+
+  /// Generates a Dictionary of properties for storage into a Preference entry
+  fileprivate func generatePropDict(_ geo: GeometrySet) -> [String: Any] {
+    var props: [String: Any] = [:]
+    /// Must *not* access `window`: this is not the main thread
+    let layout = pwc.currentLayout
+
+    let buildNumber: Int = info.priorStateBuildNumber
+    props[PropName.buildNumber.rawValue] = buildNumber
+    props[PropName.launchID.rawValue] = UIState.shared.currentLaunchID
+
+    // - Window Layout & Geometry
+
+    /// `layoutSpec`
+    props[PropName.layoutState.rawValue] = layout.toCSV(buildNumber: buildNumber)
+
+    /// `windowedModeGeo`: use supplied GeometrySet for most up-to-date window frame
+    props[PropName.windowedModeGeo.rawValue] = geo.windowed.toCSV()
+
+    /// `musicModeGeo`: use supplied GeometrySet for most up-to-date window frame
+    props[PropName.musicModeGeo.rawValue] = geo.musicMode.toCSV()
+
+    /// `videoGeo`: use supplied GeometrySet for most up-to-date data (avoiding complex logic to derive it)
+    props[PropName.videoGeo.rawValue] = geo.video.toCSV()
+
+    let screenMetaCSVList: [String] = UIState.shared.cachedScreens.values.map{$0.toCSV()}
+    props[PropName.screens.rawValue] = screenMetaCSVList
+
+    if pwc.isOnTop {
+      props[PropName.isOnTop.rawValue] = true.yn
+    }
+
+    // - Misc window state
+
+    if Preference.bool(for: .autoSwitchToMusicMode) {
+      var overrideAutoMusicMode = overrideAutoMusicMode
+      let audioStatus = info.currentMediaAudioStatus
+      if (audioStatus == .notAudio && isInMiniPlayer) || (audioStatus.isAudio && !isInMiniPlayer) {
+        /// Need to set this so that when restoring, the player won't immediately overcorrect and auto-switch music mode.
+        /// This can happen because the `iinaFileLoaded` event will be fired by mpv very soon after restore is done, which is where it switches.
+        overrideAutoMusicMode = true
+      }
+      props[PropName.overrideAutoMusicMode.rawValue] = overrideAutoMusicMode.yn
+    }
+
+    props[PropName.miscWindowBools.rawValue] = [
+      pwc.isWindowMiniturized.yn,
+      pwc.isWindowHidden.yn,
+      layout.isInPiP.yn,  // stored here for historical reasons. MOved into LayoutState in v1.4
+      pwc.isWindowMiniaturizedDueToPip.yn,
+      pwc.isPausedPriorToInteractiveMode.yn
+    ].joined(separator: ",")
+
+    // - Playback State
+
+    if let urlString = info.currentURL?.absoluteString ?? nil {
+      props[PropName.url.rawValue] = urlString
+    }
+
+    let playlist = info.playlist
+    let playlistPaths: [String] = playlist.compactMap{ PlaybackID.path(from: $0.url) }
+    if !playlistPaths.isEmpty {
+      props[PropName.playlistPaths.rawValue] = playlistPaths
+    }
+    if let playlistPos = info.currentPlayback?.playlistPos {
+      props[PropName.playlistPos.rawValue] = playlistPos
+    }
+
+    if let playbackPositionSec = info.playbackPositionSec {
+      props[PropName.playPosition.rawValue] = playbackPositionSec.stringMaxFrac6
+    }
+    if let playbackDurationSec = info.playbackDurationSec {
+      props[PropName.playDuration.rawValue] = playbackDurationSec.stringMaxFrac6
+    }
+    props[PropName.paused.rawValue] = info.isPaused.yn
+
+    // - Video, Audio, Subtitles Settings
+
+    props[PropName.playlistVideos.rawValue] = Array(info.currentVideosInfo.map({
+      // Need to store the group prefix length (if any) to allow collapsing it in the playlist. Not easy to recompute
+      "\(playlistVideosCSVVersion),\($0.prefix.count),\($0.url.absoluteString)"
+    })).joined(separator: " ")
+    props[PropName.playlistSubtitles.rawValue] = Array(info.currentSubsInfo.map({$0.url.absoluteString}))
+    let matchedSubsArray = info.matchedSubs.map({key, value in (key, Array(value.map({$0.absoluteString})))})
+    let matchedSubs: [String: [String]] = Dictionary(uniqueKeysWithValues: matchedSubsArray)
+    props[PropName.matchedSubtitles.rawValue] = matchedSubs
+
+    props[PropName.deinterlace.rawValue] = info.deinterlace.yn
+    props[PropName.hwdec.rawValue] = info.hwdec
+    props[PropName.hdrEnabled.rawValue] = info.hdrEnabled.yn
+
+    if let intVal = info.vid {
+      props[PropName.vid.rawValue] = String(intVal)
+    }
+    if let intVal = info.aid {
+      props[PropName.aid.rawValue] = String(intVal)
+    }
+    if let intVal = info.sid {
+      props[PropName.sid.rawValue] = String(intVal)
+    }
+    if let intVal = info.secondSid {
+      props[PropName.s2id.rawValue] = String(intVal)
+    }
+    let vidDisabled = info.vidDisabled ?? -1
+    props[PropName.vidDisabled.rawValue] = String(vidDisabled)
+    props[PropName.brightness.rawValue] = String(info.brightness)
+    props[PropName.contrast.rawValue] = String(info.contrast)
+    props[PropName.saturation.rawValue] = String(info.saturation)
+    props[PropName.gamma.rawValue] = String(info.gamma)
+    props[PropName.hue.rawValue] = String(info.hue)
+
+    props[PropName.playSpeed.rawValue] = info.playSpeed.stringMaxFrac6
+    props[PropName.volume.rawValue] = info.volume.stringMaxFrac6
+    props[PropName.isMuted.rawValue] = info.isMuted.yn
+    props[PropName.audioDelay.rawValue] = info.audioDelay.stringMaxFrac6
+    props[PropName.subDelay.rawValue] = info.subDelay.stringMaxFrac6
+    props[PropName.sub2Delay.rawValue] = info.sub2Delay.stringMaxFrac6
+
+    props[PropName.subScale.rawValue] = info.subScale.stringMaxFrac2
+    props[PropName.subPos.rawValue] = info.subPos.stringMaxFrac2
+    props[PropName.sub2Pos.rawValue] = info.sub2Pos.stringMaxFrac2
+
+    props[PropName.isSubVisible.rawValue] = info.isSubVisible.yn
+    props[PropName.isSub2Visible.rawValue] = info.isSecondSubVisible.yn
+
+    let abLoopA: Double = info.abLoopA
+    if abLoopA != 0 {
+      props[PropName.abLoopA.rawValue] = abLoopA.stringMaxFrac6
+    }
+    let abLoopB: Double = info.abLoopB
+    if abLoopB != 0 {
+      props[PropName.abLoopB.rawValue] = abLoopB.stringMaxFrac6
+    }
+
+    props[PropName.loopPlaylist.rawValue] = info.loopFile
+    props[PropName.loopFile.rawValue] = info.loopPlaylist
+
+    let volumeMax = info.volumeMax
+    if volumeMax != 100 {
+      props[PropName.maxVolume.rawValue] = String(volumeMax)
+    }
+
+    let videoFiltersCSV = PlayerSaveState.toCSV(mpvFilters: info.videoFilters)
+    props[PropName.videoFilters.rawValue] = videoFiltersCSV
+    let audioFiltersCSV = PlayerSaveState.toCSV(mpvFilters: info.audioFilters)
+    props[PropName.audioFilters.rawValue] = audioFiltersCSV
+
+    // Remember: mpv itself uses comma as delimiter between filters in a serialized string (see the mpv docs).
+    let videoFiltersDisabled = PlayerSaveState.toCSV(mpvFilters: info.videoFiltersDisabled.values)
+    props[PropName.videoFiltersDisabled.rawValue] = videoFiltersDisabled
+
+    return props
+  }
+
+  // Saves this player's state asynchronously
+  func saveState() {
+    guard isSaveEnabled else { return }
+
+    /// Runs asynchronously in background queue to avoid blocking UI.
+    /// Cuts down on duplicate work via delay and ticket check.
+    saveUIStateDebouncer.run { [self] in
+      guard !isRestoring else {
+        log.trace{"Skipping player state save: still restoring previous state"}
+        return
+      }
+      guard !isShuttingDown else {
+        log.verbose("Skipping player state save: player is shutting down")
+        return
+      }
+      guard !isStopping else {
+        // mpv core is often still active even after closing, and will send events which
+        // can trigger save. Need to make sure we check for this so that we don't un-delete state
+        log.trace("Skipping player state save: window.isClosing is true")
+        return
+      }
+
+      guard let pwc = self.pwc else { return }
+      DispatchQueue.main.async {
+        guard pwc.loaded else {
+          pwc.log.trace{"Skipping player state save: player window is not loaded"}
+          return
+        }
+        pwc.animationPipeline.submitInstantTask {
+          guard !pwc.isAnimatingLayoutTransition else {
+            /// The transition itself will call `save` when it is done. Just return
+            return
+          }
+          // Retrieve appropriate geometry values, updating to latest window frame if needed:
+          let geo = pwc.buildGeoSet(layoutMode: pwc.currentLayout.mode)
+
+          let player = pwc.player
+          guard !player.isShuttingDown else { return }
+
+          PlayerSaveState.saveQueue.async {
+            let properties = player.generatePropDict(geo)
+            if Logger.isTraceEnabled, Preference.bool(for: .logPlayerSave) {
+              player.log.trace{"Saving player state: \(properties)"}
+            }
+            UIState.shared.saveState(forPlayerID: player.label, properties: properties)
+          }
+        }
+      }
+    }
+  }
+
+  @MainActor
+  func saveSynchronously() {
+    guard isSaveEnabled else { return }
+    log.debug("Saving player state synchronously")
+    let pwc = pwc!
+
+    // Retrieve appropriate geometry values, updating to latest window frame if needed:
+    let geo: GeometrySet
+    if pwc.isAnimatingLayoutTransition {
+      geo = pwc.geo
+    } else {
+      geo = pwc.buildGeoSet(layoutMode: pwc.currentLayout.mode)
+    }
+
+    /// Using `sync` here should delay shutdown & makes sure any existing async saves aren't killed mid-write!
+    PlayerSaveState.saveQueue.sync {
+      let properties = generatePropDict(geo)
+      log.trace{"Saving player state: \(properties)"}
+      UIState.shared.saveState(forPlayerID: label, properties: properties)
+      log.debug("Done saving player state synchronously")
+    }
+  }
+
+  @MainActor
+  func clearSavedState() {
+    UIState.shared.clearPlayerSaveState(forPlayerID: label)
+  }
 }
