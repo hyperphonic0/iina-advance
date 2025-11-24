@@ -634,7 +634,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   override func makeTouchBar() -> NSTouchBar? {
     return player.makeTouchBar()
   }
-  
+
   /// Returns the position in seconds for the given percent of the total duration of the video the percentage represents.
   ///
   /// The number of seconds returned must be considered an estimate that could change. The duration of the video is obtained from
@@ -800,12 +800,14 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // MARK: - Window delegate: Open / Close
 
+  @MainActor
   override func openWindow(_ sender: Any?) {
     animationPipeline.submitInstantTask({ [self] in
       _openWindow()
     })
   }
 
+  @MainActor
   func _openWindow() {
     guard let window = self.window else { return }
 

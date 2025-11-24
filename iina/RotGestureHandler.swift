@@ -8,6 +8,7 @@
 
 import Foundation
 
+@MainActor
 class RotationGestureHandler {
 
   // Current rotation of videoView

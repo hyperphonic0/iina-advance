@@ -429,6 +429,7 @@ extension NSLayoutConstraint {
   /// Even when executed inside an animation block, MacOS only sometimes creates implicit animations for changes to constraints.
   /// Using an explicit call to `animator()` seems to be required to guarantee it, but we do not always want it to animate.
   /// This function will automatically disable animations in case they are disabled.
+  @MainActor
   func animateToConstant(_ newConstantValue: CGFloat) {
     if IINAAnimation.isAnimationEnabled {
       self.animator().constant = newConstantValue

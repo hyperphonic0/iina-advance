@@ -59,7 +59,7 @@ extension PlayerWindowController {
     var log: any Logger.Subsystem { player.log }
     var pwc: PlayerWindowController { player.pwc }
 
-    let overlayView = PIPOverlayView()
+    let overlayView: PIPOverlayView
 
     var controller: PIPViewController?
     /// Needs to be retained during PiP, but cannot be reused
@@ -70,11 +70,14 @@ extension PlayerWindowController {
     /// In certain situations we will not get `pipDidClose` callback. Use this timer as a fallback
     let pipDidCloseTimer = TimeoutTimer(timeout: Constants.TimeInterval.pipDidCloseTimeout)
 
+    @MainActor
     init(_ player: PlayerCore) {
       self.player = player
+      self.overlayView = PIPOverlayView()
     }
 
     /// Hide PiP overlay if in PiP and during animation. Show overlay if PiP shown.
+    @MainActor
     func showOrHidePipOverlayView() {
       let mustHide: Bool
       if pwc.currentLayout.isInPiP {
@@ -98,11 +101,10 @@ extension PlayerWindowController {
   }
 }
 
-extension PlayerWindowController: PIPViewControllerDelegate {
+extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
 
+  @MainActor
   func enterPIP(usePipBehavior preferredPipBehavior: Preference.WindowBehaviorWhenPip? = nil, then doOnSuccess: (() -> Void)? = nil) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     // Exit interactive mode before even entering intermediate status
     exitInteractiveMode(then: { [self] in
       guard !pip.isInTransition else { return }
@@ -168,6 +170,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     })
   }
 
+  @MainActor
   private func _enterPIP(usePipBehavior: Preference.WindowBehaviorWhenPip?, then doOnSuccess: (() -> Void)?) {
     guard let window else { return }
 
@@ -258,6 +261,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
   }
 
   /// This is called right before we're about to close the PIP.
+  @MainActor
   private func prepareForPIPClosure(_ pipController: PIPViewController) {
     guard let window = window else { return }
     guard currentLayout.isInPiP, !pip.isInTransition else {
@@ -297,16 +301,19 @@ extension PlayerWindowController: PIPViewControllerDelegate {
   }
 
   /// Called from PiP controller?
+  @MainActor
   func pipWillClose(_ pipController: PIPViewController) {
     prepareForPIPClosure(pipController)
   }
 
   /// Called from PiP controller?
+  @MainActor
   func pipShouldClose(_ pipController: PIPViewController) -> Bool {
     prepareForPIPClosure(pipController)
     return true
   }
 
+  @MainActor
   func pipDidClose(_ pipController: PIPViewController) {
     guard !AppDelegate.shared.isTerminating else { return }
     guard let window else { return }
@@ -375,14 +382,17 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     animationPipeline.submit(tasks)
   }
 
+  @MainActor
   func pipActionPlay(_ pipController: PIPViewController) {
     player.resume()
   }
 
+  @MainActor
   func pipActionPause(_ pipController: PIPViewController) {
     player.pause()
   }
 
+  @MainActor
   func pipActionStop(_ pipController: PIPViewController) {
     // Stopping PIP pauses playback
     player.pause()

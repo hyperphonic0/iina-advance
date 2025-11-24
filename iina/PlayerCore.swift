@@ -2481,10 +2481,10 @@ class PlayerCore: NSObject {
     }
   }
 
-  func sidChanged(silent: Bool = false) {
+  func sidChanged(to sid: Int? = nil, silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !pwc.sessionState.isRestoring, !isStopping else { return }
-    let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
+    let sid = sid ?? Int(mpv.getInt(MPVOption.TrackSelection.sid))
     guard info.isFileLoaded else {
       log.verbose("SID changed to \(sid) but file is not loaded; ignoring")
       return
@@ -2501,10 +2501,10 @@ class PlayerCore: NSObject {
     saveState()
   }
 
-  func secondarySidChanged(silent: Bool = false) {
+  func secondarySidChanged(to ssid: Int? =  nil, silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isRestoring, !isStopping else { return }
-    let ssid = Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
+    let ssid = ssid ?? Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
     guard info.isFileLoaded else {
       log.verbose("SSID changed to \(ssid) but file is not loaded; ignoring")
       return
@@ -3129,7 +3129,7 @@ class PlayerCore: NSObject {
   // MARK: - Notifications
 
   func postNotification(_ name: Notification.Name) {
-    log.trace{"Posting notification: \(name.rawValue)"}
+    log.verbose("Posting notification: \(name.rawValue)")
     NotificationCenter.default.post(Notification(name: name, object: self))
   }
 
@@ -3269,14 +3269,20 @@ class PlayerCore: NSObject {
     guard info.isFileLoaded else { return }
     log.debug("Track list changed")
     guard reloadTrackInfo() else { return }
-    log.verbose("Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) sid=\(String(info.sid))")
+    // Need to reload these explicitly. Sometimes when mpv sends `track-list`, it omits `vid`, `aid`, etc.
+    vidChanged()
+    aidChanged()
+    sidChanged()
+    secondarySidChanged()
+
+    log.verbose("Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) sid=\(String(info.sid)) ssid=\(String(info.secondSid))")
     postNotification(.iinaTracklistChanged)
   }
 
-  func aidChanged(silent: Bool = false) {
+  func aidChanged(to aid: Int? = nil, silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isRestoring, !isStopping else { return }
-    let aid = Int(mpv.getInt(MPVOption.TrackSelection.aid))
+    let aid = aid ?? Int(mpv.getInt(MPVOption.TrackSelection.aid))
     guard aid != info.aid else { return }
     guard info.isFileLoaded else {
       log.verbose("Audio track changed to \(aid) but file is not loaded; ignoring")
@@ -3314,6 +3320,7 @@ class PlayerCore: NSObject {
       // the first render callback is triggered (unless track is album art).
       videoView.isReadyToRender = (isVidEnabled && trackIsAlbumArt) || isRestoring
       info.vid = vid
+      log.verbose("Updated video state: vid=\(String(info.vid)) isAlbumArt=\(videoView.isVidAlbumArt.yn) ready=\(videoView.isReadyToRender.yn)")
       return (vid, true)
     }
   }
@@ -3327,8 +3334,8 @@ class PlayerCore: NSObject {
     pendingActionOnVidChange = .none
 
     let (vid, vidDidChange) = updateVidStateFromMpv()
-
     let hasPendingAction = pendingAction != .none
+    log.verbose("VidDidChange=\(vidDidChange.yn) vid=\(String(info.vid)) hasPendingAction=\(hasPendingAction.yn)")
     guard vidDidChange || hasPendingAction else { return }
 
     let sessionStateTF: GeometryTransform.PWinSessionStateTF = { [self] prevSessionState, ctx -> PWinSessionState? in
@@ -3379,14 +3386,14 @@ class PlayerCore: NSObject {
 
     switch pendingAction {
     case .none:
-      gtf = GeometryTransform("VidTrackChanged", self,
+      gtf = GeometryTransform("VidChange", self,
                               syncVideoParams: false,   // does the syncing itself
                               sessionState: sessionStateTF,
                               video: videoGeoTF)
       gtf.submit()
 
     case .showViewportInMusicMode:
-      gtf = GeometryTransform("ShowViewport", self,
+      gtf = GeometryTransform("ShowViewportOnVidChange", self,
                               syncVideoParams: false,   // does the syncing itself
                               sessionState: sessionStateTF,
                               video: videoGeoTF,

@@ -120,6 +120,7 @@ class KeyBindingTranslator {
     return commands.joined(separator: " ")
   }
 
+  @MainActor
   static func string(fromCriteria criteria: [Criterion]) -> String {
     var mapped = criteria.filter { !$0.isPlaceholder }.map { $0.mpvCommandValue }
 

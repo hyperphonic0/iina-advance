@@ -229,7 +229,7 @@ struct Constants {
     static let playTimeSaveStateFrequency: TimeInt = 10.0
 
     /// Delay before auto-loading playlist from files in the opened file's directory
-    static let autoLoadDelay = 1.0
+    static let autoLoadDelay = 2.0
 
     static let keyBindingsSearchDebounceDelay: TimeInt = 0.1
 

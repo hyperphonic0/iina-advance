@@ -17,6 +17,7 @@ class OptionalConstraint {
     self.identifier = identifier
   }
 
+  @MainActor
   func createIfMissing(_ log: (any Logger.Subsystem)?,_ creationFunc: () -> NSLayoutConstraint) {
     guard !isActive else { return }
 
@@ -27,6 +28,7 @@ class OptionalConstraint {
   }
 
   /// This overload exists solely to fix a compiler error complaining about an ambiguous generic type
+  @MainActor
   func createOrUpdate(to constantToSet: CGFloat = 0, priorityInt: Int = defaultPriority,
                       _ log: (any Logger.Subsystem)?,
                       _ creationFunc: (CGFloat) -> NSLayoutConstraint) {
@@ -34,6 +36,7 @@ class OptionalConstraint {
     createOrUpdate(to: constantToSet, priorityInt: priorityInt, requiredFirstAnchor: requiredFirstAnchor, requiredSecondAnchor: nil, log, creationFunc)
   }
 
+  @MainActor
   func createOrUpdate<AnchorType>(to constantToSet: CGFloat = 0, priorityInt: Int = defaultPriority,
                                   requiredFirstAnchor: NSLayoutAnchor<AnchorType>? = nil,
                                   requiredSecondAnchor: NSLayoutAnchor<AnchorType>? = nil,

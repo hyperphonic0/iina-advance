@@ -1626,7 +1626,7 @@ struct Preference {
   ]
 
 
-  static private let ud = UserDefaults.standard
+  static private var ud: UserDefaults { UserDefaults.standard }
 
   static func object(for key: Key) -> Any? {
     return ud.object(forKey: key.rawValue)

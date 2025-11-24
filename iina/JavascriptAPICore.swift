@@ -276,10 +276,12 @@ fileprivate class WindowAPI: JavascriptAPI, CoreSubAPIExportable {
       window.toggleWindowFullScreen()
     case "pip":
       guard let val = value as? Bool else { return }
-      if val {
-        window.enterPIP()
-      } else {
-        window.exitPIP()
+      DispatchQueue.main.async {
+        if val {
+          window.enterPIP()
+        } else {
+          window.exitPIP()
+        }
       }
     case "ontop":
       guard let val = value as? Bool else { return }

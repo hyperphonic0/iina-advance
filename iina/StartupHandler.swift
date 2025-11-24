@@ -77,6 +77,7 @@ class StartupHandler {
 
   // MARK: Init
 
+  @MainActor
   init() {
     restoreTimer.action = restoreDidTimeOut
     openFilesTimer.action = handleOpenFilesTimeout
@@ -422,6 +423,7 @@ class StartupHandler {
   }
 
 
+  @MainActor
   private func addWindowToRestore(_ savedWindow: SavedWindow, _ wc: WindowController) {
     Logger.restore.verbose("Adding window to restore: \(savedWindow.saveName.string.quoted), minimized=\(savedWindow.isMinimized.yn)")
 
@@ -465,8 +467,8 @@ class StartupHandler {
 
   /// Called by a `TimeoutTimer` if the restore process is taking too long.  Displays a dialog prompting
   /// the user to discard the stored state, or keep waiting.
+  @MainActor
   private func restoreDidTimeOut() {
-    assert(DispatchQueue.isExecutingIn(.main))
     let log = Logger.restore
     guard state == .doneEnqueuing else {
       log.error("Restore timed out but state is \(state)")
@@ -556,6 +558,7 @@ class StartupHandler {
 
   /// Called if all the windows become ready while still displaying the timeout dialog, Dismisses the dialog
   /// automatically, so the user does not have to do it themselves.
+  @MainActor
   private func dismissTimeoutAlertPanel() {
     guard let restoreTimeoutAlertPanel else { return }
 

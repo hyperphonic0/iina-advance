@@ -110,6 +110,7 @@ struct ViewportConstraints {
   let aspectRatio: NSLayoutConstraint
 
   /// UPDATE FUNC
+  @MainActor
   fileprivate func update(connectSpacers: Constraint,
                           aspect: AspectConstraint,
                           wMax: CGFloat? = nil, hMax: CGFloat? = nil,
@@ -203,6 +204,7 @@ struct ViewportConstraints {
     updateSpacerMin(to: spacerMin.values, spacerMin.priority, active: spacerMin.active)
   }
 
+  @MainActor
   func updateSpacerMin(to quad: MarginQuad?, _ priority: NSLayoutConstraint.Priority, active: Bool = true) {
     if let quad {
       topSpacerMin.animateToConstant(quad.top)
@@ -274,9 +276,9 @@ extension ViewportView {
   }
 
   /// __Add / Remove / Update Constraints__, based on the given `geometry` (or lack thereof).
+  @MainActor
   func apply(_ geometry: PWinGeometry,
              _ transitionCategory: TransitionCategory = .noTransition) {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard let pwc else { return }
 
     guard geometry.isViewportShown else {

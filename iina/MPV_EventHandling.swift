@@ -320,16 +320,28 @@ extension MPVController {
       player.refreshEdrMode()
 
     case MPVOption.TrackSelection.vid:
+      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
+      let vid = Int(data)
+      player.log.verbose("Δ mpv prop: 'vid' ≔ \(vid)")
       player.vidChanged()
 
     case MPVOption.TrackSelection.aid:
-      player.aidChanged()
+      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
+      let aid = Int(data)
+      player.log.verbose("Δ mpv prop: 'aid' ≔ \(aid)")
+      player.aidChanged(to: aid)
 
     case MPVOption.TrackSelection.sid:
-      player.sidChanged()
+      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
+      let sid = Int(data)
+      player.log.verbose("Δ mpv prop: 'sid' ≔ \(sid)")
+      player.sidChanged(to: sid)
 
     case MPVOption.Subtitles.secondarySid:
-      player.secondarySidChanged()
+      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
+      let ssid = Int(data)
+      player.log.verbose("Δ mpv prop: 'secondary-sid' ≔ \(ssid)")
+      player.secondarySidChanged(to: ssid)
 
     case MPVOption.PlaybackControl.pause:
       guard let paused = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else {

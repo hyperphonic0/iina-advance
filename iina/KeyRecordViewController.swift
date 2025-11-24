@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class KeyRecordViewController: NSViewController, KeyRecordViewDelegate, NSRuleEditorDelegate, NSTextFieldDelegate {
+class KeyRecordViewController: NSViewController, @MainActor KeyRecordViewDelegate, @MainActor NSRuleEditorDelegate, NSTextFieldDelegate {
 
   @IBOutlet weak var keyRecordView: KeyRecordView!
   @IBOutlet weak var keyLabel: NSTextField!
@@ -107,6 +107,7 @@ class KeyRecordViewController: NSViewController, KeyRecordViewDelegate, NSRuleEd
 
   // MARK: - Other
 
+  @MainActor
   private func updateCommandField() {
     guard let criterions = ruleEditor.criteria(forRow: 0) as? [Criterion] else { return }
     actionTextField.stringValue = KeyBindingTranslator.string(fromCriteria: criterions)

@@ -9,7 +9,7 @@
 import Cocoa
 
 // The control bar when position=="floating"
-class FloatingControlBarView: NSVisualEffectView, DraggableObject {
+class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
   private static let barHeight: CGFloat = 67
   private static let minBarWidth: CGFloat = 200
   private static let preferredBarWidth: CGFloat = 440
@@ -294,6 +294,7 @@ class FloatingControlBarView: NSVisualEffectView, DraggableObject {
     return FloatingControlBarGeometry(parentGeo: pwinGeo)
   }
 
+  @MainActor
   fileprivate struct FloatingControlBarGeometry {
     let parentGeo: PWinGeometry
 

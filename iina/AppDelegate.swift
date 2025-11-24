@@ -92,8 +92,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Preference.bool(for: .iinaEnablePluginSystem) && isInteractiveLaunch
   }
 
-  var startupHandler = StartupHandler()
-  private var shutdownHandler = ShutdownHandler()
+  var startupHandler: StartupHandler!
+  private let shutdownHandler = ShutdownHandler()
   private var notiHandler: NotificationHandler!
 
   private var lastClosedWindowName: String = ""
@@ -216,6 +216,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationWillFinishLaunching(_ notification: Notification) {
     // Must setup preferences before logging so log level is set correctly.
     registerUserDefaultValues()
+
+    startupHandler = StartupHandler()
 
     // Parse & process command line arguments, if any.
     // Do this *before* loading history or even initLogging, because both can be disabled by CLI args.

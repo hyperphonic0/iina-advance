@@ -8,17 +8,21 @@
 
 import Cocoa
 
+/// Needs `@MainActor` for `TextFieldCriterion`...
+@MainActor
 class Criterion: NSObject {
 
-  var isPlaceholder = false
-  var isIINACommand = false
+  let isPlaceholder: Bool
+  let isIINACommand: Bool
 
-  var children: [Criterion]
+  let children: [Criterion]
 
   var mpvCommandValue: String { get { return "" } }
 
-  override init() {
-    children = []
+  init(children: [Criterion], isPlaceholder: Bool, isIINACommand: Bool) {
+    self.children = children
+    self.isPlaceholder = isPlaceholder
+    self.isIINACommand = isIINACommand
     super.init()
   }
 
@@ -30,10 +34,6 @@ class Criterion: NSObject {
     return children[index]
   }
 
-  func addChild(_ child: Criterion) {
-    children.append(child)
-  }
-
   func displayValue() -> Any { return "" }
 
 }
@@ -41,8 +41,8 @@ class Criterion: NSObject {
 
 class TextCriterion: Criterion {
 
-  var name: String
-  var localizedName: String
+  let name: String
+  let localizedName: String
 
   override var mpvCommandValue: String {
     get {
@@ -50,10 +50,10 @@ class TextCriterion: Criterion {
     }
   }
 
-  init(name: String, localizedName: String) {
+  init(name: String, localizedName: String, children: [Criterion], isPlaceholder: Bool, isIINACommand: Bool) {
     self.name = name
     self.localizedName = localizedName
-    super.init()
+    super.init(children: children, isPlaceholder: isPlaceholder, isIINACommand: isIINACommand)
   }
 
   override func displayValue() -> Any {
@@ -65,7 +65,16 @@ class TextCriterion: Criterion {
 
 class TextFieldCriterion: Criterion, NSTextFieldDelegate, NSControlTextEditingDelegate {
 
-  private lazy var field = NSTextField(frame: NSRect(x: 0, y: 0, width: 50, height: 18))
+  private let field: NSTextField
+
+  override init(children: [Criterion], isPlaceholder: Bool, isIINACommand: Bool) {
+    self.field = NSTextField(frame: NSRect(x: 0, y: 0, width: 50, height: 18))
+    field.focusRingType = .none
+    field.bezelStyle = .roundedBezel
+    field.font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
+    super.init(children: children, isPlaceholder: isPlaceholder, isIINACommand: isIINACommand)
+    field.delegate = self
+  }
 
   override var mpvCommandValue: String {
     get {
@@ -74,10 +83,6 @@ class TextFieldCriterion: Criterion, NSTextFieldDelegate, NSControlTextEditingDe
   }
 
   override func displayValue() -> Any {
-    field.delegate = self
-    field.focusRingType = .none
-    field.bezelStyle = .roundedBezel
-    field.font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
     return field
   }
 
@@ -88,6 +93,10 @@ class TextFieldCriterion: Criterion, NSTextFieldDelegate, NSControlTextEditingDe
 }
 
 class SeparatorCriterion: Criterion {
+
+  init(children: [Criterion]) {
+    super.init(children: children, isPlaceholder: false, isIINACommand: false)
+  }
 
   override func displayValue() -> Any {
     return NSMenuItem.separator()

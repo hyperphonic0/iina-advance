@@ -222,6 +222,7 @@ final class OSDState {
     osdIconImageView.centerYAnchor.constraint(equalTo: osdView.centerYAnchor).isActive = true
   }
 
+  @MainActor
   fileprivate func updateIconSize(fromOSDTextSize osdTextSize: CGFloat) {
     guard #available(macOS 11.0, *) else { return }
     let iconHeight, iconWidth: CGFloat
@@ -257,6 +258,7 @@ final class OSDState {
     CATransaction.commit()
   }
 
+  @MainActor
   func updateProgressBarStyle(_ appearance: NSAppearance, effectiveOSCColorScheme: Preference.OSCColorScheme) {
     let osdTextSize = textSizeLast
     guard osdTextSize > 0 else { return }
@@ -691,6 +693,7 @@ extension PlayerWindowController {
     }
   }
 
+  @MainActor
   private func updateOSDIcon(from message: OSDMessage) {
     guard #available(macOS 11.0, *) else { return }
 
