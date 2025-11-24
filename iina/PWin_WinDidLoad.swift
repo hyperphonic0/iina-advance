@@ -168,7 +168,6 @@ extension PlayerWindowController {
     leadingTB.distribution = .fill
     leadingTB.spacing = 0
     leadingTB.detachesHiddenViews = true
-    leadingTB.setHuggingPriority(.init(500), for: .horizontal)
 
     leadingTB.addArrangedSubview(leadingSidebarToggleButton)
 
@@ -195,7 +194,6 @@ extension PlayerWindowController {
     trailingTB.detachesHiddenViews = true
     trailingTB.distribution = .fill
     trailingTB.spacing = iconSpacingH
-    trailingTB.setHuggingPriority(.init(500), for: .horizontal)
     trailingTB.edgeInsets = NSEdgeInsets(top: 0, left: iconSpacingH, bottom: 0, right: iconSpacingH)
 
     trailingTB.addArrangedSubview(trailingSidebarToggleButton)

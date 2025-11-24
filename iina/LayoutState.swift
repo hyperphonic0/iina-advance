@@ -110,7 +110,9 @@ struct LayoutState {
     let controlBarGeo = givenControlBarGeo ?? ControlBarGeometry(mode: mode, oscPosition: oscPosition)
     self.controlBarGeo = controlBarGeo
 
-    let titleBarVisibility = LayoutState.titleBarVisibility(for: mode, topBarPlacement: topBarPlacement)
+    let titleBarVisibility = LayoutState.titleBarVisibility(for: mode,
+                                                            topBarPlacement: topBarPlacement,
+                                                            isLegacyStyle: isLegacyStyle)
     let hasLeadingSidebar = mode.canShowSidebars && !leadingSidebar.tabGroups.isEmpty
     self.leadingSidebarToggleButton = hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) ? titleBarVisibility : .hidden
     let hasTrailingSidebar = mode.canShowSidebars && !trailingSidebar.tabGroups.isEmpty
@@ -222,13 +224,17 @@ struct LayoutState {
   // - Visibility of views/categories
 
   var titleBar: VisibilityMode {
-    LayoutState.titleBarVisibility(for: mode, topBarPlacement: topBarPlacement)
+    LayoutState.titleBarVisibility(for: mode, topBarPlacement: topBarPlacement, isLegacyStyle: isLegacyStyle)
   }
 
-  fileprivate static func titleBarVisibility(for mode: PlayerWindowMode, topBarPlacement: Preference.PanelPlacement) -> VisibilityMode {
+  fileprivate static func titleBarVisibility(for mode: PlayerWindowMode,
+                                             topBarPlacement: Preference.PanelPlacement,
+                                             isLegacyStyle: Bool) -> VisibilityMode {
     switch mode {
-    case .fullScreenNormal, .fullScreenInteractive, .musicMode:
+    case .musicMode:
       return .hidden
+    case .fullScreenNormal, .fullScreenInteractive:
+      return isLegacyStyle ? .hidden : .showAlways
     case .windowedInteractive:
       return .showAlways
     case .windowedNormal:
@@ -275,7 +281,9 @@ struct LayoutState {
   // - Sizes / offsets
 
   var titleBarHeight: CGFloat {
-    if titleBar.isShowable {
+    // Native FS is a corner case. The native title bar will drop down when the user touches the top of the screen.
+    // But we don't need to allocate any space for it in that case.
+    if titleBar.isShowable && !isNativeFullScreen {
       if hasTopOSC {
         // Reduce title height a bit because it will share space with OSC
         return Constants.Distance.reducedTitleBarHeight

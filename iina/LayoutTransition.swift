@@ -91,11 +91,12 @@ extension PlayerWindowController {
     }
     
     // Always need to execute this step. But may not need to use an animation
-    var needsAnimationForShowFadeables: Bool {
-      return !outputLayout.isInteractiveMode && needsFadeOutOldViewsStep
+    var needsShowFadeablesAnimation: Bool {
+      return !isWindowInitialLayout && !outputLayout.isInteractiveMode && !isTogglingFullScreen
     }
     
     var needsFadeOutOldViewsStep: Bool {
+      if isTogglingFullScreen { return false }
       return isTogglingLegacyStyle || isTopBarPlacementOrStyleChanging
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.bottomBarPlacement == .insideViewport && isBottomBarPlacementOrStyleChanging) // fade OUT

@@ -957,7 +957,6 @@ extension PlayerWindowController {
   /// FADE IN NEW VIEWS
   /// Expected to be animated.
   func fadeInNewViews(_ transition: LayoutTransition) {
-    guard let window = window else { return }
     let logPre = "[\(transition.name)-FadeInNewViews"
     let outputLayout = transition.outputLayout
     log.verbose("\(logPre) Start")
@@ -981,13 +980,8 @@ extension PlayerWindowController {
               view.isHidden = false
             }
           }
-        } else {  // Native windowed mode
+        } else {  // Native windowed or FS mode
           showNativeTitleBarViews()
-          window.titleVisibility = .visible
-
-          /// Title bar accessories get removed by fullscreen or if window `styleMask` did not include `.titled`.
-          /// Add them back:
-          addTitleBarAccessoryViews()
         }
       }
       // covers both native & custom variants
@@ -1007,11 +1001,6 @@ extension PlayerWindowController {
       if !isPausedPriorToInteractiveMode {
         player.resume()
       }
-    }
-
-    if transition.isExitingFullScreen && !transition.outputLayout.isLegacyStyle && transition.outputLayout.titleBar.isShowable {
-      // MUST put this in prev task to avoid race condition!
-      window.titleVisibility = .visible
     }
 
     if !transition.isWindowInitialLayout || transition.outputLayout.isFullScreen {
@@ -1055,15 +1044,13 @@ extension PlayerWindowController {
       window.styleMask.remove(.borderless)
     }
 
+    if !transition.outputLayout.isLegacyStyle && transition.outputLayout.titleBar.isShowable {
+      /// Special case: need to wait until now to call `trafficLightButtons.isHidden = false` due to their quirks
+      showNativeTitleBarViews()
+    }
+
     if transition.isEnteringFullScreen {
       // Entered FS
-
-      if transition.outputLayout.isNativeFullScreen {
-        /// Special case: need to wait until now to call `trafficLightButtons.isHidden = false` due to their quirks
-        for button in trafficLightButtons {
-          button.isHidden = false
-        }
-      }
 
       if Preference.bool(for: .blackOutMonitor) {
         blackOutOtherMonitors()
@@ -1118,7 +1105,6 @@ extension PlayerWindowController {
           hideNativeTitleBarViews(andSetAlpha: false)
         } else {
           showNativeTitleBarViews()   /// do this again after adding `titled` style
-          addTitleBarAccessoryViews() /// Need to make sure this executes after styleMask is `.titled`
         }
         updateTitle()
       }
@@ -1226,33 +1212,62 @@ extension PlayerWindowController {
 
   // MARK: - Support Functions: Title Bar
 
-  private func addTitleBarAccessoryViews() {
-    guard let window = window else { return }
-    guard window.styleMask.contains(.titled) else { return }
+  // MARK: - Title bar items
 
-    if leadingTitlebarAccesoryViewController == nil {
-      let controller = NSTitlebarAccessoryViewController()
-      leadingTitlebarAccesoryViewController = controller
-      controller.view = leadingTitleBarAccessoryView
-      controller.layoutAttribute = .leading
+  func updateTitleBarUI(from layoutState: LayoutState) {
+    guard let window else { return }
+    updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
+    let enableGlow = Preference.bool(for: .titleBarBtnsGlow)
+    // Leading sidebar toggle button
+    for button in [leadingSidebarToggleButton, customTitleBar?.leadingSidebarToggleButton].compactMap({$0}) {
+      if layoutState.leadingSidebarToggleButton.isShowable {
+        button.setGlowForTitleBar(enabled: enableGlow && layoutState.leadingSidebar.isVisible)
+      }
+      fadeableViews.applyVisibility(layoutState.leadingSidebarToggleButton, button)
     }
-    if trailingTitlebarAccesoryViewController == nil {
-      let controller = NSTitlebarAccessoryViewController()
-      trailingTitlebarAccesoryViewController = controller
-      controller.view = trailingTitleBarAccessoryView
-      controller.layoutAttribute = .trailing
-    }
-
-    if !window.titlebarAccessoryViewControllers.contains(leadingTitlebarAccesoryViewController!) {
-      window.addTitlebarAccessoryViewController(leadingTitlebarAccesoryViewController!)
-      leadingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
-      leadingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+    // Trailing sidebar toggle button
+    for button in [trailingSidebarToggleButton, customTitleBar?.trailingSidebarToggleButton].compactMap({$0}) {
+      if layoutState.trailingSidebarToggleButton.isShowable {
+        button.setGlowForTitleBar(enabled: enableGlow && layoutState.trailingSidebar.isVisible)
+      }
+      fadeableViews.applyVisibility(layoutState.trailingSidebarToggleButton, button)
     }
 
-    if !window.titlebarAccessoryViewControllers.contains(trailingTitlebarAccesoryViewController!) {
-      window.addTitlebarAccessoryViewController(trailingTitlebarAccesoryViewController!)
-      trailingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
-      trailingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+    updateOnTopButton(from: layoutState, showIfFadeable: false)
+
+    // Title bar accessories (to cover native windowed mode):
+    fadeableViews.applyVisibility(layoutState.titlebarAccessoryViewControllers, to: leadingTitleBarAccessoryView)
+    fadeableViews.applyVisibility(layoutState.titlebarAccessoryViewControllers, to: trailingTitleBarAccessoryView)
+  }
+
+  /// Hides all the various buttons of the built-in title bar, some of which can have strange quirks.
+  ///
+  /// Note: there is an Apple bug (as of MacOS 13.3.1) where setting `alphaValue=0` on `miniaturizeButton` will
+  /// cause `window.performMiniaturize()` to be ignored. So to hide these, use `isHidden=true` + `alphaValue=1`
+  /// (except for temporary animations).
+  ///
+  /// Note 2: do not touch `titleVisibility` if at all possible. There seems to be no reliable way to toggle it
+  /// while also guaranteeing that `documentIcon` & `titleTextField` are shown/hidden consistently.
+  /// Setting `isHidden=true` on `titleTextField` and `documentIcon` do not animate and do not always work.
+  /// We can use `alphaValue=0` to fade out in `fadeOutOldViews()`, but `titleVisibility` is needed to remove them.
+  /// We can work around the problem by (1) inserting or removing `.titled` from the window's style mask, which
+  /// effectively swaps the whole title bar in or out), and (2) in native windowed mode, *always* show the title bar when
+  /// the mouse hovers over it, because even if we set the document icon's alpha to 0, the user can still click on it.
+  func hideNativeTitleBarViews(andSetAlpha setAlpha: Bool) {
+    if setAlpha {
+      documentIconButton?.alphaValue = 0
+      titleTextField?.alphaValue = 0
+    }
+    documentIconButton?.isHidden = true
+    titleTextField?.isHidden = true
+    for button in trafficLightButtons {
+      /// Special case for fullscreen transition due to quirks of `trafficLightButtons`.
+      /// In most cases it's best to avoid setting `alphaValue = 0` for these because doing so will disable their menu items,
+      /// but should be ok for brief animations
+      if setAlpha {
+        button.alphaValue = 0
+      }
+      button.isHidden = false
     }
   }
 
@@ -1281,6 +1296,67 @@ extension PlayerWindowController {
       window.styleMask.insert(.titled)
     }
     window.hasShadow = true
+  }
+
+  /// Special case for these because their instances may change. Do not use `fadeableViews`. Always set `alphaValue = 1`.
+  func showNativeTitleBarViews() {
+    guard let window = window else { return }
+    for button in trafficLightButtons {
+      button.alphaValue = 1
+      button.isHidden = false
+    }
+
+    titleTextField?.isHidden = false
+    titleTextField?.alphaValue = 1
+    documentIconButton?.isHidden = false
+    documentIconButton?.alphaValue = 1
+
+    if #available(macOS 11.0, *) {
+      window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
+    }
+
+    /// Title bar accessories get removed by fullscreen or if window `styleMask` did not include `.titled`.
+    /// Add them back:
+    addTitleBarAccessoryViews()
+  }
+
+  private func addTitleBarAccessoryViews() {
+    guard let window = window else { return }
+    guard window.styleMask.contains(.titled) else { return }
+
+    if leadingTitlebarAccesoryViewController == nil {
+      let accessory = NSTitlebarAccessoryViewController()
+      leadingTitlebarAccesoryViewController = accessory
+      accessory.view = leadingTitleBarAccessoryView
+      accessory.fullScreenMinHeight = Constants.Distance.standardTitleBarHeight
+      accessory.layoutAttribute = .leading
+    }
+
+    if trailingTitlebarAccesoryViewController == nil {
+      let accessory = NSTitlebarAccessoryViewController()
+      trailingTitlebarAccesoryViewController = accessory
+      accessory.view = trailingTitleBarAccessoryView
+      accessory.fullScreenMinHeight = Constants.Distance.standardTitleBarHeight
+      accessory.layoutAttribute = .trailing
+    }
+
+    if !window.titlebarAccessoryViewControllers.contains(leadingTitlebarAccesoryViewController!) {
+      window.addTitlebarAccessoryViewController(leadingTitlebarAccesoryViewController!)
+      leadingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
+      leadingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+    }
+
+    if !window.titlebarAccessoryViewControllers.contains(trailingTitlebarAccesoryViewController!) {
+      window.addTitlebarAccessoryViewController(trailingTitlebarAccesoryViewController!)
+      trailingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
+      trailingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+    }
+
+    leadingTitleBarAccessoryView.isHidden = false
+    leadingTitleBarAccessoryView.alphaValue = 1
+
+    trailingTitleBarAccessoryView.isHidden = false
+    trailingTitleBarAccessoryView.alphaValue = 1
   }
 
   // MARK: - Support Functions: Interactive Mode Controls
