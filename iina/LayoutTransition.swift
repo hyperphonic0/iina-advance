@@ -94,11 +94,16 @@ extension PlayerWindowController {
     var needsShowFadeablesAnimation: Bool {
       return !isWindowInitialLayout && !outputLayout.isInteractiveMode && !isTogglingFullScreen
     }
-    
+
+    /// Returns true, even if only needed temporarily
+    var needsToHideTopBar: Bool {
+      return isTopBarPlacementOrStyleChanging || isTogglingLegacyStyle
+      || (outputLayout.mode != inputLayout.mode)
+      || outputLayout.titleBar == .hidden
+    }
+
     var needsFadeOutOldViewsStep: Bool {
-      if isTogglingFullScreen { return false }
-      return isTogglingLegacyStyle || isTopBarPlacementOrStyleChanging
-      || (inputLayout.mode != outputLayout.mode)
+      return needsToHideTopBar
       || (inputLayout.bottomBarPlacement == .insideViewport && isBottomBarPlacementOrStyleChanging) // fade OUT
       || (inputLayout.enableOSC != outputLayout.enableOSC)
       || (inputLayout.enableOSC && (inputLayout.oscPosition.rawValue != outputLayout.oscPosition.rawValue))

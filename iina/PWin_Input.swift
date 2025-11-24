@@ -47,11 +47,11 @@ extension PlayerWindowController {
   }
 
   func keyEventArgs(_ event: NSEvent) -> [[String: Any]] {
-    return [[
+    [[
       "x": event.locationInWindow.x,
       "y": event.locationInWindow.y,
       "isRepeat": event.isARepeat
-    ] as [String : Any]]
+    ]]
   }
 
   /// Returns true if handled

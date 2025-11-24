@@ -178,10 +178,8 @@ extension PlayerWindowController {
 
     // Title bar & title bar accessories:
 
-    let needToHideTopBar = transition.isTopBarPlacementOrStyleChanging || transition.isTogglingLegacyStyle  || (transition.outputLayout.mode != transition.inputLayout.mode)
-
     // Hide all title bar items if top bar placement is changing
-    if needToHideTopBar || outputLayout.titleBar == .hidden {
+    if transition.needsToHideTopBar {
       // Native & custom title bar components
       fadeableViews.applyVisibility(.hidden, documentIconButton, titleTextField, customTitleBar?.view)
 

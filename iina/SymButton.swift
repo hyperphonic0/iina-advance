@@ -52,6 +52,24 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
     imageAlignment = .alignCenter
   }
 
+  fileprivate func pwc(from event: NSEvent) -> PlayerWindowController? {
+    if let pwc = super.pwc {
+      return pwc
+    }
+
+    let isFullScreen = NSApp.presentationOptions.contains(.fullScreen)
+    if isFullScreen {
+      let locationInWindow = event.locationInWindow
+      if let mainWin = NSApplication.shared.mainWindow {
+        let isInWindow = mainWin.frame.contains(locationInWindow)
+        if isInWindow {
+          return mainWin.windowController as? PlayerWindowController
+        }
+      }
+    }
+    return nil
+  }
+
   // MARK: - Mouse Input
 
   override var acceptsFirstResponder: Bool { true }
@@ -62,10 +80,12 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
       return
     }
 
+    guard let pwc = pwc(from: event) else { return }
+
     /// Setting this will cause PlayerWindowController to forward `mouseDragged` & `mouseUp` events to this object even when out of bounds
-    pwc?.currentDragObject = self
+    pwc.currentDragObject = self
     let isInsideBounds = updateHighlight(from: event)
-    pwc?.log.verbose("SymButton \(idString.quoted): mouseDown insideBounds=\(isInsideBounds.yn)")
+    pwc.log.verbose("SymButton \(idString.quoted): mouseDown insideBounds=\(isInsideBounds.yn)")
 
     if enableAcceleration && isInsideBounds {
       pressureStage = 1
@@ -88,10 +108,11 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
       return
     }
     let isInsideBounds = isInsideBounds(event)
-    pwc?.log.verbose("SymButton \(idString.quoted): mouseUp insideBounds=\(isInsideBounds.yn)")
+    guard let pwc = pwc(from: event) else { return }
+    pwc.log.verbose("SymButton \(idString.quoted): mouseUp insideBounds=\(isInsideBounds.yn)")
     if isInsideBounds {
       pressureStage = 0
-      pwc?.currentDragObject = nil
+      pwc.currentDragObject = nil
 
       if #available(macOS 14.0, *), bounceOnClick, IINAAnimation.isAnimationEnabled {
         addSymbolEffect(.bounce.down.wholeSymbol, options:
@@ -100,7 +121,7 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
                         animated: true)
       }
 
-      pwc?.player.log.verbose("Calling action: \(action?.description ?? "nil")")
+      pwc.player.log.verbose("Calling action: \(action?.description ?? "nil")")
       sendAction(action, to: target)
       updateHighlight(isInsideBounds: false)
     }
@@ -114,7 +135,8 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
   override func pressureChange(with event: NSEvent) {
     guard enableAcceleration else { return }
     let pseudoStage = Int(event.pressure * 5)
-    pwc?.player.log.trace{"SymButton \(idString.quoted): PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition) pressure=\(event.pressure) pseudoStage=\(pseudoStage)"}
+    guard let pwc = pwc(from: event) else { return }
+    pwc.player.log.trace{"SymButton \(idString.quoted): PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition) pressure=\(event.pressure) pseudoStage=\(pseudoStage)"}
     pressureStage = pseudoStage
     sendAction(action, to: target)
   }
@@ -136,7 +158,7 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
 
   @discardableResult
   private func updateHighlight(from event: NSEvent) -> Bool {
-    guard let pwc else { return false }
+    guard let pwc = pwc(from: event) else { return false }
     let isInsideBounds = pwc.currentDragObject == self && isInsideViewFrame(pointInWindow: event.locationInWindow)
     updateHighlight(isInsideBounds: isInsideBounds)
     return isInsideBounds
@@ -162,7 +184,7 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
   // MARK: - Misc.
 
   private func isInsideBounds(_ event: NSEvent) -> Bool {
-    guard let pwc else { return false }
+    guard let pwc = pwc(from: event) else { return false }
     return pwc.currentDragObject == self && isInsideViewFrame(pointInWindow: event.locationInWindow)
   }
 
