@@ -3207,9 +3207,10 @@ final class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.trace("Reloading tracklist from mpv")
 
-    let trackCount = mpv.getInt(MPVProperty.trackListCount)
-    guard trackCount > 0 else {
-      log.warn("No tracks returned by mpv's trackListCount; ignoring")
+    let raw = mpv.getNode(MPVProperty.trackList)
+    guard let list = raw as? [[String: Any]] else {
+      // Internal error, should not occur.
+      log.error("Cast of mpv node failed: \(String(describing: raw))")
       return false
     }
 
@@ -3217,29 +3218,32 @@ final class PlayerCore: NSObject {
     var videoTracks: [MPVTrack] = []
     var subTracks: [MPVTrack] = []
 
-    for index in 0..<trackCount {
-      // get info for each track
-      guard let trackType = mpv.getString(MPVProperty.trackListNType(index)) else { continue }
-      let track = MPVTrack(id: mpv.getInt(MPVProperty.trackListNId(index)),
-                           type: MPVTrack.TrackType(rawValue: trackType)!,
-                           isDefault: mpv.getFlag(MPVProperty.trackListNDefault(index)),
-                           isForced: mpv.getFlag(MPVProperty.trackListNForced(index)),
-                           isImage: mpv.getFlag(MPVProperty.trackListNImage(index)),
-                           isSelected: mpv.getFlag(MPVProperty.trackListNSelected(index)),
-                           isExternal: mpv.getFlag(MPVProperty.trackListNExternal(index)))
-      track.srcId = mpv.getInt(MPVProperty.trackListNSrcId(index))
-      track.title = mpv.getString(MPVProperty.trackListNTitle(index))
-      track.lang = mpv.getString(MPVProperty.trackListNLang(index))
-      track.codec = mpv.getString(MPVProperty.trackListNCodec(index))
-      track.externalFilename = mpv.getString(MPVProperty.trackListNExternalFilename(index))
-      track.isAlbumart = mpv.getString(MPVProperty.trackListNAlbumart(index)) == "yes"
-      track.decoderDesc = mpv.getString(MPVProperty.trackListNDecoderDesc(index))
-      track.demuxW = mpv.getInt(MPVProperty.trackListNDemuxW(index))
-      track.demuxH = mpv.getInt(MPVProperty.trackListNDemuxH(index))
-      track.demuxFps = mpv.getDouble(MPVProperty.trackListNDemuxFps(index))
-      track.demuxChannelCount = mpv.getInt(MPVProperty.trackListNDemuxChannelCount(index))
-      track.demuxChannels = mpv.getString(MPVProperty.trackListNDemuxChannels(index))
-      track.demuxSamplerate = mpv.getInt(MPVProperty.trackListNDemuxSamplerate(index))
+    for dict in list {
+      guard let type = dict["type"] as? String else { continue }
+      guard let isDefault = dict["default"] as? Bool, let isForced = dict["forced"] as? Bool,
+            let isImage = dict["image"] as? Bool, let isSelected = dict["selected"] as? Bool,
+            let isExternal = dict["external"] as? Bool else {
+        // Internal error, should not occur.
+        log.error("Unable to construct MPVTrack from mpv node map: \(dict)")
+        continue
+      }
+      let id = MPVController.nodeValueAsInt(dict["id"])
+      let track = MPVTrack(id: id, type: MPVTrack.TrackType(rawValue: type)!,
+                           isDefault: isDefault, isForced: isForced, isImage: isImage,
+                           isSelected: isSelected, isExternal: isExternal)
+      track.srcId = MPVController.nodeValueAsInt(dict["src-id"])
+      track.title = dict["title"] as? String
+      track.lang = dict["lang"] as? String
+      track.codec = dict["codec"] as? String
+      track.externalFilename = dict["external-filename"] as? String
+      track.isAlbumart = dict["albumart"] as? Bool ?? false
+      track.decoderDesc = dict["decoder-desc"] as? String
+      track.demuxW = MPVController.nodeValueAsInt(dict["demux-w"])
+      track.demuxH = MPVController.nodeValueAsInt(dict["demux-h"])
+      track.demuxFps = dict["demux-fps"] as? Double
+      track.demuxChannelCount = MPVController.nodeValueAsInt(dict["demux-channel-count"])
+      track.demuxChannels = dict["demux-channels"] as? String
+      track.demuxSamplerate = MPVController.nodeValueAsInt(dict["demux-samplerate"])
 
       // add to lists
       switch track.type {
@@ -3255,7 +3259,7 @@ final class PlayerCore: NSObject {
     }
 
     info.replaceTracks(audio: audioTracks, video: videoTracks, sub: subTracks)
-    log.debug("Reloaded tracklist from mpv (\(trackCount) tracks)")
+    log.debug("Reloaded tracklist from mpv: \(videoTracks.count) video, \(audioTracks.count) audio, \(subTracks.count) subtitle")
     return true
   }
 
