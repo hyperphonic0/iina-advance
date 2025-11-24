@@ -17,6 +17,20 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
   unowned var pwc: PlayerWindowController! = nil
 
+  // Zoom constants
+  private let pinchZoomMultiplier: Double = 1.0
+  private let pinchMinZoom: Double = 1.0
+  private let pinchMaxZoom: Double = 4.5
+  private let pinchMaxPan: Double = 1.0
+
+  // Zoom variables
+  private var lastMagnification: CGFloat = 0.0
+  private var pinchOriginInWindow: NSPoint?
+  private var pinchOriginInVideo: NSPoint?
+  private var pinchOriginInVideoUnit: NSPoint?
+  private var pinchScale: CGFloat = 1.0
+  private var pinchInitialZoom: Double = 1.0
+
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
     guard !pwc.isInInteractiveMode else { return }
     guard !pwc.isInMiniPlayer || pwc.miniPlayer.isViewportShown else { return }
@@ -89,29 +103,123 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       }
 
     case .windowSize:
-      // avoid zero and negative numbers because they will cause problems
-      let targetScale = max(0.0001, recognizer.magnification + 1.0)
-
       IINAAnimation.disableAnimation {  // need this to prevent floating OSC from jumping
-        pwc.scaleVideoFromPinchGesture(to: targetScale, recognizer.state)
+        let currentMode = pwc.currentLayout.mode
+        if currentMode.isFullScreen {
+          zoomVideoFromPinchGesture(recognizer, currentMode: currentMode)
+        } else {
+          pwc.scaleWindowFromPinch(recognizer, currentMode: currentMode)
+        }
       }
 
     }  // end switch
   }
+
+  /// Adjusts the window size as needed to scale the video as specified by `recognizer`.
+  fileprivate func zoomVideoFromPinchGesture(_ recognizer: NSMagnificationGestureRecognizer, currentMode: PlayerWindowMode) {
+    guard let window = pwc.window else { return }
+
+    switch recognizer.state {
+
+    case .began:
+      // Fullscreen: pinch to zoom video around the pinch origin.
+      lastMagnification = recognizer.magnification
+      pinchScale = 1.0
+
+      let currentZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
+      pinchInitialZoom = max(pinchMinZoom, 1.0 + currentZoom)
+      // Only update the pinch origin if starting from baseline; otherwise keep the prior origin to reduce jumps.
+      if pinchInitialZoom <= pinchMinZoom {
+        pinchOriginInWindow = recognizer.location(in: window.contentView)
+        pinchOriginInVideo = clampedVideoPoint(fromWindowPoint: pinchOriginInWindow ?? .zero)
+        pinchOriginInVideoUnit = normalizedVideoPoint(fromWindowPoint: pinchOriginInWindow ?? .zero)
+      }
+    case .changed:
+      pinchScale = recognizer.magnification + 1.0
+      applyVideoZoom(scaleMultiplier: pinchScale)
+      lastMagnification = recognizer.magnification
+    case .ended:
+      applyVideoZoom(scaleMultiplier: pinchScale)
+    case .cancelled, .failed:
+      break
+    default:
+      break
+    }
+  }
+
+  private func clampedVideoPoint(fromWindowPoint point: NSPoint) -> NSPoint {
+    let viewPoint = pwc.videoView.convert(point, from: pwc.window?.contentView)
+    let bounds = pwc.videoView.bounds
+    guard bounds.width > 0, bounds.height > 0 else { return .zero }
+
+    let videoSize = pwc.player.videoGeo.videoSizeDisplay
+    let fitSize = videoSize.shrink(toSize: bounds.size)
+    let videoRect = fitSize.centeredRect(in: bounds)
+
+    guard videoRect.width > 0, videoRect.height > 0 else { return .zero }
+
+    let clampedX = max(videoRect.minX, min(videoRect.maxX - 1, viewPoint.x))
+    let clampedY = max(videoRect.minY, min(videoRect.maxY - 1, viewPoint.y))
+
+    return NSPoint(x: clampedX - videoRect.minX, y: clampedY - videoRect.minY)
+  }
+
+  private func normalizedVideoPoint(fromWindowPoint point: NSPoint) -> NSPoint? {
+    guard let rect = videoRectInView() else { return nil }
+    let clamped = clampedVideoPoint(fromWindowPoint: point)
+    guard rect.width > 0, rect.height > 0 else { return nil }
+    return NSPoint(x: clamped.x / rect.width, y: clamped.y / rect.height)
+  }
+
+  private func videoRectInView() -> NSRect? {
+    let bounds = pwc.videoView.bounds
+    guard bounds.width > 0, bounds.height > 0 else { return nil }
+    let videoSize = pwc.player.videoGeo.videoSizeDisplay
+    let fitSize = videoSize.shrink(toSize: bounds.size)
+    return fitSize.centeredRect(in: bounds)
+  }
+
+  private func applyVideoZoom(scaleMultiplier: CGFloat) {
+    let s0 = pinchInitialZoom
+    let s1 = min(pinchMaxZoom, max(pinchMinZoom, s0 * Double(scaleMultiplier) * pinchZoomMultiplier))
+    let zoomProp = s1 - 1.0
+
+    let origin = pinchOriginInVideoUnit ?? NSPoint(x: 0.5, y: 0.5)
+    // Adjust pan to keep the pinch origin under the cursor relative to the current zoom.
+    // mpv pan semantics: positive pan-x moves video right; positive pan-y moves video down.
+    let invScale = 1.0 / s1
+    let newPanX = clampPan(Double(0.5 - origin.x) * (1.0 - invScale))
+    let newPanY = clampPan(Double(origin.y - 0.5) * (1.0 - invScale))
+
+    pwc.player.mpv.setDouble(MPVOption.Video.videoZoom, zoomProp, level: .verbose)
+    pwc.player.mpv.setDouble(MPVOption.Video.videoPanX, newPanX, level: .verbose)
+    pwc.player.mpv.setDouble(MPVOption.Video.videoPanY, newPanY, level: .verbose)
+
+    // If we're effectively back to 1x, forget the stored origin so a new pinch can pick a fresh focal point.
+    if s1 <= pinchMinZoom + 0.0001 {
+      pinchOriginInWindow = nil
+      pinchOriginInVideo = nil
+      pinchOriginInVideoUnit = nil
+    }
+  }
+
+  private func clampPan(_ value: Double) -> Double {
+    return min(pinchMaxPan, max(-pinchMaxPan, value))
+  }
 }
 
 extension PlayerWindowController {
-  /// Adjusts the window size as needed to scale the video as specified by `recognizer`.
-  fileprivate func scaleVideoFromPinchGesture(to targetScale: CGFloat, _ recognizerState: NSGestureRecognizer.State) {
-    let currentMode = currentLayout.mode
-    guard !currentMode.isFullScreen else { return }
+  fileprivate func scaleWindowFromPinch(_ recognizer: NSMagnificationGestureRecognizer, currentMode: PlayerWindowMode) {
 
-    switch recognizerState {
+    // avoid zero and negative numbers because they will cause problems
+    let targetScale = max(0.0001, recognizer.magnification + 1.0)
+
+    switch recognizer.state {
 
     case .began:
       isMagnifying = true
 
-      // Cache current window frame. All updates until the end of this session will operate on this.
+      // Save current window frame. All updates until the end of this session will operate on this.
       if currentMode == .musicMode {
         musicModeGeo = musicModeGeoForCurrentFrame()
       } else {
@@ -171,4 +279,5 @@ extension PlayerWindowController {
     }
     setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: submitResult)
   }
+
 }

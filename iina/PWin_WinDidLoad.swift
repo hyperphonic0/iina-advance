@@ -65,8 +65,8 @@ extension PlayerWindowController {
     // gesture recognizers
     rotationHandler.pwc = self
     magnificationHandler.pwc = self
-    contentView.addGestureRecognizer(magnificationHandler.magnificationGestureRecognizer)
-    contentView.addGestureRecognizer(rotationHandler.rotationGestureRecognizer)
+    viewportView.addGestureRecognizer(magnificationHandler.magnificationGestureRecognizer)
+    viewportView.addGestureRecognizer(rotationHandler.rotationGestureRecognizer)
 
     // scroll wheel
     playSlider.scrollWheelDelegate = PlaySliderScrollWheel(slider: playSlider, log)
