@@ -542,6 +542,8 @@
 
               frameworks="$1/Contents/Frameworks"
 
+              echo "Canonicalizing lib groups under $frameworks"
+
               # Build the index in memory: each line is "STEM \t VERSION \t BASENAME"
               lines="$(
                 find "$frameworks" -maxdepth 1 \( -type f -o -type l \) -name 'lib*.dylib' | while read -r dep; do
@@ -745,18 +747,19 @@
               activeArch="$(uname -m)"
 
               echo "📦 Bundling frameworks from ${depsIndirect} into $appName (\(activeArch))"
-              cp -RL ${depsIndirect}/. "$frameworks/"
+              cp -RL "${depsIndirect}/." "$frameworks/"
 
               echo "📦 Bundling executables from ${depsExecutable} into $appName (\(activeArch))"
-              cp -RL ${depsExecutable}/. "$macos/"
+              cp -RL "${depsExecutable}/." "$macos/"
 
               echo "🐍 Bundling ${pkgs.python3} into $appName (\(activeArch))"
 
               # Pick the single pythonX.Y dir from Nix’s python3
-              python_src_dir=$(echo ${pkgs.python3}/lib/python* | awk '{print $1}')
+              python_src_dir=$(echo ${pkgs.python3}/lib/python* | awk '{print $0}')
+              echo "🐍 Python src dir: $python_src_dir"
               python_basename="$(basename "$python_src_dir")"
               python_site="$resources/Python/lib/$python_basename/site-packages"
-              vapoursynth_site_src=$(echo ${pkgs.vapoursynth}/lib/python*/site-packages | awk '{print $1}')
+              vapoursynth_site_src=$(echo ${pkgs.vapoursynth}/lib/python*/site-packages | awk '{print $0}')
 
               mkdir -p "$resources/Python/lib"
               mkdir -p "$python_site"
