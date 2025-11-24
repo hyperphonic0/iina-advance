@@ -602,11 +602,11 @@ struct Logger {
 
 
 #if DEBUG
-    let needsStdout = true
+    let needsStdout = (stdoutLogLevel <= level) || (Logger.Level.preferred <= level)
 #else
-    let needsStdout = level >= stdoutLogLevel
+    let needsStdout = stdoutLogLevel <= level
 #endif
-    let needsElsewhere = Logger.Level.preferred >= level
+    let needsElsewhere = Logger.Level.preferred <= level
     guard needsStdout || needsElsewhere else { return }
 
     // Now that we know the message will not be discarded, call the closure to construct the message

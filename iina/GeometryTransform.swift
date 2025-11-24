@@ -672,6 +672,7 @@ struct GeometryTransform {
     /// Requires `ctx.outputLayout`.
     fileprivate func buildFinalInitialLayoutTask() -> IINAAnimation.Task {
       return IINAAnimation.Task.instantTask{
+        log.verbose("[GTF:\(name)] Running final initial layout task")
         // Run this early when restoring, before showWindow(), to avoid noticeable color flickering
         pwc.videoView.refreshAllVideoDisplayState()
 
