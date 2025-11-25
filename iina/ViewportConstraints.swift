@@ -287,7 +287,7 @@ extension ViewportView {
       return
     }
 
-    guard !pwc.currentLayout.isInPiP else {
+    guard !pwc.currentLayout.isInPiP || transitionCategory == .enteringPIP else {
       log.verbose("VideoView: currently in PiP. Skipping constraints update & setting aspectRatio in PiP controller ≔ \(geometry.video.videoSizeCAR)")
       pwc.pip.controller?.aspectRatio = geometry.video.videoSizeCAR
       return
