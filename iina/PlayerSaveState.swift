@@ -1291,9 +1291,6 @@ extension LayoutState {
         // v1 of the CSV lacked this info. Fall back to default
         moreSidebarState = Sidebar.SidebarMiscState.fromDefaultPrefs()
       }
-      // Just grab these from prefs. Not important or unique enough to also store it in each window's CSV.
-      let isLegacyFullScreen = mode.isFullScreen && isLegacyStyle
-      let hasTopPaddingForCameraHousing = isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
       let oscColorScheme = effectiveOSCColorSchemeFromPrefs
 
 
@@ -1302,8 +1299,7 @@ extension LayoutState {
                          isLegacyStyle: isLegacyStyle, topBarPlacement: topBarPlacement,
                          bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition,
                          oscColorScheme: oscColorScheme,
-                         interactiveMode: interactiveMode, moreSidebarState: moreSidebarState,
-                         hasTopPaddingForCameraHousing: hasTopPaddingForCameraHousing)
+                         interactiveMode: interactiveMode, moreSidebarState: moreSidebarState)
     }
 
     do {

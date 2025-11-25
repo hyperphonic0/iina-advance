@@ -70,7 +70,7 @@ struct LayoutState {
        controlBarGeo givenControlBarGeo: ControlBarGeometry? = nil,
        interactiveMode: InteractiveMode?,
        moreSidebarState: Sidebar.SidebarMiscState,
-       hasTopPaddingForCameraHousing: Bool,
+       hasTopPaddingForCameraHousing: Bool? = nil,
   ) {
 
     var mode = mode
@@ -118,7 +118,14 @@ struct LayoutState {
     let hasTrailingSidebar = mode.canShowSidebars && !trailingSidebar.tabGroups.isEmpty
     self.trailingSidebarToggleButton = hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) ? titleBarVisibility : .hidden
 
-    self.hasTopPaddingForCameraHousing = hasTopPaddingForCameraHousing
+    if let hasTopPaddingForCameraHousing {
+      self.hasTopPaddingForCameraHousing = hasTopPaddingForCameraHousing
+    } else {
+      // Just grab these from prefs. Not important or unique enough to also store it in each window's CSV.
+      let isLegacyFullScreen = mode.isFullScreen && isLegacyStyle
+      let hasTopPaddingForCameraHousing = isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
+      self.hasTopPaddingForCameraHousing = hasTopPaddingForCameraHousing
+    }
   }
 
   /// Specify any properties to override; if nil, will use self's property values.
@@ -190,9 +197,6 @@ struct LayoutState {
     let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen)
                                           : Preference.bool(for: .useLegacyWindowedMode))
     let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
-
-    let isLegacyFullScreen = mode.isFullScreen && isLegacyStyle
-    let hasTopPaddingForCameraHousing = isLegacyFullScreen && !Preference.bool(for: .allowVideoToOverlapCameraHousing)
     let oscColorScheme = effectiveOSCColorSchemeFromPrefs
 
     return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
@@ -205,8 +209,7 @@ struct LayoutState {
                        oscPosition: Preference.enum(for: .oscPosition),
                        oscColorScheme: oscColorScheme,
                        interactiveMode: interactiveMode,
-                       moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs(),
-                       hasTopPaddingForCameraHousing: hasTopPaddingForCameraHousing)
+                       moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs())
   }
 
   static var effectiveOSCColorSchemeFromPrefs: Preference.OSCColorScheme {

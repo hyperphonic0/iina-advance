@@ -177,7 +177,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   var shouldHaveAdditionalInfo: Bool {
-    mode.isFullScreen && Preference.bool(for: .displayTimeAndBatteryInFullScreen)
+    mode == .fullScreenNormal && Preference.bool(for: .displayTimeAndBatteryInFullScreen)
   }
 
   /// OSD offset from top of viewportView.
@@ -187,17 +187,14 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   func osdOffsetFromTopOfViewport() -> CGFloat {
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
 
-    let offset: CGFloat
     if screenFit == .nativeFullScreen {
       let maxScreenUsableHeight = screen.visibleFrame.height
-      offset = max(0, insideBars.top,  windowFrame.height - maxScreenUsableHeight) + 8
+      return max(0, insideBars.top) + 8
     } else {
       // Possibly entering legacy full screen
       let maxScreenUsableHeight = screen.frameWithoutCameraHousing.height
-      let unusedScreenHeight = max(windowFrame.height - cameraHousingOffset - maxScreenUsableHeight, 0)
-      offset = max(0, insideBars.top, unusedScreenHeight) + 8
+      return max(0, insideBars.top, windowFrame.height - maxScreenUsableHeight - cameraHousingOffset) + 8
     }
-    return offset
   }
 
   /// Only nonzero if leading sidebar is open

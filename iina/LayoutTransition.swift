@@ -214,6 +214,10 @@ extension PlayerWindowController {
       return isEnteringLegacyFullScreen || isExitingLegacyFullScreen
     }
 
+    var isTogglingNativeFullScreen: Bool {
+      return isEnteringNativeFullScreen || isExitingNativeFullScreen
+    }
+
     var isEnteringMusicMode: Bool {
       return !inputLayout.isMusicMode && outputLayout.isMusicMode
     }
@@ -441,7 +445,9 @@ extension PlayerWindowController {
           /// No need for extra animation. Apply final geometry.
           return outputGeometry
         }
-      case .openNewPanels, .postTransition:
+      case .openNewPanels:
+        return outputGeometry
+      case .postTransition:
         return outputGeometry
       }
     }

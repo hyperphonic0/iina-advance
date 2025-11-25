@@ -1049,7 +1049,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func window(_ window: NSWindow, startCustomAnimationToEnterFullScreenOn screen: NSScreen, withDuration duration: TimeInterval) {
-    animateEntryIntoFullScreen(withDuration: Constants.AnimationDuration.nativeFullScreenTransition, isLegacy: false)
+    animateEntryIntoFullScreen(withDuration: duration, isLegacy: false)
   }
 
   // Animation: Enter FullScreen

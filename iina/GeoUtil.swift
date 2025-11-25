@@ -64,8 +64,7 @@ struct GeoUtil {
     } else {
       /// MacOS native FS (in Tahoe at least) seems to add an extra pixel to the frame. Do the same to be consistent.
       /// (See `window(_:, willUseFullScreenContentSize:)` in `PlayerWindowController`).
-      let visibleFrame = screen.visibleFrame
-      return visibleFrame.addingTo(top: 1)
+      return screen.frameWithoutCameraHousing.addingTo(top: 1)
     }
   }
 

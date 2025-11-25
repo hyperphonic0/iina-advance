@@ -359,18 +359,7 @@ extension PlayerWindowController {
     case .enableOSD, .osdPosition, .displayTimeAndBatteryInFullScreen:
       // If OSD is showing, it will move over as a neat animation:
       animationPipeline.submitInstantTask { [self] in
-        guard let window else { return }
-        let layout = currentLayout
-        let (windowFrame, screenID) = getLatestWindowFrameAndScreenID() ?? (window.frame, bestScreen.screenID)
-        let currentGeo = layout.buildGeometry(windowFrame: windowFrame, screenID: screenID, geo.video)
-
-        if Preference.bool(for: .displayTimeAndBatteryInFullScreen), layout.isFullScreen {
-          fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
-        } else {
-          fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
-        }
-        addOrRemoveOSDViews(currentGeo)
-        updateOSDConstraints(currentGeo)
+        updateTitleBarAndOSC()
       }
     case .osdTextSize:
       animationPipeline.submitInstantTask { [self] in

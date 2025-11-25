@@ -456,7 +456,7 @@ extension PlayerWindowController {
     }
   }
 
-  func addOrRemoveOSDViews(_ stageGeo: PWinGeometry) {
+  func addOrRemoveOSDViews(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry) {
     if stageGeo.shouldHaveOSD {
       if !viewportView.subviews.contains(osd.osdView) {
         log.verbose("[OSD] Adding osdView to viewportView")
@@ -491,7 +491,7 @@ extension PlayerWindowController {
   /// - For many of the constraints, priority=900 will be used to avoid problems with black swan layouts
   /// which might trigger constraint violations if priority=required were used.
   /// - Setting `skipAddConstraints` to `true` is a kludge for special use during layout transitions
-  func updateOSDConstraints(_ stageGeo: PWinGeometry) {
+  func updateOSDConstraints(for stage: LayoutTransition.Stage = .postTransition, _ stageGeo: PWinGeometry) {
     for optCon in osd.optionalConstraints {
       optCon.constraint?.priorityInt = 1
     }

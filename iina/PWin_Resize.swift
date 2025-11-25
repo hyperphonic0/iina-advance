@@ -164,11 +164,8 @@ extension PlayerWindowController {
     log.verbose("[PWin.setFrame] Entered: updateViewportConstraints=\(updateViewportConstraints.yn) cat=\(transitionCategory) submit=\(submitUpdate.yn) geo=\(geometry)")
 
     resizeWindowSubviews(using: geometry, updateViewportConstraints: updateViewportConstraints, transitionCategory)
-
-    if geometry.isLegacyFullScreen {
-      updateOSDTopOffsetConstraints(for: geometry)
-      updateTopBarHeight(using: geometry)
-    }
+    updateOSDTopOffsetConstraints(for: geometry)
+    updateTopBarHeight(using: geometry)
 
     let window = (window as? PlayerWindow)!
     if window.frame.equalTo(geometry.windowFrame) {

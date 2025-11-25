@@ -33,7 +33,7 @@ extension PlayerWindowController {
   /// │                     │              cvBtmOffsetFromBottomBarTop│  │cvBtmOffsetFromVPBtm
   /// └─ Bottom             ▼                                         ▼  ▼
   ///```
-  /// - ¹Used for opening/closing viewport animation.
+  /// - ¹Equals `outsideBars.top + topMarginHeight`
   /// - ⁴Only used when bottomBar is shown & viewport is hidden.
   /// - ⁵Only used in music mode when both video & playlist are hidden.
   struct PanelConstraints {
@@ -93,7 +93,8 @@ extension PlayerWindowController {
     log.verbose("RebuildPanels: VP=\(useViewport.yn) Bottom=\(useBottomBar.yn) Top=\(useTopBar.yn) Leading=\(useLeadingSidebar.yn) Trailing=\(useTrailingSidebar.yn)")
 
     // - Add window subviews in a well-defined order (before adding constraints between them)
-    addOrRemoveViews(for: stageGeo, useViewport: useViewport,
+    addOrRemoveViews(for: stage, stageGeo: stageGeo,
+                     useViewport: useViewport,
                      useTopBar: useTopBar,
                      useBottomBar: useBottomBar,
                      useLeadingSidebar: useLeadingSidebar,
@@ -241,16 +242,15 @@ extension PlayerWindowController {
     updateSidebarConstraints(for: stage, stageGeo, in: transition, log)
 
     // OSD constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
-    updateOSDConstraints(stageGeo)
+    updateOSDConstraints(for: stage, stageGeo)
 
+    updateWindowFrameIfNeeded(for: stage, stageGeo, in: transition, log)
 
     // Must execute this *before* sidebars logic below, which may alter their orders
     sortContentViewSubviews(for: stageLayout, in: transition)
-
-    updateWindowFrameIfNeeded(for: stage, stageGeo, in: transition, log)
   }
 
-  private func addOrRemoveViews(for stageGeo: PWinGeometry, useViewport: Bool,
+  private func addOrRemoveViews(for stage: LayoutTransition.Stage, stageGeo: PWinGeometry, useViewport: Bool,
                                 useTopBar: Bool, useBottomBar: Bool,
                                 useLeadingSidebar: Bool, useTrailingSidebar: Bool) {
     let contentView = window!.contentView!
@@ -305,7 +305,7 @@ extension PlayerWindowController {
     }
 
     // Need to add additionalInfo, OSD before changing sidebars
-    addOrRemoveOSDViews(stageGeo)
+    addOrRemoveOSDViews(for: stage, stageGeo)
   }
 
   private func updateSidebarConstraints(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry, in transition: LayoutTransition, _ log: any Logger.Subsystem) {

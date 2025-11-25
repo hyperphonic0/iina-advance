@@ -18,7 +18,7 @@ extension PlayerWindowController {
   /// Setup work. Always immediate (i.e., not animated).
   func doPreTransitionWork(_ transition: LayoutTransition) {
     let log = Logger.addPreamble(transition.logPreamble(for: .preTransitionSetup), toSubsystem: log)
-    log.verbose("[\(transition.name)] Start")
+    log.verbose("Start")
     isAnimatingLayoutTransition = true
     // When playback is paused the display link is stopped in order to avoid wasting energy on
     // needless processing. It must be running while transitioning to/from full screen mode.
@@ -83,7 +83,7 @@ extension PlayerWindowController {
 
     if transition.isEnteringFullScreen {
       /// `windowedModeGeo` should already be kept up to date. Might be hard to track down bugs...
-      log.verbose("[\(transition.name)] Entering full screen; priorWindowedGeometry = \(windowedModeGeo)")
+      log.verbose("Entering full screen; priorWindowedGeometry = \(windowedModeGeo)")
 
       // Hide traffic light buttons & title during the animation.
       // Do not move this block. It needs to go here.
@@ -105,7 +105,7 @@ extension PlayerWindowController {
       if transition.isEnteringLegacyFullScreen {
         // stylemask
         let hasTitled = window.styleMask.contains(.titled)
-        log.verbose("[\(transition.name)] Entering legacy FS\(hasTitled ? ": removing window styleMask: .titled" : "")")
+        log.verbose("Entering legacy FS\(hasTitled ? ": removing window styleMask: .titled" : "")")
         if #available(macOS 10.16, *) {
           if hasTitled {
             window.styleMask.remove(.titled)
@@ -130,11 +130,6 @@ extension PlayerWindowController {
       if transition.inputLayout.isNativeFullScreen {
         // Hide traffic light buttons & title during the animation:
         hideNativeTitleBarViews(andSetAlpha: true)
-      }
-
-      if !player.isStopping {
-        player.mpv.setFlag(MPVOption.Window.fullscreen, false)
-        player.didEnterFullScreenViaUserToggle = false
       }
     }
 
@@ -957,12 +952,6 @@ extension PlayerWindowController {
     fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating)
     fadeableViews.applyVisibility(outputLayout.topBarView, to: topBarView)
 
-    if outputLayout.isFullScreen {
-      if !outputLayout.isInteractiveMode && Preference.bool(for: .displayTimeAndBatteryInFullScreen) {
-        fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
-      }
-    }
-
     // If exiting FS, the openNewPanels and fadInNewViews steps are combined. Wait till later
     if outputLayout.titleBar.isShowable {
       if !transition.isExitingFullScreen {
@@ -1042,6 +1031,10 @@ extension PlayerWindowController {
       showNativeTitleBarViews()
     }
 
+    if transition.outputGeometry.shouldHaveAdditionalInfo {
+      fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
+    }
+
     if transition.isEnteringFullScreen {
       // Entered FS
 
@@ -1065,6 +1058,11 @@ extension PlayerWindowController {
       if transition.isEnteringLegacyFullScreen {
         // auto hide menubar and dock (this will freeze all other animations, so must do it last)
         updatePresentationOptions(windowIsLegacyFS: true)
+      }
+
+      if !player.isStopping {
+        player.mpv.setFlag(MPVOption.Window.fullscreen, true)
+        player.didEnterFullScreenViaUserToggle = true
       }
 
       player.events.emit(.windowFullscreenChanged, data: true)
@@ -1115,11 +1113,6 @@ extension PlayerWindowController {
         player.pause()
       }
 
-      if !player.isStopping {
-        player.mpv.setFlag(MPVOption.Window.fullscreen, true)
-        player.didEnterFullScreenViaUserToggle = true
-      }
-
       if player.info.isPaused {
         // When playback is paused the display link is stopped in order to avoid wasting energy on
         // needless processing. It must be running while transitioning from full screen mode. Now that
@@ -1129,6 +1122,11 @@ extension PlayerWindowController {
 
       /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
       updatePresentationOptions(windowIsLegacyFS: false)
+
+      if !player.isStopping {
+        player.mpv.setFlag(MPVOption.Window.fullscreen, false)
+        player.didEnterFullScreenViaUserToggle = false
+      }
 
       player.events.emit(.windowFullscreenChanged, data: false)
     }
@@ -1179,7 +1177,7 @@ extension PlayerWindowController {
         /// verify them against (C) mpv's internal video size calculations. Those are checked in `PWin_Resize.swift`
         /// (search for another instance of the UTF "X" like the one below).
         let wrong = "ⓧ"
-        let lines = ["[\(transition.name)] ❌ SanityCheck-C failed!",
+        let lines = ["❌ SanityCheck-C failed!",
                      "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect) Constraint=\(viewportView.videoViewAspect?.logStr ?? "nil")",
                      "  VideoSize: Expect=\(enableVidCheck ? vidSizeE.description : "NA") Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
                      "  Viewport:  Expect=\(viewportSizeE) Actual=\(viewportSizeA)",
@@ -1193,7 +1191,7 @@ extension PlayerWindowController {
 
     if !transition.isWindowInitialLayout,  // The initial layout case is covered in `GeometryTransform.doPostApplyWork`
         transition.outputGeometry.mode.isWindowed || transition.isTogglingFullScreen || transition.isTogglingMusicMode {
-      log.verbose("[\(transition.name)] Calling sendWindowScaleToMPV for output mode=\(currentLayout.mode)")
+      log.verbose(" Calling sendWindowScaleToMPV for output mode=\(currentLayout.mode)")
       sendWindowScaleToMPV(basedOn: transition.outputGeometry)
     }
 
@@ -1202,7 +1200,7 @@ extension PlayerWindowController {
     screenParamsChangedDebouncer.invalidate()
     isAnimatingLayoutTransition = false
 
-    log.verbose("[\(transition.name)] Done with transition: isLegacy=\(transition.outputLayout.isLegacyStyle.yn) mode=\(currentLayout.mode)")
+    log.verbose("Done with transition: isLegacy=\(transition.outputLayout.isLegacyStyle.yn) mode=\(currentLayout.mode)")
 
     player.saveState()
   }
