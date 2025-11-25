@@ -430,6 +430,9 @@ extension PlayerWindowController.LayoutTransition {
 
     if isExitingLegacyFullScreen {
       return buildGeoForExtraLegacyFSAnimation(fsGeometry: inputGeometry)
+    } else if isExitingNativeFullScreen {
+      // Need to go to windowd mode with same frame as FS, so that additionalInfoView is removed correctly
+      return inputGeometry.clone(screenFit: .stayInside, mode: outputGeometry.mode)
     } else if isTogglingInteractiveMode {
       // - Interactive Mode
 

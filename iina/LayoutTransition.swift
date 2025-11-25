@@ -125,6 +125,8 @@ extension PlayerWindowController {
     }
     
     var needsCloseOldPanelsStep: Bool {
+      // Need this for exiting legacy FS (for extra animation) & native FS (to remove additionalInfoView constraints without
+      // changing window frame).
       if isEnteringFullScreen || isWindowInitialLayout {
         // Avoid bounciness and possible unwanted video scaling animation (not needed for ->FS anyway)
         return false

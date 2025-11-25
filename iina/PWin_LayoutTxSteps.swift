@@ -102,11 +102,6 @@ extension PlayerWindowController {
 
       setWindowFloatingOnTop(false, from: transition.inputLayout, updateOnTopStatus: false)
 
-      if !player.isStopping {
-        player.mpv.setFlag(MPVOption.Window.fullscreen, true)
-        player.didEnterFullScreenViaUserToggle = true
-      }
-
       if transition.isEnteringLegacyFullScreen {
         // stylemask
         let hasTitled = window.styleMask.contains(.titled)
@@ -1118,6 +1113,11 @@ extension PlayerWindowController {
 
       if Preference.bool(for: .pauseWhenLeavingFullScreen) && player.info.isPlaying {
         player.pause()
+      }
+
+      if !player.isStopping {
+        player.mpv.setFlag(MPVOption.Window.fullscreen, true)
+        player.didEnterFullScreenViaUserToggle = true
       }
 
       if player.info.isPaused {
