@@ -186,8 +186,18 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   ///  (We do allow the OSC to overlap with the notch though).
   func osdOffsetFromTopOfViewport() -> CGFloat {
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
-    let unusedScreenHeight = max(windowFrame.height - cameraHousingOffset - screen.frameWithoutCameraHousing.height, 0)
-    return max(0, insideBars.top, unusedScreenHeight) + 8
+
+    let offset: CGFloat
+    if screenFit == .nativeFullScreen {
+      let maxScreenUsableHeight = screen.visibleFrame.height
+      offset = max(0, insideBars.top,  windowFrame.height - maxScreenUsableHeight) + 8
+    } else {
+      // Possibly entering legacy full screen
+      let maxScreenUsableHeight = screen.frameWithoutCameraHousing.height
+      let unusedScreenHeight = max(windowFrame.height - cameraHousingOffset - maxScreenUsableHeight, 0)
+      offset = max(0, insideBars.top, unusedScreenHeight) + 8
+    }
+    return offset
   }
 
   /// Only nonzero if leading sidebar is open
