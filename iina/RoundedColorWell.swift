@@ -11,10 +11,13 @@ import Cocoa
 /// For 10.12 or below only
 class RoundedColorWell: NSColorWell {
 
-  var isMouseDown: Bool = false
+  private var isMouseDown: Bool = false
 
   override func awakeFromNib() {
     self.isBordered = false
+    if #available(macOS 14.0, *) {
+      self.supportsAlpha = true
+    }
   }
 
   override func draw(_ dirtyRect: NSRect) {

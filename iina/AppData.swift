@@ -149,6 +149,12 @@ struct Constants {
     static let hidePluginsPanel = NSLocalizedString("menu.hide_plugins_panel", comment: "Hide Plugins Sidebar")
   }
 
+  struct Menu {
+    /// Tags for "Open File/URL" menu item when "Always open file in new windows" is off. Vice versa.
+    /// Tags for "Open File/URL in New Window" when "Always open URL" when "Open file in new windows" is off. Vice versa.
+    static let alternativeMenuItemTag = 1
+  }
+
   // - Quantities:
 
   /**

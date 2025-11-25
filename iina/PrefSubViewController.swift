@@ -59,6 +59,9 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
     if #available(macOS 13.0, *) {
       [subColorWell, subBackgroundColorWell, subBorderColorWell, subShadowColorWell].forEach {
         $0.colorWellStyle = .expanded
+        if #available(macOS 14.0, *) {
+          $0.supportsAlpha = true
+        }
       }
     }
 #endif

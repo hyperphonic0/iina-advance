@@ -23,11 +23,6 @@ extension AppDelegate {
   }
 }
 
-/** Tags for "Open File/URL" menu item when "Always open file in new windows" is off. Vice versa. */
-fileprivate let NormalMenuItemTag = 0
-/** Tags for "Open File/URL in New Window" when "Always open URL" when "Open file in new windows" is off. Vice versa. */
-fileprivate let AlternativeMenuItemTag = 1
-
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
@@ -914,13 +909,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   @MainActor
   @IBAction func openFile(_ sender: AnyObject) {
     Logger.log("Menu - Open File")
-    showOpenFileWindow(isAlternativeAction: sender.tag == AlternativeMenuItemTag)
+    showOpenFileWindow(isAlternativeAction: sender.tag == Constants.Menu.alternativeMenuItemTag)
   }
 
   @MainActor
   @IBAction func openURL(_ sender: AnyObject) {
     Logger.log("Menu - Open URL")
-    showOpenURLWindow(isAlternativeAction: sender.tag == AlternativeMenuItemTag)
+    showOpenURLWindow(isAlternativeAction: sender.tag == Constants.Menu.alternativeMenuItemTag)
   }
 
   /// Only used if `Preference.Key.enableCmdN` is set to `true`
