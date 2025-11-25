@@ -9,6 +9,21 @@
 import Foundation
 
 
+extension PlayerWindowController {
+
+  override func scrollWheel(with event: NSEvent) {
+    guard !isInInteractiveMode else { return }
+    guard !isMouseEventInsideDisabledView(event) else { return }
+
+    if magnificationHandler.handlePanGesture(with: event) {
+      return
+    }
+
+    windowScrollWheel.scrollWheel(with: event)
+  }
+}
+
+
 /// Processes scroll wheel events for a play slider.
 ///
 /// Also see `playSliderAction(_:)` in `PlayerWindowController`.
@@ -187,14 +202,3 @@ class PWinScrollWheel: VirtualScrollWheel {
   }
 
 }  /// end `class PWinScrollWheel`
-
-
-extension PlayerWindowController {
-
-  override func scrollWheel(with event: NSEvent) {
-    guard !isInInteractiveMode else { return }
-    guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
-
-    windowScrollWheel.scrollWheel(with: event)
-  }
-}

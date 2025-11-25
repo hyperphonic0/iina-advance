@@ -255,6 +255,10 @@ extension PlayerWindowController {
     ] as [String : Any]]
   }
 
+  func isMouseEventInsideDisabledView(_ event: NSEvent) -> Bool {
+    isMouseEvent(event, inAnyOf: mouseActionDisabledViews)
+  }
+
   func isMouseEvent(_ event: NSEvent, inAnyOf views: any Collection<NSView?>) -> Bool {
     return isPoint(event.locationInWindow, inAnyOf: views)
   }
@@ -468,14 +472,6 @@ extension PlayerWindowController {
     let isSingleClick = event.clickCount == 1
     let isDoubleClick = event.clickCount == 2
 
-    /// Single click. Note that `event.clickCount` will be 0 if there is at least one call to `mouseDragged()`,
-    /// but we will only count it as a drag if `isDragging==true`
-    if isSingleClick && !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) {
-      if hideSidebarsOnClick() {
-        log.verbose("PWin MouseUp: hiding sidebars")
-        return
-      }
-    }
     if isDoubleClick {
       let titleBarMinY = window!.frame.height - Constants.Distance.standardTitleBarHeight
       if !isFullScreen && (event.locationInWindow.y >= titleBarMinY) {
@@ -495,11 +491,21 @@ extension PlayerWindowController {
       }
     }
 
-    guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else {
+    guard !isMouseEventInsideDisabledView(event) else {
       log.verbose("PWin MouseUp: click occurred in a disabled view; ignoring")
       super.mouseUp(with: event)
       return
     }
+
+    /// Single click. Note that `event.clickCount` will be 0 if there is at least one call to `mouseDragged()`,
+    /// but we will only count it as a drag if `isDragging==true`
+    if isSingleClick {
+      if hideSidebarsOnClick() {
+        log.verbose("PWin MouseUp: hiding sidebars")
+        return
+      }
+    }
+
     PluginInputManager.handle(
       input: PluginInputManager.Input.mouse, event: .mouseUp, player: player,
       arguments: mouseEventArgs(event), defaultHandler: { [self] in
@@ -536,7 +542,7 @@ extension PlayerWindowController {
   override func otherMouseUp(with event: NSEvent) {
     log.verbose("PWin OtherMouseUp!")
     hideCursorTimer.restart()
-    guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
+    guard !isMouseEventInsideDisabledView(event) else { return }
 
     PluginInputManager.handle(
       input: PluginInputManager.Input.otherMouse, event: .mouseUp, player: player,
@@ -561,12 +567,6 @@ extension PlayerWindowController {
     lastRightMouseDownEventID = event.eventNumber
     log.verbose("PWin RightMouseDown!")
 
-    defer {
-      /// Apple note (https://developer.apple.com/documentation/appkit/nsview):
-      /// NSView changes the default behavior of rightMouseDown(with:) so that it calls menu(for:) and, if non nil, presents the contextual menu. In macOS 10.7 and later, if the event is not handled, NSView passes the event up the responder chain. Because of these behaviorial changes, call super when implementing rightMouseDown(with:) in your custom NSView subclasses.
-      super.rightMouseDown(with: event)
-    }
-
     hideCursorTimer.restart()
     PluginInputManager.handle(
       input: PluginInputManager.Input.rightMouse, event: .mouseDown,
@@ -579,7 +579,7 @@ extension PlayerWindowController {
     lastRightMouseUpEventID = event.eventNumber
     log.verbose("PWin RightMouseUp!")
     hideCursorTimer.restart()
-    guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
+    guard !isMouseEventInsideDisabledView(event) else { return }
 
     PluginInputManager.handle(
       input: PluginInputManager.Input.rightMouse, event: .mouseUp, player: player,
