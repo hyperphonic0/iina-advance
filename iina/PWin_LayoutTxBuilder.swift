@@ -107,11 +107,11 @@ extension PlayerWindowController {
       closeOldPanelsTiming = .linear
       openFinalPanelsTiming = .linear
     } else if transition.isEnteringFullScreen {
-      closeOldPanelsTiming = .easeIn
-      openFinalPanelsTiming = .easeIn
+      closeOldPanelsTiming = .easeIn  // doesn't matter; not used
+      openFinalPanelsTiming = .easeInEaseOut
     } else if transition.isExitingFullScreen {
-      closeOldPanelsTiming = .easeOut
-      openFinalPanelsTiming = .easeOut
+      closeOldPanelsTiming = .easeOut  // doesn't matter; not used
+      openFinalPanelsTiming = .easeInEaseOut
     } else if transition.isOpeningOrClosingAnySidebar {
       closeOldPanelsTiming = .easeInEaseOut
       openFinalPanelsTiming = .easeInEaseOut
@@ -264,6 +264,16 @@ extension PlayerWindowController {
       tasks.append(moveAndScaleTask)
     }
 
+    // Roll up all full screen tasks created thus far into a single task. Seems to result in a smoother animation(?)
+    if transition.isTogglingFullScreen {
+      let allPrevTasks = tasks
+      tasks = [.instantTask {
+        for task in allPrevTasks {
+          try task.runFunc()
+        }
+      }]
+    }
+
     // - Ending animations:
 
     // (Only for Enter Legacy FS) Extra animation for camera housing. In Big Sur, AppKit needed an extra transaction & more
@@ -272,8 +282,10 @@ extension PlayerWindowController {
     if useExtraAnimationForEnteringLegacyFullScreen {
       let duration = endingAnimationDuration * transition.windowedModeScreen.nonCameraHeightToFrameHeightRatio
 
-      tasks.append(.init(duration: duration, timing: openFinalPanelsTiming) { [self] in
+      tasks.append(.init(duration: duration, timing: .linear) { [self] in
         rebuildPanelConstraints(transition, stage: .extraAnimationBeforeOpenNewPanels)
+        // Do this here to reduce chance of an animation jump
+        updatePresentationOptions(windowIsLegacyFS: true)
       })
     }
 
