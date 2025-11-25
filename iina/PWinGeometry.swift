@@ -188,7 +188,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
 
     if screenFit == .nativeFullScreen {
-      let maxScreenUsableHeight = screen.visibleFrame.height
       return max(0, insideBars.top) + 8
     } else {
       // Possibly entering legacy full screen

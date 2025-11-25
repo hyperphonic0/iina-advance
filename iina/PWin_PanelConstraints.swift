@@ -76,16 +76,17 @@ extension PlayerWindowController {
     let stageGeo = transition.geometry(for: stage)
 
     // Need to always have viewportView during animations (when toggling music mode with video off)
-    let useViewport = (!stage.isFinalStage && transition.inputGeometry.isViewportShown) || transition.outputGeometry.isViewportShown
+    let useViewport = transition.outputGeometry.isViewportShown || (!stage.isFinalStage && transition.inputGeometry.isViewportShown)
 
     let stageLayout: LayoutState = transition.targetLayout(for: stage)
     // We need to include constraints for some panels in multiple stages if they are open at any point
     let useLeadingSidebar = stageLayout.isLeadingSidebarVisible
     let useTrailingSidebar = stageLayout.isTrailingSidebarVisible
-    let useBottomBar = stageLayout.hasBottomBar
+    let useBottomBar: Bool = stageLayout.hasBottomBar
     let useTopBar: Bool
     if transition.isTogglingFullScreen {
-      useTopBar = (!stage.isFinalStage && transition.inputLayout.hasTopBar) || transition.outputLayout.hasTopBar
+      // FIXME: there is a bug in an offset somewhere in native FS
+      useTopBar = transition.outputLayout.hasTopBar || (!stage.isFinalStage && transition.inputLayout.hasTopBar)
     } else {
       useTopBar = stageLayout.hasTopBar
     }
@@ -107,26 +108,24 @@ extension PlayerWindowController {
 
     if useTopBar {
       assert(useViewport, "Cannot use topBarView without viewportView")
-      let constant1 = stageGeo.vpTopOffsetFromTopBarTop
-      let constant2 = stageGeo.topBarBtmOffsetFromVPTop
-      log.verbose("Updating topBar: vpTopOffsetFromTopBarTop=\(constant1) topBarBtmOffsetFromVPTop=\(constant2)")
+      let outsideTopBarHeight = stageGeo.vpTopOffsetFromTopBarTop
+      let insideTopBarHeight = stageGeo.topBarBtmOffsetFromVPTop
+      log.verbose("Updating topBar: vpTopOffsetFromTopBarTop=\(outsideTopBarHeight) topBarBtmOffsetFromVPTop=\(insideTopBarHeight)")
 
-      p.vpTopOffsetFromTopBarTop.createOrUpdate(to: constant1, log) { [self] c in
+      p.vpTopOffsetFromTopBarTop.createOrUpdate(to: outsideTopBarHeight, log) { [self] c in
         viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
       }
 
       // Don't use required priority, as sometimes this causes constraint violations
-      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: constant2, priorityInt: 999, log) { [self] c in
+      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: insideTopBarHeight, priorityInt: 1000, log) { [self] c in
         topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
-      if stage == .closeOldPanels {
-        if let middleGeo = transition.closeOldPanelsGeometry, middleGeo.topBarHeight == 0 {
-          log.verbose("Updating titleHeight=\(0)")
-          topBarView.titleBarHeightConstraint.animateToConstant(0)
-        }
+      if stage == .closeOldPanels, let middleGeo = transition.closeOldPanelsGeometry, middleGeo.topBarHeight == 0 {
+        log.verbose("Updating titleHeight=\(0)")
+        topBarView.titleBarHeightConstraint.animateToConstant(0)
       } else {
-        let titleHeight = min(stageLayout.titleBarHeight, abs(constant1 - constant2))  // do not make titleBar larger than top bar
+        let titleHeight = min(stageLayout.titleBarHeight, stageGeo.topBarHeight)  // do not make titleBar larger than top bar
         log.verbose("Updating titleHeight=\(Int(titleHeight))")
         topBarView.titleBarHeightConstraint.animateToConstant(titleHeight)
       }

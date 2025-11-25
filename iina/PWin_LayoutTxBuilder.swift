@@ -107,11 +107,11 @@ extension PlayerWindowController {
       closeOldPanelsTiming = .linear
       openFinalPanelsTiming = .linear
     } else if transition.isEnteringFullScreen {
-      closeOldPanelsTiming = .easeIn  // doesn't matter; not used
-      openFinalPanelsTiming = .easeInEaseOut
+      closeOldPanelsTiming = .linear  // doesn't matter; not used
+      openFinalPanelsTiming = .linear
     } else if transition.isExitingFullScreen {
-      closeOldPanelsTiming = .easeOut  // doesn't matter; not used
-      openFinalPanelsTiming = .easeInEaseOut
+      closeOldPanelsTiming = .linear  // doesn't matter; not used
+      openFinalPanelsTiming = .linear
     } else if transition.isOpeningOrClosingAnySidebar {
       closeOldPanelsTiming = .easeInEaseOut
       openFinalPanelsTiming = .easeInEaseOut

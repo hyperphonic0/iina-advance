@@ -241,7 +241,7 @@ final class OSDState {
       let attachment = NSTextAttachment()
       attachment.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "")!
       let iconString = NSMutableAttributedString(attachment: attachment)
-      let osdIconTextSize = osdTextSize + sliderBarHeight
+      let osdIconTextSize = ((osdTextSize + sliderBarHeight) * 1.15).rounded()
       let osdIconFont = NSFont.monospacedDigitSystemFont(ofSize: osdIconTextSize, weight: .regular)
       iconString.addAttribute(.font, value: osdIconFont, range: NSRange(location: 0, length: iconString.length))
       iconHeight = iconString.size().height
@@ -307,10 +307,10 @@ final class OSDState {
     guard osdTextSize > 0 else { return 0 }
 
     switch osdTextSize {
-    case ..<30:
-      return 3
+    case ..<32:
+      return 4
     default:
-      return (osdTextSize / 10).rounded()
+      return (osdTextSize / 8).rounded()
     }
   }
 
@@ -457,10 +457,12 @@ extension PlayerWindowController {
   }
 
   func addOrRemoveOSDViews(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry) {
+    var addedSomething = false
     if stageGeo.shouldHaveOSD {
       if !viewportView.subviews.contains(osd.osdView) {
         log.verbose("[OSD] Adding osdView to viewportView")
         viewportView.addSubview(osd.osdView)  // will sort below
+        addedSomething = true
       }
 
     } else {
@@ -475,6 +477,7 @@ extension PlayerWindowController {
         log.verbose("[OSD] Adding additionalInfoView to viewportView")
         viewportView.addSubview(additionalInfoView)  // will sort below
         fadeableViews.applyVisibility(.hidden, additionalInfoView)  // hide for now. Will show in later stage
+        addedSomething = true
       }
       updateAdditionalInfoContent()  // update content
 
@@ -485,6 +488,12 @@ extension PlayerWindowController {
       }
     }
 
+    if addedSomething {
+      updateOSDTextSize(from: stageGeo)
+
+      sortViewportViewSubviews()
+      window?.contentView?.needsLayout = true
+    }
   }
 
   /// - Enforces `Preference.Key.osdPosition` pref which allows OSD to be on either left or right.
@@ -567,14 +576,6 @@ extension PlayerWindowController {
         viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: trailingView.bottomAnchor, constant: c)
       }
     }
-
-    if hasOSD || hasAdditionalInfo {
-      updateOSDTextSize(from: stageGeo)
-
-      sortViewportViewSubviews()
-      window?.contentView?.needsLayout = true
-    }
-
   }
 
   /// Update OSD view & Additional Info view constraints so they have the correct offset from top of screen.

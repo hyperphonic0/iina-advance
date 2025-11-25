@@ -57,7 +57,6 @@ class TopBarView: ClickThroughVisualEffectView {
 
     titleBarHeightConstraint = titleBarView.bottomAnchor.constraint(equalTo: topAnchor, constant: Constants.Distance.standardTitleBarHeight)
     titleBarHeightConstraint.identifier = .init("TitleBarView-HeightConstraint")
-    titleBarHeightConstraint.priority = .init(900)
     titleBarHeightConstraint.isActive = true
 
     /// `controlBarTop`

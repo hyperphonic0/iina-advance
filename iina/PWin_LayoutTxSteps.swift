@@ -72,7 +72,7 @@ extension PlayerWindowController {
 
     // Skip for initial layout: not all panels have been init'd yet.
     // Don't use with legacy full screen transitions; they use extra animations which will be screwed up
-    if !transition.isWindowInitialLayout {
+    if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
       rebuildPanelConstraints(transition, stage: .preTransitionSetup)
     }
 
@@ -140,19 +140,9 @@ extension PlayerWindowController {
     }
 
     // Music mode
-    if transition.isExitingMusicMode {
-      // Make sure to restore video
-      if !transition.inputGeometry.isViewportShown {
-        // Video was disabled in music mode, but need to restore it now
-        player.setVideoTrackEnabled()
-      }
-    }
-
-    if transition.outputLayout.isMusicMode && transition.isClosingViewport {
-      // Hiding video
-
-      // [MusicModeKludge-A] Loosen constraints manually *before* the animation task below
-      viewportView.viewportConstraints?.aspectRatio.isActive = false
+    if transition.isExitingMusicMode && !transition.inputGeometry.isViewportShown {
+      // Video was disabled in music mode, but need to restore it now
+      player.setVideoTrackEnabled()
     }
 
   }
@@ -189,28 +179,20 @@ extension PlayerWindowController {
       /// So just set alpha value for now, and hide later in `updateHiddenViewsAndConstraints()`
       if outputLayout.leadingSidebarToggleButton == .hidden {
         leadingSidebarToggleButton.alphaValue = 0
-
         // Match behavior for custom title bar's copy:
-        if let customTitleBar {
-          customTitleBar.leadingSidebarToggleButton.alphaValue = 0
-        }
+        customTitleBar?.leadingSidebarToggleButton.alphaValue = 0
       }
       if outputLayout.trailingSidebarToggleButton == .hidden {
         trailingSidebarToggleButton.alphaValue = 0
-
-        if let customTitleBar {
-          customTitleBar.trailingSidebarToggleButton.alphaValue = 0
-        }
+        customTitleBar?.trailingSidebarToggleButton.alphaValue = 0
       }
 
       let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
       if onTopButtonVisibility == .hidden {
         onTopButton.alphaValue = 0
-        onTopButton.isHidden = true
 
         if let customTitleBar {
           customTitleBar.onTopButton.alphaValue = 0
-          customTitleBar.onTopButton.isHidden = true
         }
       }
     }
@@ -250,24 +232,20 @@ extension PlayerWindowController {
 
     // Hide seek preview for mode transitions or large animations
     let isChangingMode = transition.outputLayout.mode != transition.inputLayout.mode
-    if isChangingMode || transition.isTopBarPlacementOrStyleChanging ||
-        transition.isBottomBarPlacementOrStyleChanging || transition.isOpeningOrClosingAnySidebar {
+    if isChangingMode || transition.isTopBarPlacementOrStyleChanging
+        || transition.isBottomBarPlacementOrStyleChanging || transition.isOpeningOrClosingAnySidebar {
       hideSeekPreviewImmediately()
     }
 
     if outputLayout.isInteractiveMode || outputLayout.isMusicMode {
       // Fade out OSC
-      if !outputLayout.enableOSC || outputLayout.controlBarGeo.isTwoRowBarOSC {
-        if oscOneRowView.superview != nil {
-          log.verbose("[\(transition.name)] Removing oscOneRowView from window")
-          oscOneRowView.dispose()
-        }
+      if !outputLayout.enableOSC || outputLayout.controlBarGeo.isTwoRowBarOSC, oscOneRowView.superview != nil {
+        log.verbose("[\(transition.name)] Removing oscOneRowView from window")
+        oscOneRowView.dispose()
       }
-      if !outputLayout.enableOSC || !outputLayout.controlBarGeo.isTwoRowBarOSC {
-        if oscTwoRowView.superview != nil {
-          log.verbose("[\(transition.name)] Removing oscTwoRowView from window")
-          oscTwoRowView.dispose()
-        }
+      if !outputLayout.enableOSC || !outputLayout.controlBarGeo.isTwoRowBarOSC, oscTwoRowView.superview != nil  {
+        log.verbose("[\(transition.name)] Removing oscTwoRowView from window")
+        oscTwoRowView.dispose()
       }
     }
   }
@@ -441,10 +419,15 @@ extension PlayerWindowController {
       window.contentView!.addSubview(bottomBarView)
     }
 
-    // Title bar views
+    /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
+    let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscBackgroundIsClear)
+    bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
-    // Allow for showing/hiding each button individually
-    let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
+    /// These should all be either 0 height or unchanged from `transition.inputLayout`.
+    /// But may need to add or remove from fadeableViews
+    fadeableViews.applyVisibility(outputLayout.bottomBarView, to: bottomBarView)
+
+    // Title bar views
 
     // For some reason, transitioning to/from interactive mode messes up the alignment of CustomTitleBar's title text.
     // Removing the whole CustomTitleBar view hierarchy & recreating it seems to be a valid workaround.
@@ -457,6 +440,9 @@ extension PlayerWindowController {
         self.customTitleBar = nil
       }
     }
+
+    // Allow for showing/hiding each button individually
+    let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
 
     if outputLayout.titleBar.isShowable, transition.outputLayout.isLegacyStyle {
       let legacyTitleBar: CustomTitleBarViewController
@@ -481,25 +467,18 @@ extension PlayerWindowController {
     fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: trailingSidebarToggleButton)
     fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: onTopButton)
 
-    /// These should all be either 0 height or unchanged from `transition.inputLayout`.
-    /// But may need to add or remove from fadeableViews
-    fadeableViews.applyVisibility(outputLayout.bottomBarView, to: bottomBarView)
     // Note: hiding top bar here when entering FS with "top outside" OSC will cause it to go black too soon.
     // But we do need it when tranitioning from music mode → FS, or top bar may never be shown
     if !transition.isEnteringFullScreen || transition.isExitingMusicMode {
       fadeableViews.applyOnlyIfHidden(outputLayout.topBarView, to: topBarView)
     }
 
-    /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
-    let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscBackgroundIsClear)
-    bottomBarTopBorder.isHidden = !showBottomBarTopBorder
-
     if transition.outputLayout.isMusicMode {
       // Need to call this for initial layout also, or if toggling video:
       updateMusicModeButtonsVisibility(using: transition.outputGeometry)
     }
 
-    if !transition.isWindowInitialLayout {
+    if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }
 
@@ -770,51 +749,49 @@ extension PlayerWindowController {
 
     // Interactive mode
 
-    if transition.isTogglingInteractiveMode {
+    if transition.isEnteringInteractiveMode {
       // Even if entering IM, may have a prev crop due to a bug elsewhere. Remove if found
       removeCropControls()
 
-      if transition.isEnteringInteractiveMode {
-        // Need videoView to have superview before adding shadow
-        videoView.addShadowForInteractiveMode()
+      // Need videoView to have superview before adding shadow
+      videoView.addShadowForInteractiveMode()
 
-        // Entering interactive mode
-        setEmptySpaceColor(to: Constants.Color.interactiveModeBackground)
+      // Entering interactive mode
+      setEmptySpaceColor(to: Constants.Color.interactiveModeBackground)
 
-        // Add crop settings at bottom
-        let cropController = self.cropSettingsView ?? transition.outputLayout.interactiveMode!.viewController()
-        cropController.pwc = self
-        self.cropSettingsView = cropController
-        bottomBarView.addSubview(cropController.view, positioned: .below, relativeTo: bottomBarTopBorder)
-        cropController.view.addAllConstraintsToFillSuperview()
-        cropController.view.alphaValue = 0
-        let videoSizeRaw = transition.outputGeometry.video.videoSizeRaw
-        // Hide for now, to prepare for a nice fade-in animation
-        cropController.cropBoxView.isHidden = true
-        cropController.cropBoxView.alphaValue = 0
-        cropController.cropBoxView.needsLayout = true
+      // Add crop settings at bottom
+      let cropController = self.cropSettingsView ?? transition.outputLayout.interactiveMode!.viewController()
+      cropController.pwc = self
+      self.cropSettingsView = cropController
+      bottomBarView.addSubview(cropController.view, positioned: .below, relativeTo: bottomBarTopBorder)
+      cropController.view.addAllConstraintsToFillSuperview()
+      cropController.view.alphaValue = 0
+      let videoSizeRaw = transition.outputGeometry.video.videoSizeRaw
+      // Hide for now, to prepare for a nice fade-in animation
+      cropController.cropBoxView.isHidden = true
+      cropController.cropBoxView.alphaValue = 0
+      cropController.cropBoxView.needsLayout = true
 
-        /// `selectedRect` should be subrect of`actualSize`
-        let selectedRect: NSRect
-        switch currentLayout.interactiveMode {
-        case .crop:
-          if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
-            selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-            log.verbose("Setting crop box selectedRect from prevFilter: \(selectedRect)")
-          } else {
-            selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
-            log.verbose("Setting crop box selectedRect to default whole videoSize: \(selectedRect)")
-          }
-        case .freeSelecting, .none:
-          selectedRect = .zero
+      /// `selectedRect` should be subrect of`actualSize`
+      let selectedRect: NSRect
+      switch currentLayout.interactiveMode {
+      case .crop:
+        if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
+          selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
+          log.verbose("Setting crop box selectedRect from prevFilter: \(selectedRect)")
+        } else {
+          selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
+          log.verbose("Setting crop box selectedRect to default whole videoSize: \(selectedRect)")
         }
-        cropController.cropBoxView.selectedRect = selectedRect
-
-      } else if transition.isExitingInteractiveMode {
-        // Exiting interactive mode
-        setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
-        removeCropControls()
+      case .freeSelecting, .none:
+        selectedRect = .zero
       }
+      cropController.cropBoxView.selectedRect = selectedRect
+
+    } else if transition.isExitingInteractiveMode {
+      // Exiting interactive mode
+      setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
+      removeCropControls()
     }
 
     if transition.outputGeometry.mode.isInteractiveMode {
@@ -997,9 +974,6 @@ extension PlayerWindowController {
     let log = Logger.addPreamble(transition.logPreamble(for: .postTransition), toSubsystem: log)
     log.verbose("Start")
 
-    // Update blending mode:
-    updatePanelBlendingModes(to: transition.outputLayout)
-
     fadeableViews.animationState = .shown
     fadeableViews.topBarAnimationState = .shown
 
@@ -1035,9 +1009,11 @@ extension PlayerWindowController {
       fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
     }
 
-    if transition.isEnteringFullScreen {
-      // Entered FS
+    if transition.isTogglingFullScreen {
+      updatePanelBlendingModes(to: transition.outputLayout)
+    }
 
+    if transition.isEnteringFullScreen {
       if Preference.bool(for: .blackOutMonitor) {
         blackOutOtherMonitors()
       }
@@ -1066,6 +1042,7 @@ extension PlayerWindowController {
       }
 
       player.events.emit(.windowFullscreenChanged, data: true)
+      // End Entering FS
 
     } else if transition.isExitingFullScreen {
       // Exited FS
@@ -1129,7 +1106,7 @@ extension PlayerWindowController {
       }
 
       player.events.emit(.windowFullscreenChanged, data: false)
-    }
+    }  // End Exiting FS
 
     // Need to execute this *after* calling updatePresentationOptions (if calling it)
     rebuildPanelConstraints(transition, stage: .postTransition)
