@@ -611,6 +611,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     case .musicMode:
       assert(lockViewportToVideoSize, "lockViewportToVideoSize must always be true in music mode")
       let containerFrame = GeoUtil.getContainerFrame(forScreenID: screenID, screenFit: .stayInside)!
+      let maxWindowWidth = CGFloat(Preference.float(for: .musicModeMaxWidth))
 
       if inLiveResize, isViewportShown && !isMusicModePlaylistShown {
         // Special case when scaling only video without playlist: allow window height to change, similar to windowed mode.
@@ -625,7 +626,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         } else {
           // Option B: resize width based on requested height
           // Always need to calculate valid width first, then recalculate height based on width (to ensure video size rounding is consistent for PWinGeo constructor)
-          let wndWidth = min(MiniPlayerViewController.maxWindowWidth, containerFrame.width, round(requestedViewportSize.height * videoViewAspect))
+          let wndWidth = min(maxWindowWidth, containerFrame.width, round(requestedViewportSize.height * videoViewAspect))
           scaledViewportSize = NSSize(width: wndWidth,
                                       height: 0)  // note: only width is used by scalingViewport()
         }
@@ -639,7 +640,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
         let minPlaylistHeight = isMusicModePlaylistShown ? Constants.Distance.MusicMode.minPlaylistHeight : 0
         let videoAspect = videoViewAspect
 
-        var maxWinWidth = min(MiniPlayerViewController.maxWindowWidth, containerFrame.width)
+        var maxWinWidth = min(maxWindowWidth, containerFrame.width)
         var maxVideoHeight: CGFloat
         if isViewportShown {
           maxVideoHeight = containerFrame.height - Constants.Distance.MusicMode.oscHeight - minPlaylistHeight
@@ -919,7 +920,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       let containerFrame: NSRect = GeoUtil.getContainerFrame(forScreenID: newScreenID, screenFit: .stayInside)!
 
       // Constrain desired width within min and max allowed, then recalculate height from new value
-      let maxWindowWidth: CGFloat = min(containerFrame.width, MiniPlayerViewController.maxWindowWidth)
+      let maxWindowWidth: CGFloat = min(containerFrame.width, CGFloat(Preference.float(for: .musicModeMaxWidth)))
       var newWindowWidth = desiredVideoWidth.clamped(to: Constants.Distance.MusicMode.minWindowWidth...maxWindowWidth)
 
       // Window height should not change. Only video size should be scaled

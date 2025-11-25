@@ -52,6 +52,10 @@ extension PlayerWindowController {
     // FIXME: support tiling for at least native full screen
     window.collectionBehavior = [.managed, .fullScreenDisallowsTiling]
 
+    window.styleMask.insert(.fullSizeContentView)
+    window.styleMask.insert(.closable)
+    window.styleMask.insert(.miniaturizable)
+    window.styleMask.insert(.resizable)
     window.initialFirstResponder = nil
 
     window.minSize = Constants.Window.minWindowSize
@@ -95,9 +99,15 @@ extension PlayerWindowController {
       initVolumeView(using: oscGeo)
       initSidebars()
 
-      closeButtonView.idString = "MiniCloseButtonView"
-      closeButtonView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 4).isActive = true
-      closeButtonView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4).isActive = true
+      contentView.addSubview(exitMusicModeButton)
+      exitMusicModeButton.idString = "ExitMusicModeBtn"
+      exitMusicModeButton.image = Images.backwardsCircle
+      exitMusicModeButton.target = self
+      exitMusicModeButton.action = #selector(backBtnAction(_:))
+      exitMusicModeButton.toolTip = "Back to video mode"
+      exitMusicModeButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 54).isActive = true
+      exitMusicModeButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 11).isActive = true
+
 
       initBufferIndicatorView()
 

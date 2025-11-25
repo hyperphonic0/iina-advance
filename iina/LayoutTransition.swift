@@ -116,6 +116,7 @@ extension PlayerWindowController {
       if isTogglingFullScreen { return false }
       return isTogglingLegacyStyle || isTopBarPlacementOrStyleChanging
       || (inputLayout.mode != outputLayout.mode)
+      || isTogglingViewport
       || (outputLayout.mode.isInteractiveMode)  // Needed to fade in cropBoxView again after layout update
       || (outputLayout.bottomBarPlacement == .insideViewport && isBottomBarPlacementOrStyleChanging) // fade IN
       || (inputLayout.enableOSC != outputLayout.enableOSC)
@@ -127,7 +128,7 @@ extension PlayerWindowController {
     var needsCloseOldPanelsStep: Bool {
       // Need this for exiting legacy FS (for extra animation) & native FS (to remove additionalInfoView constraints without
       // changing window frame).
-      if isEnteringFullScreen || isWindowInitialLayout {
+      if isWindowInitialLayout {
         // Avoid bounciness and possible unwanted video scaling animation (not needed for ->FS anyway)
         return false
       }

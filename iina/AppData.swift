@@ -309,7 +309,7 @@ struct Constants {
     static var osdAnimation: CGFloat = Preference.double(for: .animationDurationOSD)
     static var cropAnimation: CGFloat = Preference.double(for: .animationDurationCrop)
     static var enterPIPTask: CGFloat = standard * 0.2
-    static var musicModeShowButtons: CGFloat = 0.2
+    static var musicModeShowButtons: CGFloat = 0.0
     static var hideSeekPreview: CGFloat = osdAnimation * 0.5
   }
   struct FilterLabel {
@@ -678,6 +678,7 @@ struct Images {
   static let volume1 = makeSymbol(named: "speaker.wave.1.fill", fallbackName: "volume-1", desc: "Volume 1 Wave", weight: .medium)
   static let volume2 = makeSymbol(named: "speaker.wave.2.fill", fallbackName: "volume-2", desc: "Volume 2 Waves", weight: .medium)
   static let volume3 = makeSymbol(named: "speaker.wave.3.fill", fallbackName: "volume", desc: "Volume Full", weight: .medium)
+  static let backwardsCircle = makeSymbol(named: "arrowshape.backward.circle.fill", fallbackName: "volume", desc: "Go Back", weight: .bold)
 }
 
 struct DebugConfig {

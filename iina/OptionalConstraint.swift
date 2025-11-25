@@ -18,6 +18,11 @@ class OptionalConstraint {
   }
 
   @MainActor
+  func weaken() {
+    constraint?.priorityInt = 1
+  }
+
+  @MainActor
   func createIfMissing(_ log: (any Logger.Subsystem)?,_ creationFunc: () -> NSLayoutConstraint) {
     guard !isActive else { return }
 

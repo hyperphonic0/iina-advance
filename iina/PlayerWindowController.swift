@@ -454,15 +454,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // - MARK: Views
 
   // MiniPlayer buttons:
-  @IBOutlet weak var closeButtonView: NSView!
-  // Mini island containing window buttons which hover over album art / video (when video is visible):
-  @IBOutlet weak var closeButtonBackgroundViewVE: NSVisualEffectView!
-  // Mini island containing window buttons which appear next to controls (when video not visible):
-  @IBOutlet weak var closeButtonBackgroundViewBox: NSBox!
-  @IBOutlet weak var closeButtonVE: NSButton!
-  @IBOutlet weak var backButtonVE: NSButton!
-  @IBOutlet weak var closeButtonBox: NSButton!
-  @IBOutlet weak var backButtonBox: NSButton!
+  let exitMusicModeButton = SymButton()
 
   /// Contains `videoView` and margins around it
   let viewportView = ViewportView()
@@ -1588,52 +1580,48 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // Update metadata in cache (also send update if something changed)
       let (mediaTitle, mediaAlbum, mediaArtist) = player.getMusicMetadata()
 
-      if isInMiniPlayer {
-        // Update title in music mode control bar
-        DispatchQueue.main.async { [self] in
+      DispatchQueue.main.async { [self] in
+        guard let window else { return }
+
+        if isInMiniPlayer {
+          // Update title in music mode control bar
           setWindowTitle(mediaTitle, isFilename: false)
           miniPlayer.loadIfNeeded()
           miniPlayer.updateTitle(mediaTitle: mediaTitle, mediaAlbum: mediaAlbum, mediaArtist: mediaArtist)
-        }
 
-      } else if player.info.isNetworkResource {
-        // Streaming media: title can change unpredictably
-        DispatchQueue.main.async { [self] in
-          window?.representedURL = nil
+        } else if currentPlayback.isNetworkResource {
+          // Streaming media: title can change unpredictably
+          window.representedURL = nil
           setWindowTitle(mediaTitle, isFilename: false)
-        }
-      } else {
-        let currentURL = currentPlayback.url
-        // Workaround for issue #3543, IINA crashes reporting:
-        // NSInvalidArgumentException [NSNextStepFrame _displayName]: unrecognized selector
-        // When running on an M1 under Big Sur and using legacy full screen.
-        //
-        // Changes in Big Sur broke the legacy full screen feature. The PlayerWindowController method
-        // legacyAnimateToFullscreen had to be changed to get this feature working again. Under Big
-        // Sur that method now calls "window.styleMask.remove(.titled)". Removing titled from the
-        // style mask causes the AppKit method NSWindow.setTitleWithRepresentedFilename to trigger the
-        // exception listed above. This appears to be a defect in the Cocoa framework. The window's
-        // title can still be set directly without triggering the exception. The problem seems to be
-        // isolated to the setTitleWithRepresentedFilename method, possibly only when running on an
-        // Apple Silicon based Mac. Based on the Apple documentation setTitleWithRepresentedFilename
-        // appears to be a convenience method. As a workaround for the issue directly set the window
-        // title.
-        //
-        // This problem has been reported to Apple as:
-        // "setTitleWithRepresentedFilename throws NSInvalidArgumentException: NSNextStepFrame _displayName"
-        // Feedback number FB9789129
-        let title = currentURL.lastPathComponent
 
-        DispatchQueue.main.async { [self] in
-          guard let window else { return }
+        } else {
+          let currentURL = currentPlayback.url
+          // Workaround for issue #3543, IINA crashes reporting:
+          // NSInvalidArgumentException [NSNextStepFrame _displayName]: unrecognized selector
+          // When running on an M1 under Big Sur and using legacy full screen.
+          //
+          // Changes in Big Sur broke the legacy full screen feature. The PlayerWindowController method
+          // legacyAnimateToFullscreen had to be changed to get this feature working again. Under Big
+          // Sur that method now calls "window.styleMask.remove(.titled)". Removing titled from the
+          // style mask causes the AppKit method NSWindow.setTitleWithRepresentedFilename to trigger the
+          // exception listed above. This appears to be a defect in the Cocoa framework. The window's
+          // title can still be set directly without triggering the exception. The problem seems to be
+          // isolated to the setTitleWithRepresentedFilename method, possibly only when running on an
+          // Apple Silicon based Mac. Based on the Apple documentation setTitleWithRepresentedFilename
+          // appears to be a convenience method. As a workaround for the issue directly set the window
+          // title.
+          //
+          // This problem has been reported to Apple as:
+          // "setTitleWithRepresentedFilename throws NSInvalidArgumentException: NSNextStepFrame _displayName"
+          // Feedback number FB9789129
+          let title = currentURL.lastPathComponent
           // Local file: facilitate document icon
           window.representedURL = currentURL
           setWindowTitle(title, isFilename: false)
           window.setTitleWithRepresentedFilename(currentURL.path)
         }
-      }
-    }  // end DispatchQueue.main work item
-
+      }  // end DispatchQueue.main work item
+    }
   }
 
   private func setWindowTitle(_ titleText: String, isFilename: Bool) {
@@ -2213,23 +2201,17 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  /// These are the 2 buttons (Close & Exit) which replace the 3 traffic light title bar buttons in music mode.
-  /// There are 2 variants because of different styling needs depending on whether videoView is visible
+  /// In music mode, there is different styling depending on whether viewport is visible.
+  /// Need to adjust layout of buttons depending on layout.
   func updateMusicModeButtonsVisibility(using targetGeo: PWinGeometry) {
     if targetGeo.mode == .musicMode {
-      // Show only in music mode when video is visible
-      let showCloseButtonOverVideo = targetGeo.isViewportShown
-      closeButtonBackgroundViewVE.isHidden = !showCloseButtonOverVideo
-
-      // Show only in music mode when video is hidden
-      closeButtonBackgroundViewBox.isHidden = showCloseButtonOverVideo
-
       miniPlayer.loadIfNeeded()
+      let isViewportShown = targetGeo.isViewportShown
       // Push the volume button to the right if the buttons on at the same vertical position
-      miniPlayer.volumeButtonLeadingConstraint.animateToConstant(showCloseButtonOverVideo ? 12 : 24)
+      miniPlayer.volumeButtonLeadingConstraint.animateToConstant(isViewportShown ? 12 : 64)
+      miniPlayer.volumeButtonLeadingConstraint.priority = .required
     } else {
-      closeButtonBackgroundViewVE.isHidden = true
-      closeButtonBackgroundViewBox.isHidden = true
+      miniPlayer.volumeButtonLeadingConstraint.priority = .minimum
     }
   }
 

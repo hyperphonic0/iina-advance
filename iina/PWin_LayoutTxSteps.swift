@@ -117,6 +117,7 @@ extension PlayerWindowController {
         }
 
         window.styleMask.remove(.resizable)
+        window.styleMask.remove(.miniaturizable)
 
         /// When restoring, it's possible this window is not actually topmost.
         /// Make sure to check before putting it on top.
@@ -162,6 +163,7 @@ extension PlayerWindowController {
     if transition.needsToHideTopBar {
       // Native & custom title bar components
       fadeableViews.applyVisibility(.hidden, documentIconButton, titleTextField, customTitleBar?.view)
+      exitMusicModeButton.alphaValue = 0
 
       // native windowed or full screen
       for button in trafficLightButtons {
@@ -466,6 +468,9 @@ extension PlayerWindowController {
     fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
     fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: trailingSidebarToggleButton)
     fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: onTopButton)
+    if outputLayout.mode != .musicMode {
+      exitMusicModeButton.isHidden = true
+    }
 
     // Note: hiding top bar here when entering FS with "top outside" OSC will cause it to go black too soon.
     // But we do need it when tranitioning from music mode → FS, or top bar may never be shown
@@ -540,7 +545,7 @@ extension PlayerWindowController {
         miniPlayer.view.removeFromSuperview()
 
         // Make sure to reset constraints for OSD
-        miniPlayer.hideControllerButtons()
+        miniPlayer.hideControls()
       }
     }  // End toggling music mode
 
@@ -945,6 +950,8 @@ extension PlayerWindowController {
       }
       // covers both native & custom variants
       updateTitleBarUI(from: outputLayout)
+    } else if outputLayout.mode == .musicMode {
+      miniPlayer.showOrHideControls()
     }
 
     if let cropController = cropSettingsView {
@@ -993,11 +1000,6 @@ extension PlayerWindowController {
     if transition.isExitingMusicMode || transition.isClosingPlaylistInMusicMode {
       // move playist view
       miniPlayer.removePlaylistViewIfPresent()
-    }
-
-    if !transition.outputLayout.isLegacyFullScreen {
-      // Legacy windowed mode
-      window.styleMask.remove(.borderless)
     }
 
     if !transition.outputLayout.isLegacyStyle && transition.outputLayout.titleBar.isShowable {
@@ -1054,7 +1056,6 @@ extension PlayerWindowController {
       if transition.inputLayout.isLegacyFullScreen {
         if #available(macOS 10.16, *) {
           window.level = .normal
-          window.hasShadow = true
         } else {
           window.styleMask.remove(.fullScreen)
         }
@@ -1251,12 +1252,16 @@ extension PlayerWindowController {
       log.verbose("Removing window styleMask.titled")
       window.styleMask.remove(.titled)
     }
+    if !window.styleMask.contains(.borderless) {
+      window.styleMask.remove(.borderless)
+    }
     if !window.styleMask.contains(.closable) {
       window.styleMask.insert(.closable)
     }
     if !window.styleMask.contains(.miniaturizable) {
       window.styleMask.insert(.miniaturizable)
     }
+    window.hasShadow = true
   }
 
   /// "Native" == `.titled` style mask
@@ -1265,8 +1270,16 @@ extension PlayerWindowController {
 
     if !window.styleMask.contains(.titled) {
       log.verbose("Inserting window styleMask.titled")
-      window.styleMask.remove(.borderless)
       window.styleMask.insert(.titled)
+    }
+    if !window.styleMask.contains(.borderless) {
+      window.styleMask.remove(.borderless)
+    }
+    if !window.styleMask.contains(.closable) {
+      window.styleMask.insert(.closable)
+    }
+    if !window.styleMask.contains(.miniaturizable) {
+      window.styleMask.insert(.miniaturizable)
     }
     window.hasShadow = true
   }

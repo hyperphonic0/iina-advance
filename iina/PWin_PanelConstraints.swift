@@ -35,7 +35,7 @@ extension PlayerWindowController {
   ///```
   /// - ¹Equals `outsideBars.top + topMarginHeight`
   /// - ⁴Only used when bottomBar is shown & viewport is hidden.
-  /// - ⁵Only used in music mode when both video & playlist are hidden.
+  /// - ⁵Only used when animating music mode when both video & playlist are hidden.
   struct PanelConstraints {
     // - Viewport + TopBar (V)
     let topBarBtmOffsetFromVPTop = OptionalConstraint("TopBar.btm-offset-from-VP.top")
@@ -58,7 +58,7 @@ extension PlayerWindowController {
     let cvBtmOffsetFromBottomBarTop = OptionalConstraint("CV.btm-offset-from-BottomBar.top")
     let bottomBarTopOffsetFromCVTop = OptionalConstraint("BottomBar.top-offset-from-CV.top")
     let bottomBarBtmOffsetFromCVTop = OptionalConstraint("BottomBar.btm-offset-from-CV.top")
-    let cvBtmOffsetFromBottomBarBtm = OptionalConstraint("BottomBar.btm-offset-from-CV.btm")
+    let cvBtmOffsetFromBottomBarBtm = OptionalConstraint("BottomBar.btm-offset-from-BottomBar.btm")
 
     // - BottomBar (H)
     // Needs to be changed to align with either sidepanel or leading edge of window:
@@ -106,7 +106,22 @@ extension PlayerWindowController {
     log.verbose("RebuildPanels: VP=\(Int(viewportView.frame.height)) BottomH=\(Int(bottomBarView.frame.height)) Top=\(Int(topBarView.frame.height))")
     let outputGeo = transition.outputGeometry
 
+    // Weaken constraints while modifying them to avoid violation errors
+    p.vpTopOffsetFromTopBarTop.weaken()
+    p.topBarBtmOffsetFromVPTop.weaken()
+    p.bottomBarTopOffsetFromCVTop.weaken()
+    p.vpBtmOffsetFromTopOfBottomBar.weaken()
+    p.bottomBarBtmOffsetFromVPBtm.weaken()
+    topBarView.titleBarHeightConstraint.priority = .minimum
+    p.bottomBarBtmOffsetFromCVTop.weaken()
+    p.cvBtmOffsetFromBottomBarBtm.weaken()
+    p.vpBtmOffsetFromCVTop.weaken()
+    p.cvBtmOffsetFromBottomBarTop.weaken()
+    p.vpTopOffsetFromCVTop.weaken()
+    p.cvBtmOffsetFromVPBtm.weaken()
+
     if useTopBar {
+
       assert(useViewport, "Cannot use topBarView without viewportView")
       let outsideTopBarHeight = stageGeo.vpTopOffsetFromTopBarTop
       let insideTopBarHeight = stageGeo.topBarBtmOffsetFromVPTop
@@ -117,7 +132,7 @@ extension PlayerWindowController {
       }
 
       // Don't use required priority, as sometimes this causes constraint violations
-      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: insideTopBarHeight, priorityInt: 1000, log) { [self] c in
+      p.topBarBtmOffsetFromVPTop.createOrUpdate(to: insideTopBarHeight, log) { [self] c in
         topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
@@ -135,7 +150,7 @@ extension PlayerWindowController {
     if useBottomBar && (!outputGeo.isViewportShown || isAnimatingVideoViewOpen) {
       let constant1 = stageGeo.bottomBarTopOffsetFromCVTop
       // Do not use "required" priority - can cause errors leaving music mode when video was hidden
-      p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1, priorityInt: 999, log) { [self] c in
+      p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
         bottomBarView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
       }
     } else {
@@ -168,9 +183,9 @@ extension PlayerWindowController {
                                           useTrailingSidebar: useTrailingSidebar, log)
 
       // enable for animations or if in music mode & neither playlist nor video is open
-      if !stage.isFinalStage || (outputGeo.mode == .musicMode && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown) {
+      if outputGeo.mode == .musicMode && !stage.isFinalStage && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown {
         let constant1 = stageGeo.bottomBarBtmOffsetFromCVTop
-        p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1, priorityInt: 999, log) { [self] c in
+        p.bottomBarBtmOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
           bottomBarView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
         }
       } else {
@@ -192,7 +207,7 @@ extension PlayerWindowController {
         || (transition.isTogglingViewport && !stage.isFinalStage) // Is animating show/hide of viewport in music mode. Keep OSC & playlist height fixed
     {
       let bottomBarHeight = stageGeo.bottomBarHeight
-      p.cvBtmOffsetFromBottomBarTop.createOrUpdate(to: bottomBarHeight, priorityInt: 1000, log) { [self] c in
+      p.cvBtmOffsetFromBottomBarTop.createOrUpdate(to: bottomBarHeight, log) { [self] c in
         contentView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
       }
     } else {
@@ -203,7 +218,7 @@ extension PlayerWindowController {
     if useViewport, (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode), !stage.isFinalStage {
       let constant3 = stageGeo.vpBtmOffsetFromCVTop
 
-      p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3, priorityInt: 999, log) { [self] c in
+      p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3, log) { [self] c in
         viewportView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
       }
     } else {
@@ -387,7 +402,7 @@ extension PlayerWindowController {
       // Needs to be no op for the Exit Interactive Mode kludge to work properly.
       return
     case .closeOldPanels:
-      assert(!transition.isWindowInitialLayout && !transition.isEnteringFullScreen)
+      assert(!transition.isWindowInitialLayout)
       updateVP = true
       if transition.isExitingInteractiveMode {
         category = .exitingInteractiveMode
@@ -617,7 +632,7 @@ extension PlayerWindowController {
       seekPreview.thumbnailPeekView,
       seekPreview.timeLabel,
       topBarView,
-      closeButtonView,
+      exitMusicModeButton,
       customWindowBorderBox,
       customWindowBorderTopHighlightBox]
 

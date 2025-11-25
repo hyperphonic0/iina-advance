@@ -53,6 +53,7 @@ final class OSDState {
 
   // - Optional constraints
 
+  /// This keeps the OSD (if it is located on the leading side) from overlapping the window's traffic light buttons
   let osdLeadingToMiniPlayerButtonsTrailingConstraint = OptionalConstraint("CloseBtn.leadingGT-LeadingOSD.trailing")
 
   fileprivate let leadingSide_TopOffsetConstraint = OptionalConstraint("LeadingOSD.top-offset-from-VP.top")
@@ -502,7 +503,7 @@ extension PlayerWindowController {
   /// - Setting `skipAddConstraints` to `true` is a kludge for special use during layout transitions
   func updateOSDConstraints(for stage: LayoutTransition.Stage = .postTransition, _ stageGeo: PWinGeometry) {
     for optCon in osd.optionalConstraints {
-      optCon.constraint?.priorityInt = 1
+      optCon.weaken()
     }
 
     let hasOSD = stageGeo.shouldHaveOSD
@@ -547,7 +548,7 @@ extension PlayerWindowController {
 
       osd.osdLeadingToMiniPlayerButtonsTrailingConstraint.createOrUpdate(to: 4, priorityInt: lowerConstraintPriorityInt,
                                                                          requiredFirstAnchor: leadingView.leadingAnchor, log) { [self] c in
-        leadingView.leadingAnchor.constraint(greaterThanOrEqualTo: closeButtonView.trailingAnchor, constant: c)
+        leadingView.leadingAnchor.constraint(greaterThanOrEqualTo: exitMusicModeButton.trailingAnchor, constant: c)
       }
     }
 

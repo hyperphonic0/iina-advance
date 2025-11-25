@@ -101,16 +101,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   var playlistShown: Bool { pwc.musicModeGeo.isMusicModePlaylistShown }
   var isViewportShown: Bool {  pwc.musicModeGeo.isViewportShown }
-  var windowWidthForScrollingLabels: CGFloat = 0
-
-  static var maxWindowWidth: CGFloat { CGFloat(Preference.float(for: .musicModeMaxWidth)) }
-
-  var currentDisplayedPlaylistHeight: CGFloat {
-    let playlistVC = pwc.playlistView
-    guard playlistVC.isViewLoaded && !playlistVC.view.isHidden else { return 0.0 }
-    let playlistHeight = playlistVC.view.frame.height
-    return playlistHeight
-  }
 
   // MARK: - Initialization
 
@@ -136,11 +126,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     pwc.viewportView.addTrackingArea(NSTrackingArea(rect: pwc.viewportView.bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
     musicModeControlBarView.addTrackingArea(NSTrackingArea(rect: musicModeControlBarView.bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
 
-    // close button
-    pwc.closeButtonVE.action = #selector(pwc.close)
-    pwc.closeButtonBox.action = #selector(pwc.close)
-    pwc.closeButtonBackgroundViewVE.roundCorners()
-
     // hide controls initially
     controllerButtonsPanelView.alphaValue = 0
 
@@ -158,8 +143,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     volumeButton.toolTip = NSLocalizedString("mini_player.volume", comment: "volume")
     volumeButton.identifier = .init("VolumeButton")
     volumeButton.bounceOnClick = true
-    pwc.closeButtonVE.toolTip = NSLocalizedString("mini_player.close", comment: "close")
-    pwc.backButtonVE.toolTip = NSLocalizedString("mini_player.back", comment: "back")
+    pwc.exitMusicModeButton.toolTip = NSLocalizedString("mini_player.back", comment: "back")
+    pwc.exitMusicModeButton.bounceOnClick = true
 
     view.addSubview(playlistWrapperView, positioned: .above, relativeTo: musicModeControlBarView)
     // Bottom constraint of playlist wrapper must be lower priority than window resize, to avoid constraint violations
@@ -191,7 +176,9 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   /// Shows Controller on hover
   override func mouseEntered(with event: NSEvent) {
     guard player.isInMiniPlayer else { return }
-    showControl()
+    pwc.animationPipeline.submitTask(duration: Constants.AnimationDuration.musicModeShowButtons, { [self] in
+      showOrHideControls()
+    })
   }
 
   /// Hides Controller when hover leaves controller area
@@ -205,7 +192,9 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       return
     }
 
-    hideControllerButtonsInPipeline()
+    pwc.animationPipeline.submitTask(duration: Constants.AnimationDuration.musicModeShowButtons, { [self] in
+      showOrHideControls()
+    })
   }
 
   func addPlaylistViewIfMissing() {
@@ -227,31 +216,60 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     playlistWrapperTopBorder.isHidden = true
   }
 
-  private func showControl() {
+  func showOrHideControls() {
+    guard let window else { return }
+    let mouseLocation = NSEvent.mouseLocation
+    let locationInWindow = window.convertPoint(fromScreen: mouseLocation)
+    if pwc.viewportView.isInsideViewFrame(pointInWindow: locationInWindow) || musicModeControlBarView.isInsideViewFrame(pointInWindow: locationInWindow) {
+      showControls()
+    } else {
+      hideControls()
+    }
+  }
+
+  private func showControlsInPipeline() {
     pwc.animationPipeline.submitTask(duration: Constants.AnimationDuration.musicModeShowButtons, { [self] in
-      log.trace("MiniPlayer: showing OSC controls / hiding media info")
-      pwc.osd.osdLeadingToMiniPlayerButtonsTrailingConstraint.constraint?.priority = .required
-      pwc.closeButtonView.isHidden = false
-      pwc.closeButtonView.animator().alphaValue = 1
-      controllerButtonsPanelView.animator().alphaValue = 1
-      mediaInfoView.animator().alphaValue = 0
+      showControls()
     })
   }
 
+  private func showControls() {
+    log.trace("MiniPlayer: showing OSC controls / hiding media info")
+    pwc.osd.osdLeadingToMiniPlayerButtonsTrailingConstraint.constraint?.priority = .required
+    // FIXME:
+    pwc.exitMusicModeButton.isHidden = false
+    pwc.exitMusicModeButton.animator().alphaValue = 1
+    if let window, window.styleMask.contains(.titled) {
+      for btn in pwc.trafficLightButtons[0...1] {
+        btn.alphaValue = 1
+        btn.isHidden = false
+      }
+    }
+    controllerButtonsPanelView.animator().alphaValue = 1
+    mediaInfoView.animator().alphaValue = 0
+  }
+
   /// Hides media info, shows OSC controls (runs as async task in animationPipeline)
-  private func hideControllerButtonsInPipeline() {
+  private func hideControlsInPipeline() {
     guard pwc.isInMiniPlayer else { return }
     pwc.animationPipeline.submitTask(duration: Constants.AnimationDuration.musicModeShowButtons, { [self] in
-      hideControllerButtons()
+      hideControls()
     })
   }
 
   /// Hides media info, shows OSC controls (synchronous version)
-  func hideControllerButtons() {
+  func hideControls() {
     log.trace("MiniPlayer: hiding OSC controls / showing media info")
     pwc.osd.osdLeadingToMiniPlayerButtonsTrailingConstraint.constraint?.priority = .defaultLow
-    pwc.closeButtonView.isHidden = true
-    pwc.closeButtonView.animator().alphaValue = 0
+
+    if let window, window.styleMask.contains(.titled) {
+      for btn in pwc.trafficLightButtons[0...1] {
+        btn.alphaValue = 0
+        btn.isHidden = true
+      }
+    }
+    pwc.exitMusicModeButton.isHidden = true
+    pwc.exitMusicModeButton.animator().alphaValue = 0
     controllerButtonsPanelView.animator().alphaValue = 0
     mediaInfoView.animator().alphaValue = 1
   }
@@ -293,7 +311,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   func popoverWillClose(_ notification: Notification) {
     hideVolumePopoverTimer?.invalidate()
     if NSWindow.windowNumber(at: NSEvent.mouseLocation, belowWindowWithWindowNumber: 0) != window!.windowNumber {
-      hideControllerButtonsInPipeline()
+      hideControlsInPipeline()
     }
   }
 
