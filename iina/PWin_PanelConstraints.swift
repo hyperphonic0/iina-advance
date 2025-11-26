@@ -275,34 +275,56 @@ extension PlayerWindowController {
       addViewportAndSubviewsToWindowIfNeeded()
 
     } else {
-      viewportView.removeFromSuperview()
+      if viewportView.superview != nil {
+        log.verbose("Removing viewportView from superview")
+        viewportView.removeFromSuperview()
+      }
     }
 
     // Add/remove sidebars if needed
     if useLeadingSidebar {
-      contentView.addSubview(leadingSidebarView, positioned: .above, relativeTo: viewportView)
+      if !contentView.containsSubview(leadingSidebarView) {
+        log.verbose("Adding leadingSidebarView to window contentView")
+        contentView.addSubview(leadingSidebarView, positioned: .above, relativeTo: viewportView)
+      }
     } else {
       leadingSidebarConstraints = nil  // disables constraints
-      leadingSidebarView.removeFromSuperview()
+      if leadingSidebarView.superview != nil {
+        log.verbose("Removing leadingSidebarView from superview")
+        leadingSidebarView.removeFromSuperview()
+      }
     }
     if useTrailingSidebar {
-      contentView.addSubview(trailingSidebarView, positioned: .above, relativeTo: viewportView)
+      if !contentView.containsSubview(trailingSidebarView) {
+        log.verbose("Adding trailingSidebarView to window contentView")
+        contentView.addSubview(trailingSidebarView, positioned: .above, relativeTo: viewportView)
+      }
     } else {
       trailingSidebarConstraints = nil  // disables constraints
-      trailingSidebarView.removeFromSuperview()
+      if trailingSidebarView.superview != nil {
+        log.verbose("Removing trailingSidebarView from superview")
+        trailingSidebarView.removeFromSuperview()
+      }
     }
 
 
     // Add/remove bottomBarView if needed
     if useBottomBar {
-      contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
+      if !contentView.containsSubview(bottomBarView) {
+        log.verbose("Adding bottomBarView to window contentView")
+        contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
+      }
     } else {
-      bottomBarView.removeFromSuperview()
+      if bottomBarView.superview != nil {
+        log.verbose("Removing bottomBarView from superview")
+        bottomBarView.removeFromSuperview()
+      }
     }
 
     // Add/remove topBarView if needed
     if useTopBar {
       if !contentView.containsSubview(topBarView) {
+        log.verbose("Adding topBarView to window contentView")
         contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
 
         // These constraints don't change as long as topBarView is attached
@@ -315,7 +337,10 @@ extension PlayerWindowController {
         topBarTrailingSpaceConstraint.isActive = true
       }
     } else {
-      topBarView.removeFromSuperview()
+      if topBarView.superview != nil {
+        log.verbose("Removing topBarView from superview")
+        topBarView.removeFromSuperview()
+      }
     }
 
     // Need to add additionalInfo, OSD before changing sidebars
@@ -440,7 +465,7 @@ extension PlayerWindowController {
     }
 
     log.verbose("Calling setFrame with \(stageGeo.windowFrame) mode=\(stageGeo.mode) updateVP\(updateVP.yn) cat=\(category)")
-    setFrameAndUpdateWindowSubviews(using: stageGeo, updateViewportConstraints: updateVP, category)
+    setFrameAndUpdateWindowSubviews(using: stageGeo, updateViewportConstraints: updateVP && !transition.isTogglingFullScreen, category)
   }
 
   @discardableResult

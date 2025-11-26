@@ -385,16 +385,16 @@ extension PlayerWindowController {
       break
     }
 
-    if transition.outputLayout.isLegacyStyle {
-      // Set legacy style
-      setWindowStyleToLegacy()
+    if !transition.isTogglingFullScreen {
+      if transition.outputLayout.isLegacyStyle {
+        // Set legacy style
+        setWindowStyleToLegacy(log)
 
-      /// if `isTogglingLegacyStyle==true && isExitingFullScreen==true`, we are toggling out of legacy FS
-      /// -> don't change `styleMask` to `.titled` here - it will look bad if screen has camera housing. Change at end of animation
-    } else {
-      // Native style
-      if !transition.isEnteringFullScreen {
-        setWindowStyleToNative()
+        /// if `isTogglingLegacyStyle==true && isExitingFullScreen==true`, we are toggling out of legacy FS
+        /// -> don't change `styleMask` to `.titled` here - it will look bad if screen has camera housing. Change at end of animation
+      } else {
+        // Native style
+        setWindowStyleToNative(log)
       }
     }
 
@@ -1061,14 +1061,19 @@ extension PlayerWindowController {
         }
 
         window.styleMask.insert(.resizable)
+
+        /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
+        updatePresentationOptions(windowIsLegacyFS: false)
+
       }
 
       if transition.outputLayout.isLegacyStyle {  // legacy windowed
-        setWindowStyleToLegacy()
+        setWindowStyleToLegacy(log)
         if let customTitleBar {
           customTitleBar.view.alphaValue = 1
         }
       } else {  // native windowed
+        setWindowStyleToNative(log)
         /// Same logic as in `fadeInNewViews()`
         if transition.outputLayout.isMusicMode {
           hideNativeTitleBarViews(andSetAlpha: false)
@@ -1097,9 +1102,6 @@ extension PlayerWindowController {
         // the transition has completed it can be stopped.
         videoView.displayIdle()
       }
-
-      /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
-      updatePresentationOptions(windowIsLegacyFS: false)
 
       if !player.isStopping {
         player.mpv.setFlag(MPVOption.Window.fullscreen, false)
@@ -1246,7 +1248,7 @@ extension PlayerWindowController {
   }
 
   /// Either legacy FS or windowed
-  private func setWindowStyleToLegacy() {
+  private func setWindowStyleToLegacy(_ log: any Logger.Subsystem) {
     guard let window = window else { return }
     if window.styleMask.contains(.titled) {
       log.verbose("Removing window styleMask.titled")
@@ -1265,7 +1267,7 @@ extension PlayerWindowController {
   }
 
   /// "Native" == `.titled` style mask
-  private func setWindowStyleToNative() {
+  private func setWindowStyleToNative(_ log: any Logger.Subsystem) {
     guard let window = window else { return }
 
     if !window.styleMask.contains(.titled) {
