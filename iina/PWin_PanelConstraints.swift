@@ -80,10 +80,10 @@ extension PlayerWindowController {
 
     let stageLayout: LayoutState = transition.targetLayout(for: stage)
     // We need to include constraints for some panels in multiple stages if they are open at any point
-    let useLeadingSidebar = stageLayout.isLeadingSidebarVisible
-    let useTrailingSidebar = stageLayout.isTrailingSidebarVisible
-    let useBottomBar: Bool = stageLayout.hasBottomBar
-    let useTopBar: Bool = stageLayout.hasTopBar
+    let useLeadingSidebar = stageLayout.isLeadingSidebarVisible || (!stage.isFinalStage && transition.inputLayout.isLeadingSidebarVisible)
+    let useTrailingSidebar = stageLayout.isTrailingSidebarVisible || (!stage.isFinalStage && transition.inputLayout.isTrailingSidebarVisible)
+    let useBottomBar: Bool = stageLayout.hasBottomBar || (!stage.isFinalStage && transition.inputLayout.hasBottomBar)
+    let useTopBar: Bool = stageLayout.hasTopBar || (!stage.isFinalStage && transition.inputLayout.hasTopBar)
 
     log.verbose("RebuildPanels: VP=\(useViewport.yn) Bottom=\(useBottomBar.yn) Top=\(useTopBar.yn) Leading=\(useLeadingSidebar.yn) Trailing=\(useTrailingSidebar.yn)")
 
@@ -131,11 +131,11 @@ extension PlayerWindowController {
       }
 
       if stage == .closeOldPanels, let middleGeo = transition.closeOldPanelsGeometry, middleGeo.topBarHeight == 0 {
-        log.verbose("Updating titleHeight=\(0)")
+        log.verbose("Updating titleBarHeight=\(0)")
         topBarView.titleBarHeightConstraint.animateToConstant(0)
       } else {
         let titleHeight = min(stageLayout.titleBarHeight, stageGeo.topBarHeight)  // do not make titleBar larger than top bar
-        log.verbose("Updating titleHeight=\(Int(titleHeight))")
+        log.verbose("Updating titleBarHeight=\(Int(titleHeight))")
         topBarView.titleBarHeightConstraint.animateToConstant(titleHeight)
       }
     }
@@ -341,7 +341,9 @@ extension PlayerWindowController {
     addOrRemoveOSDViews(for: stage, stageGeo)
   }
 
-  private func updateSidebarConstraints(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry, in transition: LayoutTransition, _ log: any Logger.Subsystem) {
+  private func updateSidebarConstraints(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry,
+                                        in transition: LayoutTransition,
+                                        _ log: any Logger.Subsystem) {
     let hasSidebarAtAnyStage = transition.inputGeometry.isMusicModePlaylistShown || transition.outputGeometry.isMusicModePlaylistShown
     || transition.inputLayout.isAnySidebarVisible || transition.outputLayout.isAnySidebarVisible
 
@@ -412,7 +414,9 @@ extension PlayerWindowController {
     }
   }
 
-  private func updateWindowFrameIfNeeded(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry, in transition: LayoutTransition, _ log: any Logger.Subsystem) {
+  private func updateWindowFrameIfNeeded(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry,
+                                         in transition: LayoutTransition,
+                                         _ log: any Logger.Subsystem) {
     let updateVP: Bool
     var category: TransitionCategory = .noTransition
     switch stage {

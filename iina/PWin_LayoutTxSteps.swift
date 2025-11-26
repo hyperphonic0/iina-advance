@@ -84,14 +84,6 @@ extension PlayerWindowController {
       /// `windowedModeGeo` should already be kept up to date. Might be hard to track down bugs...
       log.verbose("Entering full screen; priorWindowedGeometry = \(windowedModeGeo)")
 
-      if transition.isEnteringNativeFullScreen {
-        // Auto-hide menu bar & Dock. This may result in a hiccup if these areas are still shown when the
-        // window expands over it, so do it just before the animation starts.
-        // Also note that this is not required when entering native FS, but leaving it out results in terrible
-        // slowdown on MacOS 26 (Tahoe).
-        updatePresentationOptions(windowIsFS: true)
-      }
-
       // Hide traffic light buttons & title during the animation.
       // Do not move this block. It needs to go here.
       hideNativeTitleBarViews(andSetAlpha: true)
@@ -257,6 +249,15 @@ extension PlayerWindowController {
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
     // Special case for exiting native FS's unique animation
     log.verbose("Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)")
+
+    if transition.isEnteringNativeFullScreen {
+      // - Auto-hide menu bar & Dock. This may result in a hiccup if these areas are still shown when the
+      //   window expands over it, so do it just before the animation starts.
+      // - Also note that this is not required when entering native FS, but leaving it out results in terrible
+      //   slowdown on MacOS 26 (Tahoe).
+      // - Seems we need to call this prior to `rebuildPanelConstraints`
+      updatePresentationOptions(windowIsFS: true)
+    }
 
     // - OSC Subviews
     // TODO: incorporate controlBarGeo into closeOldPanelsGeometry for cleaner code
