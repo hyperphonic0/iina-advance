@@ -951,10 +951,10 @@ extension PlayerWindowController {
           }
         } else {  // Native windowed or FS mode
           showNativeTitleBarViews()
+          // covers both native & custom variants
+          updateTitleBarUI(from: outputLayout)
         }
       }
-      // covers both native & custom variants
-      updateTitleBarUI(from: outputLayout)
     } else if outputLayout.mode == .musicMode {
       miniPlayer.showOrHideControls()
     }
@@ -1012,11 +1012,6 @@ extension PlayerWindowController {
     if transition.isExitingMusicMode || transition.isClosingPlaylistInMusicMode {
       // move playist view
       miniPlayer.removePlaylistViewIfPresent()
-    }
-
-    if !transition.outputLayout.isLegacyStyle && transition.outputLayout.titleBar.isShowable {
-      /// Special case: need to wait until now to call `trafficLightButtons.isHidden = false` due to their quirks
-      showNativeTitleBarViews()
     }
 
     if transition.outputGeometry.shouldHaveAdditionalInfo {
@@ -1120,6 +1115,13 @@ extension PlayerWindowController {
 
     // Need to execute this *after* calling updatePresentationOptions (if calling it)
     rebuildPanelConstraints(transition, stage: .postTransition)
+
+    if !transition.outputLayout.isLegacyStyle && transition.outputLayout.titleBar.isShowable {
+      /// Special case: need to wait until now to call `trafficLightButtons.isHidden = false` due to their quirks
+      showNativeTitleBarViews()
+      // covers both native & custom variants
+      updateTitleBarUI(from: transition.outputLayout)
+    }
 
     if transition.isTogglingMusicMode {
       if Preference.bool(for: .playlistShowMetadataInMusicMode) {
