@@ -103,6 +103,7 @@ extension PlayerWindowController {
     }
 
     var needsFadeOutOldViewsStep: Bool {
+      if isEnteringFullScreen { return false }
       return needsToHideTopBar
       || (inputLayout.bottomBarPlacement == .insideViewport && isBottomBarPlacementOrStyleChanging) // fade OUT
       || (inputLayout.enableOSC != outputLayout.enableOSC)
@@ -130,6 +131,9 @@ extension PlayerWindowController {
       // changing window frame).
       if isWindowInitialLayout {
         // Avoid bounciness and possible unwanted video scaling animation (not needed for ->FS anyway)
+        return false
+      }
+      if isEnteringFullScreen {
         return false
       }
       return (inputLayout.mode != outputLayout.mode)

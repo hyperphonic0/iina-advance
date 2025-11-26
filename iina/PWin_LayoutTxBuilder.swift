@@ -211,6 +211,10 @@ extension PlayerWindowController {
     // Setup: Set initial var or other tasks which happen before main animations
     tasks.append(.instantTask{ [self] in
       doPreTransitionWork(transition)
+
+      if transition.isTogglingFullScreen {
+        fadeOutOldViews(transition)
+      }
     })
 
     if transition.needsShowFadeablesAnimation {
@@ -271,12 +275,13 @@ extension PlayerWindowController {
     // be the case, but it's not harming anything to leave this as-is for now.
     if useExtraAnimationForEnteringLegacyFullScreen {
       let duration = endingAnimationDuration * transition.windowedModeScreen.nonCameraHeightToFrameHeightRatio
-
-      tasks.append(.init(duration: duration, timing: .linear) { [self] in
-        rebuildPanelConstraints(transition, stage: .extraAnimationBeforeOpenNewPanels)
-        // Do this here to reduce chance of an animation jump
-        updatePresentationOptions(windowIsFS: true)
-      })
+      if duration > 0.0 {
+        tasks.append(.init(duration: duration, timing: .linear) { [self] in
+          rebuildPanelConstraints(transition, stage: .extraAnimationBeforeOpenNewPanels)
+          // Do this here to reduce chance of an animation jump
+          updatePresentationOptions(windowIsFS: true)
+        })
+      }
     }
 
     // EndingAnimation 1: Open new panels
@@ -458,12 +463,12 @@ extension PlayerWindowController.LayoutTransition {
         // FIXME: For very slim crop, this sometimes shows black pillars. Maybe set a minimum zoom?
         let videoFrameInScreenCoords = baseGeo.refitted(lockViewportToVideoSize: true).videoFrameInScreenCoords
 
-        let middleGeo = baseGeo.clone(windowFrame: videoFrameInScreenCoords, mode: .windowedNormal,
+        let closedGeo = baseGeo.clone(windowFrame: videoFrameInScreenCoords, mode: .windowedNormal,
                                       topMarginHeight: 0,
                                       outsideBars: .zero, insideBars: .zero,
                                       viewportMargins: .zero,
                                       video: baseGeo.video)
-        return middleGeo
+        return closedGeo
       }
 
     } else if isEnteringMusicMode {

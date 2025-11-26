@@ -130,14 +130,18 @@ extension PlayerWindowController {
         topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
-      if stage == .closeOldPanels, let middleGeo = transition.closeOldPanelsGeometry, middleGeo.topBarHeight == 0 {
-        log.verbose("Updating titleBarHeight=\(0)")
+      if stage == .closeOldPanels, let closedGeo = transition.closeOldPanelsGeometry, (closedGeo.topBarHeight == 0) {
+        log.verbose("Updating titleBarHeight=\(0) to close panel")
+        topBarView.titleBarHeightConstraint.animateToConstant(0)
+      } else if stage == .preTransitionSetup, transition.isEnteringNativeFullScreen {
+        log.verbose("Updating titleBarHeight=\(0) for native FS")
         topBarView.titleBarHeightConstraint.animateToConstant(0)
       } else {
         let titleHeight = min(stageLayout.titleBarHeight, stageGeo.topBarHeight)  // do not make titleBar larger than top bar
         log.verbose("Updating titleBarHeight=\(Int(titleHeight))")
         topBarView.titleBarHeightConstraint.animateToConstant(titleHeight)
       }
+      topBarView.titleBarHeightConstraint.priority = .required
     }
 
     let isAnimatingVideoViewOpen = transition.isOpeningViewport && !stage.isFinalStage  // Music Mode: opening video
@@ -365,6 +369,8 @@ extension PlayerWindowController {
         if transition.isExitingMusicMode {
           // Use music mode tab height
           updateSidebarVerticalConstraints(tabHeight: transition.inputGeometry.sidebarTabHeight, downshift: transition.inputGeometry.sidebarDownshift)
+        } else if transition.isExitingNativeFullScreen {
+          updateSidebarVerticalConstraints(tabHeight: transition.outputGeometry.sidebarTabHeight, downshift: transition.outputGeometry.sidebarDownshift)
         } else {
           // Update sidebar vertical alignments to match top bar:
           updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
@@ -435,7 +441,7 @@ extension PlayerWindowController {
       // It's not needed until the next step anyway.
       updateVP = false
     case .midTransitionHiddenUpdates:
-      if transition.isEnteringFullScreen {
+      if transition.isEnteringFullScreen || transition.isExitingFullScreen {
         // If entering FS, wait until next stage
         return
       }
@@ -459,10 +465,11 @@ extension PlayerWindowController {
     case .openNewPanels:
       updateVP = stageGeo.mode != .musicMode
     case .postTransition:
-      updateVP = true
+      // Not needed for this stage
+      return
     }
 
-    log.verbose("Calling setFrame with \(stageGeo.windowFrame) mode=\(stageGeo.mode) updateVP\(updateVP.yn) cat=\(category)")
+    log.verbose("Calling setFrame with \(stageGeo.windowFrame) mode=\(stageGeo.mode) updateVP=\(updateVP.yn) category=\(category)")
     setFrameAndUpdateWindowSubviews(using: stageGeo, updateViewportConstraints: updateVP && !transition.isTogglingFullScreen, category)
   }
 

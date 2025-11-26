@@ -235,6 +235,11 @@ extension PlayerWindowController {
         oscTwoRowView.dispose()
       }
     }
+
+    if transition.isTogglingNativeFullScreen {
+      // Do this now because this step is duration=0.
+      setFrameAndUpdateWindowSubviews(using: transition.closeOldPanelsGeometry!, updateViewportConstraints: false)
+    }
   }
 
   /// -------------------------------------------------
