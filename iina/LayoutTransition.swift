@@ -446,6 +446,8 @@ extension PlayerWindowController {
         if isEnteringLegacyFullScreen {
           assert(!isWindowInitialLayout && IINAAnimation.isAnimationEnabled)
           return buildGeoForExtraLegacyFSAnimation(fsGeometry: outputGeometry)
+        } else if isExitingNativeFullScreen {
+          return geometry(for: .closeOldPanels)
         } else {
           /// No need for extra animation. Apply final geometry.
           return outputGeometry

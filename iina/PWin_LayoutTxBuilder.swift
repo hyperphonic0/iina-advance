@@ -173,11 +173,16 @@ extension PlayerWindowController {
     let useExtraAnimationForEnteringLegacyFullScreen = IINAAnimation.isAnimationEnabled && transition.isEnteringLegacyFullScreen && screenHasCameraHousing && !transition.isWindowInitialLayout
 
     // Extra animation when exiting legacy full screen: remove camera housing with black bar
-    let useExtraAnimationForExitingLegacyFullScreen = IINAAnimation.isAnimationEnabled && transition.isExitingLegacyFullScreen && screenHasCameraHousing && !transition.isWindowInitialLayout
+    let addClosePanelsStepForExitingLegacyFullScreen = IINAAnimation.isAnimationEnabled && transition.isExitingLegacyFullScreen && screenHasCameraHousing && !transition.isWindowInitialLayout
+
+    let addClosePanelsStepForExitingNativeFullScreen = IINAAnimation.isAnimationEnabled && transition.isExitingNativeFullScreen && !transition.isWindowInitialLayout
 
     var fadeInNewViewsDuration = endingAnimationDuration * 0.5
     var openFinalPanelsDuration = endingAnimationDuration
-    if useExtraAnimationForExitingLegacyFullScreen {
+    if addClosePanelsStepForExitingNativeFullScreen {
+      closeOldPanelsDuration = endingAnimationDuration
+      openFinalPanelsDuration = 0.0
+    } else if addClosePanelsStepForExitingLegacyFullScreen {
       let cameraHeightToFrameHeightRatio = transition.windowedModeScreen.cameraHeightToFrameHeightRatio
       closeOldPanelsDuration *= cameraHeightToFrameHeightRatio
       let nonCameraHeightToFrameHeightRatio = transition.windowedModeScreen.nonCameraHeightToFrameHeightRatio
@@ -238,7 +243,7 @@ extension PlayerWindowController {
 
     // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies closeOldPanelsGeometry if it exists.
     // Not enabled for full screen transitions or if animation is disabled.
-    if needsCloseOldPanelsStep {
+    if needsCloseOldPanelsStep || addClosePanelsStepForExitingLegacyFullScreen {
       tasks.append(.init(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
         closeOldPanels(transition)
       }))

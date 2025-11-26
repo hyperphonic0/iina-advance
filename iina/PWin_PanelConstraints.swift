@@ -133,15 +133,17 @@ extension PlayerWindowController {
       if stage == .closeOldPanels, let closedGeo = transition.closeOldPanelsGeometry, (closedGeo.topBarHeight == 0) {
         log.verbose("Updating titleBarHeight=\(0) to close panel")
         topBarView.titleBarHeightConstraint.animateToConstant(0)
-      } else if stage == .preTransitionSetup, transition.isEnteringNativeFullScreen {
-        log.verbose("Updating titleBarHeight=\(0) for native FS")
+      } else if stage == .openNewPanels, transition.isExitingNativeFullScreen {
+        log.verbose("Updating titleBarHeight=\(0) for exiting native FS")
         topBarView.titleBarHeightConstraint.animateToConstant(0)
       } else {
         let titleHeight = min(stageLayout.titleBarHeight, stageGeo.topBarHeight)  // do not make titleBar larger than top bar
         log.verbose("Updating titleBarHeight=\(Int(titleHeight))")
         topBarView.titleBarHeightConstraint.animateToConstant(titleHeight)
       }
-      topBarView.titleBarHeightConstraint.priority = .required
+
+      // Not sure why when we make this `.required`, we get a bogus constraint violation
+      topBarView.titleBarHeightConstraint.priority = .defaultHigh
     }
 
     let isAnimatingVideoViewOpen = transition.isOpeningViewport && !stage.isFinalStage  // Music Mode: opening video
@@ -354,7 +356,11 @@ extension PlayerWindowController {
     // - Sidebars
     switch stage {
     case .preTransitionSetup:
-      updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
+      if transition.isEnteringNativeFullScreen {
+        updateSidebarVerticalConstraints(tabHeight: transition.outputGeometry.sidebarTabHeight, downshift: transition.outputGeometry.sidebarDownshift)
+      } else {
+        updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
+      }
 
     case .closeOldPanels:
       assert(!transition.isWindowInitialLayout)
@@ -369,7 +375,7 @@ extension PlayerWindowController {
         if transition.isExitingMusicMode {
           // Use music mode tab height
           updateSidebarVerticalConstraints(tabHeight: transition.inputGeometry.sidebarTabHeight, downshift: transition.inputGeometry.sidebarDownshift)
-        } else if transition.isExitingNativeFullScreen {
+        } else if transition.isTogglingNativeFullScreen {
           updateSidebarVerticalConstraints(tabHeight: transition.outputGeometry.sidebarTabHeight, downshift: transition.outputGeometry.sidebarDownshift)
         } else {
           // Update sidebar vertical alignments to match top bar:
@@ -382,7 +388,9 @@ extension PlayerWindowController {
 
     case .midTransitionHiddenUpdates:
       /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
-      if transition.isClosingLeadingSidebar, let tabGroupToHide = transition.inputLayout.leadingSidebar.visibleTabGroup {
+      if transition.isTogglingNativeFullScreen {
+        updateSidebarVerticalConstraints(tabHeight: transition.outputGeometry.sidebarTabHeight, downshift: transition.outputGeometry.sidebarDownshift)
+      } else if transition.isClosingLeadingSidebar, let tabGroupToHide = transition.inputLayout.leadingSidebar.visibleTabGroup {
         /// Finish closing (if closing)
         removeSidebarTabGroupView(group: tabGroupToHide)
       }
