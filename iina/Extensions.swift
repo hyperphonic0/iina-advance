@@ -1830,9 +1830,9 @@ extension NSWindow {
     return selectDefaultScreen().screenScaleFactor
   }
 
-  var isAnotherWindowInLegacyFullScreen: Bool {
+  var isAnotherWindowInFullScreen: Bool {
     for winCon in AppDelegate.shared.playerWindows {
-      if winCon.window != self, winCon.currentLayout.isLegacyFullScreen {
+      if winCon.window != self, winCon.currentLayout.isFullScreen {
         return true
       }
     }

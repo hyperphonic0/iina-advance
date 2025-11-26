@@ -83,13 +83,7 @@ extension PlayerWindowController {
     let useLeadingSidebar = stageLayout.isLeadingSidebarVisible
     let useTrailingSidebar = stageLayout.isTrailingSidebarVisible
     let useBottomBar: Bool = stageLayout.hasBottomBar
-    let useTopBar: Bool
-    if transition.isTogglingFullScreen {
-      // FIXME: there is a bug in an offset somewhere in native FS
-      useTopBar = transition.outputLayout.hasTopBar || (!stage.isFinalStage && transition.inputLayout.hasTopBar)
-    } else {
-      useTopBar = stageLayout.hasTopBar
-    }
+    let useTopBar: Bool = stageLayout.hasTopBar
 
     log.verbose("RebuildPanels: VP=\(useViewport.yn) Bottom=\(useBottomBar.yn) Top=\(useTopBar.yn) Leading=\(useLeadingSidebar.yn) Trailing=\(useTrailingSidebar.yn)")
 

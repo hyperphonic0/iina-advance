@@ -71,8 +71,7 @@ extension PlayerWindowController {
     }
 
     // Skip for initial layout: not all panels have been init'd yet.
-    // Don't use with legacy full screen transitions; they use extra animations which will be screwed up
-    if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
+    if !transition.isWindowInitialLayout {
       rebuildPanelConstraints(transition, stage: .preTransitionSetup)
     }
 
@@ -84,6 +83,14 @@ extension PlayerWindowController {
     if transition.isEnteringFullScreen {
       /// `windowedModeGeo` should already be kept up to date. Might be hard to track down bugs...
       log.verbose("Entering full screen; priorWindowedGeometry = \(windowedModeGeo)")
+
+      if transition.isEnteringNativeFullScreen {
+        // Auto-hide menu bar & Dock. This may result in a hiccup if these areas are still shown when the
+        // window expands over it, so do it just before the animation starts.
+        // Also note that this is not required when entering native FS, but leaving it out results in terrible
+        // slowdown on MacOS 26 (Tahoe).
+        updatePresentationOptions(windowIsFS: true)
+      }
 
       // Hide traffic light buttons & title during the animation.
       // Do not move this block. It needs to go here.
@@ -249,12 +256,11 @@ extension PlayerWindowController {
     let isClosingBarOSC = transition.isClosingBarOSC
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
     // Special case for exiting native FS's unique animation
-    let isExitingNativeFSWithBarOSC = transition.isExitingNativeFullScreen && transition.outputLayout.hasTopOrBottomOSC
-    log.verbose("Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn) isExitingNativeFSWithBarOSC=\(isExitingNativeFSWithBarOSC.yn)")
+    log.verbose("Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)")
 
     // - OSC Subviews
     // TODO: incorporate controlBarGeo into closeOldPanelsGeometry for cleaner code
-    if isOpeningBarOSC || isClosingBarOSC || isExitingNativeFSWithBarOSC {
+    if isOpeningBarOSC || isClosingBarOSC {
       // Shrink all the buttons vertically to create cool animated effect.
       // Don't worry about horizontal.
       for toolbarItem in fragToolbarView.views {
@@ -459,12 +465,6 @@ extension PlayerWindowController {
     fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: onTopButton)
     if outputLayout.mode != .musicMode {
       exitMusicModeButton.isHidden = true
-    }
-
-    // Note: hiding top bar here when entering FS with "top outside" OSC will cause it to go black too soon.
-    // But we do need it when tranitioning from music mode → FS, or top bar may never be shown
-    if !transition.isEnteringFullScreen || transition.isExitingMusicMode {
-      fadeableViews.applyOnlyIfHidden(outputLayout.topBarView, to: topBarView)
     }
 
     if transition.outputLayout.isMusicMode {
@@ -834,6 +834,16 @@ extension PlayerWindowController {
     let log = Logger.addPreamble(transition.logPreamble(for: .openNewPanels), toSubsystem: log)
     log.verbose("Start: TitleBar_H=\(outputLayout.titleBarHeight) TopOSC_H=\(outputLayout.topOSCHeight)")
 
+    if transition.isEnteringLegacyFullScreen {
+      // Call this here in case there was no `.extraAnimationBeforeOpenNewPanels` stage
+      updatePresentationOptions(windowIsFS: true)
+    } else if transition.isExitingNativeFullScreen {
+      /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end.
+      /// Do this also for native FS. It will kick off an independent animation which will last about as long as this step's
+      /// animation.
+      updatePresentationOptions(windowIsFS: false)
+    }
+
     rebuildPanelConstraints(transition, stage: .openNewPanels)
 
     if outputLayout.hasControlBar {
@@ -970,6 +980,13 @@ extension PlayerWindowController {
     let log = Logger.addPreamble(transition.logPreamble(for: .postTransition), toSubsystem: log)
     log.verbose("Start")
 
+    if transition.isExitingLegacyFullScreen {
+      /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end.
+      /// Do this also for native FS. It will kick off an independent animation which will last about as long as this step's
+      /// animation.
+      updatePresentationOptions(windowIsFS: false)
+    }
+
     fadeableViews.animationState = .shown
     fadeableViews.topBarAnimationState = .shown
 
@@ -1011,11 +1028,6 @@ extension PlayerWindowController {
 
       player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: true)
 
-      if transition.isEnteringLegacyFullScreen {
-        // auto hide menubar and dock (this will freeze all other animations, so must do it last)
-        updatePresentationOptions(windowIsLegacyFS: true)
-      }
-
       player.mpv.queue.async { [self] in
         guard !player.isStopping else { return }
         if player.info.isPaused {
@@ -1051,10 +1063,6 @@ extension PlayerWindowController {
         } else {
           window.styleMask.remove(.fullScreen)
         }
-
-        /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
-        updatePresentationOptions(windowIsLegacyFS: false)
-
       }
 
       if transition.outputLayout.isLegacyStyle {  // legacy windowed
@@ -1451,7 +1459,7 @@ extension PlayerWindowController {
   // It's not possible to control the icon padding from inside the buttons in all cases.
   // Instead we can get the same effect with a little more work, by using the stack view's features.
   private func updateToolbarHStack(iconSpacing: CGFloat) {
-    log.verbose("Updating toolbar hstack using spacing=\(iconSpacing)")
+    log.verbose("Updating toolbar hstack using spacing=\(iconSpacing)*2")
     fragToolbarView.spacing = 2 * iconSpacing
     let sideInset = (iconSpacing * 0.5).rounded()
     fragToolbarView.edgeInsets = .init(top: iconSpacing, left: sideInset,

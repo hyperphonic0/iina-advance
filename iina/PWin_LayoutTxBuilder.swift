@@ -108,10 +108,10 @@ extension PlayerWindowController {
       openFinalPanelsTiming = .linear
     } else if transition.isEnteringFullScreen {
       closeOldPanelsTiming = .linear  // doesn't matter; not used
-      openFinalPanelsTiming = .linear
+      openFinalPanelsTiming = .easeInEaseOut
     } else if transition.isExitingFullScreen {
       closeOldPanelsTiming = .linear  // doesn't matter; not used
-      openFinalPanelsTiming = .linear
+      openFinalPanelsTiming = .easeInEaseOut
     } else if transition.isOpeningOrClosingAnySidebar {
       closeOldPanelsTiming = .easeInEaseOut
       openFinalPanelsTiming = .easeInEaseOut
@@ -264,16 +264,6 @@ extension PlayerWindowController {
       tasks.append(moveAndScaleTask)
     }
 
-    // Roll up all full screen tasks created thus far into a single task. Seems to result in a smoother animation(?)
-    if transition.isTogglingFullScreen {
-      let allPrevTasks = tasks
-      tasks = [.instantTask {
-        for task in allPrevTasks {
-          try task.runFunc()
-        }
-      }]
-    }
-
     // - Ending animations:
 
     // (Only for Enter Legacy FS) Extra animation for camera housing. In Big Sur, AppKit needed an extra transaction & more
@@ -285,7 +275,7 @@ extension PlayerWindowController {
       tasks.append(.init(duration: duration, timing: .linear) { [self] in
         rebuildPanelConstraints(transition, stage: .extraAnimationBeforeOpenNewPanels)
         // Do this here to reduce chance of an animation jump
-        updatePresentationOptions(windowIsLegacyFS: true)
+        updatePresentationOptions(windowIsFS: true)
       })
     }
 
@@ -433,11 +423,17 @@ extension PlayerWindowController.LayoutTransition {
     } else if isEnteringNativeFullScreen {
       return outputGeometry
     } else if isExitingNativeFullScreen {
-      // Need to go to windowd mode with same frame as FS, so that additionalInfoView is removed correctly
-      return outputGeometry.withResizedBars(outsideTop: 0,
-                                            outsideBottom: 0,
-                                            insideTop: 0,
-                                            insideBottom: 0)
+      // Remove title bar only
+      if outputLayout.topBarPlacement == .outsideViewport {
+        let outsideTopH = outputGeometry.outsideBars.top - outputLayout.titleBarHeight
+        assert(outsideTopH >= 0, "Expected outsideBars.top - titleBarHeight to be non-negative! Found: \(outsideTopH)")
+        return outputGeometry.withResizedBars(outsideTop: outsideTopH)
+      } else {
+        assert(outputLayout.topBarPlacement == .insideViewport)
+        let insideTopH = outputGeometry.insideBars.top - outputLayout.titleBarHeight
+        assert(insideTopH >= 0, "Expected insideBars.top - titleBarHeight to be non-negative! Found: \(insideTopH)")
+        return outputGeometry.withResizedBars(insideTop: insideTopH)
+      }
     } else if isTogglingInteractiveMode {
       // - Interactive Mode
 
