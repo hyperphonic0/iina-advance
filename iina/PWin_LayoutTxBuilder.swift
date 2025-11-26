@@ -419,9 +419,9 @@ extension PlayerWindowController {
 extension PlayerWindowController.LayoutTransition {
 
   /// Builds `closeOldPanelsGeometry`.
-  /// Currently there are 4 bars. Each can be either `inside` or `outside`, exclusively.
+  /// Currently there are 4 bars, each of which can be either `inside` or `outside`, exclusively.
   func buildCloseOldPanelsGeometry() -> PWinGeometry? {
-    guard !isWindowInitialLayout, !isEnteringFullScreen else {
+    guard !isWindowInitialLayout, !isEnteringLegacyFullScreen else {
       // Not animated
       return nil
     }
@@ -430,9 +430,14 @@ extension PlayerWindowController.LayoutTransition {
 
     if isExitingLegacyFullScreen {
       return buildGeoForExtraLegacyFSAnimation(fsGeometry: inputGeometry)
+    } else if isEnteringNativeFullScreen {
+      return outputGeometry
     } else if isExitingNativeFullScreen {
       // Need to go to windowd mode with same frame as FS, so that additionalInfoView is removed correctly
-      return inputGeometry.clone(screenFit: .stayInside, mode: outputGeometry.mode)
+      return outputGeometry.withResizedBars(outsideTop: 0,
+                                            outsideBottom: 0,
+                                            insideTop: 0,
+                                            insideBottom: 0)
     } else if isTogglingInteractiveMode {
       // - Interactive Mode
 

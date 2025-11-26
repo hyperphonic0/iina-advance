@@ -248,11 +248,13 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     let isClosingBarOSC = transition.isClosingBarOSC
     let isOpeningBarOSC = transition.isOpeningBarOSCFromZero
-    log.verbose("Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn)")
+    // Special case for exiting native FS's unique animation
+    let isExitingNativeFSWithBarOSC = transition.isExitingNativeFullScreen && transition.outputLayout.hasTopOrBottomOSC
+    log.verbose("Start: title_H=\(outputLayout.titleBarHeight) topOSC_H=\(outputLayout.topOSCHeight) isClosingBarOSC=\(isClosingBarOSC.yn) isOpeningBarOSC=\(isOpeningBarOSC.yn) hasControlBar=\(outputLayout.hasControlBar.yn) isExitingNativeFSWithBarOSC=\(isExitingNativeFSWithBarOSC.yn)")
 
     // - OSC Subviews
     // TODO: incorporate controlBarGeo into closeOldPanelsGeometry for cleaner code
-    if isOpeningBarOSC || isClosingBarOSC {
+    if isOpeningBarOSC || isClosingBarOSC || isExitingNativeFSWithBarOSC {
       // Shrink all the buttons vertically to create cool animated effect.
       // Don't worry about horizontal.
       for toolbarItem in fragToolbarView.views {
