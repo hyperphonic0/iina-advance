@@ -103,21 +103,7 @@ extension PlayerWindowController {
       setWindowFloatingOnTop(false, from: transition.inputLayout, updateOnTopStatus: false)
 
       if transition.isEnteringLegacyFullScreen {
-        // stylemask
-        let hasTitled = window.styleMask.contains(.titled)
-        log.verbose("Entering legacy FS\(hasTitled ? ": removing window styleMask: .titled" : "")")
-        if #available(macOS 10.16, *) {
-          if hasTitled {
-            window.styleMask.remove(.titled)
-          }
-          window.styleMask.insert(.borderless)
-          window.hasShadow = false
-        } else {
-          window.styleMask.insert(.fullScreen)
-        }
-
-        window.styleMask.remove(.resizable)
-        window.styleMask.remove(.miniaturizable)
+        setStyleMaskForLegacyFS(log)
 
         /// When restoring, it's possible this window is not actually topmost.
         /// Make sure to check before putting it on top.
@@ -385,16 +371,17 @@ extension PlayerWindowController {
       break
     }
 
-    if !transition.isTogglingFullScreen {
+    if !transition.isTogglingFullScreen, transition.outputLayout.isWindowed {
+      // Transitioning to/from native & windowed modes (but not while toggling FS)
       if transition.outputLayout.isLegacyStyle {
         // Set legacy style
-        setWindowStyleToLegacy(log)
+        setStyleForWindowedLegacy(log)
 
         /// if `isTogglingLegacyStyle==true && isExitingFullScreen==true`, we are toggling out of legacy FS
         /// -> don't change `styleMask` to `.titled` here - it will look bad if screen has camera housing. Change at end of animation
       } else {
         // Native style
-        setWindowStyleToNative(log)
+        setStyleMaskForNativeWindowed(log)
       }
     }
 
@@ -1020,17 +1007,6 @@ extension PlayerWindowController {
         blackOutOtherMonitors()
       }
 
-      if player.info.isPaused {
-        if !player.isRestoring && Preference.bool(for: .playWhenEnteringFullScreen) {
-          player.resume()
-        } else {
-          // When playback is paused the display link is stopped in order to avoid wasting energy on
-          // needless processing. It must be running while transitioning to full screen mode. Now that
-          // the transition has completed it can be stopped.
-          videoView.displayIdle()
-        }
-      }
-
       player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: true)
 
       if transition.isEnteringLegacyFullScreen {
@@ -1038,7 +1014,21 @@ extension PlayerWindowController {
         updatePresentationOptions(windowIsLegacyFS: true)
       }
 
-      if !player.isStopping {
+      player.mpv.queue.async { [self] in
+        guard !player.isStopping else { return }
+        if player.info.isPaused {
+          if !player.isRestoring && Preference.bool(for: .playWhenEnteringFullScreen) {
+            player._resume()
+          } else {
+            DispatchQueue.main.async { [self] in
+              // When playback is paused the display link is stopped in order to avoid wasting energy on
+              // needless processing. It must be running while transitioning to full screen mode. Now that
+              // the transition has completed it can be stopped.
+              videoView.displayIdle()
+            }
+          }
+        }
+
         player.mpv.setFlag(MPVOption.Window.fullscreen, true)
         player.didEnterFullScreenViaUserToggle = true
       }
@@ -1060,20 +1050,18 @@ extension PlayerWindowController {
           window.styleMask.remove(.fullScreen)
         }
 
-        window.styleMask.insert(.resizable)
-
         /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
         updatePresentationOptions(windowIsLegacyFS: false)
 
       }
 
       if transition.outputLayout.isLegacyStyle {  // legacy windowed
-        setWindowStyleToLegacy(log)
+        setStyleForWindowedLegacy(log)
         if let customTitleBar {
           customTitleBar.view.alphaValue = 1
         }
       } else {  // native windowed
-        setWindowStyleToNative(log)
+        setStyleMaskForNativeWindowed(log)
         /// Same logic as in `fadeInNewViews()`
         if transition.outputLayout.isMusicMode {
           hideNativeTitleBarViews(andSetAlpha: false)
@@ -1092,18 +1080,21 @@ extension PlayerWindowController {
 
       player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: false)
 
-      if Preference.bool(for: .pauseWhenLeavingFullScreen) && player.info.isPlaying {
-        player.pause()
-      }
+      player.mpv.queue.async { [self] in
+        guard !player.isStopping else { return }
+        if Preference.bool(for: .pauseWhenLeavingFullScreen) && player.info.isPlaying {
+          player._pause()
+        }
 
-      if player.info.isPaused {
-        // When playback is paused the display link is stopped in order to avoid wasting energy on
-        // needless processing. It must be running while transitioning from full screen mode. Now that
-        // the transition has completed it can be stopped.
-        videoView.displayIdle()
-      }
+        if player.info.isPaused {
+          DispatchQueue.main.async { [self] in
+            // When playback is paused the display link is stopped in order to avoid wasting energy on
+            // needless processing. It must be running while transitioning from full screen mode. Now that
+            // the transition has completed it can be stopped.
+            videoView.displayIdle()
+          }
+        }
 
-      if !player.isStopping {
         player.mpv.setFlag(MPVOption.Window.fullscreen, false)
         player.didEnterFullScreenViaUserToggle = false
       }
@@ -1247,18 +1238,46 @@ extension PlayerWindowController {
     }
   }
 
-  /// Either legacy FS or windowed
-  private func setWindowStyleToLegacy(_ log: any Logger.Subsystem) {
+  // Legacy FS
+  private func setStyleMaskForLegacyFS(_ log: any Logger.Subsystem) {
     guard let window = window else { return }
+    if #unavailable(macOS 10.16) {
+      log.verbose("Adding styleMask '.fullScreen' to window (entering legacy FS)")
+      window.styleMask.insert(.fullScreen)
+      return
+    }
+
     if window.styleMask.contains(.titled) {
-      log.verbose("Removing window styleMask.titled")
+      log.verbose("Removing styleMask '.titled' from window (entering legacy FS)")
       window.styleMask.remove(.titled)
     }
     if !window.styleMask.contains(.borderless) {
+      window.styleMask.insert(.borderless)
+    }
+    if window.styleMask.contains(.miniaturizable) {
+      window.styleMask.remove(.miniaturizable)
+    }
+    if window.styleMask.contains(.resizable) {
+      window.styleMask.remove(.resizable)
+    }
+    window.hasShadow = false
+  }
+
+  /// Legacy windowed
+  private func setStyleForWindowedLegacy(_ log: any Logger.Subsystem) {
+    guard let window = window else { return }
+    if window.styleMask.contains(.titled) {
+      log.verbose("Removing styleMask '.titled' from window (entering legacy FS)")
+      window.styleMask.remove(.titled)
+    }
+    if window.styleMask.contains(.borderless) {
       window.styleMask.remove(.borderless)
     }
     if !window.styleMask.contains(.closable) {
       window.styleMask.insert(.closable)
+    }
+    if !window.styleMask.contains(.resizable) {
+      window.styleMask.insert(.resizable)
     }
     if !window.styleMask.contains(.miniaturizable) {
       window.styleMask.insert(.miniaturizable)
@@ -1267,11 +1286,11 @@ extension PlayerWindowController {
   }
 
   /// "Native" == `.titled` style mask
-  private func setWindowStyleToNative(_ log: any Logger.Subsystem) {
+  private func setStyleMaskForNativeWindowed(_ log: any Logger.Subsystem) {
     guard let window = window else { return }
 
     if !window.styleMask.contains(.titled) {
-      log.verbose("Inserting window styleMask.titled")
+      log.verbose("Inserting window styleMask.titled for native windowed")
       window.styleMask.insert(.titled)
     }
     if !window.styleMask.contains(.borderless) {
@@ -1279,6 +1298,9 @@ extension PlayerWindowController {
     }
     if !window.styleMask.contains(.closable) {
       window.styleMask.insert(.closable)
+    }
+    if !window.styleMask.contains(.resizable) {
+      window.styleMask.insert(.resizable)
     }
     if !window.styleMask.contains(.miniaturizable) {
       window.styleMask.insert(.miniaturizable)

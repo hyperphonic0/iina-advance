@@ -1950,6 +1950,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     if updateOnTopStatus {
       self.isOnTop = onTop
       player.mpv.queue.async { [self] in
+        guard !player.isStopping else { return }
         // TODO: does this hang if videoView is not in window?
         player.mpv.setFlag(MPVOption.Window.ontop, onTop)
         DispatchQueue.main.async { [self] in

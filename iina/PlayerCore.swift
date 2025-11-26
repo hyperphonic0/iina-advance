@@ -875,11 +875,11 @@ class PlayerCore: NSObject {
     }
   }
 
-  private func _pause() {
+  func _pause() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard isActive else { return }
     /// Set this so that callbacks will fire even though `info.isPaused` was already set
-    info.pauseStateWasChangedLocally = true
+    info.isPausedLocally = true
     mpv.setFlag(MPVOption.PlaybackControl.pause, true)
     let isNormalSpeed = info.playSpeed == 1
     if !isNormalSpeed && Preference.bool(for: .resetSpeedWhenPaused) {
@@ -891,12 +891,17 @@ class PlayerCore: NSObject {
     }
   }
 
-  private func _resume() {
+  func _resume() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    /// Set this so that callbacks will fire even though `info.isPaused` was already set
+    info.isPausedLocally = false
     if shouldRestartFromEOF() {
       _seek(0, absolute: true, option: .exact)
     }
     mpv.setFlag(MPVOption.PlaybackControl.pause, false)
+    DispatchQueue.main.async { [self] in
+      pwc.updatePlayButtonAndSpeedUI()
+    }
   }
 
   /// Restart playback if at EOF & feature is enabled.
@@ -935,11 +940,8 @@ class PlayerCore: NSObject {
 
   func resume() {
     mpv.queue.async { [self] in
-      /// Set this so that callbacks will fire even though `info.isPaused` was already set
-      info.pauseStateWasChangedLocally = true
       _resume()
     }
-    pwc.updatePlayButtonAndSpeedUI()
   }
 
   /// Stop playback and unload the media.
@@ -1435,10 +1437,10 @@ class PlayerCore: NSObject {
 
   /// Called with `MPVOption.PlaybackControl.pause` changed
   func pausedStateDidChange(to paused: Bool) {
-    guard info.isPaused != paused || info.pauseStateWasChangedLocally else { return }
-    
-    info.isPaused = paused
-    info.pauseStateWasChangedLocally = false
+    let didChange = info.isPausedRemotely != paused
+    info.isPausedRemotely = paused
+    info.isPausedLocally = nil
+    guard didChange else { return }
 
     DispatchQueue.main.async { [self] in
       if !paused {

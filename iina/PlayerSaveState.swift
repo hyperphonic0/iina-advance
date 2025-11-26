@@ -521,7 +521,7 @@ struct PlayerSaveState: CustomStringConvertible {
       info.playbackDurationSec = playbackDurationSec
     }
     if let paused = bool(for: .paused) {
-      info.isPaused = paused
+      info.isPausedLocally = paused
     }
 
     if let videoURLListString = string(for: .playlistVideos) {

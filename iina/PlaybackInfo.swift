@@ -35,7 +35,11 @@ class PlaybackInfo {
 
   // -- PERSISTENT PROPERTIES BEGIN --
 
-  var isPaused: Bool = false {
+  var isPaused: Bool {
+    isPausedLocally ?? isPausedRemotely
+  }
+  var isPlaying: Bool { !isPaused }
+  var isPausedRemotely: Bool = false {
     didSet {
       if oldValue != isPaused {
         log.verbose("Playback is \(isPaused ? "PAUSED" : "PLAYING")")
@@ -43,8 +47,8 @@ class PlaybackInfo {
       }
     }
   }
-  var isPlaying: Bool { !isPaused }
-  var pauseStateWasChangedLocally = false
+  /// Set this while waiting for remote to respond
+  var isPausedLocally: Bool? = nil
 
   /// Should only be updated in `DispatchQueue.main`
   var isSeeking: Bool = false
