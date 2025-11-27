@@ -385,17 +385,22 @@ extension PlayerWindowController {
       break
     }
 
-    if !transition.isTogglingFullScreen, transition.outputLayout.isWindowed {
-      // Transitioning to/from native & windowed modes (but not while toggling FS)
-      if transition.outputLayout.isLegacyStyle {
-        // Set legacy style
-        setStyleForWindowedLegacy(log)
+    if !transition.isTogglingFullScreen {
+      switch transition.outputLayout.mode {
+      case .windowedNormal, .windowedInteractive, .musicMode:
+        // Transitioning to/from native & windowed modes (but not while toggling FS)
+        if transition.outputLayout.isLegacyStyle {
+          // Set legacy style
+          setStyleForWindowedLegacy(log)
 
-        /// if `isTogglingLegacyStyle==true && isExitingFullScreen==true`, we are toggling out of legacy FS
-        /// -> don't change `styleMask` to `.titled` here - it will look bad if screen has camera housing. Change at end of animation
-      } else {
-        // Native style
-        setStyleMaskForNativeWindowed(log)
+          /// if `isTogglingLegacyStyle==true && isExitingFullScreen==true`, we are toggling out of legacy FS
+          /// -> don't change `styleMask` to `.titled` here - it will look bad if screen has camera housing. Change at end of animation
+        } else {
+          // Native style
+          setStyleMaskForNativeWindowed(log)
+        }
+      case .fullScreenInteractive, .fullScreenNormal:
+        break
       }
     }
 
