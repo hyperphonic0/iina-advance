@@ -214,11 +214,17 @@ extension PlayerWindowController {
       p.cvBtmOffsetFromBottomBarTop.remove(log)
     }
 
-    // This constraint is only used during the animation. Do not use priority=1000 because it may be off by a pixel...
-    if useViewport, (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode), !stage.isFinalStage {
+    // This constraint is needed for:
+    // 1. Ensuring "toggle viewport" & "toggle playlist" animations work properly in music mode.
+    // 2. Workaround for bug in music mode where viewport closes unexpectedly.
+    // - Do not use priority=1000 because it may be off by a pixel.
+    // - Do not use priority >= 500 because it will prevent window resize.
+    if useViewport,
+       (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode),
+       (!stage.isFinalStage || transition.outputLayout.mode == .musicMode) {
       let constant3 = stageGeo.vpBtmOffsetFromCVTop
 
-      p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3, log) { [self] c in
+      p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3, priorityInt: 499, log) { [self] c in
         viewportView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
       }
     } else {
@@ -445,9 +451,13 @@ extension PlayerWindowController {
         category = .exitingInteractiveMode
       }
     case .moveAndScale:
-      // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVP: false).
-      // It's not needed until the next step anyway.
-      updateVP = false
+      if transition.isExitingMusicMode {
+        updateVP = true
+      } else {
+        // For some reason, updating videoView constraints here causes a visual glich, so skip it (updateVP: false).
+        // It's not needed until the next step anyway.
+        updateVP = false
+      }
     case .midTransitionHiddenUpdates:
       if transition.isEnteringFullScreen || transition.isExitingFullScreen {
         // If entering FS, wait until next stage

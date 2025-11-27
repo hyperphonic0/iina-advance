@@ -2135,10 +2135,15 @@ extension NSView {
 
   /// Adds the given NSView to this view's subviews, then adds the given offset constraints.
   func addSubviewAndConstraints(_ subview: NSView,
-                                top: CGFloat? = nil, bottom: CGFloat? = nil,
-                                leading: CGFloat? = nil, trailing: CGFloat? = nil) {
+                                top: CGFloat? = nil, _ topPriority: NSLayoutConstraint.Priority? = nil,
+                                bottom: CGFloat? = nil, _ btmPriority: NSLayoutConstraint.Priority? = nil,
+                                leading: CGFloat? = nil, _ leadPriority: NSLayoutConstraint.Priority? = nil,
+                                trailing: CGFloat? = nil, _ trailPriority: NSLayoutConstraint.Priority? = nil) {
     addSubview(subview)
-    subview.addConstraintsToFillSuperview(top: top, bottom: bottom, leading: leading, trailing: trailing)
+    subview.addConstraintsToFillSuperview(top: top, topPriority,
+                                          bottom: bottom, btmPriority,
+                                          leading: leading, leadPriority,
+                                          trailing: trailing, trailPriority)
   }
 
   /// Get `NSImage` representation of the view.

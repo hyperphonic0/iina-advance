@@ -479,17 +479,19 @@ extension PlayerWindowController.LayoutTransition {
       // - Music Mode: Enter
       let baseGeo = inputGeometry
 
-      let middleWindowFrame = baseGeo.videoFrameInScreenCoords
-      return PWinGeometry(windowFrame: middleWindowFrame, screenID: baseGeo.screenID,
+      let closedWindowFrame = baseGeo.videoFrameInScreenCoords
+      return PWinGeometry(windowFrame: closedWindowFrame, screenID: baseGeo.screenID,
                           screenFit: baseGeo.screenFit, mode: .windowedNormal, topMarginHeight: 0,
                           outsideBars: .zero, insideBars: .zero, video: baseGeo.video)
 
     } else if isExitingMusicMode {
       // - Music Mode: Exit
-      // Only bottom bar needs to be closed. No need to constrain in screen
-      return inputGeometry.withResizedBars(mode: .windowedNormal,
-                                           outsideBottom: 0,
-                                           pinWidthOrHeightIfAtMax: false)
+      let baseGeo = inputGeometry
+
+      let closedWindowFrame = baseGeo.videoFrameInScreenCoords
+      return PWinGeometry(windowFrame: closedWindowFrame, screenID: baseGeo.screenID,
+                          screenFit: baseGeo.screenFit, mode: .windowedNormal, topMarginHeight: 0,
+                          outsideBars: .zero, insideBars: .zero, video: baseGeo.video)
     } else if inputGeometry.mode == .musicMode, outputGeometry.mode == .musicMode {
       // - Music Mode: Continuing
       if isTogglingViewport {
