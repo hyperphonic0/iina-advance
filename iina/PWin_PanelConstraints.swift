@@ -146,8 +146,8 @@ extension PlayerWindowController {
       topBarView.titleBarHeightConstraint.priority = .defaultHigh
     }
 
-    let isAnimatingVideoViewOpen = transition.isOpeningViewport && !stage.isFinalStage  // Music Mode: opening video
-    if useBottomBar && (!outputGeo.isViewportShown || isAnimatingVideoViewOpen) {
+    let isAnimatingViewportOpen = transition.isOpeningViewport && !stage.isFinalStage  // Music Mode: opening video
+    if useBottomBar && (!outputGeo.isViewportShown || isAnimatingViewportOpen) {
       let constant1 = stageGeo.bottomBarTopOffsetFromCVTop
       // Do not use "required" priority - can cause errors leaving music mode when video was hidden
       p.bottomBarTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
@@ -159,7 +159,7 @@ extension PlayerWindowController {
     }
 
     // BottomBar + Viewport
-    if useBottomBar && useViewport && !isAnimatingVideoViewOpen {
+    if useBottomBar && useViewport && !isAnimatingViewportOpen {
       let constant1 = stageGeo.vpBtmOffsetFromTopOfBottomBar
       let constant2 = stageGeo.bottomBarBtmOffsetFromVPBtm
       log.verbose("Updating bottomBar & viewport: vpBtmOffsetFromTopOfBottomBar=\(Int(constant1)) bottomBarBtmOffsetFromVPBtm=\(Int(constant2))")

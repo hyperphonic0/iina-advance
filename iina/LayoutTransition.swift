@@ -141,7 +141,7 @@ extension PlayerWindowController {
       || (inputLayout.enableOSC && (inputLayout.oscPosition.rawValue != outputLayout.oscPosition.rawValue))
       || isClosingLeadingSidebar || isClosingTrailingSidebar
       || (inputLayout.hasTopPaddingForCameraHousing != outputLayout.hasTopPaddingForCameraHousing)
-      || isClosingViewport  // notably, not currently using this step for closing playlist in music mode
+      || isClosingViewport || isClosingPlaylistInMusicMode
       || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
       || (inputLayout.isLegacyStyle != outputLayout.isLegacyStyle)
     }
@@ -164,6 +164,7 @@ extension PlayerWindowController {
       || isTopBarPlacementOrStyleChanging || isBottomBarPlacementOrStyleChanging
       || (inputLayout.isLegacyStyle != outputLayout.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
+      || isOpeningViewport || isOpeningPlaylistInMusicMode
       || (inputLayout.topBarHeight != outputLayout.topBarHeight)
       || (inputGeometry.insideBars.bottom != outputGeometry.insideBars.bottom)
       || (inputGeometry.outsideBars.bottom != outputGeometry.outsideBars.bottom)

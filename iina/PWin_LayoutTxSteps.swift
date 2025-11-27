@@ -484,7 +484,7 @@ extension PlayerWindowController {
 
     // - Music mode: entering or continuing)
 
-    if (transition.isEnteringMusicMode || transition.isTogglingPlaylistInMusicMode) && transition.outputGeometry.isMusicModePlaylistShown {
+    if transition.isEnteringMusicMode || transition.isOpeningPlaylistInMusicMode {
       // move playist view
       miniPlayer.loadIfNeeded()
       miniPlayer.addPlaylistViewIfMissing()

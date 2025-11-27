@@ -147,6 +147,10 @@ extension PlayerWindowController {
     } else if transition.isExitingInteractiveMode {
       showFadeableViewsDuration = 0
       fadeOutOldViewsDuration = startingAnimationDuration * 0.5
+    } else if !transition.isTogglingMusicMode && (transition.isClosingViewport || transition.isClosingPlaylistInMusicMode) {
+      showFadeableViewsDuration = startingAnimationDuration * 0.5
+      closeOldPanelsDuration = startingAnimationDuration * 2.0
+      fadeOutOldViewsDuration = startingAnimationDuration * 0.5
     } else {
       if !transition.needsShowFadeablesAnimation {
         showFadeableViewsDuration = 0
@@ -197,6 +201,9 @@ extension PlayerWindowController {
     } else if transition.isEnteringInteractiveMode {
       openFinalPanelsDuration *= 0.5
       fadeInNewViewsDuration *= 0.5
+    } else if !transition.isTogglingMusicMode && (transition.isOpeningViewport || transition.isOpeningPlaylistInMusicMode) {
+      openFinalPanelsDuration = endingAnimationDuration * 2 / 3
+      fadeInNewViewsDuration = endingAnimationDuration / 3 / 2
     } else {
       if !transition.needsFadeInNewViewsStep {
         fadeInNewViewsDuration = 0
@@ -207,7 +214,7 @@ extension PlayerWindowController {
       }
     }
 
-    log.verbose("[\(transition.name)] Task durations: ShowOldFadeables=\(showFadeableViewsDuration) FadeOutOldViews=\(fadeOutOldViewsDuration), CloseOldPanels=\(closeOldPanelsDuration) FadeInNewViews=\(fadeInNewViewsDuration) OpenFinalPanels=\(openFinalPanelsDuration)")
+    log.verbose("[\(transition.name)] Task durations: ShowOldFadeables=\(showFadeableViewsDuration) FadeOutOldViews=\(fadeOutOldViewsDuration), CloseOld=\(closeOldPanelsDuration) FadeInNew=\(fadeInNewViewsDuration) OpenFinal=\(openFinalPanelsDuration)")
 
     var tasks: [IINAAnimation.Task] = []
 
@@ -494,7 +501,7 @@ extension PlayerWindowController.LayoutTransition {
                           outsideBars: .zero, insideBars: .zero, video: baseGeo.video)
     } else if inputGeometry.mode == .musicMode, outputGeometry.mode == .musicMode {
       // - Music Mode: Continuing
-      if isTogglingViewport {
+      if isClosingViewport || isClosingPlaylistInMusicMode {
         return outputGeometry
       } else {
         return nil

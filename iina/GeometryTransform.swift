@@ -498,15 +498,14 @@ struct GeometryTransform {
           let isClosingViewport = inputMusicModeGeo.isViewportShown && !outputMusicModeGeo.isViewportShown
           let isOpeningPlaylist = !inputMusicModeGeo.isMusicModePlaylistShown && outputMusicModeGeo.isMusicModePlaylistShown
           let isClosingPlaylist = inputMusicModeGeo.isMusicModePlaylistShown && !outputMusicModeGeo.isMusicModePlaylistShown
-          // Closing playlist happens in OpenPanels step
-          let startingDuration = isClosingViewport ? duration : 0
-          let endingDuration = isOpeningViewport || isOpeningPlaylist || isClosingPlaylist ? duration : 0
+          let closingDuration = isClosingViewport || isClosingPlaylist ? duration : 0
+          let openingDuration = isOpeningViewport || isOpeningPlaylist ? duration : 0
 
           log.verbose("[GTF:\(name)] Building transition tasks for musicMode: sess=\(gtfSessionState) togglingVideo=\(isTogglingViewport.yn) togglingPlaylist=\(isTogglingPlaylist.yn) dur=\(duration) → \(outputMusicModeGeo)")
           // Need to use LayoutTransition for complex layout changes
           let transition = pwc.buildLayoutTransition(named: name, from: inputLayout,
                                                      to: outputLayout, outputGeo: outputMusicModeGeo, inputGeoSet)
-          return pwc.buildTasks(for: transition, totalStartingDuration: startingDuration, totalEndingDuration: endingDuration)
+          return pwc.buildTasks(for: transition, totalStartingDuration: closingDuration, totalEndingDuration: openingDuration)
         } else {
           let showDefaultArt: Bool? = shouldChangeDefaultArt
           log.verbose("[GTF:\(name)] Building 'apply' tasks for musicMode: sess=\(gtfSessionState) defaultArt=\(showDefaultArt?.yn ?? "nil") dur=\(duration) → \(outputMusicModeGeo)")
