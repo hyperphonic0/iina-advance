@@ -193,26 +193,26 @@ final class OSDState {
     osdVStackView.addView(osdAccessoryProgress, in: .leading)
 
     let initialIconSize: CGFloat = 45
-    osdIconWidthConstraint.createOrUpdate(to: initialIconSize, log) { [self] c in
+    osdIconWidthConstraint.createOrUpdate(to: initialIconSize, priorityInt: 1000, log) { [self] c in
       osdIconImageView.widthAnchor.constraint(equalToConstant: c)
     }
-    osdIconHeightConstraint.createOrUpdate(to: initialIconSize, log) { [self] c in
+    osdIconHeightConstraint.createOrUpdate(to: initialIconSize, priorityInt: 1000, log) { [self] c in
       osdIconImageView.heightAnchor.constraint(equalToConstant: c)
     }
 
-    osdTopPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
+    osdTopPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
       osdVStackView.topAnchor.constraint(equalTo: osdView.topAnchor, constant: c)
     }
-    osdBtmPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
+    osdBtmPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
       osdView.bottomAnchor.constraint(equalTo: osdVStackView.bottomAnchor, constant: c)
     }
-    osdLeadingPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
+    osdLeadingPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
       osdIconImageView.leadingAnchor.constraint(equalTo: osdView.leadingAnchor, constant: c)
     }
-    osdTrailingPaddingConstraint.createOrUpdate(to: standardOffset, log) { [self] c in
+    osdTrailingPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
       osdView.trailingAnchor.constraint(equalTo: osdVStackView.trailingAnchor, constant: c)
     }
-    osdProgressHeightConstraint.createOrUpdate(to: 0, log) { [self] c in
+    osdProgressHeightConstraint.createOrUpdate(to: 0, priorityInt: 1000, log) { [self] c in
       osdAccessoryProgress.heightAnchor.constraint(equalToConstant: c)
     }
 
@@ -766,6 +766,7 @@ extension PlayerWindowController {
       osd.queue.append({ [self] in
         // DO NOT use animationPipeline here. It is not needed, and will cause OSD to block
         _displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController)
+        updateOSDTextSize(andSetViewsFrom: msg)
       })
     }
     // Need to do the UI sync in the main queue
@@ -933,8 +934,6 @@ extension PlayerWindowController {
     } else {
       log.verbose("[OSD] Showing '\(msg)', no timeout")
     }
-
-    updateOSDTextSize(andSetViewsFrom: msg)
 
     let existingAccessoryViews = osd.osdVStackView.views(in: .bottom)
     if !existingAccessoryViews.isEmpty {

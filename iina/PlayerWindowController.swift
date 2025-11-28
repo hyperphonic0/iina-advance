@@ -1221,9 +1221,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func window(_ window: NSWindow, willUseFullScreenContentSize proposedSize: NSSize) -> NSSize {
-    let fsGeo = fullScreenGeo()
-    log.verbose("Full screen content size proposed=\(proposedSize), returning=\(fsGeo.windowFrame.size)")
-    return fsGeo.windowFrame.size
+    log.verbose("Full screen content size proposed=\(proposedSize), returning=\(proposedSize)")
+    return proposedSize
   }
 
   // MARK: - Window Delegate: window move, screen changes

@@ -391,7 +391,7 @@ extension PlayerWindowController {
         // Transitioning to/from native & windowed modes (but not while toggling FS)
         if transition.outputLayout.isLegacyStyle {
           // Set legacy style
-          setStyleForWindowedLegacy(log)
+          setStyleForLegacyWindowed(log)
 
           /// if `isTogglingLegacyStyle==true && isExitingFullScreen==true`, we are toggling out of legacy FS
           /// -> don't change `styleMask` to `.titled` here - it will look bad if screen has camera housing. Change at end of animation
@@ -1023,6 +1023,18 @@ extension PlayerWindowController {
       fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
     }
 
+    // Do this for either native windowed or FS
+    if !transition.outputLayout.isLegacyStyle {
+      setStyleMaskForNativeWindowed(log)
+      /// Same logic as in `fadeInNewViews()`
+      if transition.outputLayout.isMusicMode {
+        hideNativeTitleBarViews(andSetAlpha: false)
+      } else {
+        showNativeTitleBarViews()   /// do this again after adding `titled` style
+      }
+      updateTitle()
+    }
+
     if transition.isTogglingFullScreen {
       updatePanelBlendingModes(to: transition.outputLayout)
     }
@@ -1072,17 +1084,9 @@ extension PlayerWindowController {
       }
 
       if transition.outputLayout.isLegacyStyle {  // legacy windowed
-        setStyleForWindowedLegacy(log)
+        setStyleForLegacyWindowed(log)
         if let customTitleBar {
           customTitleBar.view.alphaValue = 1
-        }
-      } else {  // native windowed
-        setStyleMaskForNativeWindowed(log)
-        /// Same logic as in `fadeInNewViews()`
-        if transition.outputLayout.isMusicMode {
-          hideNativeTitleBarViews(andSetAlpha: false)
-        } else {
-          showNativeTitleBarViews()   /// do this again after adding `titled` style
         }
         updateTitle()
       }
@@ -1288,7 +1292,7 @@ extension PlayerWindowController {
   }
 
   /// Legacy windowed
-  private func setStyleForWindowedLegacy(_ log: any Logger.Subsystem) {
+  private func setStyleForLegacyWindowed(_ log: any Logger.Subsystem) {
     guard let window = window else { return }
     if window.styleMask.contains(.titled) {
       log.verbose("Removing styleMask '.titled' from window (entering legacy FS)")
@@ -1335,6 +1339,12 @@ extension PlayerWindowController {
   /// Special case for these because their instances may change. Do not use `fadeableViews`. Always set `alphaValue = 1`.
   func showNativeTitleBarViews() {
     guard let window = window else { return }
+    log.verbose("Showing native title bar views: trafficLights, titleText, docIcon, titleBarAccessories")
+//    guard window.styleMask.contains(.titled) || window.styleMask.contains(.fullScreen) else {
+//      log.error("Cannot show native title bar views: window styleMask !+ .titled or .fullScreen!")
+//      return
+//    }
+
     for button in trafficLightButtons {
       button.alphaValue = 1
       button.isHidden = false
@@ -1356,7 +1366,10 @@ extension PlayerWindowController {
 
   private func addTitleBarAccessoryViews() {
     guard let window = window else { return }
-    guard window.styleMask.contains(.titled) else { return }
+    guard window.styleMask.contains(.titled) else {
+      log.error("Cannot add title bar accessory views: window styleMask !+ .titled!")
+      return
+    }
 
     if leadingTitlebarAccesoryViewController == nil {
       let accessory = NSTitlebarAccessoryViewController()
