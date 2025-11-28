@@ -53,9 +53,6 @@ final class OSDState {
 
   // - Optional constraints
 
-  /// This keeps the OSD (if it is located on the leading side) from overlapping the window's traffic light buttons
-  let osdLeadingToMiniPlayerButtonsTrailingConstraint = OptionalConstraint("CloseBtn.leadingGT-LeadingOSD.trailing")
-
   fileprivate let leadingSide_TopOffsetConstraint = OptionalConstraint("LeadingOSD.top-offset-from-VP.top")
   fileprivate let leadingSide_BtmOffsetConstraint = OptionalConstraint("VP.btm-offset-from-LeadingOSD.btm")
   fileprivate let trailingSide_TopOffsetConstraint = OptionalConstraint("TrailingOSD-TopOffset")
@@ -68,7 +65,6 @@ final class OSDState {
 
   fileprivate var optionalConstraints: [OptionalConstraint] {
     [
-      osdLeadingToMiniPlayerButtonsTrailingConstraint,
       leadingSide_TopOffsetConstraint, leadingSide_BtmOffsetConstraint,
       trailingSide_TopOffsetConstraint, trailingSide_BtmOffsetConstraint,
       leadingSide_LeadingConstraint, leadingSide_TrailingConstraint,
@@ -544,11 +540,6 @@ extension PlayerWindowController {
                                                     requiredFirstAnchor: viewportView.bottomAnchor,
                                                     requiredSecondAnchor: leadingView.bottomAnchor, log) { [self] c in
         viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: leadingView.bottomAnchor, constant: c)
-      }
-
-      osd.osdLeadingToMiniPlayerButtonsTrailingConstraint.createOrUpdate(to: 4, priorityInt: lowerConstraintPriorityInt,
-                                                                         requiredFirstAnchor: leadingView.leadingAnchor, log) { [self] c in
-        leadingView.leadingAnchor.constraint(greaterThanOrEqualTo: exitMusicModeButton.trailingAnchor, constant: c)
       }
     }
 

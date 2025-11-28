@@ -452,16 +452,6 @@ struct Constants {
       static let oscSectionHSpacing: CGFloat = 3
     }
 
-    /// Distance between traffic light buttons (their alignment rects, which does not include some extra padding around
-    /// their images)
-    static var titleBarIconHSpacing: CGFloat = {
-      if #available(macOS 26.0, *) {
-        // Icon spacing increased in Tahoe
-        return 9
-      }
-      return 6
-    }()
-
     // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
     // (with no bar gradient or shading).
     static let seekPreviewTimeLabel_ShadowRadiusConstant: CGFloat = 3.0
@@ -472,6 +462,8 @@ struct Constants {
     static let oscClearBG_TextShadowBlurRadius_Constant: CGFloat = 0.5
     static let oscClearBG_TextShadowBlurRadius_Multiplier: CGFloat = 0.02
     // See also: Constants.Distance.Slider.shadowBlurRadius
+
+    // - Title Bar
 
     /**
      `NSWindow` doesn't provide title bar height directly, but we can derive it by asking `NSWindow` for
@@ -501,6 +493,16 @@ struct Constants {
         return closeBtn.frame.size
       }
       return CGSize(width: 14, height: 14)
+    }()
+
+    /// Distance between traffic light buttons (their alignment rects, which does not include some extra padding around
+    /// their images)
+    static var titleBarIconHSpacing: CGFloat = {
+      if #available(macOS 26.0, *) {
+        // Icon spacing increased in Tahoe
+        return 9
+      }
+      return 6
     }()
 
     struct Thumbnail {

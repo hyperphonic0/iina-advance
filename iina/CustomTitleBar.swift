@@ -16,27 +16,34 @@ fileprivate let inactiveControlOpacity: CGFloat = 0.40
 class CustomTitleBarViewController: NSViewController {
   unowned var pwc: PlayerWindowController!
 
-  // Leading side
+  // Leading side contains traffic light buttons + leading title bar accessories
   let leadingStackView = TitleBarButtonsContainerView()
   var closeButton: NSButton?
   var miniaturizeButton: NSButton?
   var zoomButton: NSButton?
   let leadingSidebarToggleButton = SymButton()
+  var isHoveringOverTrafficLights: Bool = false {
+    didSet {
+      leadingStackView.markButtonsDirty()
+    }
+  }
 
+  /// Convenience accessor which packages the standard window buttons
   var trafficLightButtons: [NSButton] {
     return [closeButton, miniaturizeButton, zoomButton].compactMap({ $0 })
   }
 
-  // Center
+  // Center stack view: contains document icon + title text
   let centerStackView = NSStackView()
   var documentIconButton: NSButton!
   let titleText = ResizableTextView(lineBreakMode: .byTruncatingTail)
 
-  // Trailing side
+  // Trailing side contains trailing title bar accessories
   let trailingStackView = NSStackView()
   let trailingSidebarToggleButton = SymButton()
   let onTopButton = SymButton()
 
+  /// Convenience accessor which packages all the `SymButton` buttons.
   var symButtons: [SymButton] {
     return [leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton]
   }
@@ -70,6 +77,7 @@ class CustomTitleBarViewController: NSViewController {
                                     action: #selector(pwc.toggleLeadingSidebarVisibility(_:)),
                                     bounceOnClick: true)
 
+    // Add fake traffic light buttons:
     leadingStackView.setViews(trafficLightButtons + [leadingSidebarToggleButton], in: .center)
     leadingStackView.identifier = .init("TitleBar-LeadingStackView")
     leadingStackView.orientation = .horizontal
@@ -79,6 +87,7 @@ class CustomTitleBarViewController: NSViewController {
     leadingStackView.distribution = .fill
     leadingStackView.edgeInsets = NSEdgeInsets(top: 0, left: iconSpacingH, bottom: 0, right: iconSpacingH)
     leadingStackView.setHuggingPriority(.init(500), for: .horizontal)
+    leadingStackView.customTitleBar = self
 
     for btn in trafficLightButtons {
       btn.alphaValue = 1
@@ -143,29 +152,6 @@ class CustomTitleBarViewController: NSViewController {
     view.configureSubtreeForCoreAnimation()
 
     pwc.log.verbose("CustomTitleBar viewDidLoad done")
-  }
-
-
-  func updateTrackingAreas() {
-    removeTrackingAreas()
-    addTrackingAreas()
-  }
-
-  func addTrackingAreas() {
-    for btn in trafficLightButtons {
-      /// This solution works better than using `window` as owner, because with that the green button would get stuck with highlight
-      /// when menu was shown.
-      let options: NSTrackingArea.Options = [.activeAlways, .inVisibleRect, .mouseEnteredAndExited]
-      btn.addTrackingArea(NSTrackingArea(rect: btn.bounds, options: options, owner: leadingStackView, userInfo: nil))
-    }
-  }
-
-  func removeTrackingAreas() {
-    for view in trafficLightButtons {
-      for area in view.trackingAreas {
-        view.removeTrackingArea(area)
-      }
-    }
   }
 
   private func initConstraints() {
@@ -306,26 +292,18 @@ class CustomTitleBarViewController: NSViewController {
 /// Leading stack view for custom title bar. Needed to subclass parent view of traffic light buttons
 /// in order to get their highlight working properly. See: https://stackoverflow.com/a/30417372/1347529
 final class TitleBarButtonsContainerView: NSStackView {
-  var isMouseInside: Bool = false
+  var customTitleBar: CustomTitleBarViewController? = nil
 
   @objc func _mouseInGroup(_ button: NSButton) -> Bool {
-    return isMouseInside
+    guard let customTitleBar else { return false }
+    return customTitleBar.isHoveringOverTrafficLights
   }
 
   func markButtonsDirty() {
     for btn in views {
+      btn.needsLayout = true  // is crucial to set this in MacOS Tahoe
       btn.needsDisplay = true
     }
-  }
-
-  override func mouseEntered(with event: NSEvent) {
-    isMouseInside = true
-    markButtonsDirty()
-  }
-
-  override func mouseExited(with event: NSEvent) {
-    isMouseInside = false
-    markButtonsDirty()
   }
 }
 

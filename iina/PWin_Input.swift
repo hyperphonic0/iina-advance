@@ -204,7 +204,6 @@ extension PlayerWindowController {
       addedCount += 1
     }
 
-    customTitleBar?.addTrackingAreas()
     log.verbose("Added \(addedCount) tracking areas")
   }
 
@@ -218,7 +217,6 @@ extension PlayerWindowController {
         }
       }
     }
-    customTitleBar?.removeTrackingAreas()
     log.verbose("Removed \(removedCount) tracking areas")
   }
 
@@ -680,6 +678,14 @@ extension PlayerWindowController {
     let pointInWindow = mouseLocationInWindow
 
     log.trace{"MouseDidMoveInWindow @ \(pointInWindow)"}
+
+    if let customTitleBar {
+      if isMouseCurrentlyInside(anyOf: customTitleBar.trafficLightButtons) {
+        customTitleBar.isHoveringOverTrafficLights = true
+      } else {
+        customTitleBar.isHoveringOverTrafficLights = false
+      }
+    }
 
     // Update hover effect(s)
     if !isInInteractiveMode {

@@ -435,6 +435,10 @@ extension PlayerWindowController {
     /// But may need to add or remove from fadeableViews
     fadeableViews.applyVisibility(outputLayout.bottomBarView, to: bottomBarView)
 
+    if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
+      rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
+    }
+
     // Title bar views
 
     // For some reason, transitioning to/from interactive mode messes up the alignment of CustomTitleBar's title text.
@@ -465,7 +469,6 @@ extension PlayerWindowController {
       }
 
       legacyTitleBar.addViewTo(superview: topBarView.titleBarView)
-      legacyTitleBar.updateTrackingAreas()  // call this *after* attaching to superview
       fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: legacyTitleBar.leadingSidebarToggleButton)
       fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: legacyTitleBar.trailingSidebarToggleButton)
       fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: legacyTitleBar.onTopButton)
@@ -481,10 +484,6 @@ extension PlayerWindowController {
     if transition.outputLayout.isMusicMode {
       // Need to call this for initial layout also, or if toggling video:
       updateMusicModeButtonsVisibility(using: transition.outputGeometry)
-    }
-
-    if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
-      rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }
 
     // - Music mode: entering or continuing)

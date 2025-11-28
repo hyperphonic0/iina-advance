@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class PlayerCore: NSObject {
+final class PlayerCore: NSObject {
   typealias SimpleCallback = () -> Void
   typealias OnSuccessCallback = () -> Void
   typealias OnErrorCallback = (String) -> Void

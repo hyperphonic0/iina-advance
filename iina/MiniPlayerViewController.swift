@@ -204,8 +204,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   private func showControls() {
     log.trace("MiniPlayer: showing OSC controls / hiding media info")
-    pwc.osd.osdLeadingToMiniPlayerButtonsTrailingConstraint.constraint?.priority = .required
-    // FIXME:
     pwc.exitMusicModeButton.isHidden = false
     pwc.exitMusicModeButton.animator().alphaValue = 1
     if let window, window.styleMask.contains(.titled) {
@@ -229,7 +227,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   /// Hides media info, shows OSC controls (synchronous version)
   func hideControls() {
     log.trace("MiniPlayer: hiding OSC controls / showing media info")
-    pwc.osd.osdLeadingToMiniPlayerButtonsTrailingConstraint.constraint?.priority = .defaultLow
 
     if let window, window.styleMask.contains(.titled) {
       for btn in pwc.trafficLightButtons[0...1] {

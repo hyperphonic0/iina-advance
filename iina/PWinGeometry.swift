@@ -185,8 +185,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   ///  Needs to include topMarginHeight if it exists. We never want the OSD to overlap with the notch.
   ///  (We do allow the OSC to overlap with the notch though).
   func osdOffsetFromTopOfViewport() -> CGFloat {
+    if mode == .musicMode {
+      return Constants.Distance.standardTitleBarHeight
+    }
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
-
     if screenFit == .nativeFullScreen {
       return max(0, insideBars.top) + 8
     } else {
