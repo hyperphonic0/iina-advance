@@ -105,8 +105,10 @@ extension PlayerWindowController {
       exitMusicModeButton.target = self
       exitMusicModeButton.action = #selector(backBtnAction(_:))
       exitMusicModeButton.toolTip = "Back to video mode"
+      // Add to traffic light buttons
       exitMusicModeButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 54).isActive = true
-      exitMusicModeButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 11).isActive = true
+      // Center vertically with traffic light buttons
+      exitMusicModeButton.centerYAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.Distance.standardTitleBarHeight / 2).isActive = true
 
 
       initBufferIndicatorView()

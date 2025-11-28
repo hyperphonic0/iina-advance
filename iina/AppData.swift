@@ -496,6 +496,13 @@ struct Constants {
       return standardTitleBarHeight
     }()
 
+    static let trafficLightButtonSize: CGSize = {
+      if let closeBtn = NSWindow.standardWindowButton(.closeButton, for: .titled) {
+        return closeBtn.frame.size
+      }
+      return CGSize(width: 14, height: 14)
+    }()
+
     struct Thumbnail {
       static let minHeight: CGFloat = 24
       static let extraOffsetX: CGFloat = 15
@@ -679,7 +686,8 @@ struct Images {
   static let volume1 = makeSymbol(named: "speaker.wave.1.fill", fallbackName: "volume-1", desc: "Volume 1 Wave", weight: .medium)
   static let volume2 = makeSymbol(named: "speaker.wave.2.fill", fallbackName: "volume-2", desc: "Volume 2 Waves", weight: .medium)
   static let volume3 = makeSymbol(named: "speaker.wave.3.fill", fallbackName: "volume", desc: "Volume Full", weight: .medium)
-  static let backwardsCircle = makeSymbol(named: "arrowshape.backward.circle.fill", fallbackName: "volume", desc: "Go Back", weight: .bold)
+  /// Used the Exit Music Mode button
+  static let backwardsCircle = makeSymbol(named: "arrowshape.backward.circle.fill", fallbackName: "arrowshape.backward.circle.fill", desc: "Go Back", ptSize: Constants.Distance.trafficLightButtonSize.height, weight: .regular, scale: .medium)
 }
 
 struct DebugConfig {

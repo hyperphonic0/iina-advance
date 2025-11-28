@@ -189,7 +189,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   func showOrHideControls() {
-    guard let window else { return }
     if pwc.isMouseCurrentlyInside(anyOf: [musicModeControlBarView, pwc.viewportView]) {
       showControls()
     } else {
