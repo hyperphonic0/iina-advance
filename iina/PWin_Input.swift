@@ -634,29 +634,34 @@ extension PlayerWindowController {
   override func mouseExited(with event: NSEvent) {
     guard !isValidDragInProgress() else { return }
     // Currently, the same modes are able to show fadeable views as being able to hide the cursor
-    guard !currentLayout.mode.mustShowCursorAlways else { return }
+    if !currentLayout.mode.mustShowCursorAlways {
+      guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
+        log.warn("MouseExited: no data for tracking area!")
+        return
+      }
 
-    guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
-      log.warn("MouseExited: no data for tracking area!")
-      return
+      switch area {
+      case .playerWindow:
+        // Show cursor if not already shown
+        // FIXME: only if mouse is not inside any window
+        log.trace("MouseExited from playerWindow: showing (normal) cursor")
+        setCursorToNormalAlwaysShown()
+
+        if !isAnimatingLayoutTransition, Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
+          log.verbose("MouseExited from playerWindow: hiding fadeableViews")
+          hideFadeableViews()
+        } else {
+          // Closes loophole in case cursor hovered over OSC before exiting (in which case timer was destroyed)
+          fadeableViews.hideTimer.restart()
+        }
+      default:
+        break
+      }
     }
 
-    switch area {
-    case .playerWindow:
-      // Show cursor if not already shown
-      // FIXME: only if mouse is not inside any window
-      log.trace("MouseExited from playerWindow: showing (normal) cursor")
-      setCursorToNormalAlwaysShown()
-
-      if !isAnimatingLayoutTransition, Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
-        log.verbose("MouseExited from playerWindow: hiding fadeableViews")
-        hideFadeableViews()
-      } else {
-        // Closes loophole in case cursor hovered over OSC before exiting (in which case timer was destroyed)
-        fadeableViews.hideTimer.restart()
-      }
-    default:
-      break
+    if player.isInMiniPlayer {
+      miniPlayer.loadIfNeeded()
+      miniPlayer.showOrHideControls()
     }
   }
 
@@ -686,32 +691,39 @@ extension PlayerWindowController {
     }
 
     // Update mouse cursor
-    guard !currentLayout.mode.mustShowCursorAlways else { return }
+    if !currentLayout.mode.mustShowCursorAlways {
 
-    // FIXME: need to use global logic instead
-    if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
-        isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: pointInWindow) {
-      /// Hovering within area which can resize a sidebar? Set or unset the cursor to `resizeLeftRight`
-      applyCustomCursor(.resizing_BothDirections)
-    } else if isPoint(pointInWindow, inAnyOf: [volumeSlider]) {
-      applyCustomCursor(.hoveringInSlider)
-    } else if isPointInPlaySliderAndNotOtherViews(pointInWindow: pointInWindow) {
-      applyCustomCursor(.hoveringInSlider)
-    } else {
-      // TODO: finish implementing hide cursor
-      /*if player.shouldAlwaysHideCursor {
-        log.verbose("Hiding cursor")
-        hideCursorTimer.cancel()
-        NSCursor.hide()
-      } else {*/
+      // FIXME: need to use global logic instead
+      if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: pointInWindow) ||
+          isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: pointInWindow) {
+        /// Hovering within area which can resize a sidebar? Set or unset the cursor to `resizeLeftRight`
+        applyCustomCursor(.resizing_BothDirections)
+      } else if isPoint(pointInWindow, inAnyOf: [volumeSlider]) {
+        applyCustomCursor(.hoveringInSlider)
+      } else if isPointInPlaySliderAndNotOtherViews(pointInWindow: pointInWindow) {
+        applyCustomCursor(.hoveringInSlider)
+      } else {
+        // TODO: finish implementing hide cursor
+        /*if player.shouldAlwaysHideCursor {
+         log.verbose("Hiding cursor")
+         hideCursorTimer.cancel()
+         NSCursor.hide()
+         } else {*/
         applyCustomCursor(.normalCursor)
         NSCursor.setHiddenUntilMouseMoves(false) // show if not shown
                                                  // Always hide after timeout even if OSD fade time is longer
         hideCursorTimer.restart()
-//      }
+        //      }
+      }
     }
 
     showFadeableViewsForMouseLocation(pointInWindow)
+
+    /// Show Controller and window controls if hovering over either `musicModeControlBarView` or `viewportView`.
+    if player.isInMiniPlayer {
+      miniPlayer.loadIfNeeded()
+      miniPlayer.showOrHideControls()
+    }
   }
 
   // Do not show hover cursor if over a button or other view which overlaps PlaySlider.
@@ -761,8 +773,12 @@ extension PlayerWindowController {
     return visibleView
   }
 
-  func isMouseActuallyInside(view: NSView) -> Bool {
+  func isMouseCurrentlyInside(view: NSView) -> Bool {
     return isPoint(mouseLocationInWindow, inAnyOf: [view])
+  }
+
+  func isMouseCurrentlyInside(anyOf views: [NSView]) -> Bool {
+    return isPoint(mouseLocationInWindow, inAnyOf: views)
   }
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {

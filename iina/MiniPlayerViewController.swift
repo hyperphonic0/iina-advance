@@ -122,10 +122,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     mediaInfoView.clipsToBounds = true
     mediaInfoView.translatesAutoresizingMaskIntoConstraints = false
 
-    /// Set up tracking area to show controller when hovering over it
-    pwc.viewportView.addTrackingArea(NSTrackingArea(rect: pwc.viewportView.bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
-    musicModeControlBarView.addTrackingArea(NSTrackingArea(rect: musicModeControlBarView.bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
-
     // hide controls initially
     controllerButtonsPanelView.alphaValue = 0
 
@@ -173,30 +169,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   // MARK: - UI: Controller
 
-  /// Shows Controller on hover
-  override func mouseEntered(with event: NSEvent) {
-    guard player.isInMiniPlayer else { return }
-    pwc.animationPipeline.submitTask(duration: Constants.AnimationDuration.musicModeShowButtons, { [self] in
-      showOrHideControls()
-    })
-  }
-
-  /// Hides Controller when hover leaves controller area
-  override func mouseExited(with event: NSEvent) {
-    guard player.isInMiniPlayer else { return }
-
-    /// The goal is to always show the control when the cursor is hovering over either of the 2 tracking areas.
-    /// Although they are adjacent to each other, `mouseExited` can still be called when moving from one to the other.
-    /// Detect and ignore this case.
-    guard !pwc.isMouseEvent(event, inAnyOf: [musicModeControlBarView, pwc.viewportView]) else {
-      return
-    }
-
-    pwc.animationPipeline.submitTask(duration: Constants.AnimationDuration.musicModeShowButtons, { [self] in
-      showOrHideControls()
-    })
-  }
-
   func addPlaylistViewIfMissing() {
     // move playist view
     let playlistView = pwc.playlistView.view
@@ -218,9 +190,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   func showOrHideControls() {
     guard let window else { return }
-    let mouseLocation = NSEvent.mouseLocation
-    let locationInWindow = window.convertPoint(fromScreen: mouseLocation)
-    if pwc.viewportView.isInsideViewFrame(pointInWindow: locationInWindow) || musicModeControlBarView.isInsideViewFrame(pointInWindow: locationInWindow) {
+    if pwc.isMouseCurrentlyInside(anyOf: [musicModeControlBarView, pwc.viewportView]) {
       showControls()
     } else {
       hideControls()
