@@ -474,7 +474,13 @@ extension PlayerWindowController {
         legacyTitleBar = CustomTitleBarViewController(transition.outputLayout.mode)
         legacyTitleBar.pwc = self
         customTitleBar = legacyTitleBar
-        legacyTitleBar.view.alphaValue = 0  // prep it to fade in later
+
+        // Prep views to fade in later
+        legacyTitleBar.view.alphaValue = 0
+        for btn in legacyTitleBar.trafficLightButtons {
+          btn.alphaValue = 0
+          btn.isHidden = true
+        }
       }
 
       if transition.outputLayout.mode == .musicMode {
@@ -954,9 +960,14 @@ extension PlayerWindowController {
     fadeableViews.applyVisibility(outputLayout.topBarView, to: topBarView)
 
     // If exiting FS, the openNewPanels and fadInNewViews steps are combined. Wait till later
-    if outputLayout.titleBar.isShowable {
-
-      if !transition.isExitingFullScreen {
+    if outputLayout.titleBar.isShowable && !transition.isExitingFullScreen {
+      if transition.outputLayout.mode == .musicMode {
+        if let customTitleBar {
+          customTitleBar.view.alphaValue = 1
+          customTitleBar.view.isHidden = false
+        }
+        miniPlayer.showOrHideControls()
+      } else {
         if outputLayout.isLegacyStyle, let customTitleBar {  // Legacy windowed mode
           for view in [customTitleBar.view] + customTitleBar.trafficLightButtons {
             view.alphaValue = 1
@@ -969,7 +980,6 @@ extension PlayerWindowController {
         // covers both native & custom variants
         updateTitleBarUI(from: outputLayout)
       }
-
     }
 
     if let cropController = cropSettingsView {
