@@ -616,14 +616,21 @@ extension PlayerWindowController {
   override func mouseEntered(with event: NSEvent) {
     guard !isValidDragInProgress() else { return }
     guard !isInInteractiveMode else { return }
+
     guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
       log.warn("No data for tracking area")
       return
     }
 
+    // Fadeable views
     switch area {
     case .playerWindow:
-      showFadeableViewsForMouseLocation(mouseLocationInWindow)
+      if player.isInMiniPlayer {
+        miniPlayer.loadIfNeeded()
+        miniPlayer.showOrHideControls()
+      } else {
+        showFadeableViewsForMouseLocation(mouseLocationInWindow)
+      }
     default:
       break
     }
@@ -631,35 +638,34 @@ extension PlayerWindowController {
 
   override func mouseExited(with event: NSEvent) {
     guard !isValidDragInProgress() else { return }
-    // Currently, the same modes are able to show fadeable views as being able to hide the cursor
-    if !currentLayout.mode.mustShowCursorAlways {
-      guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
-        log.warn("MouseExited: no data for tracking area!")
-        return
-      }
+    guard let area = event.trackingArea?.userInfo?[TrackingArea.key] as? TrackingArea else {
+      log.warn("MouseExited: no data for tracking area!")
+      return
+    }
 
-      switch area {
-      case .playerWindow:
+    switch area {
+    case .playerWindow:
+      // Cursor
+      if !currentLayout.mode.mustShowCursorAlways {
         // Show cursor if not already shown
         // FIXME: only if mouse is not inside any window
         log.trace("MouseExited from playerWindow: showing (normal) cursor")
         setCursorToNormalAlwaysShown()
-
-        if !isAnimatingLayoutTransition, Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
-          log.verbose("MouseExited from playerWindow: hiding fadeableViews")
-          hideFadeableViews()
-        } else {
-          // Closes loophole in case cursor hovered over OSC before exiting (in which case timer was destroyed)
-          fadeableViews.hideTimer.restart()
-        }
-      default:
-        break
       }
-    }
 
-    if player.isInMiniPlayer {
-      miniPlayer.loadIfNeeded()
-      miniPlayer.showOrHideControls()
+      if player.isInMiniPlayer {
+        miniPlayer.loadIfNeeded()
+        miniPlayer.showOrHideControls()
+      } else if !isAnimatingLayoutTransition, Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
+        // Hide fadeable views if configured
+        log.verbose("MouseExited from playerWindow: hiding fadeableViews")
+        hideFadeableViews()
+      } else {
+        // Closes loophole in case cursor hovered over OSC before exiting (in which case timer was destroyed)
+        fadeableViews.hideTimer.restart()
+      }
+    default:
+      break
     }
   }
 
@@ -680,6 +686,7 @@ extension PlayerWindowController {
     log.trace{"MouseDidMoveInWindow @ \(pointInWindow)"}
 
     if let customTitleBar {
+      // Enable show/hide of icons when hovering over traffic light buttons, mimicking native title bar
       if isMouseCurrentlyInside(anyOf: customTitleBar.trafficLightButtons) {
         customTitleBar.isHoveringOverTrafficLights = true
       } else {
@@ -723,12 +730,13 @@ extension PlayerWindowController {
       }
     }
 
-    showFadeableViewsForMouseLocation(pointInWindow)
-
-    /// Show Controller and window controls if hovering over either `musicModeControlBarView` or `viewportView`.
+    // Fadeable views
     if player.isInMiniPlayer {
+      /// Show Controller and window controls if hovering over either `musicModeControlBarView` or `viewportView`.
       miniPlayer.loadIfNeeded()
       miniPlayer.showOrHideControls()
+    } else {
+      showFadeableViewsForMouseLocation(pointInWindow)
     }
   }
 

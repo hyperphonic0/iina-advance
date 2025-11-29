@@ -1524,10 +1524,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   /// Music mode only!
-  func withVideoViewVisible(_ visible: Bool) -> PWinGeometry {
+  func withViewportVisible(_ visible: Bool) -> PWinGeometry {
     guard mode == .musicMode else {
-      log.error("Cannot call PWinGeometry.withVideoViewVisible when mode ≠ music mode: \(self)")
-      assert(false, "Cannot call PWinGeometry.withVideoViewVisible when mode ≠ music mode: \(self)")  // fail fast when debugging
+      log.error("Cannot call PWinGeometry.withViewportVisible when mode ≠ music mode: \(self)")
+      assert(false, "Cannot call PWinGeometry.withViewportVisible when mode ≠ music mode: \(self)")  // fail fast when debugging
       return self
     }
     guard self.isViewportShown != visible else { return self }

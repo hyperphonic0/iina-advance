@@ -348,6 +348,9 @@ extension PlayerWindowController {
       if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
         controlBarFloating.moveToLocationRatio(parentGeo: closeOldPanelsGeo)
       }
+
+      // Need to call this for initial layout also, or if toggling video:
+      updateMusicModeButtonOffsets(using: closeOldPanelsGeo)
     }
   }
 
@@ -481,11 +484,6 @@ extension PlayerWindowController {
       exitMusicModeButton.isHidden = true
     }
 
-    if transition.outputLayout.isMusicMode {
-      // Need to call this for initial layout also, or if toggling video:
-      updateMusicModeButtonsVisibility(using: transition.outputGeometry)
-    }
-
     // - Music mode: entering or continuing)
 
     if transition.isEnteringMusicMode || transition.isOpeningPlaylistInMusicMode {
@@ -549,9 +547,6 @@ extension PlayerWindowController {
     }  // End toggling music mode
 
     if transition.outputLayout.isMusicMode {
-      // Need to call this for initial layout also, or if toggling video:
-      updateMusicModeButtonsVisibility(using: transition.outputGeometry)
-
       // FIXME: refactor to put most of this into `rebuildPanelConstraints`
       if !transition.outputGeometry.isViewportShown && !transition.outputLayout.isInPiP {
         viewportView.removeViewportConstraints()
@@ -856,6 +851,9 @@ extension PlayerWindowController {
 
     rebuildPanelConstraints(transition, stage: .openNewPanels)
 
+    // Need to call this for initial layout also, or if toggling video:
+    updateMusicModeButtonOffsets(using: transition.outputGeometry)
+
     if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
       let newGeo = outputLayout.controlBarGeo
@@ -936,9 +934,9 @@ extension PlayerWindowController {
   /// FADE IN NEW VIEWS
   /// Expected to be animated.
   func fadeInNewViews(_ transition: LayoutTransition) {
-    let logPre = "[\(transition.name)-FadeInNewViews"
+    let log = Logger.addPreamble("[\(transition.name)-FadeInNewViews", toSubsystem: log)
     let outputLayout = transition.outputLayout
-    log.verbose("\(logPre) Start")
+    log.verbose("Start")
 
     fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating)
     fadeableViews.applyVisibility(outputLayout.topBarView, to: topBarView)
@@ -954,7 +952,7 @@ extension PlayerWindowController {
             }
           }
         } else {  // Native windowed or FS mode
-          showNativeTitleBarViews()
+          showNativeTitleBarViews(iconAndTitleText: outputLayout.titleIconAndText, log)
         }
         // covers both native & custom variants
         updateTitleBarUI(from: outputLayout)
@@ -1029,7 +1027,7 @@ extension PlayerWindowController {
       if transition.outputLayout.isMusicMode {
         hideNativeTitleBarViews(andSetAlpha: false)
       } else {
-        showNativeTitleBarViews()   /// do this again after adding `titled` style
+        showNativeTitleBarViews(iconAndTitleText: transition.outputLayout.titleIconAndText, log)   /// do this again after adding `titled` style
       }
       updateTitle()
     }
@@ -1127,7 +1125,7 @@ extension PlayerWindowController {
     if transition.outputLayout.titleBar.isShowable {
       if !transition.outputLayout.isLegacyStyle {
         /// Special case: need to wait until now to call `trafficLightButtons.isHidden = false` due to their quirks
-        showNativeTitleBarViews()
+        showNativeTitleBarViews(iconAndTitleText: transition.outputLayout.titleIconAndText, log)
       }
       updateTitleBarUI(from: transition.outputLayout)  // covers both native & custom variants
     }
@@ -1248,6 +1246,7 @@ extension PlayerWindowController {
   /// effectively swaps the whole title bar in or out), and (2) in native windowed mode, *always* show the title bar when
   /// the mouse hovers over it, because even if we set the document icon's alpha to 0, the user can still click on it.
   func hideNativeTitleBarViews(andSetAlpha setAlpha: Bool) {
+    log.verbose("Hiding native title bar views, setAlpha\(setAlpha.yn)")
     if setAlpha {
       documentIconButton?.alphaValue = 0
       titleTextField?.alphaValue = 0
@@ -1336,23 +1335,16 @@ extension PlayerWindowController {
   }
 
   /// Special case for these because their instances may change. Do not use `fadeableViews`. Always set `alphaValue = 1`.
-  func showNativeTitleBarViews() {
+  func showNativeTitleBarViews(iconAndTitleText: VisibilityMode, _ log: any Logger.Subsystem) {
     guard let window = window else { return }
-    log.verbose("Showing native title bar views: trafficLights, titleText, docIcon, titleBarAccessories")
-//    guard window.styleMask.contains(.titled) || window.styleMask.contains(.fullScreen) else {
-//      log.error("Cannot show native title bar views: window styleMask !+ .titled or .fullScreen!")
-//      return
-//    }
+    log.verbose("Showing native title bar views: iconAndTitleText=\(iconAndTitleText)")
 
     for button in trafficLightButtons {
       button.alphaValue = 1
       button.isHidden = false
     }
 
-    titleTextField?.isHidden = false
-    titleTextField?.alphaValue = 1
-    documentIconButton?.isHidden = false
-    documentIconButton?.alphaValue = 1
+    fadeableViews.applyVisibility(iconAndTitleText, titleTextField, documentIconButton)
 
     if #available(macOS 11.0, *) {
       window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow

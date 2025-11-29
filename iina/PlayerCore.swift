@@ -3398,7 +3398,7 @@ final class PlayerCore: NSObject {
         log.verbose("[GTF:\(ctx.name)] Showing viewport in music mode (visibleNow=\(inputMusicModeGeo.isViewportShown.yesno))")
         miniPlayerShowVideoTimer.cancel()
         guard ctx.inputLayout.isMusicMode && !inputMusicModeGeo.isViewportShown else { return nil }
-        let newGeo = inputMusicModeGeo.clone(video: ctx.outputVidGeo).withVideoViewVisible(true)
+        let newGeo = inputMusicModeGeo.clone(video: ctx.outputVidGeo).withViewportVisible(true)
         return newGeo
       })
 

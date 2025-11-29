@@ -325,13 +325,13 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     })
   }
 
-  /// Action: Show/Hide `videoView`
+  /// Action: Show/Hide `videoView` (same as hiding `viewportView`)
   @IBAction func toggleVideoViewVisibleState(_ sender: AnyObject?) {
     pwc.animationPipeline.submitInstantTask({ [self] in
-      let showVideoView = !isViewportShown
-      log.verbose("MusicMode: user clicked btn: toggling viewport visibility: \((!showVideoView).yn) → \(showVideoView.yn)")
+      let showViewport = !isViewportShown
+      log.verbose("MusicMode: user clicked btn: toggling viewport visibility: \((!showViewport).yn) → \(showViewport.yn)")
 
-      if showVideoView {
+      if showViewport {
         /// If showing video, call `setVideoTrackEnabled()`, then do animations, for a nicer effect.
         player.setVideoTrackEnabled(thenDoAction: .showViewportInMusicMode)
       } else {
@@ -347,7 +347,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
           guard ctx.inputLayout.mode == .musicMode, ctx.outputLayout.mode == .musicMode else { return nil }
 
           let inputMusicModeGeo = ctx.inputGeoSet.musicMode
-          let outputMusicModeGeo = inputMusicModeGeo.withVideoViewVisible(false)
+          let outputMusicModeGeo = inputMusicModeGeo.withViewportVisible(false)
           log.verbose("MusicMode: changing viewport visibility: \(inputMusicModeGeo.isViewportShown.yesno) → \(outputMusicModeGeo.isViewportShown.yesno), H=\(outputMusicModeGeo.videoHeight)")
           return outputMusicModeGeo
         })

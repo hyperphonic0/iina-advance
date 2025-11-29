@@ -2203,7 +2203,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// In music mode, there is different styling depending on whether viewport is visible.
   /// Need to adjust layout of buttons depending on layout.
-  func updateMusicModeButtonsVisibility(using targetGeo: PWinGeometry) {
+  func updateMusicModeButtonOffsets(using targetGeo: PWinGeometry) {
     if targetGeo.mode == .musicMode {
       miniPlayer.loadIfNeeded()
       let isViewportShown = targetGeo.isViewportShown

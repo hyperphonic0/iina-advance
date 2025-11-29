@@ -18,10 +18,21 @@ class CustomTitleBarViewController: NSViewController {
 
   // Leading side contains traffic light buttons + leading title bar accessories
   let leadingStackView = TitleBarButtonsContainerView()
-  var closeButton: NSButton?
-  var miniaturizeButton: NSButton?
-  var zoomButton: NSButton?
+  let closeButton: NSButton? = NSWindow.standardWindowButton(.closeButton, for: .titled)
+  let miniaturizeButton: NSButton? = NSWindow.standardWindowButton(.miniaturizeButton, for: .titled)
+  let zoomButton: NSButton? = NSWindow.standardWindowButton(.zoomButton, for: .titled)
   let leadingSidebarToggleButton = SymButton()
+
+  // Center stack view: contains document icon + title text
+  let centerStackView = NSStackView()
+  let documentIconButton: NSButton! = NSWindow.standardWindowButton(.documentIconButton, for: .titled)
+  let titleText = ResizableTextView(lineBreakMode: .byTruncatingTail)
+
+  // Trailing side contains trailing title bar accessories
+  let trailingStackView = NSStackView()
+  let trailingSidebarToggleButton = SymButton()
+  let onTopButton = SymButton()
+
   var isHoveringOverTrafficLights: Bool = false {
     didSet {
       leadingStackView.markButtonsDirty()
@@ -32,16 +43,6 @@ class CustomTitleBarViewController: NSViewController {
   var trafficLightButtons: [NSButton] {
     return [closeButton, miniaturizeButton, zoomButton].compactMap({ $0 })
   }
-
-  // Center stack view: contains document icon + title text
-  let centerStackView = NSStackView()
-  var documentIconButton: NSButton!
-  let titleText = ResizableTextView(lineBreakMode: .byTruncatingTail)
-
-  // Trailing side contains trailing title bar accessories
-  let trailingStackView = NSStackView()
-  let trailingSidebarToggleButton = SymButton()
-  let onTopButton = SymButton()
 
   /// Convenience accessor which packages all the `SymButton` buttons.
   var symButtons: [SymButton] {
@@ -61,13 +62,6 @@ class CustomTitleBarViewController: NSViewController {
 
     // - Leading views
 
-    // Add fake traffic light buttons:
-
-    closeButton = NSWindow.standardWindowButton(.closeButton, for: .titled)
-    miniaturizeButton = NSWindow.standardWindowButton(.miniaturizeButton, for: .titled)
-    zoomButton = NSWindow.standardWindowButton(.zoomButton, for: .titled)
-    let trafficLightButtons = trafficLightButtons
-
     // Add leading title bar accessory view
 
     builder.configureTitleBarButton(leadingSidebarToggleButton,
@@ -78,6 +72,7 @@ class CustomTitleBarViewController: NSViewController {
                                     bounceOnClick: true)
 
     // Add fake traffic light buttons:
+    let trafficLightButtons = trafficLightButtons
     leadingStackView.setViews(trafficLightButtons + [leadingSidebarToggleButton], in: .center)
     leadingStackView.identifier = .init("TitleBar-LeadingStackView")
     leadingStackView.orientation = .horizontal
@@ -105,7 +100,6 @@ class CustomTitleBarViewController: NSViewController {
     // See https://github.com/indragiek/INAppStoreWindow/blob/master/INAppStoreWindow/INAppStoreWindow.m
     pwc.window!.representedURL = pwc.player.info.currentURL
 
-    documentIconButton = NSWindow.standardWindowButton(.documentIconButton, for: .titled)
     documentIconButton.image = Utility.icon(for: pwc.player.info.currentURL,
                                             optimizingForHeight: documentIconButton.frame.height)
 

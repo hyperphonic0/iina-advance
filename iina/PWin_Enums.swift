@@ -249,8 +249,6 @@ enum PlayerWindowMode: Int, CustomStringConvertible {
     return self == .windowedNormal || self == .fullScreenNormal
   }
 
-  /// Currently, the modes which always must show the cursor are the same modes which have no fadeable views,
-  /// so this flag can be used as a test for both.
   var mustShowCursorAlways: Bool {
     switch self {
     case .windowedNormal, .fullScreenNormal:

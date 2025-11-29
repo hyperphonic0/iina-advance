@@ -235,7 +235,8 @@ struct LayoutState {
                                              isLegacyStyle: Bool) -> VisibilityMode {
     switch mode {
     case .musicMode:
-      return .hidden
+      // Currently we use a different mechanism to show these simliar to fadeable views, so just use .showAlways here
+      return .showAlways
     case .fullScreenNormal, .fullScreenInteractive:
       return isLegacyStyle ? .hidden : .showAlways
     case .windowedInteractive:
@@ -245,9 +246,9 @@ struct LayoutState {
     }
   }
 
-  var titleIconAndText: VisibilityMode { titleBar }
+  var titleIconAndText: VisibilityMode { mode == .musicMode ? .hidden : titleBar }
   var trafficLightButtons: VisibilityMode { titleBar }
-  var titlebarAccessoryViewControllers: VisibilityMode { isLegacyStyle ? .hidden : titleBar }
+  var titlebarAccessoryViewControllers: VisibilityMode { (isLegacyStyle || mode == .musicMode) ? .hidden : titleBar }
 
   var bottomBarView: VisibilityMode {
     switch mode {
@@ -412,7 +413,11 @@ struct LayoutState {
   }
 
   var topBarHeight: CGFloat {
-    titleBarHeight + topOSCHeight
+    if mode == .musicMode {
+      // special case: title bar is not inside top bar
+      return 0
+    }
+    return titleBarHeight + topOSCHeight
   }
 
   var hasTopBar: Bool {
@@ -507,8 +512,10 @@ struct LayoutState {
   }
 
   func computeOnTopButtonVisibility(isOnTop: Bool) -> VisibilityMode {
-    let showOnTopStatus = Preference.bool(for: .alwaysShowOnTopIcon) || isOnTop
-    if isFullScreen || isMusicMode || !showOnTopStatus {
+    if isFullScreen || isMusicMode {
+      return .hidden
+    }
+    guard Preference.bool(for: .alwaysShowOnTopIcon) || isOnTop else {
       return .hidden
     }
 

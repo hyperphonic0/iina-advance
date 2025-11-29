@@ -198,11 +198,15 @@ extension PlayerWindowController {
             if targetLayout.isLegacyStyle {
               customTitleBar?.view.animator().alphaValue = 1
             } else {
-              for button in trafficLightButtons {
-                button.alphaValue = 1
+              if targetLayout.trafficLightButtons == .showFadeableTopBar {
+                for button in trafficLightButtons {
+                  button.alphaValue = 1
+                }
               }
-              titleTextField?.alphaValue = 1
-              documentIconButton?.alphaValue = 1
+              if targetLayout.titleIconAndText == .showFadeableTopBar {
+                titleTextField?.alphaValue = 1
+                documentIconButton?.alphaValue = 1
+              }
             }
           }
         }  // end top bar
@@ -230,11 +234,15 @@ extension PlayerWindowController {
             if targetLayout.isLegacyStyle {
               customTitleBar?.view.isHidden = false
             } else {
-              for button in trafficLightButtons {
-                button.isHidden = false
+              if targetLayout.trafficLightButtons == .showFadeableTopBar {
+                for button in trafficLightButtons {
+                  button.isHidden = false
+                }
               }
-              titleTextField?.isHidden = false
-              documentIconButton?.isHidden = false
+              if targetLayout.titleIconAndText == .showFadeableTopBar {
+                titleTextField?.isHidden = false
+                documentIconButton?.isHidden = false
+              }
             }
           }
         }  // end top bar
