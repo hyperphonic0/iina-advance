@@ -405,7 +405,7 @@ extension PlayerWindowController {
         }
 
         if transition.outputLayout.isMusicMode {
-          miniPlayer.showOrHideControls()
+          miniPlayer.hideControls()
         }
       case .fullScreenInteractive, .fullScreenNormal:
         break
@@ -492,7 +492,9 @@ extension PlayerWindowController {
     fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: trailingSidebarToggleButton)
     fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: onTopButton)
     fadeableViews.applyOnlyIfHidden(outputLayout.titleIconAndText, documentIconButton, titleTextField)
-    exitMusicModeButton.isHidden = outputLayout.mode != .musicMode
+    if outputLayout.mode != .musicMode {
+      exitMusicModeButton.isHidden = true
+    }
 
     // - Music mode: entering or continuing)
 
@@ -966,10 +968,6 @@ extension PlayerWindowController {
 
         // covers both native & custom variants
         updateTitleBarUI(from: outputLayout)
-
-        if outputLayout.mode == .musicMode {
-          miniPlayer.showOrHideControls()
-        }
       }
 
     }

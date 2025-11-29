@@ -88,6 +88,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBOutlet weak var artistAlbumLabel: ScrollingTextField!
   @IBOutlet weak var togglePlaylistButton: SymButton!
   @IBOutlet weak var toggleAlbumArtButton: SymButton!
+  /// This is adjusted when the viewport is open/closed
   @IBOutlet weak var volumeButtonLeadingConstraint: NSLayoutConstraint!
 
   let playlistWrapperTopBorder = BorderLineView(id: "MusicMode-PL-Wrapper-TopBorder", fillColor: .quaternaryLabelColor)
@@ -221,10 +222,10 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     }
 
     pwc.exitMusicModeButton.isHidden = false
-    pwc.exitMusicModeButton.animator().alphaValue = 1
+    pwc.exitMusicModeButton.alphaValue = 1
 
-    controllerButtonsPanelView.animator().alphaValue = 1
-    mediaInfoView.animator().alphaValue = 0
+    controllerButtonsPanelView.alphaValue = 1
+    mediaInfoView.alphaValue = 0
   }
 
   /// Hides media info, shows OSC controls (runs as async task in animationPipeline)
@@ -252,10 +253,10 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     }
 
     pwc.exitMusicModeButton.isHidden = true
-    pwc.exitMusicModeButton.animator().alphaValue = 0
+    pwc.exitMusicModeButton.alphaValue = 0
 
-    controllerButtonsPanelView.animator().alphaValue = 0
-    mediaInfoView.animator().alphaValue = 1
+    controllerButtonsPanelView.alphaValue = 0
+    mediaInfoView.alphaValue = 1
   }
 
   // MARK: - UI: Media Info

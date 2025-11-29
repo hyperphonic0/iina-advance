@@ -2210,7 +2210,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     if targetGeo.mode == .musicMode {
       let isViewportShown = targetGeo.isViewportShown
       // Push the volume button to the right if the buttons on at the same vertical position
-      miniPlayer.volumeButtonLeadingConstraint.animateToConstant(isViewportShown ? 12 : 64)
+      miniPlayer.volumeButtonLeadingConstraint.animateToConstant(isViewportShown ? 12 : 70)
       miniPlayer.volumeButtonLeadingConstraint.priority = .required
     } else {
       miniPlayer.volumeButtonLeadingConstraint.priority = .minimum
