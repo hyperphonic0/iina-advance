@@ -361,7 +361,8 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     /// Notification callback: Enqueue in backgroundQueue to ensure happens-before relationship
     backgroundQueue.async { [self] in
       guard let entry = HistoryController.shared.history(forURL: url) else {
-        log.error("Cannot update file history: no entry found for URL: \(url)")
+        // No history for URL. Can happen if URL was removed from history, or simply never played
+        log.verbose("No entry found for URL in history, skipping: \(url.path.pii.quoted)")
         return
       }
 

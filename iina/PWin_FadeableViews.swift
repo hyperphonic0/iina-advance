@@ -76,12 +76,21 @@ extension PlayerWindowController {
       }
     }
 
-    func applyOnlyIfHidden(_ visibility: VisibilityMode, to fadeableView: NSView, isTopBar: Bool = true) {
+    func applyOnlyIfHidden(_ visibility: VisibilityMode, to fadeableView: NSView) {
       guard visibility == .hidden else { return }
       applyVisibility(visibility, fadeableView)
     }
 
-    func applyOnlyIfShowable(_ visibility: VisibilityMode, to fadeableView: NSView, isTopBar: Bool = true) {
+    func applyOnlyIfHidden(_ visibility: VisibilityMode, _ views: NSView?...) {
+      guard visibility == .hidden else { return }
+      for fadeableView in views {
+        if let fadeableView {
+          applyVisibility(visibility, to: fadeableView)
+        }
+      }
+    }
+
+    func applyOnlyIfShowable(_ visibility: VisibilityMode, to fadeableView: NSView) {
       guard visibility != .hidden else { return }
       applyVisibility(visibility, fadeableView)
     }

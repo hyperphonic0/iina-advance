@@ -204,14 +204,25 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   private func showControls() {
     log.trace("MiniPlayer: showing OSC controls / hiding media info")
-    pwc.exitMusicModeButton.isHidden = false
-    pwc.exitMusicModeButton.animator().alphaValue = 1
-    if let window, window.styleMask.contains(.titled) {
-      for btn in pwc.trafficLightButtons[0...1] {
+
+    if let customTitleBar = pwc.customTitleBar {
+      for btn in customTitleBar.trafficLightButtons {
         btn.alphaValue = 1
         btn.isHidden = false
       }
     }
+
+    let trafficLightButtons = pwc.trafficLightButtons
+    if trafficLightButtons.count >= 2 {
+      for btn in trafficLightButtons[0...1] {
+        btn.alphaValue = 1
+        btn.isHidden = false
+      }
+    }
+
+    pwc.exitMusicModeButton.isHidden = false
+    pwc.exitMusicModeButton.animator().alphaValue = 1
+
     controllerButtonsPanelView.animator().alphaValue = 1
     mediaInfoView.animator().alphaValue = 0
   }
@@ -228,14 +239,21 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   func hideControls() {
     log.trace("MiniPlayer: hiding OSC controls / showing media info")
 
-    if let window, window.styleMask.contains(.titled) {
-      for btn in pwc.trafficLightButtons[0...1] {
+    if let customTitleBar = pwc.customTitleBar {
+      for btn in customTitleBar.trafficLightButtons {
         btn.alphaValue = 0
         btn.isHidden = true
       }
     }
+
+    for btn in pwc.trafficLightButtons {
+      btn.alphaValue = 0
+      btn.isHidden = true
+    }
+
     pwc.exitMusicModeButton.isHidden = true
     pwc.exitMusicModeButton.animator().alphaValue = 0
+
     controllerButtonsPanelView.animator().alphaValue = 0
     mediaInfoView.animator().alphaValue = 1
   }

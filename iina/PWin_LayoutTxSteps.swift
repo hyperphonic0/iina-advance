@@ -388,7 +388,8 @@ extension PlayerWindowController {
       break
     }
 
-    if !transition.isTogglingFullScreen {
+    if !transition.isTogglingFullScreen, transition.isTogglingLegacyStyle {
+
       switch transition.outputLayout.mode {
       case .windowedNormal, .windowedInteractive, .musicMode:
         // Transitioning to/from native & windowed modes (but not while toggling FS)
@@ -402,9 +403,14 @@ extension PlayerWindowController {
           // Native style
           setStyleMaskForNativeWindowed(log)
         }
+
+        if transition.outputLayout.isMusicMode {
+          miniPlayer.showOrHideControls()
+        }
       case .fullScreenInteractive, .fullScreenNormal:
         break
       }
+
     }
 
 
@@ -465,24 +471,28 @@ extension PlayerWindowController {
       if let customTitleBar {
         legacyTitleBar = customTitleBar
       } else {
-        legacyTitleBar = CustomTitleBarViewController()
+        legacyTitleBar = CustomTitleBarViewController(transition.outputLayout.mode)
         legacyTitleBar.pwc = self
         customTitleBar = legacyTitleBar
         legacyTitleBar.view.alphaValue = 0  // prep it to fade in later
       }
 
-      legacyTitleBar.addViewTo(superview: topBarView.titleBarView)
+      if transition.outputLayout.mode == .musicMode {
+        legacyTitleBar.addViewTo(superview: window.contentView!)
+      } else {
+        legacyTitleBar.addViewTo(superview: topBarView.titleBarView)
+      }
       fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: legacyTitleBar.leadingSidebarToggleButton)
       fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: legacyTitleBar.trailingSidebarToggleButton)
       fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: legacyTitleBar.onTopButton)
+      fadeableViews.applyOnlyIfHidden(outputLayout.titleIconAndText, to: legacyTitleBar.titleIconAndTextStackView)
     }
 
     fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: leadingSidebarToggleButton)
     fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: trailingSidebarToggleButton)
     fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: onTopButton)
-    if outputLayout.mode != .musicMode {
-      exitMusicModeButton.isHidden = true
-    }
+    fadeableViews.applyOnlyIfHidden(outputLayout.titleIconAndText, documentIconButton, titleTextField)
+    exitMusicModeButton.isHidden = outputLayout.mode != .musicMode
 
     // - Music mode: entering or continuing)
 
@@ -943,22 +953,25 @@ extension PlayerWindowController {
 
     // If exiting FS, the openNewPanels and fadInNewViews steps are combined. Wait till later
     if outputLayout.titleBar.isShowable {
+
       if !transition.isExitingFullScreen {
-        if outputLayout.isLegacyStyle {  // Legacy windowed mode
-          for view in [customTitleBar?.view] {
-            if let view {
-              view.alphaValue = 1
-              view.isHidden = false
-            }
+        if outputLayout.isLegacyStyle, let customTitleBar {  // Legacy windowed mode
+          for view in [customTitleBar.view] + customTitleBar.trafficLightButtons {
+            view.alphaValue = 1
+            view.isHidden = false
           }
         } else {  // Native windowed or FS mode
-          showNativeTitleBarViews(iconAndTitleText: outputLayout.titleIconAndText, log)
+          showNativeTitleBarViews(outputLayout, log)
         }
+
         // covers both native & custom variants
         updateTitleBarUI(from: outputLayout)
+
+        if outputLayout.mode == .musicMode {
+          miniPlayer.showOrHideControls()
+        }
       }
-    } else if outputLayout.mode == .musicMode {
-      miniPlayer.showOrHideControls()
+
     }
 
     if let cropController = cropSettingsView {
@@ -1027,7 +1040,7 @@ extension PlayerWindowController {
       if transition.outputLayout.isMusicMode {
         hideNativeTitleBarViews(andSetAlpha: false)
       } else {
-        showNativeTitleBarViews(iconAndTitleText: transition.outputLayout.titleIconAndText, log)   /// do this again after adding `titled` style
+        showNativeTitleBarViews(transition.outputLayout, log)   /// do this again after adding `titled` style
       }
       updateTitle()
     }
@@ -1123,11 +1136,13 @@ extension PlayerWindowController {
     rebuildPanelConstraints(transition, stage: .postTransition)
 
     if transition.outputLayout.titleBar.isShowable {
-      if !transition.outputLayout.isLegacyStyle {
-        /// Special case: need to wait until now to call `trafficLightButtons.isHidden = false` due to their quirks
-        showNativeTitleBarViews(iconAndTitleText: transition.outputLayout.titleIconAndText, log)
-      }
+      /// Special case: need to wait until now to call `trafficLightButtons.isHidden = false` due to their quirks
+      showNativeTitleBarViews(transition.outputLayout, log)
       updateTitleBarUI(from: transition.outputLayout)  // covers both native & custom variants
+
+      if transition.outputLayout.mode == .musicMode {
+        miniPlayer.showOrHideControls()
+      }
     }
 
     if transition.isTogglingMusicMode {
@@ -1210,6 +1225,9 @@ extension PlayerWindowController {
     guard let window else { return }
     updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
     let enableGlow = Preference.bool(for: .titleBarBtnsGlow)
+
+    log.verbose("Updating title bar UI for \(layoutState.mode): enableGlow=\(enableGlow.yn), docIconAndText=\(layoutState.titleIconAndText)")
+
     // Leading sidebar toggle button
     for button in [leadingSidebarToggleButton, customTitleBar?.leadingSidebarToggleButton].compactMap({$0}) {
       if layoutState.leadingSidebarToggleButton.isShowable {
@@ -1223,6 +1241,12 @@ extension PlayerWindowController {
         button.setGlowForTitleBar(enabled: enableGlow && layoutState.trailingSidebar.isVisible)
       }
       fadeableViews.applyVisibility(layoutState.trailingSidebarToggleButton, button)
+    }
+
+    if let customTitleBar {
+      fadeableViews.applyVisibility(layoutState.titleIconAndText, to: customTitleBar.titleIconAndTextStackView)
+    } else {
+      fadeableViews.applyVisibility(layoutState.titleIconAndText, titleTextField, documentIconButton)
     }
 
     updateOnTopButton(from: layoutState, showIfFadeable: false)
@@ -1334,14 +1358,22 @@ extension PlayerWindowController {
     window.hasShadow = true
   }
 
-  /// Special case for these because their instances may change. Do not use `fadeableViews`. Always set `alphaValue = 1`.
-  func showNativeTitleBarViews(iconAndTitleText: VisibilityMode, _ log: any Logger.Subsystem) {
+  /// Special case for traffic light buttons because their instances may change.
+  /// Do not use `fadeableViews`. Always set `alphaValue = 1`.
+  func showNativeTitleBarViews(_ targetLayout: LayoutState, _ log: any Logger.Subsystem) {
     guard let window = window else { return }
+    guard !targetLayout.isLegacyStyle else { return }
+    let iconAndTitleText: VisibilityMode = targetLayout.titleIconAndText
     log.verbose("Showing native title bar views: iconAndTitleText=\(iconAndTitleText)")
 
-    for button in trafficLightButtons {
-      button.alphaValue = 1
-      button.isHidden = false
+    closeButton?.alphaValue = 1
+    closeButton?.isHidden = false
+    miniaturizeButton?.alphaValue = 1
+    miniaturizeButton?.isHidden = false
+
+    if targetLayout.mode != .musicMode {
+      zoomButton?.alphaValue = 1
+      zoomButton?.isHidden = false
     }
 
     fadeableViews.applyVisibility(iconAndTitleText, titleTextField, documentIconButton)

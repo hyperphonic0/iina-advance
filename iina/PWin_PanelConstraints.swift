@@ -679,10 +679,16 @@ extension PlayerWindowController {
     possibleSubviews += [
       seekPreview.thumbnailPeekView,
       seekPreview.timeLabel,
-      topBarView,
+      topBarView
+    ]
+    if let customTitleBar {  // only for music mode
+      possibleSubviews.append(customTitleBar.view)
+    }
+    possibleSubviews += [
       exitMusicModeButton,
       customWindowBorderBox,
-      customWindowBorderTopHighlightBox]
+      customWindowBorderTopHighlightBox
+    ]
 
     let contentView = window!.contentView!
     let correctOrderedSubviews = possibleSubviews.filter { contentView.containsSubview($0) }

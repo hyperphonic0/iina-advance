@@ -499,6 +499,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     window?.standardWindowButton(.documentIconButton)
   }
 
+  var closeButton: NSButton? { window?.standardWindowButton(.closeButton) }
+  var miniaturizeButton: NSButton? { window?.standardWindowButton(.miniaturizeButton) }
+  var zoomButton: NSButton? { window?.standardWindowButton(.zoomButton) }
+
   /// The traffic light buttons of the window's native title bar (given that window's styleMask contains `.titled`).
   var trafficLightButtons: [NSButton] {
     if let window, window.styleMask.contains(.titled) {
@@ -1449,8 +1453,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func updateColorsForKeyWindowStatus(isKey: Bool) {
     if let customTitleBar {
-      // The traffic light buttons should change to active/inactive
-      customTitleBar.leadingStackView.markButtonsDirty()
       updateTitle()
     } else {
       /// Duplicate some of the logic in `customTitleBar.refreshTitle()`
@@ -2204,8 +2206,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// In music mode, there is different styling depending on whether viewport is visible.
   /// Need to adjust layout of buttons depending on layout.
   func updateMusicModeButtonOffsets(using targetGeo: PWinGeometry) {
+    miniPlayer.loadIfNeeded()
     if targetGeo.mode == .musicMode {
-      miniPlayer.loadIfNeeded()
       let isViewportShown = targetGeo.isViewportShown
       // Push the volume button to the right if the buttons on at the same vertical position
       miniPlayer.volumeButtonLeadingConstraint.animateToConstant(isViewportShown ? 12 : 64)

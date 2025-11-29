@@ -17,21 +17,31 @@ class CustomTitleBarViewController: NSViewController {
   unowned var pwc: PlayerWindowController!
 
   // Leading side contains traffic light buttons + leading title bar accessories
-  let leadingStackView = TitleBarButtonsContainerView()
-  let closeButton: NSButton? = NSWindow.standardWindowButton(.closeButton, for: .titled)
-  let miniaturizeButton: NSButton? = NSWindow.standardWindowButton(.miniaturizeButton, for: .titled)
-  let zoomButton: NSButton? = NSWindow.standardWindowButton(.zoomButton, for: .titled)
+  fileprivate let leadingStackView = TitleBarButtonsContainerView()
+  let closeButton: NSButton?
+  let miniaturizeButton: NSButton?
+  let zoomButton: NSButton?
   let leadingSidebarToggleButton = SymButton()
 
-  // Center stack view: contains document icon + title text
-  let centerStackView = NSStackView()
-  let documentIconButton: NSButton! = NSWindow.standardWindowButton(.documentIconButton, for: .titled)
-  let titleText = ResizableTextView(lineBreakMode: .byTruncatingTail)
+  /// Center stack view: contains document icon + title text
+  let titleIconAndTextStackView = NSStackView()
+  fileprivate let documentIconButton: NSButton! = NSWindow.standardWindowButton(.documentIconButton, for: .titled)
+  fileprivate let titleText = ResizableTextView(lineBreakMode: .byTruncatingTail)
 
   // Trailing side contains trailing title bar accessories
-  let trailingStackView = NSStackView()
+  fileprivate let trailingStackView = NSStackView()
   let trailingSidebarToggleButton = SymButton()
   let onTopButton = SymButton()
+
+  init(_ mode: PlayerWindowMode) {
+    closeButton = NSWindow.standardWindowButton(.closeButton, for: .titled)
+    miniaturizeButton = NSWindow.standardWindowButton(.miniaturizeButton, for: .titled)
+    zoomButton = mode == .musicMode ? nil : NSWindow.standardWindowButton(.zoomButton, for: .titled)
+
+    super.init(nibName: nil, bundle: nil)
+  }
+  
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
   var isHoveringOverTrafficLights: Bool = false {
     didSet {
@@ -107,14 +117,14 @@ class CustomTitleBarViewController: NSViewController {
     titleText.font = NSFont.titleBarFont(ofSize: NSFont.systemFontSize(for: .regular))
     titleText.textColor = .labelColor
 
-    centerStackView.setViews([documentIconButton, titleText], in: .center)
-    centerStackView.detachesHiddenViews = true
-    centerStackView.identifier = .init("TitleBar-CenterStackView")
-    centerStackView.orientation = .horizontal
-    centerStackView.alignment = .centerY
-    centerStackView.spacing = 0
-    centerStackView.distribution = .fill
-    centerStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+    titleIconAndTextStackView.setViews([documentIconButton, titleText], in: .center)
+    titleIconAndTextStackView.detachesHiddenViews = true
+    titleIconAndTextStackView.identifier = .init("TitleBar-CenterStackView")
+    titleIconAndTextStackView.orientation = .horizontal
+    titleIconAndTextStackView.alignment = .centerY
+    titleIconAndTextStackView.spacing = 0
+    titleIconAndTextStackView.distribution = .fill
+    titleIconAndTextStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
 
     // - Trailing views
 
@@ -155,7 +165,7 @@ class CustomTitleBarViewController: NSViewController {
 
     // Stack views:
     view.addSubview(leadingStackView)
-    view.addSubview(centerStackView)
+    view.addSubview(titleIconAndTextStackView)
     view.addSubview(trailingStackView)
     initConstraintsForStackViews()
 
@@ -164,28 +174,28 @@ class CustomTitleBarViewController: NSViewController {
 
   private func initConstraintsForStackViews() {
     leadingStackView.translatesAutoresizingMaskIntoConstraints = false
-    centerStackView.translatesAutoresizingMaskIntoConstraints = false
+    titleIconAndTextStackView.translatesAutoresizingMaskIntoConstraints = false
     trailingStackView.translatesAutoresizingMaskIntoConstraints = false
 
     // Vertical constraints:
 
     leadingStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
-    centerStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
+    titleIconAndTextStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
     trailingStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
 
     // Horizontal constraints:
 
     leadingStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
 
-    let centerStackLeadingEqCon = centerStackView.leadingAnchor.constraint(equalTo: leadingStackView.trailingAnchor)
+    let centerStackLeadingEqCon = titleIconAndTextStackView.leadingAnchor.constraint(equalTo: leadingStackView.trailingAnchor)
     centerStackLeadingEqCon.priority = .init(400)
     centerStackLeadingEqCon.isActive = true
-    centerStackView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor).isActive = true
+    titleIconAndTextStackView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor).isActive = true
 
-    let centerStackTrailingEqCon = centerStackView.trailingAnchor.constraint(equalTo: trailingStackView.trailingAnchor)
+    let centerStackTrailingEqCon = titleIconAndTextStackView.trailingAnchor.constraint(equalTo: trailingStackView.trailingAnchor)
     centerStackTrailingEqCon.priority = .init(400)
     centerStackTrailingEqCon.isActive = true
-    centerStackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingStackView.leadingAnchor).isActive = true
+    titleIconAndTextStackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingStackView.leadingAnchor).isActive = true
 
     trailingStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
   }
@@ -196,7 +206,7 @@ class CustomTitleBarViewController: NSViewController {
     // (>= 500 would interfere with window resize).
     // We want text's horizontal center to align with window's center, but more importantly it should use up
     // all available horizontal space.
-    let cenXCon = centerStackView.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: 0)
+    let cenXCon = titleIconAndTextStackView.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: 0)
     cenXCon.priority = .init(401)  // make priority greater than leading & trailing EQ constraints above
     cenXCon.isActive = true
     titleText.setContentCompressionResistancePriority(.init(499), for: .horizontal)  // allow truncation
@@ -221,7 +231,7 @@ class CustomTitleBarViewController: NSViewController {
     trailTitleConEQ.isActive = true
   }
 
-  // Add to [different] superview
+  /// Add to [different] superview and add constraints
   func addViewTo(superview: NSView) {
     superview.addSubview(view)
     view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
@@ -267,6 +277,10 @@ class CustomTitleBarViewController: NSViewController {
       }
       btn.contentTintColor = btn.regularColor
     }
+
+    // We may have been called due to key window status change.
+    // Redraw the traffic light buttons to change to active/inactive
+    leadingStackView.markButtonsDirty()
   }
 
   func removeAndCleanUp() {
