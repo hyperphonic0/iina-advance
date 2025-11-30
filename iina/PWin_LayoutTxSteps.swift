@@ -959,8 +959,7 @@ extension PlayerWindowController {
     fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating)
     fadeableViews.applyVisibility(outputLayout.topBarView, to: topBarView)
 
-    // If exiting FS, the openNewPanels and fadInNewViews steps are combined. Wait till later
-    if outputLayout.titleBar.isShowable && !transition.isExitingFullScreen {
+    if outputLayout.titleBar.isShowable {
       if transition.outputLayout.mode == .musicMode {
         if let customTitleBar {
           customTitleBar.view.alphaValue = 1
@@ -973,7 +972,7 @@ extension PlayerWindowController {
             view.alphaValue = 1
             view.isHidden = false
           }
-        } else {  // Native windowed or FS mode
+        } else if outputLayout.isWindowed {  // Native windowed
           showNativeTitleBarViews(outputLayout, log)
         }
 
@@ -1044,12 +1043,6 @@ extension PlayerWindowController {
     // Do this for either native windowed or FS
     if !transition.outputLayout.isLegacyStyle {
       setStyleMaskForNativeWindowed(log)
-      /// Same logic as in `fadeInNewViews()`
-      if transition.outputLayout.isMusicMode {
-        hideNativeTitleBarViews(andSetAlpha: false)
-      } else {
-        showNativeTitleBarViews(transition.outputLayout, log)   /// do this again after adding `titled` style
-      }
       updateTitle()
     }
 
@@ -1144,8 +1137,14 @@ extension PlayerWindowController {
     rebuildPanelConstraints(transition, stage: .postTransition)
 
     if transition.outputLayout.titleBar.isShowable {
-      /// Special case: need to wait until now to call `trafficLightButtons.isHidden = false` due to their quirks
-      showNativeTitleBarViews(transition.outputLayout, log)
+      if !transition.outputLayout.isLegacyStyle {
+        /// Special case: need to wait until now to call `trafficLightButtons.isHidden = false` due to their quirks
+        showNativeTitleBarViews(transition.outputLayout, log)
+        /// Title bar accessories get removed by fullscreen or if window `styleMask` did not include `.titled`.
+        /// Add them back:
+        addTitleBarAccessoryViews()
+      }
+
       updateTitleBarUI(from: transition.outputLayout)  // covers both native & custom variants
 
       if transition.outputLayout.mode == .musicMode {
@@ -1389,10 +1388,6 @@ extension PlayerWindowController {
     if #available(macOS 11.0, *) {
       window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
     }
-
-    /// Title bar accessories get removed by fullscreen or if window `styleMask` did not include `.titled`.
-    /// Add them back:
-    addTitleBarAccessoryViews()
   }
 
   private func addTitleBarAccessoryViews() {
@@ -1403,6 +1398,7 @@ extension PlayerWindowController {
     }
 
     if leadingTitlebarAccesoryViewController == nil {
+      log.verbose("Creating leadingTitlebarAccesoryViewController")
       let accessory = NSTitlebarAccessoryViewController()
       leadingTitlebarAccesoryViewController = accessory
       accessory.view = leadingTitleBarAccessoryView
@@ -1411,6 +1407,7 @@ extension PlayerWindowController {
     }
 
     if trailingTitlebarAccesoryViewController == nil {
+      log.verbose("Creating trailingTitlebarAccesoryViewController")
       let accessory = NSTitlebarAccessoryViewController()
       trailingTitlebarAccesoryViewController = accessory
       accessory.view = trailingTitleBarAccessoryView
@@ -1419,12 +1416,14 @@ extension PlayerWindowController {
     }
 
     if !window.titlebarAccessoryViewControllers.contains(leadingTitlebarAccesoryViewController!) {
+      log.verbose("Adding leadingTitlebarAccesory to window")
       window.addTitlebarAccessoryViewController(leadingTitlebarAccesoryViewController!)
       leadingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
       leadingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
     }
 
     if !window.titlebarAccessoryViewControllers.contains(trailingTitlebarAccesoryViewController!) {
+      log.verbose("Adding leadingTitlebarAccesory to window")
       window.addTitlebarAccessoryViewController(trailingTitlebarAccesoryViewController!)
       trailingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
       trailingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
