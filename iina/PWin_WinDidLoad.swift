@@ -176,13 +176,21 @@ extension PlayerWindowController {
                                     action: #selector(toggleLeadingSidebarVisibility(_:)),
                                     bounceOnClick: true)
 
+    // Need to add trailing padding for each . But can't use edgeInsets of stack view because that seems to result in constraint errors.
+    // Use a spacer instead
+    let leadingAccTrailingSpacer = SpacerView(id: "LeadingTBAccTrailingSpacer")
+    let leadingAccTrailingSpaceConstraint = leadingAccTrailingSpacer.widthAnchor.constraint(equalToConstant: 0)
+    leadingAccTrailingSpaceConstraint.priority = .defaultHigh
+    leadingAccTrailingSpaceConstraint.isActive = true
+
     leadingTB.orientation = .horizontal
     leadingTB.alignment = .centerY
     leadingTB.distribution = .fill
-    leadingTB.spacing = 0
+    leadingTB.spacing = iconSpacingH
     leadingTB.detachesHiddenViews = true
 
     leadingTB.addArrangedSubview(leadingSidebarToggleButton)
+    leadingTB.addArrangedSubview(leadingAccTrailingSpacer)
 
     // - TRAILING
 
@@ -202,15 +210,21 @@ extension PlayerWindowController {
                                     action: #selector(toggleTrailingSidebarVisibility(_:)),
                                     bounceOnClick: true)
 
+    let trailingAccTrailingSpacer = SpacerView(id: "TrailingTBAccTrailingSpacer")
+    let trailingAccTrailingSpaceConstraint = trailingAccTrailingSpacer.widthAnchor.constraint(equalToConstant: 0)
+    trailingAccTrailingSpaceConstraint.priority = .defaultHigh
+    trailingAccTrailingSpaceConstraint.isActive = true
+
     trailingTB.orientation = .horizontal
     trailingTB.alignment = .centerY
     trailingTB.detachesHiddenViews = true
     trailingTB.distribution = .fill
     trailingTB.spacing = iconSpacingH
-    trailingTB.edgeInsets = NSEdgeInsets(top: 0, left: iconSpacingH, bottom: 0, right: iconSpacingH)
+    trailingTB.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
 
     trailingTB.addArrangedSubview(trailingSidebarToggleButton)
     trailingTB.addArrangedSubview(onTopButton)
+    trailingTB.addArrangedSubview(trailingAccTrailingSpacer)
   }
 
   private func initOSCToolbar() {

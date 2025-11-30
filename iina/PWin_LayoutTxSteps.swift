@@ -981,19 +981,15 @@ extension PlayerWindowController {
       }
     }
 
-    if let cropController = cropSettingsView {
-      if transition.outputLayout.isInteractiveMode {
-        // show crop settings view
-        cropController.view.alphaValue = 1
-        cropController.cropBoxView.isHidden = false
-        cropController.cropBoxView.alphaValue = 1
-      }
+    if let cropController = cropSettingsView, transition.outputLayout.isInteractiveMode {
+      // show crop settings view
+      cropController.view.alphaValue = 1
+      cropController.cropBoxView.isHidden = false
+      cropController.cropBoxView.alphaValue = 1
     }
 
-    if transition.isExitingInteractiveMode {
-      if !isPausedPriorToInteractiveMode {
-        player.resume()
-      }
+    if transition.isExitingInteractiveMode, !isPausedPriorToInteractiveMode {
+      player.resume()
     }
 
     if !transition.isWindowInitialLayout || transition.outputLayout.isFullScreen {
@@ -1172,7 +1168,8 @@ extension PlayerWindowController {
 #if DEBUG
     // Do not run sanity checks for initial layout, because in that case all task funcs combined into a single
     // animation task, which means that frames will not be updated yet & can't be measured correctly
-    if Logger.isEnabled(.error), DebugConfig.validatePWinGeometry, !transition.isWindowInitialLayout, !transition.outputLayout.isInPiP,
+    if DebugConfig.validatePWinGeometry, Logger.isEnabled(.error),
+       !transition.isWindowInitialLayout, !transition.outputLayout.isInPiP,
        player.state.isNotYet(.stopping), player.info.isVideoTrackSelected {
       let vidSizeA = videoView.frame.size
       let vidSizeE = transition.outputGeometry.videoSize
