@@ -79,11 +79,12 @@ extension PlayerWindowController {
     let useViewport = transition.outputGeometry.isViewportShown || (!stage.isFinalStage && transition.inputGeometry.isViewportShown)
 
     let stageLayout: LayoutState = transition.targetLayout(for: stage)
+    let isFinalStage = stage.isFinalStage
     // We need to include constraints for some panels in multiple stages if they are open at any point
-    let useLeadingSidebar = stageLayout.isLeadingSidebarVisible || (!stage.isFinalStage && transition.inputLayout.isLeadingSidebarVisible)
-    let useTrailingSidebar = stageLayout.isTrailingSidebarVisible || (!stage.isFinalStage && transition.inputLayout.isTrailingSidebarVisible)
-    let useBottomBar: Bool = stageLayout.hasBottomBar || (!stage.isFinalStage && transition.inputLayout.hasBottomBar)
-    let useTopBar: Bool = stageLayout.hasTopBar || (!stage.isFinalStage && transition.inputLayout.hasTopBar)
+    let useLeadingSidebar: Bool = isFinalStage ? stageLayout.isLeadingSidebarVisible : transition.inputLayout.isLeadingSidebarVisible || transition.outputLayout.isLeadingSidebarVisible
+    let useTrailingSidebar: Bool = isFinalStage ? stageLayout.isTrailingSidebarVisible : transition.inputLayout.isTrailingSidebarVisible || transition.outputLayout.isTrailingSidebarVisible
+    let useBottomBar: Bool = isFinalStage ? stageLayout.hasBottomBar : transition.inputLayout.hasBottomBar || transition.outputLayout.hasBottomBar
+    let useTopBar: Bool = isFinalStage ? stageLayout.hasTopBar : transition.inputLayout.hasTopBar || transition.outputLayout.hasTopBar
 
     log.verbose("RebuildPanels: VP=\(useViewport.yn) Bottom=\(useBottomBar.yn) Top=\(useTopBar.yn) Leading=\(useLeadingSidebar.yn) Trailing=\(useTrailingSidebar.yn)")
 
@@ -130,10 +131,7 @@ extension PlayerWindowController {
         topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
-      if stage == .closeOldPanels, let closedGeo = transition.closeOldPanelsGeometry, (closedGeo.topBarHeight == 0) {
-        log.verbose("Updating titleBarHeight=\(0) to close panel")
-        topBarView.titleBarHeightConstraint.animateToConstant(0)
-      } else if stage == .openNewPanels, transition.isExitingNativeFullScreen {
+      if stage == .openNewPanels, transition.isExitingNativeFullScreen {
         log.verbose("Updating titleBarHeight=\(0) for exiting native FS")
         topBarView.titleBarHeightConstraint.animateToConstant(0)
       } else {
