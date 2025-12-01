@@ -9,7 +9,7 @@
 import Cocoa
 
 final class PlayerCore: NSObject {
-  typealias SimpleCallback = () -> Void
+  typealias Callback = () -> Void
   typealias OnSuccessCallback = () -> Void
   typealias OnErrorCallback = (String) -> Void
 
@@ -1811,7 +1811,7 @@ final class PlayerCore: NSObject {
   func addShufflePlaylistHook() {
     $shufflePending.withLock{ $0 = true }
 
-    func callback(next: @escaping SimpleCallback) {
+    func callback(next: @escaping Callback) {
       var mustShuffle = false
       $shufflePending.withLock{ shufflePending in
         if shufflePending {

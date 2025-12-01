@@ -114,7 +114,7 @@ class WindowController: NSWindowController {
       behavior = behaviorFound
     }
 
-    Logger.log.verbose("WindowOpenCloseAnimation: setting behavior for \(savedStateName) to \(behavior)")
+    Logger.log.verbose("WindowOpenCloseAnimation: setting behavior for \(savedStateName) to \(behavior.rawValue)")
     window.animationBehavior = behavior
   }
 

@@ -140,7 +140,6 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
     window.titlebarAppearsTransparent = true
     window.styleMask.insert(.fullSizeContentView)
 
-    // Move your existing content into it
     if let visualEffectCV = window.contentView as? NSVisualEffectView {
       visualEffectCV.material = .titlebar
       visualEffectCV.blendingMode = .withinWindow

@@ -313,7 +313,7 @@ return -1;\
                                                  8,  // 8 bit per component
                                                  width * 4,  // 4 bytes(rgba) per pixel
                                                  rgb,
-                                                 kCGImageAlphaPremultipliedLast);
+                                                 kCGBitmapAlphaInfoMask);
   CGImageRef cgImage = CGBitmapContextCreateImage(cgContext);
 
   // Create NSImage
