@@ -6,9 +6,10 @@
 //  Copyright © 2016 lhc. All rights reserved.
 //
 
-import Cocoa
+import Combine
 
 class KeyRecordViewController: NSViewController, @MainActor KeyRecordViewDelegate, @MainActor NSRuleEditorDelegate, NSTextFieldDelegate {
+  private var activeObservers: Set<AnyCancellable> = []
 
   @IBOutlet weak var keyRecordView: KeyRecordView!
   @IBOutlet weak var keyLabel: NSTextField!
@@ -69,8 +70,26 @@ class KeyRecordViewController: NSViewController, @MainActor KeyRecordViewDelegat
       pendingAction = nil
     }
 
-    NotificationCenter.default.addObserver(forName: .iinaKeyBindingInputChanged, object: nil, queue: .main) { [unowned self] _ in
-      self.updateCommandField()
+  }
+
+  override func viewWillAppear() {
+    super.viewWillAppear()
+
+    NotificationCenter.default.publisher(for: .iinaKeyBindingInputChanged, object: nil)
+      .receive(on: RunLoop.main)
+      .sink(receiveValue: { [self] _ in
+        self.updateCommandField()
+      })
+      .store(in: &activeObservers)
+  }
+
+  override func viewWillDisappear() {
+    super.viewWillDisappear()
+
+    let activeObservers = activeObservers
+    self.activeObservers = []
+    for observer in activeObservers {
+      observer.cancel()
     }
   }
 

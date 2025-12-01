@@ -23,44 +23,36 @@ class BindingTableStateManager: NSObject {
   }
 
   private var undoHelper = PrefKeyBindingUndoHelper()
-  private var observers: [NSObjectProtocol] = []
+  private var notiHandler: NotificationHandler!
+
+  override init() {
+    super.init()
+    notiHandler = NotificationHandler(AppInputConfig.log, prefDidChange: prefDidChange, [.showKeyBindingsFromAllSources], [
+      .default: [
+        .init(.iinaAppInputConfigDidChange, self.appInputConfigDidChange)
+      ]
+    ])
+  }
 
   func enableObservers() {
-    guard observers.isEmpty else { return }
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaAppInputConfigDidChange, object: nil, queue: .main, using: self.appInputConfigDidChange))
-
-    for key in [Preference.Key.showKeyBindingsFromAllSources] {
-      UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
-    }
+    notiHandler.addAllObservers()
   }
 
   func disableObservers() {
-    for observer in observers {
-      ObjcUtils.silenced {
-        NotificationCenter.default.removeObserver(observer)
-      }
-    }
-    observers = []
-
-    // Remove observers for IINA preferences.
-    ObjcUtils.silenced {
-      for key in [Preference.Key.showKeyBindingsFromAllSources] {
-        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
-      }
-    }
+    notiHandler.removeAllObservers()
   }
-
-  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-    DispatchQueue.main.async {
-      switch keyPath {
-      case Preference.Key.showKeyBindingsFromAllSources.rawValue:
+  
+  fileprivate func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
+    switch key {
+    case .showKeyBindingsFromAllSources:
+      DispatchQueue.main.async {
         self.applyStateUpdate(AppInputConfig.current)
-      default:
-        return
       }
+    default:
+      return
     }
   }
-
+  
   func initialState() -> BindingTableState {
     let filterString = UIState.shared.isRestoreEnabled ? Preference.string(for: .uiPrefBindingsTableSearchString) ?? "" : ""
     let showAllBindings = Preference.bool(for: .showKeyBindingsFromAllSources)

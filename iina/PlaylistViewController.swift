@@ -86,14 +86,13 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     return NSNib.Name("PlaylistViewController")
   }
 
-  private var distObservers: [NSObjectProtocol] = []  // For DistributedNotificationCenter
+  private var notiHandler: NotificationHandler!
 
-  // TODO: refactor these into a better observer
-  var playlistChangeObserver: NSObjectProtocol?
-  var fileHistoryUpdateObserver: NSObjectProtocol?
-  var fileExistsInfoUpdateObserver: NSObjectProtocol?
-
-  private var enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration)
+#if DEBUG
+  private let enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration) && !DebugConfig.disableLookaheadCaches
+#else
+  private let enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration)
+#endif
 
   func updateTableColors() {
     player.log.verbose("Playlist sidebar: updating table colors")
@@ -195,10 +194,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     updateVerticalConstraints()
 
-#if DEBUG
-    enablePrefetching = enablePrefetching && !DebugConfig.disableLookaheadCaches
-#endif
-
     if !enablePrefetching {
       player.log.debug("Playlist: video duration prefetch is disabled")
     }
@@ -217,65 +212,55 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
                                                  options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
                                                  owner: pwc, userInfo: [PlayerWindowController.TrackingArea.key: PlayerWindowController.TrackingArea.playerWindow]))
     }
-    view.configureSubtreeForCoreAnimation()
-    view.needsLayout = true
 
-    // Set up notification observers last
-    playlistChangeObserver = NotificationCenter.default.addObserver(forName: .iinaPlaylistChanged, object: player, queue: .main) { [self] _ in
-      guard player.playlistShown else {
-        player.log.verbose("Got iinaPlaylistChanged, but playlist is not visible. Ignoring")
-        return
-      }
+    notiHandler = NotificationHandler(player.log, [], [
+      .default: [
+        .init(.iinaPlaylistChanged, object: player) { [self] _ in
+          guard player.playlistShown else {
+            player.log.verbose("Got iinaPlaylistChanged, but playlist is not visible. Ignoring")
+            return
+          }
 
-      player.log.verbose("Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…")
-      playlistTotalLengthIsReady = false
-      reloadData(playlist: true, chapters: false)
-    }
+          player.log.verbose("Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…")
+          playlistTotalLengthIsReady = false
+          reloadData(playlist: true, chapters: false)
+        },
 
-    fileHistoryUpdateObserver = NotificationCenter.default.addObserver(forName: .iinaFileHistoryDidUpdate, object: nil, queue: .main) { [self] note in
-      guard !AppDelegate.shared.isTerminating else { return }
-      guard let url = note.userInfo?["url"] as? URL else {
-        player.log.error("Cannot update file history: no url found in userInfo!")
-        return
-      }
-      guard url.isFileURL else { return }
-      let playlist = displayedPlaylist
-      for (rowIndex, item) in playlist.enumerated() {
-        if item.url == url {
-          reloadPlaylistRow(rowIndex)
-        }
-      }
-    }
+          .init(.iinaFileHistoryDidUpdate) { [self] note in
+            guard !AppDelegate.shared.isTerminating else { return }
+            guard let url = note.userInfo?["url"] as? URL else {
+              player.log.error("Cannot update file history: no url found in userInfo!")
+              return
+            }
+            guard url.isFileURL else { return }
+            let playlist = displayedPlaylist
+            for (rowIndex, item) in playlist.enumerated() {
+              if item.url == url {
+                reloadPlaylistRow(rowIndex)
+              }
+            }
+          },
 
-    fileExistsInfoUpdateObserver = NotificationCenter.default.addObserver(forName: .iinaFileExistsInfoDidUpdate, object: nil, queue: .main) { [self] note in
-      guard !AppDelegate.shared.isTerminating else { return }
-      // Just cache this for local use. Doesn't change the displayed table rows
-      self.fileExistsMap = HistoryController.shared.fileExistsMap
-    }
+          .init(.iinaFileExistsInfoDidUpdate) { [self] note in
+            guard !AppDelegate.shared.isTerminating else { return }
+            // Just cache this for local use. Doesn't change the displayed table rows
+            self.fileExistsMap = HistoryController.shared.fileExistsMap
+          }
+      ]
+    ])
+    notiHandler.addAllObservers()
 
     // Register this sidebar for dragged files, just so we can deny all drops onto the sidebar
     // not including the Playlist table. See note in QuickSettingsViewController.viewDidLoad().
     view.registerForDraggedTypes([NSPasteboard.PasteboardType.fileURL])
 
+    view.configureSubtreeForCoreAnimation()
+    view.needsLayout = true
     player.log.verbose("PlaylistView viewDidLoad done")
   }
 
   deinit {
-    ObjcUtils.silenced { [self] in
-      for observer in distObservers {
-        DistributedNotificationCenter.default().removeObserver(observer)
-      }
-      distObservers = []
-      if let playlistChangeObserver {
-        NotificationCenter.default.removeObserver(playlistChangeObserver)
-      }
-      if let fileHistoryUpdateObserver {
-        NotificationCenter.default.removeObserver(fileHistoryUpdateObserver)
-      }
-      if let fileExistsInfoUpdateObserver {
-        NotificationCenter.default.removeObserver(fileExistsInfoUpdateObserver)
-      }
-    }
+    notiHandler.removeAllObservers()
   }
 
   func scrollPlaylistToCurrentItem() {

@@ -6,7 +6,7 @@
 //  Copyright © 2022 lhc. All rights reserved.
 //
 
-import Foundation
+import Combine
 
 fileprivate let keyColumnIndex = 0
 fileprivate let actionColumnIndex = 2
@@ -32,7 +32,7 @@ class BindingTableViewController: NSObject {
   }
 
   private var selectionDidChangeHandler: () -> Void
-  private var observers: [NSObjectProtocol] = []
+  private var activeObservers: Set<AnyCancellable> = []
 
   private var draggedRowInfo: (Int, IndexSet)? = nil
 
@@ -60,7 +60,10 @@ class BindingTableViewController: NSObject {
     tableView.allowsMultipleSelection = true
     tableView.editableTextColumnIndexes = [keyColumnIndex, actionColumnIndex]
     tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForBindingTable)
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
+    NotificationCenter.default.publisher(for: .iinaKeyBindingErrorOccurred, object: nil)
+      .receive(on: RunLoop.main)
+      .sink(receiveValue: self.errorDidOccur)
+      .store(in: &activeObservers)
 
     // Enable drag & drop
     var acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.iinaKeyMapping]
@@ -78,12 +81,11 @@ class BindingTableViewController: NSObject {
   }
 
   deinit {
-    for observer in observers {
-      ObjcUtils.silenced {
-        NotificationCenter.default.removeObserver(observer)
-      }
+    let activeObservers = activeObservers
+    self.activeObservers = []
+    for observer in activeObservers {
+      observer.cancel()
     }
-    observers = []
   }
 
   private func systemColorSettingsDidChange(notification: Notification) {

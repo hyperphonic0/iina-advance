@@ -5,7 +5,7 @@
 //  Created by Matt Svoboda on 2024-10-15.
 //
 
-import Foundation
+import Combine
 
 typealias PrefDidChangeCallback = (_ key: Preference.Key, _ newValue: Any?) -> Void
 typealias NotiCenterCallback = (Notification) -> Void
@@ -14,16 +14,16 @@ typealias NotiCenterCallback = (Notification) -> Void
 class NotificationHandler: NSObject {
   struct NCObserver {
     let name: Notification.Name
-    let object: Any?
+    let object: AnyObject?
     let callback: NotiCenterCallback
 
-    init(_ name: Notification.Name, object: Any? = nil, _ callback: @escaping NotiCenterCallback) {
+    init(_ name: Notification.Name, object: AnyObject? = nil, _ callback: @escaping NotiCenterCallback) {
       self.name = name
       self.object = object
       self.callback = callback
     }
   }
-  private var activeObservers: [NotificationCenter: [NSObjectProtocol]] = [:]
+  private var activeObservers: Set<AnyCancellable> = []
 
   private let observedPrefKeys: [Preference.Key]
   private let log: any Logger.Subsystem
@@ -68,12 +68,12 @@ class NotificationHandler: NSObject {
     legacyPrefKeyObserver?.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
   }
 
-  func addObserver(to notificationCenter: NotificationCenter, forName name: Notification.Name, object: Any? = nil,
+  func addObserver(to notificationCenter: NotificationCenter, forName name: Notification.Name, object: AnyObject? = nil,
                    using callback: @escaping (Notification) -> Void) {
-    let observer: NSObjectProtocol = notificationCenter.addObserver(forName: name, object: object, queue: .main, using: callback)
-    var observers = activeObservers[notificationCenter] ?? []
-    observers.append(observer)
-    activeObservers[notificationCenter] = observers
+    notificationCenter.publisher(for: name, object: object)
+      .receive(on: RunLoop.main)
+      .sink(receiveValue: callback)
+      .store(in: &activeObservers)
   }
 
   func removeAllObservers() {
@@ -85,13 +85,12 @@ class NotificationHandler: NSObject {
 
       // Detach Notification Center observers
       let activeObservers = activeObservers
-      self.activeObservers = [:]
-      for (notificationCenter, observers) in activeObservers {
-        for observer in observers {
-          notificationCenter.removeObserver(observer)
-        }
-        log.verbose("Removed \(observers.count) observers from \(notificationCenter.className)")
+      self.activeObservers = []
+
+      for observer in activeObservers {
+        observer.cancel()
       }
+      log.verbose("Cancelled \(activeObservers.count) subscribers from NotificationCenters")
     }
   }
 
