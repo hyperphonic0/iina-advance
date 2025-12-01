@@ -859,7 +859,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log.debug("Got killRequest! Terminating this instance.")
 
     RunLoop.main.perform(inModes: [.common]) {
-      guard !AppDelegate.shared.isTerminating else { return }
       NSApp.terminate(nil)
     }
   }
@@ -1033,6 +1032,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if result == .OK {  /// OK
         Logger.log.verbose("OpenFile: user chose \(panel.urls.count) files")
         if Preference.bool(for: .recordRecentFiles) && HistoryController.shared.historyEnabled {
+          HistoryController.shared.start()  // ensure documents are restored first, so they will not be overwritten
           let urls = panel.urls  // must call this on the main thread
           HistoryController.shared.async {
             HistoryController.shared.noteNewRecentDocumentURLs(urls)

@@ -6,7 +6,7 @@
 //  Copyright © 2024 lhc. All rights reserved.
 //
 
-import Foundation
+import Combine
 
 @objcMembers
 class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddable {
@@ -44,7 +44,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   @IBOutlet weak var clearHistoryBtn: NSButton!
   @IBOutlet weak var clearThumbnailCacheBtn: NSButton!
 
-  private var observers: [NSObjectProtocol] = []
+  private var cancellables: Set<AnyCancellable> = []
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -58,23 +58,33 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     Logger.log("Saved Data pref pane will appear", level: .verbose)
     super.viewWillAppear()
 
-    observers.append(NotificationCenter.default.addObserver(forName: .savedWindowStateDidChange, object: nil,
-                                                            queue: .main, using: self.refreshSavedLaunchSummary(_:)))
+    NotificationCenter.default.publisher(for: .savedWindowStateDidChange, object: nil)
+      .receive(on: RunLoop.main)
+      .sink(receiveValue: self.refreshSavedLaunchSummary)
+      .store(in: &cancellables)
 
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaHistoryListUpdated, object: nil,
-                                                            queue: .main, using: self.reloadHistoryCount(_:)))
+    NotificationCenter.default.publisher(for: .iinaHistoryListUpdated, object: nil)
+      .receive(on: RunLoop.main)
+      .sink(receiveValue: self.reloadHistoryCount)
+      .store(in: &cancellables)
 
-    observers.append(NotificationCenter.default.addObserver(forName: .watchLaterOptionsDidChange, object: nil,
-                                                            queue: .main, using: self.reloadWatchLaterOptions(_:)))
+    NotificationCenter.default.publisher(for: .watchLaterOptionsDidChange, object: nil)
+      .receive(on: RunLoop.main)
+      .sink(receiveValue: self.reloadWatchLaterCount)
+      .store(in: &cancellables)
 
-    observers.append(NotificationCenter.default.addObserver(forName: .watchLaterDirDidChange, object: nil,
-                                                            queue: .main, using: self.reloadWatchLaterCount(_:)))
+    NotificationCenter.default.publisher(for: .recentDocumentsDidChange, object: nil)
+      .receive(on: RunLoop.main)
+      .sink(receiveValue: self.refreshRecentDocumentsCount)
+      .store(in: &cancellables)
 
-    observers.append(NotificationCenter.default.addObserver(forName: .recentDocumentsDidChange, object: nil,
-                                                            queue: .main, using: self.refreshRecentDocumentsCount(_:)))
+    NotificationCenter.default.publisher(for: .iinaThumbnailCacheDidUpdate, object: nil)
+      .receive(on: RunLoop.main)
+      .sink(receiveValue: self.reloadThumbnailCacheStat)
+      .store(in: &cancellables)
 
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaThumbnailCacheDidUpdate, object: nil,
-                                                            queue: .main, using: self.reloadThumbnailCacheStat(_:)))
+    // Need to ensure history is loaded, or history count will show as 0
+    HistoryController.shared.start()
 
     let dummy = Notification(name: .recentDocumentsDidChange)
     refreshSavedLaunchSummary(dummy)
@@ -89,12 +99,10 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     Logger.log("Saved Data pref pane will disappear", level: .verbose)
     super.viewWillDisappear()
     // Disable observers when not in use to save CPU
-    for observer in observers {
-      ObjcUtils.silenced {
-        NotificationCenter.default.removeObserver(observer)
-      }
+    for observer in cancellables {
+      observer.cancel()
     }
-    observers = []
+    cancellables = []
   }
 
   // TODO: this can get called often. Add throttling

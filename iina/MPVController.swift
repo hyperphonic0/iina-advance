@@ -114,7 +114,7 @@ class MPVController: NSObject {
   }
 
   deinit {
-    removeOptionObservers()
+    removeObservers()
   }
 
   // MARK: - Shutdown
@@ -152,7 +152,7 @@ class MPVController: NSObject {
   func mpvQuit() {
     player.log.verbose("Quitting mpv")
     // Observers must be removed to avoid accessing the mpv core after it has shutdown.
-    removeObservers()
+    removeOptionObservers()
     // Start mpv quitting. Even though this command is being sent using the synchronous command API
     // the quit command is special and will be executed by mpv asynchronously.
     command(.quit, checkActive: false, level: .verbose)

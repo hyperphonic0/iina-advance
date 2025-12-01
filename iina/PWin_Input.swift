@@ -109,11 +109,9 @@ extension PlayerWindowController {
       // could use mpv's IPC interface to send the quit command directly to mpv. However the
       // shutdown sequence is cleaner when initiated by IINA, so we do not send the quit command
       // to mpv and instead trigger the normal app termination sequence.
-      RunLoop.main.perform(inModes: [.common]) { [self] in
-        if !AppDelegate.shared.isTerminating {
-          log.verbose("Received MPVCommand.quit: calling NSApp.terminate")
-          NSApp.terminate(nil)
-        }
+      log.debug("Received MPVCommand.quit: calling NSApp.terminate")
+      RunLoop.main.perform(inModes: [.common]) {
+        NSApp.terminate(nil)
       }
       returnValue = 0
 

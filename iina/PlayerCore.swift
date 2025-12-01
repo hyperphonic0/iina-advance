@@ -752,7 +752,6 @@ final class PlayerCore: NSObject {
       // however the main dispatch queue must not be used to avoid blocking the queue as per
       // instructions from Apple.
       RunLoop.main.perform(inModes: [.common]) {
-        guard !AppDelegate.shared.isTerminating else { return }
         NSApp.terminate(nil)
       }
     }

@@ -1729,7 +1729,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
       let vidGeoToSyncFrom: VideoGeometry
-      if let cropController = cropSettingsView, let newVidGeo, let newCropFilter = newVidGeo.cropFilter {
+      if let newVidGeo, let newCropFilter = newVidGeo.cropFilter {
         // If newVidGeo contains a crop, we must apply it
         log.verbose("Cropping video from videoSizeRaw=\(inputVidGeo.videoSizeRaw) cropRect=\(newVidGeo.cropRect?.description ?? "nil")")
 

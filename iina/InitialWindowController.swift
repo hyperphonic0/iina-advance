@@ -147,6 +147,8 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     assert(isWindowLoaded, "Expected WelcomeWindow to be loaded!")
 
     if isFirstLoad {
+      // Start history if not already started
+      HistoryController.shared.start()
       /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with recentDocuments load:
       HistoryController.shared.async {
         DispatchQueue.main.async {
@@ -333,7 +335,8 @@ class InitialWindowController: WindowController, NSWindowDelegate {
       // Reload data:
 
       let sw = Utility.Stopwatch()
-      let recentsUnfiltered = Preference.bool(for: .enableRecentDocumentsWorkaround) ? HistoryController.shared.cachedRecentDocumentURLs : NSDocumentController.shared.recentDocumentURLs
+      let loadSavedRecentDocs = Preference.bool(for: .enableRecentDocumentsWorkaround)
+      let recentsUnfiltered = loadSavedRecentDocs ? HistoryController.shared.cachedRecentDocumentURLs : NSDocumentController.shared.recentDocumentURLs
       /// Make sure to resolve symlinks in `lastPlaybackURL`
       lastPlaybackURL = getLastPlaybackIfValid()?.resolvingSymlinksInPath() ?? nil
       if let lastURL = lastPlaybackURL {
@@ -346,7 +349,7 @@ class InitialWindowController: WindowController, NSWindowDelegate {
         recentDocuments = recentsUnfiltered
       }
 
-      Logger.log.verbose("[ReloadWelcomeWindow] Resolved \(self.recentDocuments.count) recentDocuments in \(sw) ms")
+      Logger.log.verbose("[ReloadWelcomeWindow] Resolved \(self.recentDocuments.count) recentDocuments (w/workaround=\(loadSavedRecentDocs.yn)) in \(sw) ms")
 
       // Refresh UI:
 

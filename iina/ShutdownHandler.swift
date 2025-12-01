@@ -6,7 +6,7 @@
 //  Copyright © 2024 lhc. All rights reserved.
 //
 
-import Foundation
+import Combine
 
 /// Handles application shutdown
 class ShutdownHandler {
@@ -16,7 +16,7 @@ class ShutdownHandler {
   private var shutdownTimedOut = false
   private let shutdownTimer = TimeoutTimer(timeout: Constants.TimeInterval.appTerminationTimeout)
 
-  private var observers: [NSObjectProtocol] = []
+  private var cancellables: Set<AnyCancellable> = []
 
   @MainActor
   func beginShutdown() -> Bool {
@@ -84,36 +84,37 @@ class ShutdownHandler {
     shutdownTimer.action = shutdownDidTimeout
     shutdownTimer.restart()
 
-    // Establish an observer for a player core stopping.
-    var observers: [NSObjectProtocol] = []
-
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaPlayerStopped, object: nil, queue: .main) { [self] note in
-      guard !self.shutdownTimedOut else {
-        // The player has stopped after IINA already timed out, gave up waiting for players to
-        // shutdown, and told Cocoa to proceed with termination. AppKit will continue to process
-        // queued tasks during application termination even after AppKit has called
-        // applicationWillTerminate. So this observer can be called after IINA has told Cocoa to
-        // proceed with termination. When the termination sequence times out IINA does not remove
-        // observers as it may be useful for debugging purposes to know that a player stopped after
-        // the timeout as that indicates the stopping was proceeding as opposed to being permanently
-        // blocked. Log that this has occurred and take no further action as it is too late to
-        // proceed with the normal termination sequence.  If the log file has already been closed
-        // then the message will only be printed to the console.
-        Logger.log("Player stopped after application termination timed out", level: .warning)
-        return
-      }
-      guard let player = note.object as? PlayerCore else { return }
-      player.log.verbose("Got iinaPlayerStopped. Requesting player shutdown")
-      // Now that the player has stopped it is safe to instruct the player to terminate. IINA MUST
-      // wait for the player to stop before instructing it to terminate because sending the quit
-      // command to mpv while it is still asynchronously executing the stop command can result in a
-      // watch later file that is missing information such as the playback position. See issue #3939
-      // for details.
-      player.shutdown()
-    })
+    NotificationCenter.default.publisher(for: .iinaPlayerStopped, object: nil)
+      .receive(on: DispatchQueue.main)
+      .sink{ [self] noti in
+        guard !self.shutdownTimedOut else {
+          // The player has stopped after IINA already timed out, gave up waiting for players to
+          // shutdown, and told Cocoa to proceed with termination. AppKit will continue to process
+          // queued tasks during application termination even after AppKit has called
+          // applicationWillTerminate. So this observer can be called after IINA has told Cocoa to
+          // proceed with termination. When the termination sequence times out IINA does not remove
+          // observers as it may be useful for debugging purposes to know that a player stopped after
+          // the timeout as that indicates the stopping was proceeding as opposed to being permanently
+          // blocked. Log that this has occurred and take no further action as it is too late to
+          // proceed with the normal termination sequence.  If the log file has already been closed
+          // then the message will only be printed to the console.
+          Logger.log("Player stopped after application termination timed out", level: .warning)
+          return
+        }
+        guard let player = noti.object as? PlayerCore else { return }
+        player.log.verbose("Got iinaPlayerStopped. Requesting player shutdown")
+        // Now that the player has stopped it is safe to instruct the player to terminate. IINA MUST
+        // wait for the player to stop before instructing it to terminate because sending the quit
+        // command to mpv while it is still asynchronously executing the stop command can result in a
+        // watch later file that is missing information such as the playback position. See issue #3939
+        // for details.
+        player.shutdown()
+      }.store(in: &cancellables)
 
     // Establish an observer for a player core shutting down.
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaPlayerShutdown, object: nil, queue: .main) { [self] _ in
+    NotificationCenter.default.publisher(for: .iinaPlayerShutdown, object: nil)
+      .receive(on: DispatchQueue.main)
+      .sink{ [self] _ in
       guard !self.shutdownTimedOut else {
         // The player has shutdown after IINA already timed out, gave up waiting for players to
         // shutdown, and told Cocoa to proceed with termination. AppKit will continue to process
@@ -128,46 +129,50 @@ class ShutdownHandler {
         Logger.log("Player shutdown completed after application termination timed out", level: .warning)
         return
       }
-      proceedWithTermination()
-    })
+        proceedWithTermination()
+      }.store(in: &cancellables)
 
     // Establish an observer for logging out of the online subtitle provider.
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaLogoutCompleted, object: nil, queue: .main) { [self] _ in
-      guard !self.shutdownTimedOut else {
-        // The request to log out of the online subtitles provider has completed after IINA already
-        // timed out, gave up waiting for players to shutdown, and told Cocoa to proceed with
-        // termination. This should not occur as the logout request uses a timeout that is shorter
-        // than the termination timeout to avoid this occurring. Therefore if this message is logged
-        // something has gone wrong with the shutdown code.
-        Logger.log.warn("Logout of online subtitles provider completed after application termination timed out")
-        return
-      }
-      Logger.log.verbose("Got iinaLogoutCompleted notification")
-      proceedWithTermination()
-    })
+    NotificationCenter.default.publisher(for: .iinaLogoutCompleted, object: nil)
+      .receive(on: DispatchQueue.main)
+      .sink{ [self] _ in
+        guard !self.shutdownTimedOut else {
+          // The request to log out of the online subtitles provider has completed after IINA already
+          // timed out, gave up waiting for players to shutdown, and told Cocoa to proceed with
+          // termination. This should not occur as the logout request uses a timeout that is shorter
+          // than the termination timeout to avoid this occurring. Therefore if this message is logged
+          // something has gone wrong with the shutdown code.
+          Logger.log.warn("Logout of online subtitles provider completed after application termination timed out")
+          return
+        }
+        Logger.log.verbose("Got iinaLogoutCompleted notification")
+        proceedWithTermination()
+      }.store(in: &cancellables)
 
     // Establish an observer for saving of playback history finishing.
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaHistoryTasksFinished, object: nil, queue: .main) { [self] _ in
-      guard !self.shutdownTimedOut else {
-        // Saving of playback history finished after IINA already timed out, gave up waiting, and
-        // told Cocoa to proceed with termination. This is a problem as it indicates playback
-        // history might be being lost.
-        Logger.log.warn("Saving of playback history finished after application termination timed out")
-        return
-      }
-      // If there are still tasks outstanding then must continue waiting.
-      let remainingHistoryTasks = HistoryController.shared.tasksOutstanding
-      guard remainingHistoryTasks == 0 else {
-        Logger.log.verbose("Received iinaHistoryTasksFinished but \(remainingHistoryTasks) tasks still outstanding")
-        return
-      }
-      guard HistoryController.shared.fileExistsDQ_ShutdownAck else {
-        Logger.log.verbose("Received iinaHistoryTasksFinished but still waiting for fileExistsDQ shutdown ack")
-        return
-      }
-      Logger.log("Saving of playback history finished")
-      proceedWithTermination()
-    })
+    NotificationCenter.default.publisher(for: .iinaHistoryTasksFinished, object: nil)
+      .receive(on: DispatchQueue.main)
+      .sink{ [self] _ in
+        guard !self.shutdownTimedOut else {
+          // Saving of playback history finished after IINA already timed out, gave up waiting, and
+          // told Cocoa to proceed with termination. This is a problem as it indicates playback
+          // history might be being lost.
+          Logger.log.warn("Saving of playback history finished after application termination timed out")
+          return
+        }
+        // If there are still tasks outstanding then must continue waiting.
+        let remainingHistoryTasks = HistoryController.shared.tasksOutstanding
+        guard remainingHistoryTasks == 0 else {
+          Logger.log.verbose("Received iinaHistoryTasksFinished but \(remainingHistoryTasks) tasks still outstanding")
+          return
+        }
+        guard HistoryController.shared.fileExistsDQ_ShutdownAck else {
+          Logger.log.verbose("Received iinaHistoryTasksFinished but still waiting for fileExistsDQ shutdown ack")
+          return
+        }
+        Logger.log("Saving of playback history finished")
+        proceedWithTermination()
+      }.store(in: &cancellables)
 
     // Instruct any players that are already stopped to start shutting down.
     for player in PlayerManager.shared.playerCores {
@@ -234,14 +239,13 @@ class ShutdownHandler {
     Logger.log("Proceeding with application termination")
     // No longer need the timer that forces termination to proceed.
     shutdownTimer.cancel()
+
     // No longer need the observers for players stopping and shutting down, along with the
     // observer for logout requests completing and saving of playback history finishing.
-    ObjcUtils.silenced { [self] in
-      for observer in observers {
-        NotificationCenter.default.removeObserver(observer)
-      }
+    for publisher in cancellables {
+      publisher.cancel()
     }
-    observers = []
+    cancellables = []
     return true
   }
 

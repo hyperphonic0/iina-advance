@@ -407,8 +407,16 @@ class HistoryController {
 
   func savePlaybackMetaAfterFileDidLoad(for id: PlaybackID, durationSec: Double, positionSec: Double?) {
     guard historyEnabled else { return }
+    if !started {
+      log.verbose("While trying to save playback after file load: history not started! Starting now")
+      start()
+    }
 
     HistoryController.shared.async { [self] in
+      guard historyEnabled else {
+        log.error("Cannot save playback meta after file load: history is unexpectedly disabled!")
+        return
+      }
       // 1. Update main history list
       let historyEntry = addPlayback(id, duration: durationSec)
 
@@ -441,8 +449,16 @@ class HistoryController {
   /// should have been written to prior to calling this function.
   func savePlaybackMetaBeforeFileWillClose(_ id: PlaybackID, duration: Double?, position: Double?) {
     guard historyEnabled else { return }
+    if !started {
+      log.verbose("While trying to save playback after file load: history not started! Starting now")
+      start()
+    }
 
     HistoryController.shared.async { [self] in
+      guard historyEnabled else {
+        log.error("Cannot save playback meta at file close: history is unexpectedly disabled!")
+        return
+      }
       saveToLastPlayedFile(id, duration: duration, position: position)
 
       // The rest of the stuff below relates to UI updates and should be cancelled if shutting down.
