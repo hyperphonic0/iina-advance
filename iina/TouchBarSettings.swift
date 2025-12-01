@@ -74,6 +74,7 @@ struct TouchBarSettings {
   /// - Note: If the the `Press and hold fn key to` setting is set to `App Controls` IINA assumes app controls are being
   ///         displayed all the time. It would be possible to optimize this further so that in this case IINA would draw the Touch Bar
   ///         only when the `fn` key is pressed.
+  @MainActor
   var showAppControls: Bool {
     if hasPerAppSetting() { return false }
     guard let globalSetting = getGlobalSetting() else { return true }
@@ -149,6 +150,7 @@ struct TouchBarSettings {
   /// Returns `true` if the Touch Bar should show function keys for IINA instead of app controls.
   /// - Returns: `true` if the user has added IINA to the `show function keys in Touch Bar instead of app controls`
   ///             macOS setting; otherwise `false`.
+  @MainActor
   private func hasPerAppSetting() -> Bool {
     guard let dictionary = dictionary(Key.PresentationModePerApp),
           let string = dictionary[InfoDictionary.shared.bundleIdentifier] as? String else {

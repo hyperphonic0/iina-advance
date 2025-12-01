@@ -103,7 +103,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
         if thumbnails.count >= AppData.minThumbnailsPerFile {
           addThumbnails(thumbnails)
           thumbnailsProgress = 1
-          DispatchQueue.main.async{ [self] in
+          DispatchQueue.main.async { [self] in
             player.refreshTouchBarSlider()
           }
           return

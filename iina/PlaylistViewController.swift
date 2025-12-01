@@ -1086,6 +1086,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     NSPasteboard.general.writeObjects([urls.joined(separator: "\n") as NSString])
   }
 
+  @MainActor
   private func buildContextMenu(_ menu: NSMenu) {
     let playlistItems = displayedPlaylist
     let rows = getTargetRowsForContextMenu()

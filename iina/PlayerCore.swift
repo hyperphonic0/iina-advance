@@ -65,6 +65,7 @@ final class PlayerCore: NSObject {
     return PlayerManager.shared.activePlayer
   }
 
+  @MainActor
   static var mouseLocationAtLastOpen: NSPoint? = nil
 
   /// A DispatchQueue for auto load feature.
@@ -95,6 +96,7 @@ final class PlayerCore: NSObject {
   /// Time of the last player state save when called by `updatePlaybackTimeInfo`.
   private var lastStateSaveTime = Date().timeIntervalSince1970
 
+  @MainActor
   var undoHelper: PlayerWindowUndoHelper { pwc.undoHelper }
 
   private var subFileMonitor: FileMonitor? = nil
@@ -727,8 +729,8 @@ final class PlayerCore: NSObject {
   ///     shutting down mpv are bypassed. This means a mpv initiated shutdown can't be made fully deterministic as there are inherit
   ///     windows of vulnerability that can not be fully closed. IINA has no choice but to support a mpv initiated shutdown as best it
   ///     can.
+  @MainActor
   func mpvHasShutdown() {
-    assert(DispatchQueue.isExecutingIn(.main))
     let isMPVInitiated = state.isAtLeast(.started) && state.isNotYet(.shuttingDown)
     let suffix = isMPVInitiated ? " (initiated by mpv)" : ""
     log.debug("Player has shut down\(suffix)")
@@ -2676,6 +2678,7 @@ final class PlayerCore: NSObject {
   /// that call for an app to avoid needless energy use. [Minimizing Timer Usage](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/power_efficiency_guidelines_osx/Timers.html#//apple_ref/doc/uid/TP40013929-CH5-SW1) is one of the recommended best practices.
   /// - Important: Make sure that any state variables (e.g., `info.isPaused`, `isInMiniPlayer`,  etc.) are set *before*
   ///     calling this method, not after, so that it makes the correct decisions.
+  @MainActor
   func refreshSyncUITimer(logMsg: String = "") {
     // Check if timer should start/restart
     assert(DispatchQueue.isExecutingIn(.main))
@@ -3151,10 +3154,12 @@ final class PlayerCore: NSObject {
       log.error("Observed key path is unrecognized: \(keyPath)")
       return
     }
-    log.debug("Touch Bar \(key) setting has changed")
-    // The macOS settings that control what the Touch Bar displays has changed. May need to start or
-    // stop the timer that refreshes the UI.
-    refreshSyncUITimer()
+    DispatchQueue.main.async { [self] in
+      log.debug("Touch Bar \(key) setting has changed")
+      // The macOS settings that control what the Touch Bar displays has changed. May need to start or
+      // stop the timer that refreshes the UI.
+      refreshSyncUITimer()
+    }
   }
 
   // MARK: - Track Meta

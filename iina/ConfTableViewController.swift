@@ -23,15 +23,14 @@ fileprivate let useSeparateColorForBuiltinConfs = true
 /// Table View Controller for the `Configuration` (aka "Conf") table (a subview of `PrefKeyBindingViewController`).
 ///
 /// Each row of the Conf table represents an mpv "input config file" (`*.conf` file).
-class ConfTableViewController: NSObject {
-  private unowned var tableView: EditableTableView!
+final class ConfTableViewController: NSObject {
+  private unowned let tableView: EditableTableView!
   @MainActor
   private var confTableState: ConfTableState {
     return ConfTableState.current
   }
-  private unowned var bindingTableViewController: BindingTableViewController
-  private var selectionDidChangeHandler: () -> Void
-  private var observers: [NSObjectProtocol] = []      // For regular NotificationCenter
+  private unowned let bindingTableViewController: BindingTableViewController
+  private let selectionDidChangeHandler: () -> Void
 
   // Convenience var. Pref lookup is super fast; should be fine to check on each access. Try to reduce need for restart
   fileprivate var enableInlineCreate: Bool {
@@ -39,7 +38,6 @@ class ConfTableViewController: NSObject {
   }
 
   /// Can be overridden: see `PrefKeyBindingViewController.setCustomTableColors()`
-  @MainActor
   fileprivate var builtInConfTextColor: NSColor = .textColor
 
   @MainActor
@@ -88,15 +86,6 @@ class ConfTableViewController: NSObject {
     tableView.draggingDestinationFeedbackStyle = .regular
 
     tableView.scrollRowToVisible(0)
-  }
-
-  deinit {
-    for observer in observers {
-      ObjcUtils.silenced {
-        NotificationCenter.default.removeObserver(observer)
-      }
-    }
-    observers = []
   }
 
   @MainActor

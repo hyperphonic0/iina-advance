@@ -22,9 +22,9 @@ fileprivate let tableCellFontSize: CGFloat = 13
 /// (whether new, or undo, or redo) must go through `BindingTableStateManager` which keeps track of `BindingTableState`
 /// instances & applies the relevant changes.
 @MainActor
-class BindingTableViewController: NSObject {
+final class BindingTableViewController: NSObject {
 
-  private unowned var tableView: EditableTableView!
+  private unowned let tableView: EditableTableView!
 
   // Gets current snapshot of table data. Do not save result past the life of the calling function
   private var bindingTableState: BindingTableState {

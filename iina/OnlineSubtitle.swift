@@ -85,7 +85,7 @@ class OnlineSubtitle {
     required init() {}
   }
 
-  class Providers {
+  struct Providers {
     static let shooter = Provider<Shooter.Fetcher>(id: ":shooter", name: "shooter.cn")
     static let openSub = Provider<OpenSub.Fetcher>(id: ":opensubtitles", name: "opensubtitles.com")
     static let assrt = Provider<Assrt.Fetcher>(id: ":assrt", name: "assrt.net")
@@ -126,7 +126,7 @@ class OnlineSubtitle {
     case plugin(id: String, name: String)
   }
 
-  class Provider<F: OnlineSubtitleFetcher>: ProviderProtocol where F: DefaultFetcher {
+  struct Provider<F: OnlineSubtitleFetcher>: ProviderProtocol where F: DefaultFetcher {
     let id: String
     let providerID: String
     let name: String

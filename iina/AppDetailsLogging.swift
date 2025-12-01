@@ -55,6 +55,7 @@ struct AppDetailsLogging {
 
   // MARK: - Logs
 
+  @MainActor
   func logAllAppDetails() {
     // Start the log file by logging the version of IINA producing the log file.
     let (version, build) = InfoDictionary.shared.version

@@ -11,7 +11,7 @@ import Foundation
 
 /// Each `PlayerWindow` has a session associated with it. The session's state can be saved using `PlayerSaveState`.
 /// This class helps keep track of the lifecycle state of the session.
-enum PWinSessionState: CustomStringConvertible {
+enum PWinSessionState: Sendable, CustomStringConvertible {
 
   case noSession
 
@@ -301,6 +301,7 @@ enum InteractiveMode: Int {
   case crop = 1
   case freeSelecting
 
+  @MainActor
   func viewController() -> CropBoxViewController {
     var vc: CropBoxViewController
     switch self {
@@ -330,7 +331,7 @@ enum ScreenFit: Int {
   /// Constrains inside `screen.frameWithoutCameraHousing`. Provided here for completeness, but not used at present.
   case nativeFullScreen
 
-  static var musicMode: ScreenFit = .stayInside
+  static let musicMode: ScreenFit = .stayInside
 
   var isFullScreen: Bool {
     switch self {

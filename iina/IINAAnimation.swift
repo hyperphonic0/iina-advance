@@ -14,13 +14,16 @@ class IINAAnimation {
   // MARK: Misc static stuff
 
   /// "Disable all" override switch
+  nonisolated(unsafe)
   private static var disableAllAnimation = false
 
+  nonisolated(unsafe)
   static var isAnimationEnabled: Bool {
     return !disableAllAnimation && !Preference.bool(for: .disableAnimations) && !AccessibilityPreferences.motionReductionEnabled
   }
 
   // Wrap a block of code inside this function to disable its animations
+  @MainActor
   @discardableResult
   static func disableAnimation<T>(_ closure: () throws -> T) rethrows -> T {
     let prevDisableState = disableAllAnimation

@@ -14,6 +14,7 @@ import Foundation
 /// to information contained in the dictionary from other classes.
 struct InfoDictionary: @unchecked Sendable {
   static let executableName = "IINA Advance"
+  nonisolated(unsafe)
   static var shared: InfoDictionary!
 
   /// The usage message to be displayed for help on the command line.

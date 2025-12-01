@@ -24,7 +24,7 @@
 ///     the transform will ignore it and will proceed with its calculated values.
 ///
 /// See also: `VideoGeo_Sync.swift` for syncing `VideoGeometry` from mpv.
-struct GeometryTransform {
+struct GeometryTransform: Sendable {
   // Transforms (functors) for different types
   typealias PWinSessionStateTF = (PWinSessionState, ContextStage2) -> PWinSessionState?
   typealias VideoGeometryTF = (VideoGeometry, ContextStage2) -> VideoGeometry?
@@ -41,6 +41,7 @@ struct GeometryTransform {
   /// `ctx.inputGeoSet` with the latest video geometry from mpv (or abort if it returns `nil`).
   let syncVideoParams: Bool
 
+  nonisolated(unsafe)
   private let player: PlayerCore
   private var pwc: PlayerWindowController { player.pwc! }
   private var log: any Logger.Subsystem { player.log }
@@ -49,9 +50,11 @@ struct GeometryTransform {
 
   /// If `sessionStateTransform` is `nil` (omitted), treat as no-op and continue to `videoTransform`.
   /// If `sessionStateTransform` returns `nil`, transition should be aborted.
+  nonisolated(unsafe)
   private let sessionStateTransform: PWinSessionStateTF?
 
   /// This always runs in the `mpv` `DispatchQueue`, and can be used for other functionality.
+  nonisolated(unsafe)
   private let videoTransform: VideoGeometryTF?
 
   // - main queue transforms
@@ -59,13 +62,16 @@ struct GeometryTransform {
   /// Can be used for custom logic for building `PWinGeometryTF`.
   ///
   /// See also `buildPWinGeoTransformTasks`.
+  nonisolated(unsafe)
   private let pWinGeoTransform: PWinGeometryTF?
 
   /// If provided, overrides all logic for generating the window geometry transform tasks.
   ///
   /// This option is mutually exclusive with the `pWinGeoTransform` option; both should not both be provided in the same GTF.
+  nonisolated(unsafe)
   private let buildPWinGeoTransformTasks: ((GeometryTransform.ContextStage3) -> [IINAAnimation.Task])?
 
+  nonisolated(unsafe)
   private let onSuccess: (() -> Void)?
 
   init(_ name: String,
@@ -111,7 +117,7 @@ struct GeometryTransform {
     // Get a copy of videoGeo inside animationPipeline to ensure serial access.
     // This is reused asynchronously down below, so some parts of it may fall out of date, but
     // shouldn't be the parts we need for now...
-    var outputVideoGeo = pwc.geo.video
+    let outputVideoGeo = pwc.geo.video
 
     // Quick summary of how we will avoid race conditions with `pwc.sessionState` (tag: #SessionState-Race)
     // 1. All reads and writes of this variable occur on the main DQ.
@@ -160,6 +166,8 @@ struct GeometryTransform {
         gtfSessionState = prevSessionState
         log.verbose("[GTF:\(name)] No sessionStateChange provided; using prev value: \(gtfSessionState)")
       }
+
+      var outputVideoGeo = outputVideoGeo
 
       /// 2b: Sync video params from mpv, if `syncVideoParams` is true.
       if syncVideoParams {
@@ -772,6 +780,7 @@ struct GeometryTransform {
 extension PlayerWindowController {
 
   /// Generates animation tasks to adjust the window layout appropriately for a newly opened file.
+  @MainActor
   private func buildTransitionTasksToInitialLayout(_ ctx: GeometryTransform.ContextStage3,
                                                    outputGeoSet: GeometrySet) -> [IINAAnimation.Task] {
 
@@ -858,6 +867,7 @@ extension PlayerWindowController {
   }
 
   /// Returns `true` if `other` has the same values which are configured from IINA app-wide prefs
+  @MainActor
   fileprivate func validateLayoutFields(from tgt: LayoutState, matchLayoutFromPrefs pref: LayoutState) -> Bool {
     func cmpAndLogError(_ expected: AnyHashable, _ actual: AnyHashable, _ fieldName: String) -> Bool {
       if expected == actual {
@@ -883,6 +893,7 @@ extension PlayerWindowController {
 
   /// Creates tasks which transition to initial layout for a window which is being restored (`PWinSessionState.restoring`).
   /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
+  @MainActor
   fileprivate func buildTasksToRestoreLayout(_ priorState: PlayerSaveState,
                                              _ ctx: inout GeometryTransform.ContextStage3) -> [IINAAnimation.Task] {
     let modeToRestore: PlayerWindowMode
@@ -912,6 +923,7 @@ extension PlayerWindowController {
 
   /// Looks for inconsistencies in `priorState.geoSet` (actually just its `.windowed` property so far), and tries to fix what it finds.
   /// May also make changes to `ctx.outputLayout` if needed.
+  @MainActor
   private func fixingErrorsInSavedGeoSet(_ priorState: PlayerSaveState,
                                          _ ctx: inout GeometryTransform.ContextStage3,
                                          modeToRestore: PlayerWindowMode) -> GeometrySet {
@@ -959,6 +971,7 @@ extension PlayerWindowController {
 
   /// Creates tasks which transition to initial layout for a brand new, greenfield window (`PWinSessionState.creatingNew`).
   /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
+  @MainActor
   fileprivate func buildTasksForNewWindow(_ ctx: inout GeometryTransform.ContextStage3) -> [IINAAnimation.Task] {
     let mode: PlayerWindowMode
 
@@ -995,6 +1008,7 @@ extension PlayerWindowController {
   /// - Uses `musicModeGeoLastClosed` for `musicMode`
   /// - Uses `windowedModeGeoLastClosed` for `windowedMode` if not in windowed mode, but uses a minimized window if in windowed mode
   ///   (as the start of window open animation)
+  @MainActor
   private func buildGeoSetForNewWindow(_ ctx: GeometryTransform.ContextStage3) -> GeometrySet {
     // Should only be here if window is a new window or was previously closed. Copy layout from the last closed window
     let musicModeGeo = PlayerWindowController.musicModeGeoLastClosed.clone(video: ctx.outputVidGeo)

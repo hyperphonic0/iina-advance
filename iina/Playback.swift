@@ -88,7 +88,7 @@ class Playback: CustomStringConvertible {
 }
 
 /// `PlaybackID`
-struct PlaybackID: Equatable, Hashable {
+struct PlaybackID: Sendable, Equatable, Hashable {
   /// Equivalent to `PlaybackID.url(fromPath: mpvFilename)`
   let url: URL
   let mpvMD5: String

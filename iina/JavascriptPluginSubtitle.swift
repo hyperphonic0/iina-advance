@@ -10,7 +10,7 @@ import Foundation
 import JavaScriptCore
 import PromiseKit
 
-class JSPluginSub {
+struct JSPluginSub {
   class Subtitle: OnlineSubtitle {
     var item: JavascriptPluginSubtitleItem
     var api: JavascriptAPISubtitle
@@ -57,8 +57,10 @@ class JSPluginSub {
   class Fetcher: OnlineSubtitle.DefaultFetcher, OnlineSubtitleFetcher {
     typealias Subtitle = JSPluginSub.Subtitle
 
+    @MainActor
     private let subChooseViewController = SubChooseViewController()
 
+    @MainActor
     func fetch(from url: URL, withProviderID id: String, playerCore player: PlayerCore) -> Promise<[Subtitle]> {
       guard let provider = OnlineSubtitle.Providers.fromPlugin[id] else {
         Logger.log("Cannot find subtitle provider \"\(id)\"", level: .error)

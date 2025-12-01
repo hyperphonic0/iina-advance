@@ -22,7 +22,7 @@ class JavascriptPluginSubtitleItem: NSObject, JavascriptPluginSubtitleItemExport
     set { setDesc(newValue) }
   }
 
-  var _data: JSManagedValue
+  let _data: JSManagedValue
   var _desc: JSManagedValue?
   var download: JSManagedValue?
 

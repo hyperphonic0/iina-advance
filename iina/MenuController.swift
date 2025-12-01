@@ -206,6 +206,7 @@ class MenuController: NSObject, NSMenuDelegate {
   // MARK: - Construct Menus
 
   /// Should be called only once, at application start
+  @MainActor
   func initMenus() {
     bindMenuItems()
     updatePluginMenu()
@@ -606,6 +607,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
+  @MainActor
   func updatePluginMenu() {
     guard AppDelegate.iinaPluginSystemEnabled else { return }
     Logger.log.trace("Updating Plugin menu")
