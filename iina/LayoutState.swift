@@ -246,6 +246,15 @@ struct LayoutState {
     }
   }
 
+  /// `true` if title bar is showable but not inside `titleBarView`.
+  /// `false` if title bar is either hidden or showable inside `titleBarView`.
+  var hasTransparentTitleBar: Bool {
+    // Music mode: draws title bar as a transparent overlay with no reserved space.
+    // Native FS: title bar will drop down when the user touches the top of the screen,
+    // but we don't need to allocate any space for it in that case.
+    isMusicMode || isNativeFullScreen
+  }
+
   var titleIconAndText: VisibilityMode { mode == .musicMode ? .hidden : titleBar }
   var trafficLightButtons: VisibilityMode { titleBar }
   var titlebarAccessoryViewControllers: VisibilityMode { (isLegacyStyle || mode == .musicMode) ? .hidden : titleBar }
@@ -284,15 +293,16 @@ struct LayoutState {
 
   // - Sizes / offsets
 
+  /// Height of the `titleBarView` inside `topBarView`
   var titleBarHeight: CGFloat {
-    // Native FS is a corner case. The native title bar will drop down when the user touches the top of the screen.
-    // But we don't need to allocate any space for it in that case.
-    if titleBar.isShowable && !isNativeFullScreen {
-      if hasTopOSC {
-        // Reduce title height a bit because it will share space with OSC
-        return Constants.Distance.reducedTitleBarHeight
+    if titleBar.isShowable {
+      if !hasTransparentTitleBar {
+        if hasTopOSC {
+          // Reduce title height a bit because it will share space with OSC
+          return Constants.Distance.reducedTitleBarHeight
+        }
+        return Constants.Distance.standardTitleBarHeight
       }
-      return Constants.Distance.standardTitleBarHeight
     }
     return 0
   }
