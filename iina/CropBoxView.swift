@@ -8,16 +8,14 @@
 
 import Cocoa
 
-class CropBoxView: NSView, DraggableObject {
+final class CropBoxView: NSView, DraggableObject {
 
   weak var settingsViewController: CropBoxViewController!
 
   /** Original video size. */
-  var actualSize: NSSize = NSZeroSize
-  /** VideoView's frame. */
-  var videoRect: NSRect = NSZeroRect
+  var originalVideoSize: NSSize = NSZeroSize
   /** Crop box's frame. */
-  var boxRect: NSRect = NSZeroRect
+  private var boxRect: NSRect = NSZeroRect
 
   var selectedRect: NSRect = NSZeroRect
 
@@ -41,13 +39,13 @@ class CropBoxView: NSView, DraggableObject {
 
   // MARK: - Rect size settings
 
-  // call by pwc. when view resized
-  func resized(with videoRect: NSRect) {
-    self.videoRect = videoRect
+  override func viewWillDraw() {
+    // Update layout from latest sizes
     updateBoxRect()
     updateCursorRects()
     updateSelectedRect()
     settingsViewController.selectedRectUpdated()
+    super.viewWillDraw()
   }
 
   // set boxRect, and update selectedRect
@@ -70,40 +68,42 @@ class CropBoxView: NSView, DraggableObject {
   // To see this, start with a full selectedRect and drag the bottom up until only
   // the top 10% of the video is selected. The y value in the UI will be in double digits.
 
-  // update selectedRect from (boxRect in videoRect)
+  // update selectedRect from (boxRect in displayedVideoSize)
   private func updateSelectedRect() {
-    guard videoRect.width > 0, videoRect.height > 0 else { return }
-    let xScale = actualSize.width / videoRect.width
-    let yScale = actualSize.height / videoRect.height
+    let displayedVideoSize = bounds
+    guard displayedVideoSize.width > 0, displayedVideoSize.height > 0 else { return }
+    let xScale = originalVideoSize.width / displayedVideoSize.width
+    let yScale = originalVideoSize.height / displayedVideoSize.height
 
-    var ix = ((boxRect.origin.x - videoRect.origin.x) * xScale).rounded()
-    var iy = ((boxRect.origin.y - videoRect.origin.y) * xScale).rounded()
+    var ix = (boxRect.origin.x * xScale).rounded()
+    var iy = (boxRect.origin.y * xScale).rounded()
     var iw = (boxRect.width * xScale).rounded()
     var ih = (boxRect.height * yScale).rounded()
 
     if abs(ix) <= 4 { ix = 0 }
     if abs(iy) <= 4 { iy = 0 }
-    if abs(iw + ix - actualSize.width) <= 4 { iw = actualSize.width - ix }
-    if abs(ih + iy - actualSize.height) <= 4 { ih = actualSize.height - iy }
+    if abs(iw + ix - originalVideoSize.width) <= 4 { iw = originalVideoSize.width - ix }
+    if abs(ih + iy - originalVideoSize.height) <= 4 { ih = originalVideoSize.height - iy }
 
     selectedRect = NSMakeRect(ix, iy, iw, ih)
-//    Logger.log("actualSize: \(actualSize), boxRect: \(boxRect) -> selectedRect: \(selectedRect) <-")
+//    Logger.log("originalVideoSize: \(originalVideoSize), boxRect: \(boxRect) -> selectedRect: \(selectedRect) <-")
   }
 
   // update boxRect from (videoRect * selectedRect)
   private func updateBoxRect() {
-    guard actualSize.width > 0, actualSize.height > 0 else { return }  // avoid NaN values!
+    let displayedVideoSize = bounds
+    guard originalVideoSize.width > 0, originalVideoSize.height > 0 else { return }  // avoid NaN values!
 
-    let xScale =  videoRect.width / actualSize.width
-    let yScale =  videoRect.height / actualSize.height
+    let xScale =  displayedVideoSize.width / originalVideoSize.width
+    let yScale =  displayedVideoSize.height / originalVideoSize.height
 
-    let ix = selectedRect.minX * xScale + videoRect.minX
-    let iy = selectedRect.minY * xScale + videoRect.minY
+    let ix = selectedRect.minX * xScale
+    let iy = selectedRect.minY * xScale
     let iw = selectedRect.width * xScale
     let ih = selectedRect.height * yScale
 
     boxRect = NSMakeRect(ix, iy, iw, ih)
-//    Logger.log("actualSize: \(actualSize) -> boxRect: \(boxRect) <- selectedRect: \(selectedRect)")
+//    Logger.log("originalVideoSize: \(originalVideoSize) -> boxRect: \(boxRect) <- selectedRect: \(selectedRect)")
   }
 
   // MARK: - Mouse event to change boxRect
@@ -112,22 +112,22 @@ class CropBoxView: NSView, DraggableObject {
     guard let pwc = settingsViewController.pwc else { return }
     pwc.currentDragObject = self
 
-    let mousePos = convert(event.locationInWindow, from: nil)
-    lastMousePos = mousePos
+    let mousePosInView = convert(event.locationInWindow, from: nil)
+    lastMousePos = mousePosInView
 
-    if rectTop.contains(mousePos) {
+    if rectTop.contains(mousePosInView) {
       isDraggingToResize = true
       dragSide = .top
-    } else if rectBottom.contains(mousePos) {
+    } else if rectBottom.contains(mousePosInView) {
       isDraggingToResize = true
       dragSide = .bottom
-    } else if rectLeft.contains(mousePos) {
+    } else if rectLeft.contains(mousePosInView) {
       isDraggingToResize = true
       dragSide = .left
-    } else if rectRight.contains(mousePos) {
+    } else if rectRight.contains(mousePosInView) {
       isDraggingToResize = true
       dragSide = .right
-    } else if videoRect.contains(mousePos) {
+    } else if isMousePoint(mousePosInView, in: bounds) {
       // free select
       isDraggingNew = true
       window?.invalidateCursorRects(for: self)
@@ -141,7 +141,7 @@ class CropBoxView: NSView, DraggableObject {
   }
 
   override func mouseDragged(with event: NSEvent) {
-    let mousePos = convert(event.locationInWindow, from: nil).constrained(to: videoRect)
+    let mousePosInView = convert(event.locationInWindow, from: nil).constrained(to: bounds)
     guard let pwc = settingsViewController.pwc else { return }
     guard pwc.currentDragObject == self else { return }
     pwc.log.trace{"CropBoxView mouseDragged, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)"}
@@ -151,37 +151,37 @@ class CropBoxView: NSView, DraggableObject {
       var newBoxRect = boxRect
       switch dragSide {
       case .top:
-        let diff = mousePos.y - lastMousePos!.y
+        let diff = mousePosInView.y - lastMousePos!.y
         newBoxRect.origin.y += diff
         newBoxRect.size.height -= diff
 
       case .bottom:
-        let diff = mousePos.y - lastMousePos!.y
+        let diff = mousePosInView.y - lastMousePos!.y
         newBoxRect.size.height += diff
 
       case .right:
-        let diff = mousePos.x - lastMousePos!.x
+        let diff = mousePosInView.x - lastMousePos!.x
         newBoxRect.size.width += diff
 
       case .left:
-        let diff = mousePos.x - lastMousePos!.x
+        let diff = mousePosInView.x - lastMousePos!.x
         newBoxRect.origin.x += diff
         newBoxRect.size.width -= diff
       }
 
       boxRectChanged(to: newBoxRect)
       updateCursorRects()
-      lastMousePos = mousePos
+      lastMousePos = mousePosInView
       needsDisplay = true
     } else if isDraggingNew {
       // free selecting
       let startingMousePos = lastMousePos!
       let newBoxRect: NSRect
-      if startingMousePos.distance(to: mousePos) <= Constants.Window.minInitialDragThreshold {
+      if startingMousePos.distance(to: mousePosInView) <= Constants.Window.minInitialDragThreshold {
         // snap to no selection if min distance not met
         newBoxRect = NSRect(origin: startingMousePos, size: CGSizeZero)
       } else {
-        newBoxRect = NSRect(vertexPoint: startingMousePos, and: mousePos)
+        newBoxRect = NSRect(vertexPoint: startingMousePos, and: mousePosInView)
       }
       boxRectChanged(to: newBoxRect)
       needsDisplay = true

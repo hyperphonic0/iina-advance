@@ -312,10 +312,6 @@ extension PlayerWindowController {
 
     // Post: After animations all finish. Not animated.
     tasks.append(.instantTask{ [self] in
-      if transition.isTogglingFullScreen {
-        // For a better visual experience wait until window finishes moving
-        fadeInNewViews(transition)
-      }
       doPostTransitionWork(transition)
     })
 
@@ -446,9 +442,9 @@ extension PlayerWindowController.LayoutTransition {
         assert(insideTopH >= 0, "Expected insideBars.top - titleBarHeight to be non-negative! Found: \(insideTopH)")
         return outputGeometry.withResizedBars(insideTop: insideTopH)
       } else {
-        // Do not modify case for .outsideViewport - there is a bug in MacOS Tahoe which causes the traffic light buttons to flicker
-        // in the wrong place
-        return outputGeometry
+        let outsideTopH = outputGeometry.outsideBars.top - outputLayout.titleBarHeight
+        assert(outsideTopH >= 0, "Expected outsideBars.top - titleBarHeight to be non-negative! Found: \(outsideTopH)")
+        return outputGeometry.withResizedBars(outsideTop: outsideTopH)
       }
     } else if isTogglingInteractiveMode {
       // - Interactive Mode

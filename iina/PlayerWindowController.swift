@@ -1739,7 +1739,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       let vidGeoToSyncFrom: VideoGeometry
       if let cropController = cropSettingsView, let newVidGeo, let newCropFilter = newVidGeo.cropFilter {
         // If newVidGeo contains a crop, we must apply it
-        log.verbose("Cropping video from videoSizeRaw: \(inputVidGeo.videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(newVidGeo.cropRect?.description ?? "nil")")
+        log.verbose("Cropping video from videoSizeRaw=\(inputVidGeo.videoSizeRaw) cropRect=\(newVidGeo.cropRect?.description ?? "nil")")
 
         /// Set the filter. This will result in `transformGeometry` getting called, which will trigger an exit from interactive mode.
         /// But that task can only happen once we return and relinquish the main queue.

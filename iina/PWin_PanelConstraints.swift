@@ -459,8 +459,8 @@ extension PlayerWindowController {
         updateVP = false
       }
     case .midTransitionHiddenUpdates:
-      if transition.isEnteringFullScreen || transition.isExitingFullScreen {
-        // If entering FS, wait until next stage
+      if transition.isTogglingFullScreen {
+        // Wait until next stage
         return
       }
 

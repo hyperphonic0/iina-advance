@@ -381,7 +381,7 @@ extension ViewportView {
     /// Special case if `keepVideoAwayFromBars` is enabled: keep video away from bars if possible
     /// We want to keep these constraints enabled sometimes even when not used, to ensure cleaner transitions
     /// in some places (e.g. while toggling `keepVideoAwayFromBars` pref while in native FS).
-    let keepVideoAwayFromBars = !interactiveMode && !musicMode && (transitionCategory != .exitingInteractiveMode)
+    let keepVideoAwayFromBars = !interactiveMode && !musicMode && (transitionCategory != .exitingInteractiveMode && transitionCategory != .enteringInteractiveMode)
     let spacerExactValues: MarginQuad = keepVideoAwayFromBars && Preference.bool(for: .keepVideoAwayFromBars) ? geometry.offsetsToKeepVideoAwayFromInsideBars : .zero
     log.trace("SPACER_exact: \(spacerExactValues)")
 

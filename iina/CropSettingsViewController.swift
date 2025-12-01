@@ -44,8 +44,8 @@ class CropSettingsViewController: CropBoxViewController {
 
     cropRectLabel.stringValue = readableCropString
 
-    let actualSize = cropBoxView.actualSize
-    if cropx == 0, cropy == 0, (cropw == 0 && croph == 0) || (cropw == actualSize.widthInt && croph == actualSize.heightInt) {
+    let originalVideoSize = cropBoxView.originalVideoSize
+    if cropx == 0, cropy == 0, (cropw == 0 && croph == 0) || (cropw == originalVideoSize.widthInt && croph == originalVideoSize.heightInt) {
       // No crop
       pwc.log.verbose("Selecting crop preset segment 0 (no crop)")
       aspectPresetsSegment.selectedSegment = 0
@@ -79,7 +79,7 @@ class CropSettingsViewController: CropBoxViewController {
   }
 
   private func isCropRectMatchedWithAsepct(_ aspect: Aspect) -> Bool {
-    let cropped = cropBoxView.actualSize.getCropRect(withAspect: aspect)
+    let cropped = cropBoxView.originalVideoSize.getCropRect(withAspect: aspect)
     return abs(Int(cropped.size.width) - cropw) <= 1 &&
     abs(Int(cropped.size.height) - croph) <= 1 &&
     abs(Int(cropped.origin.x) - cropx) <= 1 &&
@@ -109,7 +109,7 @@ class CropSettingsViewController: CropBoxViewController {
     // Remove saved crop (if any)
     player.info.videoFiltersDisabled.removeValue(forKey: Constants.FilterLabel.crop)
 
-    let videoSizeRaw = cropBoxView.actualSize
+    let videoSizeRaw = cropBoxView.originalVideoSize
     // Use <=, >= to account for imprecision
     let isAllSelected = cropBox.origin.x <= 0 && cropBox.origin.y <= 0 && cropBox.width >= videoSizeRaw.width && cropBox.height >= videoSizeRaw.height
     let isNoSelection = cropBox.width <= 0 || cropBox.height <= 0
@@ -145,7 +145,7 @@ class CropSettingsViewController: CropBoxViewController {
     if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
       /// Prev filter exists. Re-apply it
       player.log.verbose("User chose Cancel button from interactive mode: restoring prev crop and exiting interactive mode")
-      let cropBoxRect = prevCropFilter.cropRect(origVideoSize: cropBoxView.actualSize)
+      let cropBoxRect = prevCropFilter.cropRect(origVideoSize: cropBoxView.originalVideoSize)
       /// Need to update these because they will be read when `video-reconfig` is received
       cropw = Int(cropBoxRect.width)
       croph = Int(cropBoxRect.height)
@@ -153,7 +153,7 @@ class CropSettingsViewController: CropBoxViewController {
       cropy = Int(cropBoxRect.origin.y)
     } else {
       player.log.verbose("User chose Cancel button from interactive mode (no prev crop)")
-      let videoSizeRaw = cropBoxView.actualSize
+      let videoSizeRaw = cropBoxView.originalVideoSize
       cropw = Int(videoSizeRaw.width)
       croph = Int(videoSizeRaw.height)
       cropx = 0
@@ -175,12 +175,12 @@ class CropSettingsViewController: CropBoxViewController {
     guard let aspect = Aspect(string: ratio) else {
       // Fall back to selecting all
       pwc.log.error("Failed to get aspect from string \(ratio.quoted); falling back to select all")
-      cropBoxView.setSelectedRect(to: NSRect(origin: CGPointZero, size: cropBoxView.actualSize))
+      cropBoxView.setSelectedRect(to: NSRect(origin: CGPointZero, size: cropBoxView.originalVideoSize))
       return
     }
 
-    let actualSize = cropBoxView.actualSize
-    let cropped = actualSize.getCropRect(withAspect: aspect)
+    let originalVideoSize = cropBoxView.originalVideoSize
+    let cropped = originalVideoSize.getCropRect(withAspect: aspect)
     pwc.log.error("Adjusting cropBoxView to \(cropped)")
     cropBoxView.setSelectedRect(to: cropped)
   }

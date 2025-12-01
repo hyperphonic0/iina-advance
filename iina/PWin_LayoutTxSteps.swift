@@ -812,15 +812,9 @@ extension PlayerWindowController {
     }
 
     if transition.outputGeometry.mode.isInteractiveMode {
-      if let cropController = cropSettingsView {
+      if cropSettingsView != nil {
         let videoSizeRaw = transition.outputGeometry.video.videoSizeRaw
-        addOrReplaceCropBoxSelection(rawVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
-
-        // Native FS seems to change frame sizes on its own in some undocumented way, so just measure whatever is displayed for that.
-        // But all other modes should use precalculated values because NSView bounds is sometimes not reliable depending on timing
-        let cropBoxBounds = outputLayout.isNativeFullScreen ? videoView.bounds : NSRect(origin: CGPointZero, size: transition.outputGeometry.videoSize)
-        cropController.cropBoxView.resized(with: cropBoxBounds)
-        cropController.cropBoxView.needsLayout = true
+        addOrReplaceCropBoxSelection(rawVideoSize: videoSizeRaw)
       } else if !player.isRestoring, player.info.isFileLoaded, !player.info.isVideoTrackSelected {
         // if restoring, there will be a brief delay before getting player info, which is ok
         Utility.showAlert("no_video_track")
@@ -1437,7 +1431,7 @@ extension PlayerWindowController {
 
   /// Call this when `origVideoSize` is known.
   /// Assumes `videoRect == videoView.frame`
-  private func addOrReplaceCropBoxSelection(rawVideoSize: NSSize, videoViewSize: NSSize) {
+  private func addOrReplaceCropBoxSelection(rawVideoSize: NSSize) {
     guard let cropController = self.cropSettingsView else { return }
 
     if !videoView.subviews.contains(cropController.cropBoxView) {
@@ -1445,8 +1439,7 @@ extension PlayerWindowController {
       cropController.cropBoxView.addAllConstraintsToFillSuperview()
     }
 
-    cropController.cropBoxView.actualSize = rawVideoSize
-    cropController.cropBoxView.resized(with: NSRect(origin: .zero, size: videoViewSize))
+    cropController.cropBoxView.originalVideoSize = rawVideoSize
   }
 
   private func removeCropControls() {

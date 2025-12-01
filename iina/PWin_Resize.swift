@@ -224,13 +224,6 @@ extension PlayerWindowController {
     // Update floating control bar position if applicable
     adjustFloatingControllerOrigin(for: newGeometry)
 
-    if newGeometry.mode.isInteractiveMode, !isAnimatingLayoutTransition {
-      // Update interactive mode selectable box size. Origin is relative to viewport origin.
-      // Do not do this when animating layout changes. It causes jitters in the animation.
-      let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
-      cropSettingsView?.cropBoxView.resized(with: newVideoRect)
-    }
-
     if osd.animationState == .shown {
       updateOSDTextSize(from: newGeometry)
     }

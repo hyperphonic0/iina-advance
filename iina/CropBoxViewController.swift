@@ -42,18 +42,18 @@ class CropBoxViewController: NSViewController {
   private func updateCropValues(from selectedRect: NSRect) {
     if selectedRect.width.isNaN { return }
     pwc.log.verbose("Updating crop values from selectedRect=\(selectedRect)")
-    var maxHeight = cropBoxView.actualSize.height
+    var maxHeight = cropBoxView.originalVideoSize.height
     if !maxHeight.isNormal {
       maxHeight = 0
     }
     let mpvY = maxHeight - (selectedRect.origin.y + selectedRect.height)
 
     // ffmpeg will error if these are outside the video's dimension. Put on some guard rails
-    cropx = min(max(0, Int(selectedRect.minX)), Int(cropBoxView.actualSize.width))
-    cropy = min(max(0, Int(mpvY)), Int(cropBoxView.actualSize.height))
-    cropw = min(max(0, Int(selectedRect.width)), Int(cropBoxView.actualSize.width))
-    croph = min(max(0, Int(selectedRect.height)), Int(cropBoxView.actualSize.height))
-    cropyFlippedForMac = min(max(0, Int(selectedRect.minY)), Int(cropBoxView.actualSize.height))
+    cropx = min(max(0, Int(selectedRect.minX)), Int(cropBoxView.originalVideoSize.width))
+    cropy = min(max(0, Int(mpvY)), Int(cropBoxView.originalVideoSize.height))
+    cropw = min(max(0, Int(selectedRect.width)), Int(cropBoxView.originalVideoSize.width))
+    croph = min(max(0, Int(selectedRect.height)), Int(cropBoxView.originalVideoSize.height))
+    cropyFlippedForMac = min(max(0, Int(selectedRect.minY)), Int(cropBoxView.originalVideoSize.height))
   }
 
   func handleKeyDown(mpvKeyCode: String) {
