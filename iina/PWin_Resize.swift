@@ -48,17 +48,17 @@ extension PlayerWindowController {
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     guard !isAnimatingLayoutTransition else {
-      log.verbose("[WinWillResize] isAnimatingLayoutTransition=Y: will grant requestedSize=\(requestedSize)")
+      log.verbose("[WndWillResize] isAnimatingLayoutTransition=Y: will grant requestedSize=\(requestedSize)")
       return requestedSize
     }
     guard !isInWindowResizeDenialPeriod() else {
-      log.verbose("[WinWillResize] Denying req=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)")
+      log.verbose("[WndWillResize] Denying req=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)")
       pendingResizeForScreenChange = false  // should be safe to reset this now
       return window.frame.size
     }
     if !window.inLiveResize && isLeftMouseButtonDown {
       // Looks like user is moving the window, but not resizing it. Prevent the system from trying to resize it..
-      log.verbose("[WinWillResize] Denying req=\(requestedSize): left mouseBtn down, but not resizing")
+      log.verbose("[WndWillResize] Denying req=\(requestedSize): left mouseBtn down, but not resizing")
       return window.frame.size
     }
 
@@ -71,7 +71,7 @@ extension PlayerWindowController {
     let inLiveResize = window.inLiveResize
 
     let lockViewportToVideoSize = currentLayout.mode.alwaysLockViewportToVideoSize || Preference.bool(for: .lockViewportToVideoSize)
-    log.verbose("[WinWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)")
+    log.verbose("[WndWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)")
 
     // Needed for snappy updates to floating OSC 
     CATransaction.setAnimationDuration(0)
@@ -94,7 +94,7 @@ extension PlayerWindowController {
           isLiveResizingWidth = true
         }
       }
-      log.verbose("[WinWillResize] choseWidth=\(self.isLiveResizingWidth?.yn ?? "nil")")
+      log.verbose("[WndWillResize] choseWidth=\(self.isLiveResizingWidth?.yn ?? "nil")")
     }
 
     let newGeo: PWinGeometry
@@ -105,13 +105,13 @@ extension PlayerWindowController {
 
     case .windowedNormal, .windowedInteractive:
       guard !sessionState.isRestoring else {
-        log.error("[WinWillResize] Still restoring; returning existing geo=\(windowedModeGeo.windowFrame.size)")
+        log.error("[WndWillResize] Still restoring; returning existing geo=\(windowedModeGeo.windowFrame.size)")
         return windowedModeGeo.windowFrame.size
       }
 
       let currentGeo = windowedGeoForCurrentFrame()
       assert(currentGeo.mode == currentLayout.mode,
-             "[WinWillResize] currentGeo.mode (\(currentGeo.mode)) != currentLayout.mode (\(currentLayout.mode))")
+             "[WndWillResize] currentGeo.mode (\(currentGeo.mode)) != currentLayout.mode (\(currentLayout.mode))")
 
       newGeo = currentGeo.resizingWindow(to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize,
                                          inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
@@ -126,7 +126,7 @@ extension PlayerWindowController {
 
     case .musicMode:
       guard !sessionState.isRestoring else {
-        log.error("[WinWillResize] Still restoring; returning existing musicModeGeo=\(musicModeGeo.windowFrame.size)")
+        log.error("[WndWillResize] Still restoring; returning existing musicModeGeo=\(musicModeGeo.windowFrame.size)")
         return musicModeGeo.windowFrame.size
       }
 
@@ -147,7 +147,7 @@ extension PlayerWindowController {
     }
 
     let newWindowSize = newGeo.windowFrame.size
-    log.verbose("[WinWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)")
+    log.verbose("[WndWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)")
     return newWindowSize
   }
 
@@ -189,13 +189,19 @@ extension PlayerWindowController {
   }
 
   fileprivate func submit(_ geometry: PWinGeometry) {
-    if geometry.mode == .musicMode {
+    switch geometry.mode {
+    case .musicMode:
       musicModeGeo = geometry
       // Update defaults:
       Preference.set(geometry.isViewportShown, for: .musicModeShowAlbumArt)
       Preference.set(geometry.isMusicModePlaylistShown, for: .musicModeShowPlaylist)
-    } else if geometry.mode.isWindowed {
+    case .windowedNormal, .windowedInteractive:
       windowedModeGeo = geometry
+    case .fullScreenNormal, .fullScreenInteractive:
+      if windowedModeGeo.screenID != geometry.screenID {
+        // Update screenID at least, so that window won't go back to other screen when exiting FS
+        windowedModeGeo = windowedModeGeo.clone(screenID: geometry.screenID)
+      }
     }
 
     log.verbose("Submit: Calling sendWindowScaleToMPV")

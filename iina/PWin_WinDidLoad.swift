@@ -166,9 +166,6 @@ extension PlayerWindowController {
     let iconSpacingH = Constants.Distance.titleBarIconHSpacing
     // - LEADING
 
-    let leadingTB = leadingTitleBarAccessoryView
-    leadingTB.idString = "leadingTitleBarAccessoryView"
-
     builder.configureTitleBarButton(leadingSidebarToggleButton,
                                     Images.sidebarLeading,
                                     identifier: "LeadingSidebarBtn_Native",
@@ -183,19 +180,19 @@ extension PlayerWindowController {
     leadingAccTrailingSpaceConstraint.priority = .defaultHigh
     leadingAccTrailingSpaceConstraint.isActive = true
 
+    let leadingTB = leadingTitleBarAccessoryView
+    leadingTB.idString = "leadingTitleBarAccessoryView"
     leadingTB.orientation = .horizontal
     leadingTB.alignment = .centerY
     leadingTB.distribution = .fill
     leadingTB.spacing = iconSpacingH
     leadingTB.detachesHiddenViews = true
+    leadingTB.translatesAutoresizingMaskIntoConstraints = false
 
     leadingTB.addArrangedSubview(leadingSidebarToggleButton)
     leadingTB.addArrangedSubview(leadingAccTrailingSpacer)
 
     // - TRAILING
-
-    let trailingTB = trailingTitleBarAccessoryView
-    trailingTB.idString = "trailingTitleBarAccessoryView"
 
     builder.configureTitleBarButton(onTopButton,
                                     Images.onTopOff,
@@ -215,12 +212,14 @@ extension PlayerWindowController {
     trailingAccTrailingSpaceConstraint.priority = .defaultHigh
     trailingAccTrailingSpaceConstraint.isActive = true
 
+    let trailingTB = trailingTitleBarAccessoryView
+    trailingTB.idString = "trailingTitleBarAccessoryView"
     trailingTB.orientation = .horizontal
     trailingTB.alignment = .centerY
-    trailingTB.detachesHiddenViews = true
     trailingTB.distribution = .fill
     trailingTB.spacing = iconSpacingH
-    trailingTB.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+    trailingTB.detachesHiddenViews = true
+    trailingTB.translatesAutoresizingMaskIntoConstraints = false
 
     trailingTB.addArrangedSubview(trailingSidebarToggleButton)
     trailingTB.addArrangedSubview(onTopButton)

@@ -11,7 +11,6 @@ import Cocoa
 // TODO: gpu-next
 // TODO: persist mpv properties in saved player state
 // TODO: support parent playlist
-// TODO: auto-adjust window size when Dock shown/hidden
 // TODO: investigate generating thumbnails & Now Playing art from mpv screenshot cmd via RPC
 class PlayerWindowController: WindowController, NSWindowDelegate {
   unowned var player: PlayerCore
@@ -493,6 +492,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   let onTopButton = SymButton()
   let leadingSidebarToggleButton = SymButton()
   let trailingSidebarToggleButton = SymButton()
+  var hiddenObservation: NSKeyValueObservation?
 
   /// The document icon of the window's native title bar.
   var documentIconButton: NSButton? {
@@ -1246,8 +1246,9 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func windowDidChangeOcclusionState(_ notification: Notification) {
-    log.trace("WindowDidChangeOcclusionState received")
+    log.verbose("WndDidChangeOcclusionState received")
     assert(DispatchQueue.isExecutingIn(.main))
+    // In case OpenGL buffer was emptied while window was hidden:
     videoView.forceDraw()
   }
 
@@ -1261,11 +1262,11 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     guard let window = window, let screen = window.screen else { return }
     let displayId = screen.displayId
     guard videoView.currentDisplay != displayId else {
-      log.trace{"WindowDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged"}
+      log.trace{"WndDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged"}
       return
     }
 
-    log.trace{"WindowDidChangeScreen received: \(videoView.currentDisplay?.description ?? "nil") → \(screen.displayId)"}
+    log.trace{"WndDidChangeScreen received: \(videoView.currentDisplay?.description ?? "nil") → \(screen.displayId)"}
     if videoView.currentDisplay != nil {  // Don't need for first update
       restartWindowResizeDenialPeriod("windowDidChangeScreen")
       pendingResizeForScreenChange = true
@@ -1275,12 +1276,12 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     screenChangedDebouncer.run { [self] in
       guard !isClosing else { return }
       guard videoView.currentDisplay != displayId else {
-        log.trace{"WindowDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged"}
+        log.trace{"WndDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged"}
         return
       }
 
       animationPipeline.submitInstantTask({ [self] in
-        log.verbose("WindowDidChangeScreen wNum=\(window.windowNumber): frame=\(window.frame) screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
+        log.verbose("WndDidChangeScreen wNum=\(window.windowNumber): frame=\(window.frame) screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
         applyThemeMaterial(window, screen)  // scaleFactor may have changed
         videoView.refreshAllVideoDisplayState()
         player.events.emit(.windowScreenChanged)
@@ -1288,7 +1289,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
       let blackWindows = self.blackWindows
       if isFullScreen && Preference.bool(for: .blackOutMonitor) && blackWindows.compactMap({$0.screen?.displayId}).contains(displayId) {
-        log.verbose("WindowDidChangeScreen: black windows contains window's displayId \(displayId); removing & regenerating black windows")
+        log.verbose("WndDidChangeScreen: black windows contains window's displayId \(displayId); removing & regenerating black windows")
         // Window changed screen: adjust black windows accordingly
         removeBlackWindows()
         blackOutOtherMonitors()
@@ -1297,40 +1298,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       guard !sessionState.isRestoring, !isAnimatingLayoutTransition else { return }
 
       animationPipeline.submitTask(timing: .linear, { [self] in
-        let screenID = bestScreen.screenID
-        let currentLayout = currentLayout
-
-        /// Need to recompute legacy FS's window size so it exactly fills the new screen.
-        /// But looks like the OS will try to reposition the window on its own and can't be stopped...
-        /// Just wait until after it does its thing before calling `setFrame()`.
-        if currentLayout.isLegacyFullScreen {
-          guard currentLayout.isLegacyFullScreen else { return }  // check again now that we are inside animation
-          log.verbose("WindowDidChangeScreen: updating legacy FS window")
-          let fsGeo = fullScreenGeo()
-          setFrameAndUpdateWindowSubviews(using: fsGeo)
-          // Update screenID at least, so that window won't go back to other screen when exiting FS
-          windowedModeGeo = windowedModeGeo.clone(screenID: screenID)
-          player.saveState()
-        } else if currentLayout.mode == .windowedNormal && windowedModeGeo.screenFit.shouldMoveWindowToKeepInContainer {
-          // Update windowedModeGeo with new window position & screen (but preserve previous size)
-          animationPipeline.submitTask(timing: .linear, { [self] in
-            let oldWindowFrame = windowedModeGeo.windowFrame
-            let newWindowFrame = window.frame
-            if let screenFrame = NSScreen.forScreenID(screenID)?.visibleFrame {
-              // If user is dragging with mouse, it feels more jarring to change the window frame, so try to avoid that.
-              // So if not using the mouse, always move & resize (if configured for shouldMoveWindowToKeepInContainer, as checked above).
-              // If using the mouse, only move & resize if the window is too large to fit the screen. (This is probably the best policy
-              // - as of MacOS Sequoia 15.4.1, the window manager gets very anxious when the window is large and snaps it to the
-              // top of the screen after every move, which results an unpleasant UX).
-              if !isLeftMouseButtonDown || !oldWindowFrame.size.canFitInside(screenFrame.size) {
-                let newGeo = windowedModeGeo.clone(windowFrame: newWindowFrame, screenID: screenID).refitted()
-                log.verbose("WindowDidChangeScreen: updating windowFrame to fit screen: \(oldWindowFrame) → \(newGeo.windowFrame)")
-                windowedModeGeo = newGeo
-                setFrameAndUpdateWindowSubviews(using: newGeo)
-              }
-            }
-          })
-        }
+        adjustWindowFrameForScreenUpdate(nameForLog: "WndDidChangeScreen")
       })
     }
   }
@@ -1361,25 +1329,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         // Put this inside a Task. It will cause hiccups in other animations if run outside
         videoView.refreshAllVideoDisplayState()
 
-        let layout = currentLayout
-        if layout.isLegacyFullScreen {
-          guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
-          log.verbose("WndDidChangeScreenParams: updating legacy full screen window")
-          let fsGeo = fullScreenGeo()
-          setFrameAndUpdateWindowSubviews(using: fsGeo)
-        } else if layout.mode == .windowedNormal {
-          /// In certain corner cases (e.g., exiting legacy full screen after changing screens while in full screen),
-          /// the screen's `visibleFrame` can change after `transition.outputGeometry` was generated and won't be known until the end.
-          /// By calling `refitted()` here, we can make sure the window is constrained to the up-to-date `visibleFrame`.
-          let oldWindowedGeo = windowedModeGeo
-          let newGeo = oldWindowedGeo.refitted()
-          guard !newGeo.hasEqual(windowFrame: oldWindowedGeo.windowFrame, videoSize: oldWindowedGeo.videoSize) else {
-            log.verbose("WndDidChangeScreenParams: in windowed mode; no change to windowFrame")
-            return
-          }
-          log.verbose("WndDidChangeScreenParams: calling setFrame with wf=\(newGeo.windowFrame) vidSize=\(newGeo.videoSize)")
-          setFrameAndUpdateWindowSubviews(using: newGeo)
-        }
+        adjustWindowFrameForScreenUpdate(nameForLog: "WndDidChangeScreenParams")
       })
     }
   }
@@ -1413,6 +1363,48 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
         }
       })
     }
+  }
+
+  /// Used for possibly updating the window size and/or origin after receiving one of:
+  /// `windowDidChangeScreen`
+  /// `windowDidChangeScreenParameters`
+  private func adjustWindowFrameForScreenUpdate(nameForLog: String) {
+    guard let window = window, let screen = window.screen else { return }
+    let screenID = screen.screenID
+    let currentLayout = currentLayout
+
+    /// Need to recompute legacy FS's window size so it exactly fills the new screen.
+    /// But looks like the OS will try to reposition the window on its own and can't be stopped...
+    /// Just wait until after it does its thing before calling `setFrame()`.
+    if currentLayout.isLegacyFullScreen {
+      guard currentLayout.isLegacyFullScreen else { return }  // check again now that we are inside animation
+      log.verbose("\(nameForLog): Updating legacy FS window")
+      let fsGeo = fullScreenGeo()
+      setFrameAndUpdateWindowSubviews(using: fsGeo, submitUpdate: true)
+      return
+    }
+
+    // If user is dragging with mouse, it feels more jarring to change the window frame, so try to avoid that.
+    guard !isLeftMouseButtonDown else { return }
+    guard NSScreen.forScreenID(screenID) != nil else { return }
+
+    let newWindowFrame = window.frame
+    // Don't resize the window unless it's too big to fit on screen.
+    //      let needsSizeChange = !newWindowFrame.size.canFitInside(screenFrame.size)
+    let newGeo: PWinGeometry
+    if currentLayout.mode.isWindowed && windowedModeGeo.screenFit.shouldMoveWindowToKeepInContainer {
+      /// In certain corner cases (e.g., exiting legacy full screen after changing screens while in full screen),
+      /// the screen's `visibleFrame` can change after `transition.outputGeometry` was generated and won't be known until the end.
+      /// By calling `refitted()` here, we can make sure the window is constrained to the up-to-date `visibleFrame`.
+      newGeo = windowedModeGeo.clone(windowFrame: newWindowFrame, screenID: screenID).refitted()
+    } else if currentLayout.mode == .musicMode && musicModeGeo.screenFit.shouldMoveWindowToKeepInContainer {
+      newGeo = musicModeGeo.clone(windowFrame: newWindowFrame, screenID: screenID).refitted()
+    } else {
+      return
+    }
+
+    log.verbose("\(nameForLog): Updating windowFrame to fit screen: \(newWindowFrame) → \(newGeo.windowFrame)")
+    setFrameAndUpdateWindowSubviews(using: newGeo, submitUpdate: true)
   }
 
   // MARK: - Window delegate: Active status
@@ -1452,7 +1444,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func updateColorsForKeyWindowStatus(isKey: Bool) {
-    if let customTitleBar {
+    if customTitleBar != nil {
       updateTitle()
     } else {
       /// Duplicate some of the logic in `customTitleBar.refreshTitle()`

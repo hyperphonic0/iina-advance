@@ -1404,6 +1404,13 @@ extension PlayerWindowController {
       accessory.view = trailingTitleBarAccessoryView
       accessory.fullScreenMinHeight = Constants.Distance.standardTitleBarHeight
       accessory.layoutAttribute = .trailing
+
+      hiddenObservation = accessory.observe(\.isHidden, options: [.new]) { [self] view, change in
+        if let newValue = change.newValue {
+          log.debug("❤️❤️❤️ Accessory visibility changed: \(newValue ? "Hidden" : "Shown")")
+          // Perform custom actions here
+        }
+      }
     }
 
     if !window.titlebarAccessoryViewControllers.contains(leadingTitlebarAccesoryViewController!) {
