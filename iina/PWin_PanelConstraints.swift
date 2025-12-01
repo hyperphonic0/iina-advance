@@ -356,34 +356,34 @@ extension PlayerWindowController {
                                         _ log: any Logger.Subsystem) {
     let hasSidebarAtAnyStage = transition.inputGeometry.isMusicModePlaylistShown || transition.outputGeometry.isMusicModePlaylistShown
     || transition.inputLayout.isAnySidebarVisible || transition.outputLayout.isAnySidebarVisible
+    guard hasSidebarAtAnyStage else { return }
+
+    var sidebarUpdateGeo: PWinGeometry? = nil
+    if transition.isTogglingNativeFullScreen {
+      sidebarUpdateGeo = transition.outputGeometry
+    }
 
     // - Sidebars
     switch stage {
     case .preTransitionSetup:
-      if transition.isEnteringNativeFullScreen {
-        updateSidebarVerticalConstraints(tabHeight: transition.outputGeometry.sidebarTabHeight, downshift: transition.outputGeometry.sidebarDownshift)
-      } else {
-        updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
-      }
+      sidebarUpdateGeo = sidebarUpdateGeo ?? stageGeo
 
     case .closeOldPanels:
       assert(!transition.isWindowInitialLayout)
-      if hasSidebarAtAnyStage {
-        // Sidebars (if closing)
-        let ΔWindowWidth = stageGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
-        animateShowOrHideSidebars(transition.inputGeometry,
-                                  leadingVisible: transition.isClosingLeadingSidebar ? false : nil,
-                                  trailingVisible: transition.isClosingTrailingSidebar ? false : nil,
-                                  ΔWindowWidth: ΔWindowWidth, log)
+      // Sidebars (if closing)
+      let ΔWindowWidth = stageGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
+      animateShowOrHideSidebars(transition.inputGeometry,
+                                leadingVisible: transition.isClosingLeadingSidebar ? false : nil,
+                                trailingVisible: transition.isClosingTrailingSidebar ? false : nil,
+                                ΔWindowWidth: ΔWindowWidth, log)
 
+      if sidebarUpdateGeo == nil {
         if transition.isExitingMusicMode {
           // Use music mode tab height
-          updateSidebarVerticalConstraints(tabHeight: transition.inputGeometry.sidebarTabHeight, downshift: transition.inputGeometry.sidebarDownshift)
-        } else if transition.isTogglingNativeFullScreen {
-          updateSidebarVerticalConstraints(tabHeight: transition.outputGeometry.sidebarTabHeight, downshift: transition.outputGeometry.sidebarDownshift)
+          sidebarUpdateGeo = transition.inputGeometry
         } else {
           // Update sidebar vertical alignments to match top bar:
-          updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
+          sidebarUpdateGeo = stageGeo
         }
       }
 
@@ -392,9 +392,7 @@ extension PlayerWindowController {
 
     case .midTransitionHiddenUpdates:
       /// Remove views for closed sidebars *BEFORE* doing logic for opening: the same transition can be doing both
-      if transition.isTogglingNativeFullScreen {
-        updateSidebarVerticalConstraints(tabHeight: transition.outputGeometry.sidebarTabHeight, downshift: transition.outputGeometry.sidebarDownshift)
-      } else if transition.isClosingLeadingSidebar, let tabGroupToHide = transition.inputLayout.leadingSidebar.visibleTabGroup {
+      if transition.isClosingLeadingSidebar, let tabGroupToHide = transition.inputLayout.leadingSidebar.visibleTabGroup {
         /// Finish closing (if closing)
         removeSidebarTabGroupView(group: tabGroupToHide)
       }
@@ -406,31 +404,53 @@ extension PlayerWindowController {
 
       prepareSidebarsForOpening(transition, stageGeo)
 
-    case .extraAnimationBeforeOpenNewPanels:
-      if hasSidebarAtAnyStage {
-        updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
+      if sidebarUpdateGeo == nil {
+        if transition.isEnteringMusicMode {
+          // Use music mode tab height
+          sidebarUpdateGeo = transition.outputGeometry
+        } else {
+          // Update sidebar vertical alignments to match top bar:
+          sidebarUpdateGeo = stageGeo
+        }
       }
+
+    case .extraAnimationBeforeOpenNewPanels:
+      sidebarUpdateGeo = sidebarUpdateGeo ?? stageGeo
 
     case .openNewPanels:
       if transition.isWindowInitialLayout {
         // Need to run this now because intiial layout doesn't run the midTransitionHiddenUpdates step
         prepareSidebarsForOpening(transition, stageGeo)
       }
-      if hasSidebarAtAnyStage {
-        // Sidebars (if opening)
-        let ΔWindowWidth = transition.ΔWindowWidth
-        animateShowOrHideSidebars(transition.outputGeometry,
-                                  leadingVisible: transition.isOpeningLeadingSidebar ? true : nil,
-                                  trailingVisible: transition.isOpeningTrailingSidebar ? true : nil,
-                                  ΔWindowWidth: ΔWindowWidth, log)
 
-        updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
-      }
+      // Sidebars (if opening)
+      let ΔWindowWidth = transition.ΔWindowWidth
+      animateShowOrHideSidebars(transition.outputGeometry,
+                                leadingVisible: transition.isOpeningLeadingSidebar ? true : nil,
+                                trailingVisible: transition.isOpeningTrailingSidebar ? true : nil,
+                                ΔWindowWidth: ΔWindowWidth, log)
+
+      sidebarUpdateGeo = sidebarUpdateGeo ?? stageGeo
 
     case .postTransition:
       break
     }
+
+    if let sidebarUpdateGeo {
+      updateSidebarVerticalConstraints(using: sidebarUpdateGeo)
+    }
   }
+
+  /// Make sure this is called AFTER `windowController.setupTitleBarAndOSC()` has updated its variables
+  private func updateSidebarVerticalConstraints(using targetGeo: PWinGeometry) {
+    let downshift = targetGeo.sidebarDownshift
+    let tabHeight = targetGeo.sidebarTabHeight
+    log.verbose("Updating sidebars: downshift=\(downshift) tabHeight=\(tabHeight)")
+    quickSettingView.setVerticalConstraints(downshift: downshift, tabHeight: tabHeight)
+    playlistView.setVerticalConstraints(downshift: downshift, tabHeight: tabHeight)
+    pluginView.setVerticalConstraints(downshift: downshift, tabHeight: tabHeight)
+  }
+
 
   private func updateWindowFrameIfNeeded(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry,
                                          in transition: LayoutTransition,
@@ -513,12 +533,6 @@ extension PlayerWindowController {
       prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
                               layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
       didSomething = true
-    }
-
-    if transition.isEnteringMusicMode {
-      updateSidebarVerticalConstraints(tabHeight: transition.outputGeometry.sidebarTabHeight, downshift: transition.outputGeometry.sidebarDownshift)
-    } else {
-      updateSidebarVerticalConstraints(tabHeight: stageGeo.sidebarTabHeight, downshift: stageGeo.sidebarDownshift)
     }
 
     // Update bottom bar constraints *after* sidebars are added
