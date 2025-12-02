@@ -72,6 +72,7 @@ struct AppDetailsLogging {
     logDependencyDetails()
     logBuildDetails()
     logPlatformDetails()
+    logScreenDetails()
   }
 
   /// Useful to know the versions of significant dependencies that are being used so log that
@@ -87,6 +88,7 @@ struct AppDetailsLogging {
       Logger.log("  \(library.name) \(AppDetailsLogging.versionAsString(library.version))")
     }
     Logger.log("libass \(MPVOptionDefaults.shared.libassVersion)")
+    
   }
 
   /// Log details about when and from what sources IINA was built.
@@ -99,10 +101,10 @@ struct AppDetailsLogging {
   /// - The git branch
   /// - The git commit
   private func logBuildDetails() {
-    guard let date = InfoDictionary.shared.buildDateString,
+    guard let buildDateString = InfoDictionary.shared.buildDateString,
           let sdk = InfoDictionary.shared.buildSDK,
           let xcode = InfoDictionary.shared.buildXcode else { return }
-    Logger.log("Built using Xcode \(xcode) and macOS SDK \(sdk) on \(date)")
+    Logger.log("Built using Xcode \(xcode) and macOS SDK \(sdk) on \(buildDateString)")
     guard let branch = InfoDictionary.shared.buildBranch,
           let commit = InfoDictionary.shared.buildCommit else { return }
     Logger.log("From branch \(branch), commit \(commit)")
@@ -113,12 +115,53 @@ struct AppDetailsLogging {
   /// Certain IINA capabilities, such as hardware acceleration, are contingent upon aspects of the Mac IINA is running on. If available,
   /// this method will log:
   /// - macOS version
-  /// - model identifier of the Mac
-  /// - kind of processor
+  /// - Model identifier of the Mac
+  /// - Kind of processor chip
+  /// - Amount of physical memory
+  /// - Thermal state
+  /// - Whether low power mode is active
+  /// - Note: At this time IINA does not listen for changes to the thermal state or whether low power mode is active or not. For now
+  ///         this information is only logged at startup. That might change if some correlation between these states and IINA's
+  ///         behavior is seen.
   private func logPlatformDetails() {
     Logger.log("Running under macOS \(ProcessInfo.processInfo.operatingSystemVersionString)")
-    guard let cpu = Sysctl.shared.machineCpuBrandString, let model = Sysctl.shared.hwModel else { return }
-    Logger.log("On a \(model) with an \(cpu) processor")
+    if let cpu = Sysctl.shared.machineCpuBrandString, let model = Sysctl.shared.hwModel {
+      let memory = ProcessInfo.processInfo.physicalMemory / 1073741824
+      Logger.log("On a \(model) with an \(cpu) processor and \(memory) GiB of RAM")
+    }
+    let thermalState = ProcessInfo.processInfo.thermalState
+    if thermalState != .nominal {
+      Logger.log("Thermal state: \(thermalState)")
+    }
+    if #available(macOS 12, *), ProcessInfo.processInfo.isLowPowerModeEnabled {
+      Logger.log("Low Power Mode is active")
+    }
   }
 
+  /// Log all the available [screens](https://developer.apple.com/documentation/appkit/nsscreen) and all the
+  /// connected displays.
+  private func logScreenDetails() {
+    DisplayController.shared.addNewDisplays()
+    NSScreen.screens.enumerated().forEach { screen in
+      NSScreen.log("NSScreen.screens[\(screen.offset)]" , screen.element)
+    }
+  }
+
+}
+
+extension ProcessInfo.ThermalState: @retroactive CustomStringConvertible {
+  public var description: String {
+    switch self {
+    case .nominal:
+      "nominal"
+    case .fair:
+      "fair"
+    case .serious:
+      "serious"
+    case .critical:
+      "critical"
+    @unknown default:
+      "unknown"
+    }
+  }
 }

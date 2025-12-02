@@ -1789,6 +1789,64 @@ extension NSScreen {
     }
     return 1.0  // default fallback
   }
+
+  /// Log the given `NSScreen` object.
+  ///
+  /// Due to issues with multiple monitors and how the screen to use for a window is selected detailed logging has been added in this
+  /// area in case additional problems are encountered in the future.
+  /// - parameter label: Label to include in the log message.
+  /// - parameter screen: The `NSScreen` object to log.
+  static func log(_ label: String, _ screen: NSScreen?, subsystem: any Logger.Subsystem = Logger.general) {
+    guard let screen = screen else {
+      Logger.log("\(label): nil", level: .warning, subsystem: subsystem)
+      return
+    }
+    var message = "\(label), \(screen.localizedName)"
+    if screen == NSScreen.main {
+      message += " (main screen)"
+    }
+    let screenNumberKey = NSDeviceDescriptionKey(rawValue: "NSScreenNumber")
+    if let displayId = screen.deviceDescription[screenNumberKey] as? CGDirectDisplayID {
+      message += ", on display \(displayId)"
+    }
+    message += ":"
+    message += "\n  Frame: \(screen.frame), visible \(screen.visibleFrame)"
+    message += "\n  \(formEDRMessage(screen))"
+    Logger.log(message, subsystem: subsystem)
+  }
+
+  /// Log EDR aspects of the given `NSScreen` object.
+  /// - parameter screen: The `NSScreen` object to log EDR aspects of.
+  static func logEDR(_ label: String, _ screen: NSScreen?, subsystem: any Logger.Subsystem = Logger.general) {
+    guard let screen = screen else {
+      Logger.log("\(label): nil", level: .warning, subsystem: subsystem)
+      return
+    }
+    var message = "\(label), \(screen.localizedName)"
+    if screen == NSScreen.main {
+      message += " (main screen)"
+    }
+    let screenNumberKey = NSDeviceDescriptionKey(rawValue: "NSScreenNumber")
+    if let displayId = screen.deviceDescription[screenNumberKey] as? CGDirectDisplayID {
+      message += ", on display \(displayId)"
+    }
+    message += ":"
+    message += "\n  Frame: \(screen.frame), visible \(screen.visibleFrame)"
+    message += "\n  \(formEDRMessage(screen))"
+    Logger.log(message, subsystem: subsystem)
+  }
+
+  /// Return a string describing EDR aspects of the given screen.
+  /// - Parameter screen: The `NSScreen` object to form EDR aspects of.
+  /// - Returns: A string with EDR related details of the given screen for use in a log message.
+  private static func formEDRMessage(_ screen: NSScreen) -> String {
+    let maxPossibleEDR = screen.maximumPotentialExtendedDynamicRangeColorComponentValue
+    let canEnableEDR = maxPossibleEDR > 1.0
+    return """
+      EDR: \(canEnableEDR ? "Supported" : "Not supported"), max potential \(maxPossibleEDR), \
+      max current \(screen.maximumExtendedDynamicRangeColorComponentValue)
+      """
+  }
 }
 
 extension NSWindow {

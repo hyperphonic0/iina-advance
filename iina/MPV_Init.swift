@@ -193,6 +193,13 @@ extension MPVController {
       setUserOption(PK.replayGainFallback, type: .float, forName: MPVOption.Audio.replaygainFallback, verboseIfDefault: true)
     }
 
+    if !player.isPresentInUserOptions(MPVOption.Audio.gaplessAudio) {
+        setUserOption(PK.gaplessAudio, type: .other, forName: MPVOption.Audio.gaplessAudio, verboseIfDefault: true) { key in
+          let value = Preference.integer(for: key)
+          return Preference.GaplessAudioOption(rawValue: value)?.mpvString ?? "weak"
+      }
+    }
+
     // - Sub
 
     if !player.isPresentInUserOptions(MPVOption.Subtitles.subAuto) {
@@ -493,8 +500,6 @@ extension MPVController {
     player.log.verbose("Configuration when building mpv: \(getString(MPVProperty.mpvConfiguration)!)")
   }
 
-  // MARK: - Support Functions
-
   /// Remove codecs from the hardware decoding white list that this Mac does not support.
   ///
   /// As explained in [HWAccelIntro](https://trac.ffmpeg.org/wiki/HWAccelIntro),  [FFmpeg](https://ffmpeg.org/)
@@ -569,12 +574,12 @@ extension MPVController {
     var sysinfo = utsname()
     let result = uname(&sysinfo)
     guard result == EXIT_SUCCESS else {
-      log.error("uname failed returning \(result)")
+      player.log.error("uname failed returning \(result)")
       return false
     }
     let data = Data(bytes: &sysinfo.machine, count: Int(_SYS_NAMELEN))
     guard let machine = String(bytes: data, encoding: .ascii) else {
-      log.error("Failed to construct string for sysinfo.machine")
+      player.log.error("Failed to construct string for sysinfo.machine")
       return false
     }
     return machine.starts(with: "arm64")

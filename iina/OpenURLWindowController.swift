@@ -59,6 +59,8 @@ class OpenURLWindowController: WindowController, NSWindowDelegate, NSTextFieldDe
     
     _ = window
     overlayView.isHidden = false
+    // Must not leave the focus in the username or password text fields.
+    window?.makeFirstResponder(nil)
     self.playerCore = playerCore
     loadingURL = playerCore.info.currentPlayback?.path
     NSApp.activate(ignoringOtherApps: true)
@@ -123,8 +125,11 @@ class OpenURLWindowController: WindowController, NSWindowDelegate, NSTextFieldDe
                                   server: host,
                                   port: url.port)
       }
-      window?.close()
-      PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: inverseOpenInNewWindowPref).openURL(url)
+      overlayView.isHidden = false
+      // Must not leave the focus in the username or password text fields.
+      window?.makeFirstResponder(nil)
+      playerCore = PlayerManager.shared.getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: inverseOpenInNewWindowPref)
+      playerCore!.openURL(url)
     } else {
       Utility.showAlert("wrong_url_format")
     }

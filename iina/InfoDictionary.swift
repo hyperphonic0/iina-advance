@@ -83,14 +83,20 @@ struct InfoDictionary: @unchecked Sendable {
   }
 
   var buildDateString: String? {
-    return dictionary["\(buildKeyPrefix).date"] as? String
+    guard let buildDate else { return nil }
+    let toString = DateFormatter()
+    toString.dateStyle = .medium
+    toString.timeStyle = .medium
+    // Always use the en_US locale for dates in the log file.
+    toString.locale = Locale(identifier: "en_US")
+    return toString.string(from: buildDate)
   }
 
   var buildDate: Date? {
     let dateParser: (String) -> Date?
     let formatter = ISO8601DateFormatter()
     dateParser = formatter.date(from:)
-    guard let date = buildDateString,
+    guard let date = dictionary["\(buildKeyPrefix).date"] as? String,
           let dateObj = dateParser(date) else {
       return nil
     }
