@@ -33,10 +33,10 @@ final class InputBinding: NSObject, Sendable {
    */
   let srcSectionName: String
   
-  var isEnabled: Bool
+  let isEnabled: Bool
 
   /// for use in UI only
-  var displayMessage: String
+  let displayMessage: String
 
   init(_ keyMapping: KeyMapping, origin: InputBindingOrigin, srcSectionName: String, menuItem: NSMenuItem? = nil, isEnabled: Bool = true,
        displayMessage: String = "") {
@@ -45,6 +45,13 @@ final class InputBinding: NSObject, Sendable {
     self.srcSectionName = srcSectionName
     self.isEnabled = isEnabled
     self.displayMessage = displayMessage.isEmpty ? (keyMapping.comment ?? "") : displayMessage
+  }
+
+  /// Clones this `InputBinding`, but using the given fields if provided.
+  func shallowClone(keyMapping: KeyMapping? = nil, isEnabled: Bool? = nil, displayMessage: String? = nil) -> InputBinding {
+    InputBinding(keyMapping ?? self.keyMapping,
+                 origin: self.origin, srcSectionName: self.srcSectionName, menuItem: self.menuItem,
+                 isEnabled: isEnabled ?? self.isEnabled, displayMessage: displayMessage ?? "")
   }
 
   /// Only mpv bindings in the "default" section can be modified or deleted
@@ -59,11 +66,6 @@ final class InputBinding: NSObject, Sendable {
     get {
       self.origin == .confFile || self.origin == .libmpv
     }
-  }
-
-  /// Clones this `InputBinding`, but using the given `keyMapping` if provided.
-  func shallowClone(keyMapping: KeyMapping? = nil) -> InputBinding {
-    return InputBinding(keyMapping ?? self.keyMapping, origin: self.origin, srcSectionName: self.srcSectionName)
   }
 
   /// Will be non-nil for all origin == `.iinaPlugin`, `.savedFilter`, and some `.conf`

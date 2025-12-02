@@ -76,7 +76,7 @@ final class BindingTableViewController: NSObject {
 
     if bindingTableState.appInputConfig.version < AppInputConfig.current.version {
       Logger.log("Binding table is out of date. Requesting rebuild")
-      AppInputConfig.rebuildCurrent()
+      AppInputConfig.rebuildForLastActivePlayer()
     }
   }
 

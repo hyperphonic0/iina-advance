@@ -9,102 +9,126 @@
 import Foundation
 
 final class AppInputConfigBuilder {
+  @MainActor
+  static let shared = AppInputConfigBuilder()
+
   private let log = Logger.input
-  private let sectionStack: InputSectionStack
-  private let playerLabel: String
-
-  /// See `AppInputConfig.userConfSectionStartIndex`
-  private var userConfSectionStartIndex: Int? = nil
-  /// See `AppInputConfig.userConfSectionEndIndex`
-  private var userConfSectionEndIndex: Int? = nil
-
-  init(_ sectionStack: InputSectionStack, playerLabel: String) {
-    self.sectionStack = sectionStack
-    self.playerLabel = playerLabel
-  }
 
   // Needs to be on main for MenuController
   @MainActor
-  func build(version: Int) -> AppInputConfig {
+  func build(_ allBindingCandidates: [InputBinding], playerLabel: String, version: Int) -> AppInputConfig {
     if DebugConfig.logBindingsRebuild {
       log.verbose("Starting rebuild of AppInputConfig v\(version) (player-\(playerLabel))")
     }
 
-    /// Build the list of `InputBinding`s, including redundancies. We're not done setting each's `isEnabled` field though.
-    /// This also sets `userConfSectionStartIndex` and `userConfSectionEndIndex`.
-    let bindingCandidateList = combineEnabledSectionBindings()
-    var resolverDict: [String: InputBinding] = [:]
+    var bindingCandidateList = allBindingCandidates
+    var resolverDict: [String: Int] = [:]
     var duplicateKeys = Set<String>()
-    var anyUnicodeBinding: InputBinding? = nil
-    var unmappedBinding: InputBinding? = nil
+    var anyUnicodeBindingIndex: Int? = nil
+    var unmappedBindingIndex: Int? = nil
+
+    /// See `AppInputConfig.userConfSectionStartIndex`
+    var userConfSectionStartIndex: Int? = nil
+    /// See `AppInputConfig.userConfSectionEndIndex`
+    var userConfSectionEndIndex: Int? = nil
 
     // Now build the resolverDict, disabling redundant key bindings along the way.
     for (candidateIndex, binding) in bindingCandidateList.enumerated() {
       guard binding.isEnabled else { continue }
+
+      // Set these variables here for improved lookup speed later. TODO: consider deleting...
+      // Remember, all weak bindings precede the default section, and all strong bindings come after it.
+      // But any section may have zero bindings.
+      if userConfSectionStartIndex ==  nil {
+        if binding.origin == .confFile, binding.srcSectionName == MPVInputSection.Shared.USER_CONF_SECTION_NAME {
+          userConfSectionStartIndex = candidateIndex
+        }
+      } else if userConfSectionEndIndex == nil {
+        if (binding.origin != .confFile) || (binding.srcSectionName != MPVInputSection.Shared.USER_CONF_SECTION_NAME) {
+          userConfSectionEndIndex = candidateIndex
+        }
+      }
 
       let key = binding.keyMapping.normalizedMpvKey
 
       // Ignore empty bindings added by the prefs UI:
       guard !key.isEmpty else { continue }
 
-      let prevSameKeyBinding: InputBinding?
+      let prevSameKeyBindingIndex: Int?
 
       if key == Constants.anyUnicodeKey {
-        // Wildcard binding
-        prevSameKeyBinding = anyUnicodeBinding
-        if let prevSameKeyBinding {
+        // Wildcard binding: ANY_UNICODE
+        prevSameKeyBindingIndex = anyUnicodeBindingIndex
+        if let prevSameKeyBindingIndex {
+          let prevSameKeyBinding = bindingCandidateList[prevSameKeyBindingIndex]
           log.warn("Multiple ANY_UNICODE bindings found in input conf! Overriding action \(prevSameKeyBinding.keyMapping.rawAction?.quoted ?? "nil") with \(binding.keyMapping.rawAction?.quoted ?? "nil")")
         }
-        anyUnicodeBinding = binding
+        anyUnicodeBindingIndex = candidateIndex
 
         // Go back and disable all previous candidates which match ANY_UNICODE
-        for index in 0..<candidateIndex {
-          let prevBinding = bindingCandidateList[index]
+        for prevBindingIndex in 0..<candidateIndex {
+          let prevBinding = bindingCandidateList[prevBindingIndex]
+          guard prevBinding.isEnabled else { continue }
           let bindingKey = prevBinding.keyMapping.normalizedMpvKey
           if KeyCodeHelper.isTypedUnicodeChar(normalizedMpvKey: bindingKey) {
-            prevBinding.isEnabled = false
+            let disabledBinding = prevBinding.shallowClone(isEnabled: false, displayMessage: "This binding is overridden by the ANY_UNICODE binding below.")
             duplicateKeys.insert(bindingKey)
-            prevBinding.displayMessage = "This binding is overridden by an \(key.quoted) binding below."
+            bindingCandidateList[prevBindingIndex] = disabledBinding
           }
         }
+
       } else if key == Constants.unmappedKey {
-        // Wildcard binding
-        prevSameKeyBinding = unmappedBinding
-        if let prevSameKeyBinding {
+        // Wildcard binding: UNMAPPED
+        prevSameKeyBindingIndex = unmappedBindingIndex
+        if let prevSameKeyBindingIndex {
+          let prevSameKeyBinding = bindingCandidateList[prevSameKeyBindingIndex]
           log.warn("Multiple UNMAPPED bindings found in input conf! Overriding action \(prevSameKeyBinding.keyMapping.rawAction?.quoted ?? "nil") with \(binding.keyMapping.rawAction?.quoted ?? "nil")")
         }
-        unmappedBinding = binding
+        unmappedBindingIndex = candidateIndex
+
       } else {
-        // Regular binding
-        prevSameKeyBinding = resolverDict[key]
+        // Regular binding (not wildcard)
+        prevSameKeyBindingIndex = resolverDict[key]
 
         // Store it, overwriting any previous entry:
-        resolverDict[key] = binding
+        resolverDict[key] = candidateIndex
       }
 
       // If multiple bindings map to the same key, favor the last one always.
-      if let prevSameKeyBinding {
+      if let prevSameKeyBindingIndex {
         duplicateKeys.insert(key)
-        prevSameKeyBinding.isEnabled = false
+        let displayMessage: String
+        let prevSameKeyBinding = bindingCandidateList[prevSameKeyBindingIndex]
         if prevSameKeyBinding.origin == .iinaPlugin {
-          prevSameKeyBinding.displayMessage = "\(key.quoted) is overridden by \(binding.keyMapping.actionDescription().quoted). Plugins must use key bindings which have not already been used."
+          displayMessage = "\(key.quoted) is overridden by \(binding.keyMapping.actionDescription().quoted). Plugins must use key bindings which have not already been used."
         } else {
-          prevSameKeyBinding.displayMessage = "This binding is overridden by a binding below it which also uses \(key.quoted)."
+          displayMessage = "This binding is overridden by a binding below it which also uses \(key.quoted)"
         }
+
+        let disabledBinding = prevSameKeyBinding.shallowClone(isEnabled: false, displayMessage: displayMessage)
+        bindingCandidateList[prevSameKeyBindingIndex] = disabledBinding
       }
     }
 
     // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
-    fillInPartialSequences(&resolverDict)
+    let partialSequenceDict = buildPartialSequences(resolverDict, bindingCandidateList)
 
     let menuController = AppDelegate.shared.menuController!
 
     // This will update all standard menu item bindings, and also update the isMenuItem status of each:
-    menuController.updateKeyEquivalents(from: bindingCandidateList)
+    menuController.updateKeyEquivalents(in: &bindingCandidateList)
+
+    if userConfSectionStartIndex == nil {
+      userConfSectionStartIndex = bindingCandidateList.count
+      userConfSectionEndIndex = bindingCandidateList.count
+    } else if userConfSectionEndIndex == nil {
+      userConfSectionEndIndex = bindingCandidateList.count
+    }
 
     let appInputConfig = AppInputConfig(version: version, playerLabel: playerLabel,
                                         bindingCandidateList: bindingCandidateList, resolverDict: resolverDict,
-                                        anyUnicode: anyUnicodeBinding, unmapped: unmappedBinding, duplicateKeys: duplicateKeys,
+                                        partialSequenceDict: partialSequenceDict,
+                                        anyUnicode: anyUnicodeBindingIndex, unmapped: unmappedBindingIndex, duplicateKeys: duplicateKeys,
                                         userConfSectionStartIndex: userConfSectionStartIndex!, userConfSectionEndIndex: userConfSectionEndIndex!)
     if DebugConfig.logBindingsRebuild {
       log.verbose("Finished AppInputConfig rebuild with \(appInputConfig.resolverDict.count) bindings")
@@ -114,32 +138,73 @@ final class AppInputConfigBuilder {
     return appInputConfig
   }
 
-  /*
-   Generates InputBindings for all the bindings in all the InputSections in this stack, and combines them into a single list.
-   Some basic individual validation is performed on each, so some will have isEnabled set to false.
-   Bindings with identical keys will not be filtered or disabled here.
-   */
-  private func combineEnabledSectionBindings() -> [InputBinding] {
+  /// Sets an explicit "ignore" for all partial key sequence matches. This is all done so that the player window doesn't beep.
+  private func buildPartialSequences(_ activeBindingsDict: [String: Int], _ activeBindings: [InputBinding]) -> [String: InputBinding] {
+    var partialSequenceDict: [String: InputBinding] = [:]
+
+    var addedCount = 0
+    for (keySequence, bindingIndex) in activeBindingsDict {
+      let binding = activeBindings[bindingIndex]
+      if binding.isEnabled && keySequence.contains("-") {
+        let keySequenceSplit = KeyCodeHelper.splitAndNormalizeMpvString(keySequence)
+        if keySequenceSplit.count >= 2 && keySequenceSplit.count <= 4 {
+          var partial = ""
+          for key in keySequenceSplit {
+            if partial == "" {
+              partial = String(key)
+            } else {
+              partial = "\(partial)-\(key)"
+            }
+            if partial != keySequence, !activeBindingsDict.keys.contains(partial), !partialSequenceDict.keys.contains(partial) {
+              let partialBinding = KeyMapping(rawKey: partial, rawAction: MPVCommand.ignore.rawValue, comment: "(partial sequence)")
+              partialSequenceDict[partial] = InputBinding(partialBinding, origin: binding.origin, srcSectionName: binding.srcSectionName, isEnabled: true)
+              addedCount += 1
+            }
+          }
+        }
+      }
+    }
+    if DebugConfig.logBindingsRebuild {
+      log.verbose("Added \(addedCount) `ignored` bindings for partial key sequences (resulting dict size: \(partialSequenceDict.count)")
+    }
+    assert(partialSequenceDict.count == addedCount, "Expected dict to contain \(addedCount) partial sequences but found \(partialSequenceDict.count)!")
+    return partialSequenceDict
+  }
+}
+
+extension InputSectionStack {
+
+  /// Generates `InputBinding`s for all the bindings in all the InputSections in this stack, and combines them into a single array.
+  /// Some basic individual validation is performed on each, so some will have `isEnabled` set to false.
+  /// Bindings with identical keys will not be filtered or disabled here.
+  func collectAllEnabledSectionBindings() -> [InputBinding] {
+    InputSectionStack.lock.withLock {
+      // Because each InputSection is a read-only struct, this player's copy of shared section data may have gone stale.
+      // Replace ours with the latest from the shared section stack.
+      // We do not overwrite the player's enablement array, so some of these could have been disabled in the player.
+      let latestSharedSections = AppInputConfig.sharedSections
+      for sharedSection in latestSharedSections {
+        // do not use auto-disable logic; it's not mandatory and might overwrite user state
+        sectionsDefined[sharedSection.name] = sharedSection
+      }
+      /// Build the list of `InputBinding`s, including redundancies. We're not done setting each's `isEnabled` field though.
+      /// This also sets `userConfSectionStartIndex` and `userConfSectionEndIndex`.
+      return collectAllEnabledSectionBindings_Unsafe()
+    }
+  }
+
+  private func collectAllEnabledSectionBindings_Unsafe() -> [InputBinding] {
     var linkedList = LinkedList<InputBinding>()
 
-    var countOfUserConfSectionBindings: Int = 0
-    var countOfWeakSectionBindings: Int = 0
-
     // Iterate from bottom to the top of the "stack":
-    for enabledSectionMeta in sectionStack.sectionsEnabled {
+    for enabledSectionMeta in sectionsEnabled {
       if DebugConfig.logBindingsRebuild {
         log.verbose("RebuildBindings: examining enabled section: \(enabledSectionMeta.name.quoted)")
       }
-      guard let inputSection = sectionStack.sectionsDefined[enabledSectionMeta.name] else {
+      guard let inputSection = sectionsDefined[enabledSectionMeta.name] else {
         // indicates serious internal error
         log.error("RebuildBindings: failed to find section: \(enabledSectionMeta.name.quoted)")
         continue
-      }
-
-      if inputSection.origin == .confFile && inputSection.name == MPVInputSection.Shared.USER_CONF_SECTION_NAME {
-        countOfUserConfSectionBindings = inputSection.keyMappingList.count
-      } else if !inputSection.isForce {
-        countOfWeakSectionBindings += inputSection.keyMappingList.count
       }
 
       addAllBindings(from: inputSection, to: &linkedList)
@@ -153,12 +218,6 @@ final class AppInputConfigBuilder {
         return Array<InputBinding>(linkedList)
       }
     }
-
-    // Best to set these variables here while still having a well-defined section structure, than try to guess it later.
-    // Remember, all weak bindings precede the default section, and all strong bindings come after it.
-    // But any section may have zero bindings.
-    userConfSectionStartIndex = countOfWeakSectionBindings
-    userConfSectionEndIndex = countOfWeakSectionBindings + countOfUserConfSectionBindings
 
     return Array<InputBinding>(linkedList)
   }
@@ -237,32 +296,4 @@ final class AppInputConfigBuilder {
     return InputBinding(finalMapping, origin: section.origin, srcSectionName: section.name, isEnabled: isEnabled, displayMessage: displayMessage)
   }
 
-  /// Sets an explicit "ignore" for all partial key sequence matches. This is all done so that the player window doesn't beep.
-  private func fillInPartialSequences(_ activeBindingsDict: inout [String: InputBinding]) {
-    var addedCount = 0
-    for (keySequence, binding) in activeBindingsDict {
-      if binding.isEnabled && keySequence.contains("-") {
-        let keySequenceSplit = KeyCodeHelper.splitAndNormalizeMpvString(keySequence)
-        if keySequenceSplit.count >= 2 && keySequenceSplit.count <= 4 {
-          var partial = ""
-          for key in keySequenceSplit {
-            if partial == "" {
-              partial = String(key)
-            } else {
-              partial = "\(partial)-\(key)"
-            }
-            if partial != keySequence && !activeBindingsDict.keys.contains(partial) {
-              let partialBinding = KeyMapping(rawKey: partial, rawAction: MPVCommand.ignore.rawValue, comment: "(partial sequence)")
-              activeBindingsDict[partial] = InputBinding(partialBinding, origin: binding.origin, srcSectionName: binding.srcSectionName, isEnabled: true)
-              addedCount += 1
-            }
-          }
-        }
-      }
-    }
-    if DebugConfig.logBindingsRebuild {
-      log.verbose("Added \(addedCount) `ignored` bindings for partial key sequences")
-    }
-  }
 }
-

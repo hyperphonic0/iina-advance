@@ -43,9 +43,9 @@ final class InputSectionStack {
    But it is also keyed by section name. Adding a section to the list with the same name as something in the list will
    remove the previous section from wherever it is before pushing the new section to the front.
    */
-  var sectionsEnabled = LinkedList<EnabledSectionMeta>()
+  private(set) var sectionsEnabled = LinkedList<EnabledSectionMeta>()
 
-  var log: any Logger.Subsystem { Logger.input }
+  let log = Logger.input
 
   init(initialEnabledSections: [InputSection]? = nil) {
     let sections: [InputSection]
@@ -204,4 +204,5 @@ final class InputSectionStack {
     }
     return nil
   }
+
 }

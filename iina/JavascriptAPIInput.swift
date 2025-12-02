@@ -27,7 +27,8 @@ class JavascriptAPIInput: JavascriptAPI, JavascriptAPIInputExportable {
   }
   
   func getAllKeyBindings() -> JSValue {
-    let keyBindings = AppInputConfig.current.resolverDict.mapValues{ $0.keyMapping }
+    let aic = AppInputConfig.current
+    let keyBindings = aic.resolverDict.mapValues{ aic.bindingCandidateList[$0].keyMapping }
     return JSValue(object: keyBindings, in: JSContext.current()!)
   }
   

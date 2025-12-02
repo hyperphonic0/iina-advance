@@ -1485,7 +1485,10 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
       // If focus changed from a different window, need to recalculate the current bindings
       // so that this window's input sections are included and the other window's are not:
       if AppInputConfig.current.associatedPlayerLabel != player.label {
-        AppInputConfig.rebuildCurrent()
+        if DebugConfig.logBindingsRebuild {
+          AppInputConfig.log.verbose("Need to rebuild AppInputConfig.current: active player changed to \(player.label)")
+        }
+        AppInputConfig.rebuildForLastActivePlayer()
       }
 
     } else {

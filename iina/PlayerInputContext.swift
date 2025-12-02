@@ -78,7 +78,7 @@ class PlayerInputContext {
   private unowned let player: PlayerCore
 
   // Data structure which keeps track of a player's input sections
-  private var sectionStack: InputSectionStack
+  private let sectionStack: InputSectionStack
 
   /*
    Stores up to the last 4 key presses, separately for each player.
@@ -101,19 +101,8 @@ class PlayerInputContext {
 
   @MainActor
   func buildAppInputConfig(version: Int) -> AppInputConfig {
-    // This class is the only other class which can access this player's InputSectionStack.
-    // But because each InputSection is a read-only struct, this player's data may have gone stale.
-    // Replace our data with the latest from the shared section stack.
-    // We do not overwrite the player's enablement array, so some of these could have been disabled in the player.
-    return InputSectionStack.lock.withLock {
-      let latestSharedSections = AppInputConfig.sharedSections
-      for sharedSection in latestSharedSections {
-        // do not use auto-disable logic; it's not mandatory and might overwrite user state
-        sectionStack.sectionsDefined[sharedSection.name] = sharedSection
-      }
-      let builder = AppInputConfigBuilder(sectionStack, playerLabel: player.label)
-      return builder.build(version: version)
-    }
+    let allBindingCandidates = sectionStack.collectAllEnabledSectionBindings()
+    return AppInputConfigBuilder.shared.build(allBindingCandidates, playerLabel: player.label, version: version)
   }
 
   // MARK: MPV Input section API
@@ -121,19 +110,18 @@ class PlayerInputContext {
   /// Is thread-safe
   func defineSection(_ inputSection: MPVInputSection) {
     sectionStack.defineSection(inputSection)
-    AppInputConfig.rebuildCurrent()
   }
 
   /// Is thread-safe
   func enableSection(_ sectionName: String, _ flags: [String]) {
     sectionStack.enableSection(sectionName, flags)
-    AppInputConfig.rebuildCurrent()
+    AppInputConfig.rebuildForLastActivePlayer()
   }
 
   /// Is thread-safe
   func disableSection(_ sectionName: String) {
     sectionStack.disableSection(sectionName)
-    AppInputConfig.rebuildCurrent()
+    AppInputConfig.rebuildForLastActivePlayer()
   }
 
   // MARK: Key resolution

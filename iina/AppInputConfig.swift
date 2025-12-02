@@ -8,13 +8,15 @@
 
 import Foundation
 
-/// Application-scoped input config (key bindings)
-/// The currently active bindings for the IINA app. Includes key lookup table, list of binding candidates, & other data
+/// Application-scoped input config (key bindings).
+///
+/// The currently active bindings for the IINA app. Includes key lookup table, list of binding candidates, & other data.
+/// Built by: `PlayerInputContext.buildAppInputConfig()`
 struct AppInputConfig: Sendable {
   /// Return true to send notifications; false otherwise
   typealias NotificationData = [AnyHashable : Any]
 
-  static var log: any Logger.Subsystem { Logger.input }
+  static let log = Logger.input
 
   // MARK: Shared input sections
 
@@ -33,19 +35,16 @@ struct AppInputConfig: Sendable {
     sharedSectionStack.sectionsEnabled.map( { sharedSectionStack.sectionsDefined[$0.name]! })
   }
 
-  /// Should only be called from within a `InputSectionStack.lock` block.
-  static var userConfMappings: [KeyMapping] {
-    sharedSectionStack.sectionsDefined[MPVInputSection.Shared.USER_CONF_SECTION_NAME]!.keyMappingList
-  }
-
+  /// This includes all key mappings which were auto-created for the built-in menu items and are not configurable
+  /// (e.g. File > Quit, Edit > Undo, etc.).
   static var staticMenuItemMappings: [KeyMapping] {
     return sharedSectionStack.sectionsDefined[MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME]!.keyMappingList
   }
 
+  /// This should include all mappings loaded from the the user's currently selected Configuration in the Key Bindings UI.
   static func replaceUserConfSectionMappings(with userConfMappings: [KeyMapping], attaching userData: NotificationData? = nil) {
     replaceMappings(forSharedSectionName: MPVInputSection.Shared.USER_CONF_SECTION_NAME, with: userConfMappings, attaching: userData)
   }
-
 
   /// This can get called a lot for menu item bindings [by MacOS], so setting onlyIfDifferent=true can possibly cut down on redundant work.
   static func replaceMappings(forSharedSectionName sectionName: String, with mappings: [KeyMapping],
@@ -59,7 +58,7 @@ struct AppInputConfig: Sendable {
       // TODO: honor onlyIfDifferent with diff logic
       let sharedSectionUpdated = sharedSection.clone(mappings)
       sharedSectionStack.sectionsDefined[sectionName] = sharedSectionUpdated
-      AppInputConfig.rebuildCurrent(attaching: userData)
+      AppInputConfig.rebuildForLastActivePlayer(attaching: userData)
     }
   }
 
@@ -67,18 +66,22 @@ struct AppInputConfig: Sendable {
 
   static private var rebuildTicketCounter: Int = 0
 
-  // Use dummy player label initially to ensure it gets overwritten by rebuildCurrent() below.
+  // Use dummy player label initially to ensure it gets overwritten by rebuildForLastActivePlayer() below.
   // We do not want to init the demo player in a variable initializer.
   /// The current instance. The app can only ever support one set of active key bindings at a time, so each time a change is made,
   /// the active bindings are rebuilt and the old set is discarded.
-  static private(set) var current = AppInputConfig(version: 0, playerLabel: "null", bindingCandidateList: [], resolverDict: [:], duplicateKeys: [],
+  static private(set) var current = AppInputConfig(version: 0, playerLabel: "null", bindingCandidateList: [], resolverDict: [:],
+                                                   partialSequenceDict: [:], duplicateKeys: [],
                                                    userConfSectionStartIndex: 0, userConfSectionEndIndex: 0)
 
+  /// Thread-safe method to rebuild `AppInputConfig.current` (i.e. the app's active set of key bindings)
+  /// from the input sections of the last active player.
+  ///
   /// This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c.
   /// Rebuilds `appBindingsList` and `currentResolverDict`, updating menu item key equivalents along the way.
   /// When done, notifies the Preferences > Key Bindings table of the update so it can refresh itself, as well
   /// as notifies the other callbacks supplied here as needed.
-  static func rebuildCurrent(attaching userData: NotificationData? = nil) {
+  static func rebuildForLastActivePlayer(attaching userData: NotificationData? = nil) {
     let ticket = AppInputConfig.rebuildTicketCounter + 1
     if DebugConfig.logBindingsRebuild {
       log.verbose("Requesting AppInputConfig rebuild (tkt #\(ticket))")
@@ -95,29 +98,22 @@ struct AppInputConfig: Sendable {
 
       AppInputConfig.rebuildTicketCounter = ticket
 
-      let player = PlayerManager.shared.lastActivePlayer ?? PlayerManager.shared.getOrCreateDemo()
-      guard let activePlayerInputContext = player.keyBindingContext else {
-        Logger.fatal("AppInputConfig.rebuildCurrent(): player \(player.label) has no keyBindingContext!")  // should never happen
-      }
-
+      let lastActivePlayer = PlayerManager.shared.lastActivePlayer ?? PlayerManager.shared.getOrCreateDemo()
+      let activePlayerInputContext = lastActivePlayer.keyBindingContext!
       let appInputConfigNew = activePlayerInputContext.buildAppInputConfig(version: ticket)
-
       AppInputConfig.current = appInputConfigNew
+      log.verbose("Updated AppInputConfig: v\(appInputConfigNew.version), \(appInputConfigNew.resolverDict.count) bindings, for player \(lastActivePlayer.label)")
 
       var data = userData ?? [:]
       data[BindingTableStateManager.Key.appInputConfig] = appInputConfigNew
 
-      let notification = Notification(name: .iinaAppInputConfigDidChange,
-                                      object: nil, userInfo: data)
-      if DebugConfig.logBindingsRebuild {
-        log.verbose("Completed AppInputConfig v\(appInputConfigNew.version); posting notification: \(notification.name.rawValue.quoted)")
-      }
+      let notification = Notification(name: .iinaAppInputConfigDidChange, object: nil, userInfo: data)
       NotificationCenter.default.post(notification)
     }
   }
 
   /// Loads the currently selected user InputConf file from cache or disk, using its contents as the `default` section in rebuild
-  /// of the app-wide conf (calling `AppInputConfig.rebuildCurrent()`.
+  /// of the app-wide conf (calling `AppInputConfig.rebuildForLastActivePlayer()`.
   ///
   /// 1. Needs to be called at app launch to do the initial build.
   /// 2. Also triggered any time the selected conf is changed in the Configuration table (specifically, in response to
@@ -164,15 +160,18 @@ struct AppInputConfig: Sendable {
   let bindingCandidateList: [InputBinding]
 
   /// This structure results from merging the layers of enabled input sections for the currently active player using precedence rules.
-  /// Contains only the bindings which are currently enabled for this player, plus extra dummy "ignored" bindings for partial key sequences.
+  /// Contains indexes into `bindingCandidateList`, only for the bindings which are currently enabled for this player, plus extra dummy
+  /// "ignored" bindings for partial key sequences.
   /// For lookup use `resolveInputBinding()` or `matchActiveKeyBinding()` from the active player's input config.
-  let resolverDict: [String: InputBinding]
+  let resolverDict: [String: Int]
 
-  /// Binding for mpv's `ANY_UNICODE` wildcard, if any (as of mpv 0.40.0).
-  let anyUnicode: InputBinding?
+  let partialSequenceDict:  [String: InputBinding]
 
-  /// Binding for mpv's `UNMAPPED` wildcard, if any (as of mpv 0.40.0).
-  let unmapped: InputBinding?
+  /// Binding for mpv's `ANY_UNICODE` wildcard, if any (as of mpv 0.40.0). Index into `bindingCandidateList`.
+  let anyUnicode: Int?
+
+  /// Binding for mpv's `UNMAPPED` wildcard, if any (as of mpv 0.40.0). Index into `bindingCandidateList`.
+  let unmapped: Int?
 
   /// (Note: These two fields are used for optimizing the Key Bindings UI  but are otherwise not important.)
   /// The index into `bindingCandidateList` of the first binding in the "default" (user conf) section.
@@ -193,13 +192,15 @@ struct AppInputConfig: Sendable {
   }
 
   init(version: Int, playerLabel: String,
-       bindingCandidateList: [InputBinding], resolverDict: [String: InputBinding],
-       anyUnicode: InputBinding? = nil, unmapped: InputBinding? = nil,
+       bindingCandidateList: [InputBinding], resolverDict: [String: Int],
+       partialSequenceDict:  [String: InputBinding],
+       anyUnicode: Int? = nil, unmapped: Int? = nil,
        duplicateKeys: Set<String>, userConfSectionStartIndex: Int, userConfSectionEndIndex: Int) {
     self.version = version
     self.associatedPlayerLabel = playerLabel
     self.bindingCandidateList = bindingCandidateList
     self.resolverDict = resolverDict
+    self.partialSequenceDict = partialSequenceDict
     self.anyUnicode = anyUnicode
     self.unmapped = unmapped
     self.duplicateKeys = duplicateKeys
@@ -222,16 +223,24 @@ struct AppInputConfig: Sendable {
     // Emulate mpv logic for matching ANY_UNICODE
     let keyStrokes = KeyCodeHelper.splitKeystrokes(keySequence)
     if let lastKey = keyStrokes.last {
-      if let anyUnicode = anyUnicode, KeyCodeHelper.isTypedUnicodeChar(normalizedMpvKey: lastKey) {
+      if let anyUnicode, KeyCodeHelper.isTypedUnicodeChar(normalizedMpvKey: lastKey) {
         AppInputConfig.log.trace{"Key \(lastKey.quoted) matches ANY_UNICODE binding"}
-        return anyUnicode
+        return bindingCandidateList[anyUnicode]
       }
     }
 
-    if let mappedInputBinding = resolverDict[keySequence] {
-      return mappedInputBinding
+    if let activeBindingIndex = resolverDict[keySequence] {
+      return bindingCandidateList[activeBindingIndex]
     }
 
-    return unmapped
+    if let partialSequnceBinding = partialSequenceDict[keySequence] {
+      return partialSequnceBinding
+    }
+
+    if let unmapped {
+      return bindingCandidateList[unmapped]
+    }
+
+    return nil
   }
 }

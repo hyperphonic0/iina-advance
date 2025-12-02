@@ -19,7 +19,7 @@ class KeyMapping: NSObject, Codable {
 
   // If present, holds the action selector & data for a menu item action.
   // May not match the actual menu item which is present in the menus.
-  var menuItem: NSMenuItem? = nil
+  let menuItem: NSMenuItem?
 
   // MARK: Key
 
@@ -103,6 +103,7 @@ class KeyMapping: NSObject, Codable {
     return "\(iinaPrefix)\(rawKey) \(rawAction)\(commentString)"
   }
 
+  // Whitelist: serialize only these fields to clipboard
   private enum CodingKeys: String, CodingKey {
     case rawKey, rawAction, isIINACommand, comment
   }
@@ -113,6 +114,7 @@ class KeyMapping: NSObject, Codable {
     rawAction = try container.decode(String.self, forKey: .rawAction)
     isIINACommand = try container.decode(Bool.self, forKey: .isIINACommand)
     comment = try container.decodeIfPresent(String.self, forKey: .comment)
+    menuItem = nil
     normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
   }
 
@@ -127,7 +129,7 @@ class KeyMapping: NSObject, Codable {
 
   // Note: neither `rawKey` nor `rawAction` paranms should start with `KeyMapping.IINA_PREFIX`.
   // (If this is an IINA command, use `isIINACommand: true`)
-  init(rawKey: String, rawAction: String?, isIINACommand: Bool = false, comment: String? = nil) {
+  init(rawKey: String, rawAction: String?, isIINACommand: Bool = false, comment: String? = nil, menuItem: NSMenuItem? = nil) {
     assert(!rawKey.hasPrefix(KeyMapping.IINA_PREFIX) && (rawAction == nil || !rawAction!.hasPrefix(KeyMapping.IINA_PREFIX)), "Bad input to KeyMapping init")
 
     self.rawKey = rawKey
@@ -135,6 +137,7 @@ class KeyMapping: NSObject, Codable {
     self.isIINACommand = isIINACommand
     self.rawAction = rawAction
     self.comment = comment
+    self.menuItem = menuItem
   }
 
   required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
@@ -163,7 +166,8 @@ class KeyMapping: NSObject, Codable {
     return rawKey == other.rawKey && rawAction == other.rawAction
   }
 
-  // Makes a duplicate of this object, but will also override any non-nil parameter
+  /// Makes a duplicate of this object, but will also override any non-nil parameter
+  /// #DOES NOT COPY MENU ITEM!#
   func clone(rawKey: String? = nil, rawAction: String? = nil, isIINACommand: Bool? = nil) -> KeyMapping {
     return KeyMapping(rawKey: rawKey ?? self.rawKey,
                       rawAction: rawAction ?? self.rawAction,
@@ -246,17 +250,16 @@ extension KeyMapping: NSPasteboardWriting, NSPasteboardReading {
   }
 }
 
-// This class is a little bit of a hurried kludge, so that bindings for menu items could go everywhere that mpv's bindings can go,
-// but instead of an action string each contains a reference to a menu item.
+/// This class is a little bit of a hurried kludge, so that bindings for menu items could go everywhere that mpv's bindings can go,
+/// but instead of an action string each contains a reference to a menu item.
 class MenuItemMapping: KeyMapping {
   let sourceName: String
   
-  init(rawKey: String, sourceName: String, menuItem: NSMenuItem, actionDescription: String) {
+  init(rawKey: String, sourceName: String, menuItem: NSMenuItem, actionDescription: String?) {
     self.sourceName = sourceName
 
     // Store description in `comment`
-    super.init(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: actionDescription)
-    self.menuItem = menuItem
+    super.init(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: actionDescription, menuItem: menuItem)
   }
 
   required init(from decoder: Decoder) throws {
