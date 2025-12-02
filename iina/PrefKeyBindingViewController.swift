@@ -46,6 +46,8 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
 
   private var searchActionDebouncer = Debouncer(delay: Constants.TimeInterval.keyBindingsSearchDebounceDelay)
 
+  private var notiHandler: NotificationHandler!
+
   // MARK: - Outlets
 
   @IBOutlet weak var confTableView: EditableTableView!
@@ -63,13 +65,6 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   @IBOutlet weak var showFromAllSourcesBtn: NSButton!
 
   deinit {
-    for observer in observers {
-      ObjcUtils.silenced {
-        NotificationCenter.default.removeObserver(observer)
-      }
-    }
-    observers = []
-
     ObjcUtils.silenced { [self] in
       removeObserver(self, forKeyPath: #keyPath(view.effectiveAppearance))
     }
@@ -78,8 +73,10 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   override func viewWillAppear() {
     Logger.log.verbose("Key Bindings pref pane will appear")
     super.viewWillAppear()
+    BindingTableState.manager.notiHandler.addAllObservers()
+    notiHandler.addAllObservers()
     BindingTableState.manager.applyStateUpdate(AppInputConfig.current)  // bring up to date
-    BindingTableState.manager.enableObservers()
+
     if DebugConfig.logBindingsRebuild {
       let keyList = PlayerManager.shared.getOrCreateDemo().mpv.getInputKeyList()
       Logger.log.debug("Key List (count=\(keyList.count)): \(keyList)")
@@ -90,7 +87,8 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
     // Disable observers when not in use to save CPU
     Logger.log.verbose("Key Bindings pref pane will disappear")
     super.viewWillDisappear()
-    BindingTableState.manager.disableObservers()
+    notiHandler.removeAllObservers()
+    BindingTableState.manager.notiHandler.removeAllObservers()
   }
 
   override func viewDidLoad() {
@@ -128,58 +126,64 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
     useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")
     bindingTableView.sizeLastColumnToFit()
 
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaPendingUIChangeForConfTable, object: nil, queue: .main) { _ in
-      self.updateTableButtonVisibilities()
-    })
 
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaPendingUIChangeForBindingTable, object: nil, queue: .main) { [self] noti in
-      let bindingState = BindingTableState.current
-      let allRowsTotal = bindingState.allRows.count
-      let displayedRows = bindingState.displayedRows
-      let userRowsTotal = bindingState.allRows.filter{ $0.origin == .confFile }.count
-      let disabledRowsTotal = bindingState.allRows.filter{ !$0.isEnabled }.count
-      let customRowsTotal = allRowsTotal - bindingState.allRows.filter{ $0.origin == .staticMenuItem }.count - userRowsTotal
-      let displayedUserRows = displayedRows.filter{ $0.origin == .confFile }
-      let displayedDisabledUserRows = displayedUserRows.filter{ !$0.isEnabled }.count
+    notiHandler = NotificationHandler(AppInputConfig.log, [], [
+      .default: [
 
-      let msg: String
-      if !bindingState.filterString.isEmpty {
-        let customRowsDisplayed = disabledRowsTotal - displayedRows.filter{ $0.origin == .staticMenuItem }.count - displayedUserRows.count
-        if bindingState.showAllBindings {
-          let disabledMsg = displayedDisabledUserRows <= 0 ? "" : ", \(displayedDisabledUserRows) disabled"
-          let customRowsMsg = customRowsDisplayed <= 0 ? "" : ", \(customRowsDisplayed) other custom"
-          msg = "Showing \(displayedRows.count) of \(allRowsTotal) total bindings (\(displayedUserRows.count) from config\(disabledMsg)\(customRowsMsg))"
-        } else {
-          let disabledMsg = displayedDisabledUserRows <= 0 ? "" : " (including \(displayedDisabledUserRows) disabled)"
-          msg = "Showing \(displayedRows.count) of \(userRowsTotal) bindings\(disabledMsg)"
+        .init(.iinaPendingUIChangeForConfTable) { _ in
+          self.updateTableButtonVisibilities()
+        },
+
+        .init(.iinaPendingUIChangeForBindingTable) { [self] noti in
+          let bindingState = BindingTableState.current
+          let allRowsTotal = bindingState.allRows.count
+          let displayedRows = bindingState.displayedRows
+          let userRowsTotal = bindingState.allRows.filter{ $0.origin == .confFile }.count
+          let disabledRowsTotal = bindingState.allRows.filter{ !$0.isEnabled }.count
+          let customRowsTotal = allRowsTotal - bindingState.allRows.filter{ $0.origin == .staticMenuItem }.count - userRowsTotal
+          let displayedUserRows = displayedRows.filter{ $0.origin == .confFile }
+          let displayedDisabledUserRows = displayedUserRows.filter{ !$0.isEnabled }.count
+
+          let msg: String
+          if !bindingState.filterString.isEmpty {
+            let customRowsDisplayed = disabledRowsTotal - displayedRows.filter{ $0.origin == .staticMenuItem }.count - displayedUserRows.count
+            if bindingState.showAllBindings {
+              let disabledMsg = displayedDisabledUserRows <= 0 ? "" : ", \(displayedDisabledUserRows) disabled"
+              let customRowsMsg = customRowsDisplayed <= 0 ? "" : ", \(customRowsDisplayed) other custom"
+              msg = "Showing \(displayedRows.count) of \(allRowsTotal) total bindings (\(displayedUserRows.count) from config\(disabledMsg)\(customRowsMsg))"
+            } else {
+              let disabledMsg = displayedDisabledUserRows <= 0 ? "" : " (including \(displayedDisabledUserRows) disabled)"
+              msg = "Showing \(displayedRows.count) of \(userRowsTotal) bindings\(disabledMsg)"
+            }
+          } else {
+            if bindingState.showAllBindings {
+              let disabledMsg = disabledRowsTotal <= 0 ? "" : " (including \(disabledRowsTotal) disabled)"
+              let customRowsMsg = customRowsTotal <= 0 ? "" : ", \(customRowsTotal) other custom"
+              msg = "\(userRowsTotal) bindings from config\(disabledMsg)\(customRowsMsg), \(allRowsTotal) total"
+            } else {
+              let disabledMsg = displayedDisabledUserRows <= 0 ? "" : " (including \(displayedDisabledUserRows) disabled)"
+              msg = "\(userRowsTotal) bindings\(disabledMsg)"
+            }
+          }
+
+          bindingTotalsLabel.stringValue = msg
+          bindingTotalsLabel.layout() // Re-layout in case width changed due to formatting changes
+        },
+
+        .init(.iinaKeyBindingSearchFieldShouldUpdate) { [self] notification in
+          guard let newStringValue = notification.object as? String else {
+            Logger.log.error("Received \(notification.name.rawValue.quoted) with invalid object: \(type(of: notification.object))")
+            return
+          }
+          guard self.bindingSearchField.stringValue != newStringValue else {
+            return
+          }
+          self.bindingSearchField.stringValue = newStringValue
         }
-      } else {
-        if bindingState.showAllBindings {
-          let disabledMsg = disabledRowsTotal <= 0 ? "" : " (including \(disabledRowsTotal) disabled)"
-          let customRowsMsg = customRowsTotal <= 0 ? "" : ", \(customRowsTotal) other custom"
-          msg = "\(userRowsTotal) bindings from config\(disabledMsg)\(customRowsMsg), \(allRowsTotal) total"
-        } else {
-          let disabledMsg = displayedDisabledUserRows <= 0 ? "" : " (including \(displayedDisabledUserRows) disabled)"
-          msg = "\(userRowsTotal) bindings\(disabledMsg)"
-        }
-      }
-
-      bindingTotalsLabel.stringValue = msg
-      bindingTotalsLabel.layout() // Re-layout in case width changed due to formatting changes
-    })
+      ]
+    ])
 
     addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [], context: nil)
-
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingSearchFieldShouldUpdate, object: nil, queue: .main) { notification in
-      guard let newStringValue = notification.object as? String else {
-        Logger.log.error("Received \(notification.name.rawValue.quoted) with invalid object: \(type(of: notification.object))")
-        return
-      }
-      guard self.bindingSearchField.stringValue != newStringValue else {
-        return
-      }
-      self.bindingSearchField.stringValue = newStringValue
-    })
 
     confTableController?.selectCurrentConfRow()
     self.updateTableButtonVisibilities()

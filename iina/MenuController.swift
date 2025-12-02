@@ -1081,7 +1081,6 @@ class MenuController: NSObject, NSMenuDelegate {
         let displayMessage = "This key binding will activate the menu item:\n\(kbMenuItem.menuPathDescription)"
 
         let kbUpdated: KeyMapping
-        let isMenuItemMapping = kb as? MenuItemMapping != nil
         if let menuItemMapping = kb as? MenuItemMapping {
           kbUpdated = MenuItemMapping(rawKey: kb.rawKey, sourceName: menuItemMapping.sourceName, menuItem: kbMenuItem, actionDescription: kb.comment)
         } else {

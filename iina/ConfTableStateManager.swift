@@ -19,7 +19,6 @@ fileprivate let changeSelectedConfActionName: String = "Change Active Config"
 @MainActor
 class ConfTableStateManager: NSObject {
   private var undoHelper = PrefKeyBindingUndoHelper()
-  private var observers: [NSObjectProtocol] = []
 
   private unowned var fileCache = InputConfFile.cache
 
@@ -33,12 +32,6 @@ class ConfTableStateManager: NSObject {
   }
 
   deinit {
-    for observer in observers {
-      ObjcUtils.silenced {
-        NotificationCenter.default.removeObserver(observer)
-      }
-    }
-    observers = []
 
     // Remove observers for IINA preferences.
     for key in [Preference.Key.currentInputConfigName] {

@@ -20,7 +20,7 @@ class BindingTableStateManager: NSObject {
   }
 
   private var undoHelper = PrefKeyBindingUndoHelper()
-  private var notiHandler: NotificationHandler!
+  var notiHandler: NotificationHandler!
 
   override init() {
     super.init()
@@ -31,14 +31,6 @@ class BindingTableStateManager: NSObject {
     ])
   }
 
-  func enableObservers() {
-    notiHandler.addAllObservers()
-  }
-
-  func disableObservers() {
-    notiHandler.removeAllObservers()
-  }
-  
   fileprivate func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     switch key {
     case .showKeyBindingsFromAllSources:
