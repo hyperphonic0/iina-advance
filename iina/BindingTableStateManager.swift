@@ -143,7 +143,7 @@ class BindingTableStateManager: NSObject {
     applyFilter(newFilterString: "")
   }
 
-  /// All table changes should go through this callback
+  /// All table UI updates should go through this callback
   @MainActor
   private func appInputConfigDidChange(_ notification: Notification) {
     Logger.log.verbose("BindingTableStateManager received \(notification.name.rawValue.quoted)")

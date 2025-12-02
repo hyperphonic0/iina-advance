@@ -51,6 +51,7 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   @IBOutlet weak var confTableView: EditableTableView!
   @IBOutlet weak var bindingTableView: EditableTableView!
   @IBOutlet weak var confHintLabel: NSTextField!
+  @IBOutlet weak var bindingTotalsLabel: NSTextField!
   @IBOutlet weak var addBindingBtn: NSButton!
   @IBOutlet weak var removeBindingBtn: NSButton!
   @IBOutlet weak var showConfFileBtn: NSButton!
@@ -129,6 +130,42 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
 
     observers.append(NotificationCenter.default.addObserver(forName: .iinaPendingUIChangeForConfTable, object: nil, queue: .main) { _ in
       self.updateTableButtonVisibilities()
+    })
+
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaPendingUIChangeForBindingTable, object: nil, queue: .main) { [self] noti in
+      let bindingState = BindingTableState.current
+      let allRowsTotal = bindingState.allRows.count
+      let displayedRows = bindingState.displayedRows
+      let userRowsTotal = bindingState.allRows.filter{ $0.origin == .confFile }.count
+      let disabledRowsTotal = bindingState.allRows.filter{ !$0.isEnabled }.count
+      let customRowsTotal = allRowsTotal - bindingState.allRows.filter{ $0.origin == .staticMenuItem }.count - userRowsTotal
+      let displayedUserRows = displayedRows.filter{ $0.origin == .confFile }
+      let displayedDisabledUserRows = displayedUserRows.filter{ !$0.isEnabled }.count
+
+      let msg: String
+      if !bindingState.filterString.isEmpty {
+        let customRowsDisplayed = disabledRowsTotal - displayedRows.filter{ $0.origin == .staticMenuItem }.count - displayedUserRows.count
+        if bindingState.showAllBindings {
+          let disabledMsg = displayedDisabledUserRows <= 0 ? "" : ", \(displayedDisabledUserRows) disabled"
+          let customRowsMsg = customRowsDisplayed <= 0 ? "" : ", \(customRowsDisplayed) other custom"
+          msg = "Showing \(displayedRows.count) of \(allRowsTotal) total bindings (\(displayedUserRows.count) from config\(disabledMsg)\(customRowsMsg))"
+        } else {
+          let disabledMsg = displayedDisabledUserRows <= 0 ? "" : " (including \(displayedDisabledUserRows) disabled)"
+          msg = "Showing \(displayedRows.count) of \(userRowsTotal) bindings\(disabledMsg)"
+        }
+      } else {
+        if bindingState.showAllBindings {
+          let disabledMsg = disabledRowsTotal <= 0 ? "" : " (including \(disabledRowsTotal) disabled)"
+          let customRowsMsg = customRowsTotal <= 0 ? "" : ", \(customRowsTotal) other custom"
+          msg = "\(userRowsTotal) bindings from config\(disabledMsg)\(customRowsMsg), \(allRowsTotal) total"
+        } else {
+          let disabledMsg = displayedDisabledUserRows <= 0 ? "" : " (including \(displayedDisabledUserRows) disabled)"
+          msg = "\(userRowsTotal) bindings\(disabledMsg)"
+        }
+      }
+
+      bindingTotalsLabel.stringValue = msg
+      bindingTotalsLabel.layout() // Re-layout in case width changed due to formatting changes
     })
 
     addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [], context: nil)

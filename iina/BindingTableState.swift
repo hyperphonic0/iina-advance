@@ -55,7 +55,7 @@ struct BindingTableState: Sendable {
   private let filterBimap: BiDictionary<Int, Int>?
 
   /// The current *unfiltered* list of table rows
-  private var allRows: [InputBinding] {
+  var allRows: [InputBinding] {
     appInputConfig.bindingCandidateList
   }
 
