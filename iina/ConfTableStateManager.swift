@@ -132,10 +132,11 @@ class ConfTableStateManager: NSObject {
     let fileMappingsAppended = [fileMappingsOrig, mappingsToAppend].flatMap { $0 }
 
     // Set up animation to flash row of changed conf (for undo/redo)
-    let tableUIChange = TableUIChange(.none)
+    var flashAfter: IndexSet? = nil
     if let targetConfIndex = ConfTableState.current.confTableRows.firstIndex(of: targetConfName) {
-      tableUIChange.flashAfter = IndexSet(integer: targetConfIndex)
+      flashAfter = IndexSet(integer: targetConfIndex)
     }
+    let tableUIChange = TableUIChange(.none, flashAfter: flashAfter)
 
     let doAction = {
       AppInputConfig.log.debug("Appending to conf: \(targetConfName.quoted), prevCount: \(fileMappingsOrig.count), newCount: \(fileMappingsAppended.count)")
@@ -145,12 +146,12 @@ class ConfTableStateManager: NSObject {
     let undoAction = {
       AppInputConfig.log.debug("Un-appending \(mappingsToAppend.count) bindings of conf: \(targetConfName.quoted) (newCount: \(fileMappingsOrig.count))")
       inputConfFile.overwriteFile(with: fileMappingsOrig)
-      self.updateTableUI(tableUIChange)
+      self.postUpdateToTableUI(tableUIChange)
     }
 
     let redoAction = {
       doAction()
-      self.updateTableUI(tableUIChange)
+      self.postUpdateToTableUI(tableUIChange)
     }
 
     doAction()
@@ -279,37 +280,38 @@ class ConfTableStateManager: NSObject {
       return
     }
 
-    updateTableUI(old: tableStateOld, new: tableStateNew, completionHandler: completionHandler)
+    postUpdateToTableUI(old: tableStateOld, new: tableStateNew, completionHandler: completionHandler)
   }
 
   // Assembles a `TableUIChange` based on the differences between states, then sends it to the UI for updating
-  private func updateTableUI(old: ConfTableState, new: ConfTableState, completionHandler: TableUIChange.CompletionHandler?) {
-
-    let tableUIChange = TableUIChange.builder.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
-                                                        completionHandler: completionHandler)
-    tableUIChange.reloadAllExistingRows = true
-    if self.undoHelper.isUndoingOrRedoing() {
-      tableUIChange.setUpFlashForChangedRows()
-    }
-
+  private func postUpdateToTableUI(old: ConfTableState, new: ConfTableState, completionHandler: TableUIChange.CompletionHandler?) {
+    var newSelectedRowIndexes: IndexSet? = nil
     switch new.specialState {
     case .addingNewInline:  // special case: creating an all-new config
       // Select the new blank row, which will be the last one:
-      tableUIChange.newSelectedRowIndexes = IndexSet(integer: new.confTableRows.count - 1)
+      newSelectedRowIndexes = IndexSet(integer: new.confTableRows.count - 1)
     case .none, .fallBackToDefaultConf:
       // Always keep the current config selected
       if let selectedConfIndex = new.confTableRows.firstIndex(of: new.selectedConfName) {
         AppInputConfig.log.verbose("Will change Conf Table selection index to \(selectedConfIndex) (\(new.selectedConfName.quoted))")
-        tableUIChange.newSelectedRowIndexes = IndexSet(integer: selectedConfIndex)
+        newSelectedRowIndexes = IndexSet(integer: selectedConfIndex)
       } else {
         AppInputConfig.log.error("Failed to find selection index for \(new.selectedConfName.quoted) in new Conf Table state!")
       }
     }
+
+    let useFlashForChangedRows = undoHelper.isUndoingOrRedoing()
+    let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
+                                                        newSelectedRowIndexes: newSelectedRowIndexes,
+                                                        useFlashForChangedRows: useFlashForChangedRows,
+                                                        completionHandler: completionHandler,
+                                                        reloadAllExistingRows: true)
+
     // Finally, fire notification. This covers row selection too
-    updateTableUI(tableUIChange)
+    postUpdateToTableUI(tableUIChange)
   }
 
-  private func updateTableUI(_ tableUIChange: TableUIChange) {
+  private func postUpdateToTableUI(_ tableUIChange: TableUIChange) {
     let notification = Notification(name: .iinaPendingUIChangeForConfTable, object: tableUIChange)
     AppInputConfig.log.verbose("ConfTableStateManager: posting \(notification.name.rawValue.quoted) notification")
     NotificationCenter.default.post(notification)

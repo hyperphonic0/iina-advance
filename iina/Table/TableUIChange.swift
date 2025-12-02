@@ -16,13 +16,10 @@ import Foundation
 /// In order to facilitate table animations, and to get around some AppKit limitations such as the tendency
 /// for it to lose track of the row selection, much additional boilerplate is needed to keep track of state.
 /// This objects attempts to provide as much of this as possible and provide future reusability.
-class TableUIChange {
+struct TableUIChange: Sendable {
 
   // MARK: - Static definitions
 
-  static let builder = TableUIChangeBuilder()
-
-  typealias AnimationBlock = (NSAnimationContext) -> Void
   typealias CompletionHandler = (TableUIChange) -> Void
 
   enum ContentChangeType {
@@ -50,39 +47,39 @@ class TableUIChange {
   // Required
   let changeType: ContentChangeType
 
-  var toRemove: IndexSet? = nil
-  var toInsert: IndexSet? = nil
-  var toUpdate: IndexSet? = nil
+  let toRemove: IndexSet?
+  let toInsert: IndexSet?
+  let toUpdate: IndexSet?
   /// Used by `ContentChangeType.moveRows`. Ordered list of pairs of (fromIndex, toIndex)
-  var toMove: [(Int, Int)]? = nil
+  let toMove: [(Int, Int)]?
 
   /// `NSTableView` already updates previous selection indexes if added/removed rows cause them to move.
   /// To select added rows, or select next index after remove, etc, will need an explicit call to update selection afterwards.
   /// Will not call to update selection if this is nil.
-  var newSelectedRowIndexes: IndexSet? = nil
+  let newSelectedRowIndexes: IndexSet?
 
   /// MARK: - Optional vars
 
   /// Provide this to restore old selection when calculating the inverse of this change (when doing an undo of "move").
   // TODO: (optimization) figure out how to calculate this from `toMove` instead of storing this
-  var oldSelectedRowIndexes: IndexSet? = nil
+  let oldSelectedRowIndexes: IndexSet?
 
   /// Optional animations
-  var flashBefore: IndexSet? = nil
-  var flashAfter: IndexSet? = nil
+  let flashBefore: IndexSet?
+  let flashAfter: IndexSet?
 
   /// Animation overrides. Leave nil to use the value from the table
-  var rowInsertAnimation: NSTableView.AnimationOptions? = nil
-  var rowRemoveAnimation: NSTableView.AnimationOptions? = nil
+  let rowInsertAnimation: NSTableView.AnimationOptions?
+  let rowRemoveAnimation: NSTableView.AnimationOptions?
 
   /// If true, reload all existing rows after executing the primary differences (to cover the case that one of them may have changed)
-  var reloadAllExistingRows: Bool = false
+  let reloadAllExistingRows: Bool
 
   /// If true:
   /// • If there are selected row(s), scroll the table so that the first selected row is visible to the user.
   /// • Else if there are inserted rows, scroll the table so that the last inserted row is visible
   /// Does this after `reloadAllExistingRows` but before `completionHandler`.
-  var scrollToShowChangedRow: Bool = true
+  let scrollToShowChangedRow: Bool
 
   /// A method which, if supplied, is called at the end of execute()
   let completionHandler: TableUIChange.CompletionHandler?
@@ -117,8 +114,38 @@ class TableUIChange {
     return false
   }
 
-  init(_ changeType: ContentChangeType, completionHandler: TableUIChange.CompletionHandler? = nil) {
+  init(_ changeType: ContentChangeType,
+       toRemove: IndexSet? = nil,
+       toInsert: IndexSet? = nil,
+       toUpdate: IndexSet? = nil,
+       toMove: [(Int, Int)]? = nil,
+       newSelectedRowIndexes: IndexSet? = nil,
+       oldSelectedRowIndexes: IndexSet? = nil,
+       useFlashForChangedRows: Bool = false,
+       flashAfter: IndexSet? = nil,
+       rowInsertAnimation: NSTableView.AnimationOptions? = nil,
+       rowRemoveAnimation: NSTableView.AnimationOptions? = nil,
+       reloadAllExistingRows: Bool = false,
+       scrollToShowChangedRow: Bool = true,
+       completionHandler: TableUIChange.CompletionHandler? = nil) {
     self.changeType = changeType
+    self.toRemove = toRemove
+    self.toInsert = toInsert
+    self.toUpdate = toUpdate
+    self.toMove = toMove
+    self.newSelectedRowIndexes = newSelectedRowIndexes
+    // to help restore selection on undo
+    self.oldSelectedRowIndexes = oldSelectedRowIndexes
+
+    // If useFlashForChangedRows==true, set up a flash animation to make it clear which rows were updated or removed.
+    // Don't need to worry about moves & inserts, because those will be highlighted.
+    self.flashBefore = useFlashForChangedRows ? toRemove : nil
+    self.flashAfter = flashAfter
+
+    self.rowInsertAnimation = rowInsertAnimation
+    self.rowRemoveAnimation = rowRemoveAnimation
+    self.reloadAllExistingRows = reloadAllExistingRows
+    self.scrollToShowChangedRow = scrollToShowChangedRow
     self.completionHandler = completionHandler
   }
 
@@ -296,17 +323,6 @@ class TableUIChange {
     }
   }
 
-  // Set up a flash animation to make it clear which rows were updated or removed.
-  // Don't need to worry about moves & inserts, because those will be highlighted.
-  func setUpFlashForChangedRows() {
-    if let toRemove {
-      flashBefore = IndexSet()
-      for index in toRemove {
-        flashBefore?.insert(index)
-      }
-    }
-  }
-
   private func animateFlash(forIndexes indexes: IndexSet, in tableView: NSTableView, _ context: NSAnimationContext) {
     context.duration = Constants.AnimationDuration.tableUIFlash
 
@@ -324,22 +340,6 @@ class TableUIChange {
     }
   }
 
-  func shallowClone() -> TableUIChange {
-    let clone = TableUIChange(changeType, completionHandler: completionHandler)
-    clone.toRemove = toRemove
-    clone.toInsert = toInsert
-    clone.toMove = toMove
-    clone.toUpdate = toUpdate
-    clone.newSelectedRowIndexes = newSelectedRowIndexes
-    clone.oldSelectedRowIndexes = oldSelectedRowIndexes
-    clone.rowInsertAnimation = rowInsertAnimation
-    clone.rowRemoveAnimation = rowRemoveAnimation
-    clone.reloadAllExistingRows = reloadAllExistingRows
-    clone.scrollToShowChangedRow = scrollToShowChangedRow
-
-    return clone
-  }
-
   // MARK: - Other Utils
 
   func postNotification(name tableChangeNotificationName: Notification.Name) {
@@ -351,7 +351,7 @@ class TableUIChange {
 
   func inverted(adjustAllIndexesBy indexAdjustment: Int = 0,
                 selectNextRowAfterDelete: Bool, completionHandler: TableUIChange.CompletionHandler? = nil) -> TableUIChange {
-    TableUIChange.builder.inverted(from: self, andAdjustAllIndexesBy: indexAdjustment,
+    TableUIChangeBuilder.shared.inverted(from: self, andAdjustAllIndexesBy: indexAdjustment,
                                    selectNextRowAfterDelete: selectNextRowAfterDelete, completionHandler: completionHandler)
   }
 }

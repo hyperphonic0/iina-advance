@@ -838,10 +838,10 @@ class MenuController: NSObject, NSMenuDelegate {
     let sectionName: String
     let filterTypeString: String
     if isVideo {
-      sectionName = SharedInputSection.VIDEO_FILTERS_SECTION_NAME
+      sectionName = MPVInputSection.Shared.VIDEO_FILTERS_SECTION_NAME
       filterTypeString = "Toggle video filter"
     } else {
-      sectionName = SharedInputSection.AUDIO_FILTERS_SECTION_NAME
+      sectionName = MPVInputSection.Shared.AUDIO_FILTERS_SECTION_NAME
       filterTypeString = "Toggle audio filter"
     }
 
@@ -876,7 +876,7 @@ class MenuController: NSObject, NSMenuDelegate {
   func refreshStaticMenuItemBindings() {
     let filterDict = AppInputConfig.current.resolverDict.filter{$0.value.origin != .staticMenuItem}
     let staticMenuItemBindings: [KeyMapping] = self.findStaticMenuItems(filterOut: filterDict)
-    AppInputConfig.replaceMappings(forSharedSectionName: SharedInputSection.STATIC_MENU_ITEMS_SECTION_NAME, with: staticMenuItemBindings, onlyIfDifferent: true)
+    AppInputConfig.replaceMappings(forSharedSectionName: MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME, with: staticMenuItemBindings, onlyIfDifferent: true)
   }
 
   private func findStaticMenuItems(filterOut filterDict: [String: InputBinding]) -> [KeyMapping] {

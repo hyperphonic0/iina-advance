@@ -15,7 +15,7 @@ import Foundation
  its functionality in order to suport all varieties of Lua scripts, while also supporting IINA's needs such as key equivalents set via
  plugins.
  */
-class InputSectionStack {
+final class InputSectionStack {
   /// More than one of these is probably excessive, since there will only ever be one active player at a time making changes
   static let lock = Lock()
 
@@ -101,7 +101,7 @@ class InputSectionStack {
 
    See: `mp_input_define_section` in mpv's source code.
    */
-  func defineSection(_ inputSection: MPVInputSection) {
+  func defineSection(_ inputSection: any InputSection) {
     InputSectionStack.lock.withLock {
       // mpv behavior is to remove a section from the enabled list if it is updated with no content
       if inputSection.keyMappingList.isEmpty && sectionsDefined[inputSection.name] != nil {

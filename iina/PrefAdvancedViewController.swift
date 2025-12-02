@@ -229,9 +229,9 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     doAction()
 
     undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
-      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
-      tableUIChangeUndo.setUpFlashForChangedRows()
-
+      let tableUIChangeUndo = TableUIChangeBuilder.shared.inverted(from: tableUIChange,
+                                                             selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete,
+                                                             useFlashForChangedRows: true)
       doAtomicTableUpdate(tableUIChangeUndo, allItemsOld)
     }, redo: {
       doAction()
@@ -254,7 +254,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     doAction()
 
     undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
-      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
+      let tableUIChangeUndo = TableUIChangeBuilder.shared.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
       doAtomicTableUpdate(tableUIChangeUndo, allItemsOld)
     }, redo: {
       doAction()
@@ -279,7 +279,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     doAction()
 
     undoHelper.register(undoHelper.buildActionName(basedOn: tableUIChange), undo: { [self] in
-      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
+      let tableUIChangeUndo = TableUIChangeBuilder.shared.inverted(from: tableUIChange, selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete)
       doAtomicTableUpdate(tableUIChangeUndo, allItemsOld)
     }, redo: {
       doAction()

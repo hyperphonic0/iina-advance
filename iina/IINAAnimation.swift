@@ -211,10 +211,8 @@ extension IINAAnimation {
     private static let alarmStartWatermark: Int = 100
     private static let alarmResetWatermark: Int = 10
 
+    @MainActor
     fileprivate func _submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
-      // Fail if not running on main thread:
-      assert(DispatchQueue.isExecutingIn(.main))
-
       var enqueuedCount = 0
 
       if !tasks.isEmpty {
@@ -280,6 +278,76 @@ extension IINAAnimation {
       }
     }
 
+    /// Async wrapper for NSAnimationContext.runAnimationGroup
+//    func submitAsync(_ task: Task) async {
+//      await withCheckedContinuation { continuation in
+//        NSAnimationContext.runAnimationGroup({ context in
+//          context.duration = task.duration
+//          if let timingName = task.timingName {
+//            context.timingFunction = CAMediaTimingFunction(name: timingName)
+//          }
+//
+//          do {
+//            try task.runFunc()
+//          } catch IINAError.cancelAnimationTransaction {
+//            if log.isTraceEnabled {
+//              log.verbose("[Pipeline] Task was cancelled")
+//            }
+//          } catch is CancellationError {
+//            log.verbose("[Pipeline] Task cancelled via CancellationError")
+//          } catch {
+//            log.error("[Pipeline] Unexpected error thrown by task: \(error)")
+//          }
+//        }, completionHandler: {
+//          continuation.resume()
+//        })
+//      }
+//    }
+//
+//
+//    class MyViewController: NSViewController {
+//      @IBOutlet weak var myView: NSView!
+//
+//      func animateView() async {
+//        // Fade out
+//        await runAnimationGroupAsync(duration: 0.5) { context in
+//          self.myView.animator().alphaValue = 0.0
+//        }
+//
+//        // Move and fade in
+//        await runAnimationGroupAsync(duration: 0.5, timingFunction: .easeInEaseOut) { context in
+//          self.myView.animator().frame.origin.y += 50
+//          self.myView.animator().alphaValue = 1.0
+//        }
+//      }
+//    }
+//
+//    class MyViewController: NSViewController {
+//      @IBOutlet weak var myView: NSView!
+//
+//      func animateSequence() async {
+//        do {
+//          // Fade out
+//          try await runAnimationGroupAsync(duration: 0.5) { context in
+//            self.myView.animator().alphaValue = 0.0
+//          }
+//
+//          // Move and fade in
+//          try await runAnimationGroupAsync(duration: 0.5, timingFunction: .easeInEaseOut) { context in
+//            self.myView.animator().frame.origin.y += 50
+//            self.myView.animator().alphaValue = 1.0
+//          }
+//
+//        } catch is CancellationError {
+//          print("Animation sequence cancelled")
+//        } catch {
+//          print("Animation failed: \(error)")
+//        }
+//      }
+//    }
+
+
+    @MainActor
     private func runTasks() {
       let nextTask: Task
 
@@ -347,6 +415,7 @@ extension IINAAnimation {
     
     /// Checks that the last GeometryTransform is done, and if there is an enqueued GeometryTransform waiting.
     /// If so, pops & returns it.
+    @MainActor
     private func popNextReadyGTF() -> Task? {
       gtfLock.withLock{ [self] in
         guard gtfCurrentlyRunningID == nil else { return nil }

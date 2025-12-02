@@ -16,7 +16,7 @@ enum InputBindingOrigin: Codable {
   case staticMenuItem  /// MacOS menu items which have hard-coded key eqivalents, which are not included in other sections
 }
 
-protocol InputSection: CustomStringConvertible {
+protocol InputSection: CustomStringConvertible, Sendable {
   // Section name must be unique within a player core
   var name: String { get }
 
@@ -30,15 +30,34 @@ protocol InputSection: CustomStringConvertible {
 
   /// Where this section came from (category). Note: "origin" is only used for display purposes
   var origin: InputBindingOrigin { get }
+
+  func clone(_ keyMappingList: [KeyMapping]) -> MPVInputSection
 }
 
-class MPVInputSection: InputSection {
+struct MPVInputSection: InputSection {
   static let FLAG_DEFAULT = "default"
   static let FLAG_FORCE = "force"
   static let FLAG_EXCLUSIVE = "exclusive"
 
+  struct Shared {
+    /// The "default" section contains the bindings loaded from the user's currently
+    /// selected input conf file, and will be shared for all `PlayerCore` instances.
+    /// Note: mpv expects this section to be named "default", so this constant should not be changed.
+    static let USER_CONF_SECTION_NAME = "default"
+
+    static let VIDEO_FILTERS_SECTION_NAME = "Video Filters"
+    static let AUDIO_FILTERS_SECTION_NAME = "Audio Filters"
+
+    /// One section to store the key equivalents for all the IINA plugins.
+    /// Only one instance of this exists for the whole IINA app.
+    /// Its `keyMappingList` will be regenerated each time the Plugin menu is updated.
+    static let PLUGINS_SECTION_NAME = "IINA Plugins"
+
+    static let STATIC_MENU_ITEMS_SECTION_NAME = "Static Menu Items"
+  }
+
   let name: String
-  fileprivate(set) var keyMappingList: [KeyMapping]
+  let keyMappingList: [KeyMapping]
   let isForce: Bool
   let origin: InputBindingOrigin
 
@@ -56,37 +75,13 @@ class MPVInputSection: InputSection {
     self.origin = origin
   }
 
+  func clone(_ keyMappingList: [KeyMapping]) -> MPVInputSection {
+    MPVInputSection(name: name, keyMappingList, isForce: isForce, origin: origin)
+  }
+
   var description: String {
     get {
       "MPVInputSection(\"\(name)\", \(isForce ? "force" : "weak"), \(keyMappingList.count) mappings)"
     }
-  }
-}
-
-class SharedInputSection: MPVInputSection {
-  /// The "default" section contains the bindings loaded from the user's currently
-  /// selected input conf file, and will be shared for all `PlayerCore` instances.
-  /// Note: mpv expects this section to be named "default", so this constant should not be changed.
-  static let USER_CONF_SECTION_NAME = "default"
-
-  static let VIDEO_FILTERS_SECTION_NAME = "Video Filters"
-  static let AUDIO_FILTERS_SECTION_NAME = "Audio Filters"
-
-  /// One section to store the key equivalents for all the IINA plugins.
-  /// Only one instance of this exists for the whole IINA app.
-  /// Its `keyMappingList` will be regenerated each time the Plugin menu is updated.
-  static let PLUGINS_SECTION_NAME = "IINA Plugins"
-
-  static let STATIC_MENU_ITEMS_SECTION_NAME = "Static Menu Items"
-
-  init(name: String, isForce: Bool, origin: InputBindingOrigin) {
-    super.init(name: name, [], isForce: isForce, origin: origin)
-  }
-
-  func setKeyMappingList(_ keyMappingList: [KeyMapping]) {
-    if DebugConfig.logBindingsRebuild {
-      AppInputConfig.log.verbose("Replacing entire section \"\(name)\" with \(keyMappingList.count) mappings")
-    }
-    self.keyMappingList = keyMappingList
   }
 }

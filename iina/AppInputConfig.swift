@@ -10,7 +10,7 @@ import Foundation
 
 /// Application-scoped input config (key bindings)
 /// The currently active bindings for the IINA app. Includes key lookup table, list of binding candidates, & other data
-struct AppInputConfig {
+struct AppInputConfig: Sendable {
   /// Return true to send notifications; false otherwise
   typealias NotificationData = [AnyHashable : Any]
 
@@ -19,55 +19,47 @@ struct AppInputConfig {
   // MARK: Shared input sections
 
   /// Contains static sections which occupy the bottom of every stack.
-  /// Sort of like a prototype, but a change to any of these sections will immediately affects all players.
+  /// Sort of like a prototype, but a change to any of these sections will immediately affect all players.
   static private let sharedSectionStack = InputSectionStack(initialEnabledSections: [
-    SharedInputSection(name: SharedInputSection.USER_CONF_SECTION_NAME, isForce: true, origin: .confFile),
-    SharedInputSection(name: SharedInputSection.AUDIO_FILTERS_SECTION_NAME, isForce: true, origin: .savedFilter),
-    SharedInputSection(name: SharedInputSection.VIDEO_FILTERS_SECTION_NAME, isForce: true, origin: .savedFilter),
-    SharedInputSection(name: SharedInputSection.PLUGINS_SECTION_NAME, isForce: false, origin: .iinaPlugin),
-    SharedInputSection(name: SharedInputSection.STATIC_MENU_ITEMS_SECTION_NAME, isForce: true, origin: .staticMenuItem)
+    MPVInputSection(name: MPVInputSection.Shared.USER_CONF_SECTION_NAME, [], isForce: true, origin: .confFile),
+    MPVInputSection(name: MPVInputSection.Shared.AUDIO_FILTERS_SECTION_NAME, [], isForce: true, origin: .savedFilter),
+    MPVInputSection(name: MPVInputSection.Shared.VIDEO_FILTERS_SECTION_NAME, [], isForce: true, origin: .savedFilter),
+    MPVInputSection(name: MPVInputSection.Shared.PLUGINS_SECTION_NAME, [], isForce: false, origin: .iinaPlugin),
+    MPVInputSection(name: MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME, [], isForce: true, origin: .staticMenuItem)
   ])
 
+  /// Should only be called from within a `InputSectionStack.lock` block.
   static var sharedSections: [InputSection] {
     sharedSectionStack.sectionsEnabled.map( { sharedSectionStack.sectionsDefined[$0.name]! })
   }
 
+  /// Should only be called from within a `InputSectionStack.lock` block.
   static var userConfMappings: [KeyMapping] {
-    return sharedSectionStack.sectionsDefined[SharedInputSection.USER_CONF_SECTION_NAME]!.keyMappingList
+    sharedSectionStack.sectionsDefined[MPVInputSection.Shared.USER_CONF_SECTION_NAME]!.keyMappingList
   }
 
   static var staticMenuItemMappings: [KeyMapping] {
-    return sharedSectionStack.sectionsDefined[SharedInputSection.STATIC_MENU_ITEMS_SECTION_NAME]!.keyMappingList
+    return sharedSectionStack.sectionsDefined[MPVInputSection.Shared.STATIC_MENU_ITEMS_SECTION_NAME]!.keyMappingList
   }
 
   static func replaceUserConfSectionMappings(with userConfMappings: [KeyMapping], attaching userData: NotificationData? = nil) {
-    replaceMappings(forSharedSectionName: SharedInputSection.USER_CONF_SECTION_NAME, with: userConfMappings, attaching: userData)
+    replaceMappings(forSharedSectionName: MPVInputSection.Shared.USER_CONF_SECTION_NAME, with: userConfMappings, attaching: userData)
   }
 
 
   /// This can get called a lot for menu item bindings [by MacOS], so setting onlyIfDifferent=true can possibly cut down on redundant work.
-  static func replaceMappings(forSharedSectionName: String, with mappings: [KeyMapping],
+  static func replaceMappings(forSharedSectionName sectionName: String, with mappings: [KeyMapping],
                               onlyIfDifferent: Bool = false, attaching userData: NotificationData? = nil) {
     InputSectionStack.lock.withLock {
-      guard let sharedSection = sharedSectionStack.sectionsDefined[forSharedSectionName] as? SharedInputSection else { return }
+      guard let sharedSection = sharedSectionStack.sectionsDefined[sectionName] else { return }
 
-      let doReplace = true
-
-//      if onlyIfDifferent {
-        // TODO: get more sophisticated than this simple check
-//        let existingCount = sharedSection.keyMappingList.count
-//        let newCount = mappings.count
-//        let didChange = !(existingCount == 0 && newCount == 0)
-//        doReplace = didChange
-//        doReplace = true
-//      }
-
-      if doReplace {
-        sharedSection.setKeyMappingList(mappings)
+      if DebugConfig.logBindingsRebuild {
+        AppInputConfig.log.verbose("Replacing entire section \"\(sharedSection.name)\" with \(mappings.count) mappings")
       }
-      if doReplace || userData != nil {
-        AppInputConfig.rebuildCurrent(attaching: userData)
-      }
+      // TODO: honor onlyIfDifferent with diff logic
+      let sharedSectionUpdated = sharedSection.clone(mappings)
+      sharedSectionStack.sectionsDefined[sectionName] = sharedSectionUpdated
+      AppInputConfig.rebuildCurrent(attaching: userData)
     }
   }
 
@@ -97,7 +89,7 @@ struct AppInputConfig {
 
       // Optimization: drop all but the most recent request (but not if there is an attachment to deliver)
       let hasAttachedData = (userData?.count ?? 0) > 0
-      if ticket <= AppInputConfig.rebuildTicketCounter && !hasAttachedData {
+      if (ticket <= AppInputConfig.rebuildTicketCounter) && !hasAttachedData {
         return
       }
 
@@ -108,8 +100,7 @@ struct AppInputConfig {
         Logger.fatal("AppInputConfig.rebuildCurrent(): player \(player.label) has no keyBindingContext!")  // should never happen
       }
 
-      let builder = activePlayerInputContext.makeAppInputConfigBuilder()
-      let appInputConfigNew = builder.build(version: ticket)
+      let appInputConfigNew = activePlayerInputContext.buildAppInputConfig(version: ticket)
 
       AppInputConfig.current = appInputConfigNew
 

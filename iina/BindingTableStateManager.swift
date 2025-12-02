@@ -13,9 +13,6 @@ import Foundation
  */
 @MainActor
 class BindingTableStateManager: NSObject {
-  let clearFilterWhenChangeMade = false
-  let selectNextRowAfterDelete = false
-
   enum Key: String {
     case appInputConfig = "AppInputConfig"
     case tableUIChange = "BindingTableChange"
@@ -77,7 +74,7 @@ class BindingTableStateManager: NSObject {
     let userConfMappingsNew = extractUserConfMappings(from: allRowsNew)
 
     // If a filter is active for these ops, clear it. Otherwise the new row may be hidden by the filter, which might confuse the user.
-    if clearFilterWhenChangeMade && !BindingTableState.current.filterString.isEmpty {
+    if BindingTableState.clearFilterWhenChangeMade && !BindingTableState.current.filterString.isEmpty {
       switch tableUIChange.changeType {
       case .updateRows, .insertRows, .moveRows, .removeRows:
         // This will cause an asynchronous load of the table's UI. So we will end up with 2 table updates from our one action.
@@ -105,10 +102,9 @@ class BindingTableStateManager: NSObject {
       let userConfSectionStartIndexOld = tableStateOld.appInputConfig.userConfSectionStartIndex
       let userConfSectionStartIndexNew = tableStateNew.appInputConfig.userConfSectionStartIndex
       let userConfSectionOffsetChange = userConfSectionStartIndexOld - userConfSectionStartIndexNew
-      let tableUIChangeUndo = TableUIChange.builder.inverted(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange,
-                                                             selectNextRowAfterDelete: selectNextRowAfterDelete)
-      tableUIChangeUndo.setUpFlashForChangedRows()
-
+      let tableUIChangeUndo = TableUIChangeBuilder.shared.inverted(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange,
+                                                             selectNextRowAfterDelete: BindingTableState.selectNextRowAfterDelete,
+                                                             useFlashForChangedRows: true)
       let bindingRowsOld = tableStateOld.appInputConfig.bindingCandidateList
       self.doAction(bindingRowsOld, tableUIChangeUndo)  // Recursive call: implicitly registers redo
     })
@@ -215,7 +211,7 @@ class BindingTableStateManager: NSObject {
       // A table change animation can be calculated if not provided, which should be sufficient for "reload".
       tableUIChange = buildTableDiff(oldState: oldState, newState: newState)
     }
-    updateTableUI(oldState: oldState, newState: newState, desiredTableUIChange: tableUIChange)
+    postUpdateToTableUI(oldState: oldState, newState: newState, desiredTableUIChange: tableUIChange)
   }
 
   private func translateToFiltered(_ unfilteredSet: IndexSet?, _ oldState: BindingTableState) -> IndexSet? {
@@ -233,21 +229,32 @@ class BindingTableStateManager: NSObject {
     return filteredSet
   }
 
-  private func updateTableUI(oldState: BindingTableState, newState: BindingTableState, desiredTableUIChange: TableUIChange) {
-    let tableUIChange = desiredTableUIChange
-
-    // Any change made could conceivably change other rows in the table. It's inexpensive to just reload all of them:
-    tableUIChange.reloadAllExistingRows = true
-
+  private func postUpdateToTableUI(oldState: BindingTableState, newState: BindingTableState, desiredTableUIChange orig: TableUIChange) {
+    var newSelectedRowIndexes: IndexSet? = nil
+    var rowInsertAnimation = orig.rowInsertAnimation
+    var rowRemoveAnimation = orig.rowRemoveAnimation
     // If the table change is the result of a new conf file being selected, don't try to retain the selection.
     if !newState.inputConfFile.canonicalFilePath.equalsIgnoreCase(oldState.inputConfFile.canonicalFilePath) {
-      tableUIChange.newSelectedRowIndexes = IndexSet() // will clear any selection
+      newSelectedRowIndexes = IndexSet() // will clear any selection
       // The default slide animations look good when applying filters, but they are too chaotic when changing files.
       // A fade effect still looks nicer than nothing. Moved rows will still animate, but that actually works well
       // for sliding VF/AF bindings up and down as the list above them changes length.
-      tableUIChange.rowInsertAnimation = .effectFade
-      tableUIChange.rowRemoveAnimation = .effectFade
+      rowInsertAnimation = .effectFade
+      rowRemoveAnimation = .effectFade
     }
+
+    let tableUIChange = TableUIChange(orig.changeType,
+                                      toRemove: orig.toRemove, toInsert: orig.toInsert, toUpdate: orig.toUpdate, toMove: orig.toMove,
+                                      newSelectedRowIndexes: newSelectedRowIndexes ?? orig.newSelectedRowIndexes,
+                                      oldSelectedRowIndexes: orig.oldSelectedRowIndexes,
+                                      useFlashForChangedRows: orig.flashBefore != nil,
+                                      flashAfter: orig.flashAfter,
+                                      rowInsertAnimation: rowInsertAnimation,
+                                      rowRemoveAnimation: rowRemoveAnimation,
+                                      // Any change made could conceivably change other rows in the table. It's inexpensive to just reload all of them:
+                                      reloadAllExistingRows: true,
+                                      scrollToShowChangedRow: orig.scrollToShowChangedRow,
+                                      completionHandler: orig.completionHandler)
 
     // Notify Key Bindings table of update:
     let notification = Notification(name: .iinaPendingUIChangeForBindingTable, object: tableUIChange)
@@ -257,7 +264,7 @@ class BindingTableStateManager: NSObject {
 
   private func buildTableDiff(oldState: BindingTableState, newState: BindingTableState) -> TableUIChange {
     // Remember, the displayed table contents must reflect the *filtered* state (displayed rows).
-    return TableUIChange.builder.buildDiff(oldRows: oldState.displayedRows, newRows: newState.displayedRows)
+    return TableUIChangeBuilder.shared.buildDiff(oldRows: oldState.displayedRows, newRows: newState.displayedRows)
   }
 
   // Save change to input conf file

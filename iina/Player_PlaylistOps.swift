@@ -122,7 +122,7 @@ extension PlayerCore {
 
     let (tableUIChange, allItemsNew) = pwc.playlistView.isViewLoaded
     ? pwc.playlistView.playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: expectedCurrentPlaylist)
-    : TableUIChange.builder.buildInsert(of: rowList, at: targetRowIndex ?? displayedPlaylist.count, in: expectedCurrentPlaylist)
+    : TableUIChangeBuilder.shared.buildInsert(of: rowList, at: targetRowIndex ?? displayedPlaylist.count, in: expectedCurrentPlaylist)
 
     let playlistSize = expectedCurrentPlaylist.count
     var insertStartIndex = targetRowIndex ?? playlistSize
@@ -228,7 +228,7 @@ extension PlayerCore {
   }
 
   func movePlaylistRows(from rowIndexes: IndexSet, to insertIndex: Int, _ undoOption: UndoOption) {
-    let (tableUIChange, allItemsNew) = TableUIChange.builder.buildMove(rowIndexes, to: insertIndex, in: displayedPlaylist)
+    let (tableUIChange, allItemsNew) = TableUIChangeBuilder.shared.buildMove(rowIndexes, to: insertIndex, in: displayedPlaylist)
     let allItemsOld = displayedPlaylist  // save in case of undo
 
     let moveIndexPairs = buildMpvMoveIndexPairs(from: rowIndexes, to: insertIndex)
@@ -300,9 +300,9 @@ extension PlayerCore {
 
       guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistAfter) else {
         if log.isVerboseEnabled {
-          let tableChangeExpected = TableUIChange.builder.buildDiff(oldRows: expectedPlaylistBefore,
+          let tableChangeExpected = TableUIChangeBuilder.shared.buildDiff(oldRows: expectedPlaylistBefore,
                                                                     newRows: expectedPlaylistAfter)
-          let tableChangeActual = TableUIChange.builder.buildDiff(oldRows: expectedPlaylistBefore,
+          let tableChangeActual = TableUIChangeBuilder.shared.buildDiff(oldRows: expectedPlaylistBefore,
                                                                   newRows: info.playlist)
           let expStr: String = tableChangeExpected.toMove?.compactMap{"\($0.0) → \($0.1)"}.joined(separator: "\n") ?? "nil"
           let actStr: String = tableChangeActual.toMove?.compactMap{"\($0.0) → \($0.1)"}.joined(separator: "\n") ?? "nil"
@@ -375,7 +375,7 @@ extension PlayerCore {
   func removePlaylistRows(_ rowIndexes: IndexSet, _ undoOption: UndoOption) {
     guard !rowIndexes.isEmpty else { return }
 
-    let (tableUIChange, allItemsNew) = TableUIChange.builder.buildRemove(rowIndexes, in: displayedPlaylist,
+    let (tableUIChange, allItemsNew) = TableUIChangeBuilder.shared.buildRemove(rowIndexes, in: displayedPlaylist,
                                                                          selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
     let allItemsOld = displayedPlaylist     // save in case of undo
 
@@ -445,7 +445,7 @@ extension PlayerCore {
     guard Set(oldPlaylistRows) == Set(newPlaylistRows) else { return }
     if oldPlaylistRows == newPlaylistRows { return }
 
-    let tableUIChange = TableUIChange.builder.buildDiff(oldRows: oldPlaylistRows, newRows: newPlaylistRows)
+    let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: oldPlaylistRows, newRows: newPlaylistRows)
 
     mpv.queue.async { [self] in
       guard syncAndValidatePlaylist(expectedPlaylist: oldPlaylistRows) else { return }

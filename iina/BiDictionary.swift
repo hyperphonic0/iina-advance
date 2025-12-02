@@ -40,8 +40,7 @@ import Foundation
 
  Project URL: https://github.com/schmittsfn/BiDictionary
  */
-@frozen
-public struct BiDictionary<Key: Hashable, Value: Hashable> {
+struct BiDictionary<Key: Hashable & Sendable, Value: Hashable & Sendable>: Sendable {
   @usableFromInline
   internal var _keyValueDict: Dictionary<Key, Value>
 

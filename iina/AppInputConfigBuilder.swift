@@ -8,7 +8,7 @@
 
 import Foundation
 
-class AppInputConfigBuilder {
+final class AppInputConfigBuilder {
   private let log = Logger.input
   private let sectionStack: InputSectionStack
   private let playerLabel: String
@@ -32,9 +32,7 @@ class AppInputConfigBuilder {
 
     /// Build the list of `InputBinding`s, including redundancies. We're not done setting each's `isEnabled` field though.
     /// This also sets `userConfSectionStartIndex` and `userConfSectionEndIndex`.
-    let bindingCandidateList = InputSectionStack.lock.withLock {
-      return self.combineEnabledSectionBindings()
-    }
+    let bindingCandidateList = combineEnabledSectionBindings()
     var resolverDict: [String: InputBinding] = [:]
     var duplicateKeys = Set<String>()
     var anyUnicodeBinding: InputBinding? = nil
@@ -138,7 +136,7 @@ class AppInputConfigBuilder {
         continue
       }
 
-      if inputSection.origin == .confFile && inputSection.name == SharedInputSection.USER_CONF_SECTION_NAME {
+      if inputSection.origin == .confFile && inputSection.name == MPVInputSection.Shared.USER_CONF_SECTION_NAME {
         countOfUserConfSectionBindings = inputSection.keyMappingList.count
       } else if !inputSection.isForce {
         countOfWeakSectionBindings += inputSection.keyMappingList.count

@@ -14,12 +14,16 @@ import Foundation
 /// • Provides create/remove/update/delete operations on the table, and also completely handles filtering,  but is decoupled from UI code
 ///   so that everything is cleaner.
 /// • Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
-@MainActor
-struct BindingTableState {
+struct BindingTableState: Sendable {
+  @MainActor
   static var current: BindingTableState = BindingTableState.manager.initialState()
+  @MainActor
   static let manager: BindingTableStateManager = BindingTableStateManager()
-
+  @MainActor
   var manager: BindingTableStateManager { BindingTableState.manager }
+
+  static let clearFilterWhenChangeMade = false
+  static let selectNextRowAfterDelete = false
 
   init(_ appInputConfig: AppInputConfig, filterString: String, inputConfFile: InputConfFile, showAllBindings: Bool) {
     self.appInputConfig = appInputConfig
@@ -99,6 +103,7 @@ struct BindingTableState {
     return nil
   }
 
+  @MainActor
   func moveBindings(from rowIndexes: IndexSet, to index: Int,
                     afterComplete: TableUIChange.CompletionHandler? = nil) -> Int {
 
@@ -106,7 +111,7 @@ struct BindingTableState {
     Logger.log.verbose("Moving \(rowIndexes.count) bindings to \(isFiltered ? "filtered" : "unfiltered") index \(index), which equates to insert at unfiltered index \(insertIndex)")
 
     let srcIndexes = ensureUnfilteredIndexes(forRowIndexes: rowIndexes)  // guarantees unfiltered indexes
-    let (tableUIChange, allRowsUpdated) = TableUIChange.builder.buildMove(rowIndexes, to: insertIndex, in: allRows,
+    let (tableUIChange, allRowsUpdated) = TableUIChangeBuilder.shared.buildMove(rowIndexes, to: insertIndex, in: allRows,
                                                                           completionHandler: afterComplete)
 
     Logger.log.verbose("Generated \(tableUIChange.toMove!.count) movePairs: \(tableUIChange.toMove!); will change selection: \(srcIndexes.map{$0}) → \(tableUIChange.newSelectedRowIndexes!.map{$0})")
@@ -114,10 +119,12 @@ struct BindingTableState {
     return insertIndex
   }
 
+  @MainActor
   func appendBindingsToUserConfSection(_ mappingList: [KeyMapping]) {
     insertNewBindings(relativeTo: appInputConfig.userConfSectionEndIndex, mappingList)
   }
 
+  @MainActor
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ mappingList: [KeyMapping],
                          afterComplete: TableUIChange.CompletionHandler? = nil) {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt, returnUnfilteredIndex: true)
@@ -128,20 +135,22 @@ struct BindingTableState {
     }
 
     // We can get away with making these assumptions about InputBinding fields, because only the "default" section can be modified by the user
-    let insertedRows = mappingList.map{InputBinding($0, origin: .confFile, srcSectionName: SharedInputSection.USER_CONF_SECTION_NAME)}
+    let insertedRows = mappingList.map{InputBinding($0, origin: .confFile, srcSectionName: MPVInputSection.Shared.USER_CONF_SECTION_NAME)}
 
-    let (tableUIChange, allRowsNew) = TableUIChange.builder.buildInsert(of: insertedRows, at: insertIndex, in: allRows,
+    let (tableUIChange, allRowsNew) = TableUIChangeBuilder.shared.buildInsert(of: insertedRows, at: insertIndex, in: allRows,
                                                                         completionHandler: afterComplete)
 
     doAction(allRowsNew, tableUIChange)
   }
 
-  // Returns the index at which it was ultimately inserted
+  /// Returns the index at which it was ultimately inserted
+  @MainActor
   func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ mapping: KeyMapping,
                         afterComplete: TableUIChange.CompletionHandler? = nil) {
     insertNewBindings(relativeTo: index, isAfterNotAt: isAfterNotAt, [mapping], afterComplete: afterComplete)
   }
 
+  @MainActor
   func removeBindings(at indexes: IndexSet) {
     Logger.log("Removing bindings (\(indexes.map{$0}))", level: .verbose)
     guard canModifyCurrentConf else {
@@ -158,13 +167,12 @@ struct BindingTableState {
       return
     }
 
-    let (tableUIChange, remainingRowsUnfiltered) = TableUIChange.builder.buildRemove(indexesToRemove, in: allRows,
-                                                                                     selectNextRowAfterDelete: manager.selectNextRowAfterDelete)
-    tableUIChange.toRemove = indexesToRemove
-
+    let (tableUIChange, remainingRowsUnfiltered) = TableUIChangeBuilder.shared.buildRemove(indexesToRemove, in: allRows,
+                                                                                     selectNextRowAfterDelete: BindingTableState.selectNextRowAfterDelete)
     doAction(remainingRowsUnfiltered, tableUIChange)
   }
 
+  @MainActor
   func updateBinding(at displayIndex: Int, to mapping: KeyMapping) {
     guard canModifyCurrentConf else {
       Logger.log("Aborting updateBinding(): cannot modify current conf!", level: .error)
@@ -196,9 +204,9 @@ struct BindingTableState {
     let bindingClone = existingRow.shallowClone(keyMapping: mapping)
     allRowsNew[indexToUpdate] = bindingClone
 
-    let tableUIChange = TableUIChange(.updateRows)
-    tableUIChange.toUpdate = IndexSet(integer: indexToUpdate)
-    tableUIChange.newSelectedRowIndexes = IndexSet(integer: indexToUpdate)
+    let toUpdate = IndexSet(integer: indexToUpdate)
+    let newSelectedRowIndexes = IndexSet(integer: indexToUpdate)
+    let tableUIChange = TableUIChange(.updateRows, toUpdate: toUpdate, newSelectedRowIndexes: newSelectedRowIndexes)
 
     doAction(allRowsNew, tableUIChange)
   }
@@ -268,6 +276,7 @@ struct BindingTableState {
 
   // Both params should be calculated based on UNFILTERED rows.
   // Let BindingTableStateManager deal with altering animations with a filter
+  @MainActor
   private func doAction(_ allRowsNew: [InputBinding], _ tableUIChange: TableUIChange) {
     manager.doAction(allRowsNew, tableUIChange)
   }
@@ -282,6 +291,7 @@ struct BindingTableState {
     return !filterString.isEmpty
   }
 
+  @MainActor
   func applyFilter(_ searchString: String) {
     Logger.log.verbose("Updating Bindings UI filter to \(searchString.quoted)")
     manager.applyFilter(newFilterString: searchString)

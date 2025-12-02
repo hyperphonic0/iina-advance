@@ -8,58 +8,69 @@
 
 import Foundation
 
-class TableUIChangeBuilder {
+struct TableUIChangeBuilder {
+  static let shared = TableUIChangeBuilder()
+  
   /// Derives the inverse of the given `TableUIChange` (as suitable for an Undo) and returns it.
   /// `indexAdjustment`: if given, shifts all indexes by this amount. Should not be needed for most cases.
   func inverted(from original: TableUIChange, andAdjustAllIndexesBy indexAdjustment: Int = 0,
-                selectNextRowAfterDelete: Bool, completionHandler: TableUIChange.CompletionHandler? = nil) -> TableUIChange {
-    let inverted: TableUIChange
-
+                selectNextRowAfterDelete: Bool, useFlashForChangedRows: Bool = false,
+                completionHandler: TableUIChange.CompletionHandler? = nil) -> TableUIChange {
+    
+    let invertedChangeType: TableUIChange.ContentChangeType
     switch original.changeType {
 
     case .removeRows:
-      inverted = TableUIChange(.insertRows, completionHandler: completionHandler)
+      invertedChangeType = .insertRows
 
     case .insertRows:
-      inverted = TableUIChange(.removeRows, completionHandler: completionHandler)
+      invertedChangeType = .removeRows
 
     case .moveRows:
-      inverted = TableUIChange(.moveRows, completionHandler: completionHandler)
+      invertedChangeType = .moveRows
 
     case .updateRows:
-      inverted = TableUIChange(.updateRows, completionHandler: completionHandler)
+      invertedChangeType = .updateRows
 
     case .none, .reloadAll, .wholeTableDiff:
       // Will not cause a failure. But can't think of a reason to ever invert these types
       Logger.log.warn("Calling inverted() on content change type '\(original.changeType)': was this intentional?")
-      inverted = TableUIChange(original.changeType, completionHandler: completionHandler)
+      invertedChangeType = original.changeType
     }
 
-    if inverted.changeType != .none && inverted.changeType != .reloadAll {
-      inverted.newSelectedRowIndexes = IndexSet()
+    var newSelectedRowIndexes: IndexSet? = nil
+    var oldSelectedRowIndexes: IndexSet? = nil
+    var toInsertSet: IndexSet? = nil
+    var toRemoveSet: IndexSet? = nil
+    var toUpdateSet: IndexSet? = nil
+    /// Used by `ContentChangeType.moveRows`. Ordered list of pairs of (fromIndex, toIndex)
+    var toMoveSet: [(Int, Int)]? = nil
+
+    if invertedChangeType != .none && invertedChangeType != .reloadAll {
+      newSelectedRowIndexes = IndexSet()
     }
 
     if let removed = original.toRemove {
       let toInsert = IndexSet(removed.map({ $0 + indexAdjustment }))
-      inverted.toInsert = toInsert
+      toInsertSet = toInsert
       // Add inserted lines to selection
       for insertIndex in toInsert {
-        inverted.newSelectedRowIndexes?.insert(insertIndex)
+        newSelectedRowIndexes?.insert(insertIndex)
       }
       Logger.log.verbose("Invert: changed removes=\(removed.toArray()) into inserts=\(toInsert.toArray())")
     }
     if let inserted = original.toInsert {
       let toRemove = IndexSet(inserted.map({ $0 + indexAdjustment }))
-      inverted.toRemove = toRemove
+      toRemoveSet = toRemove
       Logger.log.verbose("Invert: changed inserts=\(inserted.toArray()) into removes=\(toRemove.toArray())")
     }
     if let updated = original.toUpdate {
       let toUpdate = IndexSet(updated.map({ $0 + indexAdjustment }))
-      inverted.toUpdate = toUpdate
+      toUpdateSet = toUpdate
       Logger.log.verbose("Invert: changed updates=\(updated.toArray()) into updates=\(toUpdate.toArray())")
       // Add updated lines to selection
       for updateIndex in toUpdate {
-        inverted.newSelectedRowIndexes?.insert(updateIndex)
+        newSelectedRowIndexes?.insert(updateIndex)
       }
     }
     if let movedPairs = original.toMove {
@@ -72,20 +83,37 @@ class TableUIChangeBuilder {
       }
 
       movePairsInverted = movePairsInverted.reversed()  // Need to reverse order for proper animation
-      inverted.toMove = movePairsInverted
+      toMoveSet = movePairsInverted
 
       // Preserve selection if possible:
       if let origBeginningSelection = original.oldSelectedRowIndexes,
-         let origEndingSelection = original.newSelectedRowIndexes, inverted.changeType == .moveRows {
-        inverted.newSelectedRowIndexes = origBeginningSelection
-        inverted.oldSelectedRowIndexes = origEndingSelection
+         let origEndingSelection = original.newSelectedRowIndexes, invertedChangeType == .moveRows {
+        newSelectedRowIndexes = origBeginningSelection
+        oldSelectedRowIndexes = origEndingSelection
         Logger.log.verbose("Invert: changed movePairs from \(movedPairs) to \(movePairsInverted.map{$0}); changed selection from \(origEndingSelection.map{$0}) to \(origBeginningSelection.map{$0})")
       }
     }
 
     // Select next row after delete event (maybe):
-    applyExtraSelectionRules(to: inverted, selectNextRowAfterDelete: selectNextRowAfterDelete)
 
+    if selectNextRowAfterDelete, toMoveSet == nil, toInsertSet == nil, let toRemoveSet {
+      // After selected rows are deleted, keep a selection on the table by selecting the next row
+      if let lastRemoveIndex = toRemoveSet.last {
+        let newSelectionIndex: Int = lastRemoveIndex - toRemoveSet.count + 1
+        if newSelectionIndex < 0 {
+          Logger.log("selectNextRowAfterDelete: new selection index is less than zero! Discarding", level: .error)
+        } else {
+          newSelectedRowIndexes = IndexSet(integer: newSelectionIndex)
+          Logger.log("TableUIChange: selecting next index after removed rows: \(newSelectionIndex)", level: .verbose)
+        }
+      }
+    }
+
+    let inverted = TableUIChange(invertedChangeType,
+                                 toRemove: toRemoveSet, toInsert: toInsertSet, toUpdate: toUpdateSet, toMove: toMoveSet,
+                                 newSelectedRowIndexes: newSelectedRowIndexes, oldSelectedRowIndexes: oldSelectedRowIndexes,
+                                 useFlashForChangedRows: useFlashForChangedRows,
+                                 completionHandler: completionHandler)
     return inverted
   }
 
@@ -106,14 +134,16 @@ class TableUIChangeBuilder {
    Further reference:
    https://swiftrocks.com/how-collection-diffing-works-internally-in-swift
    */
-  func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>, completionHandler:
-                    TableUIChange.CompletionHandler? = nil, overrideSingleRowMove: Bool = true) -> TableUIChange where R:Hashable {
-
-    let diff = TableUIChange(.wholeTableDiff, completionHandler: completionHandler)
-    diff.toRemove = IndexSet()
-    diff.toInsert = IndexSet()
-    diff.toUpdate = IndexSet()
-    diff.toMove = []
+  func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>,
+                    newSelectedRowIndexes: IndexSet? = nil,
+                    useFlashForChangedRows: Bool = false,
+                    completionHandler: TableUIChange.CompletionHandler? = nil,
+                    reloadAllExistingRows: Bool = false,
+                    overrideSingleRowMove: Bool = true) -> TableUIChange where R:Hashable {
+    var toRemove = IndexSet()
+    var toInsert = IndexSet()
+    var toUpdate = IndexSet()
+    var toMove: [(Int, Int)] = []
 
     // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
 
@@ -128,13 +158,17 @@ class TableUIChangeBuilder {
         switch steps[1] {
         case let .insert(_, indexToInsert):
           if indexToRemove == indexToInsert {
-            diff.toUpdate = IndexSet(integer: indexToInsert)
+            toUpdate = IndexSet(integer: indexToInsert)
             Logger.log.verbose("Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 update: \(indexToInsert)")
-            return diff
+          } else {
+            toMove.append((indexToRemove, indexToInsert))
+            Logger.log.verbose("Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 move: from \(indexToRemove) to \(indexToInsert)")
           }
-          diff.toMove?.append((indexToRemove, indexToInsert))
-          Logger.log.verbose("Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 move: from \(indexToRemove) to \(indexToInsert)")
-          return diff
+          return TableUIChange(.wholeTableDiff,
+                               toUpdate: toUpdate, toMove: toMove,
+                               useFlashForChangedRows: useFlashForChangedRows,
+                               reloadAllExistingRows: reloadAllExistingRows,
+                               completionHandler: completionHandler)
         default: break
         }
       default: break
@@ -145,39 +179,31 @@ class TableUIChangeBuilder {
       switch step {
       case let .remove(_, index):
         // If toOffset != nil, it signifies a MOVE from fromOffset -> toOffset. But the offset must be adjusted for removes!
-        diff.toRemove?.insert(index)
+        toRemove.insert(index)
       case let .insert(_, index):
-        diff.toInsert?.insert(index)
+        toInsert.insert(index)
       case let .move(_, from, to):
-        diff.toMove?.append((from, to))
+        toMove.append((from, to))
       }
     }
+
+    let diff = TableUIChange(.wholeTableDiff,
+                             toRemove: toRemove, toInsert: toInsert, toUpdate: toUpdate, toMove: toMove,
+                             newSelectedRowIndexes: newSelectedRowIndexes,
+                             useFlashForChangedRows: useFlashForChangedRows,
+                             reloadAllExistingRows: reloadAllExistingRows,
+                             completionHandler: completionHandler)
 
     return diff
-  }
-
-  private func applyExtraSelectionRules(to tableUIChange: TableUIChange, selectNextRowAfterDelete: Bool) {
-    if selectNextRowAfterDelete && !tableUIChange.hasMove && !tableUIChange.hasInsert && tableUIChange.hasRemove {
-      // After selected rows are deleted, keep a selection on the table by selecting the next row
-      if let toRemove = tableUIChange.toRemove, let lastRemoveIndex = toRemove.last {
-        let newSelectionIndex: Int = lastRemoveIndex - toRemove.count + 1
-        if newSelectionIndex < 0 {
-          Logger.log("selectNextRowAfterDelete: new selection index is less than zero! Discarding", level: .error)
-        } else {
-          tableUIChange.newSelectedRowIndexes = IndexSet(integer: newSelectionIndex)
-          Logger.log("TableUIChange: selecting next index after removed rows: \(newSelectionIndex)", level: .verbose)
-        }
-      }
-    }
   }
 
   /// Do not use this moving forward. Use the equivalent `EditableTableView` method.
   func buildInsert<T>(of itemsToInsert: [T], at insertIndex: Int, in allCurrentItems: [T],
                       completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
-    let tableUIChange = TableUIChange(.insertRows, completionHandler: completionHandler)
     let toInsert = IndexSet(insertIndex..<(insertIndex+itemsToInsert.count))
-    tableUIChange.toInsert = toInsert
-    tableUIChange.newSelectedRowIndexes = toInsert
+    let tableUIChange = TableUIChange(.insertRows,
+                                      toInsert: toInsert, newSelectedRowIndexes: toInsert,
+                                      completionHandler: completionHandler)
 
     var allItemsNew = allCurrentItems
     allItemsNew.insert(contentsOf: itemsToInsert, at: insertIndex)
@@ -190,9 +216,6 @@ class TableUIChangeBuilder {
                       in allCurrentRows: [T],
                       selectNextRowAfterDelete: Bool,
                       completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
-    let tableUIChange = TableUIChange(.removeRows, completionHandler: completionHandler)
-    tableUIChange.toRemove = indexesToRemove
-
     var remainingRows: [T] = []
     var lastRemovedIndex = 0
     for (rowIndex, row) in allCurrentRows.enumerated() {
@@ -203,14 +226,22 @@ class TableUIChangeBuilder {
       }
     }
 
+    var newSelectedRowIndexes: IndexSet? = nil
     if selectNextRowAfterDelete {
       // After removal, select the single row after the last one removed:
       let countRemoved = allCurrentRows.count - remainingRows.count
       if countRemoved < allCurrentRows.count {
         let newSelectionIndex: Int = lastRemovedIndex - countRemoved + 1
-        tableUIChange.newSelectedRowIndexes = IndexSet(integer: newSelectionIndex)
+        newSelectedRowIndexes = IndexSet(integer: newSelectionIndex)
       }
     }
+
+    let tableUIChange = TableUIChange(.removeRows,
+                                      toRemove: indexesToRemove,
+                                      newSelectedRowIndexes: newSelectedRowIndexes,
+                                      completionHandler: completionHandler)
+
+
     return (tableUIChange, remainingRows)
   }
 
@@ -251,11 +282,11 @@ class TableUIChangeBuilder {
       }
     }
     let allRowsUpdated = beforeInsert + movedRows + afterInsert
-
-    let tableUIChange = TableUIChange(.moveRows, completionHandler: completionHandler)
-    tableUIChange.toMove = moveIndexPairs
-    tableUIChange.oldSelectedRowIndexes = indexesToMove  // to help restore selection on undo
-    tableUIChange.newSelectedRowIndexes = dstIndexes
+    let tableUIChange = TableUIChange(.moveRows,
+                                      toMove: moveIndexPairs,
+                                      newSelectedRowIndexes: dstIndexes,
+                                      oldSelectedRowIndexes: indexesToMove,
+                                      completionHandler: completionHandler)
 
     return (tableUIChange, allRowsUpdated)
   }
@@ -275,12 +306,12 @@ extension EditableTableView {
     } else {
       insertIndex = numberOfRows
     }
-    return TableUIChange.builder.buildInsert(of: itemsToInsert, at: insertIndex, in: allCurrentItems,
+    return TableUIChangeBuilder.shared.buildInsert(of: itemsToInsert, at: insertIndex, in: allCurrentItems,
                                              completionHandler: completionHandler)
   }
   func buildRemove<T>(_ indexesToRemove: IndexSet, in allCurrentRows: [T],
                       completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
-    return TableUIChange.builder.buildRemove(indexesToRemove, in: allCurrentRows,
+    return TableUIChangeBuilder.shared.buildRemove(indexesToRemove, in: allCurrentRows,
                                              selectNextRowAfterDelete: selectNextRowAfterDelete,
                                              completionHandler: completionHandler)
   }
@@ -288,7 +319,7 @@ extension EditableTableView {
                     to insertIndex: Int,
                     in allCurrentRows: [T],
                     completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
-    return TableUIChange.builder.buildMove(indexesToMove, to: insertIndex, in: allCurrentRows,
+    return TableUIChangeBuilder.shared.buildMove(indexesToMove, to: insertIndex, in: allCurrentRows,
                                            completionHandler: completionHandler)
   }
 }

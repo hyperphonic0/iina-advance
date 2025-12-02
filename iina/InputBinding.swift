@@ -6,7 +6,7 @@
 //  Copyright © 2022 lhc. All rights reserved.
 //
 
-/*
+/**
  Contains metadata for a single input binding (a mapping: {key combination or sequence / mouse input / etc} -> {action}) for use by the IINA app.
 
  The intent of this class was to decorate an otherwise naive `KeyMapping` object with additional metadata such as its origin, whether it
@@ -18,7 +18,7 @@
 
  An instance of this class encapsulates all the data needed to display a single row/line in the Key Bindings table.
  */
-class InputBinding: NSObject {
+final class InputBinding: NSObject, Sendable {
   /// Will be `nil` for plugin bindings.
   let keyMapping: KeyMapping
 

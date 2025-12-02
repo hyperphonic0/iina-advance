@@ -28,19 +28,15 @@ class KeyMapping: NSObject, Codable {
   let normalizedMpvKey: String
 
   var normalizedMacKey: String? {
-    get {
-      return KeyCodeHelper.normalizedMacKeySequence(from: normalizedMpvKey)
-    }
+    KeyCodeHelper.normalizedMacKeySequence(from: normalizedMpvKey)
   }
 
   // For UI
   var prettyKey: String {
-    get {
-      if let normalizedMacKey = normalizedMacKey {
-        return normalizedMacKey
-      } else {
-        return normalizedMpvKey
-      }
+    if let normalizedMacKey = normalizedMacKey {
+      return normalizedMacKey
+    } else {
+      return normalizedMpvKey
     }
   }
 
@@ -57,11 +53,9 @@ class KeyMapping: NSObject, Codable {
   /// Similar to rawAction, but includes the #@iina prefix if appropriate, and
   /// the tokens are always separated by exactly one space
   var readableAction: String? {
-    get {
-      guard let action else { return nil }
-      let joined = action.joined(separator: " ")
-      return isIINACommand ? ("\(KeyMapping.IINA_PREFIX) " + joined) : joined
-    }
+    guard let action else { return nil }
+    let joined = action.joined(separator: " ")
+    return isIINACommand ? ("\(KeyMapping.IINA_PREFIX) " + joined) : joined
   }
 
   // The human-language description of the action
@@ -87,15 +81,13 @@ class KeyMapping: NSObject, Codable {
   // This is a rare occurrence. The section, if it exists, will be the first element in `action` and will be surrounded by curly braces.
   // Leave it inside `rawAction` and `action` so that it will be easy to edit in the UI.
   var destinationSection: String? {
-    get {
-      if let action, action.count > 1 {
-        var token = action[0]
-        if token.count > 2, token.removeFirst() == "{", token.removeLast() == "}" {
-          return token.trimmingCharacters(in: .whitespaces)
-        }
+    if let action, action.count > 1 {
+      var token = action[0]
+      if token.count > 2, token.removeFirst() == "{", token.removeLast() == "}" {
+        return token.trimmingCharacters(in: .whitespaces)
       }
-      return nil
     }
+    return nil
   }
 
   // Convenience method. Returns true if action is "ignore"
@@ -105,12 +97,10 @@ class KeyMapping: NSObject, Codable {
 
   // Serialized form, suitable for writing to a single line of mpv's input.conf
   var confFileFormat: String {
-    get {
-      let iinaPrefix = isIINACommand ? "\(KeyMapping.IINA_PREFIX) " : ""
-      let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
-      let rawAction = rawAction ?? ""
-      return "\(iinaPrefix)\(rawKey) \(rawAction)\(commentString)"
-    }
+    let iinaPrefix = isIINACommand ? "\(KeyMapping.IINA_PREFIX) " : ""
+    let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
+    let rawAction = rawAction ?? ""
+    return "\(iinaPrefix)\(rawKey) \(rawAction)\(commentString)"
   }
 
   private enum CodingKeys: String, CodingKey {

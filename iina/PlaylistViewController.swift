@@ -318,7 +318,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
 
     if animate {
-      let tableUIChange = TableUIChange.builder.buildDiff(oldRows: oldPlaylistRows,
+      let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: oldPlaylistRows,
                                                           newRows: newPlaylistRows, completionHandler: { _ in
         self.pwc.animationPipeline.submitInstantTask {
           doAfterReload()
