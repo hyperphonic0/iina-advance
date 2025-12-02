@@ -11,7 +11,7 @@ typealias PrefDidChangeCallback = (_ key: Preference.Key, _ newValue: Any?) -> V
 typealias NotiCenterCallback = (Notification) -> Void
 
 /// Convenience class for observing AppKit's `NotificationCenter` notifications and `Preference` changes
-class NotificationHandler: NSObject {
+final class NotificationHandler: NSObject {
   struct NCObserver {
     let name: Notification.Name
     let object: AnyObject?

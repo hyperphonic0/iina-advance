@@ -496,7 +496,11 @@ class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlin
   func outlineView(_ outlineView: NSOutlineView, didAdd rowView: NSTableRowView, forRow row: Int) {
     /// The background color for a `NSTableRowView` will default to the parent's background color, which results in an
     /// unwanted additive effect for translucent backgrounds. Just make each row transparent.
-//    rowView.backgroundColor = .clear
+    if row <= 0 {
+      rowView.backgroundColor = .init(white: 0.0, alpha: 0.1)
+    } else {
+      rowView.backgroundColor = .clear
+    }
   }
 
   func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {

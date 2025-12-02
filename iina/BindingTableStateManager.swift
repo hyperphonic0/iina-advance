@@ -12,7 +12,7 @@ import Foundation
  Responsible for changing the state of the Key Bindings table by building new versions of `BindingTableState`.
  */
 @MainActor
-class BindingTableStateManager: NSObject {
+final class BindingTableStateManager: NSObject {
   enum Key: String {
     case appInputConfig = "AppInputConfig"
     case tableUIChange = "BindingTableChange"

@@ -12,7 +12,7 @@ import Foundation
 /// Encapsulates code for opening/restoring windows at application startup...and, um, also opening windows when files or URLs
 /// are opened manually.
 /// See also: `AppDelegate`
-class StartupHandler {
+final class StartupHandler {
 
   enum OpenWindowsState: Int {
     case stillEnqueuing = 1

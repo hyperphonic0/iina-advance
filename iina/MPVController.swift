@@ -61,7 +61,7 @@ extension mpv_event_end_file {
 ///   & property changes, respectively.
 /// - `MPVLogScanner.swift`: contains logic to parse certain `MPV_EVENT_LOG_MESSAGE` events to extract information which
 ///   cannot be determined elsewhere, and react appropriately.
-class MPVController: NSObject {
+final class MPVController: NSObject {
   // Cached for prefs display. TODO: use ad hoc call using demo player instead
   static var watchLaterOptions: String = ""
 

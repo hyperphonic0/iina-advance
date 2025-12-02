@@ -9,8 +9,8 @@
 import Foundation
 import Carbon
 
-class KeyCodeHelper {
-  class KeyEquivalents { // MacOS
+struct KeyCodeHelper {
+  struct KeyEquivalents { // MacOS
     static let BACKSPACE = String(UnicodeScalar(NSBackspaceCharacter)!)
     static let DEL = String(UnicodeScalar(NSDeleteCharacter)!)
     static let ENTER = String(UnicodeScalar(NSEnterCharacter)!)

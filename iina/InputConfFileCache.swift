@@ -11,7 +11,7 @@ import Foundation
 // Loading all the input conf files into memory shouldn't take too much time or space, and it will help avoid
 // a bunch of tricky failure points for undo/redo, as well as unexpected behavior when the files are
 // changed outside of IINA.
-class InputConfFileCache {
+final class InputConfFileCache {
   static let fileDQ = DispatchQueue(label: "com.iina_advance.InputConfFile-FileSystemQueue", qos: .utility)
 
   private var storage: [String: InputConfFile] = [:]
@@ -252,7 +252,7 @@ fileprivate func sendErrorAlert(key alertKey: String, args: [String]) {
 }
 
 // Represents an input config file which has been loaded into memory.
-struct InputConfFile {
+struct InputConfFile: Sendable {
   static let cache = InputConfFileCache()
 
   enum Status {
