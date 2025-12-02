@@ -8,7 +8,7 @@
 import Foundation
 
 /// Describes the current panel sizes & locations for all modes of a unique `PlayerWindow`.
-struct GeometrySet {
+struct GeometrySet: Sendable {
   /// The window geometry, whether in regular  or interactive mode.
   ///
   /// Full screen geometry is not stored in a `GeometrySet`, but is expected to be derived from the properties

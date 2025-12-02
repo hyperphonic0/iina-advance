@@ -61,7 +61,7 @@ import Foundation
  └────────────────────────────────────────────────────────────────────────────────────────┘
  ```
  */
-struct PWinGeometry: Equatable, CustomStringConvertible {
+struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
 
   // MARK: Stored properties
 

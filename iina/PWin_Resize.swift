@@ -271,22 +271,24 @@ extension PlayerWindowController {
   /// Changes video scale to `targetVideoScale`, where a value of `1.0` is the video's native scale.
   /// This actually scales the entire viewport, if pref `lockViewportToVideoSize` is enabled, but the size of the displayed video should match
   /// the desired scale.
+  @MainActor
   func setVideoScale(to targetVideoScale: Double) {
-    assert(DispatchQueue.isExecutingIn(.main))
-    // Not supported in music mode at this time. Need to resolve backing scale bugs
-    guard currentLayout.mode == .windowedNormal else {
-      log.verbose("[mpv-window-scale] SetVideoScale: skipping; mode is unsupported: \(currentLayout.mode)")
-      return
-    }
-    guard targetVideoScale > 0.0 else {
-      log.error("[mpv-window-scale] SetVideoScale: requested scale is invalid: \(targetVideoScale)")
-      return
-    }
+    animationPipeline.submitInstantTask{ [self] in
+      // Not supported in music mode at this time. Need to resolve backing scale bugs
+      guard currentLayout.mode == .windowedNormal else {
+        log.verbose("[mpv-window-scale] SetVideoScale: skipping; mode is unsupported: \(currentLayout.mode)")
+        return
+      }
+      guard targetVideoScale > 0.0 else {
+        log.error("[mpv-window-scale] SetVideoScale: requested scale is invalid: \(targetVideoScale)")
+        return
+      }
 
-    let oldWindowedGeo = windowedModeGeo
-    let newGeo = oldWindowedGeo.scalingViewport(toVideoScale: targetVideoScale)
-    log.verbose("[mpv-window-scale] SetVideoScale: from targetVideoScale=\(targetVideoScale) → sending derived mpvWindowScale=\(newGeo.mpvWindowScale())")
-    buildApplyPWinGeoTasks(to: newGeo, thenRun: true)
+      let oldWindowedGeo = windowedGeoForCurrentFrame()
+      let newGeo = oldWindowedGeo.scalingViewport(toVideoScale: targetVideoScale)
+      log.verbose("[mpv-window-scale] SetVideoScale: from targetVideoScale=\(targetVideoScale) → sending derived mpvWindowScale=\(newGeo.mpvWindowScale())")
+      buildApplyPWinGeoTasks(to: newGeo, thenRun: true)
+    }
   }
 
   /// Scales the viewport (which is equivalent to mpv's concept of a window) to the given `desiredMpvWindowScale`.
@@ -427,8 +429,8 @@ extension PlayerWindowController {
 
 
   // TODO: interpolate this
+  @MainActor
   func scaleVideoByIncrement(_ widthStep: Int) {
-    assert(DispatchQueue.isExecutingIn(.main))
     let currentLayout = currentLayout
 
     guard currentLayout.isWindowed || currentLayout.isMusicMode else { return }

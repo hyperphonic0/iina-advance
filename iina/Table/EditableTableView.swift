@@ -282,35 +282,34 @@ class EditableTableView: NSTableView {
         for columnIndex in 0..<self.numberOfColumns {
           // note: keep `makeIfNecessary==false` to prevent drawing items which aren't on the screen
           // (a nice performance improvement, but could be improved visually)
-          if let cellView = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: false) as? NSTableCellView {
+          guard let cellView = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: true) as? NSTableCellView else { continue }
 
-            if columnIndex == 0 {
-              columnOffsets.append(0.0)
+          if columnIndex == 0 {
+            columnOffsets.append(0.0)
+          } else {
+            let colWidth = self.tableColumns[columnIndex - 1].width + self.intercellSpacing.width
+            columnOffsets.append(columnOffsets.last! + colWidth)
+          }
+
+          let dragImageComps = cellView.draggingImageComponents
+          for (compIndex, comp) in dragImageComps.enumerated() {
+            if comp.frame.height > maxRowHeight {
+              maxRowHeight = comp.frame.height
+            }
+            if compIndex == 0 {
+              xOffsets.append(columnOffsets.last!)
             } else {
-              let colWidth = self.tableColumns[columnIndex - 1].width + self.intercellSpacing.width
-              columnOffsets.append(columnOffsets.last! + colWidth)
+              // Never tested with more than 1 component per column.
+              // Probably will need adjusting. At least this shouldn't crash!
+              xOffsets.append(xOffsets.last! + dragImageComps[compIndex-1].frame.width)
             }
-
-            let dragImageComps = cellView.draggingImageComponents
-            for (compIndex, comp) in dragImageComps.enumerated() {
-              if comp.frame.height > maxRowHeight {
-                maxRowHeight = comp.frame.height
-              }
-              if compIndex == 0 {
-                xOffsets.append(columnOffsets.last!)
-              } else {
-                // Never tested with more than 1 component per column.
-                // Probably will need adjusting. At least this shouldn't crash!
-                xOffsets.append(xOffsets.last! + dragImageComps[compIndex-1].frame.width)
-              }
-              componentArray.append(comp)
-            }
+            componentArray.append(comp)
           }
         }
 
         // The `draggingFrame` of `draggingItem` uses the coordinate system of the clicked cell by default.
         // Need to convert this...
-        let dragStartColumnOffset: CGFloat = columnOffsets[dragStartColumnIndex]
+        let dragStartColumnOffset: CGFloat = dragStartColumnIndex < columnOffsets.count ? columnOffsets[dragStartColumnIndex] : 0.0
 
         // Second pass: set offsets and sizes
         for (compArrIndex, comp) in componentArray.enumerated() {
@@ -318,11 +317,9 @@ class EditableTableView: NSTableView {
           comp.frame = NSRect(x: xOffsets[compArrIndex] - dragStartColumnOffset, y: yAdjustToCenter, width: comp.frame.width, height: comp.frame.height)
         }
 
-        let draggingFrameOrigin = CGPoint(x: 0.0,
-                                          y: 0.0)
         let draggingFrameSize = CGSize(width: self.frame.width,
                                        height: self.rowHeight * CGFloat(rowIndexArray.count))
-        draggingItem.draggingFrame = NSRect(origin: draggingFrameOrigin, size: draggingFrameSize)
+        draggingItem.draggingFrame = NSRect(origin: .zero, size: draggingFrameSize)
         log.trace{"DraggingFrame: \(draggingItem.draggingFrame)"}
 
         log.trace{"Returning \(componentArray.count) draggingImageComponents"}
