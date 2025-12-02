@@ -794,11 +794,9 @@ extension BindingTableViewController: NSMenuDelegate {
       let culprit: String
       switch clickedRow.origin {
       case .iinaPlugin:
-        let sourceName = (clickedRow.keyMapping as? MenuItemMapping)?.sourceName ?? "<ERROR>"
-        culprit = "the IINA plugin \(sourceName.quoted)"
+        culprit = "the IINA plugin \(clickedRow.keyMapping.sourceName.quoted)"
       case .savedFilter:
-        let sourceName = (clickedRow.keyMapping as? MenuItemMapping)?.sourceName ?? "<ERROR>"
-        culprit = "the saved filter \(sourceName.quoted)"
+        culprit = "the saved filter \(clickedRow.keyMapping.sourceName.quoted)"
       case .libmpv:
         culprit = "a Lua script or via mpv RPC"
       case .staticMenuItem:

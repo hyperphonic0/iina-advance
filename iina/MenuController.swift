@@ -611,7 +611,7 @@ class MenuController: NSObject, NSMenuDelegate {
   func updatePluginMenu() {
     guard AppDelegate.iinaPluginSystemEnabled else { return }
     Logger.log.trace("Updating Plugin menu")
-    var keyMappings: [MenuItemMapping] = []
+    var keyMappings: [KeyMapping] = []
     let activePlayer = PlayerManager.shared.activePlayer
     pluginMenu.removeAllItems()
     pluginMenu.addItem(withTitle: Constants.String.managePlugins, action: #selector(AppDelegate.showPluginPreferences(_:)), keyEquivalent: "")
@@ -675,7 +675,7 @@ class MenuController: NSObject, NSMenuDelegate {
   private func add(menuItemDef item: JavascriptPluginMenuItem,
                    to menu: NSMenu,
                    for plugin: JavascriptPluginInstance,
-                   keyMappings: inout [MenuItemMapping]) -> NSMenuItem {
+                   keyMappings: inout [KeyMapping]) -> NSMenuItem {
     if (item.isSeparator) {
       let item = NSMenuItem.separator()
       menu.addItem(item)
@@ -699,7 +699,8 @@ class MenuController: NSObject, NSMenuDelegate {
     if let rawKey = item.keyBinding {
       // Store the item with its pair - the PlayerInputContext will set the binding & deal with conflicts
       let actionDescription = "\(plugin.plugin.name) → \(menuItem.title)"
-      keyMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: plugin.plugin.name, menuItem: menuItem, actionDescription: actionDescription))
+      // #MenuItemKeyBinding
+      keyMappings.append(KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: actionDescription, menuItem: menuItem, sourceName: plugin.plugin.name))
     }
     if !item.items.isEmpty {
       menuItem.submenu = NSMenu()
@@ -863,7 +864,8 @@ class MenuController: NSObject, NSMenuDelegate {
       let rawKey = KeyCodeHelper.macOSToMpv(key: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
       if !rawKey.isEmpty {
         let description = "\(filterTypeString): \(filter.name.quoted)"
-        keyMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: filter.name, menuItem: menuItem, actionDescription: description))
+        // #MenuItemKeyBinding
+        keyMappings.append(KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: description, menuItem: menuItem, sourceName: filter.name))
       }
     }
 
@@ -903,8 +905,8 @@ class MenuController: NSObject, NSMenuDelegate {
               return
             }
             let actionDesc = "This key binding will activate the menu item:\n\(menuItem.menuPathDescription)"
-            menuItemMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: "built-in", menuItem: menuItem,
-                                                    actionDescription: actionDesc))
+            // #MenuItemKeyBinding
+            menuItemMappings.append(KeyMapping(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: actionDesc, menuItem: menuItem, sourceName: "built-in"))
           })
         }
       }
@@ -1080,12 +1082,7 @@ class MenuController: NSObject, NSMenuDelegate {
         /// Make sure this is executed after `updateMenuItem()` to ensure it contains the accurate menu item title:
         let displayMessage = "This key binding will activate the menu item:\n\(kbMenuItem.menuPathDescription)"
 
-        let kbUpdated: KeyMapping
-        if let menuItemMapping = kb as? MenuItemMapping {
-          kbUpdated = MenuItemMapping(rawKey: kb.rawKey, sourceName: menuItemMapping.sourceName, menuItem: kbMenuItem, actionDescription: kb.comment)
-        } else {
-          kbUpdated = KeyMapping(rawKey: kb.rawKey, rawAction: kb.rawAction, isIINACommand: kb.isIINACommand, comment: kb.comment, menuItem: kbMenuItem)
-        }
+        let kbUpdated = KeyMapping(rawKey: kb.rawKey, rawAction: kb.rawAction, isIINACommand: kb.isIINACommand, comment: kb.comment, menuItem: kbMenuItem, sourceName: kb.sourceName)
         bindingList[bindingIndex] = binding.shallowClone(keyMapping: kbUpdated, displayMessage: displayMessage)
       }
 
