@@ -75,7 +75,10 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
     super.viewWillAppear()
     BindingTableState.manager.notiHandler.addAllObservers()
     notiHandler.addAllObservers()
-    BindingTableState.manager.applyStateUpdate(AppInputConfig.current)  // bring up to date
+    BindingTableState.manager.applyStateUpdate(AppInputConfig.current)
+    // Seems there is a race condition between the observer setup & the table update above?
+    // Just patch it for now...
+    updateBindingTotalsLabel()
 
     if DebugConfig.logBindingsRebuild {
       let keyList = PlayerManager.shared.getOrCreateDemo().mpv.getInputKeyList()
@@ -135,39 +138,7 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
         },
 
         .init(.iinaPendingUIChangeForBindingTable) { [self] noti in
-          let bindingState = BindingTableState.current
-          let allRowsTotal = bindingState.allRows.count
-          let displayedRows = bindingState.displayedRows
-          let userRowsTotal = bindingState.allRows.filter{ $0.origin == .confFile }.count
-          let disabledRowsTotal = bindingState.allRows.filter{ !$0.isEnabled }.count
-          let customRowsTotal = allRowsTotal - bindingState.allRows.filter{ $0.origin == .staticMenuItem }.count - userRowsTotal
-          let displayedUserRows = displayedRows.filter{ $0.origin == .confFile }
-          let displayedDisabledUserRows = displayedUserRows.filter{ !$0.isEnabled }.count
-
-          let msg: String
-          if !bindingState.filterString.isEmpty {
-            let customRowsDisplayed = disabledRowsTotal - displayedRows.filter{ $0.origin == .staticMenuItem }.count - displayedUserRows.count
-            if bindingState.showAllBindings {
-              let disabledMsg = displayedDisabledUserRows <= 0 ? "" : ", \(displayedDisabledUserRows) disabled"
-              let customRowsMsg = customRowsDisplayed <= 0 ? "" : ", \(customRowsDisplayed) other custom"
-              msg = "Showing \(displayedRows.count) of \(allRowsTotal) total bindings (\(displayedUserRows.count) from config\(disabledMsg)\(customRowsMsg))"
-            } else {
-              let disabledMsg = displayedDisabledUserRows <= 0 ? "" : " (including \(displayedDisabledUserRows) disabled)"
-              msg = "Showing \(displayedRows.count) of \(userRowsTotal) bindings\(disabledMsg)"
-            }
-          } else {
-            if bindingState.showAllBindings {
-              let disabledMsg = disabledRowsTotal <= 0 ? "" : " (including \(disabledRowsTotal) disabled)"
-              let customRowsMsg = customRowsTotal <= 0 ? "" : ", \(customRowsTotal) other custom"
-              msg = "\(userRowsTotal) bindings from config\(disabledMsg)\(customRowsMsg), \(allRowsTotal) total"
-            } else {
-              let disabledMsg = displayedDisabledUserRows <= 0 ? "" : " (including \(displayedDisabledUserRows) disabled)"
-              msg = "\(userRowsTotal) bindings\(disabledMsg)"
-            }
-          }
-
-          bindingTotalsLabel.stringValue = msg
-          bindingTotalsLabel.layout() // Re-layout in case width changed due to formatting changes
+          updateBindingTotalsLabel()
         },
 
         .init(.iinaKeyBindingSearchFieldShouldUpdate) { [self] notification in
@@ -175,10 +146,8 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
             Logger.log.error("Received \(notification.name.rawValue.quoted) with invalid object: \(type(of: notification.object))")
             return
           }
-          guard self.bindingSearchField.stringValue != newStringValue else {
-            return
-          }
-          self.bindingSearchField.stringValue = newStringValue
+          guard bindingSearchField.stringValue != newStringValue else { return }
+          bindingSearchField.stringValue = newStringValue
         }
       ]
     ])
@@ -263,6 +232,43 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   }
 
   // MARK: - UI
+
+  private func updateBindingTotalsLabel() {
+    let bindingState = BindingTableState.current
+    let allRowsTotal = bindingState.allRows.count
+    let displayedRows = bindingState.displayedRows
+    let userRowsTotal = bindingState.allRows.filter{ $0.origin == .confFile }.count
+    let disabledRowsTotal = bindingState.allRows.filter{ !$0.isEnabled }.count
+    let customRowsTotal = allRowsTotal - bindingState.allRows.filter{ $0.origin == .staticMenuItem }.count - userRowsTotal
+    let displayedUserRows = displayedRows.filter{ $0.origin == .confFile }
+    let displayedDisabledUserRows = displayedUserRows.filter{ !$0.isEnabled }.count
+
+    let msg: String
+    if !bindingState.filterString.isEmpty {
+      let customRowsDisplayed = disabledRowsTotal - displayedRows.filter{ $0.origin == .staticMenuItem }.count - displayedUserRows.count
+      if bindingState.showAllBindings {
+        let disabledMsg = displayedDisabledUserRows <= 0 ? "" : ", \(displayedDisabledUserRows) disabled"
+        let customRowsMsg = customRowsDisplayed <= 0 ? "" : ", \(customRowsDisplayed) other custom"
+        msg = "Showing \(displayedRows.count) of \(allRowsTotal) total bindings (\(displayedUserRows.count) from config\(disabledMsg)\(customRowsMsg))"
+      } else {
+        let disabledMsg = displayedDisabledUserRows <= 0 ? "" : " (including \(displayedDisabledUserRows) disabled)"
+        msg = "Showing \(displayedRows.count) of \(userRowsTotal) bindings\(disabledMsg)"
+      }
+    } else {
+      if bindingState.showAllBindings {
+        let disabledMsg = disabledRowsTotal <= 0 ? "" : " (including \(disabledRowsTotal) disabled)"
+        let customRowsMsg = customRowsTotal <= 0 ? "" : ", \(customRowsTotal) other custom"
+        msg = "\(userRowsTotal) bindings from config\(disabledMsg)\(customRowsMsg), \(allRowsTotal) total"
+      } else {
+        let disabledMsg = displayedDisabledUserRows <= 0 ? "" : " (including \(displayedDisabledUserRows) disabled)"
+        msg = "\(userRowsTotal) bindings\(disabledMsg)"
+      }
+    }
+
+    bindingTotalsLabel.stringValue = msg
+    bindingTotalsLabel.layout() // Re-layout in case width changed due to formatting changes
+  }
+
   private func updateTableButtonVisibilities() {
     let isSelectedConfReadOnly = confTableState.isSelectedConfReadOnly
     [deleteConfFileBtn, addBindingBtn].forEach { btn in
