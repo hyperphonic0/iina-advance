@@ -8,7 +8,7 @@
 import Foundation
 
 /// A data structure which contains the sizes of 4 1-dimensional margins
-struct MarginQuad: Equatable, CustomStringConvertible {
+struct MarginQuad: Equatable, CustomStringConvertible, Sendable {
   let top: CGFloat
   let trailing: CGFloat
   let bottom: CGFloat

@@ -217,7 +217,7 @@ class MPVLogScanner {
         rawAction = tokens[1...].joined(separator: " ")
       }
       // Store the normalized key in the KeyMapping (can't envision any need to retain the non-normalized key for script bindings…)
-      keyMappings.append(KeyMapping(rawKey: normalizedMpvKey, rawAction: rawAction))
+      keyMappings.append(KeyMapping(rawKey: normalizedMpvKey, rawAction: rawAction, isIINACommand: false))
 
       if Logger.enabled, KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey) == nil {
         player.log.error("Unrecognized key in input binding: \(normalizedMpvKey.quoted), from line: \(line)")

@@ -1084,7 +1084,7 @@ class MenuController: NSObject, NSMenuDelegate {
         if let menuItemMapping = kb as? MenuItemMapping {
           kbUpdated = MenuItemMapping(rawKey: kb.rawKey, sourceName: menuItemMapping.sourceName, menuItem: kbMenuItem, actionDescription: kb.comment)
         } else {
-          kbUpdated = KeyMapping(rawKey: kb.rawKey, rawAction: kb.rawAction, comment: kb.comment, menuItem: kbMenuItem)
+          kbUpdated = KeyMapping(rawKey: kb.rawKey, rawAction: kb.rawAction, isIINACommand: kb.isIINACommand, comment: kb.comment, menuItem: kbMenuItem)
         }
         bindingList[bindingIndex] = binding.shallowClone(keyMapping: kbUpdated, displayMessage: displayMessage)
       }

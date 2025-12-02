@@ -156,7 +156,7 @@ final class AppInputConfigBuilder {
               partial = "\(partial)-\(key)"
             }
             if partial != keySequence, !activeBindingsDict.keys.contains(partial), !partialSequenceDict.keys.contains(partial) {
-              let partialBinding = KeyMapping(rawKey: partial, rawAction: MPVCommand.ignore.rawValue, comment: "(partial sequence)")
+              let partialBinding = KeyMapping(rawKey: partial, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: "(partial sequence)")
               partialSequenceDict[partial] = InputBinding(partialBinding, origin: binding.origin, srcSectionName: binding.srcSectionName, isEnabled: true)
               addedCount += 1
             }
@@ -275,7 +275,7 @@ extension InputSectionStack {
         if destinationSectionName == section.name {
           /// Drop "{section}" because it is unnecessary and will get in the way of libmpv command execution
           let newRawAction = Array(action.dropFirst()).joined(separator: " ")
-          finalMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, comment: keyMapping.comment)
+          finalMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, isIINACommand: keyMapping.isIINACommand, comment: keyMapping.comment)
           log.verbose("Modifying binding to remove redundant section specifier (\(destinationSectionName.quoted)) for key: \(keyMapping.rawKey.quoted)")
         } else {
           log.verbose("Skipping binding which specifies section \(destinationSectionName.quoted) for key: \(keyMapping.rawKey.quoted)")

@@ -181,7 +181,7 @@ class PlayerInputContext {
     if hasPartialValidSequence {
       // Send an explicit "ignore" for a partial sequence match, so player window doesn't beep
       log.verbose("Contains partial sequence; ignoring: \(keySequence.quoted)")
-      return KeyMapping(rawKey: keySequence, rawAction: MPVCommand.ignore.rawValue, comment: nil)
+      return KeyMapping(rawKey: keySequence, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: nil)
     } else {
       // Not even part of a valid sequence = invalid keystroke
       log.debug("No active binding for keystroke \(lastKeyStroke.quoted)")

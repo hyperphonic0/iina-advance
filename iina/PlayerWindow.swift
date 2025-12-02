@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class PlayerWindow: NSWindow {
+final class PlayerWindow: NSWindow {
   var useZeroDurationForAnimationResize = false
   private var keyDownCount: Int = 0
   private var keyUpCount: Int = 0

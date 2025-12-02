@@ -77,7 +77,7 @@ class InspectorTabSegmentedCell: NSSegmentedCell {
 
 fileprivate let inspectorCornerRadius: CGFloat = 14
 
-class InspectorWindowController: WindowController, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource {
+final class InspectorWindowController: WindowController, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource {
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("InspectorWindowController")

@@ -573,7 +573,7 @@ extension BindingTableViewController: EditableTableViewDelegate {
           self.tableView.editCell(row: insertedRowIndex, column: 0)
         }
       }
-      let newMapping = KeyMapping(rawKey: "", rawAction: "")
+      let newMapping = KeyMapping(rawKey: "", rawAction: "", isIINACommand: false)
       let _ = bindingTableState.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping, afterComplete: afterComplete)
 
     } else {

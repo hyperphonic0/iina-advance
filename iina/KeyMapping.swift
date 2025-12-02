@@ -129,7 +129,7 @@ class KeyMapping: NSObject, Codable {
 
   // Note: neither `rawKey` nor `rawAction` paranms should start with `KeyMapping.IINA_PREFIX`.
   // (If this is an IINA command, use `isIINACommand: true`)
-  init(rawKey: String, rawAction: String?, isIINACommand: Bool = false, comment: String? = nil, menuItem: NSMenuItem? = nil) {
+  init(rawKey: String, rawAction: String?, isIINACommand: Bool, comment: String? = nil, menuItem: NSMenuItem? = nil) {
     assert(!rawKey.hasPrefix(KeyMapping.IINA_PREFIX) && (rawAction == nil || !rawAction!.hasPrefix(KeyMapping.IINA_PREFIX)), "Bad input to KeyMapping init")
 
     self.rawKey = rawKey
