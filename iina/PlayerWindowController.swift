@@ -636,16 +636,20 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // Use the correct contentRect right away. When restoring windows with the `.titled` style, the window
     // sometimes briefly appears at the first supplied size & origin even if it is supposed to be resized while hidden.
     let playerWindow = PlayerWindow(contentRect: contentRect, styleMask: style, backing: .buffered, defer: false)
-//    playerWindow.titlebarAppearsTransparent = true  // incompatible with tabbed windows
+    playerWindow.autorecalculatesKeyViewLoop = false
+    // incompatible with tabbed windows! But needed for FS transition
+    playerWindow.titlebarAppearsTransparent = true
+    // FIXME: window sizing
+    // FIXME: tabbed windows
+    playerWindow.tabbingMode = .disallowed
+
     if let contentView = playerWindow.contentView {
       contentView.autoresizesSubviews = false
       contentView.autoresizingMask = [.width, .height]
     }
-    // FIXME: window sizing
-    // FIXME: tabbed windows
-    playerWindow.autorecalculatesKeyViewLoop = false
 
     super.init(window: playerWindow)
+    playerWindow.delegate = self
     player.pwc = self
     osd.hideOSDTimer.action = { self.hideOSD() }
     log.verbose("PlayerWindowController init: done")

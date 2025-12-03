@@ -142,9 +142,7 @@ extension PlayerWindowController {
     /// within the same animation transaction as the code below. But the existing `VideoView` constraints should ensure
     /// that everything resizes properly.
     /// Update: need to update `VideoView` layout to ensure that cropbox in interactive mode is resized properly!
-    animationPipeline.submitInstantTask { [self] in
-      resizeWindowSubviews(using: newGeo)
-    }
+    resizeWindowSubviews(using: newGeo)
 
     let newWindowSize = newGeo.windowFrame.size
     log.verbose("[WndWillResize] Returning size=\(newWindowSize) for \(currentLayout.mode)")
