@@ -75,8 +75,8 @@ final class PlayerCore: NSObject {
 
   // MARK: - Instance Fields
 
-  let subsystem: any Logger.Subsystem
-  var log: any Logger.Subsystem { self.subsystem }
+  let log: any Logger.Subsystem
+  var subsystem: any Logger.Subsystem { self.log }
   var label: String
   let isDemoPlayer: Bool
 
@@ -329,7 +329,7 @@ final class PlayerCore: NSObject {
     let log = Logger.subsystem(forPlayerID: label)
     log.debug("PlayerCore init: starting")
     self.label = label
-    self.subsystem = log
+    self.log = log
     self.info = PlaybackInfo(log: log)
     self.isDemoPlayer = isDemoPlayer
     self.playlistTableChangeNotificationName = .init("uiChangeForPlaylistTable-\(label)")
@@ -340,7 +340,6 @@ final class PlayerCore: NSObject {
     self.videoView = VideoView(player: self)
     self.mpv = MPVController(playerCore: self)
     self.keyBindingContext = PlayerInputContext(playerCore: self)
-    self.pwc = PlayerWindowController(playerCore: self)
     self.touchBarSupport = TouchBarSupport(playerCore: self)
 
     miniPlayerShowVideoTimer.action = miniPlayerShowViewportTimerAction
@@ -648,6 +647,11 @@ final class PlayerCore: NSObject {
     if isDemoPlayer {
       startMPV()
     } else {
+      if pwc == nil {
+        let pwc = PlayerWindowController(playerCore: self)
+        pwc.windowDidLoad()
+      }
+
       if videoView.useOpenGL {
         startMPV()
         videoView.initVideoLayer()
@@ -715,8 +719,10 @@ final class PlayerCore: NSObject {
     }
     log.debug("Shutting down player")
     state = .shuttingDown
-    savePlaybackMetaBeforePlayerWillStop() // Save state to mpv watch-later (if enabled)
-    refreshSyncUITimer()   // Shut down timer
+    if !isDemoPlayer {
+      savePlaybackMetaBeforePlayerWillStop() // Save state to mpv watch-later (if enabled)
+      refreshSyncUITimer()   // Shut down timer
+    }
     mpv.mpvQuit()
   }
 
@@ -737,8 +743,10 @@ final class PlayerCore: NSObject {
     // If mpv shutdown was initiated by mpv then the player state has not been saved.
     if isMPVInitiated {
       state = .shuttingDown  // Make sure to indicate shutdown before calling `refreshSyncUITimer`
-      savePlaybackMetaBeforePlayerWillStop() // Save state to mpv watch-later (if enabled)
-      refreshSyncUITimer()   // Shut down timer
+      if !isDemoPlayer {
+        savePlaybackMetaBeforePlayerWillStop() // Save state to mpv watch-later (if enabled)
+        refreshSyncUITimer()   // Shut down timer
+      }
       mpv.removeObservers()
     }
     videoView.uninit()       // Shut down DisplayLink. Has its own lock.
@@ -2681,7 +2689,6 @@ final class PlayerCore: NSObject {
   @MainActor
   func refreshSyncUITimer(logMsg: String = "") {
     // Check if timer should start/restart
-    assert(DispatchQueue.isExecutingIn(.main))
 
     let useTimer: Bool
     if state.isAtLeast(.stopping) {

@@ -123,6 +123,8 @@ struct PlayerSaveState: CustomStringConvertible {
   let geoSet: GeometrySet
   let screens: [ScreenMeta]
 
+  let needsNativeFullScreen: Bool
+
   @MainActor
   init(_ props: [String: Any], playerID: String) {
     self.properties = props
@@ -138,11 +140,85 @@ struct PlayerSaveState: CustomStringConvertible {
       Logger.log.error("Failed to restore property \(PropName.miscWindowBools.rawValue.quoted); will assume window is not in PiP")
       isWindowInPiP = false
     }
-    let layoutState = LayoutState.fromCSV(layoutStateCSV, isInPiP: isWindowInPiP)
-    self.layoutState = layoutState
-    self.geoSet = PlayerSaveState.geoSet(from: props, log)
-
     self.screens = (props[PropName.screens.rawValue] as? [String] ?? []).compactMap({ScreenMeta.from($0)})
+
+    // Layout + GeometrySet
+    let priorLayoutState = LayoutState.fromCSV(layoutStateCSV, isInPiP: isWindowInPiP)
+    let priorGeoSet = PlayerSaveState.geoSet(from: props, log)
+
+    let modeToRestore: PlayerWindowMode
+    let initialLayout: LayoutState
+    var needsNativeFullScreen = false
+    if let priorLayoutState {
+      if priorLayoutState.isNativeFullScreen {
+        // Special handling for native fullscreen. Rely on mpv to put us in FS when it is ready
+        initialLayout = priorLayoutState.clone(mode: .windowedNormal)
+        needsNativeFullScreen = true
+      } else {
+        initialLayout = priorLayoutState
+      }
+      modeToRestore = initialLayout.mode
+    } else {
+      log.error("Failed to read LayoutState object for restore! Will try to assemble window from prefs instead")
+      modeToRestore = .windowedNormal
+      initialLayout = LayoutState.fromPrefs(andMode: modeToRestore)
+    }
+
+    self.needsNativeFullScreen = needsNativeFullScreen
+    (self.geoSet, self.layoutState) = PlayerSaveState.fixingErrorsInSavedGeoSet(priorGeoSet, log,
+                                                                                initialLayout: initialLayout,
+                                                                                modeToRestore: modeToRestore)
+  }
+
+  /// Looks for inconsistencies in `priorState.geoSet` (actually just its `.windowed` property so far), and tries to fix what it finds.
+  /// May also make changes to `ctx.outputLayout` if needed.
+  @MainActor
+  private static func fixingErrorsInSavedGeoSet(_ savedGeoSet: GeometrySet, _ log: any Logger.Subsystem,
+                                         initialLayout: LayoutState,
+                                         modeToRestore: PlayerWindowMode) -> (GeometrySet, LayoutState) {
+
+    var adjustedLayout = initialLayout
+    let adjustedGeoSet: GeometrySet
+    switch modeToRestore {
+
+    case .windowedNormal, .windowedInteractive:
+      let savedWindowedGeo = savedGeoSet.windowed
+      if !savedWindowedGeo.mode.isWindowed || savedWindowedGeo.screenFit.isFullScreen {
+        log.error("Initial layout: windowedModeGeo from prior state has invalid mode (\(savedWindowedGeo.mode)) or screenFit (\(savedWindowedGeo.screenFit)). Will generate a fresh windowedModeGeo from saved layoutState and last closed window instead")
+
+        let lastClosedGeo = PlayerWindowController.windowedModeGeoLastClosed
+        let windowed: PWinGeometry
+        if lastClosedGeo.mode.isWindowed && !lastClosedGeo.screenFit.isFullScreen {
+          windowed = initialLayout.convertWindowedModeGeometry(from: lastClosedGeo, video: savedGeoSet.video,
+                                                                  pinWidthOrHeightIfAtMax: false, log)
+        } else {
+          let bestScreen = NSScreen.forScreenID(lastClosedGeo.screenID) ?? NSScreen.main ?? NSScreen.screens.first!
+          windowed = initialLayout.buildDefaultInitialGeometry(screen: bestScreen, video: savedGeoSet.video)
+        }
+        adjustedGeoSet = savedGeoSet.clone(windowed: windowed)
+
+      } else if savedWindowedGeo.outsideBars.totalWidth + savedWindowedGeo.insideBars.totalWidth > savedWindowedGeo.windowFrame.width {
+        log.error("Initial layout: windowedModeGeo from prior state has window size (\(savedWindowedGeo.windowFrame.size)) which is too small to accomodate bars (outside=\(savedWindowedGeo.outsideBars), inside=\(savedWindowedGeo.insideBars)). Will close sidebars.")
+
+        /// Overwrite `outputLayout` with fixed version
+        adjustedLayout = initialLayout.withSidebarsHidden()
+        let outsideNew = savedWindowedGeo.outsideBars.clone(trailing: 0, leading: 0)
+        let insideNew = savedWindowedGeo.insideBars.clone(trailing: 0, leading: 0)
+        let windowed = savedWindowedGeo.clone(outsideBars: outsideNew, insideBars: insideNew)
+
+        adjustedGeoSet = savedGeoSet.clone(windowed: windowed)
+      } else {
+        // Valid (as far as we've checked anyway)
+        adjustedGeoSet = savedGeoSet
+      }
+
+    case .musicMode,
+        .fullScreenNormal, .fullScreenInteractive:
+      // No validation at present
+      adjustedGeoSet = savedGeoSet
+    }
+
+    return (adjustedGeoSet, adjustedLayout)
   }
 
   var description: String {

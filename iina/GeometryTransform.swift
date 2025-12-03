@@ -892,81 +892,23 @@ extension PlayerWindowController {
   }
 
   /// Creates tasks which transition to initial layout for a window which is being restored (`PWinSessionState.restoring`).
-  /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
+  /// Side effects: sets `ctx.outputLayout`.
   @MainActor
   fileprivate func buildTasksToRestoreLayout(_ priorState: PlayerSaveState,
                                              _ ctx: inout GeometryTransform.ContextStage3) -> [IINAAnimation.Task] {
     let modeToRestore: PlayerWindowMode
-    if let priorLayoutState = priorState.layoutState {
+    if let priorLayout = priorState.layoutState {
+      ctx.outputLayout = priorLayout
       log.verbose("[GTF:\(ctx.name)] Transitioning to initial layout from prior window state")
-
-      let initialLayoutState: LayoutState
-      if priorLayoutState.isNativeFullScreen {
-        // Special handling for native fullscreen. Rely on mpv to put us in FS when it is ready
-        initialLayoutState = priorLayoutState.clone(mode: .windowedNormal)
-        ctx.needsNativeFullScreen = true
-      } else {
-        initialLayoutState = priorLayoutState
-      }
-      ctx.outputLayout = initialLayoutState
-      modeToRestore = initialLayoutState.mode
+      modeToRestore = priorLayout.mode
+      ctx.needsNativeFullScreen = priorState.needsNativeFullScreen
     } else {
       log.error("[GTF:\(ctx.name)] Failed to read LayoutState object for restore! Will try to assemble window from prefs instead")
       modeToRestore = .windowedNormal
       ctx.outputLayout = LayoutState.fromPrefs(andMode: modeToRestore, fillingInFrom: lastWindowedLayoutState)
     }
 
-    let outputGeoSet: GeometrySet = fixingErrorsInSavedGeoSet(priorState, &ctx, modeToRestore: modeToRestore)
-
-    return buildTransitionTasksToInitialLayout(ctx, outputGeoSet: outputGeoSet)
-  }
-
-  /// Looks for inconsistencies in `priorState.geoSet` (actually just its `.windowed` property so far), and tries to fix what it finds.
-  /// May also make changes to `ctx.outputLayout` if needed.
-  @MainActor
-  private func fixingErrorsInSavedGeoSet(_ priorState: PlayerSaveState,
-                                         _ ctx: inout GeometryTransform.ContextStage3,
-                                         modeToRestore: PlayerWindowMode) -> GeometrySet {
-    let savedGeoSet = priorState.geoSet
-
-    switch modeToRestore {
-
-    case .windowedNormal, .windowedInteractive:
-      let savedWindowedGeo = savedGeoSet.windowed
-      if !savedWindowedGeo.mode.isWindowed || savedWindowedGeo.screenFit.isFullScreen {
-        log.error("[GTF:\(ctx.name)] Initial layout: windowedModeGeo from prior state has invalid mode (\(savedWindowedGeo.mode)) or screenFit (\(savedWindowedGeo.screenFit)). Will generate a fresh windowedModeGeo from saved layoutState and last closed window instead")
-
-        let lastClosedGeo = PlayerWindowController.windowedModeGeoLastClosed
-        let windowed: PWinGeometry
-        if lastClosedGeo.mode.isWindowed && !lastClosedGeo.screenFit.isFullScreen {
-          windowed = ctx.outputLayout.convertWindowedModeGeometry(from: lastClosedGeo, video: savedGeoSet.video,
-                                                                  pinWidthOrHeightIfAtMax: false, log)
-        } else {
-          windowed = ctx.outputLayout.buildDefaultInitialGeometry(screen: bestScreen, video: savedGeoSet.video)
-        }
-        return savedGeoSet.clone(windowed: windowed)
-
-      } else if savedWindowedGeo.outsideBars.totalWidth + savedWindowedGeo.insideBars.totalWidth > savedWindowedGeo.windowFrame.width {
-        log.error("[GTF:\(ctx.name)] Initial layout: windowedModeGeo from prior state has window size (\(savedWindowedGeo.windowFrame.size)) which is too small to accomodate bars (outside=\(savedWindowedGeo.outsideBars), inside=\(savedWindowedGeo.insideBars)). Will close sidebars.")
-
-        /// Overwrite `outputLayout` with fixed version
-        ctx.outputLayout = ctx.outputLayout.withSidebarsHidden()
-        let outsideNew = savedWindowedGeo.outsideBars.clone(trailing: 0, leading: 0)
-        let insideNew = savedWindowedGeo.insideBars.clone(trailing: 0, leading: 0)
-        let windowed = savedWindowedGeo.clone(outsideBars: outsideNew, insideBars: insideNew)
-
-        return savedGeoSet.clone(windowed: windowed)
-      } else {
-        // Valid (as far as we've checked anyway)
-        return savedGeoSet
-      }
-
-    case .musicMode,
-        .fullScreenNormal, .fullScreenInteractive:
-      // No validation at present
-      return savedGeoSet
-    }
-
+    return buildTransitionTasksToInitialLayout(ctx, outputGeoSet: priorState.geoSet)
   }
 
   /// Creates tasks which transition to initial layout for a brand new, greenfield window (`PWinSessionState.creatingNew`).

@@ -154,7 +154,7 @@ extension IINAAnimation {
     /// to be skipped.
     private var currentTxID: Int = 0
 
-    private(set) var isRunning = false
+    private(set) var isExecuting = false
     private var taskQueue = LinkedList<(Int, Task)>()
 
     // GeometryTransform queue
@@ -171,7 +171,7 @@ extension IINAAnimation {
 
     unowned var player: PlayerCore?
     var pwc: PlayerWindowController? { player?.pwc }
-    var log: any Logger.Subsystem
+    let log: any Logger.Subsystem
 
     // Convenience function. Run the task with no animation / zero duration.
     // Useful for updating constraints, etc., which cannot be animated or do not look good animated.
@@ -200,8 +200,17 @@ extension IINAAnimation {
     /// Will execute without animation if motion reduction is enabled, or if wrapped in a call to `IINAAnimation.disableAnimation()`.
     /// If animating, it uses either the supplied `duration` for duration, or if that is not provided, uses `Constants.AnimationDuration.standard`.
     func submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
-      DispatchQueue.main.async { [self] in
-        _submit(tasks, then: doAfter)
+      DispatchQueue.main.async { [self] in  // TODO: be smarter about this
+        // Add tasks to queue.
+        enqueue(tasks, then: doAfter)
+
+        if isExecuting {
+          // Already running tasks. Let the existing chain pop the new animations & run them when it is ready.
+        } else {
+          // Start executing tasks in the queue
+          isExecuting = true
+          executeNextTask()
+        }
       }
     }
 
@@ -212,7 +221,7 @@ extension IINAAnimation {
     private static let alarmResetWatermark: Int = 10
 
     @MainActor
-    fileprivate func _submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
+    fileprivate func enqueue(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
       var enqueuedCount = 0
 
       if !tasks.isEmpty {
@@ -251,30 +260,6 @@ extension IINAAnimation {
           lastLoggedTaskCount = submitCounter
           log.verbose("[Pipeline] TaskQueue is falling behind! Size: \(taskQueueSize), submitCount: \(submitCounter)")
         }
-      }
-
-      if isRunning {
-        // Let existing chain pick up the new animations
-      } else {
-        // Launch for new tasks
-        isRunning = true
-        runTasks()
-      }
-    }
-
-    private func popNextValidTask() -> IINAAnimation.Task? {
-      while true {
-        guard let (taskTxID, poppedTask) = taskQueue.removeFirst() else {
-          self.isRunning = false
-          return nil
-        }
-
-        guard taskTxID >= currentTxID else {
-          log.debug("[Pipeline] Skipping task with cancelled txID \(taskTxID) (next valid txID: \(currentTxID))")
-          continue
-        }
-        currentTxID = taskTxID
-        return poppedTask
       }
     }
 
@@ -348,7 +333,7 @@ extension IINAAnimation {
 
 
     @MainActor
-    private func runTasks() {
+    private func executeNextTask() {
       let nextTask: Task
 
       // Favor executing GeometryTransforms before regular Tasks - unless isAnimatingLayoutTransition is true.
@@ -388,8 +373,24 @@ extension IINAAnimation {
           log.error("[Pipeline] Unexpected error thrown by task: \(error)")
         }
       }, completionHandler: {
-        self.runTasks()
+        self.executeNextTask()
       })
+    }
+
+    private func popNextValidTask() -> IINAAnimation.Task? {
+      while true {
+        guard let (taskTxID, poppedTask) = taskQueue.removeFirst() else {
+          self.isExecuting = false
+          return nil
+        }
+
+        guard taskTxID >= currentTxID else {
+          log.debug("[Pipeline] Skipping task with cancelled txID \(taskTxID) (next valid txID: \(currentTxID))")
+          continue
+        }
+        currentTxID = taskTxID
+        return poppedTask
+      }
     }
 
     // MARK: - GeometryTransform

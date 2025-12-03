@@ -412,9 +412,12 @@ final class StartupHandler {
     }
 
     let player = PlayerManager.shared.createNewPlayerCore(withLabel: id)
-    let pwc = player.pwc!
+
+    let pwc = PlayerWindowController(playerCore: player, geoSet: savedState.geoSet, initialLayout: savedState.layoutState)
     assert(pwc.sessionState.isNone, "Invalid sessionState for restore: \(pwc.sessionState)")
     pwc.sessionState = .restoring(playerState: savedState)
+    // Need to call this explicitly if not using a XIB
+    player.pwc.windowDidLoad()
 
     addWindowToRestore(savedWindow, pwc)
 

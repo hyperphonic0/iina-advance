@@ -12,6 +12,7 @@ extension PlayerWindowController {
 
   /// Called when window is initially loaded. Add all subviews here.
   override func windowDidLoad() {
+    guard !loaded else { return }
     log.verbose("[Load] PWin_WinDidLoad starting")
     super.windowDidLoad()
 
@@ -26,6 +27,8 @@ extension PlayerWindowController {
     viewportView.player = player
 
     notiHandler = buildObservers()
+    // TODO: add/remove observers on window open/close instead
+    addAllObservers()
 
     // The fade timer is only used if auto-hide is enabled
     fadeableViews.hideTimer.action = hideTimeoutAction
@@ -51,11 +54,6 @@ extension PlayerWindowController {
     /// at worst results in an infinite loop with our code.
     // FIXME: support tiling for at least native full screen
     window.collectionBehavior = [.managed, .fullScreenDisallowsTiling]
-
-    window.styleMask.insert(.fullSizeContentView)
-    window.styleMask.insert(.closable)
-    window.styleMask.insert(.miniaturizable)
-    window.styleMask.insert(.resizable)
     window.initialFirstResponder = nil
 
     window.minSize = Constants.Window.minWindowSize
@@ -176,8 +174,8 @@ extension PlayerWindowController {
     // Need to add trailing padding for each . But can't use edgeInsets of stack view because that seems to result in constraint errors.
     // Use a spacer instead
     let leadingAccTrailingSpacer = SpacerView(id: "LeadingTBAccTrailingSpacer")
+    leadingAccTrailingSpacer.setContentHuggingPriority(.required, for: .horizontal)  // do not expand horizontally
     let leadingAccTrailingSpaceConstraint = leadingAccTrailingSpacer.widthAnchor.constraint(equalToConstant: 0)
-    leadingAccTrailingSpaceConstraint.priority = .defaultHigh
     leadingAccTrailingSpaceConstraint.isActive = true
 
     let leadingTB = leadingTitleBarAccessoryView
@@ -208,8 +206,8 @@ extension PlayerWindowController {
                                     bounceOnClick: true)
 
     let trailingAccTrailingSpacer = SpacerView(id: "TrailingTBAccTrailingSpacer")
+    trailingAccTrailingSpacer.setContentHuggingPriority(.required, for: .horizontal)  // do not expand horizontally
     let trailingAccTrailingSpaceConstraint = trailingAccTrailingSpacer.widthAnchor.constraint(equalToConstant: 0)
-    trailingAccTrailingSpaceConstraint.priority = .defaultHigh
     trailingAccTrailingSpaceConstraint.isActive = true
 
     let trailingTB = trailingTitleBarAccessoryView

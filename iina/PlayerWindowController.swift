@@ -16,10 +16,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   unowned var player: PlayerCore
   var log: any Logger.Subsystem { player.log }
 
-  override var windowNibName: NSNib.Name {
-    return NSNib.Name("PlayerWindowController")
-  }
-
   var undoHelper: PlayerWindowUndoHelper!
 
   var bestScreen: NSScreen {
@@ -77,7 +73,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // MARK: - Vars: State
 
   var isAnimating: Bool {
-    return animationPipeline.isRunning
+    return animationPipeline.isExecuting
   }
 
   // While true, disable window geometry listeners so they don't overwrite cache with intermediate data
@@ -252,7 +248,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // MARK: - Vars: Window Layout State
 
-  var currentLayout: LayoutState = LayoutState.fromPrefs() {
+  var currentLayout: LayoutState {
     didSet {
       if currentLayout.mode == .windowedNormal {
         lastWindowedLayoutState = currentLayout
@@ -609,17 +605,48 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// `isWindowLoaded` because that will cause `window` to be loaded (and will definitely crash if not
   /// accessed on the main thread).
   @MainActor
-  init(playerCore player: PlayerCore) {
+  init(playerCore player: PlayerCore, geoSet: GeometrySet? = nil, initialLayout: LayoutState? = nil) {
+    player.log.verbose("PlayerWindowController init")
     self.player = player
     self.animationPipeline = IINAAnimation.Pipeline(player)
     self.fadeableViews = FadeableViewsHandler(player.log)
     self.osd = OSDState(log: player.log)
     self.pip = PIPState(player)
-    player.log.verbose("PlayerWindowController init: using lastClosed geometries for now")
-    self.geo = GeometrySet(windowed: PlayerWindowController.windowedModeGeoLastClosed,
-                           musicMode: PlayerWindowController.musicModeGeoLastClosed,
-                           video: VideoGeometry.defaultGeometry(player.log))
-    super.init(window: nil)
+
+    let layoutToUse = initialLayout ?? LayoutState.fromPrefs()
+    self.currentLayout = layoutToUse
+
+    let geoSetToUse: GeometrySet
+    if let geoSet {
+      geoSetToUse = geoSet
+    } else {
+      player.log.verbose("PlayerWindowController init: using lastClosed geometries for now")
+      geoSetToUse = GeometrySet(windowed: PlayerWindowController.windowedModeGeoLastClosed,
+                             musicMode: PlayerWindowController.musicModeGeoLastClosed,
+                             video: VideoGeometry.defaultGeometry(player.log))
+    }
+
+    self.geo = geoSetToUse
+
+    let contentRect = (layoutToUse.mode == .musicMode ? geoSetToUse.musicMode : geoSetToUse.windowed).windowFrame
+    var style: NSWindow.StyleMask = [.fullSizeContentView, .closable, .resizable, .miniaturizable]
+    if !Preference.bool(for: .useLegacyWindowedMode) {
+      style.insert(.titled)
+    }
+    // Use the correct contentRect right away. When restoring windows with the `.titled` style, the window
+    // sometimes briefly appears at the first supplied size & origin even if it is supposed to be resized while hidden.
+    let playerWindow = PlayerWindow(contentRect: contentRect, styleMask: style, backing: .buffered, defer: false)
+//    playerWindow.titlebarAppearsTransparent = true  // incompatible with tabbed windows
+    if let contentView = playerWindow.contentView {
+      contentView.autoresizesSubviews = false
+      contentView.autoresizingMask = [.width, .height]
+    }
+    // FIXME: window sizing
+    // FIXME: tabbed windows
+    playerWindow.autorecalculatesKeyViewLoop = false
+
+    super.init(window: playerWindow)
+    player.pwc = self
     osd.hideOSDTimer.action = { self.hideOSD() }
     log.verbose("PlayerWindowController init: done")
   }
@@ -847,8 +874,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
 
     resetCollectionBehavior()
-
-    addAllObservers()
 
     /// Enqueue this in case `windowDidLoad` is not yet done
     animationPipeline.submitInstantTask{ [self] in

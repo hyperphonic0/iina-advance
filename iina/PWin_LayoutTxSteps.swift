@@ -713,10 +713,10 @@ extension PlayerWindowController {
       playSlider.abLoopB.updateKnobImage(to: .loopKnob)
       playSlider.needsDisplay = true
 
-      let volumeSliderCell = volumeSlider.cell as! VolumeSliderCell
-      volumeSliderCell.knobWidth = sliderKnobWidth
-      volumeSliderCell.knobHeight = sliderKnobHeight
-      volumeSlider.needsDisplay = true
+//      let volumeSliderCell = volumeSlider.cell as! VolumeSliderCell
+//      volumeSliderCell.knobWidth = sliderKnobWidth
+//      volumeSliderCell.knobHeight = sliderKnobHeight
+//      volumeSlider.needsDisplay = true
 
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging || transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight {
         let hasClearBG = transition.outputLayout.oscBackgroundIsClear
@@ -1341,7 +1341,7 @@ extension PlayerWindowController {
       log.verbose("Inserting window styleMask.titled for native windowed")
       window.styleMask.insert(.titled)
     }
-    if !window.styleMask.contains(.borderless) {
+    if window.styleMask.contains(.borderless) {
       window.styleMask.remove(.borderless)
     }
     if !window.styleMask.contains(.closable) {
