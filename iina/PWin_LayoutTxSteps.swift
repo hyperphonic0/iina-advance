@@ -713,10 +713,10 @@ extension PlayerWindowController {
       playSlider.abLoopB.updateKnobImage(to: .loopKnob)
       playSlider.needsDisplay = true
 
-//      let volumeSliderCell = volumeSlider.cell as! VolumeSliderCell
-//      volumeSliderCell.knobWidth = sliderKnobWidth
-//      volumeSliderCell.knobHeight = sliderKnobHeight
-//      volumeSlider.needsDisplay = true
+      let volumeSliderCell = volumeSliderCell
+      volumeSliderCell.knobWidth = sliderKnobWidth
+      volumeSliderCell.knobHeight = sliderKnobHeight
+      volumeSlider.needsDisplay = true
 
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging || transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight {
         let hasClearBG = transition.outputLayout.oscBackgroundIsClear

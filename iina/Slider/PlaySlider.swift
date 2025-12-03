@@ -50,9 +50,8 @@ final class PlaySlider: ScrollableSlider {
 
   // MARK:- Initialization
 
-  override init(frame frameRect: NSRect) {
-    super.init(frame: frameRect)
-    cell = PlaySliderCell()
+  init() {
+    super.init(customCell: PlaySliderCell())
     abLoopAKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop A")
     abLoopBKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop B")
   }

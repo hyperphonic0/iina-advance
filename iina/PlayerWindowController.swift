@@ -551,8 +551,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Container for volume slider & mute button
   var fragVolumeView = ClickThroughView()
   let muteButton = OSCSymButton()
-  let volumeSlider = ScrollableSlider()
-  let volumeSliderCell = VolumeSliderCell()
+  let volumeSlider = ScrollableSlider(customCell: VolumeSliderCell())
+  var volumeSliderCell: VolumeSliderCell { volumeSlider.cell as! VolumeSliderCell }
 
   /// Container for playback buttons
   let fragPlaybackBtnsView = ClickThroughView()
@@ -2315,7 +2315,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  @IBAction func volumeSliderAction(_ slider: ScrollableSlider) {
+  @objc func volumeSliderAction(_ slider: ScrollableSlider) {
     // show volume popover when volume seek begins and hide on end
     if isInMiniPlayer {
       miniPlayer.showVolumePopover()
@@ -2328,7 +2328,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     player.setVolume(value)
   }
 
-  @IBAction func backBtnAction(_ sender: NSButton) {
+  @objc func backBtnAction(_ sender: NSButton) {
     player.exitMusicMode()
   }
 
@@ -2336,7 +2336,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     player.togglePause()
   }
 
-  @IBAction func muteButtonAction(_ sender: AnyObject) {
+  @objc func muteButtonAction(_ sender: AnyObject) {
     player.toggleMute()
   }
 
@@ -2418,7 +2418,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     return AppData.availableSpeedValues.count - 1
   }
 
-  @IBAction func toggleOnTop(_ sender: AnyObject) {
+  @objc func toggleOnTop(_ sender: AnyObject) {
     let wasOnTop = isOnTop
     log.verbose("Toggling onTop: \(wasOnTop.yn) → \((!wasOnTop).yn)")
     if Preference.bool(for: .alwaysFloatOnTop) {

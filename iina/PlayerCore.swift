@@ -457,7 +457,8 @@ final class PlayerCore: NSObject {
       return 0
     }
 
-    info.shouldAutoLoadFiles = AppDelegate.isInteractiveLaunch && !pwc.sessionState.isRestoring && playableFiles.count == 1
+    // If pwc is nil, it is not restoring
+    info.shouldAutoLoadFiles = AppDelegate.isInteractiveLaunch && (pwc == nil || !pwc.sessionState.isRestoring) && playableFiles.count == 1
 
     // open the first file
     openPlayerWindow(playableFiles)
@@ -524,11 +525,12 @@ final class PlayerCore: NSObject {
     let playback = Playback(url: urls[0], playlistPos: 0)
 
     if isInteractivePlayer && playback.isNetworkResource {
-      pwc.close()
+      pwc?.close()
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
 
-    // This should apply all the mpv user options as well
+    // Start mpv & create the PlayerWindowController (pwc) if it hasn't been already
+    // This should apply all the mpv user options as well.
     start()
 
     /// Need to use `sync` so that:

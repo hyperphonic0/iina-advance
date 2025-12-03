@@ -86,6 +86,16 @@ class SliderScrollWheelDelegate: VirtualScrollWheel {
 class ScrollableSlider: NSSlider {
   var scrollWheelDelegate: SliderScrollWheelDelegate?
 
+  init(customCell: ScrollableSliderCell? = nil) {
+    super.init(frame: .zero)
+    if let customCell {
+      cell = customCell
+    }
+  }
+  
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+
   override func scrollWheel(with event: NSEvent) {
     guard isEnabled else { return }
     if let scrollWheelDelegate {
