@@ -36,6 +36,16 @@ fileprivate let timeColMinWidths: [Preference.HistoryGroupBy: CGFloat] = [
   .parentFolder: 145
 ]
 
+/// Header panel in History table (`outlineView`).
+///
+/// This class exists solely so that a gray background is drawn under the header.
+/// The background doesn't seem to be customizable...
+class HistoryTableHeaderView: NSTableHeaderView {
+  override func draw(_ dirtyRect: NSRect) {
+    super.draw(dirtyRect)
+  }
+}
+
 final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NSOutlineViewDataSource,
                                      NSMenuDelegate, NSMenuItemValidation, NSWindowDelegate {
 

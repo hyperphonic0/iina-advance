@@ -21,7 +21,7 @@
         <window title="Playback History" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" titlebarAppearsTransparent="YES" id="F0z-JX-Cv5" userLabel="Playback History Window">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <rect key="contentRect" x="0.0" y="240" width="600" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1083"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="937"/>
             <value key="minSize" type="size" width="580" height="200"/>
             <view key="contentView" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="PlaybackHistoryWindow Content View" customClass="NSVisualEffectView">
                 <rect key="frame" x="0.0" y="0.0" width="600" height="200"/>
@@ -214,7 +214,7 @@
                             <rect key="frame" x="224" y="17" width="15" height="102"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
-                        <tableHeaderView key="headerView" autoresizesSubviews="NO" wantsLayer="YES" id="MiB-ow-W6T" userLabel="PlaybackHistoryTable Table Header View">
+                        <tableHeaderView key="headerView" autoresizesSubviews="NO" wantsLayer="YES" id="MiB-ow-W6T" userLabel="PlaybackHistoryTable Table Header View" customClass="HistoryTableHeaderView" customModule="IINA_Advance" customModuleProvider="target">
                             <rect key="frame" x="0.0" y="0.0" width="598" height="23"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </tableHeaderView>
