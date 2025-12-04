@@ -30,23 +30,42 @@ class PrefControlViewController: PreferenceViewController, PreferenceWindowEmbed
   @IBOutlet var sectionTrackpadView: NSView!
   @IBOutlet var sectionMouseView: NSView!
 
+  @IBOutlet var videoZoomContainerView: NSView!
+  @IBOutlet var touchpadGridView: NSGridView!
+
   @IBOutlet weak var forceTouchLabel: NSTextField!
   @IBOutlet weak var scrollVerticallyLabel: NSTextField!
 
   @IBOutlet weak var seekScrollSensitivityLabel: NSTextField!
   @IBOutlet weak var volumeScrollSensitivityLabel: NSTextField!
 
+  /// Weak reference to `PreferenceWindowController.animationPipeline`.
+  private unowned var animationPipeline: IINAAnimation.Pipeline!
+
   var notiHandler: NotificationHandler! = nil
+
+  private let prefsToWatch: [Preference.Key] = [
+    .relativeSeekAmount,
+    .volumeScrollAmount,
+    .pinchAction,
+    .enablePinchToVideoZoom,
+  ]
 
   override func viewDidLoad() {
     super.viewDidLoad()
+
+    animationPipeline = AppDelegate.shared.preferenceWindowController.animationPipeline
     configureObservers()
+
+    IINAAnimation.disableAnimation {
+      updateUIFromPrefs()
+    }
   }
 
   override func viewDidAppear() {
     super.viewDidAppear()
     notiHandler.addAllObservers()
-    updateLabels()
+    updateUIFromPrefs()
   }
 
   override func viewWillDisappear() {
@@ -56,20 +75,39 @@ class PrefControlViewController: PreferenceViewController, PreferenceWindowEmbed
   // MARK: Observers
 
   private func configureObservers() {
-    notiHandler = NotificationHandler(Logger.log, prefDidChange: prefDidChange, [
-      .relativeSeekAmount,
-      .volumeScrollAmount,
-    ])
+    notiHandler = NotificationHandler(Logger.log, prefDidChange: prefDidChange, prefsToWatch)
   }
 
   /// Called each time a pref `key`'s value is set
   func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
-    switch key {
-    case PK.relativeSeekAmount, PK.volumeScrollAmount:
-      updateLabels()
+    guard prefsToWatch.contains(key) else { return }
+
+    updateUIFromPrefs()
+  }
+
+  private func updateUIFromPrefs() {
+    let pinchAction: Preference.PinchAction = Preference.enum(for: .pinchAction)
+    let hideZoomControls: Bool
+    switch pinchAction {
+    case .windowSize, .windowSizeOrFullScreen:
+      hideZoomControls = false
     default:
-      break
+      hideZoomControls = true
     }
+
+    // 2-phase animation
+    let hideTaks: [IINAAnimation.Task] = [
+      .instantTask{ [self] in
+        videoZoomContainerView.animator().isHidden = hideZoomControls
+      },
+
+        .init{ [self] in
+          touchpadGridView.row(at: 1).isHidden = hideZoomControls
+        },
+    ]
+    animationPipeline.submit(hideZoomControls ? hideTaks : hideTaks.reversed())
+
+    updateLabels()
   }
 
   private func updateLabels() {

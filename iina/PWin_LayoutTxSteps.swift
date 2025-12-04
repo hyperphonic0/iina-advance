@@ -602,6 +602,8 @@ extension PlayerWindowController {
         }
 
         if !topBarView.controlBarTop.subviews.contains(oscContentView) {
+          log.verbose("Adding \(oscContentView.idString) to topBarView")
+//          assert(topBarView.frame.width > Constants.Distance.titleBarIconHSpacing * 2)
           topBarView.controlBarTop.addSubview(oscContentView, positioned: .below, relativeTo: topBarView.bottomBorder)
           // Match leading/trailing spacing of title bar icons above
           oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0,
@@ -624,6 +626,8 @@ extension PlayerWindowController {
         }
 
         if !bottomBarView.subviews.contains(oscContentView) {
+          log.verbose("Adding \(oscContentView.idString) to bottomBarView")
+//          assert(bottomBarView.frame.width > Constants.Distance.titleBarIconHSpacing * 2)
           bottomBarView.addSubview(oscContentView, positioned: .below, relativeTo: bottomBarTopBorder)
           // Match leading/trailing spacing of title bar icons above
           oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0,

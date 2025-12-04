@@ -438,6 +438,9 @@ struct Preference {
     static let rotateAction = Key("rotateAction")
     static let forceTouchAction = Key("forceTouchAction")
 
+    static let enablePinchToVideoZoom = Key("enablePinchToVideoZoom")
+    static let pinchMaxZoom = Key("pinchMaxZoom")
+
     static let showRemainingTime = Key("showRemainingTime")
     static let scaleRemainingTime = Key("scaleRemainingTime")
     static let timeDisplayPrecision = Key("timeDisplayPrecision")
@@ -1629,6 +1632,8 @@ struct Preference {
     .pinchAction: PinchAction.defaultValue.rawValue,
     .rotateAction: RotateAction.defaultValue.rawValue,
     .forceTouchAction: MouseClickAction.none.rawValue,
+    .enablePinchToVideoZoom: true,
+    .pinchMaxZoom: 4.0,
 
       .screenshotSaveToFile: true,
     .screenshotCopyToClipboard: false,

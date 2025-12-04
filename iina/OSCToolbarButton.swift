@@ -15,8 +15,8 @@ class OSCToolbarButton: OSCSymButton {
   var widthConstraint: NSLayoutConstraint? = nil
   var heightConstraint: NSLayoutConstraint? = nil
 
-  override init() {
-    super.init()
+  override init(id: String? = nil) {
+    super.init(id: id)
     bounceOnClick = true
     refusesFirstResponder = true
     tag = -1

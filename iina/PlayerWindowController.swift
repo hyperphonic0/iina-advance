@@ -450,7 +450,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
   // - MARK: Views
 
   // MiniPlayer buttons:
-  let exitMusicModeButton = SymButton()
+  let exitMusicModeButton = SymButton(id: "ExitMusicModeBtn")
 
   /// Contains `videoView` and margins around it
   let viewportView = ViewportView()

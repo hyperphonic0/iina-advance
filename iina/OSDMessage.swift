@@ -428,8 +428,10 @@ enum OSDMessage {
       if value == 0 {
         return (NSLocalizedString("osd.video_zoom.none", comment: "Zoom: None"), .normal)
       } else {
-        let valueStr = abs(value).twoDecimalPlaces
-        let text: String = String(format: NSLocalizedString("osd.video_zoom.value", comment: "Zoom: %@"), valueStr)
+        // Convert from mpv zoom
+        let zoom = pow(2.0, value)
+        let zoomStr = abs(zoom).twoDecimalPlaces
+        let text: String = String(format: NSLocalizedString("osd.video_zoom.value", comment: "Zoom: %@"), zoomStr)
         return (text, .normal)
       }
 

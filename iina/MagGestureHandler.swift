@@ -20,7 +20,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   // Zoom constants
   private let pinchZoomMultiplier: Double = 1.0
   private let pinchMinZoom: Double = 1.0
-  private let pinchMaxZoom: Double = 4.5
+  private var pinchMaxZoom: Double = 1.0  // will be updated at start of every pinch gesture
 
   // Zoom variables
   private var lastMagnification: CGFloat = 0.0
@@ -64,28 +64,34 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       // Check for full screen toggle conditions first
       if !pwc.isInMiniPlayer, recognizer.state != .ended {  // Disallow full screen toggle from pinch while in music mode
 
-        let wantsShrink = recognizer.magnification < 0
-        if pwc.isFullScreen, wantsShrink {
-          /// Change `windowedModeGeo` so that the window still fills the screen after leaving full screen, rather than whatever size it was
-          pwc.windowedModeGeo = pwc.windowedModeGeo.clone(windowFrame: screen.visibleFrame, screenID: screen.screenID)
-          // Set this immediately instead of waiting for the transitionn to set it (to disable window resize listeners).
-          // (seems to prevent hiccups in the animation):
-          pwc.isAnimatingLayoutTransition = true
-          // Exit FS:
-          pwc.toggleWindowFullScreen()
-          /// Force the gesture to end after toggling FS. Window scaling via `scaleWindow` looks terrible when overlapping FS animation
-          // TODO: put effort into truly seamless window scaling which also can toggle legacy FS
-          recognizer.state = .ended
-          pwc.isMagnifying = false  // really need to work hard to stop future events
+        if pwc.isFullScreen {
+          let wantsShrink = recognizer.magnification < 0
+          if wantsShrink {
+            /// Change `windowedModeGeo` so that the window still fills the screen after leaving full screen, rather than whatever size it was
+            pwc.windowedModeGeo = pwc.windowedModeGeo.clone(windowFrame: screen.visibleFrame, screenID: screen.screenID)
+            // Set this immediately instead of waiting for the transitionn to set it (to disable window resize listeners).
+            // (seems to prevent hiccups in the animation):
+            pwc.isAnimatingLayoutTransition = true
+            // Exit FS:
+            pwc.toggleWindowFullScreen()
+            /// Force the gesture to end after toggling FS. Window scaling via `scaleWindow` looks terrible when overlapping FS animation
+            // TODO: put effort into truly seamless window scaling which also can toggle legacy FS
+            recognizer.state = .ended
+            pwc.isMagnifying = false  // really need to work hard to stop future events
 
-          // KLUDGE! AppKit does not give us the correct visibleFrame until after we have exited FS. The resulting window (as of MacOS 14.4)
-          // is 6 pts too tall. For now, run another quick resize after exiting FS using the (now) correct visibleFrame
-          pwc.animationPipeline.submitInstantTask{ [self] in
-            let tasks = pwc.buildResizeViewportTasks(to: screen.visibleFrame.size, centerOnScreen: true, duration: Constants.AnimationDuration.standard * 0.25)
-            pwc.animationPipeline.submit(tasks)
+            // KLUDGE! AppKit does not give us the correct visibleFrame until after we have exited FS. The resulting window (as of MacOS 14.4)
+            // is 6 pts too tall. For now, run another quick resize after exiting FS using the (now) correct visibleFrame
+            pwc.animationPipeline.submitInstantTask{ [self] in
+              let tasks = pwc.buildResizeViewportTasks(to: screen.visibleFrame.size, centerOnScreen: true,
+                                                       duration: Constants.AnimationDuration.standard * 0.25)
+              pwc.animationPipeline.submit(tasks)
+            }
+            return
+          } else if Preference.bool(for: .enablePinchToVideoZoom) {
+            IINAAnimation.disableAnimation {  // need this to prevent floating OSC from jumping
+              zoomVideoFromPinchGesture(recognizer, currentMode: pwc.currentLayout.mode)
+            }
           }
-          return
-
         } else if !pwc.isFullScreen, recognizer.magnification > 0 {
           let screenFrame = screen.visibleFrame
           let heightIsMax = window.frame.height >= screenFrame.height
@@ -110,7 +116,9 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       IINAAnimation.disableAnimation {  // need this to prevent floating OSC from jumping
         let currentMode = pwc.currentLayout.mode
         if currentMode.isFullScreen {
-          zoomVideoFromPinchGesture(recognizer, currentMode: currentMode)
+          if Preference.bool(for: .enablePinchToVideoZoom) {
+            zoomVideoFromPinchGesture(recognizer, currentMode: currentMode)
+          }
         } else {
           pwc.scaleWindowFromPinch(recognizer, currentMode: currentMode)
         }
@@ -130,6 +138,8 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       // Fullscreen: pinch to zoom video around the pinch origin.
       lastMagnification = recognizer.magnification
       pinchScale = 1.0
+      // Update from prefs
+      pinchMaxZoom = Preference.double(for: .pinchMaxZoom)
 
       let currentZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
       pinchInitialZoom = max(pinchMinZoom, mpvScale(fromZoom: currentZoom))
@@ -190,6 +200,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     let zoomProp = mpvZoom(fromScale: s1)
     let bounds = pwc.videoView.bounds
     let rect = videoRectInView() ?? bounds
+    pwc.log.verbose("Zooming: \(s0) -> \(s1) -> \(zoomProp)")
 
     let origin = pinchOriginInVideoUnit ?? NSPoint(x: 0.5, y: 0.5)
     // Adjust pan to keep the pinch origin under the cursor relative to the current zoom.
@@ -256,8 +267,10 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     guard event.momentumPhase.isEmpty else { return true }
     guard pwc.currentLayout.isFullScreen else { return false }
     guard pwc.player.isActive else { return false }
+    guard Preference.bool(for: .enablePinchToVideoZoom) else { return false }
 
     let currentZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
+    pwc.log.verbose("Panning: currentZoom=\(currentZoom)")
     let currentScale = max(pinchMinZoom, mpvScale(fromZoom: currentZoom))
     guard currentScale > pinchMinZoom + 0.0001 else { return false }
 
