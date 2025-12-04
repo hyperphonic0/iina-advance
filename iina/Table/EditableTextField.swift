@@ -44,23 +44,25 @@ class EditableTextField: NSTextField {
   var heightConstraint: NSLayoutConstraint? = nil
 
   override func mouseDown(with event: NSEvent) {
-    if event.clickCount == 2 {
-      guard let editTracker = self.editTracker else {
-        Logger.log("Table textField \(self) received double-click event without validateProposedFirstResponder() being called first!", level: .error)
-        super.mouseDown(with: event)
-        return
-      }
-
-      Logger.log.verbose("EditableTextField: Got a double-cick")
-      let approved = editTracker.askUserToApproveDoubleClickEdit()
-      Logger.log.verbose("Double-click approved: \(approved.yesno)")
-      if approved {
-        self.window?.makeFirstResponder(self)
-      }
-      // These are the only cases where `super.mouseDown()` should not be called
+    guard let editTracker = self.editTracker else {
+      Logger.log.error("Table textField \(self) received double-click event without validateProposedFirstResponder() being called first!")
+      super.mouseDown(with: event)
       return
     }
-    super.mouseDown(with: event)
+
+    guard event.clickCount == 2 else {
+      Logger.log.verbose("EditableTextField: got event but not a double-click")
+      super.mouseDown(with: event)
+      return
+    }
+
+    editTracker.log.verbose("EditableTextField: Got a double-cick")
+    let approved = editTracker.askUserToApproveDoubleClickEdit()
+    editTracker.log.verbose("Double-click approved: \(approved.yesno)")
+    if approved {
+      window?.makeFirstResponder(self)
+    }
+    // These are the only cases where `super.mouseDown()` should not be called
   }
 
   override func becomeFirstResponder() -> Bool {

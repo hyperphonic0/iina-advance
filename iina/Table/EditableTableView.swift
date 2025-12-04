@@ -143,6 +143,7 @@ class EditableTableView: NSTableView {
 
   // Need to override here, in case anything needs to be given higher priority than row drag & drop.
   override func mouseDown(with event: NSEvent) {
+    log.verbose("EditableTableView\(idString.isEmpty ? "" : "[\(idString.quoted)]") MouseDown")
     if let editableDelegate, editableDelegate.handleMouseDown(with: event) {
       return
     }
@@ -150,6 +151,7 @@ class EditableTableView: NSTableView {
   }
 
   override func mouseUp(with event: NSEvent) {
+    log.verbose("EditableTableView\(idString.isEmpty ? "" : "[\(idString.quoted)]") MouseUp")
     if let editableDelegate, editableDelegate.handleMouseUp(with: event) {
       return
     }

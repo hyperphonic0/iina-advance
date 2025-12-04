@@ -23,10 +23,9 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
   }
   private var current: CurrentFocus? = nil
 
-  private var parentTable: EditableTableView {
-    return delegate.parentTableView
-  }
+  private var parentTable: EditableTableView {  delegate.parentTableView }
   private let delegate: EditableTableViewDelegate
+  var log: any Logger.Subsystem { parentTable.log }
 
   init(delegate: EditableTableViewDelegate) {
     self.delegate = delegate
@@ -35,8 +34,6 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
   var isEditInProgress: Bool {
     current?.editInProgress ?? false
   }
-
-  var log: any Logger.Subsystem { parentTable.log }
 
   private func getTextMovementName(from notification: Notification) -> String {
     guard let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int else {
@@ -79,7 +76,7 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     if let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int,
        let textMovement = NSTextMovement(rawValue: textMovementInt) {
 
-      self.endEdit()
+      self.endEdit(closeEditorExplicitly: false)
 
       DispatchQueue.main.async {
         // Start asynchronously so we can return
@@ -164,7 +161,7 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     guard let current = current, current.editInProgress else { return false }
 
     let textField = current.textField
-    log.verbose("END Edit   [\(current.row), \(current.column)] \"\(textField.stringValue)\"")
+    log.verbose("END Edit   [\(current.row), \(current.column)] \"\(textField.stringValue)\" closeEditor=\(closeEditorExplicitly.yn)")
 
     let shouldContinue = commitChanges(to: current)
 

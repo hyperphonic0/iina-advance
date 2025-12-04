@@ -69,10 +69,10 @@
             <rect key="screenRect" x="0.0" y="0.0" width="1496" height="937"/>
             <value key="minSize" type="size" width="426" height="450"/>
             <view key="contentView" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="InspectorWindow Content View">
-                <rect key="frame" x="0.0" y="0.0" width="426" height="450"/>
+                <rect key="frame" x="0.0" y="0.0" width="428" height="450"/>
                 <subviews>
                     <segmentedControl focusRingType="none" translatesAutoresizingMaskIntoConstraints="NO" id="0rt-Td-kr8" userLabel="Tab-Button-Group Segmented Control">
-                        <rect key="frame" x="32" y="410" width="362" height="39"/>
+                        <rect key="frame" x="33" y="410" width="362" height="39"/>
                         <constraints>
                             <constraint firstAttribute="height" constant="36" id="cW8-pr-q3Y"/>
                             <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="360" id="hwV-GT-mEN"/>
@@ -91,10 +91,10 @@
                         </connections>
                     </segmentedControl>
                     <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="CDi-R3-knX">
-                        <rect key="frame" x="0.0" y="410" width="426" height="5"/>
+                        <rect key="frame" x="0.0" y="410" width="428" height="5"/>
                     </box>
                     <tabView drawsBackground="NO" controlSize="small" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="wHY-jo-uW0" userLabel="(General, Tracks, File, Status) Tab View">
-                        <rect key="frame" x="12" y="-29" width="402" height="437"/>
+                        <rect key="frame" x="12" y="12" width="404" height="396"/>
                         <tabViewItems>
                             <tabViewItem label="General" identifier="1" id="f7a-XG-NCc">
                                 <view key="view" id="mRY-yK-FeT">
@@ -1118,13 +1118,13 @@
                                         <customView verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="GYo-pW-QQ3" userLabel="WatchTable Container View">
                                             <rect key="frame" x="12" y="34" width="380" height="157"/>
                                             <subviews>
-                                                <scrollView verticalCompressionResistancePriority="250" borderType="none" horizontalLineScroll="22" horizontalPageScroll="0.0" verticalLineScroll="22" verticalPageScroll="0.0" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="9In-dC-gN9" userLabel="WatchTable Scroll View">
+                                                <scrollView verticalCompressionResistancePriority="250" borderType="none" horizontalLineScroll="20" horizontalPageScroll="0.0" verticalLineScroll="20" verticalPageScroll="0.0" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="9In-dC-gN9" userLabel="WatchTable Scroll View">
                                                     <rect key="frame" x="0.0" y="0.0" width="380" height="157"/>
                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="MlR-S8-3gW" userLabel="WatchTable Clip View">
                                                         <rect key="frame" x="0.0" y="0.0" width="380" height="157"/>
-                                                        <autoresizingMask key="autoresizingMask"/>
+                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>
-                                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="sourceList" selectionHighlightStyle="sourceList" columnReordering="NO" autosaveName="InspectorWatchTable" rowHeight="22" usesAutomaticRowHeights="YES" viewBased="YES" floatsGroupRows="NO" id="oUp-DO-OKl" userLabel="WatchTable Table View" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
+                                                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="sourceList" selectionHighlightStyle="sourceList" columnReordering="NO" autosaveName="InspectorWatchTable" rowHeight="20" usesAutomaticRowHeights="YES" viewBased="YES" floatsGroupRows="NO" id="oUp-DO-OKl" userLabel="WatchTable Table View" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
                                                                 <rect key="frame" x="0.0" y="0.0" width="380" height="157"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1142,10 +1142,10 @@
                                                                         </textFieldCell>
                                                                         <prototypeCellViews>
                                                                             <tableCellView clipsToBounds="YES" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="z2z-PI-nzs" userLabel="Name-Column Table Cell View">
-                                                                                <rect key="frame" x="0.0" y="0.0" width="196" height="22"/>
+                                                                                <rect key="frame" x="10" y="0.0" width="196" height="22"/>
                                                                                 <subviews>
                                                                                     <textField autoresizesSubviews="NO" focusRingType="none" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="vTu-fg-hiW" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="4" width="196" height="14"/>
+                                                                                        <rect key="frame" x="0.0" y="5" width="196" height="14"/>
                                                                                         <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="left" title="KeyColumn Text Field" usesSingleLineMode="YES" id="HA9-NO-iHC">
                                                                                             <font key="font" metaFont="systemSemibold" size="11"/>
                                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1156,7 +1156,7 @@
                                                                                 <constraints>
                                                                                     <constraint firstItem="vTu-fg-hiW" firstAttribute="leading" secondItem="z2z-PI-nzs" secondAttribute="leading" constant="2" id="55D-Jr-fJc"/>
                                                                                     <constraint firstAttribute="trailing" secondItem="vTu-fg-hiW" secondAttribute="trailing" constant="2" id="iFb-bH-oQE"/>
-                                                                                    <constraint firstItem="vTu-fg-hiW" firstAttribute="top" secondItem="z2z-PI-nzs" secondAttribute="top" constant="4" id="vi6-ok-4jz"/>
+                                                                                    <constraint firstItem="vTu-fg-hiW" firstAttribute="top" secondItem="z2z-PI-nzs" secondAttribute="top" constant="3" id="vi6-ok-4jz"/>
                                                                                 </constraints>
                                                                                 <connections>
                                                                                     <outlet property="textField" destination="vTu-fg-hiW" id="0Ce-oy-dXe"/>
@@ -1177,10 +1177,10 @@
                                                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES"/>
                                                                         <prototypeCellViews>
                                                                             <tableCellView clipsToBounds="YES" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="z7F-bR-0pz" userLabel="Value-Column Table Cell View">
-                                                                                <rect key="frame" x="0.0" y="0.0" width="164" height="22"/>
+                                                                                <rect key="frame" x="206" y="0.0" width="164" height="20"/>
                                                                                 <subviews>
                                                                                     <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="DwZ-IW-2Yw" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="4" width="164" height="14"/>
+                                                                                        <rect key="frame" x="0.0" y="3" width="164" height="14"/>
                                                                                         <textFieldCell key="cell" lineBreakMode="charWrapping" sendsActionOnEndEditing="YES" alignment="left" title="ValueColumn Text Field" id="k5Q-ii-1cq">
                                                                                             <font key="font" metaFont="systemLight" size="11"/>
                                                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -1190,8 +1190,8 @@
                                                                                 </subviews>
                                                                                 <constraints>
                                                                                     <constraint firstAttribute="trailing" secondItem="DwZ-IW-2Yw" secondAttribute="trailing" constant="2" id="TT2-cp-bzy"/>
-                                                                                    <constraint firstItem="DwZ-IW-2Yw" firstAttribute="top" secondItem="z7F-bR-0pz" secondAttribute="top" constant="4" id="YIU-PK-pLg"/>
-                                                                                    <constraint firstAttribute="bottom" secondItem="DwZ-IW-2Yw" secondAttribute="bottom" constant="4" id="bFk-hT-QLV"/>
+                                                                                    <constraint firstItem="DwZ-IW-2Yw" firstAttribute="top" secondItem="z7F-bR-0pz" secondAttribute="top" constant="3" id="YIU-PK-pLg"/>
+                                                                                    <constraint firstAttribute="bottom" secondItem="DwZ-IW-2Yw" secondAttribute="bottom" constant="3" id="bFk-hT-QLV"/>
                                                                                     <constraint firstItem="DwZ-IW-2Yw" firstAttribute="leading" secondItem="z7F-bR-0pz" secondAttribute="leading" constant="2" id="i5k-ev-16W"/>
                                                                                 </constraints>
                                                                                 <connections>

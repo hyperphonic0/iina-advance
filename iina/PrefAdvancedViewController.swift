@@ -69,7 +69,8 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
       return
     }
     optionsList = userOptions
-    
+
+    optionsTableView.idString = "mpvOptionsTable"
     optionsTableView.dataSource = self
     optionsTableView.delegate = self
     optionsTableView.editableDelegate = self

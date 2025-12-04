@@ -299,37 +299,37 @@
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <scrollView autohidesScrollers="YES" horizontalLineScroll="24" horizontalPageScroll="10" verticalLineScroll="24" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bA7-7o-Vd0">
+                <scrollView autoresizesSubviews="NO" autohidesScrollers="YES" horizontalLineScroll="24" horizontalPageScroll="10" verticalLineScroll="24" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bA7-7o-Vd0">
                     <rect key="frame" x="1" y="100" width="478" height="132"/>
-                    <clipView key="contentView" id="aL1-v5-nLY">
+                    <clipView key="contentView" autoresizesSubviews="NO" id="aL1-v5-nLY">
                         <rect key="frame" x="1" y="1" width="476" height="130"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnReordering="NO" autosaveName="mpvOptionsTable" rowHeight="22" usesAutomaticRowHeights="YES" headerView="wiq-g9-ouS" viewBased="YES" id="LPs-2B-Pt0" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
+                            <tableView autoresizesSubviews="NO" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnReordering="NO" autosaveName="mpvOptionsTable" rowHeight="22" usesAutomaticRowHeights="YES" headerView="wiq-g9-ouS" viewBased="YES" id="LPs-2B-Pt0" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="476" height="107"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="4" height="2"/>
                                 <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="calibratedRGB"/>
                                 <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                 <tableColumns>
-                                    <tableColumn identifier="Key" width="118" minWidth="40" maxWidth="1000" id="E3I-Q7-9t1">
+                                    <tableColumn identifier="Key" editable="NO" width="118" minWidth="40" maxWidth="1000" id="E3I-Q7-9t1">
                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Name">
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                         </tableHeaderCell>
-                                        <textFieldCell key="dataCell" controlSize="large" lineBreakMode="truncatingTail" selectable="YES" editable="YES" title="Text Cell" usesSingleLineMode="YES" id="A9b-rU-8Ku">
+                                        <textFieldCell key="dataCell" controlSize="large" lineBreakMode="truncatingTail" selectable="YES" editable="YES" refusesFirstResponder="YES" title="Text Cell" usesSingleLineMode="YES" id="A9b-rU-8Ku">
                                             <font key="font" metaFont="system"/>
                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
-                                            <tableCellView clipsToBounds="YES" translatesAutoresizingMaskIntoConstraints="NO" id="aYw-Un-OIE" customClass="EditableTableCellView" customModule="IINA_Advance" customModuleProvider="target">
+                                            <tableCellView clipsToBounds="YES" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="aYw-Un-OIE" customClass="EditableTableCellView" customModule="IINA_Advance" customModuleProvider="target">
                                                 <rect key="frame" x="2" y="1" width="122" height="22"/>
                                                 <subviews>
-                                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="249" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="jGv-Vw-Iau" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
+                                                    <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="249" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="jGv-Vw-Iau" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                         <rect key="frame" x="2" y="2" width="118" height="17"/>
-                                                        <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" selectable="YES" sendsActionOnEndEditing="YES" title="Key EditableTextField" id="fbj-c6-bpP" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
+                                                        <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Key EditableTextField" id="fbj-c6-bpP" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                             <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -349,22 +349,22 @@
                                             </tableCellView>
                                         </prototypeCellViews>
                                     </tableColumn>
-                                    <tableColumn identifier="Value" width="316" minWidth="40" maxWidth="1000" id="SX9-fy-bss">
+                                    <tableColumn identifier="Value" editable="NO" width="316" minWidth="40" maxWidth="1000" id="SX9-fy-bss">
                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Value">
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                         </tableHeaderCell>
-                                        <textFieldCell key="dataCell" controlSize="large" lineBreakMode="truncatingTail" selectable="YES" editable="YES" title="Text Cell" usesSingleLineMode="YES" id="1nQ-mn-luW">
+                                        <textFieldCell key="dataCell" controlSize="large" lineBreakMode="truncatingTail" selectable="YES" editable="YES" refusesFirstResponder="YES" title="Text Cell" usesSingleLineMode="YES" id="1nQ-mn-luW">
                                             <font key="font" metaFont="system"/>
                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
-                                            <tableCellView clipsToBounds="YES" translatesAutoresizingMaskIntoConstraints="NO" id="dJ7-Mq-OHX" customClass="EditableTableCellView" customModule="IINA_Advance" customModuleProvider="target">
+                                            <tableCellView clipsToBounds="YES" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="dJ7-Mq-OHX" customClass="EditableTableCellView" customModule="IINA_Advance" customModuleProvider="target">
                                                 <rect key="frame" x="128" y="1" width="320" height="22"/>
                                                 <subviews>
-                                                    <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="DWx-cI-Qdh" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
+                                                    <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="DWx-cI-Qdh" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                         <rect key="frame" x="2" y="2" width="316" height="17"/>
                                                         <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Value EditableTextField" id="qOl-B1-6Cg" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                             <font key="font" metaFont="system"/>
@@ -406,7 +406,7 @@
                         <rect key="frame" x="-15" y="23" width="16" height="0.0"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </scroller>
-                    <tableHeaderView key="headerView" wantsLayer="YES" id="wiq-g9-ouS">
+                    <tableHeaderView key="headerView" autoresizesSubviews="NO" wantsLayer="YES" id="wiq-g9-ouS">
                         <rect key="frame" x="0.0" y="0.0" width="476" height="23"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </tableHeaderView>

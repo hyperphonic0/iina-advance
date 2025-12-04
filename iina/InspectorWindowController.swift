@@ -185,6 +185,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
     // Watch table
 
     watchProperties = Preference.array(for: .watchProperties) as! [String]
+    watchTableView.idString = "WatchTable"
     watchTableView.delegate = self
     watchTableView.dataSource = self
     watchTableView.editableDelegate = self
