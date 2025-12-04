@@ -16,7 +16,7 @@ import Foundation
  refer to ConfTableState.current each time for an up-to-date version.
  Tries to be model-focused and decoupled from UI code so that everything is cleaner.
  */
-struct ConfTableState {
+struct ConfTableState: Sendable {
   // current read-only snapshot:
   @MainActor
   static var current: ConfTableState = ConfTableState.manager.initialState()

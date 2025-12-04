@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct Thumbnail {
+struct Thumbnail: Sendable {
   let image: CGImage
   let timestamp: Double
 
@@ -17,7 +17,7 @@ struct Thumbnail {
   }
 }
 
-class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
+final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
   unowned let player: PlayerCore!
   let queueTicket: Int
   let mediaFilePath: String

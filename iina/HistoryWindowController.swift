@@ -16,6 +16,16 @@ fileprivate extension NSUserInterfaceItemIdentifier {
   static let contextMenu = NSUserInterfaceItemIdentifier("ContextMenu")
 }
 
+fileprivate let sectionHighlightColor = NSColor(name: nil) { appearance in
+  if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+    // Dark mode
+    return NSColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.04)
+  } else {
+    // Light mode
+    return NSColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.6)
+  }
+}
+
 // MARK: Constants
 
 fileprivate let loadingKey = "Loading..."
@@ -151,7 +161,7 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
     window.styleMask.insert(.fullSizeContentView)
 
     if let visualEffectCV = window.contentView as? NSVisualEffectView {
-      visualEffectCV.material = .titlebar
+      visualEffectCV.material = .contentBackground
       visualEffectCV.blendingMode = .withinWindow
       visualEffectCV.state = .active
       visualEffectCV.autoresizingMask = [.width, .height]
@@ -506,7 +516,12 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
   func outlineView(_ outlineView: NSOutlineView, didAdd rowView: NSTableRowView, forRow row: Int) {
     /// The background color for a `NSTableRowView` will default to the parent's background color, which results in an
     /// unwanted additive effect for translucent backgrounds. Just make each row transparent.
-    rowView.backgroundColor = .clear
+    rowView.wantsLayer = true
+    if outlineView.item(atRow: row) as? PlaybackHistory == nil {
+      rowView.backgroundColor = sectionHighlightColor
+    } else {
+      rowView.backgroundColor = .clear
+    }
   }
 
   func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
