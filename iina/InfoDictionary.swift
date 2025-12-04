@@ -14,20 +14,7 @@ import Foundation
 /// to information contained in the dictionary from other classes.
 struct InfoDictionary: @unchecked Sendable {
   static let executableName = "IINA Advance"
-  nonisolated(unsafe)
-  static var shared: InfoDictionary!
-
-  /// The usage message to be displayed for help on the command line.
-  let iinaBinaryUsageText: String
-  let iinaCLIUsageText: String
-
-  let dictionary: [String: Any?]
-
-  init() {
-    dictionary = Bundle.main.infoDictionary!
-    iinaBinaryUsageText = InfoDictionary.buildUsageText(iinaCLI: false)
-    iinaCLIUsageText = InfoDictionary.buildUsageText(iinaCLI: true)
-  }
+  static let shared = InfoDictionary()
 
   private static func buildUsageText(iinaCLI: Bool) -> String {
     let execName = iinaCLI ? "iina-cli" : InfoDictionary.executableName
@@ -74,9 +61,53 @@ struct InfoDictionary: @unchecked Sendable {
     return text
   }
 
-  var buildBranch: String? { dictionary["\(buildKeyPrefix).branch"] as? String }
-  var buildConfiguration: String? { dictionary["\(buildKeyPrefix).configuration"] as? String }
-  var buildCommit: String? { dictionary["\(buildKeyPrefix).commit"] as? String }
+  init() {
+    let dictionary = Bundle.main.infoDictionary!
+    let bundleIdentifier = dictionary["CFBundleIdentifier"] as! String
+    self.bundleIdentifier = bundleIdentifier
+    let buildKeyPrefix = bundleIdentifier + ".build"
+    buildBranch = dictionary["\(buildKeyPrefix).branch"] as? String
+    buildConfiguration = dictionary["\(buildKeyPrefix).configuration"] as? String
+    buildCommit = dictionary["\(buildKeyPrefix).commit"] as? String
+    buildSDK = dictionary["\(buildKeyPrefix).sdk"] as? String
+    rawBuildDate = dictionary["\(buildKeyPrefix).date"] as? String
+    copyright = dictionary["NSHumanReadableCopyright"] as! String
+
+    if let asFourChars = dictionary["\(buildKeyPrefix).xcode"] as? String {
+      if asFourChars.count == 4 {
+        let major: String.SubSequence
+        if asFourChars.first == "0" {
+          let index = asFourChars.index(asFourChars.startIndex, offsetBy: 1)
+          major = asFourChars[index...index]
+        } else {
+          major = asFourChars.prefix(2)
+        }
+        let minor: String.SubSequence
+        if asFourChars.last == "0" {
+          let index = asFourChars.index(asFourChars.endIndex, offsetBy: -2)
+          minor = asFourChars[index...index]
+        } else {
+          minor = asFourChars.suffix(2)
+        }
+        buildXcode = "\(major).\(minor)"
+      } else {
+        buildXcode = asFourChars
+      }
+    } else {
+      buildXcode = nil
+    }
+
+    version = (dictionary["CFBundleShortVersionString"] as! String, dictionary["CFBundleVersion"] as! String)
+  }
+
+  /// The usage message to be displayed for help on the command line.
+  var iinaBinaryUsageText: String  { InfoDictionary.buildUsageText(iinaCLI: false) }
+  var iinaCLIUsageText: String { InfoDictionary.buildUsageText(iinaCLI: true) }
+
+  let buildBranch: String?
+  let buildConfiguration: String?
+  let buildCommit: String?
+  let rawBuildDate: String?
   var shortCommitSHA: String? {
     guard let buildCommit = buildCommit else { return nil }
     return String(buildCommit.prefix(7))
@@ -96,7 +127,7 @@ struct InfoDictionary: @unchecked Sendable {
     let dateParser: (String) -> Date?
     let formatter = ISO8601DateFormatter()
     dateParser = formatter.date(from:)
-    guard let date = dictionary["\(buildKeyPrefix).date"] as? String,
+    guard let date = rawBuildDate,
           let dateObj = dateParser(date) else {
       return nil
     }
@@ -111,7 +142,7 @@ struct InfoDictionary: @unchecked Sendable {
   /// The version of the macOS SDK the application was built with.
   ///
   /// This is the value of the Xcode `SDK_VERSION` build setting.
-  var buildSDK: String? { dictionary["\(buildKeyPrefix).sdk"] as? String }
+  let buildSDK: String?
 
   /// The type of build used to generate this IINA executable.
   ///
@@ -132,43 +163,20 @@ struct InfoDictionary: @unchecked Sendable {
   /// For the SDK Xcode provides a setting with the version in human readable form. Unfortunately that is not the case for the Xcode
   /// version, so the `XCODE_VERSION_ACTUAL` build setting is used which provides the version number in a four character format
   /// that must be parsed and turned into a human readable form.
-  var buildXcode: String? {
-    guard let asFourChars = dictionary["\(buildKeyPrefix).xcode"] as? String else {
-      return nil
-    }
-    guard asFourChars.count == 4 else { return asFourChars }
-    let major: String.SubSequence
-    if asFourChars.first == "0" {
-      let index = asFourChars.index(asFourChars.startIndex, offsetBy: 1)
-      major = asFourChars[index...index]
-    } else {
-      major = asFourChars.prefix(2)
-    }
-    let minor: String.SubSequence
-    if asFourChars.last == "0" {
-      let index = asFourChars.index(asFourChars.endIndex, offsetBy: -2)
-      minor = asFourChars[index...index]
-    } else {
-      minor = asFourChars.suffix(2)
-    }
-    return "\(major).\(minor)"
-  }
+  var buildXcode: String?
 
-  var bundleIdentifier: String { dictionary["CFBundleIdentifier"] as! String }
+  let bundleIdentifier: String
 
-  var copyright: String { dictionary["NSHumanReadableCopyright"] as! String }
+  let copyright: String
 
   /// A Boolean value that indicates whether this executable was an optimized (not debug) build.
-  #if DEBUG
+#if DEBUG
   let isDebug = true
-  #else
+#else
   let isDebug = false
-  #endif
+#endif
 
-  var version: (String, String) {
-    return (dictionary["CFBundleShortVersionString"] as! String,
-            dictionary["CFBundleVersion"] as! String)
-  }
+  let version: (String, String)
 
   // MARK: - Enums
 

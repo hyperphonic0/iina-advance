@@ -223,7 +223,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     Logger.initLogging()
 
-    InfoDictionary.shared = InfoDictionary()
     // This will also start the demo player
     let demoPlayer = PlayerManager.shared.getOrCreateDemo()
     // Init MPVOptionDefaults: we need this for logAllAppDetails()
