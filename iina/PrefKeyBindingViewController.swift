@@ -274,7 +274,7 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
     [deleteConfFileBtn, addBindingBtn].forEach { btn in
       btn?.isHidden = isSelectedConfReadOnly
     }
-    showConfFileBtn.isEnabled = !isSelectedConfReadOnly
+    showConfFileBtn.isHidden = isSelectedConfReadOnly
     confHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(isSelectedConfReadOnly ? "1" : "2")", comment: "preference.key_binding_hint")
 
     // re-evaluate this each time either table changed selection:

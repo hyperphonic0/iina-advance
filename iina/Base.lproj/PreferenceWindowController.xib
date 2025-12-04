@@ -28,11 +28,11 @@
         <window title="Settings" separatorStyle="none" allowsToolTipsWhenApplicationIsInactive="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="F0z-JX-Cv5" userLabel="Preferences Window">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="196" y="240" width="820" height="480"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1083"/>
-            <value key="minSize" type="size" width="820" height="320"/>
+            <rect key="contentRect" x="196" y="240" width="840" height="480"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="937"/>
+            <value key="minSize" type="size" width="840" height="320"/>
             <view key="contentView" wantsLayer="YES" id="se5-gp-TjO" userLabel="PrefWindow Content View">
-                <rect key="frame" x="0.0" y="0.0" width="820" height="480"/>
+                <rect key="frame" x="0.0" y="0.0" width="840" height="480"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                 <subviews>
                     <visualEffectView blendingMode="behindWindow" material="sidebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="AO2-1e-7F6" userLabel="PrefNavPanel Visual Effect View">
@@ -151,16 +151,16 @@
                         <rect key="frame" x="197" y="0.0" width="5" height="480"/>
                     </box>
                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="mpW-1b-ztU" userLabel="PrefSearchResult Mask View" customClass="PrefSearchResultMaskView" customModule="IINA_Advance" customModuleProvider="target">
-                        <rect key="frame" x="200" y="0.0" width="620" height="480"/>
+                        <rect key="frame" x="200" y="0.0" width="640" height="480"/>
                     </customView>
                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" findBarPosition="aboveHorizontalRuler" translatesAutoresizingMaskIntoConstraints="NO" id="VYU-tb-v3l" userLabel="PrefDetailPanel Scroll View">
-                        <rect key="frame" x="200" y="0.0" width="620" height="480"/>
+                        <rect key="frame" x="200" y="0.0" width="640" height="480"/>
                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="fAk-o1-RBn" userLabel="PrefDetailPanel Clip View">
-                            <rect key="frame" x="0.0" y="0.0" width="620" height="480"/>
+                            <rect key="frame" x="0.0" y="0.0" width="640" height="480"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <view horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="5R5-77-bmq" userLabel="PrefDetailPanel Flipped Content View" customClass="FlippedView" customModule="IINA_Advance" customModuleProvider="target">
-                                    <rect key="frame" x="0.0" y="0.0" width="620" height="480"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="640" height="480"/>
                                 </view>
                             </subviews>
                             <constraints>
