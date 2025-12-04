@@ -237,6 +237,7 @@ struct Preference {
     static let disableOSDPauseResumeMsgs = Key("disableOSDPauseResumeMsgs")
     static let disableOSDSeekMsg = Key("disableOSDSeekMsg")
     static let disableOSDSpeedMsg = Key("disableOSDSpeedMsg")
+    static let disableOSDVideoZoomMsg = Key("disableOSDVideoZoomMsg")
 
     static let osdAutoHideTimeout = Key("osdAutoHideTimeout")
     static let osdTextSize = Key("osdTextSize")
@@ -1412,6 +1413,7 @@ struct Preference {
     .disableOSDPauseResumeMsgs: false,
     .disableOSDSeekMsg: false,
     .disableOSDSpeedMsg: false,
+    .disableOSDVideoZoomMsg: false,
     .osdAutoHideTimeout: Float(1),
     .osdTextSize: Float(28),
     .softVolume: 100,

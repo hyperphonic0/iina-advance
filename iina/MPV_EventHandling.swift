@@ -52,6 +52,7 @@ extension MPVController {
     MPVOption.Equalizer.gamma: MPV_FORMAT_INT64,
     MPVOption.Equalizer.hue: MPV_FORMAT_INT64,
     MPVOption.Equalizer.saturation: MPV_FORMAT_INT64,
+    MPVOption.Video.videoZoom: MPV_FORMAT_DOUBLE,
     MPVOption.Window.keepaspectWindow: MPV_FORMAT_FLAG,
     MPVOption.Window.fullscreen: MPV_FORMAT_FLAG,
     MPVOption.Window.ontop: MPV_FORMAT_FLAG,
@@ -585,6 +586,14 @@ extension MPVController {
       player.info.saturation = intData
       player.sendOSD(.saturation(intData))
       player.setQuickSettingsViewNeedsUpdate()
+
+    case MPVOption.Video.videoZoom:
+      guard let zoom = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
+        logPropertyValueError(MPVOption.Video.videoZoom, property.format)
+        break
+      }
+      player.log.verbose("Δ mpv prop: 'video-zoom' = \(zoom)")
+      player.sendOSD(.videoZoom(zoom))
 
     case MPVProperty.playlistCount:
       player.log.verbose("Δ mpv prop: 'playlist-count'")

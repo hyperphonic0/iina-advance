@@ -76,6 +76,8 @@ enum OSDMessage {
   case brightness(Int)
   case gamma(Int)
 
+  case videoZoom(Double)
+
   case addFilter(String)
   case removeFilter
 
@@ -109,6 +111,7 @@ enum OSDMessage {
     case .resume: return Preference.bool(for: .disableOSDPauseResumeMsgs)
     case .seek: return Preference.bool(for: .disableOSDSeekMsg)
     case .speed: return Preference.bool(for: .disableOSDSpeedMsg)
+    case .videoZoom: return Preference.bool(for: .disableOSDVideoZoomMsg)
     default: return false
     }
   }
@@ -420,6 +423,15 @@ enum OSDMessage {
         String(format: NSLocalizedString("osd.video_eq.brightness", comment: "Brightness: %i"), value),
         .withProgress(toPercent(Double(value), 100))
       )
+
+    case .videoZoom(let value):
+      if value == 0 {
+        return (NSLocalizedString("osd.video_zoom.none", comment: "Zoom: None"), .normal)
+      } else {
+        let valueStr = abs(value).twoDecimalPlaces
+        let text: String = String(format: NSLocalizedString("osd.video_zoom.value", comment: "Zoom: %@"), valueStr)
+        return (text, .normal)
+      }
 
     case .addFilter(let name):
       return (
