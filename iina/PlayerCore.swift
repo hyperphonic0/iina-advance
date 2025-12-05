@@ -152,6 +152,7 @@ final class PlayerCore: NSObject {
   // Window & views
 
   var pwc: PlayerWindowController!
+  @MainActor
   var window: PlayerWindow { pwc.window as! PlayerWindow }
 
   var mpv: MPVController!
@@ -3238,21 +3239,23 @@ final class PlayerCore: NSObject {
       }
       let id = MPVController.nodeValueAsInt(dict["id"])
       let track = MPVTrack(id: id, type: MPVTrack.TrackType(rawValue: type)!,
+                           srcId: MPVController.nodeValueAsInt(dict["src-id"]),
+                           title: dict["title"] as? String,
+                           lang: dict["lang"] as? String,
                            isDefault: isDefault, isForced: isForced, isImage: isImage,
-                           isSelected: isSelected, isExternal: isExternal)
-      track.srcId = MPVController.nodeValueAsInt(dict["src-id"])
-      track.title = dict["title"] as? String
-      track.lang = dict["lang"] as? String
-      track.codec = dict["codec"] as? String
-      track.externalFilename = dict["external-filename"] as? String
-      track.isAlbumart = dict["albumart"] as? Bool ?? false
-      track.decoderDesc = dict["decoder-desc"] as? String
-      track.demuxW = MPVController.nodeValueAsInt(dict["demux-w"])
-      track.demuxH = MPVController.nodeValueAsInt(dict["demux-h"])
-      track.demuxFps = dict["demux-fps"] as? Double
-      track.demuxChannelCount = MPVController.nodeValueAsInt(dict["demux-channel-count"])
-      track.demuxChannels = dict["demux-channels"] as? String
-      track.demuxSamplerate = MPVController.nodeValueAsInt(dict["demux-samplerate"])
+                           isSelected: isSelected,
+                           isExternal: isExternal,
+                           externalFilename: dict["external-filename"] as? String,
+                           codec: dict["codec"] as? String,
+                           demuxW: MPVController.nodeValueAsInt(dict["demux-w"]),
+                           demuxH: MPVController.nodeValueAsInt(dict["demux-h"]),
+                           demuxChannelCount: MPVController.nodeValueAsInt(dict["demux-channel-count"]),
+                           demuxChannels: dict["demux-channels"] as? String,
+                           demuxSamplerate: MPVController.nodeValueAsInt(dict["demux-samplerate"]),
+                           demuxFps: dict["demux-fps"] as? Double,
+                           isAlbumart: dict["albumart"] as? Bool ?? false,
+                           decoderDesc: dict["decoder-desc"] as? String,
+      )
 
       // add to lists
       switch track.type {
