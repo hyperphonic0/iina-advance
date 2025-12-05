@@ -58,7 +58,7 @@ extension PlayerWindowController {
     let cvBtmOffsetFromBottomBarTop = OptionalConstraint("CV.btm-offset-from-BottomBar.top")
     let bottomBarTopOffsetFromCVTop = OptionalConstraint("BottomBar.top-offset-from-CV.top")
     let bottomBarBtmOffsetFromCVTop = OptionalConstraint("BottomBar.btm-offset-from-CV.top")
-    let cvBtmOffsetFromBottomBarBtm = OptionalConstraint("BottomBar.btm-offset-from-BottomBar.btm")
+    let cvBtmOffsetFromBottomBarBtm = OptionalConstraint("CV.btm-offset-from-BottomBar.btm")
 
     // - BottomBar (H)
     // Needs to be changed to align with either sidepanel or leading edge of window:
@@ -89,7 +89,7 @@ extension PlayerWindowController {
     log.verbose("RebuildPanels: VP=\(useViewport.yn) Bottom=\(useBottomBar.yn) Top=\(useTopBar.yn) Leading=\(useLeadingSidebar.yn) Trailing=\(useTrailingSidebar.yn)")
 
     // - Add window subviews in a well-defined order (before adding constraints between them)
-    addOrRemoveViews(for: stage, stageGeo: stageGeo,
+    addOrRemoveViews(for: stage, stageGeo: stageGeo, log,
                      useViewport: useViewport,
                      useTopBar: useTopBar,
                      useBottomBar: useBottomBar,
@@ -268,7 +268,8 @@ extension PlayerWindowController {
     sortContentViewSubviews(for: stageLayout, in: transition)
   }
 
-  private func addOrRemoveViews(for stage: LayoutTransition.Stage, stageGeo: PWinGeometry, useViewport: Bool,
+  private func addOrRemoveViews(for stage: LayoutTransition.Stage, stageGeo: PWinGeometry, _ log: any Logger.Subsystem,
+                                useViewport: Bool,
                                 useTopBar: Bool, useBottomBar: Bool,
                                 useLeadingSidebar: Bool, useTrailingSidebar: Bool) {
     let contentView = window!.contentView!

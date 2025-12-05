@@ -2647,9 +2647,10 @@ final class PlayerCore: NSObject {
     guard pwc.loaded, isActive else { return }
 
     syncFullScreenState()
+
     let ontop = mpv.getFlag(MPVOption.Window.ontop)
     if ontop != pwc.isOnTop {
-      log.verbose("IINA OnTop state (\(pwc.isOnTop.yn)) does not match mpv (\(ontop.yn)). Will change to match mpv state")
+      log.verbose("IINA OnTop state (\(pwc.isOnTop.yn)) does not match mpv (\(ontop.yn)); will change to match mpv state")
       DispatchQueue.main.async { [self] in
         pwc.setWindowFloatingOnTop(ontop, from: pwc.currentLayout, updateOnTopStatus: false)
       }
@@ -2663,17 +2664,19 @@ final class PlayerCore: NSObject {
     let mpvFS = mpv.getFlag(MPVOption.Window.fullscreen)
     let iinaFS = pwc.isFullScreen
     log.verbose("FullScreen state: IINA=\(iinaFS.yn) mpv=\(mpvFS.yn)")
-    if mpvFS != iinaFS {
-      if mpvFS && didEnterFullScreenViaUserToggle {
-        didEnterFullScreenViaUserToggle = false
-        mpv.setFlag(MPVOption.Window.fullscreen, false)
-      } else {
-        DispatchQueue.main.async { [self] in
-          if mpvFS {
-            pwc.enterFullScreen()
-          } else {
-            pwc.exitFullScreen()
-          }
+    guard mpvFS != iinaFS else { return }
+
+    if mpvFS && didEnterFullScreenViaUserToggle {
+      log.verbose("Disabling mpv full screen to sync it with IINA's state")
+      didEnterFullScreenViaUserToggle = false
+      mpv.setFlag(MPVOption.Window.fullscreen, false)
+    } else {
+      log.debug("IINA full screen state does not match mpv (FS=\(mpvFS.yesno)); will change to match mpv state")
+      DispatchQueue.main.async { [self] in
+        if mpvFS {
+          pwc.enterFullScreen()
+        } else {
+          pwc.exitFullScreen()
         }
       }
     }

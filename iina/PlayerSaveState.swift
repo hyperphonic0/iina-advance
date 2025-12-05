@@ -680,6 +680,12 @@ struct PlayerSaveState: CustomStringConvertible {
     // See also: `PlayerCore.pendingResumeWhenShowingWindow`
     mpv.setFlag(MPVOption.PlaybackControl.pause, true)
 
+    if let priorLayout = layoutState, priorLayout.isLegacyFullScreen {
+      // Go immediately into full screen mode for Legacy Full Screen.
+      // (Native Full Screen requires us to start in windowed and enter FS using an animation)
+      mpv.setFlag(MPVOption.Window.fullscreen, true)
+    }
+
     if let hwdec = string(for: .hwdec) {
       mpv.setString(MPVOption.Video.hwdec, hwdec)
     }

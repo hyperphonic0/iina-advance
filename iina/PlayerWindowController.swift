@@ -619,6 +619,7 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     let geoSetToUse: GeometrySet
     if let geoSet {
       geoSetToUse = geoSet
+      player.log.verbose("PlayerWindowController init: using provided geoSet. Using \(initialLayout == nil ? "provided layout" : "layout from prefs"), mode=\(layoutToUse.mode)")
     } else {
       player.log.verbose("PlayerWindowController init: using lastClosed geometries for now")
       geoSetToUse = GeometrySet(windowed: PlayerWindowController.windowedModeGeoLastClosed,
