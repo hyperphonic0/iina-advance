@@ -191,6 +191,7 @@ class ShutdownHandler {
     return isReadyToTerminate()
   }
 
+  @MainActor
   @objc
   private func shutdownDidTimeout() {
     shutdownTimedOut = true
@@ -223,6 +224,7 @@ class ShutdownHandler {
     NSApp.reply(toApplicationShouldTerminate: true)
   }
 
+  @MainActor
   private func isReadyToTerminate() -> Bool {
     // If any player has not shut down then continue waiting.
     let allPlayersShutdown = PlayerManager.shared.allPlayersShutdown
@@ -254,6 +256,7 @@ class ShutdownHandler {
   /// This method is called when an observer receives a notification that a player has shutdown or an online subtitles provider logout
   /// request has completed. If there are no other termination tasks outstanding then this method will instruct AppKit to proceed with
   /// termination.
+  @MainActor
   private func proceedWithTermination() {
     guard isReadyToTerminate() else { return }
     // Tell AppKit to proceed with termination.
@@ -264,6 +267,7 @@ class ShutdownHandler {
   ///
   /// This method recursively descends through the entire tree of menu items removing all items.
   /// - Parameter menu: Menu to remove items from
+  @MainActor
   private func removeAllMenuItems(_ menu: NSMenu) {
     for item in menu.items {
       if item.hasSubmenu {

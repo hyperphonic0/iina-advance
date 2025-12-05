@@ -21,9 +21,8 @@ class MediaPlayerIntegration {
     updateEnablement(to: newEnablement)
   }
 
+  @MainActor
   private func updateEnablement(to newEnablement: Bool) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     let didChange: Bool = $enabled.withLock {
       let didChange = $0 != newEnablement
       if didChange {
@@ -44,6 +43,7 @@ class MediaPlayerIntegration {
     }
   }
 
+  @MainActor
   func shutdown() {
     updateEnablement(to: false)
   }
@@ -167,10 +167,9 @@ class MediaPlayerIntegration {
   ///         and [MPNowPlayingInfoCenter](https://developer.apple.com/documentation/mediaplayer/mpnowplayinginfocenter)
   ///         for more information.
   ///
-  /// - Important: This method **must** be run on the main thread because it references `PlayerCore.lastActive`.
+  /// This method must be run on the main thread because it references `PlayerCore.lastActive`.
+  @MainActor
   func updateNowPlayingInfo() {
-    assert(DispatchQueue.isExecutingIn(.main))  /// needed for `PlayerCore.lastActive`
-
     let center = MPNowPlayingInfoCenter.default()
     var info = center.nowPlayingInfo ?? [String: Any]()
 

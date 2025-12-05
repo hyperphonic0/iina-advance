@@ -120,12 +120,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     case PK.enableAdvancedSettings, PK.enableLogging, PK.logLevel:
       Logger.updateEnablement()
       // depends on advanced being enabled:
-      menuController.refreshCmdNStatus()
-      menuController.refreshStaticMenuItemBindings()
+      DispatchQueue.main.async { [self] in
+        menuController.refreshCmdNStatus()
+        menuController.refreshStaticMenuItemBindings()
+      }
 
     case PK.enableCmdN:
-      menuController.refreshCmdNStatus()
-      menuController.refreshStaticMenuItemBindings()
+      DispatchQueue.main.async { [self] in
+        menuController.refreshCmdNStatus()
+        menuController.refreshStaticMenuItemBindings()
+      }
 
     case PK.resumeLastPosition:
       HistoryController.shared.async {
@@ -533,8 +537,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   /// Question mark
+  @MainActor
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return false }
     guard startupHandler.state == .doneOpening else {
       Logger.log.verbose("App will not terminate due to window closed: not yet done launching (state: \(startupHandler.state))")
@@ -885,13 +889,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// which protects against object substitution attacks. If an application does not implement this method then a warning will be emitted
   /// reporting secure coding is not enabled for restorable state.
   @available(macOS 12.0, *)
-  @MainActor func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
+  @MainActor
+  func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
     return true
   }
 
   /// Called when this application becomes the frontmost app (as indicated by its name appearing as a menu next to the Apple menu).
   ///
   /// Cases include: at app launch; whenever Dock icon is clicked; when an app window is ordered to front.
+  @MainActor
   func applicationDidBecomeActive(_ notfication: Notification) {
     // When using custom window style, sometimes AppKit will remove their entries from the Window menu (e.g. when hiding the app).
     // Make sure to add them again if they are missing:

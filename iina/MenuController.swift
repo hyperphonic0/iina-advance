@@ -72,7 +72,7 @@ fileprivate func sameKeyAction(_ lhs: [String], _ rhs: [String], _ normalizeLast
 class MenuController: NSObject, NSMenuDelegate {
 
   /** For convenient bindings. see `bind(...)` below. [menu: check state block] */
-  private var menuBindingList: [NSMenu: (NSMenuItem) -> Bool] = [:]
+  private var menuBindingList: [NSMenu: @MainActor (NSMenuItem) -> Bool] = [:]
 
   private var stringForOpen: String!
   private var stringForOpenAlternative: String!
@@ -213,6 +213,7 @@ class MenuController: NSObject, NSMenuDelegate {
     refreshStaticMenuItemBindings()
   }
 
+  @MainActor
   private func bindMenuItems() {
 
     [cycleSubtitles, cycleAudioTracks, cycleVideoTracks].forEach { item in
@@ -424,6 +425,7 @@ class MenuController: NSObject, NSMenuDelegate {
     miniPlayer.action = #selector(PlayerWindowController.menuSwitchToMiniPlayer(_:))
   }
 
+  @MainActor
   func refreshCmdNStatus() {
     let isEnabled = Preference.isAdvancedEnabled && Preference.bool(for: .enableCmdN)
     newWindowSeparator.isHidden = !isEnabled
@@ -432,6 +434,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   // MARK: - Update Menus
 
+  @MainActor
   func updateOtherKeyBindings(replacingAllWith newItems: [NSMenuItem]) {
     otherKeyBindingsMenu.removeAllItems()
     for item in newItems {
@@ -440,6 +443,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
+  @MainActor
   private func updatePlaylist() {
     playlistMenu.removeAllItems()
     guard let player = PlayerCore.active else { return }
@@ -450,6 +454,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
+  @MainActor
   private func updateChapterList() {
     chapterMenu.removeAllItems()
     guard let player = PlayerCore.active else { return }
@@ -474,6 +479,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
+  @MainActor
   private func updateTracks(forMenu menu: NSMenu, type: MPVTrack.TrackType) {
     guard let player = PlayerCore.active else { return }
     let info = player.info
@@ -490,6 +496,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
+  @MainActor
   private func updatePlaybackMenu() {
     guard let player = PlayerCore.active else { return }
     let isDisplayingPlaylist = player.pwc.isOpen(sidebarTab: .playlist)
@@ -511,6 +518,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
+  @MainActor
   private func updateVideoMenu() {
     guard let player = PlayerCore.active else { return }
     let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .video)
@@ -528,6 +536,7 @@ class MenuController: NSObject, NSMenuDelegate {
     delogo.state = isDelogo ? .on : .off
   }
 
+  @MainActor
   private func updateAudioMenu() {
     guard let player = PlayerCore.active else { return }
     let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .audio)
@@ -547,6 +556,7 @@ class MenuController: NSObject, NSMenuDelegate {
     audioDelayIndicator.title = String(format: NSLocalizedString("menu.audio_delay", comment: "Audio Delay:"), audioDelayString)
   }
 
+  @MainActor
   private func updateAudioDevice() {
     guard let player = PlayerCore.active else { return }
     let devices = player.getAudioDevices()
@@ -559,12 +569,14 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
+  @MainActor
   private func updateFlipAndMirror() {
     guard let info = PlayerCore.active?.info else { return }
     flip.state = info.isFlippedVertical ? .on : .off
     mirror.state = info.isFlippedHorizontal ? .on : .off
   }
 
+  @MainActor
   private func updateSubMenu() {
     guard let player = PlayerCore.active else { return }
     let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .sub)
@@ -594,6 +606,7 @@ class MenuController: NSObject, NSMenuDelegate {
                                 action: #selector(PlayerWindowController.menuFindOnlineSub(_:)))
   }
 
+  @MainActor
   func updateSavedFiltersMenu(type: String) {
     guard let player = PlayerCore.active else { return }
     let filters = type == MPVProperty.vf ? player.info.videoFilters : player.info.audioFilters
@@ -725,7 +738,7 @@ class MenuController: NSObject, NSMenuDelegate {
   private func bind(menu: NSMenu,
                     withOptions titles: [String]?, objects: [Any?]?,
                     objectMap: [String: Any?]?,
-                    action: Selector?, checkStateBlock block: @escaping (NSMenuItem) -> Bool) {
+                    action: Selector?, checkStateBlock block: @MainActor @escaping (NSMenuItem) -> Bool) {
     // if use title
     if let titles = titles {
       // options and objects must be same
@@ -757,6 +770,7 @@ class MenuController: NSObject, NSMenuDelegate {
     menuBindingList.updateValue(block, forKey: menu)
   }
 
+  @MainActor
   private func updateOpenMenuItems() {
     if PlayerManager.shared.getNonIdle().count == 0 {
       open.title = stringForOpen
@@ -780,6 +794,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   // MARK: - Menu delegate
 
+  @MainActor
   func menuWillOpen(_ menu: NSMenu) {
     Logger.log.verbose("Updating menu: \(menu.title.quoted)")
 
@@ -916,12 +931,12 @@ class MenuController: NSObject, NSMenuDelegate {
   }
 
   private func forMenuItemAndAllDescendents(_ menuItem: NSMenuItem, do callback: (NSMenuItem) -> Void) {
-      callback(menuItem)
-      if menuItem.hasSubmenu, let subMenu = menuItem.submenu {
-        for subMenuItem in subMenu.items {
-          forMenuItemAndAllDescendents(subMenuItem, do: callback)
-        }
+    callback(menuItem)
+    if menuItem.hasSubmenu, let subMenu = menuItem.submenu {
+      for subMenuItem in subMenu.items {
+        forMenuItemAndAllDescendents(subMenuItem, do: callback)
       }
+    }
   }
 
   // MARK: Set key equivalents
@@ -930,6 +945,7 @@ class MenuController: NSObject, NSMenuDelegate {
   /// Two general groups to be processed:
   /// - Save filters & Plugin menu bindings have already had their values & enablement determined: just need to update their menu items.
   /// - MPV bindings need some additional checks to see if they can be associated with menu items.
+  @MainActor
   func updateKeyEquivalents(in candidateBindings: inout [InputBinding]) {
     var mpvBindingIndexes: [Int] = []
 
@@ -951,6 +967,7 @@ class MenuController: NSObject, NSMenuDelegate {
     matchKeyEquivalents(with: mpvBindingIndexes, into: &candidateBindings)
   }
 
+  @MainActor
   private func updateKeyEquivalent(from binding: InputBinding) -> InputBinding {
     guard let menuItem = binding.menuItem else { return binding }
 
@@ -978,6 +995,7 @@ class MenuController: NSObject, NSMenuDelegate {
     return binding
   }
 
+  @MainActor
   private func matchKeyEquivalents(with userBindingIndexes: [Int], into bindingList: inout [InputBinding]) {
     let bindableMenuItems: [(NSMenuItem, Bool, [String], Bool, ClosedRange<Double>?, String?)] = [
       (showCurrentFileInFinder, true, [IINACommand.showCurrentFileInFinder.rawValue], false, nil, nil),

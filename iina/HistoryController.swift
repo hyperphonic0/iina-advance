@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class HistoryController {
+final class HistoryController {
 
   static let shared = HistoryController(plistFileURL: Utility.playbackHistoryURL)
 

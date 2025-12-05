@@ -47,21 +47,20 @@ final class PlayerCore: NSObject {
   ///
   /// - Important: Code referencing this property **must** be run on the main thread as getting the value of this property _may_
   ///              result in a reference the `active` property and that requires use of the main thread.
+  @MainActor
   static var lastActive: PlayerCore? {
     get {
-      assert(DispatchQueue.isExecutingIn(.main))
       return PlayerManager.shared.lastActivePlayer
     }
     set {
-      assert(DispatchQueue.isExecutingIn(.main))
       PlayerManager.shared.lastActivePlayer = newValue
     }
   }
 
   /// - Important: Code referencing this property **must** be run on the main thread because it references
   ///   [NSApplication.pwc`](https://developer.apple.com/documentation/appkit/nsapplication/1428723-mainwindow)
+  @MainActor
   static var active: PlayerCore? {
-    assert(DispatchQueue.isExecutingIn(.main))
     return PlayerManager.shared.activePlayer
   }
 

@@ -247,8 +247,10 @@ class Assrt {
         subChooseViewController.userCanceledAction = {
           resolver.reject(OnlineSubtitle.CommonError.canceled)
         }
-        PlayerCore.active?.sendOSD(.foundSub(subs.count), autoHide: false, accessoryViewController: subChooseViewController)
-        subChooseViewController.tableView.reloadData()
+        DispatchQueue.main.async { [self] in
+          PlayerCore.active?.sendOSD(.foundSub(subs.count), autoHide: false, accessoryViewController: subChooseViewController)
+          subChooseViewController.tableView.reloadData()
+        }
       }
     }
 

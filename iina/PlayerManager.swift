@@ -8,15 +8,20 @@
 
 import Foundation
 
-class PlayerManager {
+final class PlayerManager {
   static let shared = PlayerManager()
 
-  private let lock = Lock()
   private var playerCoreCounter = 0
 
-  private var _playerCores: [PlayerCore] = []
-  private var _demoPlayer: PlayerCore? = nil
+  @MainActor
+  var playerCores: [PlayerCore] = []
 
+  /// Audio-only player. Needed for listing audio devices when no player windows are open.
+  /// Should not be used for playing anything.
+  @MainActor
+  var demoPlayer: PlayerCore? = nil
+
+  @MainActor
   var pipPlayer: PlayerCore? = nil {
     willSet {
       let usurperPlayer = newValue
@@ -29,92 +34,58 @@ class PlayerManager {
     }
   }
 
-  /// Audio-only player. Needed for listing audio devices when no player windows are open.
-  /// Should not be used for playing anything.
-  var demoPlayer: PlayerCore? {
-    var player: PlayerCore?
-    lock.withLock {
-      player = _demoPlayer
-    }
-    return player
-  }
-
   /// Returns the last player whose window was "active" (or in MacOS terminology, was the key window).
+  @MainActor
   var lastActivePlayer: PlayerCore? {
     get {
-      lock.withLock {
-        return _lastActivePlayer ?? findCurrentlyActivePlayer()
-      }
+      return _lastActivePlayer ?? findCurrentlyActivePlayer()
     }
     set {
-      lock.withLock {
-        _lastActivePlayer = newValue
-      }
+      _lastActivePlayer = newValue
     }
   }
   weak private var _lastActivePlayer: PlayerCore?
 
-  // Returns a copy of the list of PlayerCores, to ensure concurrency
-  var playerCores: [PlayerCore] {
-    lock.withLock {
-      _playerCores
-    }
-  }
-
+  @MainActor
   var allPlayersShutdown: Bool {
-    lock.withLock {
-      let runningLabels = _playerCores.compactMap({ player in
-        // Non-interactive players don't have callbacks registered.
-        // So just assume they finished shutting down and hope it's fine.
-        !player.isInteractivePlayer || player.isShutDown ? nil : player.label}
-      )
-      if !runningLabels.isEmpty {
-        Logger.log.verbose("Players have not yet shut down: \(runningLabels)")
-        return false
-      }
-      return true
+    let runningLabels = playerCores.compactMap({ player in
+      // Non-interactive players don't have callbacks registered.
+      // So just assume they finished shutting down and hope it's fine.
+      !player.isInteractivePlayer || player.isShutDown ? nil : player.label}
+    )
+    if !runningLabels.isEmpty {
+      Logger.log.verbose("Players have not yet shut down: \(runningLabels)")
+      return false
     }
-  }
-
-  var hasOpenPlayer: Bool {
-    for player in playerCores {
-      if player.pwc.isOpen {
-        return true
-      }
-    }
-    return false
+    return true
   }
 
   @MainActor
   private func _getOrCreateFirst() -> PlayerCore {
-    if _playerCores.isEmpty {
-      return _createNewPlayerCore()
+    if playerCores.isEmpty {
+      return createNewPlayerCore()
     }
-    return _playerCores[0]
+    return playerCores[0]
   }
 
   @MainActor
   func getOrCreateFirst() -> PlayerCore {
-    lock.withLock {
-      _getOrCreateFirst()
-    }
+    _getOrCreateFirst()
   }
 
   @MainActor
   func getActiveOrCreateNew() -> PlayerCore {
-    lock.withLock {
-      if _playerCores.isEmpty {
-        return _createNewPlayerCore()
+    if playerCores.isEmpty {
+      return createNewPlayerCore()
+    } else {
+      if Preference.bool(for: .alwaysOpenInNewWindow) {
+        return getIdleOrCreateNew()
       } else {
-        if Preference.bool(for: .alwaysOpenInNewWindow) {
-          return _getIdleOrCreateNew()
+        if let activePlayer = findCurrentlyActivePlayer() {
+          return activePlayer
         } else {
-          if let activePlayer = findCurrentlyActivePlayer() {
-            return activePlayer
-          } else {
-            Logger.log.debug("No active player found; creating new")
-            return _createNewPlayerCore()
-          }
+          Logger.log.debug("No active player found; creating new")
+          return createNewPlayerCore()
         }
       }
     }
@@ -132,9 +103,10 @@ class PlayerManager {
   }
 
   /// Finds a player core which was already created but is not in use (idle or not started), or nil if none
-  private func _findIdlePlayerCore() -> PlayerCore? {
+  @MainActor
+  private func findIdlePlayerCore() -> PlayerCore? {
     var firstIdlePlayer: PlayerCore? = nil
-    for p in _playerCores {
+    for p in playerCores {
       let isPlayerIdleOrUnused = p.isIdleOrUnused
       Logger.log.verbose("Player-\(p.label): hasPlayback=\(p.hasPlayback.yn) idle=\(p.state == .idle) → UNUSED=\(isPlayerIdleOrUnused.yn)")
       if firstIdlePlayer == nil && isPlayerIdleOrUnused {
@@ -144,33 +116,24 @@ class PlayerManager {
     return firstIdlePlayer
   }
 
-  func getNonIdle() -> [PlayerCore] {
-    lock.withLock {
-      _playerCores.filter { $0.isActive }
-    }
-  }
-
   @MainActor
-  private func _getIdleOrCreateNew() -> PlayerCore {
-    if let idleCore = _findIdlePlayerCore() {
-      Logger.log.debug("Found idle player: #\(idleCore.label)")
-      return idleCore
-    }
-    Logger.log.debug("No idle player found; creating new")
-    return _createNewPlayerCore()
+  func getNonIdle() -> [PlayerCore] {
+    playerCores.filter { $0.isActive }
   }
 
   @MainActor
   func getIdleOrCreateNew() -> PlayerCore {
-    lock.withLock {
-      _getIdleOrCreateNew()
+    if let idleCore = findIdlePlayerCore() {
+      Logger.log.debug("Found idle player: #\(idleCore.label)")
+      return idleCore
     }
+    Logger.log.debug("No idle player found; creating new")
+    return createNewPlayerCore()
   }
 
+  @MainActor
   var activePlayer: PlayerCore? {
-    lock.withLock {
-      findCurrentlyActivePlayer()
-    }
+    findCurrentlyActivePlayer()
   }
 
   /// The "active" player is the player attached to the current key window, if any.
@@ -186,38 +149,35 @@ class PlayerManager {
   /// Demo player is a redundant player which is used for app-wide things such as configuring audio devices or input bindings in prefs
   @MainActor
   func getOrCreateDemo() -> PlayerCore {
-    let player = lock.withLock {
-      if let _demoPlayer {
-        return _demoPlayer
-      } else {
-        Logger.log.debug("Creating demo player")
-        let player = PlayerCore(Constants.demoPlayerLabel, isDemoPlayer: true)
-        _demoPlayer = player
-        return player
-      }
+    let player: PlayerCore
+    if let demoPlayer {
+      player = demoPlayer
+    } else {
+      Logger.log.debug("Creating demo player")
+      player = PlayerCore(Constants.demoPlayerLabel, isDemoPlayer: true)
+      demoPlayer = player
     }
     player.start()
     return player
   }
 
-  private func _playerExists(withLabel label: String) -> Bool {
-    var exists = false
-    exists = _playerCores.first(where: { $0.label == label }) != nil
-    return exists
+  @MainActor
+  private func playerExists(withLabel label: String) -> Bool {
+    return playerCores.first(where: { $0.label == label }) != nil
   }
 
   @MainActor
-  private func _createNewPlayerCore(withLabel label: String? = nil) -> PlayerCore {
+  func createNewPlayerCore(withLabel label: String? = nil) -> PlayerCore {
     Logger.log.debug("Creating PlayerCore instance with ID \(label?.quoted ?? "nil")")
     let pc: PlayerCore
     if let label = label {
-      guard !_playerExists(withLabel: label) else {
+      guard !playerExists(withLabel: label) else {
         Logger.fatal("Cannot create new PlayerCore: a player already exists with label \(label.quoted)")
       }
       pc = PlayerCore(label)
     } else {
       let playerLabel = AppData.label(forPlayerCore: playerCoreCounter)
-      while _playerExists(withLabel: playerLabel) {
+      while playerExists(withLabel: playerLabel) {
         playerCoreCounter += 1
       }
       pc = PlayerCore(playerLabel)
@@ -225,23 +185,13 @@ class PlayerManager {
     }
     Logger.log.debug("Successfully created PlayerCore \(pc.label)")
 
-    _playerCores.append(pc)
+    playerCores.append(pc)
     return pc
   }
 
   @MainActor
-  func createNewPlayerCore(withLabel label: String? = nil) -> PlayerCore {
-    var pc: PlayerCore? = nil
-    lock.withLock {
-      pc = _createNewPlayerCore(withLabel: label)
-    }
-    return pc!
-  }
-
   func removePlayer(withLabel label: String) {
-    lock.withLock {
-      _playerCores.removeAll(where: { (player) in player.label == label })
-      Logger.log.debug("Removed player from app-wide list: \(label.quoted); \(_playerCores.count) remain")
-    }
+    playerCores.removeAll(where: { (player) in player.label == label })
+    Logger.log.debug("Removed player from app-wide list: \(label.quoted); \(playerCores.count) remain")
   }
 }
