@@ -26,7 +26,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   /// Only needs to be updated at start of each pinch gesture: only used for the life of the gesture.
   private var currrentOperation: PinchOperation = .none
   /// If there is an active zoom, we need to know if it is the result of a previous pinch gesture, or done through some external mechanism.
-  private var isZoomedViaGesture: Bool = false
+  private(set) var isZoomedViaGesture: Bool = false
 
   // Zoom constants
   private let pinchZoomMultiplier: Double = 1.0
@@ -39,6 +39,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   private var pinchOriginInVideo: NSPoint?
   private var pinchOriginInVideoUnit: NSPoint?
   private var pinchScale: CGFloat = 1.0
+  /// The video-zoom value at the start of the most recent pinch
   private var pinchInitialZoom: Double = 1.0
 
   private enum PanAxis {
@@ -90,7 +91,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         return .videoZoom
       }
       return .none
-    } else if isWindowMaximized() && wantsToGrow {
+    } else if isWindowMaximized(windowFrame: window.frame) && wantsToGrow {
       // Not full screen, no prev zoom
       if pinchAction == .windowSizeOrFullScreen {
         // Enter FS and end the current gesture
@@ -105,7 +106,22 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       }
     }
     return .windowScale
+  }
 
+  /// Pinch-to-zoom is only enabled while window is maximized on screen.
+  /// Checks if the window (described by the gien geomeetry) is still maximized on screen, and if not, resets the zoom & pan values to zero.
+  /// Makes no changes if pinch-to-zoom was not used (e.g., if zoomed using mpv key commands).
+  func resetZoomIfNotMaximized(_ targetGeo: PWinGeometry) {
+    // Don't reset if still magnifying
+    guard !pwc.isMagnifying else { return }
+    guard isZoomedViaGesture, !targetGeo.mode.isFullScreen, !isWindowMaximized(windowFrame: targetGeo.windowFrame) else { return }
+    pwc.log.verbose("Window is no longer maximized: reseting video-zoom, video-pan-x, video-pan-y")
+
+    guard pwc.player.isActive else { return }
+    pwc.player.mpv.setDouble(MPVOption.Video.videoZoom, 0.0, level: .verbose)
+    pwc.player.mpv.setDouble(MPVOption.Video.videoPanX, 0.0, level: .verbose)
+    pwc.player.mpv.setDouble(MPVOption.Video.videoPanY, 0.0, level: .verbose)
+    isZoomedViaGesture = false
   }
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
@@ -154,11 +170,11 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     }  // end switch
   }
 
-  fileprivate func isWindowMaximized() -> Bool {
+  fileprivate func isWindowMaximized(windowFrame: NSRect) -> Bool {
     guard let window = pwc.window, let screen = window.screen else { return false }
     let screenFrame = screen.visibleFrame
-    let heightIsMax = window.frame.height >= screenFrame.height
-    let widthIsMax = window.frame.width >= screenFrame.width
+    let heightIsMax = windowFrame.height >= screenFrame.height
+    let widthIsMax = windowFrame.width >= screenFrame.width
     // If viewport is not locked, the window must be the size of the screen in both directions before triggering full screen.
     // If viewport is locked, window is considered at maximum if either of its sides is filling all the available space in its dimension.
     return (heightIsMax && widthIsMax) || (Preference.bool(for: .lockViewportToVideoSize) && (heightIsMax || widthIsMax))
@@ -172,7 +188,8 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     switch recognizer.state {
 
     case .began:
-      // Fullscreen: pinch to zoom video around the pinch origin.
+      // Fullscreen or maximized window: pinch to zoom video around the pinch origin.
+      pwc.isMagnifying = true
       lastMagnification = recognizer.magnification
       pinchScale = 1.0
       // Update from prefs
@@ -192,6 +209,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       lastMagnification = recognizer.magnification
     case .ended:
       applyVideoZoom(scaleMultiplier: pinchScale)
+      pwc.isMagnifying = false
     case .cancelled, .failed:
       break
     default:

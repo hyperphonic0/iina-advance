@@ -1497,7 +1497,7 @@ struct Preference {
       .videoThreads: 0,
     .hardwareDecoder: HardwareDecoderOption.autoCopy.rawValue,
     .forceDedicatedGPU: false,
-    .loadIccProfile: true,
+    .loadIccProfile: false,
     .enableHdrSupport: false,
     .enableToneMapping: false,
     .toneMappingTargetPeak: 0,

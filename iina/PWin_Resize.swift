@@ -225,6 +225,8 @@ extension PlayerWindowController {
       viewportView.apply(newGeometry, transitionCategory)
     }
 
+    magnificationHandler.resetZoomIfNotMaximized(newGeometry)
+
     // Update floating control bar position if applicable
     adjustFloatingControllerOrigin(for: newGeometry)
 
