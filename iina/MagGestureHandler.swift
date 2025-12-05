@@ -63,11 +63,11 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     let wantsToGrow = recognizer.magnification > 0
     let isPinchToZoomEnabled = Preference.bool(for: .enablePinchToVideoZoom)
 
-    if isZoomedViaGesture {
-      // If zoom is already in progress, give it priority
-      return .videoZoom
-    } else if pwc.isFullScreen {
-      if wantsToShrink && pinchAction == .windowSizeOrFullScreen {
+    if pwc.isFullScreen {
+      if isZoomedViaGesture {
+        // If zoom is already in progress, give it priority
+        return .videoZoom
+      } else if wantsToShrink && pinchAction == .windowSizeOrFullScreen {
         // Exit FS and end the current gesture
         /// Change `windowedModeGeo` so that the window still fills the screen after leaving full screen, rather than whatever size it was
         pwc.windowedModeGeo = pwc.windowedModeGeo.clone(windowFrame: screen.visibleFrame, screenID: screen.screenID)
@@ -90,20 +90,23 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         }
         return .none
       } else if isPinchToZoomEnabled {
+        // Will do nothing if already at min zoom
         return .videoZoom
       }
       return .none
-    } else if isWindowMaximized(windowFrame: window.frame) && wantsToGrow {
-      // Not full screen, no prev zoom
-      if pinchAction == .windowSizeOrFullScreen {
-        // Enter FS and end the current gesture
+    } else if isWindowMaximized(windowFrame: window.frame) {
+      // Maximized window
+      if wantsToGrow, pinchAction == .windowSizeOrFullScreen {
+        // Enter FS and end the current gesture.
+        // Favor this over any kind of video zoom.
         pwc.isAnimatingLayoutTransition = true
         pwc.toggleWindowFullScreen()
         /// See note above
         recognizer.state = .ended
         pwc.isMagnifying = false
         return .none
-      } else if isPinchToZoomEnabled {
+      } else if isPinchToZoomEnabled, wantsToGrow || isZoomedViaGesture {
+        // Continue zooming if already zoomed; otherwise start via expand pinch motion
         return .videoZoom
       }
     }
@@ -117,10 +120,14 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     // Don't reset if still magnifying
     guard !pwc.isMagnifying else { return }
     guard isZoomedViaGesture, !targetGeo.mode.isFullScreen, !isWindowMaximized(windowFrame: targetGeo.windowFrame) else { return }
-    pwc.log.verbose("Window is no longer maximized: reseting video-zoom, video-pan-x, video-pan-y")
+    resetZoom()
+  }
 
+  func resetZoom() {
+    guard isZoomedViaGesture else { return }
     guard pwc.player.isActive else { return }
     pwc.isMagnifying = true
+    pwc.log.verbose("Resetting pinch-to-zoom props (video-zoom, video-pan-x, video-pan-y)")
 
     // Cancel any prev timer first
     resetTimerSubscription?.cancel()

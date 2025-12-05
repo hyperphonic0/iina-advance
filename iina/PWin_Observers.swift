@@ -91,6 +91,7 @@ extension PlayerWindowController {
       .useLegacyWindowedMode,
       .lockViewportToVideoSize,
       .allowVideoToOverlapCameraHousing,
+      .enablePinchToVideoZoom,
     ]
 
     let ncList: [NotificationCenter: [NotificationHandler.NCObserver]]
@@ -297,6 +298,11 @@ extension PlayerWindowController {
           // No need for animation
           player.updateMpvKeepaspectWindowSynchronously()
         }
+      }
+    case .enablePinchToVideoZoom:
+      if let enabled = newValue as? Bool, !enabled {
+        log.debug("Pref \(key.rawValue.quoted) changed to \(enabled): will reset any active zoom from pinch")
+        magnificationHandler.resetZoom()
       }
     case .hideWindowsWhenInactive:
       animationPipeline.submitInstantTask({ [self] in
