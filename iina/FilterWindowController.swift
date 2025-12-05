@@ -37,13 +37,19 @@ class FilterWindowController: WindowController, NSWindowDelegate {
   @IBOutlet weak var addActiveFilterButton: NSButton!
   @IBOutlet weak var removeButton: NSButton!
 
+  @MainActor
   let filterType: String
 
+  @MainActor
   var filters: [MPVFilter] = []
+  @MainActor
   var savedFilters: [SavedFilter] = []
+  @MainActor
   private var filterIsSaved: [Bool] = []
 
+  @MainActor
   private var currentFilterEditIndex: Int?
+  @MainActor
   private var currentSavedFilterEditIndex: Int?
 
   init(filterType: String, _ autosaveName: WindowAutosaveName) {
@@ -149,7 +155,7 @@ class FilterWindowController: WindowController, NSWindowDelegate {
   }
 
   @MainActor
-  func addFilter(_ filter: MPVFilter, onSuccess: @escaping () -> Void) {
+  func addFilter(_ filter: MPVFilter, onSuccess: @Sendable @MainActor @escaping () -> Void) {
     guard let player = PlayerCore.lastActive else {
       Utility.showAlert("filter.no_player", sheetWindow: window)
       return
@@ -623,10 +629,8 @@ class NewFilterSheetViewController: NSViewController, NSTableViewDelegate, NSTab
     }
     let instance = FilterPresetInstance(from: preset, params: params)
     // create filter
-    filterWindow.addFilter(preset.transformer(instance), onSuccess: {
-      DispatchQueue.main.async {
-        PlayerCore.lastActive?.sendOSD(.addFilter(preset.localizedName))
-      }
+    filterWindow.addFilter(preset.transformer(instance), onSuccess: {  @MainActor in
+      PlayerCore.lastActive?.sendOSD(.addFilter(preset.localizedName))
     })
   }
 

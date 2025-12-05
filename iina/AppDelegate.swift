@@ -861,7 +861,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
     Logger.log.debug("Got killRequest! Terminating this instance.")
 
-    RunLoop.main.perform(inModes: [.common]) {
+    Task { @MainActor in
       NSApp.terminate(nil)
     }
   }
@@ -1083,3 +1083,4 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     HistoryController.shared.clearRecentDocuments(sender)
   }
 }
+

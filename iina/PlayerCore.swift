@@ -555,6 +555,7 @@ final class PlayerCore: NSObject {
           }
           pwc.sessionState = pwc.sessionState.newSession()
         }
+        let sessionState = pwc.sessionState
 
         if isInteractivePlayer {
           pwc.openWindow(nil)
@@ -576,7 +577,7 @@ final class PlayerCore: NSObject {
           // Send load file command
           mpv.command(.loadfile, args: [path], checkActive: false)
 
-          if case .restoring(let priorState) = pwc.sessionState {
+          if case .restoring(let priorState) = sessionState {
             priorState.restoreMpvProperties(to: self)
 
             /// Player was already paused in `PlayerSaveState.restoreTo()`.
@@ -763,7 +764,7 @@ final class PlayerCore: NSObject {
       // Initiate application termination. AppKit requires this be done from the main thread,
       // however the main dispatch queue must not be used to avoid blocking the queue as per
       // instructions from Apple.
-      RunLoop.main.perform(inModes: [.common]) {
+      Task { @MainActor in
         NSApp.terminate(nil)
       }
     }
