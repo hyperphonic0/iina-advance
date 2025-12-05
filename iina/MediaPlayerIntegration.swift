@@ -8,38 +8,31 @@
 import Foundation
 import MediaPlayer
 
-class MediaPlayerIntegration {
+final class MediaPlayerIntegration {
   static let shared = MediaPlayerIntegration()
 
-  @Atomic private var enabled = false
+  private var enabled = false
   private let remoteCommand = MPRemoteCommandCenter.shared()
+  private var lastActivePlayer: PlayerCore? = nil
 
   @MainActor
   func update() {
     guard !AppDelegate.shared.isTerminating else { return }
     let newEnablement = Preference.bool(for: .useMediaKeys)
     updateEnablement(to: newEnablement)
+    updateNowPlayingInfo()
   }
 
   @MainActor
   private func updateEnablement(to newEnablement: Bool) {
-    let didChange: Bool = $enabled.withLock {
-      let didChange = $0 != newEnablement
-      if didChange {
-        $0 = newEnablement
-      }
-      return didChange
-    }
-    if didChange {
-      if newEnablement {
-        attachRemoteCommands()
-      } else {
-        detachAllCommands()
-      }
-    }
+    let didChange = enabled != newEnablement
+    guard didChange else { return }
+    enabled = newEnablement
 
     if newEnablement {
-      updateNowPlayingInfo()
+      attachRemoteCommands()
+    } else {
+      detachAllCommands()
     }
   }
 
@@ -48,95 +41,51 @@ class MediaPlayerIntegration {
     updateEnablement(to: false)
   }
 
+  private func buildCmdHandler(forKey normalizedMpvKey: String,
+                               fallbackAction: @escaping (PlayerCore, MPRemoteCommandEvent) -> Void) -> (MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
+    { [self] event in
+      guard let player = lastActivePlayer else { return .commandFailed }
+      player.pwc.executeActionForKey(normalizedMpvKey: normalizedMpvKey, fallbackAction: { player in fallbackAction(player, event) })
+      updateCommandEnablements(for: player)
+      return .success
+    }
+  }
+
+  private func buildCmdHandler(_ commandFunc: @escaping (PlayerCore, MPRemoteCommandEvent) -> Void) -> (MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
+    { [self] event in
+      guard let player = lastActivePlayer else { return .commandFailed }
+      commandFunc(player, event)
+      updateCommandEnablements(for: player)
+      return .success
+    }
+  }
+
   private func attachRemoteCommands() {
     Logger.log.trace("Attaching MediaPlayer remote commands")
-    remoteCommand.playCommand.addTarget { [self] _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.pwc.executeActionForKey(normalizedMpvKey: "PLAY", fallbackAction: {
-        player.resume()
-      })
-      updateCommandEnablements(for: player)
-      return .success
-    }
-    remoteCommand.pauseCommand.addTarget { [self] _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.pwc.executeActionForKey(normalizedMpvKey: "PAUSE", fallbackAction: {
-        player.pause()
-      })
-      updateCommandEnablements(for: player)
-      return .success
-    }
-    remoteCommand.togglePlayPauseCommand.addTarget { [self] _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.pwc.executeActionForKey(normalizedMpvKey: "PLAYPAUSE", fallbackAction: {
-        player.togglePause()
-      })
-      updateCommandEnablements(for: player)
-      return .success
-    }
-    remoteCommand.stopCommand.addTarget { [self] _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.pwc.executeActionForKey(normalizedMpvKey: "STOP", fallbackAction: {
-        player.stop()
-      })
-      updateCommandEnablements(for: player)
-      return .success
-    }
-    remoteCommand.nextTrackCommand.addTarget { [self] _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.pwc.executeActionForKey(normalizedMpvKey: "NEXT", fallbackAction: {
-        player.navigateInPlaylist(nextMedia: true)
-      })
-      updateCommandEnablements(for: player)
-      return .success
-    }
-    remoteCommand.previousTrackCommand.addTarget { [self] _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.pwc.executeActionForKey(normalizedMpvKey: "PREV", fallbackAction: {
-        player.navigateInPlaylist(nextMedia: false)
-      })
-      updateCommandEnablements(for: player)
-      return .success
-    }
-    remoteCommand.changeRepeatModeCommand.addTarget { [self] _ in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.nextLoopMode()
-      updateCommandEnablements(for: player)
-      return .success
-    }
+    remoteCommand.playCommand.addTarget(handler: buildCmdHandler(forKey: "PLAY", fallbackAction: { p, _ in p.resume() }))
+    remoteCommand.pauseCommand.addTarget(handler: buildCmdHandler(forKey: "PAUSE", fallbackAction: { p, _ in p.pause() }))
+    remoteCommand.togglePlayPauseCommand.addTarget(handler: buildCmdHandler(forKey: "PLAYPAUSE", fallbackAction: { p, _ in p.togglePause() }))
+    remoteCommand.stopCommand.addTarget(handler: buildCmdHandler(forKey: "STOP", fallbackAction: { p, _ in p.stop() }))
+    remoteCommand.nextTrackCommand.addTarget(handler: buildCmdHandler(forKey: "NEXT", fallbackAction: { p, _ in p.navigateInPlaylist(nextMedia: true) }))
+    remoteCommand.previousTrackCommand.addTarget(handler: buildCmdHandler(forKey: "PREV", fallbackAction: { p, _ in p.navigateInPlaylist(nextMedia: false) }))
+    remoteCommand.changeRepeatModeCommand.addTarget(handler: buildCmdHandler{ player, _ in player.nextLoopMode() })
     remoteCommand.changeShuffleModeCommand.isEnabled = false
     // remoteCommand.changeShuffleModeCommand.addTarget {})
     remoteCommand.changePlaybackRateCommand.supportedPlaybackRates = [0.5, 1, 1.5, 2]
-    remoteCommand.changePlaybackRateCommand.addTarget { [self] event in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
+    remoteCommand.changePlaybackRateCommand.addTarget(handler: buildCmdHandler{ player, event in
       player.setSpeed(Double((event as! MPChangePlaybackRateCommandEvent).playbackRate))
-      updateCommandEnablements(for: player)
-      return .success
-    }
+    })
     remoteCommand.skipForwardCommand.preferredIntervals = [15]
-    remoteCommand.skipForwardCommand.addTarget { [self] event in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.pwc.executeActionForKey(normalizedMpvKey: "GO_FORWARD", fallbackAction: {
-        player.seek(relativeSecond: (event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
-      })
-      updateCommandEnablements(for: player)
-      return .success
-    }
+    remoteCommand.skipForwardCommand.addTarget(handler: buildCmdHandler(forKey: "GO_FORWARD", fallbackAction: { player, event in
+      player.seek(relativeSecond: (event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
+    }))
     remoteCommand.skipBackwardCommand.preferredIntervals = [15]
-    remoteCommand.skipBackwardCommand.addTarget { [self] event in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
-      player.pwc.executeActionForKey(normalizedMpvKey: "GO_BACK", fallbackAction: {
-        player.seek(relativeSecond: -(event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
-      })
-      updateCommandEnablements(for: player)
-      return .success
-    }
-    remoteCommand.changePlaybackPositionCommand.addTarget { [self] event in
-      guard let player = PlayerCore.lastActive else { return .commandFailed }
+    remoteCommand.skipBackwardCommand.addTarget(handler: buildCmdHandler(forKey: "GO_BACK", fallbackAction: { player, event in
+      player.seek(relativeSecond: -(event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
+    }))
+    remoteCommand.changePlaybackPositionCommand.addTarget(handler: buildCmdHandler{ player, event in
       player.seek(absoluteSecond: (event as! MPChangePlaybackPositionCommandEvent).positionTime)
-      updateCommandEnablements(for: player)
-      return .success
-    }
+    })
   }
 
   private func detachAllCommands() {
@@ -179,6 +128,7 @@ class MediaPlayerIntegration {
       updateEnablement(to: false)
       return
     }
+    self.lastActivePlayer = activePlayer
 
     if activePlayer.info.currentMediaAudioStatus.isAudio {
       info[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue

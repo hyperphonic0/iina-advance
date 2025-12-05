@@ -26,7 +26,7 @@ extension PlayerWindowController {
   /// Returns true if handled (or ignored), false if not.
   /// If `fallbackAction` is given, always returns true.
   @discardableResult
-  func executeActionForKey(normalizedMpvKey: String, fallbackAction: (() -> Void)? = nil) -> Bool {
+  func executeActionForKey(normalizedMpvKey: String, fallbackAction: ((PlayerCore) -> Void)? = nil) -> Bool {
     if let keyBinding = player.keyBindingContext.matchActiveKeyBinding(endingWith: normalizedMpvKey) {
       if keyBinding.normalizedMpvKey == Constants.anyUnicodeKey {
         // Matched ANY_UNICODE: just pass the key through to mpv. It will know what to do with it.
@@ -39,7 +39,7 @@ extension PlayerWindowController {
 
     if let fallbackAction {
       log.verbose("Executing fallback action for key \(normalizedMpvKey)")
-      fallbackAction()
+      fallbackAction(player)
       return true
     }
 
