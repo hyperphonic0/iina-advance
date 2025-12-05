@@ -78,12 +78,6 @@ extension PlayerWindowController {
                                       windowedModeScreen: windowedModeScreen,
                                       isWindowInitialLayout: isWindowInitialLayout)
 
-
-    log.verbose("[\(transitionName)] INPUT_GEO:  \(inputGeometry)")
-    log.verbose("[\(transitionName)] CLOSE_OLD:  \(transition.closeOldPanelsGeometry?.description ?? "nil")")
-    log.verbose("[\(transitionName)] MOVE_SCALE: \(transition.moveAndScaleGeometry?.description ?? "nil")")
-    log.verbose("[\(transitionName)] OUTPUT_GEO\(outputGeoExplicit == nil ? "" : "(given)"): \(outputGeometry)")
-
     return transition
   }
 
@@ -214,7 +208,12 @@ extension PlayerWindowController {
       }
     }
 
-    log.verbose("[\(transition.name)] Task durations: ShowOldFadeables=\(showFadeableViewsDuration) FadeOutOldViews=\(fadeOutOldViewsDuration), CloseOld=\(closeOldPanelsDuration) FadeInNew=\(fadeInNewViewsDuration) OpenFinal=\(openFinalPanelsDuration)")
+    log.verbose("[\(transition.name)] INPUT_GEO:  \(transition.inputGeometry)")
+    log.verbose("[\(transition.name)] CLOSE_OLD:  \(transition.closeOldPanelsGeometry?.description ?? "nil")")
+    log.verbose("[\(transition.name)] MOVE_SCALE: \(transition.moveAndScaleGeometry?.description ?? "nil")")
+    log.verbose("[\(transition.name)] OUTPUT_GEO: \(transition.outputGeometry)")
+
+    log.verbose("[\(transition.name)] Durations: ShowOldFadeables=\(showFadeableViewsDuration) FadeOutOldViews=\(fadeOutOldViewsDuration), CloseOld=\(closeOldPanelsDuration) FadeInNew=\(fadeInNewViewsDuration) OpenFinal=\(openFinalPanelsDuration)")
 
     var tasks: [IINAAnimation.Task] = []
 

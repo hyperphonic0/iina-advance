@@ -92,7 +92,7 @@ extension PlayerWindowController {
     
     // Always need to execute this step. But may not need to use an animation
     var needsShowFadeablesAnimation: Bool {
-      return !isWindowInitialLayout && !outputLayout.isInteractiveMode && !isTogglingFullScreen
+      return !isWindowInitialLayout && !outputLayout.isInteractiveMode && !isTogglingFullScreen && !isOpeningOrClosingAnySidebar
     }
 
     /// Returns true, even if only needed temporarily
