@@ -6,7 +6,7 @@
 //  Copyright © 2023 lhc. All rights reserved.
 //
 
-import Foundation
+import Combine
 
 /// Provides Pinch to Zoom feature.
 final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
@@ -28,13 +28,15 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   /// If there is an active zoom, we need to know if it is the result of a previous pinch gesture, or done through some external mechanism.
   private(set) var isZoomedViaGesture: Bool = false
 
+  private var resetTimerSubscription: AnyCancellable?
+
   // Zoom constants
-  private let pinchZoomMultiplier: Double = 1.0
+  private let pinchZoomMultiplier: Double = 1.0  // increase to accelerate zoom
   private let pinchMinZoom: Double = 1.0
   private var pinchMaxZoom: Double = 1.0  // will be updated at start of every pinch gesture
+  private let zoomResetFPS = 1.0 / 60
 
   // Zoom variables
-  private var lastMagnification: CGFloat = 0.0
   private var pinchOriginInWindow: NSPoint?
   private var pinchOriginInVideo: NSPoint?
   private var pinchOriginInVideoUnit: NSPoint?
@@ -118,10 +120,29 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     pwc.log.verbose("Window is no longer maximized: reseting video-zoom, video-pan-x, video-pan-y")
 
     guard pwc.player.isActive else { return }
-    pwc.player.mpv.setDouble(MPVOption.Video.videoZoom, 0.0, level: .verbose)
-    pwc.player.mpv.setDouble(MPVOption.Video.videoPanX, 0.0, level: .verbose)
-    pwc.player.mpv.setDouble(MPVOption.Video.videoPanY, 0.0, level: .verbose)
-    isZoomedViaGesture = false
+    pwc.isMagnifying = true
+
+    // Cancel any prev timer first
+    resetTimerSubscription?.cancel()
+
+    let mpvZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
+    let currentZoom = max(pinchMinZoom, mpvScale(fromZoom: mpvZoom))
+    // Shrink the zoom by this multiplier at every redraw (1.0 == no change)
+    pinchScale = 1.0 - (zoomResetFPS * currentZoom)
+
+    resetTimerSubscription = Timer.publish(every: zoomResetFPS, on: .main, in: .common)
+      .autoconnect()
+      .sink { [self] time in
+        guard isZoomedViaGesture else {
+          pwc.log.verbose("Cancelling timer")
+          pwc.isMagnifying = false
+          resetTimerSubscription?.cancel()
+          return
+        }
+        let currentZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
+        pinchInitialZoom = max(pinchMinZoom, mpvScale(fromZoom: currentZoom))
+        applyVideoZoom(scaleMultiplier: pinchScale)
+      }
   }
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
@@ -190,7 +211,6 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     case .began:
       // Fullscreen or maximized window: pinch to zoom video around the pinch origin.
       pwc.isMagnifying = true
-      lastMagnification = recognizer.magnification
       pinchScale = 1.0
       // Update from prefs
       pinchMaxZoom = Preference.double(for: .pinchMaxZoom)
@@ -206,7 +226,6 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     case .changed:
       pinchScale = recognizer.magnification + 1.0
       applyVideoZoom(scaleMultiplier: pinchScale)
-      lastMagnification = recognizer.magnification
     case .ended:
       applyVideoZoom(scaleMultiplier: pinchScale)
       pwc.isMagnifying = false
@@ -255,7 +274,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     let zoomProp = mpvZoom(fromScale: s1)
     let bounds = pwc.videoView.bounds
     let rect = videoRectInView() ?? bounds
-    pwc.log.verbose("Zooming: \(s0) -> \(s1) -> \(zoomProp)")
+    pwc.log.trace("Zooming from pinch: \(s0) -> \(s1) -> \(zoomProp)")
 
     let origin = pinchOriginInVideoUnit ?? NSPoint(x: 0.5, y: 0.5)
     // Adjust pan to keep the pinch origin under the cursor relative to the current zoom.
