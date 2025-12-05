@@ -754,7 +754,7 @@ extension ConfTableViewController:  NSMenuDelegate {
     self.confTableState.addUserConf(confName: newName, filePath: newFilePath)
   }
 
-  /*
+  /**
    Action: Import conf file(s).
    Checks that each file can be opened and parsed and if any cannot, prints an error and does nothing.
    If any of the imported files would overwrite an existing one:
@@ -769,86 +769,80 @@ extension ConfTableViewController:  NSMenuDelegate {
     // Return immediately, and import (or fail to) asynchronously
     let confTableState = confTableState
     let window = tableView.window
-    DispatchQueue.global(qos: .userInitiated).async {
-      Logger.log("Importing input conf files: \(fileList)", level: .verbose)
+    Logger.log.verbose("Importing input conf files: \(fileList)")
 
-      // confName -> (srcFilePath, dstFilePath)
-      var createdConfDict: [String: (String, String)] = [:]
+    // confName -> (srcFilePath, dstFilePath)
+    var createdConfDict: [String: (String, String)] = [:]
 
-      for filePath in fileList {
-        let url = URL(fileURLWithPath: filePath)
-        // If conf is builtin, its name won't match its filename exactly, so need to look it up
-        let confName = ConfTableState.getBuiltinConfName(forFilePath: filePath) ?? url.deletingPathExtension().lastPathComponent
+    for filePath in fileList {
+      let url = URL(fileURLWithPath: filePath)
+      // If conf is builtin, its name won't match its filename exactly, so need to look it up
+      let confName = ConfTableState.getBuiltinConfName(forFilePath: filePath) ?? url.deletingPathExtension().lastPathComponent
 
-        guard InputConfFile.tryLoadingFile(at: filePath) else {
-          DispatchQueue.main.async {
-            Logger.log("Error reading conf file \(filePath.pii.quoted); aborting import", level: .error)
-            Utility.showAlert("keybinding_config.error", arguments: [url.lastPathComponent], sheetWindow: window)
-          }
-          // Do not import any files if we can't parse one.
-          // This probably means the user doesn't know what they are doing, or something is very wrong
-          return
+      guard InputConfFile.tryLoadingFile(at: filePath) else {
+        DispatchQueue.main.async {
+          Logger.log.error("Error reading conf file \(filePath.pii.quoted); aborting import")
+          Utility.showAlert("keybinding_config.error", arguments: [url.lastPathComponent], sheetWindow: window)
         }
-        var newName = confName
-        var newFilePath: String
-        if let filePath = ConfTableViewController.getFilePathIfValid(forConfName: newName, compareWith: confTableState) {
-          newFilePath = filePath
-        } else if renameDuplicates {
-          (newName, newFilePath) = ConfTableViewController.findNewNameForDuplicate(originalName: newName, compareWith: confTableState)
-        } else {
-          // Looks like file exists, but renameDuplicates is disabled
-          newFilePath = Utility.buildConfFilePath(for: newName)
-
-          if filePath.equalsIgnoreCase(newFilePath) {
-            // Edge case
-            Logger.log("File is already present in input_conf directory but was missing from conf list; adding it: \(filePath.pii.quoted)")
-          } else {
-            DispatchQueue.main.sync {  // block because we need user input to proceed
-              guard self.handlePossibleExistingFile(filePath: newFilePath) else {
-                // Do not proceed if user does not want to delete.
-                Logger.log("Aborting conf file import: user did not delete file: \(newFilePath.pii.quoted)")
-                return
-              }
-            }
-          }
-        }
-
-        createdConfDict[newName] = (filePath, newFilePath)
-      }
-
-      // Copy files one by one. Allow copy errors but keep track of which failed
-      var failedNameSet = Set<String>()
-      for (newName, (filePath, newFilePath)) in createdConfDict {
-        if filePath != newFilePath {
-          do {
-            Logger.log("Import: copying: \(filePath.pii.quoted) -> \(newFilePath.pii.quoted)")
-            try FileManager.default.copyItem(atPath: filePath, toPath: newFilePath)
-          } catch let error {
-            DispatchQueue.main.async {
-              Logger.log("Import: failed to copy: \(filePath.pii.quoted) -> \(newFilePath.quoted): \(error.localizedDescription)", level: .error)
-              Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
-            }
-            failedNameSet.insert(newName)
-          }
-        }
-      }
-
-      // Filter failed rows from being added to UI
-      let confsToAdd: [String: String] = createdConfDict.filter{ !failedNameSet.contains($0.key) }.mapValues { $0.1 }
-      guard !confsToAdd.isEmpty else {
+        // Do not import any files if we can't parse one.
+        // This probably means the user doesn't know what they are doing, or something is very wrong
         return
       }
-      Logger.log("Successfully imported: \(confsToAdd.count) input conf files")
+      var newName = confName
+      var newFilePath: String
+      if let filePath = ConfTableViewController.getFilePathIfValid(forConfName: newName, compareWith: confTableState) {
+        newFilePath = filePath
+      } else if renameDuplicates {
+        (newName, newFilePath) = ConfTableViewController.findNewNameForDuplicate(originalName: newName, compareWith: confTableState)
+      } else {
+        // Looks like file exists, but renameDuplicates is disabled
+        newFilePath = Utility.buildConfFilePath(for: newName)
 
-      // update prefs & refresh UI
-      DispatchQueue.main.async {
-        confTableState.addUserConfs(confsToAdd)
+        if filePath.equalsIgnoreCase(newFilePath) {
+          // Edge case
+          Logger.log.debug("File is already present in input_conf directory but was missing from conf list; adding it: \(filePath.pii.quoted)")
+        } else {
+          guard self.handlePossibleExistingFile(filePath: newFilePath) else {
+            // Do not proceed if user does not want to delete.
+            Logger.log.debug("Aborting conf file import: user did not delete file: \(newFilePath.pii.quoted)")
+            return
+          }
+        }
+      }
+
+      createdConfDict[newName] = (filePath, newFilePath)
+    }
+
+    // Copy files one by one. Allow copy errors but keep track of which failed
+    var failedNameSet = Set<String>()
+    for (newName, (filePath, newFilePath)) in createdConfDict {
+      if filePath != newFilePath {
+        do {
+          Logger.log("Import: copying: \(filePath.pii.quoted) -> \(newFilePath.pii.quoted)")
+          try FileManager.default.copyItem(atPath: filePath, toPath: newFilePath)
+        } catch let error {
+          DispatchQueue.main.async {
+            Logger.log.error("Import: failed to copy: \(filePath.pii.quoted) -> \(newFilePath.quoted): \(error.localizedDescription)")
+            Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
+          }
+          failedNameSet.insert(newName)
+        }
       }
     }
+
+    // Filter failed rows from being added to UI
+    let confsToAdd: [String: String] = createdConfDict.filter{ !failedNameSet.contains($0.key) }.mapValues { $0.1 }
+    guard !confsToAdd.isEmpty else {
+      return
+    }
+    Logger.log("Successfully imported: \(confsToAdd.count) input conf files")
+
+    // update prefs & refresh UI
+    confTableState.addUserConfs(confsToAdd)
   }
 
-  // Check whether file already exists at `filePath`.
-  // If it does, prompt the user to overwrite it or show it in Finder. Return true if user agrees, false otherwise
+  /// Check whether file already exists at `filePath`.
+  /// If it does, prompt the user to overwrite it or show it in Finder. Return true if user agrees, false otherwise
   @MainActor
   private func handlePossibleExistingFile(filePath: String) -> Bool {
     let fm = FileManager.default
@@ -864,7 +858,7 @@ extension ConfTableViewController:  NSMenuDelegate {
           return true
         } catch  {
           Utility.showAlert("error_deleting_file", sheetWindow: self.tableView.window)
-          Logger.log("Failed to remove file: \(filePath.pii.quoted)': \(error)")
+          Logger.log.error("Failed to remove file: \(filePath.pii.quoted)': \(error)")
           return false
         }
       } else {
