@@ -190,7 +190,7 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
       showLoadingUI()
       // If app is starting up, need to prevent reload from happening before the history has finished loading,
       // or else it will immediately show as an empty list.
-      if HistoryController.shared.historyListVersion > 0 {
+      if HistoryController.shared.started && HistoryController.shared.historyListVersion > 0 {
         reloadHistoryData()
       } else {
         // Load history if not started already:
@@ -267,6 +267,17 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
     let unfilteredHistory = HistoryController.shared.history
     let searchString = searchString
 
+    guard HistoryController.shared.started else {
+      log.warn("History window: failed to reload data. History service is stopped! Something is wrong. Aborting")
+      // History service should not be stopped here. Something went wrong.
+      DispatchQueue.main.async { [self] in
+        showLoadingMsgTimer.cancel()
+        // TODO: show error message instead of appearing to hang on load
+        showLoadingUI()
+      }
+      return
+    }
+
     let historyList: [PlaybackHistory]
     if searchString.isEmpty {
       historyList = unfilteredHistory
@@ -301,7 +312,7 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
 
     DispatchQueue.main.async { [self] in
       guard isInitialLoad || isTicketStillValid(ticket) else { return }  // check ticket
-
+      
       showLoadingMsgTimer.cancel()
 
       // Save selection to restore later
@@ -517,7 +528,9 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
     /// The background color for a `NSTableRowView` will default to the parent's background color, which results in an
     /// unwanted additive effect for translucent backgrounds. Just make each row transparent.
     rowView.wantsLayer = true
-    if outlineView.item(atRow: row) as? PlaybackHistory == nil {
+    let item = outlineView.item(atRow: row)
+    // do not color bg of Loading placeholder
+    if let item, item as? PlaybackHistory == nil, (item as? String) != loadingKey {
       rowView.backgroundColor = sectionHighlightColor
     } else {
       rowView.backgroundColor = .clear

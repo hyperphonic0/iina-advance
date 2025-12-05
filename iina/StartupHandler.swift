@@ -401,8 +401,6 @@ final class StartupHandler {
   /// Attempt to exactly restore play state & UI from last run of IINA (for given player)
   @MainActor
   private func restorePlayerWindowFromPriorLaunch(_ savedWindow: SavedWindow, playerID id: String) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     let log = UIState.shared.log
     log.debug("Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
 
@@ -416,12 +414,12 @@ final class StartupHandler {
     let pwc = PlayerWindowController(playerCore: player, geoSet: savedState.geoSet, initialLayout: savedState.layoutState)
     assert(pwc.sessionState.isNone, "Invalid sessionState for restore: \(pwc.sessionState)")
     pwc.sessionState = .restoring(playerState: savedState)
-    // Need to call this explicitly if not using a XIB
-    player.pwc.windowDidLoad()
-
     addWindowToRestore(savedWindow, pwc)
 
+    // Need to call this explicitly if not using a XIB
+    player.pwc.windowDidLoad()
     player.start()
+    // This will call `player.openURLs()` when done
     savedState.restoreTo(player)
   }
 

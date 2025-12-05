@@ -578,9 +578,6 @@ struct PlayerSaveState: CustomStringConvertible {
 
     info.priorStateBuildNumber = int(for: .buildNumber) ?? info.priorStateBuildNumber
 
-    let pwc = player.pwc!
-    pwc.geo = self.geoSet
-
     log.verbose("Screens from prior launch: \(self.screens)")
 
     // TODO: map current geometry to prior screen. Deal with mismatch
@@ -641,6 +638,8 @@ struct PlayerSaveState: CustomStringConvertible {
     if let vidDisabled = int(for: .vidDisabled) {
       info.vidDisabled = vidDisabled >= 0 ? vidDisabled : nil
     }
+
+    let pwc = player.pwc!
 
     // Prevent "seek" OSD from appearing unncessarily after loading finishes
     pwc.osd.lastPlaybackPosition = info.playbackPositionSec

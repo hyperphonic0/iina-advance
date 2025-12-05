@@ -20,7 +20,7 @@ class HistoryController {
     AppDelegate.isInteractiveLaunch
   }
 
-  var started = false
+  private(set) var started = false
 
   let plistURL: URL
 
@@ -131,23 +131,31 @@ class HistoryController {
     }
   }
 
-  func stop() {
+  /// Use `shutdown: true` only if application is shutting down
+  func stop(shutdown: Bool = false) {
+    log.debug("Stopping History")
     folderMonitor.stopMonitoring()
 
     // Flush workQueue
-    $tasksOutstanding.withLock { _ in
-      isAppTerminating = true
-    }
-    workDQ.async { [self] in
-      log.debug("Reached end of workDQ")
+    if shutdown {
+      $tasksOutstanding.withLock { _ in
+        isAppTerminating = true
+      }
     }
 
-    fileExistsDQ.async { [self] in
-      log.debug("Reached end of fileExistsDQ; sending shutdown acknowledgment")
-      fileExistsDQ_ShutdownAck = true
-      // Ping ShutdownHandler:
-      DispatchQueue.main.async {
-        NotificationCenter.default.post(Notification(name: .iinaHistoryTasksFinished))
+    workDQ.async { [self] in
+      log.debug("Reached end of workDQ")
+      started = false
+    }
+
+    if shutdown {
+      fileExistsDQ.async { [self] in
+        log.debug("Reached end of fileExistsDQ; sending shutdown acknowledgment")
+        fileExistsDQ_ShutdownAck = true
+        // Ping ShutdownHandler:
+        DispatchQueue.main.async {
+          NotificationCenter.default.post(Notification(name: .iinaHistoryTasksFinished))
+        }
       }
     }
   }
@@ -155,6 +163,10 @@ class HistoryController {
   private func saveHistoryToFile() {
     guard historyEnabled else {
       log.trace("History disabled; skipping history save")
+      return
+    }
+    guard FileManager.default.isWritableFile(atPath: plistURL.path) else {
+      log.error("Cannot save playback history to disk! Cannot write to file \(plistURL.path.pii.quoted)")
       return
     }
     let sw = Utility.Stopwatch()
@@ -170,10 +182,14 @@ class HistoryController {
     log.verbose("Saving history done, in \(sw.secElapsedString)")
   }
 
-  private func readHistoryFromFile() {
+  /// Returns `true` if successful; `false` if not
+  private func readHistoryFromFile() -> Bool {
     assert(DispatchQueue.isExecutingIn(workDQ))
     // Avoid logging a scary error if the file does not exist.
-    guard FileManager.default.fileExists(atPath: plistURL.path) else { return }
+    guard FileManager.default.isReadableFile(atPath: plistURL.path) else {
+      log.error("Cannot read playback history file \(plistURL.path.pii.quoted)")
+      return false
+    }
 
     do {
       log.verbose("Reading playback history file \(plistURL.path.pii.quoted)")
@@ -182,12 +198,14 @@ class HistoryController {
                                                           from: data)
       guard let historyItemList = deserData as? [PlaybackHistory] else {
         log.error("Failed deserialize PlaybackHistory array from file \(plistURL.path.pii.quoted)!")
-        return
+        return false
       }
       history = historyItemList
       log.verbose("Loaded playback history (entryCount=\(historyItemList.count))")
+      return true
     } catch {
       log.error("Failed to load playback history file \(plistURL.path.pii.quoted): \(error)")
+      return false
     }
   }
 
@@ -205,7 +223,12 @@ class HistoryController {
     // `PK.resumeLastPosition` is toggled.
     fileExistsMap = [:]
 
-    readHistoryFromFile()
+    let didLoadSuccessfully = readHistoryFromFile()
+    guard didLoadSuccessfully else {
+      // Stop the History service. Must not try to write new history if history load failed
+      stop()
+      return
+    }
     // Force a timeout to trigger full status reload prior to calling historyListDidUpdate()
     lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
     historyListDidUpdate()

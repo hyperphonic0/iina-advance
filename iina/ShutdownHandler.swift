@@ -39,7 +39,7 @@ class ShutdownHandler {
       (window.windowController as? WindowController)?.refreshWindowOpenCloseAnimation()
     }
 
-    HistoryController.shared.stop()
+    HistoryController.shared.stop(shutdown: true)
 
     // Normally termination happens fast enough that the user does not have time to initiate
     // additional actions, however to be sure shutdown further input from the user.

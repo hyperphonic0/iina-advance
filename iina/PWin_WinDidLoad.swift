@@ -79,9 +79,6 @@ extension PlayerWindowController {
     pluginView.view.idString = "PluginView"
     quickSettingView.pwc = self
 
-    /// This will init mpv, but we will not add `videoView` until setting the initial layout (see updateHiddenViewsAndConstraints)
-    player.start()
-
     /// Use an animation task to init views, to hopefully prevent partial/redundant draws.
     /// NOTE: this will likely execute *after* `_openWindow()`
     animationPipeline.submitInstantTask{ [self] in
