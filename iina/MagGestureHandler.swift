@@ -8,6 +8,13 @@
 
 import Combine
 
+// Zoom constants
+private let pinchZoomMultiplier: Double = 1.0  // increase to accelerate zoom
+private let pinchMinZoom: Double = 1.0
+private let pinchMinZoomForPan: Double = pinchMinZoom + 0.0001
+private let panSpeed: Double = 2.3
+private let zoomResetFPS = 1.0 / 60
+
 /// Provides Pinch to Zoom feature.
 final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
@@ -17,46 +24,84 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
   unowned var pwc: PlayerWindowController! = nil
 
-  fileprivate enum PinchOperation {
+  /// Only used for PinchActions `.windowSize`, `.windowSizeOrFullScreen`.
+  /// Only needs to be updated at start of each pinch gesture: only used for the life of the gesture.
+  private var currrentResizeOperation: ResizeOperation = .none
+
+  fileprivate enum ResizeOperation {
     case none
     case videoZoom
     case windowScale
   }
-  /// Only used for PinchActions `.windowSize`, `.windowSizeOrFullScreen`.
-  /// Only needs to be updated at start of each pinch gesture: only used for the life of the gesture.
-  private var currrentOperation: PinchOperation = .none
-  /// If there is an active zoom, we need to know if it is the result of a previous pinch gesture, or done through some external mechanism.
-  private(set) var isZoomedViaGesture: Bool = false
-
-  private var resetTimerSubscription: AnyCancellable?
-
-  // Zoom constants
-  private let pinchZoomMultiplier: Double = 1.0  // increase to accelerate zoom
-  private let pinchMinZoom: Double = 1.0
-  private var pinchMaxZoom: Double = 1.0  // will be updated at start of every pinch gesture
-  private let zoomResetFPS = 1.0 / 60
 
   // Zoom variables
   private var pinchOriginInWindow: NSPoint?
   private var pinchOriginInVideo: NSPoint?
   private var pinchOriginInVideoUnit: NSPoint?
-  private var pinchScale: CGFloat = 1.0
+  private var currentPinchScale: CGFloat = 1.0
   /// The video-zoom value at the start of the most recent pinch
   private var pinchInitialZoom: Double = 1.0
+  private var pinchMaxZoom: Double = 1.0  // will be updated at start of every pinch gesture
+
+  /// If there is an active video-zoom, we need to know if it is the result of a previous pinch gesture, or done through some external mechanism.
+  private(set) var isZoomedViaGesture: Bool = false
+  /// Timer used to generate crude "zoom out" operation to reset the video-zoom when window is resized.
+  private var resetTimerSubscription: AnyCancellable?
 
   private enum PanAxis {
     case x
     case y
   }
 
-  private func isAlreadyZoomedViaGesture() -> Bool {
-    guard Preference.bool(for: .enablePinchToVideoZoom) else { return false }
-    let currentZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
-    let isAlreadyZoomed = max(pinchMinZoom, mpvScale(fromZoom: currentZoom)) > pinchMinZoom
-    return isAlreadyZoomed
+  @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
+    guard !pwc.isInInteractiveMode else { return }
+    guard !pwc.isInMiniPlayer || pwc.miniPlayer.isViewportShown else { return }
+    guard !pwc.isAnimatingLayoutTransition else { return }
+
+    let pinchAction: Preference.PinchAction = Preference.enum(for: .pinchAction)
+    switch pinchAction {
+
+    case .none:
+      return
+
+    case .fullScreen:
+      // enter/exit fullscreen
+      guard !pwc.isInMiniPlayer else { return }  // Disallow full screen toggle from pinch while in music mode
+
+      if recognizer.state == .began {
+        let wantsToGrow = recognizer.magnification > 0
+        if wantsToGrow != pwc.isFullScreen {
+          recognizer.state = .recognized
+          pwc.toggleWindowFullScreen()
+        }
+      }
+
+    case .windowSize,
+        .windowSizeOrFullScreen:
+      // Disallow full screen toggle from pinch while in music mode
+      guard !pwc.isInMiniPlayer else { return }
+
+      if recognizer.state == .began {
+        currrentResizeOperation = chooseOperationForNewGesture(pinchAction, recognizer)
+      }  // end BEGAN
+
+      switch currrentResizeOperation {
+      case .none:
+        return
+      case .videoZoom:
+        zoomVideoFromPinchGesture(recognizer, currentMode: pwc.currentLayout.mode)
+      case .windowScale:
+        IINAAnimation.disableAnimation {  // need this to prevent floating OSC from jumping
+          pwc.scaleWindowFromPinch(recognizer, currentMode: pwc.currentLayout.mode)
+        }
+      }
+
+    }  // end switch
   }
 
-  private func newOperation(_ pinchAction: Preference.PinchAction, _ recognizer: NSMagnificationGestureRecognizer) -> PinchOperation {
+  private func chooseOperationForNewGesture(_ pinchAction: Preference.PinchAction,
+                                            _ recognizer: NSMagnificationGestureRecognizer) -> ResizeOperation {
+    assert(pinchAction == .windowSize || pinchAction == .windowSizeOrFullScreen)
     guard let window = pwc.window, let screen = window.screen else { return .none }
 
     let wantsToShrink = recognizer.magnification < 0
@@ -113,6 +158,19 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     return .windowScale
   }
 
+  fileprivate func isWindowMaximized(windowFrame: NSRect) -> Bool {
+    guard let window = pwc.window, let screen = window.screen else { return false }
+    let screenFrame = screen.visibleFrame
+    let heightIsMax = windowFrame.height >= screenFrame.height
+    let widthIsMax = windowFrame.width >= screenFrame.width
+    // If viewport is not locked, the window must be the size of the screen in both directions before triggering full screen.
+    // If viewport is locked, window is considered at maximum if either of its sides is filling all the available space in its dimension.
+    return (heightIsMax && widthIsMax) || (Preference.bool(for: .lockViewportToVideoSize) && (heightIsMax || widthIsMax))
+  }
+
+
+  // MARK: - Video Zoom
+
   /// Pinch-to-zoom is only enabled while window is maximized on screen.
   /// Checks if the window (described by the gien geomeetry) is still maximized on screen, and if not, resets the zoom & pan values to zero.
   /// Makes no changes if pinch-to-zoom was not used (e.g., if zoomed using mpv key commands).
@@ -125,17 +183,15 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
   func resetZoom() {
     guard isZoomedViaGesture else { return }
-    guard pwc.player.isActive else { return }
     pwc.isMagnifying = true
     pwc.log.verbose("Resetting pinch-to-zoom props (video-zoom, video-pan-x, video-pan-y)")
 
     // Cancel any prev timer first
     resetTimerSubscription?.cancel()
 
-    let mpvZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
-    let currentZoom = max(pinchMinZoom, mpvScale(fromZoom: mpvZoom))
+    guard let currentZoom = getCurrentZoomFromMPV() else { return }
     // Shrink the zoom by this multiplier at every redraw (1.0 == no change)
-    pinchScale = 1.0 - (zoomResetFPS * currentZoom)
+    currentPinchScale = 1.0 - (zoomResetFPS * currentZoom)
 
     resetTimerSubscription = Timer.publish(every: zoomResetFPS, on: .main, in: .common)
       .autoconnect()
@@ -146,84 +202,36 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
           resetTimerSubscription?.cancel()
           return
         }
-        let currentZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
-        pinchInitialZoom = max(pinchMinZoom, mpvScale(fromZoom: currentZoom))
-        applyVideoZoom(scaleMultiplier: pinchScale)
+        guard let currentZoom = getCurrentZoomFromMPV() else {
+          resetTimerSubscription?.cancel()
+          return
+        }
+        pinchInitialZoom = currentZoom
+        applyVideoZoom()
       }
   }
 
-  @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
-    guard !pwc.isInInteractiveMode else { return }
-    guard !pwc.isInMiniPlayer || pwc.miniPlayer.isViewportShown else { return }
-    guard !pwc.isAnimatingLayoutTransition else { return }
-
-    let pinchAction: Preference.PinchAction = Preference.enum(for: .pinchAction)
-    switch pinchAction {
-
-    case .none:
-      return
-
-    case .fullScreen:
-      // enter/exit fullscreen
-      guard !pwc.isInMiniPlayer else { return }  // Disallow full screen toggle from pinch while in music mode
-      
-      if recognizer.state == .began {
-        let wantsToGrow = recognizer.magnification > 0
-        if wantsToGrow != pwc.isFullScreen {
-          recognizer.state = .recognized
-          pwc.toggleWindowFullScreen()
-        }
-      }
-
-    case .windowSize,
-        .windowSizeOrFullScreen:
-      // Disallow full screen toggle from pinch while in music mode
-      guard !pwc.isInMiniPlayer else { return }
-
-      if recognizer.state == .began {
-        currrentOperation = newOperation(pinchAction, recognizer)
-      }  // end BEGAN
-
-      switch currrentOperation {
-      case .none:
-        return
-      case .videoZoom:
-        zoomVideoFromPinchGesture(recognizer, currentMode: pwc.currentLayout.mode)
-      case .windowScale:
-        IINAAnimation.disableAnimation {  // need this to prevent floating OSC from jumping
-          pwc.scaleWindowFromPinch(recognizer, currentMode: pwc.currentLayout.mode)
-        }
-      }
-
-    }  // end switch
-  }
-
-  fileprivate func isWindowMaximized(windowFrame: NSRect) -> Bool {
-    guard let window = pwc.window, let screen = window.screen else { return false }
-    let screenFrame = screen.visibleFrame
-    let heightIsMax = windowFrame.height >= screenFrame.height
-    let widthIsMax = windowFrame.width >= screenFrame.width
-    // If viewport is not locked, the window must be the size of the screen in both directions before triggering full screen.
-    // If viewport is locked, window is considered at maximum if either of its sides is filling all the available space in its dimension.
-    return (heightIsMax && widthIsMax) || (Preference.bool(for: .lockViewportToVideoSize) && (heightIsMax || widthIsMax))
+  /// Returns current value of `video-zoom`, converted to linear scale. Returns `nil` if player is not available.
+  fileprivate func getCurrentZoomFromMPV() -> Double? {
+    guard pwc.player.isActive else { return nil }
+    return pwc.player.getVideoZoom().clamped(to: pinchMinZoom...)
   }
 
   /// Adjusts the window size as needed to scale the video as specified by `recognizer`.
   fileprivate func zoomVideoFromPinchGesture(_ recognizer: NSMagnificationGestureRecognizer, currentMode: PlayerWindowMode) {
     guard let window = pwc.window else { return }
-    guard pwc.player.isActive else { return }
 
     switch recognizer.state {
 
     case .began:
       // Fullscreen or maximized window: pinch to zoom video around the pinch origin.
       pwc.isMagnifying = true
-      pinchScale = 1.0
+      currentPinchScale = 1.0
       // Update from prefs
       pinchMaxZoom = Preference.double(for: .pinchMaxZoom)
 
-      let currentZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
-      pinchInitialZoom = max(pinchMinZoom, mpvScale(fromZoom: currentZoom))
+      guard let currentZoom = getCurrentZoomFromMPV() else { return }
+      pinchInitialZoom = max(pinchMinZoom, currentZoom)
       // Only update the pinch origin if starting from baseline; otherwise keep the prior origin to reduce jumps.
       if pinchInitialZoom <= pinchMinZoom {
         pinchOriginInWindow = recognizer.location(in: window.contentView)
@@ -231,10 +239,10 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         pinchOriginInVideoUnit = normalizedVideoPoint(fromWindowPoint: pinchOriginInWindow ?? .zero)
       }
     case .changed:
-      pinchScale = recognizer.magnification + 1.0
-      applyVideoZoom(scaleMultiplier: pinchScale)
+      currentPinchScale = recognizer.magnification + 1.0
+      applyVideoZoom()
     case .ended:
-      applyVideoZoom(scaleMultiplier: pinchScale)
+      applyVideoZoom()
       pwc.isMagnifying = false
     case .cancelled, .failed:
       break
@@ -275,34 +283,34 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     return fitSize.centeredRect(in: bounds)
   }
 
-  private func applyVideoZoom(scaleMultiplier: CGFloat) {
-    let s0 = pinchInitialZoom
-    let s1 = (s0 * Double(scaleMultiplier) * pinchZoomMultiplier).clamped(to: pinchMinZoom...pinchMaxZoom)
-    let zoomProp = mpvZoom(fromScale: s1)
+  private func applyVideoZoom() {
+    let oldZoom = pinchInitialZoom
+    let newZoom = (oldZoom * Double(currentPinchScale) * pinchZoomMultiplier).clamped(to: pinchMinZoom...pinchMaxZoom)
     let bounds = pwc.videoView.bounds
     let rect = videoRectInView() ?? bounds
-    pwc.log.trace("Zooming from pinch: \(s0) -> \(s1) -> \(zoomProp)")
+    pwc.log.trace("Zooming from pinch: \(oldZoom) -> \(newZoom)")
 
     let origin = pinchOriginInVideoUnit ?? NSPoint(x: 0.5, y: 0.5)
     // Adjust pan to keep the pinch origin under the cursor relative to the current zoom.
     // mpv pan semantics: positive pan-x moves video right; positive pan-y moves video down.
-    let marginX = panMargin(forScale: s1, rect: rect, bounds: bounds, axis: .x)
-    let marginY = panMargin(forScale: s1, rect: rect, bounds: bounds, axis: .y)
+    let marginX = panMargin(forScale: newZoom, rect: rect, bounds: bounds, axis: .x)
+    let marginY = panMargin(forScale: newZoom, rect: rect, bounds: bounds, axis: .y)
     let newPanX = clampPan(Double(0.5 - origin.x), reach: marginX)
     let newPanY = clampPan(Double(origin.y - 0.5), reach: marginY)
 
-    pwc.player.mpv.setDouble(MPVOption.Video.videoZoom, zoomProp, level: .verbose)
+    guard pwc.player.isActive else { return }
+    pwc.player.setVideoZoom(to: newZoom)
     pwc.player.mpv.setDouble(MPVOption.Video.videoPanX, newPanX, level: .verbose)
     pwc.player.mpv.setDouble(MPVOption.Video.videoPanY, newPanY, level: .verbose)
 
     // If we're effectively back to 1x, forget the stored origin so a new pinch can pick a fresh focal point.
-    if s1 <= pinchMinZoom + 0.0001 {
+    if newZoom <= pinchMinZoomForPan {
       pinchOriginInWindow = nil
       pinchOriginInVideo = nil
       pinchOriginInVideoUnit = nil
     }
 
-    isZoomedViaGesture = s1 > pinchMinZoom
+    isZoomedViaGesture = newZoom > pinchMinZoom
   }
 
   private func clampPan(_ value: Double, reach: Double) -> Double {
@@ -336,14 +344,6 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     return min(0.5, max(0.0, reach))
   }
 
-  private func mpvScale(fromZoom zoom: Double) -> Double {
-    return pow(2.0, zoom)
-  }
-
-  private func mpvZoom(fromScale scale: Double) -> Double {
-    return log2(scale)
-  }
-
   /// Provides video panning while zoomed (via vertical/horizontal scroll)
   func handlePanGesture(with event: NSEvent) -> Bool {
     guard event.hasPreciseScrollingDeltas else { return false }
@@ -351,10 +351,9 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     guard pwc.player.isActive else { return false }
     guard Preference.bool(for: .enablePinchToVideoZoom) else { return false }
 
-    let currentZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
-    pwc.log.verbose("Panning: currentZoom=\(currentZoom)")
-    let currentScale = max(pinchMinZoom, mpvScale(fromZoom: currentZoom))
-    guard currentScale > pinchMinZoom + 0.0001 else { return false }
+    guard let zoom = getCurrentZoomFromMPV() else { return false }
+    pwc.log.trace("Panning while zoomed (zoom=\(zoom))")
+    guard zoom > pinchMinZoomForPan else { return false }
 
     guard let rect = videoRectInView(), rect.width > 0, rect.height > 0 else { return false }
     let bounds = pwc.videoView.bounds
@@ -367,9 +366,8 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       deltaY = -deltaY
     }
 
-    let panSpeed: Double = 2.3
-    let normalizedDeltaX = Double(deltaX) * panSpeed / (Double(rect.width) * currentScale)
-    let normalizedDeltaY = -Double(deltaY) * panSpeed / (Double(rect.height) * currentScale)
+    let normalizedDeltaX = Double(deltaX) * panSpeed / (Double(rect.width) * zoom)
+    let normalizedDeltaY = -Double(deltaY) * panSpeed / (Double(rect.height) * zoom)
 
     if abs(normalizedDeltaX) < 0.000001 && abs(normalizedDeltaY) < 0.000001 {
       return true
@@ -378,8 +376,8 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     let currentPanX = pwc.player.mpv.getDouble(MPVOption.Video.videoPanX)
     let currentPanY = pwc.player.mpv.getDouble(MPVOption.Video.videoPanY)
 
-    let marginX = panMargin(forScale: currentScale, rect: rect, bounds: bounds, axis: .x)
-    let marginY = panMargin(forScale: currentScale, rect: rect, bounds: bounds, axis: .y)
+    let marginX = panMargin(forScale: zoom, rect: rect, bounds: bounds, axis: .x)
+    let marginY = panMargin(forScale: zoom, rect: rect, bounds: bounds, axis: .y)
 
     let currentCenterX = 0.5 - currentPanX
     let currentCenterY = 0.5 + currentPanY
@@ -399,6 +397,8 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   }
 }
 
+// MARK: - Scale Window
+
 extension PlayerWindowController {
   fileprivate func scaleWindowFromPinch(_ recognizer: NSMagnificationGestureRecognizer, currentMode: PlayerWindowMode) {
 
@@ -417,20 +417,17 @@ extension PlayerWindowController {
         windowedModeGeo = windowedGeoForCurrentFrame()
       }
 
-      scaleVideoFromPinchGesture(to: targetScale, currentMode: currentMode)
+      scaleWindowFromPinchGesture(targetVideoScale: targetScale, currentMode: currentMode)
 
     case .changed:
-      guard isMagnifying else { return }
-      scaleVideoFromPinchGesture(to: targetScale, currentMode: currentMode)
+      scaleWindowFromPinchGesture(targetVideoScale: targetScale, currentMode: currentMode)
 
     case .ended:
-      guard isMagnifying else { return }
-      scaleVideoFromPinchGesture(to: targetScale, currentMode: currentMode, submitResult: true)
+      scaleWindowFromPinchGesture(targetVideoScale: targetScale, currentMode: currentMode, submitResult: true)
       isMagnifying = false
 
     case .cancelled, .failed:
-      guard isMagnifying else { return }
-      scaleVideoFromPinchGesture(to: 1.0, currentMode: currentMode)
+      scaleWindowFromPinchGesture(targetVideoScale: 1.0, currentMode: currentMode)
       isMagnifying = false
 
     default:
@@ -438,8 +435,8 @@ extension PlayerWindowController {
     }
   }
 
-  private func scaleVideoFromPinchGesture(to targetScale: CGFloat, currentMode: PlayerWindowMode,
-                                          submitResult: Bool = false) {
+  private func scaleWindowFromPinchGesture(targetVideoScale: CGFloat, currentMode: PlayerWindowMode,
+                                           submitResult: Bool = false) {
     /// For best experience for the user, do not check `isAnimatingLayoutTransition` at state `began` (i.e., allow it to
     /// start keeping track  of pinch), but do not allow this method to execute (i.e. do not respond) until after layout
     /// transitions are complete.
@@ -457,16 +454,16 @@ extension PlayerWindowController {
         return
       }
       let inputWidth = musicModeGeo.windowFrame.width
-      let desiredWidth = (inputWidth * targetScale).rounded()
+      let desiredWidth = (inputWidth * targetVideoScale).rounded()
       outputGeo = musicModeGeo.scalingVideo(toWidth: desiredWidth)
-      log.verbose("Scaling pinched video in music mode, scale=\(targetScale) reqWidth=\(desiredWidth) → result=\(outputGeo)")
+      log.verbose("Scaling pinched video in music mode, scale=\(targetVideoScale) reqWidth=\(desiredWidth) → result=\(outputGeo)")
 
     } else {
       let originalGeo = windowedModeGeo
       
-      let newViewportSize = originalGeo.viewportSize.multiplyThenRound(targetScale)
+      let newViewportSize = originalGeo.viewportSize.multiplyThenRound(targetVideoScale)
       outputGeo = originalGeo.scalingViewport(to: newViewportSize, screenFit: .stayInside, mode: currentMode)
-      log.verbose("Scaling pinched video in windowed mode, scale=\(targetScale) → result=\(outputGeo)")
+      log.verbose("Scaling pinched video in windowed mode, scale=\(targetVideoScale) → result=\(outputGeo)")
     }
     setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: submitResult)
   }

@@ -1645,6 +1645,27 @@ final class PlayerCore: NSObject {
     }
   }
 
+  func getVideoZoom() -> Double {
+    let logZoom = pwc.player.mpv.getDouble(MPVOption.Video.videoZoom)
+    // mpv uses a logrithmic scale. Convert to linear scale:
+    let linearZoom = pow(2.0, logZoom)
+    return linearZoom
+  }
+
+  func setVideoZoom(to zoom: Double) {
+    let logZoom = log2(zoom)
+    pwc.player.mpv.setDouble(MPVOption.Video.videoZoom, logZoom, level: .verbose)
+  }
+
+  private func mpvScale(fromZoom zoom: Double) -> Double {
+    return pow(2.0, zoom)
+  }
+
+  private func mpvZoom(fromScale scale: Double) -> Double {
+    return log2(scale)
+  }
+
+
   enum VideoEqualizerType {
     case brightness, contrast, saturation, gamma, hue
   }
