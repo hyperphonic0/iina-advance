@@ -189,12 +189,15 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
       return Constants.Distance.standardTitleBarHeight
     }
     let screen = NSScreen.getScreenOrDefault(screenID: screenID)
+    // In native FS, the user is able to trigger a showing of the title bar, which will drop down over the window's content.
+    // But so far there seems to be no good way to detect this. So just add extra space for the title bar at all times.
+    let extraOffsetForTitleBar = max(0, Constants.Distance.standardTitleBarHeight - outsideBars.top - insideBars.top)
     if screenFit == .nativeFullScreen {
-      return max(0, insideBars.top) + 8
+      return max(0, insideBars.top) + extraOffsetForTitleBar + 8
     } else {
       // Possibly entering legacy full screen
       let maxScreenUsableHeight = screen.frameWithoutCameraHousing.height
-      return max(0, insideBars.top, windowFrame.height - maxScreenUsableHeight - cameraHousingOffset) + 8
+      return max(0, insideBars.top, windowFrame.height - maxScreenUsableHeight - cameraHousingOffset) + extraOffsetForTitleBar + 8
     }
   }
 

@@ -440,16 +440,9 @@ extension PlayerWindowController.LayoutTransition {
     } else if isEnteringNativeFullScreen {
       return outputGeometry
     } else if isExitingNativeFullScreen {
-      if outputLayout.topBarPlacement == .insideViewport {
-        // Remove title bar only
-        let insideTopH = outputGeometry.insideBars.top - outputLayout.titleBarHeight
-        assert(insideTopH >= 0, "Expected insideBars.top - titleBarHeight to be non-negative! Found: \(insideTopH)")
-        return outputGeometry.withResizedBars(insideTop: insideTopH)
-      } else {
-        // Do not modify case for .outsideViewport - there is a bug in MacOS Tahoe which causes the traffic light buttons to flicker
-        // in the wrong place
-        return outputGeometry
-      }
+      // Just use output geometry. - there is a bug in MacOS Tahoe which causes the traffic light buttons to flicker in the wrong place.
+      // This was determined to be the best compromise because it avoids making things jump around too much more
+      return outputGeometry
     } else if isTogglingInteractiveMode {
       // - Interactive Mode
 

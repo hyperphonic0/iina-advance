@@ -507,9 +507,9 @@ extension PlayerWindowController {
     for optCon in osd.optionalConstraints {
       optCon.weaken()
     }
+    let offsetFromTop = stageGeo.osdOffsetFromTopOfViewport()
 
     let hasOSD = stageGeo.shouldHaveOSD
-    let offsetFromTop = stageGeo.osdOffsetFromTopOfViewport()
     let hasAdditionalInfo = stageGeo.shouldHaveAdditionalInfo
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
     let hasLeadingSidebar = stageGeo.insideBars.leading > 0
