@@ -189,7 +189,8 @@ final class OSDState {
     osdVStackView.addView(osdAccessoryText, in: .leading)
     osdVStackView.addView(osdAccessoryProgress, in: .leading)
 
-    let initialIconSize: CGFloat = 45
+    // Use initial size of 0, in case MacOS 11 code never gets executed
+    let initialIconSize: CGFloat = 0
     osdIconWidthConstraint.createOrUpdate(to: initialIconSize, priorityInt: 1000, log) { [self] c in
       osdIconImageView.widthAnchor.constraint(equalToConstant: c)
     }
@@ -209,12 +210,14 @@ final class OSDState {
     osdTrailingPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
       osdView.trailingAnchor.constraint(equalTo: osdVStackView.trailingAnchor, constant: c)
     }
+    // Progress bar height
     osdProgressHeightConstraint.createOrUpdate(to: 0, priorityInt: 1000, log) { [self] c in
       osdAccessoryProgress.heightAnchor.constraint(equalToConstant: c)
     }
 
+    // Space between icon & VStack to the right of it. Start with 0, assuming icon is not shown
     // [osdIconImageView]-4-[osdVStackView]
-    iconToVStackSpacingConstraint.createOrUpdate(to: 4, priorityInt: 1000, log) { [self] c in
+    iconToVStackSpacingConstraint.createOrUpdate(to: 0, priorityInt: 1000, log) { [self] c in
       osdVStackView.leadingAnchor.constraint(equalTo: osdIconImageView.trailingAnchor, constant: c)
     }
 
@@ -223,7 +226,7 @@ final class OSDState {
   }
 
   @MainActor
-  fileprivate func updateIconSize(fromOSDTextSize osdTextSize: CGFloat) {
+  fileprivate func updateIconSize(isIconVisible: Bool) {
     guard #available(macOS 11.0, *) else { return }
     let iconHeight, iconWidth: CGFloat
 
@@ -232,7 +235,8 @@ final class OSDState {
     CATransaction.setDisableActions(true)
     CATransaction.setAnimationDuration(0.0)
 
-    if let icon = osdIconImageView.image {
+    if isIconVisible, let icon = osdIconImageView.image {
+      let osdTextSize = textSizeLast
       let sliderBarHeight = getSliderBarHeight(forOSDTextSize: osdTextSize)
 
       // Use dimensions of a dummy image to keep the height fixed. Because all the components are vertically aligned
@@ -254,7 +258,6 @@ final class OSDState {
 
     osdIconHeightConstraint.constraint?.animateToConstant(iconHeight)
     osdIconWidthConstraint.constraint?.animateToConstant(iconWidth)
-
     CATransaction.commit()
   }
 
@@ -725,23 +728,19 @@ extension PlayerWindowController {
     }
 
     let isIconVisible = icon != nil
-    // Need this only for OSD messages which use the icon
+    // This will set icon width to 0 if it should not be visible so that VStackView can use its space.
+    osd.updateIconSize(isIconVisible: isIconVisible)
     osd.osdIconImageView.isHidden = !isIconVisible
-    osd.iconToVStackSpacingConstraint.constraint?.constant = isIconVisible ? 4 : 0
 
     if let icon {
       osd.osdIconImageView.image = icon
       osd.osdIconImageView.contentTintColor = isIconGrayedOut ? .disabledControlTextColor : .controlTextColor
-
-      // New icon may have a different aspect than old one. Update its width
-      osd.updateIconSize(fromOSDTextSize: osd.textSizeLast)
-      osd.osdIconImageView.isHidden = false
+      osd.iconToVStackSpacingConstraint.constraint?.constant = 4
     } else {
-      // Set width to 0 so that VStackView can use its space
-      osd.updateIconSize(fromOSDTextSize: 0)
-      osd.osdIconImageView.isHidden = true
+      // Need this only for OSD messages which use the icon
+      osd.iconToVStackSpacingConstraint.constraint?.constant = 0
     }
-    log.trace{"[OSD] Icon=\(isIconVisible.yn) for msg: \(message)"}
+    log.verbose("[OSD] Icon visible=\(isIconVisible.yn) for msg: \(message)")
   }
 
   /// Do not call `displayOSD` directly. Call `PlayerCore.sendOSD` instead.
@@ -1022,11 +1021,6 @@ extension PlayerWindowController {
       // Update OSD label
       let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
       osd.osdLabel.font = osdLabelFont
-
-      // Update icon height & width
-      if #available(macOS 11.0, *) {
-        osd.updateIconSize(fromOSDTextSize: osdTextSize)
-      }
     }
 
     // Always call this afterwards
