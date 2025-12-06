@@ -126,6 +126,8 @@
 "osd.video_eq.hue" = "Hue: %i";
 "osd.video_eq.saturation" = "Saturation: %i";
 "osd.video_eq.brightness" = "Brightness: %i";
+"osd.video_zoom.none" = "Zoom: None";
+"osd.video_zoom.value" = "Zoom: %@x";
 "osd.find_online_sub" = "Finding online subtitles…";
 "osd.find_online_sub.source" = "from";
 "osd.sub_not_found" = "No subtitles found";
