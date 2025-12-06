@@ -470,6 +470,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   let additionalInfoView = AdditionalInfoView()
 
   /// Custom-built window border, used for legacy windowed mode
+  /// #Deprecated: no longer needed for MacOS 26+
   let customWindowBorderBox = CustomWindowBorderBox(id: "CustomWndBorderBox", borderWidth: 1, borderColor: .customWindowBorder)
   /// Custom-built window border highlight, used for legacy windowed mode
   let customWindowBorderTopHighlightBox = CustomWindowBorderBox(id: "CustomWndBorderBox", borderWidth: 0.5, borderColor: .customWindowBorderHighlight)
