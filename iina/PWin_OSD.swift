@@ -50,6 +50,7 @@ final class OSDState {
   fileprivate let osdBtmPaddingConstraint = OptionalConstraint("OSD-BtmPadding")
 
   fileprivate let osdProgressHeightConstraint = OptionalConstraint("OSDProgress.height")
+  fileprivate let iconToVStackSpacingConstraint = OptionalConstraint("OSDIcon-to-VStack.hSpacing")
 
   // - Optional constraints
 
@@ -213,7 +214,9 @@ final class OSDState {
     }
 
     // [osdIconImageView]-4-[osdVStackView]
-    osdVStackView.leadingAnchor.constraint(equalTo: osdIconImageView.trailingAnchor, constant: 4).isActive = true
+    iconToVStackSpacingConstraint.createOrUpdate(to: 4, priorityInt: 1000, log) { [self] c in
+      osdVStackView.leadingAnchor.constraint(equalTo: osdIconImageView.trailingAnchor, constant: c)
+    }
 
     // Center the icon vertically
     osdIconImageView.centerYAnchor.constraint(equalTo: osdView.centerYAnchor).isActive = true
@@ -721,6 +724,11 @@ extension PlayerWindowController {
       }
     }
 
+    let isIconVisible = icon != nil
+    // Need this only for OSD messages which use the icon
+    osd.osdIconImageView.isHidden = !isIconVisible
+    osd.iconToVStackSpacingConstraint.constraint?.constant = isIconVisible ? 4 : 0
+
     if let icon {
       osd.osdIconImageView.image = icon
       osd.osdIconImageView.contentTintColor = isIconGrayedOut ? .disabledControlTextColor : .controlTextColor
@@ -733,9 +741,6 @@ extension PlayerWindowController {
       osd.updateIconSize(fromOSDTextSize: 0)
       osd.osdIconImageView.isHidden = true
     }
-    let isIconVisible = icon != nil
-    // Need this only for OSD messages which use the icon
-    osd.osdIconImageView.isHidden = !isIconVisible
     log.trace{"[OSD] Icon=\(isIconVisible.yn) for msg: \(message)"}
   }
 
@@ -756,8 +761,8 @@ extension PlayerWindowController {
     osd.queueLock.withLock {
       osd.queue.append({ [self] in
         // DO NOT use animationPipeline here. It is not needed, and will cause OSD to block
-        _displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController)
         updateOSDTextSize(andSetViewsFrom: msg)
+        _displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController)
       })
     }
     // Need to do the UI sync in the main queue
@@ -1004,19 +1009,15 @@ extension PlayerWindowController {
       // Also update progress bar height based on text size
       osd.updateProgressBarStyle(window.effectiveAppearance, effectiveOSCColorScheme: currentLayout.effectiveOSCColorScheme)
 
-      let osdAccessoryTextSize = (osdTextSize * 0.75).clamped(to: 11...25)
+      let osdAccessoryTextSize = (osdTextSize * 0.75).rounded().clamped(to: 11...25)
       osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
 
-      // Just manually
-      let stackViewMargin = osdTextSize * 0.2
-      osd.osdVStackView.edgeInsets.bottom = stackViewMargin
-
       // Update padding around edges
-      let marginScaled = 8 + (osdTextSize * 0.06)
+      let marginScaled = 8 + (osdTextSize * 0.15).rounded()
       osd.osdTopPaddingConstraint.constraint?.animateToConstant(marginScaled)
       osd.osdBtmPaddingConstraint.constraint?.animateToConstant(marginScaled)
-      osd.osdTrailingPaddingConstraint.constraint?.animateToConstant(marginScaled + stackViewMargin)
-      osd.osdLeadingPaddingConstraint.constraint?.animateToConstant(marginScaled + (stackViewMargin * 0.5))
+      osd.osdTrailingPaddingConstraint.constraint?.animateToConstant(marginScaled)
+      osd.osdLeadingPaddingConstraint.constraint?.animateToConstant(marginScaled)
 
       // Update OSD label
       let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)

@@ -638,9 +638,8 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
     // sometimes briefly appears at the first supplied size & origin even if it is supposed to be resized while hidden.
     let playerWindow = PlayerWindow(contentRect: contentRect, styleMask: style, backing: .buffered, defer: false)
     playerWindow.autorecalculatesKeyViewLoop = false
-    // incompatible with tabbed windows! But needed for FS transition
+    // incompatible with tabbed windows! But needed for pretty FS transition
     playerWindow.titlebarAppearsTransparent = true
-    // FIXME: window sizing
     // FIXME: tabbed windows
     playerWindow.tabbingMode = .disallowed
 

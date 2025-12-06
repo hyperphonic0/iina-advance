@@ -175,17 +175,16 @@ extension PlayerWindowController {
     let leadingAccTrailingSpaceConstraint = leadingAccTrailingSpacer.widthAnchor.constraint(equalToConstant: 0)
     leadingAccTrailingSpaceConstraint.isActive = true
 
-    let leadingTB = leadingTitleBarAccessoryView
-    leadingTB.idString = "leadingTitleBarAccessoryView"
-    leadingTB.orientation = .horizontal
-    leadingTB.alignment = .centerY
-    leadingTB.distribution = .fill
-    leadingTB.spacing = iconSpacingH
-    leadingTB.detachesHiddenViews = true
-    leadingTB.translatesAutoresizingMaskIntoConstraints = false
+    leadingTitleBarAccessoryView.idString = "leadingTitleBarAccessoryView"
+    leadingTitleBarAccessoryView.orientation = .horizontal
+    leadingTitleBarAccessoryView.alignment = .centerY
+    leadingTitleBarAccessoryView.distribution = .fill
+    leadingTitleBarAccessoryView.spacing = iconSpacingH
+    leadingTitleBarAccessoryView.detachesHiddenViews = true
+    leadingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
 
-    leadingTB.addArrangedSubview(leadingSidebarToggleButton)
-    leadingTB.addArrangedSubview(leadingAccTrailingSpacer)
+    leadingTitleBarAccessoryView.addArrangedSubview(leadingSidebarToggleButton)
+    leadingTitleBarAccessoryView.addArrangedSubview(leadingAccTrailingSpacer)
 
     // - TRAILING
 
@@ -207,18 +206,17 @@ extension PlayerWindowController {
     let trailingAccTrailingSpaceConstraint = trailingAccTrailingSpacer.widthAnchor.constraint(equalToConstant: 0)
     trailingAccTrailingSpaceConstraint.isActive = true
 
-    let trailingTB = trailingTitleBarAccessoryView
-    trailingTB.idString = "trailingTitleBarAccessoryView"
-    trailingTB.orientation = .horizontal
-    trailingTB.alignment = .centerY
-    trailingTB.distribution = .fill
-    trailingTB.spacing = iconSpacingH
-    trailingTB.detachesHiddenViews = true
-    trailingTB.translatesAutoresizingMaskIntoConstraints = false
+    trailingTitleBarAccessoryView.idString = "trailingTitleBarAccessoryView"
+    trailingTitleBarAccessoryView.orientation = .horizontal
+    trailingTitleBarAccessoryView.alignment = .centerY
+    trailingTitleBarAccessoryView.distribution = .fill
+    trailingTitleBarAccessoryView.spacing = iconSpacingH
+    trailingTitleBarAccessoryView.detachesHiddenViews = true
+    trailingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
 
-    trailingTB.addArrangedSubview(trailingSidebarToggleButton)
-    trailingTB.addArrangedSubview(onTopButton)
-    trailingTB.addArrangedSubview(trailingAccTrailingSpacer)
+    trailingTitleBarAccessoryView.addArrangedSubview(trailingSidebarToggleButton)
+    trailingTitleBarAccessoryView.addArrangedSubview(onTopButton)
+    trailingTitleBarAccessoryView.addArrangedSubview(trailingAccTrailingSpacer)
   }
 
   private func initOSCToolbar() {

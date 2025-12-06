@@ -712,10 +712,6 @@ final class StartupHandler {
     // Various initializations at App level
     NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
 
-    // TODO: try to get tabbing working
-    NSWindow.allowsAutomaticWindowTabbing = false
-    // NSWindow.userTabbingPreference
-
     JavascriptPlugin.loadGlobalInstances()
 
     if let menuController = AppDelegate.shared.menuController {
