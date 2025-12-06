@@ -193,8 +193,8 @@ extension PlayerCore {
     guard let types = pb.types else { return false }
 
     if types.contains(.nsFilenames) {
-      guard var paths = pb.propertyList(forType: .nsFilenames) as? [String] else { return false }
-      paths = Utility.resolvePaths(paths)
+      guard let pbPaths = pb.propertyList(forType: .nsFilenames) as? [String] else { return false }
+      let paths = Utility.resolvePaths(pbPaths)
       log.verbose("Received drop of file paths: \(paths.map{$0.pii})")
       // check 3d lut files
       if paths.count == 1 && Utility.lut3dExt.contains(paths[0].lowercasedPathExtension) {

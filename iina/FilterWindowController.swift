@@ -133,7 +133,8 @@ class FilterWindowController: WindowController, NSWindowDelegate {
           savedFiltersUpdated.append(savedFilter.clone(enabled: false))
         }
       }
-      DispatchQueue.main.async { [self] in
+
+      Task { @MainActor in
         Logger.log.verbose("Reloading filters UI: active=\(latestActiveFilters.count) saved=\(savedFilters.count) checkboxes=\(filterIsSavedUpdated.map(\.description).joined(separator: "-"))")
         self.filters = latestActiveFilters
         self.filterIsSaved = filterIsSavedUpdated
@@ -231,6 +232,7 @@ class FilterWindowController: WindowController, NSWindowDelegate {
     }
     let selectedRows = currentFiltersTableView.selectedRowIndexes
     if !selectedRows.isEmpty {
+      let filters = self.filters  // cache a read-only copy for capture below
       pc.mpv.queue.async { [self] in
         if filterType == MPVProperty.vf {
           for row in selectedRows.sorted().reversed() {

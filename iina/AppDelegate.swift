@@ -39,25 +39,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   @IBOutlet weak var dockMenu: NSMenu!
 
-  // TODO: finish adding support for tabbing windows
-  var tabService: TabService? = nil
-
-  @MainActor
-  func addTabForPlayer(_ pwc: PlayerWindowController) {
-    if let tabService, let mainWindow = tabService.mainWindow {
-      Logger.log.debug("Adding tab for PlayerWindow \(pwc.player.label.quoted)")
-      tabService.createTab(newWindowController: pwc, inWindow: mainWindow, ordered: .above)
-    } else {
-      // If either tabService or mainWindow is nil, there are no prev tabbed windows
-      Logger.log.debug("Creating new TabService with initial PlayerWindow \(pwc.player.label.quoted)")
-      tabService = TabService(initialWindowController: pwc)
-    }
-  }
-
-  // Need to store these somewhere which isn't only inside a struct
-  private var bindingTableStateManger: BindingTableStateManager!
-  private var confTableStateManager: ConfTableStateManager!
-
   // MARK: Window controllers
 
   @MainActor lazy var initialWindow = InitialWindowController()
@@ -253,10 +234,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // Wait until after logging is done to run this (need PII):
     UIState.shared.updateCachedScreens()
-
-
-    bindingTableStateManger = BindingTableState.manager
-    confTableStateManager = ConfTableState.manager
 
     // Set up observers
 

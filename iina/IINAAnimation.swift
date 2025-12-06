@@ -8,8 +8,9 @@
 
 import Foundation
 
+typealias SwiftTask = Task  // workaround for conflict with our Task type, epp
 class IINAAnimation {
-  typealias TaskFunc = (() throws -> Void)
+  typealias TaskFunc = (@Sendable @MainActor () throws -> Void)
 
   // MARK: Misc static stuff
 
@@ -37,24 +38,28 @@ class IINAAnimation {
   }
 
   /// Convenience func to reduce code verbosity
+  @MainActor
   static func runAsync(duration: CGFloat? = nil, _ timingName: CAMediaTimingFunctionName? = nil,
                        _ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
     runAsync(Task(duration: duration, timing: timingName, runFunc), then: doAfter)
   }
 
   /// Convenience func for running the giving closure in a transactional way
+  @MainActor
   static func runInstantAsync(_ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
     runAsync(.instantTask(runFunc), then: doAfter)
   }
 
   /// Convenience wrapper for running a task asynchronously and immediately via `NSAnimationContext.runAnimationGroup()`.
   /// Does not use pipeline.
+  @MainActor
   static func runAsync(_ task: Task, then doAfter: TaskFunc? = nil) {
     runAsync([task], then: doAfter)
   }
 
   /// Convenience wrapper for executing a chain of tasks sequentially via `NSAnimationContext.runAnimationGroup()`.
   /// The first task in the chain is launched immediately & asynchronously (does not use pipeline).
+  @MainActor
   static func runAsync(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
     var tasks = tasks
     if let doAfter {
@@ -66,12 +71,11 @@ class IINAAnimation {
   }
 
   // Recursive function which executes code for a single Task in a chain of tasks.
+  @MainActor
   private static func runSequentially(_ taskIterator: IndexingIterator<Array<Task>>) {
-    // Fail if not running on main thread:
-    assert(DispatchQueue.isExecutingIn(.main))
-
     var taskIterator = taskIterator
     guard let task = taskIterator.next() else { return }
+    let nextTasIter = taskIterator
     NSAnimationContext.runAnimationGroup({ context in
       let disableAnimation = !isAnimationEnabled
       if disableAnimation {
@@ -92,13 +96,15 @@ class IINAAnimation {
         Logger.log.error("[Pipeline] Unexpected error thrown by async task: \(error)")
       }
     }, completionHandler: {
-      runSequentially(taskIterator)
+      SwiftTask { @MainActor in
+        runSequentially(nextTasIter)
+      }
     })
   }
 }
 
 extension IINAAnimation {
-  struct Task {
+  struct Task: Sendable {
     let duration: CGFloat
     let timingName: CAMediaTimingFunctionName?
     let runFunc: TaskFunc
@@ -373,7 +379,9 @@ extension IINAAnimation {
           log.error("[Pipeline] Unexpected error thrown by task: \(error)")
         }
       }, completionHandler: {
-        self.executeNextTask()
+        SwiftTask { @MainActor in
+          self.executeNextTask()
+        }
       })
     }
 
@@ -423,13 +431,13 @@ extension IINAAnimation {
         if let nextGTF = gtfQueue.removeFirst() {
           gtfCurrentlyRunningID = nextGTF.id
           log.verbose("[Pipeline] Starting GTF: \(nextGTF.name.quoted); queue size: \(gtfQueue.count)")
-          return Task.instantTask(nextGTF.execute)
+          return Task.instantTask{nextGTF.execute()}
         }
         if isDoneWithAllGTFs {
           if wantsVideoGeoSync, let player {
             wantsVideoGeoSync = false
             let gtf = GeometryTransform("SyncVidGeo", id: nextID_NoLock(), player)
-            return Task.instantTask(gtf.execute)
+            return Task.instantTask{gtf.execute()}
           } else if let workAfterGTFs = pendingWorkAfterGTFs {
             pendingWorkAfterGTFs = nil
             return Task.instantTask(workAfterGTFs)

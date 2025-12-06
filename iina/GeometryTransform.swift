@@ -202,7 +202,7 @@ struct GeometryTransform: Sendable {
 
       // MARK: - STAGE 3
       // -- main queue -------------------------------------------------------------------------
-      DispatchQueue.main.async { [self] in
+      Task { @MainActor in
         pwc.animationPipeline.submitInstantTask { [self] in
           // Do not reference these variables until inside this animation task to ensure serial access
           let inputLayout = pwc.currentLayout
@@ -212,18 +212,19 @@ struct GeometryTransform: Sendable {
                                             forceWinFrameUpdate: !gtfSessionState.isStartingSession)
           log.verbose("[GTF:\(name)] Input geoSet=\(inputGeoSet)")
 
-          var ctxStage3 = GeometryTransform.ContextStage3(ctxStage2, gtfSessionState: gtfSessionState,
+          let ctxStage3 = GeometryTransform.ContextStage3(ctxStage2, gtfSessionState: gtfSessionState,
                                                           inputGeoSet: inputGeoSet, outputVidGeo: outputVideoGeo,
                                                           inputLayout: inputLayout)
 
-          doMainQueueWork(&ctxStage3)
+          doMainQueueWork(ctxStage3)
         }
       }
     }
   }
 
   @MainActor
-  private func doMainQueueWork(_ ctx: inout GeometryTransform.ContextStage3) {
+  private func doMainQueueWork(_ ctxInput: GeometryTransform.ContextStage3) {
+    var ctx = ctxInput
     log.trace{"[GTF:\(name)] Starting main thread work: startingSession=\(ctx.gtfSessionState.isStartingSession)"}
 
     /// 3. Build tasks to transition the window to its "initial" layout (new sessions only)
@@ -239,7 +240,7 @@ struct GeometryTransform: Sendable {
     } else {
       remainingTasks = ctx.buildPWinGeoTransformTasks()
     }
-    remainingTasks.append(.instantTask(ctx.doPostApplyWork))
+    remainingTasks.append(.instantTask{ ctx.doPostApplyWork() })
 
     /// 5. Need to switch to/from music mode, or enter full screen (if not done elsewhere)?
     /// If so, append to "remaining" tasks.
@@ -321,7 +322,7 @@ struct GeometryTransform: Sendable {
 
   /// Builds on the state in the `GeometryTransform` object and adds the variables retrieved in Stage 2 (mpv queue).
   /// Used as input for `PWinSessionStateTF` & `VideoGeometryTF` functions.
-  struct ContextStage2 {
+  struct ContextStage2 : Sendable{
     /// The transform spec. Immutable.
     let tf: GeometryTransform
 
@@ -342,7 +343,7 @@ struct GeometryTransform: Sendable {
   /// Builds on the `ContextStage2` state, adding the results from the `PWinSessionState` & `VideoGeometry` transforms,
   /// & additional state retrieved / computed in the final main queue stage.
   /// Used as input for `PWinGeometry` transforms, as well as a useful container to pass around internal methods.
-  struct ContextStage3 {
+  struct ContextStage3: Sendable {
     let ctxStage2: ContextStage2
 
     var tf: GeometryTransform { ctxStage2.tf }
@@ -559,7 +560,7 @@ struct GeometryTransform: Sendable {
             log.debug("[GTF:\(name)] Updating playback.state = .loadedAndSized; will emit fileLoaded")
             currentPlayback.state = .loadedAndSized
 
-            DispatchQueue.main.async { [self] in
+            Task { @MainActor in
               pwc.animationPipeline.submitInstantTask {
                 sendInitialWindowScaleToMpv()
                 // Should refresh EDR each time switching files

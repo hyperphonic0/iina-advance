@@ -20,7 +20,7 @@ struct TableUIChange: Sendable {
 
   // MARK: - Static definitions
 
-  typealias CompletionHandler = (TableUIChange) -> Void
+  typealias CompletionHandler = @Sendable @MainActor (TableUIChange) -> Void
 
   enum ContentChangeType {
     case removeRows
@@ -151,7 +151,7 @@ struct TableUIChange: Sendable {
 
   // MARK: - Execute
 
-  /// Subclasses should override executeContentUpdates() instead of this
+  @MainActor
   func execute(on tableView: EditableTableView) {
     let log = tableView.log
     var animationTasks: [IINAAnimation.Task] = []

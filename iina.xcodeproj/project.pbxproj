@@ -324,7 +324,6 @@
 		D13A7F0C2D39E5E900840277 /* TimeoutTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */; };
 		D13A7F0E2D3A03B100840277 /* VideoView_DisplayLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0D2D3A03A300840277 /* VideoView_DisplayLink.swift */; };
 		D13A7F102D3A05D000840277 /* ViewportConstraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0F2D3A05CB00840277 /* ViewportConstraints.swift */; };
-		D13A7F122D3B6CC400840277 /* TabService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F112D3B6CBE00840277 /* TabService.swift */; };
 		D13A7F162D3C512F00840277 /* KnobFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F152D3C512B00840277 /* KnobFactory.swift */; };
 		D13BEC552D476E6800BF1071 /* SpacerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13BEC542D476E6400BF1071 /* SpacerView.swift */; };
 		D13D9EE62DB921EA00A94C60 /* CommandLineState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13D9EE52DB921E500A94C60 /* CommandLineState.swift */; };
@@ -1855,7 +1854,6 @@
 		D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeoutTimer.swift; sourceTree = "<group>"; };
 		D13A7F0D2D3A03A300840277 /* VideoView_DisplayLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoView_DisplayLink.swift; sourceTree = "<group>"; };
 		D13A7F0F2D3A05CB00840277 /* ViewportConstraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportConstraints.swift; sourceTree = "<group>"; };
-		D13A7F112D3B6CBE00840277 /* TabService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabService.swift; sourceTree = "<group>"; };
 		D13A7F152D3C512B00840277 /* KnobFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnobFactory.swift; sourceTree = "<group>"; };
 		D13BEC542D476E6400BF1071 /* SpacerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacerView.swift; sourceTree = "<group>"; };
 		D13D9EE52DB921E500A94C60 /* CommandLineState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandLineState.swift; sourceTree = "<group>"; };
@@ -2634,7 +2632,6 @@
 				D11FB53F2CB8E4E20012A45A /* ShutdownHandler.swift */,
 				D1F2B09A2CFF07CC00F995B3 /* AppDetailsLogging.swift */,
 				D1FF15742A7E072200C0CE86 /* PlayerManager.swift */,
-				D13A7F112D3B6CBE00840277 /* TabService.swift */,
 				348F71952DE2A814006C587D /* MPVCommandWrappers.swift */,
 				84C6D3611EAF8D63009BF721 /* HistoryController.swift */,
 				D1F2B09C2CFF271900F995B3 /* MediaPlayerIntegration.swift */,
@@ -3478,7 +3475,6 @@
 				D1C741122CB6503400522FA7 /* PWin_Enums.swift in Sources */,
 				D1FD62AE2CBF6FBA00FFCF21 /* NotificationHandler.swift in Sources */,
 				D1049C852872C154003D47C1 /* ConfTableViewController.swift in Sources */,
-				D13A7F122D3B6CC400840277 /* TabService.swift in Sources */,
 				8466BE181D5CDD0300039D03 /* QuickSettingViewController.swift in Sources */,
 				84A0BA9E1D2FAD4000BC8DA1 /* PlayerWindowController.swift in Sources */,
 				D1F2B09B2CFF07D500F995B3 /* AppDetailsLogging.swift in Sources */,

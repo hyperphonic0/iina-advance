@@ -647,7 +647,7 @@ class Utility {
 
   // MARK: - Util classes
 
-  class Stopwatch: CustomStringConvertible {
+  struct Stopwatch: CustomStringConvertible, Sendable {
     let startTime: CFAbsoluteTime
     init() {
       startTime = CFAbsoluteTimeGetCurrent()
@@ -662,13 +662,13 @@ class Utility {
     var description: String { msElapsed.stringMaxFrac2 }
   }
 
-  class AlertInfo {
+  struct AlertInfo: Sendable {
     let key: String
     let comment: String?
-    let args: [CVarArg]?
+    let args: [String]?
     let style: NSAlert.Style
 
-    init(key: String, comment: String? = nil, args: [CVarArg]? = nil, _ style: NSAlert.Style = .critical) {
+    init(key: String, comment: String? = nil, args: [String]? = nil, _ style: NSAlert.Style = .critical) {
       self.key = key
       self.comment = comment
       self.args = args

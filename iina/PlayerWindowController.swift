@@ -12,8 +12,8 @@ import Cocoa
 // TODO: persist mpv properties in saved player state
 // TODO: support parent playlist
 // TODO: investigate generating thumbnails & Now Playing art from mpv screenshot cmd via RPC
-class PlayerWindowController: WindowController, NSWindowDelegate {
-  unowned var player: PlayerCore
+final class PlayerWindowController: WindowController, NSWindowDelegate {
+  let player: PlayerCore
   var log: any Logger.Subsystem { player.log }
 
   var undoHelper: PlayerWindowUndoHelper!
@@ -49,8 +49,6 @@ class PlayerWindowController: WindowController, NSWindowDelegate {
 
 
   // MARK: - Vars: Services
-
-  unowned var tabDelegate: TabDelegate?
 
   // For Rotate gesture:
   let rotationHandler = RotationGestureHandler()
