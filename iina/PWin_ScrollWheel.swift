@@ -97,15 +97,16 @@ class VolumeSliderScrollWheel: SliderScrollWheelDelegate {
   }
 
   override func scrollSessionWillBegin(_ session: ScrollSession) {
-    slider.associatedPlayer?.log.verbose("VolumeSlider scrollWheel seek began")
+    slider.associatedPlayer?.log.verbose("VolSlider scrollWheel seek began: value=\(slider.doubleValue)")
     session.sensitivity = Preference.volumeScrollSensitivity()
     session.valueAtStart = slider.doubleValue
   }
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {
-    slider.associatedPlayer?.log.verbose("VolumeSlider scrollWheel seek ended")
+    slider.associatedPlayer?.log.verbose("VolSlider scrollWheel seek ended: value=\(slider.doubleValue)")
     super.scrollSessionDidEnd(session)
-    slider.needsDisplay = true  // redraw slider if only showing knob during scroll (e.g. for clear BG style)
+    // Redraw slider if only showing knob during scroll (e.g. for clear BG style)
+    slider.needsDisplay = true
   }
 
 }  /// end `class VolumeSliderScrollWheel`
