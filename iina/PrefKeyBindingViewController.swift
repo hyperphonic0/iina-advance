@@ -96,6 +96,8 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    bindingTableView.idString = "BindingTable"
+    confTableView.idString = "ConfTable"
 
     // Need table updates to execute in serial queue
     let animationPipeline = AppDelegate.shared.preferenceWindowController.animationPipeline

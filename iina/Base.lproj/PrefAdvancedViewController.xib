@@ -325,11 +325,11 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView clipsToBounds="YES" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="aYw-Un-OIE" customClass="EditableTableCellView" customModule="IINA_Advance" customModuleProvider="target">
-                                                <rect key="frame" x="2" y="1" width="122" height="22"/>
+                                                <rect key="frame" x="2" y="1" width="122" height="37"/>
                                                 <subviews>
-                                                    <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="249" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="jGv-Vw-Iau" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
-                                                        <rect key="frame" x="2" y="2" width="118" height="17"/>
-                                                        <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Key EditableTextField" id="fbj-c6-bpP" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
+                                                    <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="500" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="jGv-Vw-Iau" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
+                                                        <rect key="frame" x="2" y="2" width="118" height="32"/>
+                                                        <textFieldCell key="cell" controlSize="large" sendsActionOnEndEditing="YES" title="Key EditableTextField" id="fbj-c6-bpP" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                             <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -338,6 +338,7 @@
                                                 </subviews>
                                                 <constraints>
                                                     <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="22" id="JpB-IN-5YG"/>
+                                                    <constraint firstAttribute="height" priority="499" constant="22" id="MGE-QQ-0cB"/>
                                                     <constraint firstItem="jGv-Vw-Iau" firstAttribute="leading" secondItem="aYw-Un-OIE" secondAttribute="leading" constant="4" id="Sos-7d-S9R"/>
                                                     <constraint firstAttribute="trailing" secondItem="jGv-Vw-Iau" secondAttribute="trailing" constant="4" id="ed2-GQ-m2M"/>
                                                     <constraint firstItem="jGv-Vw-Iau" firstAttribute="top" secondItem="aYw-Un-OIE" secondAttribute="top" constant="3" id="hdw-af-AiH"/>
@@ -364,9 +365,9 @@
                                             <tableCellView clipsToBounds="YES" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="dJ7-Mq-OHX" customClass="EditableTableCellView" customModule="IINA_Advance" customModuleProvider="target">
                                                 <rect key="frame" x="128" y="1" width="320" height="22"/>
                                                 <subviews>
-                                                    <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="DWx-cI-Qdh" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
+                                                    <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="500" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="DWx-cI-Qdh" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                         <rect key="frame" x="2" y="2" width="316" height="17"/>
-                                                        <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Value EditableTextField" id="qOl-B1-6Cg" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
+                                                        <textFieldCell key="cell" controlSize="large" sendsActionOnEndEditing="YES" title="Value EditableTextField" id="qOl-B1-6Cg" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                             <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>

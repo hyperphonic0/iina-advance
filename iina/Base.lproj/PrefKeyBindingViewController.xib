@@ -92,7 +92,7 @@
                                 <color key="backgroundColor" red="0.11764705882352941" green="0.11764705882352941" blue="0.11764705882352941" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                 <tableColumns>
-                                    <tableColumn identifier="nameColumn" width="162" minWidth="160" maxWidth="500" id="WgC-oi-gh9" userLabel="Name Column">
+                                    <tableColumn identifier="nameColumn" width="160" minWidth="160" maxWidth="500" id="WgC-oi-gh9" userLabel="Name Column">
                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Name">
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -105,10 +105,10 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView clipsToBounds="YES" translatesAutoresizingMaskIntoConstraints="NO" id="8QN-S3-Agb" userLabel="Name TableCellView" customClass="EditableTableCellView" customModule="IINA_Advance" customModuleProvider="target">
-                                                <rect key="frame" x="2" y="1" width="166" height="22"/>
+                                                <rect key="frame" x="2" y="1" width="164" height="22"/>
                                                 <subviews>
                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="200" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Zmv-VF-02E" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
-                                                        <rect key="frame" x="2" y="3" width="162" height="16"/>
+                                                        <rect key="frame" x="2" y="3" width="160" height="16"/>
                                                         <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Name EditableTextField" id="evx-8m-PJT" userLabel="Name TextFieldCell" customClass="EditableTextFieldCell" customModule="IINA_Advance" customModuleProvider="target">
                                                             <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -139,7 +139,7 @@
                                         </textFieldCell>
                                         <prototypeCellViews>
                                             <tableCellView translatesAutoresizingMaskIntoConstraints="NO" id="S8W-AF-Z3k" userLabel="IsDefault TableCellView">
-                                                <rect key="frame" x="172" y="1" width="16" height="22"/>
+                                                <rect key="frame" x="170" y="1" width="16" height="22"/>
                                                 <subviews>
                                                     <imageView identifier="isDefault" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="bcd-Sf-UF4" userLabel="Locked Image">
                                                         <rect key="frame" x="1" y="1.5" width="15.5" height="20"/>
@@ -286,7 +286,7 @@
                                             <tableCellView clipsToBounds="YES" autoresizesSubviews="NO" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="nMC-X0-DpK" userLabel="Key TableCellView" customClass="EditableTableCellView" customModule="IINA_Advance" customModuleProvider="target">
                                                 <rect key="frame" x="2" y="1" width="120" height="39"/>
                                                 <subviews>
-                                                    <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="251" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="wdS-kV-koV" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
+                                                    <textField autoresizesSubviews="NO" focusRingType="none" horizontalHuggingPriority="251" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="1000" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="wdS-kV-koV" customClass="EditableTextField" customModule="IINA_Advance" customModuleProvider="target">
                                                         <rect key="frame" x="2" y="2" width="116" height="34"/>
                                                         <textFieldCell key="cell" controlSize="large" lineBreakMode="charWrapping" sendsActionOnEndEditing="YES" title="Key EditableTextField" id="D4i-Dv-Avr" userLabel="Key TextFieldCell" customClass="EditableTextFieldCell" customModule="IINA_Advance">
                                                             <font key="font" metaFont="system"/>
