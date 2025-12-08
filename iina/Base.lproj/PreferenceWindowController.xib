@@ -28,18 +28,18 @@
         <window title="Settings" separatorStyle="none" allowsToolTipsWhenApplicationIsInactive="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" titlebarAppearsTransparent="YES" titleVisibility="hidden" id="F0z-JX-Cv5" userLabel="Preferences Window">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="196" y="240" width="840" height="480"/>
+            <rect key="contentRect" x="196" y="240" width="840" height="510"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1496" height="937"/>
-            <value key="minSize" type="size" width="840" height="320"/>
+            <value key="minSize" type="size" width="840" height="510"/>
             <view key="contentView" wantsLayer="YES" id="se5-gp-TjO" userLabel="PrefWindow Content View">
-                <rect key="frame" x="0.0" y="0.0" width="840" height="480"/>
+                <rect key="frame" x="0.0" y="0.0" width="840" height="510"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                 <subviews>
                     <visualEffectView blendingMode="behindWindow" material="sidebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="AO2-1e-7F6" userLabel="PrefNavPanel Visual Effect View">
-                        <rect key="frame" x="0.0" y="0.0" width="200" height="480"/>
+                        <rect key="frame" x="0.0" y="0.0" width="200" height="510"/>
                         <subviews>
                             <searchField wantsLayer="YES" focusRingType="none" verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rKj-eM-MTH">
-                                <rect key="frame" x="9" y="422" width="182" height="28"/>
+                                <rect key="frame" x="9" y="452" width="182" height="28"/>
                                 <searchFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" id="ZLM-z2-CyT">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -50,13 +50,13 @@
                                 </connections>
                             </searchField>
                             <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="38" horizontalPageScroll="10" verticalLineScroll="38" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="Isy-K8-od9" userLabel="PrefNavPanelTable Scroll View">
-                                <rect key="frame" x="0.0" y="0.0" width="200" height="422"/>
+                                <rect key="frame" x="0.0" y="0.0" width="200" height="452"/>
                                 <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="H3G-ed-YHx" userLabel="PrefNavPanel Clip View">
-                                    <rect key="frame" x="0.0" y="0.0" width="200" height="422"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="200" height="452"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="sourceList" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" typeSelect="NO" autosaveName="" rowHeight="36" rowSizeStyle="automatic" viewBased="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vde-uJ-0ge" userLabel="PrefNavPanel Table View">
-                                            <rect key="frame" x="0.0" y="0.0" width="200" height="422"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="200" height="452"/>
                                             <size key="intercellSpacing" width="0.0" height="2"/>
                                             <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
                                             <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
@@ -148,19 +148,19 @@
                         </constraints>
                     </visualEffectView>
                     <box horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="anY-kd-ix3" userLabel="Vertical Divider Line">
-                        <rect key="frame" x="197" y="0.0" width="5" height="480"/>
+                        <rect key="frame" x="197" y="0.0" width="5" height="510"/>
                     </box>
                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="mpW-1b-ztU" userLabel="PrefSearchResult Mask View" customClass="PrefSearchResultMaskView" customModule="IINA_Advance" customModuleProvider="target">
-                        <rect key="frame" x="200" y="0.0" width="640" height="480"/>
+                        <rect key="frame" x="200" y="0.0" width="640" height="510"/>
                     </customView>
                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" findBarPosition="aboveHorizontalRuler" translatesAutoresizingMaskIntoConstraints="NO" id="VYU-tb-v3l" userLabel="PrefDetailPanel Scroll View">
-                        <rect key="frame" x="200" y="0.0" width="640" height="480"/>
+                        <rect key="frame" x="200" y="0.0" width="640" height="510"/>
                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="fAk-o1-RBn" userLabel="PrefDetailPanel Clip View">
-                            <rect key="frame" x="0.0" y="0.0" width="640" height="480"/>
+                            <rect key="frame" x="0.0" y="0.0" width="640" height="510"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <view horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="5R5-77-bmq" userLabel="PrefDetailPanel Flipped Content View" customClass="FlippedView" customModule="IINA_Advance" customModuleProvider="target">
-                                    <rect key="frame" x="0.0" y="0.0" width="640" height="480"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="640" height="510"/>
                                 </view>
                             </subviews>
                             <constraints>
@@ -175,8 +175,8 @@
                             <rect key="frame" x="-100" y="-100" width="480" height="16"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
-                        <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="94x-ey-qaM">
-                            <rect key="frame" x="603" y="0.0" width="17" height="452"/>
+                        <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="94x-ey-qaM">
+                            <rect key="frame" x="623" y="0.0" width="17" height="500"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
                     </scrollView>

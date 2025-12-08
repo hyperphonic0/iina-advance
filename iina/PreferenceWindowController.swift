@@ -59,6 +59,9 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
   /// Use for all animations in the `Preferences` window, if possible.
   let animationPipeline = IINAAnimation.Pipeline(nil)
 
+  // Only used for MacOS 26+
+  let detailView = NSView()
+
   class Trie {
 
     class Node {
@@ -231,6 +234,14 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
       navTableSearchFieldSpacingConstraint.constant = 10.0
     }
 
+#if compiler(>=6.2) // only when using Xcode 26+
+
+    // replace with split view when all subviews are properly loaded
+    if #available(macOS 26.0, *) {
+      setupForLiquidGlass()
+    }
+#endif
+
     // To restore selection properly, must set table to allow empty selection initially (in XIB).
     // Otherwise, it will automatically select the first value and trigger the selection notification.
     // Much safer to disable empty selection after selecting a row.
@@ -299,11 +310,6 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
         searchField.sendAction(searchField.action, to: searchField.target)
       }
     }
-
-#if compiler(>=6.2) // only when using Xcode 26+
-    // replace with split view when all subviews are properly loaded
-    setupForLiquidGlass()
-#endif
   }
 
   override func mouseDown(with event: NSEvent) {
@@ -384,7 +390,13 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     prefDetailContentView.removeAllSubviews()
     guard let vc = viewControllers[at: index] else { return nil }
     prefDetailContentView.addSubview(vc.view)
-    Utility.quickConstraints(["H:|-28-[v]-28-|", "V:|-0-[v]-28-|"], ["v": vc.view])
+    if #available(macOS 26.0, *) {
+      // Liquid Glass: make top of content start below search bar, but allow it to scroll underneath it.
+      // Use padding so that content aligns with title bar text
+      vc.view.addConstraintsToFillSuperview(top: detailView.safeAreaInsets.top, bottom: 20, leading: 20, trailing: 20)
+    } else {
+      vc.view.addConstraintsToFillSuperview(top: 0, bottom: 28, leading: 28, trailing: 28)
+    }
 
     let isScrollable = vc.preferenceContentIsScrollable
     detailViewBottomConstraint?.isActive = !isScrollable
@@ -591,55 +603,53 @@ extension PreferenceWindowController: NSTableViewDelegate, NSTableViewDataSource
 
 }
 
-#if compiler(>=6.2)
-extension PreferenceWindowController {
-  func setupForLiquidGlass() {
-    if #available(macOS 26.0, *) {
-      window?.styleMask = [.titled, .miniaturizable, .closable, .resizable, .fullSizeContentView]
-      window?.titlebarAppearsTransparent = false
-      window?.collectionBehavior = .fullScreenAuxiliary
-      let toolbar = NSToolbar(identifier: "preference.window.toolbar") // dummy toolbar to make sidebar merge with titlebar
-      toolbar.delegate = self
-      toolbar.displayMode = .iconOnly
-      toolbar.allowsDisplayModeCustomization = false
-      toolbar.allowsUserCustomization = false
-      window?.toolbar = toolbar
-      let detailView = NSView()
-      for v in [maskView!, prefDetailScrollView!] {
-        detailView.addSubview(v)
-        v.constraints.forEach(v.removeConstraint(_:))
-      }
-      NSLayoutConstraint.activate([
-        prefDetailScrollView.topAnchor.constraint(equalTo: detailView.topAnchor),
-        prefDetailScrollView.leadingAnchor.constraint(equalTo: detailView.safeAreaLayoutGuide.leadingAnchor),
-        prefDetailScrollView.trailingAnchor.constraint(equalTo: detailView.trailingAnchor),
-        prefDetailScrollView.bottomAnchor.constraint(equalTo: detailView.bottomAnchor),
+// MARK: - Liquid Glass
 
-        maskView.topAnchor.constraint(equalTo: detailView.topAnchor),
-        maskView.leadingAnchor.constraint(equalTo: detailView.leadingAnchor), // stretch all the way under sidebar
-        maskView.trailingAnchor.constraint(equalTo: detailView.trailingAnchor),
-        maskView.bottomAnchor.constraint(equalTo: detailView.bottomAnchor),
-      ])
-      if let top = window?.contentView?.safeAreaInsets.top {
-        // a little hack to xib's settings
-        prefDetailScrollView.contentInsets.top = top
-      }
-      prefDetailScrollView.contentView.automaticallyAdjustsContentInsets = true
-      let splitController = NSSplitViewController()
-      splitController.splitViewItems = [
-        NSSplitViewItem(sidebarWithViewController: SimpleViewController(wrapped: tableView.enclosingScrollView!)),
-        NSSplitViewItem(viewController: SimpleViewController(wrapped: detailView)),
-      ]
-      splitController.splitViewItems.forEach {
-        $0.automaticallyAdjustsSafeAreaInsets = true // allow mask to stretch under side bar
-      }
-      tableView.enclosingScrollView?.contentView.automaticallyAdjustsContentInsets = true
-      NSLayoutConstraint.activate([
-        tableView.enclosingScrollView!.widthAnchor.constraint(equalToConstant: 200),
-      ])
-      splitController.splitViewItems[0].canCollapse = false
-      window?.contentViewController = splitController
+#if compiler(>=6.2)
+
+extension PreferenceWindowController {
+  @available(macOS 26.0, *)
+  func setupForLiquidGlass() {
+    window?.styleMask = [.titled, .miniaturizable, .closable, .resizable, .fullSizeContentView]
+    window?.titleVisibility = .visible
+    window?.titlebarAppearsTransparent = false
+    window?.collectionBehavior = .fullScreenAuxiliary
+    let toolbar = NSToolbar(identifier: "preference.window.toolbar") // dummy toolbar to make sidebar merge with titlebar
+    toolbar.delegate = self
+    toolbar.displayMode = .iconOnly
+    toolbar.allowsDisplayModeCustomization = false
+    toolbar.allowsUserCustomization = false
+    window?.toolbar = toolbar
+    for v in [maskView!, prefDetailScrollView!] {
+      detailView.addSubview(v)
+      v.constraints.forEach(v.removeConstraint(_:))
     }
+    NSLayoutConstraint.activate([
+      prefDetailScrollView.topAnchor.constraint(equalTo: detailView.topAnchor),
+      prefDetailScrollView.leadingAnchor.constraint(equalTo: detailView.safeAreaLayoutGuide.leadingAnchor),
+      detailView.trailingAnchor.constraint(equalTo: prefDetailScrollView.trailingAnchor),
+      detailView.bottomAnchor.constraint(equalTo: prefDetailScrollView.bottomAnchor),
+
+      maskView.topAnchor.constraint(equalTo: detailView.topAnchor),
+      maskView.leadingAnchor.constraint(equalTo: detailView.leadingAnchor), // stretch all the way under sidebar
+      maskView.trailingAnchor.constraint(equalTo: detailView.trailingAnchor),
+      maskView.bottomAnchor.constraint(equalTo: detailView.bottomAnchor),
+    ])
+    prefDetailScrollView.contentView.automaticallyAdjustsContentInsets = true
+    let splitController = NSSplitViewController()
+    splitController.splitViewItems = [
+      NSSplitViewItem(sidebarWithViewController: SimpleViewController(wrapped: tableView.enclosingScrollView!)),
+      NSSplitViewItem(viewController: SimpleViewController(wrapped: detailView)),
+    ]
+    splitController.splitViewItems.forEach {
+      $0.automaticallyAdjustsSafeAreaInsets = true // allow mask to stretch under side bar
+    }
+    tableView.enclosingScrollView?.contentView.automaticallyAdjustsContentInsets = true
+    NSLayoutConstraint.activate([
+      tableView.enclosingScrollView!.widthAnchor.constraint(equalToConstant: 200),
+    ])
+    splitController.splitViewItems[0].canCollapse = false
+    window?.contentViewController = splitController
   }
 }
 
@@ -682,6 +692,8 @@ extension PreferenceWindowController: NSToolbarDelegate {
   }
 }
 #endif // compiler(>=6.2)
+
+// MARK: - Support classes
 
 class PrefSearchResultMaskView: NSView {
 

@@ -8,6 +8,8 @@
 
 import Cocoa
 
+fileprivate let stackViewVertSpacing: CGFloat = 16
+
 class PreferenceViewController: NSViewController {
 
   var stackView: NSStackView!
@@ -24,14 +26,15 @@ class PreferenceViewController: NSViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    guard let embeddable = self as? PreferenceWindowEmbeddable else { return }
+    
+    if embeddable.preferenceContentIsScrollable || !sectionViews.isEmpty {
+      var views = sectionViews.flatMap { [$0, NSBox.horizontalLine()] }.dropLast()
 
-    let views = sectionViews.flatMap { [$0, NSBox.horizontalLine()] }.dropLast()
-
-    if let embeddable = self as? PreferenceWindowEmbeddable, embeddable.preferenceContentIsScrollable || !sectionViews.isEmpty {
       stackView = NSStackView(views: Array(views))
       stackView.orientation = .vertical
       stackView.alignment = .leading
-      stackView.spacing = 16
+      stackView.spacing = stackViewVertSpacing
       stackView.distribution = .fill
       stackView.idString = "PreferenceViewController.stackView"
       view.addSubview(stackView)
