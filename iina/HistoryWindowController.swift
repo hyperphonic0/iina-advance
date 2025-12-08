@@ -128,7 +128,6 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
   override func windowDidLoad() {
     super.windowDidLoad()
     guard let window else { return }
-    historySearchField.stringValue = searchString
     outlineView.delegate = self
     outlineView.dataSource = self
     outlineView.menu?.delegate = self
@@ -145,17 +144,6 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
       groupByButton.layer?.cornerRadius = 10
     }
 
-    // Add the visual effect as a title bar accessory
-    let accessory = NSTitlebarAccessoryViewController()
-    accessory.view = titleBarAccessoryContentView
-    accessory.layoutAttribute = .trailing
-    window.addTitlebarAccessoryViewController(accessory)
-
-    if #available(macOS 11.0, *) {
-      window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
-      accessory.automaticallyAdjustsSize = false
-    }
-
     window.backgroundColor = .clear
     window.titlebarAppearsTransparent = true
     window.styleMask.insert(.fullSizeContentView)
@@ -167,6 +155,22 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
       visualEffectCV.autoresizingMask = [.width, .height]
     }
 
+    // replace with split view when all subviews are properly loaded
+    if #available(macOS 26.0, *) {
+      setupForLiquidGlass()
+    } else {
+      // Add the visual effect as a title bar accessory
+      let accessory = NSTitlebarAccessoryViewController()
+      accessory.view = titleBarAccessoryContentView
+      accessory.layoutAttribute = .trailing
+      window.addTitlebarAccessoryViewController(accessory)
+
+      if #available(macOS 11.0, *) {
+        window.titlebarSeparatorStyle = .automatic  // or .line, .none, .shadow
+        accessory.automaticallyAdjustsSize = false
+      }
+    }
+
     // Override the automatic key-view loop to ensure correct order
     self.outlineView.nextKeyView = self.groupByButton
     self.groupByButton.nextKeyView = self.historySearchField
@@ -174,6 +178,10 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
     // Focus on table when window opens, becuase the other views show a glaring ring when focused
     window.initialFirstResponder = self.outlineView
 
+    DispatchQueue.main.async { [self] in
+      historySearchField.stringValue = searchString
+      historySearchField.sendAction(historySearchField.action, to: historySearchField.target)
+    }
     log.verbose("History windowDidLoad done")
   }
 
@@ -785,6 +793,87 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
     return approvedSelectionIndexes
   }
 }
+
+// MARK: - Liquid Glass
+
+#if compiler(>=6.2)
+
+extension HistoryWindowController {
+  @available(macOS 26.0, *)
+  func setupForLiquidGlass() {
+    window?.titleVisibility = .visible
+    window?.titlebarAppearsTransparent = false
+    window?.collectionBehavior = .fullScreenAuxiliary
+    let toolbar = NSToolbar(identifier: "history.window.toolbar") // dummy toolbar to make sidebar merge with titlebar
+    toolbar.delegate = self
+    toolbar.displayMode = .iconOnly
+    toolbar.allowsDisplayModeCustomization = false
+    toolbar.allowsUserCustomization = false
+    window?.toolbar = toolbar
+  }
+}
+
+// MARK: - Toolbar for macOS 26+
+@available(macOS 26.0, *)
+private extension NSToolbarItem.Identifier {
+  static let historySearchItem = NSToolbarItem.Identifier("HistorySearchItem")
+  static let historyGroupByLabelItem = NSToolbarItem.Identifier("HistoryGroupByLabelItem")
+  static let historyGroupByPopupItem = NSToolbarItem.Identifier("HistoryGroupByPopupItem")
+}
+
+@available(macOS 26.0, *)
+extension HistoryWindowController: NSToolbarDelegate {
+  func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    [
+      .sidebarTrackingSeparator,
+      .flexibleSpace,
+      .historyGroupByLabelItem,
+      .historyGroupByPopupItem,
+      .historySearchItem,
+    ]
+  }
+
+  func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+    switch itemIdentifier {
+
+    case .historyGroupByLabelItem:
+      let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+      item.view = NSTextField(labelWithString: "Group by:")
+      return item
+
+    case .historyGroupByPopupItem:
+      let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+
+      // Reuse the existing pop-up from the XIB
+      let popup = groupByButton!
+      popup.translatesAutoresizingMaskIntoConstraints = false
+      popup.widthAnchor.constraint(greaterThanOrEqualToConstant: 50).isActive = true
+      
+      item.view = popup
+      return item
+
+    case .historySearchItem:
+      let item = NSSearchToolbarItem(itemIdentifier: itemIdentifier)
+      item.searchField.target = self
+      item.searchField.action = #selector(searchFieldAction(_:))
+      // replace the on in xib
+      historySearchField = item.searchField
+      return item
+
+    default:
+      return nil
+    }
+  }
+
+  func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    toolbarDefaultItemIdentifiers(toolbar)
+  }
+
+  func toolbar(_ toolbar: NSToolbar, itemIdentifier: NSToolbarItem.Identifier, canBeInsertedAt index: Int) -> Bool {
+    true
+  }
+}
+#endif // compiler(>=6.2)
 
 
 // MARK: - Other classes

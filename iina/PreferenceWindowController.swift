@@ -610,16 +610,17 @@ extension PreferenceWindowController: NSTableViewDelegate, NSTableViewDataSource
 extension PreferenceWindowController {
   @available(macOS 26.0, *)
   func setupForLiquidGlass() {
-    window?.styleMask = [.titled, .miniaturizable, .closable, .resizable, .fullSizeContentView]
-    window?.titleVisibility = .visible
-    window?.titlebarAppearsTransparent = false
-    window?.collectionBehavior = .fullScreenAuxiliary
+    guard let window else { return }
+    window.styleMask = [.titled, .miniaturizable, .closable, .resizable, .fullSizeContentView]
+    window.titleVisibility = .visible
+    window.titlebarAppearsTransparent = false
+    window.collectionBehavior = .fullScreenAuxiliary
     let toolbar = NSToolbar(identifier: "preference.window.toolbar") // dummy toolbar to make sidebar merge with titlebar
     toolbar.delegate = self
     toolbar.displayMode = .iconOnly
     toolbar.allowsDisplayModeCustomization = false
     toolbar.allowsUserCustomization = false
-    window?.toolbar = toolbar
+    window.toolbar = toolbar
     for v in [maskView!, prefDetailScrollView!] {
       detailView.addSubview(v)
       v.constraints.forEach(v.removeConstraint(_:))
@@ -636,20 +637,21 @@ extension PreferenceWindowController {
       maskView.bottomAnchor.constraint(equalTo: detailView.bottomAnchor),
     ])
     prefDetailScrollView.contentView.automaticallyAdjustsContentInsets = true
+    let navTableScrollView = tableView.enclosingScrollView!
     let splitController = NSSplitViewController()
     splitController.splitViewItems = [
-      NSSplitViewItem(sidebarWithViewController: SimpleViewController(wrapped: tableView.enclosingScrollView!)),
+      NSSplitViewItem(sidebarWithViewController: SimpleViewController(wrapped: navTableScrollView)),
       NSSplitViewItem(viewController: SimpleViewController(wrapped: detailView)),
     ]
     splitController.splitViewItems.forEach {
       $0.automaticallyAdjustsSafeAreaInsets = true // allow mask to stretch under side bar
     }
-    tableView.enclosingScrollView?.contentView.automaticallyAdjustsContentInsets = true
-    NSLayoutConstraint.activate([
-      tableView.enclosingScrollView!.widthAnchor.constraint(equalToConstant: 200),
-    ])
-    splitController.splitViewItems[0].canCollapse = false
-    window?.contentViewController = splitController
+    navTableScrollView.contentView.automaticallyAdjustsContentInsets = true
+    let navContainer = splitController.splitViewItems[0]
+    navContainer.canCollapse = false
+    navContainer.minimumThickness = 200
+    navContainer.maximumThickness = 200
+    window.contentViewController = splitController
   }
 }
 
