@@ -967,7 +967,6 @@ extension PlayerWindowController {
     }
 
     videoView.enterAsynchronousMode()
-    CATransaction.setAnimationDuration(0)  // need immediate effect. No lag!
 
     let (newCursor, newGeo): (CursorType, PWinGeometry?)
 

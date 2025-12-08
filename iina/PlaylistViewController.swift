@@ -1218,7 +1218,10 @@ extension PlaylistViewController: EditableTableViewDelegate {
     if let pwc = pwc, pwc.currentDragObject == view,
        let sidebar = pwc.getConfiguredSidebar(forTabGroup: .playlist) {
 
-      pwc.continueResizingSidebar(sidebar.locationID, with: event)
+      // Do not animate. It will cause lag while dragging
+      IINAAnimation.disableAnimation {
+        pwc.continueResizingSidebar(sidebar.locationID, with: event)
+      }
       return
     }
 
