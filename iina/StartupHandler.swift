@@ -124,7 +124,7 @@ final class StartupHandler {
     // If launched non-interactively, load all the UI stuff now
     if !AppDelegate.isInteractiveLaunch {
       // TODO: remove this when problems fixed...
-      Utility.showAlert("OpenFiles: Launch is not interactive!", style: .critical, logAlert: true)
+      Utility.showAlert("OpenFiles: Launch is not interactive! Cannot open \(pendingFilesForApplicationOpenFiles.count) requested files", style: .critical, logAlert: true)
       return
     }
     AppDelegate.shared.ensureInteractiveLaunchEnabled()
