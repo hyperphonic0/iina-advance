@@ -322,7 +322,7 @@ struct GeometryTransform: Sendable {
 
   /// Builds on the state in the `GeometryTransform` object and adds the variables retrieved in Stage 2 (mpv queue).
   /// Used as input for `PWinSessionStateTF` & `VideoGeometryTF` functions.
-  struct ContextStage2 : Sendable{
+  struct ContextStage2 : Sendable {
     /// The transform spec. Immutable.
     let tf: GeometryTransform
 
