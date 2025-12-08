@@ -19,7 +19,7 @@ fileprivate extension NSUserInterfaceItemIdentifier {
 fileprivate let sectionHighlightColor = NSColor(name: nil) { appearance in
   if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
     // Dark mode
-    return NSColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.04)
+    return NSColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 0.16)
   } else {
     // Light mode
     return NSColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.6)
@@ -150,7 +150,7 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
 
     if let visualEffectCV = window.contentView as? NSVisualEffectView {
       visualEffectCV.material = .contentBackground
-      visualEffectCV.blendingMode = .withinWindow
+      visualEffectCV.blendingMode = .behindWindow
       visualEffectCV.state = .active
       visualEffectCV.autoresizingMask = [.width, .height]
     }
@@ -838,7 +838,9 @@ extension HistoryWindowController: NSToolbarDelegate {
 
     case .historyGroupByLabelItem:
       let item = NSToolbarItem(itemIdentifier: itemIdentifier)
-      item.view = NSTextField(labelWithString: "Group by:")
+      let label = NSTextField(labelWithString: "Group by:")
+      label.textColor = .secondaryLabelColor
+      item.view = label
       return item
 
     case .historyGroupByPopupItem:

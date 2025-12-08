@@ -51,6 +51,8 @@ class LogWindowController: WindowController, NSMenuDelegate {
     }
     levelPopUpButton.selectItem(withTag: Logger.Level.preferred.rawValue)
     subsystemPopUpButton.menu!.delegate = self
+    
+    window?.initialFirstResponder = logTableView
   }
 
   override func showWindow(_ sender: Any?) {

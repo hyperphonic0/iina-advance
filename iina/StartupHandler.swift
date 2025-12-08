@@ -120,14 +120,15 @@ final class StartupHandler {
     // if launched from command line, should ignore openFile during launch
     guard !shouldIgnoreOpenFile else { return }
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
-
-    // If launched non-interactively, load all the UI stuff now
-    if !AppDelegate.isInteractiveLaunch {
-      // TODO: remove this when problems fixed...
-      Utility.showAlert("OpenFiles: Launch is not interactive! Cannot open \(pendingFilesForApplicationOpenFiles.count) requested files", style: .critical, logAlert: true)
+    guard !urls.isEmpty else {
+      Logger.log.verbose("application(openFiles:) called with: no URLs; returning")
       return
     }
-    AppDelegate.shared.ensureInteractiveLaunchEnabled()
+
+    guard AppDelegate.isInteractiveLaunch else {
+      Logger.log.debug("OpenFiles: Launch is not interactive. Ignoring \(filePaths.count) requested files")
+      return
+    }
 
     // if installing a plugin package
     if let pluginPackageURL = urls.first(where: { $0.pathExtension == "iinaplgz" }) {
@@ -711,6 +712,9 @@ final class StartupHandler {
 
     // Various initializations at App level
     NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
+
+    // TODO: try to get tabbing working
+    NSWindow.allowsAutomaticWindowTabbing = false
 
     JavascriptPlugin.loadGlobalInstances()
 

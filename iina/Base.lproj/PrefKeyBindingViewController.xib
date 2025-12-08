@@ -217,7 +217,7 @@
                 </button>
                 <button toolTip="Duplicate" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5WK-s3-J9x" userLabel="DuplicateConf Button">
                     <rect key="frame" x="49" y="61" width="24" height="24"/>
-                    <buttonCell key="cell" type="recessed" title="Duplicate" bezelStyle="recessed" image="plus.square.on.square" catalog="system" imagePosition="only" alignment="center" borderStyle="border" inset="2" id="gpZ-Rh-DMn">
+                    <buttonCell key="cell" type="recessed" title="Duplicate" bezelStyle="recessed" image="plus.square.on.square" imagePosition="only" alignment="center" borderStyle="border" inset="2" id="gpZ-Rh-DMn">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system" size="16"/>
                     </buttonCell>
@@ -514,6 +514,6 @@
         <image name="NSAddTemplate" width="18" height="17"/>
         <image name="NSLockLockedTemplate" width="17" height="19"/>
         <image name="NSRemoveTemplate" width="18" height="5"/>
-        <image name="plus.square.on.square" catalog="system" width="17" height="16"/>
+        <image name="plus.square.on.square" width="11" height="11"/>
     </resources>
 </document>

@@ -691,6 +691,7 @@ struct Images {
   static let volume3 = makeSymbol(named: "speaker.wave.3.fill", fallbackName: "volume", desc: "Volume Full", weight: .medium)
   /// Used the Exit Music Mode button
   static let backwardsCircle = makeSymbol(named: "arrowshape.backward.circle.fill", fallbackName: "arrowshape.backward.circle.fill", desc: "Go Back", ptSize: Constants.Distance.trafficLightButtonSize.height, weight: .regular, scale: .medium)
+  static let duplicate = makeSymbol(named: "plus.square.on.square", fallbackName: "plus.square.on.square", desc: "Duplicate", weight: .medium)
 }
 
 struct DebugConfig {

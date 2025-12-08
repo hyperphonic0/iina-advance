@@ -27,9 +27,9 @@ class PreferenceViewController: NSViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     guard let embeddable = self as? PreferenceWindowEmbeddable else { return }
-    
+
     if embeddable.preferenceContentIsScrollable || !sectionViews.isEmpty {
-      var views = sectionViews.flatMap { [$0, NSBox.horizontalLine()] }.dropLast()
+      let views = sectionViews.flatMap { [$0, NSBox.horizontalLine()] }.dropLast()
 
       stackView = NSStackView(views: Array(views))
       stackView.orientation = .vertical
