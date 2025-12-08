@@ -305,12 +305,6 @@ extension PlayerWindowController {
     // Prevent from triggering during a drag
     guard currentDragObject == nil else { return }
 
-    if let clickedButton = visibleViewForMouseEvent(event, in: symButtons) {
-      // Allow these controls to handle the event
-      log.trace{"PressureChange: clicked button=\(clickedButton.idString) hidden=\(clickedButton.isHidden.yn) stage=\(event.stage) stageTransition=\(event.stageTransition)"}
-      clickedButton.pressureChange(with: event)
-      return
-    }
     log.trace{"PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition)"}
     if !isCurrentPressInSecondStage && event.stage == 2 {
       performMouseAction(Preference.enum(for: .forceTouchAction))
@@ -324,14 +318,6 @@ extension PlayerWindowController {
     guard event.eventNumber != lastMouseDownEventID else { return }
     lastMouseDownEventID = event.eventNumber
     log.verbose("PWin MouseDown @ \(event.locationInWindow) clickCount=\(event.clickCount) eventNum=\(event.eventNumber)")
-
-    if let clickedButton = visibleViewForMouseEvent(event, in: symButtons) {
-      // When titlebar is "inside" the viewport, clicking on one of its SymButtons goes here first. Unclear why...
-      // So check for this and route the click to the button explicitly.
-      log.verbose("MouseDown: clicked button=\(clickedButton.idString) hidden=\(clickedButton.isHidden.yn)")
-      clickedButton.mouseDown(with: event)
-      return
-    }
 
     wasKeyWindowAtMouseDown = lastKeyWindowStatus
     mouseDownLocation = NSEvent.mouseLocation

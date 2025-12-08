@@ -166,7 +166,7 @@ extension PlayerWindowController {
                                     identifier: "LeadingSidebarBtn_Native",
                                     target: self,
                                     action: #selector(toggleLeadingSidebarVisibility(_:)),
-                                    bounceOnClick: true)
+                                    actionSymbolEffectFunc: SymButton.bounceEffectFunc)
 
     // Need to add trailing padding for each . But can't use edgeInsets of stack view because that seems to result in constraint errors.
     // Use a spacer instead
@@ -192,14 +192,14 @@ extension PlayerWindowController {
                                     Images.onTopOff,
                                     identifier: "OnTopButton_Native",
                                     target: self, action: #selector(toggleOnTop(_:)),
-                                    bounceOnClick: false) // Do not bounce (looks weird)
+                                    actionSymbolEffectFunc: SymButton.nullEffectFunc) // Do not bounce (looks weird)
 
     builder.configureTitleBarButton(trailingSidebarToggleButton,
                                     Images.sidebarTrailing,
                                     identifier: "TrailingSidebarBtn_Native",
                                     target: self,
                                     action: #selector(toggleTrailingSidebarVisibility(_:)),
-                                    bounceOnClick: true)
+                                    actionSymbolEffectFunc: SymButton.bounceEffectFunc)
 
     let trailingAccTrailingSpacer = SpacerView(id: "TrailingTBAccTrailingSpacer")
     trailingAccTrailingSpacer.setContentHuggingPriority(.required, for: .horizontal)  // do not expand horizontally
@@ -320,8 +320,8 @@ extension PlayerWindowController {
     playButton.image = Images.play
     playButton.target = self
     playButton.action = #selector(playButtonAction(_:))
-    playButton.refusesFirstResponder = true
     playButton.idString = "PlayBtn"  // helps with debug logging
+    playButton.actionSymbolEffectFunc = SymButton.nullEffectFunc(_:)
     // Set to 0 at load time to be safe:
     let playAspectConstraint = playButton.widthAnchor.constraint(equalTo: playButton.heightAnchor)
     playAspectConstraint.isActive = true
@@ -336,23 +336,19 @@ extension PlayerWindowController {
     leftArrowButton.image = oscGeo.leftArrowImage
     leftArrowButton.target = self
     leftArrowButton.action = #selector(leftArrowButtonAction(_:))
-    leftArrowButton.identifier = .init("LeftArrowBtn")
-    leftArrowButton.refusesFirstResponder = true
+    leftArrowButton.idString = "LeftArrowBtn"
     leftArrowButton.enableAcceleration = enableAcceleration
-    leftArrowButton.bounceOnClick = true
 
     // Right Arrow button
     rightArrowButton.image = oscGeo.rightArrowImage
     rightArrowButton.target = self
     rightArrowButton.action = #selector(rightArrowButtonAction(_:))
-    rightArrowButton.identifier = .init("RightArrowBtn")
-    rightArrowButton.refusesFirstResponder = true
+    rightArrowButton.idString = "RightArrowBtn"
     rightArrowButton.enableAcceleration = enableAcceleration
-    rightArrowButton.bounceOnClick = true
 
     initSpeedLabel()
 
-    fragPlaybackBtnsView.identifier = .init("fragPlaybackBtnsView")
+    fragPlaybackBtnsView.idString = "fragPlaybackBtnsView"
     fragPlaybackBtnsView.addSubview(leftArrowButton)
     fragPlaybackBtnsView.addSubview(playButton)
     fragPlaybackBtnsView.addSubview(speedLabel)

@@ -76,10 +76,10 @@ class CustomTitleBarViewController: NSViewController {
 
     builder.configureTitleBarButton(leadingSidebarToggleButton,
                                     Images.sidebarLeading,
-                                    identifier: "leadingSidebarBtn",
+                                    identifier: "LeadingSidebarBtn",
                                     target: pwc,
                                     action: #selector(pwc.toggleLeadingSidebarVisibility(_:)),
-                                    bounceOnClick: true)
+                                    actionSymbolEffectFunc: SymButton.bounceEffectFunc(_:))
 
     // Add fake traffic light buttons:
     let trafficLightButtons = trafficLightButtons
@@ -133,14 +133,14 @@ class CustomTitleBarViewController: NSViewController {
                                     identifier: "OnTopButton",
                                     target: pwc,
                                     action: #selector(pwc.toggleOnTop(_:)),
-                                    bounceOnClick: false) // Do not bounce (looks weird)
+                                    actionSymbolEffectFunc: SymButton.nullEffectFunc(_:)) // Do not bounce (looks weird)
 
     builder.configureTitleBarButton(trailingSidebarToggleButton,
                                     Images.sidebarTrailing,
                                     identifier: "TrailingSidebarBtn",
                                     target: pwc,
                                     action: #selector(pwc.toggleTrailingSidebarVisibility(_:)),
-                                    bounceOnClick: true)
+                                    actionSymbolEffectFunc: SymButton.bounceEffectFunc(_:))
     trailingStackView.setViews([trailingSidebarToggleButton, onTopButton], in: .center)
     trailingStackView.detachesHiddenViews = true
     trailingStackView.identifier = .init("TitleBar-TrailingStackView")
@@ -319,7 +319,8 @@ final class TitleBarButtonsContainerView: NSStackView {
 final class CustomTitleBar {
   static let shared = CustomTitleBar()
 
-  func configureTitleBarButton(_ button: SymButton, _ image: NSImage, identifier: String, target: AnyObject, action: Selector, bounceOnClick: Bool) {
+  func configureTitleBarButton(_ button: SymButton, _ image: NSImage, identifier: String, target: AnyObject, action: Selector,
+                               actionSymbolEffectFunc: @escaping (SymButton) -> Void) {
     button.image = image
     button.target = target
     button.action = action
@@ -344,6 +345,6 @@ final class CustomTitleBar {
       button.widthAnchor.constraint(equalToConstant: iconWidth).isActive = true
     }
 
-    button.bounceOnClick = bounceOnClick
+    button.actionSymbolEffectFunc = actionSymbolEffectFunc
   }
 }

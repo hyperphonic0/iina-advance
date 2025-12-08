@@ -130,18 +130,14 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     togglePlaylistButton.identifier = .init("TogglePlaylistButton")
     togglePlaylistButton.toolTip = Preference.ToolBarButton.playlist.description()
     togglePlaylistButton.image = Preference.ToolBarButton.playlist.image()
-    togglePlaylistButton.bounceOnClick = true
 
     toggleAlbumArtButton.identifier = .init("ToggleAlbumArtButton")
     toggleAlbumArtButton.toolTip = NSLocalizedString("mini_player.album_art", comment: "album_art")
     toggleAlbumArtButton.image = Images.toggleAlbumArt
-    toggleAlbumArtButton.bounceOnClick = true
 
     volumeButton.toolTip = NSLocalizedString("mini_player.volume", comment: "volume")
     volumeButton.identifier = .init("VolumeButton")
-    volumeButton.bounceOnClick = true
     pwc.exitMusicModeButton.toolTip = NSLocalizedString("mini_player.back", comment: "back")
-    pwc.exitMusicModeButton.bounceOnClick = true
 
     view.addSubview(playlistWrapperView, positioned: .above, relativeTo: musicModeControlBarView)
     // Bottom constraint of playlist wrapper must be lower priority than window resize, to avoid constraint violations

@@ -570,15 +570,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   let leftTimeLabel = DurationDisplayTextField()
   let rightTimeLabel = DurationDisplayTextField()
 
-  var symButtons: [SymButton] {
-    var buttons = [muteButton, playButton, leftArrowButton, rightArrowButton,
-                   leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton]
-    if let moreButtons = customTitleBar?.symButtons {
-      buttons += moreButtons
-    }
-    return buttons
-  }
-
   // - Misc Views
 
   var mouseActionDisabledViews: [NSView?] {

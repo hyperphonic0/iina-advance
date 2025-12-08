@@ -693,6 +693,15 @@ extension PlayerWindowController {
       leftArrowButton.replaceSymbolImage(with: newGeo.leftArrowImage)
       rightArrowButton.replaceSymbolImage(with: newGeo.rightArrowImage)
 
+      switch newGeo.arrowButtonAction {
+      case .playlist, .speed, .unused:
+        leftArrowButton.actionSymbolEffectFunc = SymButton.bounceEffectFunc(_:)
+        rightArrowButton.actionSymbolEffectFunc = SymButton.bounceEffectFunc(_:)
+      case .seek:
+        leftArrowButton.actionSymbolEffectFunc = SymButton.rotateEffectFunc(_:)
+        rightArrowButton.actionSymbolEffectFunc = SymButton.rotateEffectFunc(_:)
+      }
+
       rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 
       let hideArrowBtns = !newGeo.hasArrowButtons

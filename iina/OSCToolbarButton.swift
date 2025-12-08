@@ -17,14 +17,11 @@ class OSCToolbarButton: OSCSymButton {
 
   override init(id: String? = nil) {
     super.init(id: id)
-    bounceOnClick = true
-    refusesFirstResponder = true
     tag = -1
   }
   
   @MainActor required init?(coder: NSCoder) {
     super.init(coder: coder)
-    bounceOnClick = true
   }
   
   var buttonSize: CGFloat {
