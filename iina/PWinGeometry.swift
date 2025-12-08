@@ -147,22 +147,22 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
       return cloneMusicMode(windowFrame: windowFrame, screenID: screenID, video: video)
     }
 
-    let outputGeo = PWinGeometry(windowFrame: windowFrame ?? self.windowFrame,
-                              screenID: screenID ?? self.screenID,
-                              screenFit: screenFit ?? self.screenFit,
-                              mode: mode,
-                              topMarginHeight: topMarginHeight ?? self.topMarginHeight,
-                              outsideBars: outsideBars ?? self.outsideBars,
-                              insideBars: insideBars ?? self.insideBars,
-                              viewportMargins: viewportMargins,
-                              video: video ?? self.video)
-    return outputGeo
+    let clonedGeo = PWinGeometry(windowFrame: windowFrame ?? self.windowFrame,
+                                 screenID: screenID ?? self.screenID,
+                                 screenFit: screenFit ?? self.screenFit,
+                                 mode: mode,
+                                 topMarginHeight: topMarginHeight ?? self.topMarginHeight,
+                                 outsideBars: outsideBars ?? self.outsideBars,
+                                 insideBars: insideBars ?? self.insideBars,
+                                 viewportMargins: viewportMargins,
+                                 video: video ?? self.video)
+    return clonedGeo
   }
 
   // MARK: - Computed properties
 
   var description: String {
-    return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) \(screenFit) \(isMusicModePlaylistShown ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=N") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidSize=\(videoSize) vidMargins=\(viewportMargins) \(video)}"
+    return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) \(screenFit) \(isMusicModePlaylistShown ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=N") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidSize=\(videoSize) vidMargins=\(viewportMargins) \(video) vidScale=\(videoScale)}"
   }
 
   var log: any Logger.Subsystem { video.log }
