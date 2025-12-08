@@ -5,8 +5,6 @@
 //  Created by Matt Svoboda on 2025-03-27.
 //  Copyright © 2025 lhc. All rights reserved.
 
-fileprivate let logEvents = false
-
 extension MPVController {
   static let observeProperties: [String: mpv_format] = [
     MPVProperty.trackList: MPV_FORMAT_NONE,
@@ -111,15 +109,12 @@ extension MPVController {
   /// Process the event
   private func handleEvent(_ event: UnsafePointer<mpv_event>!) {
     let eventId: mpv_event_id = event.pointee.event_id
-    if logEvents && Logger.isEnabled(.verbose) {
-      player.log.verbose("Got mpv event: \(eventId)")
-    }
 
     switch eventId {
     case MPV_EVENT_PROPERTY_CHANGE:
       let dataOpaquePtr = OpaquePointer(event.pointee.data)
       if let property = UnsafePointer<mpv_event_property>(dataOpaquePtr)?.pointee {
-        handlePropertyChange(property)
+        propertyDidChange(property)
       }
 
     case MPV_EVENT_QUEUE_OVERFLOW:
@@ -246,22 +241,24 @@ extension MPVController {
       }
 
     default:
-      player.log.trace("Unhandled mpv event: \(eventId)")
+      player.log.verbose("Unhandled mpv event: \(eventId)")
       break
     }
 
     // This code is running in the com.colliderli.iina.controller dispatch queue. We must not run
     // plugins from a task in this queue. Accessing EventController data from a thread in this queue
     // results in data races that can cause a crash. See issue 3986.
-    DispatchQueue.main.async { [self] in
-      let eventName = "mpv.\(String(cString: mpv_event_name(eventId)))"
-      player.events.emit(.init(eventName))
+    if AppDelegate.iinaPluginSystemEnabled {
+      DispatchQueue.main.async { [self] in
+        let eventName = "mpv.\(String(cString: mpv_event_name(eventId)))"
+        player.events.emit(.init(eventName))
+      }
     }
   }
 
   // MARK: - Property listeners
 
-  private func handlePropertyChange(_ property: mpv_event_property) {
+  private func propertyDidChange(_ property: mpv_event_property) {
     let name = String(cString: property.name)
 
     switch name {
@@ -285,33 +282,25 @@ extension MPVController {
     case MPVProperty.videoParamsRotate:
       /** `video-params/rotate: Intended display rotation in degrees (clockwise).` - mpv manual
        Do not confuse with the user-configured `video-rotate` (below) */
-      if let totalRotation = UnsafePointer<Int>(OpaquePointer(property.data))?.pointee {
+      if let totalRotation = property.intData(log) {
         player.log.verbose("Δ mpv prop: 'video-params/rotate' ≔ \(totalRotation)")
         player.saveState()
         /// Any necessary resizing will be handled elsewhere
       }
 
     case MPVOption.Video.videoRotate:
-      guard player.pwc.loaded else { break }
-      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
-      let userRotation = Int(data)
-
+      guard let userRotation = property.intData(log) else { break }
       // Will only get here if rotation was initiated from mpv. If IINA initiated, the new value would have matched videoGeo.
       player.log.verbose("Δ mpv prop: 'video-rotate' ≔ \(userRotation)")
-
       player.userRotationDidChange(to: userRotation)
 
     case MPVProperty.dwidth:
-      guard player.pwc.loaded else { break }
-      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
-      let dwidth = Int(data)
+      guard let dwidth = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: 'dwidth' ≔ \(dwidth)")
       player.syncVideoParamsFromMpv()
 
     case MPVProperty.dheight:
-      guard player.pwc.loaded else { break }
-      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
-      let dheight = Int(data)
+      guard let dheight = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: 'dheight' ≔ \(dheight)")
       player.syncVideoParamsFromMpv()
     case MPVProperty.videoParamsPrimaries:
@@ -321,45 +310,36 @@ extension MPVController {
       player.refreshEdrMode()
 
     case MPVOption.TrackSelection.vid:
-      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
-      let vid = Int(data)
+      guard let vid = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: 'vid' ≔ \(vid)")
       player.vidChanged()
 
     case MPVOption.TrackSelection.aid:
-      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
-      let aid = Int(data)
+      guard let aid = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: 'aid' ≔ \(aid)")
       player.aidChanged(to: aid)
 
     case MPVOption.TrackSelection.sid:
-      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
-      let sid = Int(data)
+      guard let sid = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: 'sid' ≔ \(sid)")
       player.sidChanged(to: sid)
 
     case MPVOption.Subtitles.secondarySid:
-      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
-      let ssid = Int(data)
+      guard let ssid = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: 'secondary-sid' ≔ \(ssid)")
       player.secondarySidChanged(to: ssid)
 
     case MPVOption.PlaybackControl.pause:
-      guard let paused = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else {
-        player.log.error("Failed to parse mpv pause data!")
-        break
-      }
+      guard let paused = property.boolData(log) else { break }
       player.log.verbose("Δ mpv prop: 'pause' = \(paused.yn)")
-
       player.pausedStateDidChange(to: paused)
 
     case MPVProperty.chapter:
       player.chapterChanged()
 
     case MPVOption.PlaybackControl.speed:
-      guard let speed = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else { break }
+      guard let speed = property.doubleData(log) else { break }
       player.log.verbose("Δ mpv prop: `speed` = \(speed)")
-
       player.speedDidChange(to: speed)
       player.setQuickSettingsViewNeedsUpdate()
 
@@ -380,7 +360,7 @@ extension MPVController {
       player.syncAbLoop()
 
     case MPVOption.OSD.osdLevel:
-      guard let level = UnsafePointer<Int>(OpaquePointer(property.data))?.pointee else { break }
+      guard let level = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: `osdLevel` = \(level)")
       let isUsingMpvOSD: Bool = level != 0
       player.isUsingMpvOSD = isUsingMpvOSD
@@ -390,7 +370,7 @@ extension MPVController {
       }
 
     case MPVOption.Video.deinterlace:
-      guard let data = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else { break }
+      guard let data = property.boolData(log) else { break }
       // this property will fire a change event at file start
       if player.info.deinterlace != data {
         player.log.verbose("Δ mpv prop: `deinterlace` = \(data.yesno)")
@@ -409,10 +389,7 @@ extension MPVController {
       player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Audio.mute:
-      guard let isMuted = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(MPVOption.Audio.mute, property.format)
-        break
-      }
+      guard let isMuted = property.boolData(log) else { break }
       guard player.info.isMuted != isMuted else { break }
       player.info.isMuted = isMuted
       player.syncUI(.muteButton)
@@ -420,20 +397,14 @@ extension MPVController {
       player.sendOSD(isMuted ? OSDMessage.mute(volume) : OSDMessage.unMute(volume))
 
     case MPVOption.Audio.volume:
-      guard let volume = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(MPVOption.Audio.volume, property.format)
-        break
-      }
+      guard let volume = property.doubleData(log) else { break }
       guard player.info.volume != volume else { break }
       player.info.volume = volume
       player.syncUI(.volume)
       player.sendOSD(.volume(volume))
 
     case MPVOption.Audio.audioDelay:
-      guard let delayUnrounded = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(MPVOption.Audio.audioDelay, property.format)
-        break
-      }
+      guard let delayUnrounded = property.doubleData(log) else { break }
       let delay = delayUnrounded.roundedTo6()
       if player.info.audioDelay != delay {
         player.log.verbose("Δ mpv prop: `audio-delay` = \(delay)")
@@ -443,59 +414,39 @@ extension MPVController {
       }
 
     case MPVOption.Subtitles.subVisibility:
-      if let visible = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee {
-        if player.info.isSubVisible != visible {
-          player.info.isSubVisible = visible
-          player.sendOSD(visible ? .subVisible : .subHidden)
-          player.setQuickSettingsViewNeedsUpdate()
-        }
-      }
+      guard let visible = property.boolData(log) else { break }
+      guard player.info.isSubVisible != visible else { break }
+      player.info.isSubVisible = visible
+      player.sendOSD(visible ? .subVisible : .subHidden)
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Subtitles.secondarySubVisibility:
-      if let visible = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee {
-        if player.info.isSecondSubVisible != visible {
-          player.info.isSecondSubVisible = visible
-          player.sendOSD(visible ? .secondSubVisible : .secondSubHidden)
-          player.setQuickSettingsViewNeedsUpdate()
-        }
-      }
+      guard let visible = property.boolData(log) else { break }
+      guard player.info.isSecondSubVisible != visible else { break }
+      player.info.isSecondSubVisible = visible
+      player.sendOSD(visible ? .secondSubVisible : .secondSubHidden)
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Subtitles.secondarySubDelay:
-      guard let data = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(name, property.format)
-        break
-      }
-      player.log.verbose("Δ mpv prop: `secondary-sub-delay` = \(data)")
-
-      player.secondarySubDelayChanged(data)
+      guard let ssubDelay = property.doubleData(log) else { break }
+      player.log.verbose("Δ mpv prop: `secondary-sub-delay` = \(ssubDelay)")
+      player.secondarySubDelayChanged(ssubDelay)
 
     case MPVOption.Subtitles.subDelay:
-      guard let data = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(name, property.format)
-        break
-      }
-      player.subDelayChanged(data)
+      guard let subDelay = property.doubleData(log) else { break }
+      player.subDelayChanged(subDelay)
 
     case MPVOption.Subtitles.subScale:
-      guard let data = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(MPVOption.Subtitles.subScale, property.format)
-        break
-      }
-      player.subScaleChanged(data)
+      guard let subScale = property.doubleData(log) else { break }
+      player.subScaleChanged(subScale)
 
     case MPVOption.Subtitles.secondarySubPos:
-      guard let data = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(name, property.format)
-        break
-      }
-      player.secondarySubPosChanged(data)
+      guard let ssubPos = property.doubleData(log) else { break }
+      player.secondarySubPosChanged(ssubPos)
 
     case MPVOption.Subtitles.subPos:
-      guard let data = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(name, property.format)
-        break
-      }
-      player.subPosChanged(data)
+      guard let subPos = property.doubleData(log) else { break }
+      player.subPosChanged(subPos)
 
     case MPVOption.Subtitles.subColor:
       // TODO:
@@ -533,65 +484,42 @@ extension MPVController {
       // TODO: OSD
 
     case MPVOption.Equalizer.contrast:
-      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(MPVOption.Equalizer.contrast, property.format)
-        break
-      }
-      let intData = Int(data)
+      guard let intData = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: 'contrast' = \(intData)")
       player.info.contrast = intData
       player.sendOSD(.contrast(intData))
       player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Equalizer.hue:
-      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(MPVOption.Equalizer.hue, property.format)
-        break
-      }
-      let intData = Int(data)
+      guard let intData = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: 'hue' = \(intData)")
       player.info.hue = intData
       player.sendOSD(.hue(intData))
       player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Equalizer.brightness:
-      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(MPVOption.Equalizer.brightness, property.format)
-        break
-      }
-      let intData = Int(data)
+      guard let intData = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: 'brightness' = \(intData)")
       player.info.brightness = intData
       player.sendOSD(.brightness(intData))
       player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Equalizer.gamma:
-      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(MPVOption.Equalizer.gamma, property.format)
-        break
-      }
-      let intData = Int(data)
+      guard let intData = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: 'gamma' = \(intData)")
       player.info.gamma = intData
       player.sendOSD(.gamma(intData))
       player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Equalizer.saturation:
-      guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(MPVOption.Equalizer.saturation, property.format)
-        break
-      }
-      let intData = Int(data)
+      guard let intData = property.intData(log) else { break }
       player.log.verbose("Δ mpv prop: 'saturation' = \(intData)")
       player.info.saturation = intData
       player.sendOSD(.saturation(intData))
       player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Video.videoZoom:
-      guard let zoom = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(MPVOption.Video.videoZoom, property.format)
-        break
-      }
+      guard let zoom = property.doubleData(log) else { break }
       player.log.verbose("Δ mpv prop: 'video-zoom' = \(zoom)")
       player.sendOSD(.videoZoom(zoom))
 
@@ -647,13 +575,10 @@ extension MPVController {
       player.pwc.hideCursorTimer.restart()
 
     case MPVProperty.windowScale:
-      guard let windowScaleRaw = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(MPVProperty.windowScale, property.format)
-        break
-      }
+      guard let windowScaleRaw = property.doubleData(log) else { break }
       let windowScale = windowScaleRaw.roundedTo6()
       if let nextScaleExpected = windowScalesExpected.first, windowScale == nextScaleExpected {
-        log.verbose("[mpv-window-scale] Received expected 'window-scale'=\(windowScale); discarding")
+        log.trace("[mpv-window-scale] Received expected 'window-scale'=\(windowScale); discarding")
         windowScalesExpected.removeFirst()
         return
       }
@@ -671,17 +596,12 @@ extension MPVController {
       player.mediaTitleChanged()
 
     case MPVProperty.idleActive:
-      guard let idleActive = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else {
-        logPropertyValueError(MPVProperty.idleActive, property.format)
-        break
-      }
+      guard let idleActive = property.boolData(log) else { break }
       guard idleActive else { break }
       player.idleActiveChanged()
 
     case MPVProperty.currentAo:
-      DispatchQueue.main.async {
-        self.player.currentAoChanged()
-      }
+      player.currentAoChanged()
 
     case MPVProperty.inputBindings:
       do {
@@ -701,35 +621,69 @@ extension MPVController {
     default:
       player.log.verbose("Unhandled mpv prop: \(name.quoted)")
       break
-
     }
 
-    let listeners = player.events.listeners
-    guard !listeners.isEmpty else { return }  // optimization: don't enqueue anything if there are no listeners
+    if AppDelegate.iinaPluginSystemEnabled {
+      let listeners = player.events.listeners
+      guard !listeners.isEmpty else { return }  // optimization: don't enqueue anything if there are no listeners
 
-    // This code is running in the com.colliderli.iina.controller dispatch queue. We must not run
-    // plugins from a task in this queue. Accessing EventController data from a thread in this queue
-    // results in data races that can cause a crash. See issue 3986.
-    DispatchQueue.main.async { [self] in
-      let eventName = EventController.Name("mpv.\(name).changed")
-      if player.events.hasListener(for: eventName) {
-        // FIXME: better convert to JSValue before passing to call()
-        let data: Any
-        switch property.format {
-        case MPV_FORMAT_FLAG:
-          data = property.data.bindMemory(to: Bool.self, capacity: 1).pointee
-        case MPV_FORMAT_INT64:
-          data = property.data.bindMemory(to: Int64.self, capacity: 1).pointee
-        case MPV_FORMAT_DOUBLE:
-          data = property.data.bindMemory(to: Double.self, capacity: 1).pointee
-        case MPV_FORMAT_STRING:
-          data = property.data.bindMemory(to: String.self, capacity: 1).pointee
-        default:
-          data = 0
+      // This code is running in the com.colliderli.iina.controller dispatch queue. We must not run
+      // plugins from a task in this queue. Accessing EventController data from a thread in this queue
+      // results in data races that can cause a crash. See issue 3986.
+      DispatchQueue.main.async { [self] in
+        let eventName = EventController.Name("mpv.\(name).changed")
+        if player.events.hasListener(for: eventName) {
+          // FIXME: better convert to JSValue before passing to call()
+          let data: Any
+          switch property.format {
+          case MPV_FORMAT_FLAG:
+            data = property.data.bindMemory(to: Bool.self, capacity: 1).pointee
+          case MPV_FORMAT_INT64:
+            data = property.data.bindMemory(to: Int64.self, capacity: 1).pointee
+          case MPV_FORMAT_DOUBLE:
+            data = property.data.bindMemory(to: Double.self, capacity: 1).pointee
+          case MPV_FORMAT_STRING:
+            data = property.data.bindMemory(to: String.self, capacity: 1).pointee
+          default:
+            data = 0
+          }
+          player.events.emit(eventName, data: data)
         }
-        player.events.emit(eventName, data: data)
       }
     }
+  }
+
+}
+
+extension mpv_event_property {
+  func intData(_ log: (any Logger.Subsystem)?) -> Int? {
+    guard let int64 = UnsafePointer<Int64>(OpaquePointer(data))?.pointee else {
+      if let log {
+        logPropertyValueError(log)
+      }
+      return nil
+    }
+    return Int(int64)
+  }
+
+  func doubleData(_ log: (any Logger.Subsystem)?) -> Double? {
+    guard let double = UnsafePointer<Double>(OpaquePointer(data))?.pointee else {
+      if let log {
+        logPropertyValueError(log)
+      }
+      return nil
+    }
+    return Double(double)
+  }
+
+  func boolData(_ log: (any Logger.Subsystem)?) -> Bool? {
+    guard let boolData = UnsafePointer<Bool>(OpaquePointer(data))?.pointee else {
+      if let log {
+        logPropertyValueError(log)
+      }
+      return nil
+    }
+    return Bool(boolData)
   }
 
   /// Log an error when a `mpv` property change event can't be processed because a property value could not be converted to the
@@ -750,12 +704,12 @@ extension MPVController {
   /// to be investigated. For now we suppress logging an error for this known case.
   /// - Parameter property: Name of the property whose value changed.
   /// - Parameter format: Format of the value contained in the property change event.
-  private func logPropertyValueError(_ property: String, _ format: mpv_format) {
-    guard property != MPVProperty.videoParamsRotate || format != MPV_FORMAT_NONE else { return }
+  private func logPropertyValueError(_ log: any Logger.Subsystem) {
+    let propName = String(cString: name)
+    guard propName != MPVProperty.videoParamsRotate || format != MPV_FORMAT_NONE else { return }
     log.error("""
-    Value of property \(property) in the property change event could not be converted from
+    Value of property \(propName) in the property change event could not be converted from
     \(format) to the expected type
     """)
   }
-
-}
+  }

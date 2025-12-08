@@ -271,18 +271,18 @@ struct VideoGeometry: Equatable, CustomStringConvertible, Sendable {
   /// dimensions are limited to whole numbers).
   /// If displaying album art, this will be `1` (square).
   var videoAspectCAR: Double {
-    return videoSizeCAR.mpvAspect
+    videoSizeCAR.mpvAspect
   }
 
-  var videoSizeDisplayOverride: CGSize? = nil
+  let videoSizeDisplayOverride: CGSize?
+
+  /// Final display size (unscaled)
   var videoSizeDisplay: CGSize {
-    get {
-      // If crop enabled, use that instead of display override, which is based on dw/dh, which doesn't take crop into account
-      hasCrop ? videoSizeCAR : (videoSizeDisplayOverride ?? videoSizeCAR)
+    // If crop enabled, use that instead of display override, which is based on dw/dh, which doesn't take crop into account
+    if hasCrop {
+      return videoSizeCAR
     }
-    set {
-      videoSizeDisplayOverride = newValue
-    }
+    return videoSizeDisplayOverride ?? videoSizeCAR
   }
 
   var videoAspectDisplay: CGFloat {
@@ -302,6 +302,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible, Sendable {
     && lhs.streamRotation == rhs.streamRotation
     && lhs.userRotation == rhs.userRotation
     && lhs.selectedCropLabel == rhs.selectedCropLabel
+    && lhs.videoSizeDisplay == rhs.videoSizeDisplay
   }
 
   static func != (lhs: VideoGeometry, rhs: VideoGeometry) -> Bool {

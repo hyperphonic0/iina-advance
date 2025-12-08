@@ -1565,6 +1565,7 @@ final class PlayerCore: NSObject {
   }
 
   func syncVideoParamsFromMpv() {
+    guard pwc.loaded else { return }
     guard !isRestoring else {
       log.trace{"Ignoring SyncVidGeo request: isRestoring=Y"}
       return
