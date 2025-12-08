@@ -103,7 +103,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
        mode: PlayerWindowMode, topMarginHeight: CGFloat,
        outsideBars: MarginQuad, insideBars: MarginQuad,
        viewportMargins: MarginQuad? = nil, video: VideoGeometry,
-       videoZoom: CGFloat = 1.0) {
+       videoZoom: CGFloat) {
 
     self.windowFrame = windowFrame
     self.screenID = screenID
@@ -143,7 +143,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
              mode: PlayerWindowMode? = nil, topMarginHeight: CGFloat? = nil,
              outsideBars: MarginQuad? = nil, insideBars: MarginQuad? = nil,
              viewportMargins: MarginQuad? = nil,
-             video: VideoGeometry? = nil) -> PWinGeometry {
+             video: VideoGeometry? = nil,
+             videoZoom: CGFloat? = nil) -> PWinGeometry {
 
     let mode = mode ?? self.mode
     if mode == .musicMode {
@@ -159,7 +160,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
                                  outsideBars: outsideBars ?? self.outsideBars,
                                  insideBars: insideBars ?? self.insideBars,
                                  viewportMargins: viewportMargins,
-                                 video: video ?? self.video)
+                                 video: video ?? self.video,
+                                 videoZoom: videoZoom ?? self.videoZoom)
     return clonedGeo
   }
 
@@ -1367,7 +1369,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
                         mode: .windowedInteractive, topMarginHeight: 0,
                         outsideBars: outsideBars,
                         insideBars: MarginQuad.zero,
-                        video: video)
+                        video: video, videoZoom: 1.0)
   }
 
   /// Transition windowed mode geometry to Interactive Mode geometry.
@@ -1511,7 +1513,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
                               topMarginHeight: 0,
                               outsideBars: MarginQuad(bottom: Constants.Distance.MusicMode.oscHeight + musicModePlaylistHeight),
                               insideBars: MarginQuad.zero,
-                              video: video)
+                              video: video,
+                              videoZoom: 1.0)
 
     let isValidHeight = playlistShown ? (musicModePlaylistHeight >= Constants.Distance.MusicMode.minPlaylistHeight) : (musicModePlaylistHeight == 0)
     if !isValidHeight {

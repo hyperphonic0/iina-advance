@@ -606,7 +606,7 @@ struct LayoutState {
                              topMarginHeight: 0,  // is only nonzero when in legacy FS
                              outsideBars: outsideBars,
                              insideBars: insideBars,
-                             video: video)
+                             video: video, videoZoom: 1.0)
       return geo.scalingViewport()
     case .musicMode:
       let geo = PWinGeometry.forMusicMode(windowFrame: windowFrame, screenID: screenID, video: video,

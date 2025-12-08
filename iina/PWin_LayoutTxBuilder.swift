@@ -482,7 +482,8 @@ extension PlayerWindowController.LayoutTransition {
       let closedWindowFrame = baseGeo.videoFrameInScreenCoords
       return PWinGeometry(windowFrame: closedWindowFrame, screenID: baseGeo.screenID,
                           screenFit: baseGeo.screenFit, mode: .windowedNormal, topMarginHeight: 0,
-                          outsideBars: .zero, insideBars: .zero, video: baseGeo.video)
+                          outsideBars: .zero, insideBars: .zero,
+                          video: baseGeo.video, videoZoom: baseGeo.videoZoom)
 
     } else if isExitingMusicMode {
       // - Music Mode: Exit
@@ -491,7 +492,8 @@ extension PlayerWindowController.LayoutTransition {
       let closedWindowFrame = baseGeo.videoFrameInScreenCoords
       return PWinGeometry(windowFrame: closedWindowFrame, screenID: baseGeo.screenID,
                           screenFit: baseGeo.screenFit, mode: .windowedNormal, topMarginHeight: 0,
-                          outsideBars: .zero, insideBars: .zero, video: baseGeo.video)
+                          outsideBars: .zero, insideBars: .zero,
+                          video: baseGeo.video, videoZoom: baseGeo.videoZoom)
     } else if inputGeometry.mode == .musicMode, outputGeometry.mode == .musicMode {
       // - Music Mode: Continuing
       if isClosingViewport || isClosingPlaylistInMusicMode {

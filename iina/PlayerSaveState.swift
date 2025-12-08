@@ -1198,7 +1198,8 @@ extension PWinGeometry {
                           topMarginHeight: topMarginHeight,
                           outsideBars: outsideBars, insideBars: insideBars,
                           viewportMargins: nil,
-                          video: videoGeo)
+                          video: videoGeo,
+                          videoZoom: 1.0)
     }
     if let pwinGeo {
       return pwinGeo
@@ -1268,7 +1269,8 @@ extension PWinGeometry {
       let pwinGeo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, screenFit: screenFit,
                                  mode: mode, topMarginHeight: topMarginHeight,
                                  outsideBars: outsideBars, insideBars: insideBars,
-                                 viewportMargins: viewportMargins, video: video)
+                                 viewportMargins: viewportMargins, video: video,
+                                 videoZoom: 1.0)
       return pwinGeo
     }
   }

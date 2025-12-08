@@ -201,7 +201,10 @@ struct GeoUtil {
     }
 
     return PWinGeometry(windowFrame: windowFrame, screenID: screen.screenID, screenFit: screenFit, mode: modeToUse,
-                        topMarginHeight: topMarginHeight, outsideBars: outsideBars, insideBars: insideBars, video: video)
+                        topMarginHeight: topMarginHeight, outsideBars: outsideBars, insideBars: insideBars,
+                        video: video,
+                        // don't care about zoom in FS
+                        videoZoom: 1.0)
   }
 
 }
