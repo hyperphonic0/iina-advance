@@ -440,7 +440,7 @@ extension PlayerWindowController {
         // Otherwise need to change tab group. Drop through.
       } else {
         // Drop request if already animating or already in desired state
-        log.verbose("Skipping \(shouldShow ? "SHOW" : "HIDE") for \(tab.name.quoted) because trailingSidebar isShown=\(isShown.yn)")
+        log.verbose("Skipping \(shouldShow ? "SHOW" : "HIDE") for \(tab.name.quoted) because trailingSidebar isOpen=\(isShown.yn)")
         return
       }
       leadingSidebar = oldLayout.leadingSidebar
@@ -453,7 +453,7 @@ extension PlayerWindowController {
 
     log.verbose("Transitioning to layout with \(leadingSidebar.locationID)=\(leadingSidebar.visibility) \(trailingSidebar.locationID)=\(trailingSidebar.visibility)")
     let newLayoutState = oldLayout.clone(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar)
-    let transition = buildLayoutTransition(named: shouldShow ? "Show Sidebar": "Hide Sidebar", from: oldLayout, to: newLayoutState)
+    let transition = buildLayoutTransition(named: shouldShow ? "OpenSidebar": "CloseSidebar", from: oldLayout, to: newLayoutState)
     buildTasks(for: transition, thenRun: true)
   }
 
@@ -467,7 +467,7 @@ extension PlayerWindowController {
 
     if let leadingVisible, let leadingSidebarPlacement = geo.leadingSidebarPlacement {
       let sidebarWidth = geo.leadingSidebarWidth
-      log.verbose("Toggling leadingSidebar visibility to \(leadingVisible.yn), width=\(sidebarWidth)")
+      log.verbose("Toggling leadingSidebar openState to \(leadingVisible.yn), width=\(sidebarWidth)")
       updateLeadingSidebarWidthConstraints(to: sidebarWidth, visible: leadingVisible, leadingSidebarPlacement,
                                            ΔWindowWidth: ΔWindowWidth)
       if leadingSidebarPlacement == .outsideViewport {
@@ -477,7 +477,7 @@ extension PlayerWindowController {
 
     if let trailingVisible, let trailingSidebarPlacement = geo.trailingSidebarPlacement {
       let sidebarWidth = geo.trailingSidebarWidth
-      log.verbose("Toggling trailingSidebar visibility to \(trailingVisible.yn), width=\(sidebarWidth)")
+      log.verbose("Toggling trailingSidebar openState to \(trailingVisible.yn), width=\(sidebarWidth)")
       updateTrailingSidebarWidthConstraints(to: sidebarWidth, visible: trailingVisible, placement: trailingSidebarPlacement,
                                             ΔWindowWidth: ΔWindowWidth)
       if trailingSidebarPlacement == .outsideViewport {

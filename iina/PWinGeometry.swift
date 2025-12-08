@@ -94,13 +94,16 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
   let viewportMargins: MarginQuad
   let video: VideoGeometry
 
+  let videoZoom: CGFloat
+
   // MARK: Initializers / Factory Methods
 
   /// Derives `viewportSize` and `videoSize` from `windowFrame`, `viewportMargins` and `videoAspect`.
   init(windowFrame: NSRect, screenID: String, screenFit: ScreenFit,
        mode: PlayerWindowMode, topMarginHeight: CGFloat,
        outsideBars: MarginQuad, insideBars: MarginQuad,
-       viewportMargins: MarginQuad? = nil, video: VideoGeometry) {
+       viewportMargins: MarginQuad? = nil, video: VideoGeometry,
+       videoZoom: CGFloat = 1.0) {
 
     self.windowFrame = windowFrame
     self.screenID = screenID
@@ -125,6 +128,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
       self.viewportMargins = GeoUtil.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize,
                                                                 insideBars: insideBars, mode: mode)
     }
+    self.videoZoom = videoZoom
 
     assert(!mode.isFullScreen || screenFit.isFullScreen, "screenFit must be fullScreen when mode is fullScreen")
   }
@@ -1109,12 +1113,21 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
     var newWindowWidth = windowFrame.width + ΔW
     var newWindowHeight = windowFrame.height + ΔH
 
+    let outputWindowFrame: CGRect
     // Special logic if output has reached out the size of the screen.
     // Do not allow it to get bigger than the screen.
-    if let screenFrame = getContainerFrame(), screenFit.shouldMoveWindowToKeepInContainer {
-      if newWindowWidth > screenFrame.width || (pinWidthOrHeightIfAtMax && (abs(screenFrame.width - windowFrame.width) <= 1)) {
+    if screenFit.shouldMoveWindowToKeepInContainer, let screenFrame = getContainerFrame() {
+      if (newWindowWidth > screenFrame.width) || (pinWidthOrHeightIfAtMax && (abs(screenFrame.width - windowFrame.width) <= 1)) {
+        // Window will be too wide, or window is already at max width & we want to stay pinned to that width:
         newWindowWidth = screenFrame.width
         newX = screenFrame.origin.x  // Move to fit in screen
+
+        // Corner case if closing an outside bar while lockViewportToVideoSize is enabled: need to scale up other dimension
+        if ΔW < 0, Preference.bool(for: .lockViewportToVideoSize) {
+          let heightAdjustment = (abs(ΔW) * video.videoAspectDisplay).rounded()
+          newWindowHeight += heightAdjustment
+          newY -= (heightAdjustment * 0.5).rounded()
+        }
       } else if pinWidthOrHeightIfAtMax {
         if abs(screenFrame.minX - windowFrame.minX) <= 1 {
           // Was aligned to screen's LEADING edge
@@ -1125,9 +1138,16 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
         }
       }
 
-      if newWindowHeight > screenFrame.height || (pinWidthOrHeightIfAtMax && (abs(screenFrame.height - windowFrame.height) <= 1)) {
+      if (newWindowHeight > screenFrame.height) || (pinWidthOrHeightIfAtMax && (abs(screenFrame.height - windowFrame.height) <= 1)) {
+        // Window will be too tall, or window is already at max height & we want to stay pinned to that height:
         newWindowHeight = screenFrame.height
         newY = screenFrame.origin.y  // Move to fit in screen
+
+        if ΔH < 0, Preference.bool(for: .lockViewportToVideoSize) {
+          let widthAdjustment = (abs(ΔH) / video.videoAspectDisplay).rounded()
+          newWindowWidth += widthAdjustment
+          newX -= (widthAdjustment * 0.5).rounded()
+        }
       } else if pinWidthOrHeightIfAtMax {
         if abs(screenFrame.minY - windowFrame.minY) <= 1 {
           // Was aligned to screen's BOTTOM edge
@@ -1137,9 +1157,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
           newY = screenFrame.maxY - newWindowHeight
         }
       }
-    }
 
-    let outputWindowFrame = CGRect(x: newX, y: newY, width: newWindowWidth, height: newWindowHeight)
+      let unconstrainedWindowFrame = CGRect(x: newX, y: newY, width: newWindowWidth, height: newWindowHeight)
+      outputWindowFrame = unconstrainedWindowFrame.constrainOrigin(in: screenFrame)
+    } else {
+      outputWindowFrame = CGRect(x: newX, y: newY, width: newWindowWidth, height: newWindowHeight)
+    }
     // If new windowFrame is slightly off screen, so fall back to current screenID.
     // Also fall back to default screen if current screenID is defunct:
     let newScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: outputWindowFrame, fallbackScreenID: screenID)
@@ -1352,7 +1375,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
   func toInteractiveMode() -> PWinGeometry {
     assert(screenFit != .legacyFullScreen && screenFit != .nativeFullScreen)
     assert(mode == .windowedNormal)
-    // TODO: preserve window size better when lockViewportToVideoSize==false
     /// Close the sidebars. Top and bottom bars are resized for interactive mode controls.
     let resizedGeo = withResizedBars(mode: .windowedInteractive,
                                      outsideTop: Constants.InteractiveMode.outsideTopBarHeight,
