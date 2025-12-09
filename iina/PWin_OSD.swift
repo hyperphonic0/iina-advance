@@ -760,7 +760,6 @@ extension PlayerWindowController {
     osd.queueLock.withLock {
       osd.queue.append({ [self] in
         // DO NOT use animationPipeline here. It is not needed, and will cause OSD to block
-        updateOSDTextSize(andSetViewsFrom: msg)
         _displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController)
       })
     }
@@ -792,15 +791,15 @@ extension PlayerWindowController {
       }
     }
 
-      if case .fileStart = osd.lastDisplayedMsg {
-        if case .fileStart = msg {
-          // Allow replacement if changing playbacks quickly
-        } else {
-          // Lots of junk messages are spewed at start. Ignore all but other .fileStart messages
-          if !player.info.isFileLoaded
-              || osd.didShowLastMsgSomewhatRecently() { return }
-        }
+    if case .fileStart = osd.lastDisplayedMsg {
+      if case .fileStart = msg {
+        // Allow replacement if changing playbacks quickly
+      } else {
+        // Lots of junk messages are spewed at start. Ignore all but other .fileStart messages
+        if !player.info.isFileLoaded
+            || osd.didShowLastMsgSomewhatRecently() { return }
       }
+    }
 
     var msg = msg
     switch msg {
@@ -870,6 +869,7 @@ extension PlayerWindowController {
 
     // End filtering
 
+    log.verbose("[OSD] Setting lastDisplayedMsg = \(msg)")
     osd.lastDisplayedMsg = msg
 
     if #available(macOS 11.0, *) {
@@ -944,9 +944,9 @@ extension PlayerWindowController {
       osd.osdVStackView.addView(accessoryView, in: .bottom)
     }
 
-    osd.osdView.needsLayout = true
     osd.osdView.alphaValue = 1
     osd.osdView.isHidden = false
+    updateOSDTextSize(andSetViewsFrom: msg)
   }
 
   @objc
