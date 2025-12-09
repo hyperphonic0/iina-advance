@@ -33,11 +33,11 @@ enum OSDMessage {
   case debug(String, String)
   case fileStart(String, String)
 
-  case pause(playbackPositionSec: Double, playbackDurationSec: Double)
-  case resume(playbackPositionSec: Double, playbackDurationSec: Double)
+  case pause(posSec: Double, durSec: Double)
+  case resume(posSec: Double, durSec: Double)
   case resumeFromWatchLater
   case seekRelative(step: String)
-  case seek(playbackPositionSec: Double, playbackDurationSec: Double)
+  case seek(posSec: Double, durSec: Double)
   case frameStep
   case frameStepBack
   case volume(Double)
@@ -166,18 +166,18 @@ enum OSDMessage {
       }
       return (filename, .withText(detailMsg))
 
-    case .pause(let playbackPositionSec, let playbackDurationSec),
-        .resume(let playbackPositionSec, let playbackDurationSec),
-        .seek(let playbackPositionSec, let playbackDurationSec):
-      let posStr = VideoTime.string(from: playbackPositionSec)
-      guard playbackDurationSec > 0.0 else {
+    case .pause(let posSec, let durSec),
+        .resume(let posSec, let durSec),
+        .seek(let posSec, let durSec):
+      let posStr = VideoTime.string(from: posSec)
+      guard durSec > 0.0 else {
         let text = "\(posStr)"
         return (text, .normal)
       }
-      let durStr = VideoTime.string(from: playbackDurationSec)
+      let durStr = VideoTime.string(from: durSec)
       let text = "\(posStr) / \(durStr)"
       let percentage: Double
-      percentage = playbackPositionSec / playbackDurationSec
+      percentage = posSec / durSec
       return (text, .withLeftToRightProgress(percentage))
 
     case .resumeFromWatchLater:

@@ -352,7 +352,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       } else {
         // Hiding video.
 
-        /// This will call `setFrameAndUpdateWindowSubviews`, which will call `setVideoTrackDisabled`
+        /// This will call `applyPWinGeometry`, which will call `setVideoTrackDisabled`
         /// (we want to wait until the animation is done before disabling video).
         /// Use `GeometryTransform` to stay consistent with "ShowVideo" which needs a GTF.
         // TODO: develop a nicer sliding animation if possible. Will need a lot of changes to constraints :/

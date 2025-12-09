@@ -159,7 +159,7 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
         tx.append(duration: taskDuration) { [self] in
           videoView.activateForcedRedraws()
           let currentGeo = currentLayout.mode == .musicMode ? musicModeGeoForCurrentFrame() : windowedGeoForCurrentFrame()
-          setFrameAndUpdateWindowSubviews(using: currentGeo, .enteringPIP)
+          applyPWinGeometry(currentGeo, .enteringPIP)
         }
         tx.append(duration: taskDuration) { [self] in
           _enterPIP(usePipBehavior: preferredPipBehavior, then: doOnSuccess)

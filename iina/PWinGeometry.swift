@@ -94,6 +94,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
   let viewportMargins: MarginQuad
   let video: VideoGeometry
 
+  /// Can be used to associate this geometry to the value of the window's`video-zoom` mpv property.
+  /// Only used for pinch-to-zoom in windowed mode with `lockViewportToVideoSize` enabled.
+  /// In all other cases this should be set to `1.0`..
+  ///
+  /// When the window is maximized within its screen, having a zoom > 1.0 allow the window's `videoView`
+  /// to expand beyond its inherent aspect ratio even if `lockViewportToVideoSize` is enabled.
   let videoZoom: CGFloat
 
   // MARK: Initializers / Factory Methods
@@ -128,6 +134,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
       self.viewportMargins = GeoUtil.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize,
                                                                 insideBars: insideBars, mode: mode)
     }
+    assert(videoZoom >= 1.0, "videoZoom must not be less than 1.0!")
     self.videoZoom = videoZoom
 
     assert(!mode.isFullScreen || screenFit.isFullScreen, "screenFit must be fullScreen when mode is fullScreen")

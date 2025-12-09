@@ -984,12 +984,12 @@ extension PlayerWindowController {
     if let newGeo {
       switch currentLayout.mode {
       case .windowedNormal:
-        setFrameAndUpdateWindowSubviews(using: newGeo)
+        applyPWinGeometry(newGeo)
         // Need to update windowedModeGeo for future operations.
         // New geo will have fit=.noConstraints, but we don't want to keep it
         windowedModeGeo = newGeo.clone(screenFit: windowedModeGeo.screenFit)
       case .fullScreenNormal:
-        setFrameAndUpdateWindowSubviews(using: newGeo)
+        applyPWinGeometry(newGeo)
       case .musicMode, .windowedInteractive, .fullScreenInteractive:
         Logger.fatal("ResizeSidebar: current mode unexpected: \(currentLayout.mode)")
       }

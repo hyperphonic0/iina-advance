@@ -1470,8 +1470,8 @@ final class PlayerCore: NSObject {
       pwc.updatePlayButtonAndSpeedUI()
       refreshSyncUITimer() // needed to get latest playback position
       if let pos = info.playbackPositionSec, let dur = info.playbackDurationSec {
-        let osdMsg: OSDMessage = paused ? .pause(playbackPositionSec: pos, playbackDurationSec: dur) :
-          .resume(playbackPositionSec: pos, playbackDurationSec: dur)
+        let osdMsg: OSDMessage = paused ? .pause(posSec: pos, durSec: dur) :
+          .resume(posSec: pos, durSec: dur)
         sendOSD(osdMsg)
       }
       saveState()  // record the pause state
@@ -2311,7 +2311,7 @@ final class PlayerCore: NSObject {
     }
 
     if let pos = info.playbackPositionSec, let dur = info.playbackDurationSec {
-      sendOSD(.seek(playbackPositionSec: pos, playbackDurationSec: dur))
+      sendOSD(.seek(posSec: pos, durSec: dur))
     }
   }
 

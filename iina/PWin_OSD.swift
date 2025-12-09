@@ -622,11 +622,11 @@ extension PlayerWindowController {
       // If the OSD is visible and is showing playback position, keep its displayed time up to date:
       switch currentMsg {
       case .pause:
-        message = .pause(playbackPositionSec: position, playbackDurationSec: duration)
+        message = .pause(posSec: position, durSec: duration)
       case .resume:
-        message = .resume(playbackPositionSec: position, playbackDurationSec: duration)
+        message = .resume(posSec: position, durSec: duration)
       case .seek(_, _):
-        message = .seek(playbackPositionSec: position, playbackDurationSec: duration)
+        message = .seek(posSec: position, durSec: duration)
       default:
         message = nil
       }
@@ -740,7 +740,7 @@ extension PlayerWindowController {
       // Need this only for OSD messages which use the icon
       osd.iconToVStackSpacingConstraint.constraint?.constant = 0
     }
-    log.verbose("[OSD] Icon visible=\(isIconVisible.yn) for msg: \(message)")
+    log.trace("[OSD] Icon visible=\(isIconVisible.yn) for msg: \(message)")
   }
 
   /// Do not call `displayOSD` directly. Call `PlayerCore.sendOSD` instead.

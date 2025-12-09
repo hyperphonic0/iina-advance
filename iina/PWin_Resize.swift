@@ -75,16 +75,16 @@ extension PlayerWindowController {
     return resizeSubviews(of: window, to: requestedSize)
   }
 
-  /// Calculates the size to return for `windowWillResize` & `windowShouldZoom`. Also resizes the window's subviews appropriately.
+  /// Calculates the size to return for either:
+  /// - `windowWillResize`
+  /// - `windowShouldZoom`.
+  ///
+  /// Also resizes the window's subviews appropriately.
   private func resizeSubviews(of window: NSWindow, to requestedSize: NSSize) -> NSSize {
     let currentLayout = currentLayout
     let inLiveResize = window.inLiveResize
-
     let lockViewportToVideoSize = currentLayout.mode.alwaysLockViewportToVideoSize || Preference.bool(for: .lockViewportToVideoSize)
     log.verbose("[WndWillResize] \(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) Live=\(inLiveResize.yn) LockViewport=\(lockViewportToVideoSize.yn)")
-
-    // Needed for snappy updates to floating OSC 
-    CATransaction.setAnimationDuration(0)
 
     if lockViewportToVideoSize && inLiveResize {
       /// Notes on the trickiness of live window resize:
@@ -148,6 +148,9 @@ extension PlayerWindowController {
                                                     inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
     }
 
+    // Needed for snappy updates to floating OSC
+    CATransaction.setAnimationDuration(0)
+
     /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
     /// within the same animation transaction as the code below. But the existing `VideoView` constraints should ensure
     /// that everything resizes properly.
@@ -167,36 +170,38 @@ extension PlayerWindowController {
   /// default animation.
   /// • Also resizes window subviews.
   /// • It will still animate if used inside an `NSAnimationContext` or `IINAAnimation.Task` with non-zero duration.
-  func setFrameAndUpdateWindowSubviews(using geometry: PWinGeometry,
-                                       updateViewportConstraints: Bool = true,
-                                       _ transitionCategory: TransitionCategory = .noTransition,
-                                       submitUpdate: Bool = false) {
+  func applyPWinGeometry(_ geometry: PWinGeometry,
+                         setWindowFrame: Bool = true,
+                         updateViewportConstraints: Bool = true,
+                         _ transitionCategory: TransitionCategory = .noTransition,
+                         submitUpdate: Bool = false) {
     log.verbose("[PWin.setFrame] Entered: updateViewportConstraints=\(updateViewportConstraints.yn) cat=\(transitionCategory) submit=\(submitUpdate.yn) geo=\(geometry)")
 
     resizeWindowSubviews(using: geometry, updateViewportConstraints: updateViewportConstraints, transitionCategory)
     updateOSDTopOffsetConstraints(for: geometry)
     updateTopBarHeight(using: geometry)
 
-    let window = (window as? PlayerWindow)!
-    if window.frame.equalTo(geometry.windowFrame) {
-      log.verbose("[PWin.setFrame] No change to windowFrame")
-    } else {
-      log.verbose("[PWin.setFrame] Setting frame=\(geometry.windowFrame)")
-      window.useZeroDurationForAnimationResize = true
-      window.setFrame(geometry.windowFrame, display: true, animate: true)
-      window.useZeroDurationForAnimationResize = false
+    if setWindowFrame, let window = (window as? PlayerWindow) {
+      if window.frame.equalTo(geometry.windowFrame) {
+        log.verbose("[PWin.setFrame] No change to windowFrame")
+      } else {
+        log.verbose("[PWin.setFrame] Setting frame=\(geometry.windowFrame)")
+        window.useZeroDurationForAnimationResize = true
+        window.setFrame(geometry.windowFrame, display: true, animate: true)
+        window.useZeroDurationForAnimationResize = false
 
-      if !geometry.mode.isFullScreen {
-        player.events.emit(.windowResized, data: window.frame)
+        if !geometry.mode.isFullScreen {
+          player.events.emit(.windowResized, data: window.frame)
+        }
       }
     }
 
     if submitUpdate {
-      submit(geometry)
+      saveToPrefs(geometry)
     }
   }
 
-  fileprivate func submit(_ geometry: PWinGeometry) {
+  fileprivate func saveToPrefs(_ geometry: PWinGeometry) {
     switch geometry.mode {
     case .musicMode:
       musicModeGeo = geometry
@@ -527,18 +532,8 @@ extension PlayerWindowController {
       case .windowedNormal, .windowedInteractive, .musicMode:
         // This is only needed to achieve "fade-in" effect when opening window:
         updateWindowBorderAndOpacity()
-
-        if isWindowHidden {
-          log.verbose("ApplyPWinGeo: window is hidden; updating videoView constraints but not setFrame")
-          viewportView.apply(outputGeo)  // Update video constraints
-                                         // Mimicks logic in `setFrameAndUpdateWindowSubviews()`
-          if save {
-            submit(outputGeo)
-          }
-        } else {
-          log.verbose("ApplyPWinGeo: calling setFrameAndUpdateWindowSubviews")
-          setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: save)
-        }
+        log.verbose("ApplyPWinGeo: " + (isWindowHidden ? "window is hidden; updating videoView constraints but not setFrame" : "calling applyPWinGeometry"))
+        applyPWinGeometry(outputGeo, setWindowFrame: !isWindowHidden, submitUpdate: save)
       }
 
     }))

@@ -238,7 +238,7 @@ extension PlayerWindowController {
 
     if transition.isTogglingNativeFullScreen {
       // (Kludge) Do this now because this step is duration=0.
-      setFrameAndUpdateWindowSubviews(using: transition.closeOldPanelsGeometry!, updateViewportConstraints: false)
+      applyPWinGeometry(transition.closeOldPanelsGeometry!, updateViewportConstraints: false)
     }
   }
 

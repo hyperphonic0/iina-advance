@@ -507,9 +507,9 @@ extension PlayerWindowController {
     }
 
     log.verbose("Calling setFrame with \(stageGeo.windowFrame) mode=\(stageGeo.mode) updateVP=\(updateVP.yn) category=\(category)")
-    setFrameAndUpdateWindowSubviews(using: stageGeo,
-                                    updateViewportConstraints: updateVP && !transition.isTogglingFullScreen,
-                                    category)
+    applyPWinGeometry(stageGeo,
+                      updateViewportConstraints: updateVP && !transition.isTogglingFullScreen,
+                      category)
   }
 
   @discardableResult

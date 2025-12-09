@@ -335,7 +335,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
         let outputGeo = originalGeo.scalingViewport(to: screenFrame.size, screenFit: .stayInside, videoZoom: newZoom)
         pwc.log.verbose("Scaling pinched video in windowed mode, zoom=\(newZoom) → result=\(outputGeo)")
-        pwc.setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: submitResult)
+        pwc.applyPWinGeometry(outputGeo, submitUpdate: submitResult)
       }
     }
 #endif
@@ -480,7 +480,7 @@ extension PlayerWindowController {
     let newViewportSize = originalGeo.viewportSize.multiplyThenRound(targetVideoScale)
     let outputGeo = originalGeo.scalingViewport(to: newViewportSize, screenFit: .stayInside)
     log.verbose("Scaling window from pinch gesture: mode=\(currentMode) scale=\(targetVideoScale) → result=\(outputGeo)")
-    setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: submitResult)
+    applyPWinGeometry(outputGeo, submitUpdate: submitResult)
   }
 
 }

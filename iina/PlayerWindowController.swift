@@ -1377,7 +1377,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
           // window management app such as Amethyst. If this happens, move the window back to its proper place:
           log.verbose("WindowDidMove: Updating legacy full screen window in response to unexpected windowDidMove to frame=\(window.frame), screen=\(bestScreen.screenID.quoted)")
           let fsGeo = fullScreenGeo()
-          setFrameAndUpdateWindowSubviews(using: fsGeo)
+          applyPWinGeometry(fsGeo)
         } else {
           player.saveState()
           player.events.emit(.windowMoved, data: window.frame)
@@ -1401,7 +1401,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       guard currentLayout.isLegacyFullScreen else { return }  // check again now that we are inside animation
       log.verbose("\(nameForLog): Updating legacy FS window")
       let fsGeo = fullScreenGeo()
-      setFrameAndUpdateWindowSubviews(using: fsGeo, submitUpdate: true)
+      applyPWinGeometry(fsGeo, submitUpdate: true)
       return
     }
 
@@ -1425,7 +1425,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     }
 
     log.verbose("\(nameForLog): Updating windowFrame to fit screen: \(newWindowFrame) → \(newGeo.windowFrame)")
-    setFrameAndUpdateWindowSubviews(using: newGeo, submitUpdate: true)
+    applyPWinGeometry(newGeo, submitUpdate: true)
   }
 
   // MARK: - Window delegate: Active status
@@ -1819,7 +1819,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
           tasks.append(.init(duration: cropAnimationDuration) { [self] in
             log.verbose("Start exiting interactive mode: animating crop using: \(croppedIMGeo)")
             // #InteractiveModeAnimationKludge
-            setFrameAndUpdateWindowSubviews(using: croppedIMGeo, .cropBeforeExitingInteractiveMode)
+            applyPWinGeometry(croppedIMGeo, .cropBeforeExitingInteractiveMode)
 
             // Fade out cropBox selection rect
             cropController.cropBoxView.isHidden = true
