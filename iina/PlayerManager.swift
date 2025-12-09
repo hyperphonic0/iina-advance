@@ -157,7 +157,7 @@ final class PlayerManager {
       player = PlayerCore(Constants.demoPlayerLabel, isDemoPlayer: true)
       demoPlayer = player
     }
-    player.start()
+    player.startPlayer()
     return player
   }
 

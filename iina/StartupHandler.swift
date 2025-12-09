@@ -419,7 +419,7 @@ final class StartupHandler {
 
     // Need to call this explicitly if not using a XIB
     player.pwc.windowDidLoad()
-    player.start()
+    player.startPlayer()
     // This will call `player.openURLs()` when done
     savedState.restoreTo(player)
   }

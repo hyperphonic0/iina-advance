@@ -513,15 +513,10 @@ final class PlayerCore: NSObject {
   /// The caller must ensure that `urls` is *never* empty!
   @MainActor
   private func openPlayerWindow(_ urls: [URL]) {
-    guard !isDemoPlayer else {
-      log.fatalError("Cannot open player window for demo player!")
-    }
+    guard !isDemoPlayer else { log.fatalError("Cannot open player window for demo player!") }
+    guard urls.count > 0 else { log.fatalError("Cannot open player window: empty url list!") }
+
     isInteractivePlayer = AppDelegate.isInteractiveLaunch
-
-    guard urls.count > 0 else {
-      log.fatalError("Cannot open player window: empty url list!")
-    }
-
     let playback = Playback(url: urls[0], playlistPos: 0)
 
     if isInteractivePlayer && playback.isNetworkResource {
@@ -529,9 +524,15 @@ final class PlayerCore: NSObject {
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
 
+    guard !isShuttingDown else {
+      // Prevent possible (though very unlikely) deadlock if called while shutting down
+      log.debug("Aborting open player window: already shutting down")
+      return
+    }
+
     // Start mpv & create the PlayerWindowController (pwc) if it hasn't been already
     // This should apply all the mpv user options as well.
-    start()
+    startPlayer()
 
     /// Need to use `sync` so that:
     /// 1. Prev use of mpv core can finish stopping / drain queue
@@ -559,9 +560,6 @@ final class PlayerCore: NSObject {
 
         if isInteractivePlayer {
           pwc.openWindow(nil)
-        } else {
-          // Make sure mpv core is started
-          start()
         }
 
         mpv.queue.async { [self] in
@@ -643,7 +641,7 @@ final class PlayerCore: NSObject {
 
   // Does nothing if already started
   @MainActor
-  func start() {
+  func startPlayer() {
     guard state == .notYetStarted else { return }
     log.verbose("Player start")
 

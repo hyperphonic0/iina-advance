@@ -44,7 +44,7 @@ class JavascriptAPIGlobalController: JavascriptAPI, JavascriptAPIGlobalControlle
       // create the `PlayerCore` manually since it's managed directly by the plugin
       let pc = PlayerCore("\(instanceCounter)-\(pluginInstance.plugin.identifier)")
       pc.isManagedByPlugin = true
-      pc.start()
+      pc.startPlayer()
       if options["disableWindowAnimation"] as? Bool == true {
         pc.disableWindowAnimation = true
       }
