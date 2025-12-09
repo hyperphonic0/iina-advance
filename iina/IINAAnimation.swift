@@ -170,6 +170,8 @@ extension IINAAnimation {
     var lastGeneratedID: Int = 0
     var wantsVideoGeoSync: Bool = false
 
+    var enableRunning = true
+
     init(_ player: PlayerCore?) {
       self.player = player
       self.log = player?.log ?? Logger.log
@@ -206,7 +208,7 @@ extension IINAAnimation {
     /// Will execute without animation if motion reduction is enabled, or if wrapped in a call to `IINAAnimation.disableAnimation()`.
     /// If animating, it uses either the supplied `duration` for duration, or if that is not provided, uses `Constants.AnimationDuration.standard`.
     func submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
-      DispatchQueue.main.async { [self] in  // TODO: be smarter about this
+      SwiftTask { @MainActor in
         // Add tasks to queue.
         enqueue(tasks, then: doAfter)
 
@@ -271,6 +273,10 @@ extension IINAAnimation {
 
     @MainActor
     private func executeNextTask() {
+      guard enableRunning else {
+        isExecuting = false
+        return
+      }
       let nextTask: Task
 
       // Favor executing GeometryTransforms before regular Tasks - unless isAnimatingLayoutTransition is true.

@@ -26,13 +26,18 @@ extension PlayerWindowController {
   // MARK: - Window Delegate: Resize
 
   func windowWillStartLiveResize(_ notification: Notification) {
-    guard !isAnimatingLayoutTransition else { return }
-    log.trace{"WindowWillStartLiveResize"}
+    log.trace("WindowWillStartLiveResize")
     isLiveResizingWidth = nil  // reset this
+    // Shut down all animations for the duration of live resize!
+    // This way the asynchrounous unprotected updates in `windowWillResize` will (hopefully) not interfere with other animations.
+    animationPipeline.enableRunning = false
   }
 
   func windowDidEndLiveResize(_ notification: Notification) {
-    log.trace{"WindowDidEndLiveResize"}
+    log.trace("WindowDidEndLiveResize")
+    // Kick-start the animation pipeline:
+    animationPipeline.enableRunning = true
+    animationPipeline.submitInstantTask{}
   }
 
   func windowDidResize(_ notification: Notification) {
