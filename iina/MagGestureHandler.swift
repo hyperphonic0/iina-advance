@@ -55,6 +55,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
     guard !pwc.isInInteractiveMode else { return }
+    // If in music mode, viewport must be shown to allow scaling window
     guard !pwc.isInMiniPlayer || pwc.miniPlayer.isViewportShown else { return }
     guard !pwc.isAnimatingLayoutTransition else { return }
 
@@ -66,7 +67,9 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
     case .fullScreen:
       // enter/exit fullscreen
-      guard !pwc.isInMiniPlayer else { return }  // Disallow full screen toggle from pinch while in music mode
+
+      // Disallow full screen toggle from pinch while in music mode
+      guard !pwc.isInMiniPlayer else { return }
 
       if recognizer.state == .began {
         let wantsToGrow = recognizer.magnification > 0
@@ -78,11 +81,10 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
     case .windowSize,
         .windowSizeOrFullScreen:
-      // Disallow full screen toggle from pinch while in music mode
-      guard !pwc.isInMiniPlayer else { return }
 
       if recognizer.state == .began {
         currrentResizeOperation = chooseOperationForNewGesture(pinchAction, recognizer)
+        pwc.log.verbose("Pinch gesture started: resizeOperation=\(currrentResizeOperation)")
       }  // end BEGAN
 
       switch currrentResizeOperation {
@@ -139,8 +141,8 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         return .videoZoom
       }
       return .none
-    } else if isWindowMaximized(windowFrame: window.frame) {
-      // Maximized window
+    } else if !pwc.isInMiniPlayer, isWindowMaximized(windowFrame: window.frame) {
+      // Maximized window in windowed mode
       if wantsToGrow, pinchAction == .windowSizeOrFullScreen {
         // Enter FS and end the current gesture.
         // Favor this over any kind of video zoom.
@@ -161,8 +163,9 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   fileprivate func isWindowMaximized(windowFrame: NSRect) -> Bool {
     guard let window = pwc.window, let screen = window.screen else { return false }
     let screenFrame = screen.visibleFrame
-    let heightIsMax = windowFrame.height >= screenFrame.height
-    let widthIsMax = windowFrame.width >= screenFrame.width
+    // Allow a single pixel difference for case when lockViewportToVideoSize is enabled: window can be off by 1px...)
+    let heightIsMax = windowFrame.height >= screenFrame.height - 1
+    let widthIsMax = windowFrame.width >= screenFrame.width - 1
     // If viewport is not locked, the window must be the size of the screen in both directions before triggering full screen.
     // If viewport is locked, window is considered at maximum if either of its sides is filling all the available space in its dimension.
     return (heightIsMax && widthIsMax) || (Preference.bool(for: .lockViewportToVideoSize) && (heightIsMax || widthIsMax))
@@ -191,12 +194,8 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     guard let currentZoom = getCurrentZoomFromMPV() else { return }
     // Shrink the zoom by this multiplier at every redraw (1.0 == no change)
     currentPinchScale = 1.0 - (zoomResetFPS * currentZoom)
-
-    // TODO: this code is duplicated 3 times in this file alone. Consolidate!
     let currentMode = pwc.currentLayout.mode
-    if currentMode.isWindowed {
-      pwc.windowedModeGeo = pwc.windowedGeoForCurrentFrame()
-    }
+
     pwc.isMagnifying = true
 
     resetTimerSubscription = Timer.publish(every: zoomResetFPS, on: .main, in: .common)
@@ -253,7 +252,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       }
     case .changed:
       currentPinchScale = recognizer.magnification + 1.0
-      applyVideoZoom(currentMode: currentMode, submitResult: false)
+      applyVideoZoom(currentMode: currentMode)
     case .ended:
       applyVideoZoom(currentMode: currentMode, submitResult: true)
       pwc.isMagnifying = false
@@ -296,7 +295,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     return fitSize.centeredRect(in: bounds)
   }
 
-  private func applyVideoZoom(currentMode: PlayerWindowMode, submitResult: Bool) {
+  private func applyVideoZoom(currentMode: PlayerWindowMode, submitResult: Bool = false) {
     let oldZoom = pinchInitialZoom
     let newZoom = (oldZoom * Double(currentPinchScale) * pinchZoomMultiplier).clamped(to: pinchMinZoom...pinchMaxZoom)
     let bounds = pwc.videoView.bounds
@@ -325,17 +324,21 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
     isZoomedViaGesture = newZoom > pinchMinZoom
 
+    // TODO: this correctly scales the window to match the zoom, but breaks when other parts of the layout system
+    // resize the window on their own...
+#if ENABLE_RESIZE_ON_ZOOM_WITH_LOCKED_VIEWPORT
     // If lockViewportToVideoSize applies, we need to resize the window frame as we zoom
-    guard currentMode.isWindowed, Preference.bool(for: .lockViewportToVideoSize) else { return }
+    if currentMode.isWindowed, Preference.bool(for: .lockViewportToVideoSize) {
+      IINAAnimation.disableAnimation {
+        let originalGeo: PWinGeometry = pwc.windowedModeGeo
+        let screenFrame = pwc.window!.screen!.visibleFrame
 
-    IINAAnimation.disableAnimation {
-      let originalGeo: PWinGeometry = pwc.windowedModeGeo
-      let screenFrame = pwc.window!.screen!.visibleFrame
-
-      let outputGeo = originalGeo.scalingViewport(to: screenFrame.size, screenFit: .stayInside, videoZoom: newZoom)
-      pwc.log.verbose("Scaling pinched video in windowed mode, zoom=\(newZoom) → result=\(outputGeo)")
-      pwc.setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: submitResult)
+        let outputGeo = originalGeo.scalingViewport(to: screenFrame.size, screenFit: .stayInside, videoZoom: newZoom)
+        pwc.log.verbose("Scaling pinched video in windowed mode, zoom=\(newZoom) → result=\(outputGeo)")
+        pwc.setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: submitResult)
+      }
     }
+#endif
   }
 
   private func clampPan(_ value: Double, reach: Double) -> Double {
@@ -470,19 +473,13 @@ extension PlayerWindowController {
 
     let originalGeo: PWinGeometry
     if currentMode == .musicMode {
-      guard miniPlayer.isViewportShown else {
-        log.verbose("Window is in music mode but video not visible. Ignoring pinch gesture")
-        return
-      }
-      // If in music mode but playlist is not visible, allow scaling up to screen size like regular windowed mode.
-      // If playlist is visible, do not resize window beyond current window height
       originalGeo = musicModeGeo
     } else {
       originalGeo = windowedModeGeo
     }
     let newViewportSize = originalGeo.viewportSize.multiplyThenRound(targetVideoScale)
     let outputGeo = originalGeo.scalingViewport(to: newViewportSize, screenFit: .stayInside)
-    log.verbose("Scaling pinched video: mode=\(currentMode) scale=\(targetVideoScale) → result=\(outputGeo)")
+    log.verbose("Scaling window from pinch gesture: mode=\(currentMode) scale=\(targetVideoScale) → result=\(outputGeo)")
     setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: submitResult)
   }
 
