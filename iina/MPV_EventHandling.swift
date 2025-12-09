@@ -295,12 +295,12 @@ extension MPVController {
       player.userRotationDidChange(to: userRotation)
 
     case MPVProperty.dwidth:
-      guard let dwidth = property.intData(log) else { break }
+      let dwidth = Int(getInt(MPVProperty.dwidth))
       player.log.verbose("Δ mpv prop: 'dwidth' ≔ \(dwidth)")
       player.syncVideoParamsFromMpv()
 
     case MPVProperty.dheight:
-      guard let dheight = property.intData(log) else { break }
+      let dheight = Int(getInt(MPVProperty.dheight))
       player.log.verbose("Δ mpv prop: 'dheight' ≔ \(dheight)")
       player.syncVideoParamsFromMpv()
     case MPVProperty.videoParamsPrimaries:
@@ -310,22 +310,22 @@ extension MPVController {
       player.refreshEdrMode()
 
     case MPVOption.TrackSelection.vid:
-      guard let vid = property.intData(log) else { break }
+      let vid = Int(getInt(MPVOption.TrackSelection.vid))
       player.log.verbose("Δ mpv prop: 'vid' ≔ \(vid)")
       player.vidChanged()
 
     case MPVOption.TrackSelection.aid:
-      guard let aid = property.intData(log) else { break }
+      let aid = Int(getInt(MPVOption.TrackSelection.aid))
       player.log.verbose("Δ mpv prop: 'aid' ≔ \(aid)")
       player.aidChanged(to: aid)
 
     case MPVOption.TrackSelection.sid:
-      guard let sid = property.intData(log) else { break }
+      let sid = Int(getInt(MPVOption.TrackSelection.sid))
       player.log.verbose("Δ mpv prop: 'sid' ≔ \(sid)")
       player.sidChanged(to: sid)
 
     case MPVOption.Subtitles.secondarySid:
-      guard let ssid = property.intData(log) else { break }
+      let ssid = Int(getInt(MPVOption.Subtitles.secondarySid))
       player.log.verbose("Δ mpv prop: 'secondary-sid' ≔ \(ssid)")
       player.secondarySidChanged(to: ssid)
 

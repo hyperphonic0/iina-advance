@@ -416,6 +416,13 @@ extension PrefAdvancedViewController: EditableTableViewDelegate {
     var optionPair: [String] = optionsList[rowIndex]
 
     var newValue = newValue
+
+    let lines = newValue.split(separator: "\n")
+    if !lines.isEmpty {
+      Logger.log.debug("Entry for col \(columnIndex) has a newline in it. Only the preceding text will be used.")
+      newValue = String(lines[0])
+    }
+
     if columnIndex == 0 {
       // Delete unnecessary prefix from confused users
       newValue = newValue.deletingPrefix("--")

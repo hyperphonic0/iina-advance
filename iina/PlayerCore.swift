@@ -860,6 +860,15 @@ final class PlayerCore: NSObject {
     log.verbose("Updating mpv keepaspect-window synchronously: done")
   }
 
+  func updateMpvKeepaspectWindowAsync() {
+    guard DebugConfig.useMpvKeepaspectWindow else { return }
+    log.verbose("Updating mpv keepaspect-window async")
+    mpv.queue.async { [self] in
+      setMpvKeepaspectWindow(to: pwc.currentLayout.mode.needsMpvKeepaspectWindow)
+    }
+    log.verbose("Updating mpv keepaspect-window synchronously: done")
+  }
+
   func togglePause() {
     mpv.queue.async { [self] in
       _togglePause()

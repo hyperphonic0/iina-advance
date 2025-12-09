@@ -425,7 +425,13 @@ extension PlayerWindowController {
     }
 
     if !transition.isExitingFullScreen && transition.needsMpvKeepaspectUpdate {
-      player.updateMpvKeepaspectWindowSynchronously()
+      if transition.isWindowInitialLayout {
+        // Do not use synchronous version - it can deadlock with the sync call in openPlayerWindow()
+        player.updateMpvKeepaspectWindowAsync()
+      } else {
+        // Block until done for a better animation
+        player.updateMpvKeepaspectWindowSynchronously()
+      }
     }
 
     // - Bottom Bar
