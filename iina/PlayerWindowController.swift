@@ -248,6 +248,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   var currentLayout: LayoutState {
     didSet {
+      log.verbose("Δ currentLayout: mode≔\(currentLayout.mode)")
       if currentLayout.mode == .windowedNormal {
         lastWindowedLayoutState = currentLayout
       } else if currentLayout.mode == .fullScreenNormal {
