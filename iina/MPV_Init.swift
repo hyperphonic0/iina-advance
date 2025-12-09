@@ -90,12 +90,14 @@ extension MPVController {
     if !player.isPresentInUserOptions(MPVOption.Screenshot.screenshotDir) {
       let setScreenshotPath = { (key: Preference.Key) -> String in
         if Preference.bool(for: .screenshotSaveToFile) {
-          return Utility.screenshotCacheURL.path
+          let screenshotPath = Preference.string(for: .screenshotFolder)!
+          return NSString(string: screenshotPath).expandingTildeInPath
         }
-        let screenshotPath = Preference.string(for: .screenshotFolder)!
-        return NSString(string: screenshotPath).expandingTildeInPath
+        return Utility.screenshotCacheURL.path
       }
 
+      setUserOption(PK.screenshotFolder, type: .other, forName: MPVOption.Screenshot.screenshotDir,
+                    level: .verbose, transformer: setScreenshotPath)
       setUserOption(PK.screenshotSaveToFile, type: .other, forName: MPVOption.Screenshot.screenshotDir,
                     level: .verbose, transformer: setScreenshotPath)
     }

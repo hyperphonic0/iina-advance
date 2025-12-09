@@ -126,6 +126,7 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
     confTableController = ConfTableViewController(confTableView, bindingTableController, selectionDidChangeHandler: updateTableButtonVisibilities)
     setCustomTableColors()
 
+    bindingSearchField.placeholderString = "Search bindings"
     bindingSearchField.stringValue = bindingTableState.filterString
 
     useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")

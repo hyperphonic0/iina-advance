@@ -676,6 +676,7 @@ extension PreferenceWindowController: NSToolbarDelegate {
     case .preferenceSearchItem:
       let item = NSSearchToolbarItem(itemIdentifier: itemIdentifier)
       item.searchField.target = self
+      item.searchField.placeholderString = "Search in Settings…"
       item.searchField.action = #selector(searchFieldAction(_:))
       // replace the on in xib
       searchField = item.searchField
