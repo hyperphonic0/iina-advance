@@ -204,7 +204,7 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
     mousePosRelatedToView = self.convert(event.locationInWindow, from: nil)
     mouseDownLocationInWindow = event.locationInWindow
     let originInViewport = pwc.viewportView.convert(frame.origin, from: nil)
-    let threshold = geometry.availableWidth * Constants.Distance.floatingControllerSnapToCenterThresholdMultiplier
+    let threshold = geometry.availableWidth * Constants.floatingControllerSnapToCenterThresholdMultiplier
     isAlignFeedbackSent = abs(originInViewport.x - (pwc.viewportView.frame.width - frame.width) / 2) <= threshold
 
     // Claim this now to signal to other things that nothing else should drag:
@@ -238,7 +238,7 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
     // stick to center
     if Preference.bool(for: .controlBarStickToCenter) {
       let xPosWhenCenter = geometry.centerX
-      let threshold = geometry.availableWidth * Constants.Distance.floatingControllerSnapToCenterThresholdMultiplier
+      let threshold = geometry.availableWidth * Constants.floatingControllerSnapToCenterThresholdMultiplier
       pwc.log.trace{"Floating OSC snap distanceToCenter=\(newCenterX - xPosWhenCenter) threshold=\(threshold)"}
       if abs(newCenterX - xPosWhenCenter) <= threshold {
         newCenterX = xPosWhenCenter

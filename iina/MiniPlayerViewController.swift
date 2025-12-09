@@ -113,7 +113,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     artistAlbumLabel.idString = "ArtistAlbumLabel"
 
     /// `musicModeControlBarView` is always the same height
-    musicModeControlBarView.heightAnchor.constraint(equalToConstant: Constants.Distance.MusicMode.oscHeight).isActive = true
+    musicModeControlBarView.heightAnchor.constraint(equalToConstant: Constants.MusicMode.oscHeight).isActive = true
     musicModeControlBarView.idString = "MusicModeControlBarView"
     positionSliderWrapperView.idString = "PositionSliderWrapperView"
     controllerButtonsPanelView.idString = "ControllerButtonsPanelView"
@@ -378,9 +378,9 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     let playlistShown = Preference.bool(for: .musicModeShowPlaylist)
     let isViewportShown = Preference.bool(for: .musicModeShowAlbumArt)
     let desiredPlaylistHeight = CGFloat(Preference.float(for: .musicModePlaylistHeight))
-    let desiredWindowWidth = Constants.Distance.MusicMode.defaultWindowWidth
+    let desiredWindowWidth = Constants.MusicMode.defaultWindowWidth
     let desiredVideoHeight = isViewportShown ? round(desiredWindowWidth / video.videoAspectCAR) : 0
-    let desiredWindowHeight = desiredVideoHeight + Constants.Distance.MusicMode.oscHeight + (playlistShown ? desiredPlaylistHeight : 0)
+    let desiredWindowHeight = desiredVideoHeight + Constants.MusicMode.oscHeight + (playlistShown ? desiredPlaylistHeight : 0)
 
     let screenFrame = screen.visibleFrame
     let windowSize = NSSize(width: desiredWindowWidth, height: desiredWindowHeight)

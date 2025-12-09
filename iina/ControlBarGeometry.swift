@@ -119,7 +119,7 @@ struct ControlBarGeometry {
     if mode == .musicMode {
       barHeight = musicModeBarHeight
       fullIconHeight = barHeight
-      self.playSliderHeight = Constants.Distance.MusicMode.positionSliderWrapperViewHeight - 4
+      self.playSliderHeight = Constants.MusicMode.positionSliderWrapperViewHeight - 4
       self.playIconSize = musicModePlayIconSize
       self.toolIconSize = musicModeToolbarIconSize
       self.toolIconSpacing = musicModeToolbarIconSpacing
@@ -138,13 +138,13 @@ struct ControlBarGeometry {
       // First establish bar height
       let desiredBarHeight = desiredBarHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
       // We need a bar height of 0 in some cases, such as resetting at window close, so do not enforce minimum bar height
-      barHeight = desiredBarHeight.clamped(to: 0...Constants.Distance.maxOSCBarHeight)
+      barHeight = desiredBarHeight.clamped(to: 0...Constants.maxOSCBarHeight)
       let isTwoRowOSC = !forceSingleRowStyle && ControlBarGeometry.qualifiesForMultiLineOSC(barHeight: barHeight, oscPosition, mode)
       if isTwoRowOSC {
         let playSliderHeight: CGFloat
         if Constants.twoRowOSC_LimitPlaySliderHeight {
           // Cap PlaySlider height at 2x its minimum
-          playSliderHeight = min(barHeight * 0.5, Constants.Distance.Slider.minPlaySliderHeight * 2).rounded()
+          playSliderHeight = min(barHeight * 0.5, Constants.Slider.minPlaySliderHeight * 2).rounded()
         } else {
           // Use half the bar height for the play slider
           playSliderHeight = (barHeight * 0.5).rounded()
@@ -260,23 +260,23 @@ struct ControlBarGeometry {
     case .bottom:
       scaleMultiplier = 0.8
     }
-    return (playSliderHeight * scaleMultiplier / Constants.Distance.Slider.minPlaySliderHeight).clamped(to: 1.0...3.0)
+    return (playSliderHeight * scaleMultiplier / Constants.Slider.minPlaySliderHeight).clamped(to: 1.0...3.0)
   }
 
   /// Height of the `PlaySlider` & `VolumeSlider` bars, in "normal" mode (i.e. not focused).
   /// This is only the slider's progress bar, not the whole bounds of its view. In fact it must be less than the height
   /// of its bounds, to prevent clipping.
   var sliderBarHeightNormal: CGFloat {
-    let height = (sliderScale * Constants.Distance.Slider.unscaledBarNormalHeight * 0.8).rounded()
-    return max(Constants.Distance.Slider.unscaledBarNormalHeight, height)
+    let height = (sliderScale * Constants.Slider.unscaledBarNormalHeight * 0.8).rounded()
+    return max(Constants.Slider.unscaledBarNormalHeight, height)
   }
 
   var sliderKnobWidth: CGFloat {
-    return (Constants.Distance.Slider.defaultKnobWidth * sliderScale).rounded()
+    return (Constants.Slider.defaultKnobWidth * sliderScale).rounded()
   }
 
   var sliderKnobHeight: CGFloat {
-    return (Constants.Distance.Slider.defaultKnobHeight * sliderScale).rounded()
+    return (Constants.Slider.defaultKnobHeight * sliderScale).rounded()
   }
 
   var sliderIndicatorSize: NSSize {
@@ -304,7 +304,7 @@ struct ControlBarGeometry {
     if mode == .musicMode {
       return 100.0
     }
-    return (Constants.Distance.Slider.unscaledVolumeSliderWidth * sliderScale).rounded()
+    return (Constants.Slider.unscaledVolumeSliderWidth * sliderScale).rounded()
   }
 
   /// Horizontal spacing between PlaySlider & time labels (if `timeLabelsWrapSlider==YES`). Also: horizontal spacing between VolumeSlider & volume icon.
@@ -358,9 +358,9 @@ struct ControlBarGeometry {
   /// Horizontal spacing between each of the set of controls in the bar (e.g., `playSliderAndTimeLabelsView`, `fragToolbarView`, etc.
   var hStackSpacing: CGFloat {
     if isTwoRowBarOSC {
-      return (Constants.Distance.TwoRowOSC.oscSectionHSpacing * (barHeight / Constants.Distance.Slider.minPlaySliderHeight)).rounded()
+      return (Constants.TwoRowOSC.oscSectionHSpacing * (barHeight / Constants.Slider.minPlaySliderHeight)).rounded()
     } else {
-      return (Constants.Distance.oscSectionHSpacing_SingleRow + barHeight / 5).rounded()
+      return (Constants.oscSectionHSpacing_SingleRow + barHeight / 5).rounded()
     }
   }
 
@@ -498,7 +498,7 @@ struct ControlBarGeometry {
 
   private static func qualifiesForMultiLineOSC(barHeight: CGFloat, _ position: Preference.OSCPosition, _ mode: PlayerWindowMode) -> Bool {
     guard position == .bottom, mode != .musicMode else { return false }
-    return barHeight >= Constants.Distance.TwoRowOSC.minQualifyingBarHeight
+    return barHeight >= Constants.TwoRowOSC.minQualifyingBarHeight
   }
 
   /// Derives desired bottom margin from playSliderHeight (TwoRowOSC style only)

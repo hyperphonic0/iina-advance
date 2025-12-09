@@ -299,9 +299,9 @@ struct LayoutState {
       if !hasTransparentTitleBar {
         if hasTopOSC {
           // Reduce title height a bit because it will share space with OSC
-          return Constants.Distance.reducedTitleBarHeight
+          return Constants.reducedTitleBarHeight
         }
-        return Constants.Distance.standardTitleBarHeight
+        return Constants.standardTitleBarHeight
       }
     }
     return 0
@@ -504,7 +504,7 @@ struct LayoutState {
 
   var playlistShown: Bool {
     if isMusicMode {
-      return outsideBottomBarHeight > Constants.Distance.MusicMode.oscHeight
+      return outsideBottomBarHeight > Constants.MusicMode.oscHeight
     } else {
       return leadingSidebar.visibleTab == .playlist || trailingSidebar.visibleTab == .playlist
     }
@@ -560,7 +560,7 @@ struct LayoutState {
     var geo = resizedBarsGeo
     if offsetIndex > 0 {
       let screenVisibleFrame: NSRect = geo.getContainerFrame(screenFit: .stayInside)!
-      let offsetIncrement = Constants.Distance.multiWindowOpenOffsetIncrement
+      let offsetIncrement = Constants.multiWindowOpenOffsetIncrement
       for _ in 1...offsetIndex {
         var newWindowFrame = NSRect(origin: NSPoint(x: geo.windowFrame.origin.x + offsetIncrement,
                                                     y: geo.windowFrame.origin.y - offsetIncrement),

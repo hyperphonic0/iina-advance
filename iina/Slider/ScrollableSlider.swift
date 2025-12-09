@@ -168,8 +168,8 @@ class ScrollableSliderCell: NSSliderCell {
     return knobWidth
   }
 
-  var knobWidth: CGFloat = Constants.Distance.Slider.defaultKnobWidth
-  var knobHeight: CGFloat = Constants.Distance.Slider.defaultKnobHeight
+  var knobWidth: CGFloat = Constants.Slider.defaultKnobWidth
+  var knobHeight: CGFloat = Constants.Slider.defaultKnobHeight
 
   var loopKnobWidth: CGFloat { knobWidth }
 

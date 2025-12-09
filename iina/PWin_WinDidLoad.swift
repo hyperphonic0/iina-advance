@@ -103,7 +103,7 @@ extension PlayerWindowController {
       // Add to traffic light buttons
       exitMusicModeButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 54).isActive = true
       // Center vertically with traffic light buttons
-      exitMusicModeButton.centerYAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.Distance.standardTitleBarHeight / 2).isActive = true
+      exitMusicModeButton.centerYAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.standardTitleBarHeight / 2).isActive = true
 
 
       initBufferIndicatorView()
@@ -158,7 +158,7 @@ extension PlayerWindowController {
   @MainActor
   private func initTitleBar() {
     let builder = CustomTitleBar.shared
-    let iconSpacingH = Constants.Distance.titleBarIconHSpacing
+    let iconSpacingH = Constants.titleBarIconHSpacing
     // - LEADING
 
     builder.configureTitleBarButton(leadingSidebarToggleButton,

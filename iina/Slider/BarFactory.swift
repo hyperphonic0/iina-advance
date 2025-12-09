@@ -70,7 +70,7 @@ class BarFactory {
     var cornerCurvature: CGFloat = Preference.bool(for: .roundSliderBarRects) ? 1.0 : 0.0
     func updateCurvature(using baseBarHeight: CGFloat) {
       guard cornerCurvature > 0.0 else { return }
-      if baseBarHeight <= Constants.Distance.Slider.reducedCurvatureBarHeightThreshold {
+      if baseBarHeight <= Constants.Slider.reducedCurvatureBarHeightThreshold {
         // At smaller sizes, the rounded effect is less noticeable, so increase to compensate
         cornerCurvature = 0.5
       } else {
@@ -100,18 +100,18 @@ class BarFactory {
     // - Secondary Vars - PlaySlider:
 
     // Bar shadow is only drawn when using clear BG style
-    let shadowPadding = Constants.Distance.Slider.shadowBlurRadius  // each side of bar!
+    let shadowPadding = Constants.Slider.shadowBlurRadius  // each side of bar!
     self.shadowPadding = shadowPadding
 
     let chapterGapWidth: CGFloat = (barHeight_Normal * 0.5).rounded()
 
     // Focused AND is the current chapter, when media has more than 1 chapter:
-    let barHeight_FocusedCurrChapter: CGFloat = (barHeight_Normal * Constants.Distance.Slider.unscaledFocusedCurrentChapterHeight_Multiplier).rounded()
+    let barHeight_FocusedCurrChapter: CGFloat = (barHeight_Normal * Constants.Slider.unscaledFocusedCurrentChapterHeight_Multiplier).rounded()
     updateCurvature(using: barHeight_FocusedCurrChapter)
     let barCornerRadius_FocusedCurrChapter = cornerRadius(for: barHeight_FocusedCurrChapter)
 
     /// Focused AND [(has more than 1 chapter, but not the current chapter) OR (only one chapter)]:
-    let barHeight_FocusedNonCurrChapter: CGFloat = (barHeight_Normal * Constants.Distance.Slider.unscaledFocusedNonCurrentChapterHeight_Multiplier).rounded()
+    let barHeight_FocusedNonCurrChapter: CGFloat = (barHeight_Normal * Constants.Slider.unscaledFocusedNonCurrentChapterHeight_Multiplier).rounded()
     let barCornerRadius_FocusedNonCurrChapter = cornerRadius(for: barHeight_FocusedNonCurrChapter)
 
     let maxPlayBarHeightNeeded = max(barHeight_Normal, barHeight_FocusedCurrChapter, barHeight_FocusedNonCurrChapter)

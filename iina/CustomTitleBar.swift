@@ -68,7 +68,7 @@ class CustomTitleBarViewController: NSViewController {
     view.wantsLayer = true
     view.layer?.backgroundColor = .clear
     let builder = CustomTitleBar.shared
-    let iconSpacingH = Constants.Distance.titleBarIconHSpacing
+    let iconSpacingH = Constants.titleBarIconHSpacing
 
     // - Leading views
 
@@ -161,7 +161,7 @@ class CustomTitleBarViewController: NSViewController {
   private func initConstraints() {
     // Root view:
     view.translatesAutoresizingMaskIntoConstraints = false
-    view.heightAnchor.constraint(equalToConstant: Constants.Distance.standardTitleBarHeight).isActive = true
+    view.heightAnchor.constraint(equalToConstant: Constants.standardTitleBarHeight).isActive = true
 
     // Stack views:
     view.addSubview(leadingStackView)
@@ -339,7 +339,7 @@ final class CustomTitleBar {
 
     if #unavailable (macOS 11.0) {
       // Needed for older versions of MacOS which use the legacy icons, which do not expand on their own
-      let iconHeight = Constants.Distance.standardTitleBarHeight - 10 // 18
+      let iconHeight = Constants.standardTitleBarHeight - 10 // 18
       let iconWidth = image.deriveWidth(fromHeight: iconHeight)
       button.heightAnchor.constraint(equalToConstant: iconHeight).isActive = true
       button.widthAnchor.constraint(equalToConstant: iconWidth).isActive = true

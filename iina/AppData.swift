@@ -379,11 +379,11 @@ struct Constants {
     /// This is the height of `CropSettingsView`. Make sure it matches the XIB!
     static let outsideBottomBarHeight: CGFloat = 72
     // Show title bar only in windowed mode
-    static let outsideTopBarHeight = Constants.Distance.standardTitleBarHeight
+    static let outsideTopBarHeight = Constants.standardTitleBarHeight
 
     // Window's top bezel must be at least as large as the title bar so that dragging the top of crop doesn't drag the window too
-    static let viewportMargins = MarginQuad(top: Constants.Distance.standardTitleBarHeight, trailing: 24,
-                                         bottom: Constants.Distance.standardTitleBarHeight, leading: 24)
+    static let viewportMargins = MarginQuad(top: Constants.standardTitleBarHeight, trailing: 24,
+                                         bottom: Constants.standardTitleBarHeight, leading: 24)
     static let minViewportSize = CGSize(width: Constants.Window.minViewportSize.width + viewportMargins.totalWidth,
                                         height: Constants.Window.minViewportSize.height + viewportMargins.totalHeight)
   }
@@ -399,128 +399,124 @@ struct Constants {
     static let osdSeekMinDeltaSec: Double = 0.000001
   }
 
-  struct Distance {
-    // This multiplied by available window width → snap to center
-    static let floatingControllerSnapToCenterThresholdMultiplier = 0.05
+  // This multiplied by available window width → snap to center
+  static let floatingControllerSnapToCenterThresholdMultiplier = 0.05
 
-    /// Not sure why, but extra width is needs to be added to intrinsicContentSize to prevent
-    /// 1 or 2 letters being replaced with ellipses.
-    static let resizableTextViewExtraWidth = 12.0
+  /// Not sure why, but extra width is needs to be added to intrinsicContentSize to prevent
+  /// 1 or 2 letters being replaced with ellipses.
+  static let resizableTextViewExtraWidth = 12.0
 
-    struct Slider {
-      /// May be overridden
-      static let defaultKnobWidth: CGFloat = 3
-      static let defaultKnobHeight: CGFloat = 15
+  struct Slider {
+    /// May be overridden
+    static let defaultKnobWidth: CGFloat = 3
+    static let defaultKnobHeight: CGFloat = 15
 
-      /// Note: doubling this value must result in a whole integer because it influences CGImage size.
-      static let shadowBlurRadius: CGFloat = 2.0
+    /// Note: doubling this value must result in a whole integer because it influences CGImage size.
+    static let shadowBlurRadius: CGFloat = 2.0
 
-      static let musicModeKnobHeight: CGFloat = 12
+    static let musicModeKnobHeight: CGFloat = 12
 
-      static let unscaledVolumeSliderWidth: CGFloat = 70.0
+    static let unscaledVolumeSliderWidth: CGFloat = 70.0
 
-      static let unscaledBarNormalHeight: CGFloat = 3.0
-      static let unscaledFocusedCurrentChapterHeight_Multiplier: CGFloat = 7.0 / unscaledBarNormalHeight
-      static let unscaledFocusedNonCurrentChapterHeight_Multiplier: CGFloat = 5.0 / unscaledBarNormalHeight
+    static let unscaledBarNormalHeight: CGFloat = 3.0
+    static let unscaledFocusedCurrentChapterHeight_Multiplier: CGFloat = 7.0 / unscaledBarNormalHeight
+    static let unscaledFocusedNonCurrentChapterHeight_Multiplier: CGFloat = 5.0 / unscaledBarNormalHeight
 
-      static let minPlaySliderHeight: CGFloat = 20
+    static let minPlaySliderHeight: CGFloat = 20
 
-      static let reducedCurvatureBarHeightThreshold = 9.0
+    static let reducedCurvatureBarHeightThreshold = 9.0
+  }
+
+  /// Should match the range of OSC height values in Settings > UI.
+  static let minOSCBarHeight: CGFloat = 24
+  static let maxOSCBarHeight: CGFloat = 100
+
+  /// When opening multiple windows simultaneously & no other layout is applied, each window's frame on screen will
+  /// be offset from the one before it by this amount, by +X and -Y (points, not pixels).
+  static let multiWindowOpenOffsetIncrement = 20.0
+
+  /// If OSC is shorter than this, never show the speed label.
+  static let minSingleRowOSCBarHeightForSpeedLabel: CGFloat = 30
+  static let minTwoRowOSCBarHeightForSpeedLabel: CGFloat = 56
+
+  static let oscSectionHSpacing_SingleRow: CGFloat = 4
+
+  /// See `TwoRowBarOSCView.swift`, `ControlBarGeometry.swift`
+  struct TwoRowOSC {
+    /// Cannot use multiLineOSC when OSC bar height below this value; will be forced to use singleLineOSC
+    static let minQualifyingBarHeight: CGFloat = minOSCBarHeight + Slider.minPlaySliderHeight
+
+    /// Negative == overlap
+    static let spacingBetweenRows: CGFloat = -4
+
+    static let oscSectionHSpacing: CGFloat = 3
+  }
+
+  // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
+  // (with no bar gradient or shading).
+  static let seekPreviewTimeLabel_ShadowRadiusConstant: CGFloat = 3.0
+  static let seekPreviewTimeLabel_xOffsetConstant: CGFloat = 0
+  static let seekPreviewTimeLabel_yOffsetConstant: CGFloat = 0.5
+  static let oscClearBG_ButtonShadowBlurRadius: CGFloat = 0.5
+  /// Shadow blur of time labels = its contentHeight * multiplier + constant
+  static let oscClearBG_TextShadowBlurRadius_Constant: CGFloat = 0.5
+  static let oscClearBG_TextShadowBlurRadius_Multiplier: CGFloat = 0.02
+  // See also: Constants.Slider.shadowBlurRadius
+
+  // - Title Bar
+
+  /// `NSWindow` doesn't provide title bar height directly, but we can derive it by asking `NSWindow` for
+  /// the dimensions of a prototypical window with titlebar, then subtracting the height of its `contentView`.
+  /// Note that we can't use this trick to get it from our window instance directly, because our window has the
+  /// `fullSizeContentView` style and so its `frameRect` does not include any extra space for its title bar.
+  static let standardTitleBarHeight: CGFloat = {
+    // Probably doesn't matter what dimensions we pick for the dummy contentRect, but to be safe let's make them nonzero.
+    let dummyContentRect = NSRect(x: 0, y: 0, width: 10, height: 10)
+    let dummyFrameRect = NSWindow.frameRect(forContentRect: dummyContentRect, styleMask: .titled)
+    let titleBarHeight = dummyFrameRect.height - dummyContentRect.height
+    return titleBarHeight
+  }()
+
+  static let reducedTitleBarHeight: CGFloat = {
+    if let heightOfCloseButton = NSWindow.standardWindowButton(.closeButton, for: .titled)?.frame.height {
+      // add 2 because button's bounds seems to be a bit larger than its visible size
+      return standardTitleBarHeight - ((standardTitleBarHeight - heightOfCloseButton) / 2 + 2)
     }
+    Logger.log("reducedTitleBarHeight may be incorrect (could not get close button)", level: .error)
+    return standardTitleBarHeight
+  }()
 
-    /// Should match the range of OSC height values in Settings > UI.
-    static let minOSCBarHeight: CGFloat = 24
-    static let maxOSCBarHeight: CGFloat = 100
-
-    /// When opening multiple windows simultaneously & no other layout is applied, each window's frame on screen will
-    /// be offset from the one before it by this amount, by +X and -Y (points, not pixels).
-    static let multiWindowOpenOffsetIncrement = 20.0
-
-    /// If OSC is shorter than this, never show the speed label.
-    static let minSingleRowOSCBarHeightForSpeedLabel: CGFloat = 30
-    static let minTwoRowOSCBarHeightForSpeedLabel: CGFloat = 56
-
-    static let oscSectionHSpacing_SingleRow: CGFloat = 4
-
-    /// See `TwoRowBarOSCView.swift`, `ControlBarGeometry.swift`
-    struct TwoRowOSC {
-      /// Cannot use multiLineOSC when OSC bar height below this value; will be forced to use singleLineOSC
-      static let minQualifyingBarHeight: CGFloat = minOSCBarHeight + Slider.minPlaySliderHeight
-
-      /// Negative == overlap
-      static let spacingBetweenRows: CGFloat = -4
-
-      static let oscSectionHSpacing: CGFloat = 3
+  static let trafficLightButtonSize: CGSize = {
+    if let closeBtn = NSWindow.standardWindowButton(.closeButton, for: .titled) {
+      return closeBtn.frame.size
     }
+    return CGSize(width: 14, height: 14)
+  }()
 
-    // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
-    // (with no bar gradient or shading).
-    static let seekPreviewTimeLabel_ShadowRadiusConstant: CGFloat = 3.0
-    static let seekPreviewTimeLabel_xOffsetConstant: CGFloat = 0
-    static let seekPreviewTimeLabel_yOffsetConstant: CGFloat = 0.5
-    static let oscClearBG_ButtonShadowBlurRadius: CGFloat = 0.5
-    /// Shadow blur of time labels = its contentHeight * multiplier + constant
-    static let oscClearBG_TextShadowBlurRadius_Constant: CGFloat = 0.5
-    static let oscClearBG_TextShadowBlurRadius_Multiplier: CGFloat = 0.02
-    // See also: Constants.Distance.Slider.shadowBlurRadius
-
-    // - Title Bar
-
-    /**
-     `NSWindow` doesn't provide title bar height directly, but we can derive it by asking `NSWindow` for
-     the dimensions of a prototypical window with titlebar, then subtracting the height of its `contentView`.
-     Note that we can't use this trick to get it from our window instance directly, because our window has the
-     `fullSizeContentView` style and so its `frameRect` does not include any extra space for its title bar.
-     */
-    static let standardTitleBarHeight: CGFloat = {
-      // Probably doesn't matter what dimensions we pick for the dummy contentRect, but to be safe let's make them nonzero.
-      let dummyContentRect = NSRect(x: 0, y: 0, width: 10, height: 10)
-      let dummyFrameRect = NSWindow.frameRect(forContentRect: dummyContentRect, styleMask: .titled)
-      let titleBarHeight = dummyFrameRect.height - dummyContentRect.height
-      return titleBarHeight
-    }()
-
-    static let reducedTitleBarHeight: CGFloat = {
-      if let heightOfCloseButton = NSWindow.standardWindowButton(.closeButton, for: .titled)?.frame.height {
-        // add 2 because button's bounds seems to be a bit larger than its visible size
-        return standardTitleBarHeight - ((standardTitleBarHeight - heightOfCloseButton) / 2 + 2)
-      }
-      Logger.log("reducedTitleBarHeight may be incorrect (could not get close button)", level: .error)
-      return standardTitleBarHeight
-    }()
-
-    static let trafficLightButtonSize: CGSize = {
-      if let closeBtn = NSWindow.standardWindowButton(.closeButton, for: .titled) {
-        return closeBtn.frame.size
-      }
-      return CGSize(width: 14, height: 14)
-    }()
-
-    /// Distance between traffic light buttons (their alignment rects, which does not include some extra padding around
-    /// their images)
-    static var titleBarIconHSpacing: CGFloat = {
-      if #available(macOS 26.0, *) {
-        // Icon spacing increased in Tahoe
-        return 9
-      }
-      return 6
-    }()
-
-    struct Thumbnail {
-      static let minHeight: CGFloat = 24
-      static let extraOffsetX: CGFloat = 15
-      static let extraOffsetY: CGFloat = 15
+  /// Distance between traffic light buttons (their alignment rects, which does not include some extra padding around
+  /// their images)
+  static var titleBarIconHSpacing: CGFloat = {
+    if #available(macOS 26.0, *) {
+      // Icon spacing increased in Tahoe
+      return 9
     }
+    return 6
+  }()
 
-    struct MusicMode {
-      static let oscHeight: CGFloat = 72
-      static let positionSliderWrapperViewHeight: CGFloat = 32
-      static let minWindowWidth: CGFloat = Constants.Window.minViewportSize.width
-      static let defaultWindowWidth: CGFloat = minWindowWidth
-      // Hide playlist if its height is too small to display at least 3 items:
-      static let minPlaylistHeight: CGFloat = 138
-    }
-  }  /// end `struct Distance`
+  struct Thumbnail {
+    static let minHeight: CGFloat = 24
+    static let extraOffsetX: CGFloat = 15
+    static let extraOffsetY: CGFloat = 15
+  }
+
+  struct MusicMode {
+    static let oscHeight: CGFloat = 72
+    static let positionSliderWrapperViewHeight: CGFloat = 32
+    static let minWindowWidth: CGFloat = Constants.Window.minViewportSize.width
+    static let defaultWindowWidth: CGFloat = minWindowWidth
+    // Hide playlist if its height is too small to display at least 3 items:
+    static let minPlaylistHeight: CGFloat = 138
+  }
 
   struct Color {
     static let defaultWindowBackgroundColor = CGColor.black
@@ -690,7 +686,7 @@ struct Images {
   static let volume2 = makeSymbol(named: "speaker.wave.2.fill", fallbackName: "volume-2", desc: "Volume 2 Waves", weight: .medium)
   static let volume3 = makeSymbol(named: "speaker.wave.3.fill", fallbackName: "volume", desc: "Volume Full", weight: .medium)
   /// Used the Exit Music Mode button
-  static let backwardsCircle = makeSymbol(named: "arrowshape.backward.circle.fill", fallbackName: "arrowshape.backward.circle.fill", desc: "Go Back", ptSize: Constants.Distance.trafficLightButtonSize.height, weight: .regular, scale: .medium)
+  static let backwardsCircle = makeSymbol(named: "arrowshape.backward.circle.fill", fallbackName: "arrowshape.backward.circle.fill", desc: "Go Back", ptSize: Constants.trafficLightButtonSize.height, weight: .regular, scale: .medium)
   static let duplicate = makeSymbol(named: "plus.square.on.square", fallbackName: "plus.square.on.square", desc: "Duplicate", weight: .medium)
 }
 

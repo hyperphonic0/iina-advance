@@ -136,7 +136,7 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
     outlineView.sizeLastColumnToFit()
 
     // Add this to prevent vertical overlap with title
-    historyTableVerticalOffsetConstraint.constant = Constants.Distance.standardTitleBarHeight
+    historyTableVerticalOffsetConstraint.constant = Constants.standardTitleBarHeight
 
     if #available(macOS 26.0, *) {
       groupByButton.wantsLayer = true
@@ -223,7 +223,7 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
   }
 
   func windowDidExitFullScreen(_ notification: Notification) {
-    historyTableVerticalOffsetConstraint.constant = Constants.Distance.standardTitleBarHeight
+    historyTableVerticalOffsetConstraint.constant = Constants.standardTitleBarHeight
   }
 
   // MARK: - History (re)-loading

@@ -2138,7 +2138,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let oscGeo = currentLayout.controlBarGeo
     let playSpeed = player.info.playSpeed
-    let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= (oscGeo.isTwoRowBarOSC ? Constants.Distance.minTwoRowOSCBarHeightForSpeedLabel : Constants.Distance.minSingleRowOSCBarHeightForSpeedLabel)
+    let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= (oscGeo.isTwoRowBarOSC ? Constants.minTwoRowOSCBarHeightForSpeedLabel : Constants.minSingleRowOSCBarHeightForSpeedLabel)
 
     let hasPlayButtonChange = playButton.image != playPauseImage
     let hasSpeedLayoutChange = speedLabel.isHidden == !showSpeedLabel

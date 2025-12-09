@@ -55,7 +55,7 @@ class TopBarView: ClickThroughVisualEffectView {
 
     titleBarView.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
 
-    titleBarHeightConstraint = titleBarView.bottomAnchor.constraint(equalTo: topAnchor, constant: Constants.Distance.standardTitleBarHeight)
+    titleBarHeightConstraint = titleBarView.bottomAnchor.constraint(equalTo: topAnchor, constant: Constants.standardTitleBarHeight)
     titleBarHeightConstraint.identifier = .init("TitleBarView-HeightConstraint")
     titleBarHeightConstraint.isActive = true
 

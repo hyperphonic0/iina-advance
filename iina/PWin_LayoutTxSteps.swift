@@ -527,7 +527,7 @@ extension PlayerWindowController {
         miniPlayer.view.addAllConstraintsToFillSuperview()
 
         // Now confiure various subviews
-        playSlider.customCell.knobHeight = Constants.Distance.Slider.musicModeKnobHeight
+        playSlider.customCell.knobHeight = Constants.Slider.musicModeKnobHeight
 
         // move playback buttons
         if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {
@@ -609,12 +609,11 @@ extension PlayerWindowController {
 
         if !topBarView.controlBarTop.subviews.contains(oscContentView) {
           log.verbose("Adding \(oscContentView.idString) to topBarView")
-//          assert(topBarView.frame.width > Constants.Distance.titleBarIconHSpacing * 2)
           topBarView.controlBarTop.addSubview(oscContentView, positioned: .below, relativeTo: topBarView.bottomBorder)
           // Match leading/trailing spacing of title bar icons above
           oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0,
-                                                       leading: Constants.Distance.titleBarIconHSpacing,
-                                                       trailing: Constants.Distance.titleBarIconHSpacing)
+                                                       leading: Constants.titleBarIconHSpacing,
+                                                       trailing: Constants.titleBarIconHSpacing)
         }
 
       case .bottom:
@@ -633,12 +632,11 @@ extension PlayerWindowController {
 
         if !bottomBarView.subviews.contains(oscContentView) {
           log.verbose("Adding \(oscContentView.idString) to bottomBarView")
-//          assert(bottomBarView.frame.width > Constants.Distance.titleBarIconHSpacing * 2)
           bottomBarView.addSubview(oscContentView, positioned: .below, relativeTo: bottomBarTopBorder)
           // Match leading/trailing spacing of title bar icons above
           oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0,
-                                                       leading: Constants.Distance.titleBarIconHSpacing,
-                                                       trailing: Constants.Distance.titleBarIconHSpacing)
+                                                       leading: Constants.titleBarIconHSpacing,
+                                                       trailing: Constants.titleBarIconHSpacing)
         }
 
       case .floating:
@@ -752,8 +750,8 @@ extension PlayerWindowController {
           textAlpha = 0.8
           timeLabelTextColor = .white
 
-          let blurRadiusConstant = Constants.Distance.oscClearBG_TextShadowBlurRadius_Constant
-          let blurRadiusMultiplier = Constants.Distance.oscClearBG_TextShadowBlurRadius_Multiplier
+          let blurRadiusConstant = Constants.oscClearBG_TextShadowBlurRadius_Constant
+          let blurRadiusMultiplier = Constants.oscClearBG_TextShadowBlurRadius_Multiplier
           leftTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant)
           rightTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant)
           oscTwoRowView.timeSlashLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant)
@@ -1412,7 +1410,7 @@ extension PlayerWindowController {
       let accessory = NSTitlebarAccessoryViewController()
       leadingTitlebarAccesoryViewController = accessory
       accessory.view = leadingTitleBarAccessoryView
-      accessory.fullScreenMinHeight = Constants.Distance.standardTitleBarHeight
+      accessory.fullScreenMinHeight = Constants.standardTitleBarHeight
       accessory.layoutAttribute = .leading
     }
 
@@ -1421,7 +1419,7 @@ extension PlayerWindowController {
       let accessory = NSTitlebarAccessoryViewController()
       trailingTitlebarAccesoryViewController = accessory
       accessory.view = trailingTitleBarAccessoryView
-      accessory.fullScreenMinHeight = Constants.Distance.standardTitleBarHeight
+      accessory.fullScreenMinHeight = Constants.standardTitleBarHeight
       accessory.layoutAttribute = .trailing
 
       hiddenObservation = accessory.observe(\.isHidden, options: [.new]) { [self] view, change in

@@ -16,10 +16,10 @@ extension PlayerWindowController {
     /// Min distance between `thumbnailPeekView` & sides of `viewportView`.
     /// For the side which includes `timeLabel`, the margin is split 1/2 above & 1/2 below the label,
     /// and does not include the offset added by the label's height itself.
-    static let minThumbMargins = MarginQuad(top: Constants.Distance.Thumbnail.extraOffsetY,
-                                            trailing: Constants.Distance.Thumbnail.extraOffsetX,
-                                            bottom: Constants.Distance.Thumbnail.extraOffsetY,
-                                            leading: Constants.Distance.Thumbnail.extraOffsetX)
+    static let minThumbMargins = MarginQuad(top: Constants.Thumbnail.extraOffsetY,
+                                            trailing: Constants.Thumbnail.extraOffsetX,
+                                            bottom: Constants.Thumbnail.extraOffsetY,
+                                            leading: Constants.Thumbnail.extraOffsetX)
 
     // Components:
     let timeLabel = NSTextField()
@@ -93,9 +93,9 @@ extension PlayerWindowController {
     }
 
     func updateStyle() {
-      timeLabel.addShadow(blurRadiusConstant: Constants.Distance.seekPreviewTimeLabel_ShadowRadiusConstant,
-                          xOffsetConstant: Constants.Distance.seekPreviewTimeLabel_xOffsetConstant,
-                          yOffsetConstant: Constants.Distance.seekPreviewTimeLabel_yOffsetConstant,
+      timeLabel.addShadow(blurRadiusConstant: Constants.seekPreviewTimeLabel_ShadowRadiusConstant,
+                          xOffsetConstant: Constants.seekPreviewTimeLabel_xOffsetConstant,
+                          yOffsetConstant: Constants.seekPreviewTimeLabel_yOffsetConstant,
                           color: .black)
       thumbnailPeekView.updateColors()
     }
@@ -187,8 +187,8 @@ extension PlayerWindowController {
         }
 
         // Thumb too small?
-        if thumbHeight < Constants.Distance.Thumbnail.minHeight {
-          thumbHeight = Constants.Distance.Thumbnail.minHeight
+        if thumbHeight < Constants.Thumbnail.minHeight {
+          thumbHeight = Constants.Thumbnail.minHeight
         }
 
         // Thumb too tall?
@@ -312,7 +312,7 @@ extension PlayerWindowController {
         thumbWidth = round(thumbWidth)
         thumbHeight = round(thumbHeight)
 
-        if thumbWidth < Constants.Distance.Thumbnail.minHeight || thumbHeight < Constants.Distance.Thumbnail.minHeight {
+        if thumbWidth < Constants.Thumbnail.minHeight || thumbHeight < Constants.Thumbnail.minHeight {
           log.verbose("Not enough space to display thumbnail")
           showThumbnail = false
         }

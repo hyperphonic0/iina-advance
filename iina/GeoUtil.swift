@@ -32,7 +32,7 @@ struct GeoUtil {
       return Constants.InteractiveMode.minViewportSize
     case .musicMode:
       // note that a viewport height of zero would be ok if video was disabled in music mode
-      return NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: 0)
+      return NSSize(width: Constants.MusicMode.minWindowWidth, height: 0)
     }
   }
 

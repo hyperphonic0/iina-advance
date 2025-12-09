@@ -459,7 +459,7 @@ extension PlayerWindowController {
     let isDoubleClick = event.clickCount == 2
 
     if isDoubleClick {
-      let titleBarMinY = window!.frame.height - Constants.Distance.standardTitleBarHeight
+      let titleBarMinY = window!.frame.height - Constants.standardTitleBarHeight
       if !isFullScreen && (event.locationInWindow.y >= titleBarMinY) {
         if let userDefault = UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
           log.verbose("Double-click occurred in title bar. Executing \(userDefault.quoted)")

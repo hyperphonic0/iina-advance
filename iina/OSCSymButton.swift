@@ -41,7 +41,7 @@ class OSCSymButton: SymButton {
     if enabled {
       guard shadow == nil else { return }
       // Shadow for clear BG
-      addShadow(blurRadiusConstant: Constants.Distance.oscClearBG_ButtonShadowBlurRadius,
+      addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
                 xOffsetConstant: 0, yOffsetConstant: 0, color: .black)
     } else {
       shadow = nil
