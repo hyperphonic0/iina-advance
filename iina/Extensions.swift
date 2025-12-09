@@ -411,6 +411,13 @@ extension CGSize: @retroactive CustomStringConvertible {
     return sizeScalingUpHeight
   }
 
+  func scalingWidth(to newWidth: CGFloat) -> CGSize {
+    return CGSize(width: newWidth, height: (newWidth / aspect).rounded())
+  }
+
+  func scalingHeight(to newHeight: CGFloat) -> CGSize {
+    return CGSize(width: (newHeight * aspect).rounded(), height: newHeight)
+  }
 }
 
 

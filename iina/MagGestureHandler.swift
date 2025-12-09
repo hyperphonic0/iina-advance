@@ -183,7 +183,6 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
   func resetZoom() {
     guard isZoomedViaGesture else { return }
-    pwc.isMagnifying = true
     pwc.log.verbose("Resetting pinch-to-zoom props (video-zoom, video-pan-x, video-pan-y)")
 
     // Cancel any prev timer first
@@ -193,21 +192,30 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     // Shrink the zoom by this multiplier at every redraw (1.0 == no change)
     currentPinchScale = 1.0 - (zoomResetFPS * currentZoom)
 
+    // TODO: this code is duplicated 3 times in this file alone. Consolidate!
+    let currentMode = pwc.currentLayout.mode
+    if currentMode.isWindowed {
+      pwc.windowedModeGeo = pwc.windowedGeoForCurrentFrame()
+    }
+    pwc.isMagnifying = true
+
     resetTimerSubscription = Timer.publish(every: zoomResetFPS, on: .main, in: .common)
       .autoconnect()
       .sink { [self] time in
         guard isZoomedViaGesture else {
-          pwc.log.verbose("Cancelling timer")
+          pwc.log.verbose("Cancelling timer: no longer zoomed")
           pwc.isMagnifying = false
           resetTimerSubscription?.cancel()
           return
         }
         guard let currentZoom = getCurrentZoomFromMPV() else {
+          pwc.log.verbose("Cancelling timer: no zoom from mpv!")
+          pwc.isMagnifying = false
           resetTimerSubscription?.cancel()
           return
         }
         pinchInitialZoom = currentZoom
-        applyVideoZoom()
+        applyVideoZoom(currentMode: currentMode, submitResult: false)
       }
   }
 
@@ -230,6 +238,11 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       // Update from prefs
       pinchMaxZoom = Preference.double(for: .pinchMaxZoom)
 
+      if currentMode.isWindowed, Preference.bool(for: .lockViewportToVideoSize) {
+        // Update cached copy: we will reference them as we zoom
+        pwc.windowedModeGeo = pwc.windowedGeoForCurrentFrame()
+      }
+
       guard let currentZoom = getCurrentZoomFromMPV() else { return }
       pinchInitialZoom = max(pinchMinZoom, currentZoom)
       // Only update the pinch origin if starting from baseline; otherwise keep the prior origin to reduce jumps.
@@ -240,9 +253,9 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       }
     case .changed:
       currentPinchScale = recognizer.magnification + 1.0
-      applyVideoZoom()
+      applyVideoZoom(currentMode: currentMode, submitResult: false)
     case .ended:
-      applyVideoZoom()
+      applyVideoZoom(currentMode: currentMode, submitResult: true)
       pwc.isMagnifying = false
     case .cancelled, .failed:
       break
@@ -283,7 +296,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     return fitSize.centeredRect(in: bounds)
   }
 
-  private func applyVideoZoom() {
+  private func applyVideoZoom(currentMode: PlayerWindowMode, submitResult: Bool) {
     let oldZoom = pinchInitialZoom
     let newZoom = (oldZoom * Double(currentPinchScale) * pinchZoomMultiplier).clamped(to: pinchMinZoom...pinchMaxZoom)
     let bounds = pwc.videoView.bounds
@@ -311,6 +324,18 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     }
 
     isZoomedViaGesture = newZoom > pinchMinZoom
+
+    // If lockViewportToVideoSize applies, we need to resize the window frame as we zoom
+    guard currentMode.isWindowed, Preference.bool(for: .lockViewportToVideoSize) else { return }
+
+    IINAAnimation.disableAnimation {
+      let originalGeo: PWinGeometry = pwc.windowedModeGeo
+      let screenFrame = pwc.window!.screen!.visibleFrame
+
+      let outputGeo = originalGeo.scalingViewport(to: screenFrame.size, screenFit: .stayInside, videoZoom: newZoom)
+      pwc.log.verbose("Scaling pinched video in windowed mode, zoom=\(newZoom) → result=\(outputGeo)")
+      pwc.setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: submitResult)
+    }
   }
 
   private func clampPan(_ value: Double, reach: Double) -> Double {
@@ -412,8 +437,9 @@ extension PlayerWindowController {
 
       // Save current window frame. All updates until the end of this session will operate on this.
       if currentMode == .musicMode {
+        miniPlayer.loadIfNeeded()
         musicModeGeo = musicModeGeoForCurrentFrame()
-      } else {
+      } else if currentMode.isWindowed {
         windowedModeGeo = windowedGeoForCurrentFrame()
       }
 
@@ -442,29 +468,21 @@ extension PlayerWindowController {
     /// transitions are complete.
     guard !isAnimatingLayoutTransition else { return }
 
-    let outputGeo: PWinGeometry
-
-    // If in music mode but playlist is not visible, allow scaling up to screen size like regular windowed mode.
-    // If playlist is visible, do not resize window beyond current window height
+    let originalGeo: PWinGeometry
     if currentMode == .musicMode {
-      miniPlayer.loadIfNeeded()
-
       guard miniPlayer.isViewportShown else {
         log.verbose("Window is in music mode but video not visible. Ignoring pinch gesture")
         return
       }
-      let inputWidth = musicModeGeo.windowFrame.width
-      let desiredWidth = (inputWidth * targetVideoScale).rounded()
-      outputGeo = musicModeGeo.scalingVideo(toWidth: desiredWidth)
-      log.verbose("Scaling pinched video in music mode, scale=\(targetVideoScale) reqWidth=\(desiredWidth) → result=\(outputGeo)")
-
+      // If in music mode but playlist is not visible, allow scaling up to screen size like regular windowed mode.
+      // If playlist is visible, do not resize window beyond current window height
+      originalGeo = musicModeGeo
     } else {
-      let originalGeo = windowedModeGeo
-      
-      let newViewportSize = originalGeo.viewportSize.multiplyThenRound(targetVideoScale)
-      outputGeo = originalGeo.scalingViewport(to: newViewportSize, screenFit: .stayInside, mode: currentMode)
-      log.verbose("Scaling pinched video in windowed mode, scale=\(targetVideoScale) → result=\(outputGeo)")
+      originalGeo = windowedModeGeo
     }
+    let newViewportSize = originalGeo.viewportSize.multiplyThenRound(targetVideoScale)
+    let outputGeo = originalGeo.scalingViewport(to: newViewportSize, screenFit: .stayInside)
+    log.verbose("Scaling pinched video: mode=\(currentMode) scale=\(targetVideoScale) → result=\(outputGeo)")
     setFrameAndUpdateWindowSubviews(using: outputGeo, submitUpdate: submitResult)
   }
 

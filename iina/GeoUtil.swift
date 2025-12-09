@@ -106,8 +106,39 @@ struct GeoUtil {
     }
   }
 
-  static func computeVideoSize(withAspectRatio videoAspect: CGFloat, toFillIn viewportSize: NSSize,
-                               minViewportMargins: MarginQuad? = nil, mode: PlayerWindowMode) -> NSSize {
+  /// Computes `videoDisplaySize` to fit within `containerSize` while maintaining `videoDisplaySize.aspect`.
+  ///
+  /// Make sure to end up with whole numbers here! Decimal values can be interpreted differently by
+  /// mpv, Core Graphics, AppKit, which will cause animation glitches.
+  static func videoSizeAtStandardZoom(videoDisplaySize: CGSize, containerSize: NSSize) -> CGSize {
+    if videoDisplaySize.mpvAspect > containerSize.mpvAspect {
+      // Video is wider than viewport -> At zoom==1.0, video width equals container width
+      return videoDisplaySize.scalingWidth(to: containerSize.width)
+    } else {
+      // Video is taller than viewport -> At zoom==1.0, video height equals container height
+      return videoDisplaySize.scalingHeight(to: containerSize.height)
+    }
+  }
+
+  static func zoomedVideoSize(forVideoDisplaySize videoDisplaySize: CGSize,
+                              toFillIn containerSize: NSSize,
+                              videoZoom: CGFloat) -> CGSize {
+    let videoSize = videoSizeAtStandardZoom(videoDisplaySize: videoDisplaySize, containerSize: containerSize)
+    guard videoZoom > 1.0 else {
+      return videoSize
+    }
+
+    let videoSizeZoomed = (videoSize * videoZoom).rounded()
+    // Crop zoomed video to fit in container:
+    return CGSize(width: min(videoSizeZoomed.width, containerSize.width),
+                  height: min(videoSizeZoomed.height, containerSize.height))
+  }
+
+  static func computeVideoViewSize(forVideoDisplaySize videoDisplaySize: CGSize,
+                                   toFillIn viewportSize: NSSize,
+                                   minViewportMargins: MarginQuad? = nil,
+                                   videoZoom: CGFloat,
+                                   mode: PlayerWindowMode) -> NSSize {
     assert(mode != .musicMode || (minViewportMargins == nil || minViewportMargins == .zero), "minViewportMargins must be nil or .zero in music mode")
     assert(viewportSize.width >= 0 && viewportSize.height >= 0, "viewportSize must not be negative! Found: \(viewportSize)")
     if viewportSize.width == 0 || viewportSize.height == 0 {
@@ -117,21 +148,10 @@ struct GeoUtil {
     let minMargins = minViewportMargins ?? self.minViewportMargins(forMode: mode)
     let usableViewportSize = NSSize(width: viewportSize.width - minMargins.totalWidth,
                                     height: viewportSize.height - minMargins.totalHeight)
-    let videoSize: NSSize
-    /// Compute `videoSize` to fit within `viewportSize` while maintaining `videoAspect`:
-    // Make sure to end up with whole numbers here! Decimal values can be interpreted differently by
-    // mpv, Core Graphics, AppKit, which will cause animation glitches
-    let videoHeightComputed = (usableViewportSize.width / videoAspect).rounded()
-    if videoHeightComputed <= usableViewportSize.height {
-      // Video aspect is taller than viewport: shrink its width
-      videoSize = NSSize(width: usableViewportSize.width, height: videoHeightComputed)
-    } else {
-      // Video is wider, shrink to meet width
-      let videoWidthComputed = (usableViewportSize.height * videoAspect).rounded()
-      videoSize = NSSize(width: videoWidthComputed, height: usableViewportSize.height)
-    }
+    let videoSize = zoomedVideoSize(forVideoDisplaySize: videoDisplaySize, toFillIn: usableViewportSize, videoZoom: videoZoom)
 
 #if DEBUG
+    // Consistency checks
     let sumViewportSize = CGSize(width: minMargins.totalWidth + videoSize.width,
                                  height: minMargins.totalHeight + videoSize.height)
     assert(((sumViewportSize.width == 0 || sumViewportSize.height == 0) && (viewportSize.width == 0 || viewportSize.height == 0)) ||
@@ -139,7 +159,7 @@ struct GeoUtil {
            "videoSize \(videoSize) + minMargins \(minMargins) → sum: \(sumViewportSize) > viewportSize \(viewportSize)")
 
     assert((usableViewportSize.width - videoSize.width >= 0) && (usableViewportSize.height - videoSize.height >= 0),
-           "Derived videoSize \(videoSize) > usableViewportSize \(usableViewportSize)! (videoAspect: \(videoAspect), viewportSize: \(viewportSize), minViewportMargins: \(minMargins))")
+           "Derived videoSize \(videoSize) > usableViewportSize \(usableViewportSize)! (videoAspect: \(videoDisplaySize.aspect), viewportSize: \(viewportSize), minViewportMargins: \(minMargins))")
 
     assert(videoSize.width >= 0 && videoSize.height >= 0, "Expected W ≥ 0 & H ≥ 0 for videoSize, found \(videoSize)")
     assert(videoSize.width.isInteger && videoSize.height.isInteger, "Expected integer W & H for videoSize, found \(videoSize)")

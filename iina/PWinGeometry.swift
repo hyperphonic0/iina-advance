@@ -117,9 +117,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
     let viewportSize = GeoUtil.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
     assert(viewportSize.width >= 0 && viewportSize.height >= 0, "viewportSize must not be negative! Found: \(viewportSize)")
 
-    let targetVideoAspect = video.videoAspectDisplay
-    let videoSize = GeoUtil.computeVideoSize(withAspectRatio: targetVideoAspect, toFillIn: viewportSize,
-                                             minViewportMargins: viewportMargins, mode: mode)
+    let targetVideoSize = video.videoSizeDisplay
+    let videoSize = GeoUtil.computeVideoViewSize(forVideoDisplaySize: targetVideoSize, toFillIn: viewportSize,
+                                                 minViewportMargins: viewportMargins, videoZoom: videoZoom, mode: mode)
     self.videoSize = videoSize
 
     if let viewportMargins {
@@ -302,13 +302,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
     return round(windowFrame.height - Constants.MusicMode.oscHeight - videoSize.height)
   }
 
-  /// Final aspect ratio of `videoView`. Very close to `video.videoAspectCAR`, except it is calculated from the actual pixels
-  /// of the final `videoSize`. Very limited utility. In most cases `video.videoAspectDisplay` should be used, as it is the target.
+  /// Final aspect ratio to be used for `videoView` aspect. It should equal `dwidth / dheight` rounded to 6 decimal places.
+  ///
+  /// This used as the source for the `aspectRatio` constraint in `ViewportConstraints`, to set a required aspect for `VideoView`.
+  /// This rounds to 6 decimal places. Do not use higher precision because it will lead to the `aspectRatio` constraint
+  /// being rebuilt & reapplied several times during window resize which can lead to choppiness.
   var videoViewAspect: CGFloat {
-    // Just use videoSizeDisplay for now because it's a consistent value
-//    return video.videoSizeDisplay.mpvAspect
-
-    // Use most precise value possible. This is crucial when toggling interactive mode
     return video.videoAspectDisplay
   }
 
@@ -772,7 +771,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
                        screenID: String? = nil,
                        screenFit desiredScreenFit: ScreenFit? = nil,
                        lockViewportToVideoSize: Bool? = nil,
-                       mode: PlayerWindowMode? = nil) -> PWinGeometry {
+                       mode: PlayerWindowMode? = nil,
+                       videoZoom desiredVideoZoom: CGFloat? = nil) -> PWinGeometry {
     guard videoViewAspect >= 0 else {
       log.error("[geo] PWinGeometry cannot scale viewport: videoViewAspect (\(videoViewAspect)) is invalid!")
       assert(false)
@@ -791,7 +791,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
     let outputScreenFit = screenFit.changeDesiredFit(to: desiredScreenFit)
     let outsideBarsSize = outsideBars.totalSize
     let newScreenID = screenID ?? self.screenID
-    
+    let newVideoZoom = desiredVideoZoom ?? videoZoom
+
     let containerFrame: NSRect? = GeoUtil.getContainerFrame(forScreenID: newScreenID, screenFit: outputScreenFit)
     let maxViewportSize: NSSize?
     if let containerFrame {
@@ -802,7 +803,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
     let minViewportSize = minViewportSize(mode: mode)
 
     var newViewportSize = desiredSize ?? viewportSize
-    log.trace{"[geo] ScaleViewport start, newViewportSize=\(newViewportSize), lockViewport=\(lockViewportToVideoSize.yn)"}
+    log.trace{"[geo] ScaleViewport start: newViewportSize=\(newViewportSize) lockViewport=\(lockViewportToVideoSize.yn) newVideoZoom=\(newVideoZoom)"}
 
     // -- Viewport size calculation
 
@@ -820,8 +821,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
                                  height: min(newViewportSize.height, maxViewportSize.height))
       }
 
-      /// Compute `videoSize` to fit within `viewportSize` (minus `viewportMargins`) while maintaining `videoAspect`:
-      let newVideoSize = GeoUtil.computeVideoSize(withAspectRatio: video.videoAspectDisplay, toFillIn: newViewportSize, mode: mode)
+      /// Compute `videoSize` to fit within `viewportSize` (minus `viewportMargins`) while maintaining `videoAspect`.
+      /// This is the part which reduces the viewport aspect to match the videoView aspect --
+      /// *unless* video is zoomed > 1.0, in which case the aspect will match the portion of zoomed video which is
+      /// able to fit within the available remaining space on screen.
+      let newVideoSize = GeoUtil.computeVideoViewSize(forVideoDisplaySize: video.videoSizeDisplay,
+                                                      toFillIn: newViewportSize, videoZoom: newVideoZoom,
+                                                      mode: mode)
       // Add min margins back in (needed for Interactive Mode)
       let minViewportMargins = GeoUtil.minViewportMargins(forMode: mode)
       newViewportSize = NSSize(width: newVideoSize.width + minViewportMargins.totalWidth,
@@ -859,7 +865,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
       log.trace{"[geo] ScaleViewport: → windowFrame=\(outputWindowFrame)"}
     }
 
-    let refittedGeo = self.clone(windowFrame: outputWindowFrame, screenID: newScreenID, screenFit: outputScreenFit, mode: mode)
+    let refittedGeo = self.clone(windowFrame: outputWindowFrame, screenID: newScreenID, screenFit: outputScreenFit, mode: mode,
+                                 videoZoom: newVideoZoom)
 
 #if DEBUG
     if DebugConfig.validatePWinGeometry {
@@ -1427,10 +1434,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
                                         height: (cropRect.height * scaleRatio).rounded())
 
     // This will use .mpvAspect - need to be consistent with rounding!
-    let croppedVideoAspect = newVidGeo.videoAspectC
-    let croppedVideoViewSize = GeoUtil.computeVideoSize(withAspectRatio: croppedVideoAspect,
-                                                        toFillIn: cropRectScaledToWindow.size,
-                                                        minViewportMargins: .zero, mode: mode)
+    let croppedVideoSize = newVidGeo.videoSizeC
+    let croppedVideoViewSize = GeoUtil.computeVideoViewSize(forVideoDisplaySize: croppedVideoSize,
+                                                            toFillIn: cropRectScaledToWindow.size,
+                                                            minViewportMargins: .zero,
+                                                            videoZoom: 1.0,
+                                                            mode: mode)
 
 
     /// Note that size of `cropRectScaledToWindow` can differ from `croppedVideoViewSize` due to being rounded
@@ -1460,7 +1469,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
                                         bottom: viewportMargins.bottom + bottomHeightOutsideCropBox,
                                         leading: viewportMargins.leading + leadingWidthOutsideCropBox)
 
-    log.debug("[geo] Cropping from cropRect \(cropRect) x videoScale (\(scaleRatio)), windowSize=\(windowFrame.size), → newVideoSize:\(cropRectScaledToWindow.size), newVideoAspect:\(croppedVideoAspect), newViewportMargins:\(newViewportMargins)")
+    log.debug("[geo] Cropping from cropRect \(cropRect) x videoScale (\(scaleRatio)), windowSize=\(windowFrame.size), → newVideoSize:\(cropRectScaledToWindow.size), newVideoAspect:\(croppedVideoSize.aspect), newViewportMargins:\(newViewportMargins)")
     let outputScreenFit = screenFit.changeDesiredFit()
     log.debug("[geo] Cropped PWinGeometry using: \(newVidGeo), screenID: \(screenID), screenFit: \(outputScreenFit)")
     return self.clone(screenFit: outputScreenFit, viewportMargins: newViewportMargins, video: newVidGeo)

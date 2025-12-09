@@ -48,8 +48,13 @@ extension PlayerWindowController {
   /// * `windowDidEndLiveResize`: Never use! It is unreliable. Use `windowDidResize` if anything.
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     guard !isAnimatingLayoutTransition else {
-      log.verbose("[WndWillResize] isAnimatingLayoutTransition=Y: will grant requestedSize=\(requestedSize)")
-      return requestedSize
+      log.verbose("[WndWillResize] isAnimatingLayoutTransition=Y: Will stay at \(window.frame.size)")
+      return window.frame.size
+    }
+    guard !isMagnifying else {
+      // Don't interfere when resetting zoom
+      log.verbose("[WndWillResize] Denying req=\(requestedSize): isMagnifying=Y: Will stay at \(window.frame.size)")
+      return window.frame.size
     }
     guard !isInWindowResizeDenialPeriod() else {
       log.verbose("[WndWillResize] Denying req=\(requestedSize): still inside denial period. Will stay at \(window.frame.size)")
