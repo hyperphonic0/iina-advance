@@ -1338,8 +1338,8 @@ extension PlayerWindowController {
 
   private func addTitleBarAccessoryViews() {
     guard let window = window else { return }
-    guard window.styleMask.contains(.titled) else {
-      log.error("Cannot add title bar accessory views: window styleMask !+ .titled!")
+    guard window.styleMask.contains(.titled) || isWindowInNativeFullScreen else {
+      log.error("Cannot add title bar accessory views: window is not .titled style or in native full screen!")
       return
     }
 
@@ -1359,23 +1359,19 @@ extension PlayerWindowController {
       accessory.view = trailingTitleBarAccessoryView
       accessory.fullScreenMinHeight = Constants.standardTitleBarHeight
       accessory.layoutAttribute = .trailing
-
-      hiddenObservation = accessory.observe(\.isHidden, options: [.new]) { [self] view, change in
-        if let newValue = change.newValue {
-          log.debug("❤️❤️❤️ Accessory visibility changed: \(newValue ? "Hidden" : "Shown")")
-          // Perform custom actions here
-        }
-      }
     }
 
-    if !window.titlebarAccessoryViewControllers.contains(leadingTitlebarAccesoryViewController!) {
+    if window.titlebarAccessoryViewControllers.count == 1 {
+      log.error("Found only 1 title bar accessory view in window! Will remove & repopulate")
+      window.titlebarAccessoryViewControllers.removeAll()
+    }
+
+    if window.titlebarAccessoryViewControllers.isEmpty {
       log.verbose("Adding leadingTitlebarAccesory to window")
       window.addTitlebarAccessoryViewController(leadingTitlebarAccesoryViewController!)
       leadingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
       leadingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
-    }
 
-    if !window.titlebarAccessoryViewControllers.contains(trailingTitlebarAccesoryViewController!) {
       log.verbose("Adding leadingTitlebarAccesory to window")
       window.addTitlebarAccessoryViewController(trailingTitlebarAccesoryViewController!)
       trailingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
