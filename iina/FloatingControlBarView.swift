@@ -19,8 +19,8 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
   let bottomRowView = ClickThroughStackView()
   let playButtonsContainerView = ClickThroughStackView()
 
-  var xConstraint: NSLayoutConstraint!  // this is X CENTER of OSC
-  var yConstraint: NSLayoutConstraint!  // Bottom of OSC
+  fileprivate var xConstraint: NSLayoutConstraint!  // this is X CENTER of OSC
+  fileprivate var yConstraint: NSLayoutConstraint!  // Bottom of OSC
 
   weak var leadingMarginConstraint: NSLayoutConstraint!
   weak var trailingMarginConstraint: NSLayoutConstraint!
@@ -29,20 +29,10 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
   private var minDragDistanceMet = false
   var mousePosRelatedToView: CGPoint?
   var mouseDownLocationInWindow: CGPoint?
-
-  var isDragging: Bool {
-    return playerWindowController?.currentDragObject == self
-  }
-
   private var isAlignFeedbackSent = false
 
-  private var playerWindowController: PlayerWindowController? {
-    return window?.windowController as? PlayerWindowController
-  }
+  var isDragging: Bool { pwc?.currentDragObject == self }
 
-  private var viewportView: NSView? {
-    return playerWindowController?.viewportView
-  }
 
   init() {
     super.init(frame: .zero)
@@ -99,13 +89,11 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
     widthGT.isActive = true
   }
   
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
   /// Adds margin constraints if missing
   func addOrUpdateMarginConstraints(for layout: LayoutState) {
-    guard let pwc = playerWindowController, let contentView = pwc.window?.contentView else { return }
+    guard let pwc, let contentView = pwc.window?.contentView else { return }
     pwc.log.verbose("Updating floating OSC constraints: leadingSidebarVisible=\(layout.leadingSidebar.isVisible.yn) traillingSidebarVisible=\(layout.leadingSidebar.isVisible.yn)")
 
     let leadingConstraintSecondAnchor = layout.leadingSidebar.isVisible ? pwc.leadingSidebarView.trailingAnchor : contentView.leadingAnchor
@@ -121,14 +109,16 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
     }
     if bottomMarginConstraint == nil || !bottomMarginConstraint.isActive {
       bottomMarginConstraint?.isActive = false
-      bottomMarginConstraint = self.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: FloatingControlBarView.margin)
+      bottomMarginConstraint = contentView.bottomAnchor.constraint(greaterThanOrEqualTo: self.bottomAnchor, constant: FloatingControlBarView.margin)
     }
     bottomMarginConstraint.isActive = true
     leadingMarginConstraint.isActive = true
     trailingMarginConstraint.isActive = true
   }
 
-  func removeMarginConstraints() {
+  func removeFloatingControlBarView() {
+    removeFromSuperview()
+
     if let leadingMarginConstraint {
       leadingMarginConstraint.isActive = false
       self.leadingMarginConstraint = nil
@@ -145,22 +135,18 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
 
   // MARK: - Positioning
 
-  func moveToLocationRatio(parentGeo: PWinGeometry) {
+  fileprivate func moveToLocationRatio(parentGeo: PWinGeometry) {
     guard superview != nil, let xConstraint, let yConstraint else { return }
 
     let ratioH = Preference.double(for: .controlBarPositionHorizontal)
     let ratioV = Preference.double(for: .controlBarPositionVertical)
 
     guard ratioH >= 0 && ratioH <= 1 else {
-      if let playerWindowController {
-        playerWindowController.log.error("FloatingOSC: cannot update position; centerRatioH is invalid: \(ratioH)")
-      }
+      pwc?.log.error("FloatingOSC: cannot update position; centerRatioH is invalid: \(ratioH)")
       return
     }
     guard ratioV >= 0 && ratioV <= 1 else {
-      if let playerWindowController {
-        playerWindowController.log.error("FloatingOSC: cannot update position; originRatioV is invalid: \(ratioV)")
-      }
+      pwc?.log.error("FloatingOSC: cannot update position; originRatioV is invalid: \(ratioV)")
       return
     }
 
@@ -197,7 +183,7 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
   }
 
   override func mouseDown(with event: NSEvent) {
-    guard let pwc = playerWindowController, let geometry = buildFloatingGeometry() else { return }
+    guard let pwc, let geometry = buildFloatingGeometry() else { return }
 
     pwc.log.verbose("FloatingOSC mouseDown")
     window?.isMovableByWindowBackground = false
@@ -216,7 +202,7 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
   override func mouseDragged(with event: NSEvent) {
     guard let mousePosRelatedToView,
           let mouseDownLocationInWindow,
-          let pwc = playerWindowController,
+          let pwc,
           let geometry = buildFloatingGeometry() else {
       return
     }
@@ -257,7 +243,7 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
   }
 
   override func mouseUp(with event: NSEvent) {
-    guard let pwc = playerWindowController, let geometry = buildFloatingGeometry()  else { return }
+    guard let pwc, let geometry = buildFloatingGeometry()  else { return }
     if isDragging {
       pwc.log.verbose("FloatingOSC mouseUp: ending drag")
       pwc.currentDragObject = nil
@@ -287,10 +273,11 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
   // MARK: - Coordinates in Viewport
 
   fileprivate func buildFloatingGeometry() -> FloatingControlBarGeometry? {
-    guard let pwc = playerWindowController else { return nil }
-    guard pwc.currentLayout.hasFloatingOSC else { return nil }
+    guard let pwc else { return nil }
+    let currentLayout = pwc.currentLayout
+    guard currentLayout.hasFloatingOSC else { return nil }
     // TODO: Consolidate duplicate code [#PWinGeoForAnyMode]
-    let pwinGeo = pwc.isFullScreen ? pwc.fullScreenGeo() : pwc.windowedGeoForCurrentFrame()
+    let pwinGeo = currentLayout.isFullScreen ? pwc.fullScreenGeo() : pwc.windowedGeoForCurrentFrame()
     return FloatingControlBarGeometry(parentGeo: pwinGeo)
   }
 
@@ -370,8 +357,32 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
 
 extension PlayerWindowController {
 
+  func addFloatingControlBarViewToViewportView() {
+    guard !viewportView.containsSubview(controlBarFloating) else { return }
+
+    log.verbose("Adding controlBarFloating to contentView")
+    viewportView.addSubview(controlBarFloating)
+    sortViewportViewSubviews()
+
+    controlBarFloating.xConstraint?.isActive = false
+    controlBarFloating.yConstraint?.isActive = false
+
+    let newY = viewportView.bottomAnchor.constraint(equalTo: controlBarFloating.bottomAnchor, constant: 60)
+    newY.identifier = "FloatingOSC-BtmY-Con"
+    newY.priority = .defaultHigh
+    controlBarFloating.yConstraint = newY
+
+    let newX = controlBarFloating.centerXAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 330)
+    newX.identifier = "FloatingOSC-CenterX-Con"
+    newX.priority = .init(450)
+    controlBarFloating.xConstraint = newX
+
+    newY.isActive = true
+    newX.isActive = true
+  }
+
   func adjustFloatingControllerOrigin(for targetGeometry: PWinGeometry? = nil) {
-    guard let window = window, currentLayout.hasFloatingOSC else { return }
+    guard let window = window else { return }
     guard controlBarFloating.superview != nil else { return }
 
     let parentGeo = targetGeometry ?? windowedModeGeo

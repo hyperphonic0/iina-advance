@@ -340,10 +340,6 @@ extension PlayerWindowController {
 
     // - Middle Geometry
     if let closeOldPanelsGeo = transition.closeOldPanelsGeometry {
-      if transition.outputLayout.hasFloatingOSC && !transition.isExitingFullScreen {
-        controlBarFloating.moveToLocationRatio(parentGeo: closeOldPanelsGeo)
-      }
-
       // Need to call this for initial layout also, or if toggling video:
       updateMusicModeButtonOffsets(using: closeOldPanelsGeo)
     }
@@ -637,29 +633,7 @@ extension PlayerWindowController {
 
       case .floating:
         currentControlBar = controlBarFloating
-        if !viewportView.containsSubview(controlBarFloating) {
-          log.verbose("Adding controlBarFloating to contentView")
-          viewportView.addSubview(controlBarFloating)
-          sortViewportViewSubviews()
-
-          controlBarFloating.xConstraint?.isActive = false
-          controlBarFloating.yConstraint?.isActive = false
-
-          let newY = viewportView.bottomAnchor.constraint(equalTo: controlBarFloating.bottomAnchor, constant: 60)
-          newY.identifier = "FloatingOSC-BtmY-Con"
-          newY.priority = .defaultHigh
-          controlBarFloating.yConstraint = newY
-
-          let newX = controlBarFloating.centerXAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 330)
-          newX.identifier = "FloatingOSC-CenterX-Con"
-          newX.priority = .init(450)
-          controlBarFloating.xConstraint = newX
-
-          adjustFloatingControllerOrigin(for: transition.outputGeometry)
-
-          newY.isActive = true
-          newX.isActive = true
-        }
+        addFloatingControlBarViewToViewportView()
 
         let floatingUpperView = controlBarFloating.topRowView
         if !floatingUpperView.views.contains(fragToolbarView) {
@@ -681,8 +655,9 @@ extension PlayerWindowController {
     }
 
     if !outputLayout.hasFloatingOSC {
-      controlBarFloating.removeMarginConstraints()
-      controlBarFloating.removeFromSuperview()
+      // Not floating OSC!
+      controlBarFloating.removeFloatingControlBarView()
+      updateSpeedLabelFont(for: transition)
     }
 
     if outputLayout.hasControlBar {
@@ -712,11 +687,6 @@ extension PlayerWindowController {
       leftTimeLabel.font = timeLabelFont
       rightTimeLabel.font = timeLabelFont
       oscTwoRowView.timeSlashLabel.font = timeLabelFont
-
-      // Not floating OSC!
-      if !transition.outputLayout.hasFloatingOSC {
-        updateSpeedLabelFont(for: transition)
-      }
 
       let sliderKnobWidth = newGeo.sliderKnobWidth
       let sliderKnobHeight = newGeo.sliderKnobHeight
@@ -917,13 +887,11 @@ extension PlayerWindowController {
       for toolbarItem in fragToolbarView.views {
         (toolbarItem as! OSCToolbarButton).setStyle(using: transition.outputLayout)
       }
-      // FIXME: add toolbar height constraint
       updateToolbarHStack(iconSpacing: newGeo.toolIconSpacing)
-
       if outputLayout.hasFloatingOSC {
+        // Animate constraints update as we open the panel
         // Must execute this *after* rebuildPanelConstraints: needs constraints to have been added
         controlBarFloating.addOrUpdateMarginConstraints(for: transition.outputLayout)
-
         // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs
         let topRowView = controlBarFloating.topRowView
         if transition.isWindowInitialLayout || !transition.inputLayout.hasFloatingOSC {
@@ -945,9 +913,6 @@ extension PlayerWindowController {
           playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
         }
         updateSpeedLabelFont(for: transition)
-
-        // Update floating control bar position
-        controlBarFloating.moveToLocationRatio(parentGeo: transition.outputGeometry)
       }
 
     }

@@ -148,9 +148,6 @@ extension PlayerWindowController {
                                                     inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
     }
 
-    // Needed for snappy updates to floating OSC
-    CATransaction.setAnimationDuration(0)
-
     /// AppKit calls `setFrame` after this method returns, and we cannot access that code to ensure it is encapsulated
     /// within the same animation transaction as the code below. But the existing `VideoView` constraints should ensure
     /// that everything resizes properly.
@@ -230,23 +227,26 @@ extension PlayerWindowController {
   private func resizeWindowSubviews(using newGeometry: PWinGeometry,
                                     updateViewportConstraints: Bool = true,
                                     _ transitionCategory: TransitionCategory = .noTransition) {
-    // Trigger forced draws so that mpv can [try its best to] redraw the video without distortion during window resize:
-    videoView.activateForcedRedraws()
 
-    // These may no longer be aligned correctly. Just hide them
-    hideSeekPreviewImmediately()
+    // Needed to prevent lagginess for floating OSC, offsets for pref `keepVideoAwayFromBars`, possibly other constraints.
+    IINAAnimation.disableAnimation {
+      // Trigger forced draws so that mpv can [try its best to] redraw the video without distortion during window resize:
+      videoView.activateForcedRedraws()
 
-    if updateViewportConstraints {
-      viewportView.apply(newGeometry, transitionCategory)
-    }
+      // These may no longer be aligned correctly. Just hide them
+      hideSeekPreviewImmediately()
+      magnificationHandler.resetZoomIfNotMaximized(newGeometry)
 
-    magnificationHandler.resetZoomIfNotMaximized(newGeometry)
+      if updateViewportConstraints {
+        viewportView.apply(newGeometry, transitionCategory)
+      }
 
-    // Update floating control bar position if applicable
-    adjustFloatingControllerOrigin(for: newGeometry)
+      // Update floating control bar position if applicable
+      adjustFloatingControllerOrigin(for: newGeometry)
 
-    if osd.animationState == .shown {
-      updateOSDViews(updateSizeFrom: newGeometry)
+      if osd.animationState == .shown {
+        updateOSDViews(updateSizeFrom: newGeometry)
+      }
     }
   }
 
