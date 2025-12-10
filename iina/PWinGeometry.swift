@@ -172,18 +172,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
     return clonedGeo
   }
 
-  // MARK: - Computed properties
-
-  var description: String {
-    return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) \(screenFit) \(isMusicModePlaylistShown ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=N") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidSize=\(videoSize) vidMargins=\(viewportMargins) \(video) vidScale=\(videoScale.roundedTo2())}"
-  }
-
-  var log: any Logger.Subsystem { video.log }
-
-  /// Can only be `false` while in music mode. All other modes should return `true` always.
-  var isViewportShown: Bool {
-    return viewportSize.height > 0
-  }
+  // MARK: - OSD
 
   var shouldHaveOSD: Bool {
     return Preference.bool(for: .enableOSD) && isViewportShown
@@ -212,6 +201,46 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
       let maxScreenUsableHeight = screen.frameWithoutCameraHousing.height
       return max(0, insideBars.top, windowFrame.height - maxScreenUsableHeight - cameraHousingOffset) + extraOffsetForTitleBar + 8
     }
+  }
+
+  func getOSDTextSize() -> CGFloat {
+    let availableSpaceForOSD = widthBetweenInsideSidebars
+
+    // Reduce text size if horizontal space is tight
+    var osdTextSize = max(Constants.OSD.minTextSize, CGFloat(Preference.float(for: .osdTextSize)))
+    switch availableSpaceForOSD {
+    case ..<300:
+      osdTextSize = min(osdTextSize, 18)
+    case 300..<400:
+      osdTextSize = min(osdTextSize, 28)
+    case 400..<500:
+      osdTextSize = min(osdTextSize, 36)
+    case 500..<700:
+      osdTextSize = min(osdTextSize, 50)
+    case 700..<900:
+      osdTextSize = min(osdTextSize, 72)
+    case 900..<1200:
+      osdTextSize = min(osdTextSize, 96)
+    case 1200..<1500:
+      osdTextSize = min(osdTextSize, 120)
+    default:
+      osdTextSize = min(osdTextSize, 150)
+    }
+
+    return osdTextSize
+  }
+
+  // MARK: - Other computed properties
+
+  var description: String {
+    return "PWinGeo{\(windowFrame) \(screenID.quoted) \(mode) \(screenFit) \(isMusicModePlaylistShown ? "pListH=\(musicModePlaylistHeight.logStr)" : "pList=N") notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) vidSize=\(videoSize) vidMargins=\(viewportMargins) \(video) vidScale=\(videoScale.roundedTo2())}"
+  }
+
+  var log: any Logger.Subsystem { video.log }
+
+  /// Can only be `false` while in music mode. All other modes should return `true` always.
+  var isViewportShown: Bool {
+    return viewportSize.height > 0
   }
 
   /// Only nonzero if leading sidebar is open

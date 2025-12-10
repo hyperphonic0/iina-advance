@@ -369,7 +369,7 @@ extension PlayerWindowController {
       }
     case .osdTextSize:
       animationPipeline.submitInstantTask { [self] in
-        updateOSDTextSize()
+        updateOSDViews()
       }
     case .aspectRatioPanelPresets, .cropPanelPresets:
       let videoGeo = player.videoGeo

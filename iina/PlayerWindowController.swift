@@ -2052,7 +2052,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
           let remaining = player.info.playbackRemainingSec else { return }
 
     // If the OSD is visible and is showing playback position, keep its displayed time up to date:
-    setOSDViews()
+    updateOSDViews(updateSize: false)
 
     // Update playback position slider in OSC:
     for label in [leftTimeLabel, rightTimeLabel] {

@@ -246,7 +246,7 @@ extension PlayerWindowController {
     adjustFloatingControllerOrigin(for: newGeometry)
 
     if osd.animationState == .shown {
-      updateOSDTextSize(from: newGeometry)
+      updateOSDViews(updateSizeFrom: newGeometry)
     }
   }
 

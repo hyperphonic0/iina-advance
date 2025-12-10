@@ -279,33 +279,6 @@ final class OSDState {
     return max(Constants.TimeInterval.osdTimeoutMin, Double(Preference.float(for: .osdAutoHideTimeout)))
   }
 
-  fileprivate func getOSDTextSize(from givenGeo: PWinGeometry) -> CGFloat {
-    let availableSpaceForOSD = givenGeo.widthBetweenInsideSidebars
-
-    // Reduce text size if horizontal space is tight
-    var osdTextSize = max(Constants.OSD.minTextSize, CGFloat(Preference.float(for: .osdTextSize)))
-    switch availableSpaceForOSD {
-    case ..<300:
-      osdTextSize = min(osdTextSize, 18)
-    case 300..<400:
-      osdTextSize = min(osdTextSize, 28)
-    case 400..<500:
-      osdTextSize = min(osdTextSize, 36)
-    case 500..<700:
-      osdTextSize = min(osdTextSize, 50)
-    case 700..<900:
-      osdTextSize = min(osdTextSize, 72)
-    case 900..<1200:
-      osdTextSize = min(osdTextSize, 96)
-    case 1200..<1500:
-      osdTextSize = min(osdTextSize, 120)
-    default:
-      osdTextSize = min(osdTextSize, 150)
-    }
-
-    return osdTextSize
-  }
-
   fileprivate func getSliderBarHeight(forOSDTextSize osdTextSize: CGFloat) -> CGFloat {
     guard osdTextSize > 0 else { return 0 }
 
@@ -446,19 +419,9 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
 
 // PlayerWindow UI: OSD
 extension PlayerWindowController {
-  fileprivate func updateCornerRoundness(fromOSDTextSize osdTextSize: CGFloat) {
-    if #available(macOS 26, *) {
-      // MacOS Tahoe's style favors rounder corners. Try to fit in
-      let cornerRadius = 10 + (osdTextSize * 0.25).rounded()
-      osd.osdView.roundCorners(withRadius: cornerRadius)
-      additionalInfoView.roundCorners(withRadius: cornerRadius)
-    } else {
-      // Pre-Tahoe
-      osd.osdView.roundCorners()
-      additionalInfoView.roundCorners()
-    }
-  }
-
+  /// Adds or removes one or both of the following based on the given geometry and transition stage:
+  /// `osdView`
+  /// `additionalInfoView`
   func addOrRemoveOSDViews(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry) {
     var addedSomething = false
     if stageGeo.shouldHaveOSD {
@@ -492,7 +455,7 @@ extension PlayerWindowController {
     }
 
     if addedSomething {
-      updateOSDTextSize(from: stageGeo)
+      updateOSDViews(updateSizeFrom: stageGeo)
 
       sortViewportViewSubviews()
       window?.contentView?.needsLayout = true
@@ -610,7 +573,12 @@ extension PlayerWindowController {
   /// If `newMessage` is provided, the OSD will be updated to display it. Otherwise if the OSD is
   /// already shown and is displaying one of the message types which requires live updates, it will be updated.
   @MainActor
-  func setOSDViews(fromMessage newMessage: OSDMessage? = nil) {
+  func updateOSDViews(from newMessage: OSDMessage? = nil,
+                      updateSize: Bool = true, updateSizeFrom givenGeo: PWinGeometry? = nil) {
+    if updateSize {
+      updateOSDSize(from: givenGeo)
+    }
+
     let message: OSDMessage?
 
     if let newMessage {
@@ -693,6 +661,52 @@ extension PlayerWindowController {
   }
 
   @MainActor
+  fileprivate func updateOSDSize(from givenGeo: PWinGeometry? = nil) {
+    guard let window else { return }
+    let currentLayout = currentLayout
+    let pwGeo: PWinGeometry
+    if let givenGeo {
+      pwGeo = givenGeo
+    } else {
+      // TODO: Consolidate duplicate code [#PWinGeoForAnyMode]
+      switch currentLayout.mode {
+      case .windowedNormal, .windowedInteractive:
+        pwGeo = windowedGeoForCurrentFrame()
+      case .fullScreenNormal, .fullScreenInteractive:
+        pwGeo = currentLayout.buildFullScreenGeometry(inScreenID: bestScreen.screenID, geo.video)
+      case .musicMode:
+        pwGeo = musicModeGeoForCurrentFrame()
+      }
+    }
+
+    let osdTextSize = pwGeo.getOSDTextSize()
+    if osdTextSize != osd.textSizeLast {
+      osd.textSizeLast = osdTextSize
+      log.verbose("[OSD] Δ textSize: \(osd.textSizeLast) → \(osdTextSize)")
+
+      // Update rounded corners
+      player.pwc.updateCornerRoundness(fromOSDTextSize: osdTextSize)
+
+      // Also update progress bar height based on text size
+      osd.updateProgressBarStyle(window.effectiveAppearance, effectiveOSCColorScheme: currentLayout.effectiveOSCColorScheme)
+
+      let osdAccessoryTextSize = (osdTextSize * 0.75).rounded().clamped(to: 11...25)
+      osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
+
+      // Update padding around edges
+      let marginScaled = 8 + (osdTextSize * 0.15).rounded()
+      osd.osdTopPaddingConstraint.constraint?.animateToConstant(marginScaled)
+      osd.osdBtmPaddingConstraint.constraint?.animateToConstant(marginScaled)
+      osd.osdTrailingPaddingConstraint.constraint?.animateToConstant(marginScaled)
+      osd.osdLeadingPaddingConstraint.constraint?.animateToConstant(marginScaled)
+
+      // Update OSD label
+      let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
+      osd.osdLabel.font = osdLabelFont
+    }
+  }
+
+  @MainActor
   private func updateOSDIcon(from message: OSDMessage) {
     guard #available(macOS 11.0, *) else { return }
 
@@ -742,6 +756,21 @@ extension PlayerWindowController {
     }
     log.trace("[OSD] Icon visible=\(isIconVisible.yn) for msg: \(message)")
   }
+
+  fileprivate func updateCornerRoundness(fromOSDTextSize osdTextSize: CGFloat) {
+    if #available(macOS 26, *) {
+      // MacOS Tahoe's style favors rounder corners. Try to fit in
+      let cornerRadius = 10 + (osdTextSize * 0.25).rounded()
+      osd.osdView.roundCorners(withRadius: cornerRadius)
+      additionalInfoView.roundCorners(withRadius: cornerRadius)
+    } else {
+      // Pre-Tahoe
+      osd.osdView.roundCorners()
+      additionalInfoView.roundCorners()
+    }
+  }
+
+  // MARK: - Show OSD
 
   /// Do not call `displayOSD` directly. Call `PlayerCore.sendOSD` instead.
   ///
@@ -896,7 +925,7 @@ extension PlayerWindowController {
         return
       } else if case .seek(_, _) = msg {
         /// Shift next icon into current icon, which will be used until the next call to `displayOSD()`
-        /// (although note that there can be subsequent calls to `setOSDViews()` to update the OSD's displayed time while playing,
+        /// (although note that there can be subsequent calls to `updateOSDViews()` to update the OSD's displayed time while playing,
         /// but those do not count as "new" OSD messages, and thus will continue to use `osd.currentSeekIcon`).
         if isScrollingOrDraggingPlaySlider {
           // give up on fancy OSD for scroll wheel seek (for now)
@@ -946,8 +975,11 @@ extension PlayerWindowController {
 
     osd.osdView.alphaValue = 1
     osd.osdView.isHidden = false
-    updateOSDTextSize(andSetViewsFrom: msg)
+    
+    updateOSDViews(from: msg)
   }
+
+  // MARK: - Hide OSD
 
   @objc
   func hideOSD(immediately: Bool = false, refreshSyncUITimer: Bool = true) {
@@ -979,51 +1011,4 @@ extension PlayerWindowController {
     })
   }
 
-  func updateOSDTextSize(from givenGeo: PWinGeometry? = nil, andSetViewsFrom msg: OSDMessage? = nil) {
-    guard let window else { return }
-    let currentLayout = currentLayout
-    let pwGeo: PWinGeometry
-    if let givenGeo {
-      pwGeo = givenGeo
-    } else {
-      // TODO: Consolidate duplicate code [#PWinGeoForAnyMode]
-      switch currentLayout.mode {
-      case .windowedNormal, .windowedInteractive:
-        pwGeo = windowedGeoForCurrentFrame()
-      case .fullScreenNormal, .fullScreenInteractive:
-        pwGeo = currentLayout.buildFullScreenGeometry(inScreenID: bestScreen.screenID, geo.video)
-      case .musicMode:
-        pwGeo = musicModeGeoForCurrentFrame()
-      }
-    }
-
-    let osdTextSize = osd.getOSDTextSize(from: pwGeo)
-    if osdTextSize != osd.textSizeLast {
-      osd.textSizeLast = osdTextSize
-      log.verbose("[OSD] Δ textSize: \(osd.textSizeLast) → \(osdTextSize)")
-
-      // Update rounded corners
-      player.pwc.updateCornerRoundness(fromOSDTextSize: osdTextSize)
-
-      // Also update progress bar height based on text size
-      osd.updateProgressBarStyle(window.effectiveAppearance, effectiveOSCColorScheme: currentLayout.effectiveOSCColorScheme)
-
-      let osdAccessoryTextSize = (osdTextSize * 0.75).rounded().clamped(to: 11...25)
-      osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
-
-      // Update padding around edges
-      let marginScaled = 8 + (osdTextSize * 0.15).rounded()
-      osd.osdTopPaddingConstraint.constraint?.animateToConstant(marginScaled)
-      osd.osdBtmPaddingConstraint.constraint?.animateToConstant(marginScaled)
-      osd.osdTrailingPaddingConstraint.constraint?.animateToConstant(marginScaled)
-      osd.osdLeadingPaddingConstraint.constraint?.animateToConstant(marginScaled)
-
-      // Update OSD label
-      let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
-      osd.osdLabel.font = osdLabelFont
-    }
-
-    // Always call this afterwards
-    setOSDViews(fromMessage: msg)
-  }
 }
