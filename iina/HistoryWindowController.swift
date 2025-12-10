@@ -114,6 +114,9 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
     searchType = HistoryWindowController.getHistorySearchTypeFromPrefs() ?? Preference.HistorySearchType.defaultValue
     searchString = HistoryWindowController.getSearchStringFromPrefs() ?? ""
     super.init(window: nil)
+    if let window {
+      window.tabbingMode = .disallowed
+    }
 
     windowFrameAutosaveName = WindowAutosaveName.playbackHistory.string
     showLoadingMsgTimer.action = showLoadingUI

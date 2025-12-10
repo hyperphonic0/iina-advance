@@ -242,7 +242,7 @@ class GLVideoLayer: CAOpenGLLayer {
   @objc func exitAsynchronousMode() {
     asychronousModeTimer?.invalidate()
     if isAsynchronous {
-      videoView.player.log.verbose("Exiting asynchronous mode")
+      videoView.player.log.trace("Exiting asynchronous mode")
     }
     /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
     /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.

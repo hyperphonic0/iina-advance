@@ -135,7 +135,7 @@ class FilterWindowController: WindowController, NSWindowDelegate {
       }
 
       Task { @MainActor in
-        Logger.log.verbose("Reloading filters UI: active=\(latestActiveFilters.count) saved=\(savedFilters.count) checkboxes=\(filterIsSavedUpdated.map(\.description).joined(separator: "-"))")
+        Logger.log.verbose("Reloading filters UI: active=\(latestActiveFilters.count) saved=\(savedFilters.count) checkboxes=[\(filterIsSavedUpdated.map(\.yn).joined(separator: "-"))]")
         self.filters = latestActiveFilters
         self.filterIsSaved = filterIsSavedUpdated
         self.savedFilters = savedFiltersUpdated

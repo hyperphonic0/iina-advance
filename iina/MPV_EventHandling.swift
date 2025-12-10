@@ -141,6 +141,7 @@ extension MPVController {
 
     case MPV_EVENT_SHUTDOWN:
       player.log.verbose("Got mpv shutdown event")
+
       DispatchQueue.main.async {
         self.player.mpvHasShutdown()
       }

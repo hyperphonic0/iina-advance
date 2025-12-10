@@ -87,14 +87,14 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
       return pwc
     }
 
-    let isFullScreen = NSApp.presentationOptions.contains(.fullScreen)
-    if isFullScreen {
-      let locationInWindow = event.locationInWindow
-      if let mainWin = NSApplication.shared.mainWindow {
-        let isInWindow = mainWin.frame.contains(locationInWindow)
-        if isInWindow {
-          return mainWin.windowController as? PlayerWindowController
-        }
+    let isInNativeFullScreen = NSApp.presentationOptions.contains(.fullScreen)
+    if isInNativeFullScreen {
+      // If this button was in the title bar, when the window goes to native full screen it will be moved to a separate faux window!
+      // Try to find pwc if it was set as the target...
+      if let pwc = target as? PlayerWindowController {
+        return pwc
+      } else {
+        Logger.log.warn("Unable to find PlayerWindowController for SymButton \(idString) while in native full screen!")
       }
     }
     return nil

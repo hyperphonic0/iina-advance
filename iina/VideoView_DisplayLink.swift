@@ -46,7 +46,7 @@ extension VideoView {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let link = link, CVDisplayLinkIsRunning(link) else { return }
     checkResult(CVDisplayLinkStop(link), "CVDisplayLinkStop")
-    log.verbose("DisplayLink stopped")
+    log.trace("DisplayLink stopped")
   }
 
   /// This should be called at start or if the window has changed displays
@@ -57,7 +57,7 @@ extension VideoView {
 
     // Do nothing if on the same display
     guard currentDisplay != displayId else {
-      log.trace{"No need to update DisplayLink; currentDisplayID (\(displayId)) is unchanged"}
+      log.trace("No need to update DisplayLink; currentDisplayID (\(displayId)) is unchanged")
       return
     }
     log.verbose("DisplayLink: updating for displayID \(displayId)")

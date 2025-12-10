@@ -18,6 +18,8 @@ private let FLAGS_REGEX = try! NSRegularExpression(
   pattern: #"[^\+]+"#, options: [])
 private let COMMAND_REGEX = try! NSRegularExpression(
   pattern: #"Run command:\s+([^,]+),"#, options: [])
+private let SET_PROPERTY_REGEX = try! NSRegularExpression(
+  pattern: #"Set property:\s+([^=]+)"#, options: [])
 private let SEEK_ARGS_REGEX = try! NSRegularExpression(
   pattern: #"target=\"([^\"]*)\"(?:, flags="([^\"]*)\")?"#, options: [])
 
@@ -43,7 +45,7 @@ fileprivate let mpvIINALogLevelMap: [MPVLogLevel: Logger.Level] = [.fatal: .erro
                                                                    .debug: .verbose,
                                                                    .trace: .verbose]
 
-class MPVLogScanner {
+final class MPVLogScanner {
   private unowned let player: PlayerCore
 
   /// Only used for messages coming directly from the mpv log event stream
@@ -51,6 +53,8 @@ class MPVLogScanner {
   let log: any Logger.Subsystem
 
   var mpvEventLogLevel: MPVLogLevel = .warn
+
+  var changedProps = Set<String>()
 
   init(player: PlayerCore) {
     self.player = player
@@ -98,23 +102,40 @@ class MPVLogScanner {
       return
     }
 
-    guard prefix == "cplayer" else { return }
+    if msg.starts(with: "Set property:") {
+      processSetProperty(msg)
+    } else if prefix == "cplayer" {
 
-    if level.starts(with: "d")  {
-      processDebugLevelLine(msg)
-    } else if level.starts(with: "i") {
-      processInfoLevelLine(msg)
+      if level.starts(with: "d")  {
+        // Debug level
+        if msg.starts(with: "Run command:") {
+          processRunCommand(msg)
+        }
+
+      } else if level.starts(with: "i") {
+        // Info level
+        if msg.starts(with: "Resuming playback.") {
+          player.sendOSD(.resumeFromWatchLater)
+        }
+      }
     }
   }
 
-  func processInfoLevelLine(_ msg: String) {
-    if msg.starts(with: "Resuming playback.") {
-      player.sendOSD(.resumeFromWatchLater)
+  private func processSetProperty(_ msg: String) {
+    guard let match = matchRegex(SET_PROPERTY_REGEX, msg) else {
+      log.error("Found 'Set property' in mpv log msg but failed to parse it: \(msg)")
+      return
     }
+
+    guard let propRange = Range(match.range(at: 1), in: msg) else {
+      log.error("Found 'Set property' in mpv log msg but failed to find capture groups in it: \(msg)")
+      return
+    }
+    let prop = String(msg[propRange])
+    changedProps.insert(prop)
   }
 
-  func processDebugLevelLine(_ msg: String) {
-    guard msg.starts(with: "Run command:") else { return }
+  private func processRunCommand(_ msg: String) {
     guard let cmdName = parseCommandName(from: msg) else { return }
 
     switch cmdName {

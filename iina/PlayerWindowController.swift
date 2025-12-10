@@ -1033,7 +1033,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
         PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
         PlayerWindowController.musicModeGeoLastClosed = musicModeGeo
 
-        log.trace{"Done: windowWillClose cleanup on main DQ"}
+        log.trace("Done: windowWillClose cleanup on main DQ")
       })
 
       log.trace("Resetting window geometry for close")
@@ -1048,11 +1048,13 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
       player.info.currentPlayback = nil
       osd.clearQueuedOSDs()
-      log.trace{"Done: windowWillClose cleanup on mpv DQ"}
+      log.trace("Done: windowWillClose cleanup on mpv DQ")
     }
   }
 
   // MARK: - Full Screen
+
+  var isWindowInNativeFullScreen: Bool { NSApp.presentationOptions.contains(.fullScreen) }
 
   func customWindowsToEnterFullScreen(for window: NSWindow) -> [NSWindow]? {
     return [window]
@@ -1063,6 +1065,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func windowWillEnterFullScreen(_ notification: Notification) {
+    log.verbose("WndWillEnterFullScreen")
   }
 
   func window(_ window: NSWindow, startCustomAnimationToEnterFullScreenOn screen: NSScreen, withDuration duration: TimeInterval) {
@@ -1093,6 +1096,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// animation completes, or the window size will be incorrectly set to the same size of the screen.
   /// There does not appear to be any similar problem when entering fullscreen.
   func windowDidExitFullScreen(_ notification: Notification) {
+    log.verbose("WndDidExitFullScreen")
     if AccessibilityPreferences.motionReductionEnabled {
       animateExitFromFullScreen(withDuration: Constants.AnimationDuration.fullScreenTransition, isLegacy: false)
     } else {
@@ -1158,14 +1162,14 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   func enterFullScreen(legacy: Bool? = nil) {
     guard let window = self.window else { fatalError("make sure the window exists before animating") }
     let isLegacy: Bool = legacy ?? Preference.bool(for: .useLegacyFullScreen)
-    let isFullScreen = NSApp.presentationOptions.contains(.fullScreen)
-    log.verbose("EnterFullScreen called. Legacy=\(isLegacy.yn) isNativeFullScreenNow=\(isFullScreen.yn)")
+    let isInNativeFullScreen = isWindowInNativeFullScreen
+    log.verbose("EnterFullScreen called. Legacy=\(isLegacy.yn) isNativeFullScreenNow=\(isInNativeFullScreen.yn)")
 
     if isLegacy {
       animationPipeline.submitInstantTask({ [self] in
         animateEntryIntoFullScreen(withDuration: Constants.AnimationDuration.fullScreenTransition, isLegacy: true)
       })
-    } else if !isFullScreen {
+    } else if !isInNativeFullScreen {
       /// `collectionBehavior` *must* be correct or else `toggleFullScreen` may do nothing!
       resetCollectionBehavior()
       window.toggleFullScreen(self)
@@ -1184,7 +1188,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
         animateExitFromFullScreen(withDuration: Constants.AnimationDuration.fullScreenTransition, isLegacy: true)
       })
     } else {
-      let isActuallyNativeFullScreen = NSApp.presentationOptions.contains(.fullScreen)
+      let isActuallyNativeFullScreen = isWindowInNativeFullScreen
       log.verbose("ExitFullScreen called, legacy=\(isLegacyFS.yn), isNativeFullScreenNow=\(isActuallyNativeFullScreen.yn)")
       guard isActuallyNativeFullScreen else { return }
       window.toggleFullScreen(self)
@@ -1200,8 +1204,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     // Set to true if in legacy FS in any window
     let appIsFS = windowIsFS || window.isAnotherWindowInFullScreen
 
-    guard !NSApp.presentationOptions.contains(.fullScreen) else {
-      log.error("Cannot add presentation options for legacy full screen: window is already in full screen!")
+    guard !isWindowInNativeFullScreen else {
+      log.error("Cannot add presentation options for legacy full screen: window is already in native full screen!")
       return
     }
 
@@ -1283,7 +1287,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     guard let window = window, let screen = window.screen else { return }
     let displayId = screen.displayId
     guard videoView.currentDisplay != displayId else {
-      log.trace{"WndDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged"}
+      log.trace("WndDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged")
       return
     }
 
@@ -2491,7 +2495,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   func resetCollectionBehavior() {
     guard AppDelegate.isInteractiveLaunch else { return }
 
-    guard !NSApp.presentationOptions.contains(.fullScreen) else {
+    guard !isWindowInNativeFullScreen else {
       log.error("resetCollectionBehavior() should not have been called while in native FS - ignoring")
       return
     }

@@ -712,9 +712,9 @@ final class StartupHandler {
 
     // Various initializations at App level
     NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
-
-    // TODO: try to get tabbing working
-    NSWindow.allowsAutomaticWindowTabbing = false
+    // Make sure this is enabled so that tab-related menu items show up in the Window menu.
+    // We will disable tabbing on a per-window basis in each window controller's constructor method.
+    NSWindow.allowsAutomaticWindowTabbing = true
 
     JavascriptPlugin.loadGlobalInstances()
 
