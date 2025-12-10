@@ -1009,9 +1009,10 @@ extension PlayerWindowController {
       fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
     }
 
-    // Do this for either native windowed or FS
     if !transition.outputLayout.isLegacyStyle {
       setStyleMaskForNativeWindowed(log)
+      showNativeTitleBarViews(transition.outputLayout, log)
+      addTitleBarAccessoryViews()
       updateTitle()
     }
 
