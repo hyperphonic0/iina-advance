@@ -84,10 +84,6 @@ extension PlayerWindowController {
       /// `windowedModeGeo` should already be kept up to date. Might be hard to track down bugs...
       log.verbose("Entering full screen; priorWindowedGeometry = \(windowedModeGeo)")
 
-      // Hide traffic light buttons & title during the animation.
-      // Do not move this block. It needs to go here.
-      hideNativeTitleBarViews(andSetAlpha: true)
-
       if #unavailable(macOS 10.14) {
         // Set the appearance to match the theme so the title bar matches the theme
         let iinaTheme = Preference.enum(for: .themeMaterial) as Preference.Theme
@@ -102,6 +98,10 @@ extension PlayerWindowController {
       setWindowFloatingOnTop(false, from: transition.inputLayout, updateOnTopStatus: false)
 
       if transition.isEnteringLegacyFullScreen {
+        // Hide traffic light buttons & title during the animation.
+        // Do not move this block. It needs to go here.
+        hideNativeTitleBarViews(andSetAlpha: true)
+
         setStyleMaskForLegacyFS(log)
 
         /// When restoring, it's possible this window is not actually topmost.
@@ -112,11 +112,6 @@ extension PlayerWindowController {
     } else if transition.isExitingFullScreen {
       // Exiting Full Screen
       fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
-
-      if transition.inputLayout.isNativeFullScreen {
-        // Hide traffic light buttons & title during the animation:
-        hideNativeTitleBarViews(andSetAlpha: true)
-      }
     }
 
     // Interactive mode
@@ -459,8 +454,9 @@ extension PlayerWindowController {
     // For some reason, transitioning to/from interactive mode messes up the alignment of CustomTitleBar's title text.
     // Removing the whole CustomTitleBar view hierarchy & recreating it seems to be a valid workaround.
     if outputLayout.titleBar == .hidden || transition.isTopBarPlacementOrStyleChanging || (transition.inputLayout.mode != transition.outputLayout.mode) {
-      /// Even if exiting FS, still don't want to show title & buttons until after panel open animation:
-      hideNativeTitleBarViews(andSetAlpha: true)
+      if !transition.isTogglingNativeFullScreen {
+        hideNativeTitleBarViews(andSetAlpha: true)
+      }
 
       if let customTitleBar {
         customTitleBar.removeAndCleanUp()
@@ -978,13 +974,18 @@ extension PlayerWindowController {
         }
         miniPlayer.showOrHideControls()
       } else {
-        if outputLayout.isLegacyStyle, let customTitleBar {  // Legacy windowed mode
-          for view in [customTitleBar.view] + customTitleBar.trafficLightButtons {
-            view.alphaValue = 1
-            view.isHidden = false
+        if outputLayout.isLegacyStyle {
+          // Legacy windowed mode
+          if let customTitleBar {
+            for view in [customTitleBar.view] + customTitleBar.trafficLightButtons {
+              view.alphaValue = 1
+              view.isHidden = false
+            }
           }
-        } else if outputLayout.isWindowed {  // Native windowed
+        } else {  // Native windowed or FS
           showNativeTitleBarViews(outputLayout, log)
+          /// Title bar accessories may be missing if window `styleMask` did not include `.titled`. Add them back:
+          addTitleBarAccessoryViews()
         }
 
         // covers both native & custom variants
@@ -1090,11 +1091,7 @@ extension PlayerWindowController {
       }
 
       if transition.inputLayout.isLegacyFullScreen {
-        if #available(macOS 10.16, *) {
-          window.level = .normal
-        } else {
-          window.styleMask.remove(.fullScreen)
-        }
+        window.level = .normal
       }
 
       if transition.outputLayout.isLegacyStyle {  // legacy windowed
@@ -1142,22 +1139,6 @@ extension PlayerWindowController {
 
     // Need to execute this *after* calling updatePresentationOptions (if calling it)
     rebuildPanelConstraints(transition, stage: .postTransition)
-
-    if transition.outputLayout.titleBar.isShowable {
-      if !transition.outputLayout.isLegacyStyle {
-        /// Special case: need to wait until now to call `trafficLightButtons.isHidden = false` due to their quirks
-        showNativeTitleBarViews(transition.outputLayout, log)
-        /// Title bar accessories get removed by fullscreen or if window `styleMask` did not include `.titled`.
-        /// Add them back:
-        addTitleBarAccessoryViews()
-      }
-
-      updateTitleBarUI(from: transition.outputLayout)  // covers both native & custom variants
-
-      if transition.outputLayout.mode == .musicMode {
-        miniPlayer.showOrHideControls()
-      }
-    }
 
     if transition.isTogglingMusicMode {
       if Preference.bool(for: .playlistShowMetadataInMusicMode) {
@@ -1232,8 +1213,6 @@ extension PlayerWindowController {
   }
   // End of steps
 
-  // MARK: - Support Functions: Title Bar
-
   // MARK: - Title bar items
 
   func updateTitleBarUI(from layoutState: LayoutState) {
@@ -1306,12 +1285,6 @@ extension PlayerWindowController {
   // Legacy FS
   private func setStyleMaskForLegacyFS(_ log: any Logger.Subsystem) {
     guard let window = window else { return }
-    if #unavailable(macOS 10.16) {
-      log.verbose("Adding styleMask '.fullScreen' to window (entering legacy FS)")
-      window.styleMask.insert(.fullScreen)
-      return
-    }
-
     if window.styleMask.contains(.titled) {
       log.verbose("Removing styleMask '.titled' from window (entering legacy FS)")
       window.styleMask.remove(.titled)

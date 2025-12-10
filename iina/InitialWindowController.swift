@@ -248,13 +248,11 @@ class InitialWindowController: WindowController, NSWindowDelegate {
     guard let window = window else { return }
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     window.appearance = NSAppearance(iinaTheme: theme)
-    if #available(macOS 10.16, *) {
-      let gradientLayer = CAGradientLayer()
-      gradientLayer.colors = window.effectiveAppearance.isDark ?
-        [NSColor.black.withAlphaComponent(0.4).cgColor, NSColor.black.withAlphaComponent(0).cgColor] :
-        [NSColor.black.withAlphaComponent(0.1).cgColor, NSColor.black.withAlphaComponent(0).cgColor]
-      leftOverlayView.layer = gradientLayer
-    }
+    let gradientLayer = CAGradientLayer()
+    gradientLayer.colors = window.effectiveAppearance.isDark ?
+    [NSColor.black.withAlphaComponent(0.4).cgColor, NSColor.black.withAlphaComponent(0).cgColor] :
+    [NSColor.black.withAlphaComponent(0.1).cgColor, NSColor.black.withAlphaComponent(0).cgColor]
+    leftOverlayView.layer = gradientLayer
   }
 
   fileprivate func openInNewPlayer(_ url: URL) {
