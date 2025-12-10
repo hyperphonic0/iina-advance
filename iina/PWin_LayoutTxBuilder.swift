@@ -303,7 +303,8 @@ extension PlayerWindowController {
 
     // EndingAnimation 2: Fade in new views
     // If exiting FS, this task is skipped. It needs to run in a separate CATransaction so it is run down below.
-    if transition.needsFadeInNewViewsStep {
+    let needsSeparateFadeInNewViewsTask: Bool = transition.needsFadeInNewViewsStep
+    if needsSeparateFadeInNewViewsTask {
       tasks.append(.init(duration: fadeInNewViewsDuration, timing: fadeInNewViewsTiming) { [self] in
         fadeInNewViews(transition)
       })
@@ -311,8 +312,10 @@ extension PlayerWindowController {
 
     // Post: After animations all finish. Not animated.
     tasks.append(.instantTask{ [self] in
-      if transition.isTogglingFullScreen {
-        // For a better visual experience wait until window finishes moving
+      if !needsSeparateFadeInNewViewsTask {
+        // For FS toggle: for a better visual experience wait until window finishes moving.
+        // Certain things (e.g. showing floating OSC) have state which relies on this task being executed,
+        // even if not animated.
         fadeInNewViews(transition)
       }
 

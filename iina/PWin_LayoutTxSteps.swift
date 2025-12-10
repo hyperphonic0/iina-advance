@@ -999,10 +999,6 @@ extension PlayerWindowController {
       cropController.cropBoxView.alphaValue = 1
     }
 
-    if transition.isExitingInteractiveMode, !isPausedPriorToInteractiveMode {
-      player.resume()
-    }
-
     if !transition.isWindowInitialLayout || transition.outputLayout.isFullScreen {
       updateWindowBorderAndOpacity(using: transition.outputLayout)
     }
@@ -1139,6 +1135,10 @@ extension PlayerWindowController {
 
       player.events.emit(.windowFullscreenChanged, data: false)
     }  // End Exiting FS
+
+    if transition.isExitingInteractiveMode, !isPausedPriorToInteractiveMode {
+      player.resume()
+    }
 
     // Need to execute this *after* calling updatePresentationOptions (if calling it)
     rebuildPanelConstraints(transition, stage: .postTransition)

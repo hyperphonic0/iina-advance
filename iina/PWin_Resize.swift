@@ -15,7 +15,7 @@ extension PlayerWindowController {
   func windowShouldZoom(_ window: NSWindow, toFrame newFrame: NSRect) -> NSRect {
     let newSize = resizeSubviews(of: window, to: newFrame.size)
     let newNewFrame = NSRect(origin: newFrame.origin, size: newSize)
-    log.verbose("WindowWillZoom: \(window.frame) → \(newFrame) → \(newNewFrame)")
+    log.verbose("WndWillZoom: \(window.frame) → \(newFrame) → \(newNewFrame)")
     return newNewFrame
   }
 
@@ -26,7 +26,7 @@ extension PlayerWindowController {
   // MARK: - Window Delegate: Resize
 
   func windowWillStartLiveResize(_ notification: Notification) {
-    log.trace("WindowWillStartLiveResize")
+    log.trace("WndWillStartLiveResize")
     isLiveResizingWidth = nil  // reset this
     // Shut down all animations for the duration of live resize!
     // This way the asynchrounous unprotected updates in `windowWillResize` will (hopefully) not interfere with other animations.
@@ -34,7 +34,7 @@ extension PlayerWindowController {
   }
 
   func windowDidEndLiveResize(_ notification: Notification) {
-    log.trace("WindowDidEndLiveResize")
+    log.trace("WndDidEndLiveResize")
     // Kick-start the animation pipeline:
     animationPipeline.enableRunning = true
     animationPipeline.submitInstantTask{}

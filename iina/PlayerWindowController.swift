@@ -1250,6 +1250,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func window(_ window: NSWindow, willUseFullScreenContentSize proposedSize: NSSize) -> NSSize {
+    // TODO: support window tiling in FS! This will likely involve saving the size given here somewhere.
     log.verbose("Full screen content size proposed=\(proposedSize), returning=\(proposedSize)")
     return proposedSize
   }

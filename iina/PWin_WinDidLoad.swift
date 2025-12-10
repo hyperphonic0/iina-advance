@@ -50,14 +50,13 @@ extension PlayerWindowController {
     /// Set base options for `collectionBehavior` here, and then insert/remove full screen options
     /// using `resetCollectionBehavior`. Do not mess with the base options again because doing so seems
     /// to cause flickering while animating.
-    /// Always use option `.fullScreenDisallowsTiling`. As of MacOS 14.2.1, tiling is at best glitchy &
-    /// at worst results in an infinite loop with our code.
-    // FIXME: support tiling for at least native full screen
+    /// For now, always use option `.fullScreenDisallowsTiling`.
+    // FIXME: support tiling for native full screen
     window.collectionBehavior = [.managed, .fullScreenDisallowsTiling]
-    window.initialFirstResponder = nil
 
+    window.initialFirstResponder = nil
     window.minSize = Constants.Window.minWindowSize
-    contentView.idString = "WindowCV"
+    contentView.idString = "PWinCV"
 
     leftTimeLabel.mode = .current
     rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
