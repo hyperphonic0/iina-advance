@@ -99,7 +99,7 @@ extension PlayerWindowController {
     if let windowed {
       windowedNew = windowed
     } else if mode.isWindowed {
-      if geo.windowed.mode != layoutMode {
+      if geo.windowed.mode != mode {
         // If this message is seen, could be a corrupted pref key, or a code bug
         log.error("buildGeoSet: geo.windowed.mode (\(geo.windowed.mode)) != layout.mode (\(mode))! Will change geo mode to match the latter; hope it doesn't break anything...")
       }
@@ -115,7 +115,7 @@ extension PlayerWindowController {
     // Music mode
     if let musicMode {
       musicModeNew = musicMode
-    } else if layoutMode == .musicMode {
+    } else if mode == .musicMode {
       musicModeNew = geo.musicMode.cloneMusicMode(windowFrame: latestWindowFrame, screenID: latestScreenID, video: videoNew)
     } else {
       musicModeNew = geo.musicMode

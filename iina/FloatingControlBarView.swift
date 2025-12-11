@@ -17,7 +17,6 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
 
   let topRowView = ClickThroughStackView()
   let bottomRowView = ClickThroughStackView()
-  let playButtonsContainerView = ClickThroughStackView()
 
   fileprivate var xConstraint: NSLayoutConstraint!  // this is X CENTER of OSC
   fileprivate var yConstraint: NSLayoutConstraint!  // Bottom of OSC
@@ -51,7 +50,7 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
 
     subviews = [topRowView, bottomRowView]
 
-    for stackView in [topRowView, bottomRowView, playButtonsContainerView] {
+    for stackView in [topRowView, bottomRowView] {
       stackView.orientation = .horizontal
       stackView.alignment = .centerY
       stackView.distribution = .gravityAreas
@@ -66,12 +65,6 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
     bottomRowView.addConstraintsToFillSuperview(bottom: 1, leading: 10, trailing: 10)
     bottomRowView.setHuggingPriority(.required, for: .vertical)
     bottomRowView.idString = "OSC-Floating-BottomRow"
-
-    // playButtonsContainerView
-    topRowView.addView(playButtonsContainerView, in: .center)
-    playButtonsContainerView.setClippingResistancePriority(.init(500), for: .horizontal)
-    playButtonsContainerView.setHuggingPriority(.init(500), for: .vertical)
-    playButtonsContainerView.idString = "OSC-Floating-PlayBtnsContainer"
 
     let rowsEqHeightCon = topRowView.heightAnchor.constraint(equalTo: bottomRowView.heightAnchor, multiplier: 1)
     rowsEqHeightCon.isActive = true
@@ -400,7 +393,7 @@ extension PlayerWindowController {
         // controlBarFloating - 12 - topRowView
         let margin: CGFloat = (10 + 12) * 2
         let hide = (window.frame.width
-                    - controlBarFloating.playButtonsContainerView.frame.width
+                    - fragPlaybackBtnsView.frame.width
                     - maxWidth*2
                     - margin) < 0
 

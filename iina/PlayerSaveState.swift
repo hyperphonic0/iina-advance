@@ -625,15 +625,13 @@ struct PlayerSaveState: CustomStringConvertible {
       }
     }
 
-    if let aid = int(for: .aid) {
-      info.aid = aid
-    }
-    if let sid = int(for: .sid) {
-      info.sid = sid
-    }
-    if let s2id = int(for: .s2id) {
-      info.secondSid = s2id
-    }
+    // We must have a non-nil track of each. The UI's selected track will be blank if not.
+    let aid = int(for: .aid) ?? 0
+    info.aid = aid
+    let sid = int(for: .sid) ?? 0
+    info.sid = sid
+    let s2id = int(for: .s2id) ?? 0
+    info.secondSid = s2id
 
     if let vidDisabled = int(for: .vidDisabled) {
       info.vidDisabled = vidDisabled >= 0 ? vidDisabled : nil
@@ -771,12 +769,12 @@ struct PlayerSaveState: CustomStringConvertible {
       }
     }
 
-    if let vid = int(for: .vid) {
-      mpv.setInt(MPVOption.TrackSelection.vid, vid)
-    }
-    if let aid = int(for: .aid) {
-      mpv.setInt(MPVOption.TrackSelection.aid, aid)
-    }
+    // Need to restore a non-nil value. Use 0 (none) by default if something went wrong
+    let vid = int(for: .vid) ?? 0
+    mpv.setInt(MPVOption.TrackSelection.vid, vid)
+    let aid = int(for: .aid) ?? 0
+    mpv.setInt(MPVOption.TrackSelection.aid, aid)
+
     if let audioFilters = string(for: .audioFilters) {
       mpv.setString(MPVProperty.af, audioFilters)
     }
@@ -1496,9 +1494,9 @@ extension PlayerCore {
     props[PropName.hwdec.rawValue] = info.hwdec
     props[PropName.hdrEnabled.rawValue] = info.hdrEnabled.yn
 
-    if let intVal = info.vid {
-      props[PropName.vid.rawValue] = String(intVal)
-    }
+    // We must restore a non-nil value. Default to 0 (none) if not found
+    let intVal = info.vid ?? 0
+    props[PropName.vid.rawValue] = String(intVal)
     if let intVal = info.aid {
       props[PropName.aid.rawValue] = String(intVal)
     }

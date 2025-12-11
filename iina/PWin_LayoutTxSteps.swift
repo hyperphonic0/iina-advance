@@ -895,7 +895,7 @@ extension PlayerWindowController {
         // Wait until now to set up floating OSC views. Doing this in prev or next task while animating results in visibility bugs
         let topRowView = controlBarFloating.topRowView
         if transition.isWindowInitialLayout || !transition.inputLayout.hasFloatingOSC {
-          controlBarFloating.playButtonsContainerView.addView(fragPlaybackBtnsView, in: .center)
+          controlBarFloating.topRowView.addView(fragPlaybackBtnsView, in: .center)
           // There sweems to be a race condition when adding to these StackViews.
           // Sometimes it still contains the old view, and then trying to add again will cause a crash.
           // Must check if it already contains the view before adding.

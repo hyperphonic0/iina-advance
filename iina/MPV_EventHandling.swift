@@ -530,7 +530,7 @@ extension MPVController {
 
     case MPVProperty.trackList:
       player.log.verbose("Δ mpv prop: 'track-list'")
-      player.trackListChanged()
+      _ = player.reloadTrackInfo()
 
     case MPVProperty.vf:
       player.log.verbose("Δ mpv prop: 'vf'")

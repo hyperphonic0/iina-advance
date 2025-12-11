@@ -141,13 +141,13 @@ struct GeometryTransform: Sendable {
     player.mpv.queue.async { [self] in
       // Check for window close (tag: #SessionState-Race)
       guard !player.isStopping else { return abort("player stopping (status=\(player.state))") }
-      guard let currentPlayback = currentPlayback else { return abort("currentPlayback is nil") }
+      guard let currentPlayback else { return abort("currentPlayback is nil") }
 
 
       // File needs to be loaded before we can know its video geometry.
       // ...Unless we are restoring. But then we still want to wait until all windows are done loading, so we can open them all at once.
       // ...But streaming files can often fail to connect. So reopen those right away if restoring (we already have their saved geometry anyway).
-      guard currentPlayback.state.isAtLeast(.loaded) || (prevSessionState.isRestoring && currentPlayback.isNetworkResource) else {
+      guard currentPlayback.state.isAtLeast(.loadedButNeedsSizing) || (prevSessionState.isRestoring && currentPlayback.isNetworkResource) else {
         return abort("playbackState=\(currentPlayback.state) restoring=\(prevSessionState.isRestoring.yn) network=\(currentPlayback.isNetworkResource.yn)")
       }
 
@@ -560,11 +560,11 @@ struct GeometryTransform: Sendable {
 
           // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
           // The OSD can have weird stretching glitches if displayed while zooming open...
-          if currentPlayback.state == .loaded,
-             let playback = player.info.currentPlayback, playback.id == currentPlayback.id,
-             playback.state.isNotYet(.loadedAndSized) {
+          if currentPlayback.state == .loadedButNeedsSizing,
+             let playerPlayback = player.info.currentPlayback, playerPlayback.id == currentPlayback.id,
+             playerPlayback.state.isNotYet(.loadedAndSized) {
             log.debug("[GTF:\(name)] Updating playback.state = .loadedAndSized + will emit fileLoaded")
-            player.info.currentPlayback = playback.changingState(to: .loadedAndSized)
+            player.info.currentPlayback = playerPlayback.changingState(to: .loadedAndSized)
 
             Task { @MainActor in
               pwc.animationPipeline.submitInstantTask {

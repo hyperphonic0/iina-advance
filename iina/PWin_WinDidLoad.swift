@@ -552,11 +552,10 @@ extension PlayerWindowController {
     volumeSlider.controlSize = .regular
     volumeSlider.translatesAutoresizingMaskIntoConstraints = false
     volumeSliderWidthConstraint = volumeSlider.widthAnchor.constraint(equalToConstant: oscGeo.volumeSliderWidth)
-    volumeSliderWidthConstraint.identifier = .init("VolSlider-WidthConstraint")
+    volumeSliderWidthConstraint.identifier = "VolSlider-WidthConstraint"
     volumeSliderWidthConstraint.isActive = true
-    volumeSlider.addConstraintsToFillSuperview(top: 0, bottom: 0)
+    volumeSlider.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
     volumeSlider.leadingAnchor.constraint(equalTo: muteButton.trailingAnchor, constant: hSpacing).isActive = true
-    volumeSlider.superview!.trailingAnchor.constraint(equalTo: volumeSlider.trailingAnchor).isActive = true
     volumeSlider.target = self
     volumeSlider.action = #selector(volumeSliderAction(_:))
   }

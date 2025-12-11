@@ -2037,6 +2037,8 @@ final class PlayerCore: NSObject {
       return
     }
 
+    info.currentPlayback = currentPlayback.changingState(to: .loaded)
+
     if currentPlayback.isNetworkResource {
       DispatchQueue.main.async {
         let openURLWindow = IINA_Advance.AppDelegate.shared.openURLWindow
@@ -2071,7 +2073,7 @@ final class PlayerCore: NSObject {
 
       /// Will complete restore when `transformGeometry` is done
     }
-    let currentPlaybackButLoaded = currentPlayback.changingState(to: .loaded)
+    let currentPlaybackButLoadedNeedsSizing = currentPlayback.changingState(to: .loadedButNeedsSizing)
 
     _reloadPlaylist()  // Need to do this when opening a playlist!
     _reloadChapters()
@@ -2079,13 +2081,8 @@ final class PlayerCore: NSObject {
     // Done syncing tracks
 
     let gtf = GeometryTransform("FileLoaded", self,
-                                currentPlayback: currentPlaybackButLoaded,
+                                currentPlayback: currentPlaybackButLoadedNeedsSizing,
                                 sessionState: { [self] prevSessionState, ctx in
-      guard ctx.currentPlayback.state == .loaded else {
-        log.verbose("[GTF:\(ctx.name)] Expected currentPlayback.state == .loaded, but found: \(ctx.currentPlayback.state)")
-        return nil
-      }
-
       switch prevSessionState {
       case .existingSession_continuing:
         return .existingSession_startingNewPlayback
@@ -3240,7 +3237,15 @@ final class PlayerCore: NSObject {
 
   func reloadTrackInfo() -> Bool {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    log.trace("Reloading tracklist from mpv")
+    log.verbose("Reloading tracklist from mpv")
+
+    // No need to process track list changes if playback is being stopped. Must not process track
+    // list changes if mpv is terminating as accessing mpv once shutdown has been initiated can
+    // trigger a crash.
+    guard !isStopping, info.isFileLoaded else {
+      log.trace("Aborting tracklist reload: player or file not ready (player=\(state), file=\(info.currentPlayback?.state.description ?? "nil"))")
+      return false
+    }
 
     let raw = mpv.getNode(MPVProperty.trackList)
     guard let list = raw as? [[String: Any]] else {
@@ -3297,18 +3302,7 @@ final class PlayerCore: NSObject {
 
     info.replaceTracks(audio: audioTracks, video: videoTracks, sub: subTracks)
     log.debug("Reloaded tracklist from mpv: \(videoTracks.count) video, \(audioTracks.count) audio, \(subTracks.count) subtitle")
-    return true
-  }
 
-  func trackListChanged() {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    // No need to process track list changes if playback is being stopped. Must not process track
-    // list changes if mpv is terminating as accessing mpv once shutdown has been initiated can
-    // trigger a crash.
-    guard !isStopping else { return }
-    guard info.isFileLoaded else { return }
-    log.debug("Track list changed")
-    guard reloadTrackInfo() else { return }
     // Need to reload these explicitly. Sometimes when mpv sends `track-list`, it omits `vid`, `aid`, etc.
     vidChanged()
     aidChanged()
@@ -3317,6 +3311,7 @@ final class PlayerCore: NSObject {
 
     log.verbose("Posting iinaTracklistChanged vid=\(String(info.vid)) aid=\(String(info.aid)) sid=\(String(info.sid)) ssid=\(String(info.secondSid))")
     postNotification(.iinaTracklistChanged)
+    return true
   }
 
   func aidChanged(to aid: Int? = nil, silent: Bool = false) {
