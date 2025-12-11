@@ -717,6 +717,8 @@ struct GeometryTransform: Sendable {
         pwc.updateTitle()
         pwc.playlistView.needsScrollToCurrentItem = true  // reset flag for when it does open
 
+        pwc.addAllObservers()
+
         // Post "ready to show" notification? Or post cancellation? Or do nothing more?
         if gtfSessionState.isRestoring {
           if pwc.window!.isMiniaturized {

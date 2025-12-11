@@ -175,6 +175,7 @@ extension PlayerWindowController {
     ObjcUtils.silenced { [self] in
       removeObserver(self, forKeyPath: #keyPath(window.effectiveAppearance))
     }
+    log.verbose("Done removing all observers")
   }
 
   /// Called each time a pref `key`'s value is set

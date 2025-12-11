@@ -27,8 +27,6 @@ extension PlayerWindowController {
     viewportView.player = player
 
     notiHandler = buildObservers()
-    // TODO: add/remove observers on window open/close instead
-    addAllObservers()
 
     // The fade timer is only used if auto-hide is enabled
     fadeableViews.hideTimer.action = hideTimeoutAction
