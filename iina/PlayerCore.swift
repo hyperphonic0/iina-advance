@@ -2104,7 +2104,7 @@ final class PlayerCore: NSObject {
         }
       }
     })
-    pwc.animationPipeline.submitGTF(gtf)
+    gtf.submit()
 
     // Launch auto-load tasks on background thread
     let shouldAutoLoadFiles = info.shouldAutoLoadFiles

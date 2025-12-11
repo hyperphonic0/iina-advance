@@ -186,6 +186,7 @@ final class StartupHandler {
     }
 
     var totalFilesOpened = 0
+    var totalExistingFilesShown = 0
 
     var lastPlayer: PlayerCore? = nil
     var pwcsForOpenFiles: [PlayerWindowController] = []
@@ -205,6 +206,7 @@ final class StartupHandler {
           if let relevantActivePlayerCore {
             Logger.log.debug("Requested URL is already playing in open window; will show it instead: \(url.path.pii.quoted)")
             relevantActivePlayerCore.pwc.showWindow(nil)
+            totalExistingFilesShown += 1
             return false
           }
           return true
@@ -232,6 +234,7 @@ final class StartupHandler {
       }
 
     } else {
+      Logger.log.debug("Opening single window for URLs: count=\(urls.count) cli=\((cli != nil).yn)")
       // open pending files in single window
       let player = PlayerManager.shared.getActiveOrCreateNew()
       if let cli {
@@ -253,14 +256,14 @@ final class StartupHandler {
       totalFilesOpened += 1
     }
 
-    if totalFilesOpened == 0 {
+    if (totalFilesOpened == 0) && (totalExistingFilesShown == 0) {
       DispatchQueue.main.async { [self] in
         abortWaitForOpenFilePlayerStartup()
         Logger.log.verbose("Notifying user nothing was opened")
         Utility.showAlert("nothing_to_open")
       }
     } else {
-      Logger.log.verbose("Total new players opening: \(pwcsForOpenFiles.count), with \(totalFilesOpened) files")
+      Logger.log.verbose("Opening \(pwcsForOpenFiles.count) new windows for \(totalFilesOpened) files & showing \(totalExistingFilesShown) existing")
       if AppDelegate.isInteractiveLaunch {
         // Set pwcsForOpenFiles so they can be tracked & shown when ready:
         self.pwcsForOpenFiles = pwcsForOpenFiles

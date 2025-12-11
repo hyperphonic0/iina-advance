@@ -111,6 +111,9 @@ extension MPVController {
     let eventId: mpv_event_id = event.pointee.event_id
 
     switch eventId {
+    case MPV_EVENT_NONE:
+      break
+
     case MPV_EVENT_PROPERTY_CHANGE:
       let dataOpaquePtr = OpaquePointer(event.pointee.data)
       if let property = UnsafePointer<mpv_event_property>(dataOpaquePtr)?.pointee {
@@ -164,10 +167,7 @@ extension MPVController {
         mpv_hook_continue(self.mpv, hookID)
       }
 
-    case MPV_EVENT_AUDIO_RECONFIG:
-      break
-
-    case MPV_EVENT_VIDEO_RECONFIG:
+    case MPV_EVENT_AUDIO_RECONFIG, MPV_EVENT_VIDEO_RECONFIG:
       break
 
     case MPV_EVENT_START_FILE:

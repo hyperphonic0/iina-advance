@@ -260,7 +260,7 @@ extension PlayerWindowController {
     updateSidebarConstraints(for: stage, stageGeo, in: transition, log)
 
     // OSD constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
-    updateOSDConstraints(for: stage, stageGeo)
+    updateConstraintsForFloatingViews(for: stage, stageGeo)
 
     updateWindowFrameIfNeeded(for: stage, stageGeo, in: transition, log)
 
@@ -349,7 +349,7 @@ extension PlayerWindowController {
     }
 
     // Need to add additionalInfo, OSD before changing sidebars
-    addOrRemoveOSDViews(for: stage, stageGeo)
+    addOrRemoveFloatingViews(for: stage, stageGeo)
   }
 
   private func updateSidebarConstraints(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry,

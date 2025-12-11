@@ -66,6 +66,13 @@ class OptionalConstraint {
     }
   }
 
+  /// Does nothing if constant not active or does not exist
+  @MainActor
+  func animateToConstant(_ newConstant: CGFloat) {
+    constraint?.animateToConstant(newConstant)
+  }
+
+  @MainActor
   func remove(_ log: (any Logger.Subsystem)?) {
     guard let constraint, constraint.isActive else { return }
     log?.verbose("Removing constraint \(identifier.quoted)")

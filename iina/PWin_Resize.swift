@@ -410,7 +410,7 @@ extension PlayerWindowController {
     let gtf = GeometryTransform("MPVWindowScaleDidUpdate", player,
                                 sessionState: sessionStateTF,
                                 windowed: windowedTF)
-    animationPipeline.submitGTF(gtf)
+    gtf.submit()
   }
 
   /// Resizes and repositions the window, attempting to match `desiredViewportSize`, but the actual resulting
@@ -479,7 +479,7 @@ extension PlayerWindowController {
         return nil
       }
     })
-    animationPipeline.submitGTF(gtf)
+    gtf.submit()
   }
 
   // MARK: - Apply PWinGeometry (General Cases)

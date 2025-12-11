@@ -292,7 +292,7 @@ final class OSDState {
 
 }
 
-class OSDView: ClickThroughVisualEffectView {
+final class OSDView: ClickThroughVisualEffectView {
   init() {
     super.init(frame: .zero)
     blendingMode = .withinWindow
@@ -419,10 +419,11 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
 
 // PlayerWindow UI: OSD
 extension PlayerWindowController {
-  /// Adds or removes one or both of the following based on the given geometry and transition stage:
+  /// Adds or removes one or both of the following floating overlay views, based on the given geometry &
+  /// transition stage:
   /// `osdView`
   /// `additionalInfoView`
-  func addOrRemoveOSDViews(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry) {
+  func addOrRemoveFloatingViews(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry) {
     var addedSomething = false
     if stageGeo.shouldHaveOSD {
       if !viewportView.subviews.contains(osd.osdView) {
@@ -466,7 +467,7 @@ extension PlayerWindowController {
   /// - For many of the constraints, priority=900 will be used to avoid problems with black swan layouts
   /// which might trigger constraint violations if priority=required were used.
   /// - Setting `skipAddConstraints` to `true` is a kludge for special use during layout transitions
-  func updateOSDConstraints(for stage: LayoutTransition.Stage = .postTransition, _ stageGeo: PWinGeometry) {
+  func updateConstraintsForFloatingViews(for stage: LayoutTransition.Stage = .postTransition, _ stageGeo: PWinGeometry) {
     for optCon in osd.optionalConstraints {
       optCon.weaken()
     }
@@ -544,8 +545,8 @@ extension PlayerWindowController {
     let newOffsetFromTop = geometry.osdOffsetFromTopOfViewport()
 
     log.verbose("[OSD] Updating top constraint to: \(newOffsetFromTop)")
-    osd.leadingSide_TopOffsetConstraint.constraint?.animateToConstant(newOffsetFromTop)
-    osd.trailingSide_TopOffsetConstraint.constraint?.animateToConstant(newOffsetFromTop)
+    osd.leadingSide_TopOffsetConstraint.animateToConstant(newOffsetFromTop)
+    osd.trailingSide_TopOffsetConstraint.animateToConstant(newOffsetFromTop)
   }
 
   // MARK: - Additional Info Content Updates
@@ -757,6 +758,7 @@ extension PlayerWindowController {
     log.trace("[OSD] Icon visible=\(isIconVisible.yn) for msg: \(message)")
   }
 
+  @MainActor
   fileprivate func updateCornerRoundness(fromOSDTextSize osdTextSize: CGFloat) {
     if #available(macOS 26, *) {
       // MacOS Tahoe's style favors rounder corners. Try to fit in

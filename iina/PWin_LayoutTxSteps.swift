@@ -954,7 +954,7 @@ extension PlayerWindowController {
         }
 
         // covers both native & custom variants
-        updateTitleBarUI(from: outputLayout)
+        updateTitleBarViews(from: outputLayout)
       }
     }
 
@@ -1181,7 +1181,7 @@ extension PlayerWindowController {
 
   // MARK: - Title bar items
 
-  func updateTitleBarUI(from layoutState: LayoutState) {
+  fileprivate func updateTitleBarViews(from layoutState: LayoutState) {
     guard let window else { return }
     updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
     let enableGlow = Preference.bool(for: .titleBarBtnsGlow)
