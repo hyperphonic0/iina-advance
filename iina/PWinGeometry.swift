@@ -349,10 +349,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
 
   let videoSize: NSSize
 
-  var videoSizeIdeal: NSSize {
-    return NSSize(width: videoSize.width, height: (videoSize.width / videoViewAspect).rounded())
-  }
-
   /// Calculates the margin adjustments needed to:
   /// 1. Minimize the overlap between inside bars & `videoView`, by donating unuused margin from one side to its opposite.
   /// 2. If bars on both sides overlap with `videoView`, then center `videoView` between them.

@@ -316,7 +316,7 @@ extension ViewportView {
       aspect = vv.widthAnchor.constraint(equalTo: vv.heightAnchor, multiplier: videoViewAspect, constant: 0)
     }
 
-    log.verbose("VideoView updating constraints: aspect=\(videoViewAspect) vidAspect=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) vidSizeIdeal=\(geometry.videoSizeIdeal) mode=\(geometry.mode)")
+    log.verbose("VideoView updating constraints: aspect=\(videoViewAspect) vidAspectFromPWinGeo=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) mode=\(geometry.mode)")
 
     let cons = ViewportConstraints(
       log: log,
