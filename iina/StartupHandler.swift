@@ -31,7 +31,7 @@ final class StartupHandler {
   // - Opening Files Manually
 
   /// Serves as a queue to store file paths received across multiple invocations of `application(_:openFiles:)` within a short interval.
-  private var pendingFilesForApplicationOpenFiles: [String] = []
+  private var pendingFilesForApplicationOpenFiles: [URL] = []
   /// The timer for `OpenFileRepeatTime` and `application(_:openFiles:)`.
   private let openFilesTimer = TimeoutTimer(timeout: Constants.TimeInterval.applicationOpenFilesRepeatTimeout)
 
@@ -71,9 +71,11 @@ final class StartupHandler {
   }
 
   /// If launched from command line, should ignore `application(_, openFiles:)` during launch.
-  var shouldIgnoreOpenFile: Bool {
-    isCommandLine && !isDoneLaunching
-  }
+  /// This is because the above will be called redundantly by MacOS after startup has finished, and after the filenames have already
+  /// been parsed from the command line args and we've already handled them. So we need a way to know to ignore these.
+  /// However, the system may also call the same API later via various other sources, and we don't want to ignore those.
+  /// So we need to set this back to `false` after we receive the call(s) we want to ignore (when the `openFilesTimer` action fires).
+  var shouldIgnoreOpenFile = false
 
   // MARK: Init
 
@@ -105,20 +107,8 @@ final class StartupHandler {
     showWindowsIfReady()
   }
 
-  func applicationOpenFilesWasReceived(with filePaths: [String]) {
-    openFilesTimer.restart()
-    pendingFilesForApplicationOpenFiles.append(contentsOf: filePaths)
-  }
-
   @MainActor
-  private func handleOpenFilesTimeout() {
-    let filePaths = pendingFilesForApplicationOpenFiles
-    pendingFilesForApplicationOpenFiles = []
-
-    let shouldIgnoreOpenFile = shouldIgnoreOpenFile
-    Logger.log.debug("application(openFiles:) called with: \(filePaths.map{$0.pii})\(shouldIgnoreOpenFile ? ". Ignoring; launched from CLI" : "")")
-    // if launched from command line, should ignore openFile during launch
-    guard !shouldIgnoreOpenFile else { return }
+  func applicationOpenFilesWasReceived(with filePaths: [String]) {
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
     guard !urls.isEmpty else {
       Logger.log.verbose("application(openFiles:) called with: no URLs; returning")
@@ -126,9 +116,29 @@ final class StartupHandler {
     }
 
     guard AppDelegate.isInteractiveLaunch else {
-      Logger.log.debug("OpenFiles: Launch is not interactive. Ignoring \(filePaths.count) requested files")
+      Logger.log.debug("OpenFiles: Launch is not interactive. Ignoring \(urls.count) requested files")
       return
     }
+
+    openFilesTimer.restart()
+    pendingFilesForApplicationOpenFiles.append(contentsOf: urls)
+  }
+
+  @MainActor
+  private func handleOpenFilesTimeout() {
+    let urls = pendingFilesForApplicationOpenFiles
+    pendingFilesForApplicationOpenFiles = []
+    guard !urls.isEmpty else { return }
+
+    Logger.log.debug("OpenFiles: collected \(urls.map{PlaybackID.path(from: $0).pii})\(shouldIgnoreOpenFile ? ". Ignoring; launched from CLI" : "")")
+    // if launched from command line, should ignore openFile during launch
+    guard !shouldIgnoreOpenFile else {
+      shouldIgnoreOpenFile = false
+      return
+    }
+
+
+    Logger.log.verbose("OpenFiles: collected \(urls.count) files before timeout")
 
     // if installing a plugin package
     if let pluginPackageURL = urls.first(where: { $0.pathExtension == "iinaplgz" }) {
@@ -164,6 +174,7 @@ final class StartupHandler {
       Logger.log.error("No valid file URLs provided via command line! Nothing to do")
       return
     }
+    shouldIgnoreOpenFile = true
     openFiles(validFileURLs, applyingCLI: cli)
   }
 
@@ -176,7 +187,7 @@ final class StartupHandler {
       // Can force --separate-windows via CLI in addition to pref, for both yes/no
       shouldOpenMultipleWindows = separateWindowsCLI
     } else {
-      shouldOpenMultipleWindows = Preference.bool(for: .alwaysOpenInNewWindow)
+      shouldOpenMultipleWindows = Preference.bool(for: .alwaysOpenInNewWindow) && urls.count > 1
     }
 
     if !shouldOpenMultipleWindows {
@@ -192,7 +203,7 @@ final class StartupHandler {
     var pwcsForOpenFiles: [PlayerWindowController] = []
 
     if shouldOpenMultipleWindows {
-      Logger.log.debug("Opening multiple windows for URLs: count=\(urls.count) cli=\((cli != nil).yn)")
+      Logger.log.debug("Opening multiple windows for URLs: count=\(urls.count) CLI=\((cli != nil).yesno)")
 
       let urlsToOpen: [URL]
       if Preference.bool(for: .allowDuplicatePlayers) {
@@ -234,7 +245,7 @@ final class StartupHandler {
       }
 
     } else {
-      Logger.log.debug("Opening single window for URLs: count=\(urls.count) cli=\((cli != nil).yn)")
+      Logger.log.debug("Opening single window for URLs: count=\(urls.count) CLI=\((cli != nil).yesno)")
       // open pending files in single window
       let player = PlayerManager.shared.getActiveOrCreateNew()
       if let cli {
@@ -263,7 +274,7 @@ final class StartupHandler {
         Utility.showAlert("nothing_to_open")
       }
     } else {
-      Logger.log.verbose("Opening \(pwcsForOpenFiles.count) new windows for \(totalFilesOpened) files & showing \(totalExistingFilesShown) existing")
+      Logger.log.verbose("Will open \(pwcsForOpenFiles.count) new windows for \(totalFilesOpened) files, & will show \(totalExistingFilesShown) existing")
       if AppDelegate.isInteractiveLaunch {
         // Set pwcsForOpenFiles so they can be tracked & shown when ready:
         self.pwcsForOpenFiles = pwcsForOpenFiles
@@ -276,7 +287,7 @@ final class StartupHandler {
         cli.applySpecialOptionsToLastPlayer(lastPlayer)
       }
     }
-    return totalFilesOpened
+    return totalFilesOpened + totalExistingFilesShown
   }
 
   /// Returns `true` if any windows were restored; `false` otherwise.
@@ -613,6 +624,7 @@ final class StartupHandler {
         restoreTimer.restart()
         return
       }
+
       // If an new player window was opened at startup (i.e. not a restored window), wait for this also.
       if isAwaitingNewWindowsForOpenedFile {
         guard let pwcsForOpenFiles else {
@@ -622,7 +634,7 @@ final class StartupHandler {
         }
 
         // If opening more than 1 file, proceed immediately. Otherwise wait for it to be ready.
-        guard pwcsForOpenFiles.count > 1 || (pwcsForOpenFiles.count == pwcsDoneWithFileOpen.count) else {
+        guard (pwcsForOpenFiles.count > 1) || (pwcsForOpenFiles.count == pwcsDoneWithFileOpen.count) else {
           log.verbose("Startup: still waiting for opened file")
           return
         }
@@ -632,11 +644,9 @@ final class StartupHandler {
       if newWindCount == 0 && wcsToRestore.count == 0 {
         log.verbose("No windows exist to wait for; finishing startup")
       } else {
-        log.verbose("All \(wcsToRestore.count) restored \(newWindCount > 0 ? " & \(newWindCount) new windows ready. Showing all" : "")")
+        log.verbose("All \(wcsToRestore.count) restored\(newWindCount > 0 ? " & \(newWindCount) new windows ready" : ""). Showing all")
       }
       restoreTimer.cancel()
-
-      Thread.sleep(forTimeInterval: 2.0)
 
       var prevWindowNumber: Int? = nil
       for wc in wcsToRestore {

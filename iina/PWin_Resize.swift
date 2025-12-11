@@ -170,9 +170,9 @@ extension PlayerWindowController {
   func applyPWinGeometry(_ geometry: PWinGeometry,
                          setWindowFrame: Bool = true,
                          updateViewportConstraints: Bool = true,
-                         _ transitionCategory: TransitionCategory = .noTransition,
+                         _ transitionCategory: TransitionCategory = .none,
                          submitUpdate: Bool = false) {
-    log.verbose("[PWin.setFrame] Entered: updateViewportConstraints=\(updateViewportConstraints.yn) cat=\(transitionCategory) submit=\(submitUpdate.yn) geo=\(geometry)")
+    log.verbose("[PWin.setFrame] Entered: viewport=\(updateViewportConstraints.yn) cat=\(transitionCategory) save=\(submitUpdate.yn) \(geometry)")
 
     resizeWindowSubviews(using: geometry, updateViewportConstraints: updateViewportConstraints, transitionCategory)
     updateOSDTopOffsetConstraints(for: geometry)
@@ -226,7 +226,7 @@ extension PlayerWindowController {
   /// This method cannot handle complex layout changes. For that, use a `LayoutTransition` (see `PWin_LayoutTxBuilder.swift`).
   private func resizeWindowSubviews(using newGeometry: PWinGeometry,
                                     updateViewportConstraints: Bool = true,
-                                    _ transitionCategory: TransitionCategory = .noTransition) {
+                                    _ transitionCategory: TransitionCategory = .none) {
 
     // Needed to prevent lagginess for floating OSC, offsets for pref `keepVideoAwayFromBars`, possibly other constraints.
     IINAAnimation.disableAnimation {
@@ -496,7 +496,7 @@ extension PlayerWindowController {
                               showDefaultArt: Bool? = nil,
                               thenRun: Bool = false) -> [IINAAnimation.Task] {
 
-    log.verbose("ApplyPWinGeo entered: task dur=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) save=\(save.yn) \(outputGeo)")
+    log.verbose("ApplyPWinGeo entered: duration=\(duration) showDefaultArt=\(showDefaultArt?.yn ?? "nil") run=\(thenRun.yn) save=\(save.yn) \(outputGeo)")
 
     var tasks: [IINAAnimation.Task] = []
 
@@ -532,7 +532,7 @@ extension PlayerWindowController {
       case .windowedNormal, .windowedInteractive, .musicMode:
         // This is only needed to achieve "fade-in" effect when opening window:
         updateWindowBorderAndOpacity()
-        log.verbose("ApplyPWinGeo: " + (isWindowHidden ? "window is hidden; updating videoView constraints but not setFrame" : "calling applyPWinGeometry"))
+        log.verbose("ApplyPWinGeo: " + (isWindowHidden ? "window is hidden; updating VP constraints but not setFrame" : "calling setFrame (duration=\(duration))"))
         applyPWinGeometry(outputGeo, setWindowFrame: !isWindowHidden, submitUpdate: save)
       }
 

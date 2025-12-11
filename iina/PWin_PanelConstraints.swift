@@ -457,7 +457,7 @@ extension PlayerWindowController {
                                          in transition: LayoutTransition,
                                          _ log: any Logger.Subsystem) {
     let updateVP: Bool
-    var category: TransitionCategory = .noTransition
+    var category: TransitionCategory = .none
     switch stage {
     case .preTransitionSetup:
       // #InteractiveModeAnimationKludge

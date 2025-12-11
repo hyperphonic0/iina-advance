@@ -278,7 +278,7 @@ extension ViewportView {
   /// __Add / Remove / Update Constraints__, based on the given `geometry` (or lack thereof).
   @MainActor
   func apply(_ geometry: PWinGeometry,
-             _ transitionCategory: TransitionCategory = .noTransition) {
+             _ transitionCategory: TransitionCategory = .none) {
     guard let pwc else { return }
 
     guard geometry.isViewportShown else {
@@ -389,7 +389,7 @@ extension ViewportView {
     cons.update(connectSpacers: Constraint(active: true, priority: 1000),
 
                 // The desired aspect (if enabled) is given top priority
-                aspect: AspectConstraint(active: (interactiveMode || musicMode) && (transitionCategory == .noTransition),
+                aspect: AspectConstraint(active: (interactiveMode || musicMode) && (transitionCategory == .none),
                                          priority: .init(499),
                                          multiplier: videoViewAspect),
 
@@ -410,7 +410,7 @@ extension ViewportView {
                 // Need to calculate these values ourselves now that we are relying on mpv to calculate margins for us via keepaspect=yes
                 spacerExact: QuadConstraint(active: true, priority: keepVideoAwayFromBars ? 497 : 10, spacerExactValues),
 
-                center: Constraint(active: (interactiveMode || musicMode) && (transitionCategory == .noTransition) && !keepVideoAwayFromBars, priority: 480)
+                center: Constraint(active: (interactiveMode || musicMode) && (transitionCategory == .none) && !keepVideoAwayFromBars, priority: 480)
     )
 
     viewportConstraints = cons

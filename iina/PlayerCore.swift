@@ -651,6 +651,9 @@ final class PlayerCore: NSObject {
       if pwc == nil {
         let pwc = PlayerWindowController(playerCore: self)
         pwc.windowDidLoad()
+        // Hide the newly created window until ready to show (when `windowIsReadyToShow` notification is sent,
+        // triggering `showWindow()`)
+        pwc.window?.orderOut(self)
       }
 
       if videoView.useOpenGL {
