@@ -56,7 +56,14 @@ class PlaybackInfo {
   /// Should only be updated in the `mpv` DispatchQueue
   var currentPlayback: Playback? = nil {
     didSet {
-      log.verbose("Updated currentPlayback to \(currentPlayback?.description ?? "nil")")
+      let newValue = currentPlayback
+      if let oldValue, let newValue, oldValue.id == newValue.id {
+        if oldValue.state != newValue.state {
+          log.verbose("Δ Playback.lifecycleState: \(oldValue.state) → \(newValue.state)")
+        }
+      } else {
+        log.verbose("Updated currentPlayback to \(newValue?.description ?? "nil")")
+      }
     }
   }
 

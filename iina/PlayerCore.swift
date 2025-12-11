@@ -1889,34 +1889,22 @@ final class PlayerCore: NSObject {
       state = .started
     }
 
-    guard let playbackFromPath = Playback(urlPath: path, playlistPos: playlistPos, state: .started) else {
+    // TODO: do something with this
+    let parentPlaylist = mpv.getString(MPVProperty.playlistPath) ?? ""
+
+    guard let playbackFromPath = Playback(urlPath: path, playlistPos: playlistPos, parentPlaylist: parentPlaylist, state: .started) else {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
       return
     }
-    let playback: Playback
     if let existingPlayback = info.currentPlayback, existingPlayback.url == playbackFromPath.url {
       guard existingPlayback.state.isNotYet(.started) else {
         log.warn("FileStarted: found existing playback for \(existingPlayback.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'notYetStarted', found: \(existingPlayback.state.rawValue))")
         return
       }
-      playback = existingPlayback
-      // update existing entry
-      existingPlayback.playlistPos = playbackFromPath.playlistPos
-      existingPlayback.state = playbackFromPath.state
-      log.verbose("FileStarted: existing playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
-    } else {
-      // New media, perhaps initiated by mpv
-      log.verbose("FileStarted: new playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
-      info.currentPlayback = playbackFromPath
-      playback = playbackFromPath
     }
 
-    if let parentPlaylist = mpv.getString(MPVProperty.playlistPath) {
-      // TODO!
-      playback.parentPlaylist = parentPlaylist
-    }
-
-    playback.state = .started
+    log.verbose("FileStarted: playbackPath=\(path.pii.quoted), PL#=\(String(playbackFromPath.playlistPos))")
+    info.currentPlayback = playbackFromPath
 
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()
@@ -1963,7 +1951,7 @@ final class PlayerCore: NSObject {
       }
     }
 
-    sendOSD(.fileStart(playback.displayName, ""))
+    sendOSD(.fileStart(playbackFromPath.displayName, ""))
 
     events.emit(.fileStarted)
   }
@@ -1988,13 +1976,15 @@ final class PlayerCore: NSObject {
       // Finally call this to update info.vid & related video track state in VideoView:
       updateVidStateFromMpv()
     } else if pwc.loaded, pwc.sessionState.hasOpenSession {
+      // Note: we only need to handle existing session here.
+      // New session or reuse of existing will be handled in openWindow().
+      // Traditionally IINA will un-pause when starting a new file, unless it is configured to do otherwise.
+      // So we should also be setting this value one way or another.
       let shouldPause = getPauseFromUserOptions() ?? Preference.bool(for: .pauseWhenOpen)
-      if shouldPause {
-        log.verbose("FileLoaded: in existing session + configured to pause -> pausing")
-        mpv.setFlag(MPVOption.PlaybackControl.pause, shouldPause)
+      log.verbose("FileLoaded: in existing session: setting pause=\(shouldPause.yn)")
+      mpv.setFlag(MPVOption.PlaybackControl.pause, shouldPause)
 
-      } else {
-
+      if !shouldPause {
         // Normally the display link is started when MainWindowController.windowDidLoad calls initVideo.
         // However if this player is being reused then the window will have already been loaded and
         // windowDidLoad will not be called. If playback is not paused make sure the display link is
@@ -2078,7 +2068,7 @@ final class PlayerCore: NSObject {
 
       /// Will complete restore when `transformGeometry` is done
     }
-    currentPlayback.state = .loaded
+    let currentPlaybackButLoaded = currentPlayback.changingState(to: .loaded)
 
     _reloadPlaylist()  // Need to do this when opening a playlist!
     _reloadChapters()
@@ -2086,6 +2076,7 @@ final class PlayerCore: NSObject {
     // Done syncing tracks
 
     let gtf = GeometryTransform("FileLoaded", self,
+                                currentPlayback: currentPlaybackButLoaded,
                                 sessionState: { [self] prevSessionState, ctx in
       guard ctx.currentPlayback.state == .loaded else {
         log.verbose("[GTF:\(ctx.name)] Expected currentPlayback.state == .loaded, but found: \(ctx.currentPlayback.state)")

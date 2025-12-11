@@ -554,7 +554,9 @@ extension PlayerCore {
     }
 
     let mpvPlaylistPos = mpv.getInt(MPVProperty.playlistPos)
-    info.currentPlayback?.playlistPos = mpvPlaylistPos
+    if let playback = info.currentPlayback {
+      info.currentPlayback = playback.clone(playlistPos: mpvPlaylistPos)
+    }
     info.playlist = newPlaylist
     log.verbose("[Playlist] After reloading: playlistPos=\(mpvPlaylistPos)")
 

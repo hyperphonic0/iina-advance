@@ -41,6 +41,8 @@ struct GeometryTransform: Sendable {
   /// `ctx.inputGeoSet` with the latest video geometry from mpv (or abort if it returns `nil`).
   let syncVideoParams: Bool
 
+  let currentPlayback: Playback?
+
   nonisolated(unsafe)
   private let player: PlayerCore
   private var pwc: PlayerWindowController { player.pwc! }
@@ -77,6 +79,7 @@ struct GeometryTransform: Sendable {
   init(_ name: String,
        id pregeneratedID: Int? = nil,
        _ player: PlayerCore,
+       currentPlayback: Playback? = nil,
        syncVideoParams: Bool = true,
        sessionState: PWinSessionStateTF? = nil,
        video: VideoGeometryTF? = nil,
@@ -89,6 +92,7 @@ struct GeometryTransform: Sendable {
     }
     self.name = "\(name)-\(id)"
     self.player = player
+    self.currentPlayback = currentPlayback ?? player.info.currentPlayback
     self.syncVideoParams = syncVideoParams
     self.sessionStateTransform = sessionState
     self.videoTransform = video
@@ -137,7 +141,7 @@ struct GeometryTransform: Sendable {
     player.mpv.queue.async { [self] in
       // Check for window close (tag: #SessionState-Race)
       guard !player.isStopping else { return abort("player stopping (status=\(player.state))") }
-      guard let currentPlayback = player.info.currentPlayback else { return abort("currentPlayback is nil") }
+      guard let currentPlayback = currentPlayback else { return abort("currentPlayback is nil") }
 
 
       // File needs to be loaded before we can know its video geometry.
@@ -544,7 +548,7 @@ struct GeometryTransform: Sendable {
       pwc.sessionState = .existingSession_continuing
 
       // Must only modify currentPlayback state inside mpv queue
-      player.mpv.queue.async {
+      player.mpv.queue.async{ [self] in
         guard !player.isStopping else { return tf.abort("In final task (mpv): player is stopping") }
 
         if gtfSessionState.isChangingVideoTrack {
@@ -556,9 +560,11 @@ struct GeometryTransform: Sendable {
 
           // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
           // The OSD can have weird stretching glitches if displayed while zooming open...
-          if currentPlayback.state == .loaded {
-            log.debug("[GTF:\(name)] Updating playback.state = .loadedAndSized; will emit fileLoaded")
-            currentPlayback.state = .loadedAndSized
+          if currentPlayback.state == .loaded,
+             let playback = player.info.currentPlayback, playback.id == currentPlayback.id,
+             playback.state.isNotYet(.loadedAndSized) {
+            log.debug("[GTF:\(name)] Updating playback.state = .loadedAndSized + will emit fileLoaded")
+            player.info.currentPlayback = playback.changingState(to: .loadedAndSized)
 
             Task { @MainActor in
               pwc.animationPipeline.submitInstantTask {
@@ -573,7 +579,7 @@ struct GeometryTransform: Sendable {
           }
         }
       }
-      
+
       // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do the below for all cases now.
       // Need to call here to ensure file title OSD is displayed when navigating playlist...
       player.refreshSyncUITimer()

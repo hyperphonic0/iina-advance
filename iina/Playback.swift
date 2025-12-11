@@ -42,19 +42,13 @@ class Playback: CustomStringConvertible {
 
 
   /// Lifecycle state of this playback
-  var state: LifecycleState {
-    willSet {
-      if newValue != state {
-        Logger.log("Δ Playback.lifecycleState: \(state) → \(newValue)")
-      }
-    }
-  }
+  let state: LifecycleState
 
   let id: PlaybackID
 
-  var playlistPos: Int
+  let playlistPos: Int
 
-  var parentPlaylist: String = ""
+  let parentPlaylist: String
 
   var thumbnails: SingleMediaThumbnailsLoader? = nil
 
@@ -69,21 +63,36 @@ class Playback: CustomStringConvertible {
     return "Playback(plPos:\(String(playlistPos)) status:\(state) path:\(path.pii.quoted))"
   }
 
-  init(_ id: PlaybackID, playlistPos: Int, state: LifecycleState = .notYetStarted) {
+  init(_ id: PlaybackID, playlistPos: Int, parentPlaylist: String = "",
+       state: LifecycleState = .notYetStarted) {
     self.id = id
     self.playlistPos = playlistPos
+    self.parentPlaylist = parentPlaylist
     self.state = state
   }
 
   /// if `url` is `nil`, assumed to be `stdin`
-  convenience init(url: URL?, playlistPos: Int, state: LifecycleState = .notYetStarted) {
+  convenience init(url: URL?, playlistPos: Int, parentPlaylist: String = "",
+                   state: LifecycleState = .notYetStarted) {
     let id = PlaybackID(url)
-    self.init(id, playlistPos: playlistPos, state: state)
+    self.init(id, playlistPos: playlistPos, parentPlaylist: parentPlaylist, state: state)
   }
 
-  convenience init?(urlPath: String, playlistPos: Int, state: LifecycleState = .notYetStarted) {
+  convenience init?(urlPath: String, playlistPos: Int, parentPlaylist: String = "",
+        state: LifecycleState = .notYetStarted) {
     guard let id = PlaybackID(path: urlPath) else { return nil }
-    self.init(id, playlistPos: playlistPos, state: state)
+    self.init(id, playlistPos: playlistPos, parentPlaylist: parentPlaylist, state: state)
+  }
+
+  func clone(playlistPos: Int? = nil, parentPlaylist: String? =  nil,
+             state: LifecycleState? = nil) -> Playback {
+    return Playback(id, playlistPos: playlistPos ?? self.playlistPos,
+                    parentPlaylist: parentPlaylist ?? self.parentPlaylist,
+                    state: state ?? self.state)
+  }
+
+  func changingState(to newState: LifecycleState) -> Playback {
+    return clone(state: newState)
   }
 }
 
