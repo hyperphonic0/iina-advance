@@ -107,6 +107,7 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
     bottomMarginConstraint.isActive = true
     leadingMarginConstraint.isActive = true
     trailingMarginConstraint.isActive = true
+
   }
 
   func removeFloatingControlBarView() {

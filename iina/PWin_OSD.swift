@@ -682,8 +682,8 @@ extension PlayerWindowController {
 
     let osdTextSize = pwGeo.getOSDTextSize()
     if osdTextSize != osd.textSizeLast {
-      osd.textSizeLast = osdTextSize
       log.verbose("[OSD] Δ textSize: \(osd.textSizeLast) → \(osdTextSize)")
+      osd.textSizeLast = osdTextSize
 
       // Update rounded corners
       player.pwc.updateCornerRoundness(fromOSDTextSize: osdTextSize)

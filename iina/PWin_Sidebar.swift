@@ -552,7 +552,7 @@ extension PlayerWindowController {
     assert(coefficients.2 * sidebarWidth == 0,
            "vpLeadingOffsetFromCVLeading should be zero: \(coefficients.2 * sidebarWidth)")
     assert(panelConstraints.vpLeadingOffsetFromCVLeading.constraint != nil)
-    panelConstraints.vpLeadingOffsetFromCVLeading.constraint?.animateToConstant(coefficients.2 * sidebarWidth)
+    panelConstraints.vpLeadingOffsetFromCVLeading.animateToConstant(coefficients.2 * sidebarWidth)
 
     // Will remove old constraints & add the new ones
     leadingSidebarConstraints = LeadingSidebarConstraints(viewportLeadingOffsetFromLeading: viewportLeadingOffsetFromLeading,
@@ -603,7 +603,7 @@ extension PlayerWindowController {
       cons.viewportLeadingOffsetFromTrailing.animateToConstant(coefficients.1 * newWidth)
     }
     assert(panelConstraints.vpLeadingOffsetFromCVLeading.constraint != nil)
-    panelConstraints.vpLeadingOffsetFromCVLeading.constraint?.animateToConstant(coefficients.2 * newWidth)
+    panelConstraints.vpLeadingOffsetFromCVLeading.animateToConstant(coefficients.2 * newWidth)
   }
 
   // MARK: - Trailing Sidebar open/close

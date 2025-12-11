@@ -80,9 +80,12 @@ extension PlayerWindowController {
 
     let stageLayout: LayoutState = transition.targetLayout(for: stage)
     let isFinalStage = stage.isFinalStage
+    // TODO: fix this
     // We need to include constraints for some panels in multiple stages if they are open at any point
-    let useLeadingSidebar: Bool = isFinalStage ? stageLayout.isLeadingSidebarVisible : transition.inputLayout.isLeadingSidebarVisible || transition.outputLayout.isLeadingSidebarVisible
-    let useTrailingSidebar: Bool = isFinalStage ? stageLayout.isTrailingSidebarVisible : transition.inputLayout.isTrailingSidebarVisible || transition.outputLayout.isTrailingSidebarVisible
+//    let useLeadingSidebar: Bool = isFinalStage ? stageLayout.isLeadingSidebarVisible : transition.inputLayout.isLeadingSidebarVisible || transition.outputLayout.isLeadingSidebarVisible
+//    let useTrailingSidebar: Bool = isFinalStage ? stageLayout.isTrailingSidebarVisible : transition.inputLayout.isTrailingSidebarVisible || transition.outputLayout.isTrailingSidebarVisible
+    let useLeadingSidebar = true
+    let useTrailingSidebar = true
     let useBottomBar: Bool = isFinalStage ? stageLayout.hasBottomBar : transition.inputLayout.hasBottomBar || transition.outputLayout.hasBottomBar
     let useTopBar: Bool = isFinalStage ? stageLayout.hasTopBar : transition.inputLayout.hasTopBar || transition.outputLayout.hasTopBar
 
@@ -98,7 +101,6 @@ extension PlayerWindowController {
 
     // - Constraints
 
-    log.verbose("RebuildPanels: VP=\(Int(viewportView.frame.height)) BottomH=\(Int(bottomBarView.frame.height)) Top=\(Int(topBarView.frame.height))")
     let outputGeo = transition.outputGeometry
 
     // Weaken constraints while modifying them to avoid violation errors
@@ -120,7 +122,7 @@ extension PlayerWindowController {
       assert(useViewport, "Cannot use topBarView without viewportView")
       let outsideTopBarHeight = stageGeo.vpTopOffsetFromTopBarTop
       let insideTopBarHeight = stageGeo.topBarBtmOffsetFromVPTop
-      log.verbose("Updating topBar: vpTopOffsetFromTopBarTop=\(outsideTopBarHeight) topBarBtmOffsetFromVPTop=\(insideTopBarHeight)")
+      log.verbose("TopBar: vpTopOffsetFromTopBarTop=\(outsideTopBarHeight) topBarBtmOffsetFromVPTop=\(insideTopBarHeight)")
 
       p.vpTopOffsetFromTopBarTop.createOrUpdate(to: outsideTopBarHeight, log) { [self] c in
         viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
@@ -160,7 +162,7 @@ extension PlayerWindowController {
     if useBottomBar && useViewport && !isAnimatingViewportOpen {
       let constant1 = stageGeo.vpBtmOffsetFromTopOfBottomBar
       let constant2 = stageGeo.bottomBarBtmOffsetFromVPBtm
-      log.verbose("Updating bottomBar & viewport: vpBtmOffsetFromTopOfBottomBar=\(Int(constant1)) bottomBarBtmOffsetFromVPBtm=\(Int(constant2))")
+      log.verbose("BottomBar & Viewport: vpBtmOffsetFromTopOfBottomBar=\(Int(constant1)) bottomBarBtmOffsetFromVPBtm=\(Int(constant2))")
 
       p.vpBtmOffsetFromTopOfBottomBar.createOrUpdate(to: constant1, log) { [self] c in
         viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: c)
@@ -175,10 +177,36 @@ extension PlayerWindowController {
 
     // - Bottom Bar
     if useBottomBar {
-      // Handle leading & trailing constraints
-      updateBottomBarHorizontalContraints(bottomBarPlacement: stageLayout.bottomBarPlacement,
-                                          useLeadingSidebar: useLeadingSidebar,
-                                          useTrailingSidebar: useTrailingSidebar, log)
+      let bottomBarPlacement = stageLayout.bottomBarPlacement
+      log.verbose("Updating bottomBar placement to \(bottomBarPlacement), HasLeadingSB=\(useLeadingSidebar.yn) HasTrailingSB=\(useTrailingSidebar.yn)")
+
+      // - Leading
+
+      let leadingSpacePartner: NSLayoutXAxisAnchor
+      if bottomBarPlacement == .insideViewport && useLeadingSidebar {
+        // Align left & right sides with sidebars (bottom bar will squeeze to make space for sidebars)
+        leadingSpacePartner = leadingSidebarView.trailingAnchor
+      } else {
+        // Left side of bottomBar is flush with left edge of window (leading sidebar is behind bottom bar visually)
+        leadingSpacePartner = contentView.leadingAnchor
+      }
+
+      p.bottomBarLeadingSpace.createOrUpdate(to: 0, requiredSecondAnchor: leadingSpacePartner, log) { [self] c in
+        bottomBarView.leadingAnchor.constraint(equalTo: leadingSpacePartner, constant: c)
+      }
+
+      // - Trailing
+
+      let trailingSpacePartner: NSLayoutXAxisAnchor
+      if bottomBarPlacement == .insideViewport && useTrailingSidebar {
+        trailingSpacePartner = trailingSidebarView.leadingAnchor
+      } else {
+        trailingSpacePartner = contentView.trailingAnchor
+      }
+
+      p.bottomBarTrailingSpace.createOrUpdate(to: 0, requiredSecondAnchor: trailingSpacePartner, log) { [self] c in
+        bottomBarView.trailingAnchor.constraint(equalTo: trailingSpacePartner, constant: c)
+      }
 
       // enable for animations or if in music mode & neither playlist nor video is open
       if outputGeo.mode == .musicMode && !stage.isFinalStage && !outputGeo.isMusicModePlaylistShown && !outputGeo.isViewportShown {
@@ -196,6 +224,8 @@ extension PlayerWindowController {
         contentView.bottomAnchor.constraint(equalTo: bottomBarView.bottomAnchor, constant: c)
       }
 
+      contentView.needsLayout = true
+      bottomBarView.needsLayout = true
     }
 
     // - Viewport View
@@ -232,7 +262,7 @@ extension PlayerWindowController {
     if useViewport {
       let constant1 = stageGeo.vpTopOffsetFromCVTop
       let constant2 = stageGeo.cvBtmOffsetFromVPBtm
-      log.verbose("Updating viewport: vpTopOffsetFromCVTop=\(Int(constant1)) cvBtmOffsetFromVPBtm=\(Int(constant2)) vpLeadingOffsetFromCVLeading=0 vpTrailingOffsetFromCVTrailing=0")
+      log.verbose("Viewport: vpTopOffsetFromCVTop=\(Int(constant1)) cvBtmOffsetFromVPBtm=\(Int(constant2)) vpLeadingOffsetFromCVLeading=0 vpTrailingOffsetFromCVTrailing=0")
 
       p.vpTopOffsetFromCVTop.createOrUpdate(to: constant1, log) { [self] c in
         viewportView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: c)
@@ -262,10 +292,10 @@ extension PlayerWindowController {
     // OSD constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
     updateConstraintsForFloatingViews(for: stage, stageGeo)
 
-    updateWindowFrameIfNeeded(for: stage, stageGeo, in: transition, log)
-
     // Must execute this *before* sidebars logic below, which may alter their orders
     sortContentViewSubviews(for: stageLayout, in: transition)
+
+    updateWindowFrameIfNeeded(for: stage, stageGeo, in: transition, log)
   }
 
   private func addOrRemoveViews(for stage: LayoutTransition.Stage, stageGeo: PWinGeometry, _ log: any Logger.Subsystem,
@@ -571,46 +601,6 @@ extension PlayerWindowController {
     p.topBarBtmOffsetFromVPTop.constraint?.animateToConstant(geometry.insideBars.top)
     p.vpTopOffsetFromTopBarTop.constraint?.animateToConstant(geometry.outsideBars.top)
     p.vpTopOffsetFromCVTop.constraint?.animateToConstant(geometry.outsideBars.top + geometry.topMarginHeight)
-  }
-
-  // - Bottom bar
-
-  private func updateBottomBarHorizontalContraints(bottomBarPlacement: Preference.PanelPlacement,
-                                                   useLeadingSidebar: Bool, useTrailingSidebar: Bool, _ log: any Logger.Subsystem) {
-    guard let window = window, let contentView = window.contentView else { return }
-    let p = panelConstraints
-
-    log.verbose("Updating bottomBar placement to: \(bottomBarPlacement) leadingSB=\(useLeadingSidebar.yn) trailingSB=\(useTrailingSidebar.yn)")
-
-    // - Leading
-
-    let leadingSpacePartner: NSLayoutXAxisAnchor
-    if bottomBarPlacement == .insideViewport && useLeadingSidebar {
-      // Align left & right sides with sidebars (bottom bar will squeeze to make space for sidebars)
-      assert(leadingSidebarView.superview != nil)
-      leadingSpacePartner = leadingSidebarView.trailingAnchor
-    } else {
-      // Left side of bottomBar is flush with left edge of window (leading sidebar is behind bottom bar visually)
-      leadingSpacePartner = contentView.leadingAnchor
-    }
-
-    p.bottomBarLeadingSpace.createOrUpdate(to: 0, requiredSecondAnchor: leadingSpacePartner, log) { [self] c in
-      return bottomBarView.leadingAnchor.constraint(equalTo: leadingSpacePartner, constant: c)
-    }
-
-    // - Trailing
-
-    let trailingSpacePartner: NSLayoutXAxisAnchor
-    if bottomBarPlacement == .insideViewport && useTrailingSidebar {
-      assert(trailingSidebarView.superview != nil)
-      trailingSpacePartner = trailingSidebarView.leadingAnchor
-    } else {
-      trailingSpacePartner = contentView.trailingAnchor
-    }
-
-    p.bottomBarTrailingSpace.createOrUpdate(to: 0, requiredSecondAnchor: trailingSpacePartner, log) { [self] c in
-      return bottomBarView.trailingAnchor.constraint(equalTo: trailingSpacePartner, constant: c)
-    }
   }
 
   func updateOnTopButton(from layout: LayoutState, showIfFadeable: Bool = false) {

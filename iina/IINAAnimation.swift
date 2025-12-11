@@ -253,20 +253,20 @@ extension IINAAnimation {
 
       if log.isVerboseEnabled {
         let taskQueueSize = taskQueue.count
-        let submittedTasks = submitCounter
+        let submitCount = submitCounter
         if alarmActivated {
-          let canDisable = taskQueueSize < IINAAnimation.Pipeline.alarmResetWatermark
-          if canDisable {
+          let canDismissAlarm = taskQueueSize < IINAAnimation.Pipeline.alarmResetWatermark
+          if canDismissAlarm {
             alarmActivated = false
           }
-          if canDisable || (submittedTasks >= lastLoggedTaskCount + 20) {
-            lastLoggedTaskCount = submittedTasks
-            log.verbose("[Pipeline] TaskQueue size: \(taskQueueSize), totalSubmits: \(submittedTasks)")
+          if canDismissAlarm || (submitCount >= lastLoggedTaskCount + 20) {
+            lastLoggedTaskCount = submitCount
+            log.verbose("[Pipeline] Queue size: \(taskQueueSize)")
           }
         } else if taskQueue.count >= IINAAnimation.Pipeline.alarmStartWatermark {
           alarmActivated = true
           lastLoggedTaskCount = submitCounter
-          log.verbose("[Pipeline] TaskQueue is falling behind! Size: \(taskQueueSize), submitCount: \(submitCounter)")
+          log.verbose("[Pipeline] Work exceeds watermark! Queue size: \(taskQueueSize)")
         }
       }
     }
