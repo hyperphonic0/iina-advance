@@ -502,60 +502,57 @@ extension PlayerWindowController {
 
     // - Music mode: entering or continuing)
 
-    if transition.isWindowInitialLayout || transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
       pip.showOrHidePipOverlayView()
 
-      if transition.isEnteringMusicMode {
-        // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
-        log.verbose("Entering music mode: adding miniPlayer view to bottomBarView")
-        miniPlayer.loadIfNeeded()
-        bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
-        miniPlayer.view.addAllConstraintsToFillSuperview()
+    if transition.isEnteringMusicMode || (transition.isWindowInitialLayout && transition.outputLayout.isMusicMode) {
+      // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
+      log.verbose("Entering music mode: adding miniPlayer view to bottomBarView")
+      bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
+      miniPlayer.view.addAllConstraintsToFillSuperview()
 
-        // Now confiure various subviews
-        playSlider.customCell.knobHeight = Constants.Slider.musicModeKnobHeight
+      // Now confiure various subviews
+      playSlider.customCell.knobHeight = Constants.Slider.musicModeKnobHeight
 
-        // move playback buttons
-        if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {
-          miniPlayer.playbackBtnsWrapperView.addSubview(fragPlaybackBtnsView)
-          miniPlayer.playbackBtnsWrapperView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor).isActive = true
-          miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
-        }
-
-        if !miniPlayer.volumeSliderView.subviews.contains(fragVolumeView) {
-          miniPlayer.volumeSliderView.addSubview(fragVolumeView)
-          fragVolumeView.centerYAnchor.constraint(equalTo: miniPlayer.volumeSliderView.centerYAnchor).isActive = true
-          volumeSlider.leadingAnchor.constraint(equalTo: miniPlayer.volumeSliderView.leadingAnchor, constant: 40).isActive = true
-          miniPlayer.volumeSliderView.trailingAnchor.constraint(equalTo: volumeSlider.trailingAnchor, constant: 40).isActive = true
-          muteButton.target = self
-          muteButton.action = #selector(muteButtonAction(_:))
-        }
-
-        seekPreview.timeLabel.font = NSFont.systemFont(ofSize: 9)
-
-        // Update music mode UI
-        updateTitle()
-
-        // move playback position slider & time labels
-        let wasAlreadyPresent = miniPlayer.positionSliderWrapperView.subviews.contains(playSliderAndTimeLabelsView)
-        miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
-        addSubviewsToPlaySliderAndTimeLabelsView(using: transition.outputLayout.controlBarGeo)
-        if !wasAlreadyPresent {
-          playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
-          playSliderAndTimeLabelsView.isHidden = false
-        }
-
-      } else if transition.isExitingMusicMode {
-        // If exiting music mode, need to restore views early in this step
-        log.verbose("Cleaning up for music mode exit")
-        miniPlayer.loadIfNeeded()
-        miniPlayer.view.removeFromSuperview()
-
-        // Make sure to reset constraints for OSD
-        miniPlayer.hideControls()
+      // move playback buttons
+      if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {
+        miniPlayer.playbackBtnsWrapperView.addSubview(fragPlaybackBtnsView)
+        miniPlayer.playbackBtnsWrapperView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor).isActive = true
+        miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
       }
-    }  // End toggling music mode
+
+      if !miniPlayer.volumeSliderView.subviews.contains(fragVolumeView) {
+        miniPlayer.volumeSliderView.addSubview(fragVolumeView)
+        fragVolumeView.centerYAnchor.constraint(equalTo: miniPlayer.volumeSliderView.centerYAnchor).isActive = true
+        volumeSlider.leadingAnchor.constraint(equalTo: miniPlayer.volumeSliderView.leadingAnchor, constant: 40).isActive = true
+        miniPlayer.volumeSliderView.trailingAnchor.constraint(equalTo: volumeSlider.trailingAnchor, constant: 40).isActive = true
+        muteButton.target = self
+        muteButton.action = #selector(muteButtonAction(_:))
+      }
+
+      seekPreview.timeLabel.font = NSFont.systemFont(ofSize: 9)
+
+      // Update music mode UI
+      updateTitle()
+
+      // move playback position slider & time labels
+      let wasAlreadyPresent = miniPlayer.positionSliderWrapperView.subviews.contains(playSliderAndTimeLabelsView)
+      miniPlayer.positionSliderWrapperView.addSubview(playSliderAndTimeLabelsView)
+      addSubviewsToPlaySliderAndTimeLabelsView(using: transition.outputLayout.controlBarGeo)
+      if !wasAlreadyPresent {
+        playSliderAndTimeLabelsView.addAllConstraintsToFillSuperview()
+        playSliderAndTimeLabelsView.isHidden = false
+      }
+
+    } else if transition.isExitingMusicMode {
+      // If exiting music mode, need to restore views early in this step
+      log.verbose("Cleaning up for music mode exit")
+      miniPlayer.loadIfNeeded()
+      miniPlayer.view.removeFromSuperview()
+
+      // Make sure to reset constraints for OSD
+      miniPlayer.hideControls()
+    }
 
     if transition.outputLayout.isMusicMode {
       miniPlayer.addPlaylistViewIfMissing()
@@ -747,7 +744,7 @@ extension PlayerWindowController {
 
     // Interactive mode
 
-    if transition.isEnteringInteractiveMode {
+    if transition.isEnteringInteractiveMode || (transition.isWindowInitialLayout && transition.outputLayout.isInteractiveMode) {
       // Even if entering IM, may have a prev crop due to a bug elsewhere. Remove if found
       removeCropControls()
 

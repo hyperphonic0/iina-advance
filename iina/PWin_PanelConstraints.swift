@@ -396,7 +396,9 @@ extension PlayerWindowController {
       sidebarUpdateGeo = sidebarUpdateGeo ?? stageGeo
       // Need this immediately becuase sometimes (e.g. when opening sidebar) other constraints may expect sidebar(s)
       // to be attached already:
-      prepareSidebarsForOpening(transition, stageGeo)
+      if !transition.inputLayout.isMusicMode {
+        prepareSidebarsForOpening(transition, stageGeo)
+      }
 
     case .closeOldPanels:
       assert(!transition.isWindowInitialLayout)
