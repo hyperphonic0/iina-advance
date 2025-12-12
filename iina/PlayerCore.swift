@@ -87,6 +87,8 @@ final class PlayerCore: NSObject {
 
   // At launch, wait until all windows are open before resuming video
   var pendingResumeWhenShowingWindow: Bool = false
+  /// If true, mpv needs to reload the current input config file because it has changed
+  var needsInputConfFileReload: Bool = false
   /// If a set of windows was opened at the same time, each is assigned an index, so they can be arranged slightly offset from each another.
   var openedWindowsSetIndex: Int = 0
 

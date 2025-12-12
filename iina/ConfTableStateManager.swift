@@ -83,10 +83,11 @@ final class ConfTableStateManager: NSObject {
           AppInputConfig.log.verbose("Already in error state; ignoring pref update for selectedConf: \(selectedConfNameNew.quoted)")
           return
         }
+        guard curr.selectedConfName != selectedConfNameNew else { return }
         AppInputConfig.log.verbose("Detected pref update for selectedConf: \(selectedConfNameNew.quoted)")
         // Update the UI in case the update came from an external source. Make sure not to update prefs,
         // as this can cause a runaway chain reaction of back-and-forth updates if two or more instances are open!
-        ConfTableState.current.changeSelectedConf(selectedConfNameNew, skipSaveToPrefs: true)
+        curr.changeSelectedConf(selectedConfNameNew, skipSaveToPrefs: true)
       default:
         return
       }
@@ -243,11 +244,14 @@ final class ConfTableStateManager: NSObject {
       if !AppInputConfig.loadSelectedConfBindingsIntoAppConfig() {
         return
       }
+
       if skipSaveToPrefs || Preference.string(for: .currentInputConfigName) == tableStateNew.selectedConfName {
         AppInputConfig.log.verbose("Skipping pref save for 'currentInputConfigName': \(tableStateOld.selectedConfName.quoted) -> \(tableStateNew.selectedConfName.quoted) (current pref val: \(Preference.string(for: .currentInputConfigName)?.quoted ?? "nil"); skip=\(skipSaveToPrefs))")
       } else {
         AppInputConfig.log.verbose("Saving pref 'currentInputConfigName': \(tableStateOld.selectedConfName.quoted) -> \(tableStateNew.selectedConfName.quoted)")
         Preference.set(tableStateNew.selectedConfName, for: .currentInputConfigName)
+
+        NotificationCenter.default.post(Notification(name: .iinaActiveInputConfFileDidUpdate))
       }
     }
 

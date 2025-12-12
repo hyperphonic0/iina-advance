@@ -394,11 +394,7 @@ extension MPVController {
 
     // Load external scripts
 
-    if !player.isPresentInUserOptions(MPVOption.Input.inputConf) {
-      // Load keybindings. This is still required for mpv to handle media keys or apple remote.
-      let inputConfPath = ConfTableState.current.selectedConfFilePath
-      chkErr(setOptionalOptionString(MPVOption.Input.inputConf, inputConfPath, level: .verbose))
-    }
+    loadSelectedInputConf(mpvQueue: false)
 
     setMpvEventLogSubscription()
 

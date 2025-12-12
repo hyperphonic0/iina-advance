@@ -1507,6 +1507,11 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
         window.level = .iinaFloating
       }
 
+      if player.needsInputConfFileReload {
+        player.needsInputConfFileReload = false
+        player.mpv.loadSelectedInputConf()
+      }
+
       // If focus changed from a different window, need to recalculate the current bindings
       // so that this window's input sections are included and the other window's are not:
       if AppInputConfig.current.associatedPlayerLabel != player.label {

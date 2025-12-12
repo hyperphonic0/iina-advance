@@ -100,6 +100,9 @@ extension PlayerWindowController {
         .init(NSScreen.colorSpaceDidChangeNotification) { note in self.colorSpaceDidChange(note) },
         .init(NSWindow.didChangeScreenNotification) { note in self.windowDidChangeScreen(note) },
         .init(.iinaMediaTitleChanged, object: player) { _ in self.updateTitle() },
+        .init(.iinaActiveInputConfFileDidUpdate) { [self] _ in
+          player.needsInputConfFileReload = true
+        },
         /* Not currently used. Leave for testing purposes only.
         .init(NSWindow.didChangeScreenProfileNotification) { note in self.windowDidChangeScreenProfile(note) },
         .init(NSWindow.didChangeBackingPropertiesNotification) { note in self.windowDidChangeBackingProperties(note) },

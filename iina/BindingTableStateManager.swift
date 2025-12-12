@@ -26,7 +26,7 @@ final class BindingTableStateManager: NSObject {
     super.init()
     notiHandler = NotificationHandler(AppInputConfig.log, prefDidChange: prefDidChange, [.showKeyBindingsFromAllSources], [
       .default: [
-        .init(.iinaAppInputConfigDidChange, self.appInputConfigDidChange)
+        .init(.iinaAppInputConfigDidChange, self.onAppInputConfigDidChange)
       ]
     ])
   }
@@ -137,7 +137,7 @@ final class BindingTableStateManager: NSObject {
 
   /// All table UI updates should go through this callback
   @MainActor
-  private func appInputConfigDidChange(_ notification: Notification) {
+  private func onAppInputConfigDidChange(_ notification: Notification) {
     Logger.log.verbose("BindingTableStateManager received \(notification.name.rawValue.quoted)")
     guard let userData = notification.userInfo else {
       Logger.log.error("Notification \(notification.name.rawValue.quoted): contains no data!")

@@ -147,6 +147,7 @@ struct AppInputConfig: Sendable {
     return true
   }
 
+  // ---------------------------------------------------------------------------------------------
   // MARK: - Single instance
 
   let version: Int

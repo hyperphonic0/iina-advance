@@ -500,6 +500,26 @@ final class MPVController: NSObject {
     chkErr(mpv_request_log_messages(mpv, subscriptionLevel.string))
   }
 
+  func loadSelectedInputConf(mpvQueue: Bool = true) {
+    Task { @MainActor in
+      guard !player.isPresentInUserOptions(MPVOption.Input.inputConf) else {
+        player.log.verbose("Skipping load of selected input conf file cuz 'input-conf' is set in user options")
+        return
+      }
+      // Load keybindings. This is still required for mpv to handle media keys or apple remote.
+      let inputConfPath = ConfTableState.current.selectedConfFilePath
+      log.verbose("Loading input config file: \(inputConfPath.pii.quoted)")
+
+      if mpvQueue {
+        queue.async{ [self] in
+          chkErr(setOptionalOptionString(MPVOption.Input.inputConf, inputConfPath, level: .verbose))
+        }
+      } else {
+        chkErr(setOptionalOptionString(MPVOption.Input.inputConf, inputConfPath, level: .verbose))
+      }
+    }
+  }
+
   func getInputBindings(filterCommandsBy filter: ((Substring) -> Bool)? = nil) -> [KeyMapping] {
     player.log.verbose("Requesting from mpv: \(MPVProperty.inputBindings)")
     let parsed = getNode(MPVProperty.inputBindings)

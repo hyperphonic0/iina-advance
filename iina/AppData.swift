@@ -582,6 +582,9 @@ extension Notification.Name {
   static let iinaKeyBindingErrorOccurred = Notification.Name("IINAKeyBindingErrorOccurred")
   // Supports auto-complete for key binding editing:
   static let iinaKeyBindingInputChanged = Notification.Name("IINAKeyBindingInputChanged")
+  /// The currently active input config file was updated on disk, or a new input config file was made active.
+  /// Contains an `InputConfFile` in its `obj` field containing the file's name and latest content.
+  static let iinaActiveInputConfFileDidUpdate = Notification.Name("IINAActiveInputConfFileDidUpdate")
   // Contains a TableUIChange which should be applied to the Input Conf table:
   // user input conf additions, subtractions, a rename, or the selection changed
   static let iinaPendingUIChangeForConfTable = Notification.Name("IINAPendingUIChangeForConfTable")
