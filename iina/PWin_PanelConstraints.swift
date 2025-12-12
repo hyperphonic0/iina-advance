@@ -286,7 +286,7 @@ extension PlayerWindowController {
     updateSidebarConstraints(for: stage, stageGeo, in: transition, log)
 
     // OSD constraints. Call this after calls to prepareLayoutForOpening(*Sidebar)
-    updateConstraintsForFloatingViews(for: stage, stageGeo)
+    updateConstraintsForFloatingViews(stageGeo: stageGeo, hasLeadingSidebar: useLeadingSidebar, hasTrailingSidebar: useTrailingSidebar)
 
     // Must execute this *before* sidebars logic below, which may alter their orders
     sortContentViewSubviews(for: stageLayout, in: transition)

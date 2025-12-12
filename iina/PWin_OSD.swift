@@ -467,7 +467,7 @@ extension PlayerWindowController {
   /// - For many of the constraints, priority=900 will be used to avoid problems with black swan layouts
   /// which might trigger constraint violations if priority=required were used.
   /// - Setting `skipAddConstraints` to `true` is a kludge for special use during layout transitions
-  func updateConstraintsForFloatingViews(for stage: LayoutTransition.Stage = .postTransition, _ stageGeo: PWinGeometry) {
+  func updateConstraintsForFloatingViews(stageGeo: PWinGeometry, hasLeadingSidebar: Bool, hasTrailingSidebar: Bool) {
     for optCon in osd.optionalConstraints {
       optCon.weaken()
     }
@@ -476,8 +476,6 @@ extension PlayerWindowController {
     let hasOSD = stageGeo.shouldHaveOSD
     let hasAdditionalInfo = stageGeo.shouldHaveAdditionalInfo
     let osdPosition: Preference.OSDPosition = Preference.enum(for: .osdPosition)
-    let hasLeadingSidebar = stageGeo.insideBars.leading > 0
-    let hasTrailingSidebar = stageGeo.insideBars.trailing > 0
 
     log.verbose("[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) offsetFromTop=\(offsetFromTop)")
 
