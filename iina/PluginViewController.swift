@@ -40,6 +40,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    view.idString = "PluginView"
     pluginContentContainerView.identifier = .init("PluginContentContainerView")
     pluginContentContainerView.translatesAutoresizingMaskIntoConstraints = false
 

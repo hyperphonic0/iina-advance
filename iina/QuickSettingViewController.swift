@@ -242,6 +242,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    view.idString = "QuickSettingsView"
 
     refreshDenialPeriodTimer.action = refreshDenialPeriodDidEnd
 

@@ -578,7 +578,7 @@ extension PlayerWindowController {
                                                           viewportLeadingClipTrailing: viewportLeadingClipTrailing,
                                                           top: topConstraint, bottom: bottomConstraint)
 
-    log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(leadingSidebar.locationID)")
+    log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(leadingSidebar.locationID), placement=\(leadingSidebar.placement)")
     addTabGroupView(for: tabGroupToShow, to: tabContainerView)
   }
 
@@ -693,7 +693,7 @@ extension PlayerWindowController {
                                                             viewportTrailingClipLeading: viewportTrailingClipLeading,
                                                             top: topCon, bottom: bottomCon)
 
-    log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(trailingSidebar.locationID)")
+    log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(trailingSidebar.locationID), placement=\(trailingSidebar.placement)")
     addTabGroupView(for: tabGroupToShow, to: tabContainerView)
   }
 

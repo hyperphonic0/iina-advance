@@ -127,6 +127,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    view.idString = "PlaylistView"
 
     withAllTableViews { (view) in
       view.dataSource = self
