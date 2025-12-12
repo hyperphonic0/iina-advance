@@ -7,7 +7,7 @@
 //
 
 /// Don't make this `.required`! Can't seem to avoid constraint violations in music mode.
-fileprivate let defaultPriority: Int = 1000
+fileprivate let defaultPriority: Int = 999
 
 /// Decoarates a single, optional `NSLayoutConstraint` with functions which make it easier to work with given its optional nature.
 class OptionalConstraint {

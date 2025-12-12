@@ -80,12 +80,8 @@ extension PlayerWindowController {
 
     let stageLayout: LayoutState = transition.targetLayout(for: stage)
     let isFinalStage = stage.isFinalStage
-    // TODO: fix this
-    // We need to include constraints for some panels in multiple stages if they are open at any point
-//    let useLeadingSidebar: Bool = isFinalStage ? stageLayout.isLeadingSidebarVisible : transition.inputLayout.isLeadingSidebarVisible || transition.outputLayout.isLeadingSidebarVisible
-//    let useTrailingSidebar: Bool = isFinalStage ? stageLayout.isTrailingSidebarVisible : transition.inputLayout.isTrailingSidebarVisible || transition.outputLayout.isTrailingSidebarVisible
-    let useLeadingSidebar = true
-    let useTrailingSidebar = true
+    let useLeadingSidebar = isFinalStage ? transition.outputLayout.isLeadingSidebarVisible : transition.inputLayout.isLeadingSidebarVisible || transition.outputLayout.isLeadingSidebarVisible
+    let useTrailingSidebar = isFinalStage ? transition.outputLayout.isTrailingSidebarVisible : transition.inputLayout.isTrailingSidebarVisible || transition.outputLayout.isTrailingSidebarVisible
     let useBottomBar: Bool = isFinalStage ? stageLayout.hasBottomBar : transition.inputLayout.hasBottomBar || transition.outputLayout.hasBottomBar
     let useTopBar: Bool = isFinalStage ? stageLayout.hasTopBar : transition.inputLayout.hasTopBar || transition.outputLayout.hasTopBar
 
@@ -398,15 +394,16 @@ extension PlayerWindowController {
     switch stage {
     case .preTransitionSetup:
       sidebarUpdateGeo = sidebarUpdateGeo ?? stageGeo
+      // Need this immediately becuase sometimes (e.g. when opening sidebar) other constraints may expect sidebar(s)
+      // to be attached already:
+      prepareSidebarsForOpening(transition, stageGeo)
 
     case .closeOldPanels:
       assert(!transition.isWindowInitialLayout)
       // Sidebars (if closing)
-      let ΔWindowWidth = stageGeo.windowFrame.width - transition.inputGeometry.windowFrame.width
-      animateShowOrHideSidebars(transition.inputGeometry,
-                                leadingVisible: transition.isClosingLeadingSidebar ? false : nil,
-                                trailingVisible: transition.isClosingTrailingSidebar ? false : nil,
-                                ΔWindowWidth: ΔWindowWidth, log)
+      animateShowOrHideSidebars(from: transition.inputGeometry,
+                                to: stageGeo,
+                                isInitialLayout: transition.isWindowInitialLayout, log)
 
       if sidebarUpdateGeo == nil {
         if transition.isExitingMusicMode {
@@ -455,11 +452,9 @@ extension PlayerWindowController {
       }
 
       // Sidebars (if opening)
-      let ΔWindowWidth = transition.ΔWindowWidth
-      animateShowOrHideSidebars(transition.outputGeometry,
-                                leadingVisible: transition.isOpeningLeadingSidebar ? true : nil,
-                                trailingVisible: transition.isOpeningTrailingSidebar ? true : nil,
-                                ΔWindowWidth: ΔWindowWidth, log)
+      animateShowOrHideSidebars(from: transition.geometry(for: .midTransitionHiddenUpdates),
+                                to: transition.outputGeometry,
+                                isInitialLayout: transition.isWindowInitialLayout, log)
 
       sidebarUpdateGeo = sidebarUpdateGeo ?? stageGeo
 
@@ -558,13 +553,13 @@ extension PlayerWindowController {
     if transition.isOpeningLeadingSidebar {
       // Opening sidebar from closed state
       prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
-                              layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+                              layout: transition.outputLayout, isWindowWidthChanging: transition.ΔWindowWidth != 0)
       didSomething = true
     }
     if transition.isOpeningTrailingSidebar {
       // Opening sidebar from closed state
       prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
-                              layout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+                              layout: transition.outputLayout, isWindowWidthChanging: transition.ΔWindowWidth != 0)
       didSomething = true
     }
 

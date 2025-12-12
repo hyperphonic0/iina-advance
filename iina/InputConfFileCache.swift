@@ -307,6 +307,7 @@ struct InputConfFile: Sendable {
 
     do {
       try InputConfFile.cache.saveFile(updatedConfFile)
+      Logger.log.verbose("Finished saving to input conf file: \(self.filePath.pii.quoted)")
     } catch {
       Logger.log("Failed to overwrite conf file at \(self.filePath.pii.quoted): \(error)", level: .error)
       let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [updatedConfFile.filePath])

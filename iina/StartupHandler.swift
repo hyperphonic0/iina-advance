@@ -534,25 +534,28 @@ final class StartupHandler {
       restoreTimer.restart()
 
     case .alertSecondButtonReturn:
-      log.debug("User chose button 2: discard stalled windows & continue with partial restore")
-      restoreTimeoutAlertPanel = nil  // Clear this (no longer needed)
-      guard state != .doneOpening else {
-        log.debug("Looks like windows finished opening - no need to close anything")
-        return
-      }
-      for wcStalled in wcsStalled {
-        guard !wcsDoneWithRestore.contains(wcStalled) else {
-          log.verbose("Window has become ready; skipping close: \(wcStalled.window!.savedStateName)")
-          continue
+      // Launch async in case loading actually finished
+      DispatchQueue.main.async { [self] in
+        log.debug("User chose button 2: discard stalled windows & continue with partial restore")
+        restoreTimeoutAlertPanel = nil  // Clear this (no longer needed)
+        guard state != .doneOpening else {
+          log.debug("Looks like windows finished opening - no need to close anything")
+          return
         }
-        log.verbose("Telling stalled window to close: \(wcStalled.window!.savedStateName)")
-        if let pWin = wcStalled as? PlayerWindowController {
-          /// This will guarantee `windowMustCancelShow` notification is sent
-          pWin.player.closeWindow()
-        } else {
-          wcStalled.close()
-          // explicitly call this, as the line above may fail
-          wcStalled.postWindowMustCancelShow()
+        for wcStalled in wcsStalled {
+          guard !wcsDoneWithRestore.contains(wcStalled) else {
+            log.verbose("Window has become ready; skipping close: \(wcStalled.window!.savedStateName)")
+            continue
+          }
+          log.verbose("Telling stalled window to close: \(wcStalled.window!.savedStateName)")
+          if let pWin = wcStalled as? PlayerWindowController {
+            /// This will guarantee `windowMustCancelShow` notification is sent
+            pWin.player.closeWindow()
+          } else {
+            wcStalled.close()
+            // explicitly call this, as the line above may fail
+            wcStalled.postWindowMustCancelShow()
+          }
         }
       }
 

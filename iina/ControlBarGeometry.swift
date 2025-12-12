@@ -21,7 +21,7 @@ fileprivate let toolSpacingScaleMultiplier: CGFloat = 0.25
 fileprivate let minToolBtnHeight: CGFloat = 8
 fileprivate let minPlayBtnHeight: CGFloat = 8
 
-fileprivate let floatingToolbarIconSize: CGFloat = 14
+fileprivate let floatingToolbarIconSize: CGFloat = 18
 fileprivate let floatingToolbarIconSpacing: CGFloat = 5
 fileprivate let floatingPlayIconSize: CGFloat = 24
 fileprivate let floatingPlayIconSpacing: CGFloat = 24
@@ -126,7 +126,7 @@ struct ControlBarGeometry {
       self.playIconSpacing = musicModePlayIconSpacing
 
     } else if oscPosition == .floating {
-      barHeight = 67  // not really useful here anyway
+      barHeight = FloatingControlBarView.barHeight  // not really useful here anyway
       fullIconHeight = 24
       self.playSliderHeight = 37
       self.toolIconSize = floatingToolbarIconSize

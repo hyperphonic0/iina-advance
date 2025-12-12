@@ -10,9 +10,9 @@ import Cocoa
 
 // The control bar when position=="floating"
 class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
-  private static let barHeight: CGFloat = 67
-  private static let minBarWidth: CGFloat = 200
-  private static let preferredBarWidth: CGFloat = 440
+  static let barHeight: CGFloat = 67
+  static let minBarWidth: CGFloat = 200
+  static let preferredBarWidth: CGFloat = 440
   private static let margin: CGFloat = CGFloat(max(0, Preference.integer(for: .floatingControlBarMargin)))
 
   let topRowView = ClickThroughStackView()
@@ -21,9 +21,9 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
   fileprivate var xConstraint: NSLayoutConstraint!  // this is X CENTER of OSC
   fileprivate var yConstraint: NSLayoutConstraint!  // Bottom of OSC
 
-  weak var leadingMarginConstraint: NSLayoutConstraint!
-  weak var trailingMarginConstraint: NSLayoutConstraint!
-  weak var bottomMarginConstraint: NSLayoutConstraint!
+  let leadingMarginConstraint = OptionalConstraint("OSC-Floating-LeadingMargin")
+  let trailingMarginConstraint = OptionalConstraint("OSC-Floating-TrailingMargin")
+  let bottomMarginConstraint = OptionalConstraint("OSC-Floating-BottomMargin")
 
   private var minDragDistanceMet = false
   var mousePosRelatedToView: CGPoint?
@@ -88,43 +88,31 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
   func addOrUpdateMarginConstraints(for layout: LayoutState) {
     guard let pwc, let contentView = pwc.window?.contentView else { return }
     pwc.log.verbose("Updating floating OSC constraints: leadingSidebarVisible=\(layout.leadingSidebar.isVisible.yn) traillingSidebarVisible=\(layout.leadingSidebar.isVisible.yn)")
+    leadingMarginConstraint.weaken()
+    trailingMarginConstraint.weaken()
+    bottomMarginConstraint.weaken()
 
     let leadingConstraintSecondAnchor = layout.leadingSidebar.isVisible ? pwc.leadingSidebarView.trailingAnchor : contentView.leadingAnchor
-    if leadingMarginConstraint == nil || !leadingMarginConstraint.isActive || (leadingMarginConstraint?.secondAnchor != leadingConstraintSecondAnchor) {
-      leadingMarginConstraint?.isActive = false
-      leadingMarginConstraint = self.leadingAnchor.constraint(greaterThanOrEqualTo: leadingConstraintSecondAnchor, constant: FloatingControlBarView.margin)
+    leadingMarginConstraint.createOrUpdate(to: FloatingControlBarView.margin, priorityInt: 1000, requiredSecondAnchor: leadingConstraintSecondAnchor, pwc.log) { [self] c in
+      self.leadingAnchor.constraint(greaterThanOrEqualTo: leadingConstraintSecondAnchor, constant: c)
     }
 
     let traillingConstraintFirstAnchor = layout.trailingSidebar.isVisible ? pwc.trailingSidebarView.leadingAnchor : contentView.trailingAnchor
-    if trailingMarginConstraint == nil || !trailingMarginConstraint.isActive || (trailingMarginConstraint?.firstAnchor != traillingConstraintFirstAnchor) {
-      trailingMarginConstraint?.isActive = false
-      trailingMarginConstraint = traillingConstraintFirstAnchor.constraint(greaterThanOrEqualTo: self.trailingAnchor, constant: FloatingControlBarView.margin)
-    }
-    if bottomMarginConstraint == nil || !bottomMarginConstraint.isActive {
-      bottomMarginConstraint?.isActive = false
-      bottomMarginConstraint = contentView.bottomAnchor.constraint(greaterThanOrEqualTo: self.bottomAnchor, constant: FloatingControlBarView.margin)
-    }
-    bottomMarginConstraint.isActive = true
-    leadingMarginConstraint.isActive = true
-    trailingMarginConstraint.isActive = true
 
+    trailingMarginConstraint.createOrUpdate(to: FloatingControlBarView.margin, priorityInt: 1000, requiredSecondAnchor: traillingConstraintFirstAnchor, pwc.log) { [self] c in
+      traillingConstraintFirstAnchor.constraint(greaterThanOrEqualTo: self.trailingAnchor, constant: c)
+    }
+
+    bottomMarginConstraint.createOrUpdate(to: FloatingControlBarView.margin, priorityInt: 1000, requiredSecondAnchor: traillingConstraintFirstAnchor, pwc.log) { [self] c in
+      contentView.bottomAnchor.constraint(greaterThanOrEqualTo: self.bottomAnchor, constant: c)
+    }
   }
 
   func removeFloatingControlBarView() {
     removeFromSuperview()
-
-    if let leadingMarginConstraint {
-      leadingMarginConstraint.isActive = false
-      self.leadingMarginConstraint = nil
-    }
-    if let trailingMarginConstraint {
-      trailingMarginConstraint.isActive = false
-      self.trailingMarginConstraint = nil
-    }
-    if let bottomMarginConstraint {
-      bottomMarginConstraint.isActive = false
-      self.bottomMarginConstraint = nil
-    }
+    leadingMarginConstraint.remove(pwc?.log)
+    trailingMarginConstraint.remove(pwc?.log)
+    bottomMarginConstraint.remove(pwc?.log)
   }
 
   // MARK: - Positioning

@@ -265,7 +265,7 @@ final class BindingTableStateManager: NSObject {
     let filePathFromBindingState = currentConfFile.canonicalFilePath
     let filePathFromConfState = URL(fileURLWithPath: ConfTableState.current.selectedConfFilePath).resolvingSymlinksInPath().path
     guard filePathFromBindingState == filePathFromConfState else {
-      Logger.log("While saving bindings updates to file \(filePathFromBindingState.quoted): its path does not match value from preferences (\(filePathFromConfState.quoted))", level: .error)
+      Logger.log.error("While saving bindings updates to file \(filePathFromBindingState.quoted): its path does not match value from preferences (\(filePathFromConfState.quoted))")
       let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [filePathFromBindingState])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
       return currentConfFile

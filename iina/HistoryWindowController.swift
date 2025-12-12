@@ -403,7 +403,7 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
     backgroundQueue.async { [self] in
       guard let entry = HistoryController.shared.history(forURL: url) else {
         // No history for URL. Can happen if URL was removed from history, or simply never played
-        log.verbose("No entry found for URL in history, skipping: \(url.path.pii.quoted)")
+        log.trace("Ignoring update, not in history: \(url.path.pii.quoted)")
         return
       }
 
