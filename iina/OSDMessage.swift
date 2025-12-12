@@ -97,6 +97,8 @@ enum OSDMessage {
   case playlistLoop
   case noLoop
 
+  case commandNotFound(String)
+
   case custom(String)
   case customWithDetail(String, String)
 
@@ -528,6 +530,9 @@ enum OSDMessage {
         NSLocalizedString("osd.no_loop", comment: "Disable loop"),
           .normal
       )
+
+    case .commandNotFound(let commandName):
+      return ("Command not found: '\(commandName)'", .normal)
 
     case .custom(let message):
       return (message, .normal)

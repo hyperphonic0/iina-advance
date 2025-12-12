@@ -16,6 +16,8 @@ private let DISABLE_SECTION_REGEX = try! NSRegularExpression(
   pattern: #"args=\[name=\"(.*)\"\]"#, options: [])
 private let FLAGS_REGEX = try! NSRegularExpression(
   pattern: #"[^\+]+"#, options: [])
+private let CMD_NOT_FOUND_ERR_REGEX = try! NSRegularExpression(
+  pattern: #"Command '([^']+)' not found."#, options: [])
 private let RUN_COMMAND_REGEX = try! NSRegularExpression(
   pattern: #"Run command:\s+([^,]+),"#, options: [])
 private let SET_PROPERTY_REGEX = try! NSRegularExpression(
@@ -102,7 +104,9 @@ final class MPVLogScanner {
       return
     }
 
-    if msg.starts(with: "Set property:") {
+    if level.starts(with: "e") && prefix == "input" {
+      processInputError(msg)
+    } else if msg.starts(with: "Set property:") {
       processSetProperty(msg)
     } else if prefix == "cplayer" {
 
@@ -119,6 +123,19 @@ final class MPVLogScanner {
         }
       }
     }
+  }
+
+  private func processInputError(_ msg: String) {
+    guard let match = matchRegex(CMD_NOT_FOUND_ERR_REGEX, msg) else {
+      return
+    }
+
+    guard let cmdRange = Range(match.range(at: 1), in: msg) else {
+      log.error("Found 'Command ...  ' in mpv log msg but failed to find capture groups in it: \(msg)")
+      return
+    }
+    let cmdName = String(msg[cmdRange])
+    player.sendOSD(.commandNotFound(cmdName))
   }
 
   private func processSetProperty(_ msg: String) {
