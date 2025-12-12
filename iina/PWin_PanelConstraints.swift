@@ -82,8 +82,8 @@ extension PlayerWindowController {
     let isFinalStage = stage.isFinalStage
     let useLeadingSidebar = isFinalStage ? transition.outputLayout.isLeadingSidebarVisible : transition.inputLayout.isLeadingSidebarVisible || transition.outputLayout.isLeadingSidebarVisible
     let useTrailingSidebar = isFinalStage ? transition.outputLayout.isTrailingSidebarVisible : transition.inputLayout.isTrailingSidebarVisible || transition.outputLayout.isTrailingSidebarVisible
-    let useBottomBar: Bool = isFinalStage ? stageLayout.hasBottomBar : transition.inputLayout.hasBottomBar || transition.outputLayout.hasBottomBar
-    let useTopBar: Bool = isFinalStage ? stageLayout.hasTopBar : transition.inputLayout.hasTopBar || transition.outputLayout.hasTopBar
+    let useBottomBar = isFinalStage ? transition.outputLayout.hasBottomBar : transition.inputLayout.hasBottomBar || transition.outputLayout.hasBottomBar
+    let useTopBar = isFinalStage ? transition.outputLayout.hasTopBar : transition.inputLayout.hasTopBar || transition.outputLayout.hasTopBar
 
     log.verbose("RebuildPanels: VP=\(useViewport.yn) Bottom=\(useBottomBar.yn) Top=\(useTopBar.yn) Leading=\(useLeadingSidebar.yn) Trailing=\(useTrailingSidebar.yn)")
 

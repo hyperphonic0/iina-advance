@@ -502,13 +502,8 @@ extension PlayerWindowController {
 
     // - Music mode: entering or continuing)
 
-    if transition.isEnteringMusicMode || transition.isOpeningPlaylistInMusicMode {
-      // move playist view
-      miniPlayer.loadIfNeeded()
-      miniPlayer.addPlaylistViewIfMissing()
-    }
-
     if transition.isWindowInitialLayout || transition.isTogglingMusicMode {
+      miniPlayer.loadIfNeeded()
       pip.showOrHidePipOverlayView()
 
       if transition.isEnteringMusicMode {
@@ -563,6 +558,8 @@ extension PlayerWindowController {
     }  // End toggling music mode
 
     if transition.outputLayout.isMusicMode {
+      miniPlayer.addPlaylistViewIfMissing()
+
       // FIXME: refactor to put most of this into `rebuildPanelConstraints`
       if !transition.outputGeometry.isViewportShown && !transition.outputLayout.isInPiP {
         viewportView.removeViewportConstraints()
@@ -578,6 +575,7 @@ extension PlayerWindowController {
 
     // [Re-]add OSC:
     if outputLayout.enableOSC {
+      assert(!outputLayout.isMusicMode)
       let newGeo = outputLayout.controlBarGeo
       log.verbose("Setting up OSC: pos=\(outputLayout.oscPosition) musicMode=\(outputLayout.isMusicMode.yn) playIconSize=\(newGeo.playIconSize) playIconSpacing=\(newGeo.playIconSpacing)")
 

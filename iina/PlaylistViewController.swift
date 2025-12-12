@@ -51,6 +51,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   // can't use main queue - it will block
   private var playlistTableReloadDebouncer = Debouncer(delay: 0.1, queue: PlayerCore.playlistQueue)
 
+  @Atomic private var playlistReloadTicket = 0
+
   @IBOutlet weak var playlistTableBackgroundView: NSView!
   @IBOutlet weak var chapterTableBackgroundView: NSView!
   @IBOutlet weak var playlistTableView: EditableTableView!
@@ -916,6 +918,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     player.mpv.queue.async { [self] in
       guard player.isActive else { return }
+      let currentTicket = $playlistReloadTicket.withLock { latestTicket in
+        latestTicket += 1
+        return latestTicket
+      }
       let playlistItems = displayedPlaylist
       var titles: [String?] = []
       player.log.verbose("Playlist: updating caches for \(playlistItems.count) rows…")
@@ -928,6 +934,13 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
       PlayerCore.playlistQueue.async { [self] in
         for (rowIndex, item) in playlistItems.enumerated() {
+          if (rowIndex %% 5) == 0 {
+            let isTicketValid = $playlistReloadTicket.withLock { $0 == currentTicket }
+            guard isTicketValid else {
+              player.log.verbose("Playlist: ticket no longer valid; cancelling cache update")
+              return
+            }
+          }
           let updatedTitle = titles[rowIndex]
           let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: item)
           let needsRefresh = (item.url.isFileURL && !existingCachedMeta.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta.title)
