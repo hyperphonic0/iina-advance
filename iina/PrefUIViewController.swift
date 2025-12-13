@@ -106,6 +106,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var arrowButtonActionPopUpButton: NSPopUpButton!
   @IBOutlet weak var oscBottomPlacementContainerView: NSView!
   @IBOutlet weak var oscSnapToCenterContainerView: NSView!
+  @IBOutlet weak var oscWidthStackView: NSStackView!
+  @IBOutlet weak var oscBarWidthTextField: NSTextField!
   @IBOutlet weak var oscHeightStackView: NSStackView!
   @IBOutlet weak var oscBarHeightTextField: NSTextField!
   @IBOutlet weak var playbackBtnDimensionsHStackView: NSStackView!
@@ -493,6 +495,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     viewHidePairs.append((toolbarIconDimensionsHStackView, !hasSingleLineOSCConfig))
     viewHidePairs.append((toolbarSectionVStackView, !ib.oscEnabled))
     viewHidePairs.append((oscHeightStackView, !hasBarOSC))
+    viewHidePairs.append((oscWidthStackView, !oscIsFloating))
     viewHidePairs.append((playbackBtnDimensionsHStackView, !hasSingleLineOSCConfig))
 
 

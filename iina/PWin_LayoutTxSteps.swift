@@ -1347,7 +1347,9 @@ extension PlayerWindowController {
       accessory.view = leadingTitleBarAccessoryView
       accessory.fullScreenMinHeight = Constants.standardTitleBarHeight
       accessory.layoutAttribute = .leading
-      accessory.automaticallyAdjustsSize = false
+      if #available(macOS 11.0, *) {
+        accessory.automaticallyAdjustsSize = false
+      }
     }
 
     if trailingTitlebarAccesoryViewController == nil {
@@ -1357,7 +1359,9 @@ extension PlayerWindowController {
       accessory.view = trailingTitleBarAccessoryView
       accessory.fullScreenMinHeight = Constants.standardTitleBarHeight
       accessory.layoutAttribute = .trailing
-      accessory.automaticallyAdjustsSize = false
+      if #available(macOS 11.0, *) {
+        accessory.automaticallyAdjustsSize = false
+      }
     }
 
     if window.titlebarAccessoryViewControllers.count == 1 {
