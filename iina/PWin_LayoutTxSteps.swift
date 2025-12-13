@@ -1347,6 +1347,7 @@ extension PlayerWindowController {
       accessory.view = leadingTitleBarAccessoryView
       accessory.fullScreenMinHeight = Constants.standardTitleBarHeight
       accessory.layoutAttribute = .leading
+      accessory.automaticallyAdjustsSize = false
     }
 
     if trailingTitlebarAccesoryViewController == nil {
@@ -1356,6 +1357,7 @@ extension PlayerWindowController {
       accessory.view = trailingTitleBarAccessoryView
       accessory.fullScreenMinHeight = Constants.standardTitleBarHeight
       accessory.layoutAttribute = .trailing
+      accessory.automaticallyAdjustsSize = false
     }
 
     if window.titlebarAccessoryViewControllers.count == 1 {
@@ -1369,7 +1371,7 @@ extension PlayerWindowController {
       leadingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
       leadingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
 
-      log.verbose("Adding leadingTitlebarAccesory to window")
+      log.verbose("Adding trailingTitleBarAccessory to window")
       window.addTitlebarAccessoryViewController(trailingTitlebarAccesoryViewController!)
       trailingTitleBarAccessoryView.translatesAutoresizingMaskIntoConstraints = false
       trailingTitleBarAccessoryView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)

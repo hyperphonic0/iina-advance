@@ -248,7 +248,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   var currentLayout: LayoutState {
     didSet {
-      log.verbose("Δ currentLayout: mode≔\(currentLayout.mode)")
+      log.verbose("Δ currentLayout: \(oldValue.mode) -> \(currentLayout.mode)")
       if currentLayout.mode == .windowedNormal {
         lastWindowedLayoutState = currentLayout
       } else if currentLayout.mode == .fullScreenNormal {
@@ -1150,12 +1150,10 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     let layout = currentLayout
 
     switch layout.mode {
-    case .windowedNormal, .windowedInteractive:
+    case .windowedNormal, .windowedInteractive, .musicMode:
       enterFullScreen()
     case .fullScreenNormal, .fullScreenInteractive:
       exitFullScreen()
-    case .musicMode:
-      enterFullScreen()
     }
   }
 
@@ -1232,19 +1230,21 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   func updateUseLegacyFullScreen() {
-    let oldLayout = currentLayout
-    if !oldLayout.isFullScreen {
-      DispatchQueue.main.async { [self] in
-        resetCollectionBehavior()
+    animationPipeline.submitInstantTask { [self] in
+      let oldLayout = currentLayout
+      if !oldLayout.isFullScreen {
+        animationPipeline.submitInstantTask { [self] in
+          resetCollectionBehavior()
+        }
       }
-    }
-    // Exit from legacy FS only. Native FS will fail if not the active space
-    guard oldLayout.isLegacyFullScreen else { return }
-    let outputLayoutState = LayoutState.fromPrefs(fillingInFrom: oldLayout)
-    if oldLayout.isLegacyStyle != outputLayoutState.isLegacyStyle {
-      DispatchQueue.main.async { [self] in
-        log.verbose("User toggled legacy FS pref to \(outputLayoutState.isLegacyStyle.yesno) while in FS. Will try to exit FS")
-        exitFullScreen()
+      // Exit from legacy FS only. Native FS will fail if not the active space
+      guard oldLayout.isLegacyFullScreen else { return }
+      let outputLayoutState = LayoutState.fromPrefs(fillingInFrom: oldLayout)
+      if oldLayout.isLegacyStyle != outputLayoutState.isLegacyStyle {
+        animationPipeline.submitInstantTask { [self] in
+          log.verbose("User toggled legacy FS pref to \(outputLayoutState.isLegacyStyle.yesno) while in FS. Will try to exit FS")
+          exitFullScreen()
+        }
       }
     }
   }
