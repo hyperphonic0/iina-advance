@@ -60,6 +60,7 @@ extension PlayerWindowController {
       .controlBarToolbarButtons,
       .oscBarToolIconSize,
       .oscBarToolIconSpacing,
+      .floatingControlBarWidth,
 
       .enableThumbnailPreview,
       .enableThumbnailForRemoteFiles,
@@ -282,6 +283,8 @@ extension PlayerWindowController {
 
       log.verbose("Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted) = \(String(describing: newValue))")
       updateTitleBarAndOSC()
+    case .floatingControlBarWidth:
+      controlBarFloating.updatePreferredBarWidth()
     case .alwaysShowSliderKnob:
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true

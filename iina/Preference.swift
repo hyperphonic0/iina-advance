@@ -199,6 +199,7 @@ struct Preference {
     static let controlBarPositionHorizontal = Key("controlBarPositionHorizontal")
     /// Horizontal position of floating control bar. In percentage from bottom. (float, 0 - 1)
     static let controlBarPositionVertical = Key("controlBarPositionVertical")
+    static let floatingControlBarWidth = Key("floatingControlBarWidth")
 
     /// Whether floating OSC can snap to center when dragging close to it.
     static let controlBarStickToCenter = Key("controlBarStickToCenter")
@@ -1366,6 +1367,7 @@ struct Preference {
     .floatingControlBarMargin: 5,
     .controlBarPositionHorizontal: Float(0.5),
     .controlBarPositionVertical: Float(0.1),
+    .floatingControlBarWidth: 440.0,
     .controlBarStickToCenter: true,
     .controlBarAutoHideTimeout: Float(2.5),
     .showCachedRangesInSlider: true,

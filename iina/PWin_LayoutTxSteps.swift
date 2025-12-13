@@ -629,6 +629,7 @@ extension PlayerWindowController {
       case .floating:
         currentControlBar = controlBarFloating
         addFloatingControlBarViewToViewportView()
+        controlBarFloating.updatePreferredBarWidth()
 
         let floatingUpperView = controlBarFloating.topRowView
         if !floatingUpperView.views.contains(fragToolbarView) {

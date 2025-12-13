@@ -266,11 +266,11 @@ extension ViewportView {
   /// __REMOVE constraints__: When in PiP, need to remove all constraints; it will instead calculate layout based on the layer's `autoresizingMask`.
   func removeViewportConstraints() {
     guard let cons = viewportConstraints else {
-      log.verbose("VideoView: all video constraints already removed")
+      log.verbose("Viewport: all video constraints already removed")
       return
     }
 
-    log.verbose("VideoView: removing all video constraints")
+    log.verbose("Viewport: removing all video constraints")
     cons.disableAll()
     viewportConstraints = nil
   }
@@ -282,13 +282,13 @@ extension ViewportView {
     guard let pwc else { return }
 
     guard geometry.isViewportShown else {
-      log.verbose("VideoView: video not visible; will remove constraints")
+      log.verbose("Viewport: video not visible; will remove constraints")
       removeViewportConstraints()
       return
     }
 
     guard !pwc.currentLayout.isInPiP || transitionCategory == .enteringPIP else {
-      log.verbose("VideoView: currently in PiP. Skipping constraints update & setting aspectRatio in PiP controller ≔ \(geometry.video.videoSizeCAR)")
+      log.verbose("Viewport: currently in PiP; skipping constraints update & setting aspectRatio in PiP controller ≔ \(geometry.video.videoSizeCAR)")
       pwc.pip.controller?.aspectRatio = geometry.video.videoSizeCAR
       return
     }
@@ -296,7 +296,7 @@ extension ViewportView {
     let vv = pwc.videoView
     guard let vp = vv.superview else {
       // Can happen when in music mode with video disabled
-      log.verbose("VideoView: no superview; skipping constraints update")
+      log.verbose("No superview for videoView; skipping constraints update")
       return
     }
 
@@ -316,7 +316,7 @@ extension ViewportView {
       aspect = vv.widthAnchor.constraint(equalTo: vv.heightAnchor, multiplier: videoViewAspect, constant: 0)
     }
 
-    log.verbose("VideoView updating constraints: aspect=\(videoViewAspect) vidAspectFromPWinGeo=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) mode=\(geometry.mode)")
+    log.verbose("Viewport updating constraints: aspect=\(videoViewAspect) vidAspectFromPWinGeo=\(geometry.videoSize.mpvAspect) vidSize=\(geometry.videoSize) mode=\(geometry.mode)")
 
     let cons = ViewportConstraints(
       log: log,

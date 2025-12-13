@@ -9,11 +9,12 @@
 import Cocoa
 
 // The control bar when position=="floating"
-class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
+final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
   static let barHeight: CGFloat = 67
   static let minBarWidth: CGFloat = 200
-  static let preferredBarWidth: CGFloat = 440
   private static let margin: CGFloat = CGFloat(max(0, Preference.integer(for: .floatingControlBarMargin)))
+
+  static var preferredBarWidth: CGFloat { max(FloatingControlBarView.minBarWidth, CGFloat(Preference.float(for: .floatingControlBarWidth))) }
 
   let topRowView = ClickThroughStackView()
   let bottomRowView = ClickThroughStackView()
@@ -21,6 +22,7 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
   fileprivate var xConstraint: NSLayoutConstraint!  // this is X CENTER of OSC
   fileprivate var yConstraint: NSLayoutConstraint!  // Bottom of OSC
 
+  var preferredWidthConstraint: NSLayoutConstraint!
   let leadingMarginConstraint = OptionalConstraint("OSC-Floating-LeadingMargin")
   let trailingMarginConstraint = OptionalConstraint("OSC-Floating-TrailingMargin")
   let bottomMarginConstraint = OptionalConstraint("OSC-Floating-BottomMargin")
@@ -75,14 +77,18 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
     translatesAutoresizingMaskIntoConstraints = false
     let heightEqCon = heightAnchor.constraint(equalToConstant: FloatingControlBarView.barHeight)
     heightEqCon.isActive = true
-    let widthEqCon = widthAnchor.constraint(equalToConstant: 440)
-    widthEqCon.priority = .init(300)
-    widthEqCon.isActive = true
-    let widthGT = widthAnchor.constraint(greaterThanOrEqualToConstant: FloatingControlBarView.minBarWidth)
-    widthGT.isActive = true
+    preferredWidthConstraint = widthAnchor.constraint(equalToConstant: FloatingControlBarView.preferredBarWidth)
+    preferredWidthConstraint.priority = .init(300)
+    preferredWidthConstraint.isActive = true
+    let minWidthConstraint = widthAnchor.constraint(greaterThanOrEqualToConstant: FloatingControlBarView.minBarWidth)
+    minWidthConstraint.isActive = true
   }
   
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+  func updatePreferredBarWidth() {
+    preferredWidthConstraint.animateToConstant(FloatingControlBarView.preferredBarWidth)
+  }
 
   /// Adds margin constraints if missing
   func addOrUpdateMarginConstraints(for layout: LayoutState) {
@@ -266,6 +272,7 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
   @MainActor
   fileprivate struct FloatingControlBarGeometry {
     let parentGeo: PWinGeometry
+    let preferredBarWidth: CGFloat = FloatingControlBarView.preferredBarWidth
 
     // "available" == space to move OSC within
     var availableWidthMinX: CGFloat {
@@ -283,10 +290,10 @@ class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
     }
 
     var barWidth: CGFloat {
-      if availableWidth < FloatingControlBarView.preferredBarWidth {
+      if availableWidth < preferredBarWidth {
         return FloatingControlBarView.minBarWidth
       }
-      return FloatingControlBarView.preferredBarWidth
+      return preferredBarWidth
     }
 
     var halfBarWidth: CGFloat {

@@ -18,9 +18,6 @@ fileprivate let iconSizeMinScaleMultiplier: CGFloat = 0.5
 fileprivate let playIconSpacingScaleMultiplier: CGFloat = 0.35
 fileprivate let toolSpacingScaleMultiplier: CGFloat = 0.25
 
-fileprivate let minToolBtnHeight: CGFloat = 8
-fileprivate let minPlayBtnHeight: CGFloat = 8
-
 fileprivate let floatingToolbarIconSize: CGFloat = 18
 fileprivate let floatingToolbarIconSpacing: CGFloat = 5
 fileprivate let floatingPlayIconSize: CGFloat = 24
