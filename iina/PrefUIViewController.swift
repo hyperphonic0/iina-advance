@@ -324,9 +324,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     switch keyPath {
     case #keyPath(view.effectiveAppearance):
       if Preference.enum(for: .themeMaterial) == Preference.Theme.system {
-        // Refresh image in case dark mode changed
-        let ib = PWinPreviewImageBuilder(self.view)
-        windowPreviewImageView.image = ib.buildPWinPreviewImage()
+        Task { @MainActor in
+          // Refresh image in case dark mode changed
+          let ib = PWinPreviewImageBuilder(self.view)
+          windowPreviewImageView.image = ib.buildPWinPreviewImage()
+        }
       }
     default:
       break

@@ -8,20 +8,18 @@
 
 import Foundation
 
+@MainActor
 final class PlayerManager {
   static let shared = PlayerManager()
 
   private var playerCoreCounter = 0
 
-  @MainActor
   var playerCores: [PlayerCore] = []
 
   /// Audio-only player. Needed for listing audio devices when no player windows are open.
   /// Should not be used for playing anything.
-  @MainActor
   var demoPlayer: PlayerCore? = nil
 
-  @MainActor
   var pipPlayer: PlayerCore? = nil {
     willSet {
       let usurperPlayer = newValue
@@ -35,7 +33,6 @@ final class PlayerManager {
   }
 
   /// Returns the last player whose window was "active" (or in MacOS terminology, was the key window).
-  @MainActor
   var lastActivePlayer: PlayerCore? {
     get {
       return _lastActivePlayer ?? findCurrentlyActivePlayer()
@@ -46,7 +43,6 @@ final class PlayerManager {
   }
   weak private var _lastActivePlayer: PlayerCore?
 
-  @MainActor
   var allPlayersShutdown: Bool {
     let runningLabels = playerCores.compactMap({ player in
       // Non-interactive players don't have callbacks registered.
@@ -60,7 +56,6 @@ final class PlayerManager {
     return true
   }
 
-  @MainActor
   private func _getOrCreateFirst() -> PlayerCore {
     if playerCores.isEmpty {
       return createNewPlayerCore()
@@ -68,12 +63,10 @@ final class PlayerManager {
     return playerCores[0]
   }
 
-  @MainActor
   func getOrCreateFirst() -> PlayerCore {
     _getOrCreateFirst()
   }
 
-  @MainActor
   func getActiveOrCreateNew() -> PlayerCore {
     if playerCores.isEmpty {
       return createNewPlayerCore()
@@ -92,7 +85,6 @@ final class PlayerManager {
   }
 
   /// `inverseOpenInNewWindowPref` means to negate the current value of pref `.alwaysOpenInNewWindow`
-  @MainActor
   func getActiveOrNewForMenuAction(inverseOpenInNewWindowPref: Bool) -> PlayerCore {
     let useNew = Preference.bool(for: .alwaysOpenInNewWindow) != inverseOpenInNewWindowPref
     if !useNew, let activePlayer {
@@ -103,7 +95,6 @@ final class PlayerManager {
   }
 
   /// Finds a player core which was already created but is not in use (idle or not started), or nil if none
-  @MainActor
   private func findIdlePlayerCore() -> PlayerCore? {
     var firstIdlePlayer: PlayerCore? = nil
     for p in playerCores {
@@ -116,12 +107,10 @@ final class PlayerManager {
     return firstIdlePlayer
   }
 
-  @MainActor
   func getNonIdle() -> [PlayerCore] {
     playerCores.filter { $0.isActive }
   }
 
-  @MainActor
   func getIdleOrCreateNew() -> PlayerCore {
     if let idleCore = findIdlePlayerCore() {
       Logger.log.debug("Found idle player: #\(idleCore.label)")
@@ -131,7 +120,6 @@ final class PlayerManager {
     return createNewPlayerCore()
   }
 
-  @MainActor
   var activePlayer: PlayerCore? {
     findCurrentlyActivePlayer()
   }
@@ -147,7 +135,6 @@ final class PlayerManager {
   }
 
   /// Demo player is a redundant player which is used for app-wide things such as configuring audio devices or input bindings in prefs
-  @MainActor
   func getOrCreateDemo() -> PlayerCore {
     let player: PlayerCore
     if let demoPlayer {
@@ -161,12 +148,10 @@ final class PlayerManager {
     return player
   }
 
-  @MainActor
   private func playerExists(withLabel label: String) -> Bool {
     return playerCores.first(where: { $0.label == label }) != nil
   }
 
-  @MainActor
   func createNewPlayerCore(withLabel label: String? = nil) -> PlayerCore {
     Logger.log.debug("Creating PlayerCore instance with ID \(label?.quoted ?? "nil")")
     let pc: PlayerCore
@@ -189,7 +174,6 @@ final class PlayerManager {
     return pc
   }
 
-  @MainActor
   func removePlayer(withLabel label: String) {
     playerCores.removeAll(where: { (player) in player.label == label })
     Logger.log.debug("Removed player from app-wide list: \(label.quoted); \(playerCores.count) remain")

@@ -9,6 +9,7 @@ import Foundation
 import MediaPlayer
 
 final class MediaPlayerIntegration {
+  @MainActor
   static let shared = MediaPlayerIntegration()
 
   private var enabled = false

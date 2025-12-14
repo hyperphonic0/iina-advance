@@ -264,6 +264,7 @@ struct TableUIChange: Sendable {
     }
   }
 
+  @MainActor
   private func executeRowUpdates(on tableView: EditableTableView) {
     let insertAnimation = IINAAnimation.isAnimationEnabled ? (rowInsertAnimation ?? tableView.rowInsertAnimation) : []
     let removeAnimation = IINAAnimation.isAnimationEnabled ? (rowRemoveAnimation ?? tableView.rowRemoveAnimation) : []
@@ -323,6 +324,7 @@ struct TableUIChange: Sendable {
     }
   }
 
+  @MainActor
   private func animateFlash(forIndexes indexes: IndexSet, in tableView: NSTableView, _ context: NSAnimationContext) {
     context.duration = Constants.AnimationDuration.tableUIFlash
 

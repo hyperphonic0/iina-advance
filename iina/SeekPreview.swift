@@ -12,6 +12,7 @@ extension PlayerWindowController {
 
   /// Encapsulates state & objects needed for seek preview UI.
   /// This class is not a view in itself.
+  @MainActor
   class SeekPreview {
     /// Min distance between `thumbnailPeekView` & sides of `viewportView`.
     /// For the side which includes `timeLabel`, the margin is split 1/2 above & 1/2 below the label,

@@ -46,11 +46,14 @@ if userArgs.contains(where: { $0 == "--help" || $0 == "-h" }) {
   exit(0)
 }
 
-if !handlePluginCommand(userArgs) {
-  printPluginHelp()
+await MainActor.run {
+  if !handlePluginCommand(userArgs) {
+    printPluginHelp()
+  }
 }
 
 
+@MainActor
 func handlePluginCommand(_ args: [String]) -> Bool {
   guard args.count > 1 else { return false }
   
@@ -294,6 +297,7 @@ func packPlugin(_ args: ArraySlice<String>) -> Bool {
 }
 
 
+@MainActor
 func linkPlugin(_ args: ArraySlice<String>) -> Bool {
   guard let path = args.first else {
     print("Please enter the plugin path.")
@@ -320,6 +324,7 @@ func linkPlugin(_ args: ArraySlice<String>) -> Bool {
 }
 
 
+@MainActor
 func unlinkPlugin(_ args: ArraySlice<String>) -> Bool {
   guard let path = args.first else {
     print("Please enter the plugin path.")

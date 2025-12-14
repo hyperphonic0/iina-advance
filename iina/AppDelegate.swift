@@ -101,13 +101,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     case PK.enableAdvancedSettings, PK.enableLogging, PK.logLevel:
       Logger.updateEnablement()
       // depends on advanced being enabled:
-      DispatchQueue.main.async { [self] in
+      Task { @MainActor in
         menuController.refreshCmdNStatus()
         menuController.refreshStaticMenuItemBindings()
       }
 
     case PK.enableCmdN:
-      DispatchQueue.main.async { [self] in
+      Task { @MainActor in
         menuController.refreshCmdNStatus()
         menuController.refreshStaticMenuItemBindings()
       }
@@ -132,20 +132,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 //        }
 //      }
 
-    case .animationDurationFullScreen:
-      if let newValue = newValue as? Double {
-        Constants.AnimationDuration.fullScreenTransition = newValue
-      }
-    case .animationDurationOSD:
-      if let newValue = newValue as? Double {
-        Constants.AnimationDuration.osdAnimation = newValue
-      }
-    case .animationDurationDefault:
-      if let newValue = newValue as? Double {
-        Constants.AnimationDuration.standard = newValue
-      }
     case .killRequest:
-      DispatchQueue.main.async { [self] in
+      Task { @MainActor in
         appDidReceiveKillRequest()
       }
 
@@ -171,7 +159,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       } else {
         Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)), but save is disabled; ignoring")
       }
-      DispatchQueue.main.async { [self] in
+      Task { @MainActor in
         NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
       }
 
@@ -268,9 +256,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       .resumeLastPosition,
       .useMediaKeys,
       //    .hideWindowsWhenInactive, // TODO: #1, see below
-      .animationDurationFullScreen,
-      .animationDurationOSD,
-      .animationDurationDefault,
       .killRequest,
     ]
 

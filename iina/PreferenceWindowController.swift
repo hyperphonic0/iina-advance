@@ -30,6 +30,7 @@ fileprivate extension NSView {
   }
 }
 
+@MainActor
 protocol PreferenceWindowEmbeddable where Self: NSViewController {
   var preferenceTabTitle: String { get }
   var preferenceTabImage: NSImage { get }

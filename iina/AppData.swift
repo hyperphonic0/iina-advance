@@ -296,23 +296,23 @@ struct Constants {
     static let historyTableCompleteFileStatusReload = 600.0
   }
   struct AnimationDuration {
-    static var standard: CGFloat = Preference.double(for: .animationDurationDefault)
-    static var tableUIChange: CGFloat = standard
+    static let standard: CGFloat = Preference.double(for: .animationDurationDefault)
+    static let tableUIChange: CGFloat = standard
     /// Also for toggle playlist in music mode
-    static var toggleVideoView: CGFloat = standard * 3
-    static var tableUIFlash: CGFloat = 0.2
-    static var videoReconfig: CGFloat = standard * 0.5
-    static var initialVideoReconfig: CGFloat = standard
+    static let toggleVideoView: CGFloat = standard * 3
+    static let tableUIFlash: CGFloat = 0.2
+    static let videoReconfig: CGFloat = standard * 0.5
+    static let initialVideoReconfig: CGFloat = standard
     /// The total duration of the custom full screen toggle. animation.
-    static var fullScreenTransition: CGFloat = Preference.double(for: .animationDurationFullScreen)
+    static let fullScreenTransition: CGFloat = Preference.double(for: .animationDurationFullScreen)
     /// As of MacOS 15.5, the native full screen duration is set by the system and cannot be changed.
-    static var nativeFullScreenTransition: CGFloat = 0.5
-    static var btnLayoutChange: CGFloat = standard * 0.25
-    static var osdAnimation: CGFloat = Preference.double(for: .animationDurationOSD)
-    static var cropAnimation: CGFloat = Preference.double(for: .animationDurationCrop)
-    static var enterPIPTask: CGFloat = standard * 0.2
-    static var musicModeShowButtons: CGFloat = 0.0
-    static var hideSeekPreview: CGFloat = osdAnimation * 0.5
+    static let nativeFullScreenTransition: CGFloat = 0.5
+    static let btnLayoutChange: CGFloat = standard * 0.25
+    static let osdAnimation: CGFloat = Preference.double(for: .animationDurationOSD)
+    static let cropAnimation: CGFloat = Preference.double(for: .animationDurationCrop)
+    static let enterPIPTask: CGFloat = standard * 0.2
+    static let musicModeShowButtons: CGFloat = 0.0
+    static let hideSeekPreview: CGFloat = osdAnimation * 0.5
   }
   struct FilterLabel {
     static let crop = "iina_crop"
@@ -379,11 +379,14 @@ struct Constants {
     /// This is the height of `CropSettingsView`. Make sure it matches the XIB!
     static let outsideBottomBarHeight: CGFloat = 72
     // Show title bar only in windowed mode
+    @MainActor
     static let outsideTopBarHeight = Constants.standardTitleBarHeight
 
     // Window's top bezel must be at least as large as the title bar so that dragging the top of crop doesn't drag the window too
+    @MainActor
     static let viewportMargins = MarginQuad(top: Constants.standardTitleBarHeight, trailing: 24,
                                          bottom: Constants.standardTitleBarHeight, leading: 24)
+    @MainActor
     static let minViewportSize = CGSize(width: Constants.Window.minViewportSize.width + viewportMargins.totalWidth,
                                         height: Constants.Window.minViewportSize.height + viewportMargins.totalHeight)
   }
@@ -469,6 +472,7 @@ struct Constants {
   /// the dimensions of a prototypical window with titlebar, then subtracting the height of its `contentView`.
   /// Note that we can't use this trick to get it from our window instance directly, because our window has the
   /// `fullSizeContentView` style and so its `frameRect` does not include any extra space for its title bar.
+  @MainActor
   static let standardTitleBarHeight: CGFloat = {
     // Probably doesn't matter what dimensions we pick for the dummy contentRect, but to be safe let's make them nonzero.
     let dummyContentRect = NSRect(x: 0, y: 0, width: 10, height: 10)
@@ -477,6 +481,7 @@ struct Constants {
     return titleBarHeight
   }()
 
+  @MainActor
   static let reducedTitleBarHeight: CGFloat = {
     if let heightOfCloseButton = NSWindow.standardWindowButton(.closeButton, for: .titled)?.frame.height {
       // add 2 because button's bounds seems to be a bit larger than its visible size
@@ -486,6 +491,7 @@ struct Constants {
     return standardTitleBarHeight
   }()
 
+  @MainActor
   static let trafficLightButtonSize: CGSize = {
     if let closeBtn = NSWindow.standardWindowButton(.closeButton, for: .titled) {
       return closeBtn.frame.size
@@ -495,6 +501,7 @@ struct Constants {
 
   /// Distance between traffic light buttons (their alignment rects, which does not include some extra padding around
   /// their images)
+  @MainActor
   static var titleBarIconHSpacing: CGFloat = {
     if #available(macOS 26.0, *) {
       // Icon spacing increased in Tahoe
@@ -689,7 +696,9 @@ struct Images {
   static let volume2 = makeSymbol(named: "speaker.wave.2.fill", fallbackName: "volume-2", desc: "Volume 2 Waves", weight: .medium)
   static let volume3 = makeSymbol(named: "speaker.wave.3.fill", fallbackName: "volume", desc: "Volume Full", weight: .medium)
   /// Used the Exit Music Mode button
-  static let backwardsCircle = makeSymbol(named: "arrowshape.backward.circle.fill", fallbackName: "arrowshape.backward.circle.fill", desc: "Go Back", ptSize: Constants.trafficLightButtonSize.height, weight: .regular, scale: .medium)
+  @MainActor
+  static let backwardsCircle = makeSymbol(named: "arrowshape.backward.circle.fill", fallbackName: "arrowshape.backward.circle.fill",
+                                          desc: "Go Back", ptSize: Constants.trafficLightButtonSize.height, weight: .regular, scale: .medium)
   static let duplicate = makeSymbol(named: "plus.square.on.square", fallbackName: "plus.square.on.square", desc: "Duplicate", weight: .medium)
 }
 
@@ -697,9 +706,9 @@ struct DebugConfig {
 
   /// If `true`, add extra logging specific to input bindings build. Useful for debugging.
   /// Can toggle at run time by updating boolean pref key `logKeyBindingsRebuild`.
-  static var logBindingsRebuild: Bool { Preference.bool(for: .logKeyBindingsRebuild) }
+  static let logBindingsRebuild = Preference.bool(for: .logKeyBindingsRebuild)
 
-  static var useMpvKeepaspectWindow = true
+  static let useMpvKeepaspectWindow = true
 
 #if DEBUG
   static let validatePWinGeometry = false
