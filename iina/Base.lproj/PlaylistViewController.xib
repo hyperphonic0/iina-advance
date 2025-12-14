@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24506"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -420,7 +421,7 @@
                                                             <rect key="frame" x="0.0" y="0.0" width="241" height="273"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <size key="intercellSpacing" width="3" height="2"/>
-                                                            <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.080000000000000002" colorSpace="calibratedRGB"/>
+                                                            <color key="backgroundColor" name="SidebarTableBackground"/>
                                                             <tableViewGridLines key="gridStyleMask" horizontal="YES"/>
                                                             <color key="gridColor" red="1" green="1" blue="1" alpha="0.050000000000000003" colorSpace="custom" customColorSpace="calibratedRGB"/>
                                                             <tableColumns>
@@ -581,7 +582,7 @@
                     <rect key="frame" x="8" y="32" width="384" height="38"/>
                     <clipView key="contentView" drawsBackground="NO" id="6rI-3b-JZo">
                         <rect key="frame" x="0.0" y="0.0" width="384" height="38"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="none" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" typeSelect="NO" rowHeight="16" id="puj-Kl-qOI">
                                 <rect key="frame" x="0.0" y="0.0" width="512" height="38"/>
@@ -680,5 +681,8 @@
         <image name="shuffle-dark" width="15" height="15"/>
         <image name="sub-track" width="14" height="14"/>
         <image name="trash" width="14" height="14"/>
+        <namedColor name="SidebarTableBackground">
+            <color red="0.0" green="0.0" blue="0.0" alpha="0.019999999552965164" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
     </resources>
 </document>

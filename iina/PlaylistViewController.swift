@@ -104,6 +104,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       if #available(macOS 10.14, *) {
         isPlayingTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingTextBlendFraction, of: .textColor)!
         isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!
+
+        // Need a dedicated view behind each table to use for background color.
+        // NSTableView & its component views don't support translucent background color.
+        // Also note: CGColor does not support dark mode, so the view layer needs to be updated
+        // explicitly whenever the appearance changes.
+        let tableBackgroundColor = NSColor.sidebarTableBackground.cgColor
+        playlistTableBackgroundView.wantsLayer = true
+        playlistTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
       }
     }
     reloadData(playlist: true, chapters: true, animate: false)
@@ -135,15 +143,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     playlistTableView.menu?.delegate = self
     playlistTableView.editableDelegate = self
     playlistTableView.selectNextRowAfterDelete = player.playlistTableSelectNextRowAfterDelete
-    playlistTableView.drawBackgroundForEmptyRows = false
-    chapterTableView.drawBackgroundForEmptyRows = false
-    // Need a dedicated view behind each table to use for background color.
-    // NSTableView & its component views don't support translucent background color.
-    let tableBackgroundColor = Constants.Color.playlistTableBackground
-    playlistTableBackgroundView.wantsLayer = true
-    playlistTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
-    chapterTableBackgroundView.wantsLayer = true
-    chapterTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
+    playlistTableView.drawBackgroundForEmptyRows = true
+    chapterTableView.drawBackgroundForEmptyRows = true
 
     playlistDragDelegate = TableDragDelegate<PlaybackID>("Playlist", playlistTableView,
                                                          acceptableDraggedTypes: playlistDraggableTypes,
@@ -159,9 +160,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     },
                                                          removeFunc: { [self] rowIndexes in
       player.removePlaylistRows(rowIndexes, .registerUndoRedo)
-    }
-)
-
+    })
 
     [deleteBtn, loopBtn, shuffleBtn].forEach {
       $0?.image?.isTemplate = true
@@ -182,9 +181,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     hideTotalLength()
     updateTableColors()  // this will also load data for tables
-
-    // colors
-    withAllTableViews { $0.backgroundColor = NSColor.sidebarTableBackground }
 
     // handle pending switch tab request
     if pendingSwitchRequest == nil {

@@ -379,14 +379,11 @@ struct Constants {
     /// This is the height of `CropSettingsView`. Make sure it matches the XIB!
     static let outsideBottomBarHeight: CGFloat = 72
     // Show title bar only in windowed mode
-    @MainActor
     static let outsideTopBarHeight = Constants.standardTitleBarHeight
 
     // Window's top bezel must be at least as large as the title bar so that dragging the top of crop doesn't drag the window too
-    @MainActor
     static let viewportMargins = MarginQuad(top: Constants.standardTitleBarHeight, trailing: 24,
                                          bottom: Constants.standardTitleBarHeight, leading: 24)
-    @MainActor
     static let minViewportSize = CGSize(width: Constants.Window.minViewportSize.width + viewportMargins.totalWidth,
                                         height: Constants.Window.minViewportSize.height + viewportMargins.totalHeight)
   }
@@ -472,7 +469,6 @@ struct Constants {
   /// the dimensions of a prototypical window with titlebar, then subtracting the height of its `contentView`.
   /// Note that we can't use this trick to get it from our window instance directly, because our window has the
   /// `fullSizeContentView` style and so its `frameRect` does not include any extra space for its title bar.
-  @MainActor
   static let standardTitleBarHeight: CGFloat = {
     // Probably doesn't matter what dimensions we pick for the dummy contentRect, but to be safe let's make them nonzero.
     let dummyContentRect = NSRect(x: 0, y: 0, width: 10, height: 10)
@@ -481,7 +477,6 @@ struct Constants {
     return titleBarHeight
   }()
 
-  @MainActor
   static let reducedTitleBarHeight: CGFloat = {
     if let heightOfCloseButton = NSWindow.standardWindowButton(.closeButton, for: .titled)?.frame.height {
       // add 2 because button's bounds seems to be a bit larger than its visible size
@@ -537,8 +532,6 @@ struct Constants {
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.35),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.5),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.6)]
-
-    static let playlistTableBackground = CGColor(gray: 1.0, alpha: 0.1)
 
   }
 }  /// end `Constants`
