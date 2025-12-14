@@ -49,7 +49,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private var draggedRowInfo: (Int, IndexSet)? = nil
 
   // can't use main queue - it will block
-  private var playlistTableReloadDebouncer = Debouncer(delay: 0.1, queue: PlayerCore.playlistQueue)
+  private var playlistTableReloadDebouncer = Debouncer(delay: 0.1, queue: PlayerCore.backgroundQueue)
 
   @Atomic private var playlistReloadTicket = 0
 
@@ -354,7 +354,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   private func refreshTotalLength() {
-    assert(DispatchQueue.isExecutingIn(PlayerCore.playlistQueue))
+    assert(DispatchQueue.isExecutingIn(PlayerCore.backgroundQueue))
 
     if let totalDuration = player.info.calculateTotalDuration() {
       player.log.trace{"Playlist: recalculated total duration: \(totalDuration)"}
@@ -411,7 +411,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       scrollPlaylistToCurrentItem()
       updateLoopBtnStatus()
       /// The observer for `iinaPlaylistChanged` may not have loaded in time to be triggered; kick it off manually.
-      PlayerCore.playlistQueue.asyncAfter(deadline: .now() + Constants.TimeInterval.initialPlaylistDelayBeforePrefetch) { [self] in
+      PlayerCore.backgroundQueue.asyncAfter(deadline: .now() + Constants.TimeInterval.initialPlaylistDelayBeforePrefetch) { [self] in
         updateCachesForAllItems()
       }
       refreshNowPlayingIndex(thenScrollToVisible: true)
@@ -879,7 +879,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
                                                                     mpvTitle: mpvTitle)
         guard needsRefresh else { return }
 
-        PlayerCore.playlistQueue.async { [self] in
+        PlayerCore.backgroundQueue.async { [self] in
           // Get watch-later form file system; get other meta from ffmpeg:
           let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem, mpvTitle: mpvTitle)
           // Now update the total length if needed (but only if it's already done calculating):
@@ -929,7 +929,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         titles.append(mpvTitle) // may be nil
       }
 
-      PlayerCore.playlistQueue.async { [self] in
+      PlayerCore.backgroundQueue.async { [self] in
         for (rowIndex, item) in playlistItems.enumerated() {
           if (rowIndex %% 5) == 0 {
             let isTicketValid = $playlistReloadTicket.withLock { $0 == currentTicket }

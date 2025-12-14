@@ -117,13 +117,13 @@ final class MediaPlayerIntegration {
   ///         and [MPNowPlayingInfoCenter](https://developer.apple.com/documentation/mediaplayer/mpnowplayinginfocenter)
   ///         for more information.
   ///
-  /// This method must be run on the main thread because it references `PlayerCore.lastActive`.
+  /// This method must be run on the main thread because it references `PlayerManager.shared.lastActivePlayer`.
   @MainActor
   func updateNowPlayingInfo() {
     let center = MPNowPlayingInfoCenter.default()
     var info = center.nowPlayingInfo ?? [String: Any]()
 
-    guard let activePlayer = PlayerCore.lastActive, !activePlayer.isStopping else {
+    guard let activePlayer = PlayerManager.shared.lastActivePlayer, !activePlayer.isStopping else {
       center.playbackState = .unknown
       center.nowPlayingInfo = nil
       updateEnablement(to: false)

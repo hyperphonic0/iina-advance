@@ -635,7 +635,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard let url = pboard.string(forType: .string) else { return }
 
     DispatchQueue.main.async { [self] in
-      guard let player = PlayerCore.active else { return }
+      guard let player = PlayerManager.shared.activePlayer else { return }
       startupHandler.isAwaitingNewWindowsForOpenedFile = true
       if player.openURLString(url) == 0 {
         startupHandler.abortWaitForOpenFilePlayerStartup()
@@ -901,7 +901,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   @MainActor
   @IBAction func menuSelectAudioDevice(_ sender: NSMenuItem) {
     if let name = sender.representedObject as? String {
-      PlayerCore.active?.setAudioDevice(name)
+      PlayerManager.shared.activePlayer?.setAudioDevice(name)
     }
   }
 

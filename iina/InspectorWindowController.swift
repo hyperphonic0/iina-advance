@@ -269,7 +269,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
   // MARK: - Data updates
 
   func updateInfo(includeStatic: Bool = true) {
-    guard let player = PlayerCore.lastActive, player.isActive else { return }
+    guard let player = PlayerManager.shared.lastActivePlayer, player.isActive else { return }
 
     DispatchQueue.main.async { [self] in
       _updateInfo(includeStatic: includeStatic, player)

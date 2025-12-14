@@ -120,6 +120,8 @@ final class PlayerManager {
     return createNewPlayerCore()
   }
 
+  /// - Important: Code referencing this property **must** be run on the main thread because it references
+  ///   [NSApplication.pwc](https://developer.apple.com/documentation/appkit/nsapplication/1428723-mainwindow)
   var activePlayer: PlayerCore? {
     findCurrentlyActivePlayer()
   }

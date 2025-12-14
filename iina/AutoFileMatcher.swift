@@ -387,9 +387,6 @@ class AutoFileMatcher {
       }
       player.info.isMatchingSubtitles = false
 
-      // Fill in file sizes after everything else is finished
-      MediaMetaCache.shared.fillInVideoSizes(videoFiles, onBehalfOf: player)
-
       player.postNotification(.iinaPlaylistChanged)
       log.debug("**Finished matching")
     } catch let err as TicketExpiredError {

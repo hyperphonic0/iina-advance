@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol StateEnum {
+protocol StateEnum: Sendable {
   associatedtype T
   
   func isAtLeast(_ minStatus: T) -> Bool

@@ -43,33 +43,12 @@ final class PlayerCore: NSObject {
 
   // MARK: - Singleton Fields
 
-  /// Returns the last player whose window was "active" (or in MacOS terminology, was the key window).
-  ///
-  /// - Important: Code referencing this property **must** be run on the main thread as getting the value of this property _may_
-  ///              result in a reference the `active` property and that requires use of the main thread.
-  @MainActor
-  static var lastActive: PlayerCore? {
-    get {
-      return PlayerManager.shared.lastActivePlayer
-    }
-    set {
-      PlayerManager.shared.lastActivePlayer = newValue
-    }
-  }
-
-  /// - Important: Code referencing this property **must** be run on the main thread because it references
-  ///   [NSApplication.pwc`](https://developer.apple.com/documentation/appkit/nsapplication/1428723-mainwindow)
-  @MainActor
-  static var active: PlayerCore? {
-    return PlayerManager.shared.activePlayer
-  }
-
   @MainActor
   static var mouseLocationAtLastOpen: NSPoint? = nil
 
-  /// A DispatchQueue for auto load feature.
-  static let backgroundQueue = DispatchQueue.newDQ(label: "IINAA-PlayerBG", qos: .background)
-  static let playlistQueue = DispatchQueue.newDQ(label: "IINAA-Playlist", qos: .utility)
+  /// A DispatchQueue for longer-running tasks reqquiring disk IO:
+  ///  auto load, playlist length prefetch, external subtitle search
+  static let backgroundQueue = DispatchQueue.newDQ(label: "IINAA-Player-BG", qos: .background)
 
   // MARK: - Instance Fields
 
@@ -1946,12 +1925,6 @@ final class PlayerCore: NSObject {
         let playlistPos: Int? = priorState.int(for: .playlistPos)
         log.debug("Restoring \(playlistPathList.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")")
         _addAllToPlaylist(pathListIncludingCurrent: playlistPathList, indexOfCurrentItem: playlistPos)
-
-        /// Launches background task which scans video files and collects video size metadata using ffmpeg
-        PlayerCore.backgroundQueue.async { [self] in
-          guard state.isNotYet(.stopping) else { return }
-          MediaMetaCache.shared.fillInVideoSizes(info.currentVideosInfo, onBehalfOf: self)
-        }
       }
     }
 

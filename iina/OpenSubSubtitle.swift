@@ -382,7 +382,7 @@ class OpenSub {
           resolver.reject(OnlineSubtitle.CommonError.canceled)
         }
         DispatchQueue.main.async { [self] in
-          PlayerCore.active?.sendOSD(.foundSub(subs.count), autoHide: false, accessoryViewController: subChooseViewController)
+          PlayerManager.shared.activePlayer?.sendOSD(.foundSub(subs.count), autoHide: false, accessoryViewController: subChooseViewController)
           subChooseViewController.tableView.reloadData()
         }
       }

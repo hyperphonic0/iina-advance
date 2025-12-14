@@ -332,10 +332,6 @@ class MediaMetaCache {
     return nil
   }
 
-  func ensureVideoMetaIsCached(id: PlaybackID?, _ log: any Logger.Subsystem) {
-    _ = getOrReadVideoMeta(id: id, log)
-  }
-
   func getOrReadVideoMeta(id: PlaybackID?, _ log: any Logger.Subsystem) -> VideoMeta? {
     guard let id else { return nil }
 

@@ -307,7 +307,7 @@ class MenuController: NSObject, NSMenuDelegate {
     bind(menu: aspectMenu, withOptions: aspectRatioMenuItemTitles, objects: aspectRatioIdentifiers, objectMap: nil,
          action: #selector(PlayerWindowController.menuChangeAspect(_:))) {
       /// return `true` if menu item should be checked (i.e. if current aspect matches menu item)
-      return PlayerCore.active?.videoGeo.userAspectLabel == $0.representedObject as? String
+      return PlayerManager.shared.activePlayer?.videoGeo.userAspectLabel == $0.representedObject as? String
     }
 
     // -- crop
@@ -315,7 +315,7 @@ class MenuController: NSObject, NSMenuDelegate {
     // same as aspectList above.
     let cropIdentifiers = [AppData.noneCropIdentifier] + Aspect.aspectsInMenu + [AppData.customCropIdentifier]
     bind(menu: cropMenu, withOptions: cropMenuItemTitles, objects: cropIdentifiers, objectMap: nil, action: #selector(PlayerWindowController.menuChangeCrop(_:))) {
-      return PlayerCore.active?.videoGeo.selectedCropLabel == $0.representedObject as? String
+      return PlayerManager.shared.activePlayer?.videoGeo.selectedCropLabel == $0.representedObject as? String
     }
     // Separate "Custom..." from other crop sizes.
     cropMenu.insertItem(NSMenuItem.separator(), at: 1 + Aspect.aspectsInMenu.count)
@@ -323,7 +323,7 @@ class MenuController: NSObject, NSMenuDelegate {
     // -- rotation
     let rotationTitles = AppData.rotations.map { "\($0)\(Constants.String.degree)" }
     bind(menu: rotationMenu, withOptions: rotationTitles, objects: AppData.rotations, objectMap: nil, action: #selector(PlayerWindowController.menuChangeRotation(_:))) {
-      PlayerCore.active?.videoGeo.userRotation == $0.representedObject as? Int
+      PlayerManager.shared.activePlayer?.videoGeo.userRotation == $0.representedObject as? Int
     }
 
     // -- flip and mirror
@@ -403,7 +403,7 @@ class MenuController: NSObject, NSMenuDelegate {
     let encodingTitles = AppData.encodings.map { $0.title }
     let encodingObjects = AppData.encodings.map { $0.code }
     bind(menu: encodingMenu, withOptions: encodingTitles, objects: encodingObjects, objectMap: nil, action: #selector(PlayerWindowController.menuSetSubEncoding(_:))) {
-      PlayerCore.active?.info.subEncoding == $0.representedObject as? String
+      PlayerManager.shared.activePlayer?.info.subEncoding == $0.representedObject as? String
     }
     subFont.action = #selector(PlayerWindowController.menuSubFont(_:))
     // Separate Auto from other encoding types
@@ -446,7 +446,7 @@ class MenuController: NSObject, NSMenuDelegate {
   @MainActor
   private func updatePlaylist() {
     playlistMenu.removeAllItems()
-    guard let player = PlayerCore.active else { return }
+    guard let player = PlayerManager.shared.activePlayer else { return }
     let nowPlayingIndex = player.info.nowPlayingIndex
     for (index, item) in player.info.playlist.enumerated() {
       playlistMenu.addItem(withTitle: item.displayName, action: #selector(PlayerWindowController.menuPlaylistItem(_:)),
@@ -457,7 +457,7 @@ class MenuController: NSObject, NSMenuDelegate {
   @MainActor
   private func updateChapterList() {
     chapterMenu.removeAllItems()
-    guard let player = PlayerCore.active else { return }
+    guard let player = PlayerManager.shared.activePlayer else { return }
     let info = player.info
     let chapters = info.chapters
     let standard = (chapters.last?.startTimeString ?? "").reversed()
@@ -481,7 +481,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   @MainActor
   private func updateTracks(forMenu menu: NSMenu, type: MPVTrack.TrackType) {
-    guard let player = PlayerCore.active else { return }
+    guard let player = PlayerManager.shared.activePlayer else { return }
     let info = player.info
     menu.removeAllItems()
     let noTrackMenuItem = NSMenuItem(title: Constants.String.trackNone, action: #selector(PlayerWindowController.menuChangeTrack(_:)), keyEquivalent: "")
@@ -498,7 +498,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   @MainActor
   private func updatePlaybackMenu() {
-    guard let player = PlayerCore.active else { return }
+    guard let player = PlayerManager.shared.activePlayer else { return }
     let isDisplayingPlaylist = player.pwc.isOpen(sidebarTab: .playlist)
     playlistPanel?.title = isDisplayingPlaylist ? Constants.String.hidePlaylistPanel : Constants.String.playlistPanel
     let isDisplayingChapters = player.pwc.isOpen(sidebarTab: .chapters)
@@ -520,7 +520,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   @MainActor
   private func updateVideoMenu() {
-    guard let player = PlayerCore.active else { return }
+    guard let player = PlayerManager.shared.activePlayer else { return }
     let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .video)
     quickSettingsVideo?.title = isDisplayingSettings ? Constants.String.hideVideoPanel :
         Constants.String.videoPanel
@@ -538,7 +538,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   @MainActor
   private func updateAudioMenu() {
-    guard let player = PlayerCore.active else { return }
+    guard let player = PlayerManager.shared.activePlayer else { return }
     let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .audio)
     quickSettingsAudio?.title = isDisplayingSettings ? Constants.String.hideAudioPanel :
         Constants.String.audioPanel
@@ -558,7 +558,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   @MainActor
   private func updateAudioDevice() {
-    guard let player = PlayerCore.active else { return }
+    guard let player = PlayerManager.shared.activePlayer else { return }
     let devices = player.getAudioDevices()
     let currAudioDevice = player.mpv.getString(MPVProperty.audioDevice)
     audioDeviceMenu.removeAllItems()
@@ -571,14 +571,14 @@ class MenuController: NSObject, NSMenuDelegate {
 
   @MainActor
   private func updateFlipAndMirror() {
-    guard let info = PlayerCore.active?.info else { return }
+    guard let info = PlayerManager.shared.activePlayer?.info else { return }
     flip.state = info.isFlippedVertical ? .on : .off
     mirror.state = info.isFlippedHorizontal ? .on : .off
   }
 
   @MainActor
   private func updateSubMenu() {
-    guard let player = PlayerCore.active else { return }
+    guard let player = PlayerManager.shared.activePlayer else { return }
     let isDisplayingSettings = player.pwc.isOpen(sidebarTab: .sub)
     quickSettingsSub?.title = isDisplayingSettings ? Constants.String.hideSubtitlesPanel :
         Constants.String.subtitlesPanel
@@ -608,7 +608,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   @MainActor
   func updateSavedFiltersMenu(type: String) {
-    guard let player = PlayerCore.active else { return }
+    guard let player = PlayerManager.shared.activePlayer else { return }
     let filters = type == MPVProperty.vf ? player.info.videoFilters : player.info.audioFilters
     let menu: NSMenu! = type == MPVProperty.vf ? savedVideoFiltersMenu : savedAudioFiltersMenu
     for item in menu.items {
@@ -637,7 +637,7 @@ class MenuController: NSObject, NSMenuDelegate {
     developerTool.title = NSLocalizedString("menu.developer_tool", comment: "Developer Tool")
     developerTool.submenu = NSMenu()
 
-    guard let player = PlayerCore.active else { return }
+    guard let player = PlayerManager.shared.activePlayer else { return }
     let plugins = player.plugins
     for instance in plugins {
       var counter = 0

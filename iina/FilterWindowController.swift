@@ -106,7 +106,7 @@ class FilterWindowController: WindowController, NSWindowDelegate {
 
   @MainActor
   @objc func reloadTable() {
-    guard let pc = PlayerCore.lastActive else {
+    guard let pc = PlayerManager.shared.lastActivePlayer else {
       // No player. But it's still useful to reload saved filters table
       savedFiltersTableView.reloadData()
       return
@@ -146,7 +146,7 @@ class FilterWindowController: WindowController, NSWindowDelegate {
   }
 
   private func setFilters() {
-    PlayerCore.lastActive?.mpv.setFilters(filterType, filters: filters)
+    PlayerManager.shared.lastActivePlayer?.mpv.setFilters(filterType, filters: filters)
   }
 
   deinit {
@@ -157,7 +157,7 @@ class FilterWindowController: WindowController, NSWindowDelegate {
 
   @MainActor
   func addFilter(_ filter: MPVFilter, onSuccess: @Sendable @MainActor @escaping () -> Void) {
-    guard let player = PlayerCore.lastActive else {
+    guard let player = PlayerManager.shared.lastActivePlayer else {
       Utility.showAlert("filter.no_player", sheetWindow: window)
       return
     }
@@ -226,7 +226,7 @@ class FilterWindowController: WindowController, NSWindowDelegate {
   }
 
   @IBAction func removeFilterAction(_ sender: Any) {
-    guard let pc = PlayerCore.lastActive else {
+    guard let pc = PlayerManager.shared.lastActivePlayer else {
       Utility.showAlert("filter.no_player", sheetWindow: window)
       return
     }
@@ -268,7 +268,7 @@ class FilterWindowController: WindowController, NSWindowDelegate {
   @IBAction func toggleSavedFilterAction(_ sender: NSButton) {
     let row = savedFiltersTableView.row(for: sender)
     let savedFilter = savedFilters[row]
-    guard let pc = PlayerCore.lastActive else {
+    guard let pc = PlayerManager.shared.lastActivePlayer else {
       Utility.showAlert("filter.no_player", sheetWindow: window)
       DispatchQueue.main.async { [self] in
         // savedFilter was already updated with toggled state. Reset from prefs:
@@ -405,7 +405,7 @@ extension FilterWindowController: NSTableViewDelegate, NSTableViewDataSource {
 
   @MainActor
   func windowDidBecomeKey(_ notification: Notification) {
-    let hasPlayer = PlayerCore.lastActive != nil
+    let hasPlayer = PlayerManager.shared.lastActivePlayer != nil
     currentFiltersTableView.isEnabled = hasPlayer
     addActiveFilterButton.isEnabled = hasPlayer
     activeFiltersLabel.textColor = hasPlayer ? .controlTextColor : .disabledControlTextColor
@@ -632,7 +632,7 @@ class NewFilterSheetViewController: NSViewController, NSTableViewDelegate, NSTab
     let instance = FilterPresetInstance(from: preset, params: params)
     // create filter
     filterWindow.addFilter(preset.transformer(instance), onSuccess: {  @MainActor in
-      PlayerCore.lastActive?.sendOSD(.addFilter(preset.localizedName))
+      PlayerManager.shared.lastActivePlayer?.sendOSD(.addFilter(preset.localizedName))
     })
   }
 

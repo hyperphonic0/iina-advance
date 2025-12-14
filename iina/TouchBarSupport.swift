@@ -257,7 +257,7 @@ class TouchBarPlaySlider: NSSlider {
   var wasPlayingBeforeTouching = false
 
   var playerCore: PlayerCore? {
-    return (self.window?.windowController as? PlayerWindowController)?.player ?? .active
+    return (self.window?.windowController as? PlayerWindowController)?.player ?? PlayerManager.shared.activePlayer
   }
 
   override func touchesBegan(with event: NSEvent) {

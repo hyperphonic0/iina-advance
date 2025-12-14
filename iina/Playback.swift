@@ -53,6 +53,7 @@ class Playback: CustomStringConvertible {
 
   let parentPlaylist: String
 
+  // TODO: refactor to move this outside of Playback object
   var thumbnails: SingleMediaThumbnailsLoader? = nil
 
   // Properties from PlaybackID
