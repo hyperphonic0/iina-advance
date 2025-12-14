@@ -89,7 +89,7 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
   }
 
   func loadThumbnails() {
-    assert(DispatchQueue.isExecutingIn(PlayerCore.thumbnailQueue))
+    assert(DispatchQueue.isExecutingIn(ThumbnailCache.shared.thumbnailQueue))
 
     guard FileManager.default.fileExists(atPath: mediaFilePath) else {
       log.debug("Aborting thumbnails load. File does not exist: \(mediaFilePath.pii.quoted)")
@@ -97,9 +97,9 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     }
 
     let cacheName = mediaFilePathMD5
-    if ThumbnailCache.fileIsCached(forName: cacheName, forVideo: mediaFilePath, forWidth: thumbnailWidth) {
+    if ThumbnailCache.shared.fileIsCached(forName: cacheName, forVideo: mediaFilePath, forWidth: thumbnailWidth) {
       log.trace{"Found matching thumbnail cache name=\(cacheName.quoted), \(thumbnailWidth)px width for: \(mediaFilePath.pii.quoted)"}
-      if let thumbnails = ThumbnailCache.read(forName: cacheName, forWidth: thumbnailWidth) {
+      if let thumbnails = ThumbnailCache.shared.read(forName: cacheName, forWidth: thumbnailWidth) {
         if thumbnails.count >= AppData.minThumbnailsPerFile {
           addThumbnails(thumbnails)
           thumbnailsProgress = 1
@@ -166,7 +166,7 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
       return
     }
     let targetCount = ffmpegController.thumbnailCount + 1
-    PlayerCore.thumbnailQueue.async { [self] in
+    ThumbnailCache.shared.thumbnailQueue.async { [self] in
       guard queueTicket == player.thumbnailQueueTicket else {
         isCancelled = true
         return
@@ -193,7 +193,7 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
       return
     }
 
-    PlayerCore.thumbnailQueue.async { [self] in
+    ThumbnailCache.shared.thumbnailQueue.async { [self] in
       guard queueTicket == player.thumbnailQueueTicket else {
         isCancelled = true
         return
@@ -210,7 +210,7 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
         log.verbose("No thumbnails to write")
         return
       }
-      ThumbnailCache.write(ffThumbnails, forName: mediaFilePathMD5, forVideo: mediaFilePath, forWidth: Int(width))
+      ThumbnailCache.shared.write(ffThumbnails, forName: mediaFilePathMD5, forVideo: mediaFilePath, forWidth: Int(width))
       ffThumbnails = []  // free the memory - not needed anymore
     }
     player.events.emit(.thumbnailsReady)

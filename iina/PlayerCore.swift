@@ -70,7 +70,6 @@ final class PlayerCore: NSObject {
   /// A DispatchQueue for auto load feature.
   static let backgroundQueue = DispatchQueue.newDQ(label: "IINAA-PlayerBG", qos: .background)
   static let playlistQueue = DispatchQueue.newDQ(label: "IINAA-Playlist", qos: .utility)
-  static let thumbnailQueue = DispatchQueue.newDQ(label: "IINA-PlayerThumbnail", qos: .utility)
 
   // MARK: - Instance Fields
 
@@ -113,8 +112,8 @@ final class PlayerCore: NSObject {
   @Atomic var thumbnailQueueTicket = 0
 
   let saveUIStateDebouncer = Debouncer(delay: Constants.TimeInterval.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
-  let thumbReloadDebouncer = Debouncer(delay: Constants.TimeInterval.thumbnailRegenerationDelay, queue: PlayerCore.thumbnailQueue)
   let sliderSeekDebouncer = Debouncer(delay: Constants.TimeInterval.sliderSeekThrottlingInterval)
+  let thumbReloadDebouncer = Debouncer(delay: Constants.TimeInterval.thumbnailRegenerationDelay, queue: ThumbnailCache.shared.thumbnailQueue)
 
   // - Plugins
 

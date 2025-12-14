@@ -11,25 +11,32 @@ import Cocoa
 fileprivate let thumbCacheSubsystem = Logger.makeSubsystem("thumbcache")
 
 class ThumbnailCache {
+  static let shared = ThumbnailCache()
+
+  let thumbnailQueue = DispatchQueue.newDQ(label: "IINA-PlayerThumbnail", qos: .utility)
+
   private typealias CacheVersion = UInt8
   private typealias FileSize = UInt64
   private typealias FileTimestamp = Int64
 
-  static let log = thumbCacheSubsystem
+  let log = thumbCacheSubsystem
+  private let version: CacheVersion = 2
 
-  private static let version: CacheVersion = 2
-  
-  private static let sizeofMetadata = MemoryLayout<CacheVersion>.size + MemoryLayout<FileSize>.size + MemoryLayout<FileTimestamp>.size
+  var isJobRunning = false
+  var needsRefresh = true
 
-  private static let imageProperties: [NSBitmapImageRep.PropertyKey: CGFloat] = [
+  private var cachedContents: [URL]?
+  private let sizeofMetadata = MemoryLayout<CacheVersion>.size + MemoryLayout<FileSize>.size + MemoryLayout<FileTimestamp>.size
+
+  private let imageProperties: [NSBitmapImageRep.PropertyKey: CGFloat] = [
     .compressionFactor: 0.75
   ]
 
-  private static func fileExists(forName name: String, forWidth width: Int) -> Bool {
+  private func fileExists(forName name: String, forWidth width: Int) -> Bool {
     return FileManager.default.fileExists(atPath: urlFor(name, width: width).path)
   }
 
-  static func fileIsCached(forName name: String, forVideo videoFilePath: String, forWidth width: Int) -> Bool {
+  func fileIsCached(forName name: String, forVideo videoFilePath: String, forWidth width: Int) -> Bool {
     guard let fileAttr = try? FileManager.default.attributesOfItem(atPath: videoFilePath) else {
       log.error("Cannot get video file attributes")
       return false
@@ -81,7 +88,7 @@ class ThumbnailCache {
 
   /// Write thumbnail cache to file.
   /// This method is expected to be called when the file doesn't exist.
-  static func write(_ thumbnails: [FFThumbnail], forName name: String, forVideo videoFilePath: String, forWidth width: Int) {
+  func write(_ thumbnails: [FFThumbnail], forName name: String, forVideo videoFilePath: String, forWidth width: Int) {
     let maxCacheSize = Preference.integer(for: .maxThumbnailPreviewCacheSize) * FloatingPointByteCountFormatter.PrefixFactor.mi.rawValue
     if maxCacheSize == 0 {
       log.verbose("Aborting write to thumbnail cache: maxCacheSize is 0")
@@ -89,10 +96,10 @@ class ThumbnailCache {
     }
     log.debug("Writing \(thumbnails.count) thumbnails width=\(width) to cache file \(name.pii) (videoFile=\(videoFilePath.pii))")
 
-    let cacheSize = ThumbnailCacheManager.shared.getCacheSize()
+    let cacheSize = getCacheSize()
     if cacheSize > maxCacheSize {
       log.debug("Thumbnail cache size (\(cacheSize)) is larger than max allowed (\(maxCacheSize)) and will be cleared")
-      ThumbnailCacheManager.shared.clearOldCache()
+      clearOldCache()
     }
 
     let pathURL = urlFor(name, width: width)
@@ -161,7 +168,7 @@ class ThumbnailCache {
       }
     }
 
-    ThumbnailCacheManager.shared.needsRefresh = true
+    needsRefresh = true
     log.debug("Finished writing to: \(path.pii.quoted)")
 
     NotificationCenter.default.post(Notification(name: .iinaThumbnailCacheDidUpdate, object: nil, userInfo: nil))
@@ -169,7 +176,7 @@ class ThumbnailCache {
 
   /// Read thumbnail cache to file.
   /// This method is expected to be called when the file exists.
-  static func read(forName name: String, forWidth width: Int) -> [FFThumbnail]? {
+  func read(forName name: String, forWidth width: Int) -> [FFThumbnail]? {
     let pathURL = urlFor(name, width: width)
     let sw = Utility.Stopwatch()
     guard let file = try? FileHandle(forReadingFrom: pathURL) else {
@@ -218,7 +225,7 @@ class ThumbnailCache {
     return result
   }
 
-  private static func deleteCacheFile(at pathURL: URL) {
+  private func deleteCacheFile(at pathURL: URL) {
     // try deleting corrupted cache
     do {
       try FileManager.default.removeItem(at: pathURL)
@@ -229,8 +236,70 @@ class ThumbnailCache {
   }
 
   // Thumbnail cache URL
-  private static func urlFor(_ name: String, width: Int) -> URL {
+  private func urlFor(_ name: String, width: Int) -> URL {
     return Utility.thumbnailCacheURL.appendingPathComponent("\(width)").appendingPathComponent(name)
+  }
+
+  // MARK: - Cache Folder
+
+  private func cacheFolderContents() -> [URL]? {
+    if needsRefresh {
+      log.verbose("Refreshing cached thumbnails index")
+      var updatedCache: [URL] = []
+      if let thumbWidthDirs = try? FileManager.default.contentsOfDirectory(at: Utility.thumbnailCacheURL,
+                                                                           includingPropertiesForKeys: [.contentAccessDateKey],
+                                                                           options:
+                                                                            [.skipsHiddenFiles, .skipsSubdirectoryDescendants]) {
+        for thumbWidthDir in thumbWidthDirs {
+          if let dirThumbFiles = try? FileManager.default.contentsOfDirectory(at: thumbWidthDir,
+                                                                              includingPropertiesForKeys: [.fileSizeKey, .contentAccessDateKey],
+                                                                              options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]) {
+            updatedCache.append(contentsOf: dirThumbFiles)
+          }
+        }
+      }
+      cachedContents = updatedCache
+      needsRefresh = false
+    }
+    return cachedContents
+  }
+
+  func getCacheSize() -> Int {
+    return cacheFolderContents()?.reduce(0 as Int) { totalSize, url in
+      let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+      return totalSize + size
+    } ?? 0
+  }
+
+  func clearOldCache() {
+    guard !isJobRunning else { return }
+    isJobRunning = true
+
+    let maxCacheSize = Preference.integer(for: .maxThumbnailPreviewCacheSize)
+    // if full, delete 50% of max cache
+    let cacheToDelete = maxCacheSize * FloatingPointByteCountFormatter.PrefixFactor.mi.rawValue / 2
+
+    log.verbose("Looking for \(cacheToDelete) byte to delete from thumbnail cache")
+
+    // sort by access date
+    guard let contents = cacheFolderContents()?.sorted(by: { url1, url2 in
+      let date1 = (try? url1.resourceValues(forKeys: [.contentAccessDateKey]).contentAccessDate) ?? Date.distantPast
+      let date2 = (try? url2.resourceValues(forKeys: [.contentAccessDateKey]).contentAccessDate) ?? Date.distantPast
+      return date1.compare(date2) == .orderedAscending
+    }) else { return }
+
+    // delete old cache
+    var clearedCacheSize = 0
+    for url in contents {
+      let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+      if clearedCacheSize < cacheToDelete {
+        try? FileManager.default.removeItem(at: url)
+        clearedCacheSize += size
+      } else {
+        break
+      }
+    }
+    log.verbose("Cleared \(clearedCacheSize) bytes from thumbnail cache")
   }
 
 }
