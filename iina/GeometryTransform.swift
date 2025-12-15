@@ -173,6 +173,11 @@ struct GeometryTransform: Sendable {
 
       var outputVideoGeo = outputVideoGeo
 
+      if gtfSessionState.isStartingNewSession {
+        log.verbose("[GTF:\(name)] Resetting mpv videoGeo for new session")
+        outputVideoGeo = VideoGeometry.defaultGeometry(log)
+      }
+
       /// 2b: Sync video params from mpv, if `syncVideoParams` is true.
       if syncVideoParams {
         if player.isRestoring {
@@ -718,6 +723,11 @@ struct GeometryTransform: Sendable {
         pwc.playlistView.needsScrollToCurrentItem = true  // reset flag for when it does open
 
         pwc.addAllObservers()
+
+        if gtfSessionState.isStartingNewSession {
+          // Make sure to always do this for new session:
+          player.reloadQuickSettingsViewNow()
+        }
 
         // Post "ready to show" notification? Or post cancellation? Or do nothing more?
         if gtfSessionState.isRestoring {

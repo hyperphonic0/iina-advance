@@ -138,9 +138,9 @@ extension PlayerCore {
   /// - Parameter filter: The filter to remove.
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   @discardableResult
-  func removeAudioFilter(_ filter: String) -> Bool {
-    log.debug("Removing audio filter \(filter)…")
-    let returnCode = mpv.command(.af, args: ["remove", filter], checkError: false) >= 0
+  func removeAudioFilter(_ filterString: String) -> Bool {
+    log.debug("Removing audio filter \(filterString)…")
+    let returnCode = mpv.command(.af, args: ["remove", filterString], checkError: false) >= 0
     log.debug(returnCode ? "Succeeded" : "Failed")
     return returnCode
   }
@@ -295,14 +295,16 @@ extension PlayerCore {
 
     let filterString: String
     if let label = filter.label {
-      // Has label: we care most about these
-      // The vf remove command will return 0 even if the filter didn't exist in mpv. So need to do this check ourselves.
-      let filterExists = mpv.getFilters(MPVProperty.vf).compactMap({$0.label}).contains(label)
-      guard filterExists else {
-        log.debug("Cannot remove video filter: could not find filter with label \(label.quoted) in mpv list. Will try refreshing filters & resyncing video params…")
-        // Something fell out of date. Try refreshing
-        vfChanged()
-        return false
+      if verify {
+        // Has label: we care most about these
+        // The vf remove command will return 0 even if the filter didn't exist in mpv. So need to do this check ourselves.
+        let filterExists = mpv.getFilters(MPVProperty.vf).compactMap({$0.label}).contains(label)
+        guard filterExists else {
+          log.debug("Cannot remove video filter: could not find filter with label \(label.quoted) in mpv list. Will try refreshing filters & resyncing video params…")
+          // Something fell out of date. Try refreshing
+          vfChanged()
+          return false
+        }
       }
 
       log.debug("Removing video filter \(label.quoted) (\(filter.stringFormat.quoted))...")
@@ -345,4 +347,38 @@ extension PlayerCore {
     return !didError
   }
 
+  func removeAllVideoFilters(notify: Bool = true) {
+    let filters = mpv.getFilters(MPVProperty.vf)
+    for filter in filters {
+      let filterString: String
+      if let label = filter.label {
+        filterString = "@" + label
+      } else {
+        filterString = filter.stringFormat
+      }
+      _ = removeVideoFilter(filterString)
+    }
+    _ = updateVideoFiltersFromMpv()
+    if notify {
+      postNotification(.iinaVFChanged)
+    }
+  }
+
+  func removeAllAudioFilters(notify: Bool = true) {
+    let filters = mpv.getFilters(MPVProperty.af)
+    for filter in filters {
+      let filterString: String
+      if let label = filter.label {
+        filterString = "@" + label
+      } else {
+        filterString = filter.stringFormat
+      }
+      _ = removeAudioFilter(filterString)
+    }
+    _ = updateAudioFiltersFromMpv()
+    if notify {
+      postNotification(.iinaAFChanged)
+    }
+  }
+  
 }

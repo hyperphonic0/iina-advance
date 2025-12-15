@@ -27,6 +27,12 @@ extension MPVController {
       return
     }
 
+    mpvSetInitialOptions()
+    mpvFinishInit()
+  }
+
+  /// This is designed to be called again if this mpv core is reused across player sessions
+  func mpvSetInitialOptions() {
     _updateUsingMpvOSDFromPrefs()  // will disable mpv OSD if demo player
     if player.isDemoPlayer || !player.isPresentInUserOptions(MPVOption.OSD.osc) {
       logError(mpv_set_option_string(mpv, MPVOption.OSD.osc, no))
@@ -36,31 +42,7 @@ extension MPVController {
     // Dropped media key support in 10.11 and 10.12.
     chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputMediaKeys, no))
 
-    if player.isDemoPlayer {
-      // Do the minimum needed for demo player
-      setFlag(MPVOption.ProgramBehavior.loadAutoProfiles, false, level: .verbose)
-      setFlag(MPVOption.ProgramBehavior.loadOsdConsole, false, level: .verbose)
-      setFlag(MPVOption.ProgramBehavior.loadScripts, false, level: .verbose)
-      setFlag(MPVOption.ProgramBehavior.loadStatsOverlay, false, level: .verbose)
-      setString("config", no)
-
-      setFlag(MPVOption.WatchLater.savePositionOnQuit, false, level: .verbose)
-      setFlag(MPVOption.WatchLater.resumePlayback, false, level: .verbose)
-      setFlag(MPVOption.Window.keepOpen, false, level: .verbose)
-      setFlag(MPVOption.ProgramBehavior.ytdl, false, level: .verbose)
-
-      setInt(MPVOption.Demuxer.demuxerReadaheadSecs, 0, level: .verbose)
-      setString(MPVOption.Demuxer.demuxerMaxBytes, "128KiB", level: .verbose)
-      setString(MPVOption.TrackSelection.aid, no, level: .verbose)
-
-      setString(MPVOption.Video.hwdec, no, level: .verbose)
-
-      logError(mpv_request_log_messages(mpv, MPVLogLevel.warn.description))
-      logError(mpv_initialize(mpv))
-
-      mpvVersion = getString(MPVProperty.mpvVersion)
-      return
-    }
+    guard !player.isDemoPlayer else { return }
 
     if !player.isRestoring {
       if Preference.bool(for: .enableInitialVolume) {
@@ -196,9 +178,9 @@ extension MPVController {
     }
 
     if !player.isPresentInUserOptions(MPVOption.Audio.gaplessAudio) {
-        setUserOption(PK.gaplessAudio, type: .other, forName: MPVOption.Audio.gaplessAudio, verboseIfDefault: true) { key in
-          let value = Preference.integer(for: key)
-          return Preference.GaplessAudioOption(rawValue: value)?.mpvString ?? "weak"
+      setUserOption(PK.gaplessAudio, type: .other, forName: MPVOption.Audio.gaplessAudio, verboseIfDefault: true) { key in
+        let value = Preference.integer(for: key)
+        return Preference.GaplessAudioOption(rawValue: value)?.mpvString ?? "weak"
       }
     }
 
@@ -393,18 +375,45 @@ extension MPVController {
     }
 
     // Load external scripts
-
     loadSelectedInputConf(mpvQueue: false)
+  }
 
+  @MainActor
+  private func mpvFinishInit() {
+    if player.isDemoPlayer {
+      // Do the minimum needed for demo player
+      setFlag(MPVOption.ProgramBehavior.loadAutoProfiles, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.loadOsdConsole, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.loadScripts, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.loadStatsOverlay, false, level: .verbose)
+      setString("config", no)
+
+      setFlag(MPVOption.WatchLater.savePositionOnQuit, false, level: .verbose)
+      setFlag(MPVOption.WatchLater.resumePlayback, false, level: .verbose)
+      setFlag(MPVOption.Window.keepOpen, false, level: .verbose)
+      setFlag(MPVOption.ProgramBehavior.ytdl, false, level: .verbose)
+
+      setInt(MPVOption.Demuxer.demuxerReadaheadSecs, 0, level: .verbose)
+      setString(MPVOption.Demuxer.demuxerMaxBytes, "128KiB", level: .verbose)
+      setString(MPVOption.TrackSelection.aid, no, level: .verbose)
+
+      setString(MPVOption.Video.hwdec, no, level: .verbose)
+
+      logError(mpv_request_log_messages(mpv, MPVLogLevel.warn.description))
+      logError(mpv_initialize(mpv))
+
+      mpvVersion = getString(MPVProperty.mpvVersion)
+      return
+    }
+
+    // Set up event callback
     setMpvEventLogSubscription()
-
-    // Request tick event.
-    // chkErr(mpv_request_event(mpv, MPV_EVENT_TICK, 1))
 
     if !player.isPresentInUserOptions(MPVEncoding.o) {
       addEventCallbacks()
     }
 
+    log.verbose("Calling mpv_initialize")
     // Initialize an uninitialized mpv instance. If the mpv instance is already running, an error is returned.
     chkErr(mpv_initialize(mpv))
 
@@ -436,6 +445,7 @@ extension MPVController {
         chkErr(setOptionString(MPVOption.WatchLater.watchLaterOptions, watchLaterOptions, level: .verbose))
       }
     }
+    
     if let watchLaterOptions = getString(MPVOption.WatchLater.watchLaterOptions) {
       player.log.debug("Options mpv is configured to save in watch later files: \(watchLaterOptions)")
       MPVController.watchLaterOptions = watchLaterOptions

@@ -100,6 +100,12 @@ struct PlayerSaveState: CustomStringConvertible {
 
     case loopPlaylist = "loopPlaylist"  /// `MPVOption.PlaybackControl.loopPlaylist`
     case loopFile = "loopFile"          /// `MPVOption.PlaybackControl.loopFile`
+
+    /// Dictionary of mpv options & properties, as set in Settings > Advanced at the time of the player's initial creation.
+    /// Any options specified in this will supercede other saved `PropName`s.
+    ///
+    /// Added in v1.4.
+    case mpvProps = "mpvProps"
   }
 
   static let saveQueue = DispatchQueue(label: "com.iina_advance.PlayerSaveQueue", qos: .background)

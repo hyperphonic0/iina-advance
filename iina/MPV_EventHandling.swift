@@ -654,7 +654,139 @@ extension MPVController {
     }
   }
 
-}
+  // MARK: - Option & observer utils
+
+  /// Remove observers for IINA preferences.
+  func removeOptionObservers() {
+    player.log.verbose("Removing mpv option observers")
+    ObjcUtils.silenced { [self] in
+      for (k, _) in optionObservers {
+        UserDefaults.standard.removeObserver(self, forKeyPath: k)
+      }
+      optionObservers = [:]
+    }
+  }
+
+  /// Set the given mpv option to the value of the given IINA setting.
+  ///
+  /// To reduce the amount of logging that occurs when `MPVController` initializes a mpv core this method provides a
+  /// `verboseIfDefault` parameter. If this parameter is set to `true` then the value to set the mpv option to is compared to the
+  /// default value for the mpv option and if the values match then the value of the `level` parameter will be ignored and the
+  /// message will be logged using the `verbose` level.
+  /// - Parameters:
+  ///   - key: Key for the IINA setting.
+  ///   - type: Type of the value of the mpv option.
+  ///   - name: Name of the mpv option.
+  ///   - sync: Whether to add an observer for the IINA setting that updates the mpv option when the IINA setting changes.
+  ///   - level: Log level to use when logging the setting of the option.
+  ///   - verboseIfDefault: Whether to use log level `verbose` if the value matches the default for the mpv option.
+  ///   - transformer: Optional transformer that changes the IINA setting value to be usable as the mpv option value.
+  func setUserOption(_ key: Preference.Key, type: UserOptionType, forName name: String,
+                     sync: Bool = true, level: Logger.Level = .debug,
+                     verboseIfDefault: Bool = false,
+                     transformer: OptionObserverInfo.Transformer? = nil) {
+    var code: Int32 = 0
+
+    let keyRawValue = key.rawValue
+
+    switch type {
+    case .int:
+      code = setOptionInt(name, Preference.integer(for: key), level: level,
+                          verboseIfDefault: verboseIfDefault)
+
+    case .float:
+      code = setOptionFloat(name, Preference.float(for: key), level: level,
+                            verboseIfDefault: verboseIfDefault)
+
+    case .bool:
+      code = setOptionFlag(name, Preference.bool(for: key), level: level,
+                           verboseIfDefault: verboseIfDefault)
+
+    case .string:
+      code = setOptionalOptionString(name, Preference.string(for: key), level: level,
+                                     verboseIfDefault: verboseIfDefault)
+
+    case .color:
+      let value = Preference.string(for: key)
+      code = setOptionalOptionColor(name, value, level: level, verboseIfDefault: verboseIfDefault)
+      // Random error here (perhaps a Swift or mpv one), so set it twice
+      // 「没有什么是 set 不了的；如果有，那就 set 两次」
+      if code < 0 {
+        code = setOptionalOptionColor(name, value, level: level, verboseIfDefault: verboseIfDefault)
+      }
+
+    case .other:
+      guard let tr = transformer else {
+        log.error("setUserOption: no transformer!")
+        return
+      }
+      if let value = tr(key) {
+        code = setOptionString(name, value, level: level, verboseIfDefault: verboseIfDefault)
+      } else {
+        code = 0
+      }
+    }
+
+    if code < 0 {
+      let message = errorString(code)
+      /// We may be on the main DQ already. Must async out of it to avoid deadlocking!
+      DispatchQueue.main.async {
+        Utility.showAlert("mpv_error", arguments: [message, "\(code)", name], disableMenus: true)
+      }
+    }
+
+    if sync {
+      UserDefaults.standard.addObserver(self, forKeyPath: keyRawValue, options: [.new, .old], context: nil)
+      if optionObservers[keyRawValue] == nil {
+        optionObservers[keyRawValue] = []
+      }
+      optionObservers[keyRawValue]!.append(OptionObserverInfo(key, name, type, transformer))
+    }
+  }
+
+  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+    guard !(change?[NSKeyValueChangeKey.oldKey] is NSNull) else { return }
+
+    guard let keyPath = keyPath else { return }
+    guard let infos = optionObservers[keyPath] else { return }
+
+    for info in infos {
+      switch info.valueType {
+      case .int:
+        let value = Preference.integer(for: info.prefKey)
+        setInt(info.optionName, value)
+
+      case .float:
+        let value = Preference.float(for: info.prefKey)
+        setDouble(info.optionName, Double(value))
+
+      case .bool:
+        let value = Preference.bool(for: info.prefKey)
+        setFlag(info.optionName, value)
+
+      case .string:
+        if let value = Preference.string(for: info.prefKey) {
+          setString(info.optionName, value)
+        }
+
+      case .color:
+        if let value = Preference.string(for: info.prefKey) {
+          setString(info.optionName, value)
+        }
+
+      case .other:
+        guard let tr = info.transformer else {
+          log.error("observeValue: no transformer!")
+          return
+        }
+        if let value = tr(info.prefKey) {
+          setString(info.optionName, value)
+        }
+      }
+    }
+  }
+
+}  /// end `extension MPVController`
 
 extension mpv_event_property {
   func intData(_ log: (any Logger.Subsystem)?) -> Int? {
@@ -713,4 +845,4 @@ extension mpv_event_property {
     \(format) to the expected type
     """)
   }
-  }
+}

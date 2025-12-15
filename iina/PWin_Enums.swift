@@ -85,6 +85,14 @@ enum PWinSessionState: Sendable, CustomStringConvertible {
     return isStartingNewPlaybackManually
   }
 
+  /// Returns true if starting a new session, i.e., same as `isStartingSession()` but excluding `restoring`
+  var isStartingNewSession: Bool {
+    if case .restoring = self {
+      return false
+    }
+    return isStartingNewPlaybackManually
+  }
+
   /// Most similar to the term "Opening file" in Settings window's UI, but also applies when changing video track
   /// in the same file.
   ///

@@ -395,6 +395,111 @@ final class PlayerCore: NSObject {
     return false
   }
 
+  private func resetOptionsForNewSession(reuseExistingWindow: Bool) {
+    // Need to remove these: `mpvSetInitialOptions` will add new ones
+    mpv.removeOptionObservers()
+
+    log.verbose("Resetting user options to defaults: reusingWnd=\(reuseExistingWindow.yn)")
+
+    // First reset any previously set options to their default values
+    for (optName, _) in userOptions {
+      mpv.resetToDefault(optName)
+    }
+
+    // Reset window vars to their defaults too:
+    pwc.isLiveResizingWidth = nil
+    pwc.isMagnifying = false
+    pwc.isWindowHidden = false
+    pwc.isWindowMiniturized = false
+    pwc.isWindowMiniaturizedDueToPip = false
+    pwc.isWindowPipDueToInactiveSpace = false
+    pwc.isDragging = false
+    pwc.currentDragObject = nil
+    pwc.isPausedDueToInactive = false
+    pwc.isPausedDueToMiniaturization = false
+    pwc.isPausedPriorToInteractiveMode = false
+
+    log.verbose("Resetting mpv options to defaults")
+
+    if !reuseExistingWindow {
+      pwc.isOnTop = false
+      mpv.setFlag(MPVOption.Window.ontop, false)
+    }
+    info.vid = nil
+    info.vidDisabled = nil
+    mpv.setString(MPVOption.TrackSelection.vid, "auto")
+    info.aid = nil
+    mpv.setString(MPVOption.TrackSelection.aid, "auto")
+    info.sid = nil
+    mpv.setString(MPVOption.TrackSelection.sid, "auto")
+    info.secondSid = nil
+    mpv.setString(MPVOption.Subtitles.secondarySid, "auto")
+    // `hwdec` is handled in `mpvSetInitialOptions`
+    mpv.resetToDefault(MPVOption.Video.deinterlace)
+    info.deinterlace = mpv.getFlag(MPVOption.Video.deinterlace)
+
+    mpv.resetToDefault(MPVOption.Video.videoZoom)
+
+    mpv.resetToDefault(MPVOption.Equalizer.brightness)
+    info.brightness = mpv.getInt(MPVOption.Equalizer.brightness)
+    mpv.resetToDefault(MPVOption.Equalizer.contrast)
+    info.contrast = mpv.getInt(MPVOption.Equalizer.contrast)
+    mpv.resetToDefault(MPVOption.Equalizer.saturation)
+    info.saturation = mpv.getInt(MPVOption.Equalizer.saturation)
+    mpv.resetToDefault(MPVOption.Equalizer.gamma)
+    info.gamma = mpv.getInt(MPVOption.Equalizer.gamma)
+    mpv.resetToDefault(MPVOption.Equalizer.hue)
+    info.hue = mpv.getInt(MPVOption.Equalizer.hue)
+
+    mpv.resetToDefault(MPVOption.Video.videoAspectOverride)
+    mpv.resetToDefault(MPVOption.Video.videoRotate)
+
+    info.isSubVisible = true
+    mpv.resetToDefault(MPVOption.Subtitles.subVisibility)
+    info.isSecondSubVisible = true
+    mpv.resetToDefault(MPVOption.Subtitles.secondarySubVisibility)
+    info.subDelay = 0
+    mpv.resetToDefault(MPVOption.Subtitles.subDelay)
+    info.sub2Delay = 0
+    mpv.resetToDefault(MPVOption.Subtitles.secondarySubDelay)
+    info.subPos = 0
+    mpv.resetToDefault(MPVOption.Subtitles.subPos)
+    info.sub2Pos = 0
+    mpv.resetToDefault(MPVOption.Subtitles.secondarySubPos)
+    info.subScale = 0
+    mpv.resetToDefault(MPVOption.Subtitles.subScale)
+
+    // PlaybackInfo cached values for these will be read in at window open:
+    mpv.resetToDefault(MPVOption.PlaybackControl.loopPlaylist)
+    mpv.resetToDefault(MPVOption.PlaybackControl.loopFile)
+
+    info.playSpeed = 1.0
+    mpv.resetToDefault(MPVOption.PlaybackControl.speed)
+
+    mpv.resetToDefault(MPVOption.Audio.volume)
+    info.volume = mpv.getDouble(MPVOption.Audio.volume)
+    // `info.maxVolume` will be reset in `mpvSetInitialOptions`
+    mpv.resetToDefault(MPVOption.Audio.mute)
+    info.isMuted = mpv.getFlag(MPVOption.Audio.mute)
+    mpv.resetToDefault(MPVOption.Audio.audioDelay)
+    info.audioDelay = mpv.getDouble(MPVOption.Audio.audioDelay)
+    mpv.resetToDefault(MPVOption.PlaybackControl.abLoopA)
+    info.abLoopA = mpv.getDouble(MPVOption.PlaybackControl.abLoopA)
+    mpv.resetToDefault(MPVOption.PlaybackControl.abLoopB)
+    info.abLoopB = mpv.getDouble(MPVOption.PlaybackControl.abLoopB)
+
+    info.videoFiltersDisabled = [:]
+    removeAllVideoFilters(notify: false)
+    removeAllAudioFilters(notify: false)
+    
+    // Now load in the most recent options from Prefs > Advanced, if any, and set remaining options
+    // as we would during the initial window load:
+    log.verbose("Reloading user options from prefs")
+    userOptions = PlayerCore.getMpvUserOptionsFromPrefs()
+    log.verbose("Loaded \(userOptions.count) user options from prefs")
+    mpv.mpvSetInitialOptions()
+  }
+
   // MARK: - Opening Media
 
   /**
@@ -526,6 +631,12 @@ final class PlayerCore: NSObject {
         // Player was previously started, but closed & is now being reopened
         state = .started
       }
+
+      if !pwc.sessionState.isRestoring {
+        resetOptionsForNewSession(reuseExistingWindow: pwc.sessionState.hasOpenSession)
+      }
+
+      info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
 
       DispatchQueue.main.async { [self] in
         let isInteractivePlayer = isInteractivePlayer
@@ -2253,7 +2364,7 @@ final class PlayerCore: NSObject {
     }
   }
 
-  fileprivate func reloadQuickSettingsViewNow() {
+  func reloadQuickSettingsViewNow() {
     guard pwc.loaded else { return }
     guard !isStopping else { return }
     log.verbose("Reloading QuickSettigsView")
