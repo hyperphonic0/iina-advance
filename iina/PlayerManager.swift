@@ -154,20 +154,20 @@ final class PlayerManager {
     return playerCores.first(where: { $0.label == label }) != nil
   }
 
-  func createNewPlayerCore(withLabel label: String? = nil) -> PlayerCore {
+  func createNewPlayerCore(withLabel label: String? = nil, userOptions: [(String, String)]? = nil) -> PlayerCore {
     Logger.log.debug("Creating PlayerCore instance with ID \(label?.quoted ?? "nil")")
     let pc: PlayerCore
     if let label = label {
       guard !playerExists(withLabel: label) else {
         Logger.fatal("Cannot create new PlayerCore: a player already exists with label \(label.quoted)")
       }
-      pc = PlayerCore(label)
+      pc = PlayerCore(label, userOptions: userOptions)
     } else {
       let playerLabel = AppData.label(forPlayerCore: playerCoreCounter)
       while playerExists(withLabel: playerLabel) {
         playerCoreCounter += 1
       }
-      pc = PlayerCore(playerLabel)
+      pc = PlayerCore(playerLabel, userOptions: userOptions)
       playerCoreCounter += 1
     }
     Logger.log.debug("Successfully created PlayerCore \(pc.label)")

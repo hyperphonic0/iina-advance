@@ -9,7 +9,6 @@
 import Cocoa
 
 // TODO: gpu-next
-// TODO: persist mpv properties in saved player state
 // TODO: support parent playlist
 // TODO: investigate generating thumbnails & Now Playing art from mpv screenshot cmd via RPC
 final class PlayerWindowController: WindowController, NSWindowDelegate {

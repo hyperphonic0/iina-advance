@@ -305,7 +305,7 @@ final class PlayerCore: NSObject {
   }
 
   @MainActor
-  init(_ label: String, isDemoPlayer: Bool = false, commandLineArgs: [(String, String)] = []) {
+  init(_ label: String, isDemoPlayer: Bool = false, userOptions: [(String, String)]? = nil) {
     let log = Logger.subsystem(forPlayerID: label)
     log.debug("PlayerCore init: starting")
     self.label = label
@@ -314,7 +314,7 @@ final class PlayerCore: NSObject {
     self.isDemoPlayer = isDemoPlayer
     self.playlistTableChangeNotificationName = .init("uiChangeForPlaylistTable-\(label)")
 
-    userOptions = PlayerCore.getMpvUserOptionsFromPrefs()
+    self.userOptions = userOptions ?? []
 
     super.init()
     self.videoView = VideoView(player: self)

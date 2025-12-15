@@ -424,23 +424,14 @@ final class StartupHandler {
       return
     }
 
-    let player = PlayerManager.shared.createNewPlayerCore(withLabel: id)
-
-    let pwc = PlayerWindowController(playerCore: player, geoSet: savedState.geoSet, initialLayout: savedState.layoutState)
-    assert(pwc.sessionState.isNone, "Invalid sessionState for restore: \(pwc.sessionState)")
-    pwc.sessionState = .restoring(playerState: savedState)
-    addWindowToRestore(savedWindow, pwc)
-
-    // Need to call this explicitly if not using a XIB
-    player.pwc.windowDidLoad()
-    player.startPlayer()
     // This will call `player.openURLs()` when done
-    savedState.restoreTo(player)
+    guard let player = savedState.restorePlayer(id: id) else { return }
+    addWindowToRestore(savedWindow, player.pwc)
   }
 
 
   @MainActor
-  private func addWindowToRestore(_ savedWindow: SavedWindow, _ wc: WindowController) {
+  func addWindowToRestore(_ savedWindow: SavedWindow, _ wc: WindowController) {
     Logger.restore.verbose("Adding window to restore: \(savedWindow.saveName.string.quoted), minimized=\(savedWindow.isMinimized.yn)")
 
     // Rebuild UIState window sets as we go:

@@ -101,11 +101,12 @@ struct PlayerSaveState: CustomStringConvertible {
     case loopPlaylist = "loopPlaylist"  /// `MPVOption.PlaybackControl.loopPlaylist`
     case loopFile = "loopFile"          /// `MPVOption.PlaybackControl.loopFile`
 
-    /// Dictionary of mpv options & properties, as set in Settings > Advanced at the time of the player's initial creation.
+    /// Dictionary of mpv options & properties, as set in Settings > Advanced > Addtional mpv options
+    /// at the time of the player's initial creation.
     /// Any options specified in this will supercede other saved `PropName`s.
     ///
     /// Added in v1.4.
-    case mpvProps = "mpvProps"
+    case mpvOpts = "mpvOpts"
   }
 
   static let saveQueue = DispatchQueue(label: "com.iina_advance.PlayerSaveQueue", qos: .background)
@@ -351,6 +352,27 @@ struct PlayerSaveState: CustomStringConvertible {
     return nil
   }
 
+  fileprivate func mpvOpts() -> [(String, String)] {
+    guard let propsString = string(for: .mpvOpts) else { return [] }
+    let lines = propsString.split(separator: "\n")
+    return lines.compactMap{ PlayerSaveState.optionFromString($0) }
+  }
+
+  fileprivate static func optionFromString(_ stringItem: Substring) -> (String, String) {
+    let splitted = stringItem.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: true)
+    let key = String(splitted[0])
+    let val = splitted.count > 1 ? String(splitted[1]) : ""
+    return (key, val)
+  }
+
+  fileprivate static func optionToString(_ option: (String, String)) -> String {
+    option.0 + "=" + option.1
+  }
+
+  fileprivate static func mpvOptsToString(_ mpvOpts: [(String, String)]) -> String {
+    mpvOpts.map{ optionToString($0) }.joined(separator: "\n")
+  }
+
   fileprivate func mpvFilterList(for name: PropName) -> [MPVFilter]? {
     guard let filterListCSV = string(for: name) else { return nil }
     return filterListCSV.split(separator: ",").compactMap({MPVFilter(rawString: String($0))})
@@ -570,13 +592,25 @@ struct PlayerSaveState: CustomStringConvertible {
 
   /// Restore player state from prior launch
   @MainActor
-  func restoreTo(_ player: PlayerCore) {
-    let log = player.log
+  func restorePlayer(id: String) -> PlayerCore? {
 
     guard let urlString = string(for: .url), let url = URL(string: urlString) else {
       log.error("Could not restore player window: no value for property \(PropName.url.rawValue.quoted)")
-      return
+      return nil
     }
+
+    let userOptions: [(String, String)] = mpvOpts()
+    let player = PlayerManager.shared.createNewPlayerCore(withLabel: id, userOptions: userOptions)
+
+    let pwc = PlayerWindowController(playerCore: player, geoSet: geoSet, initialLayout: layoutState)
+    assert(pwc.sessionState.isNone, "Invalid sessionState for restore: \(pwc.sessionState)")
+    pwc.sessionState = .restoring(playerState: self)
+
+    // Need to call this explicitly if not using a XIB
+    player.pwc.windowDidLoad()
+    player.startPlayer()
+
+    let log = player.log
 
       // Log properties
     log.verbose("Restoring from prior launch: \(self)")
@@ -643,8 +677,6 @@ struct PlayerSaveState: CustomStringConvertible {
       info.vidDisabled = vidDisabled >= 0 ? vidDisabled : nil
     }
 
-    let pwc = player.pwc!
-
     // Prevent "seek" OSD from appearing unncessarily after loading finishes
     pwc.osd.lastPlaybackPosition = info.playbackPositionSec
     pwc.osd.lastPlaybackDuration = info.playbackDurationSec
@@ -664,6 +696,7 @@ struct PlayerSaveState: CustomStringConvertible {
 
     // Open the window!
     player.openURLs([url])
+    return player
   }
 
   /// Restore mpv properties.
@@ -1559,6 +1592,9 @@ extension PlayerCore {
     // Remember: mpv itself uses comma as delimiter between filters in a serialized string (see the mpv docs).
     let videoFiltersDisabled = PlayerSaveState.toCSV(mpvFilters: info.videoFiltersDisabled.values)
     props[PropName.videoFiltersDisabled.rawValue] = videoFiltersDisabled
+
+    let mpvOptsString = PlayerSaveState.mpvOptsToString(userOptions)
+    props[PropName.mpvOpts.rawValue] = mpvOptsString
 
     return props
   }
