@@ -118,21 +118,21 @@ struct GeometryTransform: Sendable {
   func execute() {
     // MARK: - STAGE 1
 
-    // Get a copy of videoGeo inside animationPipeline to ensure serial access.
-    // This is reused asynchronously down below, so some parts of it may fall out of date, but
-    // shouldn't be the parts we need for now...
+    /// Get a copy of videoGeo inside animationPipeline to ensure serial access.
+    /// This is reused asynchronously down below, so some parts of it may fall out of date, but
+    /// shouldn't be the parts we need for now...
     let outputVideoGeo = pwc.geo.video
 
-    // Quick summary of how we will avoid race conditions with `pwc.sessionState` (tag: #SessionState-Race)
-    // 1. All reads and writes of this variable occur on the main DQ.
-    // 2. In `player.openPlayerWindow`, the use of `mpv.queue.sync` creates a sort of checkpoint betwween
-    // the mpv & main queues, ensuring that the mpv queue is emptied (& thus discarding any enqueued GTFs) before
-    // proceeding with an update of the variable.
-    // 3. The logic in `IINAAnimation.Pipeline` ensures that each GTF starts after the last one has completed.
-    // Thus, no GTFs overlap in their execution, even across the two queues.
-    // 4. We set `pwc.sessionState = .noSession` when closing the player window. But we can check for this
-    // before updating it at the end of the GTF, and pair with a check for `player.isStopping` in the mpv queue
-    // to cover both cases.
+    /// Quick summary of how we will avoid race conditions with `pwc.sessionState` (tag: #SessionState-Race)
+    /// 1. All reads and writes of this variable occur on the main DQ.
+    /// 2. In `player.openPlayerWindow`, the use of `mpv.queue.sync` creates a sort of checkpoint betwween
+    /// the mpv & main queues, ensuring that the mpv queue is emptied (& thus discarding any enqueued GTFs) before
+    /// proceeding with an update of the variable.
+    /// 3. The logic in `IINAAnimation.Pipeline` ensures that each GTF starts after the last one has completed.
+    /// Thus, no GTFs overlap in their execution, even across the two queues.
+    /// 4. We set `pwc.sessionState = .closedSession` when closing the player window. But we can check for this
+    /// before updating it at the end of the GTF, and pair with a check for `player.isStopping` in the mpv queue
+    /// to cover both cases.
     let prevSessionState = pwc.sessionState
 
     // MARK: - STAGE 2
@@ -292,12 +292,12 @@ struct GeometryTransform: Sendable {
     switch ctx.gtfSessionState {
 
     case .restoring(let priorState):
-      /// Restoring from prior launch  (`PWinSessionState.restoring`).
+      /// Restoring from prior launch.
       /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
       return ctx.pwc.buildTasksToRestoreLayout(priorState, &ctx)
 
-    case .newReplacingExisting:
-      /// Reusing existing window for new file (`PWinSessionState.newReplacingExisting`)
+    case .newReplacingOpen, .newReplacingClosed:
+      /// Reusing existing window for new file.
       log.verbose("[GTF:\(ctx.name)] Opening a new file in an already open window, mode=\(ctx.inputLayout.mode)")
 
       /// `windowFrame` may be slightly off; update it
@@ -441,7 +441,7 @@ struct GeometryTransform: Sendable {
           timing = .linear
           resizedGeo = applyResizePrefsForNewPlaybackInWindowedMode()
 
-        case .newReplacingExisting:
+        case .newReplacingOpen, .newReplacingClosed:
           duration = Constants.AnimationDuration.initialVideoReconfig
           fallthrough
 
@@ -464,7 +464,7 @@ struct GeometryTransform: Sendable {
             resizedGeo = nil
           }
 
-        case .noSession:
+        case .noSession, .closedSession:
           Logger.fatal("[GTF:\(name)] Invalid gtfSessionState: \(gtfSessionState)")
         }
 
@@ -546,8 +546,8 @@ struct GeometryTransform: Sendable {
       // (tag: #SessionState-Race)
       guard !player.isStopping else { return tf.abort("In final task (main): player is stopping") }
 
-      if case .noSession = pwc.sessionState {
-        return tf.abort("In final task: found 'noSession' for sessionState, assuming the player is stopping")
+      if case .closedSession = pwc.sessionState {
+        return tf.abort("In final task: found 'closedSession' for sessionState, assuming the player is stopping")
       }
       // Apply new session state (need to do this in .main). This will always be `.continuing`.
       pwc.sessionState = .existingSession_continuing
@@ -756,7 +756,8 @@ struct GeometryTransform: Sendable {
 
       switch gtfSessionState {
       case .existingSession_startingNewPlayback,
-          .newReplacingExisting:
+          .newReplacingOpen,
+          .newReplacingClosed:
 
         let layout = outputLayout
         if player.overrideAutoMusicMode {
@@ -779,15 +780,19 @@ struct GeometryTransform: Sendable {
 
     @MainActor
     fileprivate func buildEnterFullScreenTaskIfNeeded() -> IINAAnimation.Task? {
-      guard case .newReplacingExisting = gtfSessionState,
-            Preference.bool(for: .fullScreenWhenOpen) else { return nil }
+      switch gtfSessionState {
+      case .newReplacingOpen, .newReplacingClosed:
+        guard  Preference.bool(for: .fullScreenWhenOpen) else { return nil }
 
-      // It's possible this task will do nothing. But we cannot know that unless we enqueue the logic inside the task.
-      return IINAAnimation.Task.instantTask {
-        if !pwc.isFullScreen && !pwc.isInMiniPlayer {
-          log.debug("[GTF:\(name)] Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
-          pwc.enterFullScreen()
+        // It's possible this task will do nothing. But we cannot know that unless we enqueue the logic inside the task.
+        return IINAAnimation.Task.instantTask {
+          if !pwc.isFullScreen && !pwc.isInMiniPlayer {
+            log.debug("[GTF:\(name)] Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
+            pwc.enterFullScreen()
+          }
         }
+      default:
+        return nil
       }
     }
 

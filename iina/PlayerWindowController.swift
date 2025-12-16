@@ -1005,7 +1005,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false
     let wasSessionFinishedOpening = sessionState.hasOpenSession
-    sessionState = .noSession  // Reset this in preparation for repoen
+    sessionState = .closedSession  // Reset this in preparation for repoen
 
     /// Use value of `sessionState.hasOpenSession` to prevent from saving when there was an error loading video
     if wasSessionFinishedOpening {

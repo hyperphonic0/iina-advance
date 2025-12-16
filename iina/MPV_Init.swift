@@ -44,7 +44,7 @@ extension MPVController {
 
     guard !player.isDemoPlayer else { return }
 
-    if !player.isRestoring {
+    if !player.isRestoring, !player.isPresentInUserOptions(MPVOption.Audio.volume) {
       if Preference.bool(for: .enableInitialVolume) {
         setUserOption(PK.initialVolume, type: .int, forName: MPVOption.Audio.volume, sync: false, level: .verbose)
       } else {

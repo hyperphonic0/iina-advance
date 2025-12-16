@@ -13,7 +13,11 @@ import Foundation
 /// This class helps keep track of the lifecycle state of the session.
 enum PWinSessionState: Sendable, CustomStringConvertible {
 
+  /// No current or previous session
   case noSession
+
+  /// Closed window which may still contain state from a previously open session
+  case closedSession
 
   /// Restoring the session from prior launch.
   /// `playerState`: contains state data needed to restore the UI state from a previous launch, loaded from prefs.
@@ -23,7 +27,10 @@ enum PWinSessionState: Sendable, CustomStringConvertible {
   case creatingNew
 
   /// Reusing an already open window, and discarding its current session, for new session & new file.
-  case newReplacingExisting
+  case newReplacingOpen
+
+  /// Reusing a previously closed window, and discarding its previous session, for new session & new file.
+  case newReplacingClosed
 
   /// Existing window & session, but new file (i.e. current media is changing via playlist navigation).
   /// See also: `isChangingVideoTrack`.
@@ -38,20 +45,24 @@ enum PWinSessionState: Sendable, CustomStringConvertible {
   /// Need to specify this so that `playerState` is not included...
   var description: String {
     switch self {
+    case .noSession:
+      "noSession"
+    case .closedSession:
+      "closedSession"
     case .restoring:
       "restoring"
     case .creatingNew:
       "creatingNew"
-    case .newReplacingExisting:
-      "newReplacingExisting"
+    case .newReplacingOpen:
+      "newReplacingOpen"
+    case .newReplacingClosed:
+      "newReplacingClosed"
     case .existingSession_startingNewPlayback:
       "existingSession_startingNewPlayback"
     case .existingSession_videoTrackChangedForSamePlayback:
       "existingSession_videoTrackChangedForSamePlayback"
     case .existingSession_continuing:
       "existingSession_continuing"
-    case .noSession:
-      "noSession"
     }
   }
 
@@ -59,9 +70,11 @@ enum PWinSessionState: Sendable, CustomStringConvertible {
   func newSession() -> PWinSessionState {
     switch self {
     case .existingSession_continuing:
-      return .newReplacingExisting
+      return .newReplacingOpen
     case .noSession:
       return .creatingNew
+    case .closedSession:
+      return .newReplacingClosed
     default:
       Logger.fatal("Unexpected sessionState for newSession(): \(self)")
     }
@@ -102,12 +115,14 @@ enum PWinSessionState: Sendable, CustomStringConvertible {
     switch self {
     case .restoring,
         .creatingNew,
-        .newReplacingExisting,
+        .newReplacingOpen,
+        .newReplacingClosed,
         .existingSession_startingNewPlayback,
         .existingSession_videoTrackChangedForSamePlayback:
       return true
     case .existingSession_continuing,
-        .noSession:
+        .noSession,
+        .closedSession:
       return false
     }
   }
@@ -117,12 +132,14 @@ enum PWinSessionState: Sendable, CustomStringConvertible {
     switch self {
     case .restoring,
         .creatingNew,
-        .newReplacingExisting,
+        .newReplacingOpen,
+        .newReplacingClosed,
         .existingSession_startingNewPlayback:
       return true
     case .existingSession_videoTrackChangedForSamePlayback,
         .existingSession_continuing,
-        .noSession:
+        .noSession,
+        .closedSession:
       return false
     }
   }
@@ -134,21 +151,26 @@ enum PWinSessionState: Sendable, CustomStringConvertible {
     switch self {
     case .restoring,
         .creatingNew,
-        .newReplacingExisting:
+        .newReplacingOpen,
+        .newReplacingClosed:
       return true
     case .existingSession_startingNewPlayback,
         .existingSession_videoTrackChangedForSamePlayback,
         .existingSession_continuing,
-        .noSession:
+        .noSession,
+        .closedSession:
       return false
     }
   }
 
   var isNone: Bool {
-    if case .noSession = self {
+    switch self {
+      case .noSession,
+        .closedSession:
       return true
+    default:
+      return false
     }
-    return false
   }
 }
 

@@ -632,7 +632,10 @@ final class PlayerCore: NSObject {
         state = .started
       }
 
-      if !pwc.sessionState.isRestoring {
+      switch pwc.sessionState {
+      case .noSession, .restoring:
+        break
+      default:
         resetOptionsForNewSession(reuseExistingWindow: pwc.sessionState.hasOpenSession)
       }
 
