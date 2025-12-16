@@ -213,7 +213,7 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
     if Preference.bool(for: .controlBarStickToCenter) {
       let xPosWhenCenter = geometry.centerX
       let threshold = geometry.availableWidth * Constants.floatingControllerSnapToCenterThresholdMultiplier
-      pwc.log.trace{"Floating OSC snap distanceToCenter=\(newCenterX - xPosWhenCenter) threshold=\(threshold)"}
+      pwc.log.trace("Floating OSC snap distanceToCenter=\(newCenterX - xPosWhenCenter) threshold=\(threshold)")
       if abs(newCenterX - xPosWhenCenter) <= threshold {
         newCenterX = xPosWhenCenter
         if !isAlignFeedbackSent {

@@ -212,7 +212,7 @@ class AutoFileMatcher {
 
     for video in videoFiles {
       var matchedSubs = Set<FileInfo>()
-      log.trace{"Matching for \(video.filename.pii.quoted)"}
+      log.trace("Matching for \(video.filename.pii.quoted)")
 
       // match video and sub if both are the closest one to each other
       if subAutoLoadOption.shouldLoadSubsMatchedByIINA() {
@@ -260,7 +260,7 @@ class AutoFileMatcher {
 
       // if no match
       if matchedSubs.isEmpty {
-        log.trace{"No matched subs for \(video.filename.pii.quoted)"}
+        log.trace("No matched subs for \(video.filename.pii.quoted)")
         unmatchedVideos.append(video)
       } else {
         log.debug("Matched \(matchedSubs.count) subtitles for \(video.filename.pii.quoted)")

@@ -355,7 +355,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible, Sendable {
     let widthNorm = cropRect.width / videoSizeRaw.width
     let heightNorm = cropRect.height / videoSizeRaw.height
     let normRect = NSRect(x: xNorm, y: yNorm, width: widthNorm, height: heightNorm)
-    log.trace{"Normalized cropRect \(cropRect) → \(normRect)"}
+    log.trace("Normalized cropRect \(cropRect) → \(normRect)")
     guard widthNorm > 0, heightNorm > 0 else {
       log.warn("Invalid cropRect! Returning nil")
       return nil

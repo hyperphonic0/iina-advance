@@ -467,7 +467,7 @@ final class StartupHandler {
       return Utility.quickAskPanel("restore_confirm", useCustomButtons: true)
 
     } else {
-      Logger.restore.trace{"No approval for restore required"}
+      Logger.restore.trace("No approval for restore required")
       return true
     }
   }

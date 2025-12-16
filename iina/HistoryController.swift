@@ -617,7 +617,7 @@ final class HistoryController {
     }
 
     self.fileExistsMap = fileExistsMapUpdated
-    log.trace{"Filled in fileExists for \(processedCount) / \(examinedCount) histories (\(historyList.count - examinedCount - startIndex) remaining) in \(sw.secElapsedString), fullReload=\(forceFullStatusReload.yn) watchLater=\(watchLaterCount)"}
+    log.trace("Filled in fileExists for \(processedCount) / \(examinedCount) histories (\(historyList.count - examinedCount - startIndex) remaining) in \(sw.secElapsedString), fullReload=\(forceFullStatusReload.yn) watchLater=\(watchLaterCount)")
     if forceFullStatusReload {
       lastCompleteStatusReloadTime = Date()
     }

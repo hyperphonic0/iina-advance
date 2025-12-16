@@ -93,7 +93,7 @@ class SleepPreventer: NSObject {
         }
         Logger.log.verbose("[sleep] None of the \(activePlayers.count) active players are playing")
       } else {
-        Logger.log.trace{"[sleep] Skipping: pref preventScreenSaver=N"}
+        Logger.log.trace("[sleep] Skipping: pref preventScreenSaver=N")
       }
       SleepPreventer.allowSleep()
     }

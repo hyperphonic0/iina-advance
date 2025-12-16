@@ -1607,7 +1607,7 @@ extension PlayerCore {
     /// Cuts down on duplicate work via delay and ticket check.
     saveUIStateDebouncer.run { [self] in
       guard !isRestoring else {
-        log.trace{"Skipping player state save: still restoring previous state"}
+        log.trace("Skipping player state save: still restoring previous state")
         return
       }
       guard !isShuttingDown else {
@@ -1624,7 +1624,7 @@ extension PlayerCore {
       guard let pwc = self.pwc else { return }
       DispatchQueue.main.async {
         guard pwc.loaded else {
-          pwc.log.trace{"Skipping player state save: player window is not loaded"}
+          pwc.log.trace("Skipping player state save: player window is not loaded")
           return
         }
         pwc.animationPipeline.submitInstantTask {
@@ -1641,7 +1641,7 @@ extension PlayerCore {
           PlayerSaveState.saveQueue.async {
             let properties = player.generatePropDict(geo)
             if Logger.isTraceEnabled, Preference.bool(for: .logPlayerSave) {
-              player.log.trace{"Saving player state: \(properties)"}
+              player.log.trace("Saving player state: \(properties)")
             }
             UIState.shared.saveState(forPlayerID: player.label, properties: properties)
           }
@@ -1667,7 +1667,7 @@ extension PlayerCore {
     /// Using `sync` here should delay shutdown & makes sure any existing async saves aren't killed mid-write!
     PlayerSaveState.saveQueue.sync {
       let properties = generatePropDict(geo)
-      log.trace{"Saving player state: \(properties)"}
+      log.trace("Saving player state: \(properties)")
       UIState.shared.saveState(forPlayerID: label, properties: properties)
       log.debug("Done saving player state synchronously")
     }

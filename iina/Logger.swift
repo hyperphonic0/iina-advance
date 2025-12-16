@@ -282,9 +282,6 @@ struct Logger {
     func log(_ rawMessage: @autoclosure () -> String, level: Level)
     func errorDebugAlert(_ msg: @autoclosure () -> String)
 
-    // MARK: - Closure arg variants (DEPRECATED!)
-    func trace(_ msgFunc: () -> String)
-
   }  // end protocol Subsystem
 
   struct SimpleSubsystem: Subsystem {

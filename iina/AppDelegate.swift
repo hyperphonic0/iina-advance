@@ -380,7 +380,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         UIState.shared.windowsOpen.insert(activeWindowName)
       } else {
         // Do not process. Another listener will handle it
-        Logger.log.trace{"Window became main: \(activeWindowName.quoted)"}
+        Logger.log.trace("Window became main: \(activeWindowName.quoted)")
         return
       }
 

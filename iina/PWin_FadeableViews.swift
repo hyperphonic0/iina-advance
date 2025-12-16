@@ -266,7 +266,7 @@ extension PlayerWindowController {
     let targetLayout = givenLayout ?? currentLayout
 
     guard !targetLayout.isInPiP, !isWindowMinimized else {
-      log.trace{"Aborting hide of fadeable views: isInPiP=\(targetLayout.isInPiP.yn), windowMinimized=\(isWindowMinimized)"}
+      log.trace("Aborting hide of fadeable views: isInPiP=\(targetLayout.isInPiP.yn), windowMinimized=\(isWindowMinimized)")
       return
     }
 
@@ -289,7 +289,7 @@ extension PlayerWindowController {
 
     let preTask = IINAAnimation.Task.instantTask{ [self] in
       if log.isTraceEnabled {
-        log.trace{"HIDE fadeables: currentTicket=\(currentTicket), latest=\(fadeableViews.showHideTicketCount)"}
+        log.trace("HIDE fadeables: currentTicket=\(currentTicket), latest=\(fadeableViews.showHideTicketCount)")
       }
 
       // Ensure we are the most current ticket
@@ -304,7 +304,7 @@ extension PlayerWindowController {
       fadeableViews.hideTimer.cancel()
 
       if isMouseInsideFadeableView(mouseLocationInWindow) {
-        log.trace{"HIDE fadeables: cancelling; mouse is still in fadeable view"}
+        log.trace("HIDE fadeables: cancelling; mouse is still in fadeable view")
         throw IINAError.cancelAnimationTransaction
       }
     }
@@ -396,7 +396,7 @@ extension PlayerWindowController {
   func hideFadeableViewsAndCursor() {
     // don't hide UI when dragging control bar
     if currentDragObject != nil {
-      log.trace{"Aborting hide of fadeable views: dragObject != nil"}
+      log.trace("Aborting hide of fadeable views: dragObject != nil")
       return
     }
 

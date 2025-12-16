@@ -630,7 +630,7 @@ extension PlayerCore {
     }
 
     if validateItemsAreEqual(actualPlaylist, expectedPlaylist) {
-      log.trace{"[Playlist] Playlist validation passed"}
+      log.trace("[Playlist] Playlist validation passed")
       return true
     } else {
       log.error("[Playlist] Playlist mismatch! Will clear undo stack to prevent further issues")

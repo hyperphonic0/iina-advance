@@ -928,7 +928,7 @@ extension PlayerWindowController {
                                   width: Constants.Sidebar.resizeActivationRadius + Constants.Sidebar.resizeActivationRadius,
                                   height: sf.height)
       if NSPointInRect(mousePositionInWindow, activationRect) {
-        log.trace{"Mouse location \(mousePositionInWindow) is within leading sidebar resize rect \(activationRect)"}
+        log.trace("Mouse location \(mousePositionInWindow) is within leading sidebar resize rect \(activationRect)")
         return true
       }
     }
@@ -947,7 +947,7 @@ extension PlayerWindowController {
                                   height: sf.height)
       
       if NSPointInRect(mousePositionInWindow, activationRect) {
-        log.trace{"Mouse location \(mousePositionInWindow) is within trailing sidebar resize rect \(activationRect)"}
+        log.trace("Mouse location \(mousePositionInWindow) is within trailing sidebar resize rect \(activationRect)")
         return true
       }
     }

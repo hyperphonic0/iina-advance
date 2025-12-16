@@ -835,7 +835,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
     let minViewportSize = minViewportSize(mode: mode)
 
     var newViewportSize = desiredSize ?? viewportSize
-    log.trace{"[geo] ScaleViewport start: newViewportSize=\(newViewportSize) lockViewport=\(lockViewportToVideoSize.yn) newVideoZoom=\(newVideoZoom)"}
+    log.trace("[geo] ScaleViewport start: newViewportSize=\(newViewportSize) lockViewport=\(lockViewportToVideoSize.yn) newVideoZoom=\(newVideoZoom)")
 
     // -- Viewport size calculation
 
@@ -892,9 +892,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
       if outputScreenFit == .centerInside {
         outputWindowFrame = outputWindowFrame.size.centeredRect(in: containerFrame)
       }
-      log.trace{"[geo] ScaleViewport: constrainedIn=\(containerFrame) → windowFrame=\(outputWindowFrame)"}
+      log.trace("[geo] ScaleViewport: constrainedIn=\(containerFrame) → windowFrame=\(outputWindowFrame)")
     } else {
-      log.trace{"[geo] ScaleViewport: → windowFrame=\(outputWindowFrame)"}
+      log.trace("[geo] ScaleViewport: → windowFrame=\(outputWindowFrame)")
     }
 
     let refittedGeo = self.clone(windowFrame: outputWindowFrame, screenID: newScreenID, screenFit: outputScreenFit, mode: mode,
@@ -1044,7 +1044,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
     }  // end music mode logic
 
     let lockViewportToVideoSize = lockViewportToVideoSize ?? Preference.bool(for: .lockViewportToVideoSize) || mode.alwaysLockViewportToVideoSize
-    log.trace{"[geo] ScaleVideo start, desiredVideoWidth: \(desiredVideoWidth), videoViewAspect: \(videoViewAspect), lockViewportToVideoSize: \(lockViewportToVideoSize)"}
+    log.trace("[geo] ScaleVideo start, desiredVideoWidth: \(desiredVideoWidth), videoViewAspect: \(videoViewAspect), lockViewportToVideoSize: \(lockViewportToVideoSize)")
 
     let outputScreenFit = screenFit.changeDesiredFit(to: desiredScreenFit)
 
@@ -1637,7 +1637,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
       // Hiding playlist
       let playlistHeightRounded = Int(round(inputPlistHeight))
       if playlistHeightRounded >= Int(Constants.MusicMode.minPlaylistHeight) {
-        log.trace{"Saving prev playlist height: \(playlistHeightRounded)"}
+        log.trace("Saving prev playlist height: \(playlistHeightRounded)")
         Preference.set(playlistHeightRounded, for: .musicModePlaylistHeight)
       }
 

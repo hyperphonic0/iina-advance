@@ -144,7 +144,7 @@ final class CropBoxView: NSView, DraggableObject {
     let mousePosInView = convert(event.locationInWindow, from: nil).constrained(to: bounds)
     guard let pwc = settingsViewController.pwc else { return }
     guard pwc.currentDragObject == self else { return }
-    pwc.log.trace{"CropBoxView mouseDragged, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)"}
+    pwc.log.trace("CropBoxView mouseDragged, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)")
 
     if isDraggingToResize {
       // resizing selected box

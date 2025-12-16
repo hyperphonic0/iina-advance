@@ -1291,7 +1291,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       return
     }
 
-    log.trace{"WndDidChangeScreen received: \(videoView.currentDisplay?.description ?? "nil") → \(screen.displayId)"}
+    log.trace("WndDidChangeScreen received: \(videoView.currentDisplay?.description ?? "nil") → \(screen.displayId)")
     if videoView.currentDisplay != nil {  // Don't need for first update
       restartWindowResizeDenialPeriod("windowDidChangeScreen")
       pendingResizeForScreenChange = true
@@ -1301,7 +1301,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     screenChangedDebouncer.run { [self] in
       guard !isClosing else { return }
       guard videoView.currentDisplay != displayId else {
-        log.trace{"WndDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged"}
+        log.trace("WndDidChangeScreen: no need to update display state; currentDisplayID \(displayId) is unchanged")
         return
       }
 
@@ -1489,7 +1489,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let isKey = window.isKeyWindow
     lastKeyWindowStatus = isKey
-    log.trace{"Window isKey=\(isKey.yesno)"}
+    log.trace("Window isKey=\(isKey.yesno)")
     updateColorsForKeyWindowStatus(isKey: isKey)
 
     if isKey {
@@ -1658,7 +1658,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 #if DEBUG
     // Include player ID in window (example: "[1234c0] MyVideo.mp4")
     let debugTitle = "[\(player.label)] \(titleText)"
-    log.trace{"Updating window title to: \(debugTitle.pii.quoted)"}
+    log.trace("Updating window title to: \(debugTitle.pii.quoted)")
     window.title = debugTitle
     filename = false
     customTitleBar?.updateTitle(to: debugTitle)
@@ -2218,7 +2218,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       // mpv usually hangs at 0% the entire time. Do not show any progress if we do not have progress to show.
       let showNumbers = bufferingState > 0
       let bufStateString = showNumbers ? "\(bufferingState)%" : ""
-      log.trace{"Showing bufferIndicatorView (\(bufferingState)%, \(usedStr)B, \(speedStr)/s)"}
+      log.trace("Showing bufferIndicatorView (\(bufferingState)%, \(usedStr)B, \(speedStr)/s)")
       let progressLabel = String(format: NSLocalizedString("main.buffering_indicator", comment:"Buffering... %@"), bufStateString)
       let detailLabel = showNumbers ? "\(usedStr)B (\(speedStr)/s)" : ""
       let animate = !(!isNotYetLoaded && player.info.cacheSpeed == 0)
@@ -2452,7 +2452,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     updatePlaybackTimeUI()
 
     let knobWndCoordX = playSlider.centerOfKnobInWindowCoordX()
-    log.trace{"Seek from PlaySlider: knobWndCoordX=\(knobWndCoordX)"}
+    log.trace("Seek from PlaySlider: knobWndCoordX=\(knobWndCoordX)")
     refreshSeekPreviewAsync(forWindowCoordX: knobWndCoordX)
 
     player.sliderSeekDebouncer.run { [self] in

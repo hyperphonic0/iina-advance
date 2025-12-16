@@ -605,7 +605,7 @@ extension PlayerWindowController {
   func updateOnTopButton(from layout: LayoutState, showIfFadeable: Bool = false) {
     let onTopButtonVisibility = layout.computeOnTopButtonVisibility(isOnTop: isOnTop)
     let image = isOnTop ? Images.onTopOn : Images.onTopOff
-    log.trace{"Updating onTopButton: visible=\(onTopButtonVisibility) selected=\(isOnTop.yn)"}
+    log.trace("Updating onTopButton: visible=\(onTopButtonVisibility) selected=\(isOnTop.yn)")
 
     for button in [onTopButton, customTitleBar?.onTopButton].compactMap({$0}) {
       button.replaceSymbolImage(with: image, effect: nil)

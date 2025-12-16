@@ -225,7 +225,7 @@ struct AppInputConfig: Sendable {
     let keyStrokes = KeyCodeHelper.splitKeystrokes(keySequence)
     if let lastKey = keyStrokes.last {
       if let anyUnicode, KeyCodeHelper.isTypedUnicodeChar(normalizedMpvKey: lastKey) {
-        AppInputConfig.log.trace{"Key \(lastKey.quoted) matches ANY_UNICODE binding"}
+        AppInputConfig.log.trace("Key \(lastKey.quoted) matches ANY_UNICODE binding")
         return bindingCandidateList[anyUnicode]
       }
     }

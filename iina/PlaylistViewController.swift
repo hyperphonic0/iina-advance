@@ -327,7 +327,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       playlistTableView.post(tableUIChange)
     } else {
       pwc.animationPipeline.submitInstantTask { [self] in
-        player.log.trace{"Updating playlist table via reloadData"}
+        player.log.trace("Updating playlist table via reloadData")
         playlistTableView.reloadData()
         doAfterReload()
       }
@@ -357,7 +357,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     assert(DispatchQueue.isExecutingIn(PlayerCore.backgroundQueue))
 
     if let totalDuration = player.info.calculateTotalDuration() {
-      player.log.trace{"Playlist: recalculated total duration: \(totalDuration)"}
+      player.log.trace("Playlist: recalculated total duration: \(totalDuration)")
       playlistTotalLengthIsReady = true
       playlistTotalLength = totalDuration
     } else {
@@ -805,7 +805,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let displayName = (wantsTitleDisplayed ? cachedMeta.title : nil) ?? cachedMeta.id.displayName
     let artist = wantsTitleDisplayed ? cachedMeta.artist : nil
 
-    player.log.trace{"Building row \(rowIndex) of playlist: \(displayName.quoted)"}
+    player.log.trace("Building row \(rowIndex) of playlist: \(displayName.quoted)")
 
     let textColor = isPlaying ? isPlayingTextColor : .controlTextColor
     let prefixTextColor = isPlaying ? isPlayingPrefixTextColor : .secondaryLabelColor
@@ -858,7 +858,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> MediaMeta? {
     guard rowIndex >= 0 else { return nil }
     let playlistItems = displayedPlaylist
-    player.log.trace{"Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)\(force ? " (forced)" : "")"}
+    player.log.trace("Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)\(force ? " (forced)" : "")")
     guard rowIndex < playlistItems.count else { return nil }
     let playlistItem = playlistItems[rowIndex]
     let url = playlistItem.url

@@ -98,7 +98,7 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
 
     let cacheName = mediaFilePathMD5
     if ThumbnailCache.shared.fileIsCached(forName: cacheName, forVideo: mediaFilePath, forWidth: thumbnailWidth) {
-      log.trace{"Found matching thumbnail cache name=\(cacheName.quoted), \(thumbnailWidth)px width for: \(mediaFilePath.pii.quoted)"}
+      log.trace("Found matching thumbnail cache name=\(cacheName.quoted), \(thumbnailWidth)px width for: \(mediaFilePath.pii.quoted)")
       if let thumbnails = ThumbnailCache.shared.read(forName: cacheName, forWidth: thumbnailWidth) {
         if thumbnails.count >= AppData.minThumbnailsPerFile {
           addThumbnails(thumbnails)
@@ -199,7 +199,7 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
         return
       }
       if thumbnails.count > 0 {
-        log.trace{"Got final count of \(thumbnails.count) thumbs, width=\(width)px"}
+        log.trace("Got final count of \(thumbnails.count) thumbs, width=\(width)px")
         addThumbnails(thumbnails)
       }
       log.debug("Done generating thumbnails, success=\(succeeded.yn) count=\(self.thumbnails.count) width=\(width)px")

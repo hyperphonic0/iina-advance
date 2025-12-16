@@ -346,7 +346,7 @@ struct TableUIChange: Sendable {
 
   func postNotification(name tableChangeNotificationName: Notification.Name) {
     let not = Notification(name: tableChangeNotificationName, object: self)
-    Logger.log.trace{"Posting \(not.name.rawValue.quoted) notification with changeType \(changeType)"}
+    Logger.log.trace("Posting \(not.name.rawValue.quoted) notification with changeType \(changeType)")
     NotificationCenter.default.post(not)
   }
 

@@ -263,13 +263,13 @@ extension PlayerWindowController {
     guard !currentLayout.isFullScreen else { return false }
     let timeElapsed = Date().timeIntervalSince(denyWindowResizePeriodStartTime)
     let denyWindowResize = timeElapsed - Constants.TimeInterval.denyWindowResizeTimeout < 0
-    log.trace{"Time elapsed=\(timeElapsed), timeout=\(Constants.TimeInterval.denyWindowResizeTimeout) → DenyWinResize=\(denyWindowResize.yn)"}
+    log.trace("Time elapsed=\(timeElapsed), timeout=\(Constants.TimeInterval.denyWindowResizeTimeout) → DenyWinResize=\(denyWindowResize.yn)")
     return denyWindowResize
   }
 
   func restartWindowScrollDenialPeriod() {
     // Do not allow MacOS to change the window size
-    log.trace{"Restarting window scroll denial period"}
+    log.trace("Restarting window scroll denial period")
     denyWindowScrollPeriodStartTime = Date()
   }
 
@@ -277,7 +277,7 @@ extension PlayerWindowController {
     guard !currentLayout.isFullScreen else { return false }
     let timeElapsed = Date().timeIntervalSince(denyWindowScrollPeriodStartTime)
     let denyWindowScroll = timeElapsed - Constants.TimeInterval.denyWindowScrollTimeout < 0
-    log.trace{"Time elapsed=\(timeElapsed), timeout=\(Constants.TimeInterval.denyWindowResizeTimeout) → DenyWinScroll=\(denyWindowScroll.yn)"}
+    log.trace("Time elapsed=\(timeElapsed), timeout=\(Constants.TimeInterval.denyWindowResizeTimeout) → DenyWinScroll=\(denyWindowScroll.yn)")
     return denyWindowScroll
   }
 

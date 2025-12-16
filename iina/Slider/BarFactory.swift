@@ -231,9 +231,7 @@ class BarFactory {
         }
         segsMaxX = chapters[1...].map{ xForSec($0.startTime) }
       }
-      if Logger.isTraceEnabled {
-        Logger.log.trace{"ValueX: \(currentValuePointX), CurrChHoverX: \(currentChapterHoverX?.description ?? "nil")"}
-      }
+      Logger.log.trace("ValueX: \(currentValuePointX), CurrChHoverX: \(currentChapterHoverX?.description ?? "nil")")
 
       // Add right end of bar (don't forget to subtract left & right padding from img)
       let lastSegMaxX = imgConf.imgWidth - (imgConf.imgPadding * 2)

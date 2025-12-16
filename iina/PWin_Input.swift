@@ -305,7 +305,7 @@ extension PlayerWindowController {
     // Prevent from triggering during a drag
     guard currentDragObject == nil else { return }
 
-    log.trace{"PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition)"}
+    log.trace("PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition)")
     if !isCurrentPressInSecondStage && event.stage == 2 {
       performMouseAction(Preference.enum(for: .forceTouchAction))
       isCurrentPressInSecondStage = true
@@ -411,7 +411,7 @@ extension PlayerWindowController {
   }
 
   override func mouseDragged(with event: NSEvent) {
-    log.trace{"PWin MouseDragged @ \(event.locationInWindow) obj=\(currentDragObject?.idString ?? "nil")"}
+    log.trace("PWin MouseDragged @ \(event.locationInWindow) obj=\(currentDragObject?.idString ?? "nil")")
 
     hideCursorTimer.cancel()
     if let currentDragObject {
@@ -670,7 +670,7 @@ extension PlayerWindowController {
     // Do not use `event.locationInWindow`: it can be very stale
     let pointInWindow = mouseLocationInWindow
 
-    log.trace{"MouseDidMoveInWindow @ \(pointInWindow)"}
+    log.trace("MouseDidMoveInWindow @ \(pointInWindow)")
 
     if let customTitleBar {
       // Enable show/hide of icons when hovering over traffic light buttons, mimicking native title bar

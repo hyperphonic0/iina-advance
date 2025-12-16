@@ -138,7 +138,7 @@ extension PlayerWindowController {
           showThumbnail = false
         }
       } else {
-        log.trace{"Not showing thumbnail for time=\(previewTimeSec): requested=\(showThumbnail.yn) found=\((ffThumbnail != nil).yn)"}
+        log.trace("Not showing thumbnail for time=\(previewTimeSec): requested=\(showThumbnail.yn) found=\((ffThumbnail != nil).yn)")
         showThumbnail = false
         thumbWidth = 0
         thumbHeight = 0
@@ -306,7 +306,7 @@ extension PlayerWindowController {
       timeLabel.isHidden = false
 
       // Done with timeLabel.
-      log.trace{"TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY), size=\(timeLabelSize) thumbnail=\(showThumbnail.yn) thumbfast=\(usingThumbfast.yn)"}
+      log.trace("TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY), size=\(timeLabelSize) thumbnail=\(showThumbnail.yn) thumbfast=\(usingThumbfast.yn)")
 
       // Need integers below.
       if showThumbnail && !usingThumbfast {
@@ -415,7 +415,7 @@ extension PlayerWindowController {
         CATransaction.commit()
       }
 
-      log.trace{"Displaying thumbnail: frame=\(thumbFrame) in windowFrame=\(thumbnailPeekView.window?.frame.description ?? "nil"), calcWinFrame=\(currentGeo.windowFrame)"}
+      log.trace("Displaying thumbnail: frame=\(thumbFrame) in windowFrame=\(thumbnailPeekView.window?.frame.description ?? "nil"), calcWinFrame=\(currentGeo.windowFrame)")
       thumbnailPeekView.alphaValue = 1.0
     }
 
@@ -438,7 +438,7 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
     
     let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
-    log.trace{"SeekPreview timed out: current mouseLoc=\(pointInWindow)"}
+    log.trace("SeekPreview timed out: current mouseLoc=\(pointInWindow)")
     guard !isScrollingOrDraggingPlaySlider else {
       // Do not step on the toes of the scroll wheel / play slider during seek.
       // Just push the timeout further out in case it's needed after seek ends
@@ -497,7 +497,7 @@ extension PlayerWindowController {
   /// Display time label & thumbnail when mouse over slider
   func refreshSeekPreviewAsync(forPointInWindow pointInWindow: NSPoint, animateHide: Bool = false) {
     thumbDisplayDebouncer.run { [self] in
-      log.trace{"RefreshSeekPreviewAsync @ \(pointInWindow)"}
+      log.trace("RefreshSeekPreviewAsync @ \(pointInWindow)")
       if shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow), let duration = player.info.playbackDurationSec {
         if showSeekPreview(forPointInWindow: pointInWindow, mediaDuration: duration) {
           return

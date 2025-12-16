@@ -246,7 +246,7 @@ class MediaMetaCache {
           oldMeta.title != newMeta.title ||
           oldMeta.album != newMeta.album ||
           oldMeta.artist != newMeta.artist {
-        log.trace{"Cache entry changed: \(id.path.pii.quoted) ≔ \(newMeta)"}
+        log.trace("Cache entry changed: \(id.path.pii.quoted) ≔ \(newMeta)")
         postFileHistoryUpdateNotification(forURL: newMeta.id.url)
       }
 

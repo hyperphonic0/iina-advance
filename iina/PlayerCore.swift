@@ -1671,7 +1671,7 @@ final class PlayerCore: NSObject {
   func syncVideoParamsFromMpv() {
     guard pwc.loaded else { return }
     guard !isRestoring else {
-      log.trace{"Ignoring SyncVidGeo request: isRestoring=Y"}
+      log.trace("Ignoring SyncVidGeo request: isRestoring=Y")
       return
     }
 
@@ -2948,7 +2948,7 @@ final class PlayerCore: NSObject {
       let now = Date().timeIntervalSince1970
       let secSinceLastSave = now - lastStateSaveTime
       if secSinceLastSave >= Constants.TimeInterval.playTimeSaveStateFrequency {
-        log.trace{"SyncUI: another \(Constants.TimeInterval.playTimeSaveStateFrequency)s has passed: saving player state"}
+        log.trace("SyncUI: another \(Constants.TimeInterval.playTimeSaveStateFrequency)s has passed: saving player state")
         saveState()
         lastStateSaveTime = now
       }
@@ -3156,7 +3156,7 @@ final class PlayerCore: NSObject {
       /// Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
       thumbReloadDebouncer.run { [self] in
         guard !isStopping else { return }
-        log.trace{"Thumbnails reload requested"}
+        log.trace("Thumbnails reload requested")
 
         var queueTicket: Int = 0
         $thumbnailQueueTicket.withLock {
@@ -3235,7 +3235,7 @@ final class PlayerCore: NSObject {
                                index:     index)
       chapters.append(chapter)
     }
-    log.trace{"Chapters: \(chapters)"}
+    log.trace("Chapters: \(chapters)")
     // Instead of modifying existing list, overwrite reference to prev list.
     // This will avoid concurrent modification crashes
     info.chapters = chapters

@@ -175,7 +175,7 @@ struct PlaybackID: Sendable, Equatable, Hashable {
   static func bookmark(fromURL url: URL, _ log: any Logger.Subsystem) -> Data? {
     guard url.isFileURL else { return nil }
     guard FileManager.default.fileExists(atPath: url.path) else {
-      log.trace{"Cannot create bookmark data from URL \(url.path.pii.quoted): file does not exist"}
+      log.trace("Cannot create bookmark data from URL \(url.path.pii.quoted): file does not exist")
       return nil
     }
     do {

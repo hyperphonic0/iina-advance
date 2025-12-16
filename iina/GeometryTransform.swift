@@ -234,7 +234,7 @@ struct GeometryTransform: Sendable {
   @MainActor
   private func doMainQueueWork(_ ctxInput: GeometryTransform.ContextStage3) {
     var ctx = ctxInput
-    log.trace{"[GTF:\(name)] Starting main thread work: startingSession=\(ctx.gtfSessionState.isStartingSession)"}
+    log.trace("[GTF:\(name)] Starting main thread work: startingSession=\(ctx.gtfSessionState.isStartingSession)")
 
     /// 3. Build tasks to transition the window to its "initial" layout (new sessions only)
     var immediateTasks: [IINAAnimation.Task] = buildInitialLayoutTasks(&ctx)

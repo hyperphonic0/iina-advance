@@ -129,7 +129,7 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
       return
     }
     let isInsideBounds = updateHighlight(from: event)
-    pwc?.log.trace{"SymButton \(idString.quoted): mouseDragged insideBounds=\(isInsideBounds.yn)"}
+    pwc?.log.trace("SymButton \(idString.quoted): mouseDragged insideBounds=\(isInsideBounds.yn)")
   }
 
   override func mouseUp(with event: NSEvent) {
@@ -163,7 +163,7 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
     guard enableAcceleration else { return }
     let pseudoStage = Int(event.pressure * 5)
     guard let pwc = pwc(from: event) else { return }
-    pwc.player.log.trace{"SymButton \(idString.quoted): PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition) pressure=\(event.pressure) pseudoStage=\(pseudoStage)"}
+    pwc.player.log.trace("SymButton \(idString.quoted): PressureChange: stage=\(event.stage) stageTransition=\(event.stageTransition) pressure=\(event.pressure) pseudoStage=\(pseudoStage)")
     pressureStage = pseudoStage
     sendAction(action, to: target)
   }

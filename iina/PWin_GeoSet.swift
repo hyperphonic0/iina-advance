@@ -49,7 +49,7 @@ extension PlayerWindowController {
     if !force {
       // Need to check state of current playback to avoid race conditions
       guard loaded, player.isActive, player.info.isFileLoaded, window.isOpen else {
-        log.trace{"Will use cached windowFrame/screenID instead of latest: playerActive=\(player.isActive) fileLoaded=\(player.info.isFileLoaded) wndOpen=\(window.isOpen.yn)"}
+        log.trace("Will use cached windowFrame/screenID instead of latest: playerActive=\(player.isActive) fileLoaded=\(player.info.isFileLoaded) wndOpen=\(window.isOpen.yn)")
         return nil
       }
       guard !sessionState.isRestoring else {
@@ -130,12 +130,12 @@ extension PlayerWindowController {
 
     let geo = geo
     if currentLayout.mode.isWindowed, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: force) {
-      log.trace{"Cloning windowed geometry with current windowFrame=\(latestWindowFrame), screenID=\(latestScreenID.quoted)"}
+      log.trace("Cloning windowed geometry with current windowFrame=\(latestWindowFrame), screenID=\(latestScreenID.quoted)")
       // If user moved the window recently, window frame might not be completely up to date. Update it & return:
       return geo.windowed.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: newVidGeo)
     }
     // Doesn't make sense to update window if currently in FS or some other mode. But update video
-    log.trace{"Cloning windowed geometry, updating only videoGeo=\(newVidGeo?.description ?? "nil")"}
+    log.trace("Cloning windowed geometry, updating only videoGeo=\(newVidGeo?.description ?? "nil")")
     return geo.windowed.clone(video: newVidGeo)
   }
 
@@ -146,7 +146,7 @@ extension PlayerWindowController {
 
     let geo = geo
     if currentLayout.mode == .musicMode, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID(force: force) {
-      log.trace{"Cloning musicMode geometry with current windowFrame=\(latestWindowFrame) screenID=\(latestScreenID.quoted)"}
+      log.trace("Cloning musicMode geometry with current windowFrame=\(latestWindowFrame) screenID=\(latestScreenID.quoted)")
       return geo.musicMode.cloneMusicMode(windowFrame: latestWindowFrame, screenID: latestScreenID, video: newVidGeo)
     }
     return geo.musicMode.cloneMusicMode(video: newVidGeo)

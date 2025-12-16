@@ -322,9 +322,9 @@ class EditableTableView: NSTableView {
         let draggingFrameSize = CGSize(width: self.frame.width,
                                        height: self.rowHeight * CGFloat(rowIndexArray.count))
         draggingItem.draggingFrame = NSRect(origin: .zero, size: draggingFrameSize)
-        log.trace{"DraggingFrame: \(draggingItem.draggingFrame)"}
+        log.trace("DraggingFrame: \(draggingItem.draggingFrame)")
 
-        log.trace{"Returning \(componentArray.count) draggingImageComponents"}
+        log.trace("Returning \(componentArray.count) draggingImageComponents")
         return componentArray
       }
     }
@@ -350,10 +350,10 @@ class EditableTableView: NSTableView {
     // It seems that `selectionIndexesForProposedSelection` needs to be called explicitly
     // in order to keep enforcing selection rules.
     if let approvedRows = self.delegate?.tableView?(self, selectionIndexesForProposedSelection: newSelectedRowIndexes) {
-      log.trace{"Updating table selection to approved indexes: \(approvedRows.map{$0})"}
+      log.trace("Updating table selection to approved indexes: \(approvedRows.map{$0})")
       self.selectRowIndexes(approvedRows, byExtendingSelection: byExtendingSelection)
     } else {
-      log.trace{"Updating table selection (no approval) to indexes: \(newSelectedRowIndexes.map{$0})"}
+      log.trace("Updating table selection (no approval) to indexes: \(newSelectedRowIndexes.map{$0})")
       self.selectRowIndexes(newSelectedRowIndexes, byExtendingSelection: byExtendingSelection)
     }
   }
