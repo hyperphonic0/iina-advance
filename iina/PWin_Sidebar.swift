@@ -525,7 +525,9 @@ extension PlayerWindowController {
   ///
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
   func prepareLayoutForOpening(leadingSidebar: Sidebar, layout: LayoutState,
-                               isWindowWidthChanging: Bool, _ log: any Logger.Subsystem) {
+                               isWindowWidthChanging: Bool,
+                               addTabGroupView shouldAddTabGroup: Bool,
+                               _ log: any Logger.Subsystem) {
     for subview in leadingSidebarView.subviews {
       // remove clipView without keeping a reference to it
       if subview != leadingSidebarTrailingBorder {
@@ -587,8 +589,10 @@ extension PlayerWindowController {
                                                           viewportLeadingClipTrailing: viewportLeadingClipTrailing,
                                                           top: topConstraint, bottom: bottomConstraint)
 
-    log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(leadingSidebar.locationID), placement=\(leadingSidebar.placement)")
-    addTabGroupView(for: tabGroupToShow, to: tabContainerView)
+    if shouldAddTabGroup {
+      log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(leadingSidebar.locationID), placement=\(leadingSidebar.placement)")
+      addTabGroupView(for: tabGroupToShow, to: tabContainerView)
+    }
   }
 
   /**
@@ -646,7 +650,9 @@ extension PlayerWindowController {
   ///
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
   func prepareLayoutForOpening(trailingSidebar: Sidebar, layout: LayoutState,
-                               isWindowWidthChanging: Bool, _ log: any Logger.Subsystem) {
+                               isWindowWidthChanging: Bool,
+                               addTabGroupView shouldAddTabGroup: Bool,
+                               _ log: any Logger.Subsystem) {
     for subview in trailingSidebarView.subviews {
       // remove clipView without keeping a reference to it
       if subview != trailingSidebarLeadingBorder {
@@ -703,8 +709,10 @@ extension PlayerWindowController {
                                                             viewportTrailingClipLeading: viewportTrailingClipLeading,
                                                             top: topCon, bottom: bottomCon)
 
-    log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(trailingSidebar.locationID), placement=\(trailingSidebar.placement)")
-    addTabGroupView(for: tabGroupToShow, to: tabContainerView)
+    if shouldAddTabGroup {
+      log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(trailingSidebar.locationID), placement=\(trailingSidebar.placement)")
+      addTabGroupView(for: tabGroupToShow, to: tabContainerView)
+    }
   }
 
   /**

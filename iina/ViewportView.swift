@@ -21,6 +21,7 @@ class ViewportView: NSView {
     super.init(frame: .zero)
     idString = "ViewportView"
     registerForDraggedTypes([.nsFilenames, .nsURL, .string])
+    wantsLayer = true  // needed for background color
     clipsToBounds = true
     translatesAutoresizingMaskIntoConstraints = false
     autoresizesSubviews = false

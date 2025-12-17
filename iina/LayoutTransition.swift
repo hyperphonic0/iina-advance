@@ -281,20 +281,13 @@ extension PlayerWindowController {
       return inputLayout.trailingSidebarPlacement != outputLayout.trailingSidebarPlacement
     }
 
-    var isOpeningLeadingSidebar: Bool {
-      return isOpening(.leadingSidebar)
-    }
+    var isOpeningLeadingSidebar: Bool { isOpening(.leadingSidebar) }
+    var isOpeningTrailingSidebar: Bool { isOpening(.trailingSidebar) }
+    var isClosingLeadingSidebar: Bool { isClosing(.leadingSidebar) }
+    var isClosingTrailingSidebar: Bool { isClosing(.trailingSidebar) }
 
-    var isOpeningTrailingSidebar: Bool {
-      return isOpening(.trailingSidebar)
-    }
-
-    var isClosingLeadingSidebar: Bool {
-      return isClosing(.leadingSidebar)
-    }
-
-    var isClosingTrailingSidebar: Bool {
-      return isClosing(.trailingSidebar)
+    var isClosingAnySidebar: Bool {
+      isClosing(.leadingSidebar) || isClosing(.trailingSidebar)
     }
 
     var isOpeningAnySidebar: Bool {

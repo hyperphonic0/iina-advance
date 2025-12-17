@@ -544,27 +544,33 @@ extension PlayerWindowController {
                                          _ log: any Logger.Subsystem) {
     // Make sure we do not step on any animations to clse sidebars
     let isPastClosingStage = stage.isAtLeast(.midTransitionHiddenUpdates)
-    guard isPastClosingStage else { return }
 
     let outputLayout = transition.outputLayout
 
-    if transition.isOpeningLeadingSidebar {
+    if transition.isOpeningLeadingSidebar, isPastClosingStage || !transition.isClosingLeadingSidebar {
       // Opening sidebar from closed state
       prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
                               layout: transition.outputLayout,
-                              isWindowWidthChanging: transition.ΔWindowWidth != 0, log)
+                              isWindowWidthChanging: transition.ΔWindowWidth != 0,
+                              addTabGroupView: isPastClosingStage,
+                              log)
     }
+    if transition.isOpeningTrailingSidebar, isPastClosingStage || !transition.isClosingTrailingSidebar {
+      // Opening sidebar from closed state
+      prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
+                              layout: transition.outputLayout,
+                              isWindowWidthChanging: transition.ΔWindowWidth != 0,
+                              addTabGroupView: isPastClosingStage,
+                              log)
+    }
+
+    guard isPastClosingStage else { return }
+
     // I already showing but need to change tab group
     if let visibleTab = outputLayout.leadingSidebar.visibleTab {
       switchToTabInTabGroup(tab: visibleTab)
     }
 
-    if transition.isOpeningTrailingSidebar {
-      // Opening sidebar from closed state
-      prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
-                              layout: transition.outputLayout,
-                              isWindowWidthChanging: transition.ΔWindowWidth != 0, log)
-    }
     // If already showing but need to change tab group
     if let visibleTab = outputLayout.trailingSidebar.visibleTab {
       switchToTabInTabGroup(tab: visibleTab)
