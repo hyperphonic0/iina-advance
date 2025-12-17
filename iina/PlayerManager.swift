@@ -154,7 +154,8 @@ final class PlayerManager {
     return playerCores.first(where: { $0.label == label }) != nil
   }
 
-  /// Always starts the given player after creating it.
+  /// ALways use this to create a new player.
+  /// This always starts the given player after creating it.
   func createNewPlayerCore(withLabel priorLabel: String? = nil, restoringFrom priorState: PlayerSaveState? = nil) -> PlayerCore {
     let pc: PlayerCore
     if let priorLabel, let priorState {

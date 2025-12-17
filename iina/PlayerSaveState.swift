@@ -658,6 +658,8 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     // We must have a non-nil track of each. The UI's selected track will be blank if not.
+    let vid = int(for: .vid) ?? 0
+    info.vid = vid
     let aid = int(for: .aid) ?? 0
     info.aid = aid
     let sid = int(for: .sid) ?? 0
@@ -1526,8 +1528,8 @@ extension PlayerCore {
     props[PropName.hdrEnabled.rawValue] = info.hdrEnabled.yn
 
     // We must restore a non-nil value. Default to 0 (none) if not found
-    let intVal = info.vid ?? 0
-    props[PropName.vid.rawValue] = String(intVal)
+    let vid = info.vid ?? 0
+    props[PropName.vid.rawValue] = String(vid)
     if let intVal = info.aid {
       props[PropName.aid.rawValue] = String(intVal)
     }

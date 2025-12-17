@@ -730,16 +730,18 @@ struct GeometryTransform: Sendable {
         }
 
         // Post "ready to show" notification? Or post cancellation? Or do nothing more?
-        if gtfSessionState.isRestoring {
-          if pwc.window!.isMiniaturized {
-            log.verbose("[GTF:\(name)] Previously minimized window is being restored: skipping windowIsReadyToShow")
-            return
-          }
+        if case .restoring(let previousState) = gtfSessionState {
+          if let (miniturized, hidden) = pwc.restoreFromMiscWindowBools(previousState) {
+            if miniturized {
+              log.verbose("[GTF:\(name)] Previously minimized window is being restored: skipping windowIsReadyToShow")
+              return
+            }
 
-          if pwc.isWindowHidden {
-            log.verbose("[GTF:\(name)] Previously hidden video is being restored: posting windowMustCancelShow")
-            pwc.postWindowMustCancelShow()
-            return
+            if hidden {
+              log.verbose("[GTF:\(name)] Previously hidden video is being restored: posting windowMustCancelShow")
+              pwc.postWindowMustCancelShow()
+              return
+            }
           }
         }
 

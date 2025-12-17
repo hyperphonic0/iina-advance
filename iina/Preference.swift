@@ -1207,7 +1207,7 @@ struct Preference {
     }
   }
 
-  enum WindowBehaviorWhenPip: Int, InitializingFromKey {
+  enum WindowBehaviorWhenPip: Int, InitializingFromKey, CustomStringConvertible {
     case doNothing = 0
     case hide
     case minimize
@@ -1216,6 +1216,17 @@ struct Preference {
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var description: String {
+      switch self {
+      case .doNothing:
+        return "doNothing"
+      case .hide:
+        return "hide"
+      case .minimize:
+        return "minimize"
+      }
     }
   }
 

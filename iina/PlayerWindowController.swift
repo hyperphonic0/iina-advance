@@ -691,7 +691,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
         }
         if !viewportView.subviews.contains(videoView) {
           if currentLayout.isInPiP {
-            log.debug("Aborting add of videoView to window: isInPiP=\(currentLayout.isInPiP)")
+            log.debug("Aborting add of videoView to window: isInPiP=\(currentLayout.isInPiP.yn)")
           } else {
             log.verbose("Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)")
             viewportView.addSubview(videoView)
@@ -770,7 +770,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
-  func restoreFromMiscWindowBools(_ priorState: PlayerSaveState) {
+  func restoreFromMiscWindowBools(_ priorState: PlayerSaveState) -> (miniturized: Bool, hidden: Bool)? {
     let window = window!
     let isOnTop = priorState.bool(for: .isOnTop) ?? false
     setWindowFloatingOnTop(isOnTop, from: currentLayout, updateOnTopStatus: true)
@@ -779,14 +779,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
                isWindowMiniaturizedDueToPip,
                isPausedPriorToInteractiveMode) = PlayerSaveState.parseMiscWindowBools(priorState.properties) else {
       log.debug("Failed to restore from miscWindowBools; defaulting to visible window")
-      window.orderOut(self)  // order out until load is complete
-      return
-    }
-
-    if !isMiniaturized && !isWindowMiniaturizedDueToPip {
-      // Hide window during init. When done, showWindow will be called
-      log.verbose("Ordering out window while restoring")
-      window.orderOut(self)
+      return nil
     }
 
     // Process PIP options first, to make sure it's not miniturized due to PIP
@@ -799,6 +792,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       } else {
         pipOption = .doNothing
       }
+      log.verbose("Restoring window which is in PiP (\(pipOption))")
       // Run in queue to avert race condition with window load
       animationPipeline.submitInstantTask({ [self] in
         enterPIP(usePipBehavior: pipOption)
@@ -813,6 +807,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     if isPausedPriorToInteractiveMode {
       self.isPausedPriorToInteractiveMode = isPausedPriorToInteractiveMode
     }
+    return (isMiniaturized, isHidden)
   }
 
   // MARK: - Window delegate: Open / Close
@@ -879,9 +874,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
         hideBufferIndicator()
       }
 
-      if let priorState = priorStateIfRestoring {
-        restoreFromMiscWindowBools(priorState)
-      } else {
+      if !sessionState.isRestoring {
         // MUST register new window before closing welcome window. If welcome window was only window open,
         // doActionWhenLastWindowWillClose() can be triggered, which consults UIState.shared.windowsOpen to check for open or pending open windows
         if !window.isMiniaturized {

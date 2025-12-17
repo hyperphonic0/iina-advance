@@ -819,7 +819,7 @@ final class StartupHandler {
     let removedFromRestoreCount = toRestoreCountOld - toRestoreCountNew
     let removedFromOpenCount = toOpenFileCountOld - toOpenFileCountNew
 
-    log.verbose("Canceled wait for window: \(window.savedStateName.quoted) (restore=\(removedFromRestoreCount), open=\(removedFromOpenCount)). Progress is now: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")")
+    log.verbose("Canceled wait for window: \(window.savedStateName.quoted) (removedFromRestoreCount=\(removedFromRestoreCount), removedFromOpenCount=\(removedFromOpenCount)). Progress is now: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")")
 
     showWindowsIfReady()
   }

@@ -2159,7 +2159,7 @@ final class PlayerCore: NSObject {
     // Cache these vars to keep them constant for background tasks
     let priorStateIfRestoring = pwc.priorStateIfRestoring
     let isRestoring = priorStateIfRestoring != nil
-    
+
     // Sync tracks
     if let priorStateIfRestoring, priorStateIfRestoring.string(for: .playPosition) != nil {
       /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist

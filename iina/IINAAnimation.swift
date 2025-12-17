@@ -329,7 +329,7 @@ extension IINAAnimation {
         }
 
         guard taskTxID >= currentTxID else {
-          log.debug("[Pipeline] Skipping task with cancelled txID \(taskTxID) (next valid txID: \(currentTxID))")
+          log.verbose("[Pipeline] Skipping task with cancelled txID \(taskTxID) (next valid txID: \(currentTxID))")
           continue
         }
         currentTxID = taskTxID

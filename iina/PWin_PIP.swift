@@ -107,7 +107,10 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
   func enterPIP(usePipBehavior preferredPipBehavior: Preference.WindowBehaviorWhenPip? = nil, then doOnSuccess: (() -> Void)? = nil) {
     // Exit interactive mode before even entering intermediate status
     exitInteractiveMode(then: { [self] in
-      guard !pip.isInTransition else { return }
+      guard !pip.isInTransition else {
+        log.verbose("Aborting request for PIP entry: already toggling PiP")
+        return
+      }
 
       // Must not try to enter PiP if already in PiP - will crash!
 
@@ -143,7 +146,7 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
         currentLayout = outputLayout
       }
 
-      log.verbose("Entering PiP")
+      log.verbose("Entering PiP, preferredBehavior=\(preferredPipBehavior?.description ?? "nil")")
       PlayerManager.shared.pipPlayer = player
 
       pip.isInTransition = true
@@ -207,13 +210,9 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
       case .doNothing:
         break
       case .hide:
+        log.verbose("PIP entered. Hiding window")
         isWindowHidden = true
         window.orderOut(self)
-        log.verbose("PIP entered; adding player to hidden windows list: \(window.savedStateName.quoted)")
-        if player.isRestoring, AppDelegate.shared.startupHandler.wcsToRestore.contains(self) {
-          // patch logic hole here
-          AppDelegate.shared.startupHandler.wcsDoneWithRestore.insert(self)
-        }
         break
       case .minimize:
         isWindowMiniaturizedDueToPip = true
@@ -331,17 +330,6 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
     // seems to require separate animation blocks to work properly
     var tasks: [IINAAnimation.Task] = []
 
-    if isWindowHidden {
-      log.verbose("PIP did close: appending extra tasks for hidden window")
-      tasks.append(contentsOf: buildApplyPWinGeoTasks(to: windowedModeGeo)) // may have skipped updates while hidden
-      tasks.append(IINAAnimation.Task({ [self] in
-        showWindow(self)
-
-        log.verbose("PIP did close; removing player from hidden windows list: \(window.savedStateName.quoted)")
-        isWindowHidden = false
-      }))
-    }
-
     tasks.append(.instantTask { [self] in
       let currentGeo = currentLayout.mode == .musicMode ? musicModeGeoForCurrentFrame() : windowedGeoForCurrentFrame()
       if currentGeo.isViewportShown {
@@ -362,6 +350,18 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
       // If using legacy windowed mode, need to manually add title to Window menu & Dock
       updateTitle()
     })
+
+    if isWindowHidden {
+      log.verbose("PIP did close: appending extra tasks for hidden window")
+      // May have skipped updates while hidden, so update now. Make sure to wait until after viewport is added to window (above)
+      tasks.append(contentsOf: buildApplyPWinGeoTasks(to: windowedModeGeo))
+      tasks.append(IINAAnimation.Task({ [self] in
+        window.makeKeyAndOrderFront(self)
+
+        log.verbose("PIP did close; removing player from hidden windows list: \(window.savedStateName.quoted)")
+        isWindowHidden = false
+      }))
+    }
 
     tasks.append(.instantTask { [self] in
       // Similarly, we need to run a redraw here as well. We check to make sure we
