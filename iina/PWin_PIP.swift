@@ -216,9 +216,11 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
         window.orderOut(self)
         break
       case .minimize:
-        isWindowMiniaturizedDueToPip = true
-        /// No need to add to `AppDelegate.windowsMinimized` - it will be handled by app-wide listener
-        window.miniaturize(self)
+        animationPipeline.submitInstantTask({ [self] in
+          isWindowMiniaturizedDueToPip = true
+          /// No need to add to `AppDelegate.windowsMinimized` - it will be handled by app-wide listener
+          window.miniaturize(self)
+        })
         break
       }
       if Preference.bool(for: .pauseWhenPip) {
