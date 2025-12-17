@@ -99,7 +99,7 @@ final class PlayerManager {
     var firstIdlePlayer: PlayerCore? = nil
     for p in playerCores {
       let isPlayerIdleOrUnused = p.isIdleOrUnused
-      Logger.log.verbose("Player-\(p.label): hasPlayback=\(p.hasPlayback.yn) idle=\(p.state == .idle) → UNUSED=\(isPlayerIdleOrUnused.yn)")
+      Logger.log.verbose("Player-\(p.label): hasPlayback=\(p.hasPlayback.yn) idle=\((p.state == .idle).yn) → UNUSED=\(isPlayerIdleOrUnused.yesno)")
       if firstIdlePlayer == nil && isPlayerIdleOrUnused {
         firstIdlePlayer = p
       }

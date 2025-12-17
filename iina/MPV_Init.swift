@@ -58,7 +58,7 @@ extension MPVController {
     // FIXME: allow hot toggling of log
     if Logger.enabled {
       let path = Logger.logDirectory.appendingPathComponent("mpv-\(player.label).log").path
-      player.log.debug("Path of mpv log: \(path.quoted)")
+      player.log.debug("Path of mpv log: \(path.pii.quoted)")
       chkErr(setOptionString(MPVOption.ProgramBehavior.logFile, path, level: .verbose))
     }
 

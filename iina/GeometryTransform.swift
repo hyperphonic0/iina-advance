@@ -296,7 +296,7 @@ struct GeometryTransform: Sendable {
       /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
       return ctx.pwc.buildTasksToRestoreLayout(priorState, &ctx)
 
-    case .newReplacingOpen, .newReplacingClosed:
+    case .newReplacingOpen:
       /// Reusing existing window for new file.
       log.verbose("[GTF:\(ctx.name)] Opening a new file in an already open window, mode=\(ctx.inputLayout.mode)")
 
@@ -316,7 +316,7 @@ struct GeometryTransform: Sendable {
       // No initial layout tasks needed. Fall through to add finishing task
       return [ctx.buildFinalInitialLayoutTask()]
 
-    case .creatingNew:
+    case .creatingNew, .newReplacingClosed:
       log.verbose("[GTF:\(ctx.name)] Brand new window is opening: building initial layout tasks")
       /// Side effects: sets `ctx.outputLayout`, `ctx.needsNativeFullScreen`.
       return ctx.pwc.buildTasksForNewWindow(&ctx)
@@ -434,14 +434,14 @@ struct GeometryTransform: Sendable {
           assert(tf.pWinGeoTransform == nil)
           return []
 
-        case .creatingNew:
+        case .creatingNew, .newReplacingClosed:
           // Just opened new window. Use a longer duration for this one, because the window starts small & will zoom into place.
           assert(tf.pWinGeoTransform == nil)
           duration = Constants.AnimationDuration.initialVideoReconfig
           timing = .linear
           resizedGeo = applyResizePrefsForNewPlaybackInWindowedMode()
 
-        case .newReplacingOpen, .newReplacingClosed:
+        case .newReplacingOpen:
           duration = Constants.AnimationDuration.initialVideoReconfig
           fallthrough
 
@@ -756,8 +756,7 @@ struct GeometryTransform: Sendable {
 
       switch gtfSessionState {
       case .existingSession_startingNewPlayback,
-          .newReplacingOpen,
-          .newReplacingClosed:
+          .newReplacingOpen:
 
         let layout = outputLayout
         if player.overrideAutoMusicMode {
@@ -781,7 +780,7 @@ struct GeometryTransform: Sendable {
     @MainActor
     fileprivate func buildEnterFullScreenTaskIfNeeded() -> IINAAnimation.Task? {
       switch gtfSessionState {
-      case .newReplacingOpen, .newReplacingClosed:
+      case .newReplacingOpen:
         guard  Preference.bool(for: .fullScreenWhenOpen) else { return nil }
 
         // It's possible this task will do nothing. But we cannot know that unless we enqueue the logic inside the task.
