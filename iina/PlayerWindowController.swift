@@ -640,7 +640,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     super.init(window: playerWindow)
     playerWindow.delegate = self
-    player.pwc = self
     osd.hideOSDTimer.action = { self.hideOSD() }
     log.verbose("PlayerWindowController init: done")
   }

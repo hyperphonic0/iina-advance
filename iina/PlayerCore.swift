@@ -609,15 +609,14 @@ final class PlayerCore: NSObject {
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
 
+    guard state.isAtLeast(.started) else {
+      Logger.fatal("Cannot open player window: player not started!")
+    }
     guard !isShuttingDown else {
       // Prevent possible (though very unlikely) deadlock if called while shutting down
       log.debug("Aborting open player window: already shutting down")
       return
     }
-
-    // Start mpv & create the PlayerWindowController (pwc) if it hasn't been already
-    // This should apply all the mpv user options as well.
-    startPlayer()
 
     /// Need to use `sync` so that:
     /// 1. Prev use of mpv core can finish stopping / drain queue
@@ -733,9 +732,11 @@ final class PlayerCore: NSObject {
 
   // MARK: - Startup / Shutdown
 
-  // Does nothing if already started
+  /// Starts mpv & create the `PlayerWindowController` (`pwc`) if it wasn't created already.
+  /// This will apply all the mpv user options as well.
+  /// Does nothing if already started.
   @MainActor
-  func startPlayer() {
+  func startPlayer(restoringFrom previousState: PlayerSaveState? = nil) {
     guard state == .notYetStarted else { return }
     log.verbose("Player start")
 
@@ -743,7 +744,14 @@ final class PlayerCore: NSObject {
       startMPV()
     } else {
       if pwc == nil {
-        let pwc = PlayerWindowController(playerCore: self)
+        if let previousState {
+          pwc = PlayerWindowController(playerCore: self, geoSet: previousState.geoSet, initialLayout: previousState.layoutState)
+          assert(pwc.sessionState.isNone, "Invalid sessionState for restore: \(pwc.sessionState)")
+          pwc.sessionState = .restoring(playerState: previousState)
+        } else {
+          pwc = PlayerWindowController(playerCore: self)
+        }
+        // Need to call this explicitly if not using a XIB
         pwc.windowDidLoad()
         // Hide the newly created window until ready to show (when `windowIsReadyToShow` notification is sent,
         // triggering `showWindow()`)

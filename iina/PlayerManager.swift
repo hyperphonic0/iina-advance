@@ -154,25 +154,30 @@ final class PlayerManager {
     return playerCores.first(where: { $0.label == label }) != nil
   }
 
-  func createNewPlayerCore(withLabel label: String? = nil, userOptions: [(String, String)]? = nil) -> PlayerCore {
-    Logger.log.debug("Creating PlayerCore instance with ID \(label?.quoted ?? "nil")")
+  /// Always starts the given player after creating it.
+  func createNewPlayerCore(withLabel priorLabel: String? = nil, restoringFrom priorState: PlayerSaveState? = nil) -> PlayerCore {
     let pc: PlayerCore
-    if let label = label {
-      guard !playerExists(withLabel: label) else {
-        Logger.fatal("Cannot create new PlayerCore: a player already exists with label \(label.quoted)")
+    if let priorLabel, let priorState {
+      Logger.log.debug("Restoring PlayerCore instance with ID \(priorLabel.quoted)")
+      guard !playerExists(withLabel: priorLabel) else {
+        Logger.fatal("Cannot create new PlayerCore: a player already exists with label \(priorLabel.quoted)")
       }
-      pc = PlayerCore(label, userOptions: userOptions)
+      let userOptions = priorState.mpvOpts()
+      pc = PlayerCore(priorLabel, userOptions: userOptions)
     } else {
       let playerLabel = AppData.label(forPlayerCore: playerCoreCounter)
       while playerExists(withLabel: playerLabel) {
         playerCoreCounter += 1
       }
-      pc = PlayerCore(playerLabel, userOptions: userOptions)
+      Logger.log.debug("Creating new PlayerCore instance with ID \(playerLabel.quoted)")
+      pc = PlayerCore(playerLabel)
       playerCoreCounter += 1
     }
     Logger.log.debug("Successfully created PlayerCore \(pc.label)")
 
     playerCores.append(pc)
+
+    pc.startPlayer(restoringFrom: priorState)
     return pc
   }
 

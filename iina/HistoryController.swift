@@ -169,9 +169,14 @@ final class HistoryController {
       log.verbose("Pref 'recordPlaybackHistory'=NO: skipping history save")
       return
     }
-    guard !FileManager.default.fileExists(atPath: plistURL.path) || FileManager.default.isWritableFile(atPath: plistURL.path) else {
-      log.error("Cannot save playback history to disk! Cannot write to file \(plistURL.path.pii.quoted)")
-      return
+    if !FileManager.default.fileExists(atPath: plistURL.path) {
+      // This is fine if the app was freshly installed. Otherwise it could indicate a permissions error or someone tampering.
+      log.warn("History file does not appear to exist; will create: \(plistURL.path.pii.quoted)")
+    } else {
+      guard FileManager.default.isWritableFile(atPath: plistURL.path) else {
+        log.error("Cannot save playback history to disk! Cannot write to file \(plistURL.path.pii.quoted)")
+        return
+      }
     }
     let sw = Utility.Stopwatch()
     do {
@@ -278,7 +283,8 @@ final class HistoryController {
   func removeAll() {
     self.async { [self] in
       log.debug("Clearing all history")
-      try? FileManager.default.removeItem(atPath: Utility.playbackHistoryURL.path)
+      history = []
+      saveHistoryToFile()
       clearRecentDocuments(nil)
       Preference.set(nil, for: .iinaLastPlayedFilePath)
 
@@ -516,7 +522,7 @@ final class HistoryController {
       log.verbose("Saving iinaLastPlayedFilePosition: \(position)s")
       Preference.set(position, for: .iinaLastPlayedFilePosition)
     } else {
-      log.warn("No position found for file; writing 0 to iinaLastPlayedFilePosition")
+      log.debug("No position found for file; writing 0 to iinaLastPlayedFilePosition for: \(id.path.pii.quoted)")
       Preference.set(0.0, for: .iinaLastPlayedFilePosition)
     }
     //////////////////

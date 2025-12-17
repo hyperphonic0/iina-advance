@@ -352,7 +352,7 @@ struct PlayerSaveState: CustomStringConvertible {
     return nil
   }
 
-  fileprivate func mpvOpts() -> [(String, String)] {
+  func mpvOpts() -> [(String, String)] {
     guard let propsString = string(for: .mpvOpts) else { return [] }
     let lines = propsString.split(separator: "\n")
     return lines.compactMap{ PlayerSaveState.optionFromString($0) }
@@ -599,16 +599,8 @@ struct PlayerSaveState: CustomStringConvertible {
       return nil
     }
 
-    let userOptions: [(String, String)] = mpvOpts()
-    let player = PlayerManager.shared.createNewPlayerCore(withLabel: id, userOptions: userOptions)
-
-    let pwc = PlayerWindowController(playerCore: player, geoSet: geoSet, initialLayout: layoutState)
-    assert(pwc.sessionState.isNone, "Invalid sessionState for restore: \(pwc.sessionState)")
-    pwc.sessionState = .restoring(playerState: self)
-
-    // Need to call this explicitly if not using a XIB
-    player.pwc.windowDidLoad()
-    player.startPlayer()
+    let player = PlayerManager.shared.createNewPlayerCore(withLabel: id, restoringFrom: self)
+    let pwc = player.pwc!
 
     let log = player.log
 
