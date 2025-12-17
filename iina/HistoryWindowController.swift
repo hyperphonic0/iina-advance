@@ -30,7 +30,9 @@ fileprivate let sectionHighlightColor = NSColor(name: nil) { appearance in
 
 fileprivate let loadingKey = "Loading..."
 fileprivate let noResultsKeyFormat = "No results found for \"%@\"."
+fileprivate let noHistoryKey = "No history exists."
 fileprivate let loadingPlaceholderLabel = ""  // displayed next to the loading spinner
+fileprivate let noHistoryPlaceholderLabel  = ""  // displayed next to the loading spinner
 
 fileprivate let MenuItemTagShowInFinder = 100
 fileprivate let MenuItemTagDelete = 101
@@ -314,11 +316,16 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
     }
 
     let hasFilter = !searchString.isEmpty
-    if hasFilter && historyDataUpdated.isEmpty {
-      log.trace("History window: showing No Results placeholder")
-      let noResultsKey = String(format: noResultsKeyFormat, searchString)
-      historyDataUpdated[noResultsKey] = []
-      historyDataKeysUpdated = [noResultsKey]
+    if historyDataUpdated.isEmpty {
+      log.trace("History window: showing No Results placeholder, hasFilter=\(hasFilter.yn)")
+      if hasFilter {
+        let noResultsKey = String(format: noResultsKeyFormat, searchString)
+        historyDataUpdated[noResultsKey] = []
+        historyDataKeysUpdated = [noResultsKey]
+      } else {
+        historyDataUpdated[noHistoryKey] = []
+        historyDataKeysUpdated = [noHistoryKey]
+      }
     }
 
     DispatchQueue.main.async { [self] in

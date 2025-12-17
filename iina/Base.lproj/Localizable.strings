@@ -355,7 +355,7 @@
 "alert.clear_saved_windows.message" = "Are you sure you want to delete all saved windows from previous launches?";
 
 "alert.clear_history.title" = "Clear Playback History";
-"alert.clear_history.message" = "Are you sure you want to delete all playback history? This will delete all playback histories and entries in \"Open Recent\".";
+"alert.clear_history.message" = "Are you sure? This will delete all playback history entries and all entries in \"Open Recent\".";
 
 "alert.clear_watch_later.title" = "Clear Saved Playback Progress";
 "alert.clear_watch_later.message" = "Are you sure you want to delete all files in the \"watch later\" folder? These files contain all saved playback progress and settings applied during playback.";

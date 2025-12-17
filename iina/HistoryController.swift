@@ -165,7 +165,11 @@ final class HistoryController {
       log.trace("History disabled; skipping history save")
       return
     }
-    guard FileManager.default.isWritableFile(atPath: plistURL.path) else {
+    guard Preference.bool(for: .recordPlaybackHistory) else {
+      log.verbose("Pref 'recordPlaybackHistory'=NO: skipping history save")
+      return
+    }
+    guard !FileManager.default.fileExists(atPath: plistURL.path) || FileManager.default.isWritableFile(atPath: plistURL.path) else {
       log.error("Cannot save playback history to disk! Cannot write to file \(plistURL.path.pii.quoted)")
       return
     }
@@ -186,6 +190,11 @@ final class HistoryController {
   private func readHistoryFromFile() -> Bool {
     assert(DispatchQueue.isExecutingIn(workDQ))
     // Avoid logging a scary error if the file does not exist.
+    guard FileManager.default.fileExists(atPath: plistURL.path) else {
+      log.debug("Playback history file does not exist: \(plistURL.path.pii.quoted). Clearing cached history from memory")
+      history = []
+      return true
+    }
     guard FileManager.default.isReadableFile(atPath: plistURL.path) else {
       log.error("Cannot read playback history file \(plistURL.path.pii.quoted)")
       return false
