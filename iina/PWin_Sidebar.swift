@@ -13,7 +13,7 @@ private func clampPlaylistWidth(_ width: CGFloat) -> CGFloat {
 }
 
 // Sidebar layout state
-struct Sidebar: CustomStringConvertible {
+struct Sidebar: CustomStringConvertible, Sendable {
 
   enum Visibility: CustomStringConvertible {
     case open(tabToShow: Sidebar.Tab)
@@ -273,7 +273,7 @@ struct Sidebar: CustomStringConvertible {
 
   var description: String {
     let tabGroups = tabGroups.map(\.description).joined(separator: ", ")
-    return "Sidebar(id=\(locationID) visibility=\(visibility) placement=\(placement) lastVisibleTab=\(lastVisibleTab.map(\.name.quoted) ?? "nil") tabGroups=[\(tabGroups)])"
+    return "Sidebar(\(locationID) \(visibility) place=\(placement) lastTab=\(lastVisibleTab.map(\.name.quoted) ?? "nil") groups=[\(tabGroups)])"
   }
 
 }  // end struct Sidebar

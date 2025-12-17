@@ -36,7 +36,7 @@ fileprivate let volumeIconTwoRowScaleFactor: CGFloat = 0.85
 
 // TODO: reimplement OSC title bar feature
 
-struct ControlBarGeometry {
+struct ControlBarGeometry: Sendable, CustomStringConvertible {
   // MARK: Stored properties
 
   let mode: PlayerWindowMode
@@ -67,9 +67,6 @@ struct ControlBarGeometry {
   /// Size of a side the 3 square playback button icons (Play/Pause, LeftArrow, RightArrow):
   let playIconSize: CGFloat
 
-  let leftArrowImage: NSImage
-  let rightArrowImage: NSImage
-
   /// This is usually the same as `playIconSize`, but can vary based on icon type
   let arrowIconHeight: CGFloat
 
@@ -80,6 +77,17 @@ struct ControlBarGeometry {
   let playIconSpacing: CGFloat
 
   let toolbarItems: [Preference.ToolBarButton]
+
+  /// Height of the entire `PlaySlider` view, including unused space.
+  ///
+  /// It is useful to expand slider height so that hovers are more likely to register.
+  /// But its height is also a useful metric for configuring spacing elsewhere.
+  /// See also: `sliderScale`
+  let playSliderHeight: CGFloat
+
+  var description: String {
+    "ControlBarGeo(\(mode) pos=\(position) barH=\(barHeight) fullIconH=\(fullIconHeight) playIcon=\(playIconSize);spacing=\(playIconSpacing) toolIcon=\(toolIconSize);spacing=\(toolIconSpacing) ticks=[\(playIconSizeTicks) \(playIconSpacingTicks) \(toolIconSizeTicks) \(toolIconSpacing)] arrowIcon=\(arrowIconWidth)x\(arrowIconHeight) arrowBtn=\(arrowButtonAction) forceSingleRow=\(forceSingleRowStyle.yn) timeLabelsAlwaysWrapSlider=\(oscTimeLabelsAlwaysWrapSlider.yn))"
+  }
 
   // MARK: Init
 
@@ -201,8 +209,6 @@ struct ControlBarGeometry {
       }
     }
     let leftArrowImage = ControlBarGeometry.leftArrowImage(given: arrowButtonAction)
-    self.leftArrowImage = leftArrowImage
-    self.rightArrowImage = ControlBarGeometry.rightArrowImage(given: arrowButtonAction)
     self.arrowIconWidth = leftArrowImage.deriveWidth(fromHeight: arrowIconHeight)
     self.arrowButtonAction = arrowButtonAction
     self.arrowIconHeight = arrowIconHeight
@@ -232,14 +238,11 @@ struct ControlBarGeometry {
 
   var isTwoRowBarOSC: Bool { !forceSingleRowStyle && ControlBarGeometry.qualifiesForMultiLineOSC(barHeight: barHeight, position, mode) }
 
-  // MARK: - Sliders
+  var leftArrowImage: NSImage { ControlBarGeometry.leftArrowImage(given: arrowButtonAction) }
+  var rightArrowImage: NSImage { ControlBarGeometry.rightArrowImage(given: arrowButtonAction) }
 
-  /// Height of the entire `PlaySlider` view, including unused space.
-  /// 
-  /// It is useful to expand slider height so that hovers are more likely to register.
-  /// But its height is also a useful metric for configuring spacing elsewhere.
-  /// See also: `sliderScale`
-  var playSliderHeight: CGFloat
+  
+  // MARK: - Sliders
 
   /// Ratio of the current slider's height vs the standard height.
   /// Useful for growing/shrinking related views & offsets.
