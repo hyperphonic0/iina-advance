@@ -137,8 +137,7 @@ class LogWindowController: WindowController, NSMenuDelegate {
     menuCopy()
   }
 
-  @objc private func menuCopy()
-  {
+  @objc private func menuCopy() {
     let string = (logArrayController.selectedObjects as! [Logger.Log]).map { $0.logString }.joined()
     let pasteboard = NSPasteboard.general
     pasteboard.clearContents()
@@ -167,6 +166,11 @@ class LogWindowController: WindowController, NSMenuDelegate {
       logTableView.scroll(NSPoint(x: 0, y: logTableView.frame.size.height))
     }
   }
+
+  @IBAction func showLogFileInFinder(_ sender: AnyObject) {
+    NSWorkspace.shared.activateFileViewerSelecting([Logger.logFile])
+  }
+
 }
 
 @objc(LogLevelTransformer) class LogLevelTransformer: ValueTransformer {

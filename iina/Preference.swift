@@ -500,7 +500,7 @@ struct Preference {
 
     // MARK: Logging
 
-    /// Master switch to enable logging to stdout and/or file, Log window (bool)
+    /// If true, enable logging to file (only if `enableAdvancedSettings` is also true).
     static let enableLogging = Key("enableLogging")
     static let logLevel = Key("logLevel")
     /// Log level threshold for logging to stdout via print() statements.

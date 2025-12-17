@@ -462,7 +462,7 @@ struct Logger {
     return sessionDir
   }()
 
-  private static let logFile: URL = logDirectory.appendingPathComponent("iina.log")
+  static let logFile: URL = logDirectory.appendingPathComponent("iina.log")
   // File for personally identifiable information lookup
   private static let piiFile: URL = logDirectory.appendingPathComponent("pii.txt")
 

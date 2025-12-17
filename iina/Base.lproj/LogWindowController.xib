@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24506"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -28,7 +28,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="608" height="350"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1083"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="937"/>
             <view key="contentView" wantsLayer="YES" id="EiT-Mj-1SZ">
                 <rect key="frame" x="0.0" y="0.0" width="600" height="332"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -86,6 +86,30 @@
                             <action selector="subsystemUpdated:" target="-2" id="cx1-KX-Fa2"/>
                         </connections>
                     </popUpButton>
+                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1LM-if-Lr6">
+                        <rect key="frame" x="343" y="304" width="160" height="24"/>
+                        <buttonCell key="cell" type="push" title="Show iina.log in Finder" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="vf5-hm-y2r">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="showLogFileInFinder:" target="-2" id="0QA-sC-N8q"/>
+                            <binding destination="Byb-k1-Sgm" name="hidden2" keyPath="values.enableAdvancedSettings" previousBinding="Ry1-EB-UO8" id="xIN-01-2wD">
+                                <dictionary key="options">
+                                    <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                    <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                    <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                    <integer key="NSNullPlaceholder" value="-1"/>
+                                    <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                </dictionary>
+                            </binding>
+                            <binding destination="Byb-k1-Sgm" name="hidden" keyPath="values.enableLogging" id="Ry1-EB-UO8">
+                                <dictionary key="options">
+                                    <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                </dictionary>
+                            </binding>
+                        </connections>
+                    </button>
                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="UoZ-gj-OUA">
                         <rect key="frame" x="511" y="304" width="81" height="24"/>
                         <buttonCell key="cell" type="push" title="Save as…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="1si-iG-tju">
@@ -299,6 +323,8 @@
                 <constraints>
                     <constraint firstAttribute="trailing" secondItem="2RH-JP-b9l" secondAttribute="trailing" id="2sX-fl-0Fn"/>
                     <constraint firstItem="QNX-uw-ybL" firstAttribute="firstBaseline" secondItem="7dr-9s-SXa" secondAttribute="firstBaseline" id="3tI-Ky-eS6"/>
+                    <constraint firstItem="UoZ-gj-OUA" firstAttribute="leading" secondItem="1LM-if-Lr6" secondAttribute="trailing" constant="8" id="5Dt-F7-oKy"/>
+                    <constraint firstItem="UoZ-gj-OUA" firstAttribute="firstBaseline" secondItem="1LM-if-Lr6" secondAttribute="firstBaseline" id="6ov-am-ciP"/>
                     <constraint firstItem="7dr-9s-SXa" firstAttribute="top" secondItem="EiT-Mj-1SZ" secondAttribute="top" constant="4" id="Bc6-Iw-qG1"/>
                     <constraint firstItem="7dr-9s-SXa" firstAttribute="firstBaseline" secondItem="b3D-Hi-aSl" secondAttribute="firstBaseline" id="JNo-VQ-rkM"/>
                     <constraint firstAttribute="bottom" secondItem="2RH-JP-b9l" secondAttribute="bottom" id="LqD-ff-met"/>
