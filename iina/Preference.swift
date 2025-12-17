@@ -1425,7 +1425,7 @@ struct Preference {
     .arrowButtonAction: ArrowButtonAction.defaultValue.rawValue,
     .resetSpeedWhenPaused: false,
     .useForceTouchForSpeedArrows: true,
-    .lockViewportToVideoSize: true,
+    .lockViewportToVideoSize: false,
     .moveWindowIntoVisibleScreenOnResize: true,
     .allowVideoToOverlapCameraHousing: false,
     .pauseWhenOpen: false,

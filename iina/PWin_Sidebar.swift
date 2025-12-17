@@ -39,7 +39,7 @@ struct Sidebar: CustomStringConvertible, Sendable {
   }
 
   /// Type of the view embedded in sidebar.
-  enum TabGroup: String, CustomStringConvertible {
+  enum TabGroup: String, CustomStringConvertible, Equatable {
     case settings
     case playlist
     case plugins
@@ -55,6 +55,14 @@ struct Sidebar: CustomStringConvertible, Sendable {
 
     var description: String {
       self.rawValue
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+      return lhs.rawValue == rhs.rawValue
+    }
+
+    static func != (lhs: Self, rhs: Self) -> Bool {
+      return lhs.rawValue != rhs.rawValue
     }
 
     static func fromPrefs(for locationID: Preference.SidebarLocation) -> Set<Sidebar.TabGroup> {
@@ -516,7 +524,8 @@ extension PlayerWindowController {
   /// * `vpLeadingOffsetFromCVLeading`
   ///
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
-  func prepareLayoutForOpening(leadingSidebar: Sidebar, layout: LayoutState, isWindowWidthChanging: Bool) {
+  func prepareLayoutForOpening(leadingSidebar: Sidebar, layout: LayoutState,
+                               isWindowWidthChanging: Bool, _ log: any Logger.Subsystem) {
     for subview in leadingSidebarView.subviews {
       // remove clipView without keeping a reference to it
       if subview != leadingSidebarTrailingBorder {
@@ -636,7 +645,8 @@ extension PlayerWindowController {
   /// * `vpTrailingOffsetFromCVTrailing`
   ///
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
-  func prepareLayoutForOpening(trailingSidebar: Sidebar, layout: LayoutState, isWindowWidthChanging: Bool) {
+  func prepareLayoutForOpening(trailingSidebar: Sidebar, layout: LayoutState,
+                               isWindowWidthChanging: Bool, _ log: any Logger.Subsystem) {
     for subview in trailingSidebarView.subviews {
       // remove clipView without keeping a reference to it
       if subview != trailingSidebarLeadingBorder {

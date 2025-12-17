@@ -328,7 +328,7 @@ extension PlayerWindowController {
           return true
         }
         if let visibleTabGroup = oldState.visibleTabGroup, !newState.tabGroups.contains(visibleTabGroup) {
-          Logger.log.error("isClosing(sidebarID:): visibleTabGroup \(visibleTabGroup.rawValue.quoted) is not present in newState!")
+          Logger.log.error("isClosing(\(sidebarID)): visibleTabGroup \(visibleTabGroup.rawValue.quoted) is not present in newState!")
           return true
         }
       }
@@ -343,7 +343,7 @@ extension PlayerWindowController {
           return true
         }
         guard let oldGroup = oldState.visibleTabGroup, let newGroup = newState.visibleTabGroup else {
-          Logger.log.error("needToCloseAndReopen(sidebarID:): visibleTabGroup missing!")
+          Logger.log.error("needToCloseAndReopen(\(sidebarID)): visibleTabGroup missing!")
           return false
         }
         if oldGroup != newGroup {

@@ -397,7 +397,7 @@ extension PlayerWindowController {
       // Need this immediately becuase sometimes (e.g. when opening sidebar) other constraints may expect sidebar(s)
       // to be attached already:
       if !transition.inputLayout.isMusicMode {
-        prepareSidebarsForOpening(transition, stage, stageGeo)
+        prepareSidebarsForOpening(transition, stage, stageGeo, log)
       }
 
     case .closeOldPanels:
@@ -432,7 +432,7 @@ extension PlayerWindowController {
         removeSidebarTabGroupView(group: tabGroupToHide)
       }
 
-      prepareSidebarsForOpening(transition, stage, stageGeo)
+      prepareSidebarsForOpening(transition, stage, stageGeo, log)
 
       if sidebarUpdateGeo == nil {
         if transition.isEnteringMusicMode {
@@ -450,7 +450,7 @@ extension PlayerWindowController {
     case .openNewPanels:
       if transition.isWindowInitialLayout {
         // Need to run this now because intiial layout doesn't run the midTransitionHiddenUpdates step
-        prepareSidebarsForOpening(transition, stage, stageGeo)
+        prepareSidebarsForOpening(transition, stage, stageGeo, log)
       }
 
       // Sidebars (if opening)
@@ -539,38 +539,39 @@ extension PlayerWindowController {
                       category)
   }
 
-  private func prepareSidebarsForOpening(_ transition: LayoutTransition, _ stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry) {
-    let outputLayout = transition.outputLayout
-    let isNotClosingAnything = stage.isAtLeast(.midTransitionHiddenUpdates)
-
+  private func prepareSidebarsForOpening(_ transition: LayoutTransition,
+                                         _ stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry,
+                                         _ log: any Logger.Subsystem) {
     // Make sure we do not step on any animations to clse sidebars
-    if isNotClosingAnything || !transition.isClosingAndThenOpening(.leadingSidebar) {
-      // Leading Sidebar - if already showing but need to change tab group
-      if let visibleTab = outputLayout.leadingSidebar.visibleTab {
-        switchToTabInTabGroup(tab: visibleTab)
-      }
-      if transition.isOpeningLeadingSidebar {
-        // Opening sidebar from closed state
-        prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
-                                layout: transition.outputLayout, isWindowWidthChanging: transition.ΔWindowWidth != 0)
-      }
+    let isPastClosingStage = stage.isAtLeast(.midTransitionHiddenUpdates)
+    guard isPastClosingStage else { return }
+
+    let outputLayout = transition.outputLayout
+
+    if transition.isOpeningLeadingSidebar {
+      // Opening sidebar from closed state
+      prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
+                              layout: transition.outputLayout,
+                              isWindowWidthChanging: transition.ΔWindowWidth != 0, log)
+    }
+    // I already showing but need to change tab group
+    if let visibleTab = outputLayout.leadingSidebar.visibleTab {
+      switchToTabInTabGroup(tab: visibleTab)
     }
 
-    if isNotClosingAnything || !transition.isClosingAndThenOpening(.trailingSidebar) {
-      // Trailing Sidebar - if already showing but need to change tab group
-      if let visibleTab = outputLayout.trailingSidebar.visibleTab {
-        switchToTabInTabGroup(tab: visibleTab)
-      }
-
-      if transition.isOpeningTrailingSidebar {
-        // Opening sidebar from closed state
-        prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
-                                layout: transition.outputLayout, isWindowWidthChanging: transition.ΔWindowWidth != 0)
-      }
+    if transition.isOpeningTrailingSidebar {
+      // Opening sidebar from closed state
+      prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
+                              layout: transition.outputLayout,
+                              isWindowWidthChanging: transition.ΔWindowWidth != 0, log)
+    }
+    // If already showing but need to change tab group
+    if let visibleTab = outputLayout.trailingSidebar.visibleTab {
+      switchToTabInTabGroup(tab: visibleTab)
     }
 
     // Update bottom bar constraints *after* sidebars are added
-    if isNotClosingAnything, transition.isOpeningAnySidebar {
+    if transition.isOpeningAnySidebar {
       log.verbose("Sidebars will be open: LeadingSidebar=\(outputLayout.leadingSidebar.isVisible.yn) TrailingSidebar=\(outputLayout.trailingSidebar.isVisible.yn)")
 
       if outputLayout.leadingSidebar.isVisible {

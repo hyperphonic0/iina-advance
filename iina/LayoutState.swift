@@ -182,16 +182,51 @@ struct LayoutState {
     let oldLeadingSidebar = oldSpec?.leadingSidebar
     let oldTrailingSidebar = oldSpec?.trailingSidebar
 
+    // Validate and correct any corrupt state in prefs
+
+    var leadingTabGroups = Sidebar.TabGroup.fromPrefs(for: .leadingSidebar)
+    let trailingTabGroups = Sidebar.TabGroup.fromPrefs(for: .trailingSidebar)
+    for trailingGroup in trailingTabGroups {
+      if let indexOfCommonGroup = leadingTabGroups.firstIndex(where: { $0.rawValue == trailingGroup.rawValue }) {
+        Logger.log.error("Invalid prefs state! Found a trailing sidebar tab group that is also in the leading sidebar: \(trailingGroup). Will remove from leading")
+        leadingTabGroups.remove(at: indexOfCommonGroup)
+      }
+    }
+
+    var leadingSBVisibility = oldLeadingSidebar?.visibility ?? .closed
+    var leadingSDLastVisibleTab = oldLeadingSidebar?.lastVisibleTab
+    if let visibleGroup = leadingSBVisibility.visibleTab?.group, !leadingTabGroups.contains(visibleGroup) {
+      Logger.log.error("Invalid visibleTab for leading sidebar; closing: \(visibleGroup.rawValue.quoted)")
+      leadingSBVisibility = .closed
+    }
+    if let visibleGroup = leadingSDLastVisibleTab?.group, !leadingTabGroups.contains(visibleGroup) {
+      Logger.log.error("Invalid lastVisibleTab for leading sidebar; setting to nil: \(visibleGroup.rawValue.quoted)")
+      leadingSDLastVisibleTab = nil
+    }
+
+    var trailingSBVisibility = oldTrailingSidebar?.visibility ?? .closed
+    var trailingSDLastVisibleTab = oldTrailingSidebar?.lastVisibleTab
+    if let visibleGroup = trailingSBVisibility.visibleTab?.group, !trailingTabGroups.contains(visibleGroup) {
+      Logger.log.error("Invalid visibleTab for trailing sidebar; closing: \(visibleGroup.rawValue.quoted)")
+      trailingSBVisibility = .closed
+    }
+    if let visibleGroup = trailingSDLastVisibleTab?.group, !trailingTabGroups.contains(visibleGroup) {
+      Logger.log.error("Invalid lastVisibleTab for trailing sidebar; setting to nil: \(visibleGroup.rawValue.quoted)")
+      trailingSDLastVisibleTab = nil
+    }
+
+    // End validation
+
     let leadingSidebar =  Sidebar(.leadingSidebar,
-                                  tabGroups: Sidebar.TabGroup.fromPrefs(for: .leadingSidebar),
+                                  tabGroups: leadingTabGroups,
                                   placement: Preference.enum(for: .leadingSidebarPlacement),
-                                  visibility: oldLeadingSidebar?.visibility ?? .closed,
-                                  lastVisibleTab: oldLeadingSidebar?.lastVisibleTab)
+                                  visibility: leadingSBVisibility,
+                                  lastVisibleTab: leadingSDLastVisibleTab)
     let trailingSidebar = Sidebar(.trailingSidebar,
-                                  tabGroups: Sidebar.TabGroup.fromPrefs(for: .trailingSidebar),
+                                  tabGroups: trailingTabGroups,
                                   placement: Preference.enum(for: .trailingSidebarPlacement),
-                                  visibility: oldTrailingSidebar?.visibility ?? .closed,
-                                  lastVisibleTab: oldTrailingSidebar?.lastVisibleTab)
+                                  visibility: trailingSBVisibility,
+                                  lastVisibleTab: trailingSDLastVisibleTab)
     let mode = newMode ?? oldSpec?.mode ?? .windowedNormal
     // Tricky need for parantheses here! Would be great as an interview question
     let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen)
