@@ -104,7 +104,9 @@ extension PlayerWindowController {
 extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
 
   @MainActor
-  func enterPIP(usePipBehavior preferredPipBehavior: Preference.WindowBehaviorWhenPip? = nil, then doOnSuccess: (() -> Void)? = nil) {
+  func enterPIP(usePipBehavior preferredPipBehavior: Preference.WindowBehaviorWhenPip? = nil,
+                isRestoring: Bool = false,
+                then doOnSuccess: (() -> Void)? = nil) {
     // Exit interactive mode before even entering intermediate status
     exitInteractiveMode(then: { [self] in
       guard !pip.isInTransition else {
@@ -127,7 +129,6 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
         }
       }
 
-      let isRestoring = player.isRestoring
       if isRestoring {
         log.debug("Skipping validation & state updates prior to entering PiP due to restore")
       } else {
@@ -356,7 +357,7 @@ extension PlayerWindowController: @MainActor PIPViewControllerDelegate {
       // May have skipped updates while hidden, so update now. Make sure to wait until after viewport is added to window (above)
       tasks.append(contentsOf: buildApplyPWinGeoTasks(to: windowedModeGeo))
       tasks.append(IINAAnimation.Task({ [self] in
-        window.makeKeyAndOrderFront(self)
+        showWindow(self)
 
         log.verbose("PIP did close; removing player from hidden windows list: \(window.savedStateName.quoted)")
         isWindowHidden = false

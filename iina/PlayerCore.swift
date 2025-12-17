@@ -3444,7 +3444,7 @@ final class PlayerCore: NSObject {
     let trackIsAlbumArt = isVidEnabled && (mpv.getString(MPVProperty.trackListNAlbumart(vid)) == "yes")
 
     return videoView.$isUninited.withLock{ _ in
-      guard vid != info.vid else { return (vid, false) }
+      let didChange = vid != info.vid
       videoView.isVidEnabled = isVidEnabled
       videoView.isVidAlbumArt = trackIsAlbumArt
       // Try to prevent crash when forcing draws. After changing vid from 0 to non-zero, do not allow forced drawing until after
@@ -3452,7 +3452,7 @@ final class PlayerCore: NSObject {
       videoView.isReadyToRender = (isVidEnabled && trackIsAlbumArt) || isRestoring
       info.vid = vid
       log.verbose("Updated video state: vid=\(String(info.vid)) isAlbumArt=\(videoView.isVidAlbumArt.yn) ready=\(videoView.isReadyToRender.yn)")
-      return (vid, true)
+      return (vid, didChange)
     }
   }
 

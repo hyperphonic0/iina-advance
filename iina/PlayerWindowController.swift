@@ -795,7 +795,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       log.verbose("Restoring window which is in PiP (\(pipOption))")
       // Run in queue to avert race condition with window load
       animationPipeline.submitInstantTask({ [self] in
-        enterPIP(usePipBehavior: pipOption)
+        enterPIP(usePipBehavior: pipOption, isRestoring: true)
       })
     } else if isMiniaturized {
       // Not in PIP, but miniturized
