@@ -779,19 +779,11 @@ struct GeometryTransform: Sendable {
 
     @MainActor
     fileprivate func buildEnterFullScreenTaskIfNeeded() -> IINAAnimation.Task? {
-      switch gtfSessionState {
-      case .newReplacingOpen:
-        guard  Preference.bool(for: .fullScreenWhenOpen) else { return nil }
+      guard needsNativeFullScreen else { return nil }
 
-        // It's possible this task will do nothing. But we cannot know that unless we enqueue the logic inside the task.
-        return IINAAnimation.Task.instantTask {
-          if !pwc.isFullScreen && !pwc.isInMiniPlayer {
-            log.debug("[GTF:\(name)] Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
-            pwc.enterFullScreen()
-          }
-        }
-      default:
-        return nil
+      return IINAAnimation.Task.instantTask {
+        log.debug("[GTF:\(name)] Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
+        pwc.enterFullScreen()
       }
     }
 
@@ -878,12 +870,6 @@ extension PlayerWindowController {
       }
     }
 
-    if ctx.needsNativeFullScreen {
-      tasks.append(.instantTask { [self] in
-        enterFullScreen()
-      })
-    }
-
     tasks.append(ctx.buildFinalInitialLayoutTask())
 
     return tasks
@@ -922,9 +908,9 @@ extension PlayerWindowController {
     let modeToRestore: PlayerWindowMode
     if let priorLayout = priorState.layoutState {
       ctx.outputLayout = priorLayout
-      log.verbose("[GTF:\(ctx.name)] Transitioning to initial layout from prior window state")
       modeToRestore = priorLayout.mode
       ctx.needsNativeFullScreen = priorState.needsNativeFullScreen
+      log.verbose("[GTF:\(ctx.name)] Transitioning to initial layout from prior window state: mode=\(modeToRestore), needsNativeFS=\(ctx.needsNativeFullScreen.yn)")
     } else {
       log.error("[GTF:\(ctx.name)] Failed to read LayoutState object for restore! Will try to assemble window from prefs instead")
       modeToRestore = .windowedNormal

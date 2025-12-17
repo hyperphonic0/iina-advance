@@ -221,7 +221,7 @@ extension PlayerWindowController {
 
     // Setup: Set initial var or other tasks which happen before main animations
     tasks.append(.instantTask{ [self] in
-      doPreTransitionWork(transition)
+      try doPreTransitionWork(transition)
 
       if transition.isTogglingFullScreen {
         fadeOutOldViews(transition)

@@ -170,6 +170,9 @@ extension PlayerWindowController {
     let leadingAccTrailingSpacer = SpacerView(id: "LeadingTBAccTrailingSpacer")
     leadingAccTrailingSpacer.setContentHuggingPriority(.required, for: .horizontal)  // do not expand horizontally
     let leadingAccTrailingSpaceConstraint = leadingAccTrailingSpacer.widthAnchor.constraint(equalToConstant: 0)
+    // Unclear why we get constraint errors when using priority=1000 here. Just reduce to 750.
+    // In the future, would be better to get rid of horizontal stack views in title bar
+    leadingAccTrailingSpaceConstraint.priority = .defaultHigh
     leadingAccTrailingSpaceConstraint.isActive = true
 
     leadingTitleBarAccessoryView.idString = "leadingTBAccView"
@@ -201,6 +204,7 @@ extension PlayerWindowController {
     let trailingAccTrailingSpacer = SpacerView(id: "TrailingTBAccTrailingSpacer")
     trailingAccTrailingSpacer.setContentHuggingPriority(.required, for: .horizontal)  // do not expand horizontally
     let trailingAccTrailingSpaceConstraint = trailingAccTrailingSpacer.widthAnchor.constraint(equalToConstant: 0)
+    trailingAccTrailingSpaceConstraint.priority = .defaultHigh  // see note above
     trailingAccTrailingSpaceConstraint.isActive = true
 
     trailingTitleBarAccessoryView.idString = "trailingTBAccView"

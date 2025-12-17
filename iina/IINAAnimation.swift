@@ -309,9 +309,8 @@ extension IINAAnimation {
         do {
           try nextTask.runFunc()
         } catch IINAError.cancelAnimationTransaction {
-          if log.isTraceEnabled {
-            log.trace("[Pipeline] Task was cancelled")
-          }
+          log.verbose("[Pipeline] Task was cancelled")
+          currentTxID += 1  // cancel txn
         } catch {
           log.error("[Pipeline] Unexpected error thrown by task: \(error)")
         }

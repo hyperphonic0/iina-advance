@@ -16,7 +16,7 @@ extension PlayerWindowController {
   /// -------------------------------------------------
   /// PRE TRANSITION
   /// Setup work. Always immediate (i.e., not animated).
-  func doPreTransitionWork(_ transition: LayoutTransition) {
+  func doPreTransitionWork(_ transition: LayoutTransition) throws {
     let log = Logger.addPreamble(transition.logPreamble(for: .preTransitionSetup), toSubsystem: log)
     log.verbose("Start")
     isAnimatingLayoutTransition = true
@@ -52,6 +52,11 @@ extension PlayerWindowController {
     }
 
     guard let window = window else { return }
+
+    if transition.isEnteringNativeFullScreen && isWindowInNativeFullScreen {
+      log.debug("Already in native full screen! Aborting transition")
+      throw IINAError.cancelAnimationTransaction
+    }
 
     // Call this early! Before rebuildPanelConstraints
     if transition.isExitingPiP {
