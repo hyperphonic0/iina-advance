@@ -879,7 +879,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
         hideBufferIndicator()
       }
 
-      if case .restoring(let priorState) = sessionState {
+      if let priorState = priorStateIfRestoring {
         restoreFromMiscWindowBools(priorState)
       } else {
         // MUST register new window before closing welcome window. If welcome window was only window open,

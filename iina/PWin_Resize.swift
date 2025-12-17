@@ -196,12 +196,10 @@ extension PlayerWindowController {
       }
     }
 
-    if submitUpdate {
-      saveToPrefs(geometry)
-    }
-  }
+    guard submitUpdate else { return }
 
-  fileprivate func saveToPrefs(_ geometry: PWinGeometry) {
+    // Cache geometry, update mpv with latest window-scale, save to prefs:
+
     switch geometry.mode {
     case .musicMode:
       musicModeGeo = geometry

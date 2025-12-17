@@ -172,7 +172,7 @@ extension PlayerWindowController {
     let leadingAccTrailingSpaceConstraint = leadingAccTrailingSpacer.widthAnchor.constraint(equalToConstant: 0)
     leadingAccTrailingSpaceConstraint.isActive = true
 
-    leadingTitleBarAccessoryView.idString = "leadingTitleBarAccessoryView"
+    leadingTitleBarAccessoryView.idString = "leadingTBAccView"
     leadingTitleBarAccessoryView.orientation = .horizontal
     leadingTitleBarAccessoryView.alignment = .centerY
     leadingTitleBarAccessoryView.distribution = .fill
@@ -203,7 +203,7 @@ extension PlayerWindowController {
     let trailingAccTrailingSpaceConstraint = trailingAccTrailingSpacer.widthAnchor.constraint(equalToConstant: 0)
     trailingAccTrailingSpaceConstraint.isActive = true
 
-    trailingTitleBarAccessoryView.idString = "trailingTitleBarAccessoryView"
+    trailingTitleBarAccessoryView.idString = "trailingTBAccView"
     trailingTitleBarAccessoryView.orientation = .horizontal
     trailingTitleBarAccessoryView.alignment = .centerY
     trailingTitleBarAccessoryView.distribution = .fill

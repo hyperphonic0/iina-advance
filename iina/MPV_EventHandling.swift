@@ -242,7 +242,7 @@ extension MPVController {
       }
 
     default:
-      player.log.verbose("Unhandled mpv event: \(eventId)")
+      player.log.trace("Unhandled mpv event: \(eventId)")
       break
     }
 

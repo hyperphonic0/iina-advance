@@ -692,16 +692,23 @@ final class StartupHandler {
     state = .doneOpening
 
     if isInteractiveLaunch {
-      /// Make sure to do this *after* `state = .doneOpening`:
+      /// Make sure to do this *after* `state = .doneOpening`
+      /// (note: this does nothing in recent versions of MacOS cuz it is a modal alert
+      // FIXME: reimplement timeout alert with custom non-modal window so it can be auto-closed
       dismissTimeoutAlertPanel()
 
       initAppUI()
 
       let didRestoreSomething = !wcsToRestore.isEmpty || restoreOpenFileWindow
       let didShowSomething = didRestoreSomething || (pwcsForOpenFiles != nil)
-      if !isCommandLine, !didShowSomething, AppDelegate.isInteractiveLaunch {
+      if !isCommandLine, !didShowSomething {
         // Fall back to default action:
         AppDelegate.shared.doLaunchOrReopenAction()
+        DispatchQueue.main.async {
+          // Pre-load if no player, for a snappier drag & drop effect in Welcome window
+          log.verbose("Ensuring an idle player is ready")
+          _ = PlayerManager.shared.getIdleOrCreateNew()
+        }
       }
     }
 

@@ -429,7 +429,7 @@ struct GeometryTransform: Sendable {
         let resizedGeo: PWinGeometry?
 
         switch gtfSessionState {
-        case .restoring(_):
+        case .restoring:
           log.verbose("[GTF:\(name)] Restore is in progress: no 'apply' tasks needed for windowed mode")
           assert(tf.pWinGeoTransform == nil)
           return []
@@ -489,7 +489,7 @@ struct GeometryTransform: Sendable {
 
       case .musicMode:
         if case .creatingNew = gtfSessionState,
-           case .restoring(_) = gtfSessionState {
+           case .restoring = gtfSessionState {
           log.verbose("[GTF:\(name)] No 'apply' tasks needed; music mode already handled for sessState=\(gtfSessionState): \(inputGeoSet.musicMode)")
           return []
         }

@@ -17,12 +17,10 @@ final class PlayerCore: NSObject {
   enum LifecycleState: Int, StateEnum {
     case notYetStarted = 1
 
+    // TODO: evaluate combining `started` + `idle` states
     case started
 
     // TODO: add states for playing, paused
-
-    /// Whether stopping of this player has been initiated.
-    case stopping
 
     /// Playback has stopped and the media has been unloaded.
     ///
@@ -30,6 +28,9 @@ final class PlayerCore: NSObject {
     /// [MPV_EVENT_PROPERTY_CHANGE](https://mpv.io/manual/stable/#command-interface-mpv-event-property-change)
     /// for the `idle-active` property is received with a value of `true`.
     case idle
+
+    /// Whether stopping of this player has been initiated.
+    case stopping
 
     /// Whether shutdown of this player has been initiated.
     case shuttingDown
@@ -767,7 +768,9 @@ final class PlayerCore: NSObject {
       }
     }
 
-    state = .started
+    if state == .notYetStarted {
+      state = .started
+    }
   }
 
   @MainActor
@@ -1088,7 +1091,6 @@ final class PlayerCore: NSObject {
       /// call this BEFORE setting state to `.stopping`
       savePlaybackMetaBeforePlayerWillStop() // Save state to mpv watch-later (if enabled)
 
-      assert(state != .idle, "stop() should not be called when state==idle")
       state = .stopping
 
       stopWatchingSubFile()
@@ -2157,15 +2159,13 @@ final class PlayerCore: NSObject {
     // Cache these vars to keep them constant for background tasks
     let priorStateIfRestoring = pwc.priorStateIfRestoring
     let isRestoring = priorStateIfRestoring != nil
-
+    
     // Sync tracks
-    if let priorStateIfRestoring {
-      if priorStateIfRestoring.string(for: .playPosition) != nil {
-        /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist
-        /// is started. Run this on the mpv queue to ensure proper ordering.
-        log.verbose("Clearing mpv 'start' option now that restore is complete")
-        mpv.setString(MPVOption.PlaybackControl.start, AppData.mpvArgNone)
-      }
+    if let priorStateIfRestoring, priorStateIfRestoring.string(for: .playPosition) != nil {
+      /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist
+      /// is started. Run this on the mpv queue to ensure proper ordering.
+      log.verbose("Clearing mpv 'start' option now that restore is complete")
+      mpv.setString(MPVOption.PlaybackControl.start, AppData.mpvArgNone)
 
       /// Will complete restore when `transformGeometry` is done
     }
@@ -2326,8 +2326,8 @@ final class PlayerCore: NSObject {
     }
     errorWhileLoading = nil
     // Make sure current playback is taken into account before changing state to `idle`.
-    // Idle player is one which is closed but can be reused. Do not set to idle when changing media or other small intervals
-    if state.isAtLeast(.started), state.isNotYet(.shuttingDown), (errorMsg != nil) || (info.currentPlayback == nil) {
+    // Idle player is one which is closed or never used but can be reused. Do not set to idle when changing media or other small intervals
+    if state.isNotYet(.shuttingDown), (errorMsg != nil) || (info.currentPlayback == nil) {
       state = .idle
     }
   }

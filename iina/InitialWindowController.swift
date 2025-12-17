@@ -233,7 +233,6 @@ class InitialWindowController: WindowController, NSWindowDelegate {
       recentFilesTableView.addTrackingArea(NSTrackingArea(rect: recentFilesTableView.bounds,
                                                           options: [.activeAlways, .mouseMoved, .mouseEnteredAndExited], owner: self,
                                                           userInfo: ["key" : "recentFilesTable"]))
-
     }
   }
 
