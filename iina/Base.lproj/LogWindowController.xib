@@ -327,6 +327,7 @@
                     <constraint firstItem="UoZ-gj-OUA" firstAttribute="firstBaseline" secondItem="1LM-if-Lr6" secondAttribute="firstBaseline" id="6ov-am-ciP"/>
                     <constraint firstItem="7dr-9s-SXa" firstAttribute="top" secondItem="EiT-Mj-1SZ" secondAttribute="top" constant="4" id="Bc6-Iw-qG1"/>
                     <constraint firstItem="7dr-9s-SXa" firstAttribute="firstBaseline" secondItem="b3D-Hi-aSl" secondAttribute="firstBaseline" id="JNo-VQ-rkM"/>
+                    <constraint firstItem="1LM-if-Lr6" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Wj3-KQ-CjI" secondAttribute="trailing" constant="8" id="Jno-Gx-tqT"/>
                     <constraint firstAttribute="bottom" secondItem="2RH-JP-b9l" secondAttribute="bottom" id="LqD-ff-met"/>
                     <constraint firstItem="Wj3-KQ-CjI" firstAttribute="leading" secondItem="QNX-uw-ybL" secondAttribute="trailing" constant="8" id="R1J-kv-UhV"/>
                     <constraint firstAttribute="trailing" secondItem="UoZ-gj-OUA" secondAttribute="trailing" constant="8" id="U12-0w-glB"/>

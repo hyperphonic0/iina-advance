@@ -54,7 +54,7 @@ class Playback: CustomStringConvertible {
   let parentPlaylist: String
 
   // TODO: refactor to move this outside of Playback object
-  var thumbnails: SingleMediaThumbnailsLoader? = nil
+  let thumbnails: SingleMediaThumbnailsLoader?
 
   // Properties from PlaybackID
   var url: URL { id.url}
@@ -90,10 +90,14 @@ class Playback: CustomStringConvertible {
   }
 
   func clone(playlistPos: Int? = nil, parentPlaylist: String? =  nil,
-             state: LifecycleState? = nil) -> Playback {
+             state: LifecycleState? = nil,
+             thumbnails: SingleMediaThumbnailsLoader? = nil,
+             clearThumbnails: Bool = false) -> Playback {
+    let thumbnailsOut = clearThumbnails ? nil : thumbnails ?? self.thumbnails
     return Playback(id, playlistPos: playlistPos ?? self.playlistPos,
                     parentPlaylist: parentPlaylist ?? self.parentPlaylist,
-                    state: state ?? self.state, thumbnails: self.thumbnails)
+                    state: state ?? self.state,
+                    thumbnails: thumbnailsOut)
   }
 
   func changingState(to newState: LifecycleState) -> Playback {

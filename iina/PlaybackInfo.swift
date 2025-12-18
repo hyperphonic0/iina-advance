@@ -22,13 +22,8 @@ class PlaybackInfo {
 
   // MARK: - Playback lifecycle state
 
-  var isFileLoaded: Bool {
-    return currentPlayback?.state.isAtLeast(.loaded) ?? false
-  }
-
-  var isFileLoadedAndSized: Bool {
-    return currentPlayback?.state.isAtLeast(.loadedAndSized) ?? false
-  }
+  var isFileLoaded: Bool { currentPlayback?.state.isAtLeast(.loaded) ?? false }
+  var isFileLoadedAndSized: Bool {  currentPlayback?.state.isAtLeast(.loadedAndSized) ?? false }
 
   var shouldAutoLoadFiles: Bool = false
   var isMatchingSubtitles = false
@@ -59,7 +54,7 @@ class PlaybackInfo {
       let newValue = currentPlayback
       if let oldValue, let newValue, oldValue.id == newValue.id {
         if oldValue.state != newValue.state {
-          log.verbose("Δ Playback.lifecycleState: \(oldValue.state) → \(newValue.state)")
+          log.verbose("Δ currentPlayback.lifecycleState: \(oldValue.state) → \(newValue.state)")
         }
       } else {
         log.verbose("Updated currentPlayback to \(newValue?.description ?? "nil")")

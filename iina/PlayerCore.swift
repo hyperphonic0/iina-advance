@@ -3122,15 +3122,20 @@ final class PlayerCore: NSObject {
   }
 
   func reloadThumbnails() {
-    DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.thumbnailRegenerationDelay) { [self] in
+    mpv.queue.asyncAfter(deadline: .now() + Constants.TimeInterval.thumbnailRegenerationDelay) { [self] in
+      guard !isStopping else { return }
       guard !Preference.bool(for: .integrateWithThumbfast) else {
         log.verbose("Thumbnails reload stopped: pref key `integrateWithThumbfast` is set")
-        touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
+        DispatchQueue.main.async { [self] in
+          touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
+        }
         return
       }
       guard let currentPlayback = info.currentPlayback else {
         log.debug("Thumbnails reload stopped ∵ no current playback")
-        touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
+        DispatchQueue.main.async { [self] in
+          touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
+        }
         return
       }
       let videoTrackID = info.vid
@@ -3160,38 +3165,38 @@ final class PlayerCore: NSObject {
         return
       }
 
-      /// Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
+      // Generate thumbnails using video's original dimensions, before aspect ratio correction.
+      // We will adjust aspect ratio & rotation when we display the thumbnail, similar to how mpv works.
+      let videoGeo = videoGeo
+      let videoSizeRaw = videoGeo.videoSizeRaw
+
+      let thumbnailWidth = SingleMediaThumbnailsLoader.determineWidthOfThumbnail(from: videoSizeRaw, log: log)
+
+      if let oldThumbs = currentPlayback.thumbnails {
+        if !oldThumbs.isCancelled, oldThumbs.mediaFilePath == currentPlayback.url.path,
+           oldThumbs.videoTrackID == videoTrackID,
+           thumbnailWidth == oldThumbs.thumbnailWidth {
+          log.debug("Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for vid\(videoTrackID) @ \(thumbnailWidth)px; nothing to do")
+          return
+        } else {
+          clearExistingThumbnails(for: currentPlayback)
+        }
+      }
+
+      var queueTicket: Int = 0
+      $thumbnailQueueTicket.withLock {
+        $0 += 1  // this will cancel any previous thumbnail loads for this player
+        queueTicket = $0
+      }
+
+      log.verbose("Creating new thumbnails loader")
+      let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, queueTicket: queueTicket, mediaFilePath: currentPlayback.url.path, mediaFilePathMD5: currentPlayback.mpvMD5,
+                                                                videoTrackID: videoTrackID, thumbnailWidth: thumbnailWidth)
+      info.currentPlayback = currentPlayback.clone(thumbnails: newMediaThumbnailLoader)
+      // Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
       thumbReloadDebouncer.run { [self] in
-        guard !isStopping else { return }
         log.trace("Thumbnails reload requested")
-
-        var queueTicket: Int = 0
-        $thumbnailQueueTicket.withLock {
-          $0 += 1  // this will cancel any previous thumbnail loads for this player
-          queueTicket = $0
-        }
-
-        // Generate thumbnails using video's original dimensions, before aspect ratio correction.
-        // We will adjust aspect ratio & rotation when we display the thumbnail, similar to how mpv works.
-        let videoGeo = videoGeo
-        let videoSizeRaw = videoGeo.videoSizeRaw
-
-        let thumbnailWidth = SingleMediaThumbnailsLoader.determineWidthOfThumbnail(from: videoSizeRaw, log: log)
-
-        if let oldThumbs = currentPlayback.thumbnails {
-          if !oldThumbs.isCancelled, oldThumbs.mediaFilePath == currentPlayback.url.path,
-             oldThumbs.videoTrackID == videoTrackID,
-             thumbnailWidth == oldThumbs.thumbnailWidth {
-            log.debug("Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for vid\(videoTrackID) @ \(thumbnailWidth)px; nothing to do")
-            return
-          } else {
-            clearExistingThumbnails(for: currentPlayback)
-          }
-        }
-
-        let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, queueTicket: queueTicket, mediaFilePath: currentPlayback.url.path, mediaFilePathMD5: currentPlayback.mpvMD5,
-                                                                  videoTrackID: videoTrackID, thumbnailWidth: thumbnailWidth)
-        currentPlayback.thumbnails = newMediaThumbnailLoader
+        
         guard queueTicket == thumbnailQueueTicket else { return }
         newMediaThumbnailLoader.loadThumbnails()
       }
@@ -3199,8 +3204,9 @@ final class PlayerCore: NSObject {
   }
 
   private func clearExistingThumbnails(for currentPlayback: Playback) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     if currentPlayback.thumbnails != nil {
-      currentPlayback.thumbnails = nil
+      info.currentPlayback = currentPlayback.clone(clearThumbnails: true)
     }
     DispatchQueue.main.async { [self] in
       touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
