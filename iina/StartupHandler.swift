@@ -452,6 +452,7 @@ final class StartupHandler {
 #if DEBUG
     if DebugConfig.alwaysApproveRestore {
       // skip approval to make testing easier
+      Logger.restore.debug("Skipping restore approval ∵ pref 'alwaysApproveRestore' is enabled")
       return true
     }
 #endif
