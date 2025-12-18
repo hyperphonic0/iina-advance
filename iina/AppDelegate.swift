@@ -501,7 +501,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     guard AppDelegate.isInteractiveLaunch else {
-      Logger.log.verbose("Received `'ast window closed' notifiation for non-interactive launch. App will quit")
+      Logger.log.verbose("Received `last window closed' notification for non-interactive launch. App will quit")
       return true
     }
 
