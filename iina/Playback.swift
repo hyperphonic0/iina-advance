@@ -68,11 +68,12 @@ class Playback: CustomStringConvertible {
   }
 
   init(_ id: PlaybackID, playlistPos: Int, parentPlaylist: String = "",
-       state: LifecycleState = .notYetStarted) {
+       state: LifecycleState = .notYetStarted, thumbnails: SingleMediaThumbnailsLoader? = nil) {
     self.id = id
     self.playlistPos = playlistPos
     self.parentPlaylist = parentPlaylist
     self.state = state
+    self.thumbnails = thumbnails
   }
 
   /// if `url` is `nil`, assumed to be `stdin`
@@ -92,7 +93,7 @@ class Playback: CustomStringConvertible {
              state: LifecycleState? = nil) -> Playback {
     return Playback(id, playlistPos: playlistPos ?? self.playlistPos,
                     parentPlaylist: parentPlaylist ?? self.parentPlaylist,
-                    state: state ?? self.state)
+                    state: state ?? self.state, thumbnails: self.thumbnails)
   }
 
   func changingState(to newState: LifecycleState) -> Playback {

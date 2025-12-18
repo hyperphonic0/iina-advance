@@ -35,7 +35,7 @@ extension PlayerWindowController {
     var pwc: PlayerWindowController! { player.pwc }
     var log: any Logger.Subsystem { player.log }
 
-    var animationState: UIAnimationState = .shown {
+    var animationState: UIAnimationState = .hidden {
       didSet {
         if animationState == .willHide || animationState == .hidden {
           currentPreviewTimeSec = nil
@@ -138,7 +138,9 @@ extension PlayerWindowController {
           showThumbnail = false
         }
       } else {
-        log.trace("Not showing thumbnail for time=\(previewTimeSec): requested=\(showThumbnail.yn) found=\((ffThumbnail != nil).yn)")
+        if showThumbnail {
+          log.verbose("Cannot show thumbnail for time=\(previewTimeSec): hasThumbstore=\((thumbStore != nil).yn) thumbsCount=\(thumbStore?.thumbnails.count ?? 0)")
+        }
         showThumbnail = false
         thumbWidth = 0
         thumbHeight = 0
@@ -306,7 +308,7 @@ extension PlayerWindowController {
       timeLabel.isHidden = false
 
       // Done with timeLabel.
-      log.trace("TimeLabel centerX=\(timeLabelCenterX), originY=\(timeLabelOriginY), size=\(timeLabelSize) thumbnail=\(showThumbnail.yn) thumbfast=\(usingThumbfast.yn)")
+      log.verbose("[SeekPreview] Showing TimeLabel: centerX=\(timeLabelCenterX) originY=\(timeLabelOriginY) size=\(timeLabelSize). Thumbnail: show=\(showThumbnail.yn) thumbfast=\(usingThumbfast.yn)")
 
       // Need integers below.
       if showThumbnail && !usingThumbfast {
@@ -350,11 +352,12 @@ extension PlayerWindowController {
           let thumbOriginY = yConverted.clamped(to: 0...(max(0, (viewportSize.height * scaleRatio) - thumbHeight))).rounded()
           player.mpv.showThumbfast(hoveredSecs: previewTimeSec, x: thumbOriginX, y: thumbOriginY)
           thumbnailPeekView.isHidden = true
-        } else {
+        } else {  // !usingThumbfast
           let thumbOriginX = (posInWindowX - thumbWidth_Halved).clamped(to: minX...(maxX - thumbWidth)).rounded()
           let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY.rounded(), width: thumbWidth, height: thumbHeight)
           updateThumbnailPeekView(to: ffThumbnail!, thumbFrame: thumbFrame, thumbStore!, currentGeo, previewTimeSec: previewTimeSec)
-          thumbnailPeekView.isHidden = !showThumbnail
+          thumbnailPeekView.isHidden = false
+          thumbnailPeekView.alphaValue = 1
         }
       }
       animationState = .shown
@@ -475,6 +478,7 @@ extension PlayerWindowController {
   /// Without animation. For animated version, see `hideSeekPreviewWithAnimation()`, which will call this func (DRY).
   func hideSeekPreviewImmediately() {
     guard seekPreview.animationState == .shown || seekPreview.animationState == .willHide else { return }
+    log.verbose("Hiding SeekPreview")
     seekPreview.hideTimer.cancel()
     seekPreview.animationState = .hidden
     seekPreview.thumbnailPeekView.isHidden = true
