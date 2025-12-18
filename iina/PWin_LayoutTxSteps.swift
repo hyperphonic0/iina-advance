@@ -1340,8 +1340,15 @@ extension PlayerWindowController {
 
   private func addTitleBarAccessoryViews() {
     guard let window = window else { return }
-    guard window.styleMask.contains(.titled) || isWindowInNativeFullScreen else {
-      log.error("Cannot add title bar accessory views: window is not .titled style or in native full screen!")
+    // This check prevents a constraint violation in MacOS 26 Tahoe when entering native full screen from custom windowed mode.
+    // (When entering full screen, the system appears to transfer the title bar & its itens to a special faux window drops down when hovering
+    // at the top of the screen. It appears that title bar accessories must be added to the window prior to entering (native) full screen for
+    // this mechanism to work properly. But if we try to add both the `titled` style and the title bar accessories right before/during the
+    // full screen transition, we seem to be asking too much. Some kind of race condition?
+    // As a result, title bar accessories will not be available in full screen if custom windowed mode is used. Another reason to stick
+    // to custom+custom or native+native pairing...
+    guard window.styleMask.contains(.titled) && !isWindowInNativeFullScreen else {
+      log.trace("Not adding title bar accessories: window is not .titled style, or is in native FS")
       return
     }
 
