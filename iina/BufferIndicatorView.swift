@@ -9,7 +9,7 @@
 class BufferIndicatorView: MouseIgnoringVisualEffectView {
   let bufferSpin = NSProgressIndicator()
   let bufferProgressLabel = NSTextField(labelWithString: "Buffering... 100%")
-  let bufferDetailLabel = NSTextField()
+  let bufferDetailLabel = NSTextField(labelWithString: "")
 
   init() {
     super.init(frame: .zero)
@@ -42,8 +42,9 @@ class BufferIndicatorView: MouseIgnoringVisualEffectView {
     bufferDetailLabel.controlSize = .mini
     bufferDetailLabel.font = .menuFont(ofSize: 9)
     bufferDetailLabel.textColor = .disabledControlTextColor
+    bufferDetailLabel.drawsBackground = false
     bufferDetailLabel.translatesAutoresizingMaskIntoConstraints = false
-    bufferDetailLabel.setContentHuggingPriority(.init(251), for: .horizontal)
+    bufferDetailLabel.setContentHuggingPriority(.init(501), for: .horizontal)
     bufferDetailLabel.topAnchor.constraint(equalTo: bufferProgressLabel.bottomAnchor).isActive = true
     bottomAnchor.constraint(equalTo: bufferDetailLabel.bottomAnchor, constant: 8).isActive = true
     bufferDetailLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true

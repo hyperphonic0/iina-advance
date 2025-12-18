@@ -539,7 +539,7 @@ final class StartupHandler {
             log.verbose("Window has become ready; skipping close: \(wcStalled.window!.savedStateName)")
             continue
           }
-          log.verbose("Telling stalled window to close: \(wcStalled.window!.savedStateName)")
+          log.debug("Telling stalled window to close: \(wcStalled.window!.savedStateName)")
           if let pWin = wcStalled as? PlayerWindowController {
             /// This will guarantee `windowMustCancelShow` notification is sent
             pWin.player.closeWindow()
@@ -600,6 +600,17 @@ final class StartupHandler {
     let isInteractiveLaunch = AppDelegate.isInteractiveLaunch
 
     if isInteractiveLaunch {
+      switch state {
+      case .stillEnqueuing:
+        log.verbose("ShowAllWindows: not ready, still enqueuing")
+        return
+      case .doneEnqueuing:
+        // This is the only case we care about
+        break
+      case .doneOpening:
+        log.verbose("ShowAllWindows: not needed (startup done)")
+        return
+      }
       guard state == .doneEnqueuing else {
         log.verbose("Skipping showWindowsIfReady: state (\(state)) != doneEnqueuing")
         return

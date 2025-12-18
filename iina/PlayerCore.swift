@@ -606,7 +606,6 @@ final class PlayerCore: NSObject {
     let playback = Playback(url: urls[0], playlistPos: 0)
 
     if isInteractivePlayer && playback.isNetworkResource {
-      pwc?.close()
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
 
