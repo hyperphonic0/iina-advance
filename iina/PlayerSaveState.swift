@@ -1596,14 +1596,15 @@ extension PlayerCore {
   // Saves this player's state asynchronously
   func saveState() {
     guard isSaveEnabled else { return }
+    guard pwc.loaded else { return }
+    guard !isRestoring else {
+      log.trace("Skipping player state save: still restoring previous state")
+      return
+    }
 
     /// Runs asynchronously in background queue to avoid blocking UI.
     /// Cuts down on duplicate work via delay and ticket check.
     saveUIStateDebouncer.run { [self] in
-      guard !isRestoring else {
-        log.trace("Skipping player state save: still restoring previous state")
-        return
-      }
       guard !isShuttingDown else {
         log.verbose("Skipping player state save: player is shutting down")
         return
