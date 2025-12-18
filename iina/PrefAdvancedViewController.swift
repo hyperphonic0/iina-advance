@@ -103,6 +103,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     notiHandler = NotificationHandler(Logger.log, prefDidChange: prefDidChange, [
       .enableAdvancedSettings,
       .integrateWithThumbfast,
+      .useUserDefinedConfDir,
     ], [.default: [
       .init(.thumbfastInfoDidChange, { [self] noti in
         updateThumbfastStatus()
@@ -113,7 +114,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   /// Called each time a pref `key`'s value is set
   func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     switch key {
-    case PK.enableAdvancedSettings, PK.integrateWithThumbfast:
+    case PK.enableAdvancedSettings, PK.integrateWithThumbfast, PK.useUserDefinedConfDir:
       updateThumbfastStatus()
     default:
       break
@@ -136,6 +137,11 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   func updateThumbfastStatus() {
     guard Preference.isAdvancedEnabled && Preference.bool(for: .integrateWithThumbfast) else {
       thumbfastStatus = ""
+      return
+    }
+
+    guard Preference.bool(for: .useUserDefinedConfDir) else {
+      thumbfastStatus = "❌ Need to enable config directory below."
       return
     }
 
