@@ -187,12 +187,17 @@ struct GeometryTransform: Sendable {
           log.verbose("[GTF:\(name)] Skipping syncVideoParamsFromMpv ∵ we're restoring")
         } else {
           log.verbose("[GTF:\(name)] Calling syncVideoParamsFromMpv as configured")
-          guard let syncedVideoGeo = ctxStage2.syncVideoParamsFromMpv(startingWith: outputVideoGeo) else {
-            return abort("syncVideoParamsFromMpv returned nil")
+          let syncedVideoGeo = ctxStage2.syncVideoParamsFromMpv(startingWith: outputVideoGeo)
+          if let syncedVideoGeo {
+            log.verbose("[GTF:\(name)] Result of video sync: \(syncedVideoGeo)")
+            /// The result is the new `outputVideoGeo`
+            outputVideoGeo = syncedVideoGeo
+          } else {
+            // May not get vid-dec-params for network stream, and that's OK
+            guard currentPlayback.isNetworkResource else {
+              return abort("syncVideoParamsFromMpv returned nil for file")
+            }
           }
-          log.verbose("[GTF:\(name)] Result of video sync: \(syncedVideoGeo)")
-          /// The result is the new `outputVideoGeo`
-          outputVideoGeo = syncedVideoGeo
         }
       }
 

@@ -422,7 +422,7 @@ extension IINAAnimation {
 
         if let workFunc = pendingWorkAfterGTFs, isDoneWithAllGTFs {
           pendingWorkAfterGTFs = nil
-          log.verbose("[Pipeline] Running pending post-GTF work…")
+          log.trace("[Pipeline] Running pending post-GTF work (ReloadQuickSettings)")
           return workFunc
         } else {
           return nil
