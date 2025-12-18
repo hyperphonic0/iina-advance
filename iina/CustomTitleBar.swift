@@ -107,11 +107,19 @@ class CustomTitleBarViewController: NSViewController {
 
     // - Center views
 
-    // See https://github.com/indragiek/INAppStoreWindow/blob/master/INAppStoreWindow/INAppStoreWindow.m
-    pwc.window!.representedURL = pwc.player.info.currentURL
+    let currentURL = pwc.player.info.currentPlayback?.url
 
-    documentIconButton.image = Utility.icon(for: pwc.player.info.currentURL,
-                                            optimizingForHeight: documentIconButton.frame.height)
+    // See https://github.com/indragiek/INAppStoreWindow/blob/master/INAppStoreWindow/INAppStoreWindow.m
+    pwc.window!.representedURL = currentURL
+    // Show document icon only for files, not URLs, to match the behavior of the native title bar
+    if let currentURL, currentURL.isFileURL {
+      documentIconButton.image = Utility.icon(for: currentURL,
+                                              optimizingForHeight: documentIconButton.frame.height)
+      documentIconButton.alphaValue = 1
+    } else {
+      // Sloppy fix here. Using isHidden messes up the layout. Just use alpha value
+      documentIconButton.alphaValue = 0
+    }
 
     titleText.identifier = .init("TitleBar-TextView")
     titleText.font = NSFont.titleBarFont(ofSize: NSFont.systemFontSize(for: .regular))

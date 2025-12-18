@@ -430,6 +430,12 @@ struct GeometryTransform: Sendable {
 
         switch gtfSessionState {
         case .restoring:
+          if currentPlayback.isNetworkResource, let showDefaultArt = shouldChangeDefaultArt {
+            log.verbose("[GTF:\(name)] Restoring a streaming window: will set defaultArtVisibility to \(showDefaultArt.yn)")
+            return [.instantTask {
+              pwc.updateDefaultArtVisibility(to: showDefaultArt)
+            }]
+          }
           log.verbose("[GTF:\(name)] Restore is in progress: no 'apply' tasks needed for windowed mode")
           assert(tf.pWinGeoTransform == nil)
           return []

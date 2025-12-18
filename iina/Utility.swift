@@ -625,6 +625,9 @@ class Utility {
         }
         if !url.isFileURL {
           // Assume it is network stream
+          if let netStreamImg = NSImage(systemSymbolName: "network", accessibilityDescription: "Network Stream") {
+            return netStreamImg
+          }
           return NSWorkspace.shared.icon(for: .url)
         }
       }
