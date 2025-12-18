@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24506"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -1450,7 +1450,7 @@ For smoothest results, also enable custom full screen.</string>
                             </constraints>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="248" horizontalHuggingPriority="251" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="SyO-4u-pAs" userLabel="OSC-Width HStack View">
-                            <rect key="frame" x="0.0" y="647" width="435" height="22"/>
+                            <rect key="frame" x="24" y="647" width="435" height="22"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="251" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VXj-pE-j8j">
                                     <rect key="frame" x="-2" y="2" width="75" height="16"/>
@@ -1513,10 +1513,10 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                         </stackView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="499" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="PrI-KL-aZn" userLabel="Bottom-OSC-Placement HStack View">
-                            <rect key="frame" x="20" y="611" width="433" height="28"/>
+                            <rect key="frame" x="24" y="611" width="429" height="28"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Xua-UF-KwL">
-                                    <rect key="frame" x="-2" y="3" width="244" height="19"/>
+                                    <rect key="frame" x="-2" y="3" width="240" height="19"/>
                                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="right" title="Bottom bar placement vs. video:" id="FAb-aX-CEz">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1524,7 +1524,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <segmentedControl horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="oZp-7o-wcg" userLabel="Bottom-Bar-Placement Segmented Control">
-                                    <rect key="frame" x="248" y="0.0" width="182" height="28"/>
+                                    <rect key="frame" x="244" y="0.0" width="182" height="28"/>
                                     <segmentedCell key="cell" controlSize="large" borderStyle="border" alignment="left" segmentDistribution="fill" style="rounded" trackingMode="selectOne" id="TEO-g1-ffc">
                                         <font key="font" metaFont="system"/>
                                         <segments>
@@ -1604,21 +1604,18 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                         </stackView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="248" horizontalHuggingPriority="251" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="d0z-Kd-exY" userLabel="OSC-Height HStack View">
-                            <rect key="frame" x="20" y="545" width="433" height="22"/>
+                            <rect key="frame" x="24" y="545" width="429" height="22"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="251" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Xbl-vr-NaJ">
-                                    <rect key="frame" x="-2" y="2" width="73" height="16"/>
+                                    <rect key="frame" x="-2" y="2" width="79" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="OSC Height:" id="5BF-Xi-M9u">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                 </textField>
-                                <slider horizontalHuggingPriority="249" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="dsQ-QF-qYK" userLabel="OSC-Height Horizontal Slider">
-                                    <rect key="frame" x="77" y="0.0" width="309" height="22"/>
-                                    <constraints>
-                                        <constraint firstAttribute="width" constant="309" id="EyV-vj-7Y7"/>
-                                    </constraints>
+                                <slider horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="dsQ-QF-qYK" userLabel="OSC-Height Horizontal Slider">
+                                    <rect key="frame" x="83" y="0.0" width="299" height="22"/>
                                     <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="24" maxValue="100" doubleValue="44" tickMarkPosition="below" numberOfTickMarks="20" allowsTickMarkValuesOnly="YES" sliderType="linear" id="8b9-rY-Ke5"/>
                                     <connections>
                                         <action selector="oscBarHeightAction:" target="-2" id="iWm-b9-yfN"/>
@@ -1631,7 +1628,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </connections>
                                 </slider>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="WPN-TF-OlT" userLabel="OSC-Height Text Field">
-                                    <rect key="frame" x="394" y="0.0" width="36" height="22"/>
+                                    <rect key="frame" x="390" y="0.0" width="36" height="22"/>
                                     <constraints>
                                         <constraint firstAttribute="width" constant="36" id="ohn-Jd-w6h"/>
                                     </constraints>
@@ -1669,10 +1666,10 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                         </stackView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ovw-kj-Bwx" userLabel="Force-Single-Line HStack View">
-                            <rect key="frame" x="20" y="515" width="441" height="22"/>
+                            <rect key="frame" x="24" y="515" width="437" height="22"/>
                             <subviews>
                                 <button horizontalHuggingPriority="252" verticalHuggingPriority="252" verticalCompressionResistancePriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="VAZ-Ki-EPD">
-                                    <rect key="frame" x="0.0" y="1" width="430" height="18"/>
+                                    <rect key="frame" x="0.0" y="1" width="426" height="18"/>
                                     <buttonCell key="cell" type="check" title="Use 2-row style when there is enough OSC height" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="jSW-qu-mfN">
                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -1689,7 +1686,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </connections>
                                 </button>
                                 <customView horizontalHuggingPriority="200" verticalHuggingPriority="900" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="i0B-he-zTK" userLabel="Horizontal Spacer View">
-                                    <rect key="frame" x="438" y="4" width="0.0" height="1"/>
+                                    <rect key="frame" x="434" y="4" width="0.0" height="1"/>
                                     <constraints>
                                         <constraint firstAttribute="height" constant="1" id="7iO-2c-6yH"/>
                                     </constraints>
@@ -2244,11 +2241,12 @@ For smoothest results, also enable custom full screen.</string>
                     <constraints>
                         <constraint firstItem="EOh-sr-h6b" firstAttribute="trailing" secondItem="oZp-7o-wcg" secondAttribute="trailing" id="2e1-Mg-c8f"/>
                         <constraint firstItem="3vi-Iu-deL" firstAttribute="trailing" secondItem="67g-AK-VP6" secondAttribute="trailing" id="3ms-CC-xpd"/>
-                        <constraint firstItem="PrI-KL-aZn" firstAttribute="leading" secondItem="mJq-OS-xid" secondAttribute="leading" constant="20" id="5tT-06-ukJ"/>
+                        <constraint firstItem="PrI-KL-aZn" firstAttribute="leading" secondItem="mJq-OS-xid" secondAttribute="leading" constant="24" id="5tT-06-ukJ"/>
                         <constraint firstItem="EOh-sr-h6b" firstAttribute="width" secondItem="oZp-7o-wcg" secondAttribute="width" id="AiY-vy-3aa"/>
                         <constraint firstItem="0Ih-pL-Y4o" firstAttribute="width" relation="greaterThanOrEqual" secondItem="yaR-pw-wfD" secondAttribute="width" id="CLe-2r-BZz"/>
-                        <constraint firstItem="VAZ-Ki-EPD" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="bVg-yv-fOx" secondAttribute="leading" constant="20" id="NoY-Ia-Nji"/>
-                        <constraint firstItem="d0z-Kd-exY" firstAttribute="leading" secondItem="4SE-r9-OnD" secondAttribute="leading" constant="20" id="UsX-hB-Xd8"/>
+                        <constraint firstItem="VXj-pE-j8j" firstAttribute="leading" secondItem="bVg-yv-fOx" secondAttribute="leading" constant="24" id="J6C-m2-5Th"/>
+                        <constraint firstItem="VAZ-Ki-EPD" firstAttribute="leading" secondItem="bVg-yv-fOx" secondAttribute="leading" constant="24" id="NoY-Ia-Nji"/>
+                        <constraint firstItem="d0z-Kd-exY" firstAttribute="leading" secondItem="4SE-r9-OnD" secondAttribute="leading" constant="24" id="UsX-hB-Xd8"/>
                         <constraint firstItem="bVg-yv-fOx" firstAttribute="leading" secondItem="HbB-K7-G5g" secondAttribute="leading" id="bHH-mu-TP3"/>
                         <constraint firstItem="6w3-c5-7MT" firstAttribute="width" secondItem="yaR-pw-wfD" secondAttribute="width" id="i5v-wW-ltJ"/>
                         <constraint firstItem="q8D-b2-H0y" firstAttribute="height" secondItem="pJh-xs-jn5" secondAttribute="height" id="kIg-OG-xMJ"/>

@@ -3196,7 +3196,7 @@ final class PlayerCore: NSObject {
       // Run the following in the background (`thumbnailQueue`) at lower priority, so the UI is not slowed down.
       thumbReloadDebouncer.run { [self] in
         log.trace("Thumbnails reload requested")
-        
+
         guard queueTicket == thumbnailQueueTicket else { return }
         newMediaThumbnailLoader.loadThumbnails()
       }

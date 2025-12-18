@@ -11,7 +11,7 @@ import Foundation
 ///
 /// An instance of this class should be created as soon as the user indicates their intent to play the media,
 /// and should not be reused for subsequent play(s).
-class Playback: CustomStringConvertible {
+struct Playback: CustomStringConvertible {
 
   /// State of the individual playack
   enum LifecycleState: Int, StateEnum, CustomStringConvertible {
@@ -77,13 +77,13 @@ class Playback: CustomStringConvertible {
   }
 
   /// if `url` is `nil`, assumed to be `stdin`
-  convenience init(url: URL?, playlistPos: Int, parentPlaylist: String = "",
-                   state: LifecycleState = .notYetStarted) {
+  init(url: URL?, playlistPos: Int, parentPlaylist: String = "",
+       state: LifecycleState = .notYetStarted) {
     let id = PlaybackID(url)
     self.init(id, playlistPos: playlistPos, parentPlaylist: parentPlaylist, state: state)
   }
 
-  convenience init?(urlPath: String, playlistPos: Int, parentPlaylist: String = "",
+  init?(urlPath: String, playlistPos: Int, parentPlaylist: String = "",
         state: LifecycleState = .notYetStarted) {
     guard let id = PlaybackID(path: urlPath) else { return nil }
     self.init(id, playlistPos: playlistPos, parentPlaylist: parentPlaylist, state: state)
