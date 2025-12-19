@@ -185,9 +185,9 @@ final class OSDState {
     osdVStackView.detachesHiddenViews = true
     osdVStackView.translatesAutoresizingMaskIntoConstraints = false
 
-    osdVStackView.addView(osdLabel, in: .leading)
-    osdVStackView.addView(osdAccessoryText, in: .leading)
-    osdVStackView.addView(osdAccessoryProgress, in: .leading)
+    osdVStackView.addView(osdLabel, in: .top)
+    osdVStackView.addView(osdAccessoryText, in: .top)
+    osdVStackView.addView(osdAccessoryProgress, in: .top)
 
     // Use initial size of 0, in case MacOS 11 code never gets executed
     let initialIconSize: CGFloat = 0
@@ -296,7 +296,7 @@ final class OSDView: ClickThroughVisualEffectView {
   init() {
     super.init(frame: .zero)
     blendingMode = .withinWindow
-    material = .toolTip
+    material = .popover
     state = .active
     idString = "OSDView"
     translatesAutoresizingMaskIntoConstraints = false

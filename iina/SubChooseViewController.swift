@@ -27,7 +27,12 @@ class SubChooseViewController: NSViewController {
     super.viewDidLoad()
 
     if let scrollView = tableView.enclosingScrollView {
-      scrollView.layer?.cornerRadius = 6
+      scrollView.wantsLayer = true
+      if #available(macOS 26, *) {
+        scrollView.layer?.cornerRadius = 10
+      } else {
+        scrollView.layer?.cornerRadius = 6
+      }
     }
 
     tableView.delegate = self
