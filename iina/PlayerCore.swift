@@ -3145,7 +3145,7 @@ final class PlayerCore: NSObject {
   func reloadThumbnails() {
     mpv.queue.asyncAfter(deadline: .now() + Constants.TimeInterval.thumbnailRegenerationDelay) { [self] in
       guard !isStopping else { return }
-      guard !isInteractivePlayer else {
+      guard isInteractivePlayer else {
         log.verbose("Thumbnails reload stopped: player is non-interactive")
         return
       }
