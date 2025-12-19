@@ -450,14 +450,16 @@ extension MPVController {
       player.subPosChanged(subPos)
 
     case MPVOption.Subtitles.subColor:
-      // TODO:
-      break
+      player.saveState()
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Subtitles.subFont:
+      player.saveState()
       player.setQuickSettingsViewNeedsUpdate()
       // TODO: OSD
 
     case MPVOption.Subtitles.subFontSize:
+      player.saveState()
       player.setQuickSettingsViewNeedsUpdate()
       //      if let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee {
       //        let fontSize = Int(data)
@@ -465,24 +467,20 @@ extension MPVController {
       //      }
 
     case MPVOption.Subtitles.subBold:
+      player.saveState()
       player.setQuickSettingsViewNeedsUpdate()
-      //      if let isBold = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee {
-      //        // TODO: OSD
-      //      }
 
     case MPVOption.Subtitles.subBorderColor:
+      player.saveState()
       player.setQuickSettingsViewNeedsUpdate()
-      // TODO: OSD
 
     case MPVOption.Subtitles.subBorderSize:
+      player.saveState()
       player.setQuickSettingsViewNeedsUpdate()
-      //      if let borderSize = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee {
-      //        // TODO: OSD
-      //      }
 
     case MPVOption.Subtitles.subBackColor:
+      player.saveState()
       player.setQuickSettingsViewNeedsUpdate()
-      // TODO: OSD
 
     case MPVOption.Equalizer.contrast:
       guard let intData = property.intData(log) else { break }

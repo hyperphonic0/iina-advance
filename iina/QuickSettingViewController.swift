@@ -262,9 +262,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
     // Color Wells
     if #available(macOS 13.0, *) {
-      subTextColorWell = NSColorWell(style: .minimal)
-      subTextBgColorWell = NSColorWell(style: .minimal)
-      subTextBorderColorWell = NSColorWell(style: .minimal)
+      subTextColorWell = NSColorWell(style: .default)
+      subTextBgColorWell = NSColorWell(style: .default)
+      subTextBorderColorWell = NSColorWell(style: .default)
     } else {
       subTextColorWell = RoundedColorWell()
       subTextBgColorWell = RoundedColorWell()
@@ -277,6 +277,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       view.addSubview(well)
       Utility.quickConstraints(["H:|[v]|", "V:|[v]|"], ["v": well])
     }
+
+    subTextColorWell.action = #selector(subTextColorAction)
+    subTextBgColorWell.action = #selector(subTextBgColorAction)
+    subTextBorderColorWell.action = #selector(subTextBorderColorAction)
 
     if #available(macOS 26, *) {
       speedSlider.neutralValue = 8
@@ -1478,7 +1482,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     player.setSubScale(realValue)
   }
 
-  @IBAction func subTextColorAction(_ sender: AnyObject) {
+  @objc func subTextColorAction(_ sender: AnyObject) {
     player.setSubTextColor(subTextColorWell.color.mpvColorString)
   }
 
@@ -1488,7 +1492,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
   }
 
-  @IBAction func subTextBorderColorAction(_ sender: AnyObject) {
+  @objc func subTextBorderColorAction(_ sender: AnyObject) {
     player.setSubTextBorderColor(subTextBorderColorWell.color.mpvColorString)
   }
 
@@ -1498,7 +1502,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
   }
 
-  @IBAction func subTextBgColorAction(_ sender: AnyObject) {
+  @objc func subTextBgColorAction(_ sender: AnyObject) {
     player.setSubTextBgColor(subTextBgColorWell.color.mpvColorString)
   }
 
