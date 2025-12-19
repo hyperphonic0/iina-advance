@@ -472,6 +472,7 @@ extension PlayerWindowController {
       optCon.weaken()
     }
     let offsetFromTop = stageGeo.osdOffsetFromTopOfViewport()
+    let btmMinOffset = stageGeo.osdMinOffsetToBottomOfViewport()
 
     let hasOSD = stageGeo.shouldHaveOSD
     let hasAdditionalInfo = stageGeo.shouldHaveAdditionalInfo
@@ -499,14 +500,14 @@ extension PlayerWindowController {
       }
 
       osd.leadingSide_TopOffsetConstraint.createOrUpdate(to: offsetFromTop, priorityInt: constraintPriorityInt,
-                                                 requiredFirstAnchor: leadingView.topAnchor,
-                                                 requiredSecondAnchor: viewportView.topAnchor, log) { [self] c in
+                                                         requiredFirstAnchor: leadingView.topAnchor,
+                                                         requiredSecondAnchor: viewportView.topAnchor, log) { [self] c in
         leadingView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
-      osd.leadingSide_BtmOffsetConstraint.createOrUpdate(to: standardOffset, priorityInt: constraintPriorityInt,
-                                                    requiredFirstAnchor: viewportView.bottomAnchor,
-                                                    requiredSecondAnchor: leadingView.bottomAnchor, log) { [self] c in
+      osd.leadingSide_BtmOffsetConstraint.createOrUpdate(to: btmMinOffset, priorityInt: constraintPriorityInt,
+                                                         requiredFirstAnchor: viewportView.bottomAnchor,
+                                                         requiredSecondAnchor: leadingView.bottomAnchor, log) { [self] c in
         viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: leadingView.bottomAnchor, constant: c)
       }
     }
@@ -525,14 +526,14 @@ extension PlayerWindowController {
       }
 
       osd.trailingSide_TopOffsetConstraint.createOrUpdate(to: offsetFromTop, priorityInt: constraintPriorityInt,
-                                                 requiredFirstAnchor: trailingView.topAnchor,
-                                                 requiredSecondAnchor: viewportView.topAnchor, log) { [self] c in
+                                                          requiredFirstAnchor: trailingView.topAnchor,
+                                                          requiredSecondAnchor: viewportView.topAnchor, log) { [self] c in
         trailingView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
-      osd.trailingSide_BtmOffsetConstraint.createOrUpdate(to: standardOffset, priorityInt: constraintPriorityInt,
-                                                    requiredFirstAnchor: viewportView.bottomAnchor,
-                                                    requiredSecondAnchor: trailingView.bottomAnchor, log) { [self] c in
+      osd.trailingSide_BtmOffsetConstraint.createOrUpdate(to: btmMinOffset, priorityInt: constraintPriorityInt,
+                                                          requiredFirstAnchor: viewportView.bottomAnchor,
+                                                          requiredSecondAnchor: trailingView.bottomAnchor, log) { [self] c in
         viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: trailingView.bottomAnchor, constant: c)
       }
     }

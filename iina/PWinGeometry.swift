@@ -203,6 +203,16 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
     }
   }
 
+  /// Minimum offset from bottom of `osdView` to bottom of viewport.
+  ///
+  /// Should always be >= 0.
+  /// Do not allow `osdView` to overlap with the `inside` bottom OSD. This is important for online subtitle selection,
+  /// wherein`SubChooseViewController` is added to the OSD. It often wants more vertical space than the window's height
+  /// when showing results, but its buttons at the bottom need always be reachable.
+  func osdMinOffsetToBottomOfViewport() -> CGFloat {
+    return max(0, insideBars.bottom) + 8
+  }
+
   func getOSDTextSize() -> CGFloat {
     let availableSpaceForOSD = widthBetweenInsideSidebars
 
