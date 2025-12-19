@@ -140,11 +140,6 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
       return
     }
 
-    guard Preference.bool(for: .useUserDefinedConfDir) else {
-      thumbfastStatus = "❌ Need to enable config directory below."
-      return
-    }
-
     let startedPlayers = PlayerManager.shared.playerCores.filter({ $0.isInteractivePlayer && $0.state.isAtLeast(.started) })
     if startedPlayers.isEmpty {
       thumbfastStatus = "⚠️ Unknown status. Make sure you have at least one player window open."
@@ -161,7 +156,34 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
         return
       }
     }
-    thumbfastStatus = "❌ No thumbfast-info. Make sure thumbfast.lua is installed properly."
+
+    // If we got here, something is wrong. Try to help troubleshoot.
+
+    guard Preference.bool(for: .useUserDefinedConfDir) else {
+      setThumbfastError("Need to enable config directory (checkbox below).")
+      return
+    }
+
+    guard let confDirString = Preference.string(for: .userDefinedConfDir) else {
+      setThumbfastError("Bad value for config directory (below).")
+      return
+    }
+    let userConfDir = NSString(string: confDirString).standardizingPath
+    guard FileManager.default.fileExists(atPath: userConfDir) else {
+      // Could be a permissions problem. Use careful language
+      setThumbfastError("(Cannot read mpv config directory. Check the path?)")
+      return
+    }
+    let thumbfastScriptPath = "\(userConfDir)/scripts/thumbfast.lua"
+    guard FileManager.default.isReadableFile(atPath: thumbfastScriptPath) else {
+      setThumbfastError("(Can't read scripts/thumbfast.lua in config directory. Make sure it is installed?)")
+      return
+    }
+    setThumbfastError("Check that thumbfast.lua is installed & configured properly, then restart IINAA.")
+  }
+
+  private func setThumbfastError(_ msg: String) {
+    thumbfastStatus = "❌ No thumbfast-info received. " + msg
   }
 
   private func saveToUserDefaults() {
