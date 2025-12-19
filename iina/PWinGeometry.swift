@@ -175,7 +175,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible, Sendable {
   // MARK: - OSD
 
   var shouldHaveOSD: Bool {
-    return Preference.bool(for: .enableOSD) && isViewportShown
+    /// Only time we do not include `osdView` in layout is if there is no viewport.
+    /// Even if OSD is disabled via pref, `osdView` is still needed for things like subtitle
+    /// download.
+    return isViewportShown
   }
 
   var shouldHaveAdditionalInfo: Bool {

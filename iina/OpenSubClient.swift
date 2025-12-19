@@ -553,7 +553,7 @@ class OpenSubClient {
       }
       if let data = try? JSONSerialization.data(withJSONObject: requestJson, options: options),
          let pretty = String(data: data, encoding: .utf8) {
-        log("Request: \(pretty)")
+        log("Request: \(pretty)", level: .trace)
       }
     }
     if let status = result.statusCode {
@@ -587,7 +587,7 @@ class OpenSubClient {
     }
     if let data = try? JSONSerialization.data(withJSONObject: resultJson, options: options),
        let pretty = String(data: data, encoding: .utf8) {
-      log("Response: \(pretty)")
+      log("Response: \(pretty)", level: .trace)
     }
   }
   

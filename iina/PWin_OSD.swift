@@ -12,7 +12,12 @@ import Mustache
 // Avoid constraint violations during window resize
 fileprivate let constraintPriorityInt = 400
 fileprivate let lowerConstraintPriorityInt = 300
+#if MACOS_26_AVAILABLE
+// Increase space a bit to accomodate the rounder corners:
+fileprivate let standardOffset: CGFloat = 12
+#else
 fileprivate let standardOffset: CGFloat = 8
+#endif
 
 /// Encapsulates all of the window's OSD state vars
 ///
@@ -783,8 +788,7 @@ extension PlayerWindowController {
   /// themselves process the display of any enqueued OSD messages.
   func displayOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
                   accessoryViewController: NSViewController? = nil, isExternal: Bool = false) {
-    guard player.canShowOSD() || msg.alwaysEnabled else { return }
-    guard !msg.isDisabled else { return }
+    guard player.canShowOSD(message: msg) else { return }
     
     // Enqueue first, in case main queue is blocked
     osd.queueLock.withLock {
@@ -807,7 +811,7 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
 
     // Check again. May have been enqueued a while
-    guard player.canShowOSD() else { return }
+    guard player.canShowOSD(message: msg) else { return }
 
     // Filter out unwanted OSDs first
     guard !osd.isShowingPersistentOSD || accessoryViewController != nil else { return }

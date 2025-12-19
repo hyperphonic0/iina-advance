@@ -3077,7 +3077,13 @@ final class PlayerCore: NSObject {
     saveState()
   }
 
-  func canShowOSD() -> Bool {
+  func canShowOSD(message: OSDMessage) -> Bool {
+    if message.alwaysEnabled {
+      return true
+    }
+    if message.isDisabled {
+      return false
+    }
     /// Note: use `loaded` (querying `isWindowLoaded` will initialize pwc unexpectedly)
     if !pwc.loaded || !Preference.bool(for: .enableOSD) || isUsingMpvOSD || isRestoring || isInInteractiveMode {
       return false
@@ -3095,6 +3101,8 @@ final class PlayerCore: NSObject {
       log.verbose("DebugOSD: \(msg)")
     }
 
+    guard !isRestoring else { return }
+
     /// Check `isFileLoadedAndSized` early to prevent race condition
     let disableOSDForFileLoading: Bool = !info.isFileLoadedAndSized
     if disableOSDForFileLoading && !external {
@@ -3108,7 +3116,8 @@ final class PlayerCore: NSObject {
       }
     }
 
-    pwc.displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController, isExternal: external)
+    pwc.displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout,
+                   accessoryViewController: accessoryViewController, isExternal: external)
   }
 
   func hideOSD() {
