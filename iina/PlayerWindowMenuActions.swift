@@ -390,11 +390,13 @@ extension PlayerWindowController {
     player.isSearchingOnlineSubtitle = true
     log.debug("Finding online subtitles")
     OnlineSubtitle.search(forFile: url, player: player, providerID: sender.representedObject as? String) { [self] urls in
+      // Executing this callback implies a successful query.
       if urls.isEmpty {
+        // No results for query
         player.sendOSD(.foundSub(0))
       } else {
         for url in urls {
-          Logger.log("Saved subtitle to \(url.path.pii.quoted)")
+          log.debug("Saved subtitle to \(url.path.pii.quoted)")
           player.loadExternalSubFile(url)
         }
         player.sendOSD(.downloadedSub(

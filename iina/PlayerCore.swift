@@ -668,7 +668,7 @@ final class PlayerCore: NSObject {
           mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, false)
 
           // Send load file command
-          mpv.command(.loadfile, args: [path], checkActive: false)
+          mpv.command(.loadfile, args: [path])
 
           if case .restoring(let priorState) = sessionState {
             priorState.restoreMpvProperties(to: self)
@@ -1135,7 +1135,7 @@ final class PlayerCore: NSObject {
       guard state != .idle else { return }
       log.debug("Stopping playback")
 
-      mpv.command(.stop, checkActive: false)
+      mpv.command(.stop)
     }
   }
 
@@ -1823,10 +1823,11 @@ final class PlayerCore: NSObject {
     mpv.queue.async { [self] in
       guard isActive else { return }
       let urlPath = PlaybackID.path(from: url)
-      let code = mpv.command(.videoAdd, args: [urlPath], checkError: false)
-      if code < 0 {
-        log.error("Unsupported video: \(urlPath)")
+      mpv.command(.videoAdd, args: [urlPath], checkError: false) { [self] code in
+        if code >= 0 { return }
+        log.error("Unsupported video: \(url.path)")
         DispatchQueue.main.async {
+          // FIXME: need to add text for `unsupported_video` (or delete this)
           Utility.showAlert("unsupported_audio")
         }
       }
@@ -1837,8 +1838,8 @@ final class PlayerCore: NSObject {
     mpv.queue.async { [self] in
       guard isActive else { return }
       let urlPath = PlaybackID.path(from: url)
-      let code = mpv.command(.audioAdd, args: [urlPath], checkError: false)
-      if code < 0 {
+      mpv.command(.audioAdd, args: [urlPath], checkError: false) { [self] code in
+        if code >= 0 { return }
         log.error("Unsupported audio: \(urlPath)")
         DispatchQueue.main.async {
           Utility.showAlert("unsupported_audio")
@@ -2483,7 +2484,9 @@ final class PlayerCore: NSObject {
   func loadExternalSubFile(_ url: URL, delay: Bool = false) {
     mpv.queue.async { [self] in
       guard isActive else { return }
+      log.verbose("Trying to load external sub file: \(url.path.pii.quoted)")
       if let track = info.findExternalSubTrack(withURL: url) {
+        log.verbose("External sub file already loaded (track \(track.id))")
         mpv.command(.subReload, args: [String(track.id)], checkError: false)
         return
       }
@@ -2493,8 +2496,9 @@ final class PlayerCore: NSObject {
       ///    <auto>    Don't select the subtitle. (Or in some special situations, let the default stream
       ///              selection mechanism decide.)```
       let urlPath = PlaybackID.path(from: url)
-      let code = mpv.command(.subAdd, args: [urlPath, "auto"], checkError: false)
-      if code < 0 {
+      log.verbose("Loading external sub file: \(urlPath.pii.quoted)")
+      mpv.command(.subAdd, args: [urlPath], checkError: false, level: .verbose) { code in
+        if code >= 0 { return }
         let errorDesc = mpv.errorString(code)
         log.error("Failed to load sub (error \(code): \(errorDesc)) \(urlPath.pii.quoted)")
         // if another modal panel is shown, popping up an alert now will cause some infinite loop.
@@ -2733,8 +2737,8 @@ final class PlayerCore: NSObject {
     let subURL = URL(fileURLWithPath: externalFilename)
     let fileMonitor = FileMonitor(url: subURL)
     fileMonitor.fileDidChange = { [self] in
-      let code = mpv.command(.subReload, args: ["\(currentSubTrack.id)"], checkError: false)
-      if code < 0 {
+      mpv.command(.subReload, args: [String(currentSubTrack.id)], checkError: false) { [self] code in
+        if code >= 0 { return }
         log.error("Failed reloading sub track \(currentSubTrack.id): error code \(code)")
       }
     }

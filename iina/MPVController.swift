@@ -144,7 +144,7 @@ final class MPVController: NSObject {
     removeOptionObservers()
     // Start mpv quitting. Even though this command is being sent using the synchronous command API
     // the quit command is special and will be executed by mpv asynchronously.
-    command(.quit, checkActive: false, level: .verbose)
+    command(.quit, level: .verbose)
   }
 
   func mpvDestroy() {
@@ -169,17 +169,11 @@ final class MPVController: NSObject {
     return strArgs
   }
 
-  /// Send arbitrary mpv command. Returns mpv return code.
+  /// Send arbitrary mpv command, with optional callback to handle return code.
   /// Warning: if `checkError: false` is not given, and an error occurs, this mpv core will go into shutdown!
-  @discardableResult
   func command(_ command: MPVCommand, args: [String?] = [], checkError: Bool = true,
-               checkActive: Bool = true, level: Logger.Level = .debug) -> Int32 {
-    if checkActive {
-      guard player.isActive else {
-        log.log("Skipping cmd (player state=\(player.state) is not active): \(command.rawValue) \(args.compactMap{$0}.joined(separator: " "))", level: level)
-        return MPV_ERROR_GENERIC.rawValue
-      }
-    }
+              level: Logger.Level = .debug, returnValueCallback: ((Int32) -> Void)? = nil) {
+    guard mpv != nil else { return }
     if Logger.isEnabled(.verbose) {
       if command == .loadfile, let filename = args[0] {
         _ = Logger.getOrCreatePII(for: filename)
@@ -194,17 +188,38 @@ final class MPVController: NSObject {
         }
       }
     }
-    guard let mpv else {
-      log.error("Aborting cmd: mpv is nil! Returning error")
-      return MPV_ERROR_GENERIC.rawValue
-    }
-    let returnValue = mpv_command(mpv, &cargs)
+    let returnValue = mpv_command(self.mpv, &cargs)
     if checkError {
       chkErr(returnValue)
-    } else {
-      logError(returnValue)
+    } else if let cb = returnValueCallback {
+      cb(returnValue)
     }
+  }
 
+  /// Send arbitrary mpv command. Returns mpv return code *synchronously*.
+  /// Warning: if `checkError: false` is not given, and an error occurs, this mpv core will go into shutdown!
+  @discardableResult
+  func command(_ command: MPVCommand, args: [String?] = [], checkError: Bool = true,
+               level: Logger.Level = .debug) -> Int32 {
+    guard mpv != nil else { return 0 }
+    if Logger.isEnabled(.verbose) {
+      if command == .loadfile, let filename = args[0] {
+        _ = Logger.getOrCreatePII(for: filename)
+      }
+    }
+    log.log("Run cmd: \(command.rawValue) \(args.compactMap{$0}.joined(separator: " "))", level: level)
+    var cargs = makeCArgs(command, args).map { $0.flatMap { UnsafePointer<CChar>(strdup($0)) } }
+    defer {
+      for ptr in cargs {
+        if (ptr != nil) {
+          free(UnsafeMutablePointer(mutating: ptr!))
+        }
+      }
+    }
+    let returnValue = mpv_command(self.mpv, &cargs)
+    if checkError {
+      chkErr(returnValue)
+    }
     return returnValue
   }
 
@@ -463,8 +478,8 @@ final class MPVController: NSObject {
       let cmd = name == MPVProperty.vf ? MPVCommand.vf : MPVCommand.af
 
       let str = filters.map { $0.stringFormat }.joined(separator: ",")
-      let returnValue = command(cmd, args: ["set", str], checkError: false)
-      if returnValue < 0 {
+      command(cmd, args: ["set", str], checkError: false)  { returnValue in
+        if returnValue >= 0 { return }
         DispatchQueue.main.async { [self] in
           Utility.showAlert("filter.incorrect")
           // reload data in filter setting window

@@ -225,61 +225,70 @@ class OnlineSubtitle {
         callback(result)
       }
     }.ensure {
+      // Hide the faux dialog OSD (AKA "persistent" OSD)
       player.hideOSD()
     }.catch { err in
-      let osdMessage: OSDMessage
-      let prefix = "Failed to obtain subtitles for \(url.description.pii) from \(provider.name). "
-      switch err {
-      case CommonError.noResult:
-        // Not an error.
-        log("No subtitles found")
-        callback([])
-        return
-      case CommonError.cannotConnect(let cause):
-        osdMessage = .cannotConnect
-        log("\(prefix)\(cause.localizedDescription)", level: .error)
-      case CommonError.networkError(let cause):
-        osdMessage = .networkError
-        let error = cause ?? err
-        log("\(prefix)\(error.localizedDescription)", level: .error)
-      case CommonError.timedOut(let cause):
-        osdMessage = .timedOut
-        log("\(prefix)\(cause.localizedDescription)", level: .error)
-      case Shooter.Error.cannotReadFile(let cause),
-           OpenSub.Error.cannotReadFile(let cause):
-        osdMessage = .fileError
-        log("\(prefix)Cannot get file handle. \(cause)", level: .error)
-      case Shooter.Error.fileTooSmall(let minimumFileSize),
-           OpenSub.Error.fileTooSmall(let minimumFileSize):
-        osdMessage = .fileError
-        log("\(prefix)File is too small. Minimum file size supported by the site is \(minimumFileSize)",
-            level: .error)
-      case OpenSub.Error.emptyFile(let reason):
-        osdMessage = .fileError
-        log("\(prefix)Invalid file, \(reason)", level: .error)
-      case OpenSub.Error.loginFailed(let reason):
-        osdMessage = .cannotLogin
-        log("\(prefix)Login failed, \(reason)", level: .error)
-      case JSPluginSub.Error.pluginError(let message):
-        osdMessage = .customWithDetail(message, provider.name)
-        log("\(prefix)\(message)", level: .error)
-      case CommonError.canceled:
-        osdMessage = .canceled
-        // Not an error.
-        log("User canceled download of subtitles")
-      case CommonError.dismissed:
-        // Operation dismissed by, for example, a plugin with custom implementation.
-        log("Default subtitle search wokflow dismissed")
-        player.isSearchingOnlineSubtitle = false
-        return
-      default:
-        // TODO: include message in network error OSD
-        osdMessage = .networkError
-        log("\(prefix)\(err.localizedDescription)", level: .error)
+      // Launch this async to ensure the "persistent" OSD is hidden first. Otherwise any OSD messages here will be ignored
+      DispatchQueue.main.async { [self] in
+        reportError(err, provider, url, player, callback)
       }
-      player.sendOSD(osdMessage)
-      player.isSearchingOnlineSubtitle = false
     }
+  }
+
+  @MainActor
+  fileprivate static func reportError<P: ProviderProtocol>(_ err: Error, _ provider: P, _ url: URL, _ player: PlayerCore,_ callback: @escaping ([URL]) -> Void) {
+    let osdMessage: OSDMessage
+    let prefix = "Failed to obtain subtitles for \(url.description.pii) from \(provider.name). "
+    switch err {
+    case CommonError.noResult:
+      // Not an error.
+      log("No subtitles found")
+      callback([])
+      return
+    case CommonError.cannotConnect(let cause):
+      osdMessage = .cannotConnect
+      log("\(prefix)\(cause.localizedDescription)", level: .error)
+    case CommonError.networkError(let cause):
+      osdMessage = .networkError
+      let error = cause ?? err
+      log("\(prefix)\(error.localizedDescription)", level: .error)
+    case CommonError.timedOut(let cause):
+      osdMessage = .timedOut
+      log("\(prefix)\(cause.localizedDescription)", level: .error)
+    case Shooter.Error.cannotReadFile(let cause),
+      OpenSub.Error.cannotReadFile(let cause):
+      osdMessage = .fileError
+      log("\(prefix)Cannot get file handle. \(cause)", level: .error)
+    case Shooter.Error.fileTooSmall(let minimumFileSize),
+      OpenSub.Error.fileTooSmall(let minimumFileSize):
+      osdMessage = .fileError
+      log("\(prefix)File is too small. Minimum file size supported by the site is \(minimumFileSize)",
+          level: .error)
+    case OpenSub.Error.emptyFile(let reason):
+      osdMessage = .fileError
+      log("\(prefix)Invalid file, \(reason)", level: .error)
+    case OpenSub.Error.loginFailed(let reason):
+      osdMessage = .cannotLogin
+      log("\(prefix)Login failed, \(reason)", level: .error)
+    case JSPluginSub.Error.pluginError(let message):
+      osdMessage = .customWithDetail(message, provider.name)
+      log("\(prefix)\(message)", level: .error)
+    case CommonError.canceled:
+      osdMessage = .canceled
+      // Not an error.
+      log("User canceled download of subtitles")
+    case CommonError.dismissed:
+      // Operation dismissed by, for example, a plugin with custom implementation.
+      log("Default subtitle search wokflow dismissed")
+      player.isSearchingOnlineSubtitle = false
+      return
+    default:
+      // TODO: include message in network error OSD
+      osdMessage = .networkError
+      log("\(prefix)\(err.localizedDescription)", level: .error)
+    }
+    player.sendOSD(osdMessage)
+    player.isSearchingOnlineSubtitle = false
   }
 
   static func populateMenu(_ menu: NSMenu, action: Selector? = nil, insertSeparator: Bool = true) {
