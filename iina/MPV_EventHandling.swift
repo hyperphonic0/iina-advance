@@ -249,7 +249,7 @@ extension MPVController {
     // This code is running in the com.colliderli.iina.controller dispatch queue. We must not run
     // plugins from a task in this queue. Accessing EventController data from a thread in this queue
     // results in data races that can cause a crash. See issue 3986.
-    if AppDelegate.iinaPluginSystemEnabled {
+    if Preference.bool(for: .iinaEnablePluginSystem) {
       DispatchQueue.main.async { [self] in
         let eventName = "mpv.\(String(cString: mpv_event_name(eventId)))"
         player.events.emit(.init(eventName))
@@ -624,7 +624,7 @@ extension MPVController {
       break
     }
 
-    if AppDelegate.iinaPluginSystemEnabled {
+    if Preference.bool(for: .iinaEnablePluginSystem) {
       let listeners = player.events.listeners
       guard !listeners.isEmpty else { return }  // optimization: don't enqueue anything if there are no listeners
 

@@ -16,9 +16,7 @@ final class HistoryController {
   /// It is preferable to disable history load/save when certain command-line arguments are used,
   /// such as encoding mode, both because they should not be counted as a history entry and to improve performance
   /// by skipping unnecessary operations.
-  var historyEnabled: Bool {
-    AppDelegate.isInteractiveLaunch
-  }
+  var historyEnabled: Bool = true
 
   private(set) var started = false
 

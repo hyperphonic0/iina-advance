@@ -143,7 +143,7 @@ final class PlayerManager {
       player = demoPlayer
     } else {
       Logger.log.debug("Creating demo player")
-      player = PlayerCore(Constants.demoPlayerLabel, isDemoPlayer: true)
+      player = PlayerCore(Constants.demoPlayerLabel, isDemoPlayer: true, userOptions: [])
       demoPlayer = player
     }
     player.startPlayer()
@@ -156,30 +156,48 @@ final class PlayerManager {
 
   /// ALways use this to create a new player.
   /// This always starts the given player after creating it.
-  func createNewPlayerCore(withLabel priorLabel: String? = nil, restoringFrom priorState: PlayerSaveState? = nil) -> PlayerCore {
-    let pc: PlayerCore
+  func createNewPlayerCore(withLabel priorLabel: String? = nil,
+                           restoringFrom priorState: PlayerSaveState? = nil,
+                           applyingCLI cli: CommandLineState? = nil) -> PlayerCore {
+    let player: PlayerCore
     if let priorLabel, let priorState {
+      assert(cli == nil, "Cannot restore a PlayerCore while also applying a CLI configuration!")
+      // Restoring a saved PlayerCore. We expect these to have a unique ID/label because
+      // it incorporates the launchID of a previous launch, and should never conflict with any players created
+      // by other launches or this launch.
       Logger.log.debug("Restoring PlayerCore instance with ID \(priorLabel.quoted)")
       guard !playerExists(withLabel: priorLabel) else {
         Logger.fatal("Cannot create new PlayerCore: a player already exists with label \(priorLabel.quoted)")
       }
       let userOptions = priorState.mpvOpts()
-      pc = PlayerCore(priorLabel, userOptions: userOptions)
+      player = PlayerCore(priorLabel, userOptions: userOptions)
     } else {
+      // Creating a new PlayerCore for this launch. Need to make sure we give it a unique ID.
+      // Each Player ID incorporates this launchID & `playerCoreCounter` starting from 0.
       let playerLabel = AppData.label(forPlayerCore: playerCoreCounter)
       while playerExists(withLabel: playerLabel) {
         playerCoreCounter += 1
       }
-      Logger.log.debug("Creating new PlayerCore instance with ID \(playerLabel.quoted)")
-      pc = PlayerCore(playerLabel)
+      var userOptions = PlayerCore.getMpvUserOptionsFromPrefs(Logger.log)
+      if let cli {
+        userOptions.append(contentsOf: cli.mpvArguments)
+      }
+      Logger.log.debug("Creating new PlayerCore instance with ID=\(playerLabel.quoted) & \(userOptions.count) user options")
+      player = PlayerCore(playerLabel, userOptions: userOptions)
       playerCoreCounter += 1
+
+      if let cli, cli.needsShufflePlaylist {
+        // Special handling for this one
+        player.log.debug("Found \"shuffle\" request in command-line args. Adding mpv hook to shuffle playlist")
+        player.addShufflePlaylistHook()
+      }
     }
-    Logger.log.debug("Successfully created PlayerCore \(pc.label)")
+    Logger.log.debug("Successfully created PlayerCore \(player.label)")
 
-    playerCores.append(pc)
+    playerCores.append(player)
 
-    pc.startPlayer(restoringFrom: priorState)
-    return pc
+    player.startPlayer(restoringFrom: priorState)
+    return player
   }
 
   func removePlayer(withLabel label: String) {

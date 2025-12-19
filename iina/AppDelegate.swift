@@ -45,11 +45,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   ///  or with `--macos-app-activation-policy=accessory`.
   ///
   /// If disabled, disables save/restore, history, plugins, and general UI for this launch.
-  static var isInteractiveLaunch: Bool = true
-
-  static var iinaPluginSystemEnabled: Bool {
-    Preference.bool(for: .iinaEnablePluginSystem) && isInteractiveLaunch
+  var isInteractiveLaunch: Bool = true {
+    didSet {
+      let isEnabled = isInteractiveLaunch
+      if !isEnabled {
+        UIState.shared.disableSaveAndRestoreUntilNextLaunch()
+      }
+      HistoryController.shared.async {
+        HistoryController.shared.historyEnabled = isEnabled
+      }
+    }
   }
+
+  static let iinaPluginSystemEnabled = Preference.bool(for: .iinaEnablePluginSystem)
 
   var startupHandler: StartupHandler!
   private let shutdownHandler = ShutdownHandler()
@@ -60,9 +68,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   @MainActor
   func ensureInteractiveLaunchEnabled() {
-    guard !AppDelegate.isInteractiveLaunch else { return }
+    guard !isInteractiveLaunch else { return }
 
-    AppDelegate.isInteractiveLaunch = true
+    isInteractiveLaunch = true
     Logger.updateEnablement()  // in case it was disabled previously
     Logger.log.debug("Re-enabling interactive launch")
     startupHandler.initAppUI()
@@ -82,9 +90,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     switch key {
     case PK.enableAdvancedSettings, PK.enableLogging, PK.logLevel:
-      Logger.updateEnablement()
-      // depends on advanced being enabled:
       Task { @MainActor in
+        Logger.updateEnablement()
+        // depends on advanced being enabled:
         menuController.refreshCmdNStatus()
         menuController.refreshStaticMenuItemBindings()
       }
@@ -186,11 +194,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     AppDetailsLogging.shared.logAllAppDetails()
 
-    Logger.log.debug("App will launch\(AppDelegate.isInteractiveLaunch ? "" : " (non-interactive)"). LaunchID: \(UIState.shared.currentLaunchID)")
+    Logger.log.debug("App will launch\(isInteractiveLaunch ? "" : " (non-interactive)"). LaunchID: \(UIState.shared.currentLaunchID)")
 
     Logger.log.debug("All app arguments: \(cmdLineArgs)")
     if let cli = startupHandler.commandLineState {
-      Logger.log.debug("Parsed IINA CLI args: stdin=\(cli.isStdin.yn) separateWindows=\(cli.openSeparateWindows?.yn ?? "-") musicMode=\(cli.enterMusicMode.yn) pip=\(cli.enterPIP.yn). Filenames from arguments: \(cli.filenames.map{$0.pii})")
+      Logger.log.debug("Parsed IINA CLI args: stdin=\(cli.isStdin.yn) separateWindows=\(cli.openSeparateWindows?.yn ?? "nil") musicMode=\(cli.enterMusicMode.yn) pip=\(cli.enterPIP.yn). Filenames from arguments: \(cli.filenames.map{$0.pii})")
       Logger.log.debug("Derived mpv properties from args: \(cli.mpvArguments)")
     }
 
@@ -226,7 +234,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 #endif
 
-    let observedPrefKeys: [Preference.Key] = !AppDelegate.isInteractiveLaunch ? [] : [
+    let observedPrefKeys: [Preference.Key] = !isInteractiveLaunch ? [] : [
       .logLevel,
       .enableLogging,
       .enableAdvancedSettings,
@@ -500,7 +508,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return false
     }
 
-    guard AppDelegate.isInteractiveLaunch else {
+    guard isInteractiveLaunch else {
       Logger.log.verbose("Received `last window closed' notification for non-interactive launch. App will quit")
       return true
     }
@@ -520,7 +528,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   @MainActor
   private func doActionWhenLastWindowWillClose() {
-    guard AppDelegate.isInteractiveLaunch else {
+    guard isInteractiveLaunch else {
       Logger.log.debug("Aborting action when last window closed: app-wide UI is disabled")
       return
     }
@@ -757,7 +765,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// Returns `true` if app termination was initiated.
   @MainActor
   private func terminateIfNotInteractiveLaunch() -> Bool {
-    if AppDelegate.isInteractiveLaunch {
+    if isInteractiveLaunch {
       return false
     }
 

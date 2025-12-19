@@ -306,7 +306,7 @@ final class PlayerCore: NSObject {
   }
 
   @MainActor
-  init(_ label: String, isDemoPlayer: Bool = false, userOptions: [(String, String)]? = nil) {
+  init(_ label: String, isDemoPlayer: Bool = false, userOptions: [(String, String)]) {
     let log = Logger.subsystem(forPlayerID: label)
     log.debug("PlayerCore init: starting")
     self.label = label
@@ -314,8 +314,7 @@ final class PlayerCore: NSObject {
     self.info = PlaybackInfo(log: log)
     self.isDemoPlayer = isDemoPlayer
     self.playlistTableChangeNotificationName = .init("uiChangeForPlaylistTable-\(label)")
-
-    self.userOptions = userOptions ?? []
+    self.userOptions = userOptions
 
     super.init()
     self.videoView = VideoView(player: self)
@@ -331,14 +330,18 @@ final class PlayerCore: NSObject {
   }
 
 
-  static func getMpvUserOptionsFromPrefs() -> [(String, String)] {
-    guard Preference.bool(for: .enableAdvancedSettings) else { return [] }
+  static func getMpvUserOptionsFromPrefs(_ log: any Logger.Subsystem) -> [(String, String)] {
+    guard Preference.bool(for: .enableAdvancedSettings) else {
+      log.verbose("Using empty user options ∵ enableAdvancedSettings pref is disabled")
+      return []
+    }
 
     guard let opts = Preference.value(for: .userOptions) as? [[String]] else {
       // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
       DispatchQueue.main.async {
         Utility.showAlert("extra_option.cannot_read")
       }
+      log.error("Using empty user options ∵ failed to deserialize userOptions pref entry")
       return []
     }
 
@@ -495,9 +498,9 @@ final class PlayerCore: NSObject {
     
     // Now load in the most recent options from Prefs > Advanced, if any, and set remaining options
     // as we would during the initial window load:
-    log.verbose("Reloading user options from prefs")
-    userOptions = PlayerCore.getMpvUserOptionsFromPrefs()
-    log.verbose("Loaded \(userOptions.count) user options from prefs")
+    log.verbose("Reloading userOptions from prefs")
+    userOptions = PlayerCore.getMpvUserOptionsFromPrefs(log)
+    log.verbose("Loaded \(userOptions.count) userOptions from prefs")
     mpv.mpvSetInitialOptions()
   }
 
@@ -544,7 +547,7 @@ final class PlayerCore: NSObject {
     }
 
     // If pwc is nil, it is not restoring
-    info.shouldAutoLoadFiles = AppDelegate.isInteractiveLaunch && (pwc == nil || !pwc.sessionState.isRestoring) && playableFiles.count == 1
+    info.shouldAutoLoadFiles = AppDelegate.shared.isInteractiveLaunch && (pwc == nil || !pwc.sessionState.isRestoring) && playableFiles.count == 1
 
     // open the first file
     openPlayerWindow(playableFiles)
@@ -602,20 +605,21 @@ final class PlayerCore: NSObject {
     guard !isDemoPlayer else { log.fatalError("Cannot open player window for demo player!") }
     guard urls.count > 0 else { log.fatalError("Cannot open player window: empty url list!") }
 
-    isInteractivePlayer = AppDelegate.isInteractiveLaunch
-    let playback = Playback(url: urls[0], playlistPos: 0)
-
-    if isInteractivePlayer && playback.isNetworkResource {
-      AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
-    }
-
     guard state.isAtLeast(.started) else {
-      Logger.fatal("Cannot open player window: player not started!")
+      log.error("Cannot open player window: player not started! Ignoring request")
+      return
     }
     guard !isShuttingDown else {
       // Prevent possible (though very unlikely) deadlock if called while shutting down
       log.debug("Aborting open player window: already shutting down")
       return
+    }
+
+    let isInteractivePlayer = self.isInteractivePlayer
+    let playback = Playback(url: urls[0], playlistPos: 0)
+
+    if playback.isNetworkResource, isInteractivePlayer {
+      AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
 
     /// Need to use `sync` so that:
@@ -624,7 +628,7 @@ final class PlayerCore: NSObject {
     mpv.queue.sync { [self] in
       let path = playback.path
       info.currentPlayback = playback
-      log.debug("Opening player (window=\(isInteractivePlayer.yn)) for \(path.pii.quoted), playerState=\(state), sessionState=\(pwc.sessionState)")
+      log.debug("Opening player (window=\(isInteractivePlayer.yesno)) for \(path.pii.quoted), playerState=\(state), sessionState=\(pwc.sessionState)")
 
       if state == .stopping || state == .idle {
         // Player was previously started, but closed & is now being reopened
@@ -641,8 +645,6 @@ final class PlayerCore: NSObject {
       info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
 
       DispatchQueue.main.async { [self] in
-        let isInteractivePlayer = isInteractivePlayer
-
         if !pwc.sessionState.isRestoring {
           if isInteractivePlayer {
             pwc.osd.clearQueuedOSDs()
@@ -707,6 +709,8 @@ final class PlayerCore: NSObject {
             _reloadPlaylist()
           }
 
+          // TODO: move this stuff into mpv init
+
           if Preference.bool(for: .enablePlaylistLoop) {
             mpv.setString(MPVOption.PlaybackControl.loopPlaylist, "inf")
           }
@@ -738,7 +742,9 @@ final class PlayerCore: NSObject {
   @MainActor
   func startPlayer(restoringFrom previousState: PlayerSaveState? = nil) {
     guard state == .notYetStarted else { return }
-    log.verbose("Player start")
+    let isInteractivePlayer = !isDemoPlayer && AppDelegate.shared.isInteractiveLaunch
+    self.isInteractivePlayer = isInteractivePlayer
+    log.verbose("Player start: interactive=\(isInteractivePlayer.yn)")
 
     if isDemoPlayer {
       startMPV()
@@ -751,8 +757,14 @@ final class PlayerCore: NSObject {
         } else {
           pwc = PlayerWindowController(playerCore: self)
         }
-        // Need to call this explicitly if not using a XIB
-        pwc.windowDidLoad()
+        if isInteractivePlayer {
+          // `windowDidLoad` is a legacy method, a leftover from when XIB was used.
+          // Need to call this explicitly now. Maybe we can refactor at some point.
+          // For non-interactive players, we still have too many dependencies on PlayerWindowController to avoid the need to
+          // instantiate it, but we can at least leave it "unloaded" and not suffer too much waste because much of the code
+          // already checks whether `!pwc.loaded` and gracefully handles it.
+          pwc.windowDidLoad()
+        }
         // Hide the newly created window until ready to show (when `windowIsReadyToShow` notification is sent,
         // triggering `showWindow()`)
         pwc.window?.orderOut(self)
@@ -760,9 +772,13 @@ final class PlayerCore: NSObject {
 
       if videoView.useOpenGL {
         startMPV()
-        videoView.initVideoLayer()
+        if isInteractivePlayer {
+          videoView.initVideoLayer()
+        }
       } else {
-        videoView.initVideoLayer()
+        if isInteractivePlayer {
+          videoView.initVideoLayer()
+        }
         startMPV()
       }
     }
@@ -2107,10 +2123,11 @@ final class PlayerCore: NSObject {
     let playbackPosition = mpv.getDouble(MPVProperty.timePos)
     info.playbackPositionSec = playbackPosition
 
-    let remaining = Preference.bool(for: .scaleRemainingTime) ?
-    mpv.getDouble(MPVProperty.playtimeRemainingFull) :
-    mpv.getDouble(MPVProperty.timeRemainingFull)
-    info.playbackRemainingSec = remaining
+    if Preference.bool(for: .scaleRemainingTime) {
+      info.playbackRemainingSec = mpv.getDouble(MPVProperty.playtimeRemainingFull)
+    } else {
+      info.playbackRemainingSec = mpv.getDouble(MPVProperty.timeRemainingFull)
+    }
 
     triedUsingExactSeekForCurrentFile = false
     // Playback will move directly from stopped to loading when transitioning to the next file in
@@ -2136,7 +2153,7 @@ final class PlayerCore: NSObject {
 
     info.currentPlayback = currentPlayback.changingState(to: .loaded)
 
-    if currentPlayback.isNetworkResource {
+    if currentPlayback.isNetworkResource, isInteractivePlayer {
       DispatchQueue.main.async {
         let openURLWindow = IINA_Advance.AppDelegate.shared.openURLWindow
         if openURLWindow.playerCore == self {
@@ -3124,6 +3141,10 @@ final class PlayerCore: NSObject {
   func reloadThumbnails() {
     mpv.queue.asyncAfter(deadline: .now() + Constants.TimeInterval.thumbnailRegenerationDelay) { [self] in
       guard !isStopping else { return }
+      guard !isInteractivePlayer else {
+        log.verbose("Thumbnails reload stopped: player is non-interactive")
+        return
+      }
       guard !Preference.bool(for: .integrateWithThumbfast) else {
         log.verbose("Thumbnails reload stopped: pref key `integrateWithThumbfast` is set")
         DispatchQueue.main.async { [self] in

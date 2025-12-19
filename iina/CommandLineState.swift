@@ -10,11 +10,13 @@ class CommandLineState {
   var openSeparateWindows: Bool? = nil
   var enterMusicMode = false
   var enterPIP = false
+  let needsShufflePlaylist: Bool
   var mpvArguments: [(String, String)] = []
   var filenames: [String] = []
 
   init?(_ tokens: ArraySlice<String>) {
     guard !tokens.isEmpty else { return nil }
+    var needsShufflePlaylist = false
     var droppedTokens = 0
 
     var dropNextToken = false
@@ -45,7 +47,16 @@ class CommandLineState {
       default:
         if token.hasPrefix("--") {
           // Assume all other double-dashed tokens are mpv args.
-          parseDoubleDashedToken(token)
+          let (argName, argValue) = CommandLineState.parseDoubleDashedToken(token)
+          if argName == MPVOption.PlaybackControl.shuffle {
+            if argValue == Constants.String.mpvYes {
+              needsShufflePlaylist = true
+            } else if argValue == Constants.String.mpvNo {
+              needsShufflePlaylist = false
+            }
+          }
+          // Also add args, in case user is using 'no' to override a 'yes' from user options or other source
+          mpvArguments.append((argName, argValue))
         } else if token.hasPrefix("-") {
           // MacOS runtime arg names are prefixed with a single dash & a space to separate name from value.
           /// Example: `-NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints YES`
@@ -63,10 +74,12 @@ class CommandLineState {
       // Does not qualify as a CLI launch
       return nil
     }
+
+    self.needsShufflePlaylist = needsShufflePlaylist
   }
 
   // mpv args
-  private func parseDoubleDashedToken(_ token: String) {
+  private static func parseDoubleDashedToken(_ token: String) -> (String, String) {
     let splitted = token.dropFirst(2).split(separator: "=", maxSplits: 1)
     var name = String(splitted[0])
 
@@ -77,12 +90,12 @@ class CommandLineState {
     if splitted.count <= 1 {
       if name.hasPrefix("no-") {
         let optName = String(name.dropFirst(3))
-        mpvArguments.append((optName, Constants.String.mpvNo))
+        return (optName, Constants.String.mpvNo)
       } else {
-        mpvArguments.append((name, Constants.String.mpvYes))
+        return (name, Constants.String.mpvYes)
       }
     } else {
-      mpvArguments.append((name, String(splitted[1])))
+      return (name, String(splitted[1]))
     }
   }
 
@@ -90,22 +103,9 @@ class CommandLineState {
     playerCore.log.debug("Setting mpv properties from arguments: \(mpvArguments)")
     var cmdLineArgs: [(String, String)] = []
     for argPair in mpvArguments {
-      if argPair.0 == MPVOption.PlaybackControl.shuffle && argPair.1 == Constants.String.mpvYes {
-        // Special handling for this one
-        playerCore.log.debug("Found \"shuffle\" request in command-line args. Adding mpv hook to shuffle playlist")
-        playerCore.addShufflePlaylistHook()
-      } else {
         cmdLineArgs.append(argPair)
-      }
     }
 
-    if playerCore.log.isDebugEnabled {
-      for cmdLineArgPair in cmdLineArgs {
-        if playerCore.userOptions.contains(where: { $0.0 == cmdLineArgPair.0 }) {
-          playerCore.log.debug("CLI arg has same name as a prev option & may override it: \(cmdLineArgPair.0)=\(cmdLineArgPair.1)")
-        }
-      }
-    }
     playerCore.userOptions.append(contentsOf: cmdLineArgs)
   }
 

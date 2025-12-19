@@ -115,7 +115,7 @@ final class StartupHandler {
       return
     }
 
-    guard AppDelegate.isInteractiveLaunch else {
+    guard AppDelegate.shared.isInteractiveLaunch else {
       Logger.log.debug("OpenFiles: Launch is not interactive. Ignoring \(urls.count) requested files")
       return
     }
@@ -174,6 +174,7 @@ final class StartupHandler {
       Logger.log.error("No valid file URLs provided via command line! Nothing to do")
       return
     }
+    Logger.log.verbose("Will open \(validFileURLs.count) URLs from command line")
     shouldIgnoreOpenFile = true
     openFiles(validFileURLs, applyingCLI: cli)
   }
@@ -231,9 +232,12 @@ final class StartupHandler {
 
       for url in urlsToOpen {
         // open one window per file
-        let player = PlayerManager.shared.getIdleOrCreateNew()
+        let player: PlayerCore
         if let cli {
-          cli.applyCommandLineArgs(to: player)
+          // TODO: do we ever need to reuse a PlayerCore for command line?
+          player = PlayerManager.shared.createNewPlayerCore(applyingCLI: cli)
+        } else {
+          player = PlayerManager.shared.getIdleOrCreateNew()
         }
         let playerFilesOpened = player.openURLs([url])
 
@@ -246,10 +250,12 @@ final class StartupHandler {
 
     } else {
       Logger.log.debug("Opening single window for URLs: count=\(urls.count) CLI=\((cli != nil).yesno)")
-      // open pending files in single window
-      let player = PlayerManager.shared.getActiveOrCreateNew()
+      let player: PlayerCore
       if let cli {
-        cli.applyCommandLineArgs(to: player)
+        player = PlayerManager.shared.createNewPlayerCore(applyingCLI: cli)
+      } else {
+        // Open pending files in single window. Replace existing player if available
+        player = PlayerManager.shared.getActiveOrCreateNew()
       }
       let playerFilesOpened = player.openURLs(urls)
       if playerFilesOpened > 0 {
@@ -260,9 +266,9 @@ final class StartupHandler {
     }
 
     if let cli, cli.isStdin {
-      let player = PlayerManager.shared.getIdleOrCreateNew()
+      Logger.log.debug("Opening player for stdin from CLI")
+      let player = PlayerManager.shared.createNewPlayerCore(applyingCLI: cli)
       lastPlayer = player
-      cli.applyCommandLineArgs(to: player)
       player.openURLString("-")
       totalFilesOpened += 1
     }
@@ -275,7 +281,7 @@ final class StartupHandler {
       }
     } else {
       Logger.log.verbose("Will open \(pwcsForOpenFiles.count) new windows for \(totalFilesOpened) files, & will show \(totalExistingFilesShown) existing")
-      if AppDelegate.isInteractiveLaunch {
+      if AppDelegate.shared.isInteractiveLaunch {
         // Set pwcsForOpenFiles so they can be tracked & shown when ready:
         self.pwcsForOpenFiles = pwcsForOpenFiles
       } else {
@@ -597,7 +603,7 @@ final class StartupHandler {
   @MainActor
   func showWindowsIfReady() {
     let log = Logger.restore
-    let isInteractiveLaunch = AppDelegate.isInteractiveLaunch
+    let isInteractiveLaunch = AppDelegate.shared.isInteractiveLaunch
 
     if isInteractiveLaunch {
       switch state {
@@ -867,7 +873,7 @@ final class StartupHandler {
         NSApp.setActivationPolicy(.regular)
       case "accessory":
         NSApp.setActivationPolicy(.accessory)
-        AppDelegate.isInteractiveLaunch = false
+        AppDelegate.shared.isInteractiveLaunch = false
       case "prohibited":
         NSApp.setActivationPolicy(.prohibited)
       default:
@@ -876,7 +882,7 @@ final class StartupHandler {
     }
 
     if commandLineState.mpvArguments.contains(where: { $0.0 == MPVEncoding.o }) {
-      AppDelegate.isInteractiveLaunch = false
+      AppDelegate.shared.isInteractiveLaunch = false
     }
   }
 }

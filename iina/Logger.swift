@@ -109,8 +109,9 @@ struct Logger {
   static nonisolated(unsafe) private(set) var enableLogToFile: Bool = false
 
   /// Updates global enablement flag
+  @MainActor
   static func updateEnablement() {
-    let isInteractiveLaunch = AppDelegate.isInteractiveLaunch
+    let isInteractiveLaunch = AppDelegate.shared.isInteractiveLaunch
     if !isInteractiveLaunch && !Preference.bool(for: .logNonInteractiveLaunches) {
       logToStdout(.debug, "Logging disabled for non-interactive launch (change pref `enableLogToFile` to enable)")
       enabled = false
@@ -172,6 +173,7 @@ struct Logger {
     return formatter
   }()
 
+  @MainActor
   static func initLogging() {
     // Call unlocked version. This should be called at app start, on the main thread, and we haven't done any logging yet, so it should be safe.
     updateEnablement()

@@ -28,7 +28,9 @@ extension MPVController {
     }
 
     mpvSetInitialOptions()
+    setUserOptions()
     mpvFinishInit()
+    player.log.verbose("Init mpv: done")
   }
 
   /// This is designed to be called again if this mpv core is reused across player sessions
@@ -351,35 +353,42 @@ extension MPVController {
       }
     }
 
-    // Set user-defined options.
-    let userOptions = player.userOptions
-    if !userOptions.isEmpty {
-      log.debug("Setting \(userOptions.count) user-configured mpv options")
-      for (opName, opValue) in userOptions {
-        // Ignore these options if specified; they are hard-coded above & will result in visual bugs if overridden
-        guard opName != MPVOption.Window.keepaspect,
-              opName != MPVOption.Window.keepaspectWindow else {
-          log.debug("Ignoring user option: \(opName.quoted)")
-          continue
-        }
-
-        let status = setOptionString(opName, opValue)
-        if status < 0 {
-          let errorString = errorString(status)
-          // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
-          DispatchQueue.main.async {
-            Utility.showAlert("extra_option.error", arguments: [opName, opValue, status, errorString])
-          }
-        }
-      }
-    }
-
     // Load external scripts
     loadSelectedInputConf(mpvQueue: false)
   }
 
   @MainActor
+  private func setUserOptions() {
+    // Set user-defined options.
+    let userOptions = player.userOptions
+    guard !userOptions.isEmpty else {
+      log.debug("No user-configured mpv options to set")
+      return
+    }
+    log.debug("Setting \(userOptions.count) user-configured mpv options")
+    for (opName, opValue) in userOptions {
+      // Ignore these options if specified; they are hard-coded above & will result in visual bugs if overridden
+      guard opName != MPVOption.Window.keepaspect,
+            opName != MPVOption.Window.keepaspectWindow else {
+        log.debug("Ignoring user option: \(opName.quoted)")
+        continue
+      }
+
+      let status = setOptionString(opName, opValue)
+      if status < 0 {
+        let errorString = errorString(status)
+        // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
+        DispatchQueue.main.async {
+          Utility.showAlert("extra_option.error", arguments: [opName, opValue, status, errorString])
+        }
+      }
+    }
+  }
+
+  @MainActor
   private func mpvFinishInit() {
+    player.log.verbose("Finshing mpv init")
+
     if player.isDemoPlayer {
       // Do the minimum needed for demo player
       setFlag(MPVOption.ProgramBehavior.loadAutoProfiles, false, level: .verbose)

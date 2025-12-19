@@ -242,10 +242,11 @@ class UIState {
   }
 
   var isRestoreEnabled: Bool {
-    return !disableForThisInstance && AppDelegate.isInteractiveLaunch && Preference.bool(for: .enableRestoreUIState)
+    return !disableForThisInstance && Preference.bool(for: .enableRestoreUIState)
   }
 
   func disableSaveAndRestoreUntilNextLaunch() {
+    log.verbose("Disabling save & restore until next app launch")
     disableForThisInstance = true
   }
 

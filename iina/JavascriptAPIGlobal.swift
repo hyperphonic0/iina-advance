@@ -42,7 +42,7 @@ class JavascriptAPIGlobalController: JavascriptAPI, JavascriptAPIGlobalControlle
     instanceCounter += 1
     DispatchQueue.main.async { [self] in
       // create the `PlayerCore` manually since it's managed directly by the plugin
-      let pc = PlayerCore("\(instanceCounter)-\(pluginInstance.plugin.identifier)")
+      let pc = PlayerCore("\(instanceCounter)-\(pluginInstance.plugin.identifier)", userOptions: [])
       pc.isManagedByPlugin = true
       pc.startPlayer()
       if options["disableWindowAnimation"] as? Bool == true {
