@@ -5,21 +5,30 @@
 //  Created by Matt Svoboda on 2025-04-23.
 //
 
-class CommandLineState {
-  var isStdin = false
-  var openSeparateWindows: Bool? = nil
-  var enterMusicMode = false
-  var enterPIP = false
+struct CommandLineState: Sendable {
+  let mpvArguments: [(String, String)]
+  let filenames: [String]
+
+  let isStdin: Bool
+  let openSeparateWindows: Bool?
+  let enterMusicMode: Bool
+  let enterPIP: Bool
   let needsShufflePlaylist: Bool
-  var mpvArguments: [(String, String)] = []
-  var filenames: [String] = []
 
   init?(_ tokens: ArraySlice<String>) {
     guard !tokens.isEmpty else { return nil }
-    var needsShufflePlaylist = false
-    var droppedTokens = 0
 
+    var mpvArguments: [(String, String)] = []
+    var filenames: [String] = []
+    var isStdin = false
+    var openSeparateWindows: Bool? = nil
+    var enterMusicMode = false
+    var enterPIP = false
+    var needsShufflePlaylist = false
+
+    var droppedTokens = 0
     var dropNextToken = false
+
     for token in tokens {
       if dropNextToken {
         // Second token in pair to ignore
@@ -75,6 +84,12 @@ class CommandLineState {
       return nil
     }
 
+    self.mpvArguments = mpvArguments
+    self.filenames = filenames
+    self.isStdin = isStdin
+    self.openSeparateWindows = openSeparateWindows
+    self.enterMusicMode = enterMusicMode
+    self.enterPIP = enterPIP
     self.needsShufflePlaylist = needsShufflePlaylist
   }
 
@@ -99,17 +114,7 @@ class CommandLineState {
     }
   }
 
-  func applyCommandLineArgs(to playerCore: PlayerCore) {
-    playerCore.log.debug("Setting mpv properties from arguments: \(mpvArguments)")
-    var cmdLineArgs: [(String, String)] = []
-    for argPair in mpvArguments {
-        cmdLineArgs.append(argPair)
-    }
-
-    playerCore.userOptions.append(contentsOf: cmdLineArgs)
-  }
-
-  func applySpecialOptionsToLastPlayer(_ lastPlayer: PlayerCore) {
+  func applySpecialModeToLastPlayer(_ lastPlayer: PlayerCore) {
     if enterMusicMode {
       DispatchQueue.main.async {
         lastPlayer.log.verbose("Player will start in music mode as specified via command line")

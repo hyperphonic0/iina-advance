@@ -290,7 +290,7 @@ final class StartupHandler {
       }
 
       if let cli, let lastPlayer {
-        cli.applySpecialOptionsToLastPlayer(lastPlayer)
+        cli.applySpecialModeToLastPlayer(lastPlayer)
       }
     }
     return totalFilesOpened + totalExistingFilesShown
