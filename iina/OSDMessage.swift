@@ -88,7 +88,7 @@ enum OSDMessage {
   case savedSub
   case cannotLogin
   case fileError
-  case networkError
+  case networkError(String)
   case canceled
   case cannotConnect
   case timedOut
@@ -477,10 +477,16 @@ enum OSDMessage {
         .normal
       )
 
-    case .networkError:
+    case .networkError(let description):
+      let descriptionForDisplay: String
+      if description.count > Constants.OSD.maxNetworkErrorMessageLength {
+        descriptionForDisplay = String(description.prefix(Constants.OSD.maxNetworkErrorMessageLength) + "…").quoted
+      } else {
+        descriptionForDisplay = description.quoted
+      }
       return (
         NSLocalizedString("osd.network_error", comment: "Network error"),
-        .normal
+        .withText(descriptionForDisplay)
       )
 
     case .fileError:

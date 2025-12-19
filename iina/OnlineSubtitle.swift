@@ -249,9 +249,9 @@ class OnlineSubtitle {
       osdMessage = .cannotConnect
       log("\(prefix)\(cause.localizedDescription)", level: .error)
     case CommonError.networkError(let cause):
-      osdMessage = .networkError
       let error = cause ?? err
       log("\(prefix)\(error.localizedDescription)", level: .error)
+      osdMessage = .networkError(error.localizedDescription)
     case CommonError.timedOut(let cause):
       osdMessage = .timedOut
       log("\(prefix)\(cause.localizedDescription)", level: .error)
@@ -283,9 +283,9 @@ class OnlineSubtitle {
       player.isSearchingOnlineSubtitle = false
       return
     default:
-      // TODO: include message in network error OSD
-      osdMessage = .networkError
       log("\(prefix)\(err.localizedDescription)", level: .error)
+      // Include message in network error OSD
+      osdMessage = .networkError(err.localizedDescription)
     }
     player.sendOSD(osdMessage)
     player.isSearchingOnlineSubtitle = false

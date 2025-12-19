@@ -397,6 +397,8 @@ struct Constants {
     /// There seem to be precision errors which break equality when comparing values beyond 6 decimal places.
     /// Just round to nearest 1/1000000 sec for comparing playback postion & duration.
     static let osdSeekMinDeltaSec: Double = 0.000001
+
+    static let maxNetworkErrorMessageLength = 100
   }
 
   // This multiplied by available window width → snap to center
