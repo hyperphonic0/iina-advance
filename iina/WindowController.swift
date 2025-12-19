@@ -25,6 +25,7 @@ class WindowController: NSWindowController {
         return
       }
 
+      // FIXME: unclear if this works or is even reachable. Maybe launches should stay non-interactive?
       Logger.log.verbose("OpenWindow (\(window?.savedStateName ?? "nil")) requested for non-interactive launch; will make interactive")
       AppDelegate.shared.ensureInteractiveLaunchEnabled()
     }

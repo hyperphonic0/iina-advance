@@ -377,10 +377,7 @@ enum ScreenFit: Int {
     case .legacyFullScreen, .nativeFullScreen:
       return true
     case .stayInside, .centerInside:
-      if Preference.bool(for: .enableAdvancedSettings) {
-        return Preference.bool(for: .moveWindowIntoVisibleScreenOnResize)
-      }
-      return true
+      return Preference.bool(for: .moveWindowIntoVisibleScreenOnResize)
     default:
       return false
     }

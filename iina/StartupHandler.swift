@@ -307,7 +307,7 @@ final class StartupHandler {
       return false
     }
 
-    if isCommandLine && !(Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableRestoreUIStateForCmdLineLaunches)) {
+    if isCommandLine && !Preference.bool(for: .enableRestoreUIStateForCmdLineLaunches) {
       log.debug("Restore is disabled for command-line launches. Will not restore launches or save this launch's state")
       UIState.shared.disableSaveAndRestoreUntilNextLaunch()
       return false
