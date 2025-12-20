@@ -18,7 +18,9 @@ class FontPickerWindowController: NSWindowController, NSTableViewDelegate, NSTab
   @IBOutlet weak var familyTableView: NSTableView!
   @IBOutlet weak var faceTableView: NSTableView!
   @IBOutlet weak var previewField: NSTextField!
+  /// "Type to filter"
   @IBOutlet weak var searchField: NSTextField!
+  /// Font name manual entry
   @IBOutlet weak var otherField: NSTextField!
 
   var fontNames: [FontInfo] = []
@@ -26,9 +28,11 @@ class FontPickerWindowController: NSWindowController, NSTableViewDelegate, NSTab
   var isSearching = false
   var chosenFontMembers: [[Any]]?
   var chosenFamily: FontInfo?
-  var chosenFace: String?
+  var chosenFace: String
 
   var finishedPicking: ((String?) -> Void)?
+
+  private var enableSelectionChangeListener = true
 
   override var windowNibName: NSNib.Name {
     get {
@@ -37,6 +41,7 @@ class FontPickerWindowController: NSWindowController, NSTableViewDelegate, NSTab
   }
 
   init() {
+    self.chosenFace = ""
     super.init(window: nil)
     self.windowFrameAutosaveName = WindowAutosaveName.fontPicker.string
   }
@@ -59,6 +64,45 @@ class FontPickerWindowController: NSWindowController, NSTableViewDelegate, NSTab
       tv.delegate = self
     }
     searchField.delegate = self
+    faceTableView.doubleAction = #selector(okBtnPressed)
+    Logger.log("FontPickerWindow init done")
+  }
+
+  func select(_ fontString: String ) {
+    Logger.log("FontPickerWindow selecting \(fontString.quoted) (searching=\(isSearching.yn))")
+
+    otherField.stringValue = fontString
+
+    updateTablesFromOtherFieldValue()
+  }
+
+  /// Updates all other UI state from the `otherField` value (i.e., the manually entered typeface name).
+  private func updateTablesFromOtherFieldValue() {
+    let selectedFace = otherField.stringValue
+    chosenFace = selectedFace
+
+    // Search for font. Unfortunately this requires checking all typefaces in the system.
+    // But it's still quite fast.
+    // If there is a filter string already set don't try to change it, even if this means not finding a match.
+    let fontNamesDisplayed = isSearching ? filteredFontNames : fontNames
+    for (familyIndex, family) in fontNamesDisplayed.enumerated() {
+      if let typefaces = FixedFontManager.typefaces(forFontFamily: family.name) as? [[Any]] {
+        for (typefaceIndex, typeface) in typefaces.enumerated() {
+          if let faceName = typeface[0] as? String, faceName == selectedFace {
+            enableSelectionChangeListener = false
+
+            chosenFamily = family
+            chosenFontMembers = typefaces
+            familyTableView.selectRowIndexes(IndexSet(integer: familyIndex), byExtendingSelection: false)
+            faceTableView.selectRowIndexes(IndexSet(integer: typefaceIndex), byExtendingSelection: false)
+
+            enableSelectionChangeListener = true
+            updatePreview()
+            return
+          }
+        }
+      }
+    }
   }
 
   // MARK: - NSTableView delegate and data source
@@ -85,24 +129,29 @@ class FontPickerWindowController: NSWindowController, NSTableViewDelegate, NSTab
   }
 
   func tableViewSelectionDidChange(_ notification: Notification) {
+    guard enableSelectionChangeListener else { return }
     guard let activeTv = notification.object as? NSTableView else { return }
     if activeTv == familyTableView {
       guard familyTableView.selectedRow >= 0 else { return }
       chosenFamily = isSearching ? filteredFontNames[familyTableView.selectedRow] : fontNames[familyTableView.selectedRow]
-      if chosenFamily != nil {
-        chosenFontMembers = FixedFontManager.typefaces(forFontFamily: chosenFamily!.name) as? [[Any]]
-        faceTableView.reloadData()
-        faceTableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
-        updatePreview()
-      }
-    } else if activeTv == faceTableView {
-      updatePreview()
+      guard let chosenFamily else { return }
+      chosenFontMembers = FixedFontManager.typefaces(forFontFamily: chosenFamily.name) as? [[Any]]
+      faceTableView.reloadData()
+      faceTableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
     }
+
+    guard let chosenFontMembers else { return }
+    chosenFace = (chosenFontMembers[faceTableView.selectedRow][0] as? String) ?? ""
+    if !chosenFace.isEmpty {
+      otherField.stringValue = chosenFace
+    }
+    updatePreview()
   }
 
   // MARK: - NSTextField delegate
 
-  func controlTextDidChange(_ obj: Notification) {
+  // Type-to-filter updates
+  func controlTextDidChange(_ notification: Notification) {
     familyTableView.deselectAll(searchField)
     let str = searchField.stringValue
     if str.isEmpty {
@@ -140,9 +189,10 @@ class FontPickerWindowController: NSWindowController, NSTableViewDelegate, NSTab
   // MARK: - Utils
 
   private func updatePreview() {
-    guard chosenFontMembers != nil else { return }
-    chosenFace = (chosenFontMembers![faceTableView.selectedRow][0] as? String) ?? ""
-    previewField.font = NSFont(name: chosenFace!, size: 24) ?? NSFont.systemFont(ofSize: 24)
+    guard let chosenFontMembers else { return }
+    chosenFace = (chosenFontMembers[faceTableView.selectedRow][0] as? String) ?? ""
+    Logger.log("Previewing chosen typeface (\(faceTableView.selectedRow) / \(chosenFontMembers.count)): \(chosenFace)")
+    previewField.font = NSFont(name: chosenFace, size: 24) ?? NSFont.systemFont(ofSize: 24)
   }
 
   private func withAllTableViews (_ block: (NSTableView) -> Void) {

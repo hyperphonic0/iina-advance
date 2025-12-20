@@ -389,6 +389,9 @@ final class StartupHandler {
         // TODO: persist isAlternativeAction too
         addWindowToRestore(savedWindow, app.openURLWindow)
         app.showOpenURLWindow(isAlternativeAction: true)
+      case .fontPicker:
+        // TODO: restore font picker
+        continue
       case .inspector:
         // Do not show Inspector window. It doesn't support being drawn in the background, but it loads very quickly.
         // So just mark it as 'ready' and show with the rest when they are ready.

@@ -2465,6 +2465,21 @@ final class PlayerCore: NSObject {
 
   // MARK: - Subtitles
 
+  /// Shows the Font Chooser window to select a new font for the player
+  func chooseSubFont() {
+    mpv.queue.async { [self] in
+      guard isActive else { return }
+      let subFont = mpv.getString(MPVOption.Subtitles.subFont)
+      DispatchQueue.main.async { [self] in
+        Utility.quickFontPickerWindow(selecting: subFont) { [self] result in
+          Task { @MainActor in
+            setSubFont(result ?? "")
+          }
+        }
+      }
+    }
+  }
+
   func toggleSubVisibility(_ set: Bool? = nil) {
     mpv.queue.async { [self] in
       guard isActive else { return }
