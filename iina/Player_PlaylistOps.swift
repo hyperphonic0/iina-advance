@@ -613,7 +613,6 @@ extension PlayerCore {
           mpv.command(.playlistPrev, checkError: false)
         }
       }
-      mpv.command(nextMedia ? .playlistNext : .playlistPrev, checkError: false)
     }
   }
 

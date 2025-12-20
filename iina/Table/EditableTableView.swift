@@ -164,11 +164,13 @@ class EditableTableView: NSTableView {
         // Unortunately, the event with event.clickCount==2 does not seem to present itself here.
         // Workaround: pass everything to the EditableTextField, which does see double-click.
         if let locationInTable = self.window?.contentView?.convert(event.locationInWindow, to: self) {
-          let clickedRow = self.row(at: locationInTable)
           let clickedColumn = self.column(at: locationInTable)
-          // qualifies!
-          cellEditTracker.changeCurrentCell(to: editableTextField, row: clickedRow, column: clickedColumn)
-          return true
+          if editableTextColumnIndexes.contains(clickedColumn) {
+            // qualifies!
+            let clickedRow = self.row(at: locationInTable)
+            cellEditTracker.changeCurrentCell(to: editableTextField, row: clickedRow, column: clickedColumn)
+            return true
+          }
         }
       }
     }

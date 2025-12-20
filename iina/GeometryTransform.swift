@@ -162,13 +162,13 @@ struct GeometryTransform: Sendable {
       if let sessionStateTransform {
         log.verbose("[GTF:\(name)] Calling sessionStateTransform")
         guard let updatedSessionState = sessionStateTransform(prevSessionState, ctxStage2) else {
-          return abort("state change func returned nil from prevSessionState=\(prevSessionState)")
+          return abort("sessionStateTF returned nil from prevSessionState=\(prevSessionState)")
         }
         gtfSessionState = updatedSessionState
-        log.verbose("[GTF:\(name)] Result of sessionStateChange: \(prevSessionState) → \(gtfSessionState.description)")
+        log.verbose("[GTF:\(name)] Result of sessionStateTF: \(prevSessionState) → \(gtfSessionState.description)")
       } else {
         gtfSessionState = prevSessionState
-        log.verbose("[GTF:\(name)] No sessionStateChange provided; using prev value: \(gtfSessionState)")
+        log.verbose("[GTF:\(name)] No sessionStateTF provided; using prev value: \(gtfSessionState)")
       }
 
       var outputVideoGeo = outputVideoGeo

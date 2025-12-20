@@ -76,14 +76,14 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     if let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int,
        let textMovement = NSTextMovement(rawValue: textMovementInt) {
 
-      self.endEdit(closeEditorExplicitly: false)
+      self.endEdit(closeEditorExplicitly: true)
 
       DispatchQueue.main.async {
         // Start asynchronously so we can return
         self.editAnotherCellAfterEditEnd(oldRow: current.row, oldColumn: current.column, textMovement)
       }
     } else {
-      self.endEdit(closeEditorExplicitly: false)
+      self.endEdit(closeEditorExplicitly: true)
     }
   }
 
