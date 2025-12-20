@@ -337,29 +337,24 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     // - Notifications
     // Do not even listen to `iinaTracklistChanged`! The following listeners are finer-grained.
     observe(.iinaVIDChanged) { [self] _ in
-      guard currentTab == .video else { return }
-      reloadVideoTabIfShown(using: player.videoGeo)
+      pwc.animationPipeline.submitInstantTask{ [self] in
+        reloadVideoTabIfShown(using: player.videoGeo)
+      }
     }
     observe(.iinaAIDChanged) { [self] _ in
-      guard currentTab == .audio else { return }
-      audioTableView.reloadData()
+      pwc.animationPipeline.submitInstantTask{ [self] in
+        reloadAudioTabIfShown()
+      }
     }
-    observe(.iinaSIDChanged) { [self] _ in
-      guard currentTab == .sub else { return }
-      subTableView.reloadData()
+    func subReloadCallback(_ notification: Notification) {
+      pwc.animationPipeline.submitInstantTask{ [self] in
+        reloadSubTabIfShown()
+      }
     }
-    observe(.iinaSSIDChanged) { [self] _ in
-      guard currentTab == .sub else { return }
-      secSubTableView.reloadData()
-    }
-    observe(.iinaSecondSubVisibilityChanged) { [self] _ in
-      guard currentTab == .sub else { return }
-      secHideSwitch.state = player.info.isSecondSubVisible ? .on : .off
-    }
-    observe(.iinaSubVisibilityChanged) { [self] _ in
-      guard currentTab == .sub else { return }
-      hideSwitch.state = player.info.isSubVisible ? .on : .off
-    }
+    observe(.iinaSIDChanged, using: subReloadCallback)
+    observe(.iinaSSIDChanged, using: subReloadCallback)
+    observe(.iinaSecondSubVisibilityChanged, using: subReloadCallback)
+    observe(.iinaSubVisibilityChanged, using: subReloadCallback)
 
     view.configureSubtreeForCoreAnimation()
     view.needsLayout = true
@@ -732,20 +727,17 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     guard !isInRefreshDenialPeriod else { return }
 
     switch currentTab {
+
     case .audio:
-      guard pwc.isOpen(sidebarTab: .audio) else { return }
-      player.log.verbose("QuickSettings: reloading tab \(currentTab.name.quoted)")
-      audioTableView.reloadData()
-      updateAudioTabControls()
-      updateAudioEqState()
+      reloadAudioTabIfShown()
+
     case .video:
       reloadVideoTabIfShown(using: player.videoGeo)
+
     case .sub:
       guard pwc.isOpen(sidebarTab: .sub) else { return }
-      player.log.verbose("QuickSettings: reloading tab \(currentTab.name.quoted)")
-      subTableView.reloadData()
-      secSubTableView.reloadData()
-      updateSubTabControls()
+      reloadSubTabIfShown()
+
     default:
       player.log.error("QuickSettings.reload(): currentTab is invalid: \(currentTab)")
     }
@@ -763,15 +755,33 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     guard isViewLoaded else { return }
     guard currentTab == .video else { return }
     guard pwc.isOpen(sidebarTab: .video) else { return }
-    player.log.verbose("QuickSettings: reloading video tab")
+    player.log.verbose("QuickSettings: reloading Video tab")
     videoTableView.reloadData()
     updateVideoTabControls(using: videoGeo)
     updateVideoEqState()
   }
 
+  private func reloadAudioTabIfShown() {
+    guard isViewLoaded else { return }
+    guard pwc.isOpen(sidebarTab: .audio) else { return }
+    player.log.verbose("QuickSettings: reloading tab \(currentTab.name.quoted)")
+    updateAudioTabControls()
+    updateAudioEqState()
+    audioTableView.reloadData()
+  }
+
+  private func reloadSubTabIfShown() {
+    guard isViewLoaded else { return }
+    guard currentTab == .sub else { return }
+    player.log.verbose("QuickSettings: reloading Subtitles tab")
+    updateSubTabControls()  // do this before reloading tables, in case isEnabled changes
+    subTableView.reloadData()
+    secSubTableView.reloadData()
+  }
+
   func setHdrAvailability(to available: Bool) {
-    player.info.hdrAvailable = available
-    if isViewLoaded {
+    guard isViewLoaded else { return }
+    pwc.animationPipeline.submitInstantTask{ [self] in
       hdrSwitch.isEnabled = available
       hdrSwitch.state = (available && player.info.hdrEnabled) ? .on : .off
     }
@@ -804,12 +814,18 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
   }
 
-  func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> Any? {
+  func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+    guard let columnName = tableColumn?.identifier else { return nil }
+    guard let cell = tableView.makeView(withIdentifier: columnName, owner: self) as? NSTableCellView else {
+      return nil
+    }
+
+    guard let textField = cell.textField else { return cell }
+
     // get track according to tableview
     // row=0: <None> row=1~: tracks[row-1]
     let track: MPVTrack?
     let activeId: Int
-    let columnName = tableColumn?.identifier
     if tableView == videoTableView {
       track = row == 0 ? nil : player.info.videoTracks[at: row-1]
       activeId = player.info.vid ?? -1
@@ -826,35 +842,41 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       return nil
     }
 
-    // Gray out table entries if table is disabled
-    if let columnName, let cell = tableView.makeView(withIdentifier: columnName, owner: self) as? NSTableCellView,
-       let textField = cell.textField {
-      textField.textColor = tableView.isEnabled ? .controlTextColor : .disabledControlTextColor
-    }
+    let mutableString: NSMutableAttributedString
 
-    // return track data
-    if columnName == .isChosen {
+    switch columnName {
+    case .isChosen:
       let isChosen = track == nil ? (activeId == 0) : (track!.id == activeId)
-      return isChosen ? Constants.String.dot : ""
-    } else if columnName == .trackName {
+      mutableString = NSMutableAttributedString(string: isChosen ? Constants.String.dot : "")
+    case .trackName:
       if let track {
-        return track.infoString
+        mutableString = NSMutableAttributedString(string: track.infoString)
       } else {
         // "<None>"
-        let noneString = Constants.String.trackNone
-        guard let cell = tableView.makeView(withIdentifier: .trackName, owner: self) as? NSTableCellView,
-              let textField = cell.textField else {
-          return noneString
-        }
-
-        let mutableString = NSMutableAttributedString(string: noneString)
+        mutableString = NSMutableAttributedString(string: Constants.String.trackNone)
         mutableString.addItalic(using: textField.font)
-        return mutableString
       }
-    } else if columnName == .trackId {
-      return track?.idString
+    case .trackId:
+      mutableString = NSMutableAttributedString(string: track?.idString ?? "")
+    default:
+      return nil
     }
-    return nil
+
+    var rowEnabled: Bool = tableView.isEnabled
+
+    // Gray out table entries if table is disabled, and for secondary subtitles already selected
+    if tableView == subTableView {
+      if row > 0, let activeSSID = player.info.secondSid, row == activeSSID {
+        rowEnabled = false
+      }
+    } else if tableView == secSubTableView {
+      if row > 0, let activeSID = player.info.sid, row == activeSID {
+        rowEnabled = false
+      }
+    }
+    textField.textColor = rowEnabled ? .controlTextColor : .disabledControlTextColor
+    textField.attributedStringValue = mutableString
+    return cell
   }
 
   func tableView(_ tableView: NSTableView,

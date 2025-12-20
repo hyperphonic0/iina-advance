@@ -20,7 +20,8 @@ struct MPVTrack: Sendable, CustomStringConvertible, Equatable {
   static let noneSubTrack = MPVTrack(id: 0, type: .sub, title: NSLocalizedString("track.none", comment: "<None>"),
                                      isDefault: false, isForced: false, isSelected: false, isExternal: false)
   /** For binding a none track object to menu, id = 0 */
-  static let noneSecondSubTrack = MPVTrack(id: 0, type: .secondSub, isDefault: false, isForced: false, isSelected: false, isExternal: false)
+  static let noneSecondSubTrack = MPVTrack(id: 0, type: .secondSub, title: NSLocalizedString("track.none", comment: "<None>"),
+                                           isDefault: false, isForced: false, isSelected: false, isExternal: false)
 
   static func emptyTrack(for type: TrackType) -> MPVTrack {
     switch type {

@@ -338,6 +338,7 @@ class VideoView: NSView {
       DispatchQueue.main.execOrAsync { [self] in
         let edrAvailable = edrEnabled != false
         if player.info.hdrAvailable != edrAvailable {
+          player.info.hdrAvailable = edrAvailable
           player.pwc.quickSettingView.setHdrAvailability(to: edrAvailable)
         }
         if edrEnabled != true { setICCProfile() }

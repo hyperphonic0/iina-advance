@@ -367,11 +367,7 @@ enum OSDMessage {
       case .video: keySuffix = "video"
       case .audio: keySuffix = "audio"
       case .sub: keySuffix = "sub"
-      case .secondSub:
-        // This enum constant is only used for setting the secondary subtitle. No track should use
-        // this type. This is an internal error.
-        Logger.log("Invalid subtitle track type: secondSub", level: .error)
-        keySuffix = "sub"
+      case .secondSub: keySuffix = "sub"  // Use same message for secondary sub for now
       }
       let trackTypeStr = String(format: NSLocalizedString("track." + keySuffix,
         comment: "Kind of track (Audio, Video, Subtitle)"))
