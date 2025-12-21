@@ -156,9 +156,13 @@ struct TableUIChange: Sendable {
     let log = tableView.log
     var animationTasks: [IINAAnimation.Task] = []
 
+    // 2. Perform row update animations
+    var flashCount = 0
+
     // 1. "Before" animations (if provided)
     if let flashBefore, !flashBefore.isEmpty {
-      animationTasks.append(.init{ [self] in
+      flashCount += 1
+      animationTasks.append(.init(duration: Constants.AnimationDuration.tableUIFlash) { [self] in
         // Doesn't matter the Task animation duration; it will be changed inside animateFlash()
         let context = NSAnimationContext.current
         log.verbose("Flashing rows before animation: \(flashBefore.map({$0}))")
@@ -166,15 +170,10 @@ struct TableUIChange: Sendable {
       })
     }
 
-
-    // 2. Perform row update animations
-    var flashCount = 0
-    if (!(flashBefore == nil || flashBefore!.isEmpty)) {
-      flashCount += 1
-    }
     if (!(flashAfter == nil || flashAfter!.isEmpty)) {
       flashCount += 1
     }
+
     // Strive for a consistent animation duration for all operations.
     // Operations such as "remove" may have a flash animation which takes some time, so subtract from this animation to compensate
     let duration = max(0.0, Constants.AnimationDuration.tableUIChange - (CGFloat(flashCount) * Constants.AnimationDuration.tableUIFlash))
@@ -241,7 +240,7 @@ struct TableUIChange: Sendable {
 
     // 5. "After" animations (if provided)
     if let flashAfter, !flashAfter.isEmpty {
-      animationTasks.append(.init { [self] in
+      animationTasks.append(.init(duration: Constants.AnimationDuration.tableUIFlash) { [self] in
         let context = NSAnimationContext.current
         log.verbose("Flashing rows after animation: \(flashAfter.map({$0}))")
         animateFlash(forIndexes: flashAfter, in: tableView, context)
