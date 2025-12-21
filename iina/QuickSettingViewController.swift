@@ -210,18 +210,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   private var lastUsedProfileName: String = ""
   private var inputString: String = ""
 
-  internal var observedPrefKeys: [Preference.Key] = [
-  ]
-
-  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-    guard let keyPath = keyPath else { return }
-
-    switch keyPath {
-      default:
-        return
-    }
-  }
-
   private var downshift: CGFloat = 0
   private var tabHeight: CGFloat = 0
 
@@ -606,24 +594,19 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       [subTextColorWell, subTextSizePopUp, subTextBgColorWell, subTextBorderColorWell, subTextBorderWidthPopUp, subTextFontBtn].forEach { $0.isEnabled = enableTextSettings }
     }
 
-    if let subTextColorString = Preference.string(for: .subTextColorString), let subTextColor = NSColor(mpvColorString: subTextColorString) {
-      subTextColorWell.color = subTextColor
-    }
-    if let subBorderColorString = Preference.string(for: .subBorderColorString), let subBorderColor = NSColor(mpvColorString: subBorderColorString) {
-      subTextBorderColorWell.color = subBorderColor
-    }
-    if let subBgColorString = Preference.string(for: .subBgColorString), let subBgColor = NSColor(mpvColorString: subBgColorString) {
-      subTextBgColorWell.color = subBgColor
-    }
     // controls can apply to either primary or secondary sub
     let isPrimary = isShowingPrimarySubPanel
 
     player.mpv.queue.async { [self] in
       guard !player.isStopping else { return }
 
+      let subColorString = player.mpv.getString(MPVOption.Subtitles.subColor)
+      let subBorderColorString = player.mpv.getString(MPVOption.Subtitles.subBorderColor)
+      let subBgColorString = player.mpv.getString(MPVOption.Subtitles.subBackColor)
+
       let currSubScale = player.mpv.getDouble(MPVOption.Subtitles.subScale).clamped(to: 0.1...10)
       let displaySubScale = Utility.toDisplaySubScale(fromRealSubScale: currSubScale)
-      player.log.verbose("Current subScale: \(currSubScale) -> display: \(displaySubScale)")
+      player.log.trace("Current subScale: \(currSubScale) -> display: \(displaySubScale)")
 
       let currSubPos = isPrimary ? player.info.subPos : player.info.sub2Pos
       let subDelay = isPrimary ? player.info.subDelay : player.info.sub2Delay
@@ -633,7 +616,17 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
       DispatchQueue.main.async { [self] in
         subSegmentedControl.setSelected(true, forSegment: isPrimary ? 0 : 1)
-        
+
+        if let subColorString, let subTextColor = NSColor(mpvColorString: subColorString) {
+          subTextColorWell.color = subTextColor
+        }
+        if let subBorderColorString, let subBorderColor = NSColor(mpvColorString: subBorderColorString) {
+          subTextBorderColorWell.color = subBorderColor
+        }
+        if let subBgColorString, let subBgColor = NSColor(mpvColorString: subBgColorString) {
+          subTextBgColorWell.color = subBgColor
+        }
+
         subPosSlider.intValue = Int32(currSubPos)
         subScaleSlider.doubleValue = displaySubScale + (displaySubScale > 0 ? -1 : 1)
 

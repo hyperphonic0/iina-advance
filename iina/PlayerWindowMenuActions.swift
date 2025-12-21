@@ -374,7 +374,6 @@ extension PlayerWindowController {
 
   @objc func menuSetSubEncoding(_ sender: NSMenuItem) {
     player.setSubEncoding((sender.representedObject as? String) ?? "auto")
-    player.reloadAllSubs()
   }
 
   @objc func menuSubFont(_ sender: NSMenuItem) {

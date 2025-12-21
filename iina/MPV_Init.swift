@@ -194,8 +194,8 @@ extension MPVController {
     if !player.isPresentInUserOptions(MPVOption.Subtitles.subCodepage) {
       chkErr(setOptionalOptionString(MPVOption.Subtitles.subCodepage,
                                      Preference.string(for: .defaultEncoding), verboseIfDefault: true))
+      player.info.subEncoding = Preference.string(for: .defaultEncoding)
     }
-    player.info.subEncoding = Preference.string(for: .defaultEncoding)
 
     let subOverrideHandler: OptionObserverInfo.Transformer = { key in
       (Preference.enum(for: key) as Preference.SubOverrideLevel).string

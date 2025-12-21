@@ -2557,7 +2557,6 @@ final class PlayerCore: NSObject {
     assert(scale > 0.0, "Invalid sub scale: \(scale)")
     mpv.queue.async { [self] in
       guard isActive else { return }
-      Preference.set(scale, for: .subScale)
       mpv.setDouble(MPVOption.Subtitles.subScale, scale)
     }
   }
@@ -2565,9 +2564,6 @@ final class PlayerCore: NSObject {
   func setSubPos(_ pos: Int, forPrimary: Bool = true) {
     mpv.queue.async { [self] in
       guard isActive else { return }
-      if forPrimary {
-        Preference.set(pos, for: .subPos)
-      }
       let option = forPrimary ? MPVOption.Subtitles.subPos : MPVOption.Subtitles.secondarySubPos
       mpv.setInt(option, pos)
     }
@@ -2576,7 +2572,6 @@ final class PlayerCore: NSObject {
   func setSubTextColor(_ colorString: String) {
     mpv.queue.async { [self] in
       guard isActive else { return }
-      Preference.set(colorString, for: .subTextColorString)
       mpv.setString("options/" + MPVOption.Subtitles.subColor, colorString)
     }
   }
@@ -2584,7 +2579,6 @@ final class PlayerCore: NSObject {
   func setSubFont(_ font: String) {
     mpv.queue.async { [self] in
       guard isActive else { return }
-      Preference.set(font, for: .subTextFont)
       mpv.setString(MPVOption.Subtitles.subFont, font)
     }
   }
@@ -2592,7 +2586,6 @@ final class PlayerCore: NSObject {
   func setSubTextSize(_ fontSize: Double) {
     mpv.queue.async { [self] in
       guard isActive else { return }
-      Preference.set(fontSize, for: .subTextSize)
       mpv.setDouble("options/" + MPVOption.Subtitles.subFontSize, fontSize)
     }
   }
@@ -2600,7 +2593,6 @@ final class PlayerCore: NSObject {
   func setSubTextBold(_ isBold: Bool) {
     mpv.queue.async { [self] in
       guard isActive else { return }
-      Preference.set(isBold, for: .subBold)
       mpv.setFlag("options/" + MPVOption.Subtitles.subBold, isBold)
     }
   }
@@ -2608,14 +2600,12 @@ final class PlayerCore: NSObject {
   func setSubTextBorderColor(_ colorString: String) {
     mpv.queue.async { [self] in
       guard isActive else { return }
-      Preference.set(colorString, for: .subBorderColorString)
       mpv.setString("options/" + MPVOption.Subtitles.subBorderColor, colorString)
     }
   }
 
   func setSubTextBorderSize(_ size: Double) {
     mpv.queue.async { [self] in
-      Preference.set(size, for: .subBorderSize)
       mpv.setDouble("options/" + MPVOption.Subtitles.subBorderSize, size)
     }
   }
@@ -2623,7 +2613,6 @@ final class PlayerCore: NSObject {
   func setSubTextBgColor(_ colorString: String) {
     mpv.queue.async { [self] in
       guard isActive else { return }
-      Preference.set(colorString, for: .subBgColorString)
       mpv.setString("options/" + MPVOption.Subtitles.subBackColor, colorString)
     }
   }
@@ -2631,9 +2620,14 @@ final class PlayerCore: NSObject {
   func setSubEncoding(_ encoding: String) {
     mpv.queue.async { [self] in
       guard isActive else { return }
-      info.subEncoding = encoding
       mpv.setString(MPVOption.Subtitles.subCodepage, encoding)
     }
+  }
+
+  func subCodepageDidChange(to encoding: String) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    info.subEncoding = encoding
+    reloadAllSubs()
   }
 
   func sidChanged(to sid: Int? = nil, silent: Bool = false) {

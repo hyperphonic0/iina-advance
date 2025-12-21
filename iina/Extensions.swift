@@ -121,20 +121,48 @@ extension NSColor {
   }
 
   convenience init?(mpvColorString: String) {
-    let splitted = mpvColorString.split(separator: "/").map { (seq) -> Double? in
-      return Double(String(seq))
-    }
-    // check nil
-    if (!splitted.contains {$0 == nil}) {
-      if splitted.count == 3 {  // if doesn't have alpha value
-        self.init(red: CGFloat(splitted[0]!), green: CGFloat(splitted[1]!), blue: CGFloat(splitted[2]!), alpha: CGFloat(1))
-      } else if splitted.count == 4 {  // if has alpha value
-        self.init(red: CGFloat(splitted[0]!), green: CGFloat(splitted[1]!), blue: CGFloat(splitted[2]!), alpha: CGFloat(splitted[3]!))
+    if mpvColorString.first == "#" {
+      // Hex format
+      let hex = String(mpvColorString.dropFirst())
+
+      let hasAlpha: Bool
+      switch hex.count {
+      case 6:
+        // RRGGBB
+        hasAlpha = false
+      case 8:
+        // AARRGGBB
+        hasAlpha = true
+      default:
+        // Invalid format!
+        return nil
+      }
+
+      var rgba: UInt64 = 0
+      guard Scanner(string: hex).scanHexInt64(&rgba) else { return nil }
+
+      let a = hasAlpha ? (CGFloat((rgba & 0xFF000000) >> 24) / 255.0) : 1.0
+      let r = CGFloat((rgba & 0x00FF0000) >> 16) / 255.0
+      let g = CGFloat((rgba & 0x0000FF00) >> 8) / 255.0
+      let b = CGFloat(rgba & 0x000000FF) / 255.0
+      self.init(red: r, green: g, blue: b, alpha: a)
+    } else {
+      // Assume slashes format
+      let splitted = mpvColorString.split(separator: "/").map { (seq) -> Double? in
+        return Double(String(seq))
+      }
+      // check nil
+      if (!splitted.contains {$0 == nil}) {
+        if splitted.count == 3 {  // if doesn't have alpha value
+          self.init(red: CGFloat(splitted[0]!), green: CGFloat(splitted[1]!), blue: CGFloat(splitted[2]!), alpha: CGFloat(1))
+        } else if splitted.count == 4 {  // if has alpha value
+          self.init(red: CGFloat(splitted[0]!), green: CGFloat(splitted[1]!), blue: CGFloat(splitted[2]!), alpha: CGFloat(splitted[3]!))
+        } else {
+          return nil
+        }
       } else {
         return nil
       }
-    } else {
-      return nil
     }
   }
 }

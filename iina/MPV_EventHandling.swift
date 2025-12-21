@@ -31,6 +31,7 @@ extension MPVController {
     MPVOption.Audio.volume: MPV_FORMAT_DOUBLE,
     MPVOption.Audio.audioDelay: MPV_FORMAT_DOUBLE,
     MPVOption.PlaybackControl.speed: MPV_FORMAT_DOUBLE,
+    MPVOption.Subtitles.subCodepage: MPV_FORMAT_STRING,
     MPVOption.Subtitles.secondarySubVisibility: MPV_FORMAT_FLAG,
     MPVOption.Subtitles.secondarySubDelay: MPV_FORMAT_DOUBLE,
     MPVOption.Subtitles.secondarySubPos: MPV_FORMAT_DOUBLE,
@@ -413,6 +414,12 @@ extension MPVController {
         player.sendOSD(.audioDelay(delay))
         player.setQuickSettingsViewNeedsUpdate()
       }
+
+    case MPVOption.Subtitles.subCodepage:
+      guard let encoding = getString(MPVOption.Subtitles.subCodepage) else { break }
+      guard encoding != player.info.subEncoding else { break }
+      player.log.verbose("Δ mpv prop: `sub-codepage` = \(encoding)")
+      player.subCodepageDidChange(to: encoding)
 
     case MPVOption.Subtitles.subVisibility:
       guard let visible = property.boolData(log) else { break }
