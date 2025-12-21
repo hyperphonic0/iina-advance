@@ -2628,6 +2628,8 @@ final class PlayerCore: NSObject {
 
   func subCodepageDidChange(to encoding: String) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard encoding != info.subEncoding else { return }
+    log.verbose("Δ mpv prop: `sub-codepage` = \(encoding)")
     info.subEncoding = encoding
     reloadAllSubs()
   }
@@ -2711,9 +2713,12 @@ final class PlayerCore: NSObject {
 
   func secondarySubDelayChanged(_ delay: Double) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    info.sub2Delay = delay
-    sendOSD(.secondSubDelay(delay))
-    saveState()
+    if info.sub2Delay != delay {
+      log.verbose("Δ mpv prop: `secondary-sub-delay` = \(delay)")
+      info.sub2Delay = delay
+      sendOSD(.secondSubDelay(delay))
+      saveState()
+    }
     setQuickSettingsViewNeedsUpdate()
   }
 
@@ -2806,21 +2811,26 @@ final class PlayerCore: NSObject {
     guard pwc.loaded else { return }
     
     let mpvFS = mpv.getFlag(MPVOption.Window.fullscreen)
-    let iinaFS = pwc.isFullScreen
-    log.verbose("FullScreen state: IINA=\(iinaFS.yn) mpv=\(mpvFS.yn)")
-    guard mpvFS != iinaFS else { return }
+    DispatchQueue.main.async { [self] in
+      let iinaFS = pwc.isFullScreen
+      log.verbose("FullScreen state: IINA=\(iinaFS.yn) mpv=\(mpvFS.yn)")
+      guard mpvFS != iinaFS else { return }
 
-    if mpvFS && didEnterFullScreenViaUserToggle {
-      log.verbose("Disabling mpv full screen to sync it with IINA's state")
-      didEnterFullScreenViaUserToggle = false
-      mpv.setFlag(MPVOption.Window.fullscreen, false)
-    } else {
-      log.debug("IINA full screen state does not match mpv (FS=\(mpvFS.yesno)); will change to match mpv state")
-      DispatchQueue.main.async { [self] in
-        if mpvFS {
-          pwc.enterFullScreen()
-        } else {
-          pwc.exitFullScreen()
+      if mpvFS && didEnterFullScreenViaUserToggle {
+        log.verbose("Disabling mpv full screen to sync it with IINA's state")
+        didEnterFullScreenViaUserToggle = false
+        mpv.queue.async{ [self] in
+          guard isActive else { return }
+          mpv.setFlag(MPVOption.Window.fullscreen, false)
+        }
+      } else {
+        log.debug("IINA full screen state does not match mpv (FS=\(mpvFS.yesno)); will change to match mpv state")
+        DispatchQueue.main.async { [self] in
+          if mpvFS {
+            pwc.enterFullScreen()
+          } else {
+            pwc.exitFullScreen()
+          }
         }
       }
     }

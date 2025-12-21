@@ -408,22 +408,20 @@ extension MPVController {
     case MPVOption.Audio.audioDelay:
       guard let delayUnrounded = property.doubleData(log) else { break }
       let delay = delayUnrounded.roundedTo6()
-      if player.info.audioDelay != delay {
-        player.log.verbose("Δ mpv prop: `audio-delay` = \(delay)")
-        player.info.audioDelay = delay
-        player.sendOSD(.audioDelay(delay))
-        player.setQuickSettingsViewNeedsUpdate()
-      }
+      guard player.info.audioDelay != delay else { break }
+      player.log.verbose("Δ mpv prop: `audio-delay` = \(delay)")
+      player.info.audioDelay = delay
+      player.sendOSD(.audioDelay(delay))
+      player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Subtitles.subCodepage:
       guard let encoding = getString(MPVOption.Subtitles.subCodepage) else { break }
-      guard encoding != player.info.subEncoding else { break }
-      player.log.verbose("Δ mpv prop: `sub-codepage` = \(encoding)")
       player.subCodepageDidChange(to: encoding)
 
     case MPVOption.Subtitles.subVisibility:
       guard let visible = property.boolData(log) else { break }
       guard player.info.isSubVisible != visible else { break }
+      player.log.verbose("Δ mpv prop: `sub-visibility` = \(visible.yn)")
       player.info.isSubVisible = visible
       player.sendOSD(visible ? .subVisible : .subHidden)
       player.setQuickSettingsViewNeedsUpdate()
@@ -431,13 +429,13 @@ extension MPVController {
     case MPVOption.Subtitles.secondarySubVisibility:
       guard let visible = property.boolData(log) else { break }
       guard player.info.isSecondSubVisible != visible else { break }
+      player.log.verbose("Δ mpv prop: `secondary-sub-visibility` = \(visible.yn)")
       player.info.isSecondSubVisible = visible
       player.sendOSD(visible ? .secondSubVisible : .secondSubHidden)
       player.setQuickSettingsViewNeedsUpdate()
 
     case MPVOption.Subtitles.secondarySubDelay:
       guard let ssubDelay = property.doubleData(log) else { break }
-      player.log.verbose("Δ mpv prop: `secondary-sub-delay` = \(ssubDelay)")
       player.secondarySubDelayChanged(ssubDelay)
 
     case MPVOption.Subtitles.subDelay:
@@ -456,36 +454,14 @@ extension MPVController {
       guard let subPos = property.doubleData(log) else { break }
       player.subPosChanged(subPos)
 
-    case MPVOption.Subtitles.subColor:
-      player.saveState()
-      player.setQuickSettingsViewNeedsUpdate()
+    case MPVOption.Subtitles.subColor,
+      MPVOption.Subtitles.subFont,
+      MPVOption.Subtitles.subFontSize,
+      MPVOption.Subtitles.subBold,
+      MPVOption.Subtitles.subBorderColor,
+      MPVOption.Subtitles.subBorderSize,
+      MPVOption.Subtitles.subBackColor:
 
-    case MPVOption.Subtitles.subFont:
-      player.saveState()
-      player.setQuickSettingsViewNeedsUpdate()
-      // TODO: OSD
-
-    case MPVOption.Subtitles.subFontSize:
-      player.saveState()
-      player.setQuickSettingsViewNeedsUpdate()
-      //      if let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee {
-      //        let fontSize = Int(data)
-      //        // TODO: OSD
-      //      }
-
-    case MPVOption.Subtitles.subBold:
-      player.saveState()
-      player.setQuickSettingsViewNeedsUpdate()
-
-    case MPVOption.Subtitles.subBorderColor:
-      player.saveState()
-      player.setQuickSettingsViewNeedsUpdate()
-
-    case MPVOption.Subtitles.subBorderSize:
-      player.saveState()
-      player.setQuickSettingsViewNeedsUpdate()
-
-    case MPVOption.Subtitles.subBackColor:
       player.saveState()
       player.setQuickSettingsViewNeedsUpdate()
 
