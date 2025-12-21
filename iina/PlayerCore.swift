@@ -61,6 +61,7 @@ final class PlayerCore: NSObject {
   /// If `false`, has player functionality without use of a player window. Must be `true` to show a player window.
   var isInteractivePlayer = false
 
+  // TODO: refactor to use [MPVOptPair]
   /// After mpvInit, contains both the user options in Settings > Advanced, + commandLineArgs
   var userOptions: [(String, String)]
 
@@ -330,13 +331,14 @@ final class PlayerCore: NSObject {
   }
 
 
+  // TODO: refactor to use [MPVOptPair]
   static func getMpvUserOptionsFromPrefs(_ log: any Logger.Subsystem) -> [(String, String)] {
     guard Preference.bool(for: .enableAdvancedSettings) else {
       log.verbose("Using empty user options ∵ enableAdvancedSettings pref is disabled")
       return []
     }
 
-    guard let opts = Preference.value(for: .userOptions) as? [[String]] else {
+    guard let opts = MPVOptPair.readFromPrefs() else {
       // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
       DispatchQueue.main.async {
         Utility.showAlert("extra_option.cannot_read")
@@ -345,22 +347,18 @@ final class PlayerCore: NSObject {
       return []
     }
 
-    return opts.compactMap { optArr in
-      // User Options table allows saving of empty values. Filter those out
-      guard !optArr.isEmpty, !optArr[0].isEmpty else { return nil }
-
+    return opts.compactMap { opt in
       // If option has value, use that
-      let name = optArr[0]
-      if optArr.count == 2, !optArr[1].isEmpty {
-        return (name, optArr[1])
+      if !opt.val.isEmpty {
+        return (opt.key, opt.val)
       }
 
       // check for special syntax for yes/no
-      if name.hasPrefix("no-") {
-        let baseName = String(name.dropFirst(3))
+      if opt.key.hasPrefix("no-") {
+        let baseName = String(opt.key.dropFirst(3))
         return (baseName, Constants.String.mpvNo)
       } else {
-        return (name, Constants.String.mpvYes)
+        return (opt.key, Constants.String.mpvYes)
       }
     }
   }

@@ -352,6 +352,7 @@ struct PlayerSaveState: CustomStringConvertible {
     return nil
   }
 
+  // TODO: refactor to use [MPVOptPair]
   func mpvOpts() -> [(String, String)] {
     guard let propsString = string(for: .mpvOpts) else { return [] }
     let lines = propsString.split(separator: "\n")

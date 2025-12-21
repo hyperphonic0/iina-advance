@@ -961,10 +961,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     player.mpv.setFlag(MPVOption.PlaybackControl.pause, false)
   }
 
-  private func isPresent(_ option: String, in userOptions: [(String, String)]) -> Bool {
-    return userOptions.contains { $0.0 == option }
-  }
-
   /// Do not use the offical `NSWindowDelegate` method. This method will be called by the global window listener.
   func doPriorToWindowWillClose(_ window: NSWindow) {
     log.verbose("Window will close")

@@ -6,6 +6,7 @@
 //
 
 struct CommandLineState: Sendable {
+  // TODO: refactor to use [MPVOptPair]
   let mpvArguments: [(String, String)]
   let filenames: [String]
 
