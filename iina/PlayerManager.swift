@@ -178,7 +178,7 @@ final class PlayerManager {
       while playerExists(withLabel: playerLabel) {
         playerCoreCounter += 1
       }
-      var userOptions = PlayerCore.getMpvUserOptionsFromPrefs(Logger.log)
+      var userOptions = PlayerCore.getMpvAdditionalOptionsFromPrefs(Logger.log)
       if let cli {
         userOptions.append(contentsOf: cli.mpvArguments)
       }

@@ -332,7 +332,9 @@ final class PlayerCore: NSObject {
 
 
   // TODO: refactor to use [MPVOptPair]
-  static func getMpvUserOptionsFromPrefs(_ log: any Logger.Subsystem) -> [(String, String)] {
+  /// If the user has enabled Advanced Settings and has added entries to the "Addtional mpv options" table,
+  /// this returns them in a list.
+  static func getMpvAdditionalOptionsFromPrefs(_ log: any Logger.Subsystem) -> [(String, String)] {
     guard Preference.bool(for: .enableAdvancedSettings) else {
       log.verbose("Using empty user options ∵ enableAdvancedSettings pref is disabled")
       return []
@@ -496,10 +498,10 @@ final class PlayerCore: NSObject {
     
     // Now load in the most recent options from Prefs > Advanced, if any, and set remaining options
     // as we would during the initial window load:
-    log.verbose("Reloading userOptions from prefs")
-    userOptions = PlayerCore.getMpvUserOptionsFromPrefs(log)
-    log.verbose("Loaded \(userOptions.count) userOptions from prefs")
-    mpv.mpvSetInitialOptions()
+    userOptions = PlayerCore.getMpvAdditionalOptionsFromPrefs(log)
+    log.verbose("Found \(userOptions.count) additional mpv options to set")
+    mpv.mpvSetOptionsFromPrefs()
+    mpv.mpvSetOptions(from: userOptions)
   }
 
   // MARK: - Opening Media

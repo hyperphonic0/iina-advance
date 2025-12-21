@@ -27,14 +27,17 @@ extension MPVController {
       return
     }
 
-    mpvSetInitialOptions()
-    setUserOptions()
+    mpvSetOptionsFromPrefs()
+    mpvSetOptions(from: player.userOptions)
+
     mpvFinishInit()
     player.log.verbose("Init mpv: done")
   }
 
-  /// This is designed to be called again if this mpv core is reused across player sessions
-  func mpvSetInitialOptions() {
+  /// This is designed to be called again if this mpv core is reused across player sessions.
+  func mpvSetOptionsFromPrefs() {
+    log.verbose("Setting mpv options from IINA settings")
+
     _updateUsingMpvOSDFromPrefs()  // will disable mpv OSD if demo player
     if player.isDemoPlayer || !player.isPresentInUserOptions(MPVOption.OSD.osc) {
       logError(mpv_set_option_string(mpv, MPVOption.OSD.osc, no))
@@ -210,6 +213,7 @@ extension MPVController {
                     transformer: subOverrideHandler)
     }
 
+    // FIXME: persist these to player saved state
     setUserOption(PK.subTextFont, type: .string, forName: MPVOption.Subtitles.subFont,
                   verboseIfDefault: true)
     setUserOption(PK.subTextSize, type: .float, forName: MPVOption.Subtitles.subFontSize,
@@ -357,16 +361,17 @@ extension MPVController {
     loadSelectedInputConf(mpvQueue: false)
   }
 
-  @MainActor
-  private func setUserOptions() {
+  /// Send a bunch of options to mpv. This can include command-line arguments and/or entries from
+  /// the Additional mpv options table, or may be empty.
+  func mpvSetOptions(from userOptionsList: [(String, String)]) {
+
     // Set user-defined options.
-    let userOptions = player.userOptions
-    guard !userOptions.isEmpty else {
+    guard !userOptionsList.isEmpty else {
       log.debug("No user-configured mpv options to set")
       return
     }
-    log.debug("Setting \(userOptions.count) user-configured mpv options")
-    for (opName, opValue) in userOptions {
+    log.debug("Setting \(userOptionsList.count) user-configured mpv options")
+    for (opName, opValue) in userOptionsList {
       // Ignore these options if specified; they are hard-coded above & will result in visual bugs if overridden
       guard opName != MPVOption.Window.keepaspect,
             opName != MPVOption.Window.keepaspectWindow else {
@@ -385,6 +390,7 @@ extension MPVController {
     }
   }
 
+  /// This should only ever be called once per player.
   @MainActor
   private func mpvFinishInit() {
     player.log.verbose("Finshing mpv init")
