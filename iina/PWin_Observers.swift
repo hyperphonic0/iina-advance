@@ -369,11 +369,19 @@ extension PlayerWindowController {
         // Reschedule timer to prevent prev long timeout from lingering
         osd.hideOSDTimer.restart(withNewTimeout: OSDState.osdTimeoutFromPrefs())
       }
-    case .enableOSD, .osdPosition, .displayTimeAndBatteryInFullScreen:
-      // If OSD is showing, it will move over as a neat animation:
-      animationPipeline.submitInstantTask { [self] in
-        updateTitleBarAndOSC()
+    case .enableOSD:
+      if !Preference.bool(for: .enableOSD) {
+        if osd.hideOSDTimer.isValid {
+          // Do not wait for OSD timeout. Hide now.
+          // But make sure to only do this if the current OSD has a timeout!
+          // Do not want to dismiss "always enabled" OSDs.
+          // Need to improve OSD state management design...
+          hideOSD()
+        }
       }
+      updateTitleBarAndOSC()
+    case .osdPosition, .displayTimeAndBatteryInFullScreen:
+      updateTitleBarAndOSC()
     case .osdTextSize:
       animationPipeline.submitInstantTask { [self] in
         updateOSDViews()

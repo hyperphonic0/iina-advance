@@ -78,8 +78,27 @@ final class OSDState {
     ]
   }
 
-  /// Whether current OSD needs user interaction to be dismissed.
-  var isShowingPersistentOSD = false
+  /// True if the current OSD needs user interaction to be dismissed, and thus should
+  /// be given higher priority than regular OSDs while still being shown.
+  /// Other user-interactive OSDs
+  ///
+  /// When this is true, it implies that `userInteractiveAccessory` should be non-nil.
+  /// In upstream IINA, this field is called `isShowingPersistentOSD`, which is
+  /// misleading because some are not persistent (such as screenshot OSD).
+  var isShowingUserInteractiveOSD = false
+
+  /// Need to keep a reference to NSViewController here in order for its Objective-C selectors to work.
+  var userInteractiveAccessory: NSViewController? = nil {
+    willSet {
+      guard newValue != userInteractiveAccessory else { return }
+      if let newValue {
+        log.verbose("Updating osd.userInteractiveAccessory to: \(newValue)")
+      } else {
+        log.verbose("Updating osd.userInteractiveAccessory to: nil")
+      }
+    }
+  }
+
   var animationState: PlayerWindowController.UIAnimationState = .hidden
   /// Timeout action is `pwc.hideOSD()`
   let hideOSDTimer = TimeoutTimer(timeout: OSDState.osdTimeoutFromPrefs())
@@ -105,17 +124,6 @@ final class OSDState {
     return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.5
   }
 
-  // Need to keep a reference to NSViewController here in order for its Objective-C selectors to work
-  var context: NSViewController? = nil {
-    willSet {
-      guard newValue != context else { return }
-      if let newValue {
-        log.verbose("Updating osd.context to: \(newValue)")
-      } else {
-        log.verbose("Updating osd.context to: nil")
-      }
-    }
-  }
   var textSizeLast: CGFloat = 0
   let queueLock = Lock()
   var queue = LinkedList<() -> Void>()
@@ -786,8 +794,8 @@ extension PlayerWindowController {
   /// To work around this issue, we instead enqueue the tasks to display OSD using a simple LinkedList and Lock. Then we call
   /// `updateUI()` both from here (as before), and inside the key event callbacks in `PlayerWindow` so that that the key events
   /// themselves process the display of any enqueued OSD messages.
-  func displayOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
-                  accessoryViewController: NSViewController? = nil, isExternal: Bool = false) {
+  func displayOSD(_ msg: OSDMessage, autoHide: Bool, forcedTimeout: Double?,
+                  accessoryViewController: NSViewController?, isExternal: Bool) {
     guard player.canShowOSD(message: msg) else { return }
     
     // Enqueue first, in case main queue is blocked
@@ -806,15 +814,15 @@ extension PlayerWindowController {
     }
   }
 
-  private func _displayOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
-                           accessoryViewController: NSViewController? = nil) {
+  private func _displayOSD(_ msg: OSDMessage, autoHide: Bool, forcedTimeout: Double?,
+                           accessoryViewController: NSViewController?) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     // Check again. May have been enqueued a while
     guard player.canShowOSD(message: msg) else { return }
 
     // Filter out unwanted OSDs first
-    guard !osd.isShowingPersistentOSD || accessoryViewController != nil else { return }
+    guard !osd.isShowingUserInteractiveOSD || accessoryViewController != nil else { return }
 
     // If showing debug OSD, do not allow any other OSD type to replace it
     if case .debug = osd.currentlyDisplayedMsg {
@@ -962,6 +970,7 @@ extension PlayerWindowController {
       osd.hideOSDTimer.restart(withNewTimeout: timeout)
     } else {
       log.verbose("[OSD] Showing '\(msg)', no timeout")
+      assert(forcedTimeout == nil, "Should not specify forcedTimeout if autoHide==false!")
     }
 
     let existingAccessoryViews = osd.osdVStackView.views(in: .bottom)
@@ -972,8 +981,8 @@ extension PlayerWindowController {
     }
     if let accessoryViewController {  // e.g., ScreenshootOSDView
       let accessoryView = accessoryViewController.view
-      osd.context = accessoryViewController
-      osd.isShowingPersistentOSD = true
+      osd.userInteractiveAccessory = accessoryViewController
+      osd.isShowingUserInteractiveOSD = true
 
       osd.osdVStackView.addView(accessoryView, in: .bottom)
     }
@@ -986,25 +995,27 @@ extension PlayerWindowController {
 
   // MARK: - Hide OSD
 
-  @objc
+  @MainActor
   func hideOSD(immediately: Bool = false, refreshSyncUITimer: Bool = true) {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard loaded else { return }
+
+    let duration = immediately ? 0 : Constants.AnimationDuration.osdAnimation
+
     if osd.animationState != .hidden {
-      log.trace("[OSD] Will hide")
+      log.verbose("[OSD] Will hide")
     }
     osd.animationState = .willHide
     osd.hideOSDTimer.cancel()
 
-    IINAAnimation.runAsync(IINAAnimation.Task(duration: immediately ? 0 : Constants.AnimationDuration.osdAnimation, { [self] in
+    IINAAnimation.runAsync(.init(duration: duration, { [self] in
       osd.osdView.alphaValue = 0
 
     }), then: { [self] in
       if osd.animationState == .willHide {
         osd.animationState = .hidden
         osd.osdView.isHidden = true
-        osd.isShowingPersistentOSD = false
-        osd.context = nil
+        osd.isShowingUserInteractiveOSD = false
+        osd.userInteractiveAccessory = nil
         for subview in osd.osdVStackView.views(in: .bottom) {
           osd.osdVStackView.removeView(subview)
         }
