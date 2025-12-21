@@ -9,8 +9,6 @@
 import Cocoa
 
 fileprivate let tableCellFontSize: CGFloat = 13
-// Options are of type text, which can be dangerous if unrelated text is on the clipboard.
-fileprivate let maxAllowedPastedOptions = 1000
 
 @objcMembers
 class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbeddable {
@@ -37,8 +35,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
   var hasResizableWidth: Bool = false
 
-  /// Each entry should have a 2-element array:
-  var optionsList: [[String]] = []
+  var optionsList: [MPVOptPair] = []
 
   override var sectionViews: [NSView] {
     return [headerView, loggingSettingsView, mpvSettingsView]
@@ -46,7 +43,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
   var notiHandler: NotificationHandler! = nil
 
-  private var tableDragDelegate: TableDragDelegate<[String]>? = nil
+  private var tableDragDelegate: TableDragDelegate<MPVOptPair>? = nil
 
   @IBOutlet var headerView: NSView!
   @IBOutlet var loggingSettingsView: NSView!
@@ -64,7 +61,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   override func viewDidLoad() {
     super.viewDidLoad()
     
-    guard let userOptions = Preference.value(for: .userOptions) as? [[String]] else {
+    guard let userOptions = MPVOptPair.readFromPrefs() else {
       Utility.showAlert("extra_option.cannot_read", sheetWindow: view.window)
       return
     }
@@ -79,11 +76,11 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     optionsTableView.animationPipeline = AppDelegate.shared.preferenceWindowController.animationPipeline
     refreshRemoveButton()
     
-    tableDragDelegate = TableDragDelegate<[String]>("mpvOptions",
+    tableDragDelegate = TableDragDelegate<MPVOptPair>("mpvOptions",
                                                     optionsTableView,
                                                     acceptableDraggedTypes: [.string],
                                                     tableChangeNotificationName: .pendingUIChangeForMpvOptionsTable,
-                                                    getFromPasteboardFunc: readOptionsListFromPasteboard,
+                                                    getFromPasteboardFunc: MPVOptPair.readOptionsListFromPasteboard,
                                                     getAllCurentFunc: { self.optionsList },
                                                     moveFunc: moveOptionRows,
                                                     insertFunc: { self.insertOptionRows($0, at: $1) },
@@ -186,20 +183,13 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     thumbfastStatus = "❌ No thumbfast-info received. " + msg
   }
 
-  private func saveToUserDefaults() {
-    let optionsList = optionsList
-    let cmdLineFormatted = optionsList.map{"--\(optionToString($0))"}.joined(separator: " ")
-    Logger.log.verbose("Saving mpv user options to prefs. CmdLine equivalent: \(cmdLineFormatted.pii.quoted)")
-    Preference.set(optionsList, for: .userOptions)
-  }
-
   // MARK: Options Table Drag & Drop
 
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
     let optionsList = optionsList
     guard rowIndex < optionsList.count else { return nil }
 
-    let rowString = optionToString(optionsList[rowIndex])
+    let rowString = optionsList[rowIndex].undashedString
     return rowString as NSString?
   }
 
@@ -231,13 +221,13 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
   // MARK: - Options Table CRUD
 
-  func doAtomicTableUpdate(_ tableUIChange: TableUIChange, _ allItemsNew: [[String]]) {
+  func doAtomicTableUpdate(_ tableUIChange: TableUIChange, _ allItemsNew: [MPVOptPair]) {
     optionsList = allItemsNew           // update cached data
-    saveToUserDefaults()                // update saved data
+    MPVOptPair.writeToPrefs(optionsList)       // update saved data
     optionsTableView.post(tableUIChange)// update UI
   }
 
-  func insertOptionRows(_ newItems: [[String]], at targetRowIndex: Int? = nil, thenStartEdit: Bool = false) {
+  func insertOptionRows(_ newItems: [MPVOptPair], at targetRowIndex: Int? = nil, thenStartEdit: Bool = false) {
     let (tableUIChange, allItemsNew) = optionsTableView.buildInsert(of: newItems, at: targetRowIndex, in: optionsList,
                                                                     completionHandler: { [self] tableUIChange in
       // We don't know beforehand exactly which row it will end up at, but we can get this info from the TableUIChange object
@@ -328,7 +318,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   @IBAction func addOptionBtnAction(_ sender: AnyObject) {
     let selectedRowIndexes = optionsTableView.selectedRowIndexes
     let insertIndex = selectedRowIndexes.isEmpty ? optionsTableView.numberOfRows : selectedRowIndexes.max()! + 1
-    insertOptionRows([["", ""]], at: insertIndex, thenStartEdit: true)
+    insertOptionRows([MPVOptPair.empty], at: insertIndex, thenStartEdit: true)
   }
 
   @IBAction func removeOptionBtnAction(_ sender: AnyObject) {
@@ -374,14 +364,15 @@ extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource
     let columnName = identifier.rawValue
 
     guard row < optionsList.count else { return nil }
+    let opt = optionsList[row]
 
-    let colIndex: Int
+    let columnText: String
     switch columnName {
     case "Key":
-      colIndex = 0
+      columnText = opt.key
 
     case "Value":
-      colIndex = 1
+      columnText = opt.val
 
     default:
       Logger.log("Unrecognized column: '\(columnName)'", level: .error)
@@ -395,7 +386,7 @@ extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource
     if !tableView.isEnabled {
       textColor = .disabledControlTextColor
     } else {
-      if isValidOptionName(optionsList[row][0]) {
+      if optionsList[row].hasValidKey {
         textColor = .controlTextColor
       } else {
         textColor = .systemRed
@@ -403,7 +394,7 @@ extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource
       }
     }
     textField.font = .monospacedSystemFont(ofSize: tableCellFontSize, weight: .regular)
-    textField.setFormattedText(stringValue: optionsList[row][colIndex], textColor: textColor, italic: useItalic)
+    textField.setFormattedText(stringValue: columnText, textColor: textColor, italic: useItalic)
     return cell
   }
 
@@ -413,10 +404,6 @@ extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource
 
   private func refreshRemoveButton() {
     removeButton.isHidden = optionsTableView.selectedRowIndexes.isEmpty
-  }
-
-  private func isValidOptionName(_ name: String) -> Bool {
-    return !name.isEmpty && !name.containsWhitespaceOrNewlines()
   }
 }
 
@@ -441,37 +428,33 @@ extension PrefAdvancedViewController: EditableTableViewDelegate {
       return false
     }
 
-    var optionPair: [String] = optionsList[rowIndex]
+    var userString = newValue
 
-    var newValue = newValue
-
-    let lines = newValue.split(separator: "\n")
+    let lines = userString.split(separator: "\n")
     if !lines.isEmpty {
-      Logger.log.debug("Entry for col \(columnIndex) has a newline in it. Only the preceding text will be used.")
-      newValue = String(lines[0])
+      Logger.log.debug("Entry for col \(columnIndex) has a newline in it: only the text before it will be used.")
+      userString = String(lines[0])
     }
 
+    let optOld = optionsList[rowIndex]
+    let optNew: MPVOptPair
     if columnIndex == 0 {
+      // Key column.
       // Delete unnecessary prefix from confused users
-      newValue = newValue.deletingPrefix("--")
+      let optParsed = MPVOptPair.parseLine(userString)
 
-      if newValue.contains("=") {
-        Logger.log.verbose("User name entry has '=' in it")
-        if optionPair[1].isEmpty {
-          // Assume user entered whole line in Name column. Just fix it
-          let split = newValue.split(separator: "=")
-          newValue = String(split[0])
-          optionPair[1] = String(split[1])
-        } else {
-          // not valid - will break our parsing!
-          return false
-        }
+      if optParsed.val.isEmpty {
+        optNew = MPVOptPair(key: optParsed.key, val: optOld.key)
+      } else {
+        Logger.log.debug("User entered a key=value pair in the Name field: will split into Name & Value and changing both columns.")
+        optNew = optParsed
       }
+    } else {
+      optNew = MPVOptPair(key: optOld.key, val: userString)
     }
 
-    optionPair[columnIndex] = newValue
-    optionsList[rowIndex] = optionPair
-    saveToUserDefaults()
+    optionsList[rowIndex] = optNew
+    MPVOptPair.writeToPrefs(optionsList)
 
     DispatchQueue.main.async { [self] in
       optionsTableView.reloadRow(rowIndex)
@@ -500,7 +483,7 @@ extension PrefAdvancedViewController: EditableTableViewDelegate {
   }
 
   func isPasteEnabled() -> Bool {
-    return !readOptionsFromClipboard().isEmpty
+    return !MPVOptPair.readOptionsFromClipboard().isEmpty
   }
 
   // Edit menu action handlers. Delegates should override these if they want to support the standard operations.
@@ -511,11 +494,11 @@ extension PrefAdvancedViewController: EditableTableViewDelegate {
   }
 
   func doEditMenuCopy() {
-    copyOptionsToClipboard(selectedOptions)
+    MPVOptPair.copyOptionsToClipboard(selectedOptions)
   }
 
   func doEditMenuPaste() {
-    let optionsToInsert = readOptionsFromClipboard()
+    let optionsToInsert = MPVOptPair.readOptionsFromClipboard()
     guard !optionsToInsert.isEmpty else { return }
     let insertIndex: Int
     if let lastSelectedRow = optionsTableView.selectedRowIndexes.last {
@@ -527,64 +510,8 @@ extension PrefAdvancedViewController: EditableTableViewDelegate {
     insertOptionRows(optionsToInsert, at: insertIndex)
   }
 
-  fileprivate var selectedOptions: [[String]] {
+  fileprivate var selectedOptions: [MPVOptPair] {
     return optionsTableView.selectedRowIndexes.map { optionsList[$0] }
   }
 
-}
-
-// MARK: - Ser/De functions for options lists
-
-fileprivate func optionsToStrings(_ optionsList: [[String]]) -> [String] {
-  return optionsList.map { optionToString($0) }
-}
-
-fileprivate func optionToString(_ option: [String]) -> String {
-  if option.count >= 2 && !option[1].isEmpty {
-    return option.joined(separator: "=")
-  } else if option.count >= 1 {
-    return option[0]
-  }
-  return ""
-}
-
-fileprivate func optionFromString(_ stringItem: String) -> [String] {
-  let splitted = stringItem.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: true)
-  let key = String(splitted[0])
-  let val = splitted.count > 1 ? String(splitted[1]) : ""
-  return [key, val]
-}
-
-/// Input pasteboard item: "{key}={val}"
-/// Ouput item: `[key, val]`
-fileprivate func readOptionsListFromPasteboard(_ pasteboard: NSPasteboard) -> [[String]] {
-  let stringItems = pasteboard.getStringItems()
-  guard stringItems.count <= Constants.mpvOptionsTableMaxRowsPerOperation else { return [] }
-  var optionPairs: [[String]] = []
-  for stringItem in stringItems {
-    let option: [String] = optionFromString(stringItem)
-    optionPairs.append(option)
-  }
-  return optionPairs
-}
-
-fileprivate func readOptionsFromClipboard() -> [[String]] {
-  let optionsList = readOptionsListFromPasteboard(NSPasteboard.general)
-  guard optionsList.count < maxAllowedPastedOptions else {
-    Logger.log.debug("Disabling paste: clipboard contains more than \(maxAllowedPastedOptions) options (counted: \(optionsList.count))")
-    return []
-  }
-  return optionsList
-}
-
-// Convert conf file path to URL and put it in clipboard
-fileprivate func copyOptionsToClipboard(_ optionsList: [[String]]) {
-  guard !optionsList.isEmpty else {
-    Logger.log.debug("Cannot copy options list to the clipboard: list is empty")
-    return
-  }
-  let optionStrings = optionsToStrings(optionsList) as [NSString]
-  NSPasteboard.general.clearContents()
-  NSPasteboard.general.writeObjects(optionStrings)
-  Logger.log.verbose("Copied to the clipboard: \(optionsList.count) options")
 }

@@ -408,6 +408,7 @@
 		D1F2B09B2CFF07D500F995B3 /* AppDetailsLogging.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2B09A2CFF07CC00F995B3 /* AppDetailsLogging.swift */; };
 		D1F2B09D2CFF272100F995B3 /* MediaPlayerIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2B09C2CFF271900F995B3 /* MediaPlayerIntegration.swift */; };
 		D1F64E902B2A655C0030E07E /* PWin_Resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */; };
+		D1F9C6722EF7B99500AD1432 /* MPVOptPair.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F9C6712EF7B99000AD1432 /* MPVOptPair.swift */; };
 		D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */; };
 		D1FA42E528E5E54700DF49DD /* AppInputConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */; };
 		D1FD2DD828521AD500CF7B35 /* MPVLogScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */; };
@@ -1937,6 +1938,7 @@
 		D1F2B09C2CFF271900F995B3 /* MediaPlayerIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPlayerIntegration.swift; sourceTree = "<group>"; };
 		D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Resize.swift; sourceTree = "<group>"; };
 		D1F68E742C6ABC22003D1208 /* movist-v2-default-input.conf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "movist-v2-default-input.conf"; sourceTree = "<group>"; };
+		D1F9C6712EF7B99000AD1432 /* MPVOptPair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVOptPair.swift; sourceTree = "<group>"; };
 		D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSectionStack.swift; sourceTree = "<group>"; };
 		D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfig.swift; sourceTree = "<group>"; };
 		D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogScanner.swift; sourceTree = "<group>"; };
@@ -2398,6 +2400,7 @@
 				D192C7D72E8CF2B800CC537A /* OptionalConstraint.swift */,
 				84791C8A1D405E9D0069E28A /* PlaybackInfo.swift */,
 				D1EF40EA2C3BCEA800921252 /* Playback.swift */,
+				D1F9C6712EF7B99000AD1432 /* MPVOptPair.swift */,
 				8476440B1D48F63D004F6DF5 /* OSDMessage.swift */,
 				D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */,
 				D1A4C2DF2BFC68DB00CE32A9 /* MarginQuad.swift */,
@@ -3607,6 +3610,7 @@
 				E32693F924BA138000BF7ADC /* JavascriptPluginSubtitleItem.swift in Sources */,
 				34FD798E291C76A600963EDE /* LogWindowController.swift in Sources */,
 				D1ACFDC92D93637F00F45712 /* MetalVideoLayer.swift in Sources */,
+				D1F9C6722EF7B99500AD1432 /* MPVOptPair.swift in Sources */,
 				845040471E0B0F500079C194 /* CropSettingsViewController.swift in Sources */,
 				D1BE7BD22D4B7E010085539F /* SingleRowBarOSCView.swift in Sources */,
 				E39EDD842CE2EB9600978036 /* PluginViewController.swift in Sources */,
