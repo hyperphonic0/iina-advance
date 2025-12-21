@@ -1669,7 +1669,7 @@ struct Preference {
     .killNonInteractiveLaunchesAtReopen: true,
     .killRequest: 0,
     .enableFFmpegImageDecoder: true,
-    .enableHdrWorkaround: false,
+    .enableHdrWorkaround: true,
     .enableNowPlayingArtwork: true,
     .enableDisplayIdle: true
   ]

@@ -90,20 +90,9 @@ extension PlayerWindowController {
       initPlaySliderAndTimeLabelsView()
       initVolumeView(using: oscGeo)
       initSidebars()
-
-      contentView.addSubview(exitMusicModeButton)
-      exitMusicModeButton.idString = "ExitMusicModeBtn"
-      exitMusicModeButton.image = Images.backwardsCircle
-      exitMusicModeButton.target = self
-      exitMusicModeButton.action = #selector(backBtnAction(_:))
-      exitMusicModeButton.toolTip = "Back to video mode"
-      // Add to traffic light buttons
-      exitMusicModeButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 54).isActive = true
-      // Center vertically with traffic light buttons
-      exitMusicModeButton.centerYAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.standardTitleBarHeight / 2).isActive = true
-
-
+      initExitMusicModeButton(in: contentView)
       initBufferIndicatorView()
+      initHdrWorkaroundView(in: contentView)
 
       log.verbose("[Load] Configuring window for CoreAnimation")
       contentView.configureSubtreeForCoreAnimation()
@@ -127,6 +116,43 @@ extension PlayerWindowController {
       log.verbose("[Load] PWin_WinDidLoad done")
       player.events.emit(.windowLoaded)
     }
+  }
+
+  /// Workaround for a bug in macOS Ventura where HDR content becomes dimmed when playing in full
+  /// screen mode once overlaying views are fully hidden (issue #3844). After applying this
+  /// workaround another bug in Ventura where an external monitor goes black could not be
+  /// reproduced (issue #4015). The workaround adds a tiny subview with such a low alpha level it
+  /// is invisible to the human eye. This workaround may not be effective in all cases.
+  ///
+  /// Update in MacOS Tahoe: discovered another problem. Setup: go into full screen (native or leacy),
+  /// when the OSD is hidden and no other elements are shown on screen other than the "bottom"
+  /// OSC configured for `inside` placement (i.e., fadeable overlay) with "Clear Black Gradient" style.
+  /// When the bottom bar & cursor are hidden & video is playing (i.e., not paused): move the mouse to
+  /// trigger the bottom OSC to show. About 1/3 of the time the entire screen will briefly flicker black,
+  /// & sometimes there is brief but noticable tearing around where the cursor appears.
+  /// Lengthy testing revealed that this workaround, which was originally intended for HDR issues,
+  /// also wards against this bug!
+  private func initHdrWorkaroundView(in contentView: NSView) {
+    guard #available(macOS 13, *), Preference.bool(for: .enableHdrWorkaround) else { return }
+    log.debug("[Load] Adding HDR full screen workaround")
+
+    hdrWorkaroundView.wantsLayer = true
+    hdrWorkaroundView.layer?.backgroundColor = NSColor.black.cgColor
+    hdrWorkaroundView.layer?.opacity = 0.01
+    contentView.addSubview(hdrWorkaroundView)
+    // Use constraints to guarantee the view will not move off screen. When placed in the upper-leading corner,
+    // this view will be clipped out entirely due by the rounded corner of the Macbook screen, yet it remains
+    // effective (though it does need to be half a pixel in diameter).
+    hdrWorkaroundView.translatesAutoresizingMaskIntoConstraints = false
+    hdrWorkaroundView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
+    hdrWorkaroundView.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
+    // Don't use priority of 1000: allow it to squeeze just in case window needs to be resized to 0 during an animation.
+    let widthConstraint = hdrWorkaroundView.trailingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0.5)
+    widthConstraint.priority = .defaultHigh
+    widthConstraint.isActive = true
+    let heightConstraint = hdrWorkaroundView.bottomAnchor.constraint(equalTo: contentView.topAnchor, constant: 0.5)
+    heightConstraint.priority = .defaultHigh
+    heightConstraint.isActive = true
   }
 
   // MARK: - Building Components
@@ -259,11 +285,17 @@ extension PlayerWindowController {
     self.bottomBarView = bottomBarView
   }
 
-  func isActive(_ con: NSLayoutConstraint?) -> Bool {
-    if let con {
-      return con.isActive
-    }
-    return false
+  private func initExitMusicModeButton(in contentView: NSView) {
+    contentView.addSubview(exitMusicModeButton)
+    exitMusicModeButton.idString = "ExitMusicModeBtn"
+    exitMusicModeButton.image = Images.backwardsCircle
+    exitMusicModeButton.target = self
+    exitMusicModeButton.action = #selector(backBtnAction(_:))
+    exitMusicModeButton.toolTip = "Back to video mode"
+    // Add to traffic light buttons
+    exitMusicModeButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 54).isActive = true
+    // Center vertically with traffic light buttons
+    exitMusicModeButton.centerYAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.standardTitleBarHeight / 2).isActive = true
   }
 
   private func initSidebars() {

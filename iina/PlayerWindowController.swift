@@ -46,6 +46,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /** The control view for interactive mode. */
   var cropSettingsView: CropBoxViewController?
 
+  let hdrWorkaroundView = NSView()
 
   // MARK: - Vars: Services
 

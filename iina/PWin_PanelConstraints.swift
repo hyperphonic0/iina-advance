@@ -698,7 +698,8 @@ extension PlayerWindowController {
     possibleSubviews += [
       exitMusicModeButton,
       customWindowBorderBox,
-      customWindowBorderTopHighlightBox
+      customWindowBorderTopHighlightBox,
+      hdrWorkaroundView  // this must always be topmost!
     ]
 
     let contentView = window!.contentView!
