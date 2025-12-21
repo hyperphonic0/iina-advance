@@ -1149,13 +1149,13 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     guard let window = self.window else { fatalError("make sure the window exists before animating") }
     let isLegacy: Bool = legacy ?? Preference.bool(for: .useLegacyFullScreen)
     let isInNativeFullScreen = isWindowInNativeFullScreen
-    log.verbose("EnterFullScreen called. Legacy=\(isLegacy.yn) isNativeFullScreenNow=\(isInNativeFullScreen.yn)")
+    log.verbose("EnterFullScreen called. Legacy=\(isLegacy.yn) isInNativeFSNow=\(isInNativeFullScreen.yn)")
 
     if isLegacy {
       animationPipeline.submitInstantTask({ [self] in
         animateEntryIntoFullScreen(withDuration: Constants.AnimationDuration.fullScreenTransition, isLegacy: true)
       })
-    } else if !isInNativeFullScreen {
+    } else {
       /// `collectionBehavior` *must* be correct or else `toggleFullScreen` may do nothing!
       resetCollectionBehavior()
       window.toggleFullScreen(self)
@@ -2484,15 +2484,9 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     viewportView.layer?.backgroundColor = newColor
   }
 
-  /// Do not call this in while in native full screen. It seems to cause FS to get stuck and unable to exit.
-  /// Try not to call this while animating. It can cause the window to briefly disappear
   func resetCollectionBehavior() {
     guard AppDelegate.shared.isInteractiveLaunch else { return }
 
-    guard !isWindowInNativeFullScreen else {
-      log.error("resetCollectionBehavior() should not have been called while in native FS - ignoring")
-      return
-    }
     guard let window else { return }
     let useLegacy = Preference.bool(for: .useLegacyFullScreen)
     log.verbose("Resetting collection behavior for full screen, legacy=\(useLegacy.yn)")
