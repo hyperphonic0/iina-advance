@@ -266,6 +266,9 @@ struct Constants {
 
     // This should match what is in Settings > UI
     static let osdTimeoutMin = 0.1
+    /// For OSD messages whose type is `alwaysEnabled`, we need to show them for a reasonable time
+    /// and need to ignore the user pref (because they may have OSD disabled as well!)
+    static let osdTimeoutForAlwaysEnabledMessages = 5.0
     static let fadeableViewsTimeoutMin = 0.1
 
     /// Longest time to wait for asynchronous shutdown tasks to finish before giving up on waiting and proceeding with termination.

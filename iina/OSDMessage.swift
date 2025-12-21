@@ -123,10 +123,12 @@ enum OSDMessage {
   /// A user may disable the OSD by unchecking the `Enable OSD` setting found on the `UI` tab in the `On Screen Display`
   /// section of IINA's settings. Or they may check the `Use mpv's OSD` setting found on the `Advanced` tab which implicitly
   /// disables IINA's OSD. _However_ not all OSD messages are optional notifications. The `Find Online Subtitles` feature
-  /// uses the OSD for its user interface. These messages must still be displayed when the OSD is disabled.
+  /// uses the OSD for its user interface. These messages must still be displayed when the OSD is disabled. For such which have a timeout, they will also ignore the timeout in the prefs and use
+  /// a standard timeout.
   var alwaysEnabled: Bool {
     switch self {
     case .debug: fallthrough
+    case .screenshot: fallthrough  // this should depend on its own pref alone
     case .canceled: fallthrough
     case .cannotConnect: fallthrough
     case .cannotLogin: fallthrough

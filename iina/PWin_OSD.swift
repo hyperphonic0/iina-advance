@@ -794,7 +794,7 @@ extension PlayerWindowController {
   /// To work around this issue, we instead enqueue the tasks to display OSD using a simple LinkedList and Lock. Then we call
   /// `updateUI()` both from here (as before), and inside the key event callbacks in `PlayerWindow` so that that the key events
   /// themselves process the display of any enqueued OSD messages.
-  func displayOSD(_ msg: OSDMessage, autoHide: Bool, forcedTimeout: Double?,
+  func displayOSD(_ msg: OSDMessage, autoHide: Bool,
                   accessoryViewController: NSViewController?, isExternal: Bool) {
     guard player.canShowOSD(message: msg) else { return }
     
@@ -802,7 +802,7 @@ extension PlayerWindowController {
     osd.queueLock.withLock {
       osd.queue.append({ [self] in
         // DO NOT use animationPipeline here. It is not needed, and will cause OSD to block
-        _displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController)
+        _displayOSD(msg, autoHide: autoHide, accessoryViewController: accessoryViewController)
       })
     }
     // Need to do the UI sync in the main queue
@@ -814,7 +814,7 @@ extension PlayerWindowController {
     }
   }
 
-  private func _displayOSD(_ msg: OSDMessage, autoHide: Bool, forcedTimeout: Double?,
+  private func _displayOSD(_ msg: OSDMessage, autoHide: Bool,
                            accessoryViewController: NSViewController?) {
     assert(DispatchQueue.isExecutingIn(.main))
 
@@ -965,12 +965,12 @@ extension PlayerWindowController {
     }
 
     if autoHide {
+      let forcedTimeout = msg.alwaysEnabled ? Constants.TimeInterval.osdTimeoutForAlwaysEnabledMessages : nil
       let timeout: Double = forcedTimeout ?? OSDState.osdTimeoutFromPrefs()
       log.verbose("[OSD] Showing '\(msg)' timeout=\(timeout)\(forcedTimeout != nil ? " (forced)" : "")")
       osd.hideOSDTimer.restart(withNewTimeout: timeout)
     } else {
       log.verbose("[OSD] Showing '\(msg)', no timeout")
-      assert(forcedTimeout == nil, "Should not specify forcedTimeout if autoHide==false!")
     }
 
     let existingAccessoryViews = osd.osdVStackView.views(in: .bottom)

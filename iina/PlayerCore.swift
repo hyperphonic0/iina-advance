@@ -1395,7 +1395,7 @@ final class PlayerCore: NSObject {
                                         size: previewImageSize,
                                         fileURL: saveToFile ? lastScreenshotURL : nil)
 
-      sendOSD(.screenshot, forcedTimeout: 5, accessoryViewController: screenshotViewController)
+      sendOSD(.screenshot, accessoryViewController: screenshotViewController)
     }
   }
 
@@ -3108,7 +3108,7 @@ final class PlayerCore: NSObject {
     return true
   }
 
-  func sendOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
+  func sendOSD(_ msg: OSDMessage, autoHide: Bool = true,
                accessoryViewController: NSViewController? = nil, external: Bool = false) {
     if case .debug = msg {
       log.verbose("DebugOSD: \(msg)")
@@ -3129,7 +3129,7 @@ final class PlayerCore: NSObject {
       }
     }
 
-    pwc.displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout,
+    pwc.displayOSD(msg, autoHide: autoHide,
                    accessoryViewController: accessoryViewController, isExternal: external)
   }
 
