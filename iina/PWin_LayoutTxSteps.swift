@@ -370,11 +370,6 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose("Start")
 
-    if outputLayout.topBarView == .showAlways {
-      // This is apparently missed
-      fadeableViews.applyVisibility(outputLayout.topBarView, to: topBarView)
-    }
-
     switch transition.outputLayout.mode {
     case .fullScreenInteractive, .windowedInteractive:
       // Show cursor always in these modes

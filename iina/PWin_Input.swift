@@ -895,7 +895,6 @@ extension PlayerWindowController {
 
       log.trace("Hiding cursor until mouse moves")
       NSCursor.setHiddenUntilMouseMoves(true)
-      videoView.layout()
     }
   }
 

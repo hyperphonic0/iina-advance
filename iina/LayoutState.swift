@@ -310,9 +310,6 @@ struct LayoutState {
     if hasTopOSC {
       if topBarPlacement == .outsideViewport {
         return .showAlways
-      } else if titleBar.isShowable {
-        // Match value from above
-        return titleBar
       } else {
         return .showFadeableTopBar
       }

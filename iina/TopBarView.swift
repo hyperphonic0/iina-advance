@@ -40,8 +40,6 @@ class TopBarView: ClickThroughVisualEffectView {
     super.init(frame: .zero)
     idString = "TopBarView"
 
-    translatesAutoresizingMaskIntoConstraints = false
-
     material = .titlebar
     state = .followsWindowActiveState
     wantsLayer = true  // needed for shadow
@@ -51,19 +49,19 @@ class TopBarView: ClickThroughVisualEffectView {
     /// `titleBarView`
     titleBarView.translatesAutoresizingMaskIntoConstraints = false
     addSubview(titleBarView)
-    titleBarView.identifier = .init("TitleBarView")
+    titleBarView.idString = "TitleBarView"
 
     titleBarView.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
 
     titleBarHeightConstraint = titleBarView.bottomAnchor.constraint(equalTo: topAnchor, constant: Constants.standardTitleBarHeight)
-    titleBarHeightConstraint.identifier = .init("TitleBarView-HeightConstraint")
+    titleBarHeightConstraint.identifier = "TitleBarView-HeightConstraint"
     titleBarHeightConstraint.isActive = true
 
     /// `controlBarTop`
     addSubviewAndConstraints(controlBarTop, bottom: 0, leading: 0, trailing: 0)
 
     let titleBarBottom_ToControlBarTop_Constraint = titleBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
-    titleBarBottom_ToControlBarTop_Constraint.identifier = .init("TitleBar-Bottom_ToControlBarTop_Constraint")
+    titleBarBottom_ToControlBarTop_Constraint.identifier = "TitleBar-Bottom_ToControlBarTop_Constraint"
     titleBarBottom_ToControlBarTop_Constraint.isActive = true
 
     // Bottom border
@@ -72,7 +70,7 @@ class TopBarView: ClickThroughVisualEffectView {
     // Want to make a 0.5px border. But it seems that in some display modes, that is not only not possible,
     // but it will trigger an auto-layout constraint error. So use defaultHigh and be prepared to accept a 1px border.
     let topBarBottomBorder_HeightConstraint = bottomBorder.topAnchor.constraint(equalTo: bottomAnchor, constant: -0.5)
-    topBarBottomBorder_HeightConstraint.identifier = .init("TopBarBottomBorder-HeightConstraint")
+    topBarBottomBorder_HeightConstraint.identifier = "TopBarBottomBorder-HeightConstraint"
     topBarBottomBorder_HeightConstraint.priority = .defaultHigh
     topBarBottomBorder_HeightConstraint.isActive = true
   }

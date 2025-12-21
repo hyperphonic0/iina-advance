@@ -150,7 +150,7 @@ extension PlayerWindowController {
   /// This is only expected to be called by `showFadeableViews()` and by the animation transition builder. Do not call directly from elsewhere.
   func buildAnimationToShowFadeableViews(targetLayout: LayoutState,
                                          restartFadeTimer: Bool = true,
-                                         duration: CGFloat = Constants.AnimationDuration.standard,
+                                         duration: CGFloat,
                                          forceShow: Bool = false,
                                          forceShowTopBar: Bool = false) -> [IINAAnimation.Task] {
 
@@ -162,7 +162,7 @@ extension PlayerWindowController {
     var fadeables: Set<NSView> = []
     var fadeablesInTopBar: Set<NSView> = []
 
-    return [
+    let tasks = [
       IINAAnimation.Task(duration: duration, { [self] in
         // Note to Future Self: stop messing with this logic! It works fine and is fast enough!
         if forceShow {
@@ -185,13 +185,13 @@ extension PlayerWindowController {
 
         fadeables = fadeableViews.fadeables
         fadeablesInTopBar = fadeableViews.fadeablesInTopBar
-        log.trace("SHOW fadeables: currentTkt=\(currentTicket) latestTkt=\(fadeableViews.showHideTicketCount) views=\(fadeables.count) topBar=\(fadeablesInTopBar.count)")
+        log.verbose("SHOW fadeables: currentTkt=\(currentTicket) latestTkt=\(fadeableViews.showHideTicketCount) dur=\(duration) views=\(fadeables.map{$0.idString}) topBar=\(fadeablesInTopBar.map{$0.idString})")
 
         player.refreshSyncUITimer(logMsg: "Showing fadeable views ")
         fadeableViews.hideTimer.cancel()
 
         for v in fadeables {
-          v.animator().alphaValue = 1
+          v.alphaValue = 1
         }
 
         let pendingShowTopPanel = fadeableViews.pendingShowTopPanel
@@ -200,12 +200,12 @@ extension PlayerWindowController {
           fadeableViews.pendingShowTopPanel = false
           fadeableViews.topBarAnimationState = .willShow
           for v in fadeablesInTopBar {
-            v.animator().alphaValue = 1
+            v.alphaValue = 1
           }
 
           if targetLayout.titleBar == .showFadeableTopBar {
             if targetLayout.isLegacyStyle {
-              customTitleBar?.view.animator().alphaValue = 1
+              customTitleBar?.view.alphaValue = 1
             } else {
               if targetLayout.trafficLightButtons == .showFadeableTopBar {
                 for button in trafficLightButtons {
@@ -258,6 +258,16 @@ extension PlayerWindowController {
       }  // end Task
 
     ]
+
+    if duration.isZero {
+      return [.instantTask({
+        for task in tasks {
+          try task.runFunc()
+        }
+      })]
+    } else {
+      return tasks
+    }
   }
 
   func hideFadeableViews(targetLayout givenLayout: LayoutState? = nil, hideCursorToo: Bool = false) {
