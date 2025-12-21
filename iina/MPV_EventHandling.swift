@@ -542,7 +542,7 @@ extension MPVController {
       player.syncFullScreenState()
 
     case MPVOption.Window.ontop:
-      player.ontopChanged()
+      player.syncOntopState()
 
     case MPVOption.Window.cursorAutohide:
       guard let cursorAutohide = getString(MPVOption.Window.cursorAutohide) else { break }

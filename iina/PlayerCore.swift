@@ -495,7 +495,7 @@ final class PlayerCore: NSObject {
     info.videoFiltersDisabled = [:]
     removeAllVideoFilters(notify: false)
     removeAllAudioFilters(notify: false)
-    
+
     // Now load in the most recent options from Prefs > Advanced, if any, and set remaining options
     // as we would during the initial window load:
     userOptions = PlayerCore.getMpvAdditionalOptionsFromPrefs(log)
@@ -659,7 +659,7 @@ final class PlayerCore: NSObject {
 
         mpv.queue.async { [self] in
           guard !isStopping else { return }
-          
+
           // If this mpv core is being reused icc-profile-auto may have been left set to true. This option
           // MUST be reset to false to avoid a crash that occurs if the mpv OSD is being used. Another way
           // to fix this would be to add this option to the mpv reset-on-next-file option. However the
@@ -717,7 +717,7 @@ final class PlayerCore: NSObject {
           if Preference.bool(for: .enableFileLoop) {
             mpv.setString(MPVOption.PlaybackControl.loopFile, "inf")
           }
-          
+
           if Preference.bool(for: .autoRepeat) {
             let loopMode = Preference.DefaultRepeatMode(rawValue: Preference.integer(for: .defaultRepeatMode))
             setLoopMode(loopMode == .file ? .file : .playlist)
@@ -1288,7 +1288,7 @@ final class PlayerCore: NSObject {
 
       guard let rawAction = keyBinding.rawAction, let action = keyBinding.action,
             let commandName = keyBinding.action?.first,
-              (commandName == MPVCommand.screenshotRaw.rawValue || commandName == MPVCommand.screenshot.rawValue) else {
+            (commandName == MPVCommand.screenshotRaw.rawValue || commandName == MPVCommand.screenshot.rawValue) else {
         log.error("Cannot take screenshot: unexpected first token in key binding action: \(keyBinding.rawAction?.quoted ?? "nil")")
         return false
       }
@@ -2419,18 +2419,6 @@ final class PlayerCore: NSObject {
     }
   }
 
-  func ontopChanged() {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard pwc.loaded else { return }
-    let ontop = mpv.getFlag(MPVOption.Window.ontop)
-    log.verbose("Δ mpv prop: 'ontop' = \(ontop.yesno)")
-    if ontop != pwc.isOnTop {
-      DispatchQueue.main.async { [self] in
-        pwc.setWindowFloatingOnTop(ontop, from: pwc.currentLayout)
-      }
-    }
-  }
-
   func playbackRestarted() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.debug("Playback restarted")
@@ -2796,6 +2784,12 @@ final class PlayerCore: NSObject {
     guard pwc.loaded, isActive else { return }
 
     syncFullScreenState()
+    syncOntopState()
+  }
+
+  func syncOntopState() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard pwc.loaded, isActive else { return }
 
     let ontop = mpv.getFlag(MPVOption.Window.ontop)
     if ontop != pwc.isOnTop {
@@ -2809,7 +2803,7 @@ final class PlayerCore: NSObject {
   func syncFullScreenState() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard pwc.loaded else { return }
-    
+
     let mpvFS = mpv.getFlag(MPVOption.Window.fullscreen)
     DispatchQueue.main.async { [self] in
       let iinaFS = pwc.isFullScreen
@@ -2960,7 +2954,7 @@ final class PlayerCore: NSObject {
       log.verbose("SyncUI: not syncing")
       return
     }
-    
+
     let isNetworkStream = info.isNetworkResource
     if isNetworkStream {
       info.playbackDurationSec = mpv.getDouble(MPVProperty.duration)
@@ -3335,8 +3329,7 @@ final class PlayerCore: NSObject {
       log.error("Observed key path is not a touch bar setting: \(keyPath)")
       return
     }
-    guard key == .PresentationModeFnModes || key == .PresentationModeGlobal ||
-          key == .PresentationModePerApp else {
+    guard (key == .PresentationModeFnModes) || (key == .PresentationModeGlobal) || (key == .PresentationModePerApp) else {
       log.error("Observed key path is unrecognized: \(keyPath)")
       return
     }
@@ -3602,7 +3595,7 @@ final class PlayerCore: NSObject {
                                sessionState: sessionStateTF,
                                video: videoGeoTF,
                                buildPWinGeoTransformTasks: { [self] ctx -> [IINAAnimation.Task] in
-        
+
         let inputMusicModeGeo = ctx.inputGeoSet.musicMode
         log.verbose("[GTF:\(ctx.name)] Showing viewport & exiting music mode (visibleNow=\(inputMusicModeGeo.isViewportShown.yesno))")
         miniPlayerShowVideoTimer.cancel()
