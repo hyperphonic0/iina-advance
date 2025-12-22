@@ -267,17 +267,16 @@ struct PlayerSaveState: CustomStringConvertible {
       }
     })
 
-    let propsString = filteredProps.compactMap{ (key, valRaw) in
-      let valToPrint: String
-      if let valStr = valRaw as? String {
-        valToPrint = valStr.quoted
-      } else {
-        valToPrint = "\(valRaw)"
-      }
-      return "\(key.quoted): \(valToPrint)"
-    }.joined(separator: ", ")
+    let propsString = json(from: filteredProps) ?? "<ERROR>"
 
     return "PlayerSaveState(url=\(urlPath.pii.quoted) props=[\(propsString)])"
+  }
+
+  func json(from object:Any) -> String? {
+    guard let data = try? JSONSerialization.data(withJSONObject: object, options: []) else {
+      return nil
+    }
+    return String(data: data, encoding: String.Encoding.utf8)
   }
 
   var url: URL? {
@@ -1488,8 +1487,8 @@ extension PlayerCore {
     let layout = pwc.currentLayout
 
     let buildNumber: Int = info.priorStateBuildNumber
-    props[PropName.buildNumber.rawValue] = buildNumber
-    props[PropName.launchID.rawValue] = UIState.shared.currentLaunchID
+    props[PropName.buildNumber.rawValue] = String(buildNumber)
+    props[PropName.launchID.rawValue] = String(UIState.shared.currentLaunchID)
 
     // - Window Layout & Geometry
 
@@ -1546,7 +1545,7 @@ extension PlayerCore {
       props[PropName.playlistPaths.rawValue] = playlistPaths
     }
     if let playlistPos = info.currentPlayback?.playlistPos {
-      props[PropName.playlistPos.rawValue] = playlistPos
+      props[PropName.playlistPos.rawValue] = String(playlistPos)
     }
 
     if let playbackPositionSec = info.playbackPositionSec {

@@ -306,7 +306,7 @@ final class PlayerCore: NSObject {
   }
 
   @MainActor
-  init(_ label: String, isDemoPlayer: Bool = false, userOptions: [MPVOptPair]) {
+  private init(_ label: String, isDemoPlayer: Bool = false) {
     let log = Logger.subsystem(forPlayerID: label)
     log.debug("PlayerCore init: starting")
     self.label = label
@@ -314,8 +314,7 @@ final class PlayerCore: NSObject {
     self.info = PlaybackInfo(log: log)
     self.isDemoPlayer = isDemoPlayer
     self.playlistTableChangeNotificationName = .init("uiChangeForPlaylistTable-\(label)")
-    self.userOptions = userOptions
-
+    self.userOptions = []
     super.init()
     self.videoView = VideoView(player: self)
     self.mpv = MPVController(playerCore: self)
@@ -326,7 +325,24 @@ final class PlayerCore: NSObject {
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeFnModes)
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeGlobal)
     TouchBarSettings.shared.addObserver(self, forKey: .PresentationModePerApp)
-    log.verbose("PlayerCore init: done")
+  }
+
+  @MainActor
+  convenience init(_ label: String, isDemoPlayer: Bool = false, userOptions: [MPVOptPair]) {
+    self.init(label, isDemoPlayer: isDemoPlayer)
+    self.userOptions = userOptions
+    pwc = PlayerWindowController(playerCore: self)
+    log.verbose("PlayerCore init (new): done")
+  }
+
+  @MainActor
+  convenience init(_ label: String, isDemoPlayer: Bool = false, restoringFrom priorState: PlayerSaveState) {
+    self.init(label, isDemoPlayer: isDemoPlayer)
+    self.userOptions = priorState.mpvUserOpts()
+    pwc = PlayerWindowController(playerCore: self, geoSet: priorState.geoSet, initialLayout: priorState.layoutState)
+    assert(pwc.sessionState.isNone, "Invalid sessionState for restore: \(pwc.sessionState)")
+    pwc.sessionState = .restoring(playerState: priorState)
+    log.verbose("PlayerCore init (restore): done")
   }
 
 
@@ -718,47 +734,34 @@ final class PlayerCore: NSObject {
   /// This will apply all the mpv user options as well.
   /// Does nothing if already started.
   @MainActor
-  func startPlayer(restoringFrom previousState: PlayerSaveState? = nil) {
+  func startPlayer() {
     guard state == .notYetStarted else { return }
     let isInteractivePlayer = !isDemoPlayer && AppDelegate.shared.isInteractiveLaunch
     self.isInteractivePlayer = isInteractivePlayer
     log.verbose("Player start: interactive=\(isInteractivePlayer.yn)")
 
-    if isDemoPlayer {
-      startMPV()
-    } else {
-      if pwc == nil {
-        if let previousState {
-          pwc = PlayerWindowController(playerCore: self, geoSet: previousState.geoSet, initialLayout: previousState.layoutState)
-          assert(pwc.sessionState.isNone, "Invalid sessionState for restore: \(pwc.sessionState)")
-          pwc.sessionState = .restoring(playerState: previousState)
-        } else {
-          pwc = PlayerWindowController(playerCore: self)
-        }
-        if isInteractivePlayer {
-          // `windowDidLoad` is a legacy method, a leftover from when XIB was used.
-          // Need to call this explicitly now. Maybe we can refactor at some point.
-          // For non-interactive players, we still have too many dependencies on PlayerWindowController to avoid the need to
-          // instantiate it, but we can at least leave it "unloaded" and not suffer too much waste because much of the code
-          // already checks whether `!pwc.loaded` and gracefully handles it.
-          pwc.windowDidLoad()
-        }
-        // Hide the newly created window until ready to show (when `windowIsReadyToShow` notification is sent,
-        // triggering `showWindow()`)
-        pwc.window?.orderOut(self)
-      }
+    if isInteractivePlayer {
+      // `windowDidLoad` is a legacy method, a leftover from when XIB was used.
+      // Need to call this explicitly now. Maybe we can refactor at some point.
+      // For non-interactive players, we still have too many dependencies on PlayerWindowController to avoid the need to
+      // instantiate it, but we can at least leave it "unloaded" and not suffer too much waste because much of the code
+      // already checks whether `!pwc.loaded` and gracefully handles it.
+      pwc.windowDidLoad()
+    }
+    // Hide the newly created window until ready to show (when `windowIsReadyToShow` notification is sent,
+    // triggering `showWindow()`)
+    pwc.window?.orderOut(self)
 
-      if videoView.useOpenGL {
-        startMPV()
-        if isInteractivePlayer {
-          videoView.initVideoLayer()
-        }
-      } else {
-        if isInteractivePlayer {
-          videoView.initVideoLayer()
-        }
-        startMPV()
+    if videoView.useOpenGL {
+      startMPV()
+      if isInteractivePlayer {
+        videoView.initVideoLayer()
       }
+    } else {
+      if isInteractivePlayer {
+        videoView.initVideoLayer()
+      }
+      startMPV()
     }
 
     if state == .notYetStarted {
