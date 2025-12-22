@@ -3090,55 +3090,6 @@ final class PlayerCore: NSObject {
     saveState()
   }
 
-  func canShowOSD(message: OSDMessage) -> Bool {
-    if message.alwaysEnabled {
-      return true
-    }
-    if message.isDisabled {
-      return false
-    }
-    /// Note: use `loaded` (querying `isWindowLoaded` will initialize pwc unexpectedly)
-    if !pwc.loaded || !Preference.bool(for: .enableOSD) || isUsingMpvOSD || isRestoring || isInInteractiveMode {
-      return false
-    }
-    if isInMiniPlayer {
-      return pwc.musicModeGeo.isViewportShown && Preference.bool(for: .enableOSDInMusicMode)
-    }
-
-    return true
-  }
-
-  func sendOSD(_ msg: OSDMessage, autoHide: Bool = true,
-               accessoryViewController: NSViewController? = nil, external: Bool = false) {
-    if case .debug = msg {
-      log.verbose("DebugOSD: \(msg)")
-    }
-
-    guard !isRestoring else { return }
-
-    /// Check `isFileLoadedAndSized` early to prevent race condition
-    let disableOSDForFileLoading: Bool = !info.isFileLoadedAndSized
-    if disableOSDForFileLoading && !external {
-      switch msg {
-      case .fileStart,
-          .resumeFromWatchLater,
-          .debug:
-        break
-      default:
-        return
-      }
-    }
-
-    pwc.displayOSD(msg, autoHide: autoHide,
-                   accessoryViewController: accessoryViewController, isExternal: external)
-  }
-
-  func hideOSD() {
-    DispatchQueue.main.async {
-      self.pwc.hideOSD()
-    }
-  }
-
   func closeWindow() {
     DispatchQueue.main.async { [self] in
       _closeWindow()

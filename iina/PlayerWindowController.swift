@@ -2009,10 +2009,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     if player.info.isFileLoadedAndSized {
       // Run all tasks in the OSD queue until it is depleted
       osd.queueLock.withLock {
-        while !osd.queue.isEmpty {
-          if let taskFunc = osd.queue.removeFirst() {
-            taskFunc()
-          }
+        while let taskFunc = osd.queue.removeFirst() {
+          taskFunc()
         }
       }
     } else {

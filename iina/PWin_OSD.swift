@@ -786,7 +786,7 @@ extension PlayerWindowController {
 
   // MARK: - Show OSD
 
-  /// Do not call `displayOSD` directly. Call `PlayerCore.sendOSD` instead.
+  /// Do not call `enqueueOSDForDisplay` directly. Call `PlayerCore.sendOSD` instead.
   ///
   /// There is a timing issue that can occur when the user holds down a key to rapidly repeat a key binding or menu item equivalent,
   /// which should result in an OSD being displayed for each keypress. But for some reason, the task to update the OSD,
@@ -794,15 +794,33 @@ extension PlayerWindowController {
   /// To work around this issue, we instead enqueue the tasks to display OSD using a simple LinkedList and Lock. Then we call
   /// `updateUI()` both from here (as before), and inside the key event callbacks in `PlayerWindow` so that that the key events
   /// themselves process the display of any enqueued OSD messages.
-  func displayOSD(_ msg: OSDMessage, autoHide: Bool,
-                  accessoryViewController: NSViewController?, isExternal: Bool) {
-    guard player.canShowOSD(message: msg) else { return }
+  fileprivate func enqueueOSDForDisplay(_ msg: OSDMessage, autoHide: Bool, accessoryViewController: NSViewController?) {
+    if case .debug = msg {
+      log.verbose("DebugOSD: \(msg)")
+    }
+
+    guard !sessionState.isRestoring else { return }
+
+    /// Check `isFileLoadedAndSized` early to prevent race condition
+    let disableOSDForFileLoading: Bool = !player.info.isFileLoadedAndSized
+    if disableOSDForFileLoading && !msg.isExternal {
+      switch msg {
+      case .fileStart,
+          .resumeFromWatchLater,
+          .debug:
+        break
+      default:
+        return
+      }
+    }
+
+    guard canShowOSD(message: msg) else { return }
     
     // Enqueue first, in case main queue is blocked
     osd.queueLock.withLock {
       osd.queue.append({ [self] in
         // DO NOT use animationPipeline here. It is not needed, and will cause OSD to block
-        _displayOSD(msg, autoHide: autoHide, accessoryViewController: accessoryViewController)
+        displayOSD(msg, autoHide: autoHide, accessoryViewController: accessoryViewController)
       })
     }
     // Need to do the UI sync in the main queue
@@ -814,12 +832,12 @@ extension PlayerWindowController {
     }
   }
 
-  private func _displayOSD(_ msg: OSDMessage, autoHide: Bool,
-                           accessoryViewController: NSViewController?) {
+  /// Do not call `displayOSD` directly. Call `PlayerCore.sendOSD` instead.
+  private func displayOSD(_ msg: OSDMessage, autoHide: Bool, accessoryViewController: NSViewController?) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     // Check again. May have been enqueued a while
-    guard player.canShowOSD(message: msg) else { return }
+    guard canShowOSD(message: msg) else { return }
 
     // Filter out unwanted OSDs first
     guard !osd.isShowingUserInteractiveOSD || accessoryViewController != nil else { return }
@@ -993,6 +1011,21 @@ extension PlayerWindowController {
     updateOSDViews(from: msg)
   }
 
+  fileprivate func canShowOSD(message: OSDMessage) -> Bool {
+    if message.alwaysEnabled { return true }
+
+    if message.isDisabled { return false }
+    /// Note: use `loaded` (querying `isWindowLoaded` will initialize pwc unexpectedly)
+    if !loaded || !Preference.bool(for: .enableOSD) { return false }
+    if player.isUsingMpvOSD || player.isRestoring || player.isInInteractiveMode { return false }
+
+    if isInMiniPlayer {
+      return musicModeGeo.isViewportShown && Preference.bool(for: .enableOSDInMusicMode)
+    }
+
+    return true
+  }
+
   // MARK: - Hide OSD
 
   @MainActor
@@ -1025,6 +1058,21 @@ extension PlayerWindowController {
         }
       }
     })
+  }
+
+}  /// end `extension PlayerWindowController`
+
+
+extension PlayerCore {
+
+  func sendOSD(_ msg: OSDMessage, autoHide: Bool = true, accessoryViewController: NSViewController? = nil) {
+    pwc.enqueueOSDForDisplay(msg, autoHide: autoHide, accessoryViewController: accessoryViewController)
+  }
+
+  func hideOSD() {
+    DispatchQueue.main.async { [self] in
+      pwc.hideOSD()
+    }
   }
 
 }

@@ -118,6 +118,16 @@ enum OSDMessage {
     }
   }
 
+  var isExternal: Bool {
+    switch self {
+    case .custom,
+        .customWithDetail:
+      return true
+    default:
+      return false
+    }
+  }
+
   /// `True` if this message must always be shown, otherwise `false`.
   ///
   /// A user may disable the OSD by unchecking the `Enable OSD` setting found on the `UI` tab in the `On Screen Display`
