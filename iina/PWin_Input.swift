@@ -28,7 +28,7 @@ extension PlayerWindowController {
   @discardableResult
   func executeActionForKey(normalizedMpvKey: String, fallbackAction: ((PlayerCore) -> Void)? = nil) -> Bool {
     if let keyBinding = player.keyBindingContext.matchActiveKeyBinding(endingWith: normalizedMpvKey) {
-      if keyBinding.normalizedMpvKey == Constants.anyUnicodeKey {
+      if keyBinding.normalizedMpvKey == Constants.String.anyUnicodeKey {
         // Matched ANY_UNICODE: just pass the key through to mpv. It will know what to do with it.
         player.mpv.command(MPVCommand.keypress, args: [normalizedMpvKey], checkError: false)
         return true

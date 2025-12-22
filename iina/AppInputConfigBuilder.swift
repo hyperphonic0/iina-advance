@@ -56,7 +56,7 @@ final class AppInputConfigBuilder {
 
       let prevSameKeyBindingIndex: Int?
 
-      if key == Constants.anyUnicodeKey {
+      if key == Constants.String.anyUnicodeKey {
         // Wildcard binding: ANY_UNICODE
         prevSameKeyBindingIndex = anyUnicodeBindingIndex
         if let prevSameKeyBindingIndex {
@@ -77,7 +77,7 @@ final class AppInputConfigBuilder {
           }
         }
 
-      } else if key == Constants.unmappedKey {
+      } else if key == Constants.String.unmappedKey {
         // Wildcard binding: UNMAPPED
         prevSameKeyBindingIndex = unmappedBindingIndex
         if let prevSameKeyBindingIndex {

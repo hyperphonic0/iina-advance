@@ -143,7 +143,7 @@ final class PlayerManager {
       player = demoPlayer
     } else {
       Logger.log.debug("Creating demo player")
-      player = PlayerCore(Constants.demoPlayerLabel, isDemoPlayer: true, userOptions: [])
+      player = PlayerCore(Constants.String.demoPlayerLabel, isDemoPlayer: true, userOptions: [])
       demoPlayer = player
     }
     player.startPlayer()
@@ -174,7 +174,7 @@ final class PlayerManager {
     } else {
       // Creating a new PlayerCore for this launch. Need to make sure we give it a unique ID.
       // Each Player ID incorporates this launchID & `playerCoreCounter` starting from 0.
-      let playerLabel = AppData.label(forPlayerCore: playerCoreCounter)
+      let playerLabel = UIState.shared.label(forPlayerCore: playerCoreCounter)
       while playerExists(withLabel: playerLabel) {
         playerCoreCounter += 1
       }

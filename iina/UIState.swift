@@ -183,6 +183,10 @@ class UIState {
     return "\(Constants.String.iinaLaunchPrefix)\(launchID)"
   }
 
+  func label(forPlayerCore playerCoreCounter: Int) -> String {
+    return "\(currentLaunchID)c\(playerCoreCounter)"
+  }
+
   /// Example input=`"PWin-1032c0"` → output=`"1032c0"`
   func playerID(fromPlayerWindowKey key: String) -> String? {
     if key.starts(with: WindowAutosaveName.playerWindowPrefix) {

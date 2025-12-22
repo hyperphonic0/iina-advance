@@ -8,11 +8,8 @@
 
 import Cocoa
 
+/// Trying to deprecate this struct. New constants should be added to `Constants` struct.
 struct AppData {
-  static func label(forPlayerCore playerCoreCounter: Int) -> String {
-    return "\(UIState.shared.currentLaunchID)c\(playerCoreCounter)"
-  }
-
   /// Time interval to sync play slider position, time labels, volume indicator & other UI.
   struct SyncTimerConfig {
     let interval: TimeInterval
@@ -30,8 +27,6 @@ struct AppData {
   /// Lowest possible speed allowed by mpv (0.01x)
   static let mpvMinPlaybackSpeed = 0.01
 
-  static let mpvArgNone = "none"
-
   // Used internally as identifiers when communicating with mpv. Should not be displayed because they are not localized:
   static let noneCropIdentifier = "None"
   static let customCropIdentifier = "Custom"
@@ -44,8 +39,6 @@ struct AppData {
   static let seekAmountMapMouse = [0, 0.5, 1, 2, 4]
   static let volumeMap = [0, 0.25, 0.5, 0.75, 1]
   static let playbackSpeedMap = [0, 0.001, 0.002, 0.005, 0.01]
-
-  static let minThumbnailsPerFile = 1
 
   static let encodings = CharEncoding.list
 
@@ -103,6 +96,11 @@ struct Constants {
   struct String {
     static let mpvYes = "yes"
     static let mpvNo = "no"
+    static let mpvArgNone = "none"
+
+    static let anyUnicodeKey = "ANY_UNICODE"
+    static let unmappedKey = "UNMAPPED"
+
     static let degree = "°"
     static let dot = "●"
     static let blackRightPointingTriangle = "▶︎"
@@ -148,6 +146,8 @@ struct Constants {
     static let managePlugins = NSLocalizedString("menu.manage_plugins", comment: "Manage Plugins…")
     static let showPluginsPanel = NSLocalizedString("menu.show_plugins_panel", comment: "Show Plugins Sidebar")
     static let hidePluginsPanel = NSLocalizedString("menu.hide_plugins_panel", comment: "Hide Plugins Sidebar")
+
+    static let demoPlayerLabel = "demo"
   }
 
   struct Menu {
@@ -156,15 +156,9 @@ struct Constants {
     static let alternativeMenuItemTag = 1
   }
 
-  // - Quantities:
-
-  /**
-   * Min threshold for *receiving* MPV_EVENT_LOG_MESSAGE messages.
-   * Lua keybindings require level "debug" or higher, so don't set threshold to be stricter than this level
-   */
+  /// Min threshold for *receiving* `MPV_EVENT_LOG_MESSAGE` messages.
+  /// Lua keybindings require level "debug" or higher, so don't set threshold to be stricter than this level.
   static let minMpvEventLogLevel = MPVLogLevel.debug
-  static let anyUnicodeKey = "ANY_UNICODE"
-  static let unmappedKey = "UNMAPPED"
 
   static let unknownProgress: Double = -1.0
 
@@ -183,7 +177,7 @@ struct Constants {
   // Should PlaySlider height be capped at 2x its minimum?
   static let twoRowOSC_LimitPlaySliderHeight = false
 
-  static let demoPlayerLabel = "demo"
+  static let minThumbnailsPerFile = 1
 
   /// All values are in seconds unless explicitly named differently
   struct TimeInterval {
@@ -225,17 +219,16 @@ struct Constants {
     /// updates made using data pulled from mpv might be out of date.
     static let quickSettingsUpdateGracePeriod = 0.5
 
-    static let windowScaleUpdateThrottlingInterval = 0.01
-
     /// Time in seconds to wait before regenerating thumbnails.
     /// Each character the user types into the thumbnailWidth text field triggers a new thumb regen request.
     /// This should help cut down on unnecessary requests.
     static let thumbnailRegenerationDelay = 0.5
-    static let playerStateSaveDelay = 0.2
+    /// Minimum delay between saves (except at program exit). Used to debounce state save requests.
+    static let playerStateSaveDelay = 0.5
     /// If state save is enabled and video is playing, make sure player is saved every this number of secs
     static let playTimeSaveStateFrequency: TimeInt = 10.0
 
-    /// Delay before auto-loading playlist from files in the opened file's directory
+    /// Delay before auto-loading playlist from files in the opened file's directory. In seconds.
     static let autoLoadDelay = 2.0
 
     static let keyBindingsSearchDebounceDelay: TimeInt = 0.1

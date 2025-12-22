@@ -2159,7 +2159,7 @@ final class PlayerCore: NSObject {
       /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist
       /// is started. Run this on the mpv queue to ensure proper ordering.
       log.verbose("Clearing mpv 'start' option now that restore is complete")
-      mpv.setString(MPVOption.PlaybackControl.start, AppData.mpvArgNone)
+      mpv.setString(MPVOption.PlaybackControl.start, Constants.String.mpvArgNone)
 
       /// Will complete restore when `transformGeometry` is done
     }

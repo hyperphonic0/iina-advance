@@ -100,7 +100,7 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     if ThumbnailCache.shared.fileIsCached(forName: cacheName, forVideo: mediaFilePath, forWidth: thumbnailWidth) {
       log.trace("Found matching thumbnail cache name=\(cacheName.quoted), \(thumbnailWidth)px width for: \(mediaFilePath.pii.quoted)")
       if let thumbnails = ThumbnailCache.shared.read(forName: cacheName, forWidth: thumbnailWidth) {
-        if thumbnails.count >= AppData.minThumbnailsPerFile {
+        if thumbnails.count >= Constants.minThumbnailsPerFile {
           addThumbnails(thumbnails)
           thumbnailsProgress = 1
           DispatchQueue.main.async { [self] in
@@ -108,7 +108,7 @@ final class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
           }
           return
         } else {
-          log.error("Expected at least \(AppData.minThumbnailsPerFile) thumbnails, but found only \(thumbnails.count) (width \(thumbnailWidth)px). Will try to regenerate")
+          log.error("Expected at least \(Constants.minThumbnailsPerFile) thumbnails, but found only \(thumbnails.count) (width \(thumbnailWidth)px). Will try to regenerate")
         }
       } else {
         log.error("Cannot read thumbnails from cache \(cacheName.quoted), width \(thumbnailWidth)px. Will try to regenerate")
