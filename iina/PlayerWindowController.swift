@@ -771,6 +771,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
+  /// This expects to be executed after `fileLoaded` (i.e. toward the end of restore).
+  /// Specifically, it expects that `self.currentLayout` & `self.geo` have already been set from `priorState`.
   func restoreFromMiscWindowBools(_ priorState: PlayerSaveState) -> (miniturized: Bool, hidden: Bool)? {
     let window = window!
     let isOnTop = priorState.bool(for: .isOnTop) ?? false
@@ -786,8 +788,24 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     if isZoomedViaGesture {
       log.verbose("Restoring window which is zoomed via gesture")
+      self.isZoomedViaGesture = isZoomedViaGesture
+
+      // Window needs to be maximized or FS to keep pinch-to-zoom.
+      // Screen may have changed since last launch: check & maybe reset
+      let currentGeo: PWinGeometry?
+      let mode = currentLayout.mode
+      switch mode {
+      case .musicMode:
+        currentGeo = geo.musicMode
+      case .windowedNormal, .windowedInteractive:
+        currentGeo = geo.windowed
+      case .fullScreenNormal, .fullScreenInteractive:
+        currentGeo = nil
+      }
+      if let currentGeo {
+        magnificationHandler.resetZoomIfNotMaximized(currentGeo)
+      }
     }
-    self.isZoomedViaGesture = isZoomedViaGesture
 
     // Process PIP options first, to make sure it's not miniturized due to PIP
     if isInPip {

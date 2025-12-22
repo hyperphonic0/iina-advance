@@ -11,6 +11,16 @@
 /// See: `MusicModeGeo.swift`
 struct GeoUtil {
 
+  static func isWindowMaximized(windowFrame: NSRect, in screen: NSScreen) -> Bool {
+    let screenFrame = screen.visibleFrame
+    // Allow a single pixel difference for case when lockViewportToVideoSize is enabled: window can be off by 1px...)
+    let heightIsMax = windowFrame.height >= screenFrame.height - 1
+    let widthIsMax = windowFrame.width >= screenFrame.width - 1
+    // If viewport is not locked, the window must be the size of the screen in both directions before triggering full screen.
+    // If viewport is locked, window is considered at maximum if either of its sides is filling all the available space in its dimension.
+    return (heightIsMax && widthIsMax) || (Preference.bool(for: .lockViewportToVideoSize) && (heightIsMax || widthIsMax))
+  }
+
   static func minViewportMargins(forMode mode: PlayerWindowMode) -> MarginQuad {
     switch mode {
     case .windowedInteractive, .fullScreenInteractive:

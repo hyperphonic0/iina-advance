@@ -139,7 +139,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         return .videoZoom
       }
       return .none
-    } else if !pwc.isInMiniPlayer, isWindowMaximized(windowFrame: window.frame) {
+    } else if !pwc.isInMiniPlayer, GeoUtil.isWindowMaximized(windowFrame: window.frame, in: screen) {
       // Maximized window in windowed mode
       if wantsToGrow, pinchAction == .windowSizeOrFullScreen {
         // Enter FS and end the current gesture.
@@ -158,17 +158,6 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     return .windowScale
   }
 
-  fileprivate func isWindowMaximized(windowFrame: NSRect) -> Bool {
-    guard let window = pwc.window, let screen = window.screen else { return false }
-    let screenFrame = screen.visibleFrame
-    // Allow a single pixel difference for case when lockViewportToVideoSize is enabled: window can be off by 1px...)
-    let heightIsMax = windowFrame.height >= screenFrame.height - 1
-    let widthIsMax = windowFrame.width >= screenFrame.width - 1
-    // If viewport is not locked, the window must be the size of the screen in both directions before triggering full screen.
-    // If viewport is locked, window is considered at maximum if either of its sides is filling all the available space in its dimension.
-    return (heightIsMax && widthIsMax) || (Preference.bool(for: .lockViewportToVideoSize) && (heightIsMax || widthIsMax))
-  }
-
 
   // MARK: - Video Zoom
 
@@ -178,7 +167,12 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   func resetZoomIfNotMaximized(_ targetGeo: PWinGeometry) {
     // Don't reset if still magnifying
     guard !pwc.isMagnifying else { return }
-    guard pwc.isZoomedViaGesture, !targetGeo.mode.isFullScreen, !isWindowMaximized(windowFrame: targetGeo.windowFrame) else { return }
+    guard pwc.isZoomedViaGesture, !targetGeo.mode.isFullScreen else { return }
+
+    if let screen = NSScreen.forScreenID(targetGeo.screenID),
+       GeoUtil.isWindowMaximized(windowFrame: targetGeo.windowFrame, in: screen) {
+      return
+    }
     resetZoom()
   }
 
