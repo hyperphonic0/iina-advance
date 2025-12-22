@@ -104,6 +104,10 @@ class PlaybackInfo {
   var gamma: Int = 0
   var hue: Int = 0
 
+  var videoZoom: Double = 1.0
+  var videoPanX: Double = 0.0
+  var videoPanY: Double = 0.0
+
   var volume: Double = 50
   var volumeMax: Int = 50
   var isMuted: Bool = false

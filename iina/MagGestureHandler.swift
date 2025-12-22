@@ -43,8 +43,6 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   private var pinchInitialZoom: Double = 1.0
   private var pinchMaxZoom: Double = 1.0  // will be updated at start of every pinch gesture
 
-  /// If there is an active video-zoom, we need to know if it is the result of a previous pinch gesture, or done through some external mechanism.
-  private(set) var isZoomedViaGesture: Bool = false
   /// Timer used to generate crude "zoom out" operation to reset the video-zoom when window is resized.
   private var resetTimerSubscription: AnyCancellable?
 
@@ -111,7 +109,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     let isPinchToZoomEnabled = Preference.bool(for: .enablePinchToVideoZoom)
 
     if pwc.isFullScreen {
-      if isZoomedViaGesture {
+      if pwc.isZoomedViaGesture {
         // If zoom is already in progress, give it priority
         return .videoZoom
       } else if wantsToShrink && pinchAction == .windowSizeOrFullScreen {
@@ -152,7 +150,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         recognizer.state = .ended
         pwc.isMagnifying = false
         return .none
-      } else if isPinchToZoomEnabled, wantsToGrow || isZoomedViaGesture {
+      } else if isPinchToZoomEnabled, wantsToGrow || pwc.isZoomedViaGesture {
         // Continue zooming if already zoomed; otherwise start via expand pinch motion
         return .videoZoom
       }
@@ -180,12 +178,12 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   func resetZoomIfNotMaximized(_ targetGeo: PWinGeometry) {
     // Don't reset if still magnifying
     guard !pwc.isMagnifying else { return }
-    guard isZoomedViaGesture, !targetGeo.mode.isFullScreen, !isWindowMaximized(windowFrame: targetGeo.windowFrame) else { return }
+    guard pwc.isZoomedViaGesture, !targetGeo.mode.isFullScreen, !isWindowMaximized(windowFrame: targetGeo.windowFrame) else { return }
     resetZoom()
   }
 
   func resetZoom() {
-    guard isZoomedViaGesture else { return }
+    guard pwc.isZoomedViaGesture else { return }
     pwc.log.verbose("Resetting pinch-to-zoom props (video-zoom, video-pan-x, video-pan-y)")
 
     // Cancel any prev timer first
@@ -201,7 +199,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     resetTimerSubscription = Timer.publish(every: zoomResetFPS, on: .main, in: .common)
       .autoconnect()
       .sink { [self] time in
-        guard isZoomedViaGesture else {
+        guard pwc.isZoomedViaGesture else {
           pwc.log.verbose("Cancelling timer: no longer zoomed")
           pwc.isMagnifying = false
           resetTimerSubscription?.cancel()
@@ -322,7 +320,7 @@ final class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       pinchOriginInVideoUnit = nil
     }
 
-    isZoomedViaGesture = newZoom > pinchMinZoom
+    pwc.isZoomedViaGesture = newZoom > pinchMinZoom
 
     // TODO: this correctly scales the window to match the zoom, but breaks when other parts of the layout system
     // resize the window on their own...

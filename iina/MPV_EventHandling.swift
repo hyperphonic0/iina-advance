@@ -25,6 +25,9 @@ extension MPVController {
     MPVOption.Video.deinterlace: MPV_FORMAT_FLAG,
     MPVOption.Video.hwdec: MPV_FORMAT_STRING,
     MPVOption.Video.videoRotate: MPV_FORMAT_INT64,
+    MPVOption.Video.videoZoom: MPV_FORMAT_DOUBLE,
+    MPVOption.Video.videoPanX: MPV_FORMAT_DOUBLE,
+    MPVOption.Video.videoPanY: MPV_FORMAT_DOUBLE,
     MPVProperty.dwidth: MPV_FORMAT_INT64,
     MPVProperty.dheight: MPV_FORMAT_INT64,
     MPVOption.Audio.mute: MPV_FORMAT_FLAG,
@@ -51,7 +54,6 @@ extension MPVController {
     MPVOption.Equalizer.gamma: MPV_FORMAT_INT64,
     MPVOption.Equalizer.hue: MPV_FORMAT_INT64,
     MPVOption.Equalizer.saturation: MPV_FORMAT_INT64,
-    MPVOption.Video.videoZoom: MPV_FORMAT_DOUBLE,
     MPVOption.Window.keepaspectWindow: MPV_FORMAT_FLAG,
     MPVOption.Window.fullscreen: MPV_FORMAT_FLAG,
     MPVOption.Window.ontop: MPV_FORMAT_FLAG,
@@ -296,6 +298,20 @@ extension MPVController {
       player.log.verbose("Δ mpv prop: 'video-rotate' ≔ \(userRotation)")
       player.userRotationDidChange(to: userRotation)
 
+    case MPVOption.Video.videoZoom:
+      guard let zoom = property.doubleData(log) else { break }
+      player.log.verbose("Δ mpv prop: 'video-zoom' = \(zoom)")
+      player.info.videoZoom = zoom
+      player.sendOSD(.videoZoom(zoom))
+
+    case MPVOption.Video.videoPanX:
+      guard let panX = property.doubleData(log) else { break }
+      player.info.videoPanX = panX
+
+    case MPVOption.Video.videoPanY:
+      guard let panY = property.doubleData(log) else { break }
+      player.info.videoPanY = panY
+
     case MPVProperty.dwidth:
       let dwidth = Int(getInt(MPVProperty.dwidth))
       player.log.verbose("Δ mpv prop: 'dwidth' ≔ \(dwidth)")
@@ -535,11 +551,6 @@ extension MPVController {
       player.info.saturation = intData
       player.sendOSD(.saturation(intData))
       player.setQuickSettingsViewNeedsUpdate()
-
-    case MPVOption.Video.videoZoom:
-      guard let zoom = property.doubleData(log) else { break }
-      player.log.verbose("Δ mpv prop: 'video-zoom' = \(zoom)")
-      player.sendOSD(.videoZoom(zoom))
 
     case MPVProperty.playlistCount:
       player.log.verbose("Δ mpv prop: 'playlist-count'")

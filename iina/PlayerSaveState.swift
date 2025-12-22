@@ -70,6 +70,11 @@ struct PlayerSaveState: CustomStringConvertible {
     case gamma = "gamma"                /// `MPVOption.Equalizer.gamma`
     case hue = "hue"                    /// `MPVOption.Equalizer.hue`
 
+    // Added in v1.4
+    case videoZoom = "videoZoom"        /// `MPVOption.Video.videoZoom`
+    case videoPanX = "videoPanX"        /// `MPVOption.Video.videoPanX`
+    case videoPanY = "videoPanY"        /// `MPVOption.Video.videoPanY`
+
     case videoFilters = "vf"            /// `MPVProperty.vf`
     case audioFilters = "af"            /// `MPVProperty.af`
     case videoFiltersDisabled = "vfDisabled"/// IINA-only
@@ -149,7 +154,7 @@ struct PlayerSaveState: CustomStringConvertible {
 
     // A bit clunky in v1.4 now that PiP status was moved into LayoutState
     let isWindowInPiP: Bool
-    if let (_, _, isInPip,  _, _) = PlayerSaveState.parseMiscWindowBools(props) {
+    if let (_, _, isInPip,  _, _, _) = PlayerSaveState.parseMiscWindowBools(props) {
       isWindowInPiP = isInPip
     } else {
       Logger.log.error("Failed to restore property \(PropName.miscWindowBools.rawValue.quoted); will assume window is not in PiP")
@@ -371,7 +376,9 @@ struct PlayerSaveState: CustomStringConvertible {
   }
 
   static func parseMiscWindowBools(_ properties: [String: Any]) -> (isMiniaturized: Bool, isHidden: Bool, isInPip: Bool,
-                                                                    isWindowMiniaturizedDueToPip: Bool, isPausedPriorToInteractiveMode: Bool)? {
+                                                                    isWindowMiniaturizedDueToPip: Bool,
+                                                                    isPausedPriorToInteractiveMode: Bool,
+                                                                    isZoomedViaGesture: Bool)? {
     guard let stateString = PlayerSaveState.string(for: .miscWindowBools, properties) else {
       log.error("Failed to restore from miscWindowBools: pref not found!")
       return nil
@@ -388,7 +395,20 @@ struct PlayerSaveState: CustomStringConvertible {
       log.error("Failed to restore property \(PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)!")
       return nil
     }
-    return (isMiniaturized, isHidden, isInPip, isWindowMiniaturizedDueToPip, isPausedPriorToInteractiveMode)
+
+    // This field was added in v1.4
+    let isZoomedViaGesture: Bool
+    if splitted.count >= 6 {
+      guard let val = Bool.yn(splitted[5]) else {
+        log.error("Failed to restore property \(PropName.miscWindowBools.rawValue.quoted): could not parse isZoomedViaGesture as bool!")
+        return nil
+      }
+      isZoomedViaGesture = val
+    } else {
+      isZoomedViaGesture = false
+    }
+
+    return (isMiniaturized, isHidden, isInPip, isWindowMiniaturizedDueToPip, isPausedPriorToInteractiveMode, isZoomedViaGesture)
   }
 
   static private func string(for name: PropName, _ properties: [String: Any]) -> String? {
@@ -737,6 +757,16 @@ struct PlayerSaveState: CustomStringConvertible {
       mpv.setInt(MPVOption.Equalizer.hue, hue)
     }
 
+    if let videoZoom = double(for: .videoZoom) {
+      mpv.setDouble(MPVOption.Video.videoZoom, videoZoom)
+    }
+    if let videoPanX = double(for: .videoPanX) {
+      mpv.setDouble(MPVOption.Video.videoPanX, videoPanX)
+    }
+    if let videoPanY = double(for: .videoPanY) {
+      mpv.setDouble(MPVOption.Video.videoPanY, videoPanY)
+    }
+
     if let playSpeed = double(for: .playSpeed) {
       mpv.setDouble(MPVOption.PlaybackControl.speed, playSpeed)
     }
@@ -829,6 +859,7 @@ struct PlayerSaveState: CustomStringConvertible {
       mpv.setString(MPVProperty.vf, videoFilters)
     }
   }
+
 }  /// end `struct PlayerSaveState`
 
 struct ScreenMeta {
@@ -1499,7 +1530,8 @@ extension PlayerCore {
       pwc.isWindowHidden.yn,
       layout.isInPiP.yn,  // stored here for historical reasons. MOved into LayoutState in v1.4
       pwc.isWindowMiniaturizedDueToPip.yn,
-      pwc.isPausedPriorToInteractiveMode.yn
+      pwc.isPausedPriorToInteractiveMode.yn,
+      pwc.isZoomedViaGesture.yn,
     ].joined(separator: ",")
 
     // - Playback State
@@ -1559,6 +1591,9 @@ extension PlayerCore {
     props[PropName.saturation.rawValue] = String(info.saturation)
     props[PropName.gamma.rawValue] = String(info.gamma)
     props[PropName.hue.rawValue] = String(info.hue)
+    props[PropName.videoZoom.rawValue] = String(info.videoZoom)
+    props[PropName.videoPanX.rawValue] = String(info.videoPanX)
+    props[PropName.videoPanY.rawValue] = String(info.videoPanY)
 
     props[PropName.playSpeed.rawValue] = info.playSpeed.stringMaxFrac6
     props[PropName.volume.rawValue] = info.volume.stringMaxFrac6

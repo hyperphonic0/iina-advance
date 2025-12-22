@@ -389,6 +389,7 @@ final class PlayerCore: NSObject {
     // Reset window vars to their defaults too:
     pwc.isLiveResizingWidth = nil
     pwc.isMagnifying = false
+    pwc.isZoomedViaGesture = false
     pwc.isWindowHidden = false
     pwc.isWindowMiniturized = false
     pwc.isWindowMiniaturizedDueToPip = false

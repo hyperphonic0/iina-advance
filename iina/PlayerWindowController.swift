@@ -117,6 +117,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   }
   var isLiveResizingWidth: Bool? = nil
   var isMagnifying = false
+  /// If there is an active video-zoom, we need to know if it is the result of a previous pinch gesture, or done through some external mechanism.
+  var isZoomedViaGesture: Bool = false
 
   // - Non-exclusive state bools:
 
@@ -271,9 +273,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   let thumbDisplayDebouncer = Debouncer()
 
   var isFullScreen: Bool { currentLayout.isFullScreen }
-
   var isInMiniPlayer: Bool { currentLayout.isMusicMode }
-
   var isInInteractiveMode: Bool { currentLayout.isInteractiveMode }
 
   // MARK: - Vars: Window Geometry
@@ -778,10 +778,16 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     guard let (isMiniaturized, isHidden, isInPip,
                isWindowMiniaturizedDueToPip,
-               isPausedPriorToInteractiveMode) = PlayerSaveState.parseMiscWindowBools(priorState.properties) else {
+               isPausedPriorToInteractiveMode,
+               isZoomedViaGesture) = PlayerSaveState.parseMiscWindowBools(priorState.properties) else {
       log.debug("Failed to restore from miscWindowBools; defaulting to visible window")
       return nil
     }
+
+    if isZoomedViaGesture {
+      log.verbose("Restoring window which is zoomed via gesture")
+    }
+    self.isZoomedViaGesture = isZoomedViaGesture
 
     // Process PIP options first, to make sure it's not miniturized due to PIP
     if isInPip {
