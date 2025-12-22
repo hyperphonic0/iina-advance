@@ -867,11 +867,11 @@ final class StartupHandler {
       exit(EX_USAGE)
     }
 
-    let activationPolicy = commandLineState.mpvArguments.last(where: { argPair in
-      argPair.0 == MPVOption.GPURendererOptions.macosAppActivationPolicy && !argPair.1.isEmpty
+    let activationPolicy = commandLineState.mpvArguments.last(where: { arg in
+      (arg.key == MPVOption.GPURendererOptions.macosAppActivationPolicy) && !arg.val.isEmpty
     })
     if let activationPolicy {
-      switch activationPolicy.1 {
+      switch activationPolicy.val {
       case "regular":
         NSApp.setActivationPolicy(.regular)
       case "accessory":
@@ -884,7 +884,7 @@ final class StartupHandler {
       }
     }
 
-    if commandLineState.mpvArguments.contains(where: { $0.0 == MPVEncoding.o }) {
+    if commandLineState.mpvArguments.contains(where: { $0.key == MPVEncoding.o }) {
       AppDelegate.shared.isInteractiveLaunch = false
     }
   }

@@ -17,6 +17,25 @@ struct MPVOptPair {
   /// Can be empty ("")
   let val: String
 
+  /// If this option is given in `no-{name}` format, strips the `no-` part to extract the option name.
+  var optionName: String { key.droppingPrefix("no-") }
+
+  /// If this option has only one token, returns a new `MPVOptPair` which satisfies one of the forms:
+  /// `{optionName}=no` or `{optionName}=yes`
+  var normalizedPair: MPVOptPair {
+    if val.isEmpty {
+      // check for special syntax for yes/no
+      if key.hasPrefix("no-") {
+        return MPVOptPair(key: optionName, val: Constants.String.mpvNo)
+      } else {
+        return MPVOptPair(key: key, val: Constants.String.mpvYes)
+      }
+    }
+
+    // If option has value, use that
+    return self
+  }
+
   // MARK: String ser/de
 
   var undashedString: String {
@@ -37,6 +56,10 @@ struct MPVOptPair {
     return optionsList.map { $0.undashedString }
   }
 
+  static func toUndashedLinesString(_ optionsList: [MPVOptPair]) -> String {
+    return toUndashedStrings(optionsList).joined(separator: "\n")
+  }
+
   static func parseLines(from unparsedString: String) -> [MPVOptPair] {
     let unparsedLineStrings = unparsedString.replacingOccurrences(of: "\r", with: "").split(separator: "\n", omittingEmptySubsequences: true)
     let optionList = unparsedLineStrings.map{MPVOptPair.parseLine(String($0))}
@@ -46,7 +69,7 @@ struct MPVOptPair {
   static func parseLine(_ stringItem: String) -> MPVOptPair {
     let splitted = stringItem.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: true)
     // Delete unnecessary leading dashes if present
-    let key = String(splitted[0]).deletingPrefix("--")
+    let key = String(splitted[0]).droppingPrefix("--")
     let val = splitted.count > 1 ? String(splitted[1]) : ""
     return MPVOptPair(key: key, val: val)
   }

@@ -352,26 +352,9 @@ struct PlayerSaveState: CustomStringConvertible {
     return nil
   }
 
-  // TODO: refactor to use [MPVOptPair]
-  func mpvOpts() -> [(String, String)] {
+  func mpvUserOpts() -> [MPVOptPair] {
     guard let propsString = string(for: .mpvOpts) else { return [] }
-    let lines = propsString.split(separator: "\n")
-    return lines.compactMap{ PlayerSaveState.optionFromString($0) }
-  }
-
-  fileprivate static func optionFromString(_ stringItem: Substring) -> (String, String) {
-    let splitted = stringItem.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: true)
-    let key = String(splitted[0])
-    let val = splitted.count > 1 ? String(splitted[1]) : ""
-    return (key, val)
-  }
-
-  fileprivate static func optionToString(_ option: (String, String)) -> String {
-    option.0 + "=" + option.1
-  }
-
-  fileprivate static func mpvOptsToString(_ mpvOpts: [(String, String)]) -> String {
-    mpvOpts.map{ optionToString($0) }.joined(separator: "\n")
+    return MPVOptPair.parseLines(from: propsString)
   }
 
   fileprivate func mpvFilterList(for name: PropName) -> [MPVFilter]? {
@@ -1588,8 +1571,8 @@ extension PlayerCore {
     let videoFiltersDisabled = PlayerSaveState.toCSV(mpvFilters: info.videoFiltersDisabled.values)
     props[PropName.videoFiltersDisabled.rawValue] = videoFiltersDisabled
 
-    let mpvOptsString = PlayerSaveState.mpvOptsToString(userOptions)
-    props[PropName.mpvOpts.rawValue] = mpvOptsString
+    let mpvUserOptsString = MPVOptPair.toUndashedLinesString(userOptions)
+    props[PropName.mpvOpts.rawValue] = mpvUserOptsString
 
     return props
   }

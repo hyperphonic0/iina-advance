@@ -363,15 +363,14 @@ extension MPVController {
 
   /// Send a bunch of options to mpv. This can include command-line arguments and/or entries from
   /// the Additional mpv options table, or may be empty.
-  func mpvSetOptions(from userOptionsList: [(String, String)]) {
-
-    // Set user-defined options.
-    guard !userOptionsList.isEmpty else {
+  func mpvSetOptions(from opList: [MPVOptPair]) {
+    guard !opList.isEmpty else {
       log.debug("No user-configured mpv options to set")
       return
     }
-    log.debug("Setting \(userOptionsList.count) user-configured mpv options")
-    for (opName, opValue) in userOptionsList {
+    log.debug("Setting \(opList.count) user-configured mpv options")
+    for op in opList.map(\.normalizedPair) {
+      let opName = op.key
       // Ignore these options if specified; they are hard-coded above & will result in visual bugs if overridden
       guard opName != MPVOption.Window.keepaspect,
             opName != MPVOption.Window.keepaspectWindow else {
@@ -379,12 +378,12 @@ extension MPVController {
         continue
       }
 
-      let status = setOptionString(opName, opValue)
+      let status = setOptionString(opName, op.val)
       if status < 0 {
         let errorString = errorString(status)
         // `Utility.showAlert` will deadlock if not called async because we are already running on the main thread
         DispatchQueue.main.async {
-          Utility.showAlert("extra_option.error", arguments: [opName, opValue, status, errorString])
+          Utility.showAlert("extra_option.error", arguments: [opName, op.val, status, errorString])
         }
       }
     }

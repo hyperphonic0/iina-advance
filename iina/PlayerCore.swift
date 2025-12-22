@@ -61,9 +61,8 @@ final class PlayerCore: NSObject {
   /// If `false`, has player functionality without use of a player window. Must be `true` to show a player window.
   var isInteractivePlayer = false
 
-  // TODO: refactor to use [MPVOptPair]
   /// After mpvInit, contains both the user options in Settings > Advanced, + commandLineArgs
-  var userOptions: [(String, String)]
+  var userOptions: [MPVOptPair]
 
   // At launch, wait until all windows are open before resuming video
   var pendingResumeWhenShowingWindow: Bool = false
@@ -307,7 +306,7 @@ final class PlayerCore: NSObject {
   }
 
   @MainActor
-  init(_ label: String, isDemoPlayer: Bool = false, userOptions: [(String, String)]) {
+  init(_ label: String, isDemoPlayer: Bool = false, userOptions: [MPVOptPair]) {
     let log = Logger.subsystem(forPlayerID: label)
     log.debug("PlayerCore init: starting")
     self.label = label
@@ -331,10 +330,9 @@ final class PlayerCore: NSObject {
   }
 
 
-  // TODO: refactor to use [MPVOptPair]
   /// If the user has enabled Advanced Settings and has added entries to the "Addtional mpv options" table,
   /// this returns them in a list.
-  static func getMpvAdditionalOptionsFromPrefs(_ log: any Logger.Subsystem) -> [(String, String)] {
+  static func getMpvAdditionalOptionsFromPrefs(_ log: any Logger.Subsystem) -> [MPVOptPair] {
     guard Preference.bool(for: .enableAdvancedSettings) else {
       log.verbose("Using empty user options ∵ enableAdvancedSettings pref is disabled")
       return []
@@ -348,29 +346,15 @@ final class PlayerCore: NSObject {
       log.error("Using empty user options ∵ failed to deserialize userOptions pref entry")
       return []
     }
-
-    return opts.compactMap { opt in
-      // If option has value, use that
-      if !opt.val.isEmpty {
-        return (opt.key, opt.val)
-      }
-
-      // check for special syntax for yes/no
-      if opt.key.hasPrefix("no-") {
-        let baseName = String(opt.key.dropFirst(3))
-        return (baseName, Constants.String.mpvNo)
-      } else {
-        return (opt.key, Constants.String.mpvYes)
-      }
-    }
+    return opts
   }
 
   /// Search mpv user options list for `pause` command; return last (i.e. the active) value. Useful when opening window and/or file.
   func getPauseFromUserOptions() -> Bool? {
-    for option in userOptions.reversed() {
-      if option.0 == MPVOption.PlaybackControl.pause {
+    for opt in userOptions.reversed() {
+      if opt.key == MPVOption.PlaybackControl.pause {
         // User option or cmd line option, if provided, takes priority over pauseOnOpen pref
-        let shouldPause = option.1.isEmpty || option.1 == Constants.String.mpvYes
+        let shouldPause = opt.val.isEmpty || opt.val == Constants.String.mpvYes
         log.debug("Found in user options: pause=\(shouldPause.yesno)")
         return shouldPause
       }
@@ -381,19 +365,11 @@ final class PlayerCore: NSObject {
   /// Searches the list of user configured `mpv` options and returns `true` if the given option is present.
   /// - Parameter option: Option to look for.
   /// - Returns: `true` if the `mpv` option is found, `false` otherwise.
-  func isPresentInUserOptions(_ option: String) -> Bool {
+  func isPresentInUserOptions(_ optionName: String) -> Bool {
     let userOptions = userOptions
-    for userOption in userOptions {
-      if userOption.0 == option {
+    for op in userOptions {
+      if op.optionName == optionName {
         return true
-      }
-
-      if userOption.0.prefix(3) == "no-" {
-        // Try removing the "--no-" prefix if present to match against the option's true name
-        let optionName = userOption.0.replacingOccurrences(of: "no-", with: "")
-        if optionName == option {
-          return true
-        }
       }
     }
     return false
@@ -406,8 +382,8 @@ final class PlayerCore: NSObject {
     log.verbose("Resetting user options to defaults: reusingWnd=\(reuseExistingWindow.yn)")
 
     // First reset any previously set options to their default values
-    for (optName, _) in userOptions {
-      mpv.resetToDefault(optName)
+    for option in userOptions {
+      mpv.resetToDefault(option.optionName)
     }
 
     // Reset window vars to their defaults too:
@@ -500,6 +476,7 @@ final class PlayerCore: NSObject {
     // as we would during the initial window load:
     userOptions = PlayerCore.getMpvAdditionalOptionsFromPrefs(log)
     log.verbose("Found \(userOptions.count) additional mpv options to set")
+    
     mpv.mpvSetOptionsFromPrefs()
     mpv.mpvSetOptions(from: userOptions)
   }

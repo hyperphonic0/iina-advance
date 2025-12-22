@@ -169,7 +169,7 @@ final class PlayerManager {
       guard !playerExists(withLabel: priorLabel) else {
         Logger.fatal("Cannot create new PlayerCore: a player already exists with label \(priorLabel.quoted)")
       }
-      let userOptions = priorState.mpvOpts()
+      let userOptions = priorState.mpvUserOpts()
       player = PlayerCore(priorLabel, userOptions: userOptions)
     } else {
       // Creating a new PlayerCore for this launch. Need to make sure we give it a unique ID.

@@ -85,7 +85,7 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
           let subtypesForExt = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: requiredSupertype)
 
           for uttype in subtypesForExt {
-            Logger.log.verbose("    \(uttype.identifier) ⊂ \(uttype.supertypes.map{$0.identifier.deletingPrefix("public.")})")
+            Logger.log.verbose("    \(uttype.identifier) ⊂ \(uttype.supertypes.map{$0.identifier.droppingPrefix("public.")})")
             utiTargetSet.insert(uttype.identifier)
           }
         } else {

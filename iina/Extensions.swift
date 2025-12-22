@@ -941,7 +941,7 @@ extension String {
     return rangeOfCharacter(from: .whitespacesAndNewlines) != nil
   }
 
-  func deletingPrefix(_ prefix: String) -> String {
+  func droppingPrefix(_ prefix: String) -> String {
     guard self.hasPrefix(prefix) else { return self }
     return String(self.dropFirst(prefix.count))
   }

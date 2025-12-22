@@ -222,9 +222,9 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   // MARK: - Options Table CRUD
 
   func doAtomicTableUpdate(_ tableUIChange: TableUIChange, _ allItemsNew: [MPVOptPair]) {
-    optionsList = allItemsNew           // update cached data
-    MPVOptPair.writeToPrefs(optionsList)       // update saved data
-    optionsTableView.post(tableUIChange)// update UI
+    optionsList = allItemsNew             // update cached data
+    MPVOptPair.writeToPrefs(optionsList)  // update saved data
+    optionsTableView.post(tableUIChange)  // update UI
   }
 
   func insertOptionRows(_ newItems: [MPVOptPair], at targetRowIndex: Int? = nil, thenStartEdit: Bool = false) {

@@ -6,8 +6,7 @@
 //
 
 struct CommandLineState: Sendable {
-  // TODO: refactor to use [MPVOptPair]
-  let mpvArguments: [(String, String)]
+  let mpvArguments: [MPVOptPair]
   let filenames: [String]
 
   let isStdin: Bool
@@ -19,7 +18,7 @@ struct CommandLineState: Sendable {
   init?(_ tokens: ArraySlice<String>) {
     guard !tokens.isEmpty else { return nil }
 
-    var mpvArguments: [(String, String)] = []
+    var mpvArguments: [MPVOptPair] = []
     var filenames: [String] = []
     var isStdin = false
     var openSeparateWindows: Bool? = nil
@@ -57,16 +56,16 @@ struct CommandLineState: Sendable {
       default:
         if token.hasPrefix("--") {
           // Assume all other double-dashed tokens are mpv args.
-          let (argName, argValue) = CommandLineState.parseDoubleDashedToken(token)
-          if argName == MPVOption.PlaybackControl.shuffle {
-            if argValue == Constants.String.mpvYes {
+          let opt = CommandLineState.parseDoubleDashedToken(token)
+          if opt.optionName == MPVOption.PlaybackControl.shuffle {
+            if opt.val == Constants.String.mpvYes {
               needsShufflePlaylist = true
-            } else if argValue == Constants.String.mpvNo {
+            } else if opt.val == Constants.String.mpvNo {
               needsShufflePlaylist = false
             }
           }
           // Also add args, in case user is using 'no' to override a 'yes' from user options or other source
-          mpvArguments.append((argName, argValue))
+          mpvArguments.append(opt)
         } else if token.hasPrefix("-") {
           // MacOS runtime arg names are prefixed with a single dash & a space to separate name from value.
           /// Example: `-NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints YES`
@@ -95,24 +94,11 @@ struct CommandLineState: Sendable {
   }
 
   // mpv args
-  private static func parseDoubleDashedToken(_ token: String) -> (String, String) {
-    let splitted = token.dropFirst(2).split(separator: "=", maxSplits: 1)
-    var name = String(splitted[0])
-
-    if name.hasPrefix("mpv-") {
-      name = String(name.dropFirst(4))
-    }
-
-    if splitted.count <= 1 {
-      if name.hasPrefix("no-") {
-        let optName = String(name.dropFirst(3))
-        return (optName, Constants.String.mpvNo)
-      } else {
-        return (name, Constants.String.mpvYes)
-      }
-    } else {
-      return (name, String(splitted[1]))
-    }
+  private static func parseDoubleDashedToken(_ token: String) -> MPVOptPair {
+    // Strip double-dash. Also strip optional legacy prefix "mpv-"
+    let strippedToken = token.droppingPrefix("--").droppingPrefix("mpv-")
+    let rawOpt = MPVOptPair.parseLine(strippedToken)
+    return rawOpt.normalizedPair
   }
 
   func applySpecialModeToLastPlayer(_ lastPlayer: PlayerCore) {
