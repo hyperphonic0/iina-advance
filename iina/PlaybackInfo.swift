@@ -110,13 +110,19 @@ class PlaybackInfo {
 
   var audioFilters: [MPVFilter] = []
 
-  // time
   var audioDelay: Double = 0
   var subDelay: Double = 0
   var sub2Delay: Double = 0
   var subScale: Double = 0
   var subPos: Double = 0
   var sub2Pos: Double = 0
+  var subEncoding: String?
+  var subFont: String?
+  var subFontSize: Int = 38
+  var subColor: String? = nil
+  var subBgColor: String? = nil
+  var subBorderColor: String? = nil
+  var subBorderSize: Double = 1.65
 
   var abLoopStatus: LoopStatus = .cleared
   var abLoopA: Double = 0
@@ -340,8 +346,6 @@ class PlaybackInfo {
       }
     }
   }
-
-  var subEncoding: String?
 
   // Playlist metadata:
   var currentVideosInfo: [FileInfo] = []

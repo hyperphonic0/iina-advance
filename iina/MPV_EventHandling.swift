@@ -454,14 +454,50 @@ extension MPVController {
       guard let subPos = property.doubleData(log) else { break }
       player.subPosChanged(subPos)
 
-    case MPVOption.Subtitles.subColor,
-      MPVOption.Subtitles.subFont,
-      MPVOption.Subtitles.subFontSize,
-      MPVOption.Subtitles.subBold,
-      MPVOption.Subtitles.subBorderColor,
-      MPVOption.Subtitles.subBorderSize,
-      MPVOption.Subtitles.subBackColor:
+    case MPVOption.Subtitles.subFont:
+      guard let subFont = getString(MPVOption.Subtitles.subFont) else { break }
+      player.log.verbose("Δ mpv prop: 'sub-font' = \(subFont.quoted)")
+      player.info.subFont = subFont
+      player.saveState()
+      player.setQuickSettingsViewNeedsUpdate()
 
+    case MPVOption.Subtitles.subFontSize:
+      let subFontSize = getInt(MPVOption.Subtitles.subFontSize)
+      guard subFontSize > 0 else { break }
+      player.log.verbose("Δ mpv prop: 'sub-font-size' = \(subFontSize)")
+      player.info.subFontSize = subFontSize
+      player.saveState()
+      player.setQuickSettingsViewNeedsUpdate()
+
+    case MPVOption.Subtitles.subColor:
+      guard let subColor = getString(MPVOption.Subtitles.subColor) else { break }
+      player.log.verbose("Δ mpv prop: 'sub-color' = \(subColor)")
+      player.info.subColor = subColor
+      player.saveState()
+      player.setQuickSettingsViewNeedsUpdate()
+
+    case MPVOption.Subtitles.subBackColor:
+      guard let subBackColor = getString(MPVOption.Subtitles.subBackColor) else { break }
+      player.log.verbose("Δ mpv prop: 'sub-back-color' = \(subBackColor)")
+      player.info.subBgColor = subBackColor
+      player.saveState()
+      player.setQuickSettingsViewNeedsUpdate()
+
+    case MPVOption.Subtitles.subBorderColor:
+      guard let subBorderColor = getString(MPVOption.Subtitles.subBorderColor) else { break }
+      player.log.verbose("Δ mpv prop: 'sub-border-color' = \(subBorderColor)")
+      player.info.subBorderColor = subBorderColor
+      player.saveState()
+      player.setQuickSettingsViewNeedsUpdate()
+
+    case MPVOption.Subtitles.subBorderSize:
+      let subBorderSize = getDouble(MPVOption.Subtitles.subBorderSize)
+      player.log.verbose("Δ mpv prop: 'sub-border-size' = \(subBorderSize)")
+      player.info.subBorderSize = subBorderSize
+      player.saveState()
+      player.setQuickSettingsViewNeedsUpdate()
+
+    case MPVOption.Subtitles.subBold:
       player.saveState()
       player.setQuickSettingsViewNeedsUpdate()
 

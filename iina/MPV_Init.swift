@@ -60,7 +60,7 @@ extension MPVController {
     // - Advanced
 
     // Don't give Demo player its own log file
-    // FIXME: allow hot toggling of log
+    // TODO: allow hot toggling of log
     if Logger.enabled {
       let path = Logger.logDirectory.appendingPathComponent("mpv-\(player.label).log").path
       player.log.debug("Path of mpv log: \(path.pii.quoted)")
@@ -213,64 +213,86 @@ extension MPVController {
                     transformer: subOverrideHandler)
     }
 
-    // FIXME: persist these to player saved state
-    setUserOption(PK.subTextFont, type: .string, forName: MPVOption.Subtitles.subFont,
-                  verboseIfDefault: true)
-    setUserOption(PK.subTextSize, type: .float, forName: MPVOption.Subtitles.subFontSize,
-                  verboseIfDefault: true)
-
-    setUserOption(PK.subTextColorString, type: .color, forName: MPVOption.Subtitles.subColor,
-                  verboseIfDefault: true)
-    setUserOption(PK.subBgColorString, type: .color, forName: MPVOption.Subtitles.subBackColor,
-                  verboseIfDefault: true)
-
-    setUserOption(PK.subBold, type: .bool, forName: MPVOption.Subtitles.subBold,
-                  verboseIfDefault: true)
-    setUserOption(PK.subItalic, type: .bool, forName: MPVOption.Subtitles.subItalic,
-                  verboseIfDefault: true)
-
-    setUserOption(PK.subBlur, type: .float, forName: MPVOption.Subtitles.subBlur,
-                  verboseIfDefault: true)
-    setUserOption(PK.subSpacing, type: .float, forName: MPVOption.Subtitles.subSpacing,
-                  verboseIfDefault: true)
-
-    setUserOption(PK.subBorderSize, type: .float, forName: MPVOption.Subtitles.subBorderSize,
-                  verboseIfDefault: true)
-    setUserOption(PK.subBorderColorString, type: .color, forName: MPVOption.Subtitles.subBorderColor,
-                  verboseIfDefault: true)
-
-    setUserOption(PK.subShadowSize, type: .float, forName: MPVOption.Subtitles.subShadowOffset,
-                  verboseIfDefault: true)
-    setUserOption(PK.subShadowColorString, type: .color, forName: MPVOption.Subtitles.subShadowColor,
-                  verboseIfDefault: true)
-
-    setUserOption(PK.subAlignX, type: .other, forName: MPVOption.Subtitles.subAlignX,
-                  verboseIfDefault: true) { key in
-      let v = Preference.integer(for: key)
-      return Preference.SubAlign(rawValue: v)?.stringForX
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subFont) {
+      setUserOption(PK.subTextFont, type: .string, forName: MPVOption.Subtitles.subFont, verboseIfDefault: true)
+    }
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subFontSize) {
+      setUserOption(PK.subTextSize, type: .float, forName: MPVOption.Subtitles.subFontSize, verboseIfDefault: true)
     }
 
-    setUserOption(PK.subAlignY, type: .other, forName: MPVOption.Subtitles.subAlignY,
-                  verboseIfDefault: true) { key in
-      let v = Preference.integer(for: key)
-      return Preference.SubAlign(rawValue: v)?.stringForY
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subColor) {
+      setUserOption(PK.subTextColorString, type: .color, forName: MPVOption.Subtitles.subColor, verboseIfDefault: true)
+    }
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subBackColor) {
+      setUserOption(PK.subBgColorString, type: .color, forName: MPVOption.Subtitles.subBackColor, verboseIfDefault: true)
     }
 
-    setUserOption(PK.subMarginX, type: .int, forName: MPVOption.Subtitles.subMarginX,
-                  verboseIfDefault: true)
-    setUserOption(PK.subMarginY, type: .int, forName: MPVOption.Subtitles.subMarginY,
-                  verboseIfDefault: true)
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subAssOverride) {
+      setUserOption(PK.subBold, type: .bool, forName: MPVOption.Subtitles.subBold, verboseIfDefault: true)
+    }
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subItalic) {
+      setUserOption(PK.subItalic, type: .bool, forName: MPVOption.Subtitles.subItalic, verboseIfDefault: true)
+    }
 
-    setUserOption(PK.subPos, type: .float, forName: MPVOption.Subtitles.subPos, verboseIfDefault: true)
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subBlur) {
+      setUserOption(PK.subBlur, type: .float, forName: MPVOption.Subtitles.subBlur, verboseIfDefault: true)
+    }
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subSpacing) {
+      setUserOption(PK.subSpacing, type: .float, forName: MPVOption.Subtitles.subSpacing, verboseIfDefault: true)
+    }
+
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subBorderSize) {
+      setUserOption(PK.subBorderSize, type: .float, forName: MPVOption.Subtitles.subBorderSize, verboseIfDefault: true)
+    }
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subBorderColor) {
+      setUserOption(PK.subBorderColorString, type: .color, forName: MPVOption.Subtitles.subBorderColor, verboseIfDefault: true)
+    }
+
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subShadowOffset) {
+      setUserOption(PK.subShadowSize, type: .float, forName: MPVOption.Subtitles.subShadowOffset, verboseIfDefault: true)
+    }
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subShadowColor) {
+      setUserOption(PK.subShadowColorString, type: .color, forName: MPVOption.Subtitles.subShadowColor,
+                    verboseIfDefault: true)
+    }
+
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subAlignX) {
+      setUserOption(PK.subAlignX, type: .other, forName: MPVOption.Subtitles.subAlignX, verboseIfDefault: true) { key in
+        let v = Preference.integer(for: key)
+        return Preference.SubAlign(rawValue: v)?.stringForX
+      }
+    }
+
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subAlignY) {
+      setUserOption(PK.subAlignY, type: .other, forName: MPVOption.Subtitles.subAlignY, verboseIfDefault: true) { key in
+        let v = Preference.integer(for: key)
+        return Preference.SubAlign(rawValue: v)?.stringForY
+      }
+    }
+
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subMarginX) {
+      setUserOption(PK.subMarginX, type: .int, forName: MPVOption.Subtitles.subMarginX, verboseIfDefault: true)
+    }
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subMarginY) {
+      setUserOption(PK.subMarginY, type: .int, forName: MPVOption.Subtitles.subMarginY, verboseIfDefault: true)
+    }
+
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subPos) {
+      setUserOption(PK.subPos, type: .float, forName: MPVOption.Subtitles.subPos, verboseIfDefault: true)
+    }
 
     if !player.isPresentInUserOptions(MPVOption.TrackSelection.slang) {
       setUserOption(PK.subLang, type: .string, forName: MPVOption.TrackSelection.slang, level: .verbose)
     }
 
-    setUserOption(PK.displayInLetterBox, type: .bool, forName: MPVOption.Subtitles.subUseMargins,
-                  verboseIfDefault: true)
-    setUserOption(PK.displayInLetterBox, type: .bool, forName: MPVOption.Subtitles.subAssForceMargins,
-                  verboseIfDefault: true)
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subUseMargins) {
+      setUserOption(PK.displayInLetterBox, type: .bool, forName: MPVOption.Subtitles.subUseMargins,
+                    verboseIfDefault: true)
+    }
+    if !player.isPresentInUserOptions(MPVOption.Subtitles.subAssForceMargins) {
+      setUserOption(PK.displayInLetterBox, type: .bool, forName: MPVOption.Subtitles.subAssForceMargins,
+                    verboseIfDefault: true)
+    }
 
     if !player.isPresentInUserOptions(MPVOption.Subtitles.subScaleByWindow) {
       setUserOption(PK.subScaleWithWindow, type: .bool, forName: MPVOption.Subtitles.subScaleByWindow,

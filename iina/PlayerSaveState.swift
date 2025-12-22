@@ -98,6 +98,14 @@ struct PlayerSaveState: CustomStringConvertible {
     case sub2Pos = "sub2Pos"            /// `MPVOption.Subtitles.secondarySubPos`
     case subScale = "subScale"          /// `MPVOption.Subtitles.subScale`
 
+    // More sub properties added in v1.4
+    case subFont = "subFont"               /// `MPVOption.Subtitles.subFont`
+    case subFontSize = "subFontSize"       /// `MPVOption.Subtitles.subFontSize`
+    case subColor = "subColor"             /// `MPVOption.Subtitles.subColor`
+    case subBgColor = "subBgColor"         /// `MPVOption.Subtitles.subBackColor`
+    case subBorderColor = "subBorderColor" /// `MPVOption.Subtitles.subBorderColor`
+    case subBorderSize = "subBorderSize"   /// `MPVOption.Subtitles.subBorderSize`
+
     case loopPlaylist = "loopPlaylist"  /// `MPVOption.PlaybackControl.loopPlaylist`
     case loopFile = "loopFile"          /// `MPVOption.PlaybackControl.loopFile`
 
@@ -747,6 +755,7 @@ struct PlayerSaveState: CustomStringConvertible {
     if let audioDelay = double(for: .audioDelay) {
       mpv.setDouble(MPVOption.Audio.audioDelay, audioDelay)
     }
+
     if let subDelay = double(for: .subDelay) {
       mpv.setDouble(MPVOption.Subtitles.subDelay, subDelay)
     }
@@ -768,6 +777,26 @@ struct PlayerSaveState: CustomStringConvertible {
     if let sub2Pos = double(for: .sub2Pos) {
       mpv.setDouble(MPVOption.Subtitles.secondarySubPos, sub2Pos)
     }
+
+    if let subFont = string(for: .subFont) {
+      mpv.setString(MPVOption.Subtitles.subFont, subFont)
+    }
+    if let subFontSize = int(for: .subFontSize) {
+      mpv.setInt(MPVOption.Subtitles.subFontSize, subFontSize)
+    }
+    if let subColor = string(for: .subColor) {
+      mpv.setString(MPVOption.Subtitles.subColor, subColor)
+    }
+    if let subBgColor = string(for: .subBgColor) {
+      mpv.setString(MPVOption.Subtitles.subBackColor, subBgColor)
+    }
+    if let subBorderColor = string(for: .subBorderColor) {
+      mpv.setString(MPVOption.Subtitles.subBorderColor, subBorderColor)
+    }
+    if let subBorderSize = double(for: .subBorderSize) {
+      mpv.setDouble(MPVOption.Subtitles.subBorderSize, subBorderSize)
+    }
+
     if let loopPlaylist = string(for: .loopPlaylist) {
       player.info.loopPlaylist = loopPlaylist
       mpv.setString(MPVOption.PlaybackControl.loopPlaylist, loopPlaylist)
@@ -1544,6 +1573,13 @@ extension PlayerCore {
 
     props[PropName.isSubVisible.rawValue] = info.isSubVisible.yn
     props[PropName.isSub2Visible.rawValue] = info.isSecondSubVisible.yn
+
+    props[PropName.subFont.rawValue] = info.subFont
+    props[PropName.subFontSize.rawValue] = String(info.subFontSize)
+    props[PropName.subColor.rawValue] = info.subColor
+    props[PropName.subBgColor.rawValue] = info.subBgColor
+    props[PropName.subBorderColor.rawValue] = info.subBorderColor
+    props[PropName.subBorderSize.rawValue] = info.subBorderSize.stringMaxFrac2
 
     let abLoopA: Double = info.abLoopA
     if abLoopA != 0 {
