@@ -85,17 +85,13 @@ final class OSDState {
   /// When this is true, it implies that `userInteractiveAccessory` should be non-nil.
   /// In upstream IINA, this field is called `isShowingPersistentOSD`, which is
   /// misleading because some are not persistent (such as screenshot OSD).
-  var isShowingUserInteractiveOSD = false
+  var isShowingUserInteractiveOSD: Bool { userInteractiveAccessory != nil }
 
   /// Need to keep a reference to NSViewController here in order for its Objective-C selectors to work.
   var userInteractiveAccessory: NSViewController? = nil {
     willSet {
       guard newValue != userInteractiveAccessory else { return }
-      if let newValue {
-        log.verbose("Updating osd.userInteractiveAccessory to: \(newValue)")
-      } else {
-        log.verbose("Updating osd.userInteractiveAccessory to: nil")
-      }
+      log.verbose("Updating osd.userInteractiveAccessory to: \(newValue?.description ?? "nil")")
     }
   }
 
@@ -1000,7 +996,6 @@ extension PlayerWindowController {
     if let accessoryViewController {  // e.g., ScreenshootOSDView
       let accessoryView = accessoryViewController.view
       osd.userInteractiveAccessory = accessoryViewController
-      osd.isShowingUserInteractiveOSD = true
 
       osd.osdVStackView.addView(accessoryView, in: .bottom)
     }
@@ -1047,7 +1042,6 @@ extension PlayerWindowController {
       if osd.animationState == .willHide {
         osd.animationState = .hidden
         osd.osdView.isHidden = true
-        osd.isShowingUserInteractiveOSD = false
         osd.userInteractiveAccessory = nil
         for subview in osd.osdVStackView.views(in: .bottom) {
           osd.osdVStackView.removeView(subview)
