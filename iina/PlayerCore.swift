@@ -2608,7 +2608,7 @@ final class PlayerCore: NSObject {
     reloadAllSubs()
   }
 
-  func sidChanged(to sid: Int? = nil, silent: Bool = false) {
+  func sidChanged(to sid: Int? = nil, silent: Bool = false, reloadTracksIfNotFound: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !pwc.sessionState.isRestoring, !isStopping else { return }
     let sid = sid ?? Int(mpv.getInt(MPVOption.TrackSelection.sid))
@@ -2617,9 +2617,16 @@ final class PlayerCore: NSObject {
       return
     }
     guard sid != info.sid else { return }
+    if reloadTracksIfNotFound, sid != 0, info.track(.sub, id: sid) == nil {
+      // This can happen after loading an external sub. Try (only once) to get its track info
+      log.verbose("Track not found for sid \(sid); will reload tracks")
+      // This will call back to this function afterwards
+      _ = reloadTrackInfo()
+      return
+    }
+    log.verbose("Δ mpv prop: `sid`=\(sid)")
     info.sid = sid
 
-    log.verbose("Δ mpv prop: `sid`=\(sid)")
     if !silent {
       sendOSD(.track(info.currentTrack(.sub) ?? .noneSubTrack))
     }
@@ -2628,7 +2635,7 @@ final class PlayerCore: NSObject {
     saveState()
   }
 
-  func secondarySidChanged(to ssid: Int? =  nil, silent: Bool = false) {
+  func secondarySidChanged(to ssid: Int? =  nil, silent: Bool = false, reloadTracksIfNotFound: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isRestoring, !isStopping else { return }
     let ssid = ssid ?? Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
@@ -2637,9 +2644,16 @@ final class PlayerCore: NSObject {
       return
     }
     guard ssid != info.secondSid else { return }
+    if reloadTracksIfNotFound, ssid != 0, info.track(.secondSub, id: ssid) == nil {
+      // This can happen after loading an external sub. Try (only once) to get its track info
+      log.verbose("Track not found for ssid \(ssid); will reload tracks")
+      // This will call back to this function afterwards
+      _ = reloadTrackInfo()
+      return
+    }
+    log.verbose("Δ mpv prop: `ssid` = \(ssid)")
     info.secondSid = ssid
 
-    log.verbose("Δ mpv prop: `ssid` = \(ssid)")
     if !silent {
       sendOSD(.track(info.currentTrack(.secondSub) ?? .noneSecondSubTrack))
     }

@@ -340,12 +340,12 @@ extension MPVController {
     case MPVOption.TrackSelection.sid:
       let sid = Int(getInt(MPVOption.TrackSelection.sid))
       player.log.verbose("Δ mpv prop: 'sid' ≔ \(sid)")
-      player.sidChanged(to: sid)
+      player.sidChanged(to: sid, reloadTracksIfNotFound: true)
 
     case MPVOption.Subtitles.secondarySid:
       let ssid = Int(getInt(MPVOption.Subtitles.secondarySid))
       player.log.verbose("Δ mpv prop: 'secondary-sid' ≔ \(ssid)")
-      player.secondarySidChanged(to: ssid)
+      player.secondarySidChanged(to: ssid, reloadTracksIfNotFound: true)
 
     case MPVOption.PlaybackControl.pause:
       guard let paused = property.boolData(log) else { break }
