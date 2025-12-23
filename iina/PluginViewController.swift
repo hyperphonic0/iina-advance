@@ -56,6 +56,11 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
     }
   }
 
+  override func viewWillAppear() {
+    player.log.verbose("Plugin sidebar will appear")
+    updatePluginTabs()
+  }
+
   func setVerticalConstraints(downshift: CGFloat, tabHeight: CGFloat) {
     // tabHeight is not used by this class. It uses its own fixed tab height
     if self.downshift != downshift {
