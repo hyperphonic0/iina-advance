@@ -113,7 +113,7 @@ class JavascriptPlugin: NSObject {
   static private func loadPlugins() -> [JavascriptPlugin] {
     guard AppDelegate.iinaPluginSystemEnabled else { return [] }
 
-    Logger.log("Reading plugins from directory \"\(Utility.pluginsURL)\"")
+    Logger.log("Reading plugins from directory \(Utility.pluginsURL.path.pii.quoted)")
     guard let contents = try?
       FileManager.default.contentsOfDirectory(at: Utility.pluginsURL,
                                               includingPropertiesForKeys: [.isDirectoryKey],
