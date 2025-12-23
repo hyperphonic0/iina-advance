@@ -10,7 +10,7 @@
 fileprivate let maxAllowedPastedOptions = 1000
 
 /// mpv user option, as used in the "Additional mpv options" table (in Settings… > Advanced).
-struct MPVOptPair {
+struct MPVOptPair: Sendable, CustomStringConvertible {
   /// Should match a valid mpv option or property name, or a name with a `no-` prefix added.
   /// Should not contain leading dashes.
   let key: String
@@ -37,6 +37,8 @@ struct MPVOptPair {
   }
 
   // MARK: String ser/de
+
+  var description: String { undashedString }
 
   var undashedString: String {
     if val.isEmpty {

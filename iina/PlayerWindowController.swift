@@ -641,6 +641,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     super.init(window: playerWindow)
     playerWindow.delegate = self
+    // Hide window until ready to show (when `windowIsReadyToShow` notification is sent, `showWindow()` will be triggered)
+    playerWindow.orderOut(self)
     osd.hideOSDTimer.action = { self.hideOSD() }
     log.verbose("PlayerWindowController init: done")
   }

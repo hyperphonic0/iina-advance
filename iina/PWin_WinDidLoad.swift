@@ -11,10 +11,14 @@ import Foundation
 extension PlayerWindowController {
 
   /// Called when window is initially loaded. Add all subviews here.
-  override func windowDidLoad() {
+  ///
+  /// Can be called more than once, but will only execute if `loaded` is false. When it finishes, it will set `loaded` to true.
+  ///
+  /// This was formerly `windowDidLoad`, but we no longer load the window via XIB, so we are free to control
+  /// the loading process ourselves.
+  func finishLoading() {
     guard !loaded else { return }
     log.verbose("[Load] PWin_WinDidLoad starting")
-    super.windowDidLoad()
 
     guard let window else { return }
     guard let contentView = window.contentView else { return }
@@ -76,10 +80,8 @@ extension PlayerWindowController {
     pluginView.view.idString = "PluginView"
     quickSettingView.pwc = self
 
-    /// Use an animation task to init views, to hopefully prevent partial/redundant draws.
-    /// NOTE: this will likely execute *after* `_openWindow()`
+    /// Use an animation task to init views in a single CATransaction, which should prevent partial/redundant draws.
     animationPipeline.submitInstantTask{ [self] in
-
       window.preservesContentDuringLiveResize = false
 
       let oscGeo = currentLayout.controlBarGeo

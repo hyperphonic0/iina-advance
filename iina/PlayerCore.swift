@@ -328,23 +328,31 @@ final class PlayerCore: NSObject {
   }
 
   @MainActor
-  convenience init(_ label: String, isDemoPlayer: Bool = false, userOptions: [MPVOptPair]) {
-    self.init(label, isDemoPlayer: isDemoPlayer)
+  convenience init(_ label: String, userOptions: [MPVOptPair]) {
+    self.init(label, isDemoPlayer: false)
     self.userOptions = userOptions
     pwc = PlayerWindowController(playerCore: self)
     log.verbose("PlayerCore init (new): done")
   }
 
   @MainActor
-  convenience init(_ label: String, isDemoPlayer: Bool = false, restoringFrom priorState: PlayerSaveState) {
-    self.init(label, isDemoPlayer: isDemoPlayer)
+  convenience init(_ label: String, restoringFrom priorState: PlayerSaveState) {
+    self.init(label, isDemoPlayer: false)
     self.userOptions = priorState.mpvUserOpts()
+
     pwc = PlayerWindowController(playerCore: self, geoSet: priorState.geoSet, initialLayout: priorState.layoutState)
     assert(pwc.sessionState.isNone, "Invalid sessionState for restore: \(pwc.sessionState)")
     pwc.sessionState = .restoring(playerState: priorState)
     log.verbose("PlayerCore init (restore): done")
   }
 
+  /// Demo player has `pwc == nil`.
+  @MainActor
+  static func buildDemoPlayer() -> PlayerCore {
+    let player = PlayerCore(Constants.String.demoPlayerLabel, isDemoPlayer: true)
+    player.log.verbose("PlayerCore init (demo): done")
+    return player
+  }
 
   /// If the user has enabled Advanced Settings and has added entries to the "Addtional mpv options" table,
   /// this returns them in a list.
@@ -740,17 +748,14 @@ final class PlayerCore: NSObject {
     self.isInteractivePlayer = isInteractivePlayer
     log.verbose("Player start: interactive=\(isInteractivePlayer.yn)")
 
-    if isInteractivePlayer {
+    if isInteractivePlayer, let pwc {
       // `windowDidLoad` is a legacy method, a leftover from when XIB was used.
       // Need to call this explicitly now. Maybe we can refactor at some point.
       // For non-interactive players, we still have too many dependencies on PlayerWindowController to avoid the need to
       // instantiate it, but we can at least leave it "unloaded" and not suffer too much waste because much of the code
       // already checks whether `!pwc.loaded` and gracefully handles it.
-      pwc.windowDidLoad()
+      pwc.finishLoading()
     }
-    // Hide the newly created window until ready to show (when `windowIsReadyToShow` notification is sent,
-    // triggering `showWindow()`)
-    pwc.window?.orderOut(self)
 
     if videoView.useOpenGL {
       startMPV()
@@ -2083,7 +2088,7 @@ final class PlayerCore: NSObject {
       mpv.setFlag(MPVOption.PlaybackControl.pause, shouldPause)
 
       if !shouldPause {
-        // Normally the display link is started when MainWindowController.windowDidLoad calls initVideo.
+        // Normally the display link is started when finishLoading() calls initVideo.
         // However if this player is being reused then the window will have already been loaded and
         // windowDidLoad will not be called. If playback is not paused make sure the display link is
         // active.

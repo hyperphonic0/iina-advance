@@ -267,9 +267,9 @@ struct PlayerSaveState: CustomStringConvertible {
       }
     })
 
-    let propsString = json(from: filteredProps) ?? "<ERROR>"
+    let propsJSON = json(from: filteredProps) ?? "<ERROR>"
 
-    return "PlayerSaveState(url=\(urlPath.pii.quoted) props=[\(propsString)])"
+    return "PlayerSaveState{url=\(urlPath.pii.quoted) props=\(propsJSON))"
   }
 
   func json(from object:Any) -> String? {

@@ -143,7 +143,7 @@ final class PlayerManager {
       player = demoPlayer
     } else {
       Logger.log.debug("Creating demo player")
-      player = PlayerCore(Constants.String.demoPlayerLabel, isDemoPlayer: true, userOptions: [])
+      player = PlayerCore.buildDemoPlayer()
       demoPlayer = player
     }
     player.startPlayer()
