@@ -148,6 +148,7 @@ extension PlayerWindowController {
     let possibleSubviews = [viewportView.topSpacer, viewportView.bottomSpacer, viewportView.leadingSpacer, viewportView.trailingSpacer,
                             pip.overlayView,
                             videoView,
+                            pluginOverlayViewContainer,
                             defaultAlbumArtView,
                             additionalInfoView,
                             bufferIndicatorView,

@@ -577,14 +577,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     return [leadingSidebarView, trailingSidebarView, topBarView, currentControlBar, subPopoverView]
   }
 
-  lazy var pluginOverlayViewContainer: NSView! = {
-    guard let window = window, let cv = window.contentView else { return nil }
-    let view = NSView(frame: .zero)
-    view.translatesAutoresizingMaskIntoConstraints = false
-    cv.addSubview(view, positioned: .above, relativeTo: viewportView)
-    Utility.quickConstraints(["H:|[v]|", "V:|[v]|"], ["v": view])
-    return view
-  }()
+  let pluginOverlayViewContainer = NSView(frame: .zero)
 
   lazy var subPopoverView = playlistView.subPopover?.contentViewController?.view
 

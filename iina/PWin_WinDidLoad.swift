@@ -92,6 +92,7 @@ extension PlayerWindowController {
       initPlaySliderAndTimeLabelsView()
       initVolumeView(using: oscGeo)
       initSidebars()
+      initPluginOverlayViewContainer()
       initExitMusicModeButton(in: contentView)
       initBufferIndicatorView()
       initHdrWorkaroundView(in: contentView)
@@ -336,6 +337,11 @@ extension PlayerWindowController {
     trailingSidebarLeadingBorder_WidthConstraint.identifier = .init("TrailingSidebarLeadingBorder-WidthConstraint")
     trailingSidebarLeadingBorder_WidthConstraint.priority = .defaultHigh
     trailingSidebarLeadingBorder_WidthConstraint.isActive = true
+  }
+
+  private func initPluginOverlayViewContainer() {
+    pluginOverlayViewContainer.translatesAutoresizingMaskIntoConstraints = false
+    viewportView.addSubviewAndConstraints(pluginOverlayViewContainer, top: 0, bottom: 0, leading: 0, trailing: 0)
   }
 
   private func addShadow(to view: NSView) {

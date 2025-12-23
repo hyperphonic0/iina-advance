@@ -41,11 +41,11 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     view.idString = "PluginView"
-    pluginContentContainerView.identifier = .init("PluginContentContainerView")
+    pluginContentContainerView.idString = "PluginContentContainerView"
     pluginContentContainerView.translatesAutoresizingMaskIntoConstraints = false
 
-    pluginTabsViewHeightConstraint.identifier = .init("PluginTabBtns-HeightConstraint")
-    buttonTopConstraint.identifier = .init("PluginTabBtns-VertDownshift-Constraint")
+    pluginTabsViewHeightConstraint.identifier = "PluginTabBtns-HeightConstraint"
+    buttonTopConstraint.identifier = "PluginTabBtns-VertDownshift-Constraint"
 
     initPluginTabs()
     if pendingSwitchRequest == nil {
@@ -153,6 +153,7 @@ class PluginViewController: NSViewController, SidebarTabGroupViewController {
            "switchToTab should not be called when plugins TabGroup is not shown")
 
     if tabID == Constants.Sidebar.anyPluginID {
+      player.log.verbose("No plugin selected: showing no-plugins label")
       pluginContentContainerView.subviews.forEach { $0.removeFromSuperview() }
       addNoPluginsLabel()
     } else {
