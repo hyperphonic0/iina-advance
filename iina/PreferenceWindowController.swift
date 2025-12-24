@@ -396,7 +396,7 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
       // Use padding so that content aligns with title bar text
       vc.view.addConstraintsToFillSuperview(top: detailView.safeAreaInsets.top, bottom: 20, leading: 20, trailing: 20)
     } else {
-      vc.view.addConstraintsToFillSuperview(top: 0, bottom: 28, leading: 28, trailing: 28)
+      vc.view.addConstraintsToFillSuperview(top: 28, bottom: 28, leading: 28, trailing: 28)
     }
 
     let isScrollable = vc.preferenceContentIsScrollable

@@ -70,10 +70,10 @@
                     </connections>
                 </button>
                 <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="ER0-iU-7fy">
-                    <rect key="frame" x="0.0" y="297" width="562" height="5"/>
+                    <rect key="frame" x="0.0" y="289" width="562" height="5"/>
                 </box>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" verticalCompressionResistancePriority="752" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZWR-gT-S2p">
-                    <rect key="frame" x="-2" y="267" width="91" height="16"/>
+                    <rect key="frame" x="-2" y="259" width="91" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" title="Configuration:" id="au5-6f-s55">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -81,7 +81,7 @@
                     </textFieldCell>
                 </textField>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="tP6-Ua-acA" userLabel="ConfHint Label">
-                    <rect key="frame" x="-2" y="249" width="566" height="14"/>
+                    <rect key="frame" x="-2" y="241" width="566" height="14"/>
                     <textFieldCell key="cell" controlSize="small" refusesFirstResponder="YES" title="Label" id="M4N-eg-JA8">
                         <font key="font" metaFont="message" size="11"/>
                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -89,13 +89,13 @@
                     </textFieldCell>
                 </textField>
                 <scrollView verticalCompressionResistancePriority="499" autohidesScrollers="YES" horizontalLineScroll="25" horizontalPageScroll="10" verticalLineScroll="25" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="Mhk-DT-3CM" userLabel="ConfTable Bordered Scroll View">
-                    <rect key="frame" x="1" y="89" width="192" height="152"/>
+                    <rect key="frame" x="1" y="89" width="192" height="144"/>
                     <clipView key="contentView" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4gB-i6-I71" userLabel="ConfTable Clip View">
-                        <rect key="frame" x="1" y="1" width="190" height="150"/>
+                        <rect key="frame" x="1" y="1" width="190" height="142"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView identifier="InputConfTable" autoresizesSubviews="NO" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" autosaveName="" rowHeight="22" viewBased="YES" floatsGroupRows="NO" id="AYj-6d-niF" userLabel="ConfTable Table View" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="190" height="150"/>
+                                <rect key="frame" x="0.0" y="0.0" width="190" height="142"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="4" height="3"/>
                                 <color key="backgroundColor" red="0.11764705882352941" green="0.11764705882352941" blue="0.11764705882352941" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
@@ -249,7 +249,7 @@
                     </connections>
                 </button>
                 <searchField wantsLayer="YES" focusRingType="none" verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="x6N-6q-HiV">
-                    <rect key="frame" x="205" y="213" width="357" height="28"/>
+                    <rect key="frame" x="205" y="205" width="357" height="28"/>
                     <searchFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" sendsSearchStringImmediately="YES" id="onw-J2-ic8">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -260,7 +260,7 @@
                     </connections>
                 </searchField>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="oWk-jo-tkr" userLabel="BindingTotals Label">
-                    <rect key="frame" x="215" y="191" width="76" height="14"/>
+                    <rect key="frame" x="215" y="183" width="76" height="14"/>
                     <textFieldCell key="cell" controlSize="small" refusesFirstResponder="YES" title="Binding totals" id="esV-tV-ghh">
                         <font key="font" metaFont="message" size="11"/>
                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -268,13 +268,13 @@
                     </textFieldCell>
                 </textField>
                 <scrollView autoresizesSubviews="NO" autohidesScrollers="YES" horizontalLineScroll="25" horizontalPageScroll="10" verticalLineScroll="25" verticalPageScroll="10" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="2pX-29-I87" userLabel="BindingTable Bordered Scroll View">
-                    <rect key="frame" x="205" y="29" width="357" height="154"/>
+                    <rect key="frame" x="205" y="29" width="357" height="146"/>
                     <clipView key="contentView" autoresizesSubviews="NO" id="Hxb-1N-pOY" userLabel="BindingTable Clip View">
-                        <rect key="frame" x="1" y="1" width="355" height="152"/>
+                        <rect key="frame" x="1" y="1" width="355" height="144"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView autoresizesSubviews="NO" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="PrefBindingTable" rowHeight="22" usesAutomaticRowHeights="YES" headerView="OOd-BT-w3p" viewBased="YES" id="1Z4-NL-6P3" userLabel="BindingTable Table View" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="355" height="129"/>
+                                <rect key="frame" x="0.0" y="0.0" width="355" height="121"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="4" height="3"/>
                                 <color key="backgroundColor" red="0.11764705882352941" green="0.11764705882352941" blue="0.11764705882352941" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
@@ -479,7 +479,7 @@
                 <constraint firstItem="f5l-5w-zmm" firstAttribute="leading" secondItem="2pX-29-I87" secondAttribute="leading" id="NjC-qo-4Sp"/>
                 <constraint firstItem="Mhk-DT-3CM" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="1" id="OLU-oB-Se7"/>
                 <constraint firstItem="2pX-29-I87" firstAttribute="trailing" secondItem="x6N-6q-HiV" secondAttribute="trailing" id="OUg-39-1kM"/>
-                <constraint firstItem="ER0-iU-7fy" firstAttribute="top" secondItem="1BL-wi-9Xf" secondAttribute="bottom" constant="8" id="PcI-aY-Zaf"/>
+                <constraint firstItem="ER0-iU-7fy" firstAttribute="top" secondItem="1BL-wi-9Xf" secondAttribute="bottom" constant="16" id="PcI-aY-Zaf"/>
                 <constraint firstItem="ER0-iU-7fy" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="Rc3-GT-Hhr"/>
                 <constraint firstItem="Mhk-DT-3CM" firstAttribute="top" secondItem="tP6-Ua-acA" secondAttribute="bottom" constant="8" id="Ud4-VR-43k"/>
                 <constraint firstItem="2pX-29-I87" firstAttribute="leading" secondItem="Mhk-DT-3CM" secondAttribute="trailing" constant="12" id="VX8-3k-wdZ"/>

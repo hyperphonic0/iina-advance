@@ -51,7 +51,7 @@ final class HistoryController {
     self.plistURL = plistFileURL
     self.history = []
     cachedRecentDocumentURLs = []
-    // Support older versions of playback history:
+    // Support playback history from upstream IINA, and/or future names for PlaybackHistory:
     NSKeyedArchiver.setClassName("IINA.PlaybackHistory", for: PlaybackHistory.self)
     NSKeyedUnarchiver.setClass(PlaybackHistory.self, forClassName: "IINA.PlaybackHistory")
     NSKeyedUnarchiver.setClass(PlaybackHistory.self, forClassName: "iina.PlaybackHistory")
