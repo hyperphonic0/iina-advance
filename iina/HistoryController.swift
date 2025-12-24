@@ -51,6 +51,11 @@ final class HistoryController {
     self.plistURL = plistFileURL
     self.history = []
     cachedRecentDocumentURLs = []
+    // Support older versions of playback history:
+    NSKeyedArchiver.setClassName("IINA.PlaybackHistory", for: PlaybackHistory.self)
+    NSKeyedUnarchiver.setClass(PlaybackHistory.self, forClassName: "IINA.PlaybackHistory")
+    NSKeyedUnarchiver.setClass(PlaybackHistory.self, forClassName: "iina.PlaybackHistory")
+    NSKeyedUnarchiver.setClass(PlaybackHistory.self, forClassName: "PlaybackHistory")
   }
 
   /// Enqueues the given task argument in workDQ.
@@ -206,8 +211,7 @@ final class HistoryController {
     do {
       log.verbose("Reading playback history file \(plistURL.path.pii.quoted)")
       let data = try Data(contentsOf: plistURL)
-      let deserData = try NSKeyedUnarchiver.unarchivedObject(ofClasses: [NSArray.self, PlaybackHistory.self],
-                                                          from: data)
+      let deserData = try NSKeyedUnarchiver.unarchivedObject(ofClasses: [NSArray.self, PlaybackHistory.self], from: data)
       guard let historyItemList = deserData as? [PlaybackHistory] else {
         log.error("Failed deserialize PlaybackHistory array from file \(plistURL.path.pii.quoted)!")
         return false
@@ -703,3 +707,4 @@ final class HistoryController {
     return historyList.first(where: { $0.url == url })
   }
 }
+
