@@ -251,11 +251,10 @@ extension PlayerWindowController {
     case .keepOpenOnFileEnd, .playlistAutoPlayNext:
       player.mpv.updateKeepOpenOptionFromPrefs()
 
-    case .useForceTouchForSpeedArrows:
-      if let newValue = newValue as? Bool {
-        leftArrowButton.enableAcceleration = newValue
-        rightArrowButton.enableAcceleration = newValue
-      }
+    case .arrowButtonAction,
+        .useForceTouchForSpeedArrows:
+      updateArrowButtonAccelerationFromPrefs()
+      updateTitleBarAndOSC()
 
     case .enableOSC,
         .oscPosition,
@@ -273,7 +272,6 @@ extension PlayerWindowController {
         .controlBarToolbarButtons,
         .allowVideoToOverlapCameraHousing,
         .useLegacyWindowedMode,
-        .arrowButtonAction,
         .showRemainingTime,
         .oscTimeLabelsAlwaysWrapSlider,
         .keepVideoAwayFromBars,

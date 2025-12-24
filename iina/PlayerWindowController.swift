@@ -754,6 +754,14 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
+  func updateArrowButtonAccelerationFromPrefs() {
+    let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
+    let enableAccelerationForSpeed = Preference.bool(for: .useForceTouchForSpeedArrows)
+    let enableAcceleration = enableAccelerationForSpeed && (arrowButtonAction == .speed)
+    leftArrowButton.enableAcceleration = enableAcceleration
+    rightArrowButton.enableAcceleration = enableAcceleration
+  }
+
   /// Asynchronous with throttling!
   func updateTitleBarAndOSC() {
     titleBarAndOSCUpdateDebouncer.run { [self] in
@@ -2367,7 +2375,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       return
     case .playlist:
       guard didRelease else { return }
-      player.navigateInPlaylist(nextMedia: left)
+      player.navigateInPlaylist(nextMedia: !left)
 
     case .seek:
       guard didRelease else { return }

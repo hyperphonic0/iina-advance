@@ -372,20 +372,19 @@ extension PlayerWindowController {
     playBtnHeightConstraint.priority = .init(900)
     playBtnHeightConstraint.isActive = true
 
-    let enableAcceleration = Preference.bool(for: .useForceTouchForSpeedArrows)
     // Left Arrow button
     leftArrowButton.image = oscGeo.leftArrowImage
     leftArrowButton.target = self
     leftArrowButton.action = #selector(leftArrowButtonAction(_:))
     leftArrowButton.idString = "LeftArrowBtn"
-    leftArrowButton.enableAcceleration = enableAcceleration
+
+    updateArrowButtonAccelerationFromPrefs()
 
     // Right Arrow button
     rightArrowButton.image = oscGeo.rightArrowImage
     rightArrowButton.target = self
     rightArrowButton.action = #selector(rightArrowButtonAction(_:))
     rightArrowButton.idString = "RightArrowBtn"
-    rightArrowButton.enableAcceleration = enableAcceleration
 
     initSpeedLabel()
 
