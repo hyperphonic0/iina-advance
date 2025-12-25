@@ -382,6 +382,7 @@
 		D1C741102CB6476900522FA7 /* PWin_PIP.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */; };
 		D1C741122CB6503400522FA7 /* PWin_Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C741112CB6503100522FA7 /* PWin_Enums.swift */; };
 		D1C897762C8DAA6700394EE4 /* ControlBarGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */; };
+		D1CC81202EFD5F9100D9785F /* MenuItemMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CC811F2EFD5F8700D9785F /* MenuItemMatcher.swift */; };
 		D1D29A282ADE2E8000D8660F /* CustomTitleBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */; };
 		D1D4C7422B0F3219003B09C2 /* MPVHookValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D4C7412B0F3219003B09C2 /* MPVHookValue.swift */; };
 		D1D4C7442B10B7D2003B09C2 /* ViewportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D4C7432B10B7D2003B09C2 /* ViewportView.swift */; };
@@ -1911,6 +1912,7 @@
 		D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_PIP.swift; sourceTree = "<group>"; };
 		D1C741112CB6503100522FA7 /* PWin_Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Enums.swift; sourceTree = "<group>"; };
 		D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlBarGeometry.swift; sourceTree = "<group>"; };
+		D1CC811F2EFD5F8700D9785F /* MenuItemMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuItemMatcher.swift; sourceTree = "<group>"; };
 		D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTitleBar.swift; sourceTree = "<group>"; };
 		D1D4C7412B0F3219003B09C2 /* MPVHookValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVHookValue.swift; sourceTree = "<group>"; };
 		D1D4C7432B10B7D2003B09C2 /* ViewportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportView.swift; sourceTree = "<group>"; };
@@ -2438,6 +2440,7 @@
 		847557121F405F2B0006B0FF /* Menu */ = {
 			isa = PBXGroup;
 			children = (
+				D1CC811F2EFD5F8700D9785F /* MenuItemMatcher.swift */,
 				8487BEC21D76A1AF00FD17B0 /* MenuController.swift */,
 				84AE59481E0FD65800771B7E /* PlayerWindowMenuActions.swift */,
 			);
@@ -3573,6 +3576,7 @@
 				84AABE8B1DBF634600D138FD /* CharEncoding.swift in Sources */,
 				8488D6DC1E1167EF00D5B952 /* FloatingPointByteCountFormatter.swift in Sources */,
 				8488D6E71E11ABE900D5B952 /* PrefNetworkViewController.swift in Sources */,
+				D1CC81202EFD5F9100D9785F /* MenuItemMatcher.swift in Sources */,
 				D1F2B09D2CFF272100F995B3 /* MediaPlayerIntegration.swift in Sources */,
 				84AABE941DBFAF1A00D138FD /* FontPickerWindowController.swift in Sources */,
 				D1D5EC902D51BC4300B468FA /* OSCSymButton.swift in Sources */,

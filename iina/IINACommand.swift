@@ -37,4 +37,14 @@ enum IINACommand: String {
   case findOnlineSubs = "find-online-subs"
   case saveDownloadedSub = "save-downloaded-sub"
 
+  case oscAutohideTimeout = "osc-autohide-timeout"
+
+  var prefKey: Preference.Key? {
+    switch self {
+    case .oscAutohideTimeout:
+      return .controlBarAutoHideTimeout
+    default:
+      return nil
+    }
+  }
 }

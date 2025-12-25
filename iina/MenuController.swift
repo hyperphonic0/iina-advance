@@ -8,67 +8,6 @@
 
 import Cocoa
 
-fileprivate func sameKeyAction(_ lhs: [String], _ rhs: [String], _ normalizeLastNum: Bool, _ numRange: ClosedRange<Double>?) -> (Bool, Double?, Any?) {
-  var lhs = lhs
-  var extraData: Any? = nil
-  if lhs.first == "seek", rhs.first == "seek", lhs.count > 2, let last = lhs.last {
-    // This is a seek command that includes flags. Adjust the command before checking for a match.
-    if lhs.count == 4 {
-      // The original mpv seek command required that the keyframes and exact flags be passed as a
-      // 3rd parameter. This is considered deprecated but still supported by mpv. Convert this to
-      // the current command format by combining the flags using a "+" separator.
-      lhs[2] = "\(lhs[2])+\(lhs[3])"
-      lhs = [String](lhs.dropLast())
-    }
-    var splitArray = last.split(whereSeparator: { $0 == "+" })
-    if let index = splitArray.firstIndex(of: "relative") {
-      // The mpv seek command seeks relative to current position by default. Because of that the
-      // seek command used by menu items does not specify this flag. Ignore it when checking for a
-      // match.
-      splitArray.remove(at: index)
-    }
-    if let index = splitArray.firstIndex(of: "exact") {
-      // Alter the behavior of the menu item by passing this flag on the side as extra data.
-      splitArray.remove(at: index)
-      extraData = Preference.SeekOption.exact
-    }
-    // NOTE at this time PlayerCore does not support specifying the keyframes flag, so it can't
-    // be specified on the side as extra data as is done for exact. Although the mpv seek command
-    // normally defaults to seeking by keyframes, that default can be changed by the hr-seek option.
-    // When hr-seek has been set to enable exact seeks by default the keyframes flag will override
-    // that default.
-    if splitArray.isEmpty {
-      // All flags were recognized as ones we do not need to consider when checking for a match.
-      lhs = [String](lhs.dropLast())
-    }
-  }
-  guard lhs.count > 0 && lhs.count == rhs.count else {
-    return (false, nil, nil)
-  }
-  if normalizeLastNum {
-    for i in 0..<lhs.count-1 {
-      if lhs[i] != rhs[i] {
-        return (false, nil, nil)
-      }
-    }
-    guard let ld = Double(lhs.last!), let rd = Double(rhs.last!) else {
-      return (false, nil, nil)
-    }
-    if let range = numRange {
-      return (range.contains(ld), ld, extraData)
-    } else {
-      return (ld == rd, ld, extraData)
-    }
-  } else {
-    for i in 0..<lhs.count {
-      if lhs[i] != rhs[i] {
-        return (false, nil, nil)
-      }
-    }
-  }
-  return (true, nil, nil)
-}
-
 class MenuController: NSObject, NSMenuDelegate {
 
   /** For convenient bindings. see `bind(...)` below. [menu: check state block] */
@@ -203,6 +142,8 @@ class MenuController: NSObject, NSMenuDelegate {
   /// If `true` then all menu items are disabled.
   private var isDisabled = false
 
+  var bindableMenuItems: [BindableMenuItem] = []
+
   // MARK: - Construct Menus
 
   /// Should be called only once, at application start
@@ -211,6 +152,7 @@ class MenuController: NSObject, NSMenuDelegate {
     bindMenuItems()
     updatePluginMenu()
     refreshStaticMenuItemBindings()
+    bindableMenuItems = buildBindableMenuItems()
   }
 
   @MainActor
@@ -936,207 +878,6 @@ class MenuController: NSObject, NSMenuDelegate {
       for subMenuItem in subMenu.items {
         forMenuItemAndAllDescendents(subMenuItem, do: callback)
       }
-    }
-  }
-
-  // MARK: Set key equivalents
-
-  /// Iterates over candidateBindings, and for those with attached menu items, update the menu items' key equivalents
-  /// Two general groups to be processed:
-  /// - Save filters & Plugin menu bindings have already had their values & enablement determined: just need to update their menu items.
-  /// - MPV bindings need some additional checks to see if they can be associated with menu items.
-  @MainActor
-  func updateKeyEquivalents(in candidateBindings: inout [InputBinding]) {
-    var mpvBindingIndexes: [Int] = []
-
-    for (i, binding) in candidateBindings.enumerated() {
-      switch binding.origin {
-      case .iinaPlugin, .savedFilter:
-        // include disabled bindings: need to set their menu item key equivs to nil
-        let updatedBinding = updateKeyEquivalent(from: binding)
-        candidateBindings[i] = updatedBinding
-      case .confFile:
-        if binding.isEnabled { // don't care about disabled bindings here
-          mpvBindingIndexes.append(i)
-        }
-      default:
-        break
-      }
-    }
-
-    matchKeyEquivalents(with: mpvBindingIndexes, into: &candidateBindings)
-  }
-
-  @MainActor
-  private func updateKeyEquivalent(from binding: InputBinding) -> InputBinding {
-    guard let menuItem = binding.menuItem else { return binding }
-
-    if binding.isEnabled {
-      let mpvKey = binding.keyMapping.normalizedMpvKey
-      if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: mpvKey) {
-        menuItem.keyEquivalent = kEqv
-        menuItem.keyEquivalentModifierMask = kMdf
-        if DebugConfig.logBindingsRebuild {
-          Logger.log.verbose("Set menu keyEquiv: \(mpvKey.quoted) → \(menuItem.menuPathDescription)")
-        }
-        let displayMessage = "This key binding will activate the menu item:\n\(menuItem.menuPathDescription)"
-        return binding.shallowClone(displayMessage: displayMessage)
-      } else {
-        Logger.log.error("Failed to get MacOS menu item key equivalent for \(mpvKey.quoted)")
-      }
-    } else {
-      // Conflict! Key binding already reserved
-      menuItem.keyEquivalent = ""
-      menuItem.keyEquivalentModifierMask = []
-      if DebugConfig.logBindingsRebuild {
-        Logger.log.verbose("Unset menu keyEquiv: \(menuItem.title.quoted)")
-      }
-    }
-    return binding
-  }
-
-  @MainActor
-  private func matchKeyEquivalents(with userBindingIndexes: [Int], into bindingList: inout [InputBinding]) {
-    let bindableMenuItems: [(NSMenuItem, Bool, [String], Bool, ClosedRange<Double>?, String?)] = [
-      (showCurrentFileInFinder, true, [IINACommand.showCurrentFileInFinder.rawValue], false, nil, nil),
-      (deleteCurrentFile, true, [IINACommand.deleteCurrentFile.rawValue], false, nil, nil),
-      (savePlaylist, true, [IINACommand.saveCurrentPlaylist.rawValue], false, nil, nil),
-      (quickSettingsVideo, true, [IINACommand.videoPanel.rawValue], false, nil, nil),
-      (quickSettingsAudio, true, [IINACommand.audioPanel.rawValue], false, nil, nil),
-      (quickSettingsSub, true, [IINACommand.subPanel.rawValue], false, nil, nil),
-      (playlistPanel, true, [IINACommand.playlistPanel.rawValue], false, nil, nil),
-      (chapterPanel, true, [IINACommand.chapterPanel.rawValue], false, nil, nil),
-      (findOnlineSub, true, [IINACommand.findOnlineSubs.rawValue], false, nil, nil),
-      (saveDownloadedSub, true, [IINACommand.saveDownloadedSub.rawValue], false, nil, nil),
-      (flip, true, [IINACommand.flip.rawValue], false, nil, nil),
-      (mirror, true, [IINACommand.mirror.rawValue], false, nil, nil),
-      (biggerSize, true, [IINACommand.biggerWindow.rawValue], false, nil, nil),
-      (smallerSize, true, [IINACommand.smallerWindow.rawValue], false, nil, nil),
-      (fitToScreen, true, [IINACommand.fitToScreen.rawValue], false, nil, nil),
-      (miniPlayer, true, [IINACommand.toggleMusicMode.rawValue], false, nil, nil),
-      (pictureInPicture, true, [IINACommand.togglePIP.rawValue], false, nil, nil),
-      (cycleVideoTracks, false, ["cycle", "video"], false, nil, nil),
-      (cycleAudioTracks, false, ["cycle", "audio"], false, nil, nil),
-      (cycleSubtitles, false, ["cycle", "sub"], false, nil, nil),
-      (nextChapter, false, ["add", "chapter", "1"], false, nil, nil),
-      (previousChapter, false, ["add", "chapter", "-1"], false, nil, nil),
-      (pause, false, ["cycle", "pause"], false, nil, nil),
-      (stop, false, ["stop"], false, nil, nil),
-      (forward, false, ["seek", "5"], true, 5.0...60.0, "seek_forward"),
-      (backward, false, ["seek", "-5"], true, -60.0...(-5.0), "seek_backward"),
-      (nextFrame, false, ["frame-step"], false, nil, nil),
-      (previousFrame, false, ["frame-back-step"], false, nil, nil),
-      (nextMedia, false, ["playlist-next"], false, nil, nil),
-      (previousMedia, false, ["playlist-prev"], false, nil, nil),
-      (speedUp, false, ["multiply", "speed", "2.0"], true, 1.5...3.0, "speed_up"),
-      (speedUpSlightly, false, ["multiply", "speed", "1.1"], true, 1.01...1.49, "speed_up"),
-      (speedDown, false, ["multiply", "speed", "0.5"], true, 0...0.7, "speed_down"),
-      (speedDownSlightly, false, ["multiply", "speed", "0.9"], true, 0.71...0.99, "speed_down"),
-      (speedReset, false, ["set", "speed", "1.0"], true, nil, nil),
-      (abLoop, false, ["ab-loop"], false, nil, nil),
-      (fileLoop, false, ["cycle-values", "loop", "\"inf\"", "\"no\""], false, nil, nil),
-      (screenshot, false, ["screenshot"], false, nil, nil),
-      (halfSize, false, ["set", "window-scale", "0.5"], true, nil, nil),
-      (normalSize, false, ["set", "window-scale", "1"], true, nil, nil),
-      (doubleSize, false, ["set", "window-scale", "2"], true, nil, nil),
-      (fullScreen, false, ["cycle", "fullscreen"], false, nil, nil),
-      (alwaysOnTop, false, ["cycle", "ontop"], false, nil, nil),
-      (mute, false, ["cycle", "mute"], false, nil, nil),
-      (increaseVolume, false, ["add", "volume", "5"], true, 5.0...10.0, "volume_up"),
-      (decreaseVolume, false, ["add", "volume", "-5"], true, -10.0...(-5.0), "volume_down"),
-      (increaseVolumeSlightly, false, ["add", "volume", "1"], true, 1.0...2.0, "volume_up"),
-      (decreaseVolumeSlightly, false, ["add", "volume", "-1"], true, -2.0...(-1.0), "volume_down"),
-      (decreaseAudioDelay, false, ["add", "audio-delay", "-0.5"], true, nil, "audio_delay_down"),
-      (decreaseAudioDelaySlightly, false, ["add", "audio-delay", "-0.1"], true, nil, "audio_delay_down"),
-      (increaseAudioDelay, false, ["add", "audio-delay", "0.5"], true, nil, "audio_delay_up"),
-      (increaseAudioDelaySlightly, false, ["add", "audio-delay", "0.1"], true, nil, "audio_delay_up"),
-      (resetAudioDelay, false, ["set", "audio-delay", "0"], true, nil, nil),
-      (hideSubtitles, false, ["cycle", "sub-visibility"], false, nil, nil),
-      (hideSecondSubtitles, false, ["cycle", "secondary-sub-visibility"], false, nil, nil),
-      (hideSubtitles, false, ["cycle", "sub-visibility"], false, nil, nil),
-      (hideSecondSubtitles, false, ["cycle", "secondary-sub-visibility"], false, nil, nil),
-      (decreaseSubDelay, false, ["add", "sub-delay", "-0.5"], true, nil, "sub_delay_down"),
-      (decreaseSubDelaySlightly, false, ["add", "sub-delay", "-0.1"], true, nil, "sub_delay_down"),
-      (increaseSubDelay, false, ["add", "sub-delay", "0.5"], true, nil, "sub_delay_up"),
-      (increaseSubDelaySlightly, false, ["add", "sub-delay", "0.1"], true, nil, "sub_delay_up"),
-      (resetSubDelay, false, ["set", "sub-delay", "0"], true, nil, nil),
-      (increaseTextSize, false, ["multiply", "sub-scale", "1.1"], true, 1.01...1.49, nil),
-      (decreaseTextSize, false, ["multiply", "sub-scale", "0.9"], true, 0.71...0.99, nil),
-      (resetTextSize, false, ["set", "sub-scale", "1"], true, nil, nil),
-      (alwaysOnTop, false, ["cycle", "ontop"], false, nil, nil),
-      (fullScreen, false, ["cycle", "fullscreen"], false, nil, nil),
-      (pictureInPicture, true, [IINACommand.togglePIP.rawValue], false, nil, nil),
-    ]
-
-    var otherActionsMenuItems: [NSMenuItem] = []
-
-    /// Loop over all the list of menu items which can be matched with one or more `KeyMapping`s
-    for (menuItem, isIINACmd, actionForMenuItem, normalizeLastNum, numRange, l10nKey) in bindableMenuItems {
-      /// Loop over all key bindings. Examine each binding's action and see if it is equivalent to `menuItem`'s action
-      var didBindMenuItem = false
-      for bindingIndex in userBindingIndexes {
-        let binding = bindingList[bindingIndex]
-        let kb = binding.keyMapping
-        guard kb.isIINACommand == isIINACmd else { continue }
-        guard let action = kb.action else { continue }
-        let (isMatch, value, extraData) = sameKeyAction(action, actionForMenuItem, normalizeLastNum, numRange)
-        guard isMatch, let (keyEquivalent, keyModifierMask) = KeyCodeHelper.macOSKeyEquivalent(from: kb.normalizedMpvKey) else { continue }
-        guard !keyModifierMask.contains(.numericPad) else { continue }
-        /// If we got here, `KeyMapping`'s action qualifies for being bound to `menuItem`.
-        let kbMenuItem: NSMenuItem
-
-        if didBindMenuItem {
-          /// This `KeyMapping` matches a menu item whose key equivalent was set from a different `KeyMapping`.
-          /// There can only be one key equivalent per menu item, so we will create a duplicate menu item and put it in a hidden menu.
-          kbMenuItem = NSMenuItem(title: menuItem.title, action: menuItem.action, keyEquivalent: "")
-          kbMenuItem.tag = menuItem.tag
-          otherActionsMenuItems.append(kbMenuItem)
-        } else {
-          /// This `KeyMapping` was the first match found for this menu item.
-          kbMenuItem = menuItem
-          didBindMenuItem = true
-        }
-        updateMenuItem(kbMenuItem, keyEquiv: keyEquivalent, keyModifierMask, l10nKey: l10nKey, value: value, extraData: extraData)
-        /// Make sure this is executed after `updateMenuItem()` to ensure it contains the accurate menu item title:
-        let displayMessage = "This key binding will activate the menu item:\n\(kbMenuItem.menuPathDescription)"
-
-        let kbUpdated = KeyMapping(rawKey: kb.rawKey, rawAction: kb.rawAction, isIINACommand: kb.isIINACommand, comment: kb.comment, menuItem: kbMenuItem, sourceName: kb.sourceName)
-        bindingList[bindingIndex] = binding.shallowClone(keyMapping: kbUpdated, displayMessage: displayMessage)
-      }
-
-      if !didBindMenuItem {
-        // Need to regenerate `title` and `representedObject` from their default values.
-        // This is needed for the case where the menu item previously matched to a key binding, but now there is no match.
-        // Obviously this is a little kludgey, but it avoids having to do a big refactor and/or writing a bunch of new code.
-        let (_, value, extraData) = sameKeyAction(actionForMenuItem, actionForMenuItem, normalizeLastNum, numRange)
-        // An "alternate" menu item appear is intended to replace a "normal" menu item in the menu if its modifier key is held down
-        // (typically Option). But this key needs to be specified in its modifier flags, or the item may never appear, or may appear
-        // at the same time as its "normal" counterpart.
-        let modifiers: NSEvent.ModifierFlags = menuItem.isAlternate ? [.option] : []
-        updateMenuItem(menuItem, keyEquiv: "", modifiers, l10nKey: l10nKey, value: value, extraData: extraData)
-      }
-    }
-
-    // Update hidden menu
-    updateOtherKeyBindings(replacingAllWith: otherActionsMenuItems)
-  }
-
-  /// Updates the key equivalent of the given menu item.
-  /// May also update its title and representedObject, for items which can change based on some param value(s).
-  private func updateMenuItem(_ menuItem: NSMenuItem, keyEquiv: String, _ keyModifierMask: NSEvent.ModifierFlags, l10nKey: String?, value: Double?, extraData: Any?) {
-    menuItem.keyEquivalent = keyEquiv
-    menuItem.keyEquivalentModifierMask = keyModifierMask
-
-    if let value = value, let l10nKey = l10nKey {
-      menuItem.title = String(format: NSLocalizedString("menu." + l10nKey, comment: ""), abs(value).groupedStringUpTo6Decimals)
-      if let extraData = extraData {
-        menuItem.representedObject = (value, extraData)
-      } else {
-        menuItem.representedObject = value
-      }
-    } else {
-      // Clear any previous value
-      menuItem.representedObject = nil
     }
   }
 
