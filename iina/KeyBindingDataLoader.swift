@@ -48,21 +48,21 @@ struct KeyBindingDataLoader {
     KBI("playlist-remove"),
     KBI("playlist-shuffle"),
     KBI.separator,
-    KBI("video-panel", type: .iinaCmd),
-    KBI("audio-panel", type: .iinaCmd),
-    KBI("sub-panel", type: .iinaCmd),
-    KBI("playlist-panel", type: .iinaCmd),
-    KBI("chapter-panel", type: .iinaCmd),
+    KBI(IINACommand.videoPanel.rawValue, type: .iinaCmd),
+    KBI(IINACommand.audioPanel.rawValue, type: .iinaCmd),
+    KBI(IINACommand.subPanel.rawValue, type: .iinaCmd),
+    KBI(IINACommand.playlistPanel.rawValue, type: .iinaCmd),
+    KBI(IINACommand.chapterPanel.rawValue, type: .iinaCmd),
     KBI.separator,
-    KBI("open-file", type: .iinaCmd),
-    KBI("open-url", type: .iinaCmd),
-    KBI("save-playlist", type: .iinaCmd),
-    KBI("show-current-file-in-finder", type: .iinaCmd),
-    KBI("delete-current-file", type: .iinaCmd),
-    KBI("delete-current-file-hard", type: .iinaCmd),
+    KBI(IINACommand.openFile.rawValue, type: .iinaCmd),
+    KBI(IINACommand.openURL.rawValue, type: .iinaCmd),
+    KBI(IINACommand.saveCurrentPlaylist.rawValue, type: .iinaCmd),
+    KBI(IINACommand.showCurrentFileInFinder.rawValue, type: .iinaCmd),
+    KBI(IINACommand.deleteCurrentFile.rawValue, type: .iinaCmd),
+    KBI(IINACommand.deleteCurrentFileHard.rawValue, type: .iinaCmd),
     KBI.separator,
-    KBI("find-online-subs", type: .iinaCmd),
-    KBI("save-downloaded-sub", type: .iinaCmd),
+    KBI(IINACommand.findOnlineSubs.rawValue, type: .iinaCmd),
+    KBI(IINACommand.saveDownloadedSub.rawValue, type: .iinaCmd),
     KBI.separator,
     KBI("write-watch-later-config"),
     KBI("stop"),
@@ -99,8 +99,15 @@ struct KeyBindingDataLoader {
   ]
 
   static let toggleableIINAProperties: [String] = [
-    "flip", "mirror"
-  ]
+    IINACommand.flip,
+    IINACommand.mirror,
+    IINACommand.togglePIP,
+    IINACommand.toggleMusicMode,
+  ].map{$0.rawValue.droppingPrefix("toggle-")}
+
+  static let cycleableIINAProperties: [String] = [
+    IINACommand.enableOscAutohide,
+  ].map(\.rawValue)
 
   static private func propertiesForSet() -> [KeyBindingItem] {
     return propertyList.map { (str, type) -> KeyBindingItem in
@@ -150,6 +157,11 @@ struct KeyBindingDataLoader {
     list.append(KBI.separator)
     toggleableIINAProperties.forEach { p in
       let kbi = KBI(p, type: .iinaCmd, l10nKey: "opt")
+      list.append(kbi)
+    }
+    // More IINA properties
+    for iinaProp in [IINACommand.enableOscAutohide.rawValue] {
+      let kbi = KBI(iinaProp, type: .iinaCmd, l10nKey: iinaProp)
       list.append(kbi)
     }
     return list

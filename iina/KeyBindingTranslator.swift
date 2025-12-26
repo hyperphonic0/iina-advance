@@ -125,9 +125,10 @@ class KeyBindingTranslator {
     var mapped = criteria.filter { !$0.isPlaceholder }.map { $0.mpvCommandValue }
 
     let firstCriterion = criteria[0] as! TextCriterion
+    let secondCriterion = criteria.count > 1 ? (criteria[1] as? TextCriterion) : nil
 
-    if firstCriterion.isIINACommand {
-      mapped.insert("@iina", at: 0)
+    if firstCriterion.isIINACommand || (secondCriterion?.isIINACommand ?? false) {
+      mapped.insert("#@iina", at: 0)
     }
 
     // special cases
@@ -164,12 +165,10 @@ class KeyBindingTranslator {
 
     /// iina properties
     else if firstCriterion.name == "cycle" {
-      if let name = (criteria[1] as? TextCriterion)?.name,
-        KeyBindingDataLoader.toggleableIINAProperties.contains(name) {
-        return "@iina toggle-\(name)"
+      if let secondCriterion, KeyBindingDataLoader.toggleableIINAProperties.contains(secondCriterion.name) {
+        return "#@iina toggle-\(secondCriterion.name)"
       }
     }
-
 
     return mapped.joined(separator: " ")
   }

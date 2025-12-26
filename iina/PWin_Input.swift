@@ -83,10 +83,22 @@ extension PlayerWindowController {
     videoView.forceDraw()
 
     if keyBinding.isIINACommand {
-      // - IINA command
+      // - IINA command (exact)
       if let iinaCommand = IINACommand(rawValue: rawAction) {
         executeIINACommand(iinaCommand)
         return true
+      } else if action.count >= 2, action[0] == "cycle",
+                let iinaCmd = IINACommand(rawValue: action[1]),
+                let prefKey = iinaCmd.prefKey {
+        // Cycle pref key
+        // Support booleans only for now
+        if Preference.defaultPreference[prefKey] as? Bool != nil {
+          let currentVal = Preference.bool(for: prefKey)
+          let newVal = !currentVal
+          log.debug("Toggling IINA pref \(prefKey.rawValue.quoted): \(currentVal.yn) → \(newVal.yn)")
+          Preference.set(newVal, for: prefKey)
+          return true
+        }
       } else {
         log.error("Unrecognized IINA command: \(rawAction.quoted)")
         return false

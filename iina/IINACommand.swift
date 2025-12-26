@@ -10,7 +10,6 @@ import Foundation
 
 enum IINACommand: String {
 
-  case togglePIP = "toggle-pip"
   case openFile = "open-file"
   case openURL = "open-url"
 
@@ -20,6 +19,7 @@ enum IINACommand: String {
   case playlistPanel = "playlist-panel"
   case chapterPanel = "chapter-panel"
 
+  case togglePIP = "toggle-pip"
   case toggleMusicMode = "toggle-music-mode"
 
   case flip = "toggle-flip"
@@ -38,9 +38,12 @@ enum IINACommand: String {
   case saveDownloadedSub = "save-downloaded-sub"
 
   case oscAutohideTimeout = "osc-autohide-timeout"
+  case enableOscAutohide = "enable-osc-autohide"
 
   var prefKey: Preference.Key? {
     switch self {
+    case .enableOscAutohide:
+      return .enableControlBarAutoHide
     case .oscAutohideTimeout:
       return .controlBarAutoHideTimeout
     default:

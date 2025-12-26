@@ -37,6 +37,8 @@
 "iina.flip" = "Flip";
 "iina.mirror" = "Mirror";
 
+"iina.pip" = "Picture-in-Picture";
+"iina.music-mode" = "Music Mode";
 "iina.toggle-pip" = "Toggle Picture-in-Picture";
 "iina.toggle-music-mode" = "Toggle Music Mode";
 "iina.open-file" = "Open file";
