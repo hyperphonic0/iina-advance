@@ -128,7 +128,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
     // tool tips
     togglePlaylistButton.identifier = .init("TogglePlaylistButton")
-    togglePlaylistButton.toolTip = Preference.ToolBarButton.playlist.description()
+    togglePlaylistButton.toolTip = Preference.ToolBarButton.playlist.displayString
     togglePlaylistButton.image = Preference.ToolBarButton.playlist.image()
 
     toggleAlbumArtButton.identifier = .init("ToggleAlbumArtButton")

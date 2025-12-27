@@ -39,7 +39,7 @@ class OSCToolbarButton: OSCSymButton {
     if let buttonType {
       image = buttonType.image()
       tag = buttonType.rawValue
-      toolTip = buttonType.description()
+      toolTip = buttonType.displayString
     }
 
     if let widthConstraint, widthConstraint.isActive {

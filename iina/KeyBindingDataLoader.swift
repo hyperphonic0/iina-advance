@@ -160,7 +160,7 @@ struct KeyBindingDataLoader {
       list.append(kbi)
     }
     // More IINA properties
-    for iinaProp in [IINACommand.enableOscAutohide.rawValue] {
+    for iinaProp in cycleableIINAProperties {
       let kbi = KBI(iinaProp, type: .iinaCmd, l10nKey: iinaProp)
       list.append(kbi)
     }

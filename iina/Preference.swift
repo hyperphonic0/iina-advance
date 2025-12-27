@@ -8,7 +8,13 @@
 
 import Cocoa
 
-protocol InitializingFromKey {
+/// Indicates that this object has a `displayString` intended to be read by the user.
+/// Ideally it should be localized, but may not be.
+protocol HasDisplayString {
+  var displayString: String { get }
+}
+
+protocol InitializingFromKey: CaseIterable {
 
   static var defaultValue: Self { get }
 
@@ -634,7 +640,7 @@ struct Preference {
 
   // MARK: - Enums
 
-  enum ActionAfterLaunch: Int, InitializingFromKey {
+  enum ActionAfterLaunch: Int, InitializingFromKey, CustomStringConvertible, CaseIterable {
     case welcomeWindow = 0
     case openPanel
     case none
@@ -645,9 +651,22 @@ struct Preference {
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
     }
+
+    var description: String {
+      switch self {
+      case .welcomeWindow:
+        return "Show welcome window"
+      case .openPanel:
+        return "Show open file panel"
+      case .none:
+        return "Show Playback History window"
+      case .historyWindow:
+        return "Do nothing"
+      }
+    }
   }
 
-  enum ActionWhenNoOpenWindow: Int, InitializingFromKey {
+  enum ActionWhenNoOpenWindow: Int, InitializingFromKey, CustomStringConvertible, CaseIterable {
     case sameActionAsLaunch = 0
     case quit
     case none
@@ -657,9 +676,20 @@ struct Preference {
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
     }
+
+    var description: String {
+      switch self {
+      case .sameActionAsLaunch:
+        return "Do same action as at launch"
+      case .quit:
+        return "Quit"
+      case .none:
+        return "Do nothing"
+      }
+    }
   }
 
-  enum ArrowButtonAction: Int, InitializingFromKey, CustomStringConvertible {
+  enum ArrowButtonAction: Int, InitializingFromKey, CustomStringConvertible, CaseIterable {
     case speed = 0
     case playlist = 1
     case seek = 2
@@ -681,7 +711,7 @@ struct Preference {
     }
   }
 
-  enum WindowOpenCloseAnimation: Int, InitializingFromKey {
+  enum WindowOpenCloseAnimation: Int, InitializingFromKey, CaseIterable {
     case none = 0
     case useDefault = 1
     case zoomIn = 2
@@ -753,7 +783,7 @@ struct Preference {
     }
   }
 
-  enum ThumbnailSizeOption: Int, InitializingFromKey {
+  enum ThumbnailSizeOption: Int, InitializingFromKey, CaseIterable {
     case fixedSize = 1
     /// Percentage of displayed video size
     case scaleWithViewport
@@ -787,7 +817,7 @@ struct Preference {
     }
 
     var description: String {
-      self == .leadingSidebar ? "leadingSidebar" : "trailingSidebar"
+      self == .leadingSidebar ? "LeadingSidebar" : "TrailingSidebar"
     }
 
   }
@@ -810,7 +840,7 @@ struct Preference {
     }
 
     var description: String {
-      self == .insideViewport ? "inside" : "outside"
+      self == .insideViewport ? "Inside" : "Outside"
     }
   }
 
@@ -834,7 +864,7 @@ struct Preference {
     }
 
     var description: String {
-      self == .visualEffectView ? "visualEffectView" : "clearGradient"
+      self == .visualEffectView ? "VisualEffectView" : "ClearGradient"
     }
   }
 
@@ -862,9 +892,9 @@ struct Preference {
 
     var description: String {
       switch self {
-      case .floating: return "floating(\(rawValue))"
-      case .top: return "top(\(rawValue))"
-      case .bottom: return "bottom(\(rawValue))"
+      case .floating: return "Floating(\(rawValue))"
+      case .top: return "Top(\(rawValue))"
+      case .bottom: return "Bottom(\(rawValue))"
       }
     }
   }
@@ -1230,7 +1260,7 @@ struct Preference {
     }
   }
 
-  enum ToolBarButton: Int {
+  enum ToolBarButton: Int, CaseIterable, CustomStringConvertible, HasDisplayString {
     case settings = 0
     case playlist
     case pip
@@ -1274,14 +1304,26 @@ struct Preference {
       return key
     }
 
-    func description() -> String {
+    var description: String {
+      let key: String
+      switch self {
+      case .settings: key = "Settings(\(rawValue))"
+      case .playlist: key = "Playlist(\(rawValue))"
+      case .pip: key = "PiP(\(rawValue))"
+      case .fullScreen: key = "FullScreen(\(rawValue))"
+      case .musicMode: key = "MusicMode(\(rawValue))"
+      case .subTrack: key = "SubTrack(\(rawValue))"
+      case .screenshot: key = "Screenshot(\(rawValue))"
+      case .plugins: key = "Plugins(\(rawValue))"
+      }
+
+      return key
+    }
+
+    var displayString: String {
       let key: String = self.keyString
       return NSLocalizedString("osc_toolbar.\(key)", comment: key)
     }
-
-    static let allButtonTypes: [Preference.ToolBarButton] = [
-      .settings, .playlist, .pip, .fullScreen, .musicMode, .subTrack, .screenshot, .plugins
-    ]
   }
 
   enum HistoryGroupBy: Int, InitializingFromKey {

@@ -769,7 +769,7 @@ extension ConfTableViewController:  NSMenuDelegate {
     // Return immediately, and import (or fail to) asynchronously
     let confTableState = confTableState
     let window = tableView.window
-    Logger.log.verbose("Importing input conf files: \(fileList)")
+    Logger.log.verbose("Importing input conf files: [\(fileList.map(\.pii.quoted).joined(separator: ", "))]")
 
     // confName -> (srcFilePath, dstFilePath)
     var createdConfDict: [String: (String, String)] = [:]

@@ -254,8 +254,8 @@ class UIState {
     disableForThisInstance = true
   }
 
-  // Convenience method. If restoring UI state is enabled, returns the saved value; otherwise returns the saved value.
-  // Note: doesn't work for enums.
+  /// Convenience method. If restoring UI state is enabled, returns the saved value; otherwise returns the default value.
+  /// * Note: doesn't work for enums.
   func getSavedValue<T>(for key: Preference.Key) -> T {
     if isRestoreEnabled {
       if let val = Preference.value(for: key) as? T {

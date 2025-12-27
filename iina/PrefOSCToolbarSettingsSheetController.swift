@@ -91,7 +91,7 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
     let iconSize = previewIconSize
     let iconSpacing = previewIconSpacing
 
-    for buttonType in Preference.ToolBarButton.allButtonTypes {
+    for buttonType in Preference.ToolBarButton.allCases {
       let itemViewController = PrefOSCToolbarDraggingItemViewController(buttonType: buttonType,
                                                                         iconSize: iconSize, iconSpacing: iconSpacing)
       itemViewController.availableItemsView = availableItemsView

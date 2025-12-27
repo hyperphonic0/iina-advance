@@ -157,9 +157,8 @@ extension PlayerWindowController {
     return true
   }
 
+  @MainActor
   private func executeIINACommand(_ cmd: IINACommand) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     switch cmd {
     case .openFile:
       AppDelegate.shared.showOpenFileWindow(isAlternativeAction: false)

@@ -21,7 +21,6 @@ enum IINACommand: String {
 
   case togglePIP = "toggle-pip"
   case toggleMusicMode = "toggle-music-mode"
-
   case flip = "toggle-flip"
   case mirror = "toggle-mirror"
 
