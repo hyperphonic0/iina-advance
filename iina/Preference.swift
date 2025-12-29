@@ -659,9 +659,9 @@ struct Preference {
       case .openPanel:
         return "Show open file panel"
       case .none:
-        return "Show Playback History window"
-      case .historyWindow:
         return "Do nothing"
+      case .historyWindow:
+        return "Show Playback History window"
       }
     }
   }
