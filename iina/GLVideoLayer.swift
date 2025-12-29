@@ -25,8 +25,6 @@ class GLVideoLayer: CAOpenGLLayer {
   private let cglContext: CGLContextObj
   private let cglPixelFormat: CGLPixelFormatObj
 
-  private let mpvGLQueue = DispatchQueue(label: "com.iina_advance.mpvgl", qos: .userInteractive)
-
   private var fbo: GLint = 1
 
   private var needsMPVRender = false
@@ -247,18 +245,6 @@ class GLVideoLayer: CAOpenGLLayer {
     /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
     /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.
     isAsynchronous = false
-  }
-
-  func drawAsync(forced: Bool = false) {
-    mpvGLQueue.async { [self] in
-      draw(forced: forced)
-    }
-  }
-
-  func drawSync(forced: Bool = false) {
-    mpvGLQueue.sync { [self] in
-      draw(forced: forced)
-    }
   }
 
   func draw(forced: Bool = false) {

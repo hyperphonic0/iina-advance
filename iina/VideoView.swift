@@ -228,7 +228,7 @@ class VideoView: NSView {
   func forceDraw() {
     assert(DispatchQueue.isExecutingIn(.main))
     guard needsForcedRedraws() else { return }
-    glLayer?.drawAsync(forced: true)
+    glLayer?.draw(forced: true)
   }
 
   func addShadowForInteractiveMode() {
