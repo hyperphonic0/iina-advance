@@ -27,8 +27,8 @@ extension VideoView {
     return link
   }
 
+  @MainActor
   func startDisplayLink() {
-    assert(DispatchQueue.isExecutingIn(.main))
     let link = obtainDisplayLink()
 
     guard !CVDisplayLinkIsRunning(link) else { return }
@@ -42,16 +42,16 @@ extension VideoView {
     log.verbose("DisplayLink started")
   }
 
+  @MainActor
   func stopDisplayLink() {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard let link = link, CVDisplayLinkIsRunning(link) else { return }
     checkResult(CVDisplayLinkStop(link), "CVDisplayLinkStop")
-    log.trace("DisplayLink stopped")
+    log.verbose("DisplayLink stopped")
   }
 
   /// This should be called at start or if the window has changed displays
+  @MainActor
   func updateDisplayLink() {
-    assert(DispatchQueue.isExecutingIn(.main))
     // Get window from pwc! Don't assume VideoView is attached to window yet
     guard let link, let displayId = player.pwc.window?.screen?.displayId else { return }
 
@@ -94,10 +94,10 @@ extension VideoView {
   // MARK: - Reducing Energy Use
 
   /// Starts the display link if it has been stopped in order to save energy.
+  @MainActor
   func displayActive() {
     let hasTimeout = player.info.isPaused
     log.trace("VideoView displayActive willTimeout=\(hasTimeout.yn)")
-    assert(DispatchQueue.isExecutingIn(.main))
     if !hasTimeout {
       displayIdleTimer.cancel()
     }
@@ -121,6 +121,7 @@ extension VideoView {
   ///
   /// - Note: In addition to playback the display link must be running for operations such seeking, stepping and entering and leaving
   ///         full screen mode.
+  @MainActor
   func displayIdle() {
     // Because the display link is critical there is an internal setting that can be changed to
     // disable shutting down the display link should any problems with this energy saving feature
@@ -129,15 +130,14 @@ extension VideoView {
       displayIdleTimer.cancel()
       return
     }
-    log.trace("VideoView displayIdle")
-    assert(DispatchQueue.isExecutingIn(.main))
+    log.verbose("VideoView displayIdle")
     displayIdleTimer.restart()
   }
 
   /// Triggered when `displayIdleTimer` times out
+  @MainActor
   @objc func displayIdleDidTimeout() {
     guard let glLayer else { return }
-    assert(DispatchQueue.isExecutingIn(.main))
     glLayer.exitAsynchronousMode()
     glLayer.videoView.stopDisplayLink()
   }
@@ -221,12 +221,10 @@ func displayLinkCallback(
   _ flagsOut: UnsafeMutablePointer<CVOptionFlags>,
   _ context: UnsafeMutableRawPointer?) -> CVReturn {
     let glVideoLayer = unsafeBitCast(context, to: GLVideoLayer.self)
+    glVideoLayer.drawAsync(forced: glVideoLayer.isAsynchronous)
     glVideoLayer.videoView.$isUninited.withLock() { isUninited in
       guard !isUninited else { return }
       glVideoLayer.mpvReportSwap()
-    }
-    if glVideoLayer.isAsynchronous && glVideoLayer.videoView.needsForcedRedraws() {
-      glVideoLayer.drawAsync(forced: true)
     }
     return kCVReturnSuccess
   }

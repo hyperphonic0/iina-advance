@@ -1213,6 +1213,7 @@ final class PlayerCore: NSObject {
     seek(absoluteSecond, absolute: true, option: option)
   }
 
+  @MainActor
   func frameStep(backwards: Bool) {
     // When playback is paused the display link is stopped in order to avoid wasting energy on
     // It must be running when stepping to avoid slowdowns caused by mpv waiting for IINA to call
@@ -2378,6 +2379,7 @@ final class PlayerCore: NSObject {
     }
   }
 
+  @MainActor
   func reloadQuickSettingsViewNow() {
     guard pwc.loaded else { return }
     guard !isStopping else { return }

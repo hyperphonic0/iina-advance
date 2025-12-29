@@ -220,7 +220,7 @@ class GLVideoLayer: CAOpenGLLayer {
   func enterAsynchronousMode() {
     asychronousModeTimer?.invalidate()
     if !isAsynchronous {
-      videoView.player.log.trace("Entering asynchronous mode")
+      videoView.player.log.verbose("Entering asynchronous mode")
     }
     /// Set this to `true` to enable video redraws to match the timing of the view redraw during animations.
     /// This fixes a situation where the layer size may not match the size of its superview at each redraw,
@@ -242,7 +242,7 @@ class GLVideoLayer: CAOpenGLLayer {
   @objc func exitAsynchronousMode() {
     asychronousModeTimer?.invalidate()
     if isAsynchronous {
-      videoView.player.log.trace("Exiting asynchronous mode")
+      videoView.player.log.verbose("Exiting asynchronous mode")
     }
     /// If this is set to `true` while the video is paused, there is some degree of busy-waiting as the
     /// layer is polled at a high rate about whether it needs to draw. Disable this to save CPU while idle.
@@ -251,6 +251,12 @@ class GLVideoLayer: CAOpenGLLayer {
 
   func drawAsync(forced: Bool = false) {
     mpvGLQueue.async { [self] in
+      draw(forced: forced)
+    }
+  }
+
+  func drawSync(forced: Bool = false) {
+    mpvGLQueue.sync { [self] in
       draw(forced: forced)
     }
   }
@@ -344,7 +350,8 @@ class GLVideoLayer: CAOpenGLLayer {
     func mpvUpdateCallback(_ ctx: UnsafeMutableRawPointer?) {
       let layer = bridge(ptr: ctx!) as GLVideoLayer
       layer.videoView.isReadyToRender = true
-      layer.drawAsync()
+      // TODO: see if disabling this & using only the displaylink is a valid solution
+//      layer.drawAsync()
     }
 
     var openGLInitParams = mpv_opengl_init_params(get_proc_address: mpvGetOpenGLFunc,

@@ -94,7 +94,9 @@ class FontPickerWindowController: NSWindowController, NSTableViewDelegate, NSTab
             chosenFamily = family
             chosenFontMembers = typefaces
             familyTableView.selectRowIndexes(IndexSet(integer: familyIndex), byExtendingSelection: false)
+            familyTableView.scrollRowToVisible(familyIndex)
             faceTableView.selectRowIndexes(IndexSet(integer: typefaceIndex), byExtendingSelection: false)
+            faceTableView.scrollRowToVisible(typefaceIndex)
 
             enableSelectionChangeListener = true
             updatePreview()
