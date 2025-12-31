@@ -28,7 +28,7 @@ extension VideoView {
   }
 
   @MainActor
-  func startDisplayLink() {
+  private func startDisplayLink() {
     let link = obtainDisplayLink()
 
     guard !CVDisplayLinkIsRunning(link) else { return }
