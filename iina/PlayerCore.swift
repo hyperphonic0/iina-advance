@@ -2847,6 +2847,8 @@ final class PlayerCore: NSObject {
     let useTimer: Bool
     if state.isAtLeast(.stopping) {
       useTimer = false
+    } else if info.currentPlayback == nil {
+      useTimer = false
     } else if info.isPaused {
       // Follow energy efficiency best practices and ensure IINA is absolutely idle when the
       // video is paused to avoid wasting energy with needless processing. If paused shutdown
