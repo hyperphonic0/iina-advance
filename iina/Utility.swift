@@ -93,6 +93,10 @@ class Utility {
       if disableMenus {
         AppDelegate.shared.menuController.disableAllMenus()
       }
+      if style == .critical {
+        // Emit the system beep
+        NSSound.beep()
+      }
       if let sheetWindow = sheetWindow {
         alert.beginSheetModal(for: sheetWindow)
       } else {
