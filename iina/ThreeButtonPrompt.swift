@@ -106,8 +106,6 @@ fileprivate struct ThreeButtonPromptContent: View {
   let middleAction: Callback
   let cancelAction: Callback
 
-  @Environment(\.dismiss) private var dismiss
-
   var body: some View {
     VStack(alignment: .leading, spacing: 30) {
       HStack(alignment: .top, spacing: 12) {
@@ -153,7 +151,6 @@ fileprivate struct ThreeButtonPromptContent: View {
       HStack(alignment: .bottom, spacing: 0) {
         Button(cancelTitle, role: .cancel) {
           cancelAction()
-          dismiss()
         }
         .fixedSize()
         .controlSize(.large)
@@ -165,7 +162,6 @@ fileprivate struct ThreeButtonPromptContent: View {
 
         Button(middleTitle, role: .destructive) {
           middleAction()
-          dismiss()
         }
         .fixedSize()
         .controlSize(.large)
@@ -176,7 +172,6 @@ fileprivate struct ThreeButtonPromptContent: View {
 
         Button(primaryTitle) {
           primaryAction()
-          dismiss()
         }
         .fixedSize()
         .controlSize(.large)
