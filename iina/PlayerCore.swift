@@ -621,10 +621,8 @@ final class PlayerCore: NSObject {
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
     }
 
-    /// Need to use `sync` so that:
-    /// 1. Prev use of mpv core can finish stopping / drain queue
-    /// 2. `currentPlayback` is guaranteed to update before returning, so that `PlayerCore.activeOrNew` does not return same player
-    mpv.queue.sync { [self] in
+    /// Put work on top of mpv queue so that prev use of mpv core can finish stopping / drain queue
+    mpv.queue.async { [self] in
       let path = playback.path
       info.currentPlayback = playback
       log.debug("Opening player (window=\(isInteractivePlayer.yesno)) for \(path.pii.quoted), playerState=\(state), sessionState=\(pwc.sessionState)")

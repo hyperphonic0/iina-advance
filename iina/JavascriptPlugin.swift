@@ -433,7 +433,7 @@ class JavascriptPlugin: NSObject {
     if let defaultPreferences = jsonDict["preferenceDefaults"] as? [String: Any] {
       self.defaultPreferences = defaultPreferences
     } else {
-      Logger.log("Unable to read preferenceDefaults", level: .warning)
+      Logger.log.debug("Unable to read preferenceDefaults for plugin \(name.quoted)")
       self.defaultPreferences = [:]
     }
 
