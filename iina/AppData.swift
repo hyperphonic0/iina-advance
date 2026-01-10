@@ -712,7 +712,7 @@ struct DebugConfig {
   static let validatePWinGeometry = false
 
   /// Skip the Approve Restore prompt and retry restore if a failed previous restore was detected.
-  static let alwaysApproveRestore = false
+  static let alwaysApproveRestore = true
   static let enableScrollWheelDebug = false
 
   static let logAllScreenChangeEvents = false

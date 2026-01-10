@@ -377,6 +377,7 @@
 		D1B787DB29AF883800DABC9C /* PWinPreviewImgBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */; };
 		D1BE7BCF2D4B7CE90085539F /* TwoRowBarOSCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1BE7BCE2D4B7CD20085539F /* TwoRowBarOSCView.swift */; };
 		D1BE7BD22D4B7E010085539F /* SingleRowBarOSCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1BE7BD12D4B7E000085539F /* SingleRowBarOSCView.swift */; };
+		D1BEC2422F1239CB0054480D /* ThreeButtonPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1BEC2412F1239C40054480D /* ThreeButtonPrompt.swift */; };
 		D1C7410A2CB3833B00522FA7 /* ScrollableSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C741092CB3833500522FA7 /* ScrollableSlider.swift */; };
 		D1C741102CB6476900522FA7 /* PWin_PIP.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */; };
 		D1C741122CB6503400522FA7 /* PWin_Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C741112CB6503100522FA7 /* PWin_Enums.swift */; };
@@ -1906,6 +1907,7 @@
 		D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinPreviewImgBuilder.swift; sourceTree = "<group>"; };
 		D1BE7BCE2D4B7CD20085539F /* TwoRowBarOSCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoRowBarOSCView.swift; sourceTree = "<group>"; };
 		D1BE7BD12D4B7E000085539F /* SingleRowBarOSCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleRowBarOSCView.swift; sourceTree = "<group>"; };
+		D1BEC2412F1239C40054480D /* ThreeButtonPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeButtonPrompt.swift; sourceTree = "<group>"; };
 		D1C741092CB3833500522FA7 /* ScrollableSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollableSlider.swift; sourceTree = "<group>"; };
 		D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_PIP.swift; sourceTree = "<group>"; };
 		D1C741112CB6503100522FA7 /* PWin_Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Enums.swift; sourceTree = "<group>"; };
@@ -2544,6 +2546,7 @@
 		84A0BAA31D2FAEA000BC8DA1 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				D1BEC2412F1239C40054480D /* ThreeButtonPrompt.swift */,
 				D1A44D882A5E18B10089B283 /* PlayerWindow */,
 				84A0BA931D2F9E9600BC8DA1 /* MainMenu.xib */,
 				51CACB9429D500290034CEE5 /* VideoPIPViewController.swift */,
@@ -3459,6 +3462,7 @@
 				8461C5301D462488006E91FF /* VideoTime.swift in Sources */,
 				E3839C5724FFF201007D0AB4 /* PluginStandaloneWindow.swift in Sources */,
 				8492C2881E7721A600CE5825 /* ISO639Helper.swift in Sources */,
+				D1BEC2422F1239CB0054480D /* ThreeButtonPrompt.swift in Sources */,
 				84F5D4991E44E8AC0060A838 /* KeyBindingDataLoader.swift in Sources */,
 				D1D87DFC2923A4E500737886 /* BindingTableStateManager.swift in Sources */,
 				D1E1446C29E3971C005DCEA3 /* IINAAnimation.swift in Sources */,

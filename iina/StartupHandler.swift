@@ -60,7 +60,7 @@ final class StartupHandler {
 
   /// Calls `self.restoreDidTimeOut` on timeout.
   let restoreTimer = TimeoutTimer(timeout: Constants.TimeInterval.restoreWindowsTimeout)
-  var restoreTimeoutAlertPanel: NSAlert? = nil
+  var restoreTimeoutPromptWindow: ThreeButtonPromptWindow? = nil
 
   // Command Line
 
@@ -519,13 +519,7 @@ final class StartupHandler {
     let countTotal = "\(wcsToRestore.count)"
     let namesStalledString = namesStalled.joined(separator: "\n")
     let msgArgs = [countStalled, countTotal, namesStalledString]
-    let askPanel = Utility.buildThreeButtonAskPanel("restore_timeout", msgArgs: msgArgs, middleBtnArgs: [countStalled],
-                                                    alertStyle: .critical)
-    restoreTimeoutAlertPanel = askPanel
-    let userResponse = askPanel.runModal()  // this will block for an indeterminate time
-
-    switch userResponse {
-    case .alertFirstButtonReturn:
+    let okAction: Callback = { [self] in
       log.debug("User chose button 1: keep waiting")
       guard state != .doneOpening else {
         log.debug("Looks like windows finished opening - no need to restart restore timer")
@@ -533,12 +527,13 @@ final class StartupHandler {
       }
       dismissTimeoutAlertPanel()
       restoreTimer.restart()
-
-    case .alertSecondButtonReturn:
+    }
+    let middleAction = { [self] in
       // Launch async in case loading actually finished
       DispatchQueue.main.async { [self] in
         log.debug("User chose button 2: discard stalled windows & continue with partial restore")
-        restoreTimeoutAlertPanel = nil  // Clear this (no longer needed)
+        dismissTimeoutAlertPanel()
+
         guard state != .doneOpening else {
           log.debug("Looks like windows finished opening - no need to close anything")
           return
@@ -559,35 +554,33 @@ final class StartupHandler {
           }
         }
       }
-
-    case .alertThirdButtonReturn:
+    }
+    let cancelAction = {
       log.debug("User chose button 3: quit")
       NSApp.terminate(nil)
-
-    case .abort:
-      log.debug("Restore timeout alert aborted; terminating")
-      NSApp.terminate(nil)
-    case .stop:
-      log.debug("Restore timeout alert stopped; terminating")
-      NSApp.terminate(nil)
-
-    default:
-      log.fatalError("User responded to Restore Timeout alert with unrecognized choice!")
     }
+    if let restoreTimeoutPromptWindow {
+      restoreTimeoutPromptWindow.update("restore_timeout", msgArgs: msgArgs, middleBtnArgs: [countStalled],
+                                        okAction: okAction, middleAction: middleAction, cancelAction: cancelAction)
+    } else {
+      let promptWindow = ThreeButtonPromptWindow("restore_timeout", msgArgs: msgArgs, middleBtnArgs: [countStalled],
+                                                 okAction: okAction, middleAction: middleAction, cancelAction: cancelAction)
+      restoreTimeoutPromptWindow = promptWindow
+    }
+
+    restoreTimeoutPromptWindow?.makeKeyAndOrderFront(nil)
   }
 
   /// Called if all the windows become ready while still displaying the timeout dialog, Dismisses the dialog
   /// automatically, so the user does not have to do it themselves.
   @MainActor
   private func dismissTimeoutAlertPanel() {
-    guard let restoreTimeoutAlertPanel else { return }
+    guard let restoreTimeoutPromptWindow else { return }
 
     /// Dismiss the prompt (if any). It seems we can't just call `close` on its `window` object, because the
     /// responder chain is left unusable. Instead, click its default button after setting `state`.
     Logger.log.debug("Dismissing Restore Timeout alert panel")
-    let keepWaitingBtn = restoreTimeoutAlertPanel.buttons[0]
-    keepWaitingBtn.performClick(self)
-    self.restoreTimeoutAlertPanel = nil
+    restoreTimeoutPromptWindow.orderOut(nil)
 
     /// This may restart the timer if not in the correct state, so account for that.
   }
@@ -715,7 +708,6 @@ final class StartupHandler {
     if isInteractiveLaunch {
       /// Make sure to do this *after* `state = .doneOpening`
       /// (note: this does nothing in recent versions of MacOS cuz it is a modal alert
-      // FIXME: reimplement timeout alert with custom non-modal window so it can be auto-closed
       dismissTimeoutAlertPanel()
 
       initAppUI()
