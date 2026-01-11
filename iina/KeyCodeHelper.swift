@@ -337,7 +337,6 @@ struct KeyCodeHelper {
     return keystrokesSplit.joined(separator: "-")
   }
 
-  // TODO: to simplify logic: add call to normalizeMpv at end of this, since it's always called
   static func mpvKeyCode(from event: NSEvent) -> String {
     var keyString = ""
     let keyChar: String
@@ -376,11 +375,11 @@ struct KeyCodeHelper {
 
     if modifiers.contains(.numericPad), let numericChar = Int(keyChar), 0 <= numericChar, numericChar <= 9 {
       keyString += "KP\(numericChar)"
-      return keyString
+    } else {
+      // char
+      keyString += keyChar
     }
-    // char
-    keyString += keyChar
-    return keyString
+    return normalizeMpv(keyString)
   }
 
   // Finds and returns the end index of the next key in the string

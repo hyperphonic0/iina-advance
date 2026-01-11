@@ -52,11 +52,10 @@ final class PlayerWindow: NSWindow {
   override func keyDown(with event: NSEvent) {
     assert(DispatchQueue.isExecutingIn(.main))
     let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
-    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
     if !event.isARepeat {
       keyDownCount += 1
     }
-    log.verbose("KEYDN #\(keyDownCount)\(event.isARepeat ? " (repeat)" : ""): \(normalizedKeyCode.quoted)")
+    log.verbose("KEYDN #\(keyDownCount)\(event.isARepeat ? " (repeat)" : ""): \(keyCode.quoted)")
 
     guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.keyDown()!") }
 
@@ -72,7 +71,7 @@ final class PlayerWindow: NSWindow {
     }
 
     let staticMenuItemMappings = AppInputConfig.staticMenuItemMappings
-    if staticMenuItemMappings.contains(where: { $0.normalizedMpvKey == normalizedKeyCode }) {
+    if staticMenuItemMappings.contains(where: { $0.normalizedMpvKey == keyCode }) {
       // For the sake of consistency, do not fall through & try to process a key mapping, even
       // if the corresponding menu item is disabled.
       log.verbose("KeyDown: key is a known menu item binding but was not handled. Beeping")
@@ -83,7 +82,7 @@ final class PlayerWindow: NSWindow {
     /// Forward all other key events which the window receives to its controller.
     /// This allows `ESC` & `TAB` key bindings to work, instead of getting swallowed by
     /// MacOS keyboard focus navigation (which PlayerWindow doesn't use).
-    if pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode) {
+    if pwc.handleKeyDown(event: event, normalizedMpvKey: keyCode) {
       log.trace("KeyDown: was handled by key binding")
       return
     }
@@ -113,11 +112,10 @@ final class PlayerWindow: NSWindow {
       }
     }
 
-    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-    log.verbose("KEYUP #\(keyUpCount): \(normalizedKeyCode.quoted)")
+    log.verbose("KEYUP #\(keyUpCount): \(keyCode.quoted)")
 
     PluginInputManager.handle(
-      input: normalizedKeyCode, event: .keyUp, player: pwc.player,
+      input: keyCode, event: .keyUp, player: pwc.player,
       arguments: pwc.keyEventArgs(event), defaultHandler: {
         // invalid key
         super.keyUp(with: event)
@@ -128,9 +126,7 @@ final class PlayerWindow: NSWindow {
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
     guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.performKeyEquivalent!") }
     let keyCode: String = KeyCodeHelper.mpvKeyCode(from: event)
-
-    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-    log.verbose("KEY Equiv: \(normalizedKeyCode.quoted)")
+    log.verbose("KEY Equiv: \(keyCode.quoted)")
 
     if processForImmediateView(keyCode: keyCode, pwc) {
       return true
@@ -140,7 +136,7 @@ final class PlayerWindow: NSWindow {
     /// (although for some reason it is the opposite for `ESC`, `TAB`, `ENTER` or `RETURN`).
     /// Need to add an explicit check here for arrow keys to ensure that they always work when desired.
     if let responder = firstResponder, shouldFavorArrowKeyNavigation(for: responder) {
-      switch normalizedKeyCode {
+      switch keyCode {
       case "UP", "DOWN", "LEFT", "RIGHT":
         // Send arrow keys to view to enable key navigation
         responder.keyDown(with: event)
@@ -157,7 +153,7 @@ final class PlayerWindow: NSWindow {
     }
 
     let staticMenuItemMappings = AppInputConfig.staticMenuItemMappings
-    if staticMenuItemMappings.contains(where: { $0.normalizedMpvKey == normalizedKeyCode }) {
+    if staticMenuItemMappings.contains(where: { $0.normalizedMpvKey == keyCode }) {
       // For the sake of consistency, do not fall through & try to process a key mapping, even
       // if the corresponding menu item is disabled.
       log.verbose("KeyEquiv: key was not handled, but is a known menu item binding. Skipping")
@@ -169,7 +165,7 @@ final class PlayerWindow: NSWindow {
     /// use the command key are sometimes unreliable.
     /// Let's take all the bindings which don't include command and invert their precedence, so that the window is allowed to handle it
     /// before the menu.
-    if pwc.handleKeyDown(event: event, normalizedMpvKey: normalizedKeyCode) {
+    if pwc.handleKeyDown(event: event, normalizedMpvKey: keyCode) {
       log.trace("KeyEquiv: trying to process as a key binding")
       return true
     }
