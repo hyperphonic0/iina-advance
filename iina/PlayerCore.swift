@@ -1860,8 +1860,7 @@ final class PlayerCore: NSObject {
         if code >= 0 { return }
         log.error("Unsupported video: \(url.path)")
         DispatchQueue.main.async {
-          // FIXME: need to add text for `unsupported_video` (or delete this)
-          Utility.showAlert("unsupported_audio")
+          Utility.showAlert("unsupported_video")
         }
       }
     }
