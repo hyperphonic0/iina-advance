@@ -89,12 +89,13 @@ struct Playback: CustomStringConvertible {
     self.init(id, playlistPos: playlistPos, parentPlaylist: parentPlaylist, state: state)
   }
 
-  func clone(playlistPos: Int? = nil, parentPlaylist: String? =  nil,
+  func clone(id: PlaybackID? = nil,
+             playlistPos: Int? = nil, parentPlaylist: String? =  nil,
              state: LifecycleState? = nil,
              thumbnails: SingleMediaThumbnailsLoader? = nil,
              clearThumbnails: Bool = false) -> Playback {
     let thumbnailsOut = clearThumbnails ? nil : thumbnails ?? self.thumbnails
-    return Playback(id, playlistPos: playlistPos ?? self.playlistPos,
+    return Playback(id ?? self.id, playlistPos: playlistPos ?? self.playlistPos,
                     parentPlaylist: parentPlaylist ?? self.parentPlaylist,
                     state: state ?? self.state,
                     thumbnails: thumbnailsOut)
@@ -110,18 +111,21 @@ struct PlaybackID: Sendable, Equatable, Hashable {
   /// Equivalent to `PlaybackID.url(fromPath: mpvFilename)`
   let url: URL
   let mpvMD5: String
+  let bookmark: Data?
 
   /// if `url` is `nil`, assumed to be `stdin`.
-  init(_ url: URL?) {
+  init(_ url: URL?, bookmark: Data? = nil) {
     let url = url ?? URL(string: "stdin")!
     self.url = url
     mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
+    self.bookmark = bookmark
   }
 
-  init?(path: String) {
+  init?(path: String, bookmark: Data? = nil) {
     guard let url = PlaybackID.url(fromPath: path) else { return nil }
     self.url = url
     mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
+    self.bookmark = bookmark
   }
 
   var path: String { PlaybackID.path(from: url) }
@@ -177,6 +181,7 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     }
   }
 
+  /// Gets a MacOS bookmark from given URL. Expensive operation!
   static func bookmark(fromURL url: URL, _ log: any Logger.Subsystem) -> Data? {
     guard url.isFileURL else { return nil }
     guard FileManager.default.fileExists(atPath: url.path) else {

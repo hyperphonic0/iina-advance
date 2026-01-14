@@ -2214,63 +2214,6 @@ final class PlayerCore: NSObject {
     }
   }
 
-  /// Auto load via background queue
-  private func fileLoaded_backgroundQueueWork(for currentPlayback: Playback,
-                                              currentTicket: Int,
-                                              shouldAutoLoadFiles: Bool,
-                                              priorStateIfRestoring: PlayerSaveState?) {
-    assert(DispatchQueue.isExecutingIn(PlayerCore.backgroundQueue))
-    let isRestoring = priorStateIfRestoring != nil
-
-    // Auto-load: add files in same folder to playlist (if configured)
-    if shouldAutoLoadFiles {
-      assert(!isRestoring, "shouldAutoLoadFiles should not be true when restoring!")
-      log.debug("Started auto load of files in current folder")
-      autoLoadFilesInCurrentFolder(ticket: currentTicket)
-    }
-
-    // Search for external subtitles on disk, auto-load if found
-    if let matchedSubs = info.getMatchedSubs(currentPlayback.path) {
-      log.debug("Found \(matchedSubs.count) external subs for current file")
-      var loadedSubs = Set<URL>()
-      for sub in matchedSubs {
-        // filter duplicated matched subtitles, see https://github.com/iina/iina/issues/5399
-        guard !loadedSubs.contains(sub) else { continue }
-        loadedSubs.insert(sub)
-        guard currentTicket == backgroundQueueTicket else { return }
-        loadExternalSubFile(sub)
-      }
-      if !isRestoring {
-        // set sub to the first one
-        // TODO: why?
-        log.debug("Setting subtitle track to because an external sub was found")
-        guard currentTicket == backgroundQueueTicket, mpv.mpv != nil else { return }
-        setTrack(1, forType: .sub)
-      }
-    }
-
-    // Search for online subtitles, auto-load if found
-    if Preference.bool(for: .autoSearchOnlineSub) &&
-        !info.isNetworkResource &&
-        info.subTracks.isEmpty &&
-        (info.playbackDurationSec ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
-      pwc.menuFindOnlineSub(pwc)
-    }
-
-    guard currentTicket == backgroundQueueTicket, mpv.mpv != nil else { return }
-
-    // Set SID & S2ID now that all subs are available
-    if let priorState = priorStateIfRestoring {
-      if let priorSID = priorState.int(for: .sid) {
-        setTrack(priorSID, forType: .sub, silent: true)
-      }
-      if let priorS2ID = priorState.int(for: .s2id) {
-        setTrack(priorS2ID, forType: .secondSub, silent: true)
-      }
-    }
-    log.debug("Auto load done")
-  }
-
   func fileEnded(dueToStopCommand: Bool, detail: String) {
     // if receive end-file when loading file, might be error
     // wait for idle
@@ -2370,6 +2313,38 @@ final class PlayerCore: NSObject {
     mpv.setString(MPVProperty.audioDevice, replacement.name)
   }
 
+  func playbackRestarted() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    log.debug("Playback restarted")
+
+    DispatchQueue.main.async { [self] in
+      info.isSeeking = false
+      // Important to synchronize the time as mpv may slightly alter the playback position during a
+      // restart even while paused. See issue #5337.
+      updatePlaybackTimeInfo()  // prepare for updateUI()
+      pwc.updateUI()
+
+      // When playback is paused the display link may be shutdown in order to not waste energy.
+      // The display link will be restarted while seeking. If playback is paused shut it down again.
+      if info.isPaused {
+        videoView.displayIdle()
+      }
+
+      // End of seeking? Set short timer to hide seek time & thumbnail
+      pwc.seekPreview.restartHideTimer()
+
+      saveState()
+    }
+  }
+
+  func refreshEdrMode() {
+    pwc.animationPipeline.submitInstantTask { [self] in
+      guard isActive else { return }
+      guard pwc.loaded else { return }
+      videoView.refreshEdrMode()
+    }
+  }
+
   /// *Enqueues*
   func setQuickSettingsViewNeedsUpdate() {
     pwc.animationPipeline.doAfterGTFs{ [self] in
@@ -2402,36 +2377,106 @@ final class PlayerCore: NSObject {
     }
   }
 
-  func playbackRestarted() {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    log.debug("Playback restarted")
+  // MARK: - Background work
 
-    DispatchQueue.main.async { [self] in
-      info.isSeeking = false
-      // Important to synchronize the time as mpv may slightly alter the playback position during a
-      // restart even while paused. See issue #5337.
-      updatePlaybackTimeInfo()  // prepare for updateUI()
-      pwc.updateUI()
+  /// Auto load via background queue
+  private func fileLoaded_backgroundQueueWork(for currentPlayback: Playback,
+                                              currentTicket: Int,
+                                              shouldAutoLoadFiles: Bool,
+                                              priorStateIfRestoring: PlayerSaveState?) {
+    assert(DispatchQueue.isExecutingIn(PlayerCore.backgroundQueue))
+    let isRestoring = priorStateIfRestoring != nil
 
-      // When playback is paused the display link may be shutdown in order to not waste energy.
-      // The display link will be restarted while seeking. If playback is paused shut it down again.
-      if info.isPaused {
-        videoView.displayIdle()
-      }
+    guard currentTicket == backgroundQueueTicket else { return }
 
-      // End of seeking? Set short timer to hide seek time & thumbnail
-      pwc.seekPreview.restartHideTimer()
+    loadBookmark(forCurrentPlayback: currentPlayback)
 
-      saveState()
+    // Auto-load: add files in same folder to playlist (if configured)
+    if shouldAutoLoadFiles {
+      assert(!isRestoring, "shouldAutoLoadFiles should not be true when restoring!")
+      log.debug("Started auto load of files in current folder")
+      autoLoadFilesInCurrentFolder(ticket: currentTicket)
     }
+
+    // Search for external subtitles on disk, auto-load if found
+    if let matchedSubs = info.getMatchedSubs(currentPlayback.path) {
+      log.debug("Found \(matchedSubs.count) external subs for current file")
+      var loadedSubs = Set<URL>()
+      for sub in matchedSubs {
+        // filter duplicated matched subtitles, see https://github.com/iina/iina/issues/5399
+        guard !loadedSubs.contains(sub) else { continue }
+        loadedSubs.insert(sub)
+        guard currentTicket == backgroundQueueTicket else { return }
+        loadExternalSubFile(sub)
+      }
+      if !isRestoring {
+        // set sub to the first one
+        // TODO: why?
+        log.debug("Setting subtitle track to because an external sub was found")
+        guard currentTicket == backgroundQueueTicket, mpv.mpv != nil else { return }
+        setTrack(1, forType: .sub)
+      }
+    }
+
+    // Search for online subtitles, auto-load if found
+    if Preference.bool(for: .autoSearchOnlineSub) &&
+        !info.isNetworkResource &&
+        info.subTracks.isEmpty &&
+        (info.playbackDurationSec ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
+      pwc.menuFindOnlineSub(pwc)
+    }
+
+    guard currentTicket == backgroundQueueTicket, mpv.mpv != nil else { return }
+
+    // Set SID & S2ID now that all subs are available
+    if let priorState = priorStateIfRestoring {
+      if let priorSID = priorState.int(for: .sid) {
+        setTrack(priorSID, forType: .sub, silent: true)
+      }
+      if let priorS2ID = priorState.int(for: .s2id) {
+        setTrack(priorS2ID, forType: .secondSub, silent: true)
+      }
+    }
+    log.debug("Auto load done")
   }
 
-  func refreshEdrMode() {
-    pwc.animationPipeline.submitInstantTask { [self] in
-      guard isActive else { return }
-      guard pwc.loaded else { return }
-      videoView.refreshEdrMode()
+  /**
+   Add files in the same folder to playlist.
+   It basically follows the following steps:
+   - Get all files in current folder. Group and sort videos and audios, and add them to playlist.
+   - Scan subtitles from search paths, combined with subs got in previous step.
+   - Try match videos and subs by series and filename.
+   - For unmatched videos and subs, perform fuzzy (but slow, O(n^2)) match for them.
+
+   **Remark**:
+
+   This method is expected to be executed in `backgroundQueue` (see `backgroundQueueTicket`).
+   Therefore accesses to `self.info` and mpv playlist must be guarded.
+   */
+  private func autoLoadFilesInCurrentFolder(ticket: Int) {
+    AutoFileMatcher(player: self, ticket: ticket).startMatching()
+  }
+
+  /// Returns a MacOS bookmark for the given playback, if possible.
+  /// If a cached bookmark is found, returns that. Otherwise a new bookmark will attempt to be generated. If successful, it will be cached and returned.
+  @discardableResult
+  func loadBookmark(forCurrentPlayback currentPlayback: Playback) -> Data? {
+    if let bookmark = currentPlayback.id.bookmark {
+      return bookmark
     }
+    guard !currentPlayback.isNetworkResource else { return nil }
+    guard let bookmarkData = PlaybackID.bookmark(fromURL: currentPlayback.url, log) else {
+      log.verbose("Failed to create bookmark for playback: \(currentPlayback.path.pii.quoted)")
+      return nil
+    }
+    // Update cached PlaybackID with bookmark
+    let idWithBookmark = PlaybackID(currentPlayback.id.url, bookmark: bookmarkData)
+    mpv.queue.async { [self] in
+      guard let currentPlayback = info.currentPlayback, currentPlayback.id.url == idWithBookmark.url else { return }
+      log.verbose("Updating currentPlayback with bookmark data")
+      info.currentPlayback = currentPlayback.clone(id: idWithBookmark)
+    }
+    return bookmarkData
   }
 
   // MARK: - Subtitles
@@ -2752,23 +2797,6 @@ final class PlayerCore: NSObject {
     log.verbose("Stopping FS watch of sub file \(PlaybackID.path(from: subFileMonitor.url).pii.quoted)")
     subFileMonitor.stopMonitoring()
     self.subFileMonitor = nil
-  }
-
-  /**
-   Add files in the same folder to playlist.
-   It basically follows the following steps:
-   - Get all files in current folder. Group and sort videos and audios, and add them to playlist.
-   - Scan subtitles from search paths, combined with subs got in previous step.
-   - Try match videos and subs by series and filename.
-   - For unmatched videos and subs, perform fuzzy (but slow, O(n^2)) match for them.
-
-   **Remark**:
-
-   This method is expected to be executed in `backgroundQueue` (see `backgroundQueueTicket`).
-   Therefore accesses to `self.info` and mpv playlist must be guarded.
-   */
-  private func autoLoadFilesInCurrentFolder(ticket: Int) {
-    AutoFileMatcher(player: self, ticket: ticket).startMatching()
   }
 
   // MARK: - Sync UI with Playback State

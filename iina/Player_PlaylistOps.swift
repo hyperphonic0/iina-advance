@@ -584,7 +584,7 @@ extension PlayerCore {
       info.shouldAutoLoadFiles = true
       let returnCode = mpv.command(.loadfile, args: [path, "replace"], checkError: false)
       guard returnCode == 0 else {
-        // TODO: report error
+        playlistErrorDidOccur(returnCode, opDesc: "load file")
         return
       }
       _reloadPlaylist()
@@ -648,7 +648,8 @@ extension PlayerCore {
     DispatchQueue.main.async { [self] in
       undoHelper.clearUndoes()
       reloadPlaylist(savePlayerState: false)
-      // TODO: beep
+      // Emit the system beep
+      NSSound.beep()
     }
   }
 
