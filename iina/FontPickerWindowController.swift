@@ -177,16 +177,18 @@ class FontPickerWindowController: NSWindowController, NSTableViewDelegate, NSTab
   }
 
   @IBAction func okBtnPressed(_ sender: AnyObject) {
-    if let block = finishedPicking {
+    if let finishedPicking {
       let otherString = otherField.stringValue
-      block(otherString)
+      let selectedFont = otherString.isEmpty ? Constants.String.mpvDefaultFont : otherString
+      finishedPicking(selectedFont)
       // remove the listener
-      finishedPicking = nil
+      self.finishedPicking = nil
     }
     self.close()
   }
 
   @IBAction func cancelBtnPressed(_ sender: AnyObject) {
+    self.finishedPicking = nil  // remove listener if any
     self.close()
   }
 
