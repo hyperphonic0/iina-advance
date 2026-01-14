@@ -24,24 +24,27 @@ fileprivate let windowGeometryPrefStringVersion = "2"
 fileprivate let musicModeGeoPrefStringVersion = "2"
 fileprivate let playlistVideosCSVVersion = "1"
 
+fileprivate let printJsonData: Bool = false
+
 fileprivate typealias PropName = PlayerSaveState.PropName
 
 /// Data structure for saving to prefs / restoring from prefs the UI state of a single player window
 struct PlayerSaveState: CustomStringConvertible {
   enum PropName: String {
-    case buildNumber = "buildNum"       /// Added in v1.2
+    case buildNumber = "buildNum"                /// Added in v1.2
     case launchID = "launchID"
 
-    case playlistPos = "playlistPos"    /// `MPVProperty.playlistPos`. Added in v1.4
+    case playlistPos = "playlistPos"             /// `MPVProperty.playlistPos`. Added in v1.4
     case playlistPaths = "playlistPaths"
+    case playlistBookmarks = "playlistBookmarks" /// Added in v1.5: better tracking of playlist paths, improves security
 
     case playlistVideos = "playlistVideos"
     case playlistSubtitles = "playlistSubs"
     case matchedSubtitles = "matchedSubs"
 
     case intendedViewportSize = "intendedViewportSize"  // No longer used in v1.4
-    case layoutState = "layoutSpec"     /// Class `LayoutSpec` was merged into `LayoutState` in v1.4
-    case videoGeo = "videoGeo"          /// Added in v1.2
+    case layoutState = "layoutSpec"              /// Class `LayoutSpec` was merged into `LayoutState` in v1.4
+    case videoGeo = "videoGeo"                   /// Added in v1.2
     case windowedModeGeo = "windowedModeGeo"
     case musicModeGeo = "musicModeGeo"
     case screens = "screens"
@@ -50,69 +53,70 @@ struct PlayerSaveState: CustomStringConvertible {
     case isOnTop = "onTop"
 
     case url = "url"
-    case playPosition = "playPosition"  /// `MPVOption.PlaybackControl.start`
-    case playDuration = "playDuration"  /// `MPVProperty.duration`
-    case paused = "paused"              /// `MPVOption.PlaybackControl.pause`
+    case bookmark = "bookmark"                   /// Added in v1.5
+    case playPosition = "playPosition"           /// `MPVOption.PlaybackControl.start`
+    case playDuration = "playDuration"           /// `MPVProperty.duration`
+    case paused = "paused"                       /// `MPVOption.PlaybackControl.pause`
 
-    case vid = "vid"                    /// `MPVOption.TrackSelection.vid`
-    case vidDisabled = "vidDisabled"    /// IINA `info.vidDisabled`
-    case aid = "aid"                    /// `MPVOption.TrackSelection.aid`
-    case sid = "sid"                    /// `MPVOption.TrackSelection.sid`
-    case s2id = "sid2"                  /// `MPVOption.Subtitles.secondarySid`
+    case vid = "vid"                             /// `MPVOption.TrackSelection.vid`
+    case vidDisabled = "vidDisabled"             /// IINA `info.vidDisabled`
+    case aid = "aid"                             /// `MPVOption.TrackSelection.aid`
+    case sid = "sid"                             /// `MPVOption.TrackSelection.sid`
+    case s2id = "sid2"                           /// `MPVOption.Subtitles.secondarySid`
 
-    case hwdec = "hwdec"                /// `MPVOption.Video.hwdec`
-    case deinterlace = "deinterlace"    /// `MPVOption.Video.deinterlace`
-    case hdrEnabled = "hdrEnabled"      /// IINA setting
+    case hwdec = "hwdec"                         /// `MPVOption.Video.hwdec`
+    case deinterlace = "deinterlace"             /// `MPVOption.Video.deinterlace`
+    case hdrEnabled = "hdrEnabled"               /// IINA setting
 
-    case brightness = "brightness"      /// `MPVOption.Equalizer.brightness`
-    case contrast = "contrast"          /// `MPVOption.Equalizer.contrast`
-    case saturation = "saturation"      /// `MPVOption.Equalizer.saturation`
-    case gamma = "gamma"                /// `MPVOption.Equalizer.gamma`
-    case hue = "hue"                    /// `MPVOption.Equalizer.hue`
+    case brightness = "brightness"               /// `MPVOption.Equalizer.brightness`
+    case contrast = "contrast"                   /// `MPVOption.Equalizer.contrast`
+    case saturation = "saturation"               /// `MPVOption.Equalizer.saturation`
+    case gamma = "gamma"                         /// `MPVOption.Equalizer.gamma`
+    case hue = "hue"                             /// `MPVOption.Equalizer.hue`
 
     // Added in v1.4
-    case videoZoom = "videoZoom"        /// `MPVOption.Video.videoZoom`
-    case videoPanX = "videoPanX"        /// `MPVOption.Video.videoPanX`
-    case videoPanY = "videoPanY"        /// `MPVOption.Video.videoPanY`
+    case videoZoom = "videoZoom"                 /// `MPVOption.Video.videoZoom`
+    case videoPanX = "videoPanX"                 /// `MPVOption.Video.videoPanX`
+    case videoPanY = "videoPanY"                 /// `MPVOption.Video.videoPanY`
 
-    case videoFilters = "vf"            /// `MPVProperty.vf`
-    case audioFilters = "af"            /// `MPVProperty.af`
-    case videoFiltersDisabled = "vfDisabled"/// IINA-only
+    case videoFilters = "vf"                     /// `MPVProperty.vf`
+    case audioFilters = "af"                     /// `MPVProperty.af`
+    case videoFiltersDisabled = "vfDisabled"     /// IINA-only
 
-    case playSpeed = "playSpeed"        /// `MPVOption.PlaybackControl.speed`
-    case volume = "volume"              /// `MPVOption.Audio.volume`
-    case isMuted = "muted"              /// `MPVOption.Audio.mute`
-    case maxVolume = "maxVolume"        /// `MPVOption.Audio.volumeMax`
-    case audioDelay = "audioDelay"      /// `MPVOption.Audio.audioDelay`
-    case abLoopA = "abLoopA"            /// `MPVOption.PlaybackControl.abLoopA`
-    case abLoopB = "abLoopB"            /// `MPVOption.PlaybackControl.abLoopB`
+    case playSpeed = "playSpeed"                 /// `MPVOption.PlaybackControl.speed`
+    case volume = "volume"                       /// `MPVOption.Audio.volume`
+    case isMuted = "muted"                       /// `MPVOption.Audio.mute`
+    case maxVolume = "maxVolume"                 /// `MPVOption.Audio.volumeMax`
+    case audioDelay = "audioDelay"               /// `MPVOption.Audio.audioDelay`
+    case abLoopA = "abLoopA"                     /// `MPVOption.PlaybackControl.abLoopA`
+    case abLoopB = "abLoopB"                     /// `MPVOption.PlaybackControl.abLoopB`
 
     /// Deprecated props, last used in v1.2.2 (replaced by single prop: `.videoGeo`)
-    case videoRawWidth = "vidRawW"      /// `MPVProperty.width`
-    case videoRawHeight = "vidRawH"     /// `MPVProperty.height`
-    case videoAspectLabel = "aspect"    /// Converted into `MPVOption.Video.videoAspectOverride`
-    case cropLabel = "cropLabel"        /// Converted into crop filter
-    case videoRotation = "videoRotate"  /// `MPVOption.Video.videoRotate`
-    case totalRotation = "totalRotation"/// `MPVProperty.videoParamsRotate`
+    case videoRawWidth = "vidRawW"               /// `MPVProperty.width`
+    case videoRawHeight = "vidRawH"              /// `MPVProperty.height`
+    case videoAspectLabel = "aspect"             /// Converted into `MPVOption.Video.videoAspectOverride`
+    case cropLabel = "cropLabel"                 /// Converted into crop filter
+    case videoRotation = "videoRotate"           /// `MPVOption.Video.videoRotate`
+    case totalRotation = "totalRotation"         /// `MPVProperty.videoParamsRotate`
 
-    case isSubVisible = "subVisible"    /// `MPVOption.Subtitles.subVisibility`
-    case isSub2Visible = "sub2Visible"  /// `MPVOption.Subtitles.secondarySubVisibility`
-    case subDelay = "subDelay"          /// `MPVOption.Subtitles.subDelay`
-    case sub2Delay = "sub2Delay"        /// `MPVOption.Subtitles.secondarySubDelay`
-    case subPos = "subPos"              /// `MPVOption.Subtitles.subPos`
-    case sub2Pos = "sub2Pos"            /// `MPVOption.Subtitles.secondarySubPos`
-    case subScale = "subScale"          /// `MPVOption.Subtitles.subScale`
+    case isSubVisible = "subVisible"             /// `MPVOption.Subtitles.subVisibility`
+    case isSub2Visible = "sub2Visible"           /// `MPVOption.Subtitles.secondarySubVisibility`
+    case subDelay = "subDelay"                   /// `MPVOption.Subtitles.subDelay`
+    case sub2Delay = "sub2Delay"                 /// `MPVOption.Subtitles.secondarySubDelay`
+    case subPos = "subPos"                       /// `MPVOption.Subtitles.subPos`
+    case sub2Pos = "sub2Pos"                     /// `MPVOption.Subtitles.secondarySubPos`
+    case subScale = "subScale"                   /// `MPVOption.Subtitles.subScale`
 
     // More sub properties added in v1.4
-    case subFont = "subFont"               /// `MPVOption.Subtitles.subFont`
-    case subFontSize = "subFontSize"       /// `MPVOption.Subtitles.subFontSize`
-    case subColor = "subColor"             /// `MPVOption.Subtitles.subColor`
-    case subBgColor = "subBgColor"         /// `MPVOption.Subtitles.subBackColor`
-    case subBorderColor = "subBorderColor" /// `MPVOption.Subtitles.subBorderColor`
-    case subBorderSize = "subBorderSize"   /// `MPVOption.Subtitles.subBorderSize`
+    case subFont = "subFont"                     /// `MPVOption.Subtitles.subFont`
+    case subFontSize = "subFontSize"             /// `MPVOption.Subtitles.subFontSize`
+    case subColor = "subColor"                   /// `MPVOption.Subtitles.subColor`
+    case subBgColor = "subBgColor"               /// `MPVOption.Subtitles.subBackColor`
+    case subBorderColor = "subBorderColor"       /// `MPVOption.Subtitles.subBorderColor`
+    case subBorderSize = "subBorderSize"         /// `MPVOption.Subtitles.subBorderSize`
 
-    case loopPlaylist = "loopPlaylist"  /// `MPVOption.PlaybackControl.loopPlaylist`
-    case loopFile = "loopFile"          /// `MPVOption.PlaybackControl.loopFile`
+    case loopPlaylist = "loopPlaylist"           /// `MPVOption.PlaybackControl.loopPlaylist`
+    case loopFile = "loopFile"                   /// `MPVOption.PlaybackControl.loopFile`
 
     /// Dictionary of mpv options & properties, as set in Settings > Advanced > Addtional mpv options
     /// at the time of the player's initial creation.
@@ -262,6 +266,10 @@ struct PlayerSaveState: CustomStringConvertible {
         PropName.playlistSubtitles.rawValue,
         PropName.matchedSubtitles.rawValue:
         return false
+      case PropName.bookmark.rawValue,
+        PropName.playlistBookmarks.rawValue:
+        // Binary data (also contains PII)
+        return false
       default:
         return true
       }
@@ -269,18 +277,66 @@ struct PlayerSaveState: CustomStringConvertible {
 
     let propsJSON = json(from: filteredProps) ?? "<ERROR>"
 
-    return "PlayerSaveState{url=\(urlPath.pii.quoted) props=\(propsJSON))"
+    return "PlayerSaveState{'url': \(urlPath.pii.quoted), 'props': \(propsJSON)}"
   }
 
-  func json(from object:Any) -> String? {
-    guard let data = try? JSONSerialization.data(withJSONObject: object, options: []) else {
+  fileprivate func json(from object: Any) -> String? {
+    // Sanitize arbitrary Foundation structures into JSON-serializable equivalents
+    func sanitize(_ value: Any) -> Any {
+      switch value {
+      case let dict as [String: Any]:
+        var out: [String: Any] = [:]
+        for (k, v) in dict { out[k] = sanitize(v) }
+        return out
+      case let array as [Any]:
+        return array.map { sanitize($0) }
+      case let data as Data:
+        if printJsonData {
+            // Data is not JSON-serializable; convert to base64 so we don't crash
+            return ["_type": "Data", "base64": data.base64EncodedString()]
+        } else {
+          return "__data__"
+        }
+      case let url as URL:
+        return url.absoluteString
+      case let num as NSNumber:
+        return num
+      case let str as String:
+        return str
+      case let bool as Bool:
+        return bool
+      case let date as Date:
+        return ISO8601DateFormatter().string(from: date)
+      case is NSNull:
+        return NSNull()
+      default:
+        // Fallback: stringify unknown types to avoid exceptions during logging
+        return String(describing: value)
+      }
+    }
+
+    let sanitized = sanitize(object)
+    guard JSONSerialization.isValidJSONObject(sanitized) else {
+      log.error("Failed to serialize to JSON: object is not a valid JSON object")
       return nil
     }
-    return String(data: data, encoding: String.Encoding.utf8)
+
+    do {
+      let data = try JSONSerialization.data(withJSONObject: sanitized, options: [])
+      return String(data: data, encoding: .utf8)
+    } catch {
+      log.error("Failed to serialize to JSON: \(error)")
+      return nil
+    }
   }
 
   var url: URL? {
-    url(for: .url)
+    if let bookmarkData = properties[PropName.bookmark.rawValue] as? Data,
+       let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
+      log.verbose("Restored player url from bookmark: \(bookmarkURL.absoluteString.pii.quoted)")
+      return bookmarkURL
+    }
+    return url(for: .url)
   }
 
   var buildNumber: Int? {
@@ -294,10 +350,11 @@ struct PlayerSaveState: CustomStringConvertible {
       return []
     }
 
-    return playlistPathList
-    // TODO: resolve bookmarks
-/*
-    guard let playlistBookmarks = properties[PropName.playlistBookmarks.rawValue] as? [NSData?] else {
+    let sw = Utility.Stopwatch()
+
+    // Use bookmarks if available to resolve paths securely and robustly
+    guard let playlistBookmarks = properties[PropName.playlistBookmarks.rawValue] as? [Data] else {
+      // No bookmarks, return plain paths
       return playlistPathList
     }
 
@@ -308,21 +365,21 @@ struct PlayerSaveState: CustomStringConvertible {
 
     var restoredPlaylistPaths: [String] = []
     var resolvedCount = 0
-    for (bookmark, storedPath) in zip(playlistBookmarks, playlistPathList) {
-      if let bookmarkData = bookmark as? Data, let url = PlaybackID.url(fromBookmark: bookmarkData, log) {
+    for (bookmarkData, storedPath) in zip(playlistBookmarks, playlistPathList) {
+      if let url = PlaybackID.url(fromBookmark: bookmarkData, log) {
         let resolvedPath = PlaybackID.path(from: url)
         restoredPlaylistPaths.append(resolvedPath)
         resolvedCount += 1
         if resolvedPath != storedPath {
-          log.debug("Playlist item from bookmark resolved to a new path than previously stored: \(resolvedPath.pii.quoted) vs. \(storedPath.pii.quoted)")
+          log.debug("Playlist item from bookmark resolved to a new path than previously stored: \(storedPath.pii.quoted) → \(resolvedPath.pii.quoted)")
         }
       } else {
         restoredPlaylistPaths.append(storedPath)
       }
     }
-    log.debug("Resolved \(resolvedCount)/\(playlistPathList.count) playlist items from bookmarks")
+    log.debug((resolvedCount == playlistPathList.count) ? "Successfully resolved all \(resolvedCount) playlist items from bookmarks in \(sw.secElapsedString)"
+              : "Resolved \(resolvedCount) of \(playlistPathList.count) playlist items from bookmarks in \(sw.secElapsedString)")
     return restoredPlaylistPaths
-*/
   }
 
   // MARK: - Restore State / Deserialize from prefs
@@ -605,7 +662,7 @@ struct PlayerSaveState: CustomStringConvertible {
   @MainActor
   func restorePlayer(id: String) -> PlayerCore? {
 
-    guard let urlString = string(for: .url), let url = URL(string: urlString) else {
+    guard let url else {
       log.error("Could not restore player window: no value for property \(PropName.url.rawValue.quoted)")
       return nil
     }
@@ -1535,14 +1592,36 @@ extension PlayerCore {
 
     // - Playback State
 
-    if let urlString = info.currentURL?.absoluteString ?? nil {
-      props[PropName.url.rawValue] = urlString
+    if let url = info.currentURL {
+      let sw = Utility.Stopwatch()
+      if let bookmark = PlaybackID.bookmark(fromURL: url, log) {
+        props[PropName.bookmark.rawValue] = bookmark
+        log.verbose("Saved bookmark in \(sw.secElapsedString).")
+      }
+      props[PropName.url.rawValue] = url.absoluteString
     }
 
     let playlist = info.playlist
     let playlistPaths: [String] = playlist.compactMap{ PlaybackID.path(from: $0.url) }
     if !playlistPaths.isEmpty {
       props[PropName.playlistPaths.rawValue] = playlistPaths
+
+      let sw = Utility.Stopwatch()
+      // New: Save bookmarks for playlist paths to improve security and robustness.
+      // We save an array of bookmark Data objects for each path.
+      var playlistBookmarks: [Data] = []
+      for item in playlist {
+        if let bookmark = PlaybackID.bookmark(fromURL: item.url, log) {
+          playlistBookmarks.append(bookmark)
+        } else {
+          // Don't bother saving the rest
+          break
+        }
+      }
+      if playlistBookmarks.count == playlistPaths.count {
+        props[PropName.playlistBookmarks.rawValue] = playlistBookmarks
+        log.verbose("Saved \(playlistBookmarks.count) playlist bookmarks in \(sw.secElapsedString).")
+      }
     }
     if let playlistPos = info.currentPlayback?.playlistPos {
       props[PropName.playlistPos.rawValue] = String(playlistPos)
@@ -1727,3 +1806,4 @@ extension PlayerCore {
     UIState.shared.clearPlayerSaveState(forPlayerID: label)
   }
 }
+

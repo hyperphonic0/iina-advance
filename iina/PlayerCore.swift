@@ -2381,7 +2381,6 @@ final class PlayerCore: NSObject {
   func reloadQuickSettingsViewNow() {
     guard pwc.loaded else { return }
     guard !isStopping else { return }
-    log.verbose("Reloading QuickSettigsView")
 
     pwc.quickSettingView.reloadCurrentTab()
   }
