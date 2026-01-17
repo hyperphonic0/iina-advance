@@ -52,6 +52,8 @@ extension PlayerCore {
       log.debug("[Playlist] Expected exactly 1 item in playlist before bulk-add, but found \(info.playlist.count). Some items may be out of order afterwards")
     }
 
+    log.trace("[Playlist] Adding URLs: [\(playbackIDs.map(\.path.pii.quoted).joined(separator: ", "))]")
+
     let currentItem: Int
     if let currentItemExplicitIndex {
       // Newer versions should include this info

@@ -173,6 +173,9 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     return other.url == url
   }
 
+  static func == (lhs: PlaybackID, rhs: PlaybackID) -> Bool {
+    return lhs.url == rhs.url
+  }
 
   /// Returns the name of this resource as it should be displayed in the UI. Does not account for its `title` or other metadata.
   static func displayName(from url: URL?) -> String {
