@@ -8,44 +8,25 @@
 
 import Foundation
 
-fileprivate let subsystem = Logger.makeSubsystem("fgroup")
+fileprivate let log = Logger.makeSubsystem("fgroup")
 
 class FileInfo: Hashable {
+  // - Stored properties
+
   let id: PlaybackID
-  var url: URL { id.url }
-  var path: String { id.path }
-  var ext: String { id.pathExtension }
-  var filename: String
-  var nameInSeries: String?
-  var characters: [Character]
   var dist: [FileInfo: UInt] = [:]
   var minDist: [FileInfo] = []
   var relatedSubs: [FileInfo] = []
   var priorityStringOccurrences = 0
   var isMatched = false
 
-  var prefix: String {  // prefix detected by FileGroup
-    didSet {
-      if prefix.count < self.characters.count {
-        suffix = String(filename[filename.index(filename.startIndex, offsetBy: prefix.count)...])
-        getNameInSeries()
-      } else {
-        prefix = ""
-        suffix = self.filename
-      }
-    }
-  }
-  var suffix: String  // filename - prefix
+  // - Computed properties
 
-  init(_ url: URL) {
-    self.id = PlaybackID(url)
-    self.filename = url.deletingPathExtension().lastPathComponent
-    self.characters = [Character](self.filename)
-    self.prefix = ""
-    self.suffix = self.filename
-  }
-
-  private func getNameInSeries() {
+  var url: URL { id.url }
+  var path: String { id.path }
+  var ext: String { id.pathExtension }
+  var filename: String { url.deletingPathExtension().lastPathComponent }
+  var nameInSeries: String? {
     // e.g. "abc_" "ch01_xxx" -> "ch01"
     var firstDigit = false
     let name = suffix.unicodeScalars.prefix {
@@ -60,7 +41,22 @@ class FileInfo: Hashable {
       }
       return true
     }
-    self.nameInSeries = String(name)
+    return String(name)
+  }
+  var characters: [Character] { [Character](self.filename) }
+
+  /// prefix detected by FileGroup
+  var prefix: String {
+    didSet {
+      assert(prefix.count < filename.count)
+    }
+  }
+  /// filename - prefix
+  var suffix: String { String(filename[filename.index(filename.startIndex, offsetBy: prefix.count)...]) }
+
+  init(_ url: URL) {
+    self.id = PlaybackID(url)
+    self.prefix = ""
   }
 
   func hash(into hasher: inout Hasher) {
@@ -79,25 +75,17 @@ class FileGroup {
   var contents: [FileInfo]
   var groups: [FileGroup]
 
-  private let chineseNumbers: [Character] = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
-
   static func group(files: [FileInfo]) -> FileGroup {
-    Logger.log("Start grouping \(files.count) files", subsystem: subsystem)
+    log.debug("Start grouping \(files.count) files")
     let group = FileGroup(prefix: "", contents: files)
     group.tryGroupFiles()
     return group
   }
 
-  init(prefix: String, contents: [FileInfo] = []) {
-    self.prefix = prefix
-    self.contents = contents
-    self.groups = []
-  }
-
   private func tryGroupFiles() {
-    subsystem.verbose("Try group files, prefix=\(prefix.quoted), count=\(contents.count)")
+    log.verbose("Try group files, prefix=\(prefix.quoted), count=\(contents.count)")
     guard contents.count >= 3 else {
-      Logger.log("Contents count < 3, skipped", level: .verbose, subsystem: subsystem)
+      log.verbose("Contents count < 3, skipped")
       return
     }
 
@@ -140,17 +128,24 @@ class FileGroup {
     }
 
     let maxSubGroupCount = tempGroup.reduce(0, { max($0, $1.value.count) })
-    if stopGrouping(currChars) || maxSubGroupCount < 3 {
-      Logger.log("Stop grouping, maxSubGroup=\(maxSubGroupCount)", level: .verbose, subsystem: subsystem)
+    if FileGroup.shouldStopGrouping(currChars) || maxSubGroupCount < 3 {
+      log.verbose("Stop grouping, maxSubGroup=\(maxSubGroupCount)")
       contents.forEach { $0.prefix = self.prefix }
     } else {
-      Logger.log("Continue grouping, groups=\(tempGroup.count), chars=\(currChars)", level: .verbose, subsystem: subsystem)
+      log.verbose("Continue grouping, groups=\(tempGroup.count), chars=\(currChars)")
       groups = tempGroup.map { FileGroup(prefix: $0.0, contents: $0.1) }
       // continue
       for g in groups {
         g.tryGroupFiles()
       }
     }
+  }
+
+
+  init(prefix: String, contents: [FileInfo] = []) {
+    self.prefix = prefix
+    self.contents = contents
+    self.groups = []
   }
 
   func flatten() -> [String: [FileInfo]] {
@@ -168,12 +163,12 @@ class FileGroup {
     return result
   }
 
-  private func stopGrouping(_ chars: [(Character, String)]) -> Bool {
+  private static func shouldStopGrouping(_ chars: [(Character, String)]) -> Bool {
     var chineseNumberCount = 0
     for (c, _) in chars {
       if c >= "0" && c <= "9" { return true }
       // chinese characters
-      if chineseNumbers.contains(c) { chineseNumberCount += 1 }
+      if Constants.chineseNumbers.contains(c) { chineseNumberCount += 1 }
       if chineseNumberCount >= 3 { return true }
     }
     return false

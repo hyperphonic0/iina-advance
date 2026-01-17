@@ -30,6 +30,7 @@ extension PlayerCore {
   /// (i.e. they will be next in the queue).
   func playNextInPlaylist(_ playlistItemIndexes: IndexSet) {
     mpv.queue.async { [self] in
+      guard !isStopping else { return }
       let current = mpv.getInt(MPVProperty.playlistPos)
       movePlaylistRows(from: playlistItemIndexes, to: current + 1, .registerUndoRedo)
     }
@@ -44,7 +45,7 @@ extension PlayerCore {
   ///   (if provided), which may be in the middle of the playlist.
   func _addAllToPlaylist(playbackIDsIncludingCurrent playbackIDs: [PlaybackID], indexOfCurrentItem currentItemExplicitIndex: Int? = nil) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    // This checks for !isStopping, so we don't have to
+    guard !isStopping else { return }
     _reloadPlaylist(thenPostNotification: false, savePlayerState: false)
 
     if info.playlist.count != 1 {

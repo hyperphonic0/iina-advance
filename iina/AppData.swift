@@ -165,6 +165,8 @@ struct Constants {
     static let alternativeMenuItemTag = 1
   }
 
+  static let chineseNumbers: [Character] = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+
   /// Min threshold for *receiving* `MPV_EVENT_LOG_MESSAGE` messages.
   /// Lua keybindings require level "debug" or higher, so don't set threshold to be stricter than this level.
   static let minMpvEventLogLevel = MPVLogLevel.debug

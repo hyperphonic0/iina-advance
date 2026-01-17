@@ -8,36 +8,40 @@
 
 import Foundation
 
+private func contentsOfDirectory(at url: URL, includingPropertiesForKeys keys: [URLResourceKey]?) -> [URL]? {
+  let searchOptions: FileManager.DirectoryEnumerationOptions = [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
+  return try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: keys, options: searchOptions)
+}
+
+/// Find all immediate child directories of given directory URL
+fileprivate func findChildDirectories(of dirURL: URL) -> [URL]? {
+  contentsOfDirectory(at: dirURL, includingPropertiesForKeys: [.isDirectoryKey])
+}
+
+/// Find all immediate children (including files, directories) of given directory URL
+fileprivate func findChildren(of dirURL: URL) -> [URL]? {
+  contentsOfDirectory(at: dirURL, includingPropertiesForKeys: nil)
+}
+
+fileprivate enum TicketExpiredError: Error {
+  case ticketExpired
+}
+
 class AutoFileMatcher {
-
-  private enum TicketExpiredError: Error {
-    case ticketExpired
-  }
-
-  weak private var player: PlayerCore!
-  var ticket: Int
-
-  private let fm = FileManager.default
-  private let searchOptions: FileManager.DirectoryEnumerationOptions = [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
-
-  private var currentFolder: URL!
+  unowned private var player: PlayerCore!
+  private let ticket: Int
+  private let log: any Logger.Subsystem
 
   private var videoFiles: [FileInfo] = []
   private var audioFiles: [FileInfo] = []
-  private var subFiles: [FileInfo] = []
-
-  private var videosGroupedBySeries: [String: [FileInfo]] = [:]
   private var subtitles: [FileInfo] = []
-  private var subsGroupedBySeries: [String: [FileInfo]] = [:]
-  private var unmatchedVideos: [FileInfo] = []
 
-  private let subsystem: any Logger.Subsystem
-  private var log: any Logger.Subsystem { subsystem }
+  private var unmatchedVideos: [FileInfo] = []
 
   init(player: PlayerCore, ticket: Int) {
     self.player = player
     self.ticket = ticket
-    subsystem = Logger.makeSubsystem("fmatcher\(player.label)")
+    log = Logger.makeSubsystem("fmatcher\(player.label)")
   }
 
   /// checkTicket
@@ -47,9 +51,11 @@ class AutoFileMatcher {
     }
   }
 
-  private func getAllMediaFiles() throws {
+  private func getAllMediaFiles(in currentFolder: URL) throws {
     // get all files in current directory
-    guard let urls = try? fm.contentsOfDirectory(at: currentFolder, includingPropertiesForKeys: nil, options: searchOptions) else { return }
+    guard let urls = findChildren(of: currentFolder) else { return }
+
+    var subFiles: [FileInfo] = []
 
     log.debug("Getting all media files...")
     // group by extension
@@ -73,11 +79,16 @@ class AutoFileMatcher {
     // natural sort
     videoFiles.sort { $0.filename.localizedStandardCompare($1.filename) == .orderedAscending }
     audioFiles.sort { $0.filename.localizedStandardCompare($1.filename) == .orderedAscending }
+
+    // Find subtitles in all subdirectories; add to the subtitles in root directory
+    let subDirSubs = try getSubs(inSubdirectoriesOf: currentFolder)
+    subtitles = subFiles + subDirSubs
+    log.debug("Got \(subtitles.count) subtitles")
   }
 
-  private func getAllPossibleSubs() throws -> [FileInfo] {
+  private func getSubs(inSubdirectoriesOf currentFolder: URL) throws -> [FileInfo] {
     try checkTicket()
-    log.debug("Getting all sub files...")
+    log.debug("Getting all sub dirs...")
 
     // search subs
     let subExts = Utility.supportedFileExt[.sub]!
@@ -101,7 +112,7 @@ class AutoFileMatcher {
       // handle wildcards
       if hasWildcard {
         // append all sub dirs
-        if let contents = try? fm.contentsOfDirectory(at: pathURL, includingPropertiesForKeys: [.isDirectoryKey], options: searchOptions) {
+        if let contents = findChildDirectories(of: pathURL) {
           subDirs.append(contentsOf: contents.filter { url in
             // Filter out bundles (here called "file packages") from the results.
             // They can otherwise look like directories, but some like iMovie libraries will cause a permission prompt
@@ -117,16 +128,15 @@ class AutoFileMatcher {
     log.debug("Searching subtitles from \(subDirs.count) directories...")
     log.verbose("Sub search dirs: \(subDirs)")
     // get all possible sub files
-    var subtitles = subFiles
 
+    var subtitles: [FileInfo] = []
     for subDir in subDirs {
       try checkTicket()
-      if let contents = try? fm.contentsOfDirectory(at: subDir, includingPropertiesForKeys: nil, options: searchOptions) {
+      if let contents = findChildren(of: subDir) {
         subtitles.append(contentsOf: contents.compactMap { subExts.contains($0.pathExtension.lowercased()) ? FileInfo($0) : nil })
       }
     }
 
-    log.debug("Got \(subtitles.count) subtitles")
     return subtitles
   }
 
@@ -156,6 +166,16 @@ class AutoFileMatcher {
   }
 
   private func matchVideoAndSubSeries() throws -> [String: String] {
+
+    // group video and sub files
+    log.debug("Grouping video files...")
+    let videosGroupedBySeries: [String: [FileInfo]] = FileGroup.group(files: videoFiles).flatten()
+    log.debug("Finished with \(videosGroupedBySeries.count) groups")
+
+    log.debug("Grouping sub files...")
+    let subsGroupedBySeries: [String: [FileInfo]] = FileGroup.group(files: subtitles).flatten()
+    log.debug("Finished with \(subsGroupedBySeries.count) groups")
+
     var prefixDistance: [String: [String: UInt]] = [:]
     var closestVideoForSub: [String: String] = [:]
 
@@ -349,32 +369,20 @@ class AutoFileMatcher {
     log.debug("**Start matching: autoLoad=\(shouldAutoLoad.yesno)")
 
     do {
-      guard let folder = player.info.currentURL?.deletingLastPathComponent(), folder.isFileURL else {
+      guard let currentFolder = player.info.currentURL?.deletingLastPathComponent(), currentFolder.isFileURL else {
         log.verbose("Aborting: parent is not a filesystem folder URL")
         return
       }
-      currentFolder = folder
 
       player.info.isMatchingSubtitles = true
-      try getAllMediaFiles()
+      try getAllMediaFiles(in: currentFolder)
 
-      // get all possible subtitles
-      subtitles = try getAllPossibleSubs()
       player.info.currentSubsInfo = subtitles
 
       // add files to playlist
       if shouldAutoLoad {
         try addFilesToPlaylist()
       }
-
-      // group video and sub files
-      log.debug("Grouping video files...")
-      videosGroupedBySeries = FileGroup.group(files: videoFiles).flatten()
-      log.debug("Finished with \(videosGroupedBySeries.count) groups")
-
-      log.debug("Grouping sub files...")
-      subsGroupedBySeries = FileGroup.group(files: subtitles).flatten()
-      log.debug("Finished with \(subsGroupedBySeries.count) groups")
 
       // match video and sub series
       let matchedPrefixes = try matchVideoAndSubSeries()
@@ -389,6 +397,7 @@ class AutoFileMatcher {
 
       player.postNotification(.iinaPlaylistChanged)
       log.debug("**Finished matching")
+
     } catch let err as TicketExpiredError {
       player.info.isMatchingSubtitles = false
       guard case .ticketExpired = err else {
@@ -396,11 +405,10 @@ class AutoFileMatcher {
         return
       }
       log.debug("Automatching cancelled: ticket expired")
-      return
+
     } catch let err {
       player.info.isMatchingSubtitles = false
       log.error(err.localizedDescription)
-      return
     }
   }
 }
