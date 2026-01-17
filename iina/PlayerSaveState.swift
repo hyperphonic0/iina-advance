@@ -345,41 +345,64 @@ struct PlayerSaveState: CustomStringConvertible {
 
   // MARK: - Save State / Serialize to prefs strings
 
-  func getPlaylistPathList() -> [String] {
-    guard let playlistPathList = properties[PropName.playlistPaths.rawValue] as? [String] else {
+  /// Builds a list of PlaybackID objects for the saved playlist, preferring secure bookmarks when available.
+  func getPlaylistIDs() -> [PlaybackID] {
+    // Retrieve stored plain paths (legacy) and optional bookmarks (v1.5+)
+    let playlistPaths = properties[PropName.playlistPaths.rawValue] as? [String] ?? []
+    let playlistBookmarks = properties[PropName.playlistBookmarks.rawValue] as? [Data]
+
+    // If neither paths nor bookmarks exist, return empty
+    if playlistPaths.isEmpty && ((playlistBookmarks?.isEmpty ?? true)) {
       return []
     }
 
-    let sw = Utility.Stopwatch()
+    var ids: [PlaybackID] = []
 
-    // Use bookmarks if available to resolve paths securely and robustly
-    guard let playlistBookmarks = properties[PropName.playlistBookmarks.rawValue] as? [Data] else {
-      // No bookmarks, return plain paths
-      return playlistPathList
-    }
-
-    guard playlistPathList.count == playlistBookmarks.count else {
-      log.error("Cannot use bookmarks for restore: found \(playlistBookmarks.count) bookmarks but \(playlistPathList.count) paths! Returning paths as-is")
-      return playlistPathList
-    }
-
-    var restoredPlaylistPaths: [String] = []
-    var resolvedCount = 0
-    for (bookmarkData, storedPath) in zip(playlistBookmarks, playlistPathList) {
-      if let url = PlaybackID.url(fromBookmark: bookmarkData, log) {
-        let resolvedPath = PlaybackID.path(from: url)
-        restoredPlaylistPaths.append(resolvedPath)
-        resolvedCount += 1
-        if resolvedPath != storedPath {
-          log.debug("Playlist item from bookmark resolved to a new path than previously stored: \(storedPath.pii.quoted) → \(resolvedPath.pii.quoted)")
+    // If we have both arrays and they are aligned, use them in lockstep to preserve order
+    if let bookmarks = playlistBookmarks, bookmarks.count == playlistPaths.count {
+      var resolvedCount = 0
+      for (bookmarkData, storedPath) in zip(bookmarks, playlistPaths) {
+        // Attempt to create a PlaybackID from the bookmark first
+        if let url = PlaybackID.url(fromBookmark: bookmarkData, log) {
+          ids.append(PlaybackID(url, bookmark: bookmarkData))
+          resolvedCount += 1
+          if PlaybackID.path(from: url) != storedPath {
+            log.debug("Playlist item from bookmark resolved to a new path than previously stored: \(storedPath.pii.quoted) → \(PlaybackID.path(from: url).pii.quoted)")
+          }
+        } else {
+          // Fallback to path -> URL when bookmark cannot be resolved
+          if let url = URL(fileURLWithPath: storedPath) as URL? {
+            ids.append(PlaybackID(url, bookmark: nil))
+          } else {
+            log.error("Failed to build PlaybackID: invalid stored path \(storedPath.pii.quoted)")
+          }
         }
-      } else {
-        restoredPlaylistPaths.append(storedPath)
       }
+      log.debug((resolvedCount == playlistPaths.count) ? "Successfully resolved all \(resolvedCount) playlist items from bookmarks"
+                : "Resolved \(resolvedCount) of \(playlistPaths.count) playlist items from bookmarks")
+      return ids
     }
-    log.debug((resolvedCount == playlistPathList.count) ? "Successfully resolved all \(resolvedCount) playlist items from bookmarks in \(sw.secElapsedString)"
-              : "Resolved \(resolvedCount) of \(playlistPathList.count) playlist items from bookmarks in \(sw.secElapsedString)")
-    return restoredPlaylistPaths
+
+    // Otherwise, fall back to whichever list we have.
+    if let bookmarks = playlistBookmarks, !bookmarks.isEmpty {
+      for data in bookmarks {
+        if let url = PlaybackID.url(fromBookmark: data, log) {
+          ids.append(PlaybackID(url, bookmark: data))
+        } else {
+          log.error("Failed to resolve playlist bookmark to URL; skipping one item")
+        }
+      }
+      log.verbose("Built \(ids.count) PlaybackIDs from playlist bookmarks")
+      return ids
+    }
+
+    // Fallback on plain paths only (legacy case)
+    for path in playlistPaths {
+      let url = URL(fileURLWithPath: path)
+      ids.append(PlaybackID(url, bookmark: nil))
+    }
+    log.verbose("Built \(ids.count) PlaybackIDs from playlist paths")
+    return ids
   }
 
   // MARK: - Restore State / Deserialize from prefs

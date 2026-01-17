@@ -146,12 +146,12 @@ class AutoFileMatcher {
   }
 
   private func addFilesToPlaylist() throws {
-    let pathList = (videoFiles + audioFiles).compactMap{$0.path}
+    let playbackIDs = (videoFiles + audioFiles).compactMap{$0.id}
     try checkTicket()
     
     player.mpv.queue.async { [self] in
       log.debug("Adding \(videoFiles.count) video files & \(audioFiles.count) audio files to playlist")
-      player._addAllToPlaylist(pathListIncludingCurrent: pathList)
+      player._addAllToPlaylist(playbackIDsIncludingCurrent: playbackIDs)
     }
   }
 

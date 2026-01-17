@@ -509,10 +509,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   private func readPlaylistItemsFromPasteboard(_ pboard: NSPasteboard) -> [PlaybackID] {
     if let filenamePaths = pboard.propertyList(forType: .nsFilenames) as? [String] {
-      let playableFiles = Utility.resolveURLs(player.getPlayableFiles(in: filenamePaths.map {
+      let fileURLs: [URL] = filenamePaths.map {
         $0.hasPrefix("/") ? URL(fileURLWithPath: $0) : URL(string: $0)!
-      }))
-      return playableFiles.map { PlaybackID($0) }
+      }
+      let resolvedURLs = Utility.resolveURLs(fileURLs)
+      let ids = resolvedURLs.compactMap{ PlaybackID($0) }
+      return player.getPlayableFiles(in: ids)
     } else if let urlPaths = pboard.propertyList(forType: .nsURL) as? [String] {
       return urlPaths.compactMap{ PlaybackID(path: $0) }
     } else if let droppedString = pboard.string(forType: .string), Regex.url.matches(droppedString) {

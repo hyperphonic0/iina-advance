@@ -96,6 +96,7 @@ class Utility {
       if style == .critical {
         // Emit the system beep
         NSSound.beep()
+        Logger.log.debug("[Playlist] Emitting system beep for 'critical' alert")
       }
       if let sheetWindow = sheetWindow {
         alert.beginSheetModal(for: sheetWindow)

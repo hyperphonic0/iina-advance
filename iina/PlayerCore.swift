@@ -516,7 +516,8 @@ final class PlayerCore: NSObject {
   @discardableResult
   func openURLs(_ urls: [URL]) -> Int {
     guard !urls.isEmpty else { return 0 }
-    log.debug("OpenURLs: \(urls.map{PlaybackID.path(from: $0).pii})")
+    let ids = urls.compactMap{ PlaybackID($0) }
+    log.debug("OpenURLs: \(ids.map{$0.path.pii})")
     // Reset:
     openedWindowsSetIndex = 0
 
@@ -531,13 +532,13 @@ final class PlayerCore: NSObject {
         || Utility.playlistFileExt.contains(urls[0].absoluteString.lowercasedPathExtension) {
 
       info.shouldAutoLoadFiles = false
-      openPlayerWindow(urls)
+      openPlayerWindow(ids)
       return 1
     }
     // Else open multiple URL args...
 
     // Filter URL args for playable files (video/audio), because mpv will "play" image files, text files (anything?)
-    let playableFiles = getPlayableFiles(in: urls, organizeList: true)
+    let playableFiles = getPlayableFiles(in: ids, organizeList: true)
 
     log.verbose("Found \(playableFiles.count) playable files for \(urls.count) requested URLs")
     // check playable files count
@@ -549,7 +550,7 @@ final class PlayerCore: NSObject {
     info.shouldAutoLoadFiles = AppDelegate.shared.isInteractiveLaunch && (pwc == nil || !pwc.sessionState.isRestoring) && playableFiles.count == 1
 
     // open the first file
-    openPlayerWindow(playableFiles)
+    openPlayerWindow(ids)
     return playableFiles.count
   }
 
@@ -565,7 +566,8 @@ final class PlayerCore: NSObject {
   func openURLString(_ str: String) -> Int? {
     if str == "-" {
       info.shouldAutoLoadFiles = false  // reset
-      openPlayerWindow([URL(string: "stdin")!])
+      let id = PlaybackID(URL(string: "stdin")!)
+      openPlayerWindow([id])
       return 1
     }
     if str.first == "/" {
@@ -600,9 +602,9 @@ final class PlayerCore: NSObject {
   /// Loads the first URL into the player, and adds any remaining URLs to playlist.
   /// The caller must ensure that `urls` is *never* empty!
   @MainActor
-  private func openPlayerWindow(_ urls: [URL]) {
+  private func openPlayerWindow(_ ids: [PlaybackID]) {
     guard !isDemoPlayer else { log.fatalError("Cannot open player window for demo player!") }
-    guard urls.count > 0 else { log.fatalError("Cannot open player window: empty url list!") }
+    guard ids.count > 0 else { log.fatalError("Cannot open player window: empty url list!") }
 
     guard state.isAtLeast(.started) else {
       log.error("Cannot open player window: player not started! Ignoring request")
@@ -615,7 +617,7 @@ final class PlayerCore: NSObject {
     }
 
     let isInteractivePlayer = self.isInteractivePlayer
-    let playback = Playback(url: urls[0], playlistPos: 0)
+    let playback = Playback(ids[0], playlistPos: 0)
 
     if playback.isNetworkResource, isInteractivePlayer {
       AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
@@ -697,10 +699,9 @@ final class PlayerCore: NSObject {
 
           // Not restoring
 
-          if urls.count > 1 {
-            log.verbose("Adding \(urls.count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)")
-            let urls = urls.map({PlaybackID.path(from: $0)})
-            _addAllToPlaylist(pathListIncludingCurrent: urls, indexOfCurrentItem: 0)
+          if ids.count > 1 {
+            log.verbose("Adding \(ids.count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)")
+            _addAllToPlaylist(playbackIDsIncludingCurrent: ids, indexOfCurrentItem: 0)
           } else {
             // Only one entry in playlist, but still need to pull it from mpv
             _reloadPlaylist()
@@ -2042,11 +2043,11 @@ final class PlayerCore: NSObject {
 
     // Cannot restore playlist until after fileStarted event & mpv has a position for current item
     if let priorState = pwc.priorStateIfRestoring {
-      let playlistPathList = priorState.getPlaylistPathList()
-      if !playlistPathList.isEmpty {
+      let playlistPlaybackIDs = priorState.getPlaylistIDs()
+      if !playlistPlaybackIDs.isEmpty {
         let playlistPos: Int? = priorState.int(for: .playlistPos)
-        log.debug("Restoring \(playlistPathList.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")")
-        _addAllToPlaylist(pathListIncludingCurrent: playlistPathList, indexOfCurrentItem: playlistPos)
+        log.debug("Restoring \(playlistPlaybackIDs.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")")
+        _addAllToPlaylist(playbackIDsIncludingCurrent: playlistPlaybackIDs, indexOfCurrentItem: playlistPos)
       }
     }
 

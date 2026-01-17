@@ -65,7 +65,7 @@ struct MediaMeta: CustomStringConvertible {
   }
 
   /// Use a negative value for `progress` to overwrite with `nil`.
-  func clone(duration: Double? = nil, progress: Double? = nil,
+  func clone(id: PlaybackID? = nil, duration: Double? = nil, progress: Double? = nil,
              title: String? = nil, album: String? = nil, artist: String? = nil,
              video: VideoMeta? = nil,
              triedFFmpeg: Bool = false) -> MediaMeta {
@@ -81,7 +81,10 @@ struct MediaMeta: CustomStringConvertible {
       newProgress = self.progress
     }
 
-    return MediaMeta(id, duration: duration ?? self.duration, progress: newProgress,
+    // Update with bookmark if needed
+    let updatedID = (id?.bookmark ?? nil) == nil ? self.id : id!
+
+    return MediaMeta(updatedID, duration: duration ?? self.duration, progress: newProgress,
                      title: title ?? self.title, album: album ?? self.album, artist: artist ?? self.artist,
                      video: video ?? self.video,
                      triedFFmpeg: triedFFmpeg || self.triedFFmpeg)
@@ -142,6 +145,12 @@ class MediaMetaCache {
   func getOrAddCachedMeta(for id: PlaybackID) -> MediaMeta {
     metaLock.withLock {
       if let meta = cachedMeta[id.url] {
+        if (id.bookmark != nil) && (meta.id.bookmark == nil) {
+          // Update with bookmark if needed
+          let metaWithBookmark = meta.clone(id: id)
+          cachedMeta[id.url] = metaWithBookmark
+          return metaWithBookmark
+        }
         return meta
       }
       let newMeta = MediaMeta(id)
@@ -158,7 +167,7 @@ class MediaMetaCache {
   func updateCacheEntry(_ id: PlaybackID, newDuration: Double? = nil, newProgress: Double? = nil) -> MediaMeta {
     return metaLock.withLock {
       let oldMeta = cachedMeta[id.url] ??  MediaMeta(id)
-      let newMeta = oldMeta.clone(duration: newDuration, progress: newProgress)
+      let newMeta = oldMeta.clone(id: id, duration: newDuration, progress: newProgress)
       cachedMeta[id.url] = newMeta
       return newMeta
     }
@@ -233,7 +242,7 @@ class MediaMetaCache {
     return metaLock.withLock {
       let existingMeta = cachedMeta[id.url]
       let oldMeta = existingMeta ?? MediaMeta(id)
-      let newMeta = oldMeta.clone(duration: duration, progress: progress,
+      let newMeta = oldMeta.clone(id: id, duration: duration, progress: progress,
                                   title: title, album: album, artist: artist,
                                   triedFFmpeg: oldMeta.triedFFmpeg || triedFFmpeg)
       cachedMeta[id.url] = newMeta

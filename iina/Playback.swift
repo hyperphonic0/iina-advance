@@ -108,27 +108,38 @@ struct Playback: CustomStringConvertible {
 
 /// `PlaybackID`
 struct PlaybackID: Sendable, Equatable, Hashable {
-  /// Equivalent to `PlaybackID.url(fromPath: mpvFilename)`
-  let url: URL
+  /// Equivalent to `PlaybackID.url(fromPath: mpvFilename)`.
+  /// Deprecated! Use `url` instead, which will first try to resolve bookmark data.
+  let staticURL: URL
   let mpvMD5: String
   let bookmark: Data?
 
   /// if `url` is `nil`, assumed to be `stdin`.
   init(_ url: URL?, bookmark: Data? = nil) {
     let url = url ?? URL(string: "stdin")!
-    self.url = url
+    self.staticURL = url
     mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
     self.bookmark = bookmark
   }
 
   init?(path: String, bookmark: Data? = nil) {
     guard let url = PlaybackID.url(fromPath: path) else { return nil }
-    self.url = url
+    self.staticURL = url
     mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
     self.bookmark = bookmark
   }
 
-  var path: String { PlaybackID.path(from: url) }
+  var url: URL {
+    if let bookmark, let fileURL = PlaybackID.url(fromBookmark: bookmark, Logger.log) {
+      // Resolve from bookmark if present
+      return fileURL
+    }
+    return staticURL
+  }
+
+  var path: String {
+    return PlaybackID.path(from: url)
+  }
 
   var filePath: String? {
     let urlPath = url.path

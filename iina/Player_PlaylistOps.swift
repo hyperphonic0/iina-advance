@@ -42,10 +42,10 @@ extension PlayerCore {
   ///   items are present in the playlist, they will get pushed to the top or to the bottom of the playlist.
   /// • This inserts around the currently playing item is in the list, so that it may end up at `indexOfCurrentItem`
   ///   (if provided), which may be in the middle of the playlist.
-  func _addAllToPlaylist(pathListIncludingCurrent pathList: [String], indexOfCurrentItem currentItemExplicitIndex: Int? = nil) {
+  func _addAllToPlaylist(playbackIDsIncludingCurrent playbackIDs: [PlaybackID], indexOfCurrentItem currentItemExplicitIndex: Int? = nil) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     // This checks for !isStopping, so we don't have to
-    guard _reloadPlaylistAndReturn() != nil else { return }
+    _reloadPlaylist(thenPostNotification: false, savePlayerState: false)
 
     if info.playlist.count != 1 {
       log.debug("[Playlist] Expected exactly 1 item in playlist before bulk-add, but found \(info.playlist.count). Some items may be out of order afterwards")
@@ -55,14 +55,14 @@ extension PlayerCore {
     if let currentItemExplicitIndex {
       // Newer versions should include this info
       currentItem = currentItemExplicitIndex
-    } else if let currentPath = info.currentPlayback?.path {
-      if let firstMatchingIndex = pathList.firstIndex(of: currentPath) {
+    } else if let currentPlaybackID = info.currentPlayback?.id {
+      if let firstMatchingIndex = playbackIDs.firstIndex(of: currentPlaybackID) {
         // Try to derive current item index.
         // Use index of first match found. If there are duplicate paths in the playlist, this will be wrong,
         // but older versions of IINA did not support duplicates in the playlist, so shouldn't be an issue.
         currentItem = firstMatchingIndex
       } else {
-        log.warn("[Playlist] Playlist (count=\(info.playlist.count) items) does not contain currently playing item (\(currentPath.pii.quoted))")
+        log.warn("[Playlist] Playlist (count=\(info.playlist.count) items) does not contain currently playing item (\(currentPlaybackID.path.pii.quoted))")
         currentItem = -1
       }
     } else {
@@ -71,16 +71,15 @@ extension PlayerCore {
       currentItem = -1
     }
 
-    let itemsAtInsertIndexes: [(Int, String)] = pathList.enumerated().compactMap { index, path in
+    let itemsAtInsertIndexes: [(Int, PlaybackID)] = playbackIDs.enumerated().compactMap { index, playbackID in
       // skip current item bc it's already present in playlist
       if index == currentItem { return nil }
       // Insert in 2 blocks: before & after current item, respectively
-      return (index < currentItem ? 0 : 1, path)
+      return (index < currentItem ? 0 : 1, playbackID)
     }
 
     _playlistInsert(itemsAtIndexes: itemsAtInsertIndexes, info.playlist, onSuccess: { [self] in
-      log.verbose("[Playlist] Done adding \(pathList.count) items. Playlist count is now \(info.playlist.count)")
-      _reloadPlaylist(savePlayerState: false)  // will send notification
+      log.verbose("[Playlist] Done adding \(playbackIDs.count) items. Playlist count is now \(info.playlist.count)")
       DispatchQueue.main.async { [self] in
         guard pwc.loaded else { return }
         pwc.playlistView.scrollPlaylistToCurrentItem()
@@ -114,27 +113,28 @@ extension PlayerCore {
 
   /// All playlist "insert" operations should ultimately call this method.
   func insertPlaylistRows(_ desiredRowList: [PlaybackID], at targetRowIndex: Int? = nil, _ undoOption: UndoOption) {
-    let playableFiles = getPlayableFiles(in: desiredRowList.map{ $0.url })
-    guard playableFiles.count > 0 else { return }
-    let rowList = playableFiles.map { PlaybackID($0) }
+    let rowList = getPlayableFiles(in: desiredRowList)
+    guard rowList.count > 0 else { return }
     log.verbose("[Playlist] Inserting \(rowList.count) rows at index \(targetRowIndex?.description ?? "nil"): \(rowList.map{$0.path.pii})")
     let expectedCurrentPlaylist = displayedPlaylist  // make sure user is moving what they expect!
 
-    let (tableUIChange, allItemsNew) = pwc.playlistView.isViewLoaded
-    ? pwc.playlistView.playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: expectedCurrentPlaylist)
-    : TableUIChangeBuilder.shared.buildInsert(of: rowList, at: targetRowIndex ?? displayedPlaylist.count, in: expectedCurrentPlaylist)
+    let (tableUIChange, allItemsNew): (TableUIChange, [PlaybackID])
+    if pwc.playlistView.isViewLoaded {
+      (tableUIChange, allItemsNew) = pwc.playlistView.playlistTableView.buildInsert(of: rowList, at: targetRowIndex, in: expectedCurrentPlaylist)
+    } else {
+      (tableUIChange, allItemsNew) = TableUIChangeBuilder.shared.buildInsert(of: rowList, at: targetRowIndex ?? displayedPlaylist.count, in: expectedCurrentPlaylist)
+    }
 
     let playlistSize = expectedCurrentPlaylist.count
     var insertStartIndex = targetRowIndex ?? playlistSize
     insertStartIndex = (insertStartIndex >= 0 && insertStartIndex <= playlistSize) ? insertStartIndex : playlistSize
-    let paths = rowList.map { $0.path }
-    let itemsAtIndexes = paths.map ({ path in (insertStartIndex, path)} )
+    let itemsAtIndexes = rowList.map ({ row in (insertStartIndex, row)} )
 
     mpv.queue.async { [self] in
       _playlistInsert(itemsAtIndexes: itemsAtIndexes, expectedCurrentPlaylist, onSuccess: { [self] in
         displayedPlaylist = info.playlist                                          // update cached data
         tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // update UI
-        sendOSD(.addToPlaylist(paths.count))
+        sendOSD(.addToPlaylist(rowList.count))
 
         // Register undo/redo for this action?
         switch undoOption {
@@ -176,7 +176,7 @@ extension PlayerCore {
   /// Insert playlist items at mapped indexes. Internal: should *only* be called by `insertPlaylistRows` or by
   /// other non-private `PlayerCore` methods.
   /// - `itemsAtIndexes` must be in ascending index order.
-  func _playlistInsert(itemsAtIndexes: [(Int, String)],
+  func _playlistInsert(itemsAtIndexes: [(insertTargetIndex: Int, itemToInsert: PlaybackID)],
                        _ expectedCurrentPlaylist: [PlaybackID]? = nil,
                        onSuccess: OnSuccessCallback? = nil) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
@@ -187,8 +187,8 @@ extension PlayerCore {
     guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistBeforeInsert) else { return }
 
     // Insert at playlist.count => append
-    for (itemsAtIndexIndex, itemsAtIndex) in itemsAtIndexes.enumerated() {
-      guard (itemsAtIndex.0 >= 0) && (itemsAtIndex.0 <= info.playlist.count + itemsAtIndexIndex) else {
+    for (workItemIndex, (insertTargetIndex, _)) in itemsAtIndexes.enumerated() {
+      guard (insertTargetIndex >= 0) && (insertTargetIndex <= info.playlist.count + workItemIndex) else {
         log.error("[Playlist] Cannot insert items: 1 or more indexes are out of bounds! Indexes=\(itemsAtIndexes.map(\.0)) PlaylistSize=\(info.playlist.count)")
         playlistErrorDidOccur()
         return
@@ -196,19 +196,15 @@ extension PlayerCore {
     }
     var expectedPlaylistAfterInsert = expectedPlaylistBeforeInsert
     var prevInsertCount = 0
-    for (itemToInsertIndex, itemToInsertPath) in itemsAtIndexes {
+    for (itemToInsertIndex, itemToInsert) in itemsAtIndexes {
       let insertIndex = itemToInsertIndex + prevInsertCount
+      let itemToInsertPath = itemToInsert.path
       let returnCode = mpv.playlistInsert(itemToInsertPath, index: insertIndex)
       guard returnCode == 0 else {
         playlistErrorDidOccur(returnCode, opDesc: "insert playlist item \(prevInsertCount) / \(itemsAtIndexes.count)")
         return
       }
-      guard let playbackInserted = PlaybackID(path: itemToInsertPath) else {
-        log.error("[Playlist] Failed to create PlaybackID from item path (will cancel remaining inserts): path=\(itemToInsertPath)")
-        playlistErrorDidOccur()
-        return
-      }
-      expectedPlaylistAfterInsert.insert(playbackInserted, at: insertIndex)
+      expectedPlaylistAfterInsert.insert(itemToInsert, at: insertIndex)
       prevInsertCount += 1
     }
 
@@ -419,7 +415,7 @@ extension PlayerCore {
             mpv.queue.async { [self] in
               // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
               // can be at non-contiguous indexes in the playlist.
-              let indexedInsertItems = rowIndexes.enumerated().map{ ($0.element - $0.offset, allItemsOld[$0.element].path) }
+              let indexedInsertItems = rowIndexes.enumerated().map{ ($0.element - $0.offset, allItemsOld[$0.element]) }
               assert(indexedInsertItems.map(\.0).sorted(by: { $0 < $1 }).elementsEqual(indexedInsertItems.map(\.0)),
                      "itemsAtIndexes must be sorted in ascending order, but found: \(indexedInsertItems.map(\.0))")
               let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
@@ -523,7 +519,8 @@ extension PlayerCore {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
 
-    guard _reloadPlaylistAndReturn() != nil else { return }
+    guard let newPlaylist = _reloadPlaylistAndReturn() else { return }
+    info.playlist = newPlaylist
 
     if thenPostNotification {
       postNotification(.iinaPlaylistChanged)
@@ -537,7 +534,7 @@ extension PlayerCore {
   /// 1. Gets the up-to-date playlist & `playlist-pos` (now playing item index) from mpv.
   /// 2. Updates `info.playlist` & `info.currentPlayback?.playlistPos`.
   /// 3. Returns the up-to-date playlist (or `nil` on error or incorrect state).
-  func _reloadPlaylistAndReturn() -> [PlaybackID]? {
+  private func _reloadPlaylistAndReturn() -> [PlaybackID]? {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return nil }
 
@@ -557,7 +554,6 @@ extension PlayerCore {
     if let playback = info.currentPlayback {
       info.currentPlayback = playback.clone(playlistPos: mpvPlaylistPos)
     }
-    info.playlist = newPlaylist
     log.verbose("[Playlist] After reloading: playlistPos=\(mpvPlaylistPos)")
 
     return newPlaylist
@@ -630,8 +626,11 @@ extension PlayerCore {
 
     if validateItemsAreEqual(actualPlaylist, expectedPlaylist) {
       log.trace("[Playlist] Playlist validation passed")
+      // Use expectedPlaylist because it may contain bookmark data, while actualPlaylist does not.
+      info.playlist = expectedPlaylist
       return true
     } else {
+      info.playlist = actualPlaylist
       log.error("[Playlist] Playlist mismatch! Will clear undo stack to prevent further issues")
       playlistErrorDidOccur()
       return false
@@ -649,6 +648,7 @@ extension PlayerCore {
       undoHelper.clearUndoes()
       reloadPlaylist(savePlayerState: false)
       // Emit the system beep
+      log.debug("[Playlist] Emitting system beep for error")
       NSSound.beep()
     }
   }

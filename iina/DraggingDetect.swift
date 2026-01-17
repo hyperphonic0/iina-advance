@@ -47,15 +47,16 @@ extension PlayerCore {
    Returns playable files contained in a URL list. Any non-file URL will be counted directly without further checking.
 
    - Parameters:
-     - urls: The list as an array of `URL`.
-   - Returns: URLs of all playable files as an array of `URL`.
+     - playbackIDs: The list as an array of `PlaybackID`.
+   - Returns: All playable files as an array of `PlaybackID`.
    */
-  func getPlayableFiles(in urls: [URL], organizeList: Bool = false) -> [URL] {
-    var playableFiles: [URL] = []
-    for url in urls {
-      if !url.isFileURL {
+  func getPlayableFiles(in playbackIDs: [PlaybackID], organizeList: Bool = false) -> [PlaybackID] {
+    var playableFiles: [PlaybackID] = []
+    for playbackID in playbackIDs {
+      let url = playbackID.url
+      if playbackID.isNetworkResource {
         // Network streaming URL
-        playableFiles.append(url)
+        playableFiles.append(playbackID)
         continue
       }
       if url.hasDirectoryPath {
@@ -65,18 +66,21 @@ extension PlayerCore {
         while let fileName = dirEnumerator.nextObject() as? String {
           guard !fileName.hasPrefix(".") else { continue }
           if Utility.playableFileExt.contains(fileName.lowercasedPathExtension) {
-            playableFiles.append(url.appendingPathComponent(fileName))
+            let id = PlaybackID(url.appendingPathComponent(fileName))
+            playableFiles.append(id)
           }
         }
       } else {
         // is file
         if !Utility.blacklistExt.contains(url.pathExtension.lowercased()) {
-          playableFiles.append(url)
+          playableFiles.append(playbackID)
         }
       }
     }
     if organizeList {
-      return Array(playableFiles).sorted { url1, url2 in
+      return Array(playableFiles).sorted { id1, id2 in
+        let url1 = id1.url
+        let url2 = id2.url
         let folder1 = url1.deletingLastPathComponent(), folder2 = url2.deletingLastPathComponent()
         if folder1.absoluteString == folder2.absoluteString {
           return url1.lastPathComponent.localizedStandardCompare(url2.lastPathComponent) == .orderedAscending
