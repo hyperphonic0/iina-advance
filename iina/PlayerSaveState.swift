@@ -1624,6 +1624,9 @@ extension PlayerCore {
         props[PropName.bookmark.rawValue] = bookmark
       }
       props[PropName.url.rawValue] = url.absoluteString
+
+      let playlistPos = currentPlayback.playlistPos
+      props[PropName.playlistPos.rawValue] = String(playlistPos)
     }
 
     let playlist = info.playlist
@@ -1636,7 +1639,11 @@ extension PlayerCore {
       // We save an array of bookmark Data objects for each path.
       var playlistBookmarks: [Data] = []
       for item in playlist {
-        if let bookmark = PlaybackID.bookmark(fromURL: item.url, log) {
+        if let bookmark = item.bookmark {
+          // Use cached bookmark if available
+          playlistBookmarks.append(bookmark)
+        } else if let bookmark = PlaybackID.bookmark(fromURL: item.url, log) {
+          // FIXME: update playbackID cache
           playlistBookmarks.append(bookmark)
         } else {
           // Don't bother saving the rest
@@ -1647,9 +1654,6 @@ extension PlayerCore {
         props[PropName.playlistBookmarks.rawValue] = playlistBookmarks
         log.verbose("Saved \(playlistBookmarks.count) playlist bookmarks in \(sw.secElapsedString).")
       }
-    }
-    if let playlistPos = info.currentPlayback?.playlistPos {
-      props[PropName.playlistPos.rawValue] = String(playlistPos)
     }
 
     if let playbackPositionSec = info.playbackPositionSec {
@@ -1792,11 +1796,13 @@ extension PlayerCore {
           guard !player.isShuttingDown else { return }
 
           PlayerSaveState.saveQueue.async {
+            let sw = Utility.Stopwatch()
             let properties = player.generatePropDict(geo)
-            if Logger.isTraceEnabled, Preference.bool(for: .logPlayerSave) {
+            if Preference.bool(for: .logPlayerSave) {
               player.log.trace("Saving player state: \(properties)")
             }
             UIState.shared.saveState(forPlayerID: player.label, properties: properties)
+            player.log.verbose("Saved player state in \(sw.secElapsedString)")
           }
         }
       }

@@ -235,7 +235,8 @@ struct Constants {
     /// This should help cut down on unnecessary requests.
     static let thumbnailRegenerationDelay = 0.5
     /// Minimum delay between saves (except at program exit). Used to debounce state save requests.
-    static let playerStateSaveDelay = 0.5
+    /// This should be on the order of whole seconds, because nowadays the save process usually takes 1 full second.
+    static let playerStateSaveDelay = 2.0
     /// If state save is enabled and video is playing, make sure player is saved every this number of secs
     static let playTimeSaveStateFrequency: TimeInt = 10.0
 
