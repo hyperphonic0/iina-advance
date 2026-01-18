@@ -66,14 +66,15 @@ extension PlayerCore {
         while let fileName = dirEnumerator.nextObject() as? String {
           guard !fileName.hasPrefix(".") else { continue }
           if Utility.playableFileExt.contains(fileName.lowercasedPathExtension) {
-            let id = PlaybackID(url.appendingPathComponent(fileName))
+            let id = MediaMetaCache.shared.getBestPlaybackID(forURL: url.appendingPathComponent(fileName))
             playableFiles.append(id)
           }
         }
       } else {
         // is file
         if !Utility.blacklistExt.contains(url.pathExtension.lowercased()) {
-          playableFiles.append(playbackID)
+          let betterID = MediaMetaCache.shared.getPlaybackIDWithBookmark(forID: playbackID)
+          playableFiles.append(betterID)
         }
       }
     }

@@ -923,7 +923,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       }
       let playlistItems = displayedPlaylist
       var titles: [String?] = []
-      player.log.verbose("Playlist: updating caches for \(playlistItems.count) rows…")
+      player.log.verbose("[Playlist] Updating caches for \(playlistItems.count) rows…")
 
       for rowIndex in 0..<playlistItems.count {
         // Get updated title from mpv
@@ -935,7 +935,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         for (rowIndex, item) in playlistItems.enumerated() {
           let isTicketValid = $playlistReloadTicket.withLock { $0 == currentTicket }
           guard isTicketValid else {
-            player.log.verbose("Playlist: ticket no longer valid; cancelling cache update")
+            player.log.verbose("[Playlist] Ticket no longer valid; cancelling cache update")
             return
           }
           let updatedTitle = titles[rowIndex]
@@ -952,7 +952,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         }
 
         // Finally, append a task to recalculate the total length. Do not show it until it is done!
-        player.log.verbose("Playlist: finished cache updates for \(playlistItems.count) rows in \(sw.secElapsedString)")
+        player.log.verbose("[Playlist] Finished cache updates for \(playlistItems.count) rows in \(sw.secElapsedString)")
         refreshTotalLength()
       }
     }

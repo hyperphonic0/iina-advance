@@ -2438,7 +2438,28 @@ final class PlayerCore: NSObject {
         setTrack(priorS2ID, forType: .secondSub, silent: true)
       }
     }
+
     log.debug("Auto load done")
+
+    let sw = Utility.Stopwatch()
+    let playlist = info.playlist
+    let playlisttItemsMissingBookmarks = playlist.filter{ !$0.isNetworkResource && $0.bookmark == nil }
+    var progress = 0
+    for item in playlisttItemsMissingBookmarks {
+      guard currentTicket == backgroundQueueTicket else { return }
+      if MediaMetaCache.shared.getOrCreateBookmark(fromURL: item.url) != nil {
+        progress += 1
+      }
+    }
+    log.verbose("Filled in \(progress) / \(playlisttItemsMissingBookmarks.count) missing bookmarks for playlist (\(playlist.count) total) in \(sw.secElapsedString)")
+
+    mpv.queue.async { [self] in
+      guard currentTicket == backgroundQueueTicket else { return }
+      let playlist = info.playlist
+      log.verbose("Updating \(playlist.count) playlist items with bookmark(s)")
+      let updatedPlaylist = playlist.map{ MediaMetaCache.shared.getPlaybackIDWithBookmark(forID: $0) }
+      info.playlist = updatedPlaylist
+    }
   }
 
   /**
@@ -2473,6 +2494,7 @@ final class PlayerCore: NSObject {
     // Update cached PlaybackID with bookmark
     let idWithBookmark = PlaybackID(currentPlayback.id.url, bookmark: bookmarkData)
     mpv.queue.async { [self] in
+      guard isActive else { return }
       guard let currentPlayback = info.currentPlayback, currentPlayback.id.url == idWithBookmark.url else { return }
       log.verbose("Adding bookmark data to currentPlayback")
       info.currentPlayback = currentPlayback.clone(id: idWithBookmark)

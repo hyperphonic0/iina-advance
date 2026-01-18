@@ -54,31 +54,33 @@ extension PlayerCore {
 
     log.trace("[Playlist] Adding URLs: [\(playbackIDs.map(\.path.pii.quoted).joined(separator: ", "))]")
 
-    let currentItem: Int
+    let nowPlayingIndex: Int
     if let currentItemExplicitIndex {
       // Newer versions should include this info
-      currentItem = currentItemExplicitIndex
+      nowPlayingIndex = currentItemExplicitIndex
     } else if let currentPlaybackID = info.currentPlayback?.id {
       if let firstMatchingIndex = playbackIDs.firstIndex(of: currentPlaybackID) {
         // Try to derive current item index.
         // Use index of first match found. If there are duplicate paths in the playlist, this will be wrong,
         // but older versions of IINA did not support duplicates in the playlist, so shouldn't be an issue.
-        currentItem = firstMatchingIndex
+        nowPlayingIndex = firstMatchingIndex
       } else {
         log.warn("[Playlist] Playlist (count=\(info.playlist.count) items) does not contain currently playing item (\(currentPlaybackID.path.pii.quoted))")
-        currentItem = -1
+        nowPlayingIndex = -1
       }
     } else {
       log.warn("[Playlist] Cannot determine current item index: currentPlayback is nil!")
       assert(false, "currentPlayback should never be nil if used properly!")
-      currentItem = -1
+      nowPlayingIndex = -1
     }
 
-    let itemsAtInsertIndexes: [(Int, PlaybackID)] = playbackIDs.enumerated().compactMap { index, playbackID in
+    let itemsAtInsertIndexes: [(Int, PlaybackID)] = playbackIDs.enumerated().compactMap { itemIndex, itemID in
       // skip current item bc it's already present in playlist
-      if index == currentItem { return nil }
+      if itemIndex == nowPlayingIndex { return nil }
+      // Use ID which contains bookmark, if available
+      let itemIDWithBookmark = MediaMetaCache.shared.getPlaybackIDWithBookmark(forID: itemID)
       // Insert in 2 blocks: before & after current item, respectively
-      return (index < currentItem ? 0 : 1, playbackID)
+      return (itemIndex < nowPlayingIndex ? 0 : 1, itemIDWithBookmark)
     }
 
     _playlistInsert(itemsAtIndexes: itemsAtInsertIndexes, info.playlist, onSuccess: { [self] in
@@ -110,7 +112,10 @@ extension PlayerCore {
                      onSuccess: OnSuccessCallback? = nil, onError: OnErrorCallback? = nil,
                      _ undoOption: UndoOption) {
 
-    let rowList = paths.compactMap{PlaybackID(path: $0)}
+    let rowList: [PlaybackID] = paths.compactMap{ path in
+      guard let id = PlaybackID(path: path) else { return nil }
+      return MediaMetaCache.shared.getPlaybackIDWithBookmark(forID: id)
+    }
     insertPlaylistRows(rowList, at: targetRowIndex, undoOption)
   }
 

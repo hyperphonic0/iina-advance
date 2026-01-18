@@ -150,7 +150,8 @@ class MediaMetaCache {
     }
     do {
       // *Very* expensive (~1.0sec during testing for local disk)
-      let bookmark = try url.bookmarkData(options: .securityScopeAllowOnlyReadAccess, includingResourceValuesForKeys: nil, relativeTo: nil)
+      let bookmark = try url.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
+                                          includingResourceValuesForKeys: nil, relativeTo: nil)
 
       log.trace("Caching bookmark data for URL \(url.path.pii.quoted)")
       // Update entry in central cache with the updated ID, which contains the bookmark
@@ -162,6 +163,29 @@ class MediaMetaCache {
       log.error("Failed to create bookmark data from URL \(PlaybackID.path(from: url).pii.quoted): \(error)")
       return nil
     }
+  }
+
+  /// Will return a new `PlaybackID`. If bookmark data is found for it, returns a `PlaybackID` with the bookmark data.
+  func getBestPlaybackID(forURL url: URL) -> PlaybackID {
+    let cachedID: PlaybackID? = metaLock.withLock {
+      cachedMeta[url]?.id
+    }
+    if let cachedID, cachedID.bookmark != nil {
+      return cachedID
+    }
+    return PlaybackID(url, bookmark: nil)
+  }
+
+  /// May not actually contain bookmark
+  func getPlaybackIDWithBookmark(forID playbackID: PlaybackID) -> PlaybackID {
+    let url = playbackID.url
+    let cachedID: PlaybackID? = metaLock.withLock {
+      cachedMeta[url]?.id
+    }
+    if let cachedID, cachedID.bookmark != nil {
+      return cachedID
+    }
+    return playbackID
   }
 
   /// Returns entry from the cache with the given `id`, or `nil` if no such entry was found in the cache.
@@ -205,10 +229,14 @@ class MediaMetaCache {
   @discardableResult
   func updateCacheEntry(_ id: PlaybackID, newDuration: Double? = nil, newProgress: Double? = nil) -> MediaMeta {
     return metaLock.withLock {
-      let oldMeta = cachedMeta[id.url] ??  MediaMeta(id)
-      let newMeta = oldMeta.clone(id: id, duration: newDuration, progress: newProgress)
-      cachedMeta[id.url] = newMeta
-      return newMeta
+      let freshMeta: MediaMeta
+      if let staleMeta = cachedMeta[id.url] {
+        freshMeta = staleMeta.clone(id: id, duration: newDuration, progress: newProgress)
+      } else {
+        freshMeta = MediaMeta(id, duration: newDuration, progress: newProgress)
+      }
+      cachedMeta[id.url] = freshMeta
+      return freshMeta
     }
   }
 

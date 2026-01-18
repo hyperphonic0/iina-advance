@@ -55,7 +55,7 @@ class FileInfo: Hashable {
   var suffix: String { String(filename[filename.index(filename.startIndex, offsetBy: prefix.count)...]) }
 
   init(_ url: URL) {
-    self.id = PlaybackID(url)
+    self.id = MediaMetaCache.shared.getBestPlaybackID(forURL: url)
     self.prefix = ""
   }
 

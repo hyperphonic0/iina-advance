@@ -103,6 +103,8 @@ extension URL {
   var isExistingDirectory: Bool {
     return (try? self.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
   }
+
+  var isNetworkResource: Bool { !isFileURL || pathExtension.starts(with: "m3u") }
 }
 
 

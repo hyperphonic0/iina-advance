@@ -146,15 +146,13 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     return urlPath.isEmpty ? nil : urlPath
   }
 
-  var networkPath: String? {
-    isNetworkResource ? path : nil
-  }
+  var networkPath: String? { isNetworkResource ? path : nil }
 
   var pathExtension: String { url.pathExtension }
 
   var isFile: Bool { url.isFileURL }
 
-  var isNetworkResource: Bool { !isFile || url.pathExtension.starts(with: "m3u") }
+  var isNetworkResource: Bool { url.isNetworkResource }
 
   var displayName: String { PlaybackID.displayName(from: url) }
 
@@ -200,7 +198,7 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     do {
       return try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale)
     } catch {
-      log.error("Failed to restore bookmark data: \(error)")
+      log.error("Failed to resolve URL from bookmark: \(error)")
       return nil
     }
   }

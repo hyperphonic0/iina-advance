@@ -365,7 +365,10 @@ struct PlayerSaveState: CustomStringConvertible {
       for (bookmarkData, storedPath) in zip(bookmarks, playlistPaths) {
         // Attempt to create a PlaybackID from the bookmark first, if it is available
         if !bookmarkData.isEmpty, let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
-          ids.append(PlaybackID(bookmarkURL, bookmark: bookmarkData))
+          let idWithBookmark = PlaybackID(bookmarkURL, bookmark: bookmarkData)
+          // Update cache
+          MediaMetaCache.shared.updateCacheEntry(idWithBookmark)
+          ids.append(idWithBookmark)
           resolvedCount += 1
           // Support empty storedPath. as of v1.5 this should never happen, but it is envisioned that future versions
           // may store an empty path for items which have bookmark data. Try to be forward compatible:
@@ -1663,7 +1666,7 @@ extension PlayerCore {
       }
       if playlistBookmarks.count == playlistPaths.count {
         props[PropName.playlistBookmarks.rawValue] = playlistBookmarks
-        log.verbose("Saved bookmarks for \(playlistBookmarks.reduce(0, { count, datum in count + (datum.isEmpty ? 0 : 1) } )) of \(playlistPaths.count) playlist items in \(sw.secElapsedString).")
+        log.verbose("Saved bookmarks for \(playlistBookmarks.reduce(0, { count, datum in count + (datum.isEmpty ? 0 : 1) } )) of \(playlistPaths.count) playlist items in \(sw.secElapsedString)")
       } else {
         assert(false)
       }
