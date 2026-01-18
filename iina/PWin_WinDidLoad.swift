@@ -104,12 +104,8 @@ extension PlayerWindowController {
       loaded = true
 
       // Update to correct values before displaying. Only useful when restoring at launch
-      player.mpv.queue.async { [self] in
-        player.updatePlaybackTimeInfo()
-        DispatchQueue.main.async { [self] in
-          updateUI()
-        }
-      }
+      player.updatePlaybackTimeInfo()
+      updateUI()
 
       if player.disableUI { hideFadeableViews() }
 

@@ -933,12 +933,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
       PlayerCore.backgroundQueue.async { [self] in
         for (rowIndex, item) in playlistItems.enumerated() {
-          if (rowIndex %% 5) == 0 {
-            let isTicketValid = $playlistReloadTicket.withLock { $0 == currentTicket }
-            guard isTicketValid else {
-              player.log.verbose("Playlist: ticket no longer valid; cancelling cache update")
-              return
-            }
+          let isTicketValid = $playlistReloadTicket.withLock { $0 == currentTicket }
+          guard isTicketValid else {
+            player.log.verbose("Playlist: ticket no longer valid; cancelling cache update")
+            return
           }
           let updatedTitle = titles[rowIndex]
           let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: item)

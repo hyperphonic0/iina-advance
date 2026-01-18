@@ -717,7 +717,6 @@ struct GeometryTransform: Sendable {
         // Run this early when restoring, before showWindow(), to avoid noticeable color flickering
         pwc.videoView.refreshAllVideoDisplayState()
 
-        player.refreshSyncUITimer()
         DispatchQueue.main.async { [self] in
           player.touchBarSupport.setupTouchBarUI()
         }

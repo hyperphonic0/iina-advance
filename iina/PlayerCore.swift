@@ -2466,7 +2466,7 @@ final class PlayerCore: NSObject {
       return bookmark
     }
     guard !currentPlayback.isNetworkResource else { return nil }
-    guard let bookmarkData = PlaybackID.bookmark(fromURL: currentPlayback.url, log) else {
+    guard let bookmarkData = MediaMetaCache.shared.getOrCreateBookmark(fromURL: currentPlayback.url) else {
       log.verbose("Failed to create bookmark for playback: \(currentPlayback.path.pii.quoted)")
       return nil
     }
@@ -2474,7 +2474,7 @@ final class PlayerCore: NSObject {
     let idWithBookmark = PlaybackID(currentPlayback.id.url, bookmark: bookmarkData)
     mpv.queue.async { [self] in
       guard let currentPlayback = info.currentPlayback, currentPlayback.id.url == idWithBookmark.url else { return }
-      log.verbose("Updating currentPlayback with bookmark data")
+      log.verbose("Adding bookmark data to currentPlayback")
       info.currentPlayback = currentPlayback.clone(id: idWithBookmark)
     }
     return bookmarkData
@@ -2973,9 +2973,18 @@ final class PlayerCore: NSObject {
     pwc.updateUI(pullUpdatesFromMpv: true)
   }
 
+  /// Warning: this makes mpv calls on the main queue!
   func updatePlaybackTimeInfo() {
-    guard state.isAtLeast(.started), state.isNotYet(.stopping) else {
-      log.verbose("SyncUI: not syncing")
+    assert(DispatchQueue.isExecutingIn(.main))
+
+    guard isActive else {
+      log.verbose("SyncUI: not syncing: player not active")
+      return
+    }
+
+    // Apparently adding this check fixes an issue at startup where `mpv.getFlag(MPVProperty.eofReached)`(below) can deadlock
+    guard info.currentPlayback != nil else {
+      log.verbose("SyncUI: not syncing: current playback is nil")
       return
     }
 

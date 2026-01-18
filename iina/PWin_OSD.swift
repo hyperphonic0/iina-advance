@@ -822,6 +822,7 @@ extension PlayerWindowController {
     // Need to do the UI sync in the main queue
     DispatchQueue.main.async { [self] in
       if !isScrollingOrDraggingPlaySlider {
+        // TODO: this makes mpv calls on the main queue!
         player.updatePlaybackTimeInfo()
       }
       updateUI()

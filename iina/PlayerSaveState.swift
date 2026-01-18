@@ -349,28 +349,31 @@ struct PlayerSaveState: CustomStringConvertible {
   func getPlaylistIDs() -> [PlaybackID] {
     // Retrieve stored plain paths (legacy) and optional bookmarks (v1.5+)
     let playlistPaths = properties[PropName.playlistPaths.rawValue] as? [String] ?? []
-    let playlistBookmarks = properties[PropName.playlistBookmarks.rawValue] as? [Data]
+    let bookmarks = properties[PropName.playlistBookmarks.rawValue] as? [Data] ?? []
 
     // If neither paths nor bookmarks exist, return empty
-    if playlistPaths.isEmpty && ((playlistBookmarks?.isEmpty ?? true)) {
+    if playlistPaths.isEmpty, bookmarks.isEmpty {
       return []
     }
 
     var ids: [PlaybackID] = []
 
     // If we have both arrays and they are aligned, use them in lockstep to preserve order
-    if let bookmarks = playlistBookmarks, bookmarks.count == playlistPaths.count {
+    if bookmarks.count == playlistPaths.count {
+      let sw = Utility.Stopwatch()
       var resolvedCount = 0
       for (bookmarkData, storedPath) in zip(bookmarks, playlistPaths) {
-        // Attempt to create a PlaybackID from the bookmark first
-        if let url = PlaybackID.url(fromBookmark: bookmarkData, log) {
-          ids.append(PlaybackID(url, bookmark: bookmarkData))
+        // Attempt to create a PlaybackID from the bookmark first, if it is available
+        if !bookmarkData.isEmpty, let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
+          ids.append(PlaybackID(bookmarkURL, bookmark: bookmarkData))
           resolvedCount += 1
-          if PlaybackID.path(from: url) != storedPath {
-            log.debug("Playlist item from bookmark resolved to a new path than previously stored: \(storedPath.pii.quoted) → \(PlaybackID.path(from: url).pii.quoted)")
+          // Support empty storedPath. as of v1.5 this should never happen, but it is envisioned that future versions
+          // may store an empty path for items which have bookmark data. Try to be forward compatible:
+          if !storedPath.isEmpty, PlaybackID.path(from: bookmarkURL) != storedPath {
+            log.debug("Playlist item from bookmark resolved to a new path than previously stored: \(storedPath.pii.quoted) → \(PlaybackID.path(from: bookmarkURL).pii.quoted)")
           }
         } else {
-          // Fallback to path -> URL when bookmark cannot be resolved
+          // Fallback to path -> URL when bookmark does not exist or cannot be resolved
           if let url = URL(fileURLWithPath: storedPath) as URL? {
             ids.append(PlaybackID(url, bookmark: nil))
           } else {
@@ -379,15 +382,18 @@ struct PlayerSaveState: CustomStringConvertible {
         }
       }
       log.debug((resolvedCount == playlistPaths.count) ? "Successfully resolved all \(resolvedCount) playlist items from bookmarks"
-                : "Resolved \(resolvedCount) of \(playlistPaths.count) playlist items from bookmarks")
+                : "Resolved \(resolvedCount) of \(playlistPaths.count) playlist items from bookmarks in \(sw.secElapsedString)")
       return ids
     }
 
     // Otherwise, fall back to whichever list we have.
-    if let bookmarks = playlistBookmarks, !bookmarks.isEmpty {
-      for data in bookmarks {
-        if let url = PlaybackID.url(fromBookmark: data, log) {
-          ids.append(PlaybackID(url, bookmark: data))
+    // Versions prior to v1.5 will have only `playlistPaths` and not bookmark data.
+    // Currently we should never encounter `playlistBookmarks` on its own, but can happen if prefs are tampered with.
+    if !bookmarks.isEmpty {
+      log.warn("Found playlistBookmarks but no playlistPaths; will try to restore from bookmarks only")
+      for bookmarkData in bookmarks {
+        if !bookmarkData.isEmpty, let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
+          ids.append(PlaybackID(bookmarkURL, bookmark: bookmarkData))
         } else {
           log.error("Failed to resolve playlist bookmark to URL; skipping one item")
         }
@@ -398,6 +404,10 @@ struct PlayerSaveState: CustomStringConvertible {
 
     // Fallback on plain paths only (legacy case)
     for path in playlistPaths {
+      guard !path.isEmpty else {
+        log.error("Playlist item path is empty and no bookmark data found: skipping!")
+        continue
+      }
       let url = URL(fileURLWithPath: path)
       ids.append(PlaybackID(url, bookmark: nil))
     }
@@ -1635,24 +1645,27 @@ extension PlayerCore {
       props[PropName.playlistPaths.rawValue] = playlistPaths
 
       let sw = Utility.Stopwatch()
-      // New: Save bookmarks for playlist paths to improve security and robustness.
-      // We save an array of bookmark Data objects for each path.
+      // Save bookmarks for playlist items if possible.
+      // Do not calculate bookmarks here - it's way too expensive!
+      // Use cached bookmarks if available. Items which are not cached or are network URLs will not have bookmarks; just save nil for these.
       var playlistBookmarks: [Data] = []
       for item in playlist {
         if let bookmark = item.bookmark {
-          // Use cached bookmark if available
+          // Local cached copy
           playlistBookmarks.append(bookmark)
-        } else if let bookmark = PlaybackID.bookmark(fromURL: item.url, log) {
-          // FIXME: update playbackID cache
-          playlistBookmarks.append(bookmark)
+        } else if let cachedBookmark = MediaMetaCache.shared.getBookmark(forURL: item.url) {
+          // Central cache's copy
+          playlistBookmarks.append(cachedBookmark)
         } else {
-          // Don't bother saving the rest
-          break
+          // Cannot serialize Optional data, so use empty Data to represent nil value:
+          playlistBookmarks.append(Data(count: 0))
         }
       }
       if playlistBookmarks.count == playlistPaths.count {
         props[PropName.playlistBookmarks.rawValue] = playlistBookmarks
-        log.verbose("Saved \(playlistBookmarks.count) playlist bookmarks in \(sw.secElapsedString).")
+        log.verbose("Saved bookmarks for \(playlistBookmarks.reduce(0, { count, datum in count + (datum.isEmpty ? 0 : 1) } )) of \(playlistPaths.count) playlist items in \(sw.secElapsedString).")
+      } else {
+        assert(false)
       }
     }
 

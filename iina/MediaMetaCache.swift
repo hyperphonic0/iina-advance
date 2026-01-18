@@ -133,6 +133,45 @@ class MediaMetaCache {
     }
   }
 
+  /// Gets a MacOS bookmark from given URL. May be an expensive operation!
+  func getOrCreateBookmark(fromURL url: URL) -> Data? {
+    // Network URLs cannot have bookmarks
+    guard url.isFileURL else { return nil }
+
+    // Consult central cache and use cached bookmark if it exists:
+    if let cachedBookmark = getBookmark(forURL: url) {
+      return cachedBookmark
+    }
+
+    // Somewhat expensive: check for file existence
+    guard FileManager.default.fileExists(atPath: url.path) else {
+      log.trace("Cannot create bookmark data from URL \(url.path.pii.quoted): file does not exist")
+      return nil
+    }
+    do {
+      // *Very* expensive (~1.0sec during testing for local disk)
+      let bookmark = try url.bookmarkData(options: .securityScopeAllowOnlyReadAccess, includingResourceValuesForKeys: nil, relativeTo: nil)
+
+      log.trace("Caching bookmark data for URL \(url.path.pii.quoted)")
+      // Update entry in central cache with the updated ID, which contains the bookmark
+      let id = PlaybackID(url, bookmark: bookmark)
+      updateCacheEntry(id)
+
+      return bookmark
+    } catch {
+      log.error("Failed to create bookmark data from URL \(PlaybackID.path(from: url).pii.quoted): \(error)")
+      return nil
+    }
+  }
+
+  /// Returns entry from the cache with the given `id`, or `nil` if no such entry was found in the cache.
+  func getBookmark(forURL url: URL) -> Data? {
+    let bookmark = metaLock.withLock {
+      cachedMeta[url]?.id.bookmark
+    }
+    return bookmark
+  }
+
   /// Returns entry from the cache with the given `id`, or `nil` if no such entry was found in the cache.
   func getCachedMeta(for id: PlaybackID) -> MediaMeta? {
     metaLock.withLock {
@@ -145,7 +184,7 @@ class MediaMetaCache {
   func getOrAddCachedMeta(for id: PlaybackID) -> MediaMeta {
     metaLock.withLock {
       if let meta = cachedMeta[id.url] {
-        if (id.bookmark != nil) && (meta.id.bookmark == nil) {
+        if id.bookmark != nil, meta.id.bookmark == nil {
           // Update with bookmark if needed
           let metaWithBookmark = meta.clone(id: id)
           cachedMeta[id.url] = metaWithBookmark

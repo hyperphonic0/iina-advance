@@ -195,21 +195,6 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     }
   }
 
-  /// Gets a MacOS bookmark from given URL. Expensive operation!
-  static func bookmark(fromURL url: URL, _ log: any Logger.Subsystem) -> Data? {
-    guard url.isFileURL else { return nil }
-    guard FileManager.default.fileExists(atPath: url.path) else {
-      log.trace("Cannot create bookmark data from URL \(url.path.pii.quoted): file does not exist")
-      return nil
-    }
-    do {
-      return try url.bookmarkData(options: .securityScopeAllowOnlyReadAccess, includingResourceValuesForKeys: nil, relativeTo: nil)
-    } catch {
-      log.error("Failed to create bookmark data from URL \(path(from: url).pii.quoted): \(error)")
-      return nil
-    }
-  }
-
   static func url(fromBookmark bookmarkData: Data, _ log: any Logger.Subsystem) -> URL? {
     var isStale = false
     do {
