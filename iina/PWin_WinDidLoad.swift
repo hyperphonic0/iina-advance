@@ -75,9 +75,7 @@ extension PlayerWindowController {
     windowScrollWheel = PWinScrollWheel(self)
 
     playlistView.pwc = self
-    playlistView.view.idString = "PlaylistView"
     pluginView.pwc = self
-    pluginView.view.idString = "PluginView"
     quickSettingView.pwc = self
 
     /// Use an animation task to init views in a single CATransaction, which should prevent partial/redundant draws.
@@ -165,13 +163,13 @@ extension PlayerWindowController {
 
     // Yes, left, not leading!
     seekPreview.timeLabelHorizontalCenterConstraint = seekPreview.timeLabel.centerXAnchor.constraint(equalTo: contentView.leftAnchor, constant: 0) // dummy value for now
-    seekPreview.timeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
+    seekPreview.timeLabelHorizontalCenterConstraint.identifier =  "SeekTimeHoverLabelHSpaceConstraint"
     seekPreview.timeLabelHorizontalCenterConstraint.isActive = true
 
     // This is a bit confusing but the constant here can be thought of as the X value in window,
     // not flipped (so, larger values toward the top)
     seekPreview.timeLabelVerticalSpaceConstraint = contentView.bottomAnchor.constraint(equalTo: seekPreview.timeLabel.bottomAnchor, constant: 0)
-    seekPreview.timeLabelVerticalSpaceConstraint.identifier = .init("SeekTimeHoverLabelVSpaceConstraint")
+    seekPreview.timeLabelVerticalSpaceConstraint.identifier = "SeekTimeHoverLabelVSpaceConstraint"
     seekPreview.timeLabelVerticalSpaceConstraint?.isActive = true
 
     seekPreview.hideTimer.action = self.seekPreviewTimeout

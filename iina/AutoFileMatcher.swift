@@ -155,16 +155,6 @@ class AutoFileMatcher {
     return false
   }
 
-  private func addFilesToPlaylist() throws {
-    let playbackIDs = (videoFiles + audioFiles).compactMap{$0.id}
-    try checkTicket()
-    
-    player.mpv.queue.async { [self] in
-      log.debug("Adding \(videoFiles.count) video files & \(audioFiles.count) audio files to playlist")
-      player._addAllToPlaylist(playbackIDsIncludingCurrent: playbackIDs)
-    }
-  }
-
   private func matchVideoAndSubSeries() throws -> [String: String] {
 
     // group video and sub files
@@ -381,7 +371,13 @@ class AutoFileMatcher {
 
       // add files to playlist
       if shouldAutoLoad {
-        try addFilesToPlaylist()
+        let playbackIDs = (videoFiles + audioFiles).compactMap{$0.id}
+        try checkTicket()
+
+        player.mpv.queue.async { [self] in
+          log.debug("Adding \(videoFiles.count) video files & \(audioFiles.count) audio files to playlist")
+          player.addAllToPlaylist(playbackIDsIncludingCurrent: playbackIDs)
+        }
       }
 
       // match video and sub series

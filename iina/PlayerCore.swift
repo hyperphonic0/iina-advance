@@ -516,14 +516,13 @@ final class PlayerCore: NSObject {
   @discardableResult
   func openURLs(_ urls: [URL]) -> Int {
     guard !urls.isEmpty else { return 0 }
-    let ids = urls.compactMap{ PlaybackID($0) }
-    log.debug("OpenURLs: \(ids.map{$0.path.pii})")
-    // Reset:
-    openedWindowsSetIndex = 0
 
     PlayerCore.mouseLocationAtLastOpen = NSEvent.mouseLocation
+    openedWindowsSetIndex = 0  // reset
 
+    let ids = urls.compactMap{ MediaMetaCache.shared.getBestPlaybackID(forURL: $0) }
     let urls = Utility.resolveURLs(urls)
+    log.debug("OpenURLs: \(ids.map{$0.path.pii})")
 
     // Handle folder URL (to support mpv shuffle, etc), BD folders and m3u / m3u8 files first.
     // For these cases, mpv will load/build the playlist and notify IINA when it can be retrieved.
@@ -681,6 +680,12 @@ final class PlayerCore: NSObject {
               pendingResumeWhenShowingWindow = !Preference.bool(for: .pauseWhenOpen)
             }
 
+            let playlistPlaybackIDs = priorState.getPlaylistIDs()
+            if !playlistPlaybackIDs.isEmpty {
+              let playlistPos: Int? = priorState.int(for: .playlistPos)
+              log.debug("Restoring \(playlistPlaybackIDs.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")")
+              addAllToPlaylist(playbackIDsIncludingCurrent: playlistPlaybackIDs, indexOfCurrentItem: playlistPos)
+            }
             return
 
           } else if isInteractivePlayer {
@@ -701,9 +706,10 @@ final class PlayerCore: NSObject {
 
           if ids.count > 1 {
             log.verbose("Adding \(ids.count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)")
-            _addAllToPlaylist(playbackIDsIncludingCurrent: ids, indexOfCurrentItem: 0)
+            addAllToPlaylist(playbackIDsIncludingCurrent: ids, indexOfCurrentItem: 0)
           } else {
             // Only one entry in playlist, but still need to pull it from mpv
+            log.verbose("Only 1 entry in playlist & not restoring; doing initial reload of playlist")
             _reloadPlaylist()
           }
 
@@ -2038,16 +2044,6 @@ final class PlayerCore: NSObject {
         let _ = data.withUnsafeBytes {
           setxattr(fileSystemPath, name, $0.baseAddress, data.count, 0, 0)
         }
-      }
-    }
-
-    // Cannot restore playlist until after fileStarted event & mpv has a position for current item
-    if let priorState = pwc.priorStateIfRestoring {
-      let playlistPlaybackIDs = priorState.getPlaylistIDs()
-      if !playlistPlaybackIDs.isEmpty {
-        let playlistPos: Int? = priorState.int(for: .playlistPos)
-        log.debug("Restoring \(playlistPlaybackIDs.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")")
-        _addAllToPlaylist(playbackIDsIncludingCurrent: playlistPlaybackIDs, indexOfCurrentItem: playlistPos)
       }
     }
 

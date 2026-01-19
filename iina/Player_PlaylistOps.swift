@@ -43,8 +43,9 @@ extension PlayerCore {
   ///   items are present in the playlist, they will get pushed to the top or to the bottom of the playlist.
   /// • This inserts around the currently playing item is in the list, so that it may end up at `indexOfCurrentItem`
   ///   (if provided), which may be in the middle of the playlist.
-  func _addAllToPlaylist(playbackIDsIncludingCurrent playbackIDs: [PlaybackID], indexOfCurrentItem currentItemExplicitIndex: Int? = nil) {
+  func addAllToPlaylist(playbackIDsIncludingCurrent playbackIDs: [PlaybackID], indexOfCurrentItem currentItemExplicitIndex: Int? = nil) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+
     guard !isStopping else { return }
     _reloadPlaylist(thenPostNotification: false, savePlayerState: false)
 

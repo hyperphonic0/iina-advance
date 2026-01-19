@@ -366,7 +366,7 @@ struct PlayerSaveState: CustomStringConvertible {
         // Attempt to create a PlaybackID from the bookmark first, if it is available
         if !bookmarkData.isEmpty, let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
           let idWithBookmark = PlaybackID(bookmarkURL, bookmark: bookmarkData)
-          // Update cache
+          // Merge bookmark into cache
           MediaMetaCache.shared.updateCacheEntry(idWithBookmark)
           ids.append(idWithBookmark)
           resolvedCount += 1
@@ -384,8 +384,9 @@ struct PlayerSaveState: CustomStringConvertible {
           }
         }
       }
-      log.debug((resolvedCount == playlistPaths.count) ? "Successfully resolved all \(resolvedCount) playlist items from bookmarks"
-                : "Resolved \(resolvedCount) of \(playlistPaths.count) playlist items from bookmarks in \(sw.secElapsedString)")
+      log.debug("Resolved bookmarks for "
+                + (resolvedCount == playlistPaths.count ? "all \(resolvedCount)" : "\(resolvedCount) of \(playlistPaths.count)")
+                + " playlist items in \(sw.secElapsedString)")
       return ids
     }
 
