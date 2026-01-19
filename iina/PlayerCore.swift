@@ -686,6 +686,7 @@ final class PlayerCore: NSObject {
               log.debug("Restoring \(playlistPlaybackIDs.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")")
               addAllToPlaylist(playbackIDsIncludingCurrent: playlistPlaybackIDs, indexOfCurrentItem: playlistPos)
             }
+            
             return
 
           } else if isInteractivePlayer {
