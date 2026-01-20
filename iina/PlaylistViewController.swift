@@ -88,6 +88,19 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     return NSNib.Name("PlaylistViewController")
   }
 
+  override func viewWillAppear() {
+    pwc.animationPipeline.submitInstantTask{ [self] in
+      guard isViewLoaded else { return }
+      if pwc.isOpen(sidebarTab: .playlist) {
+        player.log.verbose("PlaylistSidebar: reloading tab \(currentTab.name.quoted)")
+        playlistTableView.reloadData()
+      } else if pwc.isOpen(sidebarTab: .chapters) {
+        player.log.verbose("PlaylistSidebar: reloading tab \(currentTab.name.quoted)")
+        chapterTableView.reloadData()
+      }
+    }
+  }
+
   private var notiHandler: NotificationHandler!
 
 #if DEBUG
@@ -329,6 +342,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       pwc.animationPipeline.submitInstantTask { [self] in
         player.log.trace("Updating playlist table via reloadData")
         playlistTableView.reloadData()
+        player.log.verbose("Updated playlist table via reloadData: \(playlistTableView.numberOfRows) rows")
         doAfterReload()
       }
     }
@@ -410,10 +424,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       reloadData(playlist: true, chapters: false)
       scrollPlaylistToCurrentItem()
       updateLoopBtnStatus()
-      /// The observer for `iinaPlaylistChanged` may not have loaded in time to be triggered; kick it off manually.
-      PlayerCore.backgroundQueue.asyncAfter(deadline: .now() + Constants.TimeInterval.initialPlaylistDelayBeforePrefetch) { [self] in
-        updateCachesForAllItems()
-      }
       refreshNowPlayingIndex(thenScrollToVisible: true)
       buttonTag = 0
     case .chapters:
@@ -858,6 +868,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   @discardableResult
   private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> MediaMeta? {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     guard rowIndex >= 0 else { return nil }
     let playlistItems = displayedPlaylist
     player.log.trace("Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)\(force ? " (forced)" : "")")

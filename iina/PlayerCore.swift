@@ -686,7 +686,7 @@ final class PlayerCore: NSObject {
               log.debug("Restoring \(playlistPlaybackIDs.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")")
               addAllToPlaylist(playbackIDsIncludingCurrent: playlistPlaybackIDs, indexOfCurrentItem: playlistPos)
             }
-            
+
             return
 
           } else if isInteractivePlayer {
@@ -2444,7 +2444,7 @@ final class PlayerCore: NSObject {
     var progress = 0
     for item in playlisttItemsMissingBookmarks {
       guard currentTicket == backgroundQueueTicket else { return }
-      if MediaMetaCache.shared.getOrCreateBookmark(fromURL: item.url) != nil {
+      if MediaMetaCache.shared.createBookmarkIfNotExist(fromURL: item.url) {
         progress += 1
       }
     }
@@ -2454,7 +2454,12 @@ final class PlayerCore: NSObject {
       guard currentTicket == backgroundQueueTicket else { return }
       let playlist = info.playlist
       log.verbose("Updating \(playlist.count) playlist items with bookmark(s)")
-      let updatedPlaylist = playlist.map{ MediaMetaCache.shared.getPlaybackIDWithBookmark(forID: $0) }
+      var updatedPlaylist: [PlaybackID] = []
+      for item in playlist {
+        guard currentTicket == backgroundQueueTicket else { return }
+        let itemUpdated = MediaMetaCache.shared.getPlaybackIDWithBookmark(forID: item)
+        updatedPlaylist.append(itemUpdated)
+      }
       info.playlist = updatedPlaylist
     }
   }

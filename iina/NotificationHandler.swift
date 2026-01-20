@@ -30,6 +30,7 @@ final class NotificationHandler: NSObject {
   var prefDidChangeCallback: PrefDidChangeCallback?
   private let legacyPrefKeyObserver: NSObject?
   private let ncObserverSpecs: [NotificationCenter: [NCObserver]]
+  private var observersAreAttached = false
 
   init(_ log: any Logger.Subsystem,
        prefDidChange: PrefDidChangeCallback? = nil,
@@ -55,6 +56,7 @@ final class NotificationHandler: NSObject {
         addObserver(to: nc, forName: spec.name, object: spec.object, using: spec.callback)
       }
     }
+    observersAreAttached = true
   }
 
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?,
@@ -77,6 +79,8 @@ final class NotificationHandler: NSObject {
   }
 
   func removeAllObservers() {
+    guard observersAreAttached else { return }
+
     ObjcUtils.silenced { [self] in
       // Stop observing prefs
       for key in observedPrefKeys {
@@ -92,6 +96,7 @@ final class NotificationHandler: NSObject {
       }
       log.verbose("Cancelled \(activeObservers.count) subscribers from NotificationCenters")
     }
+    observersAreAttached = false
   }
 
 }

@@ -133,20 +133,52 @@ class MediaMetaCache {
     }
   }
 
-  /// Gets a MacOS bookmark from given URL. May be an expensive operation!
   func getOrCreateBookmark(fromURL url: URL) -> Data? {
     // Network URLs cannot have bookmarks
     guard url.isFileURL else { return nil }
 
-    // Consult central cache and use cached bookmark if it exists:
-    if let cachedBookmark = getBookmark(forURL: url) {
-      return cachedBookmark
+    // Consult central cache to see if cached bookmark exists:
+    if let bookmarkData = getBookmark(forURL: url) {
+      return bookmarkData
     }
 
     // Somewhat expensive: check for file existence
     guard FileManager.default.fileExists(atPath: url.path) else {
       log.trace("Cannot create bookmark data from URL \(url.path.pii.quoted): file does not exist")
       return nil
+    }
+    do {
+      // *Very* expensive (~1.0sec during testing for local disk)
+      let bookmarkData = try url.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
+                                              includingResourceValuesForKeys: nil, relativeTo: nil)
+
+      log.trace("Caching bookmark data for URL \(url.path.pii.quoted)")
+      // Update entry in central cache with the updated ID, which contains the bookmark
+      let id = PlaybackID(url, bookmark: bookmarkData)
+      updateCacheEntry(id)
+
+      return bookmarkData
+    } catch {
+      log.error("Failed to create bookmark data from URL \(PlaybackID.path(from: url).pii.quoted): \(error)")
+      return nil
+    }
+  }
+
+  /// Generates a MacOS bookmark from given URL if it does not exist. May be an expensive operation!
+  /// Returns `true` if bookmark was created; false if not
+  func createBookmarkIfNotExist(fromURL url: URL) -> Bool {
+    // Network URLs cannot have bookmarks
+    guard url.isFileURL else { return false }
+
+    // Consult central cache to see if cached bookmark exists:
+    if getBookmark(forURL: url) != nil {
+      return false
+    }
+
+    // Somewhat expensive: check for file existence
+    guard FileManager.default.fileExists(atPath: url.path) else {
+      log.trace("Cannot create bookmark data from URL \(url.path.pii.quoted): file does not exist")
+      return false
     }
     do {
       // *Very* expensive (~1.0sec during testing for local disk)
@@ -158,10 +190,10 @@ class MediaMetaCache {
       let id = PlaybackID(url, bookmark: bookmark)
       updateCacheEntry(id)
 
-      return bookmark
+      return true
     } catch {
       log.error("Failed to create bookmark data from URL \(PlaybackID.path(from: url).pii.quoted): \(error)")
-      return nil
+      return false
     }
   }
 
