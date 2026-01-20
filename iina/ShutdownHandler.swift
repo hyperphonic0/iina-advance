@@ -25,10 +25,7 @@ class ShutdownHandler {
       return false
     }
 
-    // Save UI state first:
-    for pwc in AppDelegate.shared.playerWindows {
-      pwc.player.saveSynchronously()
-    }
+    // Save window list before fiddling with any windows, so that we preserve the current order & visible state:
     UIState.shared.saveCurrentOpenWindowList()
 
     isTerminating = true
@@ -37,6 +34,28 @@ class ShutdownHandler {
     /// Plug holes by explicitly updating all windows here.
     for window in NSApp.windows {
       (window.windowController as? WindowController)?.refreshWindowOpenCloseAnimation()
+    }
+
+    // Now hide all windows prior to saving. The save loop below can take a noticeable amount of time, so we can conceal this.
+    for window in NSApp.windows {
+      window.orderOut(nil)
+    }
+
+    Logger.log("All windows hidden")
+    
+    // Allow orderOut to take effect for windows before proceeding
+    DispatchQueue.main.async { [self] in
+      continueShutdown()
+    }
+    // Shutdown "later", when we say so.
+    return false
+  }
+
+  @MainActor
+  private func continueShutdown() {
+    // Save UI state for all player windows. This can add up to whole seconds if there are many windows.
+    for pwc in AppDelegate.shared.playerWindows {
+      pwc.player.saveSynchronously()
     }
 
     HistoryController.shared.stop(shutdown: true)
@@ -188,7 +207,7 @@ class ShutdownHandler {
       }
     }
 
-    return isReadyToTerminate()
+    proceedWithTermination()
   }
 
   @MainActor
