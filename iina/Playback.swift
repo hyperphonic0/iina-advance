@@ -114,7 +114,7 @@ struct PlaybackID: Sendable, Equatable, Hashable {
   let mpvMD5: String
   let bookmark: Data?
 
-  /// if `url` is `nil`, assumed to be `stdin`.
+  /// If `url` is `nil`, assumed to be `stdin`.
   init(_ url: URL?, bookmark: Data? = nil) {
     let url = url ?? URL(string: "stdin")!
     self.staticURL = url
@@ -129,13 +129,7 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     self.bookmark = bookmark
   }
 
-  var url: URL {
-    if let bookmark, let fileURL = PlaybackID.url(fromBookmark: bookmark, Logger.log) {
-      // Resolve from bookmark if present
-      return fileURL
-    }
-    return staticURL
-  }
+  var url: URL { staticURL }
 
   var path: String {
     return PlaybackID.path(from: url)
@@ -183,7 +177,8 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     return isNetworkResource ? urlPath : NSString(string: urlPath).lastPathComponent
   }
 
-  /// Do not use `url.path` for an unknown URL. Use this instead. It will handle both files and network URLs.
+  /// Do not use `url.path` for a playback URL of unknown origin. Use this instead. It will handle both files and network URLs,
+  /// and notably IINA's nonstandard use of the string "stdin" to represent a `stdin` socket stream.
   static func path(from url: URL?) -> String {
     let url = url ?? URL(string: "stdin")!
     if url.absoluteString == "stdin" {
@@ -193,6 +188,7 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     }
   }
 
+  /// Warning: this can be expensive! Use strategically.
   static func url(fromBookmark bookmarkData: Data, _ log: any Logger.Subsystem) -> URL? {
     var isStale = false
     do {

@@ -62,11 +62,15 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
     }
     if url.isArray {
       if let paths = url.toArray() as? [String] {
-        player!.addToPlaylist(paths: paths, at: at, .registerUndoRedo)
+        DispatchQueue.main.async { [self] in
+          player!.addToPlaylist(paths: paths, at: at, .registerUndoRedo)
+        }
         return true
       }
     } else if url.isString {
-      player!.addToPlaylist(paths: [url.toString()], at: at, .registerUndoRedo)
+      DispatchQueue.main.async { [self] in
+        player!.addToPlaylist(paths: [url.toString()], at: at, .registerUndoRedo)
+      }
       return true
     }
     log("playlist.add: The first argument should be a string or an array of strings.", level: .error)
@@ -82,7 +86,9 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
         log("playlist.remove: Invalid index.", level: .error)
         return false
       }
-      player!.playlistRemove(IndexSet(indices), .clearUndoStack)
+      DispatchQueue.main.async { [self] in
+        player!.playlistRemove(IndexSet(indices), .clearUndoStack)
+      }
       return true
     } else if index.isNumber {
       let index = Int(index.toInt32())
@@ -90,7 +96,9 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
         log("playlist.remove: Invalid index.", level: .error)
         return false
       }
-      player!.playlistRemove(index, .clearUndoStack)
+      DispatchQueue.main.async { [self] in
+        player!.playlistRemove(index, .clearUndoStack)
+      }
       return true
     }
     log("playlist.remove: The argument should be a number or an array of numbers.", level: .error)
@@ -106,7 +114,9 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
       log("playlist.move: Invalid index.", level: .error)
       return false
     }
-    player!.playlistMove(index, to: to)
+    DispatchQueue.main.async { [self] in
+      player!.playlistMove(index, to: to)
+    }
     return true
   }
 

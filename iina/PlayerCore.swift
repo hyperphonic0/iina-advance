@@ -141,6 +141,7 @@ final class PlayerCore: NSObject {
 
   // - Playlist
 
+  @MainActor
   var displayedPlaylist: [PlaybackID] {
     get { pwc.playlistView.displayedPlaylist }
     set { pwc.playlistView.displayedPlaylist = newValue }

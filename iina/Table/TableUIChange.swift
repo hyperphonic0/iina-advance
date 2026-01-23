@@ -347,6 +347,6 @@ struct TableUIChange: Sendable {
   func inverted(adjustAllIndexesBy indexAdjustment: Int = 0,
                 selectNextRowAfterDelete: Bool, completionHandler: TableUIChange.CompletionHandler? = nil) -> TableUIChange {
     TableUIChangeBuilder.shared.inverted(from: self, andAdjustAllIndexesBy: indexAdjustment,
-                                   selectNextRowAfterDelete: selectNextRowAfterDelete, completionHandler: completionHandler)
+                                         selectNextRowAfterDelete: selectNextRowAfterDelete, completionHandler: completionHandler)
   }
 }

@@ -33,6 +33,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private var pendingSwitchRequest: Sidebar.Tab?
   private var fileExistsMap: [URL: Bool] = [:]
   /// Currently displayed playlist rows. Should always be updated from `player.info.playlist`
+  @MainActor
   var displayedPlaylist: [PlaybackID] = []
 
   /// Cannot reliably scroll to current item until after the table finishes loading. So set this flag first.
@@ -86,19 +87,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   override var nibName: NSNib.Name {
     return NSNib.Name("PlaylistViewController")
-  }
-
-  override func viewWillAppear() {
-    pwc.animationPipeline.submitInstantTask{ [self] in
-      guard isViewLoaded else { return }
-      if pwc.isOpen(sidebarTab: .playlist) {
-        player.log.verbose("PlaylistSidebar: reloading tab \(currentTab.name.quoted)")
-        playlistTableView.reloadData()
-      } else if pwc.isOpen(sidebarTab: .chapters) {
-        player.log.verbose("PlaylistSidebar: reloading tab \(currentTab.name.quoted)")
-        chapterTableView.reloadData()
-      }
-    }
   }
 
   private var notiHandler: NotificationHandler!
@@ -275,18 +263,17 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     notiHandler.removeAllObservers()
   }
 
+  @MainActor
   func scrollPlaylistToCurrentItem() {
     // Execute in pipeline task to prevent hiccups if running other animations
-    pwc.animationPipeline.submitInstantTask{ [self] in
-      guard let playlistTableView else { return }
-      if let entryIndex = player.info.currentPlayback?.playlistPos {
-        player.log.verbose("Scrolling playlist table to index \(entryIndex)")
-        guard isViewLoaded else {
-          player.log.verbose("Playlist table not loaded yet, skipping scroll")
-          return
-        }
-        playlistTableView.scrollRowToVisible(entryIndex)
+    guard let playlistTableView else { return }
+    if let entryIndex = player.info.currentPlayback?.playlistPos {
+      player.log.verbose("Scrolling playlist table to index \(entryIndex)")
+      guard isViewLoaded else {
+        player.log.verbose("Playlist table not loaded yet, skipping scroll")
+        return
       }
+      playlistTableView.scrollRowToVisible(entryIndex)
     }
   }
 
@@ -319,7 +306,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let newPlaylistRows = player.info.playlist
     displayedPlaylist = newPlaylistRows
 
-    let doAfterReload: () -> Void = { [self] in
+    let doAfterReload: @MainActor () -> Void = { [self] in
       refreshNowPlayingIndex()
       updateCachesForAllItems()
       removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
@@ -349,7 +336,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   private func showTotalLength() {
-    guard let playlistTotalLength = playlistTotalLength, playlistTotalLengthIsReady else { return }
+    guard let playlistTotalLength, playlistTotalLengthIsReady else { return }
     totalLengthLabel.isHidden = false
     if playlistTableView.numberOfSelectedRows > 0 {
       let info = player.info
@@ -372,13 +359,16 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     if let totalDuration = player.info.calculateTotalDuration() {
       player.log.trace("Playlist: recalculated total duration: \(totalDuration)")
-      playlistTotalLengthIsReady = true
-      playlistTotalLength = totalDuration
+      pwc.animationPipeline.submitInstantTask { [self] in
+        playlistTotalLengthIsReady = true
+        playlistTotalLength = totalDuration
+        self.showTotalLength()
+      }
     } else {
-      player.log.verbose("Playlist: failed to recaculate total duration; hiding length label")
-    }
-    pwc.animationPipeline.submitInstantTask {
-      self.showTotalLength()
+      pwc.animationPipeline.submitInstantTask { [self] in
+        player.log.verbose("Playlist: failed to recaculate total duration; hiding length label")
+        hideTotalLength()
+      }
     }
   }
 
@@ -691,9 +681,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   // Updates index of playing item. Don't need to reload whole playlist
+  @MainActor
   func refreshNowPlayingIndex(setNewIndexTo newNowPlayingIndex: Int? = nil,
                               forceRedraw: Bool = false, thenScrollToVisible: Bool = false) {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard isViewLoaded else { return }
     guard !view.isHidden else { return }
 
@@ -706,34 +696,32 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       return
     }
 
-    // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
-    loadCachedItem(forRowIndex: newNowPlayingIndex, force: true)
     // ... also make sure the old "now playing" row is redrawn so it loses its status
     loadCachedItem(forRowIndex: oldNowPlayingIndex, force: true)
+    // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
+    loadCachedItem(forRowIndex: newNowPlayingIndex, force: true)
 
     // The calls to loadCachedItem should refresh the given indexes, but will go through multiple queues
     // to do so and may be delayed by a minute or more. We need to update the nowPlaying status ASAP,
     // so just add extra redraws right away:
-    reloadPlaylistRow(newNowPlayingIndex)
     reloadPlaylistRow(oldNowPlayingIndex)
+    reloadPlaylistRow(newNowPlayingIndex)
 
     if thenScrollToVisible {
       playlistTableView.scrollRowToVisible(newNowPlayingIndex)
     }
   }
 
+  @MainActor
   func reloadPlaylistRow(_ rowIndex: Int) {
-    assert(DispatchQueue.isExecutingIn(.main))
     reloadPlaylistRows(IndexSet(integer: rowIndex))
   }
 
   /// Reload all rows if not specified
+  @MainActor
   func reloadPlaylistRows(_ rows: IndexSet? = nil) {
-    // Enqueue this asynchronously to prevent it from causing hiccups if other animations are in progress
-    pwc.animationPipeline.submitInstantTask{ [self] in
-      let rows = rows ?? IndexSet(integersIn: 0..<playlistTableView.numberOfRows)
-      playlistTableView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integersIn: 0...1))
-    }
+    let rows = rows ?? IndexSet(integersIn: 0..<playlistTableView.numberOfRows)
+    playlistTableView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integersIn: 0...1))
   }
 
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
@@ -741,7 +729,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let v = tableView.makeView(withIdentifier: identifier, owner: self) as! NSTableCellView
 
     if tableView == playlistTableView {  // Playlist table
-      refreshNowPlayingIndex()  // make sure this is up-to-date
       // use cached value
       let isPlaying = self.lastNowPlayingIndex == row
 
@@ -905,7 +892,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
               refreshTotalLength()
             }
           }
-          pwc.animationPipeline.submitInstantTask { [self] in
+          // TODO: (optimization) add debouncer & aggregate work here
+          pwc.animationPipeline.submitInstantTask{ [self] in
             /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
             reloadPlaylistRow(rowIndex)
           }
@@ -926,6 +914,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard enablePrefetching else { return }
 
     let sw = Utility.Stopwatch()
+    let playlistItems = displayedPlaylist
 
     player.mpv.queue.async { [self] in
       guard player.isActive else { return }
@@ -933,7 +922,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         latestTicket += 1
         return latestTicket
       }
-      let playlistItems = displayedPlaylist
       var titles: [String?] = []
       player.log.verbose("[Playlist] Updating caches for \(playlistItems.count) rows…")
 
@@ -957,10 +945,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           // Get watch-later form file system; get other meta from ffmpeg:
           MediaMetaCache.shared.updateCachedMeta(item, mpvTitle: updatedTitle)
           // Refresh each row as it gets updated. May take a while to refresh all
-          pwc.animationPipeline.submit(.init{ [self] in
+          // TODO: (optimization) add debouncer & aggregate work here
+          pwc.animationPipeline.submitInstantTask{ [self] in
             /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
             reloadPlaylistRow(rowIndex)
-          })
+          }
         }
 
         // Finally, append a task to recalculate the total length. Do not show it until it is done!
