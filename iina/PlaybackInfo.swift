@@ -65,14 +65,8 @@ class PlaybackInfo {
   var nowPlayingIndex: Int? { currentPlayback?.playlistPos }
   var currentURL: URL? { currentPlayback?.url }
   var isNetworkResource: Bool { currentPlayback?.isNetworkResource ?? false }
+  var isMediaOnRemoteDrive: Bool { currentPlayback?.isMediaOnRemoteDrive ?? false }
   var mpvMd5: String? { currentPlayback?.mpvMD5 }
-
-  var isMediaOnRemoteDrive: Bool {
-    if let attrs = try? currentPlayback?.url.resourceValues(forKeys: Set([.volumeIsLocalKey])), !attrs.volumeIsLocal! {
-      return true
-    }
-    return false
-  }
 
   // MARK: - Filters & Equalizers
 

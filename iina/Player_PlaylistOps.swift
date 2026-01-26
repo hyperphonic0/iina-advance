@@ -151,41 +151,52 @@ extension PlayerCore {
     insertStartIndex = (insertStartIndex >= 0 && insertStartIndex <= playlistSize) ? insertStartIndex : playlistSize
     let itemsAtIndexes = rowList.map ({ row in (insertStartIndex, row)} )
 
-    mpv.queue.async { [self] in
-      _playlistInsert(itemsAtIndexes: itemsAtIndexes, expectedCurrentPlaylist, onSuccess: { [self] in
-        tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // update UI
-        sendOSD(.addToPlaylist(rowList.count))
+    playlistInsert(itemsAtIndexes: itemsAtIndexes, expectedCurrentPlaylist, onSuccess: { [self] in
+      tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // update UI
+      sendOSD(.addToPlaylist(rowList.count))
 
-        // Register undo/redo for this action?
-        switch undoOption {
-        case .ignoreUndoRedo:
-          break
-        case .clearUndoStack:
-          log.debug("[Playlist] Clearing undo stack for playlist after 'insert'")
-          undoHelper.clearUndoes()
-        case .registerUndoRedo:
-          let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
-          undoHelper.register(actionName, undo: { [self] in
-            let expectedPlaylist = displayedPlaylist
-            mpv.queue.async { [self] in
-              guard expectedPlaylist == allItemsNew else {
-                log.error("[Playlist] Cannot undo insert: playlist is in unexpected state! Clearing undo stack & aborting.")
-                playlistErrorDidOccur()
-                return
-              }
-              let rmStartIndex = tableUIChange.toInsert!.first!
-              let rmEndIndex = rmStartIndex + rowList.count
-              let rowIndexesToRemove = IndexSet(rmStartIndex..<rmEndIndex)
-              pwc.animationPipeline.submitInstantTask { [self] in
-                removePlaylistRows(rowIndexesToRemove, .ignoreUndoRedo)
-              }
+      // Register undo/redo for this action?
+      switch undoOption {
+      case .ignoreUndoRedo:
+        break
+      case .clearUndoStack:
+        log.debug("[Playlist] Clearing undo stack for playlist after 'insert'")
+        undoHelper.clearUndoes()
+      case .registerUndoRedo:
+        let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
+        undoHelper.register(actionName, undo: { [self] in
+          let expectedPlaylist = displayedPlaylist
+          mpv.queue.async { [self] in
+            guard expectedPlaylist == allItemsNew else {
+              log.error("[Playlist] Cannot undo insert: playlist is in unexpected state! Clearing undo stack & aborting.")
+              playlistErrorDidOccur()
+              return
             }
-          }, redo: { [self] in
-            insertPlaylistRows(rowList, at: targetRowIndex, .ignoreUndoRedo)
-          })
-        }
-      })
-    }  // end mpv.queue.async
+            let rmStartIndex = tableUIChange.toInsert!.first!
+            let rmEndIndex = rmStartIndex + rowList.count
+            let rowIndexesToRemove = IndexSet(rmStartIndex..<rmEndIndex)
+            pwc.animationPipeline.submitInstantTask { [self] in
+              removePlaylistRows(rowIndexesToRemove, .ignoreUndoRedo)
+            }
+          }
+        }, redo: { [self] in
+          insertPlaylistRows(rowList, at: targetRowIndex, .ignoreUndoRedo)
+        })
+      }
+    })
+  }
+
+  /// Insert playlist items at mapped indexes. Contains the backend logic only.
+  ///
+  /// This is internal: should *only* be called by `insertPlaylistRows` or by other non-private `PlayerCore` methods,
+  /// and must be called on the `mpv` queue.
+  /// - `itemsAtIndexes` must be in ascending index order.
+  func playlistInsert(itemsAtIndexes: [(insertTargetIndex: Int, itemToInsert: PlaybackID)],
+                      _ expectedCurrentPlaylist: [PlaybackID]? = nil,
+                      onSuccess: @escaping MainActorSuccessCallback) {
+    mpv.queue.async { [self] in
+      _playlistInsert(itemsAtIndexes: itemsAtIndexes, expectedCurrentPlaylist, onSuccess: onSuccess)
+    }
   }
 
   /// Insert playlist items at mapped indexes. Contains the backend logic only.

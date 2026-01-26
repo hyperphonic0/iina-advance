@@ -11,7 +11,7 @@ import Foundation
 ///
 /// An instance of this class should be created as soon as the user indicates their intent to play the media,
 /// and should not be reused for subsequent play(s).
-struct Playback: CustomStringConvertible {
+struct Playback: CustomStringConvertible, Sendable {
 
   /// State of the individual playack
   enum LifecycleState: Int, StateEnum, CustomStringConvertible {
@@ -61,6 +61,7 @@ struct Playback: CustomStringConvertible {
   var mpvMD5: String { id.mpvMD5 }
   var path: String { id.path }
   var isNetworkResource: Bool { id.isNetworkResource }
+  var isMediaOnRemoteDrive: Bool { id.isMediaOnRemoteDrive }
   var displayName: String { id.displayName }
 
   var description: String {
@@ -142,11 +143,18 @@ struct PlaybackID: Sendable, Equatable, Hashable {
 
   var networkPath: String? { isNetworkResource ? path : nil }
 
-  var pathExtension: String { url.pathExtension }
-
   var isFile: Bool { url.isFileURL }
 
   var isNetworkResource: Bool { url.isNetworkResource }
+
+  var isMediaOnRemoteDrive: Bool {
+    if let attrs = try? url.resourceValues(forKeys: Set([.volumeIsLocalKey])), !attrs.volumeIsLocal! {
+      return true
+    }
+    return false
+  }
+
+  var pathExtension: String { url.pathExtension }
 
   var displayName: String { PlaybackID.displayName(from: url) }
 

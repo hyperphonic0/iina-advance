@@ -335,7 +335,7 @@ class VideoView: NSView {
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
     if let screen = self.window?.screen {
-      NSScreen.logEDR("Refreshing HDR for \(player.subsystem.rawValue) on display\(displayId)",
+      NSScreen.logEDR("Refreshing HDR for \(player.label) on display\(displayId)",
                       screen, subsystem: logHDR)
     }
     requestEdrMode(then: { [self] edrEnabled in

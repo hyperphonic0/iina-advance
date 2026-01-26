@@ -51,7 +51,6 @@ final class PlayerCore: NSObject {
   // MARK: - Instance Fields
 
   let log: any Logger.Subsystem
-  var subsystem: any Logger.Subsystem { self.log }
   var label: String
   let isDemoPlayer: Bool
 
@@ -2554,7 +2553,7 @@ final class PlayerCore: NSObject {
       ///              selection mechanism decide.)```
       let urlPath = PlaybackID.path(from: url)
       log.verbose("Loading external sub file: \(urlPath.pii.quoted)")
-      mpv.command(.subAdd, args: [urlPath], checkError: false, level: .verbose) { code in
+      mpv.command(.subAdd, args: [urlPath], checkError: false, level: .verbose) { [self] code in
         if code >= 0 { return }
         let errorDesc = mpv.errorString(code)
         log.error("Failed to load sub (error \(code): \(errorDesc)) \(urlPath.pii.quoted)")
