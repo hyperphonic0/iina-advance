@@ -46,7 +46,7 @@ class AutoFileMatcher {
 
   /// checkTicket
   private func checkTicket() throws {
-    if player.backgroundQueueTicket != ticket {
+    if player.postLoadBGQTicket != ticket {
       throw TicketExpiredError.ticketExpired
     }
   }

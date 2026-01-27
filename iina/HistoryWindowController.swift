@@ -79,7 +79,7 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
   private let log: any Logger.Subsystem
   private var notiHandler: NotificationHandler!
 
-  private var backgroundQueue = DispatchQueue.newDQ(label: "HistoryWindow-BG", qos: .background)
+  private var bgDQ = DispatchQueue.newDQ(label: "HistoryWindow-BG", qos: .background)
 
   /// Calls `self.showLoadingUI` on timeout.
   private let showLoadingMsgTimer = TimeoutTimer(timeout: Constants.TimeInterval.historyTableDelayBeforeLoadingMsgDisplay)
@@ -268,14 +268,14 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
   }
 
   private func _reloadHistoryDataBG(ticket: Int) {
-    backgroundQueue.async { [self] in
+    bgDQ.async { [self] in
       guard !isInitialLoadDone || isTicketStillValid(ticket) else { return }
       _reloadHistoryData(ticket: ticket)
     }
   }
 
   private func _reloadHistoryData(ticket: Int) {
-    assert(DispatchQueue.isExecutingIn(backgroundQueue))
+    assert(DispatchQueue.isExecutingIn(bgDQ))
 
     let isInitialLoad = !isInitialLoadDone
     log.trace("History window: reloading History data, tkt=\(ticket)")
@@ -410,8 +410,8 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
       return
     }
 
-    /// Notification callback: Enqueue in backgroundQueue to ensure happens-before relationship
-    backgroundQueue.async { [self] in
+    /// Notification callback: Enqueue in bgDQ to ensure happens-before relationship
+    bgDQ.async { [self] in
       guard let entry = HistoryController.shared.history(forURL: url) else {
         // No history for URL. Can happen if URL was removed from history, or simply never played
         log.trace("Ignoring update, not in history: \(url.path.pii.quoted)")

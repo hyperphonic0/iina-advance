@@ -46,6 +46,8 @@ final class PlayerCore: NSObject {
 
   /// A DispatchQueue for longer-running tasks reqquiring disk IO:
   ///  auto load, playlist length prefetch, external subtitle search
+  static let postLoadBGQ = DispatchQueue.newDQ(label: "IINAA-Player-PostLoad-BG", qos: .background)
+  /// A DispatchQueue for background meta refresh:
   static let backgroundQueue = DispatchQueue.newDQ(label: "IINAA-Player-BG", qos: .background)
 
   // MARK: - Instance Fields
@@ -82,12 +84,12 @@ final class PlayerCore: NSObject {
 
   // - Concurrency
 
-  /// This ticket will be increased each time before a new task being submitted to `backgroundQueue`.
+  /// This ticket will be increased each time before a new task being submitted to `postLoadBGQ`.
   ///
   /// Each task holds a copy of ticket value at creation, so that a previous task will perceive & quit early if new tasks are awaiting.
   ///
   /// **See also**: `autoLoadFilesInCurrentFolder(ticket:)`
-  @Atomic var backgroundQueueTicket = 0
+  @Atomic var postLoadBGQTicket = 0
   @Atomic var thumbnailQueueTicket = 0
 
   let saveUIStateDebouncer = Debouncer(delay: Constants.TimeInterval.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
@@ -1112,7 +1114,7 @@ final class PlayerCore: NSObject {
       thumbReloadDebouncer.invalidate()
       // If the user immediately closes the player window it is possible the background task may still
       // be working to load subtitles. Invalidate the ticket to get that task to abandon the work.
-      $backgroundQueueTicket.withLock { $0 += 1 }
+      $postLoadBGQTicket.withLock { $0 += 1 }
       $thumbnailQueueTicket.withLock { $0 += 1 }
 
       // Reset playback state
@@ -2200,12 +2202,12 @@ final class PlayerCore: NSObject {
 
     // Launch auto-load tasks on background thread
     let shouldAutoLoadFiles = info.shouldAutoLoadFiles
-    let currentTicket = $backgroundQueueTicket.withLock { latestTicket in
+    let currentTicket = $postLoadBGQTicket.withLock { latestTicket in
       latestTicket += 1
       return latestTicket
     }
-    PlayerCore.backgroundQueue.asyncAfter(deadline: DispatchTime.now() + Constants.TimeInterval.autoLoadDelay) { [self] in
-      fileLoaded_backgroundQueueWork(for: currentPlayback, currentTicket: currentTicket,
+    PlayerCore.postLoadBGQ.asyncAfter(deadline: DispatchTime.now() + Constants.TimeInterval.autoLoadDelay) { [self] in
+      fileLoaded_postLoadBGQWork(for: currentPlayback, currentTicket: currentTicket,
                                      shouldAutoLoadFiles: shouldAutoLoadFiles,
                                      priorStateIfRestoring: priorStateIfRestoring)
     }
@@ -2386,14 +2388,14 @@ final class PlayerCore: NSObject {
   // MARK: - Background work
 
   /// Auto load via background queue
-  private func fileLoaded_backgroundQueueWork(for currentPlayback: Playback,
+  private func fileLoaded_postLoadBGQWork(for currentPlayback: Playback,
                                               currentTicket: Int,
                                               shouldAutoLoadFiles: Bool,
                                               priorStateIfRestoring: PlayerSaveState?) {
-    assert(DispatchQueue.isExecutingIn(PlayerCore.backgroundQueue))
+    assert(DispatchQueue.isExecutingIn(PlayerCore.postLoadBGQ))
     let isRestoring = priorStateIfRestoring != nil
 
-    guard currentTicket == backgroundQueueTicket else { return }
+    guard currentTicket == postLoadBGQTicket else { return }
 
     loadBookmark(forCurrentPlayback: currentPlayback)
 
@@ -2412,14 +2414,14 @@ final class PlayerCore: NSObject {
         // filter duplicated matched subtitles, see https://github.com/iina/iina/issues/5399
         guard !loadedSubs.contains(sub) else { continue }
         loadedSubs.insert(sub)
-        guard currentTicket == backgroundQueueTicket else { return }
+        guard currentTicket == postLoadBGQTicket else { return }
         loadExternalSubFile(sub)
       }
       if !isRestoring {
         // set sub to the first one
         // TODO: why?
         log.debug("Setting subtitle track to because an external sub was found")
-        guard currentTicket == backgroundQueueTicket, mpv.mpv != nil else { return }
+        guard currentTicket == postLoadBGQTicket, mpv.mpv != nil else { return }
         setTrack(1, forType: .sub)
       }
     }
@@ -2432,7 +2434,7 @@ final class PlayerCore: NSObject {
       pwc.menuFindOnlineSub(pwc)
     }
 
-    guard currentTicket == backgroundQueueTicket, mpv.mpv != nil else { return }
+    guard currentTicket == postLoadBGQTicket, mpv.mpv != nil else { return }
 
     // Set SID & S2ID now that all subs are available
     if let priorState = priorStateIfRestoring {
@@ -2446,12 +2448,14 @@ final class PlayerCore: NSObject {
 
     log.debug("Auto load done")
 
+    // Create bookmarks for playlist items (if not already done).
+    // This can be expensive - perhaps ~1sec per item!
     let swGenBMs = Utility.Stopwatch()
     let playlist = info.playlist
     let playlisttItemsMissingBookmarks = playlist.filter{ !$0.isNetworkResource && $0.bookmark == nil }
     var progress = 0
     for item in playlisttItemsMissingBookmarks {
-      guard currentTicket == backgroundQueueTicket else { return }
+      guard currentTicket == postLoadBGQTicket else { return }
       if MediaMetaCache.shared.createBookmarkIfNotExist(fromURL: item.url) {
         progress += 1
       }
@@ -2460,13 +2464,14 @@ final class PlayerCore: NSObject {
                 + swGenBMs.secElapsedString)
 
     mpv.queue.async { [self] in
+      // Attach bookmarks to playlist items (relatively inexpensive operations)
       let swAttachBMs = Utility.Stopwatch()
-      guard currentTicket == backgroundQueueTicket else { return }
+      guard currentTicket == postLoadBGQTicket else { return }
       let playlist = info.playlist
       log.verbose("Updating \(playlist.count) playlist items with bookmark(s)")
       var updatedPlaylist: [PlaybackID] = []
       for item in playlist {
-        guard currentTicket == backgroundQueueTicket else { return }
+        guard currentTicket == postLoadBGQTicket else { return }
         let itemUpdated = MediaMetaCache.shared.getPlaybackIDWithBookmark(forID: item)
         updatedPlaylist.append(itemUpdated)
       }
@@ -2485,7 +2490,7 @@ final class PlayerCore: NSObject {
 
    **Remark**:
 
-   This method is expected to be executed in `backgroundQueue` (see `backgroundQueueTicket`).
+   This method is expected to be executed in `postLoadBGQ` (see `postLoadBGQTicket`).
    Therefore accesses to `self.info` and mpv playlist must be guarded.
    */
   private func autoLoadFilesInCurrentFolder(ticket: Int) {

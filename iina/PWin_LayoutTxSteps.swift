@@ -1107,7 +1107,7 @@ extension PlayerWindowController {
         /// Need to toggle music metadata due to music mode switch.
         /// Do this even if playlist is not visible now, because it will not be be reloaded when toggled.
         playlistView.needsScrollToCurrentItem = true
-        playlistView.reloadPlaylistRows()
+        playlistView.reloadAllPlaylistRows()
       } else if transition.outputLayout.isMusicMode && transition.outputGeometry.isMusicModePlaylistShown {
         // Music mode playlist is visible: need to scroll to current item again due to size change
         playlistView.scrollPlaylistToCurrentItem()

@@ -731,9 +731,13 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   /// Reload all rows if not specified
   @MainActor
-  func reloadPlaylistRows(_ rows: IndexSet? = nil) {
-    let rows = rows ?? IndexSet(integersIn: 0..<playlistTableView.numberOfRows)
+  func reloadPlaylistRows(_ rows: IndexSet) {
     playlistTableView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integersIn: 0...1))
+  }
+
+  @MainActor
+  func reloadAllPlaylistRows(_ rows: IndexSet? = nil) {
+    playlistTableView.reloadExistingRows(reselectRowsAfter: true)
   }
 
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
