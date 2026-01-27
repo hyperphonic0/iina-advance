@@ -60,6 +60,9 @@ final class PlayerCore: NSObject {
   /// After mpvInit, contains both the user options in Settings > Advanced, + commandLineArgs
   var userOptions: [MPVOptPair]
 
+  /// Should be the current build number, unless this player was restored from an older version's saved state
+  var priorStateBuildNumber: Int
+
   // At launch, wait until all windows are open before resuming video
   var pendingResumeWhenShowingWindow: Bool = false
   /// If true, mpv needs to reload the current input config file because it has changed
@@ -302,8 +305,9 @@ final class PlayerCore: NSObject {
     abLoopA != 0 && abLoopB != 0 && mpv.getString(MPVOption.PlaybackControl.abLoopCount) != "0"
   }
 
+  /// Base constructor (private).
   @MainActor
-  private init(_ label: String, isDemoPlayer: Bool = false) {
+  private init(_ label: String, isDemoPlayer: Bool = false, priorStateBuildNumber: Int? = nil) {
     let log = Logger.subsystem(forPlayerID: label)
     log.debug("PlayerCore init: starting")
     self.label = label
@@ -312,6 +316,8 @@ final class PlayerCore: NSObject {
     self.isDemoPlayer = isDemoPlayer
     self.playlistTableChangeNotificationName = .init("uiChangeForPlaylistTable-\(label)")
     self.userOptions = []
+    self.priorStateBuildNumber = priorStateBuildNumber ?? InfoDictionary.shared.buildNumber
+
     super.init()
     self.videoView = VideoView(player: self)
     self.mpv = MPVController(playerCore: self)
@@ -334,7 +340,8 @@ final class PlayerCore: NSObject {
 
   @MainActor
   convenience init(_ label: String, restoringFrom priorState: PlayerSaveState) {
-    self.init(label, isDemoPlayer: false)
+    let priorStateBuildNumber = priorState.int(for: .buildNumber) ?? InfoDictionary.shared.buildNumber
+    self.init(label, isDemoPlayer: false, priorStateBuildNumber: priorStateBuildNumber)
     self.userOptions = priorState.mpvUserOpts()
 
     pwc = PlayerWindowController(playerCore: self, geoSet: priorState.geoSet, initialLayout: priorState.layoutState)
@@ -406,6 +413,9 @@ final class PlayerCore: NSObject {
     for option in userOptions {
       mpv.resetToDefault(option.optionName)
     }
+
+    // All newly created sessions use the current build number
+    priorStateBuildNumber = InfoDictionary.shared.buildNumber
 
     // Reset window vars to their defaults too:
     pwc.isLiveResizingWidth = nil

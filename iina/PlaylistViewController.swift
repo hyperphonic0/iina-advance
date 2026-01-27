@@ -232,7 +232,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           }
 
           player.log.verbose("Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…")
+
+          playlistTotalLength = nil
           playlistTotalLengthIsReady = false
+          hideTotalLength()
+
           reloadData(playlist: true, chapters: false)
         },
 
@@ -311,11 +315,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private func reloadPlaylistTable(animate: Bool) {
     // Be sure to access playlist data only from within mpv queue
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-    let oldPlaylistRows = displayedPlaylist
-    let newPlaylistRows = player.info.playlist
-    displayedPlaylist = newPlaylistRows
+    let playlistOld = displayedPlaylist
+    let playlistNew = player.info.playlist
     if let nowPlayingIndex = player.info.currentPlayback?.playlistPos,
-       nowPlayingIndex >= 0, nowPlayingIndex < newPlaylistRows.count {
+       nowPlayingIndex >= 0, nowPlayingIndex < playlistNew.count {
       // Update this prior to reload so the highlight is drawn correctly at first draw:
       lastNowPlayingIndex = nowPlayingIndex
     }
@@ -331,8 +334,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
 
     if animate {
-      let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: oldPlaylistRows,
-                                                                newRows: newPlaylistRows, completionHandler: { _ in
+      let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: playlistOld,
+                                                                newRows: playlistNew, completionHandler: { [self] _ in
+        displayedPlaylist = playlistNew
         self.pwc.animationPipeline.submitInstantTask {
           doAfterReload()
         }
@@ -349,12 +353,25 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
   }
 
+  // MARK: Total Duration
+
+  private func calculateTotalDuration() -> Double {
+    let playlist: [PlaybackID] = displayedPlaylist
+    let urls = playlist.map { $0.url }
+    return MediaMetaCache.shared.calculateTotalDuration(urls)
+  }
+
+  private func calculateTotalDuration(of indexes: IndexSet) -> Double {
+    let playlist: [PlaybackID] = displayedPlaylist
+    let urls = indexes.compactMap{ $0 < playlist.count ? playlist[$0].url : nil }
+    return MediaMetaCache.shared.calculateTotalDuration(urls)
+  }
+
   private func showTotalLength() {
-    guard let playlistTotalLength, playlistTotalLengthIsReady else { return }
+    guard let playlistTotalLength else { return }
     totalLengthLabel.isHidden = false
     if playlistTableView.numberOfSelectedRows > 0 {
-      let info = player.info
-      let selectedDuration = info.calculateTotalDuration(playlistTableView.selectedRowIndexes)
+      let selectedDuration = calculateTotalDuration(of: playlistTableView.selectedRowIndexes)
       totalLengthLabel.stringValue = String(format: NSLocalizedString("playlist.total_length_with_selected", comment: "%@ of %@ selected"),
                                             VideoTime(selectedDuration).stringRepresentation,
                                             VideoTime(playlistTotalLength).stringRepresentation)
@@ -371,20 +388,17 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private func refreshTotalLength() {
     assert(DispatchQueue.isExecutingIn(PlayerCore.backgroundQueue))
 
-    if let totalDuration = player.info.calculateTotalDuration() {
-      player.log.trace("Playlist: recalculated total duration: \(totalDuration)")
-      pwc.animationPipeline.submitInstantTask { [self] in
-        playlistTotalLengthIsReady = true
-        playlistTotalLength = totalDuration
-        self.showTotalLength()
-      }
-    } else {
-      pwc.animationPipeline.submitInstantTask { [self] in
-        player.log.verbose("Playlist: failed to recaculate total duration; hiding length label")
-        hideTotalLength()
-      }
+    guard playlistTotalLengthIsReady else { return }
+
+    let totalDuration = calculateTotalDuration()
+    player.log.trace("Playlist: recalculated total duration: \(totalDuration)")
+    pwc.animationPipeline.submitInstantTask { [self] in
+      playlistTotalLength = totalDuration
+      self.showTotalLength()
     }
   }
+
+  // - Loop Button
 
   func updateLoopBtnStatus() {
     guard isViewLoaded else { return }
@@ -688,6 +702,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let tv = notification.object as! NSTableView
     if tv == playlistTableView {
       showTotalLength()
+      totalLengthLabel.needsDisplay = true
 
       removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
       return
@@ -893,14 +908,13 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           // Get watch-later form file system; get other meta from ffmpeg:
           let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem, mpvTitle: mpvTitle)
           // Now update the total length if needed (but only if it's already done calculating):
-          if playlistTotalLengthIsReady {
-            let prevDuration = existingCachedMeta.duration ?? 0
-            let updatedDuration = cachedMeta.duration ?? 0
-            if updatedDuration != prevDuration {
-              // if FFmpeg got the duration successfully
-              refreshTotalLength()
-            }
+          let prevDuration = existingCachedMeta.duration ?? 0
+          let updatedDuration = cachedMeta.duration ?? 0
+          if updatedDuration != prevDuration {
+            // if FFmpeg got the duration successfully
+            refreshTotalLength()
           }
+
           // TODO: (optimization) add debouncer & aggregate work here
           pwc.animationPipeline.submitInstantTask{ [self] in
             /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
@@ -924,6 +938,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     let sw = Utility.Stopwatch()
     let playlistItems = displayedPlaylist
+    player.log.verbose("[Playlist] Updating caches for \(playlistItems.count) rows…")
 
     player.mpv.queue.async { [self] in
       guard player.isActive else { return }
@@ -932,7 +947,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         return latestTicket
       }
       var titles: [String?] = []
-      player.log.verbose("[Playlist] Updating caches for \(playlistItems.count) rows…")
 
       for rowIndex in 0..<playlistItems.count {
         // Get updated title from mpv
@@ -941,28 +955,30 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       }
 
       PlayerCore.backgroundQueue.async { [self] in
-        for (rowIndex, item) in playlistItems.enumerated() {
+        for (rowIndex, itemID) in playlistItems.enumerated() {
           let isTicketValid = $playlistReloadTicket.withLock { $0 == currentTicket }
           guard isTicketValid else {
             player.log.verbose("[Playlist] Ticket no longer valid; cancelling cache update")
             return
           }
           let updatedTitle = titles[rowIndex]
-          let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: item)
-          let needsRefresh = (item.url.isFileURL && !existingCachedMeta.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta.title)
-          guard needsRefresh else { continue }
-          // Get watch-later form file system; get other meta from ffmpeg:
-          MediaMetaCache.shared.updateCachedMeta(item, mpvTitle: updatedTitle)
-          // Refresh each row as it gets updated. May take a while to refresh all
-          // TODO: (optimization) add debouncer & aggregate work here
-          pwc.animationPipeline.submitInstantTask{ [self] in
-            /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
-            reloadPlaylistRow(rowIndex)
+          let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: itemID)
+          let needsRefresh = (itemID.url.isFileURL && !existingCachedMeta.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta.title)
+          if needsRefresh {
+            // Get watch-later form file system; get other meta from ffmpeg:
+            MediaMetaCache.shared.updateCachedMeta(itemID, mpvTitle: updatedTitle)
+            // Refresh each row as it gets updated. May take a while to refresh all
+            // TODO: (optimization) add debouncer & aggregate work here
+            pwc.animationPipeline.submitInstantTask{ [self] in
+              /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
+              reloadPlaylistRow(rowIndex)
+            }
           }
         }
 
         // Finally, append a task to recalculate the total length. Do not show it until it is done!
         player.log.verbose("[Playlist] Finished cache updates for \(playlistItems.count) rows in \(sw.secElapsedString)")
+        playlistTotalLengthIsReady = true
         refreshTotalLength()
       }
     }

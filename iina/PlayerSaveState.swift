@@ -713,8 +713,6 @@ struct PlayerSaveState: CustomStringConvertible {
     log.verbose("Restoring from prior launch: \(self)")
     let info = player.info
 
-    info.priorStateBuildNumber = int(for: .buildNumber) ?? info.priorStateBuildNumber
-
     log.verbose("Screens from prior launch: \(self.screens)")
 
     // TODO: map current geometry to prior screen. Deal with mismatch
@@ -1580,7 +1578,7 @@ extension PlayerCore {
     /// Must *not* access `window`: this is not the main thread
     let layout = pwc.currentLayout
 
-    let buildNumber: Int = info.priorStateBuildNumber
+    let buildNumber: Int = priorStateBuildNumber
     props[PropName.buildNumber.rawValue] = String(buildNumber)
     props[PropName.launchID.rawValue] = String(UIState.shared.currentLaunchID)
 

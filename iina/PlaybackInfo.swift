@@ -12,41 +12,12 @@ import Foundation
 class PlaybackInfo {
   let log: any Logger.Subsystem
 
-  var priorStateBuildNumber: Int
-
   @MainActor
   init(log: any Logger.Subsystem) {
     self.log = log
-    self.priorStateBuildNumber = Int(InfoDictionary.shared.version.1)!
   }
 
-  // MARK: - Playback lifecycle state
-
-  var isFileLoaded: Bool { currentPlayback?.state.isAtLeast(.loaded) ?? false }
-  var isFileLoadedAndSized: Bool {  currentPlayback?.state.isAtLeast(.loadedAndSized) ?? false }
-
-  var shouldAutoLoadFiles: Bool = false
-  var isMatchingSubtitles = false
-
-  // -- PERSISTENT PROPERTIES BEGIN --
-
-  var isPaused: Bool {
-    isPausedLocally ?? isPausedRemotely
-  }
-  var isPlaying: Bool { !isPaused }
-  var isPausedRemotely: Bool = true {
-    didSet {
-      if oldValue != isPaused {
-        log.verbose("Playback is \(isPaused ? "PAUSED" : "PLAYING")")
-        SleepPreventer.updateSleepPrevention()
-      }
-    }
-  }
-  /// Set this while waiting for remote to respond
-  var isPausedLocally: Bool? = nil
-
-  /// Should only be updated in `DispatchQueue.main`
-  var isSeeking: Bool = false
+  // MARK: - Current Playback
 
   /// Should only be updated in the `mpv` DispatchQueue
   var currentPlayback: Playback? = nil {
@@ -67,6 +38,31 @@ class PlaybackInfo {
   var isNetworkResource: Bool { currentPlayback?.isNetworkResource ?? false }
   var isMediaOnRemoteDrive: Bool { currentPlayback?.isMediaOnRemoteDrive ?? false }
   var mpvMd5: String? { currentPlayback?.mpvMD5 }
+
+  var isFileLoaded: Bool { currentPlayback?.state.isAtLeast(.loaded) ?? false }
+  var isFileLoadedAndSized: Bool {  currentPlayback?.state.isAtLeast(.loadedAndSized) ?? false }
+
+  var shouldAutoLoadFiles: Bool = false
+  var isMatchingSubtitles = false
+
+  var isPaused: Bool {
+    isPausedLocally ?? isPausedRemotely
+  }
+  var isPlaying: Bool { !isPaused }
+  /// Set this while waiting for remote to respond
+  var isPausedLocally: Bool? = nil
+
+  var isPausedRemotely: Bool = true {
+    didSet {
+      if oldValue != isPaused {
+        log.verbose("Playback is \(isPaused ? "PAUSED" : "PLAYING")")
+        SleepPreventer.updateSleepPrevention()
+      }
+    }
+  }
+
+  /// Should only be updated in `DispatchQueue.main`
+  var isSeeking: Bool = false
 
   // MARK: - Filters & Equalizers
 
@@ -382,18 +378,6 @@ class PlaybackInfo {
   var cacheUsed: Int = 0
   var cacheSpeed: Int = 0
   var bufferingState: Int = 0
-
-  func calculateTotalDuration() -> Double? {
-    let playlist: [PlaybackID] = playlist
-    let urls = playlist.map { $0.url }
-    return MediaMetaCache.shared.calculateTotalDuration(urls)
-  }
-
-  func calculateTotalDuration(_ indexes: IndexSet) -> Double {
-    let playlist: [PlaybackID] = playlist
-    let urls = indexes.compactMap{ $0 < playlist.count ? playlist[$0].url : nil }
-    return MediaMetaCache.shared.calculateTotalDuration(urls)
-  }
 
   /// Returns the percent of the total duration of the video the given position in seconds represents.
   ///

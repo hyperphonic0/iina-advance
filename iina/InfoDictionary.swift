@@ -177,6 +177,8 @@ struct InfoDictionary: @unchecked Sendable {
 #endif
 
   let version: (String, String)
+  /// The build number of the currently executing binary
+  var buildNumber: Int { Int(version.1)! }
 
   // MARK: - Enums
 
