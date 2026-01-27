@@ -237,17 +237,17 @@ class GLVideoLayer: CAOpenGLLayer {
     /// Save some CPU by making this less strict, because we don't really care that much
     asychronousModeTimer?.tolerance = Constants.TimeInterval.asynchronousModeTimeout * 0.2
   }
-  
+
   func drawAsync(forced: Bool = false) {
     mpvGLQueue.async { [self] in
       draw(forced: forced)
     }
   }
 
+  /// Although this generates a warning in Xcode, synchronous drawing via the DisplayLink seems far smoother.
+  /// Despite Xcode's declarations, no lockup has yet been observed.
   func drawSync(forced: Bool = false) {
-    mpvGLQueue.sync { [self] in
-      draw(forced: forced)
-    }
+    draw(forced: forced)
   }
 
   @MainActor
@@ -350,8 +350,6 @@ class GLVideoLayer: CAOpenGLLayer {
     func mpvUpdateCallback(_ ctx: UnsafeMutableRawPointer?) {
       let layer = bridge(ptr: ctx!) as GLVideoLayer
       layer.videoView.isReadyToRender = true
-      // TODO: see if disabling this & using only the displaylink is a valid solution
-//      layer.drawAsync()
     }
 
     var openGLInitParams = mpv_opengl_init_params(get_proc_address: mpvGetOpenGLFunc,

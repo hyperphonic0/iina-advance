@@ -221,7 +221,7 @@ func displayLinkCallback(
   _ flagsOut: UnsafeMutablePointer<CVOptionFlags>,
   _ context: UnsafeMutableRawPointer?) -> CVReturn {
     let glVideoLayer = unsafeBitCast(context, to: GLVideoLayer.self)
-    glVideoLayer.drawAsync(forced: glVideoLayer.isAsynchronous)
+    glVideoLayer.drawSync(forced: glVideoLayer.isAsynchronous)
     glVideoLayer.videoView.$isUninited.withLock() { isUninited in
       guard !isUninited else { return }
       glVideoLayer.mpvReportSwap()
