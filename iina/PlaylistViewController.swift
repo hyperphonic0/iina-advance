@@ -29,8 +29,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private var pendingSwitchRequest: Sidebar.Tab?
   private var fileExistsMap: [URL: Bool] = [:]
   /// Currently displayed playlist rows. Should always be updated from `player.info.playlist`
-  @MainActor
-  var displayedPlaylist: [PlaybackID] = []
+  @MainActor var displayedPlaylist: [PlaybackID] = []
 
   /// Cannot reliably scroll to current item until after the table finishes loading. So set this flag first.
   /// It will cause `scrollPlaylistToCurrentItem` to be called when done loading.
@@ -63,14 +62,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   @IBOutlet weak var loopBtn: NSButton!
   @IBOutlet weak var shuffleBtn: NSButton!
   @IBOutlet weak var sortBtn: NSButton!
-  @IBOutlet weak var totalLengthLabel: NSTextField!
+  @IBOutlet weak var totalDurationLabel: NSTextField!
   @IBOutlet var subPopover: NSPopover!
   @IBOutlet var addFileMenu: NSMenu!
   @IBOutlet weak var addBtn: NSButton!
   @IBOutlet weak var removeBtn: NSButton!
 
-  @Atomic private var playlistTotalLengthIsReady = false
-  @Atomic private var playlistTotalLength: Double? = nil
+  @Atomic private var playlistTotalDurationIsReady = false
+  @Atomic private var playlistTotalDuration: Double? = nil
   private var lastNowPlayingIndex: Int = -1
 
   private var downshift: CGFloat = 0
@@ -93,6 +92,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private let enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration)
 #endif
 
+  @MainActor
   func updateTableColors() {
     player.log.verbose("Playlist sidebar: updating table colors")
     // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
@@ -131,8 +131,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   // FIXME: Need to fix the playlist reload queue mechanism. Can probably delete this func afterwards
-  override func viewWillAppear() {
-    super.viewWillAppear()
+  override func viewDidAppear() {
+    super.viewDidAppear()
     if currentTab == .playlist {
       pwc.animationPipeline.submitInstantTask { [self] in
         refreshNowPlayingIndex()
@@ -185,7 +185,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     removeBtn.toolTip = NSLocalizedString("mini_player.remove", comment: "remove")
     sortBtn.toolTip = NSLocalizedString("mini_player.sort", comment: "sort")
 
-    hideTotalLength()
+    hideTotalDuration()
     updateTableColors()  // this will also load data for tables
 
     // handle pending switch tab request
@@ -228,9 +228,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
           player.log.verbose("Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…")
 
-          playlistTotalLength = nil
-          playlistTotalLengthIsReady = false
-          hideTotalLength()
+          playlistTotalDuration = nil
+          playlistTotalDurationIsReady = false
+          hideTotalDuration()
 
           reloadData(playlist: true, chapters: false)
         },
@@ -286,6 +286,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   /// Use `animate: false` only for initial load, to avoid seeing a briefly empty table
+  @MainActor
   func reloadData(playlist: Bool, chapters: Bool, animate: Bool = true) {
     guard player.isActive else { return }
     guard pwc.currentLayout.isMusicMode || pwc.isOpen(sidebarTabGroup: .playlist) else { return }
@@ -318,6 +319,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       lastNowPlayingIndex = nowPlayingIndex
     }
 
+    let sw = Utility.Stopwatch()
+
     let doAfterReload: @MainActor () -> Void = { [self] in
       refreshNowPlayingIndex()
       updateCachesForAllItems()
@@ -326,6 +329,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         needsScrollToCurrentItem = false
         scrollPlaylistToCurrentItem()
       }
+      player.log.verbose("Done with playlist table reload in \(sw.secElapsedString)")
     }
 
     if animate {
@@ -348,35 +352,37 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
   }
 
-  // MARK: Total Duration
+  // MARK: - Total Duration
 
-  private func showTotalLength() {
-    guard let playlistTotalLength else { return }
-    totalLengthLabel.isHidden = false
-    let totalDurationString = VideoTime(playlistTotalLength).stringRepresentation
+  @MainActor
+  private func showTotalDuration() {
+    guard let playlistTotalDuration else { return }
+    totalDurationLabel.isHidden = false
+    let totalDurationString = VideoTime(playlistTotalDuration).stringRepresentation
 
     if playlistTableView.numberOfSelectedRows > 0 {
       let playlist: [PlaybackID] = displayedPlaylist
       let urls = playlistTableView.selectedRowIndexes.compactMap{ $0 < playlist.count ? playlist[$0].url : nil }
       let selectedDuration = MediaMetaCache.shared.calculateTotalDuration(urls)
 
-      totalLengthLabel.stringValue = String(format: NSLocalizedString("playlist.total_length_with_selected", comment: "%@ of %@ selected"),
+      totalDurationLabel.stringValue = String(format: NSLocalizedString("playlist.total_length_with_selected", comment: "%@ of %@ selected"),
                                             VideoTime(selectedDuration).stringRepresentation,
                                             totalDurationString)
     } else {
-      totalLengthLabel.stringValue = String(format: NSLocalizedString("playlist.total_length", comment: "%@ in total"),
+      totalDurationLabel.stringValue = String(format: NSLocalizedString("playlist.total_length", comment: "%@ in total"),
                                             totalDurationString)
     }
   }
 
-  private func hideTotalLength() {
-    totalLengthLabel.isHidden = true
+  @MainActor
+  private func hideTotalDuration() {
+    totalDurationLabel.isHidden = true
   }
 
-  private func refreshTotalLength() {
+  /// Only if `playlistTotalDurationIsReady`
+  private func refreshTotalDuration() {
     assert(DispatchQueue.isExecutingIn(PlayerCore.backgroundQueue))
-
-    guard playlistTotalLengthIsReady else { return }
+    guard playlistTotalDurationIsReady else { return }
 
     let playlist: [PlaybackID] = displayedPlaylist
     let urls = playlist.map { $0.url }
@@ -384,13 +390,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     player.log.trace("Playlist: recalculated total duration: \(totalDuration)")
     pwc.animationPipeline.submitInstantTask { [self] in
-      playlistTotalLength = totalDuration
-      showTotalLength()
+      playlistTotalDuration = totalDuration
+      showTotalDuration()
     }
   }
 
   // - Loop Button
 
+  @MainActor
   func updateLoopBtnStatus() {
     guard isViewLoaded else { return }
     player.mpv.queue.async { [self] in
@@ -408,7 +415,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   // MARK: - Tab switching
 
-  /** Switch tab (call from other objects) */
+  /// Switch tab (call from other objects)
+  @MainActor
   func pleaseSwitchToTab(_ tab: Sidebar.Tab) {
     if isViewLoaded {
       switchToTab(tab)
@@ -418,7 +426,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
   }
 
-  /** Switch tab (for internal call) */
+  /// Switch tab (for internal call)
+  @MainActor
   private func switchToTab(_ tab: Sidebar.Tab) {
     guard tab.group == .playlist else {
       player.log.error("PlaylistViewController: cannot switch to tab: \(tab)")
@@ -449,7 +458,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   // Updates display of all tabs buttons to indicate that the given tab is active and the rest are not
-  private func updateTabButtonSelection() {
+  @MainActor private func updateTabButtonSelection() {
     updateTabActiveStatus(for: playlistBtn, isActive: currentTab == .playlist)
     updateTabActiveStatus(for: chaptersBtn, isActive: currentTab == .chapters)
   }
@@ -678,8 +687,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   func tableViewSelectionDidChange(_ notification: Notification) {
     let tv = notification.object as! NSTableView
     if tv == playlistTableView {
-      showTotalLength()
-      totalLengthLabel.needsDisplay = true
+      showTotalDuration()
+      totalDurationLabel.needsDisplay = true
 
       removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
       return
@@ -889,7 +898,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           let updatedDuration = cachedMeta.duration ?? 0
           if updatedDuration != prevDuration {
             // if FFmpeg got the duration successfully
-            refreshTotalLength()
+            refreshTotalDuration()
           }
 
           // TODO: (optimization) add debouncer & aggregate work here
@@ -898,6 +907,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
             reloadPlaylistRow(rowIndex)
           }
         }
+
       }
     }
 
@@ -955,16 +965,18 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
         // Finally, append a task to recalculate the total length. Do not show it until it is done!
         player.log.verbose("[Playlist] Finished cache updates for \(playlistItems.count) rows in \(sw.secElapsedString)")
-        playlistTotalLengthIsReady = true
-        refreshTotalLength()
+        playlistTotalDurationIsReady = true
+        refreshTotalDuration()
       }
     }
   }
+
 }
 
 // MARK: - EditableTableViewDelegate
 
 extension PlaylistViewController: EditableTableViewDelegate {
+
   var parentTableView: EditableTableView! { playlistTableView }
 
   // Allows for sidebar resize to happen from inside the table, by giving it higher priority than row drag & drop.

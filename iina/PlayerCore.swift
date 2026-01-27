@@ -2446,7 +2446,7 @@ final class PlayerCore: NSObject {
 
     log.debug("Auto load done")
 
-    let sw = Utility.Stopwatch()
+    let swGenBMs = Utility.Stopwatch()
     let playlist = info.playlist
     let playlisttItemsMissingBookmarks = playlist.filter{ !$0.isNetworkResource && $0.bookmark == nil }
     var progress = 0
@@ -2456,9 +2456,11 @@ final class PlayerCore: NSObject {
         progress += 1
       }
     }
-    log.verbose("Filled in \(progress) / \(playlisttItemsMissingBookmarks.count) missing bookmarks for playlist (\(playlist.count) total) in \(sw.secElapsedString)")
+    log.verbose("Filled in \(progress) / \(playlisttItemsMissingBookmarks.count) missing bookmarks for playlist (\(playlist.count) total) in "
+                + swGenBMs.secElapsedString)
 
     mpv.queue.async { [self] in
+      let swAttachBMs = Utility.Stopwatch()
       guard currentTicket == backgroundQueueTicket else { return }
       let playlist = info.playlist
       log.verbose("Updating \(playlist.count) playlist items with bookmark(s)")
@@ -2469,6 +2471,7 @@ final class PlayerCore: NSObject {
         updatedPlaylist.append(itemUpdated)
       }
       info.playlist = updatedPlaylist
+      log.verbose("Done updating playlist items with bookmarks in \(swAttachBMs.secElapsedString)")
     }
   }
 

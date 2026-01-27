@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24506"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -26,7 +25,7 @@
                 <outlet property="subPopover" destination="nSf-Kp-eDQ" id="PUs-AK-r1c"/>
                 <outlet property="tabHeightConstraint" destination="So5-Pf-aJb" id="EFJ-yr-PVa"/>
                 <outlet property="tabView" destination="Yym-Zw-Hd8" id="xXL-Ne-hHh"/>
-                <outlet property="totalLengthLabel" destination="icQ-T6-fV9" id="D9Z-Th-JVy"/>
+                <outlet property="totalDurationLabel" destination="icQ-T6-fV9" id="D9Z-Th-JVy"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
             </connections>
         </customObject>
@@ -93,7 +92,7 @@
                                                 <rect key="frame" x="0.0" y="0.0" width="241" height="249"/>
                                                 <clipView key="contentView" autoresizesSubviews="NO" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="2M9-8L-veI" userLabel="Playlist-Table Clip View">
                                                     <rect key="frame" x="0.0" y="0.0" width="241" height="249"/>
-                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                    <autoresizingMask key="autoresizingMask"/>
                                                     <subviews>
                                                         <tableView autoresizesSubviews="NO" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" autosaveColumns="NO" typeSelect="NO" rowHeight="28" viewBased="YES" floatsGroupRows="NO" id="xIa-sI-0Xn" userLabel="Playlist Table View" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
                                                             <rect key="frame" x="0.0" y="0.0" width="241" height="249"/>
@@ -415,7 +414,7 @@
                                                 <rect key="frame" x="0.0" y="0.0" width="241" height="273"/>
                                                 <clipView key="contentView" autoresizesSubviews="NO" drawsBackground="NO" copiesOnScroll="NO" id="6tr-hz-bdD" userLabel="Chapter-Table Clip View">
                                                     <rect key="frame" x="0.0" y="0.0" width="241" height="273"/>
-                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                    <autoresizingMask key="autoresizingMask"/>
                                                     <subviews>
                                                         <tableView autoresizesSubviews="NO" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="31" rowSizeStyle="automatic" viewBased="YES" id="BvG-MR-6LX" userLabel="Chapters Table" customClass="EditableTableView" customModule="IINA_Advance" customModuleProvider="target">
                                                             <rect key="frame" x="0.0" y="0.0" width="241" height="273"/>
