@@ -25,6 +25,8 @@ class GLVideoLayer: CAOpenGLLayer {
   private let cglContext: CGLContextObj
   private let cglPixelFormat: CGLPixelFormatObj
 
+  private let mpvGLQueue = DispatchQueue(label: "com.iina_advance.mpvgl", qos: .userInteractive)
+
   private var fbo: GLint = 1
 
   private var needsMPVRender = false
@@ -234,6 +236,18 @@ class GLVideoLayer: CAOpenGLLayer {
     )
     /// Save some CPU by making this less strict, because we don't really care that much
     asychronousModeTimer?.tolerance = Constants.TimeInterval.asynchronousModeTimeout * 0.2
+  }
+  
+  func drawAsync(forced: Bool = false) {
+    mpvGLQueue.async { [self] in
+      draw(forced: forced)
+    }
+  }
+
+  func drawSync(forced: Bool = false) {
+    mpvGLQueue.sync { [self] in
+      draw(forced: forced)
+    }
   }
 
   @MainActor
