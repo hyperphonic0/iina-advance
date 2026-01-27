@@ -2024,10 +2024,8 @@ final class PlayerCore: NSObject {
 
     DispatchQueue.main.async { [self] in
       // Check this inside main DispatchQueue
-      if playlistShown {
-        // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
-        pwc.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos, thenScrollToVisible: true)
-      }
+      // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
+      pwc.playlistView.refreshNowPlayingIndex(thenScrollToVisible: true)
 
       MediaPlayerIntegration.shared.update()
     }

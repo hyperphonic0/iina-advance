@@ -134,6 +134,16 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     view.needsLayout = true
   }
 
+  // FIXME: Need to fix the playlist reload queue mechanism. Can probably delete this func afterwards
+  override func viewWillAppear() {
+    super.viewWillAppear()
+    if currentTab == .playlist {
+      pwc.animationPipeline.submitInstantTask { [self] in
+        refreshNowPlayingIndex()
+      }
+    }
+  }
+
   override func viewDidLoad() {
     super.viewDidLoad()
     view.idString = "PlaylistView"
@@ -263,18 +273,17 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     notiHandler.removeAllObservers()
   }
 
+  /// Execute in pipeline task to prevent hiccups if running other animations
   @MainActor
   func scrollPlaylistToCurrentItem() {
-    // Execute in pipeline task to prevent hiccups if running other animations
-    guard let playlistTableView else { return }
-    if let entryIndex = player.info.currentPlayback?.playlistPos {
-      player.log.verbose("Scrolling playlist table to index \(entryIndex)")
-      guard isViewLoaded else {
-        player.log.verbose("Playlist table not loaded yet, skipping scroll")
-        return
-      }
-      playlistTableView.scrollRowToVisible(entryIndex)
+    guard isViewLoaded else {
+      player.log.verbose("Playlist table not loaded yet, skipping scroll")
+      return
     }
+    guard let entryIndex = player.info.currentPlayback?.playlistPos else { return }
+    guard let playlistTableView else { return }
+    player.log.verbose("Scrolling playlist table to index \(entryIndex)")
+    playlistTableView.scrollRowToVisible(entryIndex)
   }
 
   /// Use `animate: false` only for initial load, to avoid seeing a briefly empty table
@@ -305,6 +314,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let oldPlaylistRows = displayedPlaylist
     let newPlaylistRows = player.info.playlist
     displayedPlaylist = newPlaylistRows
+    if let nowPlayingIndex = player.info.currentPlayback?.playlistPos,
+       nowPlayingIndex >= 0, nowPlayingIndex < newPlaylistRows.count {
+      // Update this prior to reload so the highlight is drawn correctly at first draw:
+      lastNowPlayingIndex = nowPlayingIndex
+    }
 
     let doAfterReload: @MainActor () -> Void = { [self] in
       refreshNowPlayingIndex()
@@ -408,13 +422,17 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     assert(pwc.isInMiniPlayer || pwc.isOpen(sidebarTabGroup: .playlist),
            "switchToTab should not be called when playlist TabGroup is not shown or not in music mode")
     guard currentTab != tab else { return }
+
+    currentTab = tab
+    updateTabButtonSelection()
+    pwc.didChangeTab(to: tab)
+
     let buttonTag: Int
     switch tab {
     case .playlist:
+      needsScrollToCurrentItem = true
       reloadData(playlist: true, chapters: false)
-      scrollPlaylistToCurrentItem()
       updateLoopBtnStatus()
-      refreshNowPlayingIndex(thenScrollToVisible: true)
       buttonTag = 0
     case .chapters:
       reloadData(playlist: false, chapters: true)
@@ -423,10 +441,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       Logger.fatal("PlaylistViewController: invalid tab requested for switching: \(tab)")
     }
     tabView.selectTabViewItem(at: buttonTag)
-
-    currentTab = tab
-    updateTabButtonSelection()
-    pwc.didChangeTab(to: tab)
   }
 
   // Updates display of all tabs buttons to indicate that the given tab is active and the rest are not
@@ -683,18 +697,15 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   // Updates index of playing item. Don't need to reload whole playlist
   @MainActor
   func refreshNowPlayingIndex(setNewIndexTo newNowPlayingIndex: Int? = nil,
-                              forceRedraw: Bool = false, thenScrollToVisible: Bool = false) {
+                              thenScrollToVisible: Bool = false) {
     guard isViewLoaded else { return }
     guard !view.isHidden else { return }
 
     let oldNowPlayingIndex = lastNowPlayingIndex
     let newNowPlayingIndex = newNowPlayingIndex ?? player.info.currentPlayback?.playlistPos ?? oldNowPlayingIndex
-    if newNowPlayingIndex != oldNowPlayingIndex {
-      player.log.verbose("Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)")
-      self.lastNowPlayingIndex = newNowPlayingIndex
-    } else if !forceRedraw {
-      return
-    }
+
+    player.log.verbose("Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)")
+    lastNowPlayingIndex = newNowPlayingIndex
 
     // ... also make sure the old "now playing" row is redrawn so it loses its status
     loadCachedItem(forRowIndex: oldNowPlayingIndex, force: true)
@@ -854,9 +865,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @discardableResult
-  private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> MediaMeta? {
-    assert(DispatchQueue.isExecutingIn(.main))
-
+  @MainActor private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> MediaMeta? {
     guard rowIndex >= 0 else { return nil }
     let playlistItems = displayedPlaylist
     player.log.trace("Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)\(force ? " (forced)" : "")")

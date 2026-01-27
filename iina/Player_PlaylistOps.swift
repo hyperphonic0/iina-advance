@@ -43,8 +43,9 @@ extension PlayerCore {
   ///
   /// • The current mpv core is expected to have only this item in its playlist at the time of this operation. If additional
   ///   items are present in the playlist, they will get pushed to the top or to the bottom of the playlist.
-  /// • This inserts around the currently playing item is in the list, so that it may end up at `indexOfCurrentItem`
-  ///   (if provided), which may be in the middle of the playlist.
+  /// • This inserts around the currently playing item is in the list. If `indexOfCurrentItem` is provided, the currently playing item
+  ///  will be located at `indexOfCurrentItem` after all inserts are done. Otherwise, the current item index will try to be derived by
+  ///  matching playlist item URLs against `info.currentPlayback`.
   func addAllToPlaylist(playbackIDsIncludingCurrent playbackIDs: [PlaybackID], indexOfCurrentItem currentItemExplicitIndex: Int? = nil) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
@@ -58,7 +59,7 @@ extension PlayerCore {
     log.trace("[Playlist] Adding URLs: [\(playbackIDs.map(\.path.pii.quoted).joined(separator: ", "))]")
 
     let nowPlayingIndex: Int
-    if let currentItemExplicitIndex {
+    if let currentItemExplicitIndex, currentItemExplicitIndex >= 0 {
       // Newer versions should include this info
       nowPlayingIndex = currentItemExplicitIndex
     } else if let currentPlaybackID = info.currentPlayback?.id {
@@ -68,7 +69,7 @@ extension PlayerCore {
         // but older versions of IINA did not support duplicates in the playlist, so shouldn't be an issue.
         nowPlayingIndex = firstMatchingIndex
       } else {
-        log.warn("[Playlist] Playlist (count=\(info.playlist.count) items) does not contain currently playing item (\(currentPlaybackID.path.pii.quoted))")
+        log.error("[Playlist] Playlist (count=\(info.playlist.count) items) does not contain currently playing item (\(currentPlaybackID.path.pii.quoted))")
         nowPlayingIndex = -1
       }
     } else {
@@ -86,10 +87,12 @@ extension PlayerCore {
       return (itemIndex < nowPlayingIndex ? 0 : 1, itemIDWithBookmark)
     }
 
-    _playlistInsert(itemsAtIndexes: itemsAtInsertIndexes, info.playlist, onSuccess: { [self] in
+    _playlistInsert(itemsAtIndexes: itemsAtInsertIndexes,
+                    expectedCurrentPlaylist: info.playlist,
+                    newIsPlayingIndex: nowPlayingIndex,
+                    onSuccess: { [self] in
       log.verbose("[Playlist] Done adding \(playbackIDs.count) items. Playlist count is now \(info.playlist.count)")
-      guard pwc.loaded else { return }
-      pwc.playlistView.scrollPlaylistToCurrentItem()
+      pwc.playlistView.refreshNowPlayingIndex(thenScrollToVisible: true)
     })
   }
 
@@ -151,7 +154,9 @@ extension PlayerCore {
     insertStartIndex = (insertStartIndex >= 0 && insertStartIndex <= playlistSize) ? insertStartIndex : playlistSize
     let itemsAtIndexes = rowList.map ({ row in (insertStartIndex, row)} )
 
-    playlistInsert(itemsAtIndexes: itemsAtIndexes, expectedCurrentPlaylist, onSuccess: { [self] in
+    playlistInsert(itemsAtIndexes: itemsAtIndexes,
+                   expectedCurrentPlaylist: expectedCurrentPlaylist,
+                   onSuccess: { [self] in
       tableUIChange.postNotification(name: playlistTableChangeNotificationName)  // update UI
       sendOSD(.addToPlaylist(rowList.count))
 
@@ -166,19 +171,15 @@ extension PlayerCore {
         let actionName = undoHelper.buildActionName(basedOn: tableUIChange)
         undoHelper.register(actionName, undo: { [self] in
           let expectedPlaylist = displayedPlaylist
-          mpv.queue.async { [self] in
-            guard expectedPlaylist == allItemsNew else {
-              log.error("[Playlist] Cannot undo insert: playlist is in unexpected state! Clearing undo stack & aborting.")
-              playlistErrorDidOccur()
-              return
-            }
-            let rmStartIndex = tableUIChange.toInsert!.first!
-            let rmEndIndex = rmStartIndex + rowList.count
-            let rowIndexesToRemove = IndexSet(rmStartIndex..<rmEndIndex)
-            pwc.animationPipeline.submitInstantTask { [self] in
-              removePlaylistRows(rowIndexesToRemove, .ignoreUndoRedo)
-            }
+          guard expectedPlaylist == allItemsNew else {
+            log.error("[Playlist] Cannot undo insert: playlist is in unexpected state! Clearing undo stack & aborting.")
+            playlistErrorDidOccur()
+            return
           }
+          let rmStartIndex = tableUIChange.toInsert!.first!
+          let rmEndIndex = rmStartIndex + rowList.count
+          let rowIndexesToRemove = IndexSet(rmStartIndex..<rmEndIndex)
+          removePlaylistRows(rowIndexesToRemove, .ignoreUndoRedo)
         }, redo: { [self] in
           insertPlaylistRows(rowList, at: targetRowIndex, .ignoreUndoRedo)
         })
@@ -192,10 +193,13 @@ extension PlayerCore {
   /// and must be called on the `mpv` queue.
   /// - `itemsAtIndexes` must be in ascending index order.
   func playlistInsert(itemsAtIndexes: [(insertTargetIndex: Int, itemToInsert: PlaybackID)],
-                      _ expectedCurrentPlaylist: [PlaybackID]? = nil,
+                      expectedCurrentPlaylist: [PlaybackID]? = nil,
+                      newIsPlayingIndex: Int? = nil,
                       onSuccess: @escaping MainActorSuccessCallback) {
     mpv.queue.async { [self] in
-      _playlistInsert(itemsAtIndexes: itemsAtIndexes, expectedCurrentPlaylist, onSuccess: onSuccess)
+      _playlistInsert(itemsAtIndexes: itemsAtIndexes, expectedCurrentPlaylist: expectedCurrentPlaylist,
+                      newIsPlayingIndex: newIsPlayingIndex,
+                      onSuccess: onSuccess)
     }
   }
 
@@ -205,7 +209,8 @@ extension PlayerCore {
   /// and must be called on the `mpv` queue.
   /// - `itemsAtIndexes` must be in ascending index order.
   func _playlistInsert(itemsAtIndexes: [(insertTargetIndex: Int, itemToInsert: PlaybackID)],
-                       _ expectedCurrentPlaylist: [PlaybackID]? = nil,
+                       expectedCurrentPlaylist: [PlaybackID]? = nil,
+                       newIsPlayingIndex: Int?,
                        onSuccess: @escaping MainActorSuccessCallback) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.verbose("[Playlist] Insert requested: \(itemsAtIndexes.count) total items @ mpvIndexes=\(itemsAtIndexes.map(\.0))")
@@ -236,6 +241,12 @@ extension PlayerCore {
       prevInsertCount += 1
     }
 
+    // If `newIsPlayingIndex` is provided, use it rather than trying to derive playlistPos because that can be wrong for duplicates
+    if let newIsPlayingIndex, let currentPlayback = info.currentPlayback,
+       newIsPlayingIndex >= 0, newIsPlayingIndex < expectedPlaylistAfterInsert.count {
+      info.currentPlayback = currentPlayback.clone(playlistPos: newIsPlayingIndex)
+    }
+
     // Now verify playlist state again to ensure changes were correct
     guard syncAndValidatePlaylist(expectedPlaylist: expectedPlaylistAfterInsert) else { return }
 
@@ -248,12 +259,10 @@ extension PlayerCore {
 
   // MARK: - Move
 
-  @MainActor
   func playlistMove(_ fromIndex: Int, to targetRowIndex: Int) {
     movePlaylistRows(from: IndexSet(integer: fromIndex), to: targetRowIndex, .registerUndoRedo)
   }
 
-  @MainActor
   func movePlaylistRows(from rowIndexes: IndexSet, to insertIndex: Int, _ undoOption: UndoOption) {
     pwc.animationPipeline.submitInstantTask { [self] in
       movePlaylistRows_TaskBody(from: rowIndexes, to: insertIndex, undoOption)
@@ -291,7 +300,6 @@ extension PlayerCore {
           // Builds an insert. Unlike the undo for `insertPlaylistRows()`, this is non-trivial because the original deleted items
           // can be at non-contiguous indexes in the playlist.
           let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
-          // FIXME: there is a bug here
           let undoMoveIndexPairs = buildInvertedMpvMoveIndexPairs(from: rowIndexes, to: insertIndex, movePairs: moveIndexPairs)
           log.verbose("[Playlist] Undo move (original op: move rows=\(rowIndexes.toArray()) → \(insertIndex); undoMoveIndexPairs=\(undoMoveIndexPairs))")
           // Undo 2. Execute backend update on mpv queue. Validate playlist before & after for consistency
@@ -308,9 +316,7 @@ extension PlayerCore {
             // Make sure this is an exact same redo! Need to run this in mpv queue to avoid data loss due to races
             guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld) else { return }
 
-            pwc.animationPipeline.submitInstantTask { [self] in
-              movePlaylistRows(from: rowIndexes, to: insertIndex, .ignoreUndoRedo)
-            }
+            movePlaylistRows(from: rowIndexes, to: insertIndex, .ignoreUndoRedo)
           }
         })
       }
@@ -479,13 +485,13 @@ extension PlayerCore {
             let tableUIChangeUndo = tableUIChange.inverted(selectNextRowAfterDelete: playlistTableSelectNextRowAfterDelete)
 
             // 2. Execute backend update for undo on mpv queue. Validate playlist before & after for consistency
-            mpv.queue.async { [self] in
-              _playlistInsert(itemsAtIndexes: indexedInsertItems, allItemsNew, onSuccess: { [self] in
-                // 3. Update UI with result, register undo, kick off other post-processing
-                tableUIChangeUndo.postNotification(name: playlistTableChangeNotificationName)  // update UI
-                sendOSD(.addToPlaylist(indexedInsertItems.count))
-              })
-            }
+            playlistInsert(itemsAtIndexes: indexedInsertItems,
+                           expectedCurrentPlaylist: allItemsNew,
+                           onSuccess: { [self] in
+              // 3. Update UI with result, register undo, kick off other post-processing
+              tableUIChangeUndo.postNotification(name: playlistTableChangeNotificationName)  // update UI
+              sendOSD(.addToPlaylist(indexedInsertItems.count))
+            })
 
           }, redo: { [self] in
             // Almost the same code as above. But don't want to re-register an undo action
@@ -509,36 +515,43 @@ extension PlayerCore {
 
     // 2. Execute backend update on mpv queue. Validate playlist before & after for consistency
     mpv.queue.async { [self] in
-      guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld) else { return }
       log.verbose("[Playlist] Reorder playlist requested")
+      guard syncAndValidatePlaylist(expectedPlaylist: allItemsOld) else { return }
+      guard let currentPlayback = info.currentPlayback else {
+        log.error("[Playlist] Aborting request to reorder playlist: currentPlayback is nil!")
+        return
+      }
+      let currentURL = currentPlayback.url
 
+      // FIXME: Need to parameterize currentPlayingIndexNew. Otherwise our assumption here may be wrong when it is a duplicate!
+      guard let currentPlayingIndexNew = allItemsNew.firstIndex(where: { $0.url == currentURL } ) else {
+        log.error("[Playlist] Aborting request to reorder playlist: failed to find current item in new playlist")
+        return playlistErrorDidOccur()
+      }
+
+      // Rather than try actually move things around, just:
+      // - Clear the entire playlist:
       let clearRC = mpv.command(.playlistClear)
       guard clearRC == 0 else {
         return playlistErrorDidOccur(clearRC, opDesc: "clear playlist to reorder")
       }
 
-      guard let currentURL = info.currentPlayback?.url, let currentPlaying = allItemsNew.firstIndex(where: { $0.url == currentURL } ) else {
-        for item in allItemsNew {
-          let returnCode = mpv.playlistAppend(item.path)
-          guard returnCode == 0 else {
-            return playlistErrorDidOccur(returnCode, opDesc: "reorder playlist (with no currentURL)")
-          }
-        }
-        return
-      }
-
-      for i in (0..<currentPlaying).reversed() {
+      // - Insert the new "currently playing" item, then work backwards (up the playlist) to insert the preceding items:
+      for i in (0..<currentPlayingIndexNew).reversed() {
         let returnCode = mpv.playlistInsert(allItemsNew[i].path, index: 0)
         guard returnCode == 0 else {
           return playlistErrorDidOccur(returnCode, opDesc: "insert to reorder playlist")
         }
       }
-      for i in currentPlaying + 1..<allItemsNew.count {
+      // - Finally just append all the items after (AKA below) the current item
+      for i in currentPlayingIndexNew + 1..<allItemsNew.count {
         let returnCode = mpv.playlistAppend(allItemsNew[i].path)
         guard returnCode == 0 else {
           return playlistErrorDidOccur(returnCode, opDesc: "append to reorder playlist")
         }
       }
+
+      info.currentPlayback = currentPlayback.clone(playlistPos: currentPlayingIndexNew)
 
       guard syncAndValidatePlaylist(expectedPlaylist: allItemsNew) else { return }
 
@@ -592,13 +605,6 @@ extension PlayerCore {
                        savePlayerState: Bool = true) -> Bool {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return false }
-
-    let mpvPlaylistPos = mpv.getInt(MPVProperty.playlistPos)
-    if let playback = info.currentPlayback {
-      info.currentPlayback = playback.clone(playlistPos: mpvPlaylistPos)
-    }
-    log.verbose("[Playlist] After reloading: playlistPos=\(mpvPlaylistPos)")
-
     var actualPlaylist: [PlaybackID] = []
     let playlistCount = mpv.getInt(MPVProperty.playlistCount)
     log.verbose("[Playlist] Reloading with \(playlistCount) items")
@@ -623,6 +629,31 @@ extension PlayerCore {
       }
     } else {
       info.playlist = actualPlaylist
+    }
+
+    if let currentPlayback = info.currentPlayback {
+      let playlist = info.playlist
+      // Make sure `currentPlayback.playlistPos` still points to the playlist index of that item
+      if currentPlayback.playlistPos >= 0, currentPlayback.playlistPos < playlist.count, currentPlayback.id == playlist[currentPlayback.playlistPos] {
+        // good
+      } else {
+        // Try to find new index of playlist, becuase we can't reliabily pull it from mpv (so far...)
+        // Find matching URLs in playlist. There may be duplicates, so try to grab the closest one to the last known playlistPos ...
+        let candidateIndexes = playlist.enumerated().filter { $0.element == currentPlayback.id }.map(\.offset)
+        var bestCandidateIndex = Int.max
+        for candidateIndex in candidateIndexes {
+          if candidateIndex.distance(to: currentPlayback.playlistPos) < bestCandidateIndex {
+            bestCandidateIndex = candidateIndex
+          }
+        }
+        if bestCandidateIndex < playlist.count {
+          log.debug("[Playlist] After reload, currentPlayback.playlistPos (\(currentPlayback.playlistPos)) no longer matches that item in playlist. Updating it to \(bestCandidateIndex)")
+          info.currentPlayback = currentPlayback.clone(playlistPos: bestCandidateIndex)
+          DispatchQueue.main.async { [self] in
+            pwc.playlistView.refreshNowPlayingIndex()
+          }
+        }
+      }
     }
 
     if thenPostNotification {
