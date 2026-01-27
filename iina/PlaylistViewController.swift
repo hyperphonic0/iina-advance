@@ -17,42 +17,16 @@ fileprivate let isPlayingPrefixTextBlendFraction: CGFloat = 0.4
 
 fileprivate let playlistDraggableTypes: [NSPasteboard.PasteboardType] = [.nsFilenames, .nsURL, .iinaPlaylistItem, .string]
 
+#if DEBUG
+fileprivate let enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration) && !DebugConfig.disableLookaheadCaches
+#else
+fileprivate let enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration)
+#endif
+
 
 class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupViewController {
 
-  private(set) var currentTab: Sidebar.Tab = .playlist
-
-  /// Similar to the one in `QuickSettingViewController`.
-  /// Since IBOutlet is `nil` when the view is not loaded at first time, use this variable to cache which tab it need to switch to when the
-  /// view is ready. The value will be handled after loaded.
-  private var pendingSwitchRequest: Sidebar.Tab?
-
-  private var fileExistsMap: [URL: Bool] = [:]
-  /// Currently displayed playlist rows. Should always be updated from `player.info.playlist`
-  @MainActor var displayedPlaylist: [PlaybackID] = []
-
-  var scores: OrderedDictionary<String, Int> = [
-    "Alice": 90,
-    "Bob": 85
-  ]
-
-  /// Cannot reliably scroll to current item until after the table finishes loading. So set this flag first.
-  /// It will cause `scrollPlaylistToCurrentItem` to be called when done loading.
-  var needsScrollToCurrentItem: Bool = true
-
-  unowned var player: PlayerCore!
-  unowned var pwc: PlayerWindowController! {
-    didSet {
-      self.player = pwc.player
-    }
-  }
-
-  private var draggedRowInfo: (Int, IndexSet)? = nil
-
-  // can't use main queue - it will block
-  private var playlistTableReloadDebouncer = Debouncer(delay: 0.1, queue: PlayerCore.backgroundQueue)
-
-  @Atomic private var playlistReloadTicket = 0
+  override var nibName: NSNib.Name { .init("PlaylistViewController") }
 
   @IBOutlet weak var playlistTableBackgroundView: NSView!
   @IBOutlet weak var chapterTableBackgroundView: NSView!
@@ -73,67 +47,45 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
   @IBOutlet weak var addBtn: NSButton!
   @IBOutlet weak var removeBtn: NSButton!
 
+  fileprivate var isPlayingTextColor: NSColor = .textColor
+  fileprivate var isPlayingPrefixTextColor: NSColor = .secondaryLabelColor
+
+  unowned var player: PlayerCore!
+  unowned var pwc: PlayerWindowController! {
+    didSet {
+      player = pwc.player
+    }
+  }
+
+  private var playlistDragDelegate: TableDragDelegate<PlaybackID>!
+  private var notiHandler: NotificationHandler!
+
+  private(set) var currentTab: Sidebar.Tab = .playlist
+
+  /// Similar to the one in `QuickSettingViewController`.
+  /// Since IBOutlet is `nil` when the view is not loaded at first time, use this variable to cache which tab it need to switch to when the
+  /// view is ready. The value will be handled after loaded.
+  private var pendingSwitchRequest: Sidebar.Tab?
+
+  /// Currently displayed playlist rows. Should always be updated from `player.info.playlist`
+  @MainActor var displayedPlaylist: [PlaybackID] = []
+
+  // can't use main queue - it will block
+  private var playlistTableReloadDebouncer = Debouncer(delay: 0.1, queue: PlayerCore.backgroundQueue)
+  @Atomic private var playlistReloadTicket = 0
+
   @Atomic private var playlistTotalDurationIsReady = false
   @Atomic private var playlistTotalDuration: Double? = nil
   private var lastNowPlayingIndex: Int = -1
 
+  /// Cannot reliably scroll to current item until after the table finishes loading. So set this flag first.
+  /// It will cause `scrollPlaylistToCurrentItem` to be called when done loading.
+  var needsScrollToCurrentItem: Bool = true
+
+  private var draggedRowInfo: (Int, IndexSet)? = nil
+
   private var downshift: CGFloat = 0
   private var tabHeight: CGFloat = 0
-
-  fileprivate var isPlayingTextColor: NSColor = .textColor
-  fileprivate var isPlayingPrefixTextColor: NSColor = .secondaryLabelColor
-
-  private var playlistDragDelegate: TableDragDelegate<PlaybackID>!
-
-  override var nibName: NSNib.Name {
-    return NSNib.Name("PlaylistViewController")
-  }
-
-  private var notiHandler: NotificationHandler!
-
-#if DEBUG
-  private let enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration) && !DebugConfig.disableLookaheadCaches
-#else
-  private let enablePrefetching = Preference.bool(for: .prefetchPlaylistVideoDuration)
-#endif
-
-  @MainActor
-  func updateTableColors() {
-    player.log.verbose("Playlist sidebar: updating table colors")
-    // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
-    let effectiveAppearance = view.window?.effectiveAppearance ?? view.effectiveAppearance
-    effectiveAppearance.applyAppearanceFor {
-      if #available(macOS 10.14, *) {
-        isPlayingTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingTextBlendFraction, of: .textColor)!
-        isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!
-
-        // Need a dedicated view behind each table to use for background color.
-        // NSTableView & its component views don't support translucent background color.
-        // Also note: CGColor does not support dark mode, so the view layer needs to be updated
-        // explicitly whenever the appearance changes.
-        let tableBackgroundColor = NSColor.sidebarTableBackground.cgColor
-        playlistTableBackgroundView.wantsLayer = true
-        playlistTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
-      }
-    }
-    reloadData(playlist: true, chapters: true, animate: false)
-  }
-
-  func setVerticalConstraints(downshift: CGFloat, tabHeight: CGFloat) {
-    if (self.downshift != downshift) || (self.tabHeight != tabHeight) {
-      self.downshift = downshift
-      self.tabHeight = tabHeight
-      updateVerticalConstraints()
-    }
-  }
-
-  private func updateVerticalConstraints() {
-    // may not be available until after load
-    player.log.verbose("Playlist: updating downshift=\(downshift), tabHeight=\(tabHeight)")
-    self.buttonTopConstraint?.animateToConstant(downshift)
-    self.tabHeightConstraint?.animateToConstant(tabHeight)
-    view.needsLayout = true
-  }
 
   // FIXME: Need to fix the playlist reload queue mechanism. Can probably delete this func afterwards
   override func viewDidAppear() {
@@ -225,42 +177,8 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
 
     notiHandler = NotificationHandler(player.log, [], [
       .default: [
-        .init(.iinaPlaylistChanged, object: player) { [self] _ in
-          guard player.playlistShown else {
-            player.log.verbose("Got iinaPlaylistChanged, but playlist is not visible. Ignoring")
-            return
-          }
-
-          player.log.verbose("Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…")
-
-          playlistTotalDuration = nil
-          playlistTotalDurationIsReady = false
-          hideTotalDuration()
-
-          reloadData(playlist: true, chapters: false)
-        },
-
-          .init(.iinaFileHistoryDidUpdate) { [self] note in
-            guard !AppDelegate.shared.isTerminating else { return }
-            guard let url = note.userInfo?["url"] as? URL else {
-              player.log.error("Cannot update file history: no url found in userInfo!")
-              return
-            }
-            guard url.isFileURL else { return }
-            let playlist = displayedPlaylist
-            for (rowIndex, item) in playlist.enumerated() {
-              if item.url == url {
-                player.log.trace("Got iinaFileHistoryDidUpdate: reloading playlist row \(rowIndex)")
-                reloadPlaylistRow(rowIndex)
-              }
-            }
-          },
-
-          .init(.iinaFileExistsInfoDidUpdate) { [self] note in
-            guard !AppDelegate.shared.isTerminating else { return }
-            // Just cache this for local use. Doesn't change the displayed table rows
-            self.fileExistsMap = HistoryController.shared.fileExistsMap
-          }
+        .init(.iinaPlaylistChanged, object: player, self.playlistDidChange),
+        .init(.iinaFileHistoryDidUpdate, object: player, self.fileHistoryDidUpdate),
       ]
     ])
     notiHandler.addAllObservers()
@@ -356,6 +274,44 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
         doAfterReload()
       }
     }
+  }
+
+  @MainActor
+  func updateTableColors() {
+    player.log.verbose("Playlist sidebar: updating table colors")
+    // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
+    let effectiveAppearance = view.window?.effectiveAppearance ?? view.effectiveAppearance
+    effectiveAppearance.applyAppearanceFor {
+      if #available(macOS 10.14, *) {
+        isPlayingTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingTextBlendFraction, of: .textColor)!
+        isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!
+
+        // Need a dedicated view behind each table to use for background color.
+        // NSTableView & its component views don't support translucent background color.
+        // Also note: CGColor does not support dark mode, so the view layer needs to be updated
+        // explicitly whenever the appearance changes.
+        let tableBackgroundColor = NSColor.sidebarTableBackground.cgColor
+        playlistTableBackgroundView.wantsLayer = true
+        playlistTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
+      }
+    }
+    reloadData(playlist: true, chapters: true, animate: false)
+  }
+
+  func setVerticalConstraints(downshift: CGFloat, tabHeight: CGFloat) {
+    if (self.downshift != downshift) || (self.tabHeight != tabHeight) {
+      self.downshift = downshift
+      self.tabHeight = tabHeight
+      updateVerticalConstraints()
+    }
+  }
+
+  private func updateVerticalConstraints() {
+    // may not be available until after load
+    player.log.verbose("Playlist: updating downshift=\(downshift), tabHeight=\(tabHeight)")
+    self.buttonTopConstraint?.animateToConstant(downshift)
+    self.tabHeightConstraint?.animateToConstant(tabHeight)
+    view.needsLayout = true
   }
 
   // MARK: - Total Duration
@@ -548,10 +504,14 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
     if #available(macOS 14.0, *) {
       menu.addItem(.sectionHeader(title: NSLocalizedString("playlist.sorting.header", comment: "Sorting")))
     }
-    menu.addItem(withTitle: NSLocalizedString("playlist.sorting.filename_ascending", comment: "Filename Ascending"), action: #selector(sortPathAscending), keyEquivalent: "")
-    menu.addItem(withTitle: NSLocalizedString("playlist.sorting.filename_descending", comment: "Filename Descending"), action: #selector(sortPathDesecnding), keyEquivalent: "")
-    menu.addItem(withTitle: NSLocalizedString("playlist.sorting.path_ascending", comment: "File Path Ascending"), action: #selector(sortPathAscending), keyEquivalent: "")
-    menu.addItem(withTitle: NSLocalizedString("playlist.sorting.path_descending", comment: "File Path Descending"), action: #selector(sortPathDesecnding), keyEquivalent: "")
+    menu.addItem(withTitle: NSLocalizedString("playlist.sorting.filename_ascending", comment: "Filename Ascending"),
+                 action: #selector(sortPathAscending), keyEquivalent: "")
+    menu.addItem(withTitle: NSLocalizedString("playlist.sorting.filename_descending", comment: "Filename Descending"),
+                 action: #selector(sortPathDesecnding), keyEquivalent: "")
+    menu.addItem(withTitle: NSLocalizedString("playlist.sorting.path_ascending", comment: "File Path Ascending"),
+                 action: #selector(sortPathAscending), keyEquivalent: "")
+    menu.addItem(withTitle: NSLocalizedString("playlist.sorting.path_descending", comment: "File Path Descending"),
+                 action: #selector(sortPathDesecnding), keyEquivalent: "")
     NSMenu.popUpContextMenu(menu, with: NSApplication.shared.currentEvent!, for: sender)
   }
 
@@ -927,7 +887,37 @@ extension PlaylistViewController: NSTableViewDelegate {
     cellView.subBtn.image?.isTemplate = true
   }
 
-  // MARK: - Playlist Table: Model Data Loading
+  // MARK: - Playlist Table: Model Data Management
+
+  fileprivate func playlistDidChange(_ noti: Notification) {
+    guard player.playlistShown else {
+      player.log.verbose("Got iinaPlaylistChanged, but playlist is not visible. Ignoring")
+      return
+    }
+    player.log.verbose("Got iinaPlaylistChanged (enablePrefetch=\(enablePrefetching.yn)); reloading playlist table…")
+
+    playlistTotalDuration = nil
+    playlistTotalDurationIsReady = false
+    hideTotalDuration()
+
+    reloadData(playlist: true, chapters: false)
+  }
+
+  fileprivate func fileHistoryDidUpdate(_ noti: Notification) {
+    guard !AppDelegate.shared.isTerminating else { return }
+    guard let url = noti.userInfo?["url"] as? URL else {
+      player.log.error("Cannot update file history: no url found in userInfo!")
+      return
+    }
+    guard url.isFileURL else { return }
+    let playlist = displayedPlaylist
+    for (rowIndex, item) in playlist.enumerated() {
+      if item.url == url {
+        player.log.trace("Got iinaFileHistoryDidUpdate: reloading playlist row \(rowIndex)")
+        reloadPlaylistRow(rowIndex)
+      }
+    }
+  }
 
   private func getOrCreateMeta(forRowIndex rowIndex: Int) -> MediaMeta? {
     guard rowIndex >= 0 else { return nil }
