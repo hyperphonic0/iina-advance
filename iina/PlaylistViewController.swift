@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import OrderedCollections
 
 fileprivate let prefixMinLength = 7
 fileprivate let displayNameMinLength = 12
@@ -17,19 +18,23 @@ fileprivate let isPlayingPrefixTextBlendFraction: CGFloat = 0.4
 fileprivate let playlistDraggableTypes: [NSPasteboard.PasteboardType] = [.nsFilenames, .nsURL, .iinaPlaylistItem, .string]
 
 
-class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate, SidebarTabGroupViewController {
+class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupViewController {
 
   private(set) var currentTab: Sidebar.Tab = .playlist
 
-  /** Similar to the one in `QuickSettingViewController`.
-   Since IBOutlet is `nil` when the view is not loaded at first time,
-   use this variable to cache which tab it need to switch to when the
-   view is ready. The value will be handled after loaded.
-   */
+  /// Similar to the one in `QuickSettingViewController`.
+  /// Since IBOutlet is `nil` when the view is not loaded at first time, use this variable to cache which tab it need to switch to when the
+  /// view is ready. The value will be handled after loaded.
   private var pendingSwitchRequest: Sidebar.Tab?
+
   private var fileExistsMap: [URL: Bool] = [:]
   /// Currently displayed playlist rows. Should always be updated from `player.info.playlist`
   @MainActor var displayedPlaylist: [PlaybackID] = []
+
+  var scores: OrderedDictionary<String, Int> = [
+    "Alice": 90,
+    "Bob": 85
+  ]
 
   /// Cannot reliably scroll to current item until after the table finishes loading. So set this flag first.
   /// It will cause `scrollPlaylistToCurrentItem` to be called when done loading.
@@ -367,11 +372,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       let selectedDuration = MediaMetaCache.shared.calculateTotalDuration(urls)
 
       totalDurationLabel.stringValue = String(format: NSLocalizedString("playlist.total_length_with_selected", comment: "%@ of %@ selected"),
-                                            VideoTime(selectedDuration).stringRepresentation,
-                                            totalDurationString)
+                                              VideoTime(selectedDuration).stringRepresentation,
+                                              totalDurationString)
     } else {
       totalDurationLabel.stringValue = String(format: NSLocalizedString("playlist.total_length", comment: "%@ in total"),
-                                            totalDurationString)
+                                              totalDurationString)
     }
   }
 
@@ -462,116 +467,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   @MainActor private func updateTabButtonSelection() {
     updateTabActiveStatus(for: playlistBtn, isActive: currentTab == .playlist)
     updateTabActiveStatus(for: chaptersBtn, isActive: currentTab == .chapters)
-  }
-
-  // MARK: - NSTableViewDataSource
-
-  func numberOfRows(in tableView: NSTableView) -> Int {
-    if tableView == playlistTableView {
-      let playlist = displayedPlaylist
-      return playlist.count
-    } else if tableView == chapterTableView {
-      return player.info.chapters.count
-    } else {
-      return 0
-    }
-  }
-
-  // MARK: - Drag and Drop
-
-  @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
-    return playlistDragDelegate.draggingSession(session, sourceOperationMaskFor: context)
-  }
-
-  /// Drag start: set session variables.
-  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
-                       willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
-    playlistDragDelegate.tableView(tableView, draggingSession: session, willBeginAt: screenPoint, forRowIndexes: rowIndexes)
-  }
-
-  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
-                       endedAt screenPoint: NSPoint, operation: NSDragOperation) {
-    playlistDragDelegate.tableView(tableView, draggingSession: session, endedAt: screenPoint, operation: operation)
-  }
-
-  @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int,
-                       proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
-    return playlistDragDelegate.tableView(tableView, validateDrop: info, proposedRow: rowIndex, proposedDropOperation: dropOperation)
-    //    return player.acceptFromPasteboard(info, isPlaylist: true)  // FIXME: reconcile with this old code
-  }
-
-  /// Accept the drop and execute changes, or reject drop.
-  ///
-  /// Remember that we can expect the following (see notes in `tableView(_, validateDrop, …)`)
-  /// 1. `0 <= targetRowIndex <= rowCount`
-  /// 2. `dropOperation = .above`.
-  @objc func tableView(_ tableView: NSTableView,
-                       acceptDrop info: NSDraggingInfo, row targetRowIndex: Int,
-                       dropOperation: NSTableView.DropOperation) -> Bool {
-    return playlistDragDelegate.tableView(tableView, acceptDrop: info, row: targetRowIndex, dropOperation: dropOperation)
-  }
-
-  // MARK: - Playlist Table CRUD
-
-  private func copyPlaylistRowsToPasteboard(_ rowIndexes: IndexSet, to pboard: NSPasteboard) {
-    player.log.verbose("Copying playlist indexes to pasteboard: \(rowIndexes.toArray())")
-    do {
-      let indexesData = try NSKeyedArchiver.archivedData(withRootObject: rowIndexes, requiringSecureCoding: true)
-      let playlist = displayedPlaylist
-      pboard.declareTypes([.iinaPlaylistItem, .nsFilenames, .nsURL], owner: playlistTableView)
-      pboard.setData(indexesData, forType: .iinaPlaylistItem)
-      let filePaths = rowIndexes.compactMap{ $0 < playlist.count ? playlist[$0].filePath : nil }
-      pboard.setPropertyList(filePaths, forType: .nsFilenames)
-      let paths = rowIndexes.compactMap{ $0 < playlist.count ? playlist[$0].path : nil }
-      pboard.setPropertyList(paths, forType: .nsURL)
-
-    } catch {
-      // Internal error, archivedData should not fail.
-      player.log.error("Failed to copy from playlist to pasteboard: \(error)")
-    }
-  }
-
-  private func readPlaylistItemsFromPasteboard(_ pboard: NSPasteboard) -> [PlaybackID] {
-    if let filenamePaths = pboard.propertyList(forType: .nsFilenames) as? [String] {
-      let fileURLs: [URL] = filenamePaths.map {
-        $0.hasPrefix("/") ? URL(fileURLWithPath: $0) : URL(string: $0)!
-      }
-      let resolvedURLs = Utility.resolveURLs(fileURLs)
-      let ids = resolvedURLs.compactMap{ PlaybackID($0) }
-      return player.getPlayableFiles(in: ids)
-    } else if let urlPaths = pboard.propertyList(forType: .nsURL) as? [String] {
-      return urlPaths.compactMap{ PlaybackID(path: $0) }
-    } else if let droppedString = pboard.string(forType: .string), Regex.url.matches(droppedString) {
-      return [droppedString].compactMap{ PlaybackID(URL(string: $0)) }
-    } else {
-      return []
-    }
-  }
-
-  @discardableResult
-  func pasteFromPasteboard(from pboard: NSPasteboard) -> Bool {
-    let playlistItems = readPlaylistItemsFromPasteboard(pboard)
-    player.log.verbose("User pasted \(playlistItems.count) items from pasteboard into playlist")
-
-    guard !playlistItems.isEmpty else {
-      return false
-    }
-    let insertIndex: Int
-    if let lastSelectedRowIndex = playlistTableView.selectedRowIndexes.last {
-      insertIndex = lastSelectedRowIndex + 1
-    } else {
-      insertIndex = playlistTableView.numberOfRows
-    }
-    player.insertPlaylistRows(playlistItems, at: insertIndex, .registerUndoRedo)
-    return true
-  }
-
-  func tableView(_ tableView: NSTableView, writeRowsWith rowIndexes: IndexSet, to pboard: NSPasteboard) -> Bool {
-    if tableView == playlistTableView {
-      copyPlaylistRowsToPasteboard(rowIndexes, to: pboard)
-      return true
-    }
-    return false
   }
 
   // MARK: - IBActions
@@ -683,308 +578,93 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     player.playlistReorder(newPlaylist: playlist)
   }
 
-  // MARK: - Table delegates
+  // MARK: - Playlist Table: Drag and Drop
 
-  func tableViewSelectionDidChange(_ notification: Notification) {
-    let tv = notification.object as! NSTableView
-    if tv == playlistTableView {
-      showTotalDuration()
-      totalDurationLabel.needsDisplay = true
+  @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+    return playlistDragDelegate.draggingSession(session, sourceOperationMaskFor: context)
+  }
 
-      removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
-      return
+  /// Drag start: set session variables.
+  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
+                       willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
+    playlistDragDelegate.tableView(tableView, draggingSession: session, willBeginAt: screenPoint, forRowIndexes: rowIndexes)
+  }
+
+  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
+                       endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+    playlistDragDelegate.tableView(tableView, draggingSession: session, endedAt: screenPoint, operation: operation)
+  }
+
+  @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int,
+                       proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+    return playlistDragDelegate.tableView(tableView, validateDrop: info, proposedRow: rowIndex, proposedDropOperation: dropOperation)
+    //    return player.acceptFromPasteboard(info, isPlaylist: true)  // FIXME: reconcile with this old code
+  }
+
+  /// Accept the drop and execute changes, or reject drop.
+  ///
+  /// Remember that we can expect the following (see notes in `tableView(_, validateDrop, …)`)
+  /// 1. `0 <= targetRowIndex <= rowCount`
+  /// 2. `dropOperation = .above`.
+  @objc func tableView(_ tableView: NSTableView,
+                       acceptDrop info: NSDraggingInfo, row targetRowIndex: Int,
+                       dropOperation: NSTableView.DropOperation) -> Bool {
+    return playlistDragDelegate.tableView(tableView, acceptDrop: info, row: targetRowIndex, dropOperation: dropOperation)
+  }
+
+  // MARK: - Playlist Table: Pasteboard CRUD
+
+  private func copyPlaylistRowsToPasteboard(_ rowIndexes: IndexSet, to pboard: NSPasteboard) {
+    player.log.verbose("Copying playlist indexes to pasteboard: \(rowIndexes.toArray())")
+    do {
+      let indexesData = try NSKeyedArchiver.archivedData(withRootObject: rowIndexes, requiringSecureCoding: true)
+      let playlist = displayedPlaylist
+      pboard.declareTypes([.iinaPlaylistItem, .nsFilenames, .nsURL], owner: playlistTableView)
+      pboard.setData(indexesData, forType: .iinaPlaylistItem)
+      let filePaths = rowIndexes.compactMap{ $0 < playlist.count ? playlist[$0].filePath : nil }
+      pboard.setPropertyList(filePaths, forType: .nsFilenames)
+      let paths = rowIndexes.compactMap{ $0 < playlist.count ? playlist[$0].path : nil }
+      pboard.setPropertyList(paths, forType: .nsURL)
+
+    } catch {
+      // Internal error, archivedData should not fail.
+      player.log.error("Failed to copy from playlist to pasteboard: \(error)")
     }
   }
 
-  // Updates index of playing item. Don't need to reload whole playlist
-  @MainActor
-  func refreshNowPlayingIndex(setNewIndexTo newNowPlayingIndex: Int? = nil,
-                              thenScrollToVisible: Bool = false) {
-    guard isViewLoaded else { return }
-    guard !view.isHidden else { return }
-
-    let oldNowPlayingIndex = lastNowPlayingIndex
-    let newNowPlayingIndex = newNowPlayingIndex ?? player.info.currentPlayback?.playlistPos ?? oldNowPlayingIndex
-
-    player.log.verbose("Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)")
-    lastNowPlayingIndex = newNowPlayingIndex
-
-    // ... also make sure the old "now playing" row is redrawn so it loses its status
-    loadCachedItem(forRowIndex: oldNowPlayingIndex, force: true)
-    // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
-    loadCachedItem(forRowIndex: newNowPlayingIndex, force: true)
-
-    // The calls to loadCachedItem should refresh the given indexes, but will go through multiple queues
-    // to do so and may be delayed by a minute or more. We need to update the nowPlaying status ASAP,
-    // so just add extra redraws right away:
-    reloadPlaylistRow(oldNowPlayingIndex)
-    reloadPlaylistRow(newNowPlayingIndex)
-
-    if thenScrollToVisible {
-      playlistTableView.scrollRowToVisible(newNowPlayingIndex)
-    }
-  }
-
-  @MainActor
-  func reloadPlaylistRow(_ rowIndex: Int) {
-    reloadPlaylistRows(IndexSet(integer: rowIndex))
-  }
-
-  /// Reload all rows if not specified
-  @MainActor
-  func reloadPlaylistRows(_ rows: IndexSet) {
-    playlistTableView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integersIn: 0...1))
-  }
-
-  @MainActor
-  func reloadAllPlaylistRows(_ rows: IndexSet? = nil) {
-    playlistTableView.reloadExistingRows(reselectRowsAfter: true)
-  }
-
-  func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    guard let identifier = tableColumn?.identifier else { return nil }
-    let v = tableView.makeView(withIdentifier: identifier, owner: self) as! NSTableCellView
-
-    if tableView == playlistTableView {  // Playlist table
-                                         // use cached value
-      let isPlaying = self.lastNowPlayingIndex == row
-
-      switch identifier {
-      case .isChosen:
-        let pointer = view.userInterfaceLayoutDirection == .rightToLeft ? Constants.String.blackLeftPointingTriangle : Constants.String.blackRightPointingTriangle
-        // ▶︎ Is Playing icon
-        let text = isPlaying ? pointer : ""
-        v.textField?.setFormattedText(stringValue: text, textColor: isPlayingTextColor)
-      case .trackName:
-        let cellView = v as! PlaylistTrackCellView
-        updateCellForPlaylistTrackNameColumn(cellView, rowIndex: row, isPlaying: isPlaying)
-      default:
-        Logger.fatal("Unknown identifier in Playlist table: \(identifier)")
+  private func readPlaylistItemsFromPasteboard(_ pboard: NSPasteboard) -> [PlaybackID] {
+    if let filenamePaths = pboard.propertyList(forType: .nsFilenames) as? [String] {
+      let fileURLs: [URL] = filenamePaths.map {
+        $0.hasPrefix("/") ? URL(fileURLWithPath: $0) : URL(string: $0)!
       }
-      return v
-
-    } else if tableView == chapterTableView {  // Chapters table
-
-      let chapters = player.info.chapters
-      guard row < chapters.count else { return nil }
-      let chapter = chapters[row]
-
-      // next chapter time
-      let nextChapterTime = chapters[at: row+1]?.startTime ?? Double.infinity
-      let isCurrentChapter = player.info.chapter == row
-      let textColor = isCurrentChapter ? isPlayingTextColor : .controlTextColor
-
-      switch identifier {
-      case .isChosen:
-        // left column
-        let pointerGlyph: String
-        if isCurrentChapter {
-          pointerGlyph = view.userInterfaceLayoutDirection == .rightToLeft ?
-          Constants.String.blackLeftPointingTriangle :  Constants.String.blackRightPointingTriangle
-        } else {
-          pointerGlyph = ""
-        }
-        v.setTitle(pointerGlyph, textColor: textColor)
-      case .trackName:
-        // right column
-        let titleString = chapter.title.isEmpty ? "Chapter \(row)" : chapter.title
-        v.setTitle(titleString, textColor: textColor)
-        let cellView = v as! ChapterTableCellView
-        let durationText = "\(VideoTime.string(from: chapter.startTime)) → \(VideoTime.string(from: nextChapterTime))"
-        cellView.durationTextField.setText(durationText, textColor: textColor)
-      default:
-        Logger.fatal("Unknown identifier in Chapters table: \(identifier)")
-      }
-      return v
-    }
-
-    return nil
-  }
-
-  private var wantsPlaylistTitleDisplayed: Bool {
-    guard Preference.bool(for: .playlistShowMetadata) else { return false }
-    let onlyInMusicMode = Preference.bool(for: .playlistShowMetadataInMusicMode)
-    if onlyInMusicMode {
-      return player.isInMiniPlayer
-    }
-    return true
-  }
-
-  /// Rebuilds playlist table's `Track Name` column cell
-  private func updateCellForPlaylistTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
-    guard let cachedMeta = getItem(forRowIndex: rowIndex) else {
-      player.log.error("No playlist item found for rowIndex \(rowIndex). Skipping cell update")
-      return
-    }
-
-    let wantsTitleDisplayed = wantsPlaylistTitleDisplayed
-    let displayName = (wantsTitleDisplayed ? cachedMeta.title : nil) ?? cachedMeta.id.displayName
-    let artist = wantsTitleDisplayed ? cachedMeta.artist : nil
-
-    player.log.trace("Building row \(rowIndex) of playlist: \(displayName.quoted)")
-
-    let textColor = isPlaying ? isPlayingTextColor : .controlTextColor
-    let prefixTextColor = isPlaying ? isPlayingPrefixTextColor : .secondaryLabelColor
-
-    // Title, artist, prefix
-    if Preference.bool(for: .shortenFileGroupsInPlaylist),
-       let prefix = player.info.currentVideosInfo.first(where: { $0.url == cachedMeta.id.url })?.prefix,
-       !prefix.isEmpty,
-       prefix.count <= displayName.count,  // check whether prefix length > displayName length
-       prefix.count >= prefixMinLength,
-       displayName.count > displayNameMinLength {
-      cellView.setPrefix(prefix, textColor: prefixTextColor)
-      cellView.setAdditionalInfo(nil)
-      cellView.setTitle(String(displayName[displayName.index(displayName.startIndex, offsetBy: prefix.count)...]), textColor: textColor)
+      let resolvedURLs = Utility.resolveURLs(fileURLs)
+      let ids = resolvedURLs.compactMap{ PlaybackID($0) }
+      return player.getPlayableFiles(in: ids)
+    } else if let urlPaths = pboard.propertyList(forType: .nsURL) as? [String] {
+      return urlPaths.compactMap{ PlaybackID(path: $0) }
+    } else if let droppedString = pboard.string(forType: .string), Regex.url.matches(droppedString) {
+      return [droppedString].compactMap{ PlaybackID(URL(string: $0)) }
     } else {
-      cellView.setPrefix(nil, textColor: prefixTextColor)
-      cellView.setAdditionalInfo(artist, textColor: textColor)
-      cellView.setTitle(displayName, textColor: textColor)
+      return []
     }
-
-    // playback progress and duration
-    cellView.durationLabel.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
-    if let duration = cachedMeta.duration {
-      let durationString = VideoTime(duration).stringRepresentation
-      let durationTextColor = isPlaying ? isPlayingTextColor : .secondaryLabelColor
-      cellView.durationLabel.setFormattedText(stringValue: durationString, textColor: durationTextColor)
-    } else {
-      cellView.durationLabel.stringValue = ""
-    }
-    if let progress = cachedMeta.progress, let duration = cachedMeta.duration {
-      cellView.playbackProgressView.layerContentsRedrawPolicy = .duringViewResize
-      cellView.playbackProgressView.percentage = progress / duration
-      cellView.playbackProgressView.isHidden = false
-    } else {
-      cellView.playbackProgressView.isHidden = true
-    }
-
-    // sub button
-    if !player.info.isMatchingSubtitles,
-       let matchedSubs = player.info.getMatchedSubs(cachedMeta.id.path), !matchedSubs.isEmpty {
-      cellView.setDisplaySubButton(true)
-    } else {
-      cellView.setDisplaySubButton(false)
-    }
-    // not sure why this line exists, but let's keep it for now
-    cellView.subBtn.image?.isTemplate = true
-  }
-
-  private func getItem(forRowIndex rowIndex: Int) -> MediaMeta? {
-    guard rowIndex >= 0 else { return nil }
-    let playlistItems = displayedPlaylist
-    player.log.trace("Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)")
-    guard rowIndex < playlistItems.count else { return nil }
-    let playlistItem = playlistItems[rowIndex]
-    let url = playlistItem.url
-
-    return MediaMetaCache.shared.getOrAddCachedMeta(for: playlistItem)
   }
 
   @discardableResult
-  @MainActor private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> MediaMeta? {
-    guard rowIndex >= 0 else { return nil }
-    let playlistItems = displayedPlaylist
-    player.log.trace("Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)\(force ? " (forced)" : "")")
-    guard rowIndex < playlistItems.count else { return nil }
-    let playlistItem = playlistItems[rowIndex]
-    let url = playlistItem.url
+  private func pasteFromPasteboard(from pboard: NSPasteboard) -> Bool {
+    let playlistItems = readPlaylistItemsFromPasteboard(pboard)
+    player.log.verbose("User pasted \(playlistItems.count) items from pasteboard into playlist")
 
-    var existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: playlistItem)
-
-    let needsRefresh = force || (url.isFileURL && !existingCachedMeta.triedFFmpeg)
-    if needsRefresh {
-      // Kick this off, but return the existing (possibly stale) data below for efficiency
-      player.mpv.queue.async { [self] in
-        guard player.isActive else { return }
-        // Get updated title from mpv
-        let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
-
-        // Check cache again; we don't know how much time has passed since last access & want to avoid redundant file access
-        existingCachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem,
-                                                                    reloadFromWatchLater: false, reloadFromFFmpeg: false,
-                                                                    mpvTitle: mpvTitle)
-        guard needsRefresh else { return }
-
-        // TODO: (optimization) add debouncer & aggregate work here
-        PlayerCore.backgroundQueue.async { [self] in
-          // Get watch-later form file system; get other meta from ffmpeg:
-          let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem, mpvTitle: mpvTitle)
-          // Now update the total length if needed (but only if it's already done calculating):
-          let prevDuration = existingCachedMeta.duration ?? 0
-          let updatedDuration = cachedMeta.duration ?? 0
-          if updatedDuration != prevDuration {
-            // if FFmpeg got the duration successfully
-            refreshTotalDuration()
-          }
-
-          pwc.animationPipeline.submitInstantTask{ [self] in
-            /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
-            reloadPlaylistRow(rowIndex)
-          }
-        }
-
-      }
+    guard !playlistItems.isEmpty else {
+      return false
     }
-
-    return existingCachedMeta
-  }
-
-  func tableView(_ tableView: NSTableView, didAdd rowView: NSTableRowView, forRow row: Int) {
-    /// The background color for a `NSTableRowView` will default to the parent's background color, which results in an
-    /// unwanted additive effect for translucent backgrounds. Just make each row transparent.
-    rowView.backgroundColor = .clear
-  }
-
-  private func updateCachesForAllItems() {
-    guard enablePrefetching else { return }
-
-    let sw = Utility.Stopwatch()
-    let playlistItems = displayedPlaylist
-    player.log.verbose("[Playlist] Updating caches for \(playlistItems.count) rows…")
-
-    player.mpv.queue.async { [self] in
-      guard player.isActive else { return }
-      let currentTicket = $playlistReloadTicket.withLock { latestTicket in
-        latestTicket += 1
-        return latestTicket
-      }
-      var titles: [String?] = []
-
-      for rowIndex in 0..<playlistItems.count {
-        // Get updated title from mpv
-        let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
-        titles.append(mpvTitle) // may be nil
-      }
-
-      PlayerCore.backgroundQueue.async { [self] in
-        for (rowIndex, itemID) in playlistItems.enumerated() {
-          let isTicketValid = $playlistReloadTicket.withLock { $0 == currentTicket }
-          guard isTicketValid else {
-            player.log.verbose("[Playlist] Ticket no longer valid; cancelling cache update")
-            return
-          }
-          let updatedTitle = titles[rowIndex]
-          let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: itemID)
-          let needsRefresh = (itemID.url.isFileURL && !existingCachedMeta.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta.title)
-          if needsRefresh {
-            // Get watch-later form file system; get other meta from ffmpeg:
-            MediaMetaCache.shared.updateCachedMeta(itemID, mpvTitle: updatedTitle)
-            // Refresh each row as it gets updated. May take a while to refresh all
-            // TODO: (optimization) add debouncer & aggregate work here
-            pwc.animationPipeline.submitInstantTask{ [self] in
-              /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
-              reloadPlaylistRow(rowIndex)
-            }
-          }
-        }
-
-        // Finally, append a task to recalculate the total length. Do not show it until it is done!
-        player.log.verbose("[Playlist] Finished cache updates for \(playlistItems.count) rows in \(sw.secElapsedString)")
-        playlistTotalDurationIsReady = true
-        refreshTotalDuration()
-      }
+    let insertIndex: Int
+    if let lastSelectedRowIndex = playlistTableView.selectedRowIndexes.last {
+      insertIndex = lastSelectedRowIndex + 1
+    } else {
+      insertIndex = playlistTableView.numberOfRows
     }
+    player.insertPlaylistRows(playlistItems, at: insertIndex, .registerUndoRedo)
+    return true
   }
 
 }
@@ -992,7 +672,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 // MARK: - EditableTableViewDelegate
 
 extension PlaylistViewController: EditableTableViewDelegate {
-
   var parentTableView: EditableTableView! { playlistTableView }
 
   // Allows for sidebar resize to happen from inside the table, by giving it higher priority than row drag & drop.
@@ -1069,146 +748,339 @@ extension PlaylistViewController: EditableTableViewDelegate {
   }
 }
 
-// MARK: - Custom View Classes
+// MARK: - NSTableViewDataSource
 
-class PlaylistTrackCellView: NSTableCellView {
-  @IBOutlet weak var subBtn: NSButton!
-  @IBOutlet weak var subBtnWidthConstraint: NSLayoutConstraint!
-  @IBOutlet weak var subBtnTrailingConstraint: NSLayoutConstraint!
-  @IBOutlet weak var prefixBtn: PlaylistPrefixButton!
-  @IBOutlet weak var infoLabel: EditableTextField!  /// use `EditableTextField` class for proper highlight color
-  @IBOutlet weak var infoLabelTrailingConstraint: NSLayoutConstraint!
-  @IBOutlet weak var durationLabel: EditableTextField!
-  @IBOutlet weak var playbackProgressView: PlaylistPlaybackProgressView!
+extension PlaylistViewController: NSTableViewDataSource {
 
-  func setPrefix(_ prefix: String?, textColor: NSColor? = nil) {
-    if #available(macOS 10.14, *) {
-      prefixBtn.contentTintColor = textColor
-    } else {
-      // Sorry earlier versions, no color for you
+  func tableView(_ tableView: NSTableView, writeRowsWith rowIndexes: IndexSet, to pboard: NSPasteboard) -> Bool {
+    if tableView == playlistTableView {
+      copyPlaylistRowsToPasteboard(rowIndexes, to: pboard)
+      return true
     }
-
-    if let prefix {
-      prefixBtn.hasPrefix = true
-      prefixBtn.text = prefix
-      prefixBtn.isHidden = false
-    } else {
-      prefixBtn.hasPrefix = false
-      prefixBtn.isHidden = true
-    }
-  }
-
-  func setDisplaySubButton(_ show: Bool) {
-    if show {
-      subBtn.isHidden = false
-      subBtnWidthConstraint.constant = 12
-      subBtnTrailingConstraint.constant = 4
-    } else {
-      subBtn.isHidden = true
-      subBtnWidthConstraint.constant = 0
-      subBtnTrailingConstraint.constant = 0
-    }
-  }
-
-  func setAdditionalInfo(_ string: String?, textColor: NSColor? = nil) {
-    if let string = string {
-      infoLabel.isHidden = false
-      infoLabelTrailingConstraint.constant = 4
-      infoLabel.setFormattedText(stringValue: string, textColor: textColor)
-      infoLabel.stringValue = string
-      infoLabel.toolTip = string
-    } else {
-      infoLabel.isHidden = true
-      infoLabelTrailingConstraint.constant = 0
-      infoLabel.stringValue = ""
-    }
-  }
-
-  override func prepareForReuse() {
-    super.prepareForReuse()
-    playbackProgressView.percentage = 0
-    playbackProgressView.isHidden = true
-    playbackProgressView.needsDisplay = true
-    setPrefix(nil)
-    setAdditionalInfo(nil)
-  }
-}
-
-
-class PlaylistPrefixButton: NSButton {
-
-  var text = "" {
-    didSet {
-      refresh()
-    }
-  }
-
-  var hasPrefix = true {
-    didSet {
-      refresh()
-    }
-  }
-
-  var isFolded = true {
-    didSet {
-      refresh()
-    }
-  }
-
-  private func refresh() {
-    self.title = hasPrefix ? (isFolded ? "…" : text) : ""
-  }
-
-}
-
-
-class SubPopoverViewController: NSViewController, NSTableViewDelegate, NSTableViewDataSource {
-
-  @IBOutlet weak var tableView: NSTableView!
-  @IBOutlet weak var playlistTableView: NSTableView!
-
-  unowned var player: PlayerCore!
-  var pwc: PlayerWindowController! { player.pwc }
-
-  var filePath: String = ""
-
-  func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
     return false
   }
 
-  func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> Any? {
-    guard let matchedSubs = player.info.getMatchedSubs(filePath) else { return nil }
-    return matchedSubs[row].lastPathComponent
-  }
 
   func numberOfRows(in tableView: NSTableView) -> Int {
-    return player.info.getMatchedSubs(filePath)?.count ?? 0
-  }
-
-  @IBAction func wrongSubBtnAction(_ sender: AnyObject) {
-    player.info.$matchedSubs.withLock { $0[filePath]?.removeAll() }
-    tableView.reloadData()
-    let playlist = pwc.playlistView.displayedPlaylist
-    if let row = playlist.firstIndex(where: { $0.path == filePath }) {
-      playlistTableView.reloadData(forRowIndexes: IndexSet(integer: row), columnIndexes: IndexSet(integersIn: 0...1))
+    if tableView == playlistTableView {
+      let playlist = displayedPlaylist
+      return playlist.count
+    } else if tableView == chapterTableView {
+      return player.info.chapters.count
+    } else {
+      return 0
     }
   }
+
 }
 
-class ChapterTableCellView: NSTableCellView {
-  @IBOutlet weak var durationTextField: EditableTextField!
-}
+  // MARK: - NSTableViewDelegate
 
-class PlaylistView: NSView, DraggableObject {
-  override func mouseDragged(with event: NSEvent) {
-    // Send to view controller (above)
-    nextResponder?.mouseDragged(with: event)
+extension PlaylistViewController: NSTableViewDelegate {
+
+  func tableViewSelectionDidChange(_ notification: Notification) {
+    let tv = notification.object as! NSTableView
+    if tv == playlistTableView {
+      showTotalDuration()
+      totalDurationLabel.needsDisplay = true
+
+      removeBtn.isEnabled = !playlistTableView.selectedRowIndexes.isEmpty
+      return
+    }
   }
 
-  func cancelDrag() {
-    guard let pwc, let sidebar = pwc.getConfiguredSidebar(forTabGroup: .playlist) else { return }
-    pwc.log.verbose("Cancelled drag of playlist sidebar")
-    pwc.finishResizingSidebar(sidebar.locationID)
+  func tableView(_ tableView: NSTableView, didAdd rowView: NSTableRowView, forRow row: Int) {
+    /// The background color for a `NSTableRowView` will default to the parent's background color, which results in an
+    /// unwanted additive effect for translucent backgrounds. Just make each row transparent.
+    rowView.backgroundColor = .clear
+  }
+
+  func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+    guard let identifier = tableColumn?.identifier else { return nil }
+    let v = tableView.makeView(withIdentifier: identifier, owner: self) as! NSTableCellView
+
+    if tableView == playlistTableView {  // Playlist table
+                                         // use cached value
+      let isPlaying = self.lastNowPlayingIndex == row
+
+      switch identifier {
+      case .isChosen:
+        let pointer = view.userInterfaceLayoutDirection == .rightToLeft ? Constants.String.blackLeftPointingTriangle : Constants.String.blackRightPointingTriangle
+        // ▶︎ Is Playing icon
+        let text = isPlaying ? pointer : ""
+        v.textField?.setFormattedText(stringValue: text, textColor: isPlayingTextColor)
+      case .trackName:
+        let cellView = v as! PlaylistTrackCellView
+        updateCellForPlaylistTrackNameColumn(cellView, rowIndex: row, isPlaying: isPlaying)
+      default:
+        Logger.fatal("Unknown identifier in Playlist table: \(identifier)")
+      }
+      return v
+
+    } else if tableView == chapterTableView {  // Chapters table
+
+      let chapters = player.info.chapters
+      guard row < chapters.count else { return nil }
+      let chapter = chapters[row]
+
+      // next chapter time
+      let nextChapterTime = chapters[at: row+1]?.startTime ?? Double.infinity
+      let isCurrentChapter = player.info.chapter == row
+      let textColor = isCurrentChapter ? isPlayingTextColor : .controlTextColor
+
+      switch identifier {
+      case .isChosen:
+        // left column
+        let pointerGlyph: String
+        if isCurrentChapter {
+          pointerGlyph = view.userInterfaceLayoutDirection == .rightToLeft ?
+          Constants.String.blackLeftPointingTriangle :  Constants.String.blackRightPointingTriangle
+        } else {
+          pointerGlyph = ""
+        }
+        v.setTitle(pointerGlyph, textColor: textColor)
+      case .trackName:
+        // right column
+        let titleString = chapter.title.isEmpty ? "Chapter \(row)" : chapter.title
+        v.setTitle(titleString, textColor: textColor)
+        let cellView = v as! ChapterTableCellView
+        let durationText = "\(VideoTime.string(from: chapter.startTime)) → \(VideoTime.string(from: nextChapterTime))"
+        cellView.durationTextField.setText(durationText, textColor: textColor)
+      default:
+        Logger.fatal("Unknown identifier in Chapters table: \(identifier)")
+      }
+      return v
+    }
+
+    return nil
+  }
+
+  private var wantsPlaylistTitleDisplayed: Bool {
+    if Preference.bool(for: .playlistShowMetadata) {
+      let onlyInMusicMode = Preference.bool(for: .playlistShowMetadataInMusicMode)
+      if onlyInMusicMode {
+        return player.isInMiniPlayer
+      } else {
+        return true
+      }
+    }
+    return false
+  }
+
+  /// Rebuilds playlist table's `Track Name` column cell
+  private func updateCellForPlaylistTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
+    guard let cachedMeta = getOrCreateMeta(forRowIndex: rowIndex) else {
+      player.log.error("No playlist item found for rowIndex \(rowIndex). Skipping cell update")
+      return
+    }
+
+    let wantsTitleDisplayed = wantsPlaylistTitleDisplayed
+    let displayName = (wantsTitleDisplayed ? cachedMeta.title : nil) ?? cachedMeta.id.displayName
+    let artist = wantsTitleDisplayed ? cachedMeta.artist : nil
+
+    player.log.trace("Building row \(rowIndex) of playlist: \(displayName.quoted)")
+
+    let textColor = isPlaying ? isPlayingTextColor : .controlTextColor
+    let prefixTextColor = isPlaying ? isPlayingPrefixTextColor : .secondaryLabelColor
+
+    // Title, artist, prefix
+    if Preference.bool(for: .shortenFileGroupsInPlaylist),
+       let prefix = player.info.currentVideosInfo.first(where: { $0.url == cachedMeta.id.url })?.prefix,
+       !prefix.isEmpty,
+       prefix.count <= displayName.count,  // check whether prefix length > displayName length
+       prefix.count >= prefixMinLength,
+       displayName.count > displayNameMinLength {
+      cellView.setPrefix(prefix, textColor: prefixTextColor)
+      cellView.setAdditionalInfo(nil)
+      cellView.setTitle(String(displayName[displayName.index(displayName.startIndex, offsetBy: prefix.count)...]), textColor: textColor)
+    } else {
+      cellView.setPrefix(nil, textColor: prefixTextColor)
+      cellView.setAdditionalInfo(artist, textColor: textColor)
+      cellView.setTitle(displayName, textColor: textColor)
+    }
+
+    // playback progress and duration
+    cellView.durationLabel.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
+    if let duration = cachedMeta.duration {
+      let durationString = VideoTime(duration).stringRepresentation
+      let durationTextColor = isPlaying ? isPlayingTextColor : .secondaryLabelColor
+      cellView.durationLabel.setFormattedText(stringValue: durationString, textColor: durationTextColor)
+    } else {
+      cellView.durationLabel.stringValue = ""
+    }
+    if let progress = cachedMeta.progress, let duration = cachedMeta.duration {
+      cellView.playbackProgressView.layerContentsRedrawPolicy = .duringViewResize
+      cellView.playbackProgressView.percentage = progress / duration
+      cellView.playbackProgressView.isHidden = false
+    } else {
+      cellView.playbackProgressView.isHidden = true
+    }
+
+    // sub button
+    if !player.info.isMatchingSubtitles,
+       let matchedSubs = player.info.getMatchedSubs(cachedMeta.id.path), !matchedSubs.isEmpty {
+      cellView.setDisplaySubButton(true)
+    } else {
+      cellView.setDisplaySubButton(false)
+    }
+    // not sure why this line exists, but let's keep it for now
+    cellView.subBtn.image?.isTemplate = true
+  }
+
+  // MARK: - Playlist Table: Model Data Loading
+
+  private func getOrCreateMeta(forRowIndex rowIndex: Int) -> MediaMeta? {
+    guard rowIndex >= 0 else { return nil }
+    let playlistItems = displayedPlaylist
+    player.log.trace("Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)")
+    guard rowIndex < playlistItems.count else { return nil }
+    let playlistItem = playlistItems[rowIndex]
+    return MediaMetaCache.shared.getOrAddCachedMeta(for: playlistItem)
+  }
+
+  @discardableResult
+  @MainActor private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> MediaMeta? {
+    guard rowIndex >= 0 else { return nil }
+    let playlistItems = displayedPlaylist
+    player.log.trace("Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)\(force ? " (forced)" : "")")
+    guard rowIndex < playlistItems.count else { return nil }
+    let playlistItem = playlistItems[rowIndex]
+    let url = playlistItem.url
+
+    var existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: playlistItem)
+
+    let needsRefresh = force || (url.isFileURL && !existingCachedMeta.triedFFmpeg)
+    if needsRefresh {
+      // Kick this off, but return the existing (possibly stale) data below for efficiency
+      player.mpv.queue.async { [self] in
+        guard player.isActive else { return }
+        // Get updated title from mpv
+        let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
+
+        // Check cache again; we don't know how much time has passed since last access & want to avoid redundant file access
+        existingCachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem,
+                                                                    reloadFromWatchLater: false, reloadFromFFmpeg: false,
+                                                                    mpvTitle: mpvTitle)
+        guard needsRefresh else { return }
+
+        // TODO: (optimization) add debouncer & aggregate work here
+        PlayerCore.backgroundQueue.async { [self] in
+          // Get watch-later form file system; get other meta from ffmpeg:
+          let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem, mpvTitle: mpvTitle)
+          // Now update the total length if needed (but only if it's already done calculating):
+          let prevDuration = existingCachedMeta.duration ?? 0
+          let updatedDuration = cachedMeta.duration ?? 0
+          if updatedDuration != prevDuration {
+            // if FFmpeg got the duration successfully
+            refreshTotalDuration()
+          }
+
+          pwc.animationPipeline.submitInstantTask{ [self] in
+            /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
+            reloadPlaylistRow(rowIndex)
+          }
+        }
+
+      }
+    }
+
+    return existingCachedMeta
+  }
+
+  private func updateCachesForAllItems() {
+    guard enablePrefetching else { return }
+
+    let sw = Utility.Stopwatch()
+    let playlistItems = displayedPlaylist
+    player.log.verbose("[Playlist] Updating caches for \(playlistItems.count) rows…")
+
+    player.mpv.queue.async { [self] in
+      guard player.isActive else { return }
+      let currentTicket = $playlistReloadTicket.withLock { latestTicket in
+        latestTicket += 1
+        return latestTicket
+      }
+      var titles: [String?] = []
+
+      for rowIndex in 0..<playlistItems.count {
+        // Get updated title from mpv
+        let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
+        titles.append(mpvTitle) // may be nil
+      }
+
+      PlayerCore.backgroundQueue.async { [self] in
+        for (rowIndex, itemID) in playlistItems.enumerated() {
+          let isTicketValid = $playlistReloadTicket.withLock { $0 == currentTicket }
+          guard isTicketValid else {
+            player.log.verbose("[Playlist] Ticket no longer valid; cancelling cache update")
+            return
+          }
+          let updatedTitle = titles[rowIndex]
+          let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: itemID)
+          let needsRefresh = (itemID.url.isFileURL && !existingCachedMeta.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta.title)
+          if needsRefresh {
+            // Get watch-later form file system; get other meta from ffmpeg:
+            MediaMetaCache.shared.updateCachedMeta(itemID, mpvTitle: updatedTitle)
+            // Refresh each row as it gets updated. May take a while to refresh all
+            // TODO: (optimization) add debouncer & aggregate work here
+            pwc.animationPipeline.submitInstantTask{ [self] in
+              /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
+              reloadPlaylistRow(rowIndex)
+            }
+          }
+        }
+
+        // Finally, append a task to recalculate the total length. Do not show it until it is done!
+        player.log.verbose("[Playlist] Finished cache updates for \(playlistItems.count) rows in \(sw.secElapsedString)")
+        playlistTotalDurationIsReady = true
+        refreshTotalDuration()
+      }
+    }
+  }
+
+  // Updates index of playing item. Don't need to reload whole playlist
+  @MainActor
+  func refreshNowPlayingIndex(setNewIndexTo newNowPlayingIndex: Int? = nil,
+                              thenScrollToVisible: Bool = false) {
+    guard isViewLoaded else { return }
+    guard !view.isHidden else { return }
+
+    let oldNowPlayingIndex = lastNowPlayingIndex
+    let newNowPlayingIndex = newNowPlayingIndex ?? player.info.currentPlayback?.playlistPos ?? oldNowPlayingIndex
+
+    player.log.verbose("Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)")
+    lastNowPlayingIndex = newNowPlayingIndex
+
+    // ... also make sure the old "now playing" row is redrawn so it loses its status
+    loadCachedItem(forRowIndex: oldNowPlayingIndex, force: true)
+    // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
+    loadCachedItem(forRowIndex: newNowPlayingIndex, force: true)
+
+    // The calls to loadCachedItem should refresh the given indexes, but will go through multiple queues
+    // to do so and may be delayed by a minute or more. We need to update the nowPlaying status ASAP,
+    // so just add extra redraws right away:
+    reloadPlaylistRow(oldNowPlayingIndex)
+    reloadPlaylistRow(newNowPlayingIndex)
+
+    if thenScrollToVisible {
+      playlistTableView.scrollRowToVisible(newNowPlayingIndex)
+    }
+  }
+
+  @MainActor
+  func reloadPlaylistRow(_ rowIndex: Int) {
+    reloadPlaylistRows(IndexSet(integer: rowIndex))
+  }
+
+  /// Reload all rows if not specified
+  @MainActor
+  func reloadPlaylistRows(_ rows: IndexSet) {
+    playlistTableView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integersIn: 0...1))
+  }
+
+  @MainActor
+  func reloadAllPlaylistRows(_ rows: IndexSet? = nil) {
+    playlistTableView.reloadExistingRows(reselectRowsAfter: true)
   }
 
 }
