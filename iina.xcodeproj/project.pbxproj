@@ -321,6 +321,7 @@
 		D1347A2D2B04879C00B37B0E /* VideoGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */; };
 		D135572A2D4AF5C500F26A79 /* SliderHoverIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13557292D4AF5C500F26A79 /* SliderHoverIndicator.swift */; };
 		D13912612F28991400540624 /* PlaylistView_Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13912602F28990B00540624 /* PlaylistView_Menu.swift */; };
+		D13912642F29547200540624 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = D13912632F29547200540624 /* OrderedCollections */; };
 		D13A7F0C2D39E5E900840277 /* TimeoutTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */; };
 		D13A7F0E2D3A03B100840277 /* VideoView_DisplayLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0D2D3A03A300840277 /* VideoView_DisplayLink.swift */; };
 		D13A7F102D3A05D000840277 /* ViewportConstraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0F2D3A05CB00840277 /* ViewportConstraints.swift */; };
@@ -2246,6 +2247,7 @@
 				B4E4470125CE3F930069F06E /* Sparkle in Frameworks */,
 				34ACABA92C142A0500F871A0 /* libxcb-shm.0.dylib in Frameworks */,
 				34ACAB9D2C142A0500F871A0 /* libavutil.59.dylib in Frameworks */,
+				D13912642F29547200540624 /* OrderedCollections in Frameworks */,
 				34ACAB722C142A0500F871A0 /* libintl.8.dylib in Frameworks */,
 				34ACABB52C142A0500F871A0 /* libspeex.1.dylib in Frameworks */,
 				34ACAB912C142A0500F871A0 /* libpcre2-8.0.dylib in Frameworks */,
@@ -3137,6 +3139,7 @@
 				B4E446F625CB54EF0069F06E /* Mustache */,
 				B4E4470025CE3F930069F06E /* Sparkle */,
 				8451E6D82604AEFC009A15D7 /* Just */,
+				D13912632F29547200540624 /* OrderedCollections */,
 			);
 			productName = mpvx;
 			productReference = 84EB1ED61D2F51D3004FA5A1 /* IINA Advance.app */;
@@ -3253,6 +3256,7 @@
 				B4E446F525CB54EF0069F06E /* XCRemoteSwiftPackageReference "GRMustache" */,
 				B4E446FF25CE3F930069F06E /* XCRemoteSwiftPackageReference "Sparkle" */,
 				8451E6D72604AEFC009A15D7 /* XCRemoteSwiftPackageReference "Just" */,
+				D13912622F29547200540624 /* XCRemoteSwiftPackageReference "swift-collections" */,
 			);
 			productRefGroup = 84EB1ED71D2F51D3004FA5A1 /* Products */;
 			projectDirPath = "";
@@ -5667,6 +5671,14 @@
 				minimumVersion = 2.7.0;
 			};
 		};
+		D13912622F29547200540624 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-collections.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -5689,6 +5701,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B4E446FF25CE3F930069F06E /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		D13912632F29547200540624 /* OrderedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D13912622F29547200540624 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = OrderedCollections;
 		};
 		E38558902A486E060083772D /* Mustache */ = {
 			isa = XCSwiftPackageProductDependency;
