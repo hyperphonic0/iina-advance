@@ -366,7 +366,6 @@ class MediaMetaCache {
   func postFileHistoryUpdateNotification(forURL url: URL) {
     DispatchQueue.main.async {
       guard !AppDelegate.shared.isTerminating else { return }
-      // TODO: attach object instead, so we don't have to pull it down
       let notification = Notification(name: .iinaFileHistoryDidUpdate, object: nil, userInfo: ["url": url])
       NotificationCenter.default.post(notification)
     }

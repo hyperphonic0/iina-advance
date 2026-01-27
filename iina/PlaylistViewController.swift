@@ -245,6 +245,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
             let playlist = displayedPlaylist
             for (rowIndex, item) in playlist.enumerated() {
               if item.url == url {
+                player.log.trace("Got iinaFileHistoryDidUpdate: reloading playlist row \(rowIndex)")
                 reloadPlaylistRow(rowIndex)
               }
             }
@@ -336,7 +337,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       let tableUIChange = TableUIChangeBuilder.shared.buildDiff(oldRows: playlistOld,
                                                                 newRows: playlistNew, completionHandler: { [self] _ in
         displayedPlaylist = playlistNew
-        self.pwc.animationPipeline.submitInstantTask {
+        pwc.animationPipeline.submitInstantTask {
           doAfterReload()
         }
       })
@@ -397,12 +398,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   // - Loop Button
 
-  @MainActor
   func updateLoopBtnStatus() {
-    guard isViewLoaded else { return }
     player.mpv.queue.async { [self] in
+      guard player.isActive else { return }
       let loopMode = player.getLoopMode()
       pwc.animationPipeline.submitInstantTask { [self] in
+        guard isViewLoaded else { return }
         switch loopMode {
         case .off:  loopBtn.state = .off
         case .file: loopBtn.state = .on
@@ -811,7 +812,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   /// Rebuilds playlist table's `Track Name` column cell
   private func updateCellForPlaylistTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
-    guard let cachedMeta = loadCachedItem(forRowIndex: rowIndex) else {
+    guard let cachedMeta = getItem(forRowIndex: rowIndex) else {
       player.log.error("No playlist item found for rowIndex \(rowIndex). Skipping cell update")
       return
     }
@@ -869,6 +870,17 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     cellView.subBtn.image?.isTemplate = true
   }
 
+  private func getItem(forRowIndex rowIndex: Int) -> MediaMeta? {
+    guard rowIndex >= 0 else { return nil }
+    let playlistItems = displayedPlaylist
+    player.log.trace("Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)")
+    guard rowIndex < playlistItems.count else { return nil }
+    let playlistItem = playlistItems[rowIndex]
+    let url = playlistItem.url
+
+    return MediaMetaCache.shared.getOrAddCachedMeta(for: playlistItem)
+  }
+
   @discardableResult
   @MainActor private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> MediaMeta? {
     guard rowIndex >= 0 else { return nil }
@@ -894,6 +906,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
                                                                     mpvTitle: mpvTitle)
         guard needsRefresh else { return }
 
+        // TODO: (optimization) add debouncer & aggregate work here
         PlayerCore.backgroundQueue.async { [self] in
           // Get watch-later form file system; get other meta from ffmpeg:
           let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem, mpvTitle: mpvTitle)
@@ -905,7 +918,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
             refreshTotalDuration()
           }
 
-          // TODO: (optimization) add debouncer & aggregate work here
           pwc.animationPipeline.submitInstantTask{ [self] in
             /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
             reloadPlaylistRow(rowIndex)

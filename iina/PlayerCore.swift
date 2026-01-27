@@ -3154,9 +3154,7 @@ final class PlayerCore: NSObject {
       }
 
     case .loop:
-      DispatchQueue.main.async {
-        self.pwc.playlistView.updateLoopBtnStatus()
-      }
+      pwc.playlistView.updateLoopBtnStatus()
     }
 
     // All of the above reflect a state change. Save it:
