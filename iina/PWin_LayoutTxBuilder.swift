@@ -197,7 +197,7 @@ extension PlayerWindowController {
       fadeInNewViewsDuration *= 0.5
     } else if !transition.isTogglingMusicMode && (transition.isOpeningViewport || transition.isOpeningPlaylistInMusicMode) {
       openFinalPanelsDuration = endingAnimationDuration * 2 / 3
-      fadeInNewViewsDuration = endingAnimationDuration / 3 / 2
+      fadeInNewViewsDuration = 0
     } else {
       if !transition.needsFadeInNewViewsStep {
         fadeInNewViewsDuration = 0
@@ -213,7 +213,7 @@ extension PlayerWindowController {
     log.verbose("[\(transition.name)] MOVE_SCALE: \(transition.moveAndScaleGeometry?.description ?? "nil")")
     log.verbose("[\(transition.name)] OUTPUT_GEO: \(transition.outputGeometry)")
 
-    log.verbose("[\(transition.name)] Durations: ShowOldFadeables=\(showFadeableViewsDuration) FadeOutOldViews=\(fadeOutOldViewsDuration), CloseOld=\(closeOldPanelsDuration) FadeInNew=\(fadeInNewViewsDuration) OpenFinal=\(openFinalPanelsDuration)")
+    log.verbose("[\(transition.name)] Durations: ShowOldFadeables=\(showFadeableViewsDuration) FadeOutOld=\(fadeOutOldViewsDuration) CloseOld=\(closeOldPanelsDuration) OpenFinal=\(openFinalPanelsDuration) FadeInNew=\(fadeInNewViewsDuration)")
 
     var tasks: [IINAAnimation.Task] = []
 

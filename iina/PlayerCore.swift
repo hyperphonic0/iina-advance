@@ -3752,11 +3752,11 @@ final class PlayerCore: NSObject {
       if index == 0 {
         log.verbose("New track is 0: launching task to show defaultAlbumArt")
         // Show default art *before* waiting for mpv confirmation, to avoid a moment of empty black window.
-        pwc.animationPipeline.submit(.instantTask{ [self] in
+        pwc.animationPipeline.submitInstantTask{ [self] in
           // Do not show if in music mode & video is hidden.
           guard !pwc.currentLayout.isMusicMode || pwc.musicModeGeo.isViewportShown else { return }
           pwc.updateDefaultArtVisibility(to: true)
-        })
+        }
       }
     case .sub:
       name = MPVOption.TrackSelection.sid

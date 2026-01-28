@@ -67,8 +67,10 @@ extension PlayerWindowController {
   ///
   /// This actually adds or removes `defaultAlbumArtView` from `viewportView`, along with the associated constraints, rather than changing `defaultAlbumArtView.isHidden`,
   /// which should always be false.
+  ///
+  /// Should be called inside of an IINAAnimation.Task.
+  @MainActor
   func updateDefaultArtVisibility(to showDefaultArt: Bool?) {
-    assert(DispatchQueue.isExecutingIn(.main))  // Should actually be inside of an IINAAnimation.Task
     guard let showDefaultArt else { return }
 
     if showDefaultArt {
