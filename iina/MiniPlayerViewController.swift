@@ -130,17 +130,24 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     controllerButtonsPanelView.alphaValue = 0
 
     // tool tips
-    togglePlaylistButton.identifier = .init("TogglePlaylistButton")
+    togglePlaylistButton.idString = "TogglePlaylistBtn"
     togglePlaylistButton.toolTip = Preference.ToolBarButton.playlist.displayString
     togglePlaylistButton.image = Preference.ToolBarButton.playlist.image()
 
-    toggleAlbumArtButton.identifier = .init("ToggleAlbumArtButton")
+    toggleAlbumArtButton.idString = "ToggleAlbumArtBtn"
     toggleAlbumArtButton.toolTip = NSLocalizedString("mini_player.album_art", comment: "album_art")
     toggleAlbumArtButton.image = Images.toggleAlbumArt
 
     volumeButton.toolTip = NSLocalizedString("mini_player.volume", comment: "volume")
-    volumeButton.identifier = .init("VolumeButton")
+    volumeButton.idString = "MiniVolumeBtn"
     pwc.exitMusicModeButton.toolTip = NSLocalizedString("mini_player.back", comment: "back")
+
+    // When viewport is closed, the traffic light buttons require moving `volumeButton` rightwards a bit
+    // (by increasing `volumeButtonLeadingConstraint`). If window is too narrow, may need to also push `playbackBtnsWrapperView`
+    // rightwards so that nothing is too close together. We can ensure that happens via this constraint.
+    // Ideally, `playbackBtnsWrapperView` is perfectly centered in its superview, but its centerX constraint has a lower priority
+    // than this constraint, so it will move rightwards if required.
+    playbackBtnsWrapperView.leadingAnchor.constraint(greaterThanOrEqualTo: volumeButton.trailingAnchor, constant: 4).isActive = true
 
     view.addSubview(playlistWrapperView, positioned: .above, relativeTo: musicModeControlBarView)
     // Bottom constraint of playlist wrapper must be lower priority than window resize, to avoid constraint violations

@@ -26,10 +26,10 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <view identifier="MiniPlayerView" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="98Q-Fi-3N5" userLabel="MiniPlayerView" customClass="ClickThroughView" customModule="IINA_Advance" customModuleProvider="target">
-            <rect key="frame" x="0.0" y="0.0" width="260" height="172"/>
+            <rect key="frame" x="0.0" y="0.0" width="260" height="72"/>
             <subviews>
                 <visualEffectView identifier="MiniControlBarView" autoresizesSubviews="NO" wantsLayer="YES" verticalCompressionResistancePriority="1000" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Q6R-eL-qkW" userLabel="MusicModeControlBar View">
-                    <rect key="frame" x="0.0" y="100" width="260" height="72"/>
+                    <rect key="frame" x="0.0" y="0.0" width="260" height="72"/>
                     <subviews>
                         <customView identifier="MediaInfoView" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Cef-Fd-eDH" userLabel="MediaInfo View">
                             <rect key="frame" x="10" y="24" width="240" height="48"/>
@@ -78,7 +78,7 @@
                                     </connections>
                                 </imageView>
                                 <customView identifier="PlaybackButtomsWrapperView" translatesAutoresizingMaskIntoConstraints="NO" id="EqE-sr-ba8" userLabel="Playback-Buttons-Wrapper View">
-                                    <rect key="frame" x="56" y="8" width="120" height="32"/>
+                                    <rect key="frame" x="60" y="8" width="120" height="32"/>
                                     <constraints>
                                         <constraint firstAttribute="width" constant="120" id="wPH-JJ-xCb"/>
                                     </constraints>
@@ -114,12 +114,11 @@
                                 <constraint firstItem="6q3-fy-whD" firstAttribute="leading" secondItem="jJt-GH-mJQ" secondAttribute="trailing" constant="12" id="SUc-7W-7ey"/>
                                 <constraint firstItem="BS3-lV-sRn" firstAttribute="leading" secondItem="Wxl-Ex-FWV" secondAttribute="leading" constant="12" id="V02-kj-dfO"/>
                                 <constraint firstItem="ezf-Py-pMY" firstAttribute="centerX" secondItem="BS3-lV-sRn" secondAttribute="centerX" id="lQw-zA-UGZ"/>
-                                <constraint firstItem="EqE-sr-ba8" firstAttribute="centerX" secondItem="Wxl-Ex-FWV" secondAttribute="centerX" constant="-4" id="lWZ-xC-47G"/>
+                                <constraint firstItem="EqE-sr-ba8" firstAttribute="centerX" secondItem="Wxl-Ex-FWV" secondAttribute="centerX" priority="400" id="lWZ-xC-47G"/>
                                 <constraint firstItem="jJt-GH-mJQ" firstAttribute="centerY" secondItem="BS3-lV-sRn" secondAttribute="centerY" id="seC-MX-YXV"/>
                                 <constraint firstAttribute="height" constant="48" id="tY4-6B-euY"/>
                                 <constraint firstAttribute="bottom" secondItem="EqE-sr-ba8" secondAttribute="bottom" constant="8" id="wNd-Rl-wlV"/>
                                 <constraint firstItem="ezf-Py-pMY" firstAttribute="centerY" secondItem="BS3-lV-sRn" secondAttribute="centerY" constant="10" id="zH1-ze-J0W"/>
-                                <constraint firstItem="EqE-sr-ba8" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="BS3-lV-sRn" secondAttribute="trailing" constant="8" id="zdM-Lg-lnF"/>
                             </constraints>
                         </customView>
                         <customView identifier="PlaySliderWrapper" translatesAutoresizingMaskIntoConstraints="NO" id="e1r-vi-5HY" userLabel="PlaySlider-Wrapper View">
@@ -147,6 +146,7 @@
                 <constraint firstItem="Q6R-eL-qkW" firstAttribute="leading" secondItem="98Q-Fi-3N5" secondAttribute="leading" id="7rj-tJ-Dbv"/>
                 <constraint firstItem="Q6R-eL-qkW" firstAttribute="top" secondItem="98Q-Fi-3N5" secondAttribute="top" id="HKs-Rq-hwV"/>
                 <constraint firstAttribute="trailing" relation="lessThanOrEqual" secondItem="qHK-Ae-PRZ" secondAttribute="trailing" priority="501" id="I7R-Jj-KYD"/>
+                <constraint firstAttribute="bottom" secondItem="Q6R-eL-qkW" secondAttribute="bottom" priority="498" id="Xzb-vJ-gKb"/>
                 <constraint firstAttribute="trailing" relation="lessThanOrEqual" secondItem="jAX-WD-i2a" secondAttribute="trailing" priority="501" id="aAr-pk-xUd"/>
                 <constraint firstAttribute="trailing" secondItem="Q6R-eL-qkW" secondAttribute="trailing" id="aFO-ag-c2T"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="qHK-Ae-PRZ" secondAttribute="trailing" priority="499" id="mvA-Hm-ujy"/>

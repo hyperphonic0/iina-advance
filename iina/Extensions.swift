@@ -2202,7 +2202,7 @@ extension NSView {
     if let top = top {
       let topConstraint = topAnchor.constraint(equalTo: superview.topAnchor, constant: top)
       if let idPrefix {
-        topConstraint.identifier = "\(idPrefix)_Top-Offset"
+        topConstraint.identifier = "\(idPrefix)Top-Offset"
       }
       if let topPriority {
         topConstraint.priority = topPriority
@@ -2212,7 +2212,7 @@ extension NSView {
     if let leading = leading {
       let leadingConstraint = leadingAnchor.constraint(equalTo: superview.leadingAnchor, constant: leading)
       if let idPrefix {
-        leadingConstraint.identifier = "\(idPrefix)_Lead-Offset"
+        leadingConstraint.identifier = "\(idPrefix)Lead-Offset"
       }
       if let leadPriority {
         leadingConstraint.priority = leadPriority
@@ -2222,7 +2222,7 @@ extension NSView {
     if let trailing = trailing {
       let trailingConstraint = superview.trailingAnchor.constraint(equalTo: trailingAnchor, constant: trailing)
       if let idPrefix {
-        trailingConstraint.identifier = "\(idPrefix)_Trail-Offset"
+        trailingConstraint.identifier = "\(idPrefix)Trail-Offset"
       }
       if let trailPriority {
         trailingConstraint.priority = trailPriority
@@ -2232,7 +2232,7 @@ extension NSView {
     if let bottom = bottom {
       let bottomConstraint = superview.bottomAnchor.constraint(equalTo: bottomAnchor, constant: bottom)
       if let idPrefix {
-        bottomConstraint.identifier = "\(idPrefix)_Btm-Offset"
+        bottomConstraint.identifier = "\(idPrefix)Btm-Offset"
       }
       if let btmPriority {
         bottomConstraint.priority = btmPriority

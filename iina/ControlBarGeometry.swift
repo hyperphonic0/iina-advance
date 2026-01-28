@@ -26,7 +26,7 @@ fileprivate let floatingVolumeIconSize: CGFloat = 18
 
 fileprivate let musicModeBarHeight: CGFloat = 48
 fileprivate let musicModePlayIconSize: CGFloat = 24
-fileprivate let musicModePlayIconSpacing: CGFloat = 16
+fileprivate let musicModePlayIconSpacing: CGFloat = 12
 fileprivate let musicModeToolbarIconSize: CGFloat = 14
 fileprivate let musicModeToolbarIconSpacing: CGFloat = 12
 

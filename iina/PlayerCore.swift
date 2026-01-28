@@ -3143,6 +3143,7 @@ final class PlayerCore: NSObject {
           guard pwc.isOpen(sidebarTab: .chapters) else { return }
         }
 
+        guard pwc.playlistView.isViewLoaded else { return }
         pwc.playlistView.chapterTableView.reloadData()
       }
 
