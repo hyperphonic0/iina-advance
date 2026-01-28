@@ -20,25 +20,26 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       translatesAutoresizingMaskIntoConstraints = false
     }
 
-    @MainActor required init?(coder: NSCoder) {
-      fatalError("init(coder:) has not been implemented")
-    }
+    @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
   }
 
-  class VolumePopoverContentViewController: NSViewController {
-    let volumeSliderView = VolumeSliderView()
-    
-    override func loadView() {
+  fileprivate class VolumePopoverContentViewController: NSViewController {
+    unowned let volumeSliderView: VolumeSliderView
+
+    init(volumeSliderView: VolumeSliderView) {
+      self.volumeSliderView = volumeSliderView
+      super.init(nibName: nil, bundle: nil)
       view = volumeSliderView
-      super.loadView()
     }
 
+    @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
   }
 
-  class VolumeSliderView: NSView {
-    let volumeLabel = NSTextField(labelWithString: "50")
+  fileprivate class VolumeSliderView: NSView {
+    unowned let volumeLabel: NSTextField
 
-    init() {
+    init(volumeLabel: NSTextField) {
+      self.volumeLabel = volumeLabel
       super.init(frame: .zero)
       idString = "VolumeSliderView"
       translatesAutoresizingMaskIntoConstraints = false
@@ -57,27 +58,19 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       trailingGTCon.isActive = true
     }
 
-    @MainActor required init?(coder: NSCoder) {
-      fatalError("init(coder:) has not been implemented")
-    }
+    @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
   }
 
-  override var nibName: NSNib.Name {
-    return NSNib.Name("MiniPlayerViewController")
-  }
+  override var nibName: NSNib.Name { NSNib.Name("MiniPlayerViewController") }
 
   @IBOutlet weak var playbackBtnsWrapperView: NSView!
   @IBOutlet weak var positionSliderWrapperView: NSView!
 
   @IBOutlet weak var volumeButton: SymButton!
-  let volumePopover = NSPopover()
-  fileprivate let volumePopoverViewController = VolumePopoverContentViewController()
-  var volumeSliderView: VolumeSliderView {
-    volumePopoverViewController.view as! VolumeSliderView
-  }
-  fileprivate var volumeLabel: NSTextField {
-    volumeSliderView.volumeLabel
-  }
+  let volumePopover: NSPopover
+  fileprivate let volumeLabel = NSTextField(labelWithString: "50")
+  let volumeSliderView: NSView
+  fileprivate let volumePopoverViewController: VolumePopoverContentViewController
   @IBOutlet weak var volumePopoverAlignmentView: NSView!
   @IBOutlet weak var musicModeControlBarView: NSVisualEffectView!
   fileprivate let playlistWrapperView = PlaylistWrapperView()
@@ -105,9 +98,19 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   // MARK: - Initialization
 
+  init() {
+    let volumeSliderView = VolumeSliderView(volumeLabel: volumeLabel)
+    self.volumeSliderView = volumeSliderView
+    volumePopoverViewController = VolumePopoverContentViewController(volumeSliderView: volumeSliderView)
+    volumePopover = NSPopover()
+    super.init(nibName: nil, bundle: nil)
+    volumePopover.contentViewController = volumePopoverViewController
+  }
+  
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
   override func viewDidLoad() {
     super.viewDidLoad()
-    volumePopover.contentViewController = volumePopoverViewController
 
     titleLabel.idString = "TitleLabel"
     artistAlbumLabel.idString = "ArtistAlbumLabel"
