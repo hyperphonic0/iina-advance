@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24128" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24128"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24506"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -119,6 +119,7 @@
                                 <constraint firstAttribute="height" constant="48" id="tY4-6B-euY"/>
                                 <constraint firstAttribute="bottom" secondItem="EqE-sr-ba8" secondAttribute="bottom" constant="8" id="wNd-Rl-wlV"/>
                                 <constraint firstItem="ezf-Py-pMY" firstAttribute="centerY" secondItem="BS3-lV-sRn" secondAttribute="centerY" constant="10" id="zH1-ze-J0W"/>
+                                <constraint firstItem="EqE-sr-ba8" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="BS3-lV-sRn" secondAttribute="trailing" constant="8" id="zdM-Lg-lnF"/>
                             </constraints>
                         </customView>
                         <customView identifier="PlaySliderWrapper" translatesAutoresizingMaskIntoConstraints="NO" id="e1r-vi-5HY" userLabel="PlaySlider-Wrapper View">
