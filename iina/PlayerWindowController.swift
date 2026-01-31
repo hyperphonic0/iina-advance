@@ -1069,6 +1069,25 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     buildTasks(for: transition, totalStartingDuration: 0, totalEndingDuration: duration, thenRun: true)
   }
 
+  /// Called if the window failed to enter full screen mode.
+  ///
+  /// The AppKit [toggleFullScreen](https://developer.apple.com/documentation/appkit/nswindow/togglefullscreen(_:))
+  /// method can fail. If that happens while transitioning into full screen mode the `NWWindowDelegate` method
+  /// [windowDidFailToEnterFullScreen](https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidfailtoenterfullscreen(_:))
+  /// is called. When this happens the changes made by `windowWillEnterFullScreen` must be reverted.
+  /// - Parameter window: The window that failed to enter to full screen mode.
+  func windowDidFailToEnterFullScreen(_ window: NSWindow) {
+    log.error("AppKit failed to enter full screen mode! Restoring previous windowed state")
+    animationPipeline.submitInstantTask{ [self] in
+      guard currentLayout.isFullScreen else {
+        log.error("Unable to restore windowed state!")
+        return
+      }
+      log.verbose("Calling animateExitFromFullScreen from windowDidFailToEnterFullScreen")
+      animateExitFromFullScreen(withDuration: 0, isLegacy: false)
+    }
+  }
+
   func window(_ window: NSWindow, startCustomAnimationToExitFullScreenWithDuration duration: TimeInterval) {
     if !AccessibilityPreferences.motionReductionEnabled {  /// see note in `windowDidExitFullScreen()`
       animateExitFromFullScreen(withDuration: duration, isLegacy: false)
@@ -1126,6 +1145,25 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       modeToSetAfterExitingFullScreen = nil
     } else {
       animationPipeline.submit(exitFSTasks)
+    }
+  }
+
+  /// Called if the window failed to exit full screen mode.
+  ///
+  /// The AppKit [toggleFullScreen](https://developer.apple.com/documentation/appkit/nswindow/togglefullscreen(_:))
+  /// method can fail. If that happens while transitioning out of full screen mode the `NWWindowDelegate` method
+  /// [windowDidFailToExitFullScreen](https://developer.apple.com/documentation/appkit/nswindowdelegate/windowdidfailtoexitfullscreen(_:))
+  /// is called. When this happens the changes made by `windowWillExitFullScreen` must be reverted.
+  /// - Parameter window: The window that failed to exit to full screen mode.
+  func windowDidFailToExitFullScreen(_ window: NSWindow) {
+    log.error("AppKit failed to exit full screen mode! Restoring full screen state")
+    animationPipeline.submitInstantTask{ [self] in
+      guard !currentLayout.isFullScreen else {
+        log.error("Unable to restore full screen state!")
+        return
+      }
+      log.verbose("Calling animateEntryIntoFullScreen from windowDidFailToExitFullScreen")
+      animateEntryIntoFullScreen(withDuration: 0, isLegacy: false)
     }
   }
 
