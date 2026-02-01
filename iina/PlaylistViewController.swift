@@ -7,7 +7,6 @@
 //
 
 import Cocoa
-import OrderedCollections
 
 fileprivate let prefixMinLength = 7
 fileprivate let displayNameMinLength = 12
@@ -50,6 +49,8 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
   fileprivate var isPlayingTextColor: NSColor = .textColor
   fileprivate var isPlayingPrefixTextColor: NSColor = .secondaryLabelColor
 
+  private var isReloadingMeta = false
+
   unowned var player: PlayerCore!
   unowned var pwc: PlayerWindowController! {
     didSet {
@@ -72,7 +73,7 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
 
   // can't use main queue - it will block
   private var playlistTableReloadDebouncer = Debouncer(delay: 0.1, queue: PlayerCore.backgroundQueue)
-  @Atomic private var playlistReloadTicket = 0
+  private var playlistItemCacheLoadQueue = LinkedList<(Int, PlaybackID, String?)>()
 
   @Atomic private var playlistTotalDurationIsReady = false
   @Atomic private var playlistTotalDuration: Double? = nil
@@ -928,68 +929,47 @@ extension PlaylistViewController: NSTableViewDelegate {
     return MediaMetaCache.shared.getOrAddCachedMeta(for: playlistItem)
   }
 
-  @discardableResult
-  @MainActor private func loadCachedItem(forRowIndex rowIndex: Int, force: Bool = false) -> MediaMeta? {
-    guard rowIndex >= 0 else { return nil }
+  /// [Re-]loads & redraws the item at the given index as quickly as feasible
+  @MainActor private func loadCachedItem(forRowIndex rowIndex: Int) {
+    guard rowIndex >= 0 else { return }
     let playlistItems = displayedPlaylist
-    player.log.trace("Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)\(force ? " (forced)" : "")")
-    guard rowIndex < playlistItems.count else { return nil }
+    player.log.trace("Playlist: reloading cache for row \(rowIndex)/\(playlistItems.count)")
+    guard rowIndex < playlistItems.count else { return }
     let playlistItem = playlistItems[rowIndex]
-    let url = playlistItem.url
 
-    var existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: playlistItem)
+    // Kick this off, but return the existing (possibly stale) data below for efficiency
+    player.mpv.queue.async { [self] in
+      guard player.isActive else { return }
+      // Get updated title from mpv
+      let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
-    let needsRefresh = force || (url.isFileURL && !existingCachedMeta.triedFFmpeg)
-    if needsRefresh {
-      // Kick this off, but return the existing (possibly stale) data below for efficiency
-      player.mpv.queue.async { [self] in
-        guard player.isActive else { return }
-        // Get updated title from mpv
-        let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
-
-        // Check cache again; we don't know how much time has passed since last access & want to avoid redundant file access
-        existingCachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem,
-                                                                    reloadFromWatchLater: false, reloadFromFFmpeg: false,
-                                                                    mpvTitle: mpvTitle)
-        guard needsRefresh else { return }
-
-        // TODO: (optimization) add debouncer & aggregate work here
-        PlayerCore.backgroundQueue.async { [self] in
-          // Get watch-later form file system; get other meta from ffmpeg:
-          let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem, mpvTitle: mpvTitle)
-          // Now update the total length if needed (but only if it's already done calculating):
-          let prevDuration = existingCachedMeta.duration ?? 0
-          let updatedDuration = cachedMeta.duration ?? 0
-          if updatedDuration != prevDuration {
-            // if FFmpeg got the duration successfully
-            refreshTotalDuration()
-          }
-
-          pwc.animationPipeline.submitInstantTask{ [self] in
-            /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
-            reloadPlaylistRow(rowIndex)
-          }
+      PlayerCore.backgroundQueue.async { [self] in
+        // Get watch-later form file system; get other meta from ffmpeg:
+        let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem,
+                                                                pullFromWatchLater: true, pullFromFfmpeg: true)
+        // Now update the total length if needed (but only if it's already done calculating):
+        if cachedMeta.duration != nil {
+          // if FFmpeg got the duration successfully
+          refreshTotalDuration()
         }
 
+        pwc.animationPipeline.submitInstantTask{ [self] in
+          /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
+          reloadPlaylistRow(rowIndex)
+        }
       }
-    }
 
-    return existingCachedMeta
+    }
   }
 
   private func updateCachesForAllItems() {
     guard enablePrefetching else { return }
 
-    let sw = Utility.Stopwatch()
     let playlistItems = displayedPlaylist
     player.log.verbose("[Playlist] Updating caches for \(playlistItems.count) rows…")
 
     player.mpv.queue.async { [self] in
       guard player.isActive else { return }
-      let currentTicket = $playlistReloadTicket.withLock { latestTicket in
-        latestTicket += 1
-        return latestTicket
-      }
       var titles: [String?] = []
 
       for rowIndex in 0..<playlistItems.count {
@@ -999,32 +979,52 @@ extension PlaylistViewController: NSTableViewDelegate {
       }
 
       PlayerCore.backgroundQueue.async { [self] in
-        for (rowIndex, itemID) in playlistItems.enumerated() {
-          let isTicketValid = $playlistReloadTicket.withLock { $0 == currentTicket }
-          guard isTicketValid else {
-            player.log.verbose("[Playlist] Ticket no longer valid; cancelling cache update")
-            return
-          }
-          let updatedTitle = titles[rowIndex]
-          let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: itemID)
-          let needsRefresh = (itemID.url.isFileURL && !existingCachedMeta.triedFFmpeg) || (updatedTitle != nil && updatedTitle != existingCachedMeta.title)
-          if needsRefresh {
-            // Get watch-later form file system; get other meta from ffmpeg:
-            MediaMetaCache.shared.updateCachedMeta(itemID, mpvTitle: updatedTitle)
-            // Refresh each row as it gets updated. May take a while to refresh all
-            // TODO: (optimization) add debouncer & aggregate work here
-            pwc.animationPipeline.submitInstantTask{ [self] in
-              /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
-              reloadPlaylistRow(rowIndex)
-            }
-          }
+        // Clear previous items & replace with new list
+        playlistItemCacheLoadQueue = []
+        for (playlistIndex, (item, title)) in (zip(playlistItems, titles)).enumerated() {
+          playlistItemCacheLoadQueue.append((playlistIndex, item, title))
         }
 
+        if !isReloadingMeta {
+          isReloadingMeta = true
+          continueReloadingCachedItems()
+        }
+      }
+    }
+  }
+
+  /// Each call of this function processes the next item in `playlistItemCacheLoadQueue` using
+  /// `PlayerCore.backgroundQueue`.
+  ///
+  /// - Uses `isReloadingMeta` flag to prevent duplicate processing.
+  /// - By Waiting until processing is complete for the current item until enqueuing work for the next
+  ///   item, we avoid tying up `PlayerCore.backgroundQueue` for use with other work, notably for
+  ///   `loadCachedItem`, which needs priority to ensure that the "Now Playing" item is correctly drawn.
+  fileprivate func continueReloadingCachedItems() {
+    PlayerCore.backgroundQueue.async { [self] in
+      guard let (playlistIndex, itemID, mpvTitle) = playlistItemCacheLoadQueue.removeHead() else {
         // Finally, append a task to recalculate the total length. Do not show it until it is done!
-        player.log.verbose("[Playlist] Finished cache updates for \(playlistItems.count) rows in \(sw.secElapsedString)")
+        player.log.verbose("[Playlist] Finished cache updates")
+        isReloadingMeta = false
         playlistTotalDurationIsReady = true
         refreshTotalDuration()
+        return
       }
+
+      let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: itemID)
+      let needsRefresh = (itemID.isFile && !existingCachedMeta.triedFFmpeg) || (mpvTitle != nil && mpvTitle != existingCachedMeta.title)
+      if needsRefresh {
+        // Get watch-later form file system; get other meta from ffmpeg:
+        MediaMetaCache.shared.updateCachedMeta(itemID, mpvTitle: mpvTitle,
+                                               pullFromWatchLater: true, pullFromFfmpeg: true)
+        // Refresh each row as it gets updated. May take a while to refresh all
+        pwc.animationPipeline.submitInstantTask{ [self] in
+          /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
+          reloadPlaylistRow(playlistIndex)
+        }
+      }
+
+      continueReloadingCachedItems()
     }
   }
 
@@ -1042,9 +1042,9 @@ extension PlaylistViewController: NSTableViewDelegate {
     lastNowPlayingIndex = newNowPlayingIndex
 
     // ... also make sure the old "now playing" row is redrawn so it loses its status
-    loadCachedItem(forRowIndex: oldNowPlayingIndex, force: true)
+    loadCachedItem(forRowIndex: oldNowPlayingIndex)
     // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
-    loadCachedItem(forRowIndex: newNowPlayingIndex, force: true)
+    loadCachedItem(forRowIndex: newNowPlayingIndex)
 
     // The calls to loadCachedItem should refresh the given indexes, but will go through multiple queues
     // to do so and may be delayed by a minute or more. We need to update the nowPlaying status ASAP,

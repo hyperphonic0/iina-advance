@@ -3369,8 +3369,8 @@ final class PlayerCore: NSObject {
   func getMediaTitle(withExtension: Bool = true) -> String {
     if let mediaTitle = mpv.getString(MPVProperty.mediaTitle) {
       if !mediaTitle.isEmpty, let path = mpv.getString(MPVProperty.path), let id = PlaybackID(path: path) {
-        MediaMetaCache.shared.updateCachedMeta(id, reloadFromWatchLater: false, reloadFromFFmpeg: false,
-                                               mpvTitle: mediaTitle)
+        MediaMetaCache.shared.updateCachedMeta(id, mpvTitle: mediaTitle,
+                                               pullFromWatchLater: false, pullFromFfmpeg: false)
       }
       return mediaTitle
     }
@@ -3396,8 +3396,8 @@ final class PlayerCore: NSObject {
         mpv.getString("metadata/by-key/artist") ?? ""
       )
       if let path = mpv.getString(MPVProperty.path), let id = PlaybackID(path: path) {
-        MediaMetaCache.shared.updateCachedMeta(id, reloadFromWatchLater: false, reloadFromFFmpeg: false,
-                                               mpvTitle: meta.0, mpvAlbum: meta.1, mpvArtist: meta.2)
+        MediaMetaCache.shared.updateCachedMeta(id, mpvTitle: meta.0, mpvAlbum: meta.1, mpvArtist: meta.2,
+                                               pullFromWatchLater: false, pullFromFfmpeg: false)
       }
       return meta
     }

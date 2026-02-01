@@ -284,27 +284,28 @@ class MediaMetaCache {
    Items 1 & 2 are expensive operations so this method should be executed in a background queue if either of these are used.
    */
   @discardableResult
-  func updateCachedMeta(_ id: PlaybackID, reloadFromWatchLater: Bool = true, reloadFromFFmpeg: Bool = true,
-                        mpvTitle: String? = nil, mpvAlbum: String? = nil, mpvArtist: String? = nil) -> MediaMeta {
+  func updateCachedMeta(_ id: PlaybackID,
+                        mpvTitle: String? = nil, mpvAlbum: String? = nil, mpvArtist: String? = nil,
+                        pullFromWatchLater: Bool, pullFromFfmpeg: Bool = true) -> MediaMeta {
 
     var progress: Double? = nil
     var duration: Double? = nil
 
-    var title: String? = nil
-    var album: String? = nil
-    var artist: String? = nil
+    var title: String? = mpvTitle
+    var album: String? = mpvAlbum
+    var artist: String? = mpvArtist
 
     var triedFFmpeg = false
 
     if id.isFile {
-      if reloadFromWatchLater {
+      if pullFromWatchLater {
         // If watch-later returns nil, send negative value to clone() to ensure it is nilled out.
         // This is important to do to ensure that toggling the history checkbox in Preferences ends up
         // hiding the progress bars in the UI.
         progress = HistoryController.shared.playbackProgressFromWatchLater(id.mpvMD5) ?? -1
       }
 
-      if reloadFromFFmpeg {
+      if pullFromFfmpeg {
         triedFFmpeg = true
         if let dict = FFmpegController.probeVideoInfo(forFile: id.path) {
 
@@ -312,13 +313,14 @@ class MediaMetaCache {
 
           dict.forEach { (k, v) in
             guard let key = k as? String else { return }
+            // Favor mpv properties
             switch key.lowercased() {
             case "title":
-              title = v as? String
+              title = title ?? v as? String
             case "album":
-              album = v as? String
+              album = album ?? v as? String
             case "artist":
-              artist = v as? String
+              artist = artist ?? v as? String
             default:
               break
             }
@@ -327,39 +329,27 @@ class MediaMetaCache {
       }
     }
 
-    // Favor mpv properties
-    if let mpvTitle {
-      title = mpvTitle
-    }
-    if let mpvAlbum {
-      album = mpvAlbum
-    }
-    if let mpvArtist {
-      artist = mpvArtist
-    }
-
-    return metaLock.withLock {
+    let (oldMeta, newMeta, didUpdateExisting) = metaLock.withLock {
       let existingMeta = cachedMeta[id.url]
       let oldMeta = existingMeta ?? MediaMeta(id)
       let newMeta = oldMeta.clone(id: id, duration: duration, progress: progress,
-                                  title: title, album: album, artist: artist,
+                                  title: mpvTitle, album: album, artist: artist,
                                   triedFFmpeg: oldMeta.triedFFmpeg || triedFFmpeg)
       cachedMeta[id.url] = newMeta
-
-      // Compare oldMeta to newMeta; send update notification if different
-      let didUpdateExisting = existingMeta != nil
-      if didUpdateExisting,
-          oldMeta.duration != newMeta.duration ||
-          oldMeta.progress != newMeta.progress ||
-          oldMeta.title != newMeta.title ||
-          oldMeta.album != newMeta.album ||
-          oldMeta.artist != newMeta.artist {
-        log.trace("Cache entry changed: \(id.path.pii.quoted) ≔ \(newMeta)")
-        postFileHistoryUpdateNotification(forURL: newMeta.id.url)
-      }
-
-      return newMeta
+      return (oldMeta, newMeta, existingMeta != nil)
     }
+
+    // Compare oldMeta to newMeta; send update notification if different
+    if didUpdateExisting,
+       oldMeta.duration != newMeta.duration ||
+        oldMeta.progress != newMeta.progress ||
+        oldMeta.title != newMeta.title ||
+        oldMeta.album != newMeta.album ||
+        oldMeta.artist != newMeta.artist {
+      log.trace("Cache entry changed: \(id.path.pii.quoted) ≔ \(newMeta)")
+      postFileHistoryUpdateNotification(forURL: newMeta.id.url)
+    }
+    return newMeta
   }
 
   /// Notifies the UI (playlist panel(s) & History window that the given URL has been updated, so they can pull it & update.
