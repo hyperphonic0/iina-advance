@@ -28,10 +28,10 @@
         <view identifier="MiniPlayerView" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="98Q-Fi-3N5" userLabel="MiniPlayerView" customClass="ClickThroughView" customModule="IINA_Advance" customModuleProvider="target">
             <rect key="frame" x="0.0" y="0.0" width="260" height="72"/>
             <subviews>
-                <visualEffectView identifier="MiniControlBarView" autoresizesSubviews="NO" wantsLayer="YES" verticalCompressionResistancePriority="1000" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Q6R-eL-qkW" userLabel="MusicModeControlBar View">
+                <visualEffectView identifier="MiniControlBarView" autoresizesSubviews="NO" wantsLayer="YES" verticalCompressionResistancePriority="1000" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Q6R-eL-qkW" userLabel="MusicModeControlBar View" customClass="ClickThroughVisualEffectView" customModule="IINA_Advance" customModuleProvider="target">
                     <rect key="frame" x="0.0" y="0.0" width="260" height="72"/>
                     <subviews>
-                        <customView identifier="MediaInfoView" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Cef-Fd-eDH" userLabel="MediaInfo View">
+                        <customView identifier="MediaInfoView" autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Cef-Fd-eDH" userLabel="MediaInfo View" customClass="ClickThroughView" customModule="IINA_Advance" customModuleProvider="target">
                             <rect key="frame" x="10" y="24" width="240" height="48"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jAX-WD-i2a" userLabel="Title Label" customClass="ScrollingTextField" customModule="IINA_Advance" customModuleProvider="target">
@@ -57,10 +57,10 @@
                                 <constraint firstItem="jAX-WD-i2a" firstAttribute="top" secondItem="Cef-Fd-eDH" secondAttribute="top" constant="6" id="gHa-e1-bbE"/>
                             </constraints>
                         </customView>
-                        <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Wxl-Ex-FWV" userLabel="Controller-Buttons-Panel View">
+                        <customView autoresizesSubviews="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Wxl-Ex-FWV" userLabel="Controller-Buttons-Panel View" customClass="ClickThroughView" customModule="IINA_Advance" customModuleProvider="target">
                             <rect key="frame" x="10" y="24" width="240" height="48"/>
                             <subviews>
-                                <customView translatesAutoresizingMaskIntoConstraints="NO" id="ezf-Py-pMY" userLabel="Volume-Popover-Alignment View">
+                                <customView translatesAutoresizingMaskIntoConstraints="NO" id="ezf-Py-pMY" userLabel="Volume-Popover-Alignment View" customClass="ClickThroughView" customModule="IINA_Advance" customModuleProvider="target">
                                     <rect key="frame" x="20" y="14" width="1" height="1"/>
                                     <constraints>
                                         <constraint firstAttribute="width" constant="1" id="fVz-jA-AZL"/>
@@ -77,7 +77,7 @@
                                         <action selector="volumeBtnAction:" target="-2" id="Hyn-iX-PXx"/>
                                     </connections>
                                 </imageView>
-                                <customView identifier="PlaybackButtomsWrapperView" translatesAutoresizingMaskIntoConstraints="NO" id="EqE-sr-ba8" userLabel="Playback-Buttons-Wrapper View">
+                                <customView identifier="PlaybackButtomsWrapperView" translatesAutoresizingMaskIntoConstraints="NO" id="EqE-sr-ba8" userLabel="Playback-Buttons-Wrapper View" customClass="ClickThroughView" customModule="IINA_Advance" customModuleProvider="target">
                                     <rect key="frame" x="60" y="8" width="120" height="32"/>
                                     <constraints>
                                         <constraint firstAttribute="width" constant="120" id="wPH-JJ-xCb"/>
@@ -121,7 +121,7 @@
                                 <constraint firstItem="ezf-Py-pMY" firstAttribute="centerY" secondItem="BS3-lV-sRn" secondAttribute="centerY" constant="10" id="zH1-ze-J0W"/>
                             </constraints>
                         </customView>
-                        <customView identifier="PlaySliderWrapper" translatesAutoresizingMaskIntoConstraints="NO" id="e1r-vi-5HY" userLabel="PlaySlider-Wrapper View">
+                        <customView identifier="PlaySliderWrapper" translatesAutoresizingMaskIntoConstraints="NO" id="e1r-vi-5HY" userLabel="PlaySlider-Wrapper View" customClass="ClickThroughView" customModule="IINA_Advance" customModuleProvider="target">
                             <rect key="frame" x="10" y="0.0" width="240" height="32"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="32" id="olE-cm-nVe"/>
