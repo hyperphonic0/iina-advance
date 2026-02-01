@@ -1921,6 +1921,7 @@
 		D1C741092CB3833500522FA7 /* ScrollableSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollableSlider.swift; sourceTree = "<group>"; };
 		D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_PIP.swift; sourceTree = "<group>"; };
 		D1C741112CB6503100522FA7 /* PWin_Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Enums.swift; sourceTree = "<group>"; };
+		D1C8309A2F7CC48E00C4C938 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlBarGeometry.swift; sourceTree = "<group>"; };
 		D1CC811F2EFD5F8700D9785F /* MenuItemMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuItemMatcher.swift; sourceTree = "<group>"; };
 		D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTitleBar.swift; sourceTree = "<group>"; };
@@ -2840,6 +2841,7 @@
 				84EB1ED71D2F51D3004FA5A1 /* Products */,
 				8461BA641E42344D008BB852 /* Executables */,
 				848290731D95978100C3C76C /* Frameworks */,
+				D1C8309A2F7CC48E00C4C938 /* README.md */,
 				D1FE0E392EC997EC00DC94D3 /* flake.nix */,
 			);
 			indentWidth = 2;
