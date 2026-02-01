@@ -106,13 +106,12 @@ extension PlayerWindowController {
     }
 
     // - mpv command
-    var returnValue: Int32
     // execute the command
     switch action.first! {
 
     case MPVCommand.abLoop.rawValue:
       player.abLoop()
-      returnValue = 0
+      return true
 
     case MPVCommand.quit.rawValue:
       // Initiate application termination. AppKit requires this be done from the main thread,
@@ -125,7 +124,7 @@ extension PlayerWindowController {
       RunLoop.main.perform(inModes: [.common]) {
         NSApp.terminate(nil)
       }
-      returnValue = 0
+      return true
 
     case MPVCommand.screenshot.rawValue,
       MPVCommand.screenshotRaw.rawValue:
@@ -135,6 +134,7 @@ extension PlayerWindowController {
       return true
 
     default:
+      var returnValue: Int32
       let dispatchGroup = DispatchGroup()
       dispatchGroup.enter()
 
@@ -148,12 +148,13 @@ extension PlayerWindowController {
         log.debug("Command timed out: \(rawAction.quoted)")
         return false
       }
+
+      guard returnValue == 0 else {
+        log.error("Return value \(returnValue) when executing key command \(rawAction.quoted)")
+        return false
+      }
     }
 
-    guard returnValue == 0 else {
-      log.error("Return value \(returnValue) when executing key command \(rawAction.quoted)")
-      return false
-    }
     return true
   }
 

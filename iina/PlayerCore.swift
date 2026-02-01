@@ -1117,6 +1117,8 @@ final class PlayerCore: NSObject {
       $postLoadBGQTicket.withLock { $0 += 1 }
       $thumbnailQueueTicket.withLock { $0 += 1 }
 
+      pwc.playlistView.clearBackgroundQueue()
+
       // Reset playback state
       info.playbackPositionSec = nil
       info.playbackDurationSec = nil

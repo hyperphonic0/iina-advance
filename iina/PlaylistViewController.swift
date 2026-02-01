@@ -88,16 +88,6 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
   private var downshift: CGFloat = 0
   private var tabHeight: CGFloat = 0
 
-  // FIXME: Need to fix the playlist reload queue mechanism. Can probably delete this func afterwards
-  override func viewDidAppear() {
-    super.viewDidAppear()
-    if currentTab == .playlist {
-      pwc.animationPipeline.submitInstantTask { [self] in
-        refreshNowPlayingIndex()
-      }
-    }
-  }
-
   override func viewDidLoad() {
     super.viewDidLoad()
     view.idString = "PlaylistView"
@@ -1009,7 +999,7 @@ extension PlaylistViewController: NSTableViewDelegate {
         playlistTotalDurationIsReady = true
         refreshTotalDuration()
         return
-      }
+      } 
 
       let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: itemID)
       let needsRefresh = (itemID.isFile && !existingCachedMeta.triedFFmpeg) || (mpvTitle != nil && mpvTitle != existingCachedMeta.title)
@@ -1025,6 +1015,15 @@ extension PlaylistViewController: NSTableViewDelegate {
       }
 
       continueReloadingCachedItems()
+    }
+  }
+
+  func clearBackgroundQueue() {
+    PlayerCore.backgroundQueue.async { [self] in
+      player.log.verbose("Clearing background queue work (was: \(playlistItemCacheLoadQueue.count) items)")
+      playlistItemCacheLoadQueue = []
+      isReloadingMeta = false
+      playlistTotalDurationIsReady = false
     }
   }
 
