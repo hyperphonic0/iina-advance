@@ -101,6 +101,13 @@ extension PlayerWindowController {
       // Make sure to set this inside the animation task! See note above
       loaded = true
 
+      if currentLayout.isMusicMode, musicModeGeo.isViewportShown {
+        // When restoring, need to set size of video ASAP or else it will briefly display with wrong initial size
+        log.verbose("[Load] Configuring viewport for music mode")
+        addViewportAndSubviewsToWindowIfNeeded()
+        viewportView.apply(musicModeGeo)
+      }
+
       // Update to correct values before displaying. Only useful when restoring at launch
       player.updatePlaybackTimeInfo()
       updateUI()

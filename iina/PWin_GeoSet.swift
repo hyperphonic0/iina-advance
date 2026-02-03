@@ -40,6 +40,58 @@ struct GeometrySet: Sendable {
   func clone(video videoNew: VideoGeometry) -> GeometrySet {
     return GeometrySet(windowed: windowed, musicMode: musicMode, video: videoNew)
   }
+
+  /// For use when restoring a saved launch. Looks for inconsistencies in `priorState.geoSet` (actually just its `.windowed` property
+  /// so far), and tries to fix what it finds. May also make changes to `initialLayout` if needed - returns these in the result.
+  @MainActor
+  func fixingErrorsInSavedGeoSet(_ log: any Logger.Subsystem,
+                                 initialLayout: LayoutState,
+                                 modeToRestore: PlayerWindowMode) -> (GeometrySet, LayoutState) {
+
+    var adjustedLayout = initialLayout
+    let adjustedGeoSet: GeometrySet
+    switch modeToRestore {
+
+    case .windowedNormal, .windowedInteractive:
+      let savedWindowedGeo = self.windowed
+      if !savedWindowedGeo.mode.isWindowed || savedWindowedGeo.screenFit.isFullScreen {
+        log.error("Initial layout: windowedModeGeo from prior state has invalid mode (\(savedWindowedGeo.mode)) or screenFit (\(savedWindowedGeo.screenFit)). Will generate a fresh windowedModeGeo from saved layoutState and last closed window instead")
+
+        let lastClosedGeo = PlayerWindowController.windowedModeGeoLastClosed
+        let windowed: PWinGeometry
+        if lastClosedGeo.mode.isWindowed && !lastClosedGeo.screenFit.isFullScreen {
+          windowed = initialLayout.convertWindowedModeGeometry(from: lastClosedGeo, video: self.video,
+                                                               pinWidthOrHeightIfAtMax: false, log)
+        } else {
+          let bestScreen = NSScreen.forScreenID(lastClosedGeo.screenID) ?? NSScreen.main ?? NSScreen.screens.first!
+          windowed = initialLayout.buildDefaultInitialGeometry(screen: bestScreen, video: self.video)
+        }
+        adjustedGeoSet = self.clone(windowed: windowed)
+
+      } else if savedWindowedGeo.outsideBars.totalWidth + savedWindowedGeo.insideBars.totalWidth > savedWindowedGeo.windowFrame.width {
+        log.error("Initial layout: windowedModeGeo from prior state has window size (\(savedWindowedGeo.windowFrame.size)) which is too small to accomodate bars (outside=\(savedWindowedGeo.outsideBars), inside=\(savedWindowedGeo.insideBars)). Will close sidebars.")
+
+        /// Overwrite `outputLayout` with fixed version
+        adjustedLayout = initialLayout.withSidebarsHidden()
+        let outsideNew = savedWindowedGeo.outsideBars.clone(trailing: 0, leading: 0)
+        let insideNew = savedWindowedGeo.insideBars.clone(trailing: 0, leading: 0)
+        let windowed = savedWindowedGeo.clone(outsideBars: outsideNew, insideBars: insideNew)
+
+        adjustedGeoSet = self.clone(windowed: windowed)
+      } else {
+        // Valid (as far as we've checked anyway)
+        adjustedGeoSet = self
+      }
+
+    case .musicMode,
+        .fullScreenNormal, .fullScreenInteractive:
+      // No validation at present
+      adjustedGeoSet = self
+    }
+
+    return (adjustedGeoSet, adjustedLayout)
+  }
+
 }
 
 extension PlayerWindowController {
