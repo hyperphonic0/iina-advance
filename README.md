@@ -136,7 +136,7 @@ Fixes and improvements to IINA Advance are more than welcome. For now, please fe
 - **Clickable Subtitles** (`kerim/iina-clickable-subtitles`) - Click subtitles to define words (macOS Look Up).
 - **Jump to Frame** (`bbeny123/iina-jump-to-frame`) - Navigate video by specific frame number.
 - **recorder** (`5thDimensionalVader/recorder-iina`) - to clip a video using ffmpeg.
-- **Multple Clips** (`karthisnk/multi-cutter-iina`) - multiple clip of a video using ffmpeg, with Batch Clipping, Vertical Clip, Format Selection, Preview Clip.
+- **Multiple Clips** (`karthisnk/multi-cutter-iina`) - multiple clip of a video using ffmpeg, with Batch Clipping, Vertical Clip, Format Selection, Preview Clip.
 
 > 💡 **Want to build your own plugin?**
 > 
