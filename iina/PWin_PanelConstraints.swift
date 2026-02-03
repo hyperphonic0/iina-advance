@@ -243,9 +243,8 @@ extension PlayerWindowController {
     // 2. Workaround for bug in music mode where viewport closes unexpectedly.
     // - Do not use priority=1000 because it may be off by a pixel.
     // - Do not use priority >= 500 because it will prevent window resize.
-    if useViewport,
-       (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode),
-       (!stage.isFinalStage || transition.outputLayout.mode == .musicMode) {
+    if useViewport, !stage.isFinalStage,
+       (transition.isTogglingViewport || transition.isTogglingPlaylistInMusicMode) {
       let constant3 = stageGeo.vpBtmOffsetFromCVTop
 
       p.vpBtmOffsetFromCVTop.createOrUpdate(to: constant3, priorityInt: 499, log) { [self] c in
@@ -529,8 +528,12 @@ extension PlayerWindowController {
     case .openNewPanels:
       updateVP = stageGeo.mode != .musicMode
     case .postTransition:
-      // Not needed for this stage
-      return
+      if stageGeo.mode == .musicMode, transition.outputGeometry.isViewportShown {
+        updateVP = true
+      } else {
+        // Not needed for this stage
+        return
+      }
     }
 
     log.verbose("Calling setFrame with \(stageGeo.windowFrame) mode=\(stageGeo.mode) updateVP=\(updateVP.yn) category=\(category)")

@@ -557,6 +557,7 @@ extension MPVController {
       player.reloadPlaylist()
 
     case MPVProperty.trackList:
+      guard !player.miniPlayerShowVideoTimer.isValid else { break }
       player.log.verbose("Δ mpv prop: 'track-list'")
       _ = player.reloadTrackInfo()
 
