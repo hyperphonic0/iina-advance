@@ -1611,12 +1611,8 @@ extension PlayerCore {
           playlistBookmarks.append(Data(count: 0))
         }
       }
-      if playlistBookmarks.count == playlistPaths.count {
-        props[PropName.playlistBookmarks.rawValue] = playlistBookmarks
-        log.verbose("Saved bookmarks for \(playlistBookmarks.reduce(0, { count, datum in count + (datum.isEmpty ? 0 : 1) } )) of \(playlistPaths.count) playlist items in \(sw.secElapsedString)")
-      } else {
-        assert(false)
-      }
+      props[PropName.playlistBookmarks.rawValue] = playlistBookmarks
+      log.verbose("Saved bookmarks for \(playlistBookmarks.reduce(0, { count, datum in count + (datum.isEmpty ? 0 : 1) } )) of \(playlistPaths.count) playlist items in \(sw.secElapsedString)")
     }
 
     if let playbackPositionSec = info.playbackPositionSec {

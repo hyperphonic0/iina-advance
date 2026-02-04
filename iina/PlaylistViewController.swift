@@ -58,6 +58,17 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
     }
   }
 
+  struct PlaylistMetaWorkItem {
+    let playlistIndex: Int
+    let itemID: PlaybackID
+    /// New mpv title to update
+    let mpvTitle: String?
+
+    func hasUpdate(for cachedMeta: MediaMeta) -> Bool {
+      (itemID.isFile && !cachedMeta.triedFFmpeg) || (mpvTitle != nil && mpvTitle != cachedMeta.title)
+    }
+  }
+
   private var playlistDragDelegate: TableDragDelegate<PlaybackID>!
   private var notiHandler: NotificationHandler!
 
@@ -72,8 +83,9 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
   @MainActor var displayedPlaylist: [PlaybackID] = []
 
   // can't use main queue - it will block
-  private var playlistTableReloadDebouncer = Debouncer(delay: 0.1, queue: PlayerCore.backgroundQueue)
-  private var playlistItemCacheLoadQueue = LinkedList<(Int, PlaybackID, String?)>()
+  private var playlistTableReloadDebouncer = Debouncer(delay: 0.1, queue: PlayerCore.playlistMetaLoadDQ)
+  /// Queue of playlist meta work to process on the `playlistMetaLoadDQ`.
+  private var playlistItemCacheLoadQueue = LinkedList<PlaylistMetaWorkItem>()
 
   @Atomic private var playlistTotalDurationIsReady = false
   @Atomic private var playlistTotalDuration: Double? = nil
@@ -334,7 +346,7 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
 
   /// Only if `playlistTotalDurationIsReady`
   private func refreshTotalDuration() {
-    assert(DispatchQueue.isExecutingIn(PlayerCore.backgroundQueue))
+    assert(DispatchQueue.isExecutingIn(PlayerCore.playlistMetaLoadDQ))
     guard playlistTotalDurationIsReady else { return }
 
     let playlist: [PlaybackID] = displayedPlaylist
@@ -933,9 +945,9 @@ extension PlaylistViewController: NSTableViewDelegate {
       // Get updated title from mpv
       let mpvTitle = player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
-      PlayerCore.backgroundQueue.async { [self] in
+      PlayerCore.playlistMetaLoadDQ.async { [self] in
         // Get watch-later form file system; get other meta from ffmpeg:
-        let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem,
+        let cachedMeta = MediaMetaCache.shared.updateCachedMeta(playlistItem, mpvTitle: mpvTitle,
                                                                 pullFromWatchLater: true, pullFromFfmpeg: true)
         // Now update the total length if needed (but only if it's already done calculating):
         if cachedMeta.duration != nil {
@@ -968,11 +980,12 @@ extension PlaylistViewController: NSTableViewDelegate {
         titles.append(mpvTitle) // may be nil
       }
 
-      PlayerCore.backgroundQueue.async { [self] in
+      PlayerCore.playlistMetaLoadDQ.async { [self] in
         // Clear previous items & replace with new list
         playlistItemCacheLoadQueue = []
-        for (playlistIndex, (item, title)) in (zip(playlistItems, titles)).enumerated() {
-          playlistItemCacheLoadQueue.append((playlistIndex, item, title))
+        for (playlistIndex, (itemID, mpvTitle)) in (zip(playlistItems, titles)).enumerated() {
+          let workItem = PlaylistMetaWorkItem(playlistIndex: playlistIndex, itemID: itemID, mpvTitle: mpvTitle)
+          playlistItemCacheLoadQueue.append(workItem)
         }
 
         if !isReloadingMeta {
@@ -984,15 +997,15 @@ extension PlaylistViewController: NSTableViewDelegate {
   }
 
   /// Each call of this function processes the next item in `playlistItemCacheLoadQueue` using
-  /// `PlayerCore.backgroundQueue`.
+  /// `PlayerCore.playlistMetaLoadDQ`.
   ///
   /// - Uses `isReloadingMeta` flag to prevent duplicate processing.
   /// - By Waiting until processing is complete for the current item until enqueuing work for the next
-  ///   item, we avoid tying up `PlayerCore.backgroundQueue` for use with other work, notably for
+  ///   item, we avoid tying up `PlayerCore.playlistMetaLoadDQ` for use with other work, notably for
   ///   `loadCachedItem`, which needs priority to ensure that the "Now Playing" item is correctly drawn.
   fileprivate func continueReloadingCachedItems() {
-    PlayerCore.backgroundQueue.async { [self] in
-      guard let (playlistIndex, itemID, mpvTitle) = playlistItemCacheLoadQueue.removeHead() else {
+    PlayerCore.playlistMetaLoadDQ.async { [self] in
+      guard let workItem = playlistItemCacheLoadQueue.removeHead() else {
         // Finally, append a task to recalculate the total length. Do not show it until it is done!
         player.log.verbose("[Playlist] Finished cache updates")
         isReloadingMeta = false
@@ -1001,16 +1014,15 @@ extension PlaylistViewController: NSTableViewDelegate {
         return
       } 
 
-      let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: itemID)
-      let needsRefresh = (itemID.isFile && !existingCachedMeta.triedFFmpeg) || (mpvTitle != nil && mpvTitle != existingCachedMeta.title)
-      if needsRefresh {
+      let existingCachedMeta = MediaMetaCache.shared.getOrAddCachedMeta(for: workItem.itemID)
+      if workItem.hasUpdate(for: existingCachedMeta) {
         // Get watch-later form file system; get other meta from ffmpeg:
-        MediaMetaCache.shared.updateCachedMeta(itemID, mpvTitle: mpvTitle,
+        MediaMetaCache.shared.updateCachedMeta(workItem.itemID, mpvTitle: workItem.mpvTitle,
                                                pullFromWatchLater: true, pullFromFfmpeg: true)
         // Refresh each row as it gets updated. May take a while to refresh all
         pwc.animationPipeline.submitInstantTask{ [self] in
           /// This should trigger a call to `updateCellForPlaylistTrackNameColumn` to rebuild the row
-          reloadPlaylistRow(playlistIndex)
+          reloadPlaylistRow(workItem.playlistIndex)
         }
       }
 
@@ -1019,7 +1031,7 @@ extension PlaylistViewController: NSTableViewDelegate {
   }
 
   func clearBackgroundQueue() {
-    PlayerCore.backgroundQueue.async { [self] in
+    PlayerCore.playlistMetaLoadDQ.async { [self] in
       player.log.verbose("Clearing background queue work (was: \(playlistItemCacheLoadQueue.count) items)")
       playlistItemCacheLoadQueue = []
       isReloadingMeta = false

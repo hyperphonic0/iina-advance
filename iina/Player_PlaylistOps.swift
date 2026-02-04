@@ -233,9 +233,19 @@ extension PlayerCore {
       let insertIndex = itemToInsertIndex + prevInsertCount
       let itemToInsertPath = itemToInsert.path
       let returnCode = mpv.playlistInsert(itemToInsertPath, index: insertIndex)
+
       guard returnCode == 0 else {
         playlistErrorDidOccur(returnCode, opDesc: "insert playlist item \(prevInsertCount) / \(itemsAtIndexes.count)")
         return
+      }
+      // Enqueue BG task to generate bookmark data for the new item if it doesn't yet exist
+      if itemToInsert.needsBookmark {
+        PlayerCore.postLoadBGQ.async { [self] in
+          guard isActive else { return }
+          if MediaMetaCache.shared.createBookmarkIfNotExist(fromURL: itemToInsert.url) {
+            log.verbose("Created bookmark data from URL \(itemToInsert.url.path.pii.quoted)")
+          }
+        }
       }
       expectedPlaylistAfterInsert.insert(itemToInsert, at: insertIndex)
       prevInsertCount += 1

@@ -41,14 +41,18 @@ final class PlayerCore: NSObject {
 
   // MARK: - Singleton Fields
 
+  /// A DispatchQueue with `.background` QoS intended for longer-running tasks reqquiring disk IO:
+  ///  - Auto Load
+  ///  - MacOS bookmark generation
+  ///  - External subtitle search
+  ///
+  ///  Tasks on this DQ are enqueued at the end of `fileLoaded`.
+  static let postLoadBGQ = DispatchQueue.newDQ(label: "IINAA-Player-PostLoad-BG", qos: .background)
+  /// A DispatchQueue with `.background` QoS for refreshing playlist item metadata (usually requiring disk or network IO)
+  static let playlistMetaLoadDQ = DispatchQueue.newDQ(label: "IINAA-Player-BG", qos: .background)
+
   @MainActor
   static var mouseLocationAtLastOpen: NSPoint? = nil
-
-  /// A DispatchQueue for longer-running tasks reqquiring disk IO:
-  ///  auto load, playlist length prefetch, external subtitle search
-  static let postLoadBGQ = DispatchQueue.newDQ(label: "IINAA-Player-PostLoad-BG", qos: .background)
-  /// A DispatchQueue for background meta refresh:
-  static let backgroundQueue = DispatchQueue.newDQ(label: "IINAA-Player-BG", qos: .background)
 
   // MARK: - Instance Fields
 
@@ -56,8 +60,16 @@ final class PlayerCore: NSObject {
   var label: String
   let isDemoPlayer: Bool
 
+  /// If a set of windows was opened at the same time, each is assigned an index, so they can be arranged slightly offset from each another.
+  var openedWindowsSetIndex: Int = 0
+
   /// If `false`, has player functionality without use of a player window. Must be `true` to show a player window.
   var isInteractivePlayer = false
+
+  var isSaveEnabled: Bool { isInteractivePlayer && UIState.shared.isSaveEnabled }
+
+  /// Time of the last player state save when called by `updatePlaybackTimeInfo`.
+  private var lastStateSaveTime = Date().timeIntervalSince1970
 
   /// After mpvInit, contains both the user options in Settings > Advanced, + commandLineArgs
   var userOptions: [MPVOptPair]
@@ -69,13 +81,6 @@ final class PlayerCore: NSObject {
   var pendingResumeWhenShowingWindow: Bool = false
   /// If true, mpv needs to reload the current input config file because it has changed
   var needsInputConfFileReload: Bool = false
-  /// If a set of windows was opened at the same time, each is assigned an index, so they can be arranged slightly offset from each another.
-  var openedWindowsSetIndex: Int = 0
-
-  var isSaveEnabled: Bool { isInteractivePlayer && UIState.shared.isSaveEnabled }
-
-  /// Time of the last player state save when called by `updatePlaybackTimeInfo`.
-  private var lastStateSaveTime = Date().timeIntervalSince1970
 
   @MainActor
   var undoHelper: PlayerWindowUndoHelper { pwc.undoHelper }
@@ -2209,9 +2214,9 @@ final class PlayerCore: NSObject {
       return latestTicket
     }
     PlayerCore.postLoadBGQ.asyncAfter(deadline: DispatchTime.now() + Constants.TimeInterval.autoLoadDelay) { [self] in
-      fileLoaded_postLoadBGQWork(for: currentPlayback, currentTicket: currentTicket,
-                                     shouldAutoLoadFiles: shouldAutoLoadFiles,
-                                     priorStateIfRestoring: priorStateIfRestoring)
+      fileLoaded_doPostLoadBGQWork(for: currentPlayback, currentTicket: currentTicket,
+                                   shouldAutoLoadFiles: shouldAutoLoadFiles,
+                                   priorStateIfRestoring: priorStateIfRestoring)
     }
 
     // History thread: update history given new playback URL. If restoring a prev playback, do not add again
@@ -2390,10 +2395,10 @@ final class PlayerCore: NSObject {
   // MARK: - Background work
 
   /// Auto load via background queue
-  private func fileLoaded_postLoadBGQWork(for currentPlayback: Playback,
-                                              currentTicket: Int,
-                                              shouldAutoLoadFiles: Bool,
-                                              priorStateIfRestoring: PlayerSaveState?) {
+  private func fileLoaded_doPostLoadBGQWork(for currentPlayback: Playback,
+                                            currentTicket: Int,
+                                            shouldAutoLoadFiles: Bool,
+                                            priorStateIfRestoring: PlayerSaveState?) {
     assert(DispatchQueue.isExecutingIn(PlayerCore.postLoadBGQ))
     let isRestoring = priorStateIfRestoring != nil
 
@@ -2506,7 +2511,7 @@ final class PlayerCore: NSObject {
     if let bookmark = currentPlayback.id.bookmark {
       return bookmark
     }
-    guard !currentPlayback.isNetworkResource else { return nil }
+    guard currentPlayback.id.needsBookmark else { return nil }
     guard let bookmarkData = MediaMetaCache.shared.getOrCreateBookmark(fromURL: currentPlayback.url) else {
       log.verbose("Failed to create bookmark for playback: \(currentPlayback.path.pii.quoted)")
       return nil

@@ -158,6 +158,8 @@ struct PlaybackID: Sendable, Equatable, Hashable {
 
   var displayName: String { PlaybackID.displayName(from: url) }
 
+  var needsBookmark: Bool { !isNetworkResource && bookmark == nil }
+
   /// Hashable protocol conformance, to enable diffing
   var hash: Int {
     var hasher = Hasher()
