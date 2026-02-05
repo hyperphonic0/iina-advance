@@ -2337,8 +2337,7 @@ final class PlayerCore: NSObject {
       info.isSeeking = false
       // Important to synchronize the time as mpv may slightly alter the playback position during a
       // restart even while paused. See issue #5337.
-      updatePlaybackTimeInfo()  // prepare for updateUI()
-      pwc.updateUI()
+      pwc.updateUI(pullUpdatesFromMpv: true)
 
       // When playback is paused the display link may be shutdown in order to not waste energy.
       // The display link will be restarted while seeking. If playback is paused shut it down again.
@@ -3012,7 +3011,7 @@ final class PlayerCore: NSObject {
     pwc.updateUI(pullUpdatesFromMpv: true)
   }
 
-  /// __WARNING:_ this makes mpv calls on the main DQ!
+  // FIXME: this makes mpv calls on the main queue!
   @MainActor
   func updatePlaybackTimeInfo() {
     guard isActive else {

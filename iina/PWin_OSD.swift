@@ -822,7 +822,6 @@ extension PlayerWindowController {
     // Need to do the UI sync in the main queue
     DispatchQueue.main.async { [self] in
       if !isScrollingOrDraggingPlaySlider {
-        // TODO: this makes mpv calls on the main queue!
         player.updatePlaybackTimeInfo()
       }
       updateUI()
@@ -868,7 +867,11 @@ extension PlayerWindowController {
         if case .frameStepBack = osd.lastDisplayedMsg { return }
       }
       /// Call this first to update `info.playbackPositionSec`, `info.playbackDurationSec`, needed below.
-      player.updatePlaybackTimeInfo()
+      /// But do not call when seeking via slider - that will be handled by the slider itself - in that
+      /// case, calling it here also will cause slider to jump back & forth!
+      if !isScrollingOrDraggingPlaySlider {
+        player.updatePlaybackTimeInfo()
+      }
 
       /// Many redundant `MPV_EVENT_SEEK` messages are emitted from mpv at different times, and each triggers a call to
       /// show a `seek` OSD message. Show it only if either `position` or `duration` actually changed from their
@@ -889,8 +892,8 @@ extension PlayerWindowController {
       osd.lastPlaybackDuration = duration
 
     case .pause, .resume:
-      // Do not show pause/resume during seek
-      if isScrollingOrDraggingPlaySlider { return }
+      // Do not show pauses/resumes during an active seek
+      guard !isScrollingOrDraggingPlaySlider else { return }
 
       if osd.didShowLastMsgRecently() {
         if case .speed = osd.lastDisplayedMsg, case .resume = msg { return }

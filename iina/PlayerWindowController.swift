@@ -2020,8 +2020,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     // scroll wheel will set newer value; do not overwrite it until it is done
     if pullUpdatesFromMpv && !isScrollingOrDraggingPlaySlider {
-      // FIXME: play slider seek preview regression: incorrectly jumping while seeking!
-      // TODO: this makes mpv calls on the main queue!
       player.updatePlaybackTimeInfo()
     }
 

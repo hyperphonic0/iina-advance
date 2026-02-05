@@ -108,9 +108,7 @@ extension PlayerWindowController {
         viewportView.apply(musicModeGeo)
       }
 
-      // Update to correct values before displaying. Only useful when restoring at launch
-      player.updatePlaybackTimeInfo()
-      updateUI()
+      updateUI(pullUpdatesFromMpv: true)
 
       if player.disableUI { hideFadeableViews() }
 
