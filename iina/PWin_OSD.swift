@@ -830,9 +830,8 @@ extension PlayerWindowController {
   }
 
   /// Do not call `displayOSD` directly. Call `PlayerCore.sendOSD` instead.
+  @MainActor
   private func displayOSD(_ msg: OSDMessage, autoHide: Bool, accessoryViewController: NSViewController?) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     // Check again. May have been enqueued a while
     guard canShowOSD(message: msg) else { return }
 
@@ -904,7 +903,7 @@ extension PlayerWindowController {
       osd.lastPlaybackDuration = player.info.playbackDurationSec
 
     case .crop(let newCropLabel):
-      if newCropLabel == AppData.noneCropIdentifier && !isInInteractiveMode && player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
+      if newCropLabel == Constants.String.noneCropIdentifier && !isInInteractiveMode && player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
         log.verbose("[OSD] Ignoring request for Crop 'None': looks like user starting to edit an existing crop")
         return
       }

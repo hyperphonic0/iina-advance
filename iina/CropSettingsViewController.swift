@@ -118,7 +118,7 @@ class CropSettingsViewController: CropBoxViewController {
       let newVidGeo: VideoGeometry
       if isAllSelected || isNoSelection {
         player.log.verbose("Interactive mode submit: isAllSelected=\(isAllSelected.yn) isNoSelection=\(isNoSelection.yn) → setting crop to None")
-        newVidGeo = player.videoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier, videoSizeDisplayOverride: nil)
+        newVidGeo = player.videoGeo.clone(selectedCropLabel: Constants.String.noneCropIdentifier, videoSizeDisplayOverride: nil)
       } else {
         // FIXME: account for codec rotation
         let newCropFilter = MPVFilter.crop(w: cropBox.widthInt, h: cropBox.heightInt, x: cropBox.xInt, y: cropBox.yInt)

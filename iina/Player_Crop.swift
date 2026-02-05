@@ -73,7 +73,7 @@ extension PlayerCore {
     let videoGeo = videoGeo
 
     mpv.queue.async { [self] in
-      if newCropLabel == AppData.noneCropIdentifier {
+      if newCropLabel == Constants.String.noneCropIdentifier {
         log.verbose("Setting crop to None")
         removeCrop()
         return
@@ -104,7 +104,7 @@ extension PlayerCore {
       log.debug("Cannot remove crop: no filter found with label \(Constants.FilterLabel.crop.quoted). Will try to resync from mpv")
       return false
     }
-    log.verbose("Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
+    log.verbose("Setting crop to \(Constants.String.noneCropIdentifier.quoted) and removing crop filter")
     return removeVideoFilter(cropFilter, verify: false, notify: false)
   }
 

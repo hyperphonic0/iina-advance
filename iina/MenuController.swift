@@ -255,7 +255,7 @@ class MenuController: NSObject, NSMenuDelegate {
     // -- crop
     let cropMenuItemTitles = [Constants.String.none] + Aspect.aspectsInMenu + [Constants.String.custom]
     // same as aspectList above.
-    let cropIdentifiers = [AppData.noneCropIdentifier] + Aspect.aspectsInMenu + [AppData.customCropIdentifier]
+    let cropIdentifiers = [Constants.String.noneCropIdentifier] + Aspect.aspectsInMenu + [Constants.String.customCropIdentifier]
     bind(menu: cropMenu, withOptions: cropMenuItemTitles, objects: cropIdentifiers, objectMap: nil, action: #selector(PlayerWindowController.menuChangeCrop(_:))) {
       return PlayerManager.shared.activePlayer?.videoGeo.selectedCropLabel == $0.representedObject as? String
     }

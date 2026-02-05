@@ -140,7 +140,7 @@ extension GeometryTransform.ContextStage2 {
       log.verbose("[GTF:\(name)] Determined crop label from iina_crop filter: \(cropLabel.quoted)")
       isNotCropped = false  // override this...it is still not perfect
     } else if isNotCropped {
-      cropLabel = AppData.noneCropIdentifier
+      cropLabel = Constants.String.noneCropIdentifier
       log.verbose("[GTF:\(name)] Looks like video is not cropped")
     } else {
       // Check for other sources of crop.
@@ -229,7 +229,7 @@ extension GeometryTransform.ContextStage2 {
               !pwc.isAnimatingLayoutTransition {
       // Don't show crop OSD when disabling it for entering interactive mode (layout transition)
       log.verbose("[GTF:\(name)] Changing selectedCropLabel: \(inputVideoGeo.selectedCropLabel.quoted) → \(cropLabel.quoted)")
-      let osdLabel = cropLabel.isEmpty ? AppData.customCropIdentifier : cropLabel
+      let osdLabel = cropLabel.isEmpty ? Constants.String.customCropIdentifier : cropLabel
       player.sendOSD(.crop(osdLabel))
     }
 

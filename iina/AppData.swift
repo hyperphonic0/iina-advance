@@ -16,12 +16,6 @@ typealias MainActorSuccessCallback = @MainActor () -> Void
 
 /// Trying to deprecate this struct. New constants should be added to `Constants` struct.
 struct AppData {
-  /// Time interval to sync play slider position, time labels, volume indicator & other UI.
-  struct SyncTimerConfig {
-    let interval: TimeInterval
-    let tolerance: TimeInterval
-  }
-  static let syncTimerConfig = SyncTimerConfig(interval: 0.05, tolerance: 0.02)
 
   // Stopgap for https://github.com/mpv-player/mpv/issues/4000
   static let availableSpeedValues: [Double] = [0.03125, 0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32]
@@ -32,10 +26,6 @@ struct AppData {
 
   /// Lowest possible speed allowed by mpv (0.01x)
   static let mpvMinPlaybackSpeed = 0.01
-
-  // Used internally as identifiers when communicating with mpv. Should not be displayed because they are not localized:
-  static let noneCropIdentifier = "None"
-  static let customCropIdentifier = "Custom"
 
   static let rotations: [Int] = [0, 90, 180, 270]
   static let scaleStepWidthPixels: Int = 25
@@ -104,6 +94,8 @@ struct Constants {
   }
 
   struct String {
+    // MARK: mpv API constants
+
     static let mpvYes = "yes"
     static let mpvNo = "no"
     static let mpvArgNone = "none"
@@ -111,11 +103,20 @@ struct Constants {
     static let anyUnicodeKey = "ANY_UNICODE"
     static let unmappedKey = "UNMAPPED"
 
+    static let mpvDefaultFont = "sans-serif"
+
+    // MARK: Internal identifiers
+    // (Should not be displayed because they are not localized)
+
+    static let noneCropIdentifier = "None"
+    static let customCropIdentifier = "Custom"
+    static let demoPlayerIdentifier = "demo"
+
+    // MARK: Displayed strings
     static let degree = "°"
     static let dot = "●"
     static let blackRightPointingTriangle = "▶︎"
     static let blackLeftPointingTriangle = "◀"
-    static let mpvDefaultFont = "sans-serif"
     static let videoTimePlaceholder = "--:--:--"
     static let trackNone = NSLocalizedString("track.none", comment: "<None>")
     static let chapter = "Chapter"
@@ -146,19 +147,17 @@ struct Constants {
     static let hideSecondSubtitles = NSLocalizedString("menu.sub_second_hide", comment: "Hide Second Subtitles")
     static let showSecondSubtitles = NSLocalizedString("menu.sub_second_show", comment: "Show Second Subtitles")
 
-    // Logger per-player categories
+    // MARK: Logger per-player categories
     static let iinaPlayerCategoryFmt = "%@-Plr"
     static let iinaMpvCategoryFmt = "%@-mpv"
     static let iinaHdrCategoryFmt = "%@-hdr"
 
-    // Pref keys
+    // MARK: Pref keys
     static let iinaLaunchPrefix = "Launch-"
     static let openWindowListFmt = "\(iinaLaunchPrefix)%d-Windows"
     static let managePlugins = NSLocalizedString("menu.manage_plugins", comment: "Manage Plugins…")
     static let showPluginsPanel = NSLocalizedString("menu.show_plugins_panel", comment: "Show Plugins Sidebar")
     static let hidePluginsPanel = NSLocalizedString("menu.hide_plugins_panel", comment: "Hide Plugins Sidebar")
-
-    static let demoPlayerLabel = "demo"
   }
 
   struct Menu {
@@ -194,6 +193,10 @@ struct Constants {
 
   /// All values are in seconds unless explicitly named differently
   struct TimeInterval {
+    /// Time interval to sync play slider position, time labels, volume indicator & other UI.
+    static let syncUITimer: TimeInt = 0.05
+    /// Tolerance to allow to possible reduce CPU consumption
+    static let syncUITimerToleraance: TimeInt = 0.02
 
     /// Minimum value to set a mpv loop point to.
     ///

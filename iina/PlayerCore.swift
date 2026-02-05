@@ -360,7 +360,7 @@ final class PlayerCore: NSObject {
   /// Demo player has `pwc == nil`.
   @MainActor
   static func buildDemoPlayer() -> PlayerCore {
-    let player = PlayerCore(Constants.String.demoPlayerLabel, isDemoPlayer: true)
+    let player = PlayerCore(Constants.String.demoPlayerIdentifier, isDemoPlayer: true)
     player.log.verbose("PlayerCore init (demo): done")
     return player
   }
@@ -2267,7 +2267,8 @@ final class PlayerCore: NSObject {
     log.verbose("Got mpv 'idle-active': isFileLoaded=\(isFileLoaded.yn) error=\(errorMsg?.quoted ?? "nil") playerState=\(state)")
     /// Make sure to check that `info.currentPlayback != nil` before outputting error
     if let errorMsg, let playback = info.currentPlayback, playback.state.isNotYet(.loaded) {
-      log.error("Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted)! Will stop player\(isInteractivePlayer ? " & close window" : "")")
+      log.error("Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted)!"
+                + " Will stop player\(isInteractivePlayer ? " & close window" : "")")
       DispatchQueue.main.async { [self] in
         let errorDetail = errorMsg.isEmpty ? "" : "\n\n\(errorMsg)"
         Utility.showAlert("error_open_name", arguments: ["\(playback.path.quoted)\(errorDetail)"])
@@ -2941,25 +2942,16 @@ final class PlayerCore: NSObject {
       useTimer = pwc.isUITimerNeeded()
     }
 
-    let timerConfig = AppData.syncTimerConfig
-
     /// Invalidate existing timer:
     /// - if no longer needed
     /// - if still needed but need to change the `timeInterval`
     var wasTimerRunning = false
-    var timerRestartNeeded = false
     if let existingTimer = self.syncUITimer, existingTimer.isValid {
+      /// Don't restart the existing timer if not needed, because restarting will ignore any time it has
+      /// already spent waiting, and could in theory result in a small visual jump (more so for long intervals).
       wasTimerRunning = true
-      if useTimer {
-        if timerConfig.interval == existingTimer.timeInterval {
-          /// Don't restart the existing timer if not needed, because restarting will ignore any time it has
-          /// already spent waiting, and could in theory result in a small visual jump (more so for long intervals).
-        } else {
-          timerRestartNeeded = true
-        }
-      }
 
-      if !useTimer || timerRestartNeeded {
+      if !useTimer {
         log.verbose("Invalidating SyncUITimer")
         existingTimer.invalidate()
         self.syncUITimer = nil
@@ -2970,7 +2962,7 @@ final class PlayerCore: NSObject {
       var summary: String = ""
       if wasTimerRunning {
         if useTimer {
-          summary = timerRestartNeeded ? "restarting" : "running"
+          summary = "running"
         } else {
           summary = "didStop"
         }
@@ -2980,12 +2972,11 @@ final class PlayerCore: NSObject {
       if summary != lastTimerSummary {
         lastTimerSummary = summary
         if useTimer {
-          summary += ", every \(timerConfig.interval)s"
+          summary += ", every \(Constants.TimeInterval.syncUITimer)s"
         }
-        log.verbose({
-          let logMsg = logMsg.isEmpty ? logMsg : "\(logMsg)- "
-          return "\(logMsg)SyncUITimer \(summary), paused:\(info.isPaused.yn) net:\(info.isNetworkResource.yn) mini:\(isInMiniPlayer.yn) touchBar:\(needsTouchBar.yn) state:\(state)"
-        }())
+        let logMsg = logMsg.isEmpty ? logMsg : "\(logMsg)- "
+        log.verbose(logMsg + "SyncUITimer \(summary), paused:\(info.isPaused.yn) net:\(info.isNetworkResource.yn)"
+                    + " mini:\(isInMiniPlayer.yn) touchBar:\(needsTouchBar.yn) state:\(state)")
       }
     }
 
@@ -2997,7 +2988,7 @@ final class PlayerCore: NSObject {
       pwc.updateUI(pullUpdatesFromMpv: true)
     }
 
-    guard useTimer && (timerRestartNeeded || !wasTimerRunning) else {
+    guard useTimer && !wasTimerRunning else {
       return
     }
 
@@ -3005,25 +2996,25 @@ final class PlayerCore: NSObject {
 
     log.verbose("Scheduling SyncUITimer")
     syncUITimer = Timer.scheduledTimer(
-      timeInterval: timerConfig.interval,
+      timeInterval: Constants.TimeInterval.syncUITimer,
       target: self,
       selector: #selector(fireSyncUITimer),
       userInfo: nil,
       repeats: true
     )
-    /// This defaults to 0 ("no tolerance"). But after profiling, it was found that granting a tolerance of `timeInterval * 0.1` (10%)
+    /// This defaults to 0 ("no tolerance"). But profiling found that granting a tolerance of `timeInterval * 0.1` (10%)
     /// resulted in an ~8% redunction in CPU time used by UI sync.
-    syncUITimer?.tolerance = timerConfig.tolerance
+    syncUITimer?.tolerance = Constants.TimeInterval.syncUITimerToleraance
   }
 
+  @MainActor
   @objc func fireSyncUITimer() {
     pwc.updateUI(pullUpdatesFromMpv: true)
   }
 
-  /// Warning: this makes mpv calls on the main queue!
+  /// __WARNING:_ this makes mpv calls on the main DQ!
+  @MainActor
   func updatePlaybackTimeInfo() {
-    assert(DispatchQueue.isExecutingIn(.main))
-
     guard isActive else {
       log.verbose("SyncUI: not syncing: player not active")
       return

@@ -2010,8 +2010,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   }
 
   /// Updates all UI controls
+  @MainActor
   func updateUI(pullUpdatesFromMpv: Bool = false) {
-    assert(DispatchQueue.isExecutingIn(.main))
     // This method is often run outside of the animation queue, which can be dangerous.
     // Just don't update in this case
     guard !isAnimatingLayoutTransition else { return }
@@ -2055,8 +2055,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     updateVolumeUI()
   }
 
+  @MainActor
   private func updatePlaybackTimeUI() {
-    assert(DispatchQueue.isExecutingIn(.main))
     // IINA listens for changes to mpv properties such as chapter that can occur during file loading
     // resulting in this function being called before mpv has set its position and duration
     // properties. Confirm the window and file have been loaded.
@@ -2083,8 +2083,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     player.touchBarSupport.touchBarPosLabels.forEach { $0.updateText(with: duration, given: position, and: remaining) }
   }
 
+  @MainActor
   func updateVolumeUI() {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard loaded, !isClosing else { return }
     guard player.info.isFileLoaded || player.isRestoring else { return }
 
@@ -2138,8 +2138,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     }
   }
 
+  @MainActor
   func updatePlayButtonAndSpeedUI() {
-    assert(DispatchQueue.isExecutingIn(.main))
     guard loaded else { return }
 
     let isPaused = player.info.isPaused
