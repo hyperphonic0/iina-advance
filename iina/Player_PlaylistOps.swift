@@ -183,6 +183,23 @@ extension PlayerCore {
         }, redo: { [self] in
           insertPlaylistRows(rowList, at: targetRowIndex, .ignoreUndoRedo)
         })
+
+        // Enqueue BG task to generate bookmark data for the new item if it doesn't yet exist.
+        // Do not do this for initial `addAllToPlaylist` inserts because that will be handled separately (and better cancellation).
+        // Generally we only want to execute this logic once per operation (not undo or redo), so attach this to `.registerUndoRedo`,
+        // and this conveniently will also omit `addAllToPlaylist` because that does not register an undo.
+        let itemsNeedingBookmarks = rowList.filter { $0.needsBookmark }
+        let currentTicket = postLoadBGQTicket  // attach to current ticket; should be fine
+        if !itemsNeedingBookmarks.isEmpty {
+          PlayerCore.postLoadBGQ.async { [self] in
+            for item in itemsNeedingBookmarks {
+              guard currentTicket == postLoadBGQTicket else { return }
+              if MediaMetaCache.shared.createBookmarkIfNotExist(fromURL: item.url) {
+                log.verbose("Created bookmark data from URL \(item.url.path.pii.quoted)")
+              }
+            }
+          }
+        }
       }
     })
   }
@@ -237,15 +254,6 @@ extension PlayerCore {
       guard returnCode == 0 else {
         playlistErrorDidOccur(returnCode, opDesc: "insert playlist item \(prevInsertCount) / \(itemsAtIndexes.count)")
         return
-      }
-      // Enqueue BG task to generate bookmark data for the new item if it doesn't yet exist
-      if itemToInsert.needsBookmark {
-        PlayerCore.postLoadBGQ.async { [self] in
-          guard isActive else { return }
-          if MediaMetaCache.shared.createBookmarkIfNotExist(fromURL: itemToInsert.url) {
-            log.verbose("Created bookmark data from URL \(itemToInsert.url.path.pii.quoted)")
-          }
-        }
       }
       expectedPlaylistAfterInsert.insert(itemToInsert, at: insertIndex)
       prevInsertCount += 1
