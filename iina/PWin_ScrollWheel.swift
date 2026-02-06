@@ -15,7 +15,7 @@ extension PlayerWindowController {
     guard !isInInteractiveMode else { return }
     guard !isMouseEventInsideDisabledView(event) else { return }
 
-    if magnificationHandler.handlePanGesture(with: event) {
+    if isZoomedViaGesture, magnificationHandler.handlePanGesture(with: event) {
       return
     }
 

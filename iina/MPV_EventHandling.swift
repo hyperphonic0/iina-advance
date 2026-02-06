@@ -303,14 +303,23 @@ extension MPVController {
       player.log.verbose("Δ mpv prop: 'video-zoom' = \(zoom)")
       player.info.videoZoom = zoom
       player.sendOSD(.videoZoom(zoom))
+      DispatchQueue.main.async { [self] in
+        player.videoView.activateForcedRedraws()
+      }
 
     case MPVOption.Video.videoPanX:
       guard let panX = property.doubleData(log) else { break }
       player.info.videoPanX = panX
+      DispatchQueue.main.async { [self] in
+        player.videoView.activateForcedRedraws()
+      }
 
     case MPVOption.Video.videoPanY:
       guard let panY = property.doubleData(log) else { break }
       player.info.videoPanY = panY
+      DispatchQueue.main.async { [self] in
+        player.videoView.activateForcedRedraws()
+      }
 
     case MPVProperty.dwidth:
       let dwidth = Int(getInt(MPVProperty.dwidth))
