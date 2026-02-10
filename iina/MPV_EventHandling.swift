@@ -209,7 +209,7 @@ extension MPVController {
       let reasonEnum = event!.pointee.data.load(as: mpv_end_file_reason.self)
       let dueToStopCommand = reasonEnum == MPV_END_FILE_REASON_STOP
       // let reasonString = dataPtr.pointee.reasonString
-      player.log.verbose("FileEnded reason=\(reasonEnum) detail=\(reasonString.quoted)")
+      player.log.verbose("FileEnded reason=\(reasonEnum.rawValue) detail=\(reasonString.quoted)")
       player.fileEnded(dueToStopCommand: dueToStopCommand, detail: reasonString)
 
     case MPV_EVENT_COMMAND_REPLY:

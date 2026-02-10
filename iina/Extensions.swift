@@ -104,7 +104,29 @@ extension URL {
     return (try? self.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
   }
 
+  /// Returns `true` if this is not a file URL or if this URL points to a playlist file
+  /// (which is useful to treat as a network stream).
   var isNetworkResource: Bool { !isFileURL || pathExtension.starts(with: "m3u") }
+
+  /// Returns `true` if this URL exists and points to a resource which is not on a local drive.
+  var isMediaOnRemoteDrive: Bool {
+    if let attrs = try? self.resourceValues(forKeys: Set([.volumeIsLocalKey])), !attrs.volumeIsLocal! {
+      return true
+    }
+    return false
+  }
+
+  /// Returns the `volumeURLForRemounting` attribute for this URL, if this URL is on a mountable shared drive.
+  /// Returns `nil` if this is a local file, or this URL points to a resource which does not currently exist, or possibly
+  /// some other error situation.
+  var volumeRemountURL: URL? {
+    let attrKeys: Set<URLResourceKey> = [.volumeURLForRemountingKey]
+    let attrs = try? self.resourceValues(forKeys: attrKeys)
+    if let attrs, let remountURL = attrs.volumeURLForRemounting {
+      return remountURL
+    }
+    return nil
+  }
 }
 
 

@@ -8,6 +8,7 @@
 
 
 import Foundation
+import OrderedCollections
 
 /// Encapsulates code for opening/restoring windows at application startup...and, um, also opening windows when files or URLs
 /// are opened manually.
@@ -20,12 +21,30 @@ final class StartupHandler {
     case doneOpening
   }
 
+  class WindowToRestore {
+    enum State {
+      case restoring
+      case done
+      case cancelled
+    }
+    let saveName: String
+    var state: State = .restoring
+    var wc: WindowController? = nil
+    var pwc: PlayerWindowController? { wc as? PlayerWindowController }
+    var done: Bool { state == .done }
+    var cancelled: Bool { state == .cancelled }
+
+    init(saveName: String, _ wc: WindowController? = nil) {
+      self.saveName = saveName
+      self.wc = wc
+    }
+  }
+
   // MARK: Properties
 
   let launchStartTime = CFAbsoluteTimeGetCurrent()
 
-  var state: OpenWindowsState = .stillEnqueuing
-
+  private(set) var state: OpenWindowsState = .stillEnqueuing
   var isDoneLaunching: Bool { state == .doneOpening }
 
   // - Opening Files Manually
@@ -50,17 +69,20 @@ final class StartupHandler {
   // - Restore
 
   /// The enqueued list of windows to restore, when restoring at launch.
-  /// Try to wait until all windows are ready so that we can show all of them at once (compare with `wcsDoneWithRestore`).
-  /// Make sure order of `wcsToRestore` is from back to front to restore the order properly.
-  var wcsToRestore: [WindowController] = []
-  var wcsDoneWithRestore = Set<WindowController>()
+  ///
+  /// Try to wait until all windows are ready so that we can show all of them at once (when `done` & `!cancelled`).
+  /// - Make sure order of `windowsToRestore` is from back to front to restore the order properly.
+  fileprivate var windowsToRestore: OrderedDictionary<String, WindowToRestore> = [:]
+  fileprivate var windowsToRestoreDoneCount: Int { windowsToRestore.values.reduce(0, { $0 + ($1.done ? 1 : 0) }) }
+  fileprivate var windowsToRestoreCancelCount: Int { windowsToRestore.values.reduce(0, { $0 + ($1.cancelled ? 1 : 0) }) }
+  fileprivate var windowsToRestoreCount: Int { windowsToRestore.count - windowsToRestoreCancelCount }
   /// Special case for Open File window when restoring. Because it is a panel, not a window, it will not have
   /// an `NSWindowController`.
-  var restoreOpenFileWindow = false
+  fileprivate var restoreOpenFileWindow = false
 
   /// Calls `self.restoreDidTimeOut` on timeout.
-  let restoreTimer = TimeoutTimer(timeout: Constants.TimeInterval.restoreWindowsTimeout)
-  var restoreTimeoutPromptWindow: ThreeButtonPromptWindow? = nil
+  fileprivate let restoreTimer = TimeoutTimer(timeout: Constants.TimeInterval.restoreWindowsTimeout)
+  fileprivate var restoreTimeoutPromptWindow: ThreeButtonPromptWindow? = nil
 
   // Command Line
 
@@ -297,8 +319,7 @@ final class StartupHandler {
   }
 
   /// Returns `true` if any windows were restored; `false` otherwise.
-  @MainActor
-  @discardableResult
+  @MainActor @discardableResult
   private func restoreWindowsFromPreviousLaunch() -> Bool {
     let log = Logger.restore
 
@@ -393,10 +414,10 @@ final class StartupHandler {
         // TODO: restore font picker
         continue
       case .inspector:
+        let windowToRestore = addWindowToRestore(savedWindow, app.inspector)
         // Do not show Inspector window. It doesn't support being drawn in the background, but it loads very quickly.
         // So just mark it as 'ready' and show with the rest when they are ready.
-        wcsDoneWithRestore.insert(app.inspector)
-        addWindowToRestore(savedWindow, app.inspector)
+        windowToRestore.state = .done
       case .videoFilter:
         addWindowToRestore(savedWindow, app.vfWindow)
         app.showVideoFilterWindow(nil)
@@ -406,11 +427,11 @@ final class StartupHandler {
       case .logViewer:
         addWindowToRestore(savedWindow, app.logWindow)
         app.showLogWindow(nil)
-      case .playerWindow(let id):
-        restorePlayerWindowFromPriorLaunch(savedWindow, playerID: id)
       case .newFilter, .editFilter, .saveFilter:
         log.debug("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping")
         continue
+      case .playerWindow(let id):
+        restorePlayerWindowFromPriorLaunch(savedWindow, playerID: id)
       default:
         // Note: Guide is not saved
         log.error("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)")
@@ -419,7 +440,7 @@ final class StartupHandler {
 
     }
 
-    return !wcsToRestore.isEmpty || restoreOpenFileWindow
+    return !windowsToRestore.isEmpty || restoreOpenFileWindow
   }
 
   /// Attempt to exactly restore play state & UI from last run of IINA (for given player)
@@ -438,21 +459,33 @@ final class StartupHandler {
     addWindowToRestore(savedWindow, player.pwc)
   }
 
-
-  @MainActor
-  func addWindowToRestore(_ savedWindow: SavedWindow, _ wc: WindowController) {
+  @MainActor @discardableResult
+  func addWindowToRestore(_ savedWindow: SavedWindow, _ wc: WindowController? = nil) -> WindowToRestore {
     Logger.restore.verbose("Adding window to restore: \(savedWindow.saveName.string.quoted), minimized=\(savedWindow.isMinimized.yn)")
+    let winMeta = WindowToRestore(saveName: savedWindow.saveName.string, wc)
+    assert(windowsToRestore[winMeta.saveName] == nil, "Duplicate window to restore: \(winMeta.saveName.quoted)")
+    windowsToRestore[winMeta.saveName] = winMeta
 
     // Rebuild UIState window sets as we go:
     if savedWindow.isMinimized {
-      // No need to worry about partial show, so skip wcsToRestore
-      wc.window?.miniaturize(self)
-      UIState.shared.windowsMinimized.insert(savedWindow.saveName.string)
+      wc!.window?.miniaturize(self)
+      UIState.shared.windowsMinimized.insert(winMeta.saveName)
+      // No danger of partial show because it's hidden, so no need to wait; just mark as done now
+      winMeta.state = .done
     } else {
-      // Add to list of windows to wait for, so we can show them all nicely
-      wcsToRestore.append(wc)
-      UIState.shared.windowsOpen.insert(savedWindow.saveName.string)
+      // Add to set of windows to wait for, so we can show them all nicely
+      windowsToRestore[winMeta.saveName] = winMeta
+      UIState.shared.windowsOpen.insert(winMeta.saveName)
     }
+    return winMeta
+  }
+
+  @MainActor
+  func setDoneWithRestore(savedWindowName: String) {
+    guard !isDoneLaunching, let windowToRestore = windowsToRestore[savedWindowName] else { return }
+    Logger.log.verbose("Marking window as done with restore: \(savedWindowName.quoted)")
+    windowToRestore.state = .done
+    showWindowsIfReady()
   }
 
   /// If this returns true, restore should be attempted using the saved launch state.
@@ -492,34 +525,35 @@ final class StartupHandler {
       return
     }
 
-    // FIXME: also show if waiting on opened file
+    // FIXME: also indicate if waiting on opened file
 
-    let namesReady = wcsDoneWithRestore.compactMap{$0.window?.savedStateName}
-    let wcsStalled: [WindowController] = wcsToRestore.filter{ !namesReady.contains($0.window!.savedStateName) }
+    let totalCount = windowsToRestoreCount
+    let doneCount = windowsToRestoreDoneCount
+    let stalledWindows: [WindowToRestore] = windowsToRestore.values.filter{ !$0.cancelled && !$0.done }
     var namesStalled: [String] = []
-    for (index, wc) in wcsStalled.enumerated() {
-      let winID = wc.window!.savedStateName
+    for (index, stalledWin) in stalledWindows.enumerated() {
       let str: String
       if index > Constants.maxWindowNamesInRestoreTimeoutAlert {
         break
       } else if index == Constants.maxWindowNamesInRestoreTimeoutAlert {
         str = "…"
-      } else if let path = (wc as? PlayerWindowController)?.player.info.currentPlayback?.path {
-        str = "\(index+1). \(path.quoted)  [\(winID)]"
+      } else if let path = stalledWin.pwc?.player.info.currentPlayback?.path {
+        str = "\(index+1). \(path.quoted)  [\(stalledWin.saveName)]"
       } else {
-        str = "\(index+1). \(winID)"
+        str = "\(index+1). \(stalledWin.saveName)"
       }
       namesStalled.append(str)
     }
 
-    log.debug("Restore timed out. Progress: \(namesReady.count)/\(wcsToRestore.count). Stalled: \(namesStalled)")
+    log.debug("Restore timed out. Progress: \(doneCount)/\(totalCount). Stalled: \(namesStalled)")
     log.debug("Prompting user whether to discard them & continue, or quit")
 
-    let countStalled = "\(wcsStalled.count)"
-    let countTotal = "\(wcsToRestore.count)"
+    let countStalled = "\(stalledWindows.count)"
+    let countTotal = "\(windowsToRestoreCount)"
     let namesStalledString = namesStalled.joined(separator: "\n")
     let msgArgs = [countStalled, countTotal, namesStalledString]
-    let okAction: Callback = { [self] in
+
+    let keepWaitingAction: Callback = { [self] in
       log.debug("User chose button 1: keep waiting")
       guard state != .doneOpening else {
         log.debug("Looks like windows finished opening - no need to restart restore timer")
@@ -528,8 +562,9 @@ final class StartupHandler {
       dismissTimeoutAlertPanel()
       restoreTimer.restart()
     }
-    let middleAction = { [self] in
-      // Launch async in case loading actually finished
+
+    let discardAction = { [self] in
+      // Launch async in case loading actually finished between time the dialog was shown & the time user clicked button
       DispatchQueue.main.async { [self] in
         log.debug("User chose button 2: discard stalled windows & continue with partial restore")
         dismissTimeoutAlertPanel()
@@ -538,33 +573,38 @@ final class StartupHandler {
           log.debug("Looks like windows finished opening - no need to close anything")
           return
         }
-        for wcStalled in wcsStalled {
-          guard !wcsDoneWithRestore.contains(wcStalled) else {
-            log.verbose("Window has become ready; skipping close: \(wcStalled.window!.savedStateName)")
+        for stalledWindow in stalledWindows {
+          // Need to check status again because we are in async task
+          guard !stalledWindow.done else {
+            log.verbose("Window has become ready; skipping close: \(stalledWindow.saveName)")
             continue
           }
-          log.debug("Telling stalled window to close: \(wcStalled.window!.savedStateName)")
-          if let pWin = wcStalled as? PlayerWindowController {
+          log.debug("Telling stalled window to close: \(stalledWindow.saveName)")
+          if let pwc = stalledWindow.pwc {
             /// This will guarantee `windowMustCancelShow` notification is sent
-            pWin.player.closeWindow()
-          } else {
-            wcStalled.close()
+            pwc.player.closeWindow()
+          } else if let wc = stalledWindow.wc {
+            wc.close()
             // explicitly call this, as the line above may fail
-            wcStalled.postWindowMustCancelShow()
+            wc.postWindowMustCancelShow()
+          } else {
+            stalledWindow.state = .cancelled
           }
         }
       }
     }
-    let cancelAction = {
+
+    let quitAction = {
       log.debug("User chose button 3: quit")
       NSApp.terminate(nil)
     }
+
     if let restoreTimeoutPromptWindow {
       restoreTimeoutPromptWindow.update("restore_timeout", msgArgs: msgArgs, middleBtnArgs: [countStalled],
-                                        okAction: okAction, middleAction: middleAction, cancelAction: cancelAction)
+                                        okAction: keepWaitingAction, middleAction: discardAction, cancelAction: quitAction)
     } else {
       let promptWindow = ThreeButtonPromptWindow("restore_timeout", msgArgs: msgArgs, middleBtnArgs: [countStalled],
-                                                 okAction: okAction, middleAction: middleAction, cancelAction: cancelAction)
+                                                 okAction: keepWaitingAction, middleAction: discardAction, cancelAction: quitAction)
       restoreTimeoutPromptWindow = promptWindow
     }
 
@@ -618,7 +658,9 @@ final class StartupHandler {
         return
       }
 
-      guard wcsDoneWithRestore.count == wcsToRestore.count else {
+      let doneCount = windowsToRestoreDoneCount
+      let totalCount = windowsToRestoreCount
+      guard doneCount == totalCount else {
         log.verbose({
           let openStr: String
           if let pwcsForOpenFiles {
@@ -626,7 +668,7 @@ final class StartupHandler {
           } else {
             openStr = ""
           }
-          return "Restarting restore timer: only done restoring \(wcsDoneWithRestore.count) / \(wcsToRestore.count)\(openStr)"
+          return "Restarting restore timer: only done restoring \(doneCount) / \(totalCount)\(openStr)"
         }())
         dismissTimeoutAlertPanel()
         restoreTimer.restart()
@@ -649,20 +691,20 @@ final class StartupHandler {
       }
 
       let newWindCount = pwcsForOpenFiles?.count ?? 0
-      if newWindCount == 0 && wcsToRestore.count == 0 {
+      if newWindCount == 0 && totalCount == 0 {
         log.verbose("No windows exist to wait for; finishing startup")
       } else {
-        log.verbose("All \(wcsToRestore.count) restored\(newWindCount > 0 ? " & \(newWindCount) new windows ready" : ""). Showing all")
+        log.verbose("All \(totalCount) restored" + (newWindCount > 0 ? " & \(newWindCount) new windows ready" : "") + ". Showing all")
       }
       restoreTimer.cancel()
 
       var prevWindowNumber: Int? = nil
-      for wc in wcsToRestore {
-        let wndName = wc.window!.savedStateName
-        let windowIsMinimized = UIState.shared.windowsMinimized.contains(wndName)
-        log.verbose("Showing restored window: \(wndName)\(windowIsMinimized ? " (minimized)" : "")")
+      for winToRestore in windowsToRestore.values {
+        let windowIsMinimized = UIState.shared.windowsMinimized.contains(winToRestore.saveName)
+        log.verbose("Showing restored window: \(winToRestore.saveName)\(windowIsMinimized ? " (minimized)" : "")")
         guard !windowIsMinimized else { continue }
 
+        let wc = winToRestore.wc!
         if let prevWindowNumber {
           wc.window?.order(.above, relativeTo: prevWindowNumber)
         }
@@ -696,7 +738,7 @@ final class StartupHandler {
       NSApp.activate(ignoringOtherApps: true)
 
       if Preference.bool(for: .isRestoreInProgress) {
-        log.verbose("Done restoring windows (\(wcsToRestore.count))")
+        log.verbose("Done restoring windows (\(windowsToRestore.count))")
         Preference.set(false, for: .isRestoreInProgress)
       } else {
         log.verbose("Done opening windows")
@@ -712,10 +754,10 @@ final class StartupHandler {
 
       initAppUI()
 
-      let didRestoreSomething = !wcsToRestore.isEmpty || restoreOpenFileWindow
+      let didRestoreSomething = !windowsToRestore.isEmpty || restoreOpenFileWindow
       let didShowSomething = didRestoreSomething || (pwcsForOpenFiles != nil)
       let canShowWelcomeWindowByDefault = Preference.enum(for: .actionAfterLaunch) == Preference.ActionAfterLaunch.welcomeWindow
-      var didShowWelcomeWindow = wcsToRestore.contains(where: { $0.windowFrameAutosaveName == WindowAutosaveName.welcome.string })
+      var didShowWelcomeWindow = windowsToRestore[WindowAutosaveName.welcome.string] != nil
       if !isCommandLine {
         if !didShowSomething {
           // Fall back to default action:
@@ -813,9 +855,10 @@ final class StartupHandler {
       }
 
     } else { // Not done launching
-      if Preference.bool(for: .isRestoreInProgress), wcsToRestore.contains(wc) {
-        wcsDoneWithRestore.insert(wc)
-        log.verbose("Restored window is ready: \(savedStateName.quoted). Progress: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")")
+      if Preference.bool(for: .isRestoreInProgress), let winToRestore = windowsToRestore[savedStateName] {
+        winToRestore.wc = wc
+        winToRestore.state = .done
+        log.verbose("Restored window is ready: \(savedStateName.quoted). Progress: \(windowsToRestoreDoneCount)/\(state == .doneEnqueuing ? "\(windowsToRestore.count)" : "?")")
       } else if let pwcsForOpenFiles, pwcsForOpenFiles.contains(where: {$0.window!.savedStateName == savedStateName}) {
         pwcsDoneWithFileOpen.append(wc as! PlayerWindowController)
         log.verbose("OpenedFile window is ready: \(savedStateName.quoted)")
@@ -836,10 +879,9 @@ final class StartupHandler {
     guard !isDoneLaunching else { return }
 
     // No longer waiting for this window before showing all windows
-    let toRestoreCountOld = wcsToRestore.count
-    wcsToRestore.removeAll(where: { wc in
-      wc.window!.savedStateName == window.savedStateName
-    })
+    let toRestoreCountOld = windowsToRestoreCount
+    windowsToRestore[window.savedStateName]?.state = .cancelled
+    let toRestoreCountNew = windowsToRestoreCount
 
     let toOpenFileCountOld = pwcsForOpenFiles?.count ?? 0
     pwcsForOpenFiles?.removeAll(where: { pwc in
@@ -847,11 +889,11 @@ final class StartupHandler {
     })
     let toOpenFileCountNew = pwcsForOpenFiles?.count ?? 0
 
-    let toRestoreCountNew = wcsToRestore.count
     let removedFromRestoreCount = toRestoreCountOld - toRestoreCountNew
     let removedFromOpenCount = toOpenFileCountOld - toOpenFileCountNew
 
-    log.verbose("Canceled wait for window: \(window.savedStateName.quoted) (removedFromRestoreCount=\(removedFromRestoreCount), removedFromOpenCount=\(removedFromOpenCount)). Progress is now: \(wcsDoneWithRestore.count)/\(state == .doneEnqueuing ? "\(wcsToRestore.count)" : "?")")
+    log.verbose("Canceled wait for window: \(window.savedStateName.quoted) (removedFromRestoreCount=\(removedFromRestoreCount),"
+                + " removedFromOpenCount=\(removedFromOpenCount)). Progress is now: \(windowsToRestoreDoneCount)/\(state == .doneEnqueuing ? "\(windowsToRestoreCount)" : "?")")
 
     showWindowsIfReady()
   }

@@ -405,16 +405,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard !savedStateName.isEmpty else { return }
 
     DispatchQueue.main.async { [self] in
-      guard !isTerminating else {
-        return
-      }
+      guard !isTerminating else { return }
       Logger.log.verbose("Window did minimize; adding to minimized windows list: \(savedStateName.quoted)")
-      if !AppDelegate.shared.startupHandler.isDoneLaunching, let wc = window.windowController as? WindowController,
-         AppDelegate.shared.startupHandler.wcsToRestore.contains(wc) {
-        Logger.log.verbose("Marking window as done with restore: \(savedStateName.quoted)")
-        AppDelegate.shared.startupHandler.wcsDoneWithRestore.insert(wc)
-        AppDelegate.shared.startupHandler.showWindowsIfReady()
-      }
+      startupHandler.setDoneWithRestore(savedWindowName: savedStateName)
       UIState.shared.windowsOpen.remove(savedStateName)
       UIState.shared.windowsMinimized.insert(savedStateName)
       UIState.shared.saveCurrentOpenWindowList()
@@ -428,9 +421,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard !savedStateName.isEmpty else { return }
 
     DispatchQueue.main.async { [self] in
-      guard !isTerminating else {
-        return
-      }
+      guard !isTerminating else { return }
       Logger.log.verbose("App window did deminiaturize; removing from minimized windows list: \(savedStateName.quoted)")
       UIState.shared.windowsOpen.insert(savedStateName)
       UIState.shared.windowsMinimized.remove(savedStateName)

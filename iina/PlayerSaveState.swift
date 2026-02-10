@@ -37,6 +37,7 @@ struct PlayerSaveState: CustomStringConvertible {
     case playlistPos = "playlistPos"             /// `MPVProperty.playlistPos`. Added in v1.4
     case playlistPaths = "playlistPaths"
     case playlistBookmarks = "playlistBookmarks" /// Added in v1.5: better tracking of playlist paths, improves security
+    case playlistVolRemountURLs = "playlistVolRemountURLs" /// Added in v1.5.1
 
     case playlistVideos = "playlistVideos"
     case playlistSubtitles = "playlistSubs"
@@ -54,6 +55,7 @@ struct PlayerSaveState: CustomStringConvertible {
 
     case url = "url"
     case bookmark = "bookmark"                   /// Added in v1.5
+    case volRemountURL = "volRemountURL"         /// Added in v1.5.1
     case playPosition = "playPosition"           /// `MPVOption.PlaybackControl.start`
     case playDuration = "playDuration"           /// `MPVProperty.duration`
     case paused = "paused"                       /// `MPVOption.PlaybackControl.pause`
@@ -209,7 +211,9 @@ struct PlayerSaveState: CustomStringConvertible {
       switch prop.key {
       case PropName.url.rawValue,
         // these are too long and contain PII
+        PropName.volRemountURL.rawValue,
         PropName.playlistPaths.rawValue,
+        PropName.playlistVolRemountURLs.rawValue,
         PropName.playlistVideos.rawValue,
         PropName.playlistSubtitles.rawValue,
         PropName.matchedSubtitles.rawValue:
@@ -226,6 +230,19 @@ struct PlayerSaveState: CustomStringConvertible {
     let propsJSON = json(from: filteredProps) ?? "<ERROR>"
 
     return "PlayerSaveState{'url': \(urlPath.pii.quoted), 'props': \(propsJSON)}"
+  }
+
+  var allRemountURLs: Set<String> {
+    var urls = Set<String>()
+    if let volRemountURL = properties[PropName.volRemountURL.rawValue] as? String {
+      urls.insert(volRemountURL)
+    }
+    
+    for volRemountURL in properties[PropName.playlistVolRemountURLs.rawValue] as? [String] ?? [] {
+      urls.insert(volRemountURL)
+    }
+
+    return urls
   }
 
   fileprivate func json(from object: Any) -> String? {
@@ -279,11 +296,42 @@ struct PlayerSaveState: CustomStringConvertible {
   }
 
   var url: URL? {
-    if let bookmarkData = properties[PropName.bookmark.rawValue] as? Data,
-       let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
-      log.verbose("Restored player url from bookmark: \(bookmarkURL.absoluteString.pii.quoted)")
-      return bookmarkURL
+    let staticURL = url(for: .url)
+    // Must not try to dereference bookmarks on remote drives! Can result in hangs at startup!
+    if let staticURL {
+      do {
+        let attrKeys: Set<URLResourceKey> = [.volumeIsLocalKey, .volumeNameKey, .volumeSubtypeKey,
+                                             .volumeIdentifierKey, .volumeSupportsPersistentIDsKey,
+                                             .volumeURLForRemountingKey, .volumeIsRemovableKey, .volumeUUIDStringKey,
+                                             .volumeTypeNameKey, .isMountTriggerKey, .volumeIsAutomountedKey]
+        let attrs = try staticURL.resourceValues(forKeys: attrKeys)
+        let volName = attrs.volumeName?.quoted ?? "nil"
+        let volUUID = attrs.volumeUUIDString ?? "nil"
+        let volID = attrs.volumeIdentifier?.description ?? "nil"
+        let isLocal = attrs.volumeIsLocal?.yn ?? "nil"
+        let volTypeName = attrs.volumeTypeName?.quoted ?? "nil"
+        let hasFileIDs = attrs.volumeSupportsPersistentIDs?.yn ?? "nil"
+        let isRemovable = attrs.volumeIsRemovable?.yn ?? "nil"
+        let volRemountURL = attrs.volumeURLForRemounting?.absoluteString.quoted ?? "nil"
+        let isMountTrigger = attrs.isMountTrigger?.yn ?? "nil"
+        let isAutomounted = attrs.volumeIsAutomounted?.yn ?? "nil"
+        log.verbose("Volume=\(volName): UUID=\(volUUID) ID=\(volID) Local=\(isLocal) HasFileIDs=\(hasFileIDs) Removable=\(isRemovable) AutoMounted=\(isAutomounted) IsMountTrigger=\(isMountTrigger) Type=\(volTypeName) volRemountURL=\(volRemountURL)")
+      } catch {
+        log.error("ERROR: \(error)")
+      }
     }
+    guard let volRemountURL = properties[PropName.volRemountURL.rawValue] as? String else {
+      log.warn("No `volRemountURL` property found for saved player (probably a pre-1.5.1 version); will restore static URL instead of bookmark")
+      return url(for: .url)
+    }
+    if volRemountURL.isEmpty {
+      if let bookmarkData = properties[PropName.bookmark.rawValue] as? Data,
+         let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
+        log.verbose("Restored player url from bookmark: \(bookmarkURL.absoluteString.pii.quoted)")
+        return bookmarkURL
+      }
+    }
+    // FIXME: handle non-empty remount URL
     return url(for: .url)
   }
 
@@ -306,13 +354,21 @@ struct PlayerSaveState: CustomStringConvertible {
 
     var ids: [PlaybackID] = []
 
-    // If we have both arrays and they are aligned, use them in lockstep to preserve order
-    if bookmarks.count == playlistPaths.count {
+    let volRemountURLs = properties[PropName.playlistVolRemountURLs.rawValue] as? [String]
+
+    // If we have all 3 arrays and they are aligned, use them in lockstep to preserve order
+    if let volRemountURLs, volRemountURLs.count == bookmarks.count, bookmarks.count == playlistPaths.count {
       let sw = Utility.Stopwatch()
       var resolvedCount = 0
-      for (bookmarkData, storedPath) in zip(bookmarks, playlistPaths) {
+      for ((bookmarkData, storedPath), volRemountURL) in zip(zip(bookmarks, playlistPaths), volRemountURLs) {
         // Attempt to create a PlaybackID from the bookmark first, if it is available
-        if !bookmarkData.isEmpty, let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
+        let staticURL = URL(fileURLWithPath: storedPath)
+        if !volRemountURL.isEmpty {
+          // Non-local URL
+          // FIXME: deal with volRemountURL
+          log.verbose("Remount URL is empty; using staticURL: \(staticURL.absoluteString.pii.quoted)")
+          ids.append(PlaybackID(staticURL, bookmark: nil))
+        } else if let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
           let idWithBookmark = PlaybackID(bookmarkURL, bookmark: bookmarkData)
           // Merge bookmark into cache
           MediaMetaCache.shared.updateCacheEntry(idWithBookmark)
@@ -325,11 +381,7 @@ struct PlayerSaveState: CustomStringConvertible {
           }
         } else {
           // Fallback to path -> URL when bookmark does not exist or cannot be resolved
-          if let url = URL(fileURLWithPath: storedPath) as URL? {
-            ids.append(PlaybackID(url, bookmark: nil))
-          } else {
-            log.error("Failed to build PlaybackID: invalid stored path \(storedPath.pii.quoted)")
-          }
+          ids.append(PlaybackID(staticURL, bookmark: nil))
         }
       }
       log.debug("Resolved bookmarks for "
@@ -338,23 +390,7 @@ struct PlayerSaveState: CustomStringConvertible {
       return ids
     }
 
-    // Otherwise, fall back to whichever list we have.
-    // Versions prior to v1.5 will have only `playlistPaths` and not bookmark data.
-    // Currently we should never encounter `playlistBookmarks` on its own, but can happen if prefs are tampered with.
-    if !bookmarks.isEmpty {
-      log.warn("Found playlistBookmarks but no playlistPaths; will try to restore from bookmarks only")
-      for bookmarkData in bookmarks {
-        if !bookmarkData.isEmpty, let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
-          ids.append(PlaybackID(bookmarkURL, bookmark: bookmarkData))
-        } else {
-          log.error("Failed to resolve playlist bookmark to URL; skipping one item")
-        }
-      }
-      log.verbose("Built \(ids.count) PlaybackIDs from playlist bookmarks")
-      return ids
-    }
-
-    // Fallback on plain paths only (legacy case)
+    // Versions prior to v1.5 will have only `playlistPaths` and not bookmark data: use these as fallback
     for path in playlistPaths {
       guard !path.isEmpty else {
         log.error("Playlist item path is empty and no bookmark data found: skipping!")
@@ -1583,6 +1619,7 @@ extension PlayerCore {
       if let bookmark = loadBookmark(forCurrentPlayback: currentPlayback) {
         props[PropName.bookmark.rawValue] = bookmark
       }
+      props[PropName.volRemountURL.rawValue] = url.volumeRemountURL?.absoluteString ?? ""
       props[PropName.url.rawValue] = url.absoluteString
 
       let playlistPos = currentPlayback.playlistPos
@@ -1612,7 +1649,10 @@ extension PlayerCore {
         }
       }
       props[PropName.playlistBookmarks.rawValue] = playlistBookmarks
-      log.verbose("Saved bookmarks for \(playlistBookmarks.reduce(0, { count, datum in count + (datum.isEmpty ? 0 : 1) } )) of \(playlistPaths.count) playlist items in \(sw.secElapsedString)")
+
+      let volRemountURLs: [String] = playlist.compactMap{ $0.url.volumeRemountURL?.absoluteString ?? "" }
+      props[PropName.playlistVolRemountURLs.rawValue] = volRemountURLs
+      log.verbose("Saved bookmarks & remountURLs for \(playlistBookmarks.reduce(0, { count, datum in count + (datum.isEmpty ? 0 : 1) } )) of \(playlistPaths.count) playlist items in \(sw.secElapsedString)")
     }
 
     if let playbackPositionSec = info.playbackPositionSec {

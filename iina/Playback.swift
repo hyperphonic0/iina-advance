@@ -147,12 +147,7 @@ struct PlaybackID: Sendable, Equatable, Hashable {
 
   var isNetworkResource: Bool { url.isNetworkResource }
 
-  var isMediaOnRemoteDrive: Bool {
-    if let attrs = try? url.resourceValues(forKeys: Set([.volumeIsLocalKey])), !attrs.volumeIsLocal! {
-      return true
-    }
-    return false
-  }
+  var isMediaOnRemoteDrive: Bool { url.isMediaOnRemoteDrive }
 
   var pathExtension: String { url.pathExtension }
 
@@ -200,9 +195,15 @@ struct PlaybackID: Sendable, Equatable, Hashable {
 
   /// Warning: this can be expensive! Use strategically.
   static func url(fromBookmark bookmarkData: Data, _ log: any Logger.Subsystem) -> URL? {
+    guard !bookmarkData.isEmpty else { return nil }
+    
     var isStale = false
     do {
-      return try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale)
+      let url = try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale)
+      if isStale {
+        log.verbose("URL has gone stale: \(url.absoluteString.pii.quoted)")
+      }
+      return url
     } catch {
       log.error("Failed to resolve URL from bookmark: \(error)")
       return nil
