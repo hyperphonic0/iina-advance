@@ -430,8 +430,19 @@ final class StartupHandler {
       case .newFilter, .editFilter, .saveFilter:
         log.debug("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping")
         continue
+
       case .playerWindow(let id):
-        restorePlayerWindowFromPriorLaunch(savedWindow, playerID: id)
+        /// Attempt to exactly restore play state & UI from last run of IINA (for given player)
+        log.debug("Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
+        guard let savedState = UIState.shared.getPlayerSaveState(forPlayerID: id) else {
+          log.errorDebugAlert("Cannot restore window: could not find saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
+          continue
+        }
+
+        // This will call `player.openURLs()` when done
+        guard let player = savedState.restorePlayer(id: id) else { continue }
+        addWindowToRestore(savedWindow, player.pwc)
+
       default:
         // Note: Guide is not saved
         log.error("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)")
@@ -441,22 +452,6 @@ final class StartupHandler {
     }
 
     return !windowsToRestore.isEmpty || restoreOpenFileWindow
-  }
-
-  /// Attempt to exactly restore play state & UI from last run of IINA (for given player)
-  @MainActor
-  private func restorePlayerWindowFromPriorLaunch(_ savedWindow: SavedWindow, playerID id: String) {
-    let log = UIState.shared.log
-    log.debug("Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
-
-    guard let savedState = UIState.shared.getPlayerSaveState(forPlayerID: id) else {
-      log.errorDebugAlert("Cannot restore window: could not find saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
-      return
-    }
-
-    // This will call `player.openURLs()` when done
-    guard let player = savedState.restorePlayer(id: id) else { return }
-    addWindowToRestore(savedWindow, player.pwc)
   }
 
   @MainActor @discardableResult

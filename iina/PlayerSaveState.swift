@@ -297,6 +297,8 @@ struct PlayerSaveState: CustomStringConvertible {
 
   var url: URL? {
     let staticURL = url(for: .url)
+    
+#if DEBUG
     // Must not try to dereference bookmarks on remote drives! Can result in hangs at startup!
     if let staticURL {
       do {
@@ -315,11 +317,15 @@ struct PlayerSaveState: CustomStringConvertible {
         let volRemountURL = attrs.volumeURLForRemounting?.absoluteString.quoted ?? "nil"
         let isMountTrigger = attrs.isMountTrigger?.yn ?? "nil"
         let isAutomounted = attrs.volumeIsAutomounted?.yn ?? "nil"
-        log.verbose("Volume=\(volName): UUID=\(volUUID) ID=\(volID) Local=\(isLocal) HasFileIDs=\(hasFileIDs) Removable=\(isRemovable) AutoMounted=\(isAutomounted) IsMountTrigger=\(isMountTrigger) Type=\(volTypeName) volRemountURL=\(volRemountURL)")
+        log.verbose("Volume=\(volName): UUID=\(volUUID) ID=\(volID) Local=\(isLocal) HasFileIDs=\(hasFileIDs)"
+                    + " Removable=\(isRemovable) AutoMounted=\(isAutomounted) IsMountTrigger=\(isMountTrigger)"
+                    + " Type=\(volTypeName) volRemountURL=\(volRemountURL)")
       } catch {
         log.error("ERROR: \(error)")
       }
     }
+#endif
+
     guard let volRemountURL = properties[PropName.volRemountURL.rawValue] as? String else {
       log.warn("No `volRemountURL` property found for saved player (probably a pre-1.5.1 version); will restore static URL instead of bookmark")
       return url(for: .url)
@@ -535,7 +541,9 @@ struct PlayerSaveState: CustomStringConvertible {
         // Older than IINA 1.2
         log.debug("Failed to restore VideoGeometry from CSV (build \(buildNumber) properties). Will attempt to build it from legacy properties instead")
       } else {
-        log.errorDebugAlert("Failed to restore VideoGeometry from CSV (build \(buildNumber) properties)! Possible tampering occurred with the prefs, or a backwards-incompatible version of of IINA Advance was run. Will attempt to build VideoGeometry from legacy properties instead...")
+        log.errorDebugAlert("Failed to restore VideoGeometry from CSV (build \(buildNumber) properties)!"
+                            + " Possible tampering occurred with the prefs, or a backwards-incompatible version of of IINA Advance was run."
+                            + " Will attempt to build VideoGeometry from legacy properties instead...")
       }
       let defaultGeo = VideoGeometry.defaultGeometry(log)
       let totalRotation = PlayerSaveState.int(for: .totalRotation, props)
@@ -567,13 +575,16 @@ struct PlayerSaveState: CustomStringConvertible {
     let defaultScreenID = defaultScreen.screenID
 
     // Need to replace `,` with `;` to avoid breaking CSV (ugly kludge)
-    let windowedFrameScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: windowedGeo.windowFrame, fallbackScreenID: defaultScreenID).replacingOccurrences(of: ",", with: ";")
+    let windowedFrameScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: windowedGeo.windowFrame,
+                                                                   fallbackScreenID: defaultScreenID).replacingOccurrences(of: ",", with: ";")
     let windowedGeoScreenID = windowedGeo.screenID.replacingOccurrences(of: ",", with: ";")
     if windowedFrameScreenID != windowedGeoScreenID {
       // The previous window origin is not in the previous screen, or possibly any screen.
       // Could be an external screen is no longer connected or the arrangement of the screens has changed.
-      log.warn("Windowed geometry's frame is invalid for screen \(windowedGeoScreenID.quoted). Will use default screen instead (\(defaultScreen.screenID.quoted))")
-      if let screenMeta = screenMetas.first(where: {$0.screenID == windowedGeoScreenID}), screenMeta.visibleFrame.contains(windowedGeo.windowFrame.origin) {
+      log.warn("Windowed geometry's frame is invalid for screen \(windowedGeoScreenID.quoted)."
+               + " Will use default screen instead (\(defaultScreen.screenID.quoted))")
+      if let screenMeta = screenMetas.first(where: {$0.screenID == windowedGeoScreenID}),
+         screenMeta.visibleFrame.contains(windowedGeo.windowFrame.origin) {
         // TODO: preserve relative window frame inside new screen
       } else {
       }
@@ -594,13 +605,16 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     // Need to replace `,` with `;` to avoid breaking CSV (ugly kludge)
-    let musicModeFrameScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: musicModeGeo.windowFrame, fallbackScreenID: defaultScreenID).replacingOccurrences(of: ",", with: ";")
+    let musicModeFrameScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: musicModeGeo.windowFrame,
+                                                                    fallbackScreenID: defaultScreenID).replacingOccurrences(of: ",", with: ";")
     let musicModeGeoScreenID = musicModeGeo.screenID.replacingOccurrences(of: ",", with: ";")
     if musicModeFrameScreenID != musicModeGeoScreenID {
       // The previous window origin is not in the previous screen, or possibly any screen.
       // Could be an external screen is no longer connected or the arrangement of the screens has changed.
-      log.warn("Invalid windowFrame for music mode PWinGeometry for screen \(musicModeGeoScreenID.quoted). Will use default screen instead (\(defaultScreen.screenID.quoted))")
-      if let screenMeta = screenMetas.first(where: {$0.screenID == musicModeGeoScreenID}), screenMeta.visibleFrame.contains(musicModeGeo.windowFrame.origin) {
+      log.warn("Invalid windowFrame for music mode PWinGeometry for screen \(musicModeGeoScreenID.quoted)."
+               + " Will use default screen instead (\(defaultScreen.screenID.quoted))")
+      if let screenMeta = screenMetas.first(where: {$0.screenID == musicModeGeoScreenID}),
+          screenMeta.visibleFrame.contains(musicModeGeo.windowFrame.origin) {
         // TODO: preserve relative window frame inside new screen
       } else {
       }
@@ -1652,7 +1666,8 @@ extension PlayerCore {
 
       let volRemountURLs: [String] = playlist.compactMap{ $0.url.volumeRemountURL?.absoluteString ?? "" }
       props[PropName.playlistVolRemountURLs.rawValue] = volRemountURLs
-      log.verbose("Saved bookmarks & remountURLs for \(playlistBookmarks.reduce(0, { count, datum in count + (datum.isEmpty ? 0 : 1) } )) of \(playlistPaths.count) playlist items in \(sw.secElapsedString)")
+      log.verbose("Saved bookmarks & remountURLs for \(playlistBookmarks.reduce(0, { count, datum in count + (datum.isEmpty ? 0 : 1) } ))"
+                  + " of \(playlistPaths.count) playlist items in \(sw.secElapsedString)")
     }
 
     if let playbackPositionSec = info.playbackPositionSec {
