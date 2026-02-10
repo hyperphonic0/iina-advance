@@ -170,9 +170,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: - Startup
 
-  var isDoneLaunching: Bool {
-    startupHandler.isDoneLaunching
-  }
+  @MainActor
+  var isDoneLaunching: Bool { startupHandler.isDoneLaunching }
 
   @MainActor
   func applicationWillFinishLaunching(_ notification: Notification) {

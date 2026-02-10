@@ -672,6 +672,15 @@ final class PlayerCore: NSObject {
           pwc.openWindow(nil)
         }
 
+        let volRemountURLs: [String: Bool]
+        if case .restoring = sessionState,
+           let playerToRestore = AppDelegate.shared.startupHandler.playersToRestore.removeValue(forKey: window.savedStateName) {
+          // This is the last bit of work for this player which requires volume remount info
+          volRemountURLs = playerToRestore.volRemountsProcessed
+        } else {
+          volRemountURLs = [:]
+        }
+
         mpv.queue.async { [self] in
           guard !isStopping else { return }
 
@@ -697,7 +706,7 @@ final class PlayerCore: NSObject {
               pendingResumeWhenShowingWindow = !Preference.bool(for: .pauseWhenOpen)
             }
 
-            let playlistPlaybackIDs = priorState.getPlaylistIDs()
+            let playlistPlaybackIDs = priorState.buildPlaylistIDs(volRemounts: volRemountURLs)
             if !playlistPlaybackIDs.isEmpty {
               let playlistPos: Int? = priorState.int(for: .playlistPos)
               log.debug("Restoring \(playlistPlaybackIDs.count) items into playlist, indexOfCurrentItem=\(playlistPos?.description ?? "nil")")

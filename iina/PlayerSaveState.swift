@@ -139,6 +139,7 @@ struct PlayerSaveState: CustomStringConvertible {
   let log: any Logger.Subsystem
 
   let properties: [String: Any]
+  let playerID: String
 
   /// Cached values parsed from `properties`
 
@@ -154,6 +155,7 @@ struct PlayerSaveState: CustomStringConvertible {
   @MainActor
   init(_ props: [String: Any], playerID: String) {
     self.properties = props
+    self.playerID = playerID
     self.log = Logger.subsystem(forPlayerID: playerID)
 
     let layoutStateCSV = PlayerSaveState.string(for: .layoutState, props)
@@ -196,15 +198,15 @@ struct PlayerSaveState: CustomStringConvertible {
   }
 
   var description: String {
-    guard let url else {
+    guard let staticURL else {
       return "PlayerSaveState(url=<ERROR>)"
     }
 
     let urlPath: String
     if #available(macOS 13.0, *) {
-      urlPath = url.path(percentEncoded: false)
+      urlPath = staticURL.path(percentEncoded: false)
     } else {
-      urlPath = url.path
+      urlPath = staticURL.path
     }
 
     let filteredProps = properties.filter({ prop in
@@ -232,13 +234,15 @@ struct PlayerSaveState: CustomStringConvertible {
     return "PlayerSaveState{'url': \(urlPath.pii.quoted), 'props': \(propsJSON)}"
   }
 
-  var allRemountURLs: Set<String> {
+  /// Builds a list of all volume remount URLs found in properties dict
+  var volumeRemountURLs: Set<String> {
     var urls = Set<String>()
-    if let volRemountURL = properties[PropName.volRemountURL.rawValue] as? String {
+    if let volRemountURL = properties[PropName.volRemountURL.rawValue] as? String, !volRemountURL.isEmpty {
       urls.insert(volRemountURL)
     }
     
     for volRemountURL in properties[PropName.playlistVolRemountURLs.rawValue] as? [String] ?? [] {
+      guard !volRemountURL.isEmpty else { continue }
       urls.insert(volRemountURL)
     }
 
@@ -295,9 +299,14 @@ struct PlayerSaveState: CustomStringConvertible {
     }
   }
 
-  var url: URL? {
-    let staticURL = url(for: .url)
-    
+  /// This is the simple value of the `url` property.
+  var staticURL: URL? { url(for: .url) }
+
+  /// This attempts to resolve the latest URL from bookmark data if possible, but may fall back to `staticURL`.
+  @MainActor
+  fileprivate func resolveURL(volRemounts: [String: Bool]) -> URL? {
+    let staticURL = staticURL
+
 #if DEBUG
     // Must not try to dereference bookmarks on remote drives! Can result in hangs at startup!
     if let staticURL {
@@ -327,18 +336,21 @@ struct PlayerSaveState: CustomStringConvertible {
 #endif
 
     guard let volRemountURL = properties[PropName.volRemountURL.rawValue] as? String else {
-      log.warn("No `volRemountURL` property found for saved player (probably a pre-1.5.1 version); will restore static URL instead of bookmark")
-      return url(for: .url)
+      log.warn("No `volRemountURL` property found for saved player (probably a pre-1.5.1 release); falling back static URL instead of bookmark")
+      return staticURL
     }
-    if volRemountURL.isEmpty {
-      if let bookmarkData = properties[PropName.bookmark.rawValue] as? Data,
-         let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
+    guard let bookmarkData = properties[PropName.bookmark.rawValue] as? Data else {
+      log.verbose("No bookmark data found for saved player (probably a pre-1.5 release); falling back to static URL")
+      return staticURL
+    }
+    if volRemountURL.isEmpty || (volRemounts[volRemountURL] == true) {
+      log.verbose("Restoring player url from bookmark…")
+      if let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
         log.verbose("Restored player url from bookmark: \(bookmarkURL.absoluteString.pii.quoted)")
         return bookmarkURL
       }
     }
-    // FIXME: handle non-empty remount URL
-    return url(for: .url)
+    return staticURL
   }
 
   var buildNumber: Int? {
@@ -348,7 +360,7 @@ struct PlayerSaveState: CustomStringConvertible {
   // MARK: - Save State / Serialize to prefs strings
 
   /// Builds a list of PlaybackID objects for the saved playlist, preferring secure bookmarks when available.
-  func getPlaylistIDs() -> [PlaybackID] {
+  func buildPlaylistIDs(volRemounts: [String: Bool]) -> [PlaybackID] {
     // Retrieve stored plain paths (legacy) and optional bookmarks (v1.5+)
     let playlistPaths = properties[PropName.playlistPaths.rawValue] as? [String] ?? []
     let bookmarks = properties[PropName.playlistBookmarks.rawValue] as? [Data] ?? []
@@ -369,12 +381,7 @@ struct PlayerSaveState: CustomStringConvertible {
       for ((bookmarkData, storedPath), volRemountURL) in zip(zip(bookmarks, playlistPaths), volRemountURLs) {
         // Attempt to create a PlaybackID from the bookmark first, if it is available
         let staticURL = URL(fileURLWithPath: storedPath)
-        if !volRemountURL.isEmpty {
-          // Non-local URL
-          // FIXME: deal with volRemountURL
-          log.verbose("Remount URL is empty; using staticURL: \(staticURL.absoluteString.pii.quoted)")
-          ids.append(PlaybackID(staticURL, bookmark: nil))
-        } else if let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
+        if volRemountURL.isEmpty || (volRemounts[volRemountURL] == true), let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
           let idWithBookmark = PlaybackID(bookmarkURL, bookmark: bookmarkData)
           // Merge bookmark into cache
           MediaMetaCache.shared.updateCacheEntry(idWithBookmark)
@@ -383,7 +390,8 @@ struct PlayerSaveState: CustomStringConvertible {
           // Support empty storedPath. as of v1.5 this should never happen, but it is envisioned that future versions
           // may store an empty path for items which have bookmark data. Try to be forward compatible:
           if !storedPath.isEmpty, PlaybackID.path(from: bookmarkURL) != storedPath {
-            log.debug("Playlist item from bookmark resolved to a new path than previously stored: \(storedPath.pii.quoted) → \(PlaybackID.path(from: bookmarkURL).pii.quoted)")
+            log.debug("Playlist item from bookmark resolved to a new path than previously stored: \(storedPath.pii.quoted)"
+                      + " → \(PlaybackID.path(from: bookmarkURL).pii.quoted)")
           }
         } else {
           // Fallback to path -> URL when bookmark does not exist or cannot be resolved
@@ -393,17 +401,17 @@ struct PlayerSaveState: CustomStringConvertible {
       log.debug("Resolved bookmarks for "
                 + (resolvedCount == playlistPaths.count ? "all \(resolvedCount)" : "\(resolvedCount) of \(playlistPaths.count)")
                 + " playlist items in \(sw.secElapsedString)")
-      return ids
-    }
-
-    // Versions prior to v1.5 will have only `playlistPaths` and not bookmark data: use these as fallback
-    for path in playlistPaths {
-      guard !path.isEmpty else {
-        log.error("Playlist item path is empty and no bookmark data found: skipping!")
-        continue
+    } else {
+      // Versions prior to v1.5 will have only `playlistPaths` and not bookmark data; v1.5.1 also added volRemountURLs
+      // which are needed to avoid very long hangs during restore. If less than all 3 properties are found, fall back to
+      for path in playlistPaths {
+        guard !path.isEmpty else {
+          log.error("Playlist item path is empty and no bookmark data found: skipping!")
+          continue
+        }
+        let url = URL(fileURLWithPath: path)
+        ids.append(PlaybackID(url, bookmark: nil))
       }
-      let url = URL(fileURLWithPath: path)
-      ids.append(PlaybackID(url, bookmark: nil))
     }
     log.verbose("Built \(ids.count) PlaybackIDs from playlist paths")
     return ids
@@ -695,14 +703,13 @@ struct PlayerSaveState: CustomStringConvertible {
 
   /// Restore player state from prior launch
   @MainActor
-  func restorePlayer(id: String) -> PlayerCore? {
-
-    guard let url else {
+  func restorePlayer(volRemounts: [String: Bool]) -> PlayerCore? {
+    guard let url = resolveURL(volRemounts: volRemounts) else {
       log.error("Could not restore player window: no value for property \(PropName.url.rawValue.quoted)")
       return nil
     }
 
-    let player = PlayerManager.shared.createNewPlayerCore(withLabel: id, restoringFrom: self)
+    let player = PlayerManager.shared.createNewPlayerCore(withLabel: playerID, restoringFrom: self)
     let pwc = player.pwc!
 
     let log = player.log

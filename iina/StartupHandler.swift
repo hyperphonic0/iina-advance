@@ -13,6 +13,7 @@ import OrderedCollections
 /// Encapsulates code for opening/restoring windows at application startup...and, um, also opening windows when files or URLs
 /// are opened manually.
 /// See also: `AppDelegate`
+@MainActor
 final class StartupHandler {
 
   enum OpenWindowsState: Int {
@@ -21,7 +22,7 @@ final class StartupHandler {
     case doneOpening
   }
 
-  class WindowToRestore {
+  fileprivate class WindowToRestore {
     enum State {
       case restoring
       case done
@@ -30,6 +31,7 @@ final class StartupHandler {
     let saveName: String
     var state: State = .restoring
     var wc: WindowController? = nil
+
     var pwc: PlayerWindowController? { wc as? PlayerWindowController }
     var done: Bool { state == .done }
     var cancelled: Bool { state == .cancelled }
@@ -37,6 +39,24 @@ final class StartupHandler {
     init(saveName: String, _ wc: WindowController? = nil) {
       self.saveName = saveName
       self.wc = wc
+    }
+  }
+
+  final class PlayerToRestore {
+    let saveName: String
+    let savedState: PlayerSaveState
+    /// Set of volume remount URLs found in player to restore which still need to be processed.
+    /// Key = absolute string of URL
+    var volRemountsToProcess: Set<String>
+    /// Dict of volume remount URLs which have been processed.
+    /// Key = absolute string of URL
+    /// Value = `true` if successful; `false` if failed or not processed
+    var volRemountsProcessed: [String: Bool] = [:]
+
+    init(saveName: String, _ savedState: PlayerSaveState, volumeRemountURLs: Set<String>) {
+      self.saveName = saveName
+      self.savedState = savedState
+      self.volRemountsToProcess = volumeRemountURLs
     }
   }
 
@@ -72,6 +92,7 @@ final class StartupHandler {
   ///
   /// Try to wait until all windows are ready so that we can show all of them at once (when `done` & `!cancelled`).
   /// - Make sure order of `windowsToRestore` is from back to front to restore the order properly.
+  /// - Dict key: saved window name
   fileprivate var windowsToRestore: OrderedDictionary<String, WindowToRestore> = [:]
   fileprivate var windowsToRestoreDoneCount: Int { windowsToRestore.values.reduce(0, { $0 + ($1.done ? 1 : 0) }) }
   fileprivate var windowsToRestoreCancelCount: Int { windowsToRestore.values.reduce(0, { $0 + ($1.cancelled ? 1 : 0) }) }
@@ -79,6 +100,10 @@ final class StartupHandler {
   /// Special case for Open File window when restoring. Because it is a panel, not a window, it will not have
   /// an `NSWindowController`.
   fileprivate var restoreOpenFileWindow = false
+
+  /// Dictionary of all pending players to restore.
+  /// Dict key: player's saved window name (same as `windowsToRestore`)
+  var playersToRestore: [String: PlayerToRestore] = [:]
 
   /// Calls `self.restoreDidTimeOut` on timeout.
   fileprivate let restoreTimer = TimeoutTimer(timeout: Constants.TimeInterval.restoreWindowsTimeout)
@@ -384,6 +409,8 @@ final class StartupHandler {
     log.verbose("Starting restore of \(savedWindowsBackToFront.count) windows")
     Preference.set(true, for: .isRestoreInProgress)
 
+    var volumeRemountURLStringsToProcess: Set<String> = []
+
     let app = AppDelegate.shared
     // Show windows one by one, starting at back and iterating to front:
     for savedWindow in savedWindowsBackToFront {
@@ -429,7 +456,6 @@ final class StartupHandler {
         app.showLogWindow(nil)
       case .newFilter, .editFilter, .saveFilter:
         log.debug("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping")
-        continue
 
       case .playerWindow(let id):
         /// Attempt to exactly restore play state & UI from last run of IINA (for given player)
@@ -439,23 +465,128 @@ final class StartupHandler {
           continue
         }
 
-        // This will call `player.openURLs()` when done
-        guard let player = savedState.restorePlayer(id: id) else { continue }
-        addWindowToRestore(savedWindow, player.pwc)
+        let pwinToRestore = addWindowToRestore(savedWindow)
+        let playerVolRemountURLs = savedState.volumeRemountURLs
+
+        if savedState.volumeRemountURLs.isEmpty {
+          let playerToRestore = PlayerToRestore(saveName: pwinToRestore.saveName, savedState, volumeRemountURLs: [])
+          restorePlayer(pwinToRestore, playerToRestore)
+        } else {
+          // Save player meta, then process volumeRemountURLs asychronously
+          playersToRestore[pwinToRestore.saveName] = PlayerToRestore(saveName: pwinToRestore.saveName, savedState,
+                                                                     volumeRemountURLs: playerVolRemountURLs)
+
+          for volumeRemountURL in savedState.volumeRemountURLs {
+            volumeRemountURLStringsToProcess.insert(volumeRemountURL)
+          }
+        }
 
       default:
         // Note: Guide is not saved
         log.error("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)")
-        continue
-      }
+      }  // end switch
 
+    }  // end loop over savedWindowsBackToFront
+
+    PlayerSaveState.saveQueue.async {
+      log.debug("[Remount] Found \(volumeRemountURLStringsToProcess.count) volume remount URLs to process")
+
+      var abort = false
+      for volRemountURLString in volumeRemountURLStringsToProcess {
+        assert(!volRemountURLString.isEmpty)
+        guard !abort else {
+          log.debug("[Remount] Aborting processing of remaining remount URLs")
+          return
+        }
+
+        var successful = false
+        if let remountURL = URL(string: volRemountURLString) {
+          let alreadyMounted = self.isMounted(remountURL: remountURL)
+          if alreadyMounted {
+            log.verbose("[Remount] Volume is already mounted: remountURL=\(volRemountURLString.pii.quoted)")
+            successful = true
+          } else {
+            log.verbose("[Remount] Volume not mounted; attempting to remount: \(volRemountURLString.pii.quoted)")
+            if NSWorkspace.shared.open(remountURL) {
+              log.verbose("[Remount] Successfully remounted volume: \(volRemountURLString.pii.quoted)")
+              successful = true
+            } else {
+              log.error("[Remount] Failed to remount volume: \(volRemountURLString.pii.quoted)")
+            }
+          }
+        } else {
+          log.error("[Remount] Failed to build URL from volume remount string: \(volRemountURLString.pii.quoted)")
+        }
+
+        DispatchQueue.main.async { [self] in
+          for playerToRestore in playersToRestore.values {
+            guard let remountProcessed = playerToRestore.volRemountsToProcess.remove(volRemountURLString) else { continue }
+            playerToRestore.volRemountsProcessed[remountProcessed] = successful
+
+            guard playerToRestore.volRemountsToProcess.isEmpty else { continue }
+            log.verbose("[Remount] Done processing all \(playerToRestore.volRemountsProcessed.count) volRemountURLs for player"
+                        + " \(playerToRestore.saveName.quoted): will begin its restore")
+            let pwinToRestore = windowsToRestore[playerToRestore.saveName]!
+            restorePlayer(pwinToRestore, playerToRestore)
+          }
+
+          guard !isDoneLaunching else {
+            log.warn("[Remount] Aborting restore of remaining players; startup was marked as done despite remount URLs not completing")
+            abort = true
+            return
+          }
+        }
+      }
     }
 
     return !windowsToRestore.isEmpty || restoreOpenFileWindow
   }
 
+  nonisolated
+  private func isMounted(remountURL: URL) -> Bool {
+    let mounted = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: nil, options: []) ?? []
+
+    // Normalize for comparison
+    let target = remountURL.standardized
+
+    for vol in mounted {
+      guard let volStd = vol.volumeRemountURL else { continue }
+
+      // For file volumes: path prefix match is typically sufficient
+      if target.isFileURL && volStd.isFileURL {
+        // Either same root volume path or the target is contained under it
+        if target == volStd || target.path.hasPrefix(volStd.path) {
+          return true
+        }
+        continue
+      }
+
+      // For network shares: compare scheme/host and path prefix
+      if target.scheme != "file",
+         volStd.scheme == target.scheme,
+         volStd.host?.localizedCaseInsensitiveCompare(target.host ?? "") == .orderedSame {
+        // Loose path prefix match (e.g., smb://server/share vs smb://server/share/folder)
+        if target.path.hasPrefix(volStd.path) || volStd.path.hasPrefix(target.path) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  @MainActor
+  fileprivate func restorePlayer(_ pwinToRestore: WindowToRestore, _ playerToRestore: PlayerToRestore) {
+    // This will call `player.openURLs()` when done
+    if let player = playerToRestore.savedState.restorePlayer(volRemounts: playerToRestore.volRemountsProcessed) {
+      pwinToRestore.wc = player.pwc
+    } else {
+      pwinToRestore.state = .cancelled
+      showWindowsIfReady()
+    }
+  }
+
   @MainActor @discardableResult
-  func addWindowToRestore(_ savedWindow: SavedWindow, _ wc: WindowController? = nil) -> WindowToRestore {
+  fileprivate func addWindowToRestore(_ savedWindow: SavedWindow, _ wc: WindowController? = nil) -> WindowToRestore {
     Logger.restore.verbose("Adding window to restore: \(savedWindow.saveName.string.quoted), minimized=\(savedWindow.isMinimized.yn)")
     let winMeta = WindowToRestore(saveName: savedWindow.saveName.string, wc)
     assert(windowsToRestore[winMeta.saveName] == nil, "Duplicate window to restore: \(winMeta.saveName.quoted)")
@@ -586,6 +717,7 @@ final class StartupHandler {
             stalledWindow.state = .cancelled
           }
         }
+        showWindowsIfReady()
       }
     }
 
@@ -695,6 +827,7 @@ final class StartupHandler {
 
       var prevWindowNumber: Int? = nil
       for winToRestore in windowsToRestore.values {
+        guard !winToRestore.cancelled else { continue }
         let windowIsMinimized = UIState.shared.windowsMinimized.contains(winToRestore.saveName)
         log.verbose("Showing restored window: \(winToRestore.saveName)\(windowIsMinimized ? " (minimized)" : "")")
         guard !windowIsMinimized else { continue }
@@ -733,7 +866,7 @@ final class StartupHandler {
       NSApp.activate(ignoringOtherApps: true)
 
       if Preference.bool(for: .isRestoreInProgress) {
-        log.verbose("Done restoring windows (\(windowsToRestore.count))")
+        log.verbose("Done restoring windows (\(windowsToRestoreDoneCount))")
         Preference.set(false, for: .isRestoreInProgress)
       } else {
         log.verbose("Done opening windows")
@@ -749,7 +882,7 @@ final class StartupHandler {
 
       initAppUI()
 
-      let didRestoreSomething = !windowsToRestore.isEmpty || restoreOpenFileWindow
+      let didRestoreSomething = (windowsToRestoreDoneCount > 0) || restoreOpenFileWindow
       let didShowSomething = didRestoreSomething || (pwcsForOpenFiles != nil)
       let canShowWelcomeWindowByDefault = Preference.enum(for: .actionAfterLaunch) == Preference.ActionAfterLaunch.welcomeWindow
       var didShowWelcomeWindow = windowsToRestore[WindowAutosaveName.welcome.string] != nil
@@ -780,6 +913,9 @@ final class StartupHandler {
         }
       }
     }
+
+    // Free memory no longer needed
+    windowsToRestore = [:]
 
     let timeElapsed: Double = CFAbsoluteTimeGetCurrent() - launchStartTime
     Logger.log.verbose("Done with startup (\(timeElapsed.stringMaxFrac2)s)")

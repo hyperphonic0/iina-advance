@@ -583,7 +583,7 @@ class UIState {
               continue
             }
 
-            log.warn("Deleting orphaned pref entry: \(playerKey.quoted) with path \(PlaybackID.path(from: savedState.url).quoted)")
+            log.warn("Deleting orphaned pref entry: \(playerKey.quoted) with path \(PlaybackID.path(from: savedState.staticURL).quoted)")
             UserDefaults.standard.removeObject(forKey: playerKey)
             countEntriesDeleted += 1
           }

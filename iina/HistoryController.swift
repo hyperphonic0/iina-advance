@@ -389,11 +389,21 @@ final class HistoryController {
       return
     }
 
+    // FIXME: Need to check volume remount URLs before attempting bookmarks! Should always keep enableRecentDocumentsWorkaround=NO for now.
     log.debug("Restoring list of recent documents from prefs...")
 
     var newRecentDocuments: [URL] = []
     var foundStale = false
     for document in recentDocuments {
+      // This loop can take a very long time if trying to resolve network files: check with every loop iteration
+      guard !isAppTerminating else {
+        log.debug("Aborting restore of recent documents from prefs: app is terminating")
+        return
+      }
+      guard historyEnabled else {
+        log.verbose("Aborting restore of recent documents from prefs: history is no longer enabled")
+        return
+      }
       var isStale = false
       guard let asData = document as? Data,
             let bookmark = try? URL(resolvingBookmarkData: asData, bookmarkDataIsStale: &isStale) else {

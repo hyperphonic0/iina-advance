@@ -847,11 +847,11 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       log.verbose("PlayerWindow openWindow aborting: launch is non-interactive")
       return
     }
-    log.verbose("PlayerWindow openWindow starting, playbackPath=\(player.info.currentPlayback?.path.pii.quoted ?? "nil")")
-    guard player.info.currentPlayback != nil else {
+    guard let currentPlayback = player.info.currentPlayback else {
       log.error("PlayerWindow openWindow aborting: currentPlayback is nil")
       return
     }
+    log.verbose("PlayerWindow openWindow starting: playbackPath=\(currentPlayback.path.pii.quoted)")
 
     // Must workaround an AppKit defect in some versions of macOS. This defect is known to exist in
     // Catalina and Big Sur. The problem was not reproducible in early versions of Monterey. It

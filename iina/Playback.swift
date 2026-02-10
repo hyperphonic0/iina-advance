@@ -201,6 +201,7 @@ struct PlaybackID: Sendable, Equatable, Hashable {
     do {
       let url = try URL(resolvingBookmarkData: bookmarkData, bookmarkDataIsStale: &isStale)
       if isStale {
+        // TODO: update stale bookmarks where convenient
         log.verbose("URL has gone stale: \(url.absoluteString.pii.quoted)")
       }
       return url
