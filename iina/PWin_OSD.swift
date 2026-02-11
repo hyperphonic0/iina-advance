@@ -121,14 +121,8 @@ final class OSDState {
   }
 
   var textSizeLast: CGFloat = 0
-  let queueLock = Lock()
+  @MainActor
   var queue = LinkedList<() -> Void>()
-
-  func clearQueuedOSDs() {
-    queueLock.withLock {
-      queue.clear()
-    }
-  }
 
   @MainActor
   init(log: any Logger.Subsystem) {
@@ -811,16 +805,14 @@ extension PlayerWindowController {
     }
 
     guard canShowOSD(message: msg) else { return }
-    
-    // Enqueue first, in case main queue is blocked
-    osd.queueLock.withLock {
+
+    // Need to do the UI sync in the main queue
+    DispatchQueue.main.async { [self] in
+      // Enqueue first, in case main queue is blocked
       osd.queue.append({ [self] in
         // DO NOT use animationPipeline here. It is not needed, and will cause OSD to block
         displayOSD(msg, autoHide: autoHide, accessoryViewController: accessoryViewController)
       })
-    }
-    // Need to do the UI sync in the main queue
-    DispatchQueue.main.async { [self] in
       updateUI(pullUpdatesFromMpv: true)
     }
   }

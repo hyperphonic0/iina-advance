@@ -1036,7 +1036,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       }
 
       player.info.currentPlayback = nil
-      osd.clearQueuedOSDs()
       log.trace("Done: windowWillClose cleanup on mpv DQ")
     }
   }
@@ -2009,10 +2008,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     /// Make sure file is completely loaded, or else the "watch-later" message may appear separately from the `fileStart` msg.
     if player.info.isFileLoadedAndSized {
       // Run all tasks in the OSD queue until it is depleted
-      osd.queueLock.withLock {
-        while let taskFunc = osd.queue.removeFirst() {
-          taskFunc()
-        }
+      while let taskFunc = osd.queue.removeFirst() {
+        taskFunc()
       }
     } else {
       // Do not refresh syncUITimer. It will cause an infinite loop

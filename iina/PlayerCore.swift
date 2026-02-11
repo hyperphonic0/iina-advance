@@ -662,7 +662,7 @@ final class PlayerCore: NSObject {
       DispatchQueue.main.async { [self] in
         if !pwc.sessionState.isRestoring {
           if isInteractivePlayer {
-            pwc.osd.clearQueuedOSDs()
+            pwc.osd.queue.clear()
           }
           pwc.sessionState = pwc.sessionState.newSession()
         }
