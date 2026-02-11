@@ -807,12 +807,14 @@ extension PlayerWindowController {
 
     // Need to do the UI sync in the main queue
     DispatchQueue.main.async { [self] in
+      log.verbose("[OSD] Enqueuing: \(msg)")
       // Enqueue first, in case main queue is blocked
       osd.queue.append({ [self] in
+        log.verbose("[OSD] Dequeuing: \(msg)")
         // DO NOT use animationPipeline here. It is not needed, and will cause OSD to block
         displayOSD(msg, autoHide: autoHide, accessoryViewController: accessoryViewController)
       })
-      videoView.displayActive()
+      player.syncTimeAndCacheUI()
     }
   }
 
