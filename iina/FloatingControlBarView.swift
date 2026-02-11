@@ -1,5 +1,5 @@
 //
-//  FloatingControlBarView.swift
+//  FloatingControlBar.swift
 //  iina
 //
 //  Created by lhc on 16/7/16.
@@ -8,13 +8,59 @@
 
 import Cocoa
 
+final class FloatingControlBarVisualEffectView: NSVisualEffectView, @MainActor DraggableObject {
+  let controlBar: FloatingControlBar
+
+  init(_ controlBar: FloatingControlBar) {
+    self.controlBar = controlBar
+    super.init(frame: .zero)
+    blendingMode = .withinWindow
+    material = .popover
+    state = .active
+    wantsLayer = true
+  }
+
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { Preference.bool(for: .videoViewAcceptsFirstMouse) }
+  override func mouseDown(with event: NSEvent) { controlBar.mouseDown(with: event) }
+  override func mouseDragged(with event: NSEvent) { controlBar.mouseDragged(with: event) }
+  override func mouseUp(with event: NSEvent) { controlBar.mouseUp(with: event) }
+  func cancelDrag() { controlBar.cancelDrag() }
+}
+
+@available(macOS 26.0, *)
+final class FloatingControlBarGlassEffectView: NSGlassEffectView, @MainActor DraggableObject {
+  let controlBar: FloatingControlBar
+
+  init(_ controlBar: FloatingControlBar, style desiredStyle: Style) {
+    self.controlBar = controlBar
+    super.init(frame: .zero)
+    if desiredStyle == .clear {
+      style = .clear
+    } else {
+      style = .regular
+    }
+  }
+
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { Preference.bool(for: .videoViewAcceptsFirstMouse) }
+  override func mouseDown(with event: NSEvent) { controlBar.mouseDown(with: event) }
+  override func mouseDragged(with event: NSEvent) { controlBar.mouseDragged(with: event) }
+  override func mouseUp(with event: NSEvent) { controlBar.mouseUp(with: event) }
+  func cancelDrag() { controlBar.cancelDrag() }
+}
+
 // The control bar when position=="floating"
-final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObject {
+final class FloatingControlBar {
   static let barHeight: CGFloat = 67
   static let minBarWidth: CGFloat = 200
   private static let margin: CGFloat = CGFloat(max(0, Preference.integer(for: .floatingControlBarMargin)))
 
-  static var preferredBarWidth: CGFloat { max(FloatingControlBarView.minBarWidth, CGFloat(Preference.float(for: .floatingControlBarWidth))) }
+  static var preferredBarWidth: CGFloat { max(FloatingControlBar.minBarWidth, CGFloat(Preference.float(for: .floatingControlBarWidth))) }
+
+  var view: NSView!
+
+  var pwc: PlayerWindowController? { view.pwc }
 
   let topRowView = ClickThroughStackView()
   let bottomRowView = ClickThroughStackView()
@@ -32,34 +78,33 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
   var mouseDownLocationInWindow: CGPoint?
   private var isAlignFeedbackSent = false
 
-  var isDragging: Bool { pwc?.currentDragObject == self }
+  var isDragging: Bool { view.pwc?.currentDragObject == view }
 
+  func rebuildView() {
+    if let prevView = self.view {
+      prevView.removeFromSuperview()
+      prevView.removeAllSubviews()
+    }
 
-  init() {
-    super.init(frame: .zero)
-    idString = "OSC-Floating"
-    blendingMode = .withinWindow
-    material = .popover
-    state = .active
+    let subviews = [topRowView, bottomRowView]
 
-    wantsLayer = true
+    let view: NSView
     if #available(macOS 26, *) {
+      let osdGlassView = FloatingControlBarGlassEffectView(self, style: .clear)
       // MacOS Tahoe's style favors rounder corners. Try to fit in
-      roundCorners(withRadius: 10)
+      let contentView = NSView()
+      osdGlassView.contentView = contentView
+      contentView.subviews = subviews
+      view = osdGlassView
+      view.roundCorners(withRadius: 10)
     } else {
-      roundCorners(withRadius: 6)
+      view = FloatingControlBarVisualEffectView(self)
+      view.roundCorners(withRadius: 6)
+      view.subviews = subviews
     }
 
-    subviews = [topRowView, bottomRowView]
-
-    for stackView in [topRowView, bottomRowView] {
-      stackView.orientation = .horizontal
-      stackView.alignment = .centerY
-      stackView.distribution = .gravityAreas
-      stackView.spacing = 0
-      stackView.detachesHiddenViews = false
-      stackView.translatesAutoresizingMaskIntoConstraints = false
-    }
+    view.idString = "OSC-Floating"
+    view.translatesAutoresizingMaskIntoConstraints = false
 
     topRowView.addConstraintsToFillSuperview(top: 4, leading: 10, trailing: 10)
     topRowView.idString = "OSC-Floating-TopRow"
@@ -74,23 +119,40 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
     let rowsVertAlignCon = bottomRowView.topAnchor.constraint(equalTo: topRowView.bottomAnchor, constant: -10)
     rowsVertAlignCon.isActive = true
 
-    translatesAutoresizingMaskIntoConstraints = false
-    let heightEqCon = heightAnchor.constraint(equalToConstant: FloatingControlBarView.barHeight)
+    let heightEqCon = view.heightAnchor.constraint(equalToConstant: FloatingControlBar.barHeight)
     heightEqCon.isActive = true
-    preferredWidthConstraint = widthAnchor.constraint(equalToConstant: FloatingControlBarView.preferredBarWidth)
+    preferredWidthConstraint?.isActive = false
+    preferredWidthConstraint = view.widthAnchor.constraint(equalToConstant: FloatingControlBar.preferredBarWidth)
     preferredWidthConstraint.priority = .init(300)
     preferredWidthConstraint.isActive = true
-    let minWidthConstraint = widthAnchor.constraint(greaterThanOrEqualToConstant: FloatingControlBarView.minBarWidth)
+    let minWidthConstraint = view.widthAnchor.constraint(greaterThanOrEqualToConstant: FloatingControlBar.minBarWidth)
     minWidthConstraint.isActive = true
+
+    self.view = view
+  }
+
+  init() {
+    for stackView in [topRowView, bottomRowView] {
+      stackView.orientation = .horizontal
+      stackView.alignment = .centerY
+      stackView.distribution = .gravityAreas
+      stackView.spacing = 0
+      stackView.detachesHiddenViews = false
+      stackView.translatesAutoresizingMaskIntoConstraints = false
+    }
+
+    rebuildView()
   }
   
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+  @MainActor
   func updatePreferredBarWidth() {
-    preferredWidthConstraint.animateToConstant(FloatingControlBarView.preferredBarWidth)
+    preferredWidthConstraint.animateToConstant(FloatingControlBar.preferredBarWidth)
   }
 
   /// Adds margin constraints if missing
+  @MainActor
   func addOrUpdateMarginConstraints(for layout: LayoutState) {
     guard let pwc, let contentView = pwc.window?.contentView else { return }
     pwc.log.verbose("Updating floating OSC constraints: leadingSidebarVisible=\(layout.leadingSidebar.isVisible.yn) traillingSidebarVisible=\(layout.leadingSidebar.isVisible.yn)")
@@ -99,23 +161,24 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
     bottomMarginConstraint.weaken()
 
     let leadingConstraintSecondAnchor = layout.leadingSidebar.isVisible ? pwc.leadingSidebarView.trailingAnchor : contentView.leadingAnchor
-    leadingMarginConstraint.createOrUpdate(to: FloatingControlBarView.margin, priorityInt: 1000, requiredSecondAnchor: leadingConstraintSecondAnchor, pwc.log) { [self] c in
-      self.leadingAnchor.constraint(greaterThanOrEqualTo: leadingConstraintSecondAnchor, constant: c)
+    leadingMarginConstraint.createOrUpdate(to: FloatingControlBar.margin, priorityInt: 1000, requiredSecondAnchor: leadingConstraintSecondAnchor, pwc.log) { [self] c in
+      view.leadingAnchor.constraint(greaterThanOrEqualTo: leadingConstraintSecondAnchor, constant: c)
     }
 
     let traillingConstraintFirstAnchor = layout.trailingSidebar.isVisible ? pwc.trailingSidebarView.leadingAnchor : contentView.trailingAnchor
 
-    trailingMarginConstraint.createOrUpdate(to: FloatingControlBarView.margin, priorityInt: 1000, requiredSecondAnchor: traillingConstraintFirstAnchor, pwc.log) { [self] c in
-      traillingConstraintFirstAnchor.constraint(greaterThanOrEqualTo: self.trailingAnchor, constant: c)
+    trailingMarginConstraint.createOrUpdate(to: FloatingControlBar.margin, priorityInt: 1000, requiredSecondAnchor: traillingConstraintFirstAnchor, pwc.log) { [self] c in
+      traillingConstraintFirstAnchor.constraint(greaterThanOrEqualTo: view.trailingAnchor, constant: c)
     }
 
-    bottomMarginConstraint.createOrUpdate(to: FloatingControlBarView.margin, priorityInt: 1000, requiredSecondAnchor: traillingConstraintFirstAnchor, pwc.log) { [self] c in
-      contentView.bottomAnchor.constraint(greaterThanOrEqualTo: self.bottomAnchor, constant: c)
+    bottomMarginConstraint.createOrUpdate(to: FloatingControlBar.margin, priorityInt: 1000, requiredSecondAnchor: traillingConstraintFirstAnchor, pwc.log) { [self] c in
+      contentView.bottomAnchor.constraint(greaterThanOrEqualTo: view.bottomAnchor, constant: c)
     }
   }
 
-  func removeFloatingControlBarView() {
-    removeFromSuperview()
+  @MainActor
+  func removeFloatingControlBar() {
+    view.removeFromSuperview()
     leadingMarginConstraint.remove(pwc?.log)
     trailingMarginConstraint.remove(pwc?.log)
     bottomMarginConstraint.remove(pwc?.log)
@@ -123,8 +186,9 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
 
   // MARK: - Positioning
 
+  @MainActor
   fileprivate func moveToLocationRatio(parentGeo: PWinGeometry) {
-    guard superview != nil, let xConstraint, let yConstraint else { return }
+    guard view.superview != nil, let xConstraint, let yConstraint else { return }
 
     let ratioH = Preference.double(for: .controlBarPositionHorizontal)
     let ratioV = Preference.double(for: .controlBarPositionVertical)
@@ -150,6 +214,7 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
   }
 
   /// Converts the relative offsets of `xConst` and `yConst` into ratios into available space in the range [0...1]
+  @MainActor
   private func updateRatios(xConst: CGFloat, yConst: CGFloat, _ geometry: FloatingControlBarGeometry) {
     let minCenterX = geometry.minCenterX
 
@@ -166,28 +231,26 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
 
   // MARK: - Mouse Events
 
-  override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-    return Preference.bool(for: .videoViewAcceptsFirstMouse)
-  }
-
-  override func mouseDown(with event: NSEvent) {
+  @MainActor
+  func mouseDown(with event: NSEvent) {
     guard let pwc, let geometry = buildFloatingGeometry() else { return }
 
     pwc.log.verbose("FloatingOSC mouseDown")
-    window?.isMovableByWindowBackground = false
-    mousePosRelatedToView = self.convert(event.locationInWindow, from: nil)
+    view.window?.isMovableByWindowBackground = false
+    mousePosRelatedToView = view.convert(event.locationInWindow, from: nil)
     mouseDownLocationInWindow = event.locationInWindow
-    let originInViewport = pwc.viewportView.convert(frame.origin, from: nil)
+    let originInViewport = pwc.viewportView.convert(view.frame.origin, from: nil)
     let threshold = geometry.availableWidth * Constants.floatingControllerSnapToCenterThresholdMultiplier
-    isAlignFeedbackSent = abs(originInViewport.x - (pwc.viewportView.frame.width - frame.width) / 2) <= threshold
+    isAlignFeedbackSent = abs(originInViewport.x - (pwc.viewportView.frame.width - view.frame.width) / 2) <= threshold
 
     // Claim this now to signal to other things that nothing else should drag:
-    pwc.currentDragObject = self
+    pwc.currentDragObject = view
     // Reset flag
     minDragDistanceMet = false
   }
 
-  override func mouseDragged(with event: NSEvent) {
+  @MainActor
+  func mouseDragged(with event: NSEvent) {
     guard let mousePosRelatedToView,
           let mouseDownLocationInWindow,
           let pwc,
@@ -207,7 +270,7 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
     let currentLocInViewport = pwc.viewportView.convert(event.locationInWindow, from: nil)
     let xxx = currentLocInViewport.x - mousePosRelatedToView.x
 
-    var newCenterX = (userInterfaceLayoutDirection == .rightToLeft ? geometry.maxCenterX - xxx : xxx + geometry.halfBarWidth)
+    var newCenterX = (view.userInterfaceLayoutDirection == .rightToLeft ? geometry.maxCenterX - xxx : xxx + geometry.halfBarWidth)
     let newOriginY = currentLocInViewport.y - mousePosRelatedToView.y
     // stick to center
     if Preference.bool(for: .controlBarStickToCenter) {
@@ -230,7 +293,8 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
     yConstraint.constant = yConst
   }
 
-  override func mouseUp(with event: NSEvent) {
+  @MainActor
+  func mouseUp(with event: NSEvent) {
     guard let pwc, let geometry = buildFloatingGeometry()  else { return }
     if isDragging {
       pwc.log.verbose("FloatingOSC mouseUp: ending drag")
@@ -241,7 +305,7 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
 
     if event.clickCount == 2 {
       // Double-clicked: center the OSC
-      let (xConst, yConst) = geometry.calculateConstraintConstants(centerX: geometry.centerX, originY: frame.origin.y)
+      let (xConst, yConst) = geometry.calculateConstraintConstants(centerX: geometry.centerX, originY: view.frame.origin.y)
 
       // apply position
       xConstraint.animateToConstant(xConst)
@@ -253,6 +317,7 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
     }
   }
 
+  @MainActor
   func cancelDrag() {
     guard let geometry = buildFloatingGeometry() else { return }
     updateRatios(xConst: xConstraint.constant, yConst: yConstraint.constant, geometry)
@@ -272,17 +337,17 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
   @MainActor
   fileprivate struct FloatingControlBarGeometry {
     let parentGeo: PWinGeometry
-    let preferredBarWidth: CGFloat = FloatingControlBarView.preferredBarWidth
+    let preferredBarWidth: CGFloat = FloatingControlBar.preferredBarWidth
 
     // "available" == space to move OSC within
     var availableWidthMinX: CGFloat {
-      return parentGeo.insideBars.leading + FloatingControlBarView.margin
+      return parentGeo.insideBars.leading + FloatingControlBar.margin
     }
 
     var availableWidthMaxX: CGFloat {
       let viewportMaxX = parentGeo.viewportSize.width
-      let trailingUsedSpace = parentGeo.insideBars.trailing + FloatingControlBarView.margin
-      return max(viewportMaxX - trailingUsedSpace, FloatingControlBarView.margin + FloatingControlBarView.minBarWidth)
+      let trailingUsedSpace = parentGeo.insideBars.trailing + FloatingControlBar.margin
+      return max(viewportMaxX - trailingUsedSpace, FloatingControlBar.margin + FloatingControlBar.minBarWidth)
     }
 
     var availableWidth: CGFloat {
@@ -291,7 +356,7 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
 
     var barWidth: CGFloat {
       if availableWidth < preferredBarWidth {
-        return FloatingControlBarView.minBarWidth
+        return FloatingControlBar.minBarWidth
       }
       return preferredBarWidth
     }
@@ -311,11 +376,11 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
 
     var minOriginY: CGFloat {
       // There is no bottom bar is OSC is floating
-      return FloatingControlBarView.margin
+      return FloatingControlBar.margin
     }
 
     var maxOriginY: CGFloat {
-      let maxYWithoutTopBar = parentGeo.viewportSize.height - FloatingControlBarView.barHeight - FloatingControlBarView.margin
+      let maxYWithoutTopBar = parentGeo.viewportSize.height - FloatingControlBar.barHeight - FloatingControlBar.margin
       let topBarHeight = parentGeo.insideBars.top
       return maxYWithoutTopBar - topBarHeight
     }
@@ -340,28 +405,28 @@ final class FloatingControlBarView: NSVisualEffectView, @MainActor DraggableObje
 
   }
 
-} // end class FloatingControlBarView
+} // end class FloatingControlBar
 
 // MARK: - PlayerWindowController
 
 extension PlayerWindowController {
 
-  func addFloatingControlBarViewToViewportView() {
-    guard !viewportView.containsSubview(controlBarFloating) else { return }
+  func addFloatingControlBarToViewportView() {
+    guard !viewportView.containsSubview(controlBarFloating.view) else { return }
 
     log.verbose("Adding controlBarFloating to contentView")
-    viewportView.addSubview(controlBarFloating)
+    viewportView.addSubview(controlBarFloating.view)
     sortViewportViewSubviews()
 
     controlBarFloating.xConstraint?.isActive = false
     controlBarFloating.yConstraint?.isActive = false
 
-    let newY = viewportView.bottomAnchor.constraint(equalTo: controlBarFloating.bottomAnchor, constant: 60)
+    let newY = viewportView.bottomAnchor.constraint(equalTo: controlBarFloating.view.bottomAnchor, constant: 60)
     newY.identifier = "FloatingOSC-BtmY-Con"
     newY.priority = .defaultHigh
     controlBarFloating.yConstraint = newY
 
-    let newX = controlBarFloating.centerXAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 330)
+    let newX = controlBarFloating.view.centerXAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: 330)
     newX.identifier = "FloatingOSC-CenterX-Con"
     newX.priority = .init(450)
     controlBarFloating.xConstraint = newX
@@ -372,7 +437,7 @@ extension PlayerWindowController {
 
   func adjustFloatingControllerOrigin(for targetGeometry: PWinGeometry? = nil) {
     guard let window = window else { return }
-    guard controlBarFloating.superview != nil else { return }
+    guard controlBarFloating.view.superview != nil else { return }
 
     let parentGeo = targetGeometry ?? windowedModeGeo
     guard parentGeo.isViewportShown else { return }

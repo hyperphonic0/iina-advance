@@ -351,7 +351,7 @@ extension PlayerWindowController {
     if !speedLabel.isHidden, isMouseEvent(event, inAnyOf: [speedLabel]) {
       log.verbose("PWin MouseDown: user clicked on speedLabel; treating as playButton")
       playButtonAction(self)
-    } else if !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
+    } else if !controlBarFloating.view.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating.view]) {
       log.error("PWin MouseDown: ignoring; should be handled by controlBarFloating")
       return
     } else if let cbView = cropSettingsView?.cropBoxView, isInInteractiveMode && isMouseEvent(event, inAnyOf: [cbView]) {

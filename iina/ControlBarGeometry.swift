@@ -131,7 +131,7 @@ struct ControlBarGeometry: Sendable, CustomStringConvertible {
       self.playIconSpacing = musicModePlayIconSpacing
 
     } else if oscPosition == .floating {
-      barHeight = FloatingControlBarView.barHeight  // not really useful here anyway
+      barHeight = FloatingControlBar.barHeight  // not really useful here anyway
       fullIconHeight = 24
       self.playSliderHeight = 37
       self.toolIconSize = floatingToolbarIconSize

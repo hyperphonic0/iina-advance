@@ -528,7 +528,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   let trailingSidebarLeadingBorder = BorderLineView(id: "TrailingSidebar-LeadingBorder", fillColor: .quaternaryLabelColor)
 
   /// Floating OSC
-  let controlBarFloating = FloatingControlBarView()
+  let controlBarFloating = FloatingControlBar()
 
   /// Layout options for bar-type ("top" or "bottom" position) OSC controls inside `currentControlBar`.
   let oscOneRowView = SingleRowBarOSCView()

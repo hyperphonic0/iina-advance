@@ -152,10 +152,11 @@ extension PlayerWindowController {
                             defaultAlbumArtView,
                             additionalInfoView,
                             bufferIndicatorView,
-                            controlBarFloating,
+                            controlBarFloating.view,
                             osd.osdView]
-    let correctOrderedSubviews = possibleSubviews.filter { viewportView.containsSubview($0) }
+    let correctOrderedSubviews = possibleSubviews.filter { $0 != nil && viewportView.containsSubview($0!) }
     for subview in correctOrderedSubviews {
+      guard let subview else { continue }
       viewportView.addSubview(subview, positioned: .above, relativeTo: nil)
     }
   }

@@ -176,15 +176,16 @@ final class OSDState {
     osdAccessoryProgress.setContentHuggingPriority(.init(270), for: .horizontal)
     osdAccessoryProgress.setContentCompressionResistancePriority(.required, for: .vertical)
 
+    let subviews = [osdIconImageView, osdVStackView]
     if #available(macOS 26.0, *) {
       let osdGlassView = OSDGlassEffectView(style: .clear)
       osdView = osdGlassView
       let contentView = NSView()
       osdGlassView.contentView = contentView
-      contentView.subviews = [osdIconImageView, osdVStackView]
+      contentView.subviews = subviews
     } else {
       osdView = OSDVisualEffectView()
-      osdView.subviews = [osdIconImageView, osdVStackView]
+      osdView.subviews = subviews
     }
     osdView.idString = "OSDView"
     osdView.translatesAutoresizingMaskIntoConstraints = false

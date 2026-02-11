@@ -6,7 +6,7 @@
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
-class BottomBarVisualEffectView: NSVisualEffectView {
+final class BottomBarVisualEffectView: NSVisualEffectView {
   init() {
     super.init(frame: .zero)
     material = .sidebar
@@ -14,13 +14,11 @@ class BottomBarVisualEffectView: NSVisualEffectView {
     wantsLayer = true
   }
 
-  @MainActor required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
+  @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
 /// The bar at the very top of the window. May include title bar and/or OSC.
-class BottomBarGradientView: NSView {
+final class BottomBarGradientView: NSView {
   init() {
     super.init(frame: .zero)
     wantsLayer = true
@@ -34,8 +32,5 @@ class BottomBarGradientView: NSView {
     layer = gradient
   }
 
-  @MainActor required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-
+  @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }

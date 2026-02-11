@@ -186,7 +186,7 @@ extension PlayerWindowController {
 
     if transition.inputLayout.hasFloatingOSC && !outputLayout.hasFloatingOSC {
       // Hide floating OSC
-      fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating)
+      fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating.view)
     }
 
     // Change blending modes
@@ -627,8 +627,8 @@ extension PlayerWindowController {
         }
 
       case .floating:
-        currentControlBar = controlBarFloating
-        addFloatingControlBarViewToViewportView()
+        currentControlBar = controlBarFloating.view
+        addFloatingControlBarToViewportView()
         controlBarFloating.updatePreferredBarWidth()
 
         let floatingUpperView = controlBarFloating.topRowView
@@ -652,7 +652,7 @@ extension PlayerWindowController {
 
     if !outputLayout.hasFloatingOSC {
       // Not floating OSC!
-      controlBarFloating.removeFloatingControlBarView()
+      controlBarFloating.removeFloatingControlBar()
       updateSpeedLabelFont(for: transition)
     }
 
@@ -924,7 +924,7 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose("Start")
 
-    fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating)
+    fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating.view)
     fadeableViews.applyVisibility(outputLayout.topBarView, to: topBarView)
 
     if outputLayout.titleBar.isShowable {
