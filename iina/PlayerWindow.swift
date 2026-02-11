@@ -62,8 +62,8 @@ final class PlayerWindow: NSWindow {
     if processForImmediateView(keyCode: keyCode, pwc) {
       return
     }
-    
-    pwc.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
+
+    pwc.videoView.displayActive()  // Call explicitly to make sure it gets attention
 
     // Menu item key equivalents take priority
     if menu?.performKeyEquivalent(with: event) == true {
@@ -146,7 +146,7 @@ final class PlayerWindow: NSWindow {
         break
       }
     }
-    pwc.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
+    pwc.videoView.displayActive()  // Call explicitly to make sure it gets attention
 
     if menu?.performKeyEquivalent(with: event) == true {
       log.verbose("KeyEquiv: key was handled by menu item; returning")

@@ -68,7 +68,7 @@ final class PlayerCore: NSObject {
 
   var isSaveEnabled: Bool { isInteractivePlayer && UIState.shared.isSaveEnabled }
 
-  /// Time of the last player state save when called by `updatePlaybackTimeInfo`.
+  /// Time of the last player state save when called by `updatePlaybackInfo`.
   private var lastStateSaveTime = Date().timeIntervalSince1970
 
   /// After mpvInit, contains both the user options in Settings > Advanced, + commandLineArgs
@@ -100,6 +100,8 @@ final class PlayerCore: NSObject {
   let saveUIStateDebouncer = Debouncer(delay: Constants.TimeInterval.playerStateSaveDelay, queue: PlayerSaveState.saveQueue)
   let sliderSeekDebouncer = Debouncer(delay: Constants.TimeInterval.sliderSeekThrottlingInterval)
   let thumbReloadDebouncer = Debouncer(delay: Constants.TimeInterval.thumbnailRegenerationDelay, queue: ThumbnailCache.shared.thumbnailQueue)
+
+  var uiTimeDebouncer: Debouncer!
 
   // - Plugins
 
@@ -145,8 +147,6 @@ final class PlayerCore: NSObject {
   var videoView: VideoView!
 
   var keyBindingContext: PlayerInputContext!
-
-  var syncUITimer: Timer?
 
   // - Playlist
 
@@ -328,13 +328,11 @@ final class PlayerCore: NSObject {
     super.init()
     self.videoView = VideoView(player: self)
     self.mpv = MPVController(playerCore: self)
+    self.uiTimeDebouncer = Debouncer(delay: Constants.TimeInterval.uiTimeDebouncerDelay, queue: mpv.queue)
     self.keyBindingContext = PlayerInputContext(playerCore: self)
     self.touchBarSupport = TouchBarSupport(playerCore: self)
 
     miniPlayerShowVideoTimer.action = miniPlayerShowViewportTimerAction
-    TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeFnModes)
-    TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeGlobal)
-    TouchBarSettings.shared.addObserver(self, forKey: .PresentationModePerApp)
   }
 
   @MainActor
@@ -860,7 +858,6 @@ final class PlayerCore: NSObject {
     state = .shuttingDown
     if !isDemoPlayer {
       savePlaybackMetaBeforePlayerWillStop() // Save state to mpv watch-later (if enabled)
-      refreshSyncUITimer()   // Shut down timer
     }
     mpv.mpvQuit()
   }
@@ -881,10 +878,9 @@ final class PlayerCore: NSObject {
     log.debug("Player has shut down\(suffix)")
     // If mpv shutdown was initiated by mpv then the player state has not been saved.
     if isMPVInitiated {
-      state = .shuttingDown  // Make sure to indicate shutdown before calling `refreshSyncUITimer`
+      state = .shuttingDown
       if !isDemoPlayer {
         savePlaybackMetaBeforePlayerWillStop() // Save state to mpv watch-later (if enabled)
-        refreshSyncUITimer()   // Shut down timer
       }
       mpv.removeObservers()
     }
@@ -1142,7 +1138,6 @@ final class PlayerCore: NSObject {
       // Do not enqueue after window is closed (and info.currentPlayback is nil)
       sendOSD(.stop)
       DispatchQueue.main.async { [self] in
-        refreshSyncUITimer()
         videoView.stopDisplayLink()
       }
 
@@ -1607,18 +1602,17 @@ final class PlayerCore: NSObject {
         }
       }
       pwc.updatePlayButtonAndSpeedUI()
-      refreshSyncUITimer() // needed to get latest playback position
+      if paused {
+        videoView.displayIdle()
+      } else {  // resume
+        videoView.displayActive()
+      }
       if let pos = info.playbackTime.positionSec, let dur = info.playbackTime.durationSec {
         let osdMsg: OSDMessage = paused ? .pause(posSec: pos, durSec: dur) :
           .resume(posSec: pos, durSec: dur)
         sendOSD(osdMsg)
       }
       saveState()  // record the pause state
-      if paused {
-        videoView.displayIdle()
-      } else {  // resume
-        videoView.displayActive()
-      }
       if pwc.currentLayout.isInPiP {
         pwc.pip.controller?.playing = !paused
       }
@@ -2321,15 +2315,31 @@ final class PlayerCore: NSObject {
     mpv.setString(MPVProperty.audioDevice, replacement.name)
   }
 
+  /// First (1) gets the latest playback time & cache info, then (2) updates the UI controls with these values.
+  ///
+  /// There will be some delay before the final UI update due to the use of queues, and the use
+  /// of `uiTimeDebouncer` will throttle the frequency of updates.
+  func syncTimeAndCacheUI() {
+    uiTimeDebouncer.run { [self] in
+      assert(DispatchQueue.isExecutingIn(mpv.queue))
+      guard let (timeInfo, cacheState, rangesDidChange) = updatePlaybackInfo() else { return }
+
+      DispatchQueue.main.async { [self] in
+        pwc.updateUIControls(timeInfo, cacheState, rangesDidChange: rangesDidChange)
+      }
+    }
+  }
+
   func playbackRestarted() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.debug("Playback restarted")
 
+    // Important to synchronize the time as mpv may slightly alter the playback position during a
+    // restart even while paused. See issue #5337.
+    syncTimeAndCacheUI()
+
     DispatchQueue.main.async { [self] in
       info.isSeeking = false
-      // Important to synchronize the time as mpv may slightly alter the playback position during a
-      // restart even while paused. See issue #5337.
-      pwc.updateUI(pullUpdatesFromMpv: true)
 
       // When playback is paused the display link may be shutdown in order to not waste energy.
       // The display link will be restarted while seeking. If playback is paused shut it down again.
@@ -2895,134 +2905,28 @@ final class PlayerCore: NSObject {
     }
   }
 
-  var lastTimerSummary = ""  // for reducing log volume
+  func updatePlaybackInfo() -> (playbackTime: PlaybackTimeInfo, cacheState: CacheState?, rangesDidChange: Bool)? {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-  /// Assess the need for the timer that synchronizes the UI and start or stop it as needed.
-  ///
-  /// Call this when `syncUITimer` may need to be started, stopped, or needs its interval changed. It will figure out the correct action.
-  ///
-  /// This method is required to adhere to the best practices in the [Energy Efficiency Guide for Mac Apps](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/power_efficiency_guidelines_osx/UsingEfficientGraphics.html#//apple_ref/doc/uid/TP40013929-CH27-SW1)
-  /// that call for an app to avoid needless energy use. [Minimizing Timer Usage](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/power_efficiency_guidelines_osx/Timers.html#//apple_ref/doc/uid/TP40013929-CH5-SW1) is one of the recommended best practices.
-  /// - Important: Make sure that any state variables (e.g., `info.isPaused`, `isInMiniPlayer`,  etc.) are set *before*
-  ///     calling this method, not after, so that it makes the correct decisions.
-  @MainActor
-  func refreshSyncUITimer(logMsg: String = "") {
-    // Check if timer should start/restart
-
-    let useTimer: Bool
-    if state.isAtLeast(.stopping) {
-      useTimer = false
-    } else if info.currentPlayback == nil {
-      useTimer = false
-    } else if info.isPaused {
-      // Follow energy efficiency best practices and ensure IINA is absolutely idle when the
-      // video is paused to avoid wasting energy with needless processing. If paused shutdown
-      // the timer that synchronizes the UI and the high priority display link thread.
-
-      // If showing OSC for streaming media, even while paused the cache may still be filling,
-      // which will change the duration continuously.
-      useTimer = info.isNetworkResource && pwc.isUITimerNeeded()
-    } else if needsTouchBar && TouchBarSettings.shared.showAppControls || isInMiniPlayer {
-      // The timer can't be stopped if the mini player is being used as it always displays the OSC
-      // or if the timer is updating the information being displayed in the Touch Bar.
-      useTimer = true
-    } else if info.isNetworkResource {
-      // May need to show, hide, or update buffering indicator at any time.
-      useTimer = true
-    } else {
-      useTimer = pwc.isUITimerNeeded()
-    }
-
-    /// Invalidate existing timer:
-    /// - if no longer needed
-    /// - if still needed but need to change the `timeInterval`
-    var wasTimerRunning = false
-    if let existingTimer = self.syncUITimer, existingTimer.isValid {
-      /// Don't restart the existing timer if not needed, because restarting will ignore any time it has
-      /// already spent waiting, and could in theory result in a small visual jump (more so for long intervals).
-      wasTimerRunning = true
-
-      if !useTimer {
-        log.verbose("Invalidating SyncUITimer")
-        existingTimer.invalidate()
-        self.syncUITimer = nil
-      }
-    }
-
-    if Logger.isEnabled(.verbose) {
-      var summary: String = ""
-      if wasTimerRunning {
-        if useTimer {
-          summary = "running"
-        } else {
-          summary = "didStop"
-        }
-      } else {  // timer was not running
-        summary = useTimer ? "starting" : "notNeeded"
-      }
-      if summary != lastTimerSummary {
-        lastTimerSummary = summary
-        if useTimer {
-          summary += ", every \(Constants.TimeInterval.syncUITimer)s"
-        }
-        let logMsg = logMsg.isEmpty ? logMsg : "\(logMsg)- "
-        log.verbose(logMsg + "SyncUITimer \(summary), paused:\(info.isPaused.yn) net:\(info.isNetworkResource.yn)"
-                    + " mini:\(isInMiniPlayer.yn) touchBar:\(needsTouchBar.yn) state:\(state)")
-      }
-    }
-
-    // When fadeable views are hidden the time can get out of sync. This method will be called when
-    // the view becomes visible to sync the time. If the timer was not running the view must be
-    // updated now. Playback may be paused. If that is the case then the timer will not be started.
-    if !wasTimerRunning {
-      // Do not wait for first redraw
-      pwc.updateUI(pullUpdatesFromMpv: true)
-    }
-
-    guard useTimer && !wasTimerRunning else {
-      return
-    }
-
-    // Timer will start
-
-    log.verbose("Scheduling SyncUITimer")
-    syncUITimer = Timer.scheduledTimer(
-      timeInterval: Constants.TimeInterval.syncUITimer,
-      target: self,
-      selector: #selector(fireSyncUITimer),
-      userInfo: nil,
-      repeats: true
-    )
-    /// This defaults to 0 ("no tolerance"). But profiling found that granting a tolerance of `timeInterval * 0.1` (10%)
-    /// resulted in an ~8% redunction in CPU time used by UI sync.
-    syncUITimer?.tolerance = Constants.TimeInterval.syncUITimerToleraance
-  }
-
-  @MainActor
-  @objc func fireSyncUITimer() {
-    pwc.updateUI(pullUpdatesFromMpv: true)
-  }
-
-  // FIXME: this makes mpv calls on the main queue!
-  @MainActor
-  func updatePlaybackTimeInfo() {
     guard isActive else {
       log.verbose("SyncUI: not syncing: player not active")
-      return
+      return nil
     }
 
     // Apparently adding this check fixes an issue at startup where `mpv.getFlag(MPVProperty.eofReached)`(below) can deadlock
     guard let currentPlayback = info.currentPlayback else {
       log.verbose("SyncUI: not syncing: current playback is nil")
-      return
+      return nil
     }
 
-    info.playbackTime = mpv.getPlaybackTimeInfo()
+    let timeInfo = mpv.getPlaybackTimeInfo()
 
+    let cacheState: CacheState?
+    let rangesDidChange: Bool
     if currentPlayback.isNetworkResource || Preference.bool(for: .showCachedRangesInSlider) {
       let cacheStateOld = info.cacheState
       let cacheStateNew = mpv.getCacheState()
-      info.cacheState = cacheStateNew
+      cacheState = cacheStateNew
 
       if cacheStateOld.isBufferUnderrun && !cacheStateNew.isBufferUnderrun {
         log.verbose("SyncUI: demuxer buffer underrun cleared")
@@ -3030,15 +2934,14 @@ final class PlayerCore: NSObject {
         log.verbose("SyncUI: demuxer buffer underrun started")
       }
 
-      let rangesDidChange = cacheStateOld.cachedRanges.count != cacheStateNew.cachedRanges.count
+      rangesDidChange = cacheStateOld.cachedRanges.count != cacheStateNew.cachedRanges.count
       || zip(cacheStateNew.cachedRanges, cacheStateOld.cachedRanges).contains(where: { $0.0 != $1.0 || $0.1 != $1.1 })
-      if rangesDidChange {
-        //    NSLog("   *** CACHED RANGES: \(cachedRanges.count): \(cachedRanges)")
-        // Redraw PlaySlider to reflect change:
-        if let osc = pwc.currentControlBar, !osc.isHidden {
-          pwc.playSlider.needsDisplay = true
-        }
-      }
+//      if rangesDidChange {
+//        NSLog("   *** CACHED RANGES: \(cachedRanges.count): \(cachedRanges)")
+//      }
+    } else {
+      cacheState = nil
+      rangesDidChange = false
     }
 
     if isSaveEnabled {
@@ -3051,6 +2954,8 @@ final class PlayerCore: NSObject {
         lastStateSaveTime = now
       }
     }
+
+    return (timeInfo, cacheState, rangesDidChange)
   }
 
   // difficult to use option set
@@ -3228,10 +3133,6 @@ final class PlayerCore: NSObject {
   func makeTouchBar() -> NSTouchBar {
     log.debug("Activating Touch Bar")
     needsTouchBar = true
-    // The timer that synchronizes the UI is shutdown to conserve energy when the OSC is hidden.
-    // However the timer can't be stopped if it is needed to update the information being displayed
-    // in the touch bar. If currently playing make sure the timer is running.
-    refreshSyncUITimer()
     return touchBarSupport.touchBar
   }
 
@@ -3272,37 +3173,6 @@ final class PlayerCore: NSObject {
   func postNotification(_ name: Notification.Name) {
     log.verbose("Posting notification: \(name.rawValue)")
     NotificationCenter.default.post(Notification(name: name, object: self))
-  }
-
-  /// Observer for changes to the macOS Touch Bar settings.
-  /// - Parameters:
-  ///   - keyPath: The key path, relative to `object`, to the value that has changed.
-  ///   - object: The source object of the key path `keyPath`.
-  ///   - change: A dictionary that describes the changes that have been made to the value of the property at the key path
-  ///             `keyPath` relative to object. Entries are described in `Change Dictionary Keys`.
-  ///   - context: The value that was provided when the observer was registered to receive key-value observation notifications.
-  override func observeValue(forKeyPath keyPath: String?, of object: Any?,
-                             change: [NSKeyValueChangeKey: Any]?,
-                             context: UnsafeMutableRawPointer?) {
-    // The following guards are sanity checks and should never report an error.
-    guard let keyPath = keyPath else {
-      log.error("Observed key path is missing")
-      return
-    }
-    guard let key = TouchBarSettings.Key(rawValue: keyPath) else {
-      log.error("Observed key path is not a touch bar setting: \(keyPath)")
-      return
-    }
-    guard (key == .PresentationModeFnModes) || (key == .PresentationModeGlobal) || (key == .PresentationModePerApp) else {
-      log.error("Observed key path is unrecognized: \(keyPath)")
-      return
-    }
-    DispatchQueue.main.async { [self] in
-      log.debug("Touch Bar \(key) setting has changed")
-      // The macOS settings that control what the Touch Bar displays has changed. May need to start or
-      // stop the timer that refreshes the UI.
-      refreshSyncUITimer()
-    }
   }
 
   // MARK: - Track Meta

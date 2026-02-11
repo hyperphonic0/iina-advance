@@ -110,11 +110,16 @@ extension PlayerWindowController {
 
   @objc func menuJumpTo(_ sender: NSMenuItem) {
     // Make certain the cached video position in the playback info is up to date.
-    updateUI(pullUpdatesFromMpv: true)
-    Utility.quickPromptPanel("jump_to", inputValue: VideoTime.string(from: self.player.info.playbackTime.positionSec, precision: 3)) {
-      input in
-      if let vt = VideoTime(input) {
-        self.player.seek(absoluteSecond: Double(vt.second))
+    player.mpv.queue.async { [self] in
+      guard player.isActive else { return }
+      let timeInfo = player.mpv.getPlaybackTimeInfo()
+      DispatchQueue.main.async { [self] in
+        Utility.quickPromptPanel("jump_to", inputValue: VideoTime.string(from: timeInfo.positionSec, precision: 3)) {
+          input in
+          if let vt = VideoTime(input) {
+            self.player.seek(absoluteSecond: Double(vt.second))
+          }
+        }
       }
     }
   }

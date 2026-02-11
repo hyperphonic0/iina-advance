@@ -596,9 +596,6 @@ struct GeometryTransform: Sendable {
         }
       }
 
-      // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Just do the below for all cases now.
-      // Need to call here to ensure file title OSD is displayed when navigating playlist...
-      player.refreshSyncUITimer()
       // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
       pwc.updateWindowBorderAndOpacity()
 

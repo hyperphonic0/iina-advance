@@ -781,9 +781,8 @@ extension PlayerWindowController {
   /// There is a timing issue that can occur when the user holds down a key to rapidly repeat a key binding or menu item equivalent,
   /// which should result in an OSD being displayed for each keypress. But for some reason, the task to update the OSD,
   /// which is enqueued via `DispatchQueue.main.async` (or even `sync`), does not run at all while the key events continue to come in.
-  /// To work around this issue, we instead enqueue the tasks to display OSD using a simple LinkedList and Lock. Then we call
-  /// `updateUI()` both from here (as before), and inside the key event callbacks in `PlayerWindow` so that that the key events
-  /// themselves process the display of any enqueued OSD messages.
+  /// To work around this issue, we instead enqueue the tasks to display OSD using a simple LinkedList and Lock. Then when
+  /// `updateUIControls()` via the `DisplayLink` callback, the OSD messages will be dequeued & displayed.
   fileprivate func enqueueOSDForDisplay(_ msg: OSDMessage, autoHide: Bool, accessoryViewController: NSViewController?) {
     if case .debug = msg {
       log.verbose("DebugOSD: \(msg)")
@@ -813,7 +812,7 @@ extension PlayerWindowController {
         // DO NOT use animationPipeline here. It is not needed, and will cause OSD to block
         displayOSD(msg, autoHide: autoHide, accessoryViewController: accessoryViewController)
       })
-      updateUI(pullUpdatesFromMpv: true)
+      videoView.displayActive()
     }
   }
 
@@ -855,12 +854,6 @@ extension PlayerWindowController {
         if case .frameStep = osd.lastDisplayedMsg { return }
         if case .frameStepBack = osd.lastDisplayedMsg { return }
       }
-      /// Call this first to update `info.playbackPositionSec`, `info.playbackDurationSec`, needed below.
-      /// But do not call when seeking via slider - that will be handled by the slider itself - in that
-      /// case, calling it here also will cause slider to jump back & forth!
-      if !isScrollingOrDraggingPlaySlider {
-        player.updatePlaybackTimeInfo()
-      }
 
       /// Many redundant `MPV_EVENT_SEEK` messages are emitted from mpv at different times, and each triggers a call to
       /// show a `seek` OSD message. Show it only if either `position` or `duration` actually changed from their
@@ -874,7 +867,7 @@ extension PlayerWindowController {
       let durationDelta = abs(duration - (osd.lastPlaybackDuration ?? Double.infinity))
       guard positionDelta > Constants.OSD.osdSeekMinDeltaSec ||
             durationDelta > Constants.OSD.osdSeekMinDeltaSec else {
-        log.verbose("[OSD] Ignoring redundant request for 'seek'; neither position or duration has changed (\(positionDelta), \(durationDelta))")
+        log.verbose("[OSD] Ignoring redundant request for 'seek'; neither position or duration has changed (Δp=\(positionDelta) Δd=\(durationDelta))")
         return
       }
       osd.lastPlaybackPosition = position
@@ -890,7 +883,6 @@ extension PlayerWindowController {
         if case .frameStepBack = osd.lastDisplayedMsg { return }
       }
 
-      player.updatePlaybackTimeInfo()  // need to call this to update info.playbackPositionSec, info.playbackDurationSec
       osd.lastPlaybackPosition = player.info.playbackTime.positionSec
       osd.lastPlaybackDuration = player.info.playbackTime.durationSec
 
@@ -961,14 +953,7 @@ extension PlayerWindowController {
 
     // Restart timer
     osd.hideOSDTimer.cancel()
-    if osd.animationState != .shown {
-      osd.animationState = .shown  /// set this before calling `refreshSyncUITimer()`
-      DispatchQueue.main.async { [self] in  /// launch async task to avoid recursion, which `osdQueueLock` doesn't like
-        player.refreshSyncUITimer()
-      }
-    } else {
-      osd.animationState = .shown
-    }
+    osd.animationState = .shown
 
     if autoHide {
       let forcedTimeout = msg.alwaysEnabled ? Constants.TimeInterval.osdTimeoutForAlwaysEnabledMessages : nil
@@ -1016,7 +1001,7 @@ extension PlayerWindowController {
   // MARK: - Hide OSD
 
   @MainActor
-  func hideOSD(immediately: Bool = false, refreshSyncUITimer: Bool = true) {
+  func hideOSD(immediately: Bool = false) {
     guard loaded else { return }
 
     let duration = immediately ? 0 : Constants.AnimationDuration.osdAnimation
@@ -1037,10 +1022,6 @@ extension PlayerWindowController {
         osd.userInteractiveAccessory = nil
         for subview in osd.osdVStackView.views(in: .bottom) {
           osd.osdVStackView.removeView(subview)
-        }
-
-        if refreshSyncUITimer {
-          player.refreshSyncUITimer()
         }
       }
     })

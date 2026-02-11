@@ -108,8 +108,6 @@ extension PlayerWindowController {
         viewportView.apply(musicModeGeo)
       }
 
-      updateUI(pullUpdatesFromMpv: true)
-
       if player.disableUI { hideFadeableViews() }
 
       // Must wait until *after* loaded==true to load plugins!

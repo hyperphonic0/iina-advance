@@ -187,7 +187,6 @@ extension PlayerWindowController {
         fadeablesInTopBar = fadeableViews.fadeablesInTopBar
         log.verbose("SHOW fadeables: currentTkt=\(currentTicket) latestTkt=\(fadeableViews.showHideTicketCount) dur=\(duration) views=\(fadeables.map{$0.idString}) topBar=\(fadeablesInTopBar.map{$0.idString})")
 
-        player.refreshSyncUITimer(logMsg: "Showing fadeable views ")
         fadeableViews.hideTimer.cancel()
 
         for v in fadeables {
@@ -322,7 +321,6 @@ extension PlayerWindowController {
     let fadeTask = IINAAnimation.Task(duration: Constants.AnimationDuration.standard) { [self] in
       fadeableViews.animationState = .willHide
       fadeableViews.topBarAnimationState = .willHide
-      player.refreshSyncUITimer(logMsg: "Hiding fadeable views ")
 
       // Wait until here to build set! To avoid race
       fadeables = fadeableViews.fadeables

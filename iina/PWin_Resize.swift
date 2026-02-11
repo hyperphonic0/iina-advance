@@ -542,7 +542,7 @@ extension PlayerWindowController {
 
       // OSD messages may have been supressed because isAnimatingLayoutTransition was set.
       // Display now if needed (see note about OSD in `buildApplyPWinGeoTasks`)
-      updateUI(pullUpdatesFromMpv: true)
+      videoView.displayActive()
       if !outputGeo.mode.isFullScreen {
         player.events.emit(.windowSizeAdjusted, data: outputGeo.windowFrame)
       }

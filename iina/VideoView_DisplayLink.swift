@@ -227,5 +227,8 @@ func displayLinkCallback(
       glVideoLayer.mpvReportSwap()
     }
 
+    if let player = glVideoLayer.videoView.player {
+      player.syncTimeAndCacheUI()
+    }
     return kCVReturnSuccess
   }

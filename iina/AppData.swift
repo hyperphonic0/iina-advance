@@ -194,10 +194,8 @@ struct Constants {
 
   /// All values are in seconds unless explicitly named differently
   struct TimeInterval {
-    /// Time interval to sync play slider position, time labels, volume indicator & other UI.
-    static let syncUITimer: TimeInt = 0.05
-    /// Tolerance to allow to possible reduce CPU consumption
-    static let syncUITimerToleraance: TimeInt = 0.02
+    /// Minimum time interval to sync play slider position, time labels, volume indicator & other UI.
+    static let uiTimeDebouncerDelay: TimeInt = 0.02
 
     /// Minimum value to set a mpv loop point to.
     ///

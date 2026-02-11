@@ -1979,20 +1979,9 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // MARK: - Sync UI with playback
 
-  func isUITimerNeeded() -> Bool {
-    log.trace("Checking if UITimer needed. hasPermanentControlBar:\(currentLayout.hasPermanentControlBar.yn) fadeableViews:\(fadeableViews.animationState) topBar: \(fadeableViews.topBarAnimationState) OSD:\(osd.animationState)")
-    if currentLayout.hasPermanentControlBar {
-      return true
-    }
-    let showingFadeableViews = fadeableViews.animationState == .shown || fadeableViews.animationState == .willShow
-    let showingFadeableTopBar = fadeableViews.topBarAnimationState == .shown || fadeableViews.topBarAnimationState == .willShow
-    let showingOSD = osd.animationState == .shown || osd.animationState == .willShow
-    return showingFadeableViews || showingFadeableTopBar || showingOSD
-  }
-
   /// Updates all UI controls
   @MainActor
-  func updateUI(pullUpdatesFromMpv: Bool = false) {
+  func updateUIControls(_ playbackTime: PlaybackTimeInfo, _ cacheState: CacheState?, rangesDidChange: Bool) {
     // This method is often run outside of the animation queue, which can be dangerous.
     // Just don't update in this case
     guard !isAnimatingLayoutTransition else { return }
@@ -2000,20 +1989,28 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     guard player.state.isNotYet(.shuttingDown) else { return }
 
     // scroll wheel will set newer value; do not overwrite it until it is done
-    if pullUpdatesFromMpv && !isScrollingOrDraggingPlaySlider {
-      player.updatePlaybackTimeInfo()
+    if !isScrollingOrDraggingPlaySlider {
+      player.info.playbackTime = playbackTime
+      if let cacheState {
+        player.info.cacheState = cacheState
+      }
+      if rangesDidChange {
+        // Redraw PlaySlider to reflect change:
+        if let osc = currentControlBar, !osc.isHidden {
+          playSlider.needsDisplay = true
+        }
+      }
     }
 
     /// Make sure window is done being sized before displaying, or else OSD text can be incorrectly stretched horizontally.
     /// Make sure file is completely loaded, or else the "watch-later" message may appear separately from the `fileStart` msg.
     if player.info.isFileLoadedAndSized {
       // Run all tasks in the OSD queue until it is depleted
-      while let taskFunc = osd.queue.removeFirst() {
-        taskFunc()
+      while let osdDisplayFunc = osd.queue.removeFirst() {
+        osdDisplayFunc()
       }
     } else {
-      // Do not refresh syncUITimer. It will cause an infinite loop
-      hideOSD(immediately: true, refreshSyncUITimer: false)
+      hideOSD(immediately: true)
     }
 
     updatePlayButtonAndSpeedUI()
@@ -2049,6 +2046,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     // If the OSD is visible and is showing playback position, keep its displayed time up to date:
     updateOSDViews(updateSize: false)
 
+    log.trace("Updating playback UI: pos=\(position) dur=\(duration) remaining=\(remaining)")
     // Update playback position slider in OSC:
     for label in [leftTimeLabel, rightTimeLabel] {
       label.updateText(with: duration, given: position, and: remaining)
