@@ -77,6 +77,7 @@ final class PlaySlider: ScrollableSlider {
   /// `super.draw` and that has now been corrected. As a workaround on earlier versions of macOS the loop knob `draw` method
   /// is called directly.
   override func draw(_ dirtyRect: NSRect) {
+    /// See `PlaySliderCell` if you want to change `drawBar`.
     super.draw(dirtyRect)
     abLoopAKnob?.updateHorizontalPosition()
     abLoopBKnob?.updateHorizontalPosition()

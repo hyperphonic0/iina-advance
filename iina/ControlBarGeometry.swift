@@ -267,6 +267,9 @@ struct ControlBarGeometry: Sendable, CustomStringConvertible {
   /// This is only the slider's progress bar, not the whole bounds of its view. In fact it must be less than the height
   /// of its bounds, to prevent clipping.
   var sliderBarHeightNormal: CGFloat {
+    if position == .floating {
+      return (Constants.Slider.unscaledBarNormalHeight * 1.5).rounded()
+    }
     let height = (sliderScale * Constants.Slider.unscaledBarNormalHeight * 0.8).rounded()
     return max(Constants.Slider.unscaledBarNormalHeight, height)
   }

@@ -35,7 +35,7 @@ final class OSDState {
 
   // - Views
 
-  let osdView: NSView
+  var osdView: NSView
   fileprivate let osdVStackView: ClickThroughStackView
   fileprivate let osdIconImageView: NSImageView
   /// Use label constructor (even with empty string) to ensure proper styling
@@ -130,18 +130,6 @@ final class OSDState {
 
     log.verbose("Init OSD")
 
-    if #available(macOS 26.0, *) {
-      osdView = OSDGlassEffectView()
-    } else {
-      osdView = OSDVisualEffectView()
-    }
-    osdView.translatesAutoresizingMaskIntoConstraints = false
-    // Min width
-    let osdMinWidthConstraint = osdView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
-    osdMinWidthConstraint.identifier = "OSDView-MinWidthConstraint"
-    osdMinWidthConstraint.priority = .init(900)
-    osdMinWidthConstraint.isActive = true
-
     osdVStackView = ClickThroughStackView()
     osdIconImageView = NSImageView()
     /// Use label constructor (even with empty string) to ensure proper styling
@@ -189,12 +177,22 @@ final class OSDState {
     osdAccessoryProgress.setContentCompressionResistancePriority(.required, for: .vertical)
 
     if #available(macOS 26.0, *) {
+      let osdGlassView = OSDGlassEffectView(style: .clear)
+      osdView = osdGlassView
       let contentView = NSView()
-      (osdView as! NSGlassEffectView).contentView = contentView
+      osdGlassView.contentView = contentView
       contentView.subviews = [osdIconImageView, osdVStackView]
     } else {
+      osdView = OSDVisualEffectView()
       osdView.subviews = [osdIconImageView, osdVStackView]
     }
+    osdView.idString = "OSDView"
+    osdView.translatesAutoresizingMaskIntoConstraints = false
+    // Min width
+    let osdMinWidthConstraint = osdView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
+    osdMinWidthConstraint.identifier = "OSDView-MinWidthConstraint"
+    osdMinWidthConstraint.priority = .init(900)
+    osdMinWidthConstraint.isActive = true
 
     osdVStackView.idString = "OSD-VStackView"
     osdVStackView.wantsLayer = true
@@ -204,6 +202,7 @@ final class OSDState {
     osdVStackView.spacing = 0
     osdVStackView.detachesHiddenViews = true
     osdVStackView.translatesAutoresizingMaskIntoConstraints = false
+    osdVStackView.setHuggingPriority(.init(500), for: .vertical)
 
     osdVStackView.addView(osdLabel, in: .center)
     osdVStackView.addView(osdAccessoryText, in: .center)
@@ -318,7 +317,6 @@ final class OSDVisualEffectView: ClickThroughVisualEffectView {
     blendingMode = .withinWindow
     material = .popover
     state = .active
-    idString = "OSDView"
   }
   
   @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -326,10 +324,14 @@ final class OSDVisualEffectView: ClickThroughVisualEffectView {
 
 @available(macOS 26.0, *)
 final class OSDGlassEffectView: ClickThroughGlassEffectView {
-  init() {
+  init(style desiredStyle: Style) {
     super.init(frame: .zero)
-    idString = "OSDView"
-    style = .regular
+    if desiredStyle == .clear {
+      style = .clear
+      tintColor = .black.withAlphaComponent(0.4)
+    } else {
+      style = .regular
+    }
   }
 
   @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -718,8 +720,8 @@ extension PlayerWindowController {
       let marginScalarH: Double
       let marginScalarV: Double
       if #available(macOS 26.0, *) {
-        marginScalarH = 0.6
-        marginScalarV = 0.4
+        marginScalarH = 0.2
+        marginScalarV = 0.2
       } else {
         marginScalarH = 0.15
         marginScalarV = 0.15
@@ -793,7 +795,7 @@ extension PlayerWindowController {
   fileprivate func updateCornerRoundness(fromOSDTextSize osdTextSize: CGFloat) {
     if #available(macOS 26, *) {
       // MacOS Tahoe's style favors very round corners: try to fit in with it
-      let cornerRadius = 10 + osdTextSize.rounded()
+      let cornerRadius = 10 + (osdTextSize * 0.25).rounded()
       osd.osdView.roundCorners(withRadius: cornerRadius)
       additionalInfoView.roundCorners(withRadius: cornerRadius)
     } else {
