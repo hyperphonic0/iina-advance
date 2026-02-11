@@ -48,6 +48,10 @@ class BufferIndicatorView: MouseIgnoringVisualEffectView {
     bufferDetailLabel.topAnchor.constraint(equalTo: bufferProgressLabel.bottomAnchor).isActive = true
     bottomAnchor.constraint(equalTo: bufferDetailLabel.bottomAnchor, constant: 8).isActive = true
     bufferDetailLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+
+    let bufIndicatorWidthCon = widthAnchor.constraint(equalToConstant: 160)
+    bufIndicatorWidthCon.priority = .defaultLow
+    bufIndicatorWidthCon.isActive = true
   }
   
   @MainActor required init?(coder: NSCoder) {

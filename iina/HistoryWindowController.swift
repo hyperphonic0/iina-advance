@@ -147,7 +147,6 @@ final class HistoryWindowController: WindowController, NSOutlineViewDelegate, NS
     if #available(macOS 26.0, *) {
       groupByButton.wantsLayer = true
       groupByButton.borderShape = .capsule
-      groupByButton.layer?.cornerRadius = 10
     }
 
     window.backgroundColor = .clear

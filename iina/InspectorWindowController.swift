@@ -75,8 +75,6 @@ class InspectorTabSegmentedCell: NSSegmentedCell {
 }
 */
 
-fileprivate let inspectorCornerRadius: CGFloat = 14
-
 final class InspectorWindowController: WindowController, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource {
 
   override var windowNibName: NSNib.Name {
@@ -215,7 +213,7 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
     watchTableContainerView.layer?.backgroundColor = watchTableBackgroundColor.cgColor
 
     if #available(macOS 26.0, *) {
-      watchTableContainerView.layer?.cornerRadius = inspectorCornerRadius
+      watchTableContainerView.layer?.cornerRadius = Constants.liquidGlassCornerRadius
 
       trackPopup.borderShape = .capsule
       trackPopup.controlSize = .large

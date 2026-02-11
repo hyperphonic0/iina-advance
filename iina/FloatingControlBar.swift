@@ -96,7 +96,7 @@ final class FloatingControlBar {
       osdGlassView.contentView = contentView
       contentView.subviews = subviews
       view = osdGlassView
-      view.roundCorners(withRadius: 10)
+      view.roundCorners(withRadius: Constants.liquidGlassCornerRadius)
     } else {
       view = FloatingControlBarVisualEffectView(self)
       view.roundCorners(withRadius: 6)

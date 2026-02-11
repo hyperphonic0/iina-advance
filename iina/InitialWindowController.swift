@@ -544,9 +544,12 @@ class InitialWindowViewActionButton: NSView {
   }
 
   override func awakeFromNib() {
+    wantsLayer = true
     layer?.cornerRadius = cornerRadius
     self.layer?.backgroundColor = normalBackground.cgColor
-    self.addTrackingArea(NSTrackingArea(rect: self.bounds, options: [.activeAlways, .mouseEnteredAndExited, .cursorUpdate], owner: self, userInfo: ["key": self.idString]))  // make sure identifier is set in the XIB for each button!
+    // make sure identifier is set in the XIB for each button!
+    self.addTrackingArea(NSTrackingArea(rect: self.bounds, options: [.activeAlways, .mouseEnteredAndExited, .cursorUpdate],
+                                        owner: self, userInfo: ["key": self.idString]))
   }
 
   override func cursorUpdate(with event: NSEvent) {

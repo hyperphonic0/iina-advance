@@ -796,7 +796,7 @@ extension PlayerWindowController {
   fileprivate func updateCornerRoundness(fromOSDTextSize osdTextSize: CGFloat) {
     if #available(macOS 26, *) {
       // MacOS Tahoe's style favors very round corners: try to fit in with it
-      let cornerRadius = 10 + (osdTextSize * 0.25).rounded()
+      let cornerRadius = Constants.liquidGlassCornerRadius
       osd.osdView.roundCorners(withRadius: cornerRadius)
       additionalInfoView.roundCorners(withRadius: cornerRadius)
     } else {

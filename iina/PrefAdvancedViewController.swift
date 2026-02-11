@@ -91,7 +91,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     if #available(macOS 26.0, *) {
       chooseConfigDirBtn.borderShape = .capsule
       chooseConfigDirBtn.wantsLayer = true
-      chooseConfigDirBtn.layer?.cornerRadius = 12
+      chooseConfigDirBtn.layer?.cornerRadius = Constants.liquidGlassButtonCornerRadius
     }
 
     enableAdvancedSettingsLabel.stringValue = NSLocalizedString("preference.enable_adv_settings",

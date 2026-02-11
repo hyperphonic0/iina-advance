@@ -239,7 +239,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     withAllTableViews { (tableView, _) in
       tableView.delegate = self
       tableView.dataSource = self
-      tableView.superview?.superview?.layer?.cornerRadius = 4
       tableView.backgroundColor = NSColor.sidebarTableBackground
     }
 

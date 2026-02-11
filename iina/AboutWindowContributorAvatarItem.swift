@@ -22,7 +22,7 @@ class AboutWindowContributorAvatarItem: NSCollectionViewItem {
 
   override func viewDidLayout() {
     guard let imageView = imageView else { return }
-    imageView.layer?.cornerRadius = imageView.frame.width / 2
+    imageView.layer?.cornerRadius = (imageView.frame.width / 2).rounded()
   }
 
   var avatarURL: String? {

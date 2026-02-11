@@ -205,7 +205,7 @@ class AboutWindowButton: NSButton {
       setButtonType(.momentaryPushIn)
       controlSize = .extraLarge
       borderShape = .capsule
-      layer?.cornerRadius = 12
+      layer?.cornerRadius = Constants.liquidGlassButtonCornerRadius
     } else {
       layer?.cornerRadius = 4
     }

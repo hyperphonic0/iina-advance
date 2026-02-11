@@ -92,7 +92,6 @@ extension PlayerWindowController {
       initSidebars()
       initPluginOverlayViewContainer()
       initExitMusicModeButton(in: contentView)
-      initBufferIndicatorView()
       initHdrWorkaroundView(in: contentView)
 
       log.verbose("[Load] Configuring window for CoreAnimation")
@@ -598,13 +597,6 @@ extension PlayerWindowController {
     volumeSlider.leadingAnchor.constraint(equalTo: muteButton.trailingAnchor, constant: hSpacing).isActive = true
     volumeSlider.target = self
     volumeSlider.action = #selector(volumeSliderAction(_:))
-  }
-
-  private func initBufferIndicatorView() {
-    bufferIndicatorView.roundCorners()
-    let bufIndicatorWidthCon = bufferIndicatorView.widthAnchor.constraint(equalToConstant: 160)
-    bufIndicatorWidthCon.priority = .defaultLow
-    bufIndicatorWidthCon.isActive = true
   }
 
 }
