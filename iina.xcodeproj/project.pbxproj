@@ -217,7 +217,7 @@
 		845ABEAC1D4D19C000BFB15B /* MPVTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845ABEAB1D4D19C000BFB15B /* MPVTrack.swift */; };
 		845AC09C1E1AE6C10080B614 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 845AC09E1E1AE6C10080B614 /* Localizable.strings */; };
 		845E70B2210CB59D00D06C42 /* ScrollingTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845E70B1210CB59D00D06C42 /* ScrollingTextField.swift */; };
-		845FB0C71D39462E00C011E0 /* FloatingControlBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845FB0C61D39462E00C011E0 /* FloatingControlBarView.swift */; };
+		845FB0C71D39462E00C011E0 /* FloatingControlBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845FB0C61D39462E00C011E0 /* FloatingControlBar.swift */; };
 		8460FBA91D6497490081841B /* PlaylistViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8460FBA71D6497490081841B /* PlaylistViewController.swift */; };
 		846121BD1F35FCA500ABB39C /* DraggingDetect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846121BC1F35FCA500ABB39C /* DraggingDetect.swift */; };
 		8461BA681E4237C7008BB852 /* youtube-dl in Copy Executables */ = {isa = PBXBuildFile; fileRef = 8461BA671E4237C2008BB852 /* youtube-dl */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -1494,7 +1494,7 @@
 		845AC09F1E1AE6CB0080B614 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		845E2F491E76CFC2002C6588 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		845E70B1210CB59D00D06C42 /* ScrollingTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScrollingTextField.swift; sourceTree = "<group>"; };
-		845FB0C61D39462E00C011E0 /* FloatingControlBarView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FloatingControlBarView.swift; sourceTree = "<group>"; };
+		845FB0C61D39462E00C011E0 /* FloatingControlBar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FloatingControlBar.swift; sourceTree = "<group>"; };
 		8460FBA71D6497490081841B /* PlaylistViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PlaylistViewController.swift; sourceTree = "<group>"; };
 		846121BC1F35FCA500ABB39C /* DraggingDetect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggingDetect.swift; sourceTree = "<group>"; };
 		8461BA671E4237C2008BB852 /* youtube-dl */ = {isa = PBXFileReference; lastKnownFileType = text; name = "youtube-dl"; path = "deps/executable/youtube-dl"; sourceTree = SOURCE_ROOT; };
@@ -2974,7 +2974,7 @@
 				D13912652F295C7E00540624 /* Playlist_Subviews.swift */,
 				D13912602F28990B00540624 /* Playlistt_ContextMenu.swift */,
 				8400D5CE1E1AB2FF006785F5 /* PlaylistViewController.xib */,
-				845FB0C61D39462E00C011E0 /* FloatingControlBarView.swift */,
+				845FB0C61D39462E00C011E0 /* FloatingControlBar.swift */,
 				D19CFD8F2E5885AB00746611 /* TopBarView.swift */,
 				D126E4412E59BF8F0099DEA9 /* BottomBarView.swift */,
 				D1BE7BD12D4B7E000085539F /* SingleRowBarOSCView.swift */,
@@ -3669,7 +3669,7 @@
 				51DE55C92A6646710050AD06 /* Sysctl.swift in Sources */,
 				D19CFD922E59077700746611 /* PWin_PanelConstraints.swift in Sources */,
 				D1D4C7422B0F3219003B09C2 /* MPVHookValue.swift in Sources */,
-				845FB0C71D39462E00C011E0 /* FloatingControlBarView.swift in Sources */,
+				845FB0C71D39462E00C011E0 /* FloatingControlBar.swift in Sources */,
 				D1AF71462DED707F000FA9B8 /* BufferIndicatorView.swift in Sources */,
 				D188CB2628D9E95500F166FD /* BindingTableState.swift in Sources */,
 				D1AD325A2ACC078600F86EE8 /* LayoutState.swift in Sources */,
