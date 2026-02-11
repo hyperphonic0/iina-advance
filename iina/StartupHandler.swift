@@ -22,12 +22,14 @@ final class StartupHandler {
     case doneOpening
   }
 
+  /// Container for temporary metadata needed during the restore of a saved window.
   fileprivate class WindowToRestore {
     enum State {
       case restoring
       case done
       case cancelled
     }
+    /// The window's autosave name
     let saveName: String
     var state: State = .restoring
     var wc: WindowController? = nil
@@ -42,7 +44,9 @@ final class StartupHandler {
     }
   }
 
+  /// Like `WindowToRestore`, but specialized for a `PlayerWindow` being restored
   final class PlayerToRestore {
+    /// The window's autosave name
     let saveName: String
     let savedState: PlayerSaveState
     /// Set of volume remount URLs found in player to restore which still need to be processed.
@@ -488,7 +492,7 @@ final class StartupHandler {
 
     }  // end loop over savedWindowsBackToFront
 
-    PlayerSaveState.saveQueue.async {
+    PlayerSaveState.saveQueue.async { [self] in
       log.debug("[Remount] Found \(volumeRemountURLStringsToProcess.count) volume remount URLs to process")
 
       var abort = false
@@ -499,47 +503,62 @@ final class StartupHandler {
           return
         }
 
-        var successful = false
-        if let remountURL = URL(string: volRemountURLString) {
-          let alreadyMounted = self.isMounted(remountURL: remountURL)
-          if alreadyMounted {
-            log.verbose("[Remount] Volume is already mounted: remountURL=\(volRemountURLString.pii.quoted)")
-            successful = true
-          } else {
-            log.verbose("[Remount] Volume not mounted; attempting to remount: \(volRemountURLString.pii.quoted)")
-            if NSWorkspace.shared.open(remountURL) {
-              log.verbose("[Remount] Successfully remounted volume: \(volRemountURLString.pii.quoted)")
-              successful = true
-            } else {
-              log.error("[Remount] Failed to remount volume: \(volRemountURLString.pii.quoted)")
-            }
-          }
-        } else {
-          log.error("[Remount] Failed to build URL from volume remount string: \(volRemountURLString.pii.quoted)")
-        }
+        let isValid = processRemountURLString(volRemountURLString, log)
 
         DispatchQueue.main.async { [self] in
-          for playerToRestore in playersToRestore.values {
-            guard let remountProcessed = playerToRestore.volRemountsToProcess.remove(volRemountURLString) else { continue }
-            playerToRestore.volRemountsProcessed[remountProcessed] = successful
-
-            guard playerToRestore.volRemountsToProcess.isEmpty else { continue }
-            log.verbose("[Remount] Done processing all \(playerToRestore.volRemountsProcessed.count) volRemountURLs for player"
-                        + " \(playerToRestore.saveName.quoted): will begin its restore")
-            let pwinToRestore = windowsToRestore[playerToRestore.saveName]!
-            restorePlayer(pwinToRestore, playerToRestore)
-          }
-
           guard !isDoneLaunching else {
             log.warn("[Remount] Aborting restore of remaining players; startup was marked as done despite remount URLs not completing")
             abort = true
             return
           }
+          didProcessRemountURLString(volRemountURLString, isValid: isValid, log)
         }
       }
     }
 
     return !windowsToRestore.isEmpty || restoreOpenFileWindow
+  }
+
+  private func processRemountURLString(_ volRemountURLString: String,
+                                       _ log: any Logger.Subsystem) -> Bool {
+    assert(DispatchQueue.isExecutingIn(PlayerSaveState.saveQueue))
+
+    if let remountURL = URL(string: volRemountURLString) {
+      let alreadyMounted = self.isMounted(remountURL: remountURL)
+      if alreadyMounted {
+        log.verbose("[Remount] Volume is already mounted: remountURL=\(volRemountURLString.pii.quoted)")
+        return true
+      } else {
+        guard Preference.bool(for: .remountVolumesOnRestore) else {
+          log.verbose("[Remount] Remount on restore disabled; skipping remountURL=\(volRemountURLString.pii.quoted)")
+          return false
+        }
+        log.verbose("[Remount] Volume not mounted; attempting to remount: \(volRemountURLString.pii.quoted)")
+        if NSWorkspace.shared.open(remountURL) {
+          log.verbose("[Remount] Successfully remounted volume: \(volRemountURLString.pii.quoted)")
+          return true
+        } else {
+          log.error("[Remount] Failed to remount volume: \(volRemountURLString.pii.quoted)")
+        }
+      }
+    } else {
+      log.error("[Remount] Failed to build URL from volume remount string: \(volRemountURLString.pii.quoted)")
+    }
+    return false
+  }
+
+  private func didProcessRemountURLString(_ volRemountURLString: String, isValid: Bool,
+                                          _ log: any Logger.Subsystem) {
+    for playerToRestore in playersToRestore.values {
+      guard let remountProcessed = playerToRestore.volRemountsToProcess.remove(volRemountURLString) else { continue }
+      playerToRestore.volRemountsProcessed[remountProcessed] = isValid
+
+      guard playerToRestore.volRemountsToProcess.isEmpty else { continue }
+      log.verbose("[Remount] Done processing all \(playerToRestore.volRemountsProcessed.count) volRemountURLs for player"
+                  + " \(playerToRestore.saveName.quoted): will begin its restore")
+      let pwinToRestore = windowsToRestore[playerToRestore.saveName]!
+      restorePlayer(pwinToRestore, playerToRestore)
+    }
   }
 
   nonisolated

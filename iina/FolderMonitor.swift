@@ -9,7 +9,9 @@ public class FolderMonitor {
   /// A file descriptor for the monitored directory.
   private var monitoredFolderFileDescriptor: CInt = -1
   /// A dispatch queue used for sending file changes in the directory.
-  private let folderMonitorQueue = DispatchQueue(label: "com.iina_advance.FolderMonitorQueue", attributes: .concurrent)
+  private let folderMonitorQueue = DispatchQueue.newDQ(label: "com.iina_advance.FolderMonitorQueue",
+                                                       qos: .utility,
+                                                       attributes: .concurrent)
   /// A dispatch source to monitor a file descriptor created from the directory.
   private var folderMonitorSource: DispatchSourceFileSystemObject?
   /// URL for the directory being monitored.

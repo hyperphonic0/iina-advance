@@ -2374,8 +2374,8 @@ extension DispatchQueue {
 
   // MARK: public functionality
 
-  static func newDQ(label: String, qos: DispatchQoS) -> DispatchQueue {
-    let q = DispatchQueue(label: label, qos: qos)
+  static func newDQ(label: String, qos: DispatchQoS, attributes: DispatchQueue.Attributes = []) -> DispatchQueue {
+    let q = DispatchQueue(label: label, qos: qos, attributes: attributes)
     registerDetection(of: q)
     return q
   }

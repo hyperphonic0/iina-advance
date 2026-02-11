@@ -586,6 +586,7 @@ struct Preference {
     /// If `enableRestoreUIStateForCmdLineLaunch==false`, then save & restore of UI state will be disabled
     /// for launches via the command line (as though `enableRestoreUIState==false`).
     static let enableRestoreUIStateForCmdLineLaunches = Key("enableRestoreUIStateForCmdLineLaunches")
+    static let remountVolumesOnRestore = Key("remountVolumesOnRestore")
     static let isRestoreInProgress = Key("isRestoreInProgress")
 
     static let uiPrefWindowSearchString = Key("uiPrefWindowSearchString")
@@ -1648,6 +1649,7 @@ struct Preference {
     .alwaysAskBeforeRestoreAtLaunch: false,
     .alwaysPauseMediaWhenRestoringAtLaunch: false,
     .enableRestoreUIStateForCmdLineLaunches: false,
+    .remountVolumesOnRestore: true,
     .isRestoreInProgress: false,
     .uiPrefWindowSearchString: "",
     .uiPrefWindowNavTableSelectionIndex: 0,

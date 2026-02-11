@@ -128,7 +128,7 @@ struct PlayerSaveState: CustomStringConvertible {
     case mpvOpts = "mpvOpts"
   }
 
-  static let saveQueue = DispatchQueue(label: "com.iina_advance.PlayerSaveQueue", qos: .background)
+  static let saveQueue = DispatchQueue.newDQ(label: "com.iina_advance.PlayerSaveQueue", qos: .background)
 
   /// IINA general log
   static let log = Logger.log
