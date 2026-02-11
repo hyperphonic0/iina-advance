@@ -35,7 +35,7 @@ final class OSDState {
 
   // - Views
 
-  let osdView: OSDView
+  let osdView: NSView
   fileprivate let osdVStackView: ClickThroughStackView
   fileprivate let osdIconImageView: NSImageView
   /// Use label constructor (even with empty string) to ensure proper styling
@@ -103,7 +103,7 @@ final class OSDState {
   var lastPlaybackPosition: Double? = nil
   var lastPlaybackDuration: Double? = nil
   private var lastDisplayedMsgTS: TimeInterval = 0
-  var lastDisplayedMsg: OSDMessage? = nil {
+  fileprivate var lastDisplayedMsg: OSDMessage? = nil {
     didSet {
       guard lastDisplayedMsg != nil else { return }
       lastDisplayedMsgTS = Date().timeIntervalSince1970
@@ -113,14 +113,14 @@ final class OSDState {
     return animationState == .shown ? lastDisplayedMsg : nil
   }
   /// "Recently" here is defined as: having been shown in the last 0.25 sec.
-  func didShowLastMsgRecently() -> Bool {
+  fileprivate func didShowLastMsgRecently() -> Bool {
     return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.25
   }
-  func didShowLastMsgSomewhatRecently() -> Bool {
+  fileprivate func didShowLastMsgSomewhatRecently() -> Bool {
     return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.5
   }
 
-  var textSizeLast: CGFloat = 0
+  fileprivate var textSizeLast: CGFloat = 0
   @MainActor
   var queue = LinkedList<() -> Void>()
 
@@ -130,7 +130,18 @@ final class OSDState {
 
     log.verbose("Init OSD")
 
-    osdView = OSDView()
+    if #available(macOS 26.0, *) {
+      osdView = OSDGlassEffectView()
+    } else {
+      osdView = OSDVisualEffectView()
+    }
+    osdView.translatesAutoresizingMaskIntoConstraints = false
+    // Min width
+    let osdMinWidthConstraint = osdView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
+    osdMinWidthConstraint.identifier = "OSDView-MinWidthConstraint"
+    osdMinWidthConstraint.priority = .init(900)
+    osdMinWidthConstraint.isActive = true
+
     osdVStackView = ClickThroughStackView()
     osdIconImageView = NSImageView()
     /// Use label constructor (even with empty string) to ensure proper styling
@@ -140,7 +151,7 @@ final class OSDState {
 
     osdIconImageView.idString = "OSDIconImageView"
     osdIconImageView.imageScaling = .scaleProportionallyUpOrDown
-    osdIconImageView.imageAlignment = .alignCenter
+    osdIconImageView.imageAlignment = .alignLeft
     osdIconImageView.translatesAutoresizingMaskIntoConstraints = false
     osdIconImageView.refusesFirstResponder = true
     osdIconImageView.setContentHugging(h: 1000, v: 1000)
@@ -177,7 +188,13 @@ final class OSDState {
     osdAccessoryProgress.setContentHuggingPriority(.init(270), for: .horizontal)
     osdAccessoryProgress.setContentCompressionResistancePriority(.required, for: .vertical)
 
-    osdView.subviews = [osdIconImageView, osdVStackView]
+    if #available(macOS 26.0, *) {
+      let contentView = NSView()
+      (osdView as! NSGlassEffectView).contentView = contentView
+      contentView.subviews = [osdIconImageView, osdVStackView]
+    } else {
+      osdView.subviews = [osdIconImageView, osdVStackView]
+    }
 
     osdVStackView.idString = "OSD-VStackView"
     osdVStackView.wantsLayer = true
@@ -188,9 +205,9 @@ final class OSDState {
     osdVStackView.detachesHiddenViews = true
     osdVStackView.translatesAutoresizingMaskIntoConstraints = false
 
-    osdVStackView.addView(osdLabel, in: .top)
-    osdVStackView.addView(osdAccessoryText, in: .top)
-    osdVStackView.addView(osdAccessoryProgress, in: .top)
+    osdVStackView.addView(osdLabel, in: .center)
+    osdVStackView.addView(osdAccessoryText, in: .center)
+    osdVStackView.addView(osdAccessoryProgress, in: .center)
 
     // Use initial size of 0, in case MacOS 11 code never gets executed
     let initialIconSize: CGFloat = 0
@@ -246,7 +263,7 @@ final class OSDState {
       // and each icon has a different height, this is needed to prevent the progress bar from jumping up and down
       // each time the OSD message changes.
       let attachment = NSTextAttachment()
-      attachment.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "")!
+      attachment.image = icon
       let iconString = NSMutableAttributedString(attachment: attachment)
       let osdIconTextSize = ((osdTextSize + sliderBarHeight) * 1.15).rounded()
       let osdIconFont = NSFont.monospacedDigitSystemFont(ofSize: osdIconTextSize, weight: .regular)
@@ -295,25 +312,27 @@ final class OSDState {
 
 }
 
-final class OSDView: ClickThroughVisualEffectView {
+final class OSDVisualEffectView: ClickThroughVisualEffectView {
   init() {
     super.init(frame: .zero)
     blendingMode = .withinWindow
     material = .popover
     state = .active
     idString = "OSDView"
-    translatesAutoresizingMaskIntoConstraints = false
-
-    // Min width
-    let osdMinWidthConstraint = widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
-    osdMinWidthConstraint.identifier = "OSDView-MinWidthConstraint"
-    osdMinWidthConstraint.priority = .init(900)
-    osdMinWidthConstraint.isActive = true
   }
   
-  @MainActor required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
+  @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+}
+
+@available(macOS 26.0, *)
+final class OSDGlassEffectView: ClickThroughGlassEffectView {
+  init() {
+    super.init(frame: .zero)
+    idString = "OSDView"
+    style = .regular
   }
+
+  @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
 /// The Additional Info view displays a battery time indicator & the media title when in full screen.
@@ -696,12 +715,22 @@ extension PlayerWindowController {
       let osdAccessoryTextSize = (osdTextSize * 0.75).rounded().clamped(to: 11...25)
       osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
 
+      let marginScalarH: Double
+      let marginScalarV: Double
+      if #available(macOS 26.0, *) {
+        marginScalarH = 0.6
+        marginScalarV = 0.4
+      } else {
+        marginScalarH = 0.15
+        marginScalarV = 0.15
+      }
       // Update padding around edges
-      let marginScaled = 8 + (osdTextSize * 0.15).rounded()
-      osd.osdTopPaddingConstraint.constraint?.animateToConstant(marginScaled)
-      osd.osdBtmPaddingConstraint.constraint?.animateToConstant(marginScaled)
-      osd.osdTrailingPaddingConstraint.constraint?.animateToConstant(marginScaled)
-      osd.osdLeadingPaddingConstraint.constraint?.animateToConstant(marginScaled)
+      let marginH = 8 + (osdTextSize * marginScalarH).rounded()
+      osd.osdTrailingPaddingConstraint.constraint?.animateToConstant(marginH)
+      osd.osdLeadingPaddingConstraint.constraint?.animateToConstant(marginH)
+      let marginV = 8 + (osdTextSize * marginScalarV).rounded()
+      osd.osdTopPaddingConstraint.constraint?.animateToConstant(marginV)
+      osd.osdBtmPaddingConstraint.constraint?.animateToConstant(marginV)
 
       // Update OSD label
       let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
@@ -763,8 +792,8 @@ extension PlayerWindowController {
   @MainActor
   fileprivate func updateCornerRoundness(fromOSDTextSize osdTextSize: CGFloat) {
     if #available(macOS 26, *) {
-      // MacOS Tahoe's style favors rounder corners. Try to fit in
-      let cornerRadius = 10 + (osdTextSize * 0.25).rounded()
+      // MacOS Tahoe's style favors very round corners: try to fit in with it
+      let cornerRadius = 10 + osdTextSize.rounded()
       osd.osdView.roundCorners(withRadius: cornerRadius)
       additionalInfoView.roundCorners(withRadius: cornerRadius)
     } else {

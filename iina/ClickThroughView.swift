@@ -26,11 +26,15 @@ class ClickThroughVisualEffectView: NSVisualEffectView {
 }
 
 class MouseIgnoringVisualEffectView: NSVisualEffectView {
-
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
   override func hitTest(_ point: NSPoint) -> NSView? {
     // Do not accept any mouse events
     return nil
   }
+}
+
+@available(macOS 26.0, *)
+class ClickThroughGlassEffectView: NSGlassEffectView {
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
