@@ -242,12 +242,12 @@ final class PlayerCore: NSObject {
   var hasPlayback: Bool { info.currentPlayback != nil }
 
   var canSkipBackward: Bool {
-    isActive && (info.isPlaying || (info.playbackPositionSec ?? 0.0) > 0.0)
+    isActive && (info.isPlaying || (info.playbackTime.positionSec ?? 0.0) > 0.0)
   }
 
   var canSkipForward: Bool {
     guard isActive else { return false }
-    guard let pos = info.playbackPositionSec, let dur = info.playbackDurationSec else { return true }
+    guard let pos = info.playbackTime.positionSec, let dur = info.playbackTime.durationSec else { return true }
     return !info.isPaused || pos < dur
   }
 
@@ -1081,7 +1081,7 @@ final class PlayerCore: NSObject {
   func shouldShowRestartFromEOFIcon() -> Bool {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    guard Preference.bool(for: .resumeFromEndRestartsPlayback) && info.isAtEOF else {
+    guard Preference.bool(for: .resumeFromEndRestartsPlayback) && info.playbackTime.isAtEOF else {
       return false
     }
 
@@ -1134,8 +1134,7 @@ final class PlayerCore: NSObject {
       pwc.playlistView.clearBackgroundQueue()
 
       // Reset playback state
-      info.playbackPositionSec = nil
-      info.playbackDurationSec = nil
+      info.playbackTime = .nullTime
       info.playlist = []
 
       info.$matchedSubs.withLock { $0.removeAll() }
@@ -1186,7 +1185,7 @@ final class PlayerCore: NSObject {
       // mpv will play next file automatically when seek to EOF.
       // We clamp to a Range to ensure that we don't try to seek to 100%.
       // however, it still won't work for videos with large keyframe interval.
-      if let duration = info.playbackDurationSec,
+      if let duration = info.playbackTime.durationSec,
          duration > 0 {
         percent = percent.clamped(to: 0..<100)
       }
@@ -1609,7 +1608,7 @@ final class PlayerCore: NSObject {
       }
       pwc.updatePlayButtonAndSpeedUI()
       refreshSyncUITimer() // needed to get latest playback position
-      if let pos = info.playbackPositionSec, let dur = info.playbackDurationSec {
+      if let pos = info.playbackTime.positionSec, let dur = info.playbackTime.durationSec {
         let osdMsg: OSDMessage = paused ? .pause(posSec: pos, durSec: dur) :
           .resume(posSec: pos, durSec: dur)
         sendOSD(osdMsg)
@@ -1884,7 +1883,7 @@ final class PlayerCore: NSObject {
     mpv.queue.async { [self] in
       // Update playbackPositionSec preemptively, so UI doesn't flash
       // to prev chapter and back
-      info.playbackPositionSec = chapter.startTime
+      info.playbackTime = info.playbackTime.clone(positionSec: chapter.startTime)
       guard isActive else { return }
       mpv.command(.seek, args: ["\(chapter.startTime)", "absolute"])
       _resume()
@@ -1966,7 +1965,7 @@ final class PlayerCore: NSObject {
       log.warn("Cannot save playback meta: currentPlayback is nil")
       return
     }
-    HistoryController.shared.savePlaybackMetaBeforeFileWillClose(id, duration: info.playbackDurationSec, position: info.playbackPositionSec)
+    HistoryController.shared.savePlaybackMetaBeforeFileWillClose(id, duration: info.playbackTime.durationSec, position: info.playbackTime.positionSec)
   }
 
   func getMPVGeometry() -> MPVGeometryDef? {
@@ -2118,23 +2117,7 @@ final class PlayerCore: NSObject {
       }
     }
 
-    let duration = mpv.getDouble(MPVProperty.duration)
-    info.playbackDurationSec = duration
-    if let path = mpv.getString(MPVProperty.path) {
-      if let id = PlaybackID(path: path) {
-        MediaMetaCache.shared.updateCacheEntry(id, newDuration: duration)
-      } else {
-        log.error("MediaMetaCache: could not create URL for path, skipping: \(path)")
-      }
-    }
-    let playbackPosition = mpv.getDouble(MPVProperty.timePos)
-    info.playbackPositionSec = playbackPosition
-
-    if Preference.bool(for: .scaleRemainingTime) {
-      info.playbackRemainingSec = mpv.getDouble(MPVProperty.playtimeRemainingFull)
-    } else {
-      info.playbackRemainingSec = mpv.getDouble(MPVProperty.timeRemainingFull)
-    }
+    info.playbackTime = mpv.getPlaybackTimeInfo()
 
     triedUsingExactSeekForCurrentFile = false
     // Playback will move directly from stopped to loading when transitioning to the next file in
@@ -2233,7 +2216,7 @@ final class PlayerCore: NSObject {
       // Pass nil as positionSec for now, to reflect mpv watch-later state. The watch-later info is deleted when a file is
       // opened. Later if we implement our own position tracking, we can do something more intuitive.
       HistoryController.shared.savePlaybackMetaAfterFileDidLoad(for: playbackID,
-                                                                durationSec: info.playbackDurationSec ?? 0.0,
+                                                                durationSec: info.playbackTime.durationSec ?? 0.0,
                                                                 positionSec: nil)
     }
   }
@@ -2396,7 +2379,7 @@ final class PlayerCore: NSObject {
       videoView.displayActive()
     }
 
-    if let pos = info.playbackPositionSec, let dur = info.playbackDurationSec {
+    if let pos = info.playbackTime.positionSec, let dur = info.playbackTime.durationSec {
       sendOSD(.seek(posSec: pos, durSec: dur))
     }
   }
@@ -2446,7 +2429,7 @@ final class PlayerCore: NSObject {
     if Preference.bool(for: .autoSearchOnlineSub) &&
         !info.isNetworkResource &&
         info.subTracks.isEmpty &&
-        (info.playbackDurationSec ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
+        (info.playbackTime.durationSec ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
       pwc.menuFindOnlineSub(pwc)
     }
 
@@ -3029,39 +3012,34 @@ final class PlayerCore: NSObject {
     }
 
     // Apparently adding this check fixes an issue at startup where `mpv.getFlag(MPVProperty.eofReached)`(below) can deadlock
-    guard info.currentPlayback != nil else {
+    guard let currentPlayback = info.currentPlayback else {
       log.verbose("SyncUI: not syncing: current playback is nil")
       return
     }
 
-    let isNetworkStream = info.isNetworkResource
-    if isNetworkStream {
-      info.playbackDurationSec = mpv.getDouble(MPVProperty.duration)
-    }
-    // When the end of a video file is reached mpv does not update the value of the property
-    // time-pos, leaving it reflecting the position of the last frame of the video. This is
-    // especially noticeable if the onscreen controller time labels are configured to show
-    // milliseconds. Adjust the position if the end of the file has been reached.
-    let eofReached = mpv.getFlag(MPVProperty.eofReached)
-    let playbackPositionSec: Double
-    if eofReached, let duration = info.playbackDurationSec {
-      playbackPositionSec = duration
-    } else {
-      playbackPositionSec = mpv.getDouble(MPVProperty.timePos)
-    }
-    info.playbackPositionSec = playbackPositionSec
+    info.playbackTime = mpv.getPlaybackTimeInfo()
 
-    info.constrainVideoPosition()
+    if currentPlayback.isNetworkResource || Preference.bool(for: .showCachedRangesInSlider) {
+      let cacheStateOld = info.cacheState
+      let cacheStateNew = mpv.getCacheState()
+      info.cacheState = cacheStateNew
 
-    let remaining = Preference.bool(for: .scaleRemainingTime) ?
-    mpv.getDouble(MPVProperty.playtimeRemainingFull) :
-    mpv.getDouble(MPVProperty.timeRemainingFull)
-    info.playbackRemainingSec = remaining
+      if cacheStateOld.isBufferUnderrun && !cacheStateNew.isBufferUnderrun {
+        log.verbose("SyncUI: demuxer buffer underrun cleared")
+      } else if !cacheStateOld.isBufferUnderrun && cacheStateNew.isBufferUnderrun {
+        log.verbose("SyncUI: demuxer buffer underrun started")
+      }
 
-    if isNetworkStream || Preference.bool(for: .showCachedRangesInSlider) {
-      updateCacheInfo()
+      let rangesDidChange = cacheStateOld.cachedRanges.count != cacheStateNew.cachedRanges.count
+      || zip(cacheStateNew.cachedRanges, cacheStateOld.cachedRanges).contains(where: { $0.0 != $1.0 || $0.1 != $1.1 })
+      if rangesDidChange {
+        //    NSLog("   *** CACHED RANGES: \(cachedRanges.count): \(cachedRanges)")
+        // Redraw PlaySlider to reflect change:
+        if let osc = pwc.currentControlBar, !osc.isHidden {
+          pwc.playSlider.needsDisplay = true
+        }
+      }
     }
-    // else: info.cachedRanges will be cleared by pref observer
 
     if isSaveEnabled {
       // Ensure user can resume playback by periodically saving
@@ -3073,49 +3051,6 @@ final class PlayerCore: NSObject {
         lastStateSaveTime = now
       }
     }
-  }
-
-  /// - Important: The mpv
-  ///     [cache-buffering-state](https://mpv.io/manual/stable/#command-interface-cache-buffering-state)
-  ///     property is only valid when
-  ///     [paused-for-cache](https://mpv.io/manual/stable/#command-interface-paused-for-cache) is `true`
-  ///     and can not be used to provide an indication of progress when seeking.
-  func updateCacheInfo() {
-    var cachedRanges: [(Double, Double)] = []
-    info.pausedForCache = mpv.getFlag(MPVProperty.pausedForCache)
-    if let demuxerCacheState = mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any] {
-      if let underrun = demuxerCacheState["underrun"] as? Bool, underrun {
-        if !info.isBufferUnderrun {
-          log.verbose("SyncUI: demuxer buffer underrun started")
-          info.isBufferUnderrun = true
-        }
-      } else if info.isBufferUnderrun {
-        log.verbose("SyncUI: demuxer buffer underrun cleared")
-        info.isBufferUnderrun = false
-      }
-      if let seekableRanges = demuxerCacheState["seekable-ranges"] as? [[String: Any]] {
-        for seekableRange in seekableRanges {
-          if let rangeStart = seekableRange["start"] as? Double, let rangeEnd = seekableRange["end"] as? Double {
-            cachedRanges.append((rangeStart, rangeEnd))
-          }
-        }
-      }
-      info.cacheUsed = Int(demuxerCacheState["fw-bytes"] as? Int64 ?? 0)
-      // Not guaranteed to be sorted. Sort them
-      cachedRanges = cachedRanges.sorted(by: { $0.0 < $1.0 })
-      let oldRanges = info.cachedRanges
-      let rangesDidChange = oldRanges.count != cachedRanges.count || zip(cachedRanges, oldRanges).contains(where: { $0.0 != $1.0 || $0.1 != $1.1 })
-      if rangesDidChange {
-        //    NSLog("   *** CACHED RANGES: \(cachedRanges.count): \(cachedRanges)")
-        info.cachedRanges = cachedRanges
-        // Redraw PlaySlider to reflect change:
-        if let osc = pwc.currentControlBar, !osc.isHidden {
-          pwc.playSlider.needsDisplay = true
-        }
-      }
-      info.cacheSpeed = Int(demuxerCacheState["raw-input-rate"] as? Int64 ?? 0)
-    }
-    info.bufferingState = mpv.getInt(MPVProperty.cacheBufferingState)
   }
 
   // difficult to use option set

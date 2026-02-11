@@ -62,6 +62,7 @@ final class PlayerWindow: NSWindow {
     if processForImmediateView(keyCode: keyCode, pwc) {
       return
     }
+    
     pwc.updateUI(pullUpdatesFromMpv: true)  // Call explicitly to make sure it gets attention
 
     // Menu item key equivalents take priority

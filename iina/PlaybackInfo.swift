@@ -132,35 +132,8 @@ class PlaybackInfo {
     return !(isPaused || playSpeed == 1)
   }
 
-  var playbackPositionSec: Double?
-  var playbackDurationSec: Double?
-  /// Remaining playback time.
-  ///
-  /// This will or will not reflect the speed at which playback is occurring depending upon whether the `scaleRemainingTime` setting is enabled or not.
-  var playbackRemainingSec: Double?
-  var isAtEOF: Bool {
-    if let mediaPosition = playbackPositionSec, let mediaDuration = playbackDurationSec, mediaPosition == mediaDuration {
-      return true
-    } else {
-      return false
-    }
-  }
-
-  var isBufferUnderrun = false
-  var cachedRanges: [(Double, Double)] = []
-
   var playlist: [PlaybackID] = []
   var playlistPlayingPos: Int = -1  /// `MPVProperty.playlistPlayingPos`
-
-  func constrainVideoPosition() {
-    guard let playbackDurationSec, let playbackPositionSec else { return }
-    if playbackPositionSec < 0.0 {
-      self.playbackPositionSec = 0.0
-    }
-    if playbackPositionSec > playbackDurationSec { 
-      self.playbackPositionSec = playbackDurationSec
-    }
-  }
 
   /** Selected track IDs. Use these (instead of `isSelected` of a track) to check if selected */
   var vid: Int? {
@@ -372,12 +345,53 @@ class PlaybackInfo {
     return cursorAutoHideTimeoutMs >= 0
   }
 
-  // MARK: - Cache
+  var playbackTime = PlaybackTimeInfo.nullTime
+  var cacheState: CacheState = CacheState(pausedForCache: false, cacheUsed: 0, cacheSpeed: 0, bufferingState: 0, isBufferUnderrun: false, cachedRanges: [])
 
-  var pausedForCache: Bool = false
-  var cacheUsed: Int = 0
-  var cacheSpeed: Int = 0
-  var bufferingState: Int = 0
+}
+
+struct PlaybackTimeInfo {
+  static let nullTime = PlaybackTimeInfo(positionSec: nil, durationSec: nil, remainingSec: nil)
+
+  let positionSec: Double?
+  let durationSec: Double?
+  /// Remaining playback time.
+  ///
+  /// This will or will not reflect the speed at which playback is occurring depending upon whether the `scaleRemainingTime` setting is enabled or not.
+  let remainingSec: Double?
+  var isAtEOF: Bool {
+    if let positionSec, let durationSec, positionSec == durationSec {
+      return true
+    }
+    return false
+  }
+
+  init(positionSec: Double?, durationSec: Double?, remainingSec: Double?) {
+    let pos: Double?
+    if let positionSec {
+      if let durationSec, positionSec > durationSec {
+        pos = max(0.0, durationSec)
+      } else {
+        pos = max(0.0, positionSec)
+      }
+    } else {
+      pos = nil
+    }
+    self.positionSec = pos
+    self.durationSec = durationSec
+    self.remainingSec = remainingSec
+  }
+
+  func clone(positionSec: Double? = nil) -> Self {
+    .init(positionSec: positionSec ?? self.positionSec, durationSec: self.durationSec, remainingSec: self.remainingSec)
+  }
+
+  var percentage: Double {
+    if let positionSec, let durationSec, durationSec > 0.0 {
+      return (positionSec / durationSec) * 100
+    }
+    return 0.0
+  }
 
   /// Returns the percent of the total duration of the video the given position in seconds represents.
   ///
@@ -388,13 +402,49 @@ class PlaybackInfo {
   /// - Parameter seconds: Position in the video as seconds from start.
   /// - Returns: The percent of the video the given position represents.
   func secondsToPercent(_ seconds: Double) -> Double {
-    if let duration = playbackDurationSec {
+    if let duration = durationSec {
       return duration == 0 ? 0 : seconds / duration * 100
-    } else if let position = playbackPositionSec {
+    } else if let position = positionSec {
       return position == 0 ? 0 : seconds / position * 100
     } else {
       return 0
     }
   }
 
+  /// Returns the position in seconds for the given percent of the total duration of the video the percentage represents.
+  ///
+  /// The number of seconds returned must be considered an estimate that could change. The duration of the video is obtained from
+  /// the [mpv](https://mpv.io/manual/stable/) `duration` property. The documentation for this property cautions that
+  /// mpv is not always able to determine the duration and when it does return a duration it may be an estimate. If the duration is
+  /// unknown this method will fallback to using the current playback position, if that is known. Otherwise this method will return zero.
+  /// - Parameter percent: Position in the video as a percentage of the duration.
+  /// - Returns: The position in the video the given percentage represents.
+  func percentToSeconds(_ percent: Double) -> Double {
+    if let duration = durationSec {
+      return duration * percent / 100
+    } else if let position = positionSec {
+      return position * percent / 100
+    } else {
+      return 0
+    }
+  }
+}
+
+struct CacheState {
+  let pausedForCache: Bool
+  let cacheUsed: Int
+  let cacheSpeed: Int
+  let bufferingState: Int
+  let isBufferUnderrun: Bool
+  let cachedRanges: [(Double, Double)]
+
+  func clone(cachedRanges: [(Double, Double)]? = nil) -> CacheState {
+    .init(
+      pausedForCache: pausedForCache,
+      cacheUsed: cacheUsed,
+      cacheSpeed: cacheSpeed,
+      bufferingState: bufferingState,
+      isBufferUnderrun: isBufferUnderrun,
+      cachedRanges: cachedRanges ?? self.cachedRanges)
+  }
 }

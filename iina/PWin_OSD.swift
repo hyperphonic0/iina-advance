@@ -594,8 +594,8 @@ extension PlayerWindowController {
       message = newMessage
 
     } else if let currentMsg = osd.currentlyDisplayedMsg,
-              let position = player.info.playbackPositionSec,
-              let duration = player.info.playbackDurationSec {
+              let position = player.info.playbackTime.positionSec,
+              let duration = player.info.playbackTime.durationSec {
       // If the OSD is visible and is showing playback position, keep its displayed time up to date:
       switch currentMsg {
       case .pause:
@@ -660,8 +660,8 @@ extension PlayerWindowController {
 
       // data for mustache rendering
       let osdData: [String: String] = [
-        "duration": VideoTime.string(from: player.info.playbackDurationSec),
-        "position": VideoTime.string(from: player.info.playbackPositionSec),
+        "duration": VideoTime.string(from: player.info.playbackTime.durationSec),
+        "position": VideoTime.string(from: player.info.playbackTime.positionSec),
         "currChapter": (player.mpv.getInt(MPVProperty.chapter) + 1).description,
         "chapterCount": player.info.chapters.count.description
       ]
@@ -821,10 +821,7 @@ extension PlayerWindowController {
     }
     // Need to do the UI sync in the main queue
     DispatchQueue.main.async { [self] in
-      if !isScrollingOrDraggingPlaySlider {
-        player.updatePlaybackTimeInfo()
-      }
-      updateUI()
+      updateUI(pullUpdatesFromMpv: true)
     }
   }
 
@@ -876,8 +873,8 @@ extension PlayerWindowController {
       /// Many redundant `MPV_EVENT_SEEK` messages are emitted from mpv at different times, and each triggers a call to
       /// show a `seek` OSD message. Show it only if either `position` or `duration` actually changed from their
       /// previously cached values.
-      guard let position = player.info.playbackPositionSec,
-            let duration = player.info.playbackDurationSec else {
+      guard let position = player.info.playbackTime.positionSec,
+            let duration = player.info.playbackTime.durationSec else {
         log.verbose("[OSD] Ignoring request for 'seek': position or duration is missing")
         return
       }
@@ -902,8 +899,8 @@ extension PlayerWindowController {
       }
 
       player.updatePlaybackTimeInfo()  // need to call this to update info.playbackPositionSec, info.playbackDurationSec
-      osd.lastPlaybackPosition = player.info.playbackPositionSec
-      osd.lastPlaybackDuration = player.info.playbackDurationSec
+      osd.lastPlaybackPosition = player.info.playbackTime.positionSec
+      osd.lastPlaybackDuration = player.info.playbackTime.durationSec
 
     case .crop(let newCropLabel):
       if newCropLabel == Constants.String.noneCropIdentifier && !isInInteractiveMode && player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {

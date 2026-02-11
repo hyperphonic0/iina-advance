@@ -502,7 +502,7 @@ extension PlayerWindowController {
   func refreshSeekPreviewAsync(forPointInWindow pointInWindow: NSPoint, animateHide: Bool = false) {
     thumbDisplayDebouncer.run { [self] in
       log.trace("RefreshSeekPreviewAsync @ \(pointInWindow)")
-      if shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow), let duration = player.info.playbackDurationSec {
+      if shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow), let duration = player.info.playbackTime.durationSec {
         if showSeekPreview(forPointInWindow: pointInWindow, mediaDuration: duration) {
           return
         }

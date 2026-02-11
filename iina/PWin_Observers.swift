@@ -112,13 +112,13 @@ extension PlayerWindowController {
 
         // Play Slider loop knobs:
         .init(.iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [self] _ in
-          let seconds = percentToSeconds(playSlider.abLoopA.posInSliderPercent)
+          let seconds = player.info.playbackTime.percentToSeconds(playSlider.abLoopA.posInSliderPercent)
           player.info.abLoopA = seconds
           player.abLoopA = seconds
           player.sendOSD(.abLoopUpdate(.aSet, VideoTime(seconds).stringRepresentation))
         },
         .init(.iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopB) { [self] _ in
-          let seconds = percentToSeconds(playSlider.abLoopB.posInSliderPercent)
+          let seconds = player.info.playbackTime.percentToSeconds(playSlider.abLoopB.posInSliderPercent)
           player.info.abLoopB = seconds
           player.abLoopB = seconds
           player.sendOSD(.abLoopUpdate(.bSet, VideoTime(seconds).stringRepresentation))
@@ -225,8 +225,8 @@ extension PlayerWindowController {
         updateWindowBorderAndOpacity()
       })
     case .showCachedRangesInSlider:
-      if let newValue = newValue as? Bool, !newValue {
-        player.info.cachedRanges = []
+      if let isEnabled = newValue as? Bool, !isEnabled {
+        player.info.cacheState = player.info.cacheState.clone(cachedRanges: [])
         if let osc = currentControlBar, !osc.isHidden {
           playSlider.needsDisplay = true
         }

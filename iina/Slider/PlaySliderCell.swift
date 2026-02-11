@@ -35,10 +35,10 @@ class PlaySliderCell: ScrollableSliderCell {
     /// The position of the knob, rounded for cleaner drawing. If `width==0`, do not draw knob.
     let knobRect = knobRect(flipped: false)
 
-    let durationSec = player.info.playbackDurationSec ?? 0.0
+    let durationSec = player.info.playbackTime.durationSec ?? 0.0
     let currentValueSec = slider.progressRatio * durationSec
     let chapters = drawChapters ? player.info.chapters : []
-    let cachedRanges = player.info.cachedRanges  // will be empty if drawing cache is disabled
+    let cachedRanges = player.info.cacheState.cachedRanges  // will be empty if drawing cache is disabled
 
     // Disable hover zoom effect & indicator while actively scrolling; looks bad
     let currentPreviewTimeSec: Double? = pwc.isScrollingOrDraggingPlaySlider ? nil : pwc.seekPreview.currentPreviewTimeSec

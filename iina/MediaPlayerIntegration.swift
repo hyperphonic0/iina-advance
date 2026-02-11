@@ -145,13 +145,15 @@ final class MediaPlayerIntegration {
       info[MPMediaItemPropertyArtist] = ""
     }
 
+    let positionSec = activePlayer.info.playbackTime.positionSec
+
     let artwork: MPMediaItemArtwork?
     if activePlayer.info.isVideoTrackSelected, (activePlayer.info.currentPlayback?.thumbnails?.thumbnails.count ?? 0) > 0 {
       artwork = MPMediaItemArtwork(boundsSize: activePlayer.videoGeo.videoSizeCAR, requestHandler: { displaySize in
         // TODO: figure out a way to use screenshot-raw from mpv instead!
         // Use thumbnail if available
-        if let currentPosition = activePlayer.info.playbackPositionSec, activePlayer.info.isVideoTrackSelected,
-           let thumbImg = activePlayer.info.currentPlayback?.thumbnails?.getThumbnail(forSecond: currentPosition)?.image {
+        if let positionSec, activePlayer.info.isVideoTrackSelected,
+           let thumbImg = activePlayer.info.currentPlayback?.thumbnails?.getThumbnail(forSecond: positionSec)?.image {
           // Crop to aspect ratio of requested size, rather than stretching/squeezing. Then resize
           let cropRect = thumbImg.size().getCropRect(withAspect: displaySize.aspect)
           if let previewImg = thumbImg.cropping(to: cropRect)?.resized(newWidth: displaySize.widthInt, newHeight: displaySize.heightInt).toNSImage() {
@@ -166,8 +168,8 @@ final class MediaPlayerIntegration {
     }
     info[MPMediaItemPropertyArtwork] = artwork
 
-    let duration = activePlayer.info.playbackDurationSec ?? 0
-    let time = activePlayer.info.playbackPositionSec ?? 0
+    let duration = activePlayer.info.playbackTime.durationSec ?? 0
+    let time = positionSec ?? 0
     let speed = activePlayer.info.playSpeed
 
     info[MPMediaItemPropertyPlaybackDuration] = duration

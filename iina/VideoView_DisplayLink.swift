@@ -226,5 +226,6 @@ func displayLinkCallback(
       guard !isUninited else { return }
       glVideoLayer.mpvReportSwap()
     }
+
     return kCVReturnSuccess
   }

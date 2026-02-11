@@ -51,13 +51,13 @@ class PlaySliderScrollWheel: SliderScrollWheelDelegate {
 
     session.sensitivity = Preference.seekScrollSensitivity()
     // Do not even bother to set session.valueAtStart - will only pollute logs with inaccuracies
-    session.modelValueAtStart = player.info.playbackPositionSec
+    session.modelValueAtStart = player.info.playbackTime.positionSec
   }
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {
     guard let player = slider.associatedPlayer else { return }
 
-    session.modelValueAtEnd = player.info.playbackPositionSec
+    session.modelValueAtEnd = player.info.playbackTime.positionSec
 
     player.log.verbose("PlaySlider scrollWheel seek ended")
     // only resume playback when it was playing before seeking
@@ -73,8 +73,8 @@ class PlaySliderScrollWheel: SliderScrollWheelDelegate {
 
   override func scrollDidUpdate(_ session: ScrollSession) {
     guard let player = slider.associatedPlayer else { return }
-    guard let position = player.info.playbackPositionSec,
-          let duration = player.info.playbackDurationSec else { return }
+    guard let position = player.info.playbackTime.positionSec,
+          let duration = player.info.playbackTime.durationSec else { return }
     let valueDelta: CGFloat = session.consumePendingEvents(for: slider)
     let playbackPositionNew = (position + Double(valueDelta)).clamped(to: 0.0...duration)
     // Use modelValueAtEnd to keep track of last seek, to prevent sending duplicate seek requests

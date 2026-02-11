@@ -640,24 +640,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     return player.makeTouchBar()
   }
 
-  /// Returns the position in seconds for the given percent of the total duration of the video the percentage represents.
-  ///
-  /// The number of seconds returned must be considered an estimate that could change. The duration of the video is obtained from
-  /// the [mpv](https://mpv.io/manual/stable/) `duration` property. The documentation for this property cautions that
-  /// mpv is not always able to determine the duration and when it does return a duration it may be an estimate. If the duration is
-  /// unknown this method will fallback to using the current playback position, if that is known. Otherwise this method will return zero.
-  /// - Parameter percent: Position in the video as a percentage of the duration.
-  /// - Returns: The position in the video the given percentage represents.
-  func percentToSeconds(_ percent: Double) -> Double {
-    if let duration = player.info.playbackDurationSec {
-      return duration * percent / 100
-    } else if let position = player.info.playbackPositionSec {
-      return position * percent / 100
-    } else {
-      return 0
-    }
-  }
-
   /// When entering "windowed" mode (either from initial load, PIP, or music mode), call this to add/return `viewportView`
   /// to this window, and add `videoView` and spacers to that. Will do nothing if all views are already in place.
   func addViewportAndSubviewsToWindowIfNeeded() {
@@ -2060,11 +2042,12 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     // properties. Confirm the window and file have been loaded.
 
     guard loaded, player.info.isFileLoaded || player.isRestoring else { return }
+    let timeInfo = player.info.playbackTime
     // The mpv documentation for the duration property indicates mpv is not always able to determine
     // the video duration in which case the property is not available.
-    guard let duration = player.info.playbackDurationSec,
-          let position = player.info.playbackPositionSec,
-          let remaining = player.info.playbackRemainingSec else { return }
+    guard let duration = timeInfo.durationSec,
+          let position = timeInfo.positionSec,
+          let remaining = timeInfo.remainingSec else { return }
 
     // If the OSD is visible and is showing playback position, keep its displayed time up to date:
     updateOSDViews(updateSize: false)
@@ -2073,8 +2056,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     for label in [leftTimeLabel, rightTimeLabel] {
       label.updateText(with: duration, given: position, and: remaining)
     }
-    let percentage = (position / duration) * 100
-    playSlider.doubleValue = percentage
+    let percentage = timeInfo.percentage
+    playSlider.doubleValue = timeInfo.percentage
 
     // Touch bar
     player.touchBarSupport.touchBarPlaySlider?.setDoubleValueSafely(percentage)
@@ -2208,26 +2191,27 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   func updateNetworkState() {
     let isNotYetLoaded = (player.info.currentPlayback?.state.isNotYet(.loaded) ?? false)
+    let cache = player.info.cacheState
     // Indicator should only be shown for network resources (AKA streaming media).
     // When media is not yet loaded, mpv does not indicate it is paused for cache. Assume it is.
     let showIndicator = player.info.isNetworkResource &&
-    (player.info.pausedForCache || isNotYetLoaded) && Preference.bool(for: .showBufferingThrobber) ||
+    (cache.pausedForCache || isNotYetLoaded) && Preference.bool(for: .showBufferingThrobber) ||
     (player.info.isSeeking && Preference.bool(for: .showSeekingThrobber))
 
     // Hide videoView so that prev media (if any) is not seen while loading current media
     videoView.isHidden = showIndicator && isNotYetLoaded
 
     if showIndicator {
-      let usedStr = FloatingPointByteCountFormatter.string(fromByteCount: player.info.cacheUsed, prefixedBy: .ki)
-      let speedStr = FloatingPointByteCountFormatter.string(fromByteCount: player.info.cacheSpeed)
-      let bufferingState = player.info.bufferingState
+      let usedStr = FloatingPointByteCountFormatter.string(fromByteCount: cache.cacheUsed, prefixedBy: .ki)
+      let speedStr = FloatingPointByteCountFormatter.string(fromByteCount: cache.cacheSpeed)
+      let bufferingState = cache.bufferingState
       // mpv usually hangs at 0% the entire time. Do not show any progress if we do not have progress to show.
       let showNumbers = bufferingState > 0
       let bufStateString = showNumbers ? "\(bufferingState)%" : ""
       log.trace("Showing bufferIndicatorView (\(bufferingState)%, \(usedStr)B, \(speedStr)/s)")
       let progressLabel = String(format: NSLocalizedString("main.buffering_indicator", comment:"Buffering... %@"), bufStateString)
       let detailLabel = showNumbers ? "\(usedStr)B (\(speedStr)/s)" : ""
-      let animate = !(!isNotYetLoaded && player.info.cacheSpeed == 0)
+      let animate = !(!isNotYetLoaded && cache.cacheSpeed == 0)
       showBufferIndicator(animate: animate, progressLabel: progressLabel, detailLabel: detailLabel)
     } else {
       hideBufferIndicator()
@@ -2445,7 +2429,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Scroll wheel seek should call `seekFromPlaySlider` directly.
   @objc func playSliderAction(_ slider: PlaySlider) {
     // Update player.info & UI proactively
-    let playbackPositionAbsSec = player.info.playbackDurationSec! * slider.progressRatio
+    guard let durationSec = player.info.playbackTime.durationSec else { return }
+    let playbackPositionAbsSec = durationSec * slider.progressRatio
     let forceExactSeek = !Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
     seekFromPlaySlider(playbackPositionSec: playbackPositionAbsSec, forceExactSeek: forceExactSeek)
   }
@@ -2454,7 +2439,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     guard !isInInteractiveMode else { return }
 
     // Update player.info & UI proactively
-    player.info.playbackPositionSec = absoluteSecond
+    player.info.playbackTime = player.info.playbackTime.clone(positionSec: absoluteSecond)
     updatePlaybackTimeUI()
 
     let knobWndCoordX = playSlider.centerOfKnobInWindowCoordX()

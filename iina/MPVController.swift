@@ -491,6 +491,62 @@ final class MPVController: NSObject {
 
   // MARK: - Other
 
+  /// - Important: The mpv
+  ///   [cache-buffering-state](https://mpv.io/manual/stable/#command-interface-cache-buffering-state)
+  ///   property is only valid when
+  ///   [paused-for-cache](https://mpv.io/manual/stable/#command-interface-paused-for-cache) is `true`
+  ///   and can not be used to provide an indication of progress when seeking.
+  func getCacheState() -> CacheState {
+    var cachedRanges: [(Double, Double)] = []
+    let pausedForCache = getFlag(MPVProperty.pausedForCache)
+    var isBufferUnderrun = false
+    var cacheUsed: Int = 0
+    var cacheSpeed: Int = 0
+    if let demuxerCacheState = getNode(MPVProperty.demuxerCacheState) as? [String: Any] {
+      if let underrun = demuxerCacheState["underrun"] as? Bool, underrun {
+        isBufferUnderrun = true
+      }
+      if let seekableRanges = demuxerCacheState["seekable-ranges"] as? [[String: Any]] {
+        for seekableRange in seekableRanges {
+          if let rangeStart = seekableRange["start"] as? Double, let rangeEnd = seekableRange["end"] as? Double {
+            cachedRanges.append((rangeStart, rangeEnd))
+          }
+        }
+      }
+      cacheUsed = Int(demuxerCacheState["fw-bytes"] as? Int64 ?? 0)
+      // Not guaranteed to be sorted. Sort them
+      cachedRanges = cachedRanges.sorted(by: { $0.0 < $1.0 })
+      cacheSpeed = Int(demuxerCacheState["raw-input-rate"] as? Int64 ?? 0)
+    }
+    let bufferingState = getInt(MPVProperty.cacheBufferingState)
+    return CacheState(pausedForCache: pausedForCache, cacheUsed: cacheUsed, cacheSpeed: cacheSpeed,
+                      bufferingState: bufferingState, isBufferUnderrun: isBufferUnderrun, cachedRanges: cachedRanges)
+  }
+
+  func getPlaybackTimeInfo() -> PlaybackTimeInfo {
+    let durationSec = getDouble(MPVProperty.duration)
+    // When the end of a video file is reached mpv does not update the value of the property
+    // time-pos, leaving it reflecting the position of the last frame of the video. This is
+    // especially noticeable if the onscreen controller time labels are configured to show
+    // milliseconds. Adjust the position if the end of the file has been reached.
+    let eofReached = getFlag(MPVProperty.eofReached)
+    let positionSec: Double
+    if eofReached {
+      positionSec = durationSec
+    } else {
+      positionSec = getDouble(MPVProperty.timePos)
+    }
+
+    let remainingSec: Double?
+    if Preference.bool(for: .scaleRemainingTime) {
+      remainingSec = getDouble(MPVProperty.playtimeRemainingFull)
+    } else {
+      remainingSec = getDouble(MPVProperty.timeRemainingFull)
+    }
+
+    return PlaybackTimeInfo(positionSec: positionSec, durationSec: durationSec, remainingSec: remainingSec)
+  }
+
   /// Call this only after player is done loading
   func updateLoggingLevels() {
     mpvLogScanner.updateMpvEventLogLevel()

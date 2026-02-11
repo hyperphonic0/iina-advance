@@ -222,7 +222,7 @@ class TouchBarSupport: NSObject, NSTouchBarDelegate {
   }
 
   func setupTouchBarUI() {
-    let duration: Double = player.info.playbackDurationSec ?? 0
+    let duration: Double = player.info.playbackTime.durationSec ?? 0
     let pad: CGFloat = 16.0
     sizingTouchBarTextField.stringValue = VideoTime(duration).stringRepresentation
     if let widthConstant = sizingTouchBarTextField.cell?.cellSize.width, !touchBarPosLabels.isEmpty {
@@ -359,7 +359,7 @@ class TouchBarPlaySliderCell: NSSliderCell {
     guard let playerCore else { return }
     guard playerCore.isActive else { return }
     let info = playerCore.info
-    if isTouching, let dur = info.playbackDurationSec,
+    if isTouching, let dur = info.playbackTime.durationSec,
         let tb = info.currentPlayback?.thumbnails?.getThumbnail(forSecond: (doubleValue / 100) * dur) {
       let image = tb.nsImage
       NSGraphicsContext.saveGraphicsState()
@@ -408,7 +408,7 @@ class TouchBarPlaySliderCell: NSSliderCell {
       while (i < end + step) {
         let percent = Double(i / end)
         let dest = NSRect(x: i, y: 0, width: 2, height: imageRect.height)
-        if let dur = info.playbackDurationSec,
+        if let dur = info.playbackTime.durationSec,
            let currentMedaiThumbs = info.currentPlayback?.thumbnails,
           let image = currentMedaiThumbs.getThumbnail(forSecond: percent * dur)?.nsImage,
            currentMedaiThumbs.thumbnailsProgress >= percent {

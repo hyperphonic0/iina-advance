@@ -727,12 +727,9 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     // Set these here so that play position slider can be restored to prev position when the window is opened - not after
-    if let playbackPositionSec = double(for: .playPosition) {
-      info.playbackPositionSec = playbackPositionSec
-    }
-    if let playbackDurationSec = double(for: .playDuration) {
-      info.playbackDurationSec = playbackDurationSec
-    }
+    let playbackPositionSec = double(for: .playPosition)
+    let playbackDurationSec = double(for: .playDuration)
+    info.playbackTime = .init(positionSec: playbackPositionSec, durationSec: playbackDurationSec, remainingSec: nil)
     if let paused = bool(for: .paused) {
       info.isPausedLocally = paused
     }
@@ -780,8 +777,8 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     // Prevent "seek" OSD from appearing unncessarily after loading finishes
-    pwc.osd.lastPlaybackPosition = info.playbackPositionSec
-    pwc.osd.lastPlaybackDuration = info.playbackDurationSec
+    pwc.osd.lastPlaybackPosition = playbackPositionSec
+    pwc.osd.lastPlaybackDuration = playbackDurationSec
 
     // IINA restore supercedes mpv watch-later.
     // Need to delete the watch-later file before mpv loads it or else things get very buggy
@@ -1677,10 +1674,10 @@ extension PlayerCore {
                   + " of \(playlistPaths.count) playlist items in \(sw.secElapsedString)")
     }
 
-    if let playbackPositionSec = info.playbackPositionSec {
+    if let playbackPositionSec = info.playbackTime.positionSec {
       props[PropName.playPosition.rawValue] = playbackPositionSec.stringMaxFrac6
     }
-    if let playbackDurationSec = info.playbackDurationSec {
+    if let playbackDurationSec = info.playbackTime.durationSec {
       props[PropName.playDuration.rawValue] = playbackDurationSec.stringMaxFrac6
     }
     props[PropName.paused.rawValue] = info.isPaused.yn
