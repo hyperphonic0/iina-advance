@@ -193,7 +193,7 @@ fileprivate struct ThreeButtonPromptContent: View {
 
 #Preview {
   ThreeButtonPromptContent(
-    title: "Error Restoring Windows",
+    title: "Problem Restoring Windows",
     message: "Test Message",
     primaryTitle: "No, Quit",
     middleTitle: "Discard 2 Windows",

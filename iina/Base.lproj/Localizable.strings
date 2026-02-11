@@ -268,7 +268,7 @@
 "alert.restore_confirm.message" = "Restore windows from the previous launch?";
 "alert.restore_confirm.ok" = "Yes, Restore";
 "alert.restore_confirm.cancel" = "No, Discard";
-"alert.restore_timeout.title" = "Error Restoring Windows";
+"alert.restore_timeout.title" = "Problem Restoring Windows";
 "alert.restore_timeout.message" = "%@ of %@ windows are taking too long to load:\n\n%@\n\nDiscard their saved state and continue?";
 "alert.restore_timeout.ok" = "Keep Waiting";
 "alert.restore_timeout.middle" = "Discard %@ Windows";

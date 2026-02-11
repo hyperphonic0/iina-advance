@@ -52,7 +52,7 @@ final class FloatingControlBarGlassEffectView: NSGlassEffectView, @MainActor Dra
 
 // The control bar when position=="floating"
 final class FloatingControlBar {
-  static let barHeight: CGFloat = 67
+  static let barHeight: CGFloat = 70
   static let minBarWidth: CGFloat = 200
   private static let margin: CGFloat = CGFloat(max(0, Preference.integer(for: .floatingControlBarMargin)))
 
@@ -106,18 +106,15 @@ final class FloatingControlBar {
     view.idString = "OSC-Floating"
     view.translatesAutoresizingMaskIntoConstraints = false
 
-    topRowView.addConstraintsToFillSuperview(top: 4, leading: 10, trailing: 10)
+    topRowView.addConstraintsToFillSuperview(top: 12, leading: 10, trailing: 10)
     topRowView.idString = "OSC-Floating-TopRow"
 
-    bottomRowView.addConstraintsToFillSuperview(bottom: 1, leading: 10, trailing: 10)
+    bottomRowView.addConstraintsToFillSuperview(bottom: 4, leading: 10, trailing: 10)
     bottomRowView.setHuggingPriority(.required, for: .vertical)
     bottomRowView.idString = "OSC-Floating-BottomRow"
 
     let rowsEqHeightCon = topRowView.heightAnchor.constraint(equalTo: bottomRowView.heightAnchor, multiplier: 1)
     rowsEqHeightCon.isActive = true
-
-    let rowsVertAlignCon = bottomRowView.topAnchor.constraint(equalTo: topRowView.bottomAnchor, constant: -10)
-    rowsVertAlignCon.isActive = true
 
     let heightEqCon = view.heightAnchor.constraint(equalToConstant: FloatingControlBar.barHeight)
     heightEqCon.isActive = true

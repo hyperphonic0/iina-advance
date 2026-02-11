@@ -18,11 +18,13 @@ fileprivate let iconSizeMinScaleMultiplier: CGFloat = 0.5
 fileprivate let playIconSpacingScaleMultiplier: CGFloat = 0.35
 fileprivate let toolSpacingScaleMultiplier: CGFloat = 0.25
 
-fileprivate let floatingToolbarIconSize: CGFloat = 18
+fileprivate let floatingToolbarIconSize: CGFloat = 22
 fileprivate let floatingToolbarIconSpacing: CGFloat = 5
-fileprivate let floatingPlayIconSize: CGFloat = 24
-fileprivate let floatingPlayIconSpacing: CGFloat = 24
-fileprivate let floatingVolumeIconSize: CGFloat = 18
+fileprivate let floatingPlayIconSize: CGFloat = 28
+fileprivate let floatingPlayIconSpacing: CGFloat = 20
+fileprivate let floatingVolumeIconSize: CGFloat = 22
+fileprivate let floatingFullIconHeight: CGFloat = max(floatingToolbarIconSize, floatingPlayIconSize)
+fileprivate let floatingPlaySliderHeight: CGFloat = 37
 
 fileprivate let musicModeBarHeight: CGFloat = 48
 fileprivate let musicModePlayIconSize: CGFloat = 24
@@ -132,8 +134,8 @@ struct ControlBarGeometry: Sendable, CustomStringConvertible {
 
     } else if oscPosition == .floating {
       barHeight = FloatingControlBar.barHeight  // not really useful here anyway
-      fullIconHeight = 24
-      self.playSliderHeight = 37
+      fullIconHeight = floatingFullIconHeight
+      self.playSliderHeight = floatingPlaySliderHeight
       self.toolIconSize = floatingToolbarIconSize
       self.toolIconSpacing = floatingToolbarIconSpacing
       self.playIconSize = floatingPlayIconSize
