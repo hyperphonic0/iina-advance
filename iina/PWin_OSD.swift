@@ -425,9 +425,9 @@ final class OSDState {
     guard osdTextSize > 0 else { return }
 
     let sliderBarHeight = getSliderBarHeight(forOSDTextSize: osdTextSize)
-    osdAccessoryProgress.barFactory = BarRenderer(effectiveAppearance: appearance,
-                                                 effectiveOSCColorScheme: effectiveOSCColorScheme,
-                                                 sliderBarHeight_Normal: sliderBarHeight)
+    osdAccessoryProgress.barRenderer = BarRenderer(effectiveAppearance: appearance,
+                                                   effectiveOSCColorScheme: effectiveOSCColorScheme,
+                                                   sliderBarHeight_Normal: sliderBarHeight)
     osdProgressHeightConstraint.constraint!.animateToConstant(sliderBarHeight * 2)
     osdView.needsLayout = true
   }

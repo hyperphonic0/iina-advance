@@ -1,12 +1,12 @@
 //
-//  KnobFactorying.swift
+//  KnobRenderer.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2025-01-18.
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
-class KnobFactory {
+class KnobRenderer {
 
   enum KnobType: Int {
     case mainKnob = 0
@@ -170,26 +170,26 @@ class KnobFactory {
     let image: CGImage
     let scaleFactor: CGFloat
 
-    init(_ kf: KnobFactory, _ knobType: KnobType, isDarkMode: Bool, hasClearBG: Bool,
+    init(_ kr: KnobRenderer, _ knobType: KnobType, isDarkMode: Bool, hasClearBG: Bool,
          knobWidth: CGFloat, mainKnobHeight: CGFloat, scaleFactor: CGFloat) {
-      let loopKnobHeight = kf.loopKnobHeight(mainKnobHeight: mainKnobHeight)
-      let shadowOrGlowColor = isDarkMode ? kf.glowColor : kf.shadowColor
+      let loopKnobHeight = kr.loopKnobHeight(mainKnobHeight: mainKnobHeight)
+      let shadowOrGlowColor = isDarkMode ? kr.glowColor : kr.shadowColor
       switch knobType {
       case .mainKnobSelected, .volumeKnobSelected:
-        image = kf.makeImage(fill: kf.mainKnobActiveColor, shadow: shadowOrGlowColor,
+        image = kr.makeImage(fill: kr.mainKnobActiveColor, shadow: shadowOrGlowColor,
                              knobWidth: knobWidth, knobHeight: mainKnobHeight, scaleFactor: scaleFactor)
       case .mainKnob, .volumeKnob:
-        let shadowColor = hasClearBG ? kf.shadowColor : ((hasClearBG || !isDarkMode) ? kf.shadowColor : nil)
-        image = kf.makeImage(fill: kf.mainKnobColor, shadow: shadowColor,
+        let shadowColor = hasClearBG ? kr.shadowColor : ((hasClearBG || !isDarkMode) ? kr.shadowColor : nil)
+        image = kr.makeImage(fill: kr.mainKnobColor, shadow: shadowColor,
                              knobWidth: knobWidth, knobHeight: mainKnobHeight, scaleFactor: scaleFactor)
       case .loopKnob:
-        image = kf.makeImage(fill: kf.loopKnobColor, shadow: nil,
+        image = kr.makeImage(fill: kr.loopKnobColor, shadow: nil,
                              knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor)
       case .loopKnobSelected:
         image = isDarkMode ?
-        kf.makeImage(fill: kf.mainKnobActiveColor, shadow: shadowOrGlowColor,
+        kr.makeImage(fill: kr.mainKnobActiveColor, shadow: shadowOrGlowColor,
                      knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor) :
-        kf.makeImage(fill: kf.loopKnobColor, shadow: nil,
+        kr.makeImage(fill: kr.loopKnobColor, shadow: nil,
                      knobWidth: knobWidth, knobHeight: loopKnobHeight, scaleFactor: scaleFactor)
       }
       self.isDarkMode = isDarkMode

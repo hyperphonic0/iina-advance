@@ -326,16 +326,16 @@
 		D13A7F0C2D39E5E900840277 /* TimeoutTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */; };
 		D13A7F0E2D3A03B100840277 /* VideoView_DisplayLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0D2D3A03A300840277 /* VideoView_DisplayLink.swift */; };
 		D13A7F102D3A05D000840277 /* ViewportConstraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F0F2D3A05CB00840277 /* ViewportConstraints.swift */; };
-		D13A7F162D3C512F00840277 /* KnobFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F152D3C512B00840277 /* KnobFactory.swift */; };
+		D13A7F162D3C512F00840277 /* KnobRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13A7F152D3C512B00840277 /* KnobRenderer.swift */; };
 		D13BEC552D476E6800BF1071 /* SpacerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13BEC542D476E6400BF1071 /* SpacerView.swift */; };
 		D13D9EE62DB921EA00A94C60 /* CommandLineState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13D9EE52DB921E500A94C60 /* CommandLineState.swift */; };
 		D13E807E2C026A2700537954 /* PWin_GeoSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13E807D2C026A2700537954 /* PWin_GeoSet.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D1491F882CEF544400DB0A06 /* SeekPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1491F872CEF543900DB0A06 /* SeekPreview.swift */; };
 		D15CABE62B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */; };
-		D160783B2D140DEE00105001 /* BarFactoryUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = D160783A2D140DDB00105001 /* BarFactoryUtil.swift */; };
+		D160783B2D140DEE00105001 /* BarRendererUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = D160783A2D140DDB00105001 /* BarRendererUtil.swift */; };
 		D161A0B42EBA2226006BF42C /* FixedProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D161A0B32EBA2226006BF42C /* FixedProgressBar.swift */; };
-		D16A434D2CDDB75B0012D66F /* BarFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16A434C2CDDB7570012D66F /* BarFactory.swift */; };
+		D16A434D2CDDB75B0012D66F /* BarRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16A434C2CDDB7570012D66F /* BarRenderer.swift */; };
 		D16E1F152E302C6800F8F208 /* DefaultAlbumArtView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16E1F142E302C5D00F8F208 /* DefaultAlbumArtView.swift */; };
 		D1724A692BF80C9A00BCE335 /* FolderMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */; };
 		D17504A629167ACF005C3DD0 /* CascadingMenuItemBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17504A529167ACF005C3DD0 /* CascadingMenuItemBuilder.swift */; };
@@ -1859,16 +1859,16 @@
 		D13A7F0B2D39E5E400840277 /* TimeoutTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeoutTimer.swift; sourceTree = "<group>"; };
 		D13A7F0D2D3A03A300840277 /* VideoView_DisplayLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoView_DisplayLink.swift; sourceTree = "<group>"; };
 		D13A7F0F2D3A05CB00840277 /* ViewportConstraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportConstraints.swift; sourceTree = "<group>"; };
-		D13A7F152D3C512B00840277 /* KnobFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnobFactory.swift; sourceTree = "<group>"; };
+		D13A7F152D3C512B00840277 /* KnobRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnobRenderer.swift; sourceTree = "<group>"; };
 		D13BEC542D476E6400BF1071 /* SpacerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacerView.swift; sourceTree = "<group>"; };
 		D13D9EE52DB921E500A94C60 /* CommandLineState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandLineState.swift; sourceTree = "<group>"; };
 		D13E807D2C026A2700537954 /* PWin_GeoSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_GeoSet.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D1491F872CEF543900DB0A06 /* SeekPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeekPreview.swift; sourceTree = "<group>"; };
 		D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleMediaThumbnailsLoader.swift; sourceTree = "<group>"; };
-		D160783A2D140DDB00105001 /* BarFactoryUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarFactoryUtil.swift; sourceTree = "<group>"; };
+		D160783A2D140DDB00105001 /* BarRendererUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarRendererUtil.swift; sourceTree = "<group>"; };
 		D161A0B32EBA2226006BF42C /* FixedProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixedProgressBar.swift; sourceTree = "<group>"; };
-		D16A434C2CDDB7570012D66F /* BarFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarFactory.swift; sourceTree = "<group>"; };
+		D16A434C2CDDB7570012D66F /* BarRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarRenderer.swift; sourceTree = "<group>"; };
 		D16E1F142E302C5D00F8F208 /* DefaultAlbumArtView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultAlbumArtView.swift; sourceTree = "<group>"; };
 		D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderMonitor.swift; sourceTree = "<group>"; };
 		D17504A529167ACF005C3DD0 /* CascadingMenuItemBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CascadingMenuItemBuilder.swift; sourceTree = "<group>"; };
@@ -2916,9 +2916,9 @@
 				D13557292D4AF5C500F26A79 /* SliderHoverIndicator.swift */,
 				8461C52D1D45FFF6006E91FF /* PlaySliderCell.swift */,
 				84F725551D4783EE000DEF1B /* VolumeSliderCell.swift */,
-				D13A7F152D3C512B00840277 /* KnobFactory.swift */,
-				D16A434C2CDDB7570012D66F /* BarFactory.swift */,
-				D160783A2D140DDB00105001 /* BarFactoryUtil.swift */,
+				D13A7F152D3C512B00840277 /* KnobRenderer.swift */,
+				D16A434C2CDDB7570012D66F /* BarRenderer.swift */,
+				D160783A2D140DDB00105001 /* BarRendererUtil.swift */,
 			);
 			path = Slider;
 			sourceTree = "<group>";
@@ -3417,7 +3417,7 @@
 				8452DD851D3B956D008A543A /* Preference.swift in Sources */,
 				8488D6E31E1183D300D5B952 /* PrefSubViewController.swift in Sources */,
 				846352581EEEE11A0043F0CC /* ThumbnailPeekView.swift in Sources */,
-				D160783B2D140DEE00105001 /* BarFactoryUtil.swift in Sources */,
+				D160783B2D140DEE00105001 /* BarRendererUtil.swift in Sources */,
 				D19CFD902E5885AE00746611 /* TopBarView.swift in Sources */,
 				84E745D61DFDD4FD00588DED /* KeyCodeHelper.swift in Sources */,
 				840D479B1DFEF649000D9A64 /* KeyRecordViewController.swift in Sources */,
@@ -3546,7 +3546,7 @@
 				D1D87E042932086000737886 /* TableUIChangeBuilder.swift in Sources */,
 				D192C7D82E8CF2BD00CC537A /* OptionalConstraint.swift in Sources */,
 				84C6D3621EAF8D63009BF721 /* HistoryController.swift in Sources */,
-				D16A434D2CDDB75B0012D66F /* BarFactory.swift in Sources */,
+				D16A434D2CDDB75B0012D66F /* BarRenderer.swift in Sources */,
 				D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */,
 				E38B3213214FB9EA000F6D27 /* PrefPluginPermissionView.swift in Sources */,
 				D1AE04CE2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift in Sources */,
@@ -3571,7 +3571,7 @@
 				E33FEEB52229A44F00B59711 /* JavascriptAPIUtils.swift in Sources */,
 				84C6D3671EB2A427009BF721 /* HistoryWindowController.swift in Sources */,
 				9E47DAC01E3CFA6D00457420 /* DurationDisplayTextField.swift in Sources */,
-				D13A7F162D3C512F00840277 /* KnobFactory.swift in Sources */,
+				D13A7F162D3C512F00840277 /* KnobRenderer.swift in Sources */,
 				E35306F62147F7AF008FE492 /* JavascriptAPIMpv.swift in Sources */,
 				D1FF157B2A7FAE9100C0CE86 /* UIState.swift in Sources */,
 				840AF5821E732C8F00F4AF92 /* JustXMLRPC.swift in Sources */,

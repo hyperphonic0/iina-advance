@@ -25,7 +25,8 @@ extension BarRenderer {
     var barMinX: CGFloat { imgPadding }
 
     /// Corner radius will be overridden to `0` if `PK.roundSliderBarRects` is true
-    init(scaleFactor: CGFloat, imgPadding: CGFloat, imgHeight: CGFloat, barHeight: CGFloat, interPillGapWidth: CGFloat,
+    init(scaleFactor: CGFloat, imgPadding: CGFloat, imgHeight: CGFloat,
+         barHeight: CGFloat, interPillGapWidth: CGFloat,
          fillColor: CGColor, pillCornerRadius: CGFloat) {
       self.scaleFactor = scaleFactor
       self.imgPadding = imgPadding
@@ -137,7 +138,8 @@ extension BarRenderer {
       self.x2 = x2
     }
 
-    init(imgPadding: CGFloat, imgHeight: CGFloat, barHeight: CGFloat, interPillGapWidth: CGFloat,
+    init(imgPadding: CGFloat, imgHeight: CGFloat,
+         barHeight: CGFloat, interPillGapWidth: CGFloat,
          fillColor: CGColor, pillCornerRadius: CGFloat) {
       let x1 = BarConf(scaleFactor: 1.0, imgPadding: imgPadding, imgHeight: imgHeight, barHeight: barHeight,
                        interPillGapWidth: interPillGapWidth, fillColor: fillColor, pillCornerRadius: pillCornerRadius)

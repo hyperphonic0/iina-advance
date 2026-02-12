@@ -9,7 +9,7 @@
 /// A class to draw progress bars in the OSD manually since macOS 26 added animation to NSProgressIndicator
 /// that can't be disabled.
 class FixedProgressBar: NSView {
-  var barFactory: BarRenderer? = nil
+  var barRenderer: BarRenderer? = nil
 
   /// Expected to be in the range [0.0, 100.0].
   var doubleValue: Double = 0.0 {
@@ -19,20 +19,20 @@ class FixedProgressBar: NSView {
   }
 
   override func draw(_ dirtyRect: NSRect) {
-    guard let bf = barFactory else { return }
+    guard let br = barRenderer else { return }
 
     effectiveAppearance.applyAppearanceFor {
       let barRect = bounds
       let scaleFactor: CGFloat = window?.screen?.backingScaleFactor ?? Constants.defaultBackingScaleFactor
-      let volBarImg = bf.buildVolumeBarImage(useFocusEffect: false,
+      let volBarImg = br.buildVolumeBarImage(useFocusEffect: false,
                                              barWidth: barRect.width,
                                              scaleFactor: scaleFactor, knobRect: .zero,
                                              currentValue: doubleValue,
                                              maxValue: 1.0,  // 100%
                                              currentPreviewValue: nil)
 
-      bf.drawBar(volBarImg, in: barRect, scaleFactor: scaleFactor,
-                 tallestBarHeight: bf.maxVolBarHeightNeeded, drawShadow: true)
+      br.drawBar(volBarImg, in: barRect, scaleFactor: scaleFactor,
+                 tallestBarHeight: br.maxVolBarHeightNeeded, drawShadow: true)
     }
   }
 }

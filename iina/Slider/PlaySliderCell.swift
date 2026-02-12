@@ -30,7 +30,7 @@ class PlaySliderCell: ScrollableSliderCell {
     guard let pwc else { return }
     let scaleFactor: CGFloat = slider.window?.screen?.backingScaleFactor ?? Constants.defaultBackingScaleFactor
     let appearance = sliderAppearance ?? slider.effectiveAppearance
-    guard let bf = pwc.barFactory else { return }
+    guard let br = pwc.barRenderer else { return }
 
     /// The position of the knob, rounded for cleaner drawing. If `width==0`, do not draw knob.
     let knobRect = knobRect(flipped: false)
@@ -45,7 +45,7 @@ class PlaySliderCell: ScrollableSliderCell {
 
     appearance.applyAppearanceFor {
       let drawShadow = hasClearBG
-      let playBarImg = bf.buildPlayBarImage(useFocusEffect: wantsFocusEffect,
+      let playBarImg = br.buildPlayBarImage(useFocusEffect: wantsFocusEffect,
                                             barWidth: barRect.width,
                                             scaleFactor: scaleFactor,
                                             knobRect: knobRect,
@@ -53,8 +53,8 @@ class PlaySliderCell: ScrollableSliderCell {
                                             currentPreviewTimeSec: currentPreviewTimeSec,
                                             chapters, cachedRanges: cachedRanges)
 
-      bf.drawBar(playBarImg, in: barRect, scaleFactor: scaleFactor,
-                 tallestBarHeight: bf.maxPlayBarHeightNeeded, drawShadow: drawShadow)
+      br.drawBar(playBarImg, in: barRect, scaleFactor: scaleFactor,
+                 tallestBarHeight: br.maxPlayBarHeightNeeded, drawShadow: drawShadow)
     }
   }
 

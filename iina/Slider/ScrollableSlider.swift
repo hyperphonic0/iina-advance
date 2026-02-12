@@ -173,7 +173,7 @@ class ScrollableSliderCell: NSSliderCell {
 
   var loopKnobWidth: CGFloat { knobWidth }
 
-  var currentKnobType: KnobFactory.KnobType {
+  var currentKnobType: KnobRenderer.KnobType {
     isHighlighted ? .mainKnobSelected : .mainKnob
   }
 

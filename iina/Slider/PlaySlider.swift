@@ -26,7 +26,7 @@ final class PlaySlider: ScrollableSlider {
   /// The slider's cell correctly typed for convenience.
   var customCell: PlaySliderCell { cell as! PlaySliderCell }
 
-  var knobFactory: KnobFactory { pwc!.knobFactory }
+  var knobFactory: KnobRenderer { pwc!.knobFactory }
 
   var hoverIndicator: SliderHoverIndicator! {
     willSet {

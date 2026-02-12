@@ -118,7 +118,7 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
 
   // MARK:- Drawing
 
-  func updateKnobImage(to knobType: KnobFactory.KnobType) {
+  func updateKnobImage(to knobType: KnobRenderer.KnobType) {
     guard let scaleFactor: CGFloat = window?.screen?.backingScaleFactor else { return }
     let cell = slider.customCell
     let knob = slider.knobFactory.getKnob(knobType,
