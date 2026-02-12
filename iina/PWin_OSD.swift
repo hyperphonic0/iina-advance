@@ -124,19 +124,91 @@ final class OSDState {
   @MainActor
   var queue = LinkedList<() -> Void>()
 
+  fileprivate static func buildOSDView(subviews: [NSView]) -> NSView {
+    let osdView: NSView
+    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .oscFloatingColorScheme)
+    if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
+      let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+      let osdGlassView = OSDGlassEffectView(style: style)
+      osdView = osdGlassView
+      let contentView = NSView()
+      osdGlassView.contentView = contentView
+      contentView.subviews = subviews
+    } else {
+      osdView = OSDVisualEffectView()
+      osdView.subviews = subviews
+    }
+
+    osdView.idString = "OSDView"
+    osdView.translatesAutoresizingMaskIntoConstraints = false
+    // Min width
+    let osdMinWidthConstraint = osdView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
+    osdMinWidthConstraint.identifier = "OSDView-MinWidthConstraint"
+    osdMinWidthConstraint.priority = .init(900)
+    osdMinWidthConstraint.isActive = true
+
+    return osdView
+  }
+
+  @MainActor
+  func rebuildOSDView() {
+    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .oscFloatingColorScheme)
+
+    let needsRebuild: Bool
+    if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
+      if let osdGlassView = osdView as? OSDGlassEffectView {
+        let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        osdGlassView.setStyle(style)
+        needsRebuild = false
+      } else {
+        needsRebuild = true
+      }
+    } else {
+      needsRebuild = (osdView as? OSDVisualEffectView == nil)
+    }
+
+    guard needsRebuild else { return }
+    log.verbose("Rebuilding OSDView for colorScheme: \(colorScheme.description)")
+    osdView.removeAllSubviews()
+    osdView.removeFromSuperview()
+
+    osdView = OSDState.buildOSDView(subviews: [osdIconImageView, osdVStackView])
+    rebuildOSDViewConstraints()
+  }
+
+  @MainActor
+  fileprivate func rebuildOSDViewConstraints() {
+    osdTopPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
+      osdVStackView.topAnchor.constraint(equalTo: osdView.topAnchor, constant: c)
+    }
+    osdBtmPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
+      osdView.bottomAnchor.constraint(equalTo: osdVStackView.bottomAnchor, constant: c)
+    }
+    osdLeadingPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
+      osdIconImageView.leadingAnchor.constraint(equalTo: osdView.leadingAnchor, constant: c)
+    }
+    osdTrailingPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
+      osdView.trailingAnchor.constraint(equalTo: osdVStackView.trailingAnchor, constant: c)
+    }
+
+    // Space between icon & VStack to the right of it. Start with 0, assuming icon is not shown
+    // [osdIconImageView]-4-[osdVStackView]
+    iconToVStackSpacingConstraint.createOrUpdate(to: 0, priorityInt: 1000, log) { [self] c in
+      osdVStackView.leadingAnchor.constraint(equalTo: osdIconImageView.trailingAnchor, constant: c)
+    }
+
+    // Center the icon vertically
+    osdIconImageView.centerYAnchor.constraint(equalTo: osdView.centerYAnchor).isActive = true
+  }
+
   @MainActor
   init(log: any Logger.Subsystem) {
     self.log = log
 
     log.verbose("Init OSD")
 
-    osdVStackView = ClickThroughStackView()
+    // Subview 1: osdIconImageView
     osdIconImageView = NSImageView()
-    /// Use label constructor (even with empty string) to ensure proper styling
-    osdLabel = NSTextField(labelWithString: "")
-    osdAccessoryText = NSTextField(labelWithString: "")
-    osdAccessoryProgress = FixedProgressBar()
-
     osdIconImageView.idString = "OSDIconImageView"
     osdIconImageView.imageScaling = .scaleProportionallyUpOrDown
     osdIconImageView.imageAlignment = .alignLeft
@@ -145,6 +217,10 @@ final class OSDState {
     osdIconImageView.setContentHugging(h: 1000, v: 1000)
     osdIconImageView.setCCResistance(h: 1000, v: 1000)
 
+    // Subview 2: osdVStackView
+
+    /// Use label constructor (even with empty string) to ensure proper styling
+    osdLabel = NSTextField(labelWithString: "")
     osdLabel.idString = "OSD-Label"
     osdLabel.translatesAutoresizingMaskIntoConstraints = false
     osdLabel.setContentHuggingPriority(.init(251), for: .horizontal)
@@ -156,6 +232,7 @@ final class OSDState {
     osdLabel.usesSingleLineMode = true
     osdLabel.wantsLayer = true
 
+    osdAccessoryText = NSTextField(labelWithString: "")
     osdAccessoryText.idString = "OSD-AccText"
     osdAccessoryText.wantsLayer = true
     osdAccessoryText.translatesAutoresizingMaskIntoConstraints = false
@@ -171,30 +248,13 @@ final class OSDState {
     osdAccessoryText.textColor = .disabledControlTextColor
     osdAccessoryText.backgroundColor = .controlColor
 
+    osdAccessoryProgress = FixedProgressBar()
     osdAccessoryProgress.idString = "OSD-ProgressBar"
     osdAccessoryProgress.translatesAutoresizingMaskIntoConstraints = false
     osdAccessoryProgress.setContentHuggingPriority(.init(270), for: .horizontal)
     osdAccessoryProgress.setContentCompressionResistancePriority(.required, for: .vertical)
 
-    let subviews = [osdIconImageView, osdVStackView]
-    if #available(macOS 26.0, *) {
-      let osdGlassView = OSDGlassEffectView(style: .clear)
-      osdView = osdGlassView
-      let contentView = NSView()
-      osdGlassView.contentView = contentView
-      contentView.subviews = subviews
-    } else {
-      osdView = OSDVisualEffectView()
-      osdView.subviews = subviews
-    }
-    osdView.idString = "OSDView"
-    osdView.translatesAutoresizingMaskIntoConstraints = false
-    // Min width
-    let osdMinWidthConstraint = osdView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
-    osdMinWidthConstraint.identifier = "OSDView-MinWidthConstraint"
-    osdMinWidthConstraint.priority = .init(900)
-    osdMinWidthConstraint.isActive = true
-
+    osdVStackView = ClickThroughStackView()
     osdVStackView.idString = "OSD-VStackView"
     osdVStackView.wantsLayer = true
     osdVStackView.orientation = .vertical
@@ -209,40 +269,28 @@ final class OSDState {
     osdVStackView.addView(osdAccessoryText, in: .center)
     osdVStackView.addView(osdAccessoryProgress, in: .center)
 
+    // Build root view & add subviews
+    osdView = OSDState.buildOSDView(subviews: [osdIconImageView, osdVStackView])
+    rebuildOSDViewConstraints()
+
+    // Add views' internal constraints:
+
     // Use initial size of 0, in case MacOS 11 code never gets executed
     let initialIconSize: CGFloat = 0
+    // Icon width
     osdIconWidthConstraint.createOrUpdate(to: initialIconSize, priorityInt: 1000, log) { [self] c in
       osdIconImageView.widthAnchor.constraint(equalToConstant: c)
     }
+    // Icon height
     osdIconHeightConstraint.createOrUpdate(to: initialIconSize, priorityInt: 1000, log) { [self] c in
       osdIconImageView.heightAnchor.constraint(equalToConstant: c)
     }
 
-    osdTopPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
-      osdVStackView.topAnchor.constraint(equalTo: osdView.topAnchor, constant: c)
-    }
-    osdBtmPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
-      osdView.bottomAnchor.constraint(equalTo: osdVStackView.bottomAnchor, constant: c)
-    }
-    osdLeadingPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
-      osdIconImageView.leadingAnchor.constraint(equalTo: osdView.leadingAnchor, constant: c)
-    }
-    osdTrailingPaddingConstraint.createOrUpdate(to: standardOffset, priorityInt: 1000, log) { [self] c in
-      osdView.trailingAnchor.constraint(equalTo: osdVStackView.trailingAnchor, constant: c)
-    }
     // Progress bar height
     osdProgressHeightConstraint.createOrUpdate(to: 0, priorityInt: 1000, log) { [self] c in
       osdAccessoryProgress.heightAnchor.constraint(equalToConstant: c)
     }
 
-    // Space between icon & VStack to the right of it. Start with 0, assuming icon is not shown
-    // [osdIconImageView]-4-[osdVStackView]
-    iconToVStackSpacingConstraint.createOrUpdate(to: 0, priorityInt: 1000, log) { [self] c in
-      osdVStackView.leadingAnchor.constraint(equalTo: osdIconImageView.trailingAnchor, constant: c)
-    }
-
-    // Center the icon vertically
-    osdIconImageView.centerYAnchor.constraint(equalTo: osdView.centerYAnchor).isActive = true
   }
 
   @MainActor
@@ -327,6 +375,10 @@ final class OSDVisualEffectView: ClickThroughVisualEffectView {
 final class OSDGlassEffectView: ClickThroughGlassEffectView {
   init(style desiredStyle: Style) {
     super.init(frame: .zero)
+    setStyle(desiredStyle)
+  }
+
+  func setStyle(_ desiredStyle: Style) {
     if desiredStyle == .clear {
       style = .clear
       tintColor = .black.withAlphaComponent(0.4)

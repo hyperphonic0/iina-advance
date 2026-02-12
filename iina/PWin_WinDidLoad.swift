@@ -261,10 +261,10 @@ extension PlayerWindowController {
 
     let bottomBarView: NSView
     switch style {
-    case .visualEffectView:
-      bottomBarView = BottomBarVisualEffectView()
     case .clearGradient:
       bottomBarView = BottomBarGradientView()
+    default:
+      bottomBarView = BottomBarVisualEffectView()
     }
 
     bottomBarView.idString = "BottomBarView"  // helps with debug logging

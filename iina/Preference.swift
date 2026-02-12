@@ -206,6 +206,8 @@ struct Preference {
     /// Horizontal position of floating control bar. In percentage from bottom. (float, 0 - 1)
     static let controlBarPositionVertical = Key("controlBarPositionVertical")
     static let floatingControlBarWidth = Key("floatingControlBarWidth")
+    /// Can be one of `visualEffectView`, `clearLiquidGlass`, or `tintedLiquidGlass`.
+    static let oscFloatingColorScheme = Key("oscFloatingColorScheme")
 
     /// Whether floating OSC can snap to center when dragging close to it.
     static let controlBarStickToCenter = Key("controlBarStickToCenter")
@@ -248,6 +250,8 @@ struct Preference {
 
     static let osdAutoHideTimeout = Key("osdAutoHideTimeout")
     static let osdTextSize = Key("osdTextSize")
+    /// Can be one of `visualEffectView`, `clearLiquidGlass`, or `tintedLiquidGlass`.
+    static let osdColorScheme = Key("osdColorScheme")
 
     // - Window Geometry
 
@@ -850,6 +854,8 @@ struct Preference {
     case visualEffectView = 1
     /// Use clear background with slight alpha gradient
     case clearGradient
+    case clearLiquidGlass
+    case tintedLiquidGlass
 
     static let defaultValue = OSCColorScheme.clearGradient
 
@@ -1422,6 +1428,7 @@ struct Preference {
     .controlBarPositionHorizontal: Float(0.5),
     .controlBarPositionVertical: Float(0.1),
     .floatingControlBarWidth: 440.0,
+    .oscFloatingColorScheme: OSCColorScheme.clearLiquidGlass.rawValue,
     .controlBarStickToCenter: true,
     .controlBarAutoHideTimeout: Float(2.5),
     .showCachedRangesInSlider: true,
@@ -1475,6 +1482,7 @@ struct Preference {
     .disableOSDVideoZoomMsg: false,
     .osdAutoHideTimeout: Float(1),
     .osdTextSize: Float(28),
+    .osdColorScheme: OSCColorScheme.clearLiquidGlass.rawValue,
     .softVolume: 100,
     .arrowButtonAction: ArrowButtonAction.defaultValue.rawValue,
     .resetSpeedWhenPaused: false,

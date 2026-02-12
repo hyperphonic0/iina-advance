@@ -213,12 +213,10 @@ final class InspectorWindowController: WindowController, NSWindowDelegate, NSTab
     watchTableContainerView.layer?.backgroundColor = watchTableBackgroundColor.cgColor
 
     if #available(macOS 26.0, *) {
-      watchTableContainerView.layer?.cornerRadius = Constants.liquidGlassCornerRadius
-
+      watchTableContainerView.roundCorners(withRadius: Constants.liquidGlassCornerRadius)
       trackPopup.borderShape = .capsule
       trackPopup.controlSize = .large
     }
-
 
     // Other UI init
 

@@ -50,7 +50,7 @@ final class FloatingControlBarGlassEffectView: NSGlassEffectView, @MainActor Dra
   func cancelDrag() { controlBar.cancelDrag() }
 }
 
-// The control bar when position=="floating"
+/// Container & pseudo-controller for the "floating" OSC. The view itself (`view`), its subviews, state & logic
 final class FloatingControlBar {
   static let barHeight: CGFloat = 70
   static let minBarWidth: CGFloat = 200
@@ -58,6 +58,7 @@ final class FloatingControlBar {
 
   static var preferredBarWidth: CGFloat { max(FloatingControlBar.minBarWidth, CGFloat(Preference.float(for: .floatingControlBarWidth))) }
 
+  /// The OSC root view when OSC position is `floating`.
   var view: NSView!
 
   var pwc: PlayerWindowController? { view.pwc }
@@ -87,10 +88,12 @@ final class FloatingControlBar {
     }
 
     let subviews = [topRowView, bottomRowView]
-
     let view: NSView
-    if #available(macOS 26, *) {
-      let osdGlassView = FloatingControlBarGlassEffectView(self, style: .clear)
+
+    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .oscFloatingColorScheme)
+    if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
+      let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+      let osdGlassView = FloatingControlBarGlassEffectView(self, style: style)
       // MacOS Tahoe's style favors rounder corners. Try to fit in
       let contentView = NSView()
       osdGlassView.contentView = contentView

@@ -2119,8 +2119,13 @@ extension NSView {
   }
 
   func roundCorners(withRadius cornerRadius: CGFloat) {
-    wantsLayer = true
-    layer?.cornerRadius = cornerRadius
+    if #available(macOS 26, *), let osdGlassView = self as? NSGlassEffectView {
+      // Need to use `cornerRadius` property
+      osdGlassView.cornerRadius = cornerRadius
+    } else {
+      wantsLayer = true
+      layer?.cornerRadius = cornerRadius
+    }
   }
 
   func roundCorners() {
