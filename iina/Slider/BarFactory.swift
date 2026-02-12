@@ -1,5 +1,5 @@
 //
-//  BarFactory.swift
+//  BarRenderer.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2024-11-07.
@@ -30,7 +30,7 @@ fileprivate extension CGColor {
 /// implemented via their own separate `CALayer`s which should enable more optimization opportunities. It's not been tested whether drawing
 /// into a `CGImage`s as this class does currently delivers any improved performance (or is even slower) than the standard `NSSlider` redrawing,
 /// although empirical results so far haven't seemed too bad...
-class BarFactory {
+final class BarRenderer {
   // MARK: - Init / Config
 
   var playBar_Normal:  PlayBarConfScaleSet
@@ -46,24 +46,10 @@ class BarFactory {
   private var leftCachedColor: CGColor
   private var rightCachedColor: CGColor
 
+  /// Need to create a new `BarRenderer` each time either the window appearance or the relevant color scheme changes.
   init(effectiveAppearance: NSAppearance, effectiveOSCColorScheme: Preference.OSCColorScheme, sliderBarHeight_Normal barHeight_Normal: CGFloat) {
-    // If clear BG, can mostly reuse dark theme, but some things need tweaks (e.g. barColorRight needs extra alpha)
-    let hasClearBG = effectiveOSCColorScheme == .clearGradient
-    let barAppearance = hasClearBG ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
-
-    let (barColorLeft, barColorRight) = barAppearance.applyAppearanceFor {
-      let barColorLeft: CGColor
-      let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .sliderBarDoneColor)
-      switch userSetting {
-      case .gray:
-        barColorLeft = (hasClearBG ? NSColor.mainSliderBarLeftClearBG : NSColor.mainSliderBarLeft).cgColor
-      case .controlAccentColor:
-        barColorLeft = NSColor.controlAccentColor.cgColor
-      }
-
-      let barColorRight = (hasClearBG ? NSColor.mainSliderBarRightClearBG : NSColor.mainSliderBarRight).cgColor
-      return (barColorLeft, barColorRight)
-    }
+    let (leftBaseColor, rightBaseColor) = BarRenderer.getBaseColorsFor(effectiveAppearance: effectiveAppearance,
+                                                                       effectiveOSCColorScheme: effectiveOSCColorScheme)
 
     // I want to vary the curvature based on bar height, but want to avoid drawing bars with different curvature in the same image,
     // which can happen when focusing on a chapter in a multi-chapter video. So: only update the curvature once per image set.
@@ -94,8 +80,8 @@ class BarFactory {
     updateCurvature(using: barHeight_Normal)
     let barCornerRadius_Normal = cornerRadius(for: barHeight_Normal)
 
-    leftCachedColor = barColorLeft.exaggerated()
-    rightCachedColor = barColorRight.exaggerated()
+    leftCachedColor = leftBaseColor.exaggerated()
+    rightCachedColor = rightBaseColor.exaggerated()
 
     // - Secondary Vars - PlaySlider:
 
@@ -121,7 +107,7 @@ class BarFactory {
 
     let barHeight_VolumeAbove100_Left: CGFloat = barHeight_Normal
     let barHeight_VolumeAbove100_Right: CGFloat = (barHeight_VolumeAbove100_Left * 0.5).rounded()
-    updateCurvature(using: barHeight_VolumeAbove100_Left) // base on tallest bar height being drawn
+    updateCurvature(using: barHeight_VolumeAbove100_Left)  // base on tallest bar height being drawn
     let barCornerRadius_VolumeAbove100_Left = cornerRadius(for: barHeight_VolumeAbove100_Left)
     let barCornerRadius_VolumeAbove100_Right = cornerRadius(for: barHeight_VolumeAbove100_Right)
 
@@ -141,9 +127,8 @@ class BarFactory {
 
     let playNormalLeft = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: barVerticalPaddingTotal + maxPlayBarHeightNeeded,
                                          barHeight: barHeight_Normal, interPillGapWidth: chapterGapWidth,
-                                         fillColor: barColorLeft, pillCornerRadius: barCornerRadius_Normal)
-    let playNormalRight = playNormalLeft.cloned(fillColor: barColorRight)
-    rightCachedColor = barColorRight.exaggerated()
+                                         fillColor: leftBaseColor, pillCornerRadius: barCornerRadius_Normal)
+    let playNormalRight = playNormalLeft.cloned(fillColor: rightBaseColor)
 
     playBar_Normal =  PlayBarConfScaleSet(currentChapter_Left: playNormalLeft, currentChapter_Right: playNormalRight,
                                           nonCurrentChapter_Left: playNormalLeft, nonCurrentChapter_Right: playNormalRight)
@@ -163,8 +148,8 @@ class BarFactory {
 
     let volumeBelow100_Left = BarConfScaleSet(imgPadding: barImgPadding, imgHeight: barVerticalPaddingTotal + maxVolBarHeightNeeded,
                                               barHeight: barHeight_Normal, interPillGapWidth: 0.0,
-                                              fillColor: barColorLeft, pillCornerRadius: barCornerRadius_Normal)
-    let volumeBelow100_Right = volumeBelow100_Left.cloned(fillColor: barColorRight)
+                                              fillColor: leftBaseColor, pillCornerRadius: barCornerRadius_Normal)
+    let volumeBelow100_Right = volumeBelow100_Left.cloned(fillColor: rightBaseColor)
 
     let volAbove100_Left_FillColor = volumeBelow100_Left.fillColor.exaggerated()
     let volAbove100_Right_FillColor = volumeBelow100_Right.fillColor // volumeBelow100_Right.fillColor.exaggerated()
@@ -180,10 +165,14 @@ class BarFactory {
                                        volumeAbove100_Left: volumeAbove100_Left,
                                        volumeAbove100_Right: volumeAbove100_Right)
 
-    volBar_Focused = VolBarConfScaleSet(volumeBelow100_Left: volumeBelow100_Left.cloned(barHeight: barHeight_Volume_Focused, pillCornerRadius: barCornerRadius_Volume_Focused),
-                                        volumeBelow100_Right: volumeBelow100_Right.cloned(barHeight: barHeight_Volume_Focused, pillCornerRadius: barCornerRadius_Volume_Focused),
-                                        volumeAbove100_Left: volumeAbove100_Left.cloned(barHeight: barHeight_Focused_VolumeAbove100_Left, pillCornerRadius: barCornerRadius_Focused_VolumeAbove100_Left),
-                                        volumeAbove100_Right: volumeAbove100_Right.cloned(barHeight: barHeight_Focused_VolumeAbove100_Right, pillCornerRadius: barCornerRadius_Focused_VolumeAbove100_Right))
+    volBar_Focused = VolBarConfScaleSet(volumeBelow100_Left: volumeBelow100_Left.cloned(barHeight: barHeight_Volume_Focused,
+                                                                                        pillCornerRadius: barCornerRadius_Volume_Focused),
+                                        volumeBelow100_Right: volumeBelow100_Right.cloned(barHeight: barHeight_Volume_Focused,
+                                                                                          pillCornerRadius: barCornerRadius_Volume_Focused),
+                                        volumeAbove100_Left: volumeAbove100_Left.cloned(barHeight: barHeight_Focused_VolumeAbove100_Left,
+                                                                                        pillCornerRadius: barCornerRadius_Focused_VolumeAbove100_Left),
+                                        volumeAbove100_Right: volumeAbove100_Right.cloned(barHeight: barHeight_Focused_VolumeAbove100_Right,
+                                                                                          pillCornerRadius: barCornerRadius_Focused_VolumeAbove100_Right))
   }
 
   // MARK: - Play Bar
@@ -480,17 +469,6 @@ class BarFactory {
     return barVerticalPaddingTotal + tallestBarHeight
   }
 
-  /// Measured in points, not pixels!
-  private func imageRect(in drawRect: CGRect, tallestBarHeight: CGFloat) -> CGRect {
-    let imgHeight = BarFactory.heightNeeded(tallestBarHeight: tallestBarHeight)
-    // can be negative:
-    let spareHeight = drawRect.height - imgHeight
-    let barImgPadding = barImgPadding
-    return CGRect(x: drawRect.origin.x - barImgPadding,
-                  y: drawRect.origin.y + (spareHeight * 0.5),
-                  width: drawRect.width + (2 * barImgPadding), height: imgHeight)
-  }
-
   func drawBar(_ barImg: CGImage, in barRect: NSRect, scaleFactor: CGFloat,
                tallestBarHeight: CGFloat, drawShadow: Bool) {
     var drawRect = imageRect(in: barRect, tallestBarHeight: tallestBarHeight)
@@ -512,6 +490,52 @@ class BarFactory {
     if drawShadow {
       ctx.endTransparencyLayer()
     }
+  }
+
+  // MARK: - Misc support functions
+
+  /// Determine "base" bar colors (i.e., not highlighted or exaggerated).
+  ///
+  /// - "Left" = segment representing completed/filled (to the left of current knob position)
+  /// - "Right" = segment representing not yet completed / empty (to the right of current knob position)
+  private static func getBaseColorsFor(effectiveAppearance: NSAppearance,
+                                       effectiveOSCColorScheme: Preference.OSCColorScheme) -> (leftBase: CGColor, rightBase: CGColor) {
+    // If clear BG, can mostly reuse dark theme, but some things need tweaks (e.g. rightBaseColor needs extra alpha)
+    let hasClearBG = effectiveOSCColorScheme == .clearGradient
+    let barAppearance = hasClearBG ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
+
+    return barAppearance.applyAppearanceFor {
+      let leftBaseColor: NSColor
+      let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .sliderBarDoneColor)
+      switch userSetting {
+      case .gray:
+        leftBaseColor = (hasClearBG ? .mainSliderBarLeftClearBG : .mainSliderBarLeft)
+      case .controlAccentColor:
+        leftBaseColor = .controlAccentColor
+      }
+
+      let rightBaseColor: NSColor
+      switch effectiveOSCColorScheme {
+      case .clearGradient:
+        rightBaseColor = .mainSliderBarRightClearBG
+      case .clearLiquidGlass, .tintedLiquidGlass:
+        rightBaseColor = .mainSliderBarRight
+      case .visualEffectView:
+        rightBaseColor = .mainSliderBarRight
+      }
+      return (leftBaseColor.cgColor, rightBaseColor.cgColor)
+    }
+  }
+
+  /// Measured in points, not pixels!
+  private func imageRect(in drawRect: CGRect, tallestBarHeight: CGFloat) -> CGRect {
+    let imgHeight = BarRenderer.heightNeeded(tallestBarHeight: tallestBarHeight)
+    // can be negative:
+    let spareHeight = drawRect.height - imgHeight
+    let barImgPadding = barImgPadding
+    return CGRect(x: drawRect.origin.x - barImgPadding,
+                  y: drawRect.origin.y + (spareHeight * 0.5),
+                  width: drawRect.width + (2 * barImgPadding), height: imgHeight)
   }
 
 }

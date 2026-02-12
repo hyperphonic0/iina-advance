@@ -1,11 +1,11 @@
 //
-//  BarFactoryUtil.swift
+//  BarRendererUtil.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2024-12-19.
 //
 
-extension BarFactory {
+extension BarRenderer {
 
   // MARK: - Support Classes
 

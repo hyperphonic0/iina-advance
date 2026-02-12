@@ -65,7 +65,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// For responding to changes to app prefs & other notifications
   var notiHandler: NotificationHandler!
 
-  var barFactory: BarFactory?
+  var barFactory: BarRenderer?
   let knobFactory = KnobFactory()
 
   // MARK: - Vars: State
@@ -708,7 +708,9 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let sliderAppearance = layoutState.effectiveOSCColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
     sliderAppearance.applyAppearanceFor {
-      let barFactory = BarFactory(effectiveAppearance: effectiveAppearance, effectiveOSCColorScheme: layoutState.effectiveOSCColorScheme, sliderBarHeight_Normal: layoutState.controlBarGeo.sliderBarHeightNormal)
+      let barFactory = BarRenderer(effectiveAppearance: effectiveAppearance,
+                                  effectiveOSCColorScheme: layoutState.effectiveOSCColorScheme,
+                                  sliderBarHeight_Normal: layoutState.controlBarGeo.sliderBarHeightNormal)
       self.barFactory = barFactory
       knobFactory.invalidateCachedKnobs()
       osd.updateProgressBarStyle(effectiveAppearance, effectiveOSCColorScheme: layoutState.effectiveOSCColorScheme)

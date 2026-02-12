@@ -631,6 +631,7 @@ extension PlayerWindowController {
 
       case .floating:
         controlBarFloating.rebuildView()
+        adjustFloatingControllerOrigin(for: transition.closeOldPanelsGeometry)
         currentControlBar = controlBarFloating.view
         addFloatingControlBarToViewportView()
         controlBarFloating.updatePreferredBarWidth()
@@ -824,7 +825,7 @@ extension PlayerWindowController {
       updatePanelBlendingModes(to: outputLayout)
     }
 
-    // Do this here so that BarFactory regenerates close enough to mid-animation (so bar thickness changes pleasantly)
+    // Do this here so that BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly)
     if let screen = window.screen {
       applyThemeMaterial(using: transition.outputLayout, window, screen)
     } else {

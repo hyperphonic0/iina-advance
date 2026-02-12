@@ -216,7 +216,7 @@ class ScrollableSliderCell: NSSliderCell {
     // Important: use knobHeight because it is the tallest thing being redrawn.
     // When seeking, anything being rapidly redrawn needs to have all its possible bounds included in
     // the slider's barRect, so that it knows what to mark dirty. Otherwise we will see artifacts!
-    let imgHeight = BarFactory.heightNeeded(tallestBarHeight: knobHeight)
+    let imgHeight = BarRenderer.heightNeeded(tallestBarHeight: knobHeight)
     let extraHeightNeeded = imgHeight - superRect.height
     if extraHeightNeeded <= 0.0 {
       return superRect

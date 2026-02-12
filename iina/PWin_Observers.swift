@@ -161,7 +161,7 @@ extension PlayerWindowController {
           if playlistView.isViewLoaded {
             playlistView.updateTableColors()
           }
-          // Need to regenerate colors in BarFactory & redraw slider:
+          // Need to regenerate colors in BarRenderer & redraw slider:
           updateTitleBarAndOSC()
         }
       ]
@@ -282,7 +282,7 @@ extension PlayerWindowController {
         .displayTimeAndBatteryInFullScreen,
         .oscFloatingColorScheme,
         .keepVideoAwayFromBars,
-      // These need calls to regenerate BarFactory:
+      // These need calls to regenerate BarRenderer:
         .roundSliderBarRects,
         .sliderBarDoneColor:
 

@@ -9,7 +9,7 @@
 /// A class to draw progress bars in the OSD manually since macOS 26 added animation to NSProgressIndicator
 /// that can't be disabled.
 class FixedProgressBar: NSView {
-  var barFactory: BarFactory? = nil
+  var barFactory: BarRenderer? = nil
 
   /// Expected to be in the range [0.0, 100.0].
   var doubleValue: Double = 0.0 {
