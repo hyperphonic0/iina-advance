@@ -37,4 +37,30 @@ class MouseIgnoringVisualEffectView: NSVisualEffectView {
 @available(macOS 26.0, *)
 class ClickThroughGlassEffectView: NSGlassEffectView {
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+  func setStyle(_ desiredStyle: Style) {
+    if desiredStyle == .clear {
+      style = .clear
+      tintColor = .black.withAlphaComponent(0.4)
+    } else {
+      style = .regular
+    }
+  }
+}
+
+@available(macOS 26.0, *)
+class MouseIgnoringGlassEffectView: NSGlassEffectView {
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+  override func hitTest(_ point: NSPoint) -> NSView? {
+    // Do not accept any mouse events
+    return nil
+  }
+  func setStyle(_ desiredStyle: Style) {
+    if desiredStyle == .clear {
+      style = .clear
+      tintColor = .black.withAlphaComponent(0.4)
+    } else {
+      style = .regular
+    }
+  }
 }

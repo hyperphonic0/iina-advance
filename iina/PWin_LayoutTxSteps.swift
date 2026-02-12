@@ -116,7 +116,7 @@ extension PlayerWindowController {
 
     } else if transition.isExitingFullScreen {
       // Exiting Full Screen
-      fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
+      fadeableViews.applyVisibility(.hidden, to: osd.additionalInfoView)
     }
 
     // Interactive mode
@@ -205,7 +205,7 @@ extension PlayerWindowController {
     }
 
     if outputLayout.mode == .fullScreenInteractive {
-      fadeableViews.applyVisibility(.hidden, to: additionalInfoView)
+      fadeableViews.applyVisibility(.hidden, to: osd.additionalInfoView)
     }
 
     if transition.isExitingInteractiveMode, let cropController = self.cropSettingsView {
@@ -1002,7 +1002,7 @@ extension PlayerWindowController {
     }
 
     if transition.outputGeometry.shouldHaveAdditionalInfo {
-      fadeableViews.applyVisibility(.showFadeableNonTopBar, to: additionalInfoView)
+      fadeableViews.applyVisibility(.showFadeableNonTopBar, to: osd.additionalInfoView)
     }
 
     if !transition.outputLayout.isLegacyStyle {

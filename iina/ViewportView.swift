@@ -8,7 +8,7 @@
 
 import Foundation
 
-class ViewportView: NSView {
+final class ViewportView: NSView {
   unowned var player: PlayerCore!
   var log: any Logger.Subsystem { player.log }
 
@@ -150,7 +150,7 @@ extension PlayerWindowController {
                             videoView,
                             pluginOverlayViewContainer,
                             defaultAlbumArtView,
-                            additionalInfoView,
+                            osd.additionalInfoView,
                             bufferIndicatorView,
                             controlBarFloating.view,
                             osd.osdView]

@@ -36,6 +36,8 @@ final class OSDState {
   // - Views
 
   var osdView: NSView
+  var additionalInfoView: NSView
+  let additionalInfoSubviews: AdditionalInfoSubviews
   fileprivate let osdVStackView: ClickThroughStackView
   fileprivate let osdIconImageView: NSImageView
   /// Use label constructor (even with empty string) to ensure proper styling
@@ -126,7 +128,7 @@ final class OSDState {
 
   fileprivate static func buildOSDView(subviews: [NSView]) -> NSView {
     let osdView: NSView
-    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .oscFloatingColorScheme)
+    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .osdColorScheme)
     if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
       let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
       let osdGlassView = OSDGlassEffectView(style: style)
@@ -148,6 +150,27 @@ final class OSDState {
     osdMinWidthConstraint.isActive = true
 
     return osdView
+  }
+
+  fileprivate static func buildAdditionalInfoView(_ additionalInfoSubviews: AdditionalInfoSubviews) -> NSView {
+    let aiView: NSView
+    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .osdColorScheme)
+    if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
+      let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+      let glassView = AdditionalInfoGlassView(style: style)
+      aiView = glassView
+      let contentView = NSView()
+      glassView.contentView = contentView
+      additionalInfoSubviews.addAllTo(additionalInfoView: contentView)
+    } else {
+      aiView = AdditionalInfoVEView()
+      additionalInfoSubviews.addAllTo(additionalInfoView: aiView)
+    }
+
+    aiView.idString = "AdditionalInfoView"
+    aiView.translatesAutoresizingMaskIntoConstraints = false
+
+    return aiView
   }
 
   @MainActor
@@ -207,7 +230,13 @@ final class OSDState {
 
     log.verbose("Init OSD")
 
-    // Subview 1: osdIconImageView
+    // AdditionalInfo view
+
+    let aiSubviews = AdditionalInfoSubviews()
+    additionalInfoSubviews = aiSubviews
+    additionalInfoView = OSDState.buildAdditionalInfoView(aiSubviews)
+
+    // OSD subview 1: osdIconImageView
     osdIconImageView = NSImageView()
     osdIconImageView.idString = "OSDIconImageView"
     osdIconImageView.imageScaling = .scaleProportionallyUpOrDown
@@ -217,7 +246,7 @@ final class OSDState {
     osdIconImageView.setContentHugging(h: 1000, v: 1000)
     osdIconImageView.setCCResistance(h: 1000, v: 1000)
 
-    // Subview 2: osdVStackView
+    // OSD subview 2: osdVStackView
 
     /// Use label constructor (even with empty string) to ensure proper styling
     osdLabel = NSTextField(labelWithString: "")
@@ -360,6 +389,8 @@ final class OSDState {
 
 }
 
+// MARK: - OSDView Classes
+
 final class OSDVisualEffectView: ClickThroughVisualEffectView {
   init() {
     super.init(frame: .zero)
@@ -378,57 +409,63 @@ final class OSDGlassEffectView: ClickThroughGlassEffectView {
     setStyle(desiredStyle)
   }
 
-  func setStyle(_ desiredStyle: Style) {
-    if desiredStyle == .clear {
-      style = .clear
-      tintColor = .black.withAlphaComponent(0.4)
-    } else {
-      style = .regular
-    }
-  }
-
   @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
-/// The Additional Info view displays a battery time indicator & the media title when in full screen.
-class AdditionalInfoView: MouseIgnoringVisualEffectView {
-  fileprivate let titleLabel = ResizableTextView(lineBreakMode: .byTruncatingMiddle)
-  fileprivate let hStackView = NSStackView()
-  fileprivate let clockTimeLabel = NSTextField(labelWithString: "99:99")
-  fileprivate let batteryView = NSView()
-  fileprivate let batteryLabel = NSTextField(labelWithString: "100%")
+// MARK: - AdditionalInfoView Classes
 
+/// The Additional Info view displays a battery time indicator & the media title when in full screen.
+class AdditionalInfoVEView: MouseIgnoringVisualEffectView {
   init() {
     super.init(frame: .zero)
     blendingMode = .withinWindow
     material = .popover
     state = .active
-    idString = "AdditionalInfoView"
-    translatesAutoresizingMaskIntoConstraints = false
-    let batteryOffsetX: CGFloat = -4
+  }
+  
+  @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+}
 
-    subviews = [titleLabel, hStackView]
+@available(macOS 26.0, *)
+class AdditionalInfoGlassView: MouseIgnoringGlassEffectView {
+  init(style desiredStyle: Style) {
+    super.init(frame: .zero)
+    setStyle(desiredStyle)
+  }
 
+  @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+}
+
+/// Simple container for subviews of AdditionalInfo view.
+class AdditionalInfoSubviews {
+  let titleLabel: ResizableTextView
+  let hStackView: NSStackView
+  let labelContainerView: NSView
+  let clockTimeLabel: NSTextField
+  let batteryView: NSView
+  let batteryLabel: NSTextField
+
+  init() {
+    titleLabel = ResizableTextView(lineBreakMode: .byTruncatingMiddle)
     titleLabel.idString = "AdditionalInfo-Title"
     titleLabel.font = NSFont.systemFont(ofSize: 18, weight: .medium)
     titleLabel.alignment = .right
     titleLabel.setContentCompressionResistancePriority(.init(499), for: .horizontal)
     titleLabel.translatesAutoresizingMaskIntoConstraints = false
-    titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 8).isActive = true
-    titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4).isActive = true
-    trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 8).isActive = true
 
-    let labelContainerView = NSView()
-    labelContainerView.translatesAutoresizingMaskIntoConstraints = false
-    labelContainerView.heightAnchor.constraint(equalToConstant: 30).isActive = true
-    labelContainerView.subviews = [clockTimeLabel]
-
+    clockTimeLabel = NSTextField(labelWithString: "99:99")
     clockTimeLabel.font = NSFont.systemFont(ofSize: 18, weight: .regular)
     clockTimeLabel.alignment = .right
     clockTimeLabel.textColor = .secondaryLabelColor
     clockTimeLabel.backgroundColor = .textBackgroundColor
     clockTimeLabel.idString = "AdditionalInfo-Label"
     clockTimeLabel.translatesAutoresizingMaskIntoConstraints = false
+
+    labelContainerView = NSView()
+    labelContainerView.translatesAutoresizingMaskIntoConstraints = false
+    labelContainerView.heightAnchor.constraint(equalToConstant: 30).isActive = true
+    labelContainerView.subviews = [clockTimeLabel]
+
     clockTimeLabel.leadingAnchor.constraint(equalTo: labelContainerView.leadingAnchor, constant: 6).isActive = true
     labelContainerView.trailingAnchor.constraint(equalTo: clockTimeLabel.trailingAnchor).isActive = true
     clockTimeLabel.centerYAnchor.constraint(equalTo: labelContainerView.centerYAnchor, constant: -1).isActive = true
@@ -438,6 +475,7 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
     verticalLine.translatesAutoresizingMaskIntoConstraints = false
     verticalLine.heightAnchor.constraint(equalToConstant: 12).isActive = true
 
+    hStackView = NSStackView()
     hStackView.idString = "AdditionalInfo-HStackView"
     hStackView.orientation = .horizontal
     hStackView.alignment = .centerY
@@ -447,19 +485,16 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
     hStackView.detachesHiddenViews = true
     hStackView.translatesAutoresizingMaskIntoConstraints = false
 
-    hStackView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4).isActive = true
-    hStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4).isActive = true
-    trailingAnchor.constraint(equalTo: hStackView.trailingAnchor, constant: 8).isActive = true
-    bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: 4).isActive = true
-
     // - Battery
 
+    batteryView = NSView()
     batteryView.idString = "AdditionalInfoBatteryView"
     batteryView.wantsLayer = true
     batteryView.translatesAutoresizingMaskIntoConstraints = false
     batteryView.heightAnchor.constraint(equalToConstant: 30).isActive = true
     batteryView.widthAnchor.constraint(equalToConstant: 56).isActive = true
 
+    batteryLabel = NSTextField(labelWithString: "100%")
     batteryLabel.idString = "AdditionalInfoBattery-Text"
     batteryLabel.font = NSFont.systemFont(ofSize: 13, weight: .bold)
     batteryLabel.textColor = .secondaryLabelColor
@@ -475,6 +510,7 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
     batteryImageView.translatesAutoresizingMaskIntoConstraints = false
 
     batteryView.subviews = [batteryLabel, batteryImageView]
+    let batteryOffsetX: CGFloat = -4
     batteryImageView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: batteryOffsetX, trailing: -batteryOffsetX)
     batteryLabel.centerXAnchor.constraint(equalTo: batteryView.centerXAnchor, constant: batteryOffsetX).isActive = true
     batteryLabel.centerYAnchor.constraint(equalTo: batteryView.centerYAnchor, constant: -0.5).isActive = true
@@ -488,9 +524,20 @@ class AdditionalInfoView: MouseIgnoringVisualEffectView {
     batteryImageView.autoresizesSubviews = false
     titleLabel.autoresizesSubviews = false
   }
-  
-  @MainActor required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
+
+  func addAllTo(additionalInfoView view: NSView) {
+    titleLabel.removeFromSuperview()
+    hStackView.removeFromSuperview()
+    
+    view.subviews = [titleLabel, hStackView]
+    titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 8).isActive = true
+    titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 4).isActive = true
+    view.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 8).isActive = true
+
+    hStackView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4).isActive = true
+    hStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 4).isActive = true
+    view.trailingAnchor.constraint(equalTo: hStackView.trailingAnchor, constant: 8).isActive = true
+    view.bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: 4).isActive = true
   }
 }
 
@@ -517,18 +564,18 @@ extension PlayerWindowController {
     }
 
     if stageGeo.shouldHaveAdditionalInfo {
-      if !viewportView.subviews.contains(additionalInfoView) {
+      if !viewportView.subviews.contains(osd.additionalInfoView) {
         log.verbose("[OSD] Adding additionalInfoView to viewportView")
-        viewportView.addSubview(additionalInfoView)  // will sort below
-        fadeableViews.applyVisibility(.hidden, additionalInfoView)  // hide for now. Will show in later stage
+        viewportView.addSubview(osd.additionalInfoView)  // will sort below
+        fadeableViews.applyVisibility(.hidden, osd.additionalInfoView)  // hide for now. Will show in later stage
         addedSomething = true
       }
       updateAdditionalInfoContent()  // update content
 
     } else {
-      if additionalInfoView.superview != nil {
+      if osd.additionalInfoView.superview != nil {
         log.verbose("[OSD] Removing additionalInfoView from superview")
-        additionalInfoView.removeFromSuperview()
+        osd.additionalInfoView.removeFromSuperview()
       }
     }
 
@@ -557,8 +604,8 @@ extension PlayerWindowController {
 
     log.verbose("[OSD] Updating constraints: hasOSD=\(hasOSD.yn) hasAddlInfo=\(hasAdditionalInfo.yn) leadingSB=\(hasLeadingSidebar.yn) trailingSB=\(hasTrailingSidebar.yn) offsetFromTop=\(offsetFromTop)")
 
-    let leadingView = osdPosition == .topLeading ? (hasOSD ? osd.osdView : nil) :  (hasAdditionalInfo ? additionalInfoView : nil)
-    let trailingView = osdPosition == .topLeading ? (hasAdditionalInfo ? additionalInfoView : nil) :  (hasOSD ? osd.osdView : nil)
+    let leadingView = osdPosition == .topLeading ? (hasOSD ? osd.osdView : nil) :  (hasAdditionalInfo ? osd.additionalInfoView : nil)
+    let trailingView = osdPosition == .topLeading ? (hasAdditionalInfo ? osd.additionalInfoView : nil) :  (hasOSD ? osd.osdView : nil)
 
     let otherAnchorLeading = hasLeadingSidebar ? leadingSidebarView.trailingAnchor : viewportView.leadingAnchor
     let otherAnchorTrailing = hasTrailingSidebar ? trailingSidebarView.leadingAnchor : viewportView.trailingAnchor
@@ -629,20 +676,23 @@ extension PlayerWindowController {
 
   /// Update `additionalInfoView` with battery status & media title
   func updateAdditionalInfoContent() {
-    log.trace("[OSD] Updating additionalInfoView content with URL: \(player.info.currentPlayback?.url.lastPathComponent ?? "nil")")
-    guard let title = player.info.currentPlayback?.url.lastPathComponent else { return }
-    additionalInfoView.titleLabel.string = title
-    additionalInfoView.titleLabel.sizeToFit()
-    additionalInfoView.titleLabel.invalidateIntrinsicContentSize()
-    additionalInfoView.needsLayout = true  // Need this for titleLabel to update
+    let aiView = osd.additionalInfoView
+    let title = player.info.currentPlayback?.url.lastPathComponent
+    log.trace("[OSD] Updating additionalInfoView content with URL: \(title ?? "nil")")
+    guard let title else { return }
+    let sv = osd.additionalInfoSubviews
+    sv.titleLabel.string = title
+    sv.titleLabel.sizeToFit()
+    sv.titleLabel.invalidateIntrinsicContentSize()
+    aiView.needsLayout = true  // Need this for titleLabel to update
 
     if let capacity = PowerSource.getList().filter({ $0.type == "InternalBattery" }).first?.currentCapacity {
-      additionalInfoView.batteryLabel.stringValue = "\(capacity)%"
-      additionalInfoView.hStackView.setVisibilityPriority(.mustHold, for: additionalInfoView.batteryView)
+      sv.batteryLabel.stringValue = "\(capacity)%"
+      sv.hStackView.setVisibilityPriority(.mustHold, for: sv.batteryView)
     } else {
-      additionalInfoView.hStackView.setVisibilityPriority(.notVisible, for: additionalInfoView.batteryView)
+      sv.hStackView.setVisibilityPriority(.notVisible, for: sv.batteryView)
     }
-    additionalInfoView.clockTimeLabel.stringValue = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
+    sv.clockTimeLabel.stringValue = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
   }
 
   // MARK: - OSD Content Updates
@@ -850,11 +900,11 @@ extension PlayerWindowController {
       // MacOS Tahoe's style favors very round corners: try to fit in with it
       let cornerRadius = Constants.liquidGlassCornerRadius
       osd.osdView.roundCorners(withRadius: cornerRadius)
-      additionalInfoView.roundCorners(withRadius: cornerRadius)
+      osd.additionalInfoView.roundCorners(withRadius: cornerRadius)
     } else {
       // Pre-Tahoe
       osd.osdView.roundCorners()
-      additionalInfoView.roundCorners()
+      osd.additionalInfoView.roundCorners()
     }
   }
 

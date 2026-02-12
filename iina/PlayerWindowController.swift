@@ -460,7 +460,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   // OSD
   let osd: OSDState
-  let additionalInfoView = AdditionalInfoView()
 
   /// Custom-built window border, used for legacy windowed mode
   /// #Deprecated: no longer needed for MacOS 26+
@@ -2015,7 +2014,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     updatePlayButtonAndSpeedUI()
     updatePlaybackTimeUI()
-    if additionalInfoView.superview != nil {
+    if osd.additionalInfoView.superview != nil {
       updateAdditionalInfoContent()
     }
 
