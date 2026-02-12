@@ -24,11 +24,11 @@ fileprivate let standardOffset: CGFloat = 8
 /// OSD constraints: shown here in "upper-left" configuration.
 /// For "upper-right" config: swap OSD & AdditionalInfo anchors in A & B, and invert all the params of B.
 /// ```
-/// ┌───────────────────────┐
-/// │ A ┌────┐  ┌───────┐ B │  A: leadingSide_LeadingConstraint
-/// │◄─►│ OSD│  │ AddNfo│◄─►│  B: trailingSide_TrailingConstraint
-/// │   └────┘  └───────┘   │
-/// └───────────────────────┘
+/// ┌────────────────────────────┐
+/// │ A ┌────┐C: ≥12 ┌───────┐ B │  A: leadingSide_LeadingConstraint
+/// │◄─►│ OSD│◄─────►│ AddNfo│◄─►│  B: trailingSide_TrailingConstraint
+/// │   └────┘       └───────┘   │  C: hSpaceBetweenViewsGEConstraint
+/// └────────────────────────────┘
 /// ```
 final class OSDState {
   let log: any Logger.Subsystem
@@ -70,6 +70,12 @@ final class OSDState {
   fileprivate let leadingSide_TrailingConstraint = OptionalConstraint("LeadingOSD-Trailing")
   fileprivate let trailingSide_LeadingConstraint = OptionalConstraint("TrailingOSD-Leading")
   fileprivate let trailingSide_TrailingConstraint = OptionalConstraint("TrailingOSD-Trailing")
+
+  // If we have both OSDs shown at the same time, don't let them overlap, but don't push them
+  // off to either side except as last resort. If they don't both fit, first shrink the AdditionalInfo text.
+  // #OSDPlusAdditionalInfoResizing
+  fileprivate let hSpaceBetweenViewsGEConstraint = OptionalConstraint("HSpaceBetweenOSDViewsGE")
+  fileprivate let hSpaceBetweenViewsLTConstraint = OptionalConstraint("HSpaceBetweenOSDViewsLT")
 
   fileprivate var optionalConstraints: [OptionalConstraint] {
     [
@@ -143,6 +149,8 @@ final class OSDState {
 
     osdView.idString = "OSDView"
     osdView.translatesAutoresizingMaskIntoConstraints = false
+    // #OSDPlusAdditionalInfoResizing
+    osdView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
     // Min width
     let osdMinWidthConstraint = osdView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
     osdMinWidthConstraint.identifier = "OSDView-MinWidthConstraint"
@@ -169,6 +177,8 @@ final class OSDState {
 
     aiView.idString = "AdditionalInfoView"
     aiView.translatesAutoresizingMaskIntoConstraints = false
+    // #OSDPlusAdditionalInfoResizing
+    aiView.setContentCompressionResistancePriority(.init(249), for: .horizontal)
 
     return aiView
   }
@@ -450,7 +460,8 @@ class AdditionalInfoSubviews {
     titleLabel.idString = "AdditionalInfo-Title"
     titleLabel.font = NSFont.systemFont(ofSize: 18, weight: .medium)
     titleLabel.alignment = .right
-    titleLabel.setContentCompressionResistancePriority(.init(499), for: .horizontal)
+    // #OSDPlusAdditionalInfoResizing
+    titleLabel.setContentCompressionResistancePriority(.init(252), for: .horizontal)
     titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
     clockTimeLabel = NSTextField(labelWithString: "99:99")
@@ -659,6 +670,20 @@ extension PlayerWindowController {
                                                           requiredFirstAnchor: viewportView.bottomAnchor,
                                                           requiredSecondAnchor: trailingView.bottomAnchor, log) { [self] c in
         viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: trailingView.bottomAnchor, constant: c)
+      }
+    }
+
+    // #OSDPlusAdditionalInfoResizing
+    if let leadingView, let trailingView {
+      osd.hSpaceBetweenViewsGEConstraint.createOrUpdate(to: standardOffset, priorityInt: constraintPriorityInt,
+                                                      requiredFirstAnchor: trailingView.leadingAnchor,
+                                                      requiredSecondAnchor: leadingView.trailingAnchor, log) { c in
+        trailingView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingView.trailingAnchor, constant: c)
+      }
+      osd.hSpaceBetweenViewsLTConstraint.createOrUpdate(to: standardOffset, priorityInt: 250,
+                                                        requiredFirstAnchor: trailingView.leadingAnchor,
+                                                        requiredSecondAnchor: leadingView.trailingAnchor, log) { c in
+        trailingView.leadingAnchor.constraint(lessThanOrEqualTo: leadingView.trailingAnchor, constant: c)
       }
     }
   }
