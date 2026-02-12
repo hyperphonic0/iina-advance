@@ -122,6 +122,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var hideFadeableViewsOutsideWindowCheckBox: NSButton!
   @IBOutlet weak var keepVideoAwayFromBarsCheckBox: NSButton!
 
+  @IBOutlet weak var oscFloatingColorSchemeHStackView: NSStackView!
   @IBOutlet weak var oscColorSchemeHStackView: NSStackView!
   @IBOutlet weak var oscForceSingleRowContainerView: NSStackView!
 
@@ -496,7 +497,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
 
     viewHidePairs.append((oscForceSingleRowContainerView, !showForceSingleRowCheckbox))
-    viewHidePairs.append((oscTimeLabelsAlwaysWrapSliderStackView, Preference.bool(for: .oscForceSingleRow)))
+    viewHidePairs.append((oscTimeLabelsAlwaysWrapSliderStackView, !(oscIsBottom && !Preference.bool(for: .oscForceSingleRow))))
 
     viewHidePairs.append((oscColorSchemeHStackView, !showOverlayStyleTrigger))
     viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
@@ -507,6 +508,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     } else {
       supportLiquidGlass = false
     }
+    viewHidePairs.append((oscFloatingColorSchemeHStackView, !(supportLiquidGlass && oscIsFloating)))
     viewHidePairs.append((osdColorSchemeHStackView, !supportLiquidGlass))
 
     viewHidePairs.append((oscSnapToCenterContainerView, !oscIsFloating))

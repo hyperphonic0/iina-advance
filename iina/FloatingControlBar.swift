@@ -76,28 +76,43 @@ final class FloatingControlBar {
   var isDragging: Bool { view.pwc?.currentDragObject == view }
 
   func rebuildView() {
-    if let prevView = self.view {
-      prevView.removeFromSuperview()
-      prevView.removeAllSubviews()
-    }
-
     let subviews = [topRowView, bottomRowView]
     let view: NSView
 
     let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .oscFloatingColorScheme)
     if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
       let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
-      let osdGlassView = FloatingControlBarGlassEffectView(self, style: style)
-      // MacOS Tahoe's style favors rounder corners. Try to fit in
-      let contentView = NSView()
-      osdGlassView.contentView = contentView
-      contentView.subviews = subviews
-      view = osdGlassView
-      view.roundCorners(withRadius: Constants.liquidGlassCornerRadius)
+      if let existingView = self.view as? FloatingControlBarGlassEffectView {
+        view = existingView
+        existingView.style = style
+        return
+      } else {
+        let osdGlassView = FloatingControlBarGlassEffectView(self, style: style)
+        // MacOS Tahoe's style favors rounder corners. Try to fit in
+        let contentView = NSView()
+        osdGlassView.contentView = contentView
+        contentView.subviews = subviews
+        view = osdGlassView
+        view.roundCorners(withRadius: Constants.liquidGlassCornerRadius)
+      }
     } else {
-      view = FloatingControlBarVisualEffectView(self)
-      view.roundCorners(withRadius: 6)
-      view.subviews = subviews
+      if let existingView = self.view as? FloatingControlBarVisualEffectView {
+        view = existingView
+        return
+      } else {
+        view = FloatingControlBarVisualEffectView(self)
+        if #available(macOS 26, *) {
+          view.roundCorners(withRadius: Constants.liquidGlassCornerRadius)
+        } else {
+          view.roundCorners(withRadius: 6)
+        }
+        view.subviews = subviews
+      }
+    }
+
+    if let prevView = self.view {
+      prevView.removeFromSuperview()
+      prevView.removeAllSubviews()
     }
 
     view.idString = "OSC-Floating"

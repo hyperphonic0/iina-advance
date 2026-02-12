@@ -630,6 +630,7 @@ extension PlayerWindowController {
         }
 
       case .floating:
+        controlBarFloating.rebuildView()
         currentControlBar = controlBarFloating.view
         addFloatingControlBarToViewportView()
         controlBarFloating.updatePreferredBarWidth()
