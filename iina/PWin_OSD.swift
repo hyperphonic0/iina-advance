@@ -150,7 +150,7 @@ final class OSDState {
     osdView.idString = "OSDView"
     osdView.translatesAutoresizingMaskIntoConstraints = false
     // #OSDPlusAdditionalInfoResizing
-    osdView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+    osdView.setContentHuggingPriority(.init(900), for: .horizontal)
     // Min width
     let osdMinWidthConstraint = osdView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
     osdMinWidthConstraint.identifier = "OSDView-MinWidthConstraint"
@@ -199,6 +199,27 @@ final class OSDState {
 
   @MainActor
   func rebuildAdditionalInfoView() {
+    guard Preference.bool(for: .displayTimeAndBatteryInFullScreen) else { return }
+    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .osdColorScheme)
+
+    let needsRebuild: Bool
+    if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
+      if let aiGlassView = additionalInfoView as? AdditionalInfoGlassView {
+        let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        aiGlassView.setStyle(style)
+        needsRebuild = false
+      } else {
+        needsRebuild = true
+      }
+    } else {
+      needsRebuild = (osdView as? AdditionalInfoVEView == nil)
+    }
+
+    guard needsRebuild else { return }
+    log.verbose("Rebuilding AdditionalInfoView for colorScheme: \(colorScheme.description)")
+    additionalInfoView.removeAllSubviews()
+    additionalInfoView.removeFromSuperview()
+
     additionalInfoView = OSDState.buildAdditionalInfoView(additionalInfoSubviews)
   }
 
@@ -720,7 +741,7 @@ extension PlayerWindowController {
                                                       requiredSecondAnchor: leadingView.trailingAnchor, log) { c in
         trailingView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingView.trailingAnchor, constant: c)
       }
-      osd.hSpaceBetweenViewsLTConstraint.createOrUpdate(to: standardOffset, priorityInt: 250,
+      osd.hSpaceBetweenViewsLTConstraint.createOrUpdate(to: standardOffset, priorityInt: 249,
                                                         requiredFirstAnchor: trailingView.leadingAnchor,
                                                         requiredSecondAnchor: leadingView.trailingAnchor, log) { c in
         trailingView.leadingAnchor.constraint(lessThanOrEqualTo: leadingView.trailingAnchor, constant: c)
