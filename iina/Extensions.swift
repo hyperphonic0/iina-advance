@@ -2062,10 +2062,6 @@ extension NSLayoutConstraint.Priority {
   static let minimum: NSLayoutConstraint.Priority = NSLayoutConstraint.Priority(rawValue: 1)
 }
 
-/// `NSShadow.shadowColor` is not dark enough. Use pure black.
-fileprivate let defaultShadowColor: NSColor = .black
-fileprivate let iconDefaultShadowBlurRadiusConstant: CGFloat = 0.5
-
 extension NSSize {
   func canFitInside(_ enclosingSize: NSSize) -> Bool {
     width <= enclosingSize.width && height <= enclosingSize.height
@@ -2113,22 +2109,18 @@ extension NSView {
   }
 
   func roundCorners() {
-    wantsLayer = true
-    let radius = suggestedRoundedCornerRadius()
-    roundCorners(withRadius: radius)
-  }
-
-  func suggestedRoundedCornerRadius() -> CGFloat {
     // Set corner radius to betwen 10 and 20
-    return 10 + min(10, max(0, (frame.height - 400) * 0.01))
+    let defaultRadius = 10 + min(10, max(0, (frame.height - 400) * 0.01))
+    roundCorners(withRadius: defaultRadius)
   }
 
   // MARK: Shadow
 
-  func addShadow(blurRadiusMultiplier: CGFloat = 0.0, blurRadiusConstant: CGFloat = iconDefaultShadowBlurRadiusConstant,
+  func addShadow(blurRadiusMultiplier: CGFloat = 0.0,
+                 blurRadiusConstant: CGFloat = Constants.iconDefaultShadowBlurRadiusConstant,
                  shadowOffsetMultiplier: CGFloat = 0.0,
                  xOffsetConstant: CGFloat = 0.0, yOffsetConstant: CGFloat = 0.0,
-                 color: NSColor = defaultShadowColor) {
+                 color: NSColor = Constants.defaultShadowColor) {
     let controlHeight = fittingSize.height
     let shadow = NSShadow()
     // Amount of blur (in pixels) applied to the shadow.

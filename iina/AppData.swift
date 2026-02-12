@@ -469,6 +469,10 @@ struct Constants {
     static let oscSectionHSpacing: CGFloat = 3
   }
 
+  /// `NSShadow.shadowColor` is not dark enough. Use pure black.
+  static let defaultShadowColor: NSColor = .black
+  static let iconDefaultShadowBlurRadiusConstant: CGFloat = 0.5
+  
   // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
   // (with no bar gradient or shading).
   static let seekPreviewTimeLabel_ShadowRadiusConstant: CGFloat = 3.0
