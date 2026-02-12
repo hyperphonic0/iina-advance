@@ -2065,24 +2065,6 @@ extension NSLayoutConstraint.Priority {
 /// `NSShadow.shadowColor` is not dark enough. Use pure black.
 fileprivate let defaultShadowColor: NSColor = .black
 fileprivate let iconDefaultShadowBlurRadiusConstant: CGFloat = 0.5
-extension NSControl {
-
-  func addShadow(blurRadiusMultiplier: CGFloat = 0.0, blurRadiusConstant: CGFloat = iconDefaultShadowBlurRadiusConstant,
-                 shadowOffsetMultiplier: CGFloat = 0.0,
-                 xOffsetConstant: CGFloat = 0.0, yOffsetConstant: CGFloat = 0.0,
-                 color: NSColor = defaultShadowColor) {
-    let controlHeight = fittingSize.height
-    let shadow = NSShadow()
-    // Amount of blur (in pixels) applied to the shadow.
-    let blurRadius = controlHeight * blurRadiusMultiplier + blurRadiusConstant
-    shadow.shadowBlurRadius = blurRadius
-    shadow.shadowColor = color
-    // the distance from the text the shadow is dropped (+X = to the right; -Y = below the text):
-    shadow.shadowOffset = NSSize(width: controlHeight * shadowOffsetMultiplier + xOffsetConstant, height: controlHeight * shadowOffsetMultiplier + yOffsetConstant)
-    self.shadow = shadow
-  }
-
-}
 
 extension NSSize {
   func canFitInside(_ enclosingSize: NSSize) -> Bool {
@@ -2118,6 +2100,8 @@ extension NSView {
     }
   }
 
+  // MARK: Corners
+
   func roundCorners(withRadius cornerRadius: CGFloat) {
     if #available(macOS 26, *), let osdGlassView = self as? NSGlassEffectView {
       // Need to use `cornerRadius` property
@@ -2138,6 +2122,25 @@ extension NSView {
     // Set corner radius to betwen 10 and 20
     return 10 + min(10, max(0, (frame.height - 400) * 0.01))
   }
+
+  // MARK: Shadow
+
+  func addShadow(blurRadiusMultiplier: CGFloat = 0.0, blurRadiusConstant: CGFloat = iconDefaultShadowBlurRadiusConstant,
+                 shadowOffsetMultiplier: CGFloat = 0.0,
+                 xOffsetConstant: CGFloat = 0.0, yOffsetConstant: CGFloat = 0.0,
+                 color: NSColor = defaultShadowColor) {
+    let controlHeight = fittingSize.height
+    let shadow = NSShadow()
+    // Amount of blur (in pixels) applied to the shadow.
+    let blurRadius = controlHeight * blurRadiusMultiplier + blurRadiusConstant
+    shadow.shadowBlurRadius = blurRadius
+    shadow.shadowColor = color
+    // the distance from the text the shadow is dropped (+X = to the right; -Y = below the text):
+    shadow.shadowOffset = NSSize(width: controlHeight * shadowOffsetMultiplier + xOffsetConstant, height: controlHeight * shadowOffsetMultiplier + yOffsetConstant)
+    self.shadow = shadow
+  }
+
+  // MARK: Inter-view relations
 
   func isInsideViewFrame(pointInWindow: CGPoint) -> Bool {
     let pointInView = convert(pointInWindow, from: nil)
@@ -2161,49 +2164,19 @@ extension NSView {
     subviews.contains(view)
   }
 
-  func setContentHugging(h: Float, v: Float) {
-    setContentHuggingPriority(.init(h), for: .horizontal)
-    setContentHuggingPriority(.init(v), for: .vertical)
-  }
+  // MARK: Constraints
 
-  func setCCResistance(h: Float, v: Float) {
-    setContentCompressionResistancePriority(.init(h), for: .horizontal)
-    setContentCompressionResistancePriority(.init(v), for: .vertical)
-  }
-
-  /// Recursive func which configures all views in the given subtree for smoother animation.
-  ///
-  /// By configuring each view to use a layer with the correct redraw policy, AppKit will use Core Animation to draw
-  /// them, which uses a dedicated background thread instead of the main thread.
-  /// For more explanation, see https://jwilling.com/blog/osx-animations/
-  func configureSubtreeForCoreAnimation() {
-    // Certain controls still need to be redrawn on every resize or they get very buggy
-    if (self as? NSButton != nil) || (self as? NSSlider != nil) || (self as? NSProgressIndicator != nil) {
-      return
-    }
-    if self is VideoView {
-      // Don't mess with these
-      return
-    }
-    self.layerContentsRedrawPolicy = .onSetNeedsDisplay
-    for subview in self.subviews {
-      subview.configureSubtreeForCoreAnimation()
-    }
-  }
-
-#if DEBUG
-  func configureSubtreeForClipping() {
-    self.clipsToBounds = true
-    for subview in self.subviews {
-      subview.configureSubtreeForClipping()
-    }
-  }
-#endif
-
-  func removeAllSubviews() {
-    for subview in subviews {
-      subview.removeFromSuperview()
-    }
+  /// Adds the given NSView to this view's subviews, then adds the given offset constraints.
+  func addSubviewAndConstraints(_ subview: NSView,
+                                top: CGFloat? = nil, _ topPriority: NSLayoutConstraint.Priority? = nil,
+                                bottom: CGFloat? = nil, _ btmPriority: NSLayoutConstraint.Priority? = nil,
+                                leading: CGFloat? = nil, _ leadPriority: NSLayoutConstraint.Priority? = nil,
+                                trailing: CGFloat? = nil, _ trailPriority: NSLayoutConstraint.Priority? = nil) {
+    addSubview(subview)
+    subview.addConstraintsToFillSuperview(top: top, topPriority,
+                                          bottom: bottom, btmPriority,
+                                          leading: leading, leadPriority,
+                                          trailing: trailing, trailPriority)
   }
 
   func addAllConstraintsToFillSuperview() {
@@ -2268,18 +2241,52 @@ extension NSView {
     }
   }
 
-  /// Adds the given NSView to this view's subviews, then adds the given offset constraints.
-  func addSubviewAndConstraints(_ subview: NSView,
-                                top: CGFloat? = nil, _ topPriority: NSLayoutConstraint.Priority? = nil,
-                                bottom: CGFloat? = nil, _ btmPriority: NSLayoutConstraint.Priority? = nil,
-                                leading: CGFloat? = nil, _ leadPriority: NSLayoutConstraint.Priority? = nil,
-                                trailing: CGFloat? = nil, _ trailPriority: NSLayoutConstraint.Priority? = nil) {
-    addSubview(subview)
-    subview.addConstraintsToFillSuperview(top: top, topPriority,
-                                          bottom: bottom, btmPriority,
-                                          leading: leading, leadPriority,
-                                          trailing: trailing, trailPriority)
+  func setContentHugging(h: Float, v: Float) {
+    setContentHuggingPriority(.init(h), for: .horizontal)
+    setContentHuggingPriority(.init(v), for: .vertical)
   }
+
+  func setCCResistance(h: Float, v: Float) {
+    setContentCompressionResistancePriority(.init(h), for: .horizontal)
+    setContentCompressionResistancePriority(.init(v), for: .vertical)
+  }
+
+  // MARK: Misc
+
+  func removeAllSubviews() {
+    for subview in subviews {
+      subview.removeFromSuperview()
+    }
+  }
+
+  /// Recursive func which configures all views in the given subtree for smoother animation.
+  ///
+  /// By configuring each view to use a layer with the correct redraw policy, AppKit will use Core Animation to draw
+  /// them, which uses a dedicated background thread instead of the main thread.
+  /// For more explanation, see https://jwilling.com/blog/osx-animations/
+  func configureSubtreeForCoreAnimation() {
+    // Certain controls still need to be redrawn on every resize or they get very buggy
+    if (self as? NSButton != nil) || (self as? NSSlider != nil) || (self as? NSProgressIndicator != nil) {
+      return
+    }
+    if self is VideoView {
+      // Don't mess with these
+      return
+    }
+    self.layerContentsRedrawPolicy = .onSetNeedsDisplay
+    for subview in self.subviews {
+      subview.configureSubtreeForCoreAnimation()
+    }
+  }
+
+#if DEBUG
+  func configureSubtreeForClipping() {
+    self.clipsToBounds = true
+    for subview in self.subviews {
+      subview.configureSubtreeForClipping()
+    }
+  }
+#endif
 
   /// Get `NSImage` representation of the view.
   ///

@@ -711,27 +711,27 @@ extension PlayerWindowController {
         let textAlpha: CGFloat
         let timeLabelTextColor: NSColor?
         if hasClearBG {
-          let xOffset: CGFloat
-          let yOffset: CGFloat
+          let textShadowOffsetX: CGFloat
+          let textShadowOffsetY: CGFloat
           if transition.outputLayout.oscPosition == .floating {
             textAlpha = 1.0
-            xOffset = 0.4
-            yOffset = 0.4
+            textShadowOffsetX = 0.4
+            textShadowOffsetY = 0.4
           } else {
             textAlpha = 0.8
-            xOffset = 0
-            yOffset = 0
+            textShadowOffsetX = 0
+            textShadowOffsetY = 0
           }
           timeLabelTextColor = .white
 
           let blurRadiusConstant = Constants.oscClearBG_TextShadowBlurRadius_Constant
           let blurRadiusMultiplier = Constants.oscClearBG_TextShadowBlurRadius_Multiplier
           leftTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
-                                  xOffsetConstant: xOffset, yOffsetConstant: yOffset)
+                                  xOffsetConstant: textShadowOffsetX, yOffsetConstant: textShadowOffsetY)
           rightTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
-                                   xOffsetConstant: xOffset, yOffsetConstant: yOffset)
+                                   xOffsetConstant: textShadowOffsetX, yOffsetConstant: textShadowOffsetY)
           oscTwoRowView.timeSlashLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
-                                                 xOffsetConstant: xOffset, yOffsetConstant: yOffset)
+                                                 xOffsetConstant: textShadowOffsetX, yOffsetConstant: textShadowOffsetY)
 
           knobFactory.mainKnobColor = NSColor.controlForClearBG
         } else {

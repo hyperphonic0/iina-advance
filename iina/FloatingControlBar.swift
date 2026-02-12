@@ -8,7 +8,7 @@
 
 import Cocoa
 
-final class FloatingControlBarVisualEffectView: NSVisualEffectView, @MainActor DraggableObject {
+final class FloatingControlBarVisualEffectView: ClickThroughVisualEffectView, @MainActor DraggableObject {
   let controlBar: FloatingControlBar
 
   init(_ controlBar: FloatingControlBar) {
@@ -21,7 +21,6 @@ final class FloatingControlBarVisualEffectView: NSVisualEffectView, @MainActor D
   }
 
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { Preference.bool(for: .videoViewAcceptsFirstMouse) }
   override func mouseDown(with event: NSEvent) { controlBar.mouseDown(with: event) }
   override func mouseDragged(with event: NSEvent) { controlBar.mouseDragged(with: event) }
   override func mouseUp(with event: NSEvent) { controlBar.mouseUp(with: event) }
@@ -29,21 +28,16 @@ final class FloatingControlBarVisualEffectView: NSVisualEffectView, @MainActor D
 }
 
 @available(macOS 26.0, *)
-final class FloatingControlBarGlassEffectView: NSGlassEffectView, @MainActor DraggableObject {
+final class FloatingControlBarGlassEffectView: ClickThroughGlassEffectView, @MainActor DraggableObject {
   let controlBar: FloatingControlBar
 
   init(_ controlBar: FloatingControlBar, style desiredStyle: Style) {
     self.controlBar = controlBar
     super.init(frame: .zero)
-    if desiredStyle == .clear {
-      style = .clear
-    } else {
-      style = .regular
-    }
+    setStyle(desiredStyle)
   }
 
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { Preference.bool(for: .videoViewAcceptsFirstMouse) }
   override func mouseDown(with event: NSEvent) { controlBar.mouseDown(with: event) }
   override func mouseDragged(with event: NSEvent) { controlBar.mouseDragged(with: event) }
   override func mouseUp(with event: NSEvent) { controlBar.mouseUp(with: event) }

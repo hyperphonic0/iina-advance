@@ -239,6 +239,10 @@ final class OSDState {
     self.log = log
 
     log.verbose("Init OSD")
+    let textShadowOffsetX = 0.4
+    let textShadowOffsetY = 0.4
+    let blurRadiusConstant = Constants.oscClearBG_TextShadowBlurRadius_Constant
+    let blurRadiusMultiplier = Constants.oscClearBG_TextShadowBlurRadius_Multiplier
 
     // AdditionalInfo view
 
@@ -255,6 +259,8 @@ final class OSDState {
     osdIconImageView.refusesFirstResponder = true
     osdIconImageView.setContentHugging(h: 1000, v: 1000)
     osdIconImageView.setCCResistance(h: 1000, v: 1000)
+    osdIconImageView.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
+                               xOffsetConstant: textShadowOffsetX, yOffsetConstant: -textShadowOffsetY)
 
     // OSD subview 2: osdVStackView
 
@@ -270,6 +276,8 @@ final class OSDState {
     osdLabel.alignment = .left
     osdLabel.usesSingleLineMode = true
     osdLabel.wantsLayer = true
+    osdLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
+                       xOffsetConstant: textShadowOffsetX, yOffsetConstant: textShadowOffsetY)
 
     osdAccessoryText = NSTextField(labelWithString: "")
     osdAccessoryText.idString = "OSD-AccText"
@@ -286,6 +294,8 @@ final class OSDState {
     osdAccessoryText.font = .messageFont(ofSize: 11)
     osdAccessoryText.textColor = .disabledControlTextColor
     osdAccessoryText.backgroundColor = .controlColor
+    osdAccessoryText.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
+                               xOffsetConstant: textShadowOffsetX, yOffsetConstant: textShadowOffsetY)
 
     osdAccessoryProgress = FixedProgressBar()
     osdAccessoryProgress.idString = "OSD-ProgressBar"
@@ -456,6 +466,10 @@ class AdditionalInfoSubviews {
   let batteryLabel: NSTextField
 
   init() {
+    let textShadowOffsetX = 0.4
+    let textShadowOffsetY = 0.4
+    let blurRadiusConstant = Constants.oscClearBG_TextShadowBlurRadius_Constant
+    let blurRadiusMultiplier = Constants.oscClearBG_TextShadowBlurRadius_Multiplier
     titleLabel = ResizableTextView(lineBreakMode: .byTruncatingMiddle)
     titleLabel.idString = "AdditionalInfo-Title"
     titleLabel.font = NSFont.systemFont(ofSize: 18, weight: .medium)
@@ -463,6 +477,8 @@ class AdditionalInfoSubviews {
     // #OSDPlusAdditionalInfoResizing
     titleLabel.setContentCompressionResistancePriority(.init(252), for: .horizontal)
     titleLabel.translatesAutoresizingMaskIntoConstraints = false
+    titleLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
+                       xOffsetConstant: textShadowOffsetX, yOffsetConstant: textShadowOffsetY)
 
     clockTimeLabel = NSTextField(labelWithString: "99:99")
     clockTimeLabel.font = NSFont.systemFont(ofSize: 18, weight: .regular)
@@ -471,6 +487,8 @@ class AdditionalInfoSubviews {
     clockTimeLabel.backgroundColor = .textBackgroundColor
     clockTimeLabel.idString = "AdditionalInfo-Label"
     clockTimeLabel.translatesAutoresizingMaskIntoConstraints = false
+    clockTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
+                       xOffsetConstant: textShadowOffsetX, yOffsetConstant: textShadowOffsetY)
 
     labelContainerView = NSView()
     labelContainerView.translatesAutoresizingMaskIntoConstraints = false
@@ -504,6 +522,8 @@ class AdditionalInfoSubviews {
     batteryView.translatesAutoresizingMaskIntoConstraints = false
     batteryView.heightAnchor.constraint(equalToConstant: 30).isActive = true
     batteryView.widthAnchor.constraint(equalToConstant: 56).isActive = true
+    batteryView.addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
+              xOffsetConstant: textShadowOffsetX, yOffsetConstant: -textShadowOffsetY, color: .black)
 
     batteryLabel = NSTextField(labelWithString: "100%")
     batteryLabel.idString = "AdditionalInfoBattery-Text"
