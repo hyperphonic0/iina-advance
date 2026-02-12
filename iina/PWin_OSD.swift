@@ -149,8 +149,6 @@ final class OSDState {
 
     osdView.idString = "OSDView"
     osdView.translatesAutoresizingMaskIntoConstraints = false
-    // #OSDPlusAdditionalInfoResizing
-    osdView.setContentHuggingPriority(.init(900), for: .horizontal)
     // Min width
     let osdMinWidthConstraint = osdView.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
     osdMinWidthConstraint.identifier = "OSDView-MinWidthConstraint"
@@ -212,7 +210,7 @@ final class OSDState {
         needsRebuild = true
       }
     } else {
-      needsRebuild = (osdView as? AdditionalInfoVEView == nil)
+      needsRebuild = (additionalInfoView as? AdditionalInfoVEView == nil)
     }
 
     guard needsRebuild else { return }
@@ -354,6 +352,8 @@ final class OSDState {
     osdVStackView.detachesHiddenViews = true
     osdVStackView.translatesAutoresizingMaskIntoConstraints = false
     osdVStackView.setHuggingPriority(.init(500), for: .vertical)
+    // #OSDPlusAdditionalInfoResizing
+    osdVStackView.setHuggingPriority(.init(500), for: .horizontal)
 
     osdVStackView.addView(osdLabel, in: .center)
     osdVStackView.addView(osdAccessoryText, in: .center)
