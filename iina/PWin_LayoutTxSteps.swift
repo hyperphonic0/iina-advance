@@ -697,26 +697,41 @@ extension PlayerWindowController {
       volumeSliderCell.knobHeight = sliderKnobHeight
       volumeSlider.needsDisplay = true
 
-      if transition.isWindowInitialLayout || transition.isOSCStyleChanging || transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight {
+      if transition.isWindowInitialLayout || transition.isOSCStyleChanging ||
+          (transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight) {
         let hasClearBG = transition.outputLayout.oscBackgroundIsClear
-        log.verbose("Updating OSC colors: hasClearBG=\(hasClearBG.yn)")
+        let oscColorScheme = transition.outputLayout.effectiveOSCColorScheme
+        log.verbose("Updating OSC colors: hasClearBG=\(hasClearBG.yn) colorScheme=\(oscColorScheme.description)")
 
-        playButton.setOSCColors(hasClearBG: hasClearBG)
-        leftArrowButton.setOSCColors(hasClearBG: hasClearBG)
-        rightArrowButton.setOSCColors(hasClearBG: hasClearBG)
-        muteButton.setOSCColors(hasClearBG: hasClearBG)
+        playButton.setOSCColors(oscColorScheme)
+        leftArrowButton.setOSCColors(oscColorScheme)
+        rightArrowButton.setOSCColors(oscColorScheme)
+        muteButton.setOSCColors(oscColorScheme)
 
         let textAlpha: CGFloat
         let timeLabelTextColor: NSColor?
-        if transition.outputLayout.oscBackgroundIsClear {
-          textAlpha = 0.8
+        if hasClearBG {
+          let xOffset: CGFloat
+          let yOffset: CGFloat
+          if transition.outputLayout.oscPosition == .floating {
+            textAlpha = 1.0
+            xOffset = 0.4
+            yOffset = 0.4
+          } else {
+            textAlpha = 0.8
+            xOffset = 0
+            yOffset = 0
+          }
           timeLabelTextColor = .white
 
           let blurRadiusConstant = Constants.oscClearBG_TextShadowBlurRadius_Constant
           let blurRadiusMultiplier = Constants.oscClearBG_TextShadowBlurRadius_Multiplier
-          leftTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant)
-          rightTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant)
-          oscTwoRowView.timeSlashLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant)
+          leftTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
+                                  xOffsetConstant: xOffset, yOffsetConstant: yOffset)
+          rightTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
+                                   xOffsetConstant: xOffset, yOffsetConstant: yOffset)
+          oscTwoRowView.timeSlashLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
+                                                 xOffsetConstant: xOffset, yOffsetConstant: yOffset)
 
           knobFactory.mainKnobColor = NSColor.controlForClearBG
         } else {
@@ -1446,10 +1461,11 @@ extension PlayerWindowController {
 
       if newButtonTypes.count > 0 {
         log.verbose("\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(iconSize) iconSpacing=\(iconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
+        let oscColorScheme = transition.outputLayout.effectiveOSCColorScheme
         for buttonType in newButtonTypes {
           let button = OSCToolbarButton()
           button.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
-          button.setOSCColors(hasClearBG: transition.outputLayout.oscBackgroundIsClear)
+          button.setOSCColors(oscColorScheme)
           button.action = #selector(self.toolBarButtonAction(_:))
           fragToolbarView.addView(button, in: .trailing)
           fragToolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
@@ -1460,9 +1476,10 @@ extension PlayerWindowController {
 
     if needsButtonsUpdate {
       log.verbose("\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(newGeo.toolIconSize) iconSpacing=\(newGeo.toolIconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
+      let oscColorScheme = transition.outputLayout.effectiveOSCColorScheme
       for button in fragToolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
         button.setStyle(iconSize: iconSize, iconSpacing: iconSpacing)
-        button.setOSCColors(hasClearBG: transition.outputLayout.oscBackgroundIsClear)
+        button.setOSCColors(oscColorScheme)
       }
     }
 

@@ -16,35 +16,31 @@ class OSCSymButton: SymButton {
   private func useDefaultColors() {
     regularColor = nil
     highlightColor = .controlTextColor
-    setShadowForOSC(enabled: false)
+    shadow = nil
     updateHighlight(isInsideBounds: false)
   }
 
   /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
-  private func useColorsForClearBG() {
-    regularColor = .controlForClearBG
-    highlightColor = .white
-    setShadowForOSC(enabled: true)
-    updateHighlight(isInsideBounds: false)
-  }
-
-  /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
-  func setOSCColors(hasClearBG: Bool) {
-    if hasClearBG {
-      useColorsForClearBG()
-    } else {
+  func setOSCColors(_ oscColorScheme: Preference.OSCColorScheme) {
+    switch oscColorScheme {
+    case .clearGradient:
+      regularColor = .controlForClearBG
+      highlightColor = .white
+      if shadow == nil {
+        addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
+                  xOffsetConstant: 0, yOffsetConstant: 0, color: .black)
+      }
+      updateHighlight(isInsideBounds: false)
+    case .clearLiquidGlass, .tintedLiquidGlass:
+      regularColor = .controlForClearBG
+      highlightColor = .white
+      if shadow == nil {
+        addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
+                  xOffsetConstant: 0.4, yOffsetConstant: -0.4, color: .black)
+      }
+      updateHighlight(isInsideBounds: false)
+    default:
       useDefaultColors()
-    }
-  }
-
-  func setShadowForOSC(enabled: Bool) {
-    if enabled {
-      guard shadow == nil else { return }
-      // Shadow for clear BG
-      addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
-                xOffsetConstant: 0, yOffsetConstant: 0, color: .black)
-    } else {
-      shadow = nil
     }
   }
 

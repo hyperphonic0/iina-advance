@@ -18,11 +18,11 @@ fileprivate let iconSizeMinScaleMultiplier: CGFloat = 0.5
 fileprivate let playIconSpacingScaleMultiplier: CGFloat = 0.35
 fileprivate let toolSpacingScaleMultiplier: CGFloat = 0.25
 
-fileprivate let floatingToolbarIconSize: CGFloat = 22
-fileprivate let floatingToolbarIconSpacing: CGFloat = 5
+fileprivate let floatingToolbarIconSize: CGFloat = 28
+fileprivate let floatingToolbarIconSpacing: CGFloat = 6
 fileprivate let floatingPlayIconSize: CGFloat = 28
 fileprivate let floatingPlayIconSpacing: CGFloat = 20
-fileprivate let floatingVolumeIconSize: CGFloat = 22
+fileprivate let floatingVolumeIconSize: CGFloat = 28
 fileprivate let floatingFullIconHeight: CGFloat = max(floatingToolbarIconSize, floatingPlayIconSize)
 fileprivate let floatingPlaySliderHeight: CGFloat = 37
 
@@ -334,7 +334,7 @@ struct ControlBarGeometry: Sendable, CustomStringConvertible {
     }
     switch position {
     case .floating:
-      return 11.0
+      return 12.0
     case .top, .bottom:
       if isTwoRowBarOSC && !oscTimeLabelsAlwaysWrapSlider {
         // Time labels go under slider; plenty of space
@@ -350,7 +350,7 @@ struct ControlBarGeometry: Sendable, CustomStringConvertible {
   var timeLabelFont: NSFont {
     let timeLabelFontSize = timeLabelFontSize
     let weight: NSFont.Weight
-    if mode == .musicMode || position == .floating {
+    if mode == .musicMode {
       weight = .light
     } else {
       weight = .regular

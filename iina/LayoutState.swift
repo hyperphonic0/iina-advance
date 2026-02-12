@@ -248,13 +248,15 @@ struct LayoutState {
   }
 
   static var effectiveOSCColorSchemeFromPrefs: Preference.OSCColorScheme {
-    if Preference.bool(for: .enableOSC),
-       Preference.enum(for: .oscPosition) == Preference.OSCPosition.bottom,
-       Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
-      return Preference.enum(for: .oscColorScheme)
-    } else {
-      return .visualEffectView
+    if Preference.bool(for: .enableOSC) {
+      let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
+      if oscPosition == .bottom, Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
+        return Preference.enum(for: .oscColorScheme)
+      } else if oscPosition == .floating {
+        return Preference.enum(for: .oscFloatingColorScheme)
+      }
     }
+    return .visualEffectView
   }
 
   // MARK: - Computed Properties
@@ -428,6 +430,9 @@ struct LayoutState {
     if hasBottomOSC && bottomBarPlacement == .insideViewport {
       return oscColorScheme
     }
+    if hasFloatingOSC {
+      return oscColorScheme
+    }
     return .visualEffectView
   }
 
@@ -435,7 +440,7 @@ struct LayoutState {
   ///
   /// Equivalent to `effectiveOSCColorScheme == .clearGradient`.
   var oscBackgroundIsClear: Bool {
-    return effectiveOSCColorScheme == .clearGradient
+    enableOSC && ((effectiveOSCColorScheme == .clearGradient) || ((oscPosition == .floating) && (oscColorScheme == .clearLiquidGlass)))
   }
 
   var canShowSidebars: Bool {

@@ -109,10 +109,10 @@ final class FloatingControlBar {
     view.idString = "OSC-Floating"
     view.translatesAutoresizingMaskIntoConstraints = false
 
-    topRowView.addConstraintsToFillSuperview(top: 12, leading: 10, trailing: 10)
+    topRowView.addConstraintsToFillSuperview(top: 10, leading: 10, trailing: 10)
     topRowView.idString = "OSC-Floating-TopRow"
 
-    bottomRowView.addConstraintsToFillSuperview(bottom: 4, leading: 10, trailing: 10)
+    bottomRowView.addConstraintsToFillSuperview(bottom: 3, leading: 12, trailing: 12)
     bottomRowView.setHuggingPriority(.required, for: .vertical)
     bottomRowView.idString = "OSC-Floating-BottomRow"
 
@@ -265,7 +265,7 @@ final class FloatingControlBar {
       pwc.log.verbose("FloatingOSC mouseDrag: minimum dragging distance was met")
       minDragDistanceMet = true
     }
-    assert(isDragging, "Something's wrong: isDragging should be true here")
+    guard isDragging else { return }
 
     let currentLocInViewport = pwc.viewportView.convert(event.locationInWindow, from: nil)
     let xxx = currentLocInViewport.x - mousePosRelatedToView.x
