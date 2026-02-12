@@ -441,6 +441,9 @@ extension PlayerWindowController {
     /// But may need to add or remove from fadeableViews
     fadeableViews.applyVisibility(outputLayout.bottomBarView, to: bottomBarView)
 
+    osd.rebuildOSDView()
+    osd.rebuildAdditionalInfoView()
+
     if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }

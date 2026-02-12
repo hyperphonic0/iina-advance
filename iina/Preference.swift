@@ -871,7 +871,16 @@ struct Preference {
     }
 
     var description: String {
-      self == .visualEffectView ? "VisualEffectView" : "ClearGradient"
+      switch self {
+      case .visualEffectView:
+        return "VisualEffectView"
+      case .clearGradient:
+        return "ClearGradient"
+      case .clearLiquidGlass:
+        return "Clear-LiquidGlass"
+      case .tintedLiquidGlass:
+        return "Tinted-LiquidGlass"
+      }
     }
   }
 

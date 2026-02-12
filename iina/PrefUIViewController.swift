@@ -125,6 +125,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var oscColorSchemeHStackView: NSStackView!
   @IBOutlet weak var oscForceSingleRowContainerView: NSStackView!
 
+  @IBOutlet weak var osdColorSchemeHStackView: NSStackView!
+
   @IBOutlet weak var leftSidebarLabel: NSTextField!
   @IBOutlet weak var leftSidebarPlacement: NSSegmentedControl!
   @IBOutlet weak var leftSidebarSettingsTabsRadioButton: NSButton!
@@ -255,6 +257,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       .oscBarPlayIconSpacingTicks,
       .oscBarToolIconSizeTicks,
       .oscBarToolIconSpacingTicks,
+      .osdColorScheme,
+      .oscFloatingColorScheme,
       .arrowButtonAction,
       .useLegacyWindowedMode,
       .aspectRatioPanelPresets,
@@ -267,19 +271,19 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   /// Called each time a pref `key`'s value is set
   func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     switch key {
-    case PK.aspectRatioPanelPresets:
+    case .aspectRatioPanelPresets:
       updateAspectControlsFromPrefs()
-    case PK.cropPanelPresets:
+    case .cropPanelPresets:
       updateCropControlsFromPrefs()
-    case PK.showTopBarTrigger,
-      PK.arrowButtonAction,
-      PK.enableOSC,
-      PK.topBarPlacement,
-      PK.bottomBarPlacement,
-      PK.oscPosition,
-      PK.useLegacyWindowedMode,
-      PK.themeMaterial,
-      PK.enableAdvancedSettings:
+    case .showTopBarTrigger,
+      .arrowButtonAction,
+      .enableOSC,
+      .topBarPlacement,
+      .bottomBarPlacement,
+      .oscPosition,
+      .useLegacyWindowedMode,
+      .themeMaterial,
+      .enableAdvancedSettings:
 
       usingMpvOSD = boolToObjectKludge(isUsingMpvOSD())
       usingThumbfast = boolToObjectKludge(isUsingThumbfastIntegration())
@@ -293,17 +297,19 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       usingMpvOSD = boolToObjectKludge(isUsingMpvOSD())
     case .integrateWithThumbfast:
       usingThumbfast = boolToObjectKludge(isUsingThumbfastIntegration())
-    case PK.settingsTabGroupLocation, PK.playlistTabGroupLocation, PK.pluginsTabGroupLocation:
+    case .settingsTabGroupLocation, .playlistTabGroupLocation, .pluginsTabGroupLocation:
       updateSidebarSectionFromPrefs()
-    case PK.oscBarHeight,
-      PK.controlBarToolbarButtons,
-      PK.oscForceSingleRow,
-      PK.oscColorScheme,
-      PK.lockViewportToVideoSize,
-      PK.oscBarPlayIconSizeTicks,
-      PK.oscBarPlayIconSpacingTicks,
-      PK.oscBarToolIconSizeTicks,
-      PK.oscBarToolIconSpacingTicks:
+    case .oscBarHeight,
+        .controlBarToolbarButtons,
+        .oscForceSingleRow,
+        .oscColorScheme,
+        .osdColorScheme,
+        .oscFloatingColorScheme,
+        .lockViewportToVideoSize,
+        .oscBarPlayIconSizeTicks,
+        .oscBarPlayIconSpacingTicks,
+        .oscBarToolIconSizeTicks,
+        .oscBarToolIconSpacingTicks:
 
       animationPipeline.submitInstantTask{ [self] in
         refreshTitleBarAndOSCSection()
@@ -495,6 +501,14 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     viewHidePairs.append((oscColorSchemeHStackView, !showOverlayStyleTrigger))
     viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
 
+    let supportLiquidGlass: Bool
+    if #available(macOS 26.0, *) {
+      supportLiquidGlass = true
+    } else {
+      supportLiquidGlass = false
+    }
+    viewHidePairs.append((osdColorSchemeHStackView, !supportLiquidGlass))
+
     viewHidePairs.append((oscSnapToCenterContainerView, !oscIsFloating))
 
     viewHidePairs.append((toolbarIconDimensionsHStackView, !hasSingleLineOSCConfig))
@@ -615,6 +629,13 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBAction func oscColorSchemeAction(_ sender: NSPopUpButton) {
     guard let oscColorScheme = Preference.OSCColorScheme(rawValue: sender.selectedTag()) else { return }
     Preference.set(oscColorScheme.rawValue, for: .oscColorScheme)
+  }
+
+  @IBAction func osdColorSchemeAction(_ sender: NSPopUpButton) {
+    let tag = sender.selectedTag()
+    guard let osdColorScheme = Preference.OSCColorScheme(rawValue: tag) else { return }
+    Logger.log.verbose("User changed osdColorScheme to: \(osdColorScheme.description)")
+    Preference.set(osdColorScheme.rawValue, for: .osdColorScheme)
   }
 
   @IBAction func customizeOSCToolbarAction(_ sender: Any) {

@@ -61,6 +61,7 @@ extension PlayerWindowController {
       .oscBarToolIconSize,
       .oscBarToolIconSpacing,
       .floatingControlBarWidth,
+      .oscFloatingColorScheme,
 
       .enableThumbnailPreview,
       .enableThumbnailForRemoteFiles,
@@ -75,6 +76,7 @@ extension PlayerWindowController {
       .blackOutMonitor,
       .useLegacyFullScreen,
       .enableOSD,
+      .osdColorScheme,
       .osdPosition,
       .displayTimeAndBatteryInFullScreen,
       .alwaysShowOnTopIcon,
@@ -274,6 +276,11 @@ extension PlayerWindowController {
         .useLegacyWindowedMode,
         .showRemainingTime,
         .oscTimeLabelsAlwaysWrapSlider,
+        .osdPosition,
+        .oscColorScheme,
+        .osdColorScheme,
+        .displayTimeAndBatteryInFullScreen,
+        .oscFloatingColorScheme,
         .keepVideoAwayFromBars,
       // These need calls to regenerate BarFactory:
         .roundSliderBarRects,
@@ -377,8 +384,6 @@ extension PlayerWindowController {
           hideOSD()
         }
       }
-      updateTitleBarAndOSC()
-    case .osdPosition, .displayTimeAndBatteryInFullScreen:
       updateTitleBarAndOSC()
     case .osdTextSize:
       animationPipeline.submitInstantTask { [self] in

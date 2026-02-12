@@ -157,6 +157,13 @@ final class OSDState {
     osdMinWidthConstraint.priority = .init(900)
     osdMinWidthConstraint.isActive = true
 
+    if #available(macOS 26, *) {
+      // MacOS Tahoe's style favors very round corners: try to fit in with it
+      osdView.roundCorners(withRadius: Constants.liquidGlassCornerRadius)
+    } else {
+      // Pre-Tahoe
+      osdView.roundCorners()
+    }
     return osdView
   }
 
@@ -180,12 +187,25 @@ final class OSDState {
     // #OSDPlusAdditionalInfoResizing
     aiView.setContentCompressionResistancePriority(.init(249), for: .horizontal)
 
+    if #available(macOS 26, *) {
+      // MacOS Tahoe's style favors very round corners: try to fit in with it
+      aiView.roundCorners(withRadius: Constants.liquidGlassCornerRadius)
+    } else {
+      // Pre-Tahoe
+      aiView.roundCorners()
+    }
     return aiView
   }
 
   @MainActor
+  func rebuildAdditionalInfoView() {
+    additionalInfoView = OSDState.buildAdditionalInfoView(additionalInfoSubviews)
+  }
+
+  @MainActor
   func rebuildOSDView() {
-    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .oscFloatingColorScheme)
+    guard Preference.bool(for: .enableOSD) else { return }
+    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .osdColorScheme)
 
     let needsRebuild: Bool
     if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
@@ -856,9 +876,6 @@ extension PlayerWindowController {
       log.verbose("[OSD] Δ textSize: \(osd.textSizeLast) → \(osdTextSize)")
       osd.textSizeLast = osdTextSize
 
-      // Update rounded corners
-      player.pwc.updateCornerRoundness(fromOSDTextSize: osdTextSize)
-
       // Also update progress bar height based on text size
       osd.updateProgressBarStyle(window.effectiveAppearance, effectiveOSCColorScheme: currentLayout.effectiveOSCColorScheme)
 
@@ -937,20 +954,6 @@ extension PlayerWindowController {
       osd.iconToVStackSpacingConstraint.constraint?.constant = 0
     }
     log.trace("[OSD] Icon visible=\(isIconVisible.yn) for msg: \(message)")
-  }
-
-  @MainActor
-  fileprivate func updateCornerRoundness(fromOSDTextSize osdTextSize: CGFloat) {
-    if #available(macOS 26, *) {
-      // MacOS Tahoe's style favors very round corners: try to fit in with it
-      let cornerRadius = Constants.liquidGlassCornerRadius
-      osd.osdView.roundCorners(withRadius: cornerRadius)
-      osd.additionalInfoView.roundCorners(withRadius: cornerRadius)
-    } else {
-      // Pre-Tahoe
-      osd.osdView.roundCorners()
-      osd.additionalInfoView.roundCorners()
-    }
   }
 
   // MARK: - Show OSD
