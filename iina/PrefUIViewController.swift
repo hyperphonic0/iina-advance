@@ -101,6 +101,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   @IBOutlet weak var themeMenu: NSMenu!
   @IBOutlet weak var topBarPositionContainerView: NSView!
+  @IBOutlet weak var topBarColorSchemeContainerView: NSView!
   @IBOutlet weak var showTopBarTriggerContainerView: NSView!
   @IBOutlet weak var windowPreviewImageView: NSImageView!
   @IBOutlet weak var arrowButtonActionPopUpButton: NSPopUpButton!
@@ -493,7 +494,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     var viewHidePairs: [(NSView, Bool)] = []
 
     viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
-
+    viewHidePairs.append((topBarColorSchemeContainerView, !hasTopBar))
     viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
 
     viewHidePairs.append((oscForceSingleRowContainerView, !showForceSingleRowCheckbox))

@@ -58,6 +58,11 @@ final class TopBar {
   var titleBarHeightConstraint: NSLayoutConstraint!
 
   init() {
+    view = TopBarVisualEffectView()
+    rebuildView()
+  }
+
+  func rebuildView() {
     let topBarColorScheme: Preference.OSCColorScheme = Preference.enum(for: .topBarColorScheme)
     switch topBarColorScheme {
     case .clearLiquidGlass, .tintedLiquidGlass:

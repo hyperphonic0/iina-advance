@@ -422,6 +422,7 @@ extension PlayerWindowController {
     }
 
     // - Bottom Bar
+
     let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging
     if needsBottomBarUpdate {
       rebuildBottomBarView(style: transition.outputLayout.effectiveOSCColorScheme)
@@ -444,7 +445,12 @@ extension PlayerWindowController {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }
 
-    // Title bar views
+    // - Top Bar
+
+    let topBarColorScheme: Preference.OSCColorScheme = Preference.enum(for: .topBarColorScheme)
+    topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
+
+    // - - Title bar views
 
     // For some reason, transitioning to/from interactive mode messes up the alignment of CustomTitleBar's title text.
     // Removing the whole CustomTitleBar view hierarchy & recreating it seems to be a valid workaround.
@@ -567,7 +573,7 @@ extension PlayerWindowController {
       }
     }
 
-    // OSC
+    // - OSC
 
     // [Re-]add OSC:
     if outputLayout.enableOSC {
@@ -758,7 +764,7 @@ extension PlayerWindowController {
       }
     }
 
-    // Interactive mode
+    // - Interactive mode
 
     if transition.isEnteringInteractiveMode || (transition.isWindowInitialLayout && transition.outputLayout.isInteractiveMode) {
       // Even if entering IM, may have a prev crop due to a bug elsewhere. Remove if found
