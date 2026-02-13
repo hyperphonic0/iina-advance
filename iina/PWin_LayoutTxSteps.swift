@@ -184,16 +184,9 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.inputLayout.hasFloatingOSC {
-      if outputLayout.hasFloatingOSC {
-        if controlBarFloating.needsPanelStyleChange() {
-          // Hide for panel style change (which will happen in the hidden step)
-          controlBarFloating.view.alphaValue = 0
-        }
-      } else {
-        // Hide floating OSC
-        fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating.view)
-      }
+    if transition.inputLayout.hasFloatingOSC && !outputLayout.hasFloatingOSC {
+      // Hide floating OSC
+      fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating.view)
     }
 
     // Change blending modes
