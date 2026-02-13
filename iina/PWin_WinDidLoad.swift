@@ -263,6 +263,13 @@ extension PlayerWindowController {
     switch style {
     case .clearGradient:
       bottomBarView = BottomBarGradientView()
+    case .clearLiquidGlass, .tintedLiquidGlass:
+      if #available(macOS 26.0, *) {
+        let desiredStyle: NSGlassEffectView.Style = style == .clearLiquidGlass ? .clear : .regular
+        bottomBarView = BottomBarGlassEffectView(desiredStyle)
+      } else {
+        fallthrough
+      }
     default:
       bottomBarView = BottomBarVisualEffectView()
     }

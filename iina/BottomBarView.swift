@@ -17,6 +17,16 @@ final class BottomBarVisualEffectView: NSVisualEffectView {
   @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
+@available(macOS 26.0, *)
+final class BottomBarGlassEffectView: ClickThroughGlassEffectView {
+  init(_ desiredStyle: Style) {
+    super.init(frame: .zero)
+    setStyle(desiredStyle)
+  }
+
+  @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+}
+
 /// The bar at the very top of the window. May include title bar and/or OSC.
 final class BottomBarGradientView: NSView {
   init() {

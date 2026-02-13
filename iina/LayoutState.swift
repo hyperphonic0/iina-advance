@@ -440,7 +440,7 @@ struct LayoutState {
   ///
   /// Equivalent to `effectiveOSCColorScheme == .clearGradient`.
   var oscBackgroundIsClear: Bool {
-    enableOSC && ((effectiveOSCColorScheme == .clearGradient) || ((oscPosition == .floating) && (oscColorScheme == .clearLiquidGlass)))
+    enableOSC && ((effectiveOSCColorScheme == .clearGradient) || (oscColorScheme == .clearLiquidGlass))
   }
 
   var canShowSidebars: Bool {

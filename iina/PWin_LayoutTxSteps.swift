@@ -428,7 +428,7 @@ extension PlayerWindowController {
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
-    let showBottomBarTopBorder = outputLayout.bottomBarPlacement == .outsideViewport || (outputLayout.hasBottomOSC && !outputLayout.oscBackgroundIsClear)
+    let showBottomBarTopBorder = (outputLayout.bottomBarPlacement == .outsideViewport) || (outputLayout.hasBottomOSC && (outputLayout.oscColorScheme == .visualEffectView))
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
     /// These should all be either 0 height or unchanged from `transition.inputLayout`.
@@ -711,14 +711,14 @@ extension PlayerWindowController {
         if hasClearBG {
           let textShadowOffsetX: CGFloat
           let textShadowOffsetY: CGFloat
-          if transition.outputLayout.oscPosition == .floating {
-            textAlpha = 1.0
-            textShadowOffsetX = 0.4
-            textShadowOffsetY = 0.4
-          } else {
+          if transition.outputLayout.oscColorScheme == .clearGradient {
             textAlpha = 0.8
             textShadowOffsetX = 0
             textShadowOffsetY = 0
+          } else {
+            textAlpha = 1.0
+            textShadowOffsetX = 0.4
+            textShadowOffsetY = 0.4
           }
           timeLabelTextColor = .white
 

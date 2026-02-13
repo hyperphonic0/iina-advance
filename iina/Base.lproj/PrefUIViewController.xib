@@ -1335,7 +1335,7 @@ For smoothest results, also enable custom full screen.</string>
                             <rect key="frame" x="0.0" y="845" width="453" height="28"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="BTX-tO-uhL">
-                                    <rect key="frame" x="-2" y="6" width="264" height="16"/>
+                                    <rect key="frame" x="-2" y="6" width="233" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Top bar placement vs. video:" id="EvR-Ml-f7d">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1343,7 +1343,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <segmentedControl horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="3vi-Iu-deL" userLabel="Top-Bar-Placement Segmented Control">
-                                    <rect key="frame" x="268" y="0.0" width="182" height="28"/>
+                                    <rect key="frame" x="237" y="0.0" width="213" height="28"/>
                                     <segmentedCell key="cell" controlSize="large" borderStyle="border" alignment="left" segmentDistribution="fill" style="rounded" trackingMode="selectOne" id="K2B-JO-2IX">
                                         <font key="font" metaFont="system"/>
                                         <segments>
@@ -1575,7 +1575,7 @@ For smoothest results, also enable custom full screen.</string>
                             <rect key="frame" x="24" y="623" width="429" height="34"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Xua-UF-KwL">
-                                    <rect key="frame" x="-2" y="3" width="240" height="22"/>
+                                    <rect key="frame" x="-2" y="3" width="209" height="22"/>
                                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="right" title="Bottom bar placement vs. video:" id="FAb-aX-CEz">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1583,7 +1583,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <segmentedControl horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="oZp-7o-wcg" userLabel="Bottom-Bar-Placement Segmented Control">
-                                    <rect key="frame" x="244" y="3" width="182" height="28"/>
+                                    <rect key="frame" x="213" y="3" width="213" height="28"/>
                                     <segmentedCell key="cell" controlSize="large" borderStyle="border" alignment="left" segmentDistribution="fill" style="rounded" trackingMode="selectOne" id="TEO-g1-ffc">
                                         <font key="font" metaFont="system"/>
                                         <segments>
@@ -1613,13 +1613,13 @@ For smoothest results, also enable custom full screen.</string>
                             <rect key="frame" x="0.0" y="587" width="453" height="28"/>
                             <subviews>
                                 <customView horizontalHuggingPriority="200" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="NQR-nq-sbu" userLabel="Horizontal Spacer View">
-                                    <rect key="frame" x="0.0" y="14" width="163" height="1"/>
+                                    <rect key="frame" x="0.0" y="14" width="132" height="1"/>
                                     <constraints>
                                         <constraint firstAttribute="height" constant="1" id="T5F-vr-M0y"/>
                                     </constraints>
                                 </customView>
                                 <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="hwA-ec-V4c">
-                                    <rect key="frame" x="169" y="6" width="93" height="16"/>
+                                    <rect key="frame" x="138" y="6" width="93" height="16"/>
                                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Color Scheme:" id="Gxo-GK-ECm">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1627,7 +1627,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="EOh-sr-h6b" userLabel="OSC-Color-Scheme Popup">
-                                    <rect key="frame" x="268" y="0.0" width="182" height="28"/>
+                                    <rect key="frame" x="237" y="0.0" width="213" height="28"/>
                                     <popUpButtonCell key="cell" type="push" title="Flat Blended Gray" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="IBM-NK-uiO" id="5jc-Ul-GDk" userLabel="OSC-Color-Scheme Popup Button Cell">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
@@ -1635,6 +1635,8 @@ For smoothest results, also enable custom full screen.</string>
                                             <items>
                                                 <menuItem title="Flat Blended Gray" state="on" tag="1" id="IBM-NK-uiO"/>
                                                 <menuItem title="Clear-Black Gradient" tag="2" id="C1F-Y0-yvA"/>
+                                                <menuItem title="Liquid Glass (Clear)" tag="3" id="JH9-zE-wWA"/>
+                                                <menuItem title="Liquid Glass (Default Tint)" tag="4" id="XGg-Dr-hBX"/>
                                             </items>
                                         </menu>
                                     </popUpButtonCell>
@@ -2434,10 +2436,10 @@ For smoothest results, also enable custom full screen.</string>
                 <box title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="0eU-xI-byi" userLabel="Hide-Inside-Video-Controls Box">
                     <rect key="frame" x="120" y="8" width="450" height="94"/>
                     <view key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="s79-ch-C1D" userLabel="Hide-Inside-Video-Controls Box View">
-                        <rect key="frame" x="0.0" y="0.0" width="450" height="94"/>
+                        <rect key="frame" x="1" y="1" width="410" height="92"/>
                         <subviews>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IvI-R5-Sdu">
-                                <rect key="frame" x="16" y="65" width="118" height="18"/>
+                                <rect key="frame" x="16" y="63" width="118" height="18"/>
                                 <buttonCell key="cell" type="check" title="Auto hide after:" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="XOh-46-9Jf">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -2450,7 +2452,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </connections>
                             </button>
                             <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Abq-vA-BcZ" userLabel="Overlay-Auto-Hide-Timeout Text Field">
-                                <rect key="frame" x="142" y="62" width="58" height="24"/>
+                                <rect key="frame" x="142" y="60" width="58" height="24"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="58" id="asW-La-UC2"/>
                                 </constraints>
@@ -2471,7 +2473,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </connections>
                             </textField>
                             <textField identifier="AccessoryLabelOSCAutoHide" focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hkU-0W-pJb">
-                                <rect key="frame" x="202" y="66" width="11" height="16"/>
+                                <rect key="frame" x="202" y="64" width="11" height="16"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="s" id="S8H-Xr-uVa">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2479,7 +2481,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </textFieldCell>
                             </textField>
                             <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="kw0-f3-qrz">
-                                <rect key="frame" x="16" y="39" width="378" height="18"/>
+                                <rect key="frame" x="16" y="37" width="378" height="18"/>
                                 <buttonCell key="cell" type="check" title="Hide when cursor leaves window" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="ZJL-Jz-cNh">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -2489,7 +2491,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </connections>
                             </button>
                             <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="Tue-oY-6da">
-                                <rect key="frame" x="16" y="13" width="394" height="18"/>
+                                <rect key="frame" x="16" y="11" width="394" height="18"/>
                                 <buttonCell key="cell" type="check" title="Move video into empty space (as available) to reduce overlap" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="nLH-m0-W5I">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
