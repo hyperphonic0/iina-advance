@@ -16,8 +16,7 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
     if #available(macOS 14.0, *) {
       btn.addSymbolEffect(.bounce.down.wholeSymbol, options:
           .speed(Constants.symButtonImageTransitionSpeed)
-          .nonRepeating,
-                      animated: true)
+          .nonRepeating, animated: true)
     }
   }
 
@@ -25,8 +24,7 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
     if #available(macOS 15.0, *) {
       btn.addSymbolEffect(.rotate.byLayer, options:
           .speed(Constants.symButtonImageTransitionSpeed)
-          .nonRepeating,
-                          animated: true)
+          .nonRepeating, animated: true)
     }
     // Also bounce, to reinforce "clicky" feel
     bounceEffectFunc(btn)

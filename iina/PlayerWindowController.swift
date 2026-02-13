@@ -65,8 +65,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// For responding to changes to app prefs & other notifications
   var notiHandler: NotificationHandler!
 
-  var barRenderer: BarRenderer?
-  let knobFactory = KnobRenderer()
+  var oscBarRenderer: BarRenderer?
+  let oscKnobRenderer = KnobRenderer()
 
   // MARK: - Vars: State
 
@@ -697,7 +697,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     window.appearance = newAppearance
 
     // Either dark or light, never nil:
-    let effectiveAppearance: NSAppearance = newAppearance ?? window.effectiveAppearance
+    let windowAppearance: NSAppearance = newAppearance ?? window.effectiveAppearance
 
     let layoutState: LayoutState = layoutState ?? currentLayout
     let oscGeo = layoutState.controlBarGeo
@@ -706,23 +706,24 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       playlistView.updateTableColors()
     }
 
-    let sliderAppearance = layoutState.effectiveOSCColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
-    sliderAppearance.applyAppearanceFor {
-      let barRenderer = BarRenderer(effectiveAppearance: effectiveAppearance,
-                                    effectiveOSCColorScheme: layoutState.effectiveOSCColorScheme,
-                                    sliderBarHeight_Normal: layoutState.controlBarGeo.sliderBarHeightNormal)
-      self.barRenderer = barRenderer
-      knobFactory.invalidateCachedKnobs()
-      osd.updateProgressBarStyle(effectiveAppearance, effectiveOSCColorScheme: layoutState.effectiveOSCColorScheme)
+    osd.updateColors(windowAppearance: windowAppearance, osdColorScheme: Preference.enum(for: .osdColorScheme))
+    oscBarRenderer = BarRenderer(windowAppearance: windowAppearance,
+                                 colorScheme: layoutState.effectiveOSCColorScheme,
+                                 sliderBarHeight_Normal: layoutState.controlBarGeo.sliderBarHeightNormal)
+    oscKnobRenderer.invalidateCachedKnobs()
+
+    // TODO: clean up this nasty code
+    let oscAppearance = layoutState.effectiveOSCColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : windowAppearance
+    oscAppearance.applyAppearanceFor {
       playSlider.abLoopA.updateKnobImage(to: .loopKnob)
       playSlider.abLoopB.updateKnobImage(to: .loopKnob)
 
       let scaleFactor = screen.backingScaleFactor
       if let hoverIndicator = playSlider.hoverIndicator {
-        hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: sliderAppearance.isDark)
+        hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: oscAppearance.isDark)
       } else {
         playSlider.hoverIndicator = SliderHoverIndicator(slider: playSlider, oscGeo: oscGeo,
-                                                         scaleFactor: scaleFactor, isDark: sliderAppearance.isDark)
+                                                         scaleFactor: scaleFactor, isDark: oscAppearance.isDark)
       }
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true

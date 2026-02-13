@@ -121,12 +121,12 @@ final class PlaySliderLoopKnob: NSImageView, DraggableObject {
   func updateKnobImage(to knobType: KnobRenderer.KnobType) {
     guard let scaleFactor: CGFloat = window?.screen?.backingScaleFactor else { return }
     let cell = slider.customCell
-    let knob = slider.knobFactory.getKnob(knobType,
+    let knob = slider.knobRenderer.getKnob(knobType,
                                           darkMode: cell.isDarkMode, clearBG: cell.hasClearBG,
                                           knobWidth: cell.knobWidth, mainKnobHeight: cell.knobHeight,
                                           scaleFactor: scaleFactor)
     let knobImage = knob.image
-    let imgSize = slider.knobFactory.imageSize(knob, knobType)  // unscaled
+    let imgSize = slider.knobRenderer.imageSize(knob, knobType)  // unscaled
     image = NSImage(cgImage: knobImage, size: imgSize)
     widthConstraint.constant = imgSize.width
     heightConstraint.constant = imgSize.height

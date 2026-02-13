@@ -31,7 +31,7 @@ class OSCSymButton: SymButton {
                   xOffsetConstant: 0, yOffsetConstant: 0, color: .black)
       }
       updateHighlight(isInsideBounds: false)
-    case .clearLiquidGlass, .tintedLiquidGlass:
+    case .clearLiquidGlass:
       regularColor = .controlForClearBG
       highlightColor = .white
       if shadow == nil {

@@ -47,9 +47,9 @@ final class BarRenderer {
   private var rightCachedColor: CGColor
 
   /// Need to create a new `BarRenderer` each time either the window appearance or the relevant color scheme changes.
-  init(effectiveAppearance: NSAppearance, effectiveOSCColorScheme: Preference.OSCColorScheme, sliderBarHeight_Normal barHeight_Normal: CGFloat) {
-    let (leftBaseColor, rightBaseColor) = BarRenderer.getBaseColorsFor(effectiveAppearance: effectiveAppearance,
-                                                                       effectiveOSCColorScheme: effectiveOSCColorScheme)
+  init(windowAppearance: NSAppearance, colorScheme: Preference.OSCColorScheme, sliderBarHeight_Normal barHeight_Normal: CGFloat) {
+    let (leftBaseColor, rightBaseColor) = BarRenderer.getBaseColorsFor(windowAppearance: windowAppearance,
+                                                                       colorScheme: colorScheme)
 
     // I want to vary the curvature based on bar height, but want to avoid drawing bars with different curvature in the same image,
     // which can happen when focusing on a chapter in a multi-chapter video. So: only update the curvature once per image set.
@@ -498,11 +498,11 @@ final class BarRenderer {
   ///
   /// - "Left" = segment representing completed/filled (to the left of current knob position)
   /// - "Right" = segment representing not yet completed / empty (to the right of current knob position)
-  private static func getBaseColorsFor(effectiveAppearance: NSAppearance,
-                                       effectiveOSCColorScheme: Preference.OSCColorScheme) -> (leftBase: CGColor, rightBase: CGColor) {
+  private static func getBaseColorsFor(windowAppearance: NSAppearance,
+                                       colorScheme: Preference.OSCColorScheme) -> (leftBase: CGColor, rightBase: CGColor) {
     // If clear BG, can mostly reuse dark theme, but some things need tweaks (e.g. rightBaseColor needs extra alpha)
-    let hasClearBG = effectiveOSCColorScheme == .clearGradient
-    let barAppearance = hasClearBG ? NSAppearance(iinaTheme: .dark)! : effectiveAppearance
+    let hasClearBG = colorScheme.hasClearBG
+    let barAppearance = hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance
 
     return barAppearance.applyAppearanceFor {
       let leftBaseColor: NSColor
@@ -515,12 +515,12 @@ final class BarRenderer {
       }
 
       let rightBaseColor: NSColor
-      switch effectiveOSCColorScheme {
+      switch colorScheme {
       case .clearGradient:
         rightBaseColor = .mainSliderBarRightClearBG
-      case .clearLiquidGlass, .tintedLiquidGlass:
+      case .clearLiquidGlass:
         rightBaseColor = .mainSliderBarRight
-      case .visualEffectView:
+      case .visualEffectView, .tintedLiquidGlass:
         rightBaseColor = .mainSliderBarRight
       }
       return (leftBaseColor.cgColor, rightBaseColor.cgColor)

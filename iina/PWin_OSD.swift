@@ -420,16 +420,19 @@ final class OSDState {
   }
 
   @MainActor
-  func updateProgressBarStyle(_ appearance: NSAppearance, effectiveOSCColorScheme: Preference.OSCColorScheme) {
+  func updateColors(windowAppearance: NSAppearance, osdColorScheme: Preference.OSCColorScheme) {
     let osdTextSize = textSizeLast
     guard osdTextSize > 0 else { return }
 
     let sliderBarHeight = getSliderBarHeight(forOSDTextSize: osdTextSize)
-    osdAccessoryProgress.barRenderer = BarRenderer(effectiveAppearance: appearance,
-                                                   effectiveOSCColorScheme: effectiveOSCColorScheme,
+    osdAccessoryProgress.barRenderer = BarRenderer(windowAppearance: windowAppearance,
+                                                   colorScheme: osdColorScheme,
                                                    sliderBarHeight_Normal: sliderBarHeight)
     osdProgressHeightConstraint.constraint!.animateToConstant(sliderBarHeight * 2)
-    osdView.needsLayout = true
+
+    let appearance = osdColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance
+    osdView.appearance = appearance
+    additionalInfoView.appearance = appearance
   }
 
   static func osdTimeoutFromPrefs() -> Double {
@@ -898,7 +901,8 @@ extension PlayerWindowController {
       osd.textSizeLast = osdTextSize
 
       // Also update progress bar height based on text size
-      osd.updateProgressBarStyle(window.effectiveAppearance, effectiveOSCColorScheme: currentLayout.effectiveOSCColorScheme)
+      osd.updateColors(windowAppearance: window.effectiveAppearance,
+                       osdColorScheme: Preference.enum(for: .osdColorScheme))
 
       let osdAccessoryTextSize = (osdTextSize * 0.75).rounded().clamped(to: 11...25)
       osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)

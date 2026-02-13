@@ -882,6 +882,15 @@ struct Preference {
         return "Tinted-LiquidGlass"
       }
     }
+
+    var hasClearBG: Bool {
+      switch self {
+      case .clearGradient, .clearLiquidGlass:
+        return true
+      default:
+        return false
+      }
+    }
   }
 
   enum ShowTopBarTrigger: Int, InitializingFromKey {

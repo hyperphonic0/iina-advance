@@ -738,7 +738,7 @@ extension PlayerWindowController {
           oscTwoRowView.timeSlashLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
                                                  xOffsetConstant: textShadowOffsetX, yOffsetConstant: textShadowOffsetY)
 
-          knobFactory.mainKnobColor = NSColor.controlForClearBG
+          oscKnobRenderer.mainKnobColor = NSColor.controlForClearBG
         } else {
           // Default alpha for text labels is 0.5. They don't change their text color.
           textAlpha = 0.5
@@ -748,7 +748,7 @@ extension PlayerWindowController {
           rightTimeLabel.shadow = nil
           oscTwoRowView.timeSlashLabel.shadow = nil
 
-          knobFactory.mainKnobColor = NSColor.mainSliderKnob
+          oscKnobRenderer.mainKnobColor = NSColor.mainSliderKnob
         }
 
         leftTimeLabel.textColor = timeLabelTextColor
@@ -759,7 +759,7 @@ extension PlayerWindowController {
         oscTwoRowView.timeSlashLabel.alphaValue = textAlpha
 
         // Invalidate all cached knob images so they are rebuilt with new style
-        knobFactory.invalidateCachedKnobs()
+        oscKnobRenderer.invalidateCachedKnobs()
       }
     }
 

@@ -179,13 +179,13 @@ class ScrollableSliderCell: NSSliderCell {
 
   override func drawKnob(_ knobRect: NSRect) {
     guard let scaleFactor = slider.window?.screen?.backingScaleFactor,
-          let kf = pwc?.knobFactory,
+          let kr = pwc?.oscKnobRenderer,
           let appearance = sliderAppearance else { return }
 
     guard wantsKnob else { return }
 
     appearance.applyAppearanceFor {
-      kf.drawKnob(currentKnobType, in: knobRect,
+      kr.drawKnob(currentKnobType, in: knobRect,
                   darkMode: appearance.isDark,
                   clearBG: hasClearBG,
                   knobWidth: knobWidth, mainKnobHeight: knobHeight,

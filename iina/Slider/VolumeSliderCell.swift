@@ -41,7 +41,7 @@ class VolumeSliderCell: ScrollableSliderCell {
     guard let pwc else { return }
     let scaleFactor: CGFloat = slider.window?.screen?.backingScaleFactor ?? Constants.defaultBackingScaleFactor
     let appearance = sliderAppearance ?? slider.effectiveAppearance
-    guard let bf = pwc.barRenderer else { return }
+    guard let bf = pwc.oscBarRenderer else { return }
 
     /// The position of the knob, rounded for cleaner drawing. If `width==0`, do not draw knob.
     let knobRect = knobRect(flipped: false)
