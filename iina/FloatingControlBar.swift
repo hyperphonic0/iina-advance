@@ -75,6 +75,25 @@ final class FloatingControlBar {
 
   var isDragging: Bool { view.pwc?.currentDragObject == view }
 
+  func needsPanelStyleChange() -> Bool {
+    guard #available(macOS 26, *) else {
+      // Only a single style is supported pre-MacOS 26
+      return false
+    }
+    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .oscFloatingColorScheme)
+    switch colorScheme {
+    case .clearLiquidGlass, .tintedLiquidGlass:
+      if let existingView = self.view as? FloatingControlBarGlassEffectView {
+        let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        return existingView.style != style
+      }
+      return true
+    case .visualEffectView, .clearGradient:
+      // `clearGradient` is not supported; just treat like visualEffectView
+      return (self.view as? FloatingControlBarVisualEffectView) != nil
+    }
+  }
+
   func rebuildView() {
     let subviews = [topRowView, bottomRowView]
     let view: NSView
@@ -111,6 +130,10 @@ final class FloatingControlBar {
     }
 
     if let prevView = self.view {
+      if let pwc = prevView.pwc {
+        // Remove from fadeable sets (if present)
+        pwc.fadeableViews.applyVisibility(.hidden, to: prevView)
+      }
       prevView.removeFromSuperview()
       prevView.removeAllSubviews()
     }
@@ -137,6 +160,9 @@ final class FloatingControlBar {
     let minWidthConstraint = view.widthAnchor.constraint(greaterThanOrEqualToConstant: FloatingControlBar.minBarWidth)
     minWidthConstraint.isActive = true
 
+    // Hide until ready for fade-in
+    view.alphaValue = 0
+    view.isHidden = true
     self.view = view
   }
 

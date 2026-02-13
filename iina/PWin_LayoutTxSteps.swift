@@ -184,9 +184,16 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.inputLayout.hasFloatingOSC && !outputLayout.hasFloatingOSC {
-      // Hide floating OSC
-      fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating.view)
+    if transition.inputLayout.hasFloatingOSC {
+      if outputLayout.hasFloatingOSC {
+        if controlBarFloating.needsPanelStyleChange() {
+          // Hide for panel style change (which will happen in the hidden step)
+          controlBarFloating.view.alphaValue = 0
+        }
+      } else {
+        // Hide floating OSC
+        fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating.view)
+      }
     }
 
     // Change blending modes
@@ -505,8 +512,8 @@ extension PlayerWindowController {
 
     // - Music mode: entering or continuing)
 
-      miniPlayer.loadIfNeeded()
-      pip.showOrHidePipOverlayView()
+    miniPlayer.loadIfNeeded()
+    pip.showOrHidePipOverlayView()
 
     if transition.isEnteringMusicMode || (transition.isWindowInitialLayout && transition.outputLayout.isMusicMode) {
       // If initial layout, bottomBar has been rebuilt, so we need to repopulate it
@@ -631,7 +638,6 @@ extension PlayerWindowController {
 
       case .floating:
         controlBarFloating.rebuildView()
-        adjustFloatingControllerOrigin(for: transition.closeOldPanelsGeometry)
         currentControlBar = controlBarFloating.view
         addFloatingControlBarToViewportView()
         controlBarFloating.updatePreferredBarWidth()
