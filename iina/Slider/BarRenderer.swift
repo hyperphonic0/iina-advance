@@ -24,6 +24,41 @@ fileprivate extension CGColor {
   }
 }
 
+fileprivate protocol CornerCalibrator {
+  func cornerRadius(for barHeight: CGFloat) -> CGFloat
+  func update(baseBarHeight: CGFloat)
+}
+
+fileprivate class SquareCornerCalibrator: CornerCalibrator {
+  func cornerRadius(for barHeight: CGFloat) -> CGFloat { 0.0 }
+  func update(baseBarHeight: CGFloat) { }
+}
+fileprivate class CurvedCornerCalibrator: CornerCalibrator {
+  var curvature: CGFloat = 0.0
+
+  init(baseBarHeight: CGFloat) {
+    update(baseBarHeight: baseBarHeight)
+  }
+
+  func update(baseBarHeight: CGFloat) {
+    if baseBarHeight <= Constants.Slider.reducedCurvatureBarHeightThreshold {
+      // At smaller sizes, the rounded effect is less noticeable, so increase to compensate
+      curvature = 0.5
+    } else {
+      if #available(macOS 26.0, *) {
+        // Curvature much increased in Tahoe
+        curvature = 1.75
+      } else {
+        // At larger sizes, too much rounding can hurt the usability of the slider as a measure of quantity.
+        curvature = 0.35
+      }
+    }
+  }
+  func cornerRadius(for barHeight: CGFloat) -> CGFloat {
+    (barHeight * curvature).rounded()
+  }
+}
+
 /// Draws slider bars, e.g., play slider & volume slider.
 /// 
 /// In the future, the sliders should be entirely custom, instead of relying on legacy `NSSlider`. Then the knob & slider can be
@@ -53,32 +88,15 @@ final class BarRenderer {
 
     // I want to vary the curvature based on bar height, but want to avoid drawing bars with different curvature in the same image,
     // which can happen when focusing on a chapter in a multi-chapter video. So: only update the curvature once per image set.
-    var cornerCurvature: CGFloat = Preference.bool(for: .roundSliderBarRects) ? 1.0 : 0.0
-    func updateCurvature(using baseBarHeight: CGFloat) {
-      guard cornerCurvature > 0.0 else { return }
-      if baseBarHeight <= Constants.Slider.reducedCurvatureBarHeightThreshold {
-        // At smaller sizes, the rounded effect is less noticeable, so increase to compensate
-        cornerCurvature = 0.5
-      } else {
-        // At larger sizes, too much rounding can hurt the usability of the slider as a measure of quantity.
-        cornerCurvature = 0.35
-      }
-      if #available(macOS 26.0, *) {
-        // Curvature much increased in Tahoe
-        cornerCurvature = cornerCurvature * 1.75
-      }
-    }
-    func cornerRadius(for barHeight: CGFloat) -> CGFloat {
-      return (barHeight * cornerCurvature).rounded()
-    }
+    let hasRoundedCorners = Preference.bool(for: .roundSliderBarRects)
 
     // CONSTANTS: All in points (not pixels).
     // Make sure these are even numbers! Otherwise bar will be antialiased on non-Retina displays
 
     // - Secondary Vars - PlaySlider & VolumeSlider both:
 
-    updateCurvature(using: barHeight_Normal)
-    let barCornerRadius_Normal = cornerRadius(for: barHeight_Normal)
+    let curve: CornerCalibrator = hasRoundedCorners ? CurvedCornerCalibrator(baseBarHeight: barHeight_Normal) : SquareCornerCalibrator()
+    let barCornerRadius_Normal = curve.cornerRadius(for: barHeight_Normal)
 
     leftCachedColor = leftBaseColor.exaggerated()
     rightCachedColor = rightBaseColor.exaggerated()
@@ -93,12 +111,12 @@ final class BarRenderer {
 
     // Focused AND is the current chapter, when media has more than 1 chapter:
     let barHeight_FocusedCurrChapter: CGFloat = (barHeight_Normal * Constants.Slider.unscaledFocusedCurrentChapterHeight_Multiplier).rounded()
-    updateCurvature(using: barHeight_FocusedCurrChapter)
-    let barCornerRadius_FocusedCurrChapter = cornerRadius(for: barHeight_FocusedCurrChapter)
+    curve.update(baseBarHeight: barHeight_FocusedCurrChapter)
+    let barCornerRadius_FocusedCurrChapter = curve.cornerRadius(for: barHeight_FocusedCurrChapter)
 
     /// Focused AND [(has more than 1 chapter, but not the current chapter) OR (only one chapter)]:
     let barHeight_FocusedNonCurrChapter: CGFloat = (barHeight_Normal * Constants.Slider.unscaledFocusedNonCurrentChapterHeight_Multiplier).rounded()
-    let barCornerRadius_FocusedNonCurrChapter = cornerRadius(for: barHeight_FocusedNonCurrChapter)
+    let barCornerRadius_FocusedNonCurrChapter = curve.cornerRadius(for: barHeight_FocusedNonCurrChapter)
 
     let maxPlayBarHeightNeeded = max(barHeight_Normal, barHeight_FocusedCurrChapter, barHeight_FocusedNonCurrChapter)
     self.maxPlayBarHeightNeeded = maxPlayBarHeightNeeded
@@ -107,17 +125,17 @@ final class BarRenderer {
 
     let barHeight_VolumeAbove100_Left: CGFloat = barHeight_Normal
     let barHeight_VolumeAbove100_Right: CGFloat = (barHeight_VolumeAbove100_Left * 0.5).rounded()
-    updateCurvature(using: barHeight_VolumeAbove100_Left)  // base on tallest bar height being drawn
-    let barCornerRadius_VolumeAbove100_Left = cornerRadius(for: barHeight_VolumeAbove100_Left)
-    let barCornerRadius_VolumeAbove100_Right = cornerRadius(for: barHeight_VolumeAbove100_Right)
+    curve.update(baseBarHeight: barHeight_VolumeAbove100_Left)  // base on tallest bar height being drawn
+    let barCornerRadius_VolumeAbove100_Left = curve.cornerRadius(for: barHeight_VolumeAbove100_Left)
+    let barCornerRadius_VolumeAbove100_Right = curve.cornerRadius(for: barHeight_VolumeAbove100_Right)
 
     let barHeight_Volume_Focused: CGFloat = barHeight_FocusedNonCurrChapter
     let barHeight_Focused_VolumeAbove100_Left: CGFloat = barHeight_FocusedCurrChapter
     let barHeight_Focused_VolumeAbove100_Right: CGFloat = barHeight_Normal
-    updateCurvature(using: barHeight_FocusedCurrChapter)
-    let barCornerRadius_Volume_Focused = cornerRadius(for: barHeight_Volume_Focused)
-    let barCornerRadius_Focused_VolumeAbove100_Left = cornerRadius(for: barHeight_Focused_VolumeAbove100_Left)
-    let barCornerRadius_Focused_VolumeAbove100_Right = cornerRadius(for: barHeight_Focused_VolumeAbove100_Right)
+    curve.update(baseBarHeight: barHeight_FocusedCurrChapter)
+    let barCornerRadius_Volume_Focused = curve.cornerRadius(for: barHeight_Volume_Focused)
+    let barCornerRadius_Focused_VolumeAbove100_Left = curve.cornerRadius(for: barHeight_Focused_VolumeAbove100_Left)
+    let barCornerRadius_Focused_VolumeAbove100_Right = curve.cornerRadius(for: barHeight_Focused_VolumeAbove100_Right)
 
     let maxVolBarHeightNeeded = max(barHeight_Normal, barHeight_VolumeAbove100_Left, barHeight_VolumeAbove100_Right,
                                     barHeight_Volume_Focused, barHeight_Focused_VolumeAbove100_Left, barHeight_Focused_VolumeAbove100_Right)

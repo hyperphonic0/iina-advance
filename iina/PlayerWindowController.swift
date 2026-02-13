@@ -2086,16 +2086,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let volumeImage = volumeIcon(volume: volume, isMuted: isMuted)
     if let volumeImage, volumeImage != muteButton.image {
-      IINAAnimation.runAsync([
-        .init(duration: Constants.AnimationDuration.btnLayoutChange, { [self] in
-          volumeIconAspectConstraint.isActive = false
-          volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volumeImage.aspect)
-          volumeIconAspectConstraint.isActive = true
-        }),
-        .init(duration: Constants.AnimationDuration.btnLayoutChange, { [self] in
-          muteButton.image = volumeImage
-        })
-      ])
+      muteButton.replaceSymbolImage(with: volumeImage, effect: .none)
     }
 
     // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.

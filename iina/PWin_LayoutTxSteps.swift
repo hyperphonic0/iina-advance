@@ -296,12 +296,6 @@ extension PlayerWindowController {
         volumeSliderWidthConstraint.animateToConstant(newGeo.volumeSliderWidth)
       }
 
-      if let img = muteButton.image {
-        volumeIconAspectConstraint.isActive = false
-        volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
-        volumeIconAspectConstraint.isActive = true
-      }
-
       if oldGeo.playIconSize > newGeo.playIconSize {
         playBtnHeightConstraint.animateToConstant(newGeo.playIconSize)
       }
@@ -878,11 +872,6 @@ extension PlayerWindowController {
 
       volumeIconHeightConstraint.animateToConstant(newGeo.volumeIconHeight)
       volumeSliderWidthConstraint.animateToConstant(newGeo.volumeSliderWidth)
-      if let img = muteButton.image {
-        volumeIconAspectConstraint.isActive = false
-        volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
-        volumeIconAspectConstraint.isActive = true
-      }
       log.trace("TotalPlayControls.width=\(newGeo.totalPlayControlsWidth) leftArrowXOffset=\(newGeo.leftArrowCenterXOffset) rightArrowXOffset=\(newGeo.rightArrowCenterXOffset)")
 
       arrowBtnWidthConstraint.animateToConstant(newGeo.arrowIconWidth)

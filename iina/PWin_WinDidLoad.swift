@@ -565,7 +565,6 @@ extension PlayerWindowController {
 
     // Mute button
     muteButton.idString = "MuteBtn"
-    let volImage = Images.volume3
     muteButton.image = Images.volume3
     muteButton.target = self
     muteButton.action = #selector(muteButtonAction(_:))
@@ -577,7 +576,8 @@ extension PlayerWindowController {
     volumeIconHeightConstraint = muteButton.heightAnchor.constraint(equalToConstant: oscGeo.volumeIconHeight)
     volumeIconHeightConstraint.priority = .init(900)
     volumeIconHeightConstraint.isActive = true
-    volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volImage.aspect)
+    // Give enough space for widest volume image, and don't change it, so that the volume bar doesn't move
+    volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: 1.8)
     volumeIconAspectConstraint.isActive = true
 
     // Volume slider
