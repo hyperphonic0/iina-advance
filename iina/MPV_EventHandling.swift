@@ -419,7 +419,7 @@ extension MPVController {
       guard let isMuted = property.boolData(log) else { break }
       guard player.info.isMuted != isMuted else { break }
       player.info.isMuted = isMuted
-      player.syncUI(.muteButton)
+      player.pwc.updateVolumeUI()
       let volume = Int(player.info.volume)
       player.sendOSD(isMuted ? OSDMessage.mute(volume) : OSDMessage.unMute(volume))
 
@@ -427,7 +427,7 @@ extension MPVController {
       guard let volume = property.doubleData(log) else { break }
       guard player.info.volume != volume else { break }
       player.info.volume = volume
-      player.syncUI(.volume)
+      player.pwc.updateVolumeUI()
       player.sendOSD(.volume(volume))
 
     case MPVOption.Audio.audioDelay:

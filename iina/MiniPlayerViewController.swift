@@ -327,7 +327,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     if volumePopover.isShown {
       volumePopover.performClose(self)
     } else {
-      pwc.updateVolumeUI()
+      pwc._updateVolumeUI()
       volumePopover.show(relativeTo: volumePopoverAlignmentView.bounds, of: volumePopoverAlignmentView,
                          preferredEdge: .minY)
     }

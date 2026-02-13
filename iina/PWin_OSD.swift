@@ -10,8 +10,9 @@ import Foundation
 import Mustache
 
 // Avoid constraint violations during window resize
-fileprivate let constraintPriorityInt = 400
-fileprivate let lowerConstraintPriorityInt = 300
+fileprivate let mildPriority = 400
+fileprivate let lowerPriorityInt = 300
+fileprivate let lowestPriorityInt = 100
 #if MACOS_26_AVAILABLE
 // Increase space a bit to accomodate the rounder corners:
 fileprivate let standardOffset: CGFloat = 12
@@ -61,15 +62,23 @@ final class OSDState {
 
   // - Optional constraints
 
+  // Vertical offsets
   fileprivate let leadingSide_TopOffsetConstraint = OptionalConstraint("LeadingOSD.top-offset-from-VP.top")
   fileprivate let leadingSide_BtmOffsetConstraint = OptionalConstraint("VP.btm-offset-from-LeadingOSD.btm")
   fileprivate let trailingSide_TopOffsetConstraint = OptionalConstraint("TrailingOSD-TopOffset")
   fileprivate let trailingSide_BtmOffsetConstraint = OptionalConstraint("TrailingOSD-BtmOffset")
 
+  // Leading side
+  /// Need extra (very weak) constraint to align with viewport in case leading sidebar is present but not yet shown
+  fileprivate let leadingSide_WeakLeadingConstraint = OptionalConstraint("LeadingOSD-Weak-Leading")
   fileprivate let leadingSide_LeadingConstraint = OptionalConstraint("LeadingOSD-Leading")
   fileprivate let leadingSide_TrailingConstraint = OptionalConstraint("LeadingOSD-Trailing")
+
+  // Trailing side
   fileprivate let trailingSide_LeadingConstraint = OptionalConstraint("TrailingOSD-Leading")
   fileprivate let trailingSide_TrailingConstraint = OptionalConstraint("TrailingOSD-Trailing")
+  /// Need extra (very weak) constraint to align with viewport in case trailing sidebar is present but not yet shown
+  fileprivate let trailingSide_TrailingWeakConstraint = OptionalConstraint("TrailingOSD-Weak-Trailing")
 
   // If we have both OSDs shown at the same time, don't let them overlap, but don't push them
   // off to either side except as last resort. If they don't both fit, first shrink the AdditionalInfo text.
@@ -81,8 +90,10 @@ final class OSDState {
     [
       leadingSide_TopOffsetConstraint, leadingSide_BtmOffsetConstraint,
       trailingSide_TopOffsetConstraint, trailingSide_BtmOffsetConstraint,
+      leadingSide_WeakLeadingConstraint,
       leadingSide_LeadingConstraint, leadingSide_TrailingConstraint,
       trailingSide_LeadingConstraint, trailingSide_TrailingConstraint,
+      trailingSide_TrailingWeakConstraint,
     ]
   }
 
@@ -686,25 +697,30 @@ extension PlayerWindowController {
     let otherAnchorTrailing = hasTrailingSidebar ? trailingSidebarView.leadingAnchor : viewportView.trailingAnchor
 
     if let leadingView {
-      osd.leadingSide_LeadingConstraint.createOrUpdate(to: standardOffset, priorityInt: constraintPriorityInt,
+      osd.leadingSide_WeakLeadingConstraint.createOrUpdate(to: standardOffset, priorityInt: lowestPriorityInt,
+                                                           requiredFirstAnchor: leadingView.leadingAnchor,
+                                                           requiredSecondAnchor: viewportView.leadingAnchor, log) { c in
+        leadingView.leadingAnchor.constraint(equalTo: viewportView.leadingAnchor, constant: c)
+      }
+      osd.leadingSide_LeadingConstraint.createOrUpdate(to: standardOffset, priorityInt: mildPriority,
                                                        requiredFirstAnchor: leadingView.leadingAnchor,
                                                        requiredSecondAnchor: otherAnchorLeading, log) { c in
         leadingView.leadingAnchor.constraint(equalTo: otherAnchorLeading, constant: c)
       }
 
-      osd.leadingSide_TrailingConstraint.createOrUpdate(to: standardOffset, priorityInt: lowerConstraintPriorityInt,
+      osd.leadingSide_TrailingConstraint.createOrUpdate(to: standardOffset, priorityInt: lowerPriorityInt,
                                                         requiredFirstAnchor: otherAnchorTrailing,
                                                         requiredSecondAnchor: leadingView.trailingAnchor, log) { c in
         otherAnchorTrailing.constraint(greaterThanOrEqualTo: leadingView.trailingAnchor, constant: c)
       }
 
-      osd.leadingSide_TopOffsetConstraint.createOrUpdate(to: offsetFromTop, priorityInt: constraintPriorityInt,
+      osd.leadingSide_TopOffsetConstraint.createOrUpdate(to: offsetFromTop, priorityInt: mildPriority,
                                                          requiredFirstAnchor: leadingView.topAnchor,
                                                          requiredSecondAnchor: viewportView.topAnchor, log) { [self] c in
         leadingView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
-      osd.leadingSide_BtmOffsetConstraint.createOrUpdate(to: btmMinOffset, priorityInt: constraintPriorityInt,
+      osd.leadingSide_BtmOffsetConstraint.createOrUpdate(to: btmMinOffset, priorityInt: mildPriority,
                                                          requiredFirstAnchor: viewportView.bottomAnchor,
                                                          requiredSecondAnchor: leadingView.bottomAnchor, log) { [self] c in
         viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: leadingView.bottomAnchor, constant: c)
@@ -712,25 +728,31 @@ extension PlayerWindowController {
     }
 
     if let trailingView {
-      osd.trailingSide_TrailingConstraint.createOrUpdate(to: standardOffset, priorityInt: constraintPriorityInt,
+      osd.trailingSide_TrailingWeakConstraint.createOrUpdate(to: standardOffset, priorityInt: lowestPriorityInt,
+                                                             requiredFirstAnchor: viewportView.trailingAnchor,
+                                                         requiredSecondAnchor: trailingView.trailingAnchor, log) { c in
+        otherAnchorTrailing.constraint(equalTo: trailingView.trailingAnchor, constant: c)
+      }
+
+      osd.trailingSide_TrailingConstraint.createOrUpdate(to: standardOffset, priorityInt: mildPriority,
                                                          requiredFirstAnchor: otherAnchorTrailing,
                                                          requiredSecondAnchor: trailingView.trailingAnchor, log) { c in
         otherAnchorTrailing.constraint(equalTo: trailingView.trailingAnchor, constant: c)
       }
 
-      osd.trailingSide_LeadingConstraint.createOrUpdate(to: standardOffset, priorityInt: lowerConstraintPriorityInt,
-                                                        requiredFirstAnchor: otherAnchorLeading,
-                                                        requiredSecondAnchor: trailingView.leadingAnchor, log) { c in
-        otherAnchorLeading.constraint(lessThanOrEqualTo: trailingView.leadingAnchor, constant: c)
+      osd.trailingSide_LeadingConstraint.createOrUpdate(to: standardOffset, priorityInt: lowerPriorityInt,
+                                                        requiredFirstAnchor: trailingView.leadingAnchor,
+                                                        requiredSecondAnchor: otherAnchorLeading, log) { c in
+        trailingView.leadingAnchor.constraint(greaterThanOrEqualTo: otherAnchorLeading, constant: c)
       }
 
-      osd.trailingSide_TopOffsetConstraint.createOrUpdate(to: offsetFromTop, priorityInt: constraintPriorityInt,
+      osd.trailingSide_TopOffsetConstraint.createOrUpdate(to: offsetFromTop, priorityInt: mildPriority,
                                                           requiredFirstAnchor: trailingView.topAnchor,
                                                           requiredSecondAnchor: viewportView.topAnchor, log) { [self] c in
         trailingView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
-      osd.trailingSide_BtmOffsetConstraint.createOrUpdate(to: btmMinOffset, priorityInt: constraintPriorityInt,
+      osd.trailingSide_BtmOffsetConstraint.createOrUpdate(to: btmMinOffset, priorityInt: mildPriority,
                                                           requiredFirstAnchor: viewportView.bottomAnchor,
                                                           requiredSecondAnchor: trailingView.bottomAnchor, log) { [self] c in
         viewportView.bottomAnchor.constraint(greaterThanOrEqualTo: trailingView.bottomAnchor, constant: c)
@@ -739,7 +761,7 @@ extension PlayerWindowController {
 
     // #OSDPlusAdditionalInfoResizing
     if let leadingView, let trailingView {
-      osd.hSpaceBetweenViewsGEConstraint.createOrUpdate(to: standardOffset, priorityInt: constraintPriorityInt,
+      osd.hSpaceBetweenViewsGEConstraint.createOrUpdate(to: standardOffset, priorityInt: mildPriority,
                                                       requiredFirstAnchor: trailingView.leadingAnchor,
                                                       requiredSecondAnchor: leadingView.trailingAnchor, log) { c in
         trailingView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingView.trailingAnchor, constant: c)

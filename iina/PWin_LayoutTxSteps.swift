@@ -835,7 +835,7 @@ extension PlayerWindowController {
     }
 
     // Other misc views
-    updateVolumeUI()
+    _updateVolumeUI()
     playSlider.needsDisplay = true
 
     log.verbose("Done")

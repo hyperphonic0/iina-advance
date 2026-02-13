@@ -2061,8 +2061,14 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     player.touchBarSupport.touchBarPosLabels.forEach { $0.updateText(with: duration, given: position, and: remaining) }
   }
 
-  @MainActor
   func updateVolumeUI() {
+    DispatchQueue.main.async { [self] in
+      _updateVolumeUI()
+    }
+  }
+
+  @MainActor
+  func _updateVolumeUI() {
     guard loaded, !isClosing else { return }
     guard player.info.isFileLoaded || player.isRestoring else { return }
 
@@ -2080,14 +2086,16 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     let volumeImage = volumeIcon(volume: volume, isMuted: isMuted)
     if let volumeImage, volumeImage != muteButton.image {
-      let task = IINAAnimation.Task(duration: Constants.AnimationDuration.btnLayoutChange, { [self] in
-        volumeIconAspectConstraint.isActive = false
-        volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volumeImage.aspect)
-        volumeIconAspectConstraint.isActive = true
-      })
-      IINAAnimation.runAsync(task, then: { [self] in
-        muteButton.image = volumeImage
-      })
+      IINAAnimation.runAsync([
+        .init(duration: Constants.AnimationDuration.btnLayoutChange, { [self] in
+          volumeIconAspectConstraint.isActive = false
+          volumeIconAspectConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volumeImage.aspect)
+          volumeIconAspectConstraint.isActive = true
+        }),
+        .init(duration: Constants.AnimationDuration.btnLayoutChange, { [self] in
+          muteButton.image = volumeImage
+        })
+      ])
     }
 
     // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.

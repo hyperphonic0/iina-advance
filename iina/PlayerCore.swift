@@ -312,6 +312,8 @@ final class PlayerCore: NSObject {
     abLoopA != 0 && abLoopB != 0 && mpv.getString(MPVOption.PlaybackControl.abLoopCount) != "0"
   }
 
+  // MARK: - Init
+
   /// Base constructor (private).
   @MainActor
   private init(_ label: String, isDemoPlayer: Bool = false, priorStateBuildNumber: Int? = nil) {
@@ -362,6 +364,8 @@ final class PlayerCore: NSObject {
     player.log.verbose("PlayerCore init (demo): done")
     return player
   }
+
+  // MARK: - Additional mpv Options
 
   /// If the user has enabled Advanced Settings and has added entries to the "Addtional mpv options" table,
   /// this returns them in a list.
@@ -2960,8 +2964,6 @@ final class PlayerCore: NSObject {
 
   // difficult to use option set
   enum SyncUIOption {
-    case volume
-    case muteButton
     case chapterList
     case playlist
     case loop
@@ -2973,11 +2975,6 @@ final class PlayerCore: NSObject {
     log.verbose("Syncing UI \(option)")
 
     switch option {
-
-    case .volume, .muteButton:
-      DispatchQueue.main.async { [self] in
-        pwc.updateVolumeUI()
-      }
 
     case .chapterList:
       DispatchQueue.main.async { [self] in
@@ -3307,7 +3304,7 @@ final class PlayerCore: NSObject {
     info.aid = aid
 
     log.verbose("Audio track changed to: \(aid)")
-    syncUI(.volume)
+    pwc.updateVolumeUI()
     postNotification(.iinaAIDChanged)
     if !silent {
       if let audioTrack = info.currentTrack(.audio) {
