@@ -192,7 +192,9 @@ extension PlayerWindowController {
     // Change blending modes
     if transition.isTogglingFullScreen {
       /// Need to use `.withinWindow` during animation or else panel tint can change in odd ways
-      topBarView.blendingMode = .withinWindow
+      if let topBarVE = topBar.view as? NSVisualEffectView {
+        topBarVE.blendingMode = .withinWindow
+      }
       if let bottomBarView = bottomBarView as? NSVisualEffectView {
         bottomBarView.blendingMode = .withinWindow
       }
@@ -481,7 +483,7 @@ extension PlayerWindowController {
       if transition.outputLayout.mode == .musicMode {
         legacyTitleBar.addViewTo(superview: window.contentView!)
       } else {
-        legacyTitleBar.addViewTo(superview: topBarView.titleBarView)
+        legacyTitleBar.addViewTo(superview: topBar.titleBarView)
       }
       fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: legacyTitleBar.leadingSidebarToggleButton)
       fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: legacyTitleBar.trailingSidebarToggleButton)
@@ -577,7 +579,7 @@ extension PlayerWindowController {
 
       switch outputLayout.oscPosition {
       case .top:
-        currentControlBar = topBarView.controlBarTop
+        currentControlBar = topBar.controlBarTop
 
 
         let oscContentView: NSView
@@ -591,9 +593,9 @@ extension PlayerWindowController {
           oscOneRowView.updateSubviews(from: self, newGeo)
         }
 
-        if !topBarView.controlBarTop.subviews.contains(oscContentView) {
+        if !topBar.controlBarTop.subviews.contains(oscContentView) {
           log.verbose("Adding \(oscContentView.idString) to topBarView")
-          topBarView.controlBarTop.addSubview(oscContentView, positioned: .below, relativeTo: topBarView.bottomBorder)
+          topBar.controlBarTop.addSubview(oscContentView, positioned: .below, relativeTo: topBar.bottomBorder)
           // Match leading/trailing spacing of title bar icons above
           oscContentView.addConstraintsToFillSuperview(top: 0, bottom: 0,
                                                        leading: Constants.titleBarIconHSpacing,
@@ -933,7 +935,7 @@ extension PlayerWindowController {
     log.verbose("Start")
 
     fadeableViews.applyVisibility(outputLayout.controlBarFloating, to: controlBarFloating.view)
-    fadeableViews.applyVisibility(outputLayout.topBarView, to: topBarView)
+    fadeableViews.applyVisibility(outputLayout.topBarView, to: topBar.view)
 
     if outputLayout.titleBar.isShowable {
       if transition.outputLayout.mode == .musicMode {
@@ -1496,11 +1498,13 @@ extension PlayerWindowController {
 
   private func updatePanelBlendingModes(to outputLayout: LayoutState) {
     if outputLayout.topBarHeight > 0 {
-      // Full screen + "behindWindow" doesn't blend properly and looks ugly
-      if outputLayout.topBarPlacement == .insideViewport || outputLayout.isFullScreen {
-        topBarView.blendingMode = .withinWindow
-      } else {
-        topBarView.blendingMode = .behindWindow
+      if let topBarVE = topBar.view as? NSVisualEffectView {
+        // Full screen + "behindWindow" doesn't blend properly and looks ugly
+        if outputLayout.topBarPlacement == .insideViewport || outputLayout.isFullScreen {
+          topBarVE.blendingMode = .withinWindow
+        } else {
+          topBarVE.blendingMode = .behindWindow
+        }
       }
     }
 

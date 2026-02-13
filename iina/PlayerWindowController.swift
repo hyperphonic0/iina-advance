@@ -510,7 +510,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Bar at top of window. May be `insideViewport` or `outsideViewport`. May contain `titleBarView` and/or `controlBarTop`
   /// depending on configuration.
-  let topBarView = TopBarView()
+  let topBar = TopBar()
 
   /// Control bar at bottom of window, if configured. May be `insideViewport` or `outsideViewport`.
   /// Used to hold other views in music mode & interactive mode
@@ -565,7 +565,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   // - Misc Views
 
   var mouseActionDisabledViews: [NSView?] {
-    return [leadingSidebarView, trailingSidebarView, topBarView, currentControlBar, subPopoverView]
+    return [leadingSidebarView, trailingSidebarView, topBar.view, currentControlBar, subPopoverView]
   }
 
   let pluginOverlayViewContainer = ClickThroughView(frame: .zero)
@@ -2253,7 +2253,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     if wantsBorderShown {
       let contentView = window!.contentView!
       if customWindowBorderBox.superview == nil {
-        contentView.addSubview(customWindowBorderBox, positioned: .above, relativeTo: contentView.containsSubview(topBarView) ? topBarView : viewportView)
+        contentView.addSubview(customWindowBorderBox, positioned: .above, relativeTo: contentView.containsSubview(topBar.view) ? topBar.view : viewportView)
         // Deviate from the native look slightly by reducing trailing & bottom by 0.5pt. Just looks too distracting otherwise
         customWindowBorderBox.addConstraintsToFillSuperview(top: 0, .required, bottom: -0.5, priority,
                                                             leading: 0, .required, trailing: -0.5, priority)

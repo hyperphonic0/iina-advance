@@ -7,7 +7,7 @@
 //
 
 /// OSC at top of window, if configured.
-class TopControlBarView: ClickThroughView {
+final class TopControlBarView: ClickThroughView {
   init() {
     super.init(frame: .zero)
     idString = "OSC-Top"
@@ -21,8 +21,29 @@ class TopControlBarView: ClickThroughView {
   }
 }
 
+final class TopBarVisualEffectView: ClickThroughVisualEffectView {
+  init() {
+    super.init(frame: .zero)
+    material = .titlebar
+    state = .followsWindowActiveState
+    wantsLayer = true  // needed for shadow
+  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+}
+
+@available(macOS 26.0, *)
+final class TopBarViewGlassEffectView: ClickThroughGlassEffectView {
+  init(style desiredStyle: Style) {
+    super.init(frame: .zero)
+    setStyle(desiredStyle)
+  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+}
+
 /// The bar at the very top of the window. May include title bar and/or OSC.
-class TopBarView: ClickThroughVisualEffectView {
+final class TopBar {
+  var view: NSView
+
   /// Reserves space for the title bar components. Can contain CustomTitleBarView *only* if using legacy
   /// windowed mode & topBarPlacement==.insideViewport
   let titleBarView = ClickThroughView()
@@ -37,39 +58,48 @@ class TopBarView: ClickThroughVisualEffectView {
   var titleBarHeightConstraint: NSLayoutConstraint!
 
   init() {
-    super.init(frame: .zero)
-    idString = "TopBarView"
-
-    material = .titlebar
-    state = .followsWindowActiveState
-    wantsLayer = true  // needed for shadow
-    clipsToBounds = true  // for better animations when toggling OSC position/placement
-    translatesAutoresizingMaskIntoConstraints = false
+    let topBarColorScheme: Preference.OSCColorScheme = Preference.enum(for: .topBarColorScheme)
+    switch topBarColorScheme {
+    case .clearLiquidGlass, .tintedLiquidGlass:
+      if #available(macOS 26.0, *) {
+        let style: NSGlassEffectView.Style = topBarColorScheme == .clearLiquidGlass ? .clear : .regular
+        view = TopBarViewGlassEffectView(style: style)
+      } else {
+        fallthrough
+      }
+    case .clearGradient:
+      // TODO: support this
+      fallthrough
+    case .visualEffectView:
+      view = TopBarVisualEffectView()
+    }
+    view.idString = "TopBarView"
+    view.clipsToBounds = true  // for better animations when toggling OSC position/placement
+    view.translatesAutoresizingMaskIntoConstraints = false
 
     /// `titleBarView`
     titleBarView.translatesAutoresizingMaskIntoConstraints = false
-    addSubview(titleBarView)
     titleBarView.idString = "TitleBarView"
+    view.addSubview(titleBarView)
 
     titleBarView.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
 
-    titleBarHeightConstraint = titleBarView.bottomAnchor.constraint(equalTo: topAnchor, constant: Constants.standardTitleBarHeight)
+    titleBarHeightConstraint = titleBarView.bottomAnchor.constraint(equalTo: view.topAnchor, constant: Constants.standardTitleBarHeight)
     titleBarHeightConstraint.identifier = "TitleBarView-HeightConstraint"
     titleBarHeightConstraint.isActive = true
 
-    /// `controlBarTop`
-    addSubviewAndConstraints(controlBarTop, bottom: 0, leading: 0, trailing: 0)
+    view.addSubviewAndConstraints(controlBarTop, bottom: 0, leading: 0, trailing: 0)
 
     let titleBarBottom_ToControlBarTop_Constraint = titleBarView.bottomAnchor.constraint(equalTo: controlBarTop.topAnchor, constant: 0)
     titleBarBottom_ToControlBarTop_Constraint.identifier = "TitleBar-Bottom_ToControlBarTop_Constraint"
     titleBarBottom_ToControlBarTop_Constraint.isActive = true
 
-    // Bottom border
-    addSubview(bottomBorder)
+    view.addSubview(bottomBorder)
     bottomBorder.addConstraintsToFillSuperview(bottom: -0.5, leading: 0, trailing: 0)
+
     // Want to make a 0.5px border. But it seems that in some display modes, that is not only not possible,
     // but it will trigger an auto-layout constraint error. So use defaultHigh and be prepared to accept a 1px border.
-    let topBarBottomBorder_HeightConstraint = bottomBorder.topAnchor.constraint(equalTo: bottomAnchor, constant: -0.5)
+    let topBarBottomBorder_HeightConstraint = bottomBorder.topAnchor.constraint(equalTo: view.bottomAnchor, constant: -0.5)
     topBarBottomBorder_HeightConstraint.identifier = "TopBarBottomBorder-HeightConstraint"
     topBarBottomBorder_HeightConstraint.priority = .defaultHigh
     topBarBottomBorder_HeightConstraint.isActive = true

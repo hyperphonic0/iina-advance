@@ -105,7 +105,7 @@ extension PlayerWindowController {
     p.bottomBarTopOffsetFromCVTop.weaken()
     p.vpBtmOffsetFromTopOfBottomBar.weaken()
     p.bottomBarBtmOffsetFromVPBtm.weaken()
-    topBarView.titleBarHeightConstraint.priority = .minimum
+    topBar.titleBarHeightConstraint.priority = .minimum
     p.bottomBarBtmOffsetFromCVTop.weaken()
     p.cvBtmOffsetFromBottomBarBtm.weaken()
     p.vpBtmOffsetFromCVTop.weaken()
@@ -121,25 +121,25 @@ extension PlayerWindowController {
       log.verbose("TopBar: vpTopOffsetFromTopBarTop=\(outsideTopBarHeight) topBarBtmOffsetFromVPTop=\(insideTopBarHeight)")
 
       p.vpTopOffsetFromTopBarTop.createOrUpdate(to: outsideTopBarHeight, log) { [self] c in
-        viewportView.topAnchor.constraint(equalTo: topBarView.topAnchor, constant: c)
+        viewportView.topAnchor.constraint(equalTo: topBar.view.topAnchor, constant: c)
       }
 
       // Don't use required priority, as sometimes this causes constraint violations
       p.topBarBtmOffsetFromVPTop.createOrUpdate(to: insideTopBarHeight, log) { [self] c in
-        topBarView.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
+        topBar.view.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
       }
 
       if stage == .openNewPanels, transition.isExitingNativeFullScreen {
         log.verbose("Updating titleBarHeight=\(0) for exiting native FS")
-        topBarView.titleBarHeightConstraint.animateToConstant(0)
+        topBar.titleBarHeightConstraint.animateToConstant(0)
       } else {
         let titleHeight = min(stageLayout.titleBarHeight, stageGeo.topBarHeight)  // do not make titleBar larger than top bar
         log.verbose("Updating titleBarHeight=\(Int(titleHeight))")
-        topBarView.titleBarHeightConstraint.animateToConstant(titleHeight)
+        topBar.titleBarHeightConstraint.animateToConstant(titleHeight)
       }
 
       // Not sure why when we make this `.required`, we get a bogus constraint violation
-      topBarView.titleBarHeightConstraint.priority = .defaultHigh
+      topBar.titleBarHeightConstraint.priority = .defaultHigh
     }
 
     let isAnimatingViewportOpen = transition.isOpeningViewport && !stage.isFinalStage  // Music Mode: opening video
@@ -353,23 +353,23 @@ extension PlayerWindowController {
 
     // Add/remove topBarView if needed
     if useTopBar {
-      if !contentView.containsSubview(topBarView) {
+      if !contentView.containsSubview(topBar.view) {
         log.verbose("Adding topBarView to window contentView")
-        contentView.addSubview(topBarView, positioned: .above, relativeTo: viewportView)
+        contentView.addSubview(topBar.view, positioned: .above, relativeTo: viewportView)
 
         // These constraints don't change as long as topBarView is attached
-        let topBarLeadingSpaceConstraint = topBarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+        let topBarLeadingSpaceConstraint = topBar.view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
         topBarLeadingSpaceConstraint.identifier = "TopBar.leading-offset-from-CV.leading"
         topBarLeadingSpaceConstraint.isActive = true
 
-        let topBarTrailingSpaceConstraint = topBarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
+        let topBarTrailingSpaceConstraint = topBar.view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
         topBarTrailingSpaceConstraint.identifier = "TopBar.trailing-offset-from-CV.trailing"
         topBarTrailingSpaceConstraint.isActive = true
       }
     } else {
-      if topBarView.superview != nil {
+      if topBar.view.superview != nil {
         log.verbose("Removing topBarView from superview")
-        topBarView.removeFromSuperview()
+        topBar.view.removeFromSuperview()
       }
     }
 
@@ -693,7 +693,7 @@ extension PlayerWindowController {
     possibleSubviews += [
       seekPreview.thumbnailPeekView,
       seekPreview.timeLabel,
-      topBarView
+      topBar.view
     ]
     if let customTitleBar {  // only for music mode
       possibleSubviews.append(customTitleBar.view)

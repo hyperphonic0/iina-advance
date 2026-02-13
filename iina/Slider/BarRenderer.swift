@@ -45,13 +45,12 @@ fileprivate class CurvedCornerCalibrator: CornerCalibrator {
       // At smaller sizes, the rounded effect is less noticeable, so increase to compensate
       curvature = 0.5
     } else {
-      if #available(macOS 26.0, *) {
-        // Curvature much increased in Tahoe
-        curvature = 1.75
-      } else {
-        // At larger sizes, too much rounding can hurt the usability of the slider as a measure of quantity.
-        curvature = 0.35
-      }
+      // At larger sizes, too much rounding can hurt the usability of the slider as a measure of quantity.
+      curvature = 0.35
+    }
+    if #available(macOS 26.0, *) {
+      // Curvature much increased in Tahoe
+      curvature *= 1.75
     }
   }
   func cornerRadius(for barHeight: CGFloat) -> CGFloat {

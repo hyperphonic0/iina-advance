@@ -46,7 +46,7 @@ import Foundation
  ├────────────────────────────────────────────────────────────────────────────────────────┤
  │ Top Bar (outside)                        ▲                                             │
  │                                          │`geo.outsideBars.top`                        │
- │                                          ▼  (`wc.topBarView`)                          │
+ │                                          ▼  (`wc.topBar.view`)                         │
  ├────────────────────────────┬────────────────────────────┬──────────────────────────────┤ ─ ◄--- `geo.insideBars.top == 0`
  │ Leading Sidebar (outside)  │   `viewportMargins.top`    │ Trailing Sidebar (outside)   │ ▲
  │                            ├─────┬────────────────┬─────┤                              │ │ `geo.viewportSize.height`

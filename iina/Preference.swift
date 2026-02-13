@@ -167,6 +167,8 @@ struct Preference {
     static let topBarPlacement = Key("topBarPlacement")
     static let bottomBarPlacement = Key("bottomBarPlacement")
 
+    static let topBarColorScheme = Key("topBarColorScheme")
+
     static let enableOSC = Key("enableOSC")
     /// Top, bottom, or floating
     static let oscPosition = Key("oscPosition")
@@ -857,7 +859,7 @@ struct Preference {
     case clearLiquidGlass
     case tintedLiquidGlass
 
-    static let defaultValue = OSCColorScheme.clearGradient
+    static let defaultValue = OSCColorScheme.tintedLiquidGlass
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1446,7 +1448,8 @@ struct Preference {
     .controlBarPositionHorizontal: Float(0.5),
     .controlBarPositionVertical: Float(0.1),
     .floatingControlBarWidth: 440.0,
-    .oscFloatingColorScheme: OSCColorScheme.clearLiquidGlass.rawValue,
+    .topBarColorScheme: OSCColorScheme.defaultValue.rawValue,
+    .oscFloatingColorScheme: OSCColorScheme.defaultValue.rawValue,
     .controlBarStickToCenter: true,
     .controlBarAutoHideTimeout: Float(2.5),
     .showCachedRangesInSlider: true,
