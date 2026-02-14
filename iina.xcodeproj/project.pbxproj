@@ -354,7 +354,7 @@
 		D192C7D82E8CF2BD00CC537A /* OptionalConstraint.swift in Sources */ = {isa = PBXBuildFile; fileRef = D192C7D72E8CF2B800CC537A /* OptionalConstraint.swift */; };
 		D19690CC2B56770F002B0458 /* MPVLogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19690CB2B56770F002B0458 /* MPVLogLevel.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */; };
-		D19CFD902E5885AE00746611 /* TopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CFD8F2E5885AB00746611 /* TopBarView.swift */; };
+		D19CFD902E5885AE00746611 /* TopBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CFD8F2E5885AB00746611 /* TopBar.swift */; };
 		D19CFD922E59077700746611 /* PWin_PanelConstraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CFD912E59076A00746611 /* PWin_PanelConstraints.swift */; };
 		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
 		D1A071892D644F4600884828 /* ResizableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A071882D644F3600884828 /* ResizableTextView.swift */; };
@@ -1885,7 +1885,7 @@
 		D192C7D72E8CF2B800CC537A /* OptionalConstraint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionalConstraint.swift; sourceTree = "<group>"; };
 		D19690CB2B56770F002B0458 /* MPVLogLevel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MPVLogLevel.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfFileCache.swift; sourceTree = "<group>"; };
-		D19CFD8F2E5885AB00746611 /* TopBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBarView.swift; sourceTree = "<group>"; };
+		D19CFD8F2E5885AB00746611 /* TopBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBar.swift; sourceTree = "<group>"; };
 		D19CFD912E59076A00746611 /* PWin_PanelConstraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_PanelConstraints.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
 		D1A071882D644F3600884828 /* ResizableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizableTextView.swift; sourceTree = "<group>"; };
@@ -2972,7 +2972,7 @@
 				D13912602F28990B00540624 /* Playlistt_ContextMenu.swift */,
 				8400D5CE1E1AB2FF006785F5 /* PlaylistViewController.xib */,
 				845FB0C61D39462E00C011E0 /* FloatingControlBar.swift */,
-				D19CFD8F2E5885AB00746611 /* TopBarView.swift */,
+				D19CFD8F2E5885AB00746611 /* TopBar.swift */,
 				D126E4412E59BF8F0099DEA9 /* BottomBarView.swift */,
 				D1BE7BD12D4B7E000085539F /* SingleRowBarOSCView.swift */,
 				D1BE7BCE2D4B7CD20085539F /* TwoRowBarOSCView.swift */,
@@ -3415,7 +3415,7 @@
 				8488D6E31E1183D300D5B952 /* PrefSubViewController.swift in Sources */,
 				846352581EEEE11A0043F0CC /* ThumbnailPeekView.swift in Sources */,
 				D160783B2D140DEE00105001 /* BarRendererUtil.swift in Sources */,
-				D19CFD902E5885AE00746611 /* TopBarView.swift in Sources */,
+				D19CFD902E5885AE00746611 /* TopBar.swift in Sources */,
 				84E745D61DFDD4FD00588DED /* KeyCodeHelper.swift in Sources */,
 				840D479B1DFEF649000D9A64 /* KeyRecordViewController.swift in Sources */,
 				D1AC43942DE1BADC00189782 /* VideoGeo_Sync.swift in Sources */,

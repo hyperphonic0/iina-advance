@@ -44,7 +44,7 @@ final class FloatingControlBarGlassEffectView: ClickThroughGlassEffectView, @Mai
   func cancelDrag() { controlBar.cancelDrag() }
 }
 
-/// Container & pseudo-controller for the "floating" OSC. The view itself (`view`), its subviews, state & logic
+/// Container & pseudo-controller for the "floating" OSC. Contains the view itself (`view`), its subviews, state & logic
 final class FloatingControlBar {
   static let barHeight: CGFloat = 70
   static let minBarWidth: CGFloat = 200

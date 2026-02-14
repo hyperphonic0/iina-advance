@@ -1,5 +1,5 @@
 //
-//  TopBarView.swift
+//  TopBar.swift
 //  iina
 //
 //  Created by Matt Svoboda on 8/22/25.
@@ -44,9 +44,9 @@ final class TopBarViewGlassEffectView: ClickThroughGlassEffectView {
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
-/// The bar at the very top of the window. May include title bar and/or OSC.
+/// Container & pseudo-controller for the "top" OSC. Contains the view itself (`view`), its subviews, state & logic.
 final class TopBar {
-  /// The top bar root view
+  /// The top bar root view. Needs to be rebuilt if the style changes, due each style inheriting from different classes.
   var view: NSView
 
   /// Reserves space for the title bar components. Can contain CustomTitleBarView *only* if using legacy
