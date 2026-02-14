@@ -26,19 +26,23 @@ class CustomTitleBarViewController: NSViewController {
   /// Center stack view: contains document icon + title text
   let titleIconAndTextStackView = NSStackView()
   fileprivate let documentIconButton: NSButton! = NSWindow.standardWindowButton(.documentIconButton, for: .titled)
-  fileprivate let titleText = ResizableTextView(lineBreakMode: .byTruncatingTail)
+  let titleText = ResizableTextView(lineBreakMode: .byTruncatingTail)
 
   // Trailing side contains trailing title bar accessories
   fileprivate let trailingStackView = NSStackView()
   let trailingSidebarToggleButton = SymButton()
   let onTopButton = SymButton()
 
-  init(_ mode: PlayerWindowMode) {
+  init(_ layout: LayoutState) {
     closeButton = NSWindow.standardWindowButton(.closeButton, for: .titled)
     miniaturizeButton = NSWindow.standardWindowButton(.miniaturizeButton, for: .titled)
-    zoomButton = mode == .musicMode ? nil : NSWindow.standardWindowButton(.zoomButton, for: .titled)
+    zoomButton = layout.mode == .musicMode ? nil : NSWindow.standardWindowButton(.zoomButton, for: .titled)
 
     super.init(nibName: nil, bundle: nil)
+    let topBarColorScheme = layout.topBarColorScheme
+    for btn in [leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton] {
+      btn.setColors(for: topBarColorScheme)
+    }
   }
   
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }

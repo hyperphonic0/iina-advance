@@ -700,11 +700,11 @@ final class StartupHandler {
 
     let keepWaitingAction: Callback = { [self] in
       log.debug("User chose button 1: keep waiting")
+      dismissTimeoutAlertPanel()
       guard state != .doneOpening else {
         log.debug("Looks like windows finished opening - no need to restart restore timer")
         return
       }
-      dismissTimeoutAlertPanel()
       restoreTimer.restart()
     }
 
@@ -897,7 +897,7 @@ final class StartupHandler {
     if isInteractiveLaunch {
       /// Make sure to do this *after* `state = .doneOpening`
       /// (note: this does nothing in recent versions of MacOS cuz it is a modal alert
-      dismissTimeoutAlertPanel()
+//      dismissTimeoutAlertPanel()
 
       initAppUI()
 

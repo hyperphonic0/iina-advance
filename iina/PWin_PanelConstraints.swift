@@ -622,7 +622,9 @@ extension PlayerWindowController {
 
     for button in [onTopButton, customTitleBar?.onTopButton].compactMap({$0}) {
       button.replaceSymbolImage(with: image, effect: nil)
-      button.setGlowForTitleBar(enabled: Preference.bool(for: .titleBarBtnsGlow) && isOnTop)
+      if Preference.bool(for: .titleBarBtnsGlow) {
+        button.setGlowForTitleBar(enabled:  isOnTop)
+      }
       fadeableViews.applyVisibility(onTopButtonVisibility, to: button)
     }
 

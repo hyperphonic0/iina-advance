@@ -67,6 +67,7 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
     if let id {
       self.idString = id
     }
+    self.wantsLayer = true
     configureSelf()
     self.image = image
     self.target = target
@@ -212,30 +213,23 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
     case .clearGradient:
       regularColor = .controlForClearBG
       highlightColor = .white
-      if shadow == nil {
-        addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
-                  xOffsetConstant: 0, yOffsetConstant: 0, color: .black)
-      }
+      addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
+                xOffsetConstant: 0,
+                yOffsetConstant: 0)
       updateHighlight(isInsideBounds: false)
     case .clearLiquidGlass:
       regularColor = .controlForClearBG
       highlightColor = .white
-      if shadow == nil {
-        addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
-                  xOffsetConstant: 0.4, yOffsetConstant: -0.4, color: .black)
-      }
+      addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
+                xOffsetConstant: Constants.seekPreviewTimeLabel_xOffsetConstant,
+                yOffsetConstant: -Constants.seekPreviewTimeLabel_xOffsetConstant)
       updateHighlight(isInsideBounds: false)
     default:
-      useDefaultColors()
+      regularColor = nil
+      highlightColor = .controlTextColor
+      shadow = nil
+      updateHighlight(isInsideBounds: false)
     }
-  }
-
-  /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
-  private func useDefaultColors() {
-    regularColor = nil
-    highlightColor = .controlTextColor
-    shadow = nil
-    updateHighlight(isInsideBounds: false)
   }
 
   // MARK: - Misc.

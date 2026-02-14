@@ -478,7 +478,7 @@ extension PlayerWindowController {
       if let customTitleBar {
         legacyTitleBar = customTitleBar
       } else {
-        legacyTitleBar = CustomTitleBarViewController(transition.outputLayout.mode)
+        legacyTitleBar = CustomTitleBarViewController(transition.outputLayout)
         legacyTitleBar.pwc = self
         customTitleBar = legacyTitleBar
 
@@ -707,61 +707,35 @@ extension PlayerWindowController {
       volumeSliderCell.knobHeight = sliderKnobHeight
       volumeSlider.needsDisplay = true
 
+      let topBarColorScheme = transition.outputLayout.topBarColorScheme
+      leadingSidebarToggleButton.setColors(for: topBarColorScheme)
+      trailingSidebarToggleButton.setColors(for: topBarColorScheme)
+      onTopButton.setColors(for: topBarColorScheme)
+      if let customTitleBar {
+        for btn in customTitleBar.symButtons {
+          btn.setColors(for: topBarColorScheme)
+        }
+        customTitleBar.titleText.setColors(topBarColorScheme)
+      }
+
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging ||
           (transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight) {
-        let hasClearBG = transition.outputLayout.oscBackgroundIsClear
         let oscColorScheme = transition.outputLayout.oscColorScheme
-        log.verbose("Updating OSC colors: hasClearBG=\(hasClearBG.yn) colorScheme=\(oscColorScheme.description)")
+        log.verbose("Updating OSC colors: hasClearBG=\(oscColorScheme.hasClearBG.yn) colorScheme=\(oscColorScheme.description)")
 
         playButton.setColors(for: oscColorScheme)
         leftArrowButton.setColors(for: oscColorScheme)
         rightArrowButton.setColors(for: oscColorScheme)
         muteButton.setColors(for: oscColorScheme)
+        leftTimeLabel.setColors(oscColorScheme)
+        rightTimeLabel.setColors(oscColorScheme)
+        oscTwoRowView.timeSlashLabel.setColors(oscColorScheme)
 
-        let textAlpha: CGFloat
-        let timeLabelTextColor: NSColor?
-        if hasClearBG {
-          let textShadowOffsetX: CGFloat
-          let textShadowOffsetY: CGFloat
-          if transition.outputLayout.oscColorScheme == .clearGradient {
-            textAlpha = 0.8
-            textShadowOffsetX = 0
-            textShadowOffsetY = 0
-          } else {
-            textAlpha = 1.0
-            textShadowOffsetX = 0.4
-            textShadowOffsetY = 0.4
-          }
-          timeLabelTextColor = .white
-
-          let blurRadiusConstant = Constants.oscClearBG_TextShadowBlurRadius_Constant
-          let blurRadiusMultiplier = Constants.oscClearBG_TextShadowBlurRadius_Multiplier
-          leftTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
-                                  xOffsetConstant: textShadowOffsetX, yOffsetConstant: textShadowOffsetY)
-          rightTimeLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
-                                   xOffsetConstant: textShadowOffsetX, yOffsetConstant: textShadowOffsetY)
-          oscTwoRowView.timeSlashLabel.addShadow(blurRadiusMultiplier: blurRadiusMultiplier, blurRadiusConstant: blurRadiusConstant,
-                                                 xOffsetConstant: textShadowOffsetX, yOffsetConstant: textShadowOffsetY)
-
+        if oscColorScheme.hasClearBG {
           oscKnobRenderer.mainKnobColor = NSColor.controlForClearBG
         } else {
-          // Default alpha for text labels is 0.5. They don't change their text color.
-          textAlpha = 0.5
-          timeLabelTextColor = nil
-
-          leftTimeLabel.shadow = nil
-          rightTimeLabel.shadow = nil
-          oscTwoRowView.timeSlashLabel.shadow = nil
-
           oscKnobRenderer.mainKnobColor = NSColor.mainSliderKnob
         }
-
-        leftTimeLabel.textColor = timeLabelTextColor
-        rightTimeLabel.textColor = timeLabelTextColor
-        oscTwoRowView.timeSlashLabel.textColor = timeLabelTextColor
-        leftTimeLabel.alphaValue = textAlpha
-        rightTimeLabel.alphaValue = textAlpha
-        oscTwoRowView.timeSlashLabel.alphaValue = textAlpha
 
         // Invalidate all cached knob images so they are rebuilt with new style
         oscKnobRenderer.invalidateCachedKnobs()
@@ -1206,15 +1180,15 @@ extension PlayerWindowController {
 
     // Leading sidebar toggle button
     for button in [leadingSidebarToggleButton, customTitleBar?.leadingSidebarToggleButton].compactMap({$0}) {
-      if layoutState.leadingSidebarToggleButton.isShowable {
-        button.setGlowForTitleBar(enabled: enableGlow && layoutState.leadingSidebar.isVisible)
+      if enableGlow, layoutState.leadingSidebarToggleButton.isShowable {
+        button.setGlowForTitleBar(enabled: layoutState.leadingSidebar.isVisible)
       }
       fadeableViews.applyVisibility(layoutState.leadingSidebarToggleButton, button)
     }
     // Trailing sidebar toggle button
     for button in [trailingSidebarToggleButton, customTitleBar?.trailingSidebarToggleButton].compactMap({$0}) {
-      if layoutState.trailingSidebarToggleButton.isShowable {
-        button.setGlowForTitleBar(enabled: enableGlow && layoutState.trailingSidebar.isVisible)
+      if enableGlow, layoutState.trailingSidebarToggleButton.isShowable {
+        button.setGlowForTitleBar(enabled: layoutState.trailingSidebar.isVisible)
       }
       fadeableViews.applyVisibility(layoutState.trailingSidebarToggleButton, button)
     }

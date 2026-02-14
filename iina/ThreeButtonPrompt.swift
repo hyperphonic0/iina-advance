@@ -8,6 +8,9 @@
 
 import SwiftUI
 
+fileprivate let spacing1x = 12.0
+fileprivate let spacing2x = spacing1x * 2
+
 fileprivate func makeThreeButtonPromptContent(_ key: String, msgArgs: [String], middleBtnArgs: [String],
                                           okAction: @escaping Callback, middleAction: @escaping Callback, cancelAction: @escaping Callback) -> ThreeButtonPromptContent {
 
@@ -107,8 +110,8 @@ fileprivate struct ThreeButtonPromptContent: View {
   let cancelAction: Callback
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 30) {
-      HStack(alignment: .top, spacing: 12) {
+    VStack(alignment: .leading, spacing: spacing2x) {
+      HStack(alignment: .top, spacing: spacing1x) {
         // Alert icon
         Group {
           if let nsImage = NSImage(named: NSImage.cautionName) {
@@ -129,63 +132,59 @@ fileprivate struct ThreeButtonPromptContent: View {
         }
         .frame(width: 44, height: 44, alignment: .top)
 
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: spacing2x) {
           Text(title)
             .font(.headline)
             .foregroundColor(.primary)
-            .frame(maxWidth: 360, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
           Text(message)
             .font(.body)
             .foregroundColor(.secondary)
-            .frame(maxWidth: 360, maxHeight: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
             .fixedSize(horizontal: false, vertical: true)
             .textSelection(.enabled)
+
+          HStack(alignment: .bottom, spacing: 8) {
+            Button(cancelTitle, role: .cancel) {
+              cancelAction()
+            }
+            .fixedSize()
+            .controlSize(.large)
+            .buttonStyle(.bordered)
+            .keyboardShortcut(.cancelAction)
+            .frame(maxWidth: .infinity)
+
+            Spacer().frame(maxWidth: .infinity)
+
+            Button(middleTitle, role: .destructive) {
+              middleAction()
+            }
+            .fixedSize()
+            .controlSize(.large)
+            .buttonStyle(.bordered)
+            .frame(maxWidth: .infinity)
+
+            Button(primaryTitle) {
+              primaryAction()
+            }
+            .fixedSize()
+            .controlSize(.large)
+            .buttonStyle(.borderedProminent)
+            .keyboardShortcut(.defaultAction)
+            .frame(maxWidth: .infinity)
+          }
+          .padding(.all, 0)
+          .frame(maxWidth: .infinity)
         }
-        .padding(.all, 0)
-      }
-      .padding(.all, 0)
-
-      HStack(alignment: .bottom, spacing: 0) {
-        Button(cancelTitle, role: .cancel) {
-          cancelAction()
-        }
-        .fixedSize()
-        .controlSize(.large)
-        .buttonStyle(.bordered)
-        .keyboardShortcut(.cancelAction)
-        .frame(maxWidth: .infinity)
-
-        Spacer()
-
-        Button(middleTitle, role: .destructive) {
-          middleAction()
-        }
-        .fixedSize()
-        .controlSize(.large)
-        .buttonStyle(.bordered)
-        .frame(maxWidth: .infinity)
-
-        Spacer()
-
-        Button(primaryTitle) {
-          primaryAction()
-        }
-        .fixedSize()
-        .controlSize(.large)
-        .buttonStyle(.borderedProminent)
-        .keyboardShortcut(.defaultAction)
-        .frame(maxWidth: .infinity)
       }
       .padding(.all, 0)
     }
-    // FIXME: figure out what is causing 30pt padding on bottom
-    .padding(.top, 32)
-    .padding(.bottom, 0)
+    .padding(.vertical, 0)
     .padding(.horizontal, 20)
-    .frame(minWidth: 420, maxWidth: 420)
+    .frame(minWidth: 360, maxWidth: 480, maxHeight: .infinity, alignment: .center)
     .ignoresSafeArea() // Removes safe area for title bar
   }
 }

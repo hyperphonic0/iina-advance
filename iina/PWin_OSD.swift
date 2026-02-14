@@ -577,6 +577,7 @@ class AdditionalInfoSubviews {
     batteryView.translatesAutoresizingMaskIntoConstraints = false
     batteryView.heightAnchor.constraint(equalToConstant: 30).isActive = true
     batteryView.widthAnchor.constraint(equalToConstant: 56).isActive = true
+    // FIXME: set this per color style
     batteryView.addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
               xOffsetConstant: textShadowOffsetX, yOffsetConstant: -textShadowOffsetY, color: .black)
 

@@ -441,17 +441,8 @@ struct LayoutState {
   }
 
   /// Has OSC with clear background.
-  ///
-  /// Equivalent to `effectiveOSCColorScheme == .clearGradient`.
   var oscBackgroundIsClear: Bool {
-    guard enableOSC else { return false }
-    switch oscColorScheme {
-    case .clearGradient,
-        .clearLiquidGlass:
-      return true
-    default:
-      return false
-    }
+    oscColorScheme.hasClearBG
   }
 
   var canShowSidebars: Bool {

@@ -1532,8 +1532,53 @@ extension NSTextField {
     self.attributedStringValue = attrString
   }
 
+  /// Keep this identical to `NSText.setColors`
+  func setColors(_ colorScheme: Preference.PanelColorScheme) {
+    switch colorScheme {
+    case .clearGradient:
+      alphaValue = 0.8
+      textColor = .white
+      addShadow(blurRadiusMultiplier: Constants.oscClearBG_TextShadowBlurRadius_Multiplier,
+                blurRadiusConstant: Constants.oscClearBG_TextShadowBlurRadius_Constant,
+                xOffsetConstant: 0, yOffsetConstant: 0)
+    case .clearLiquidGlass:
+      alphaValue = 1.0
+      textColor = .white
+      addShadow(blurRadiusMultiplier: Constants.oscClearBG_TextShadowBlurRadius_Multiplier,
+                blurRadiusConstant: Constants.oscClearBG_TextShadowBlurRadius_Constant,
+                xOffsetConstant: 0.4, yOffsetConstant: 0.4)
+    default:
+      // Default alpha for text labels is 0.5. They don't change their text color.
+      alphaValue = 0.5
+      textColor = nil
+      shadow = nil
+    }
+  }
 }
 
+extension NSText {
+  func setColors(_ colorScheme: Preference.PanelColorScheme) {
+    switch colorScheme {
+    case .clearGradient:
+      alphaValue = 0.8
+      textColor = .white
+      addShadow(blurRadiusMultiplier: Constants.oscClearBG_TextShadowBlurRadius_Multiplier,
+                blurRadiusConstant: Constants.oscClearBG_TextShadowBlurRadius_Constant,
+                xOffsetConstant: 0, yOffsetConstant: 0)
+    case .clearLiquidGlass:
+      alphaValue = 1.0
+      textColor = .white
+      addShadow(blurRadiusMultiplier: Constants.oscClearBG_TextShadowBlurRadius_Multiplier,
+                blurRadiusConstant: Constants.oscClearBG_TextShadowBlurRadius_Constant,
+                xOffsetConstant: 0.4, yOffsetConstant: 0.4)
+    default:
+      // Default alpha for text labels is 0.5. They don't change their text color.
+      alphaValue = 0.5
+      textColor = nil
+      shadow = nil
+    }
+  }
+}
 
 extension NSSlider {
 
