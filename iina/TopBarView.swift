@@ -38,6 +38,8 @@ final class TopBarViewGlassEffectView: ClickThroughGlassEffectView {
   init(style desiredStyle: Style) {
     super.init(frame: .zero)
     setStyle(desiredStyle)
+    // Is rounded by default. Make sharp in case of custom window
+    cornerRadius = 0
   }
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }

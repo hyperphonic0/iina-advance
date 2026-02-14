@@ -24,6 +24,8 @@ final class BottomBarGlassEffectView: ClickThroughGlassEffectView {
   init(_ desiredStyle: Style) {
     super.init(frame: .zero)
     setStyle(desiredStyle)
+    // Is rounded by default. Make sharp in case of custom window
+    cornerRadius = 0
   }
 
   @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }

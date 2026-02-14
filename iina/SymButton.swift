@@ -221,8 +221,8 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
       regularColor = .controlForClearBG
       highlightColor = .white
       addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
-                xOffsetConstant: Constants.seekPreviewTimeLabel_xOffsetConstant,
-                yOffsetConstant: -Constants.seekPreviewTimeLabel_xOffsetConstant)
+                xOffsetConstant: Constants.clarLiquidGlass_TextShadowOffsetX,
+                yOffsetConstant: -Constants.clarLiquidGlass_TextShadowOffsetY)
       updateHighlight(isInsideBounds: false)
     default:
       regularColor = nil

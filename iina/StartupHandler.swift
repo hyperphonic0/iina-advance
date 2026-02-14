@@ -766,7 +766,7 @@ final class StartupHandler {
     /// Dismiss the prompt (if any). It seems we can't just call `close` on its `window` object, because the
     /// responder chain is left unusable. Instead, click its default button after setting `state`.
     Logger.log.debug("Dismissing Restore Timeout alert panel")
-    restoreTimeoutPromptWindow.orderOut(nil)
+    restoreTimeoutPromptWindow.close()
 
     /// This may restart the timer if not in the correct state, so account for that.
   }
@@ -816,7 +816,6 @@ final class StartupHandler {
           }
           return "Restarting restore timer: only done restoring \(doneCount) / \(totalCount)\(openStr)"
         }())
-        dismissTimeoutAlertPanel()
         restoreTimer.restart()
         return
       }
@@ -843,6 +842,7 @@ final class StartupHandler {
         log.verbose("All \(totalCount) restored" + (newWindCount > 0 ? " & \(newWindCount) new windows ready" : "") + ". Showing all")
       }
       restoreTimer.cancel()
+      dismissTimeoutAlertPanel()
 
       var prevWindowNumber: Int? = nil
       for winToRestore in windowsToRestore.values {
