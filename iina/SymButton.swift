@@ -206,6 +206,38 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
     }
   }
 
+  /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
+  func setColors(for colorScheme: Preference.PanelColorScheme) {
+    switch colorScheme {
+    case .clearGradient:
+      regularColor = .controlForClearBG
+      highlightColor = .white
+      if shadow == nil {
+        addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
+                  xOffsetConstant: 0, yOffsetConstant: 0, color: .black)
+      }
+      updateHighlight(isInsideBounds: false)
+    case .clearLiquidGlass:
+      regularColor = .controlForClearBG
+      highlightColor = .white
+      if shadow == nil {
+        addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,
+                  xOffsetConstant: 0.4, yOffsetConstant: -0.4, color: .black)
+      }
+      updateHighlight(isInsideBounds: false)
+    default:
+      useDefaultColors()
+    }
+  }
+
+  /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
+  private func useDefaultColors() {
+    regularColor = nil
+    highlightColor = .controlTextColor
+    shadow = nil
+    updateHighlight(isInsideBounds: false)
+  }
+
   // MARK: - Misc.
 
   private func isInsideBounds(_ event: NSEvent) -> Bool {

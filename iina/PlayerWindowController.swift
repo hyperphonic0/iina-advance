@@ -541,7 +541,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Container for volume slider & mute button
   var fragVolumeView = ClickThroughView()
-  let muteButton = OSCSymButton()
+  let muteButton = SymButton()
   let volumeSlider = ScrollableSlider(customCell: VolumeSliderCell())
   var volumeSliderCell: VolumeSliderCell { volumeSlider.cell as! VolumeSliderCell }
 
@@ -549,9 +549,9 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   let fragPlaybackBtnsView = ClickThroughView()
   /// Speed indicator label, when playing at speeds other than 1x
   let speedLabel = NSTextField()
-  let playButton = OSCSymButton()
-  let leftArrowButton = OSCSymButton()
-  let rightArrowButton = OSCSymButton()
+  let playButton = SymButton()
+  let leftArrowButton = SymButton()
+  let rightArrowButton = SymButton()
 
   /// Toolbar Buttons container
   let fragToolbarView = ClickThroughStackView()

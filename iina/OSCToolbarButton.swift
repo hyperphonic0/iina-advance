@@ -9,7 +9,7 @@
 import Foundation
 
 // Not elegant. Just a place to stick common code so that it won't be duplicated
-class OSCToolbarButton: OSCSymButton {
+class OSCToolbarButton: SymButton {
   var iconSize: CGFloat = 0
   var iconSpacing: CGFloat = 0
   var widthConstraint: NSLayoutConstraint? = nil
