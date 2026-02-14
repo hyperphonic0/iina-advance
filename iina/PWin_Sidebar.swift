@@ -528,7 +528,13 @@ extension PlayerWindowController {
                                isWindowWidthChanging: Bool,
                                addTabGroupView shouldAddTabGroup: Bool,
                                _ log: any Logger.Subsystem) {
-    for subview in leadingSidebarView.subviews {
+    let contentView: NSView
+    if #available(macOS 26.0, *), let glassView = leadingSidebarView as? NSGlassEffectView {
+      contentView = glassView.contentView!
+    } else {
+      contentView = leadingSidebarView
+    }
+    for subview in contentView.subviews {
       // remove clipView without keeping a reference to it
       if subview != leadingSidebarTrailingBorder {
         subview.removeFromSuperview()
@@ -543,7 +549,7 @@ extension PlayerWindowController {
     let viewportLeadingClipTrailing: NSLayoutConstraint?
     switch leadingSidebar.placement {
     case .insideViewport:
-      tabContainerView = leadingSidebarView
+      tabContainerView = contentView
       boundaryView = window!.contentView!
       viewportLeadingClipTrailing = nil
     case .outsideViewport:
@@ -553,7 +559,7 @@ extension PlayerWindowController {
       // view for this purpose:
       let clipView = NSView()
       clipView.idString = "LeadingSidebarClipView"
-      leadingSidebarView.addSubview(clipView, positioned: .below, relativeTo: leadingSidebarTrailingBorder)
+      contentView.addSubview(clipView, positioned: .below, relativeTo: leadingSidebarTrailingBorder)
       clipView.translatesAutoresizingMaskIntoConstraints = false
       clipView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
       tabContainerView = clipView
@@ -653,7 +659,13 @@ extension PlayerWindowController {
                                isWindowWidthChanging: Bool,
                                addTabGroupView shouldAddTabGroup: Bool,
                                _ log: any Logger.Subsystem) {
-    for subview in trailingSidebarView.subviews {
+    let contentView: NSView
+    if #available(macOS 26.0, *), let glassView = trailingSidebarView as? NSGlassEffectView {
+      contentView = glassView.contentView!
+    } else {
+      contentView = trailingSidebarView
+    }
+    for subview in contentView.subviews {
       // remove clipView without keeping a reference to it
       if subview != trailingSidebarLeadingBorder {
         subview.removeFromSuperview()
@@ -668,13 +680,13 @@ extension PlayerWindowController {
     let boundaryView: NSView
     switch trailingSidebar.placement {
     case .insideViewport:
-      tabContainerView = trailingSidebarView
+      tabContainerView = contentView
       boundaryView = window!.contentView!
       viewportTrailingClipLeading = nil
     case .outsideViewport:
       let clipView = NSView()
       clipView.identifier = .init("TrailingSidebarClipView")
-      trailingSidebarView.addSubview(clipView, positioned: .below, relativeTo: trailingSidebarLeadingBorder)
+      contentView.addSubview(clipView, positioned: .below, relativeTo: trailingSidebarLeadingBorder)
       clipView.translatesAutoresizingMaskIntoConstraints = false
       clipView.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
       tabContainerView = clipView
@@ -917,17 +929,21 @@ extension PlayerWindowController {
   func updateSidebarBlendingMode(_ sidebarID: Preference.SidebarLocation, layout: LayoutState) {
     switch sidebarID {
     case .leadingSidebar:
-      // Full screen + "behindWindow" doesn't blend properly and looks ugly
-      if layout.leadingSidebarPlacement == .insideViewport || layout.isFullScreen {
-        leadingSidebarView.blendingMode = .withinWindow
-      } else {
-        leadingSidebarView.blendingMode = .behindWindow
+      if let leadingSidebarVE = leadingSidebarView as? NSVisualEffectView {
+        // Full screen + "behindWindow" doesn't blend properly and looks ugly
+        if layout.leadingSidebarPlacement == .insideViewport || layout.isFullScreen{
+          leadingSidebarVE.blendingMode = .withinWindow
+        } else {
+          leadingSidebarVE.blendingMode = .behindWindow
+        }
       }
     case .trailingSidebar:
-      if layout.trailingSidebarPlacement == .insideViewport || layout.isFullScreen {
-        trailingSidebarView.blendingMode = .withinWindow
-      } else {
-        trailingSidebarView.blendingMode = .behindWindow
+      if let trailingSidebarVE = leadingSidebarView as? NSVisualEffectView {
+        if layout.trailingSidebarPlacement == .insideViewport || layout.isFullScreen {
+          trailingSidebarVE.blendingMode = .withinWindow
+        } else {
+          trailingSidebarVE.blendingMode = .behindWindow
+        }
       }
     }
   }

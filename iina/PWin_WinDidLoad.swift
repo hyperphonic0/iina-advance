@@ -309,37 +309,61 @@ extension PlayerWindowController {
 
     // - Leading sidebar
 
+    if #available(macOS 26.0, *) {
+      let glassView = ClickThroughGlassEffectView()
+      glassView.cornerRadius = 0
+      let contentView = NSView()
+      glassView.contentView = contentView
+      leadingSidebarView = glassView
+      // No top border in this case; it already provides a border
+    } else {
+      let veView = ClickThroughVisualEffectView()
+      veView.state = .active
+      leadingSidebarView = veView
+
+      // Leading sidebar border
+      leadingSidebarView.addSubview(leadingSidebarTrailingBorder)
+      leadingSidebarTrailingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
+      // Avoid constraint error by setting priority = .defaultHigh (see similar notes for bottomBarTopBorder_HeightConstraint, et al.)
+      let leadingSidebarTrailingBorder_WidthConstraint = leadingSidebarTrailingBorder.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: -0.5)
+      leadingSidebarTrailingBorder_WidthConstraint.identifier = .init("LeadingSidebarTrailingBorder-WidthConstraint")
+      leadingSidebarTrailingBorder_WidthConstraint.priority = .defaultHigh
+      leadingSidebarTrailingBorder_WidthConstraint.isActive = true
+    }
+
     leadingSidebarView.idString = "LeadingSidebarView"
-    leadingSidebarView.state = .active
-    addShadow(to: leadingSidebarView)
+    addShadow(toSidebar: leadingSidebarView)
     leadingSidebarView.translatesAutoresizingMaskIntoConstraints = false
     leadingSidebarView.autoresizesSubviews = false
 
-    // Leading sidebar border
-    leadingSidebarView.addSubview(leadingSidebarTrailingBorder)
-    leadingSidebarTrailingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, trailing: 0)
-    // Avoid constraint error by setting priority = .defaultHigh (see similar notes for bottomBarTopBorder_HeightConstraint, et al.)
-    let leadingSidebarTrailingBorder_WidthConstraint = leadingSidebarTrailingBorder.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: -0.5)
-    leadingSidebarTrailingBorder_WidthConstraint.identifier = .init("LeadingSidebarTrailingBorder-WidthConstraint")
-    leadingSidebarTrailingBorder_WidthConstraint.priority = .defaultHigh
-    leadingSidebarTrailingBorder_WidthConstraint.isActive = true
-
     // - Trailing sidebar
 
+    if #available(macOS 26.0, *) {
+      let glassView = ClickThroughGlassEffectView()
+      glassView.cornerRadius = 0
+      let contentView = NSView()
+      glassView.contentView = contentView
+      trailingSidebarView = glassView
+      // No top border in this case; it already provides a border
+    } else {
+      let veView = ClickThroughVisualEffectView()
+      veView.state = .active
+      trailingSidebarView = veView
+
+      // Trailing sidebar border
+      trailingSidebarView.addSubview(trailingSidebarLeadingBorder)
+      trailingSidebarLeadingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+      // Avoid constraint error by setting priority = .defaultHigh (see similar notes for bottomBarTopBorder_HeightConstraint, et al.)
+      let trailingSidebarLeadingBorder_WidthConstraint = trailingSidebarLeadingBorder.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0.5)
+      trailingSidebarLeadingBorder_WidthConstraint.identifier = .init("TrailingSidebarLeadingBorder-WidthConstraint")
+      trailingSidebarLeadingBorder_WidthConstraint.priority = .defaultHigh
+      trailingSidebarLeadingBorder_WidthConstraint.isActive = true
+    }
+
     trailingSidebarView.idString = "TrailingSidebarView"
-    trailingSidebarView.state = .active
-    addShadow(to: trailingSidebarView)
+    addShadow(toSidebar: trailingSidebarView)
     trailingSidebarView.translatesAutoresizingMaskIntoConstraints = false
     trailingSidebarView.autoresizesSubviews = false
-
-    // Trailing sidebar border
-    trailingSidebarView.addSubview(trailingSidebarLeadingBorder)
-    trailingSidebarLeadingBorder.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
-    // Avoid constraint error by setting priority = .defaultHigh (see similar notes for bottomBarTopBorder_HeightConstraint, et al.)
-    let trailingSidebarLeadingBorder_WidthConstraint = trailingSidebarLeadingBorder.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0.5)
-    trailingSidebarLeadingBorder_WidthConstraint.identifier = .init("TrailingSidebarLeadingBorder-WidthConstraint")
-    trailingSidebarLeadingBorder_WidthConstraint.priority = .defaultHigh
-    trailingSidebarLeadingBorder_WidthConstraint.isActive = true
   }
 
   private func initPluginOverlayViewContainer() {
@@ -347,10 +371,10 @@ extension PlayerWindowController {
     viewportView.addSubviewAndConstraints(pluginOverlayViewContainer, top: 0, bottom: 0, leading: 0, trailing: 0)
   }
 
-  private func addShadow(to view: NSView) {
-    view.wantsLayer = true
-    let layer = view.layer!
-    layer.shadowColor = .black
+  private func addShadow(toSidebar sidebarView: NSView) {
+    sidebarView.wantsLayer = true
+    let layer = sidebarView.layer!
+    layer.shadowColor = Constants.defaultShadowColor.cgColor
     layer.shadowOffset = .zero
     layer.shadowOpacity = 1
     layer.shadowRadius = 12

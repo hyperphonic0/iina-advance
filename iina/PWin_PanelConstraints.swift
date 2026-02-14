@@ -586,19 +586,19 @@ extension PlayerWindowController {
     if transition.isOpeningAnySidebar {
       log.verbose("Sidebars will be open: LeadingSidebar=\(outputLayout.leadingSidebar.isVisible.yn) TrailingSidebar=\(outputLayout.trailingSidebar.isVisible.yn)")
 
-      if outputLayout.leadingSidebar.isVisible {
+      if outputLayout.leadingSidebar.isVisible, let leadingSidebarVE = leadingSidebarView as? NSVisualEffectView {
         if outputLayout.leadingSidebarPlacement == .insideViewport {
-          leadingSidebarView.material = .menu
+          leadingSidebarVE.material = .menu
         } else {
-          leadingSidebarView.material = .toolTip
+          leadingSidebarVE.material = .toolTip
         }
       }
 
-      if outputLayout.trailingSidebar.isVisible {
+      if outputLayout.trailingSidebar.isVisible, let trailingSidebarVE = trailingSidebarView as? NSVisualEffectView {
         if outputLayout.trailingSidebarPlacement == .insideViewport {
-          trailingSidebarView.material = .menu
+          trailingSidebarVE.material = .menu
         } else {
-          trailingSidebarView.material = .toolTip
+          trailingSidebarVE.material = .toolTip
         }
       }
     }

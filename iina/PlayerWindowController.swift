@@ -518,11 +518,11 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Top border of `bottomBarView`.
   let bottomBarTopBorder = BorderLineView(id: "BottomBar-TopBorder", fillColor: .titleBarBorder)
 
-  let leadingSidebarView = ClickThroughVisualEffectView()
+  var leadingSidebarView: NSView = ClickThroughVisualEffectView()
   /// Shown if leading sidebar is "outside"
   let leadingSidebarTrailingBorder = BorderLineView(id: "LeadingSidebar-TrailingBorder", fillColor: .quaternaryLabelColor)
 
-  let trailingSidebarView = ClickThroughVisualEffectView()
+  var trailingSidebarView: NSView = ClickThroughVisualEffectView()
   /// Shown if trailing sidebar is "outside"
   let trailingSidebarLeadingBorder = BorderLineView(id: "TrailingSidebar-LeadingBorder", fillColor: .quaternaryLabelColor)
 

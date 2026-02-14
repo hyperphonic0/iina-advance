@@ -52,7 +52,7 @@ class OptionalConstraint {
     if let constraint, isActive,
        requiredFirstAnchor == nil || (constraint.firstAnchor == requiredFirstAnchor),
        requiredSecondAnchor == nil || (constraint.secondAnchor == requiredSecondAnchor) {
-      log?.verbose("Updating constraint \(identifier.quoted): pri=\(priorityInt) const=\(Int(constantToSet))\(requiredFirstAnchor == nil ? "" : " 1st=\(requiredFirstAnchor!.description)")\(requiredSecondAnchor == nil ? "" : " 2nd==\(requiredSecondAnchor!.description)")")
+      log?.verbose("Updating constraint \(identifier.quoted): pri=\(priorityInt) const=\(Int(constantToSet))\(requiredFirstAnchor == nil ? "" : " 1st=\(requiredFirstAnchor!.name.description)")\(requiredSecondAnchor == nil ? "" : " 2nd==\(requiredSecondAnchor!.name.description)")")
       constraint.priorityInt = priorityInt
       constraint.animateToConstant(constantToSet)
     } else {

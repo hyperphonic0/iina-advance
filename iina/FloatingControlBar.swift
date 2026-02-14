@@ -88,11 +88,11 @@ final class FloatingControlBar {
         return
       } else {
         let osdGlassView = FloatingControlBarGlassEffectView(self, style: style)
-        // MacOS Tahoe's style favors rounder corners. Try to fit in
         let contentView = NSView()
         osdGlassView.contentView = contentView
         contentView.subviews = subviews
         view = osdGlassView
+        // MacOS Tahoe's style favors rounder corners. Try to fit in
         view.roundCorners(withRadius: Constants.liquidGlassCornerRadius)
       }
     } else {

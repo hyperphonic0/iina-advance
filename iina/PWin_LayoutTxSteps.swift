@@ -198,8 +198,8 @@ extension PlayerWindowController {
       if let bottomBarView = bottomBarView as? NSVisualEffectView {
         bottomBarView.blendingMode = .withinWindow
       }
-      leadingSidebarView.blendingMode = .withinWindow
-      trailingSidebarView.blendingMode = .withinWindow
+      (leadingSidebarView as? NSVisualEffectView)?.blendingMode = .withinWindow
+      (trailingSidebarView as? NSVisualEffectView)?.blendingMode = .withinWindow
     }
 
     if transition.isTogglingMusicMode || transition.isTogglingInteractiveMode {
