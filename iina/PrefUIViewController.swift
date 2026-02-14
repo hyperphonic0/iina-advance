@@ -631,7 +631,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   @IBAction func osdColorSchemeAction(_ sender: NSPopUpButton) {
     let tag = sender.selectedTag()
-    guard let osdColorScheme = Preference.OSCColorScheme(rawValue: tag) else { return }
+    guard let osdColorScheme = Preference.PanelColorScheme(rawValue: tag) else { return }
     Logger.log.verbose("User changed osdColorScheme to: \(osdColorScheme.description)")
     Preference.set(osdColorScheme.rawValue, for: .osdColorScheme)
   }

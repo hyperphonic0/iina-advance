@@ -145,7 +145,7 @@ final class OSDState {
 
   fileprivate static func buildOSDView(subviews: [NSView]) -> NSView {
     let osdView: NSView
-    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .osdColorScheme)
+    let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .osdColorScheme)
     if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
       let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
       let osdGlassView = OSDGlassEffectView(style: style)
@@ -178,7 +178,7 @@ final class OSDState {
 
   fileprivate static func buildAdditionalInfoView(_ additionalInfoSubviews: AdditionalInfoSubviews) -> NSView {
     let aiView: NSView
-    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .osdColorScheme)
+    let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .osdColorScheme)
     if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
       let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
       let glassView = AdditionalInfoGlassView(style: style)
@@ -209,7 +209,7 @@ final class OSDState {
   @MainActor
   func rebuildAdditionalInfoView() {
     guard Preference.bool(for: .displayTimeAndBatteryInFullScreen) else { return }
-    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .osdColorScheme)
+    let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .osdColorScheme)
 
     let needsRebuild: Bool
     if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
@@ -235,7 +235,7 @@ final class OSDState {
   @MainActor
   func rebuildOSDView() {
     guard Preference.bool(for: .enableOSD) else { return }
-    let colorScheme: Preference.OSCColorScheme = Preference.enum(for: .osdColorScheme)
+    let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .osdColorScheme)
 
     let needsRebuild: Bool
     if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
@@ -431,7 +431,7 @@ final class OSDState {
   }
 
   @MainActor
-  func updateColors(windowAppearance: NSAppearance, osdColorScheme: Preference.OSCColorScheme) {
+  func updateColors(windowAppearance: NSAppearance, osdColorScheme: Preference.PanelColorScheme) {
     let osdTextSize = textSizeLast
     guard osdTextSize > 0 else { return }
 

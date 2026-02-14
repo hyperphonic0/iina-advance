@@ -708,12 +708,12 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     osd.updateColors(windowAppearance: windowAppearance, osdColorScheme: Preference.enum(for: .osdColorScheme))
     oscBarRenderer = BarRenderer(windowAppearance: windowAppearance,
-                                 colorScheme: layoutState.effectiveOSCColorScheme,
+                                 colorScheme: layoutState.oscColorScheme,
                                  sliderBarHeight_Normal: layoutState.controlBarGeo.sliderBarHeightNormal)
     oscKnobRenderer.invalidateCachedKnobs()
 
     // TODO: clean up this nasty code
-    let oscAppearance = layoutState.effectiveOSCColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : windowAppearance
+    let oscAppearance = layoutState.oscColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : windowAppearance
     oscAppearance.applyAppearanceFor {
       playSlider.abLoopA.updateKnobImage(to: .loopKnob)
       playSlider.abLoopB.updateKnobImage(to: .loopKnob)

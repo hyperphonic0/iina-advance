@@ -851,7 +851,7 @@ struct Preference {
     }
   }
 
-  enum OSCColorScheme: Int, InitializingFromKey, CustomStringConvertible {
+  enum PanelColorScheme: Int, InitializingFromKey, CustomStringConvertible {
     /// Use Apple's `NSVisualEffectView`
     case visualEffectView = 1
     /// Use clear background with slight alpha gradient
@@ -859,7 +859,7 @@ struct Preference {
     case clearLiquidGlass
     case tintedLiquidGlass
 
-    static let defaultValue = OSCColorScheme.tintedLiquidGlass
+    static let defaultValue = PanelColorScheme.tintedLiquidGlass
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -1448,8 +1448,8 @@ struct Preference {
     .controlBarPositionHorizontal: Float(0.5),
     .controlBarPositionVertical: Float(0.1),
     .floatingControlBarWidth: 440.0,
-    .topBarColorScheme: OSCColorScheme.defaultValue.rawValue,
-    .oscFloatingColorScheme: OSCColorScheme.defaultValue.rawValue,
+    .topBarColorScheme: PanelColorScheme.defaultValue.rawValue,
+    .oscFloatingColorScheme: PanelColorScheme.defaultValue.rawValue,
     .controlBarStickToCenter: true,
     .controlBarAutoHideTimeout: Float(2.5),
     .showCachedRangesInSlider: true,
@@ -1475,7 +1475,7 @@ struct Preference {
     .oscBarToolIconSize: 33,
     .oscBarToolIconSpacing: 7,
     .oscPosition: OSCPosition.defaultValue.rawValue,
-    .oscColorScheme: OSCColorScheme.defaultValue.rawValue,
+    .oscColorScheme: PanelColorScheme.defaultValue.rawValue,
     .oscForceSingleRow: false,
     .oscTimeLabelsAlwaysWrapSlider: false,
     .hideFadeableViewsWhenOutsideWindow: true,
@@ -1503,7 +1503,7 @@ struct Preference {
     .disableOSDVideoZoomMsg: false,
     .osdAutoHideTimeout: Float(1),
     .osdTextSize: Float(28),
-    .osdColorScheme: OSCColorScheme.clearLiquidGlass.rawValue,
+    .osdColorScheme: PanelColorScheme.clearLiquidGlass.rawValue,
     .softVolume: 100,
     .arrowButtonAction: ArrowButtonAction.defaultValue.rawValue,
     .resetSpeedWhenPaused: false,

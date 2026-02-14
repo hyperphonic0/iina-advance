@@ -61,12 +61,12 @@ final class TopBar {
   var titleBarHeightConstraint: NSLayoutConstraint!
 
   init() {
-    let topBarColorScheme: Preference.OSCColorScheme = Preference.enum(for: .topBarColorScheme)
+    let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
     view = TopBar.buildView(topBarColorScheme)
     configureView()
   }
 
-  static func buildView(_ colorScheme: Preference.OSCColorScheme) -> NSView {
+  static func buildView(_ colorScheme: Preference.PanelColorScheme) -> NSView {
     switch colorScheme {
     case .clearLiquidGlass, .tintedLiquidGlass:
       if #available(macOS 26.0, *) {
@@ -84,7 +84,7 @@ final class TopBar {
   }
 
   /// Returns `true` if view needed to be rebuilt
-  func rebuildViewIfNeeded(_ colorScheme: Preference.OSCColorScheme) -> Bool {
+  func rebuildViewIfNeeded(_ colorScheme: Preference.PanelColorScheme) -> Bool {
     guard #available(macOS 26.0, *) else { return false }
     switch colorScheme {
     case .clearLiquidGlass, .tintedLiquidGlass:
@@ -107,7 +107,7 @@ final class TopBar {
     return true
   }
 
-  func rebuildView(_ colorScheme: Preference.OSCColorScheme) {
+  func rebuildView(_ colorScheme: Preference.PanelColorScheme) {
     view = TopBar.buildView(colorScheme)
     configureView()
   }

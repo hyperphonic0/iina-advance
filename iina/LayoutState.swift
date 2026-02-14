@@ -43,8 +43,13 @@ struct LayoutState {
   let enableOSC: Bool
 
   let oscPosition: Preference.OSCPosition
-  let topBarColorScheme: Preference.OSCColorScheme
-  let oscColorScheme: Preference.OSCColorScheme
+  /// Color scheme of whatever panel the OSC is configured to be in (top, bottom, or floating).
+  /// If OSC is `top`, this should be identical to `topBarColorScheme`.
+  /// If configured for no OSC, this field is meaningless.
+  /// See `effectiveOSCColorSchemeFromPrefs`.
+  let oscColorScheme: Preference.PanelColorScheme
+  /// Color scheme of the top bar.
+  let topBarColorScheme: Preference.PanelColorScheme
 
   let controlBarGeo: ControlBarGeometry
 
@@ -67,8 +72,8 @@ struct LayoutState {
        isInPiP: Bool, isLegacyStyle: Bool,
        topBarPlacement: Preference.PanelPlacement, bottomBarPlacement: Preference.PanelPlacement,
        enableOSC: Bool, oscPosition: Preference.OSCPosition,
-       oscColorScheme: Preference.OSCColorScheme,
-       topBarColorScheme: Preference.OSCColorScheme,
+       oscColorScheme: Preference.PanelColorScheme,
+       topBarColorScheme: Preference.PanelColorScheme,
        controlBarGeo givenControlBarGeo: ControlBarGeometry? = nil,
        interactiveMode: InteractiveMode?,
        moreSidebarState: Sidebar.SidebarMiscState,
@@ -144,8 +149,8 @@ struct LayoutState {
              bottomBarPlacement: Preference.PanelPlacement? = nil,
              enableOSC: Bool? = nil,
              oscPosition: Preference.OSCPosition? = nil,
-             oscColorScheme: Preference.OSCColorScheme? = nil,
-             topBarColorScheme: Preference.OSCColorScheme? = nil,
+             oscColorScheme: Preference.PanelColorScheme? = nil,
+             topBarColorScheme: Preference.PanelColorScheme? = nil,
              controlBarGeo: ControlBarGeometry? = nil,
              hasTopPaddingForCameraHousing: Bool? = nil,
              interactiveMode: InteractiveMode? = nil,
@@ -238,7 +243,7 @@ struct LayoutState {
                                           : Preference.bool(for: .useLegacyWindowedMode))
     let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
     let oscColorScheme = effectiveOSCColorSchemeFromPrefs
-    let topBarColorScheme: Preference.OSCColorScheme = Preference.enum(for: .topBarColorScheme)
+    let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
 
     return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
                        mode: mode,
@@ -254,7 +259,7 @@ struct LayoutState {
                        moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs())
   }
 
-  static var effectiveOSCColorSchemeFromPrefs: Preference.OSCColorScheme {
+  static var effectiveOSCColorSchemeFromPrefs: Preference.PanelColorScheme {
     if Preference.bool(for: .enableOSC) {
       let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
       if oscPosition == .bottom, Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
@@ -435,23 +440,18 @@ struct LayoutState {
     return enableOSC && (oscPosition == .top || oscPosition == .bottom)
   }
 
-  var effectiveOSCColorScheme: Preference.OSCColorScheme {
-    if hasBottomOSC && bottomBarPlacement == .insideViewport {
-      return oscColorScheme
-    } else if hasTopOSC {
-      return topBarColorScheme
-    }
-    if hasFloatingOSC {
-      return oscColorScheme
-    }
-    return .visualEffectView
-  }
-
   /// Has OSC with clear background.
   ///
   /// Equivalent to `effectiveOSCColorScheme == .clearGradient`.
   var oscBackgroundIsClear: Bool {
-    enableOSC && ((effectiveOSCColorScheme == .clearGradient) || (oscColorScheme == .clearLiquidGlass))
+    guard enableOSC else { return false }
+    switch oscColorScheme {
+    case .clearGradient,
+        .clearLiquidGlass:
+      return true
+    default:
+      return false
+    }
   }
 
   var canShowSidebars: Bool {

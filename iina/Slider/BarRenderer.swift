@@ -81,7 +81,7 @@ final class BarRenderer {
   private var rightCachedColor: CGColor
 
   /// Need to create a new `BarRenderer` each time either the window appearance or the relevant color scheme changes.
-  init(windowAppearance: NSAppearance, colorScheme: Preference.OSCColorScheme, sliderBarHeight_Normal barHeight_Normal: CGFloat) {
+  init(windowAppearance: NSAppearance, colorScheme: Preference.PanelColorScheme, sliderBarHeight_Normal barHeight_Normal: CGFloat) {
     let (leftBaseColor, rightBaseColor) = BarRenderer.getBaseColorsFor(windowAppearance: windowAppearance,
                                                                        colorScheme: colorScheme)
 
@@ -516,7 +516,7 @@ final class BarRenderer {
   /// - "Left" = segment representing completed/filled (to the left of current knob position)
   /// - "Right" = segment representing not yet completed / empty (to the right of current knob position)
   private static func getBaseColorsFor(windowAppearance: NSAppearance,
-                                       colorScheme: Preference.OSCColorScheme) -> (leftBase: CGColor, rightBase: CGColor) {
+                                       colorScheme: Preference.PanelColorScheme) -> (leftBase: CGColor, rightBase: CGColor) {
     // If clear BG, can mostly reuse dark theme, but some things need tweaks (e.g. rightBaseColor needs extra alpha)
     let hasClearBG = colorScheme.hasClearBG
     let barAppearance = hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance

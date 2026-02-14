@@ -21,8 +21,8 @@ class OSCSymButton: SymButton {
   }
 
   /// Sets current tint as a side effect! Do not use if currently between mouseDown & mouseUp.
-  func setOSCColors(_ oscColorScheme: Preference.OSCColorScheme) {
-    switch oscColorScheme {
+  func setColors(for colorScheme: Preference.PanelColorScheme) {
+    switch colorScheme {
     case .clearGradient:
       regularColor = .controlForClearBG
       highlightColor = .white

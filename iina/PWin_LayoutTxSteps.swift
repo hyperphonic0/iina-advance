@@ -425,7 +425,7 @@ extension PlayerWindowController {
 
     let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging
     if needsBottomBarUpdate {
-      rebuildBottomBarView(style: transition.outputLayout.effectiveOSCColorScheme)
+      rebuildBottomBarView(style: transition.outputLayout.oscColorScheme)
       // Just add the new view now. It will have its Z order corrected in `rebuildPanelConstraints`.
       window.contentView!.addSubview(bottomBarView)
     }
@@ -710,13 +710,13 @@ extension PlayerWindowController {
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging ||
           (transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight) {
         let hasClearBG = transition.outputLayout.oscBackgroundIsClear
-        let oscColorScheme = transition.outputLayout.effectiveOSCColorScheme
+        let oscColorScheme = transition.outputLayout.oscColorScheme
         log.verbose("Updating OSC colors: hasClearBG=\(hasClearBG.yn) colorScheme=\(oscColorScheme.description)")
 
-        playButton.setOSCColors(oscColorScheme)
-        leftArrowButton.setOSCColors(oscColorScheme)
-        rightArrowButton.setOSCColors(oscColorScheme)
-        muteButton.setOSCColors(oscColorScheme)
+        playButton.setColors(for: oscColorScheme)
+        leftArrowButton.setColors(for: oscColorScheme)
+        rightArrowButton.setColors(for: oscColorScheme)
+        muteButton.setColors(for: oscColorScheme)
 
         let textAlpha: CGFloat
         let timeLabelTextColor: NSColor?
@@ -1466,11 +1466,11 @@ extension PlayerWindowController {
 
       if newButtonTypes.count > 0 {
         log.verbose("\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(iconSize) iconSpacing=\(iconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
-        let oscColorScheme = transition.outputLayout.effectiveOSCColorScheme
+        let oscColorScheme = transition.outputLayout.oscColorScheme
         for buttonType in newButtonTypes {
           let button = OSCToolbarButton()
           button.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
-          button.setOSCColors(oscColorScheme)
+          button.setColors(for: oscColorScheme)
           button.action = #selector(self.toolBarButtonAction(_:))
           fragToolbarView.addView(button, in: .trailing)
           fragToolbarView.setVisibilityPriority(.detachOnlyIfNecessary, for: button)
@@ -1481,10 +1481,10 @@ extension PlayerWindowController {
 
     if needsButtonsUpdate {
       log.verbose("\(transition.logPreamble(for: stage)) Updating OSC toolbar: iconSize=\(newGeo.toolIconSize) iconSpacing=\(newGeo.toolIconSpacing) barHeight=\(newGeo.barHeight) fullIconHeight=\(newGeo.fullIconHeight) btns=[\(newButtonTypes.map({$0.keyString}).joined(separator: ","))]")
-      let oscColorScheme = transition.outputLayout.effectiveOSCColorScheme
+      let oscColorScheme = transition.outputLayout.oscColorScheme
       for button in fragToolbarView.views.compactMap({ $0 as? OSCToolbarButton }) {
         button.setStyle(iconSize: iconSize, iconSpacing: iconSpacing)
-        button.setOSCColors(oscColorScheme)
+        button.setColors(for: oscColorScheme)
       }
     }
 

@@ -254,7 +254,7 @@ extension PlayerWindowController {
 
   /// The `bottomBarView` may need to be completely rebuilt if the style changes.
   /// This also removes the previous `bottomBarView` from `contentView`.
-  func rebuildBottomBarView(style: Preference.OSCColorScheme) {
+  func rebuildBottomBarView(style: Preference.PanelColorScheme) {
     log.verbose("[Load] Rebuilding bottomBarView: style=\(style)")
     bottomBarView.removeAllSubviews()
     bottomBarView.removeFromSuperview()
