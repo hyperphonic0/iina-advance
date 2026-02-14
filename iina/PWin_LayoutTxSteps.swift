@@ -441,14 +441,18 @@ extension PlayerWindowController {
     osd.rebuildOSDView()
     osd.rebuildAdditionalInfoView()
 
+    // - Top Bar
+
+    if topBar.rebuildViewIfNeeded(transition.outputLayout.topBarColorScheme) {
+      window.contentView!.addSubview(topBar.view)
+    }
+
+    let topBarColorScheme = transition.outputLayout.topBarColorScheme
+    topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
+
     if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }
-
-    // - Top Bar
-
-    let topBarColorScheme: Preference.OSCColorScheme = Preference.enum(for: .topBarColorScheme)
-    topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
 
     // - - Title bar views
 

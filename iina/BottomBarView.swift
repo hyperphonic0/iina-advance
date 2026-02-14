@@ -6,6 +6,7 @@
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
+/// Bottom bar root view with flat blended effect
 final class BottomBarVisualEffectView: NSVisualEffectView {
   init() {
     super.init(frame: .zero)
@@ -17,6 +18,7 @@ final class BottomBarVisualEffectView: NSVisualEffectView {
   @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
+/// Bottom bar root view with Liquid Glass effect
 @available(macOS 26.0, *)
 final class BottomBarGlassEffectView: ClickThroughGlassEffectView {
   init(_ desiredStyle: Style) {
@@ -27,7 +29,7 @@ final class BottomBarGlassEffectView: ClickThroughGlassEffectView {
   @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
-/// The bar at the very top of the window. May include title bar and/or OSC.
+/// Bottom bar root view with clear-black gradient effect
 final class BottomBarGradientView: NSView {
   init() {
     super.init(frame: .zero)

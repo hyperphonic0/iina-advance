@@ -154,7 +154,7 @@ extension PlayerWindowController {
       currentPreviewTimeSec = previewTimeSec
 
       // Get size *after* stringValue is set:
-      let timeLabelSize = timeLabel.attributedStringValue.size()
+      let timeLabelSize = timeLabel.attributedStringValue.size().rounded()
 
       // Subtract some height for less margin before time label
       let adjustedMarginTotalHeight = margins.totalHeight * 0.75

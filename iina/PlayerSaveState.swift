@@ -1543,13 +1543,14 @@ extension LayoutState {
         moreSidebarState = Sidebar.SidebarMiscState.fromDefaultPrefs()
       }
       let oscColorScheme = effectiveOSCColorSchemeFromPrefs
-
+      let topBarColorScheme: Preference.OSCColorScheme = Preference.enum(for: .topBarColorScheme)
 
       return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar, mode: mode,
                          isInPiP: isInPiP,
                          isLegacyStyle: isLegacyStyle, topBarPlacement: topBarPlacement,
                          bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition,
                          oscColorScheme: oscColorScheme,
+                         topBarColorScheme: topBarColorScheme,
                          interactiveMode: interactiveMode, moreSidebarState: moreSidebarState)
     }
 

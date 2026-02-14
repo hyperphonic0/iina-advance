@@ -257,10 +257,13 @@ extension PlayerWindowController {
       (inputLayout.controlBarGeo.isTwoRowBarOSC != outputLayout.controlBarGeo.isTwoRowBarOSC)
     }
 
+    var isTopBarStyleChanging: Bool {
+      inputLayout.topBarColorScheme != outputLayout.topBarColorScheme
+    }
+
     var isTopBarPlacementOrStyleChanging: Bool {
       // assume that if a style change is happening, it affects active panel
-      // NOTE: Only 1 style is currently supported for topBar!
-      return isTopBarPlacementChanging
+      return isTopBarPlacementChanging || isTopBarStyleChanging
     }
 
     /// Note: this may not include OSC

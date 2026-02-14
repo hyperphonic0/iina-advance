@@ -14,7 +14,7 @@ fileprivate extension CGColor {
     var colorsComps: [CGFloat] = []
     let numComponents = min(self.numberOfComponents, 3)
     for i in 0..<numComponents {
-      colorsComps.append((self.components![i] * 1.5).clamped(to: 0.0...1.0))
+      colorsComps.append((self.components![i] * 1.75).clamped(to: 0.0...1.0))
     }
     // alpha
     colorsComps.append((self.components![3] + 0.4).clamped(to: 0.0...1.0))
@@ -536,7 +536,7 @@ final class BarRenderer {
       case .clearGradient:
         rightBaseColor = .mainSliderBarRightClearBG
       case .clearLiquidGlass:
-        rightBaseColor = .mainSliderBarRight
+        rightBaseColor = .mainSliderBarRightClearBG
       case .visualEffectView, .tintedLiquidGlass:
         rightBaseColor = .mainSliderBarRight
       }

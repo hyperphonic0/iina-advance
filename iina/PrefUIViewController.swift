@@ -629,11 +629,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     Preference.set(oscPosition.rawValue, for: .oscPosition)
   }
 
-  @IBAction func oscColorSchemeAction(_ sender: NSPopUpButton) {
-    guard let oscColorScheme = Preference.OSCColorScheme(rawValue: sender.selectedTag()) else { return }
-    Preference.set(oscColorScheme.rawValue, for: .oscColorScheme)
-  }
-
   @IBAction func osdColorSchemeAction(_ sender: NSPopUpButton) {
     let tag = sender.selectedTag()
     guard let osdColorScheme = Preference.OSCColorScheme(rawValue: tag) else { return }

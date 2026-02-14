@@ -37,6 +37,10 @@ extension PlayerWindowController {
   /// - ⁴Only used when bottomBar is shown & viewport is hidden.
   /// - ⁵Only used when animating music mode when both video & playlist are hidden.
   struct PanelConstraints {
+    // - TopBar (H)
+    let topBarLeadingSpace = OptionalConstraint("TopBar.leading-space")
+    let topBarTrailingSpace = OptionalConstraint("TopBar.trailing-space")
+
     // - Viewport + TopBar (V)
     let topBarBtmOffsetFromVPTop = OptionalConstraint("TopBar.btm-offset-from-VP.top")
     let vpTopOffsetFromTopBarTop = OptionalConstraint("VP.top-offset-from-TopBar.top")
@@ -127,6 +131,14 @@ extension PlayerWindowController {
       // Don't use required priority, as sometimes this causes constraint violations
       p.topBarBtmOffsetFromVPTop.createOrUpdate(to: insideTopBarHeight, log) { [self] c in
         topBar.view.bottomAnchor.constraint(equalTo: viewportView.topAnchor, constant: c)
+      }
+
+      // These constraints don't change as long as topBarView is attached, but may need to recreate them if topBar.view is rebuilt
+      p.topBarLeadingSpace.createIfMissing(log) {
+        topBar.view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
+      }
+      p.topBarTrailingSpace.createIfMissing(log) {
+        topBar.view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
       }
 
       if stage == .openNewPanels, transition.isExitingNativeFullScreen {
@@ -356,15 +368,6 @@ extension PlayerWindowController {
       if !contentView.containsSubview(topBar.view) {
         log.verbose("Adding topBarView to window contentView")
         contentView.addSubview(topBar.view, positioned: .above, relativeTo: viewportView)
-
-        // These constraints don't change as long as topBarView is attached
-        let topBarLeadingSpaceConstraint = topBar.view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0)
-        topBarLeadingSpaceConstraint.identifier = "TopBar.leading-offset-from-CV.leading"
-        topBarLeadingSpaceConstraint.isActive = true
-
-        let topBarTrailingSpaceConstraint = topBar.view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0)
-        topBarTrailingSpaceConstraint.identifier = "TopBar.trailing-offset-from-CV.trailing"
-        topBarTrailingSpaceConstraint.isActive = true
       }
     } else {
       if topBar.view.superview != nil {

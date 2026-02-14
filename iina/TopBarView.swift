@@ -21,6 +21,7 @@ final class TopControlBarView: ClickThroughView {
   }
 }
 
+/// Top bar root view which inherits from `NSVisualEffectView`
 final class TopBarVisualEffectView: ClickThroughVisualEffectView {
   init() {
     super.init(frame: .zero)
@@ -31,6 +32,7 @@ final class TopBarVisualEffectView: ClickThroughVisualEffectView {
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
+/// Top bar root view with Liquid Glass
 @available(macOS 26.0, *)
 final class TopBarViewGlassEffectView: ClickThroughGlassEffectView {
   init(style desiredStyle: Style) {
@@ -42,6 +44,7 @@ final class TopBarViewGlassEffectView: ClickThroughGlassEffectView {
 
 /// The bar at the very top of the window. May include title bar and/or OSC.
 final class TopBar {
+  /// The top bar root view
   var view: NSView
 
   /// Reserves space for the title bar components. Can contain CustomTitleBarView *only* if using legacy
@@ -58,17 +61,17 @@ final class TopBar {
   var titleBarHeightConstraint: NSLayoutConstraint!
 
   init() {
-    view = TopBarVisualEffectView()
-    rebuildView()
+    let topBarColorScheme: Preference.OSCColorScheme = Preference.enum(for: .topBarColorScheme)
+    view = TopBar.buildView(topBarColorScheme)
+    configureView()
   }
 
-  func rebuildView() {
-    let topBarColorScheme: Preference.OSCColorScheme = Preference.enum(for: .topBarColorScheme)
-    switch topBarColorScheme {
+  static func buildView(_ colorScheme: Preference.OSCColorScheme) -> NSView {
+    switch colorScheme {
     case .clearLiquidGlass, .tintedLiquidGlass:
       if #available(macOS 26.0, *) {
-        let style: NSGlassEffectView.Style = topBarColorScheme == .clearLiquidGlass ? .clear : .regular
-        view = TopBarViewGlassEffectView(style: style)
+        let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        return TopBarViewGlassEffectView(style: style)
       } else {
         fallthrough
       }
@@ -76,8 +79,40 @@ final class TopBar {
       // TODO: support this
       fallthrough
     case .visualEffectView:
-      view = TopBarVisualEffectView()
+      return TopBarVisualEffectView()
     }
+  }
+
+  /// Returns `true` if view needed to be rebuilt
+  func rebuildViewIfNeeded(_ colorScheme: Preference.OSCColorScheme) -> Bool {
+    guard #available(macOS 26.0, *) else { return false }
+    switch colorScheme {
+    case .clearLiquidGlass, .tintedLiquidGlass:
+      if let glassView = view as? TopBarViewGlassEffectView {
+        let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        glassView.style = style
+        return false
+      }
+
+    case .clearGradient:
+      // TODO: support this
+      fallthrough
+    case .visualEffectView:
+      if view as? TopBarVisualEffectView != nil {
+        return false
+      }
+    }
+    view.removeFromSuperview()
+    rebuildView(colorScheme)
+    return true
+  }
+
+  func rebuildView(_ colorScheme: Preference.OSCColorScheme) {
+    view = TopBar.buildView(colorScheme)
+    configureView()
+  }
+
+  func configureView() {
     view.idString = "TopBarView"
     view.clipsToBounds = true  // for better animations when toggling OSC position/placement
     view.translatesAutoresizingMaskIntoConstraints = false

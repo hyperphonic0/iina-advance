@@ -1402,7 +1402,6 @@ For smoothest results, also enable custom full screen.</string>
                                         </menu>
                                     </popUpButtonCell>
                                     <connections>
-                                        <action selector="oscColorSchemeAction:" target="-2" id="sUt-k8-LF1"/>
                                         <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableOSC" id="DSX-Nv-d5i"/>
                                         <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSC" previousBinding="DSX-Nv-d5i" id="wis-d9-fm7">
                                             <dictionary key="options">
@@ -1697,7 +1696,6 @@ For smoothest results, also enable custom full screen.</string>
                                         </menu>
                                     </popUpButtonCell>
                                     <connections>
-                                        <action selector="oscColorSchemeAction:" target="-2" id="azx-pS-sFL"/>
                                         <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableOSC" id="2Uz-ET-ap6"/>
                                         <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSC" previousBinding="2Uz-ET-ap6" id="YWJ-vN-E2X">
                                             <dictionary key="options">
