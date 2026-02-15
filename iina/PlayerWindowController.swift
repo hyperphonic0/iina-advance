@@ -688,8 +688,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
   /// Set material & theme (light or dark mode) for OSC and title bar.
   /// Make sure this is running inside an animation task too!
+  @MainActor
   func applyThemeMaterial(using layoutState: LayoutState? = nil, _ window: NSWindow, _ screen: NSScreen) {
-    assert(DispatchQueue.isExecutingIn(.main))
     log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted)")
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance:
@@ -706,6 +706,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       playlistView.updateTableColors()
     }
 
+    customTitleBar?.updateAppearance()
+
     osd.updateColors(windowAppearance: windowAppearance, osdColorScheme: Preference.enum(for: .osdColorScheme))
     oscBarRenderer = BarRenderer(windowAppearance: windowAppearance,
                                  colorScheme: layoutState.oscColorScheme,
@@ -713,7 +715,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     oscKnobRenderer.invalidateCachedKnobs()
 
     // TODO: clean up this nasty code
-    let oscAppearance = layoutState.oscColorScheme == .clearGradient ? NSAppearance(iinaTheme: .dark)! : windowAppearance
+    let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance
     oscAppearance.applyAppearanceFor {
       playSlider.abLoopA.updateKnobImage(to: .loopKnob)
       playSlider.abLoopB.updateKnobImage(to: .loopKnob)

@@ -33,10 +33,11 @@ class CustomTitleBarViewController: NSViewController {
   let trailingSidebarToggleButton = SymButton()
   let onTopButton = SymButton()
 
-  init(_ layout: LayoutState) {
+  init(_ layout: LayoutState, _ pwc: PlayerWindowController) {
     closeButton = NSWindow.standardWindowButton(.closeButton, for: .titled)
     miniaturizeButton = NSWindow.standardWindowButton(.miniaturizeButton, for: .titled)
     zoomButton = layout.mode == .musicMode ? nil : NSWindow.standardWindowButton(.zoomButton, for: .titled)
+    self.pwc = pwc
 
     super.init(nibName: nil, bundle: nil)
     let topBarColorScheme = layout.topBarColorScheme
@@ -166,8 +167,19 @@ class CustomTitleBarViewController: NSViewController {
     initConstraints()
 
     view.configureSubtreeForCoreAnimation()
+    updateAppearance()
 
     pwc.log.verbose("CustomTitleBar viewDidLoad done")
+  }
+
+  func updateAppearance() {
+    let windowAppearance: NSAppearance = pwc.window!.effectiveAppearance
+    let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
+    let topBarAppearance = topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance
+    topBarAppearance.applyAppearanceFor {
+      view.appearance = topBarAppearance
+      titleText.textColor = .labelColor
+    }
   }
 
   private func initConstraints() {

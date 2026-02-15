@@ -254,18 +254,18 @@ extension PlayerWindowController {
 
   /// The `bottomBarView` may need to be completely rebuilt if the style changes.
   /// This also removes the previous `bottomBarView` from `contentView`.
-  func rebuildBottomBarView(style: Preference.PanelColorScheme) {
-    log.verbose("[Load] Rebuilding bottomBarView: style=\(style)")
+  func rebuildBottomBarView(colorScheme: Preference.PanelColorScheme) {
+    log.verbose("[Load] Rebuilding bottomBarView: style=\(colorScheme)")
     bottomBarView.removeAllSubviews()
     bottomBarView.removeFromSuperview()
 
     let bottomBarView: NSView
-    switch style {
+    switch colorScheme {
     case .clearGradient:
       bottomBarView = BottomBarGradientView()
     case .clearLiquidGlass, .tintedLiquidGlass:
       if #available(macOS 26.0, *) {
-        let desiredStyle: NSGlassEffectView.Style = style == .clearLiquidGlass ? .clear : .regular
+        let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
         bottomBarView = BottomBarGlassEffectView(desiredStyle)
       } else {
         fallthrough
@@ -306,17 +306,28 @@ extension PlayerWindowController {
 
   private func initSidebars() {
     log.verbose("[Load] Init sidebars")
+    rebuildLeadingSidebarView(.tintedLiquidGlass)
+    rebuildTrailingSidebarView(.tintedLiquidGlass)
+  }
 
-    // - Leading sidebar
+  private func rebuildLeadingSidebarView(_ colorScheme: Preference.PanelColorScheme) {
+    leadingSidebarView.removeFromSuperview()
 
-    if #available(macOS 26.0, *) {
-      let glassView = ClickThroughGlassEffectView()
-      glassView.cornerRadius = 0
-      let contentView = NSView()
-      glassView.contentView = contentView
-      leadingSidebarView = glassView
-      // No top border in this case; it already provides a border
-    } else {
+    switch colorScheme {
+    case .clearLiquidGlass, .tintedLiquidGlass:
+      if #available(macOS 26.0, *) {
+        let glassView = ClickThroughGlassEffectView()
+        let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        glassView.setStyle(desiredStyle)
+        glassView.cornerRadius = 0
+        let contentView = NSView()
+        glassView.contentView = contentView
+        leadingSidebarView = glassView
+        // No top border in this case; it already provides a border
+      } else {
+        fallthrough
+      }
+    default:
       let veView = ClickThroughVisualEffectView()
       veView.state = .active
       leadingSidebarView = veView
@@ -335,17 +346,26 @@ extension PlayerWindowController {
     addShadow(toSidebar: leadingSidebarView)
     leadingSidebarView.translatesAutoresizingMaskIntoConstraints = false
     leadingSidebarView.autoresizesSubviews = false
+  }
 
-    // - Trailing sidebar
+  private func rebuildTrailingSidebarView(_ colorScheme: Preference.PanelColorScheme) {
+    trailingSidebarView.removeFromSuperview()
 
-    if #available(macOS 26.0, *) {
-      let glassView = ClickThroughGlassEffectView()
-      glassView.cornerRadius = 0
-      let contentView = NSView()
-      glassView.contentView = contentView
-      trailingSidebarView = glassView
-      // No top border in this case; it already provides a border
-    } else {
+    switch colorScheme {
+    case .clearLiquidGlass, .tintedLiquidGlass:
+      if #available(macOS 26.0, *) {
+        let glassView = ClickThroughGlassEffectView()
+        let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        glassView.setStyle(desiredStyle)
+        glassView.cornerRadius = 0
+        let contentView = NSView()
+        glassView.contentView = contentView
+        trailingSidebarView = glassView
+        // No top border in this case; it already provides a border
+      } else {
+        fallthrough
+      }
+    default:
       let veView = ClickThroughVisualEffectView()
       veView.state = .active
       trailingSidebarView = veView

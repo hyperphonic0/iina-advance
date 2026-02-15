@@ -130,6 +130,7 @@ fileprivate struct ThreeButtonPromptContent: View {
               .accessibilityHidden(true)
           }
         }
+        .padding(.all, 0)
         .frame(width: 44, height: 44, alignment: .top)
 
         VStack(alignment: .leading, spacing: spacing2x) {
@@ -182,9 +183,9 @@ fileprivate struct ThreeButtonPromptContent: View {
       }
       .padding(.all, 0)
     }
-    .padding(.vertical, 0)
-    .padding(.horizontal, 20)
-    .frame(minWidth: 360, maxWidth: 480, maxHeight: .infinity, alignment: .center)
+    .padding(.vertical, spacing1x)
+    .padding(.horizontal, spacing2x)
+    .frame(minWidth: 550, maxWidth: 550, maxHeight: .infinity, alignment: .center)
     .ignoresSafeArea() // Removes safe area for title bar
   }
 }

@@ -425,7 +425,7 @@ extension PlayerWindowController {
 
     let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging
     if needsBottomBarUpdate {
-      rebuildBottomBarView(style: transition.outputLayout.oscColorScheme)
+      rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme)
       // Just add the new view now. It will have its Z order corrected in `rebuildPanelConstraints`.
       window.contentView!.addSubview(bottomBarView)
     }
@@ -478,8 +478,7 @@ extension PlayerWindowController {
       if let customTitleBar {
         legacyTitleBar = customTitleBar
       } else {
-        legacyTitleBar = CustomTitleBarViewController(transition.outputLayout)
-        legacyTitleBar.pwc = self
+        legacyTitleBar = CustomTitleBarViewController(transition.outputLayout, self)
         customTitleBar = legacyTitleBar
 
         // Prep views to fade in later

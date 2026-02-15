@@ -38,7 +38,7 @@ class ClickThroughGlassEffectView: NSGlassEffectView {
   func setStyle(_ desiredStyle: Style) {
     if desiredStyle == .clear {
       style = .clear
-//      tintColor = .black.withAlphaComponent(0.4)
+      tintColor = .darkGray.withAlphaComponent(0.25)
     } else {
       style = .regular
     }

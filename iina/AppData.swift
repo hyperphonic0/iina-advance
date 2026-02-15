@@ -544,8 +544,11 @@ struct Constants {
   }
 
   struct Color {
+    /// The standard viewport color
     static let defaultWindowBackgroundColor = CGColor.black
+    /// The viewport color when in Interactive Mode
     static let interactiveModeBackground: CGColor = NSColor.windowBackgroundColor.cgColor
+
     static let blackShadow = CGColor(gray: 0, alpha: 0.75)
     static let whiteShadow = CGColor(gray: 1, alpha: 0.75)
 
