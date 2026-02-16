@@ -310,7 +310,7 @@ extension PlayerWindowController {
     rebuildTrailingSidebarView(.tintedLiquidGlass)
   }
 
-  private func rebuildLeadingSidebarView(_ colorScheme: Preference.PanelColorScheme) {
+  func rebuildLeadingSidebarView(_ colorScheme: Preference.PanelColorScheme) {
     leadingSidebarView.removeFromSuperview()
 
     switch colorScheme {
@@ -348,7 +348,7 @@ extension PlayerWindowController {
     leadingSidebarView.autoresizesSubviews = false
   }
 
-  private func rebuildTrailingSidebarView(_ colorScheme: Preference.PanelColorScheme) {
+  func rebuildTrailingSidebarView(_ colorScheme: Preference.PanelColorScheme) {
     trailingSidebarView.removeFromSuperview()
 
     switch colorScheme {

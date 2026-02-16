@@ -276,6 +276,10 @@ extension PlayerWindowController {
       return isBottomBarPlacementChanging || (outputLayout.hasBottomOSC && isOSCStyleChanging)
     }
 
+    var isSidebarsStyleChanging: Bool {
+      inputLayout.sidebarsColorScheme != outputLayout.sidebarsColorScheme
+    }
+
     var isLeadingSidebarPlacementChanging: Bool {
       return inputLayout.leadingSidebarPlacement != outputLayout.leadingSidebarPlacement
     }
@@ -336,6 +340,9 @@ extension PlayerWindowController {
       let newState = outputLayout.sidebar(withID: sidebarID)
       if oldState.isVisible && newState.isVisible {
         if oldState.placement != newState.placement {
+          return true
+        }
+        if inputLayout.sidebarsColorScheme != outputLayout.sidebarsColorScheme {
           return true
         }
         guard let oldGroup = oldState.visibleTabGroup, let newGroup = newState.visibleTabGroup else {

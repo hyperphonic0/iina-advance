@@ -1544,6 +1544,7 @@ extension LayoutState {
       }
       let oscColorScheme = effectiveOSCColorSchemeFromPrefs
       let topBarColorScheme = effectiveTopBarColorSchemeFromPrefs()
+      let sidebarsColorScheme = effectiveSidebarsColorSchemeFromPrefs()
 
       return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar, mode: mode,
                          isInPiP: isInPiP,
@@ -1551,6 +1552,7 @@ extension LayoutState {
                          bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition,
                          oscColorScheme: oscColorScheme,
                          topBarColorScheme: topBarColorScheme,
+                         sidebarsColorScheme: sidebarsColorScheme,
                          interactiveMode: interactiveMode, moreSidebarState: moreSidebarState)
     }
 

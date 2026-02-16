@@ -50,6 +50,7 @@ struct LayoutState {
   let oscColorScheme: Preference.PanelColorScheme
   /// Color scheme of the top bar.
   let topBarColorScheme: Preference.PanelColorScheme
+  let sidebarsColorScheme: Preference.PanelColorScheme
 
   let controlBarGeo: ControlBarGeometry
 
@@ -74,6 +75,7 @@ struct LayoutState {
        enableOSC: Bool, oscPosition: Preference.OSCPosition,
        oscColorScheme: Preference.PanelColorScheme,
        topBarColorScheme: Preference.PanelColorScheme,
+       sidebarsColorScheme: Preference.PanelColorScheme,
        controlBarGeo givenControlBarGeo: ControlBarGeometry? = nil,
        interactiveMode: InteractiveMode?,
        moreSidebarState: Sidebar.SidebarMiscState,
@@ -117,6 +119,7 @@ struct LayoutState {
     let controlBarGeo = givenControlBarGeo ?? ControlBarGeometry(mode: mode, oscPosition: oscPosition)
     self.controlBarGeo = controlBarGeo
     self.topBarColorScheme = topBarColorScheme
+    self.sidebarsColorScheme = sidebarsColorScheme
 
     let titleBarVisibility = LayoutState.titleBarVisibility(for: mode,
                                                             topBarPlacement: topBarPlacement,
@@ -151,6 +154,7 @@ struct LayoutState {
              oscPosition: Preference.OSCPosition? = nil,
              oscColorScheme: Preference.PanelColorScheme? = nil,
              topBarColorScheme: Preference.PanelColorScheme? = nil,
+             sidebarsColorScheme: Preference.PanelColorScheme? = nil,
              controlBarGeo: ControlBarGeometry? = nil,
              hasTopPaddingForCameraHousing: Bool? = nil,
              interactiveMode: InteractiveMode? = nil,
@@ -171,6 +175,7 @@ struct LayoutState {
                        oscPosition: oscPosition ?? self.oscPosition,
                        oscColorScheme: oscColorScheme ?? self.oscColorScheme,
                        topBarColorScheme: topBarColorScheme ?? self.topBarColorScheme,
+                       sidebarsColorScheme: sidebarsColorScheme ?? self.sidebarsColorScheme,
                        controlBarGeo: controlBarGeo,
                        interactiveMode: interactiveMode ?? self.interactiveMode,
                        moreSidebarState: moreSidebarState ?? self.moreSidebarState,
@@ -245,6 +250,7 @@ struct LayoutState {
     let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
     let oscColorScheme = effectiveOSCColorSchemeFromPrefs
     let topBarColorScheme = effectiveTopBarColorSchemeFromPrefs()
+    let sidebarsColorScheme = effectiveSidebarsColorSchemeFromPrefs()
 
     return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
                        mode: mode,
@@ -256,6 +262,7 @@ struct LayoutState {
                        oscPosition: Preference.enum(for: .oscPosition),
                        oscColorScheme: oscColorScheme,
                        topBarColorScheme: topBarColorScheme,
+                       sidebarsColorScheme: sidebarsColorScheme,
                        interactiveMode: interactiveMode,
                        moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs())
   }
@@ -281,6 +288,16 @@ struct LayoutState {
     }
     let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
     return topBarColorScheme
+  }
+
+  static func effectiveSidebarsColorSchemeFromPrefs() -> Preference.PanelColorScheme {
+    let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .sidebarsColorScheme)
+    switch colorScheme {
+    case .tintedLiquidGlass, .visualEffectView:
+      return colorScheme
+    default:
+      return .visualEffectView
+    }
   }
 
   // MARK: - Computed Properties

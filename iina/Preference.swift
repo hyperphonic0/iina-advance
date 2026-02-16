@@ -274,6 +274,7 @@ struct Preference {
     static let showTrailingSidebarToggleButton = Key("showTrailingSidebarToggleButton")
     static let hideLeadingSidebarOnClick = Key("hideLeadingSidebarOnClick")
     static let hideTrailingSidebarOnClick = Key("hideTrailingSidebarOnClick")
+    static let sidebarsColorScheme = Key("sidebarsColorScheme")
     /// `Settings` tab group (leading or trailing)
     static let settingsTabGroupLocation = Key("settingsTabGroupLocation")
     /// `Playlist` tab group (leading or trailing)
@@ -1450,6 +1451,7 @@ struct Preference {
     .floatingControlBarWidth: 440.0,
     .topBarColorScheme: PanelColorScheme.defaultValue.rawValue,
     .oscFloatingColorScheme: PanelColorScheme.defaultValue.rawValue,
+    .sidebarsColorScheme: PanelColorScheme.defaultValue.rawValue,
     .controlBarStickToCenter: true,
     .controlBarAutoHideTimeout: Float(2.5),
     .showCachedRangesInSlider: true,

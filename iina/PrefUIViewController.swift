@@ -128,6 +128,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var oscForceSingleRowContainerView: NSStackView!
 
   @IBOutlet weak var osdColorSchemeHStackView: NSStackView!
+  @IBOutlet weak var sidebarsColorSchemeHStackView: NSStackView!
 
   @IBOutlet weak var leftSidebarLabel: NSTextField!
   @IBOutlet weak var leftSidebarPlacement: NSSegmentedControl!

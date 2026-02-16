@@ -16,9 +16,7 @@ final class TopControlBarView: ClickThroughView {
     clipsToBounds = true  // for better animations when toggling OSC position/placement
   }
 
-  @MainActor required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
+  @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
 /// Top bar root view which inherits from `NSVisualEffectView`
@@ -93,6 +91,7 @@ final class TopBar {
       if let glassView = view as? TopBarViewGlassEffectView {
         let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
         glassView.style = style
+        
         return false
       }
 
@@ -147,7 +146,15 @@ final class TopBar {
     topBarBottomBorder_HeightConstraint.isActive = true
   }
 
-  @MainActor required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
+  func updateAppearance(windowAppearance: NSAppearance?) {
+    // Can be nil, which means dynamic system appearance:
+    let topBarColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
+    let topBarAppearance = topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark) : windowAppearance
+    view.pwc?.log.verbose("Setting top bar appearance to \(topBarAppearance?.name.rawValue ?? "system")")
+    view.appearance = topBarAppearance
+    view.pwc?.customTitleBar?.view.appearance = topBarAppearance
+    view.needsDisplay = true
+    view.needsLayout = true
   }
+
 }

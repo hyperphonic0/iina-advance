@@ -421,6 +421,11 @@ extension PlayerWindowController {
       }
     }
 
+    if transition.isSidebarsStyleChanging {
+      rebuildLeadingSidebarView(transition.outputLayout.sidebarsColorScheme)
+      rebuildTrailingSidebarView(transition.outputLayout.sidebarsColorScheme)
+    }
+
     // - Bottom Bar
 
     let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging
@@ -494,7 +499,6 @@ extension PlayerWindowController {
       } else {
         legacyTitleBar.addViewTo(superview: topBar.titleBarView)
       }
-//      legacyTitleBar.updateAppearance(windowAppearance: cachedEffectiveAppearanceName)
       fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: legacyTitleBar.leadingSidebarToggleButton)
       fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: legacyTitleBar.trailingSidebarToggleButton)
       fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: legacyTitleBar.onTopButton)

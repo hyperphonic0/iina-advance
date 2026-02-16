@@ -172,20 +172,6 @@ class CustomTitleBarViewController: NSViewController {
     pwc.log.verbose("CustomTitleBar viewDidLoad done")
   }
 
-  func updateAppearance(windowAppearance: NSAppearance?) {
-    // Can be nil, which means dynamic system appearance:
-    let topBarColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
-    let topBarAppearance = topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark) : windowAppearance
-    if let topBarAppearance {
-      pwc.log.verbose("CustomTitleBar updating appearance: isDark=\(topBarAppearance.isDark.yesno)")
-      topBarAppearance.performAsCurrentDrawingAppearance {
-        titleText.textColor = .labelColor
-      }
-    }
-    view.appearance = topBarAppearance
-    view.needsDisplay = true
-  }
-
   private func initConstraints() {
     // Root view:
     view.translatesAutoresizingMaskIntoConstraints = false

@@ -66,6 +66,7 @@
                 <outlet property="sectionWindowView" destination="D77-Iw-nrY" id="qGB-hx-chL"/>
                 <outlet property="seekPreviewWhiteShadowCheckbox" destination="9ps-qR-8m9" id="u73-uK-80J"/>
                 <outlet property="showTopBarTriggerContainerView" destination="EaM-oZ-jJO" id="vwd-nV-ra6"/>
+                <outlet property="sidebarsColorSchemeHStackView" destination="MPe-w8-VKH" id="VVc-cC-BqR"/>
                 <outlet property="simpleVideoSizeRadioButton" destination="VP5-cz-tSV" id="mQ5-Zf-djp"/>
                 <outlet property="spacer0" destination="KWh-Ak-RW7" id="vL5-Sj-sCo"/>
                 <outlet property="themeMenu" destination="Cpu-U2-hGC" id="jer-bS-DhW"/>
@@ -1374,14 +1375,14 @@ For smoothest results, also enable custom full screen.</string>
                             <rect key="frame" x="0.0" y="836" width="461" height="28"/>
                             <subviews>
                                 <customView horizontalHuggingPriority="200" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="4N9-gU-oqs" userLabel="Horizontal Spacer View">
-                                    <rect key="frame" x="0.0" y="14" width="140" height="1"/>
+                                    <rect key="frame" x="0.0" y="14" width="90" height="1"/>
                                     <constraints>
                                         <constraint firstAttribute="height" constant="1" id="t3G-24-vXi"/>
                                     </constraints>
                                 </customView>
                                 <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="dXc-vL-p2V">
-                                    <rect key="frame" x="146" y="6" width="93" height="16"/>
-                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Color Scheme:" id="vk9-Au-GyR">
+                                    <rect key="frame" x="96" y="6" width="143" height="16"/>
+                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Top Bar Color Scheme:" id="vk9-Au-GyR">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -1668,14 +1669,14 @@ For smoothest results, also enable custom full screen.</string>
                             <rect key="frame" x="0.0" y="587" width="453" height="28"/>
                             <subviews>
                                 <customView horizontalHuggingPriority="200" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="NQR-nq-sbu" userLabel="Horizontal Spacer View">
-                                    <rect key="frame" x="0.0" y="14" width="132" height="1"/>
+                                    <rect key="frame" x="0.0" y="14" width="60" height="1"/>
                                     <constraints>
                                         <constraint firstAttribute="height" constant="1" id="T5F-vr-M0y"/>
                                     </constraints>
                                 </customView>
                                 <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="hwA-ec-V4c">
-                                    <rect key="frame" x="138" y="6" width="93" height="16"/>
-                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Color Scheme:" id="Gxo-GK-ECm">
+                                    <rect key="frame" x="66" y="6" width="165" height="16"/>
+                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Bottom Bar Color Scheme:" id="Gxo-GK-ECm">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -2609,7 +2610,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="0eU-xI-byi" firstAttribute="top" secondItem="6ml-Xj-nVX" secondAttribute="bottom" constant="4" id="wjF-MV-3US"/>
                 <constraint firstItem="6ml-Xj-nVX" firstAttribute="leading" secondItem="0eU-xI-byi" secondAttribute="leading" id="zS7-aO-rrc"/>
             </constraints>
-            <point key="canvasLocation" x="-30" y="-220"/>
+            <point key="canvasLocation" x="-30" y="-161"/>
         </customView>
         <customView id="c8m-G4-or8" userLabel="Prefs &gt; UI &gt; OSD">
             <rect key="frame" x="0.0" y="0.0" width="653" height="392"/>
@@ -2969,8 +2970,8 @@ For smoothest results, also enable custom full screen.</string>
                                                             <menu key="menu" id="UPH-VG-b81">
                                                                 <items>
                                                                     <menuItem title="Flat Blended Gray" state="on" tag="1" id="18p-Bl-jAH"/>
-                                                                    <menuItem title="Liquid Glass (Default Tint)" tag="4" id="e5e-CE-Afn"/>
                                                                     <menuItem title="Liquid Glass (Clear)" tag="3" id="47R-QO-YIE"/>
+                                                                    <menuItem title="Liquid Glass (Default Tint)" tag="4" id="e5e-CE-Afn"/>
                                                                 </items>
                                                             </menu>
                                                             <connections>
@@ -3249,13 +3250,13 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="tw5-VT-L9M" secondAttribute="bottom" constant="8" id="aER-9z-99c"/>
                 <constraint firstItem="zyi-J3-lSp" firstAttribute="top" secondItem="c8m-G4-or8" secondAttribute="top" constant="8" id="wfr-Ab-w5u"/>
             </constraints>
-            <point key="canvasLocation" x="-2" y="616"/>
+            <point key="canvasLocation" x="-2" y="773"/>
         </customView>
-        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars">
-            <rect key="frame" x="0.0" y="0.0" width="619" height="362"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars">
+            <rect key="frame" x="0.0" y="0.0" width="619" height="420"/>
             <subviews>
                 <textField identifier="SectionTitleSidebars" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="E6K-jW-Lzn">
-                    <rect key="frame" x="-2" y="338" width="66" height="16"/>
+                    <rect key="frame" x="-2" y="379" width="66" height="16"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="16" id="VMK-jQ-Ujf"/>
                     </constraints>
@@ -3265,10 +3266,62 @@ For smoothest results, also enable custom full screen.</string>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kog-j2-kGH" userLabel="RightColumn VStack View">
-                    <rect key="frame" x="120" y="8" width="450" height="350"/>
+                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kog-j2-kGH" userLabel="RightColumn VStack View">
+                    <rect key="frame" x="120" y="8" width="450" height="393"/>
                     <subviews>
-                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="top" spacing="0.0" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zxv-zZ-q8V" userLabel="HStack View">
+                        <stackView clipsToBounds="YES" autoresizesSubviews="NO" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="MPe-w8-VKH" userLabel="Sidebars-Color-Scheme HStack View">
+                            <rect key="frame" x="0.0" y="362" width="450" height="31"/>
+                            <subviews>
+                                <customView horizontalHuggingPriority="200" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="EpZ-XX-fpV" userLabel="Horizontal Spacer View">
+                                    <rect key="frame" x="0.0" y="8" width="129" height="1"/>
+                                    <constraints>
+                                        <constraint firstAttribute="height" constant="1" id="8t4-CW-a3W"/>
+                                    </constraints>
+                                </customView>
+                                <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="WaT-zt-ObT">
+                                    <rect key="frame" x="135" y="9" width="93" height="16"/>
+                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Color Scheme:" id="DOJ-ac-Lpj">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="500" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="iHT-e9-f3r" userLabel="OSC-Color-Scheme Popup">
+                                    <rect key="frame" x="234" y="3" width="213" height="28"/>
+                                    <popUpButtonCell key="cell" type="push" title="Flat Blended Gray" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="C6Y-Cg-81Y" id="KQt-wi-dOo" userLabel="OSC-Color-Scheme Popup Button Cell">
+                                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                        <font key="font" metaFont="message"/>
+                                        <menu key="menu" id="a09-Bm-lf3">
+                                            <items>
+                                                <menuItem title="Flat Blended Gray" state="on" tag="1" id="C6Y-Cg-81Y"/>
+                                                <menuItem title="Liquid Glass (Default Tint)" tag="4" id="orb-1b-TNw"/>
+                                            </items>
+                                        </menu>
+                                    </popUpButtonCell>
+                                    <connections>
+                                        <binding destination="lH7-Vv-0M1" name="selectedTag" keyPath="values.sidebarsColorScheme" id="RCm-XM-tZV"/>
+                                    </connections>
+                                </popUpButton>
+                            </subviews>
+                            <edgeInsets key="edgeInsets" left="0.0" right="3" top="3" bottom="3"/>
+                            <visibilityPriorities>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
+                            </visibilityPriorities>
+                            <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                            </customSpacing>
+                        </stackView>
+                        <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="jwX-da-Lm3" userLabel="12pt Spacer">
+                            <rect key="frame" x="0.0" y="354" width="450" height="4"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="4" id="RFf-aM-i4d"/>
+                            </constraints>
+                        </customView>
+                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="top" spacing="0.0" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zxv-zZ-q8V" userLabel="HStack View">
                             <rect key="frame" x="0.0" y="158" width="450" height="192"/>
                             <subviews>
                                 <gridView horizontalCompressionResistancePriority="500" xPlacement="center" yPlacement="bottom" rowAlignment="firstBaseline" rowSpacing="4" columnSpacing="2" translatesAutoresizingMaskIntoConstraints="NO" id="gHl-nV-4jw" userLabel="SidebarConfigs Grid View">
@@ -3726,8 +3779,12 @@ For smoothest results, also enable custom full screen.</string>
                         <integer value="1000"/>
                         <integer value="1000"/>
                         <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
                     </visibilityPriorities>
                     <customSpacing>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
@@ -3736,15 +3793,16 @@ For smoothest results, also enable custom full screen.</string>
                 </stackView>
             </subviews>
             <constraints>
+                <constraint firstItem="iHT-e9-f3r" firstAttribute="firstBaseline" secondItem="E6K-jW-Lzn" secondAttribute="firstBaseline" id="2eu-Qq-I8k"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="kog-j2-kGH" secondAttribute="trailing" id="Dl0-GF-pDe"/>
                 <constraint firstItem="E6K-jW-Lzn" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="iZa-Jl-fXs" secondAttribute="leading" constant="120" id="Imb-YN-akQ"/>
-                <constraint firstItem="eh8-tf-wHU" firstAttribute="firstBaseline" secondItem="E6K-jW-Lzn" secondAttribute="firstBaseline" id="PKg-IN-WSc"/>
                 <constraint firstAttribute="bottom" secondItem="kog-j2-kGH" secondAttribute="bottom" constant="8" id="T5x-i2-gUA"/>
                 <constraint firstItem="E6K-jW-Lzn" firstAttribute="leading" secondItem="iZa-Jl-fXs" secondAttribute="leading" id="Tj4-o9-IqL"/>
+                <constraint firstItem="WaT-zt-ObT" firstAttribute="firstBaseline" secondItem="E6K-jW-Lzn" secondAttribute="firstBaseline" id="Wcy-CQ-tvY"/>
                 <constraint firstItem="E6K-jW-Lzn" firstAttribute="top" secondItem="iZa-Jl-fXs" secondAttribute="top" constant="8" id="gKH-FL-rHR"/>
                 <constraint firstItem="kog-j2-kGH" firstAttribute="leading" secondItem="iZa-Jl-fXs" secondAttribute="leading" constant="120" id="l2c-o1-o6t"/>
             </constraints>
-            <point key="canvasLocation" x="-20" y="1022"/>
+            <point key="canvasLocation" x="-19" y="1223"/>
         </customView>
         <customView id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview">
             <rect key="frame" x="0.0" y="0.0" width="570" height="327"/>

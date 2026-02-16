@@ -690,10 +690,10 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Make sure this is running inside an animation task too!
   @MainActor
   func applyThemeMaterial(using layoutState: LayoutState? = nil, _ window: NSWindow, _ screen: NSScreen) {
-    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted)")
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance:
     let newAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
+    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): appearance=\(newAppearance?.name.rawValue ?? "nil")")
 
     // Either dark or light, never nil:
     let windowAppearance: NSAppearance = newAppearance ?? window.effectiveAppearance
@@ -707,11 +707,10 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     /// Setting `window.appearance` will trigger a change to `#keyPath(window.effectiveAppearance)`,
     /// which will call this method again unless we set `cachedEffectiveAppearanceName`
-    cachedEffectiveAppearanceName = newAppearance?.name.rawValue ?? window.effectiveAppearance.name.rawValue
     window.appearance = newAppearance
 
     // This may override the window appearance if needed based on the top OSC color scheme
-    customTitleBar?.updateAppearance(windowAppearance: windowAppearance)
+    topBar.updateAppearance(windowAppearance: windowAppearance)
 
     osd.updateColors(windowAppearance: windowAppearance, osdColorScheme: Preference.enum(for: .osdColorScheme))
     oscBarRenderer = BarRenderer(windowAppearance: windowAppearance,

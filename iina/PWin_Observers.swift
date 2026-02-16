@@ -78,6 +78,7 @@ extension PlayerWindowController {
       .useLegacyFullScreen,
       .enableOSD,
       .osdColorScheme,
+      .sidebarsColorScheme,
       .osdPosition,
       .displayTimeAndBatteryInFullScreen,
       .alwaysShowOnTopIcon,
@@ -216,13 +217,7 @@ extension PlayerWindowController {
         .toneMappingAlgorithm:
       player.refreshEdrMode()
     case .themeMaterial:
-      animationPipeline.submitInstantTask { [self] in
-        if let window, let screen = window.screen {
-          applyThemeMaterial(window, screen)
-        } else {
-          log.debug("Could not apply theme change: no window or screen!")
-        }
-      }
+      updateTitleBarAndOSC()
     case .playerWindowOpacity:
       animationPipeline.submitInstantTask({ [self] in
         updateWindowBorderAndOpacity()
@@ -281,6 +276,7 @@ extension PlayerWindowController {
         .osdPosition,
         .oscColorScheme,
         .osdColorScheme,
+        .sidebarsColorScheme,
         .displayTimeAndBatteryInFullScreen,
         .oscFloatingColorScheme,
         .keepVideoAwayFromBars,
@@ -412,16 +408,11 @@ extension PlayerWindowController {
         guard cachedEffectiveAppearanceName != effectiveAppearanceName else { return }
         log.verbose("Window appearance changed to: \(effectiveAppearanceName)")
         cachedEffectiveAppearanceName = effectiveAppearanceName
-        
-        if let screen = window.screen {
-          applyThemeMaterial(window, screen)
-        } else {
-          log.debug("Could not apply appearance change: no screen!")
-        }
+        // This will call applyThemeMaterial
+        updateTitleBarAndOSC()
       }
     default:
       return
     }
   }
-
 }
