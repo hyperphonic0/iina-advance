@@ -404,15 +404,15 @@ extension PlayerWindowController {
 
     switch keyPath {
     case #keyPath(window.effectiveAppearance):
-      /// This indicates light/dark mode was toggled. But this won't be sent when `controlAccentColor` changes...
-      /// For that, we follow `appleColorPreferencesChangedNotification`
-      guard let window else { return }
-      let effectiveAppearanceName = window.effectiveAppearance.name.rawValue
-      guard cachedEffectiveAppearanceName != effectiveAppearanceName else { return }
-      log.verbose("Window appearance changed to: \(effectiveAppearanceName)")
-      cachedEffectiveAppearanceName = effectiveAppearanceName
-
       animationPipeline.submitInstantTask { [self] in
+        /// This indicates light/dark mode was toggled. But this won't be sent when `controlAccentColor` changes...
+        /// For that, we follow `appleColorPreferencesChangedNotification`
+        guard let window else { return }
+        let effectiveAppearanceName = window.effectiveAppearance.name.rawValue
+        guard cachedEffectiveAppearanceName != effectiveAppearanceName else { return }
+        log.verbose("Window appearance changed to: \(effectiveAppearanceName)")
+        cachedEffectiveAppearanceName = effectiveAppearanceName
+        
         if let screen = window.screen {
           applyThemeMaterial(window, screen)
         } else {

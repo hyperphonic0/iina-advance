@@ -87,7 +87,7 @@ struct LayoutState {
       mode = .windowedNormal
     }
     self.mode = mode
-    self.oscColorScheme = oscColorScheme
+    self.oscColorScheme = oscPosition == .top ? topBarColorScheme : oscColorScheme
 
     self.isInPiP = (mode == .windowedNormal || mode == .musicMode) ? isInPiP : false
 
@@ -116,7 +116,7 @@ struct LayoutState {
     // Should be ok to fill in most of ControlBarGeometry from prefs if not given
     let controlBarGeo = givenControlBarGeo ?? ControlBarGeometry(mode: mode, oscPosition: oscPosition)
     self.controlBarGeo = controlBarGeo
-    self.topBarColorScheme = Preference.enum(for: .topBarColorScheme)
+    self.topBarColorScheme = topBarColorScheme
 
     let titleBarVisibility = LayoutState.titleBarVisibility(for: mode,
                                                             topBarPlacement: topBarPlacement,
@@ -241,15 +241,16 @@ struct LayoutState {
     // Tricky need for parantheses here! Would be great as an interview question
     let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen)
                                           : Preference.bool(for: .useLegacyWindowedMode))
+    let topBarPlacement: Preference.PanelPlacement = Preference.enum(for: .topBarPlacement)
     let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
     let oscColorScheme = effectiveOSCColorSchemeFromPrefs
-    let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
+    let topBarColorScheme = effectiveTopBarColorSchemeFromPrefs()
 
     return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
                        mode: mode,
                        isInPiP: oldSpec?.isInPiP ?? false,
                        isLegacyStyle: isLegacyStyle,
-                       topBarPlacement: Preference.enum(for: .topBarPlacement),
+                       topBarPlacement: topBarPlacement,
                        bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
                        enableOSC: Preference.bool(for: .enableOSC),
                        oscPosition: Preference.enum(for: .oscPosition),
@@ -265,12 +266,21 @@ struct LayoutState {
       if oscPosition == .bottom, Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
         return Preference.enum(for: .oscColorScheme)
       } else if oscPosition == .top {
-        return Preference.enum(for: .topBarColorScheme)
+        return effectiveTopBarColorSchemeFromPrefs()
       } else if oscPosition == .floating {
         return Preference.enum(for: .oscFloatingColorScheme)
       }
     }
     return .visualEffectView
+  }
+
+  static func effectiveTopBarColorSchemeFromPrefs() -> Preference.PanelColorScheme {
+    let topBarPlacement: Preference.PanelPlacement = Preference.enum(for: .topBarPlacement)
+    guard topBarPlacement == .insideViewport else {
+      return .visualEffectView
+    }
+    let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
+    return topBarColorScheme
   }
 
   // MARK: - Computed Properties

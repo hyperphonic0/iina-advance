@@ -8,6 +8,8 @@
 
 import Cocoa
 
+fileprivate let blendFraction: CGFloat = 0.2
+
 /// Root view for all `Settings` > `Key Bindings` UI.
 ///
 /// For the Configuration ("Conf") table, see `ConfTableViewController`.
@@ -171,14 +173,13 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
     }
   }
 
-  fileprivate let blendFraction: CGFloat = 0.2
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
     guard let keyPath = keyPath else { return }
 
     switch keyPath {
     case #keyPath(view.effectiveAppearance):
       // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
-      view.effectiveAppearance.applyAppearanceFor {
+      view.effectiveAppearance.performAsCurrentDrawingAppearance {
         setCustomTableColors()
       }
     default:

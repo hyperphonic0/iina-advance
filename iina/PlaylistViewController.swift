@@ -284,7 +284,7 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
     player.log.verbose("Playlist sidebar: updating table colors")
     // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
     let effectiveAppearance = view.window?.effectiveAppearance ?? view.effectiveAppearance
-    effectiveAppearance.applyAppearanceFor {
+    effectiveAppearance.performAsCurrentDrawingAppearance {
       if #available(macOS 10.14, *) {
         isPlayingTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingTextBlendFraction, of: .textColor)!
         isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!

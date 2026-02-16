@@ -1543,7 +1543,7 @@ extension LayoutState {
         moreSidebarState = Sidebar.SidebarMiscState.fromDefaultPrefs()
       }
       let oscColorScheme = effectiveOSCColorSchemeFromPrefs
-      let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
+      let topBarColorScheme = effectiveTopBarColorSchemeFromPrefs()
 
       return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar, mode: mode,
                          isInPiP: isInPiP,

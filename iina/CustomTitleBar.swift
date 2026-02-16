@@ -9,12 +9,12 @@
 import Foundation
 
 // Try to roughly match Apple's title bar colors:
-fileprivate let activeControlOpacity: CGFloat = 1.0
+fileprivate let activeControlOpacity: CGFloat = 0.8
 fileprivate let inactiveControlOpacity: CGFloat = 0.40
 
 /// For legacy windowed mode. Manual reconstruction of title bar is needed when not using `titled` window style.
 class CustomTitleBarViewController: NSViewController {
-  unowned var pwc: PlayerWindowController!
+  unowned let pwc: PlayerWindowController!
 
   // Leading side contains traffic light buttons + leading title bar accessories
   fileprivate let leadingStackView = TitleBarButtonsContainerView()
@@ -129,6 +129,7 @@ class CustomTitleBarViewController: NSViewController {
     titleText.identifier = .init("TitleBar-TextView")
     titleText.font = NSFont.titleBarFont(ofSize: NSFont.systemFontSize(for: .regular))
     titleText.textColor = .labelColor
+    titleText.alphaValue = 0.5
 
     titleIconAndTextStackView.setViews([documentIconButton, titleText], in: .center)
     titleIconAndTextStackView.detachesHiddenViews = true
@@ -167,19 +168,22 @@ class CustomTitleBarViewController: NSViewController {
     initConstraints()
 
     view.configureSubtreeForCoreAnimation()
-    updateAppearance()
 
     pwc.log.verbose("CustomTitleBar viewDidLoad done")
   }
 
-  func updateAppearance() {
-    let windowAppearance: NSAppearance = pwc.window!.effectiveAppearance
-    let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
-    let topBarAppearance = topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance
-    topBarAppearance.applyAppearanceFor {
-      view.appearance = topBarAppearance
-      titleText.textColor = .labelColor
+  func updateAppearance(windowAppearance: NSAppearance?) {
+    // Can be nil, which means dynamic system appearance:
+    let topBarColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
+    let topBarAppearance = topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark) : windowAppearance
+    if let topBarAppearance {
+      pwc.log.verbose("CustomTitleBar updating appearance: isDark=\(topBarAppearance.isDark.yesno)")
+      topBarAppearance.performAsCurrentDrawingAppearance {
+        titleText.textColor = .labelColor
+      }
     }
+    view.appearance = topBarAppearance
+    view.needsDisplay = true
   }
 
   private func initConstraints() {

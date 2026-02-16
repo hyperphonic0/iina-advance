@@ -694,7 +694,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance:
     let newAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
-    window.appearance = newAppearance
 
     // Either dark or light, never nil:
     let windowAppearance: NSAppearance = newAppearance ?? window.effectiveAppearance
@@ -706,7 +705,13 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       playlistView.updateTableColors()
     }
 
-    customTitleBar?.updateAppearance()
+    /// Setting `window.appearance` will trigger a change to `#keyPath(window.effectiveAppearance)`,
+    /// which will call this method again unless we set `cachedEffectiveAppearanceName`
+    cachedEffectiveAppearanceName = newAppearance?.name.rawValue ?? window.effectiveAppearance.name.rawValue
+    window.appearance = newAppearance
+
+    // This may override the window appearance if needed based on the top OSC color scheme
+    customTitleBar?.updateAppearance(windowAppearance: windowAppearance)
 
     osd.updateColors(windowAppearance: windowAppearance, osdColorScheme: Preference.enum(for: .osdColorScheme))
     oscBarRenderer = BarRenderer(windowAppearance: windowAppearance,
@@ -716,7 +721,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
     // TODO: clean up this nasty code
     let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance
-    oscAppearance.applyAppearanceFor {
+    oscAppearance.performAsCurrentDrawingAppearance {
       playSlider.abLoopA.updateKnobImage(to: .loopKnob)
       playSlider.abLoopB.updateKnobImage(to: .loopKnob)
 

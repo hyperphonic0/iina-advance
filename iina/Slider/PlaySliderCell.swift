@@ -43,7 +43,7 @@ class PlaySliderCell: ScrollableSliderCell {
     // Disable hover zoom effect & indicator while actively scrolling; looks bad
     let currentPreviewTimeSec: Double? = pwc.isScrollingOrDraggingPlaySlider ? nil : pwc.seekPreview.currentPreviewTimeSec
 
-    appearance.applyAppearanceFor {
+    appearance.performAsCurrentDrawingAppearance {
       let drawShadow = hasClearBG
       let playBarImg = br.buildPlayBarImage(useFocusEffect: wantsFocusEffect,
                                             barWidth: barRect.width,

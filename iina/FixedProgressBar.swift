@@ -21,7 +21,7 @@ class FixedProgressBar: NSView {
   override func draw(_ dirtyRect: NSRect) {
     guard let br = barRenderer else { return }
 
-    effectiveAppearance.applyAppearanceFor {
+    effectiveAppearance.performAsCurrentDrawingAppearance {
       let barRect = bounds
       let scaleFactor: CGFloat = window?.screen?.backingScaleFactor ?? Constants.defaultBackingScaleFactor
       let volBarImg = br.buildVolumeBarImage(useFocusEffect: false,

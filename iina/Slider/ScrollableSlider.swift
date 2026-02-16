@@ -184,7 +184,7 @@ class ScrollableSliderCell: NSSliderCell {
 
     guard wantsKnob else { return }
 
-    appearance.applyAppearanceFor {
+    appearance.performAsCurrentDrawingAppearance {
       kr.drawKnob(currentKnobType, in: knobRect,
                   darkMode: appearance.isDark,
                   clearBG: hasClearBG,

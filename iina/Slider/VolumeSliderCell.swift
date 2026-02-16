@@ -47,7 +47,7 @@ class VolumeSliderCell: ScrollableSliderCell {
     let knobRect = knobRect(flipped: false)
     let previewValue: CGFloat? = nil  // FIXME: find actual preview value, implement preview
 
-    appearance.applyAppearanceFor {
+    appearance.performAsCurrentDrawingAppearance {
       let drawShadow = hasClearBG
       
       let volBarImg = bf.buildVolumeBarImage(useFocusEffect: wantsFocusEffect,

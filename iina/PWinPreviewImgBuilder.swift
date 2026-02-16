@@ -61,7 +61,7 @@ class PWinPreviewImageBuilder {
 
   func buildPWinPreviewImage() -> NSImage? {
     var image: NSImage?
-    appearance.applyAppearanceFor {
+    appearance.performAsCurrentDrawingAppearance {
       image = _buildPWinPreviewImage()
     }
     return image

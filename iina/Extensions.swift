@@ -1732,27 +1732,18 @@ extension NSAppearance {
   }
 
   // Performs the given closure with this appearance by temporarily making this the current appearance.
-  func applyAppearanceFor<T>(_ closure: ()  -> T) -> T {
-    if #available(macOS 11.0, *) {
-      var result: T?
-      self.performAsCurrentDrawingAppearance {
-        result = closure()
-      }
-      return result!
-    } else {
-      let previousAppearance = NSAppearance.current
-      NSAppearance.current = self
-      defer {
-        NSAppearance.current = previousAppearance
-      }
-      return closure()
+  func performAsCurrentDrawingAppearance<T>(_ closure: ()  -> T) -> T {
+    var result: T?
+    self.performAsCurrentDrawingAppearance {
+      result = closure()
     }
+    return result!
   }
 }
 
-extension NSScreen {
-  static func getOwnerScreenID(forPoint point: NSPoint) -> String? {
-    for screen in NSScreen.screens {
+  extension NSScreen {
+    static func getOwnerScreenID(forPoint point: NSPoint) -> String? {
+      for screen in NSScreen.screens {
       if screen.frame.contains(point) {
         return screen.screenID
       }

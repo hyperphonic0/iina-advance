@@ -48,14 +48,14 @@ class KeyRecordView: NSView {
   }
 
   override func resignFirstResponder() -> Bool {
-    effectiveAppearance.applyAppearanceFor {
+    effectiveAppearance.performAsCurrentDrawingAppearance {
       layer?.backgroundColor = NSColor.keyRecordViewBackground.cgColor
     }
     return true
   }
 
   override func becomeFirstResponder() -> Bool {
-    effectiveAppearance.applyAppearanceFor {
+    effectiveAppearance.performAsCurrentDrawingAppearance {
       layer?.backgroundColor = NSColor.keyRecordViewBackgroundActive.cgColor
     }
     return true

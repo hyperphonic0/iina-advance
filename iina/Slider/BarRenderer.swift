@@ -521,7 +521,7 @@ final class BarRenderer {
     let hasClearBG = colorScheme.hasClearBG
     let barAppearance = hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance
 
-    return barAppearance.applyAppearanceFor {
+    return barAppearance.performAsCurrentDrawingAppearance {
       let leftBaseColor: NSColor
       let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .sliderBarDoneColor)
       switch userSetting {

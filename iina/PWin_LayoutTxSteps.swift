@@ -494,6 +494,7 @@ extension PlayerWindowController {
       } else {
         legacyTitleBar.addViewTo(superview: topBar.titleBarView)
       }
+//      legacyTitleBar.updateAppearance(windowAppearance: cachedEffectiveAppearanceName)
       fadeableViews.applyOnlyIfHidden(outputLayout.leadingSidebarToggleButton, to: legacyTitleBar.leadingSidebarToggleButton)
       fadeableViews.applyOnlyIfHidden(outputLayout.trailingSidebarToggleButton, to: legacyTitleBar.trailingSidebarToggleButton)
       fadeableViews.applyOnlyIfHidden(onTopButtonVisibility, to: legacyTitleBar.onTopButton)

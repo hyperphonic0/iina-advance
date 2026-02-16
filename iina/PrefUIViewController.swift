@@ -494,7 +494,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     var viewHidePairs: [(NSView, Bool)] = []
 
     viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
-    viewHidePairs.append((topBarColorSchemeContainerView, !hasTopBar))
+    viewHidePairs.append((topBarColorSchemeContainerView, !(hasTopBar && (ib.topBarPlacement == .insideViewport))))
     viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
 
     viewHidePairs.append((oscForceSingleRowContainerView, !showForceSingleRowCheckbox))
