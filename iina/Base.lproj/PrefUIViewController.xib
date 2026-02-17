@@ -102,11 +102,11 @@
         </customView>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customView id="M9c-Ak-HmK" userLabel="Prefs &gt; UI &gt; Appearance">
-            <rect key="frame" x="0.0" y="0.0" width="540" height="151"/>
+            <rect key="frame" x="0.0" y="0.0" width="540" height="219"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField identifier="SectionTitleAppearance" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="APB-Nm-aTA">
-                    <rect key="frame" x="-2" y="127" width="87" height="16"/>
+                    <rect key="frame" x="-2" y="195" width="87" height="16"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Appearance:" id="mM7-1Q-FyL">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -114,13 +114,13 @@
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VWZ-zT-vZx" userLabel="RightColumn Stack View">
-                    <rect key="frame" x="120" y="8" width="420" height="142"/>
+                    <rect key="frame" x="120" y="8" width="420" height="210"/>
                     <subviews>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="vO4-Dh-YVv" userLabel="Theme Container View">
-                            <rect key="frame" x="0.0" y="112" width="274" height="30"/>
+                            <rect key="frame" x="0.0" y="160" width="360" height="50"/>
                             <subviews>
-                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BMi-Ax-7wP">
-                                    <rect key="frame" x="-2" y="7" width="50" height="16"/>
+                                <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="751" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BMi-Ax-7wP">
+                                    <rect key="frame" x="85" y="27" width="50" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Theme:" id="yLF-vu-1Gl">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -128,7 +128,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="FNR-0h-DtW">
-                                    <rect key="frame" x="54" y="1" width="219" height="28"/>
+                                    <rect key="frame" x="141" y="1" width="218" height="48"/>
                                     <popUpButtonCell key="cell" type="push" title="Dark" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="VvZ-mQ-wQB" id="Qe2-v8-Xh7">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
@@ -149,7 +149,7 @@
                                 </popUpButton>
                             </subviews>
                             <constraints>
-                                <constraint firstItem="BMi-Ax-7wP" firstAttribute="leading" secondItem="vO4-Dh-YVv" secondAttribute="leading" id="3DB-RP-egN"/>
+                                <constraint firstItem="BMi-Ax-7wP" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="vO4-Dh-YVv" secondAttribute="leading" id="3DB-RP-egN"/>
                                 <constraint firstAttribute="trailing" secondItem="FNR-0h-DtW" secondAttribute="trailing" constant="1" id="4SS-oj-7Kk"/>
                                 <constraint firstItem="FNR-0h-DtW" firstAttribute="firstBaseline" secondItem="BMi-Ax-7wP" secondAttribute="firstBaseline" id="MHV-qv-f52"/>
                                 <constraint firstItem="FNR-0h-DtW" firstAttribute="leading" secondItem="BMi-Ax-7wP" secondAttribute="trailing" constant="8" id="OsU-eb-RGc"/>
@@ -157,6 +157,46 @@
                                 <constraint firstAttribute="bottom" secondItem="FNR-0h-DtW" secondAttribute="bottom" constant="1" id="qld-yg-jmP"/>
                             </constraints>
                         </customView>
+                        <stackView clipsToBounds="YES" autoresizesSubviews="NO" distribution="fill" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="DiV-l8-Zu1" userLabel="Global-Color-Scheme HStack View">
+                            <rect key="frame" x="0.0" y="112" width="357" height="44"/>
+                            <subviews>
+                                <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="q8v-Ea-g0Q">
+                                    <rect key="frame" x="-2" y="14" width="137" height="16"/>
+                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Global Color Scheme:" id="PWe-jB-34p">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RL2-X8-DXE" userLabel="Global-Color-Scheme Popup">
+                                    <rect key="frame" x="141" y="8" width="213" height="28"/>
+                                    <popUpButtonCell key="cell" type="push" title="Custom (separate per panel)" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="hmP-DM-bfx" id="2U7-Ni-pTW" userLabel="Global-Color-Scheme Popup Button Cell">
+                                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                        <font key="font" metaFont="message"/>
+                                        <menu key="menu" id="3Au-mZ-6Z9">
+                                            <items>
+                                                <menuItem title="Custom (separate per panel)" id="hmP-DM-bfx"/>
+                                                <menuItem title="Flat Blended Gray" tag="1" id="S6k-6H-Ew1"/>
+                                                <menuItem title="Liquid Glass (Clear)" tag="3" id="MLH-yf-NPQ"/>
+                                                <menuItem title="Liquid Glass (Default Tint)" state="on" tag="4" id="VLc-qc-n5R"/>
+                                            </items>
+                                        </menu>
+                                    </popUpButtonCell>
+                                    <connections>
+                                        <binding destination="lH7-Vv-0M1" name="selectedTag" keyPath="values.globalColorScheme" id="ZEM-XZ-IJ4"/>
+                                    </connections>
+                                </popUpButton>
+                            </subviews>
+                            <edgeInsets key="edgeInsets" left="0.0" right="3" top="3" bottom="3"/>
+                            <visibilityPriorities>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
+                            </visibilityPriorities>
+                            <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                            </customSpacing>
+                        </stackView>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="3SK-mj-ecb" userLabel="4pt Spacer">
                             <rect key="frame" x="0.0" y="104" width="1" height="4"/>
                             <constraints>
@@ -295,7 +335,11 @@ For smoothest results, also enable custom full screen.</string>
                             </connections>
                         </stackView>
                     </subviews>
+                    <constraints>
+                        <constraint firstItem="RL2-X8-DXE" firstAttribute="leading" secondItem="FNR-0h-DtW" secondAttribute="leading" id="F9e-zm-CkC"/>
+                    </constraints>
                     <visibilityPriorities>
+                        <integer value="1000"/>
                         <integer value="1000"/>
                         <integer value="1000"/>
                         <integer value="1000"/>
@@ -304,6 +348,7 @@ For smoothest results, also enable custom full screen.</string>
                         <integer value="1000"/>
                     </visibilityPriorities>
                     <customSpacing>
+                        <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>

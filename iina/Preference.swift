@@ -159,6 +159,8 @@ struct Preference {
 
     // MARK: - UI Keys
 
+    static let globalColorScheme = Key("globalColorScheme")
+
     // - Title bar & OSC
 
     static let titleBarBtnsGlow = Key("activeTitleBarBtnsGlow")
@@ -853,7 +855,9 @@ struct Preference {
   }
 
   enum PanelColorScheme: Int, InitializingFromKey, CustomStringConvertible {
-    /// Use Apple's `NSVisualEffectView`
+    /// Only valid for `globalColorScheme`. Indicates that each panel can have an independent color scheme.
+    case none = 0
+    /// Use Apple's `NSVisualEffectView`. This was the default prior to v1.6
     case visualEffectView = 1
     /// Use clear background with slight alpha gradient
     case clearGradient
@@ -875,6 +879,8 @@ struct Preference {
 
     var description: String {
       switch self {
+      case .none:
+        return "None"
       case .visualEffectView:
         return "VisualEffectView"
       case .clearGradient:
@@ -1437,6 +1443,7 @@ struct Preference {
     .alwaysOpenInNewWindow: true,
     .allowDuplicatePlayers: false,
     .enableCmdN: true,
+    .globalColorScheme: PanelColorScheme.tintedLiquidGlass.rawValue,
     .animationDurationDefault: 0.25,
     // Native duration (as of MacOS 13.4) is 0.5s, which is quite sluggish. Speed it up a bit
     .animationDurationFullScreen: 0.25,

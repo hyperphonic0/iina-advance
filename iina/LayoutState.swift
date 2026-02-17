@@ -267,7 +267,25 @@ struct LayoutState {
                        moreSidebarState: oldSpec?.moreSidebarState ?? Sidebar.SidebarMiscState.fromDefaultPrefs())
   }
 
+  static func effectiveGlobalColorSchemeFromPrefs() -> Preference.PanelColorScheme {
+    guard #available(macOS 26.0, *) else {
+      return .visualEffectView
+    }
+    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
+    switch globalScheme {
+    case .clearGradient:
+      // Not supported; default to visualEffectView
+      return .visualEffectView
+    default:
+      return globalScheme
+    }
+  }
+
+  /// OSC color scheme
   static var effectiveOSCColorSchemeFromPrefs: Preference.PanelColorScheme {
+    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
+    guard globalScheme == .none else { return globalScheme }
+
     if Preference.bool(for: .enableOSC) {
       let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
       if oscPosition == .bottom, Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
@@ -281,7 +299,11 @@ struct LayoutState {
     return .visualEffectView
   }
 
+  /// Top bar color scheme
   static func effectiveTopBarColorSchemeFromPrefs() -> Preference.PanelColorScheme {
+    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
+    guard globalScheme == .none else { return globalScheme }
+
     let topBarPlacement: Preference.PanelPlacement = Preference.enum(for: .topBarPlacement)
     guard topBarPlacement == .insideViewport else {
       return .visualEffectView
@@ -290,11 +312,26 @@ struct LayoutState {
     return topBarColorScheme
   }
 
+  /// Sidebars color scheme
   static func effectiveSidebarsColorSchemeFromPrefs() -> Preference.PanelColorScheme {
+    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
+    switch globalScheme {
+    case .tintedLiquidGlass, .visualEffectView:
+      return globalScheme
+    case .clearLiquidGlass:
+      // Clear glass not allowed for sidebars (doesn't look good)
+      return .tintedLiquidGlass
+    default:
+      break
+    }
+    
     let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .sidebarsColorScheme)
     switch colorScheme {
     case .tintedLiquidGlass, .visualEffectView:
       return colorScheme
+    case .clearLiquidGlass:
+      // Clear glass not allowed for sidebars
+      return .tintedLiquidGlass
     default:
       return .visualEffectView
     }

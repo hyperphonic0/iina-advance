@@ -25,6 +25,7 @@ extension PlayerWindowController {
       .useForceTouchForSpeedArrows,
       .playlistAutoPlayNext,
       .themeMaterial,
+      .globalColorScheme,
       .playerWindowOpacity,
       .maxVolume,
       .useMpvOsd,
@@ -216,8 +217,6 @@ extension PlayerWindowController {
         .loadIccProfile,
         .toneMappingAlgorithm:
       player.refreshEdrMode()
-    case .themeMaterial:
-      updateTitleBarAndOSC()
     case .playerWindowOpacity:
       animationPipeline.submitInstantTask({ [self] in
         updateWindowBorderAndOpacity()
@@ -251,6 +250,7 @@ extension PlayerWindowController {
 
     case .arrowButtonAction,
         .useForceTouchForSpeedArrows:
+
       updateArrowButtonAccelerationFromPrefs()
       updateTitleBarAndOSC()
 
@@ -271,6 +271,8 @@ extension PlayerWindowController {
         .controlBarToolbarButtons,
         .allowVideoToOverlapCameraHousing,
         .useLegacyWindowedMode,
+        .themeMaterial,
+        .globalColorScheme,
         .showRemainingTime,
         .oscTimeLabelsAlwaysWrapSlider,
         .osdPosition,

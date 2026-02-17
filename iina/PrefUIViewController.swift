@@ -242,6 +242,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       .enableAdvancedSettings,
       .useMpvOsd,
       .integrateWithThumbfast,
+      .globalColorScheme,
       .showTopBarTrigger,
       .topBarPlacement,
       .bottomBarPlacement,
@@ -304,6 +305,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       updateSidebarSectionFromPrefs()
     case .oscBarHeight,
         .controlBarToolbarButtons,
+        .globalColorScheme,
         .oscForceSingleRow,
         .oscColorScheme,
         .osdColorScheme,
@@ -477,9 +479,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
     let isAdvancedEnabled = Preference.bool(for: .enableAdvancedSettings)
     let showForceSingleRowCheckbox = isAdvancedEnabled && oscIsBottom
-    let showOverlayStyleTrigger = oscIsBottom && oscIsOverlay
+    let oscIsBottomOverlay = oscIsBottom && oscIsOverlay
     let hasTopBar = ib.hasTopBar
     let showTopBarTrigger = hasTopBar && ib.topBarPlacement == .insideViewport && isAdvancedEnabled
+    let useGlobalColorScheme = (Preference.enum(for: .globalColorScheme) != Preference.PanelColorScheme.none)
 
     // Update enablement, various state (except isHidden state)
     arrowButtonActionPopUpButton.selectItem(withTag: arrowButtonAction.rawValue)
@@ -495,13 +498,13 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     var viewHidePairs: [(NSView, Bool)] = []
 
     viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
-    viewHidePairs.append((topBarColorSchemeContainerView, !(hasTopBar && (ib.topBarPlacement == .insideViewport))))
+    viewHidePairs.append((topBarColorSchemeContainerView, !( !useGlobalColorScheme && hasTopBar && (ib.topBarPlacement == .insideViewport) ) ))
     viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
 
     viewHidePairs.append((oscForceSingleRowContainerView, !showForceSingleRowCheckbox))
-    viewHidePairs.append((oscTimeLabelsAlwaysWrapSliderStackView, !(oscIsBottom && !Preference.bool(for: .oscForceSingleRow))))
+    viewHidePairs.append((oscTimeLabelsAlwaysWrapSliderStackView, !( oscIsBottom && !Preference.bool(for: .oscForceSingleRow) ) ))
 
-    viewHidePairs.append((oscColorSchemeHStackView, !showOverlayStyleTrigger))
+    viewHidePairs.append((oscColorSchemeHStackView, !oscIsBottomOverlay))
     viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
 
     let supportLiquidGlass: Bool
@@ -525,6 +528,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let arrowButtonActionIsSpeed = arrowButtonAction == .speed
     viewHidePairs.append((usePressureForArrowsButton, !arrowButtonActionIsSpeed))
 
+    viewHidePairs.append((sidebarsColorSchemeHStackView, useGlobalColorScheme))
 
     // Two-phase animation. First show/hide the subviews of each container view with no animation.
     for (view, shouldHide) in viewHidePairs {

@@ -61,7 +61,7 @@ final class TopBar {
   var titleBarHeightConstraint: NSLayoutConstraint!
 
   init() {
-    let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
+    let topBarColorScheme: Preference.PanelColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
     view = TopBar.buildView(topBarColorScheme)
     configureView()
   }
@@ -78,7 +78,8 @@ final class TopBar {
     case .clearGradient:
       // TODO: support this
       fallthrough
-    case .visualEffectView:
+    case .visualEffectView, .none:
+      // Default to NSVisualEffectView
       return TopBarVisualEffectView()
     }
   }
@@ -98,7 +99,7 @@ final class TopBar {
     case .clearGradient:
       // TODO: support this
       fallthrough
-    case .visualEffectView:
+    case .visualEffectView, .none:
       if view as? TopBarVisualEffectView != nil {
         return false
       }
