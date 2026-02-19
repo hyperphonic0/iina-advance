@@ -284,15 +284,22 @@ struct LayoutState {
   /// OSC color scheme
   static var effectiveOSCColorSchemeFromPrefs: Preference.PanelColorScheme {
     let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
-    guard globalScheme == .none else { return globalScheme }
 
     if Preference.bool(for: .enableOSC) {
       let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
       if oscPosition == .bottom, Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
-        return Preference.enum(for: .oscColorScheme)
+        let bottomBarColorSchme: Preference.PanelColorScheme = Preference.enum(for: .oscColorScheme)
+        if bottomBarColorSchme == .clearGradient {
+          // Make exception for this one
+          return bottomBarColorSchme
+        }
+        guard globalScheme == .none else { return globalScheme }
+        return bottomBarColorSchme
       } else if oscPosition == .top {
+        guard globalScheme == .none else { return globalScheme }
         return effectiveTopBarColorSchemeFromPrefs()
       } else if oscPosition == .floating {
+        guard globalScheme == .none else { return globalScheme }
         return Preference.enum(for: .oscFloatingColorScheme)
       }
     }

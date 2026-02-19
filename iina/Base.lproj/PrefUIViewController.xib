@@ -13,6 +13,7 @@
                 <outlet property="autoHideAfterCheckBox" destination="IvI-R5-Sdu" id="wu0-bY-KHj"/>
                 <outlet property="cropPresetsTokenField" destination="hg9-M3-Cff" id="6pU-e7-Aco"/>
                 <outlet property="currentThumbCacheSizeTextField" destination="a7V-Fh-RgC" id="QhQ-K6-m2C"/>
+                <outlet property="globalColorSchemeContainerView" destination="DiV-l8-Zu1" id="sjW-Hy-8hn"/>
                 <outlet property="hideFadeableViewsOutsideWindowCheckBox" destination="kw0-f3-qrz" id="gFU-Zd-LEb"/>
                 <outlet property="keepVideoAwayFromBarsCheckBox" destination="Tue-oY-6da" id="62h-h9-O8h"/>
                 <outlet property="leftSidebarClickToCloseButton" destination="ogu-q9-cqE" id="GzV-MN-iTl"/>
@@ -27,8 +28,8 @@
                 <outlet property="mpvWindowSizeCollapseView" destination="fnx-bb-tli" id="5Rr-eb-18Y"/>
                 <outlet property="oscAutoHideTimeoutTextField" destination="Abq-vA-BcZ" id="NtQ-5B-PVy"/>
                 <outlet property="oscBarHeightTextField" destination="WPN-TF-OlT" id="qQj-1x-hjY"/>
+                <outlet property="oscBottomColorSchemeHStackView" destination="KxK-zk-W7E" id="Q7g-TQ-owA"/>
                 <outlet property="oscBottomPlacementContainerView" destination="PrI-KL-aZn" id="2q0-hp-otk"/>
-                <outlet property="oscColorSchemeHStackView" destination="KxK-zk-W7E" id="Q7g-TQ-owA"/>
                 <outlet property="oscFloatingColorSchemeHStackView" destination="ohf-zL-x9l" id="7ml-TE-t1g"/>
                 <outlet property="oscForceSingleRowContainerView" destination="ovw-kj-Bwx" id="TJQ-Ev-O3a"/>
                 <outlet property="oscHeightStackView" destination="d0z-Kd-exY" id="nMX-hb-ykw"/>
@@ -170,15 +171,15 @@
                                 </textField>
                                 <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RL2-X8-DXE" userLabel="Global-Color-Scheme Popup">
                                     <rect key="frame" x="141" y="8" width="213" height="28"/>
-                                    <popUpButtonCell key="cell" type="push" title="Custom (separate per panel)" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="hmP-DM-bfx" id="2U7-Ni-pTW" userLabel="Global-Color-Scheme Popup Button Cell">
+                                    <popUpButtonCell key="cell" type="push" title="Custom (set per panel)" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="hmP-DM-bfx" id="2U7-Ni-pTW" userLabel="Global-Color-Scheme Popup Button Cell">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
                                         <menu key="menu" id="3Au-mZ-6Z9">
                                             <items>
-                                                <menuItem title="Custom (separate per panel)" id="hmP-DM-bfx"/>
+                                                <menuItem title="Custom (set per panel)" state="on" id="hmP-DM-bfx"/>
                                                 <menuItem title="Flat Blended Gray" tag="1" id="S6k-6H-Ew1"/>
                                                 <menuItem title="Liquid Glass (Clear)" tag="3" id="MLH-yf-NPQ"/>
-                                                <menuItem title="Liquid Glass (Default Tint)" state="on" tag="4" id="VLc-qc-n5R"/>
+                                                <menuItem title="Liquid Glass (Default Tint)" tag="4" id="VLc-qc-n5R"/>
                                             </items>
                                         </menu>
                                     </popUpButtonCell>
@@ -3298,10 +3299,10 @@ For smoothest results, also enable custom full screen.</string>
             <point key="canvasLocation" x="-2" y="773"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars">
-            <rect key="frame" x="0.0" y="0.0" width="619" height="420"/>
+            <rect key="frame" x="0.0" y="0.0" width="619" height="400"/>
             <subviews>
                 <textField identifier="SectionTitleSidebars" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="E6K-jW-Lzn">
-                    <rect key="frame" x="-2" y="379" width="66" height="16"/>
+                    <rect key="frame" x="-2" y="376" width="66" height="16"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="16" id="VMK-jQ-Ujf"/>
                     </constraints>
@@ -3312,19 +3313,19 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kog-j2-kGH" userLabel="RightColumn VStack View">
-                    <rect key="frame" x="120" y="8" width="450" height="393"/>
+                    <rect key="frame" x="120" y="8" width="450" height="390"/>
                     <subviews>
                         <stackView clipsToBounds="YES" autoresizesSubviews="NO" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="MPe-w8-VKH" userLabel="Sidebars-Color-Scheme HStack View">
-                            <rect key="frame" x="0.0" y="362" width="450" height="31"/>
+                            <rect key="frame" x="0.0" y="362" width="450" height="28"/>
                             <subviews>
                                 <customView horizontalHuggingPriority="200" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="EpZ-XX-fpV" userLabel="Horizontal Spacer View">
-                                    <rect key="frame" x="0.0" y="8" width="129" height="1"/>
+                                    <rect key="frame" x="0.0" y="5" width="129" height="1"/>
                                     <constraints>
                                         <constraint firstAttribute="height" constant="1" id="8t4-CW-a3W"/>
                                     </constraints>
                                 </customView>
                                 <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="WaT-zt-ObT">
-                                    <rect key="frame" x="135" y="9" width="93" height="16"/>
+                                    <rect key="frame" x="135" y="6" width="93" height="16"/>
                                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Color Scheme:" id="DOJ-ac-Lpj">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -3332,7 +3333,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="500" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="iHT-e9-f3r" userLabel="OSC-Color-Scheme Popup">
-                                    <rect key="frame" x="234" y="3" width="213" height="28"/>
+                                    <rect key="frame" x="234" y="0.0" width="213" height="28"/>
                                     <popUpButtonCell key="cell" type="push" title="Flat Blended Gray" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="C6Y-Cg-81Y" id="KQt-wi-dOo" userLabel="OSC-Color-Scheme Popup Button Cell">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
@@ -3396,7 +3397,7 @@ For smoothest results, also enable custom full screen.</string>
                                     <gridCells>
                                         <gridCell row="hjW-b6-71D" column="Pgq-7f-mYz" id="NoI-f5-36O">
                                             <textField key="contentView" focusRingType="none" horizontalHuggingPriority="248" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="og0-0i-0wu" userLabel="Blank Text Field">
-                                                <rect key="frame" x="-2" y="172" width="219" height="16"/>
+                                                <rect key="frame" x="-2" y="168" width="219" height="24"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="XsQ-RU-5sT">
                                                     <font key="font" metaFont="system"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -3406,7 +3407,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="hjW-b6-71D" column="v1D-IJ-G5S" id="82f-7F-ibj">
                                             <textField key="contentView" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eh8-tf-wHU">
-                                                <rect key="frame" x="231" y="172" width="83" height="16"/>
+                                                <rect key="frame" x="231" y="176" width="83" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Left Sidebar" id="8Oi-ew-3cu">
                                                     <font key="font" textStyle="headline" name=".SFNS-Bold"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -3416,7 +3417,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="hjW-b6-71D" column="P5j-t5-Vfj" id="2f6-h6-Ebf">
                                             <textField key="contentView" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6mM-VC-jd0">
-                                                <rect key="frame" x="342" y="172" width="92" height="16"/>
+                                                <rect key="frame" x="342" y="176" width="92" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Right Sidebar" id="Msi-a9-5mJ">
                                                     <font key="font" textStyle="headline" name=".SFNS-Bold"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -3846,6 +3847,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="WaT-zt-ObT" firstAttribute="firstBaseline" secondItem="E6K-jW-Lzn" secondAttribute="firstBaseline" id="Wcy-CQ-tvY"/>
                 <constraint firstItem="E6K-jW-Lzn" firstAttribute="top" secondItem="iZa-Jl-fXs" secondAttribute="top" constant="8" id="gKH-FL-rHR"/>
                 <constraint firstItem="kog-j2-kGH" firstAttribute="leading" secondItem="iZa-Jl-fXs" secondAttribute="leading" constant="120" id="l2c-o1-o6t"/>
+                <constraint firstItem="eh8-tf-wHU" firstAttribute="firstBaseline" secondItem="E6K-jW-Lzn" secondAttribute="firstBaseline" priority="800" identifier="BackupAlign_whenColorSchemeHidden" id="l5j-V6-q3e"/>
             </constraints>
             <point key="canvasLocation" x="-19" y="1223"/>
         </customView>

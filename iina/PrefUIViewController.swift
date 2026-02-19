@@ -100,6 +100,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet var sectionAccessibilityView: NSView!
 
   @IBOutlet weak var themeMenu: NSMenu!
+  @IBOutlet weak var globalColorSchemeContainerView: NSView!
   @IBOutlet weak var topBarPositionContainerView: NSView!
   @IBOutlet weak var topBarColorSchemeContainerView: NSView!
   @IBOutlet weak var showTopBarTriggerContainerView: NSView!
@@ -124,7 +125,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var keepVideoAwayFromBarsCheckBox: NSButton!
 
   @IBOutlet weak var oscFloatingColorSchemeHStackView: NSStackView!
-  @IBOutlet weak var oscColorSchemeHStackView: NSStackView!
+  @IBOutlet weak var oscBottomColorSchemeHStackView: NSStackView!
   @IBOutlet weak var oscForceSingleRowContainerView: NSStackView!
 
   @IBOutlet weak var osdColorSchemeHStackView: NSStackView!
@@ -462,6 +463,13 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   // MARK: - Title Bar & OSC
 
   private func refreshTitleBarAndOSCSection(from geo: ControlBarGeometry? = nil) {
+    let hasMacOS26: Bool
+    if #available(macOS 26.0, *) {
+      hasMacOS26 = true
+    } else {
+      hasMacOS26 = false
+    }
+
     let newGeo = geo ?? ControlBarGeometry(mode: .windowedNormal)
     lastAppliedGeo = newGeo
     let ib = PWinPreviewImageBuilder(self.view)
@@ -482,7 +490,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let oscIsBottomOverlay = oscIsBottom && oscIsOverlay
     let hasTopBar = ib.hasTopBar
     let showTopBarTrigger = hasTopBar && ib.topBarPlacement == .insideViewport && isAdvancedEnabled
-    let useGlobalColorScheme = (Preference.enum(for: .globalColorScheme) != Preference.PanelColorScheme.none)
+    let useGlobalColorScheme = hasMacOS26 && (Preference.enum(for: .globalColorScheme) != Preference.PanelColorScheme.none)
 
     // Update enablement, various state (except isHidden state)
     arrowButtonActionPopUpButton.selectItem(withTag: arrowButtonAction.rawValue)
@@ -497,24 +505,19 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     /// Each entry contains a ref to a view & intended `isHidden` state:
     var viewHidePairs: [(NSView, Bool)] = []
 
+    viewHidePairs.append((globalColorSchemeContainerView, !hasMacOS26))
     viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
-    viewHidePairs.append((topBarColorSchemeContainerView, !( !useGlobalColorScheme && hasTopBar && (ib.topBarPlacement == .insideViewport) ) ))
+    viewHidePairs.append((topBarColorSchemeContainerView, !(hasMacOS26 && !useGlobalColorScheme && hasTopBar && (ib.topBarPlacement == .insideViewport) ) ))
     viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
 
     viewHidePairs.append((oscForceSingleRowContainerView, !showForceSingleRowCheckbox))
     viewHidePairs.append((oscTimeLabelsAlwaysWrapSliderStackView, !( oscIsBottom && !Preference.bool(for: .oscForceSingleRow) ) ))
 
-    viewHidePairs.append((oscColorSchemeHStackView, !oscIsBottomOverlay))
+    viewHidePairs.append((oscBottomColorSchemeHStackView, !(oscIsBottomOverlay)))
     viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
 
-    let supportLiquidGlass: Bool
-    if #available(macOS 26.0, *) {
-      supportLiquidGlass = true
-    } else {
-      supportLiquidGlass = false
-    }
-    viewHidePairs.append((oscFloatingColorSchemeHStackView, !(supportLiquidGlass && oscIsFloating)))
-    viewHidePairs.append((osdColorSchemeHStackView, !supportLiquidGlass))
+    viewHidePairs.append((oscFloatingColorSchemeHStackView, !(hasMacOS26 && oscIsFloating && !useGlobalColorScheme)))
+    viewHidePairs.append((osdColorSchemeHStackView, !(hasMacOS26 && !useGlobalColorScheme)))
 
     viewHidePairs.append((oscSnapToCenterContainerView, !oscIsFloating))
 
@@ -528,7 +531,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let arrowButtonActionIsSpeed = arrowButtonAction == .speed
     viewHidePairs.append((usePressureForArrowsButton, !arrowButtonActionIsSpeed))
 
-    viewHidePairs.append((sidebarsColorSchemeHStackView, useGlobalColorScheme))
+    viewHidePairs.append((sidebarsColorSchemeHStackView, !(hasMacOS26 && !useGlobalColorScheme)))
 
     // Two-phase animation. First show/hide the subviews of each container view with no animation.
     for (view, shouldHide) in viewHidePairs {
