@@ -85,14 +85,13 @@ final class TopBar {
   }
 
   /// Returns `true` if view needed to be rebuilt
-  func rebuildViewIfNeeded(_ colorScheme: Preference.PanelColorScheme, superview: NSView) {
+  func rebuildViewIfNeeded(_ colorScheme: Preference.PanelColorScheme, superview: NSView, windowAppearance: NSAppearance) {
     guard #available(macOS 26.0, *) else { return }
     switch colorScheme {
     case .clearLiquidGlass, .tintedLiquidGlass:
       if let glassView = view as? TopBarViewGlassEffectView {
         let targetStyle: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
         if glassView.style == targetStyle {
-          updateAppearance(windowAppearance: superview.effectiveAppearance)
           return
         }
         // As of MacOS 26.0, glass effect views seem to be unreliable at changing between light & dark.
@@ -109,7 +108,6 @@ final class TopBar {
     }
     view.removeFromSuperview()
     rebuildView(colorScheme, superview: superview)
-    updateAppearance(windowAppearance: superview.effectiveAppearance)
   }
 
   func rebuildView(_ colorScheme: Preference.PanelColorScheme, superview: NSView) {
@@ -154,9 +152,10 @@ final class TopBar {
   func updateAppearance(windowAppearance: NSAppearance?) {
     // Can be nil, which means dynamic system appearance:
     let topBarColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
-
     let topBarAppearance = topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance
     view.appearance = topBarAppearance
+    view.needsDisplay = true
+    view.needsLayout = true
     if #available(macOS 26.0, *), let glassView = view as? NSGlassEffectView {
       glassView.contentView?.appearance = topBarAppearance
       glassView.contentView?.needsDisplay = true
@@ -166,9 +165,6 @@ final class TopBar {
     view.pwc?.customTitleBar?.setColors(topBarColorScheme: topBarColorScheme)
 
     bottomBorder.isHidden = topBarColorScheme != .visualEffectView
-
-    view.needsDisplay = true
-    view.needsLayout = true
 
     view.pwc?.log.verbose("Updated topBarView appearance to \(topBarColorScheme.description), isDark=\(view.effectiveAppearance.isDark.yesno)")
   }

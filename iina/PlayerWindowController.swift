@@ -689,10 +689,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Set material & theme (light or dark mode) for OSC and title bar.
   /// Make sure this is running inside an animation task too!
   @MainActor
-  func applyThemeMaterial(using layoutState: LayoutState, _ window: NSWindow, _ screen: NSScreen) {
-    let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
-    // Can be nil, which means dynamic system appearance:
-    let newAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
+  func applyThemeMaterial(using layoutState: LayoutState, _ newAppearance: NSAppearance?, _ window: NSWindow, _ screen: NSScreen) {
     log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): appearance=\(newAppearance?.name.rawValue ?? "nil")")
 
     if playlistView.isViewLoaded {
@@ -703,7 +700,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     /// which will call this method again unless we set `cachedEffectiveAppearanceName`
     window.appearance = newAppearance
     let windowEffectiveAppearance = newAppearance ?? window.effectiveAppearance
-    topBar.updateAppearance(windowAppearance: windowEffectiveAppearance)
     osd.updateColors(windowAppearance: windowEffectiveAppearance)
     oscBarRenderer = BarRenderer(windowAppearance: windowEffectiveAppearance,
                                  colorScheme: layoutState.oscColorScheme,
@@ -1298,7 +1294,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
       animationPipeline.submitInstantTask({ [self] in
         log.verbose("WndDidChangeScreen wNum=\(window.windowNumber): frame=\(window.frame) screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
-        applyThemeMaterial(using: currentLayout, window, screen)  // scaleFactor may have changed
+        applyThemeMaterial(using: currentLayout, window.effectiveAppearance, window, screen)  // scaleFactor may have changed
         videoView.refreshAllVideoDisplayState()
         player.events.emit(.windowScreenChanged)
       })

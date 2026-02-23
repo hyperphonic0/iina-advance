@@ -360,6 +360,30 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose("Start")
 
+    let oldWindowAppearance = window.effectiveAppearance
+
+    let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
+    // Can be nil, which means dynamic system appearance:
+    let themeAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
+
+    // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
+    // & (2) window.appearance is updated before updating styling of any window views!
+    if let screen = window.screen {
+      applyThemeMaterial(using: transition.outputLayout, themeAppearance, window, screen)
+    } else {
+      // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
+      // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
+      // be called via windowDidChangeScreen.
+      log.verbose("Skipped applyThemeMaterial due to missing window or screen")
+    }
+
+    let targetWindowAppearance: NSAppearance = themeAppearance ?? window.effectiveAppearance
+    let appearanceDidChange = targetWindowAppearance != oldWindowAppearance
+    if appearanceDidChange {
+      // Call this NOW before updating styles / appearance of subviews
+      window.contentView?.display()
+    }
+
     switch transition.outputLayout.mode {
     case .fullScreenInteractive, .windowedInteractive:
       // Show cursor always in these modes
@@ -422,7 +446,7 @@ extension PlayerWindowController {
 
     // - Bottom Bar
 
-    let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging
+    let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging || appearanceDidChange
     if needsBottomBarUpdate {
       rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme)
       // Just add the new view now. It will have its Z order corrected in `rebuildPanelConstraints`.
@@ -442,7 +466,9 @@ extension PlayerWindowController {
 
     // - Top Bar
 
-    topBar.rebuildViewIfNeeded(transition.outputLayout.topBarColorScheme, superview: window.contentView!)
+    // FIXME: topBar.view doesn't always update appearance
+    topBar.rebuildViewIfNeeded(transition.outputLayout.topBarColorScheme, superview: window.contentView!, windowAppearance: targetWindowAppearance)
+    topBar.updateAppearance(windowAppearance: targetWindowAppearance)
 
     if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
@@ -568,17 +594,6 @@ extension PlayerWindowController {
 
         player.setVideoTrackDisabled()
       }
-    }
-
-    // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
-    // & (2) window.appearance is updated before updating styling of any window views!
-    if let screen = window.screen {
-      applyThemeMaterial(using: transition.outputLayout, window, screen)
-    } else {
-      // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
-      // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
-      // be called via windowDidChangeScreen.
-      log.verbose("Skipped applyThemeMaterial due to missing window or screen")
     }
 
     // - OSC
@@ -711,25 +726,6 @@ extension PlayerWindowController {
       volumeSliderCell.knobHeight = sliderKnobHeight
       volumeSlider.needsDisplay = true
 
-      let topBarColorScheme = outputLayout.topBarColorScheme
-      if outputLayout.leadingSidebarToggleButton.isShowable {
-        leadingSidebarToggleButton.setColors(for: topBarColorScheme)
-        leadingSidebarToggleButton.needsDisplay = true
-      }
-      if outputLayout.trailingSidebarToggleButton.isShowable {
-        trailingSidebarToggleButton.setColors(for: topBarColorScheme)
-        trailingSidebarToggleButton.needsDisplay = true
-      }
-//      if outputLayout.titleIconAndText.isShowable {
-//        titleTextField?.setColors(topBarColorScheme)
-//        titleTextField?.needsDisplay = true
-//      }
-      onTopButton.setColors(for: topBarColorScheme)
-      onTopButton.needsDisplay = true
-      if let customTitleBar {
-        customTitleBar.setColors(topBarColorScheme: topBarColorScheme)
-      }
-
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging ||
           (transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight) {
         let oscColorScheme = transition.outputLayout.oscColorScheme
@@ -819,12 +815,34 @@ extension PlayerWindowController {
     // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
     // & (2) window.appearance is updated before updating styling of any window views!
     if let screen = window.screen {
-      applyThemeMaterial(using: transition.outputLayout, window, screen)
+      applyThemeMaterial(using: transition.outputLayout, targetWindowAppearance, window, screen)
     } else {
       // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
       // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
       // be called via windowDidChangeScreen.
       log.verbose("Skipped applyThemeMaterial due to missing window or screen")
+    }
+
+    targetWindowAppearance.performAsCurrentDrawingAppearance { [self] in
+      // Top bar control colors. Do this after applying theme!
+      let topBarColorScheme = outputLayout.topBarColorScheme
+      if outputLayout.leadingSidebarToggleButton.isShowable {
+        leadingSidebarToggleButton.setColors(for: topBarColorScheme)
+        leadingSidebarToggleButton.needsDisplay = true
+      }
+      if outputLayout.trailingSidebarToggleButton.isShowable {
+        trailingSidebarToggleButton.setColors(for: topBarColorScheme)
+        trailingSidebarToggleButton.needsDisplay = true
+      }
+      //      if outputLayout.titleIconAndText.isShowable {
+      //        titleTextField?.setColors(topBarColorScheme)
+      //        titleTextField?.needsDisplay = true
+      //      }
+      onTopButton.setColors(for: topBarColorScheme)
+      onTopButton.needsDisplay = true
+      if let customTitleBar {
+        customTitleBar.setColors(topBarColorScheme: topBarColorScheme)
+      }
     }
 
     // Other misc views
