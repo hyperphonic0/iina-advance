@@ -486,25 +486,11 @@ struct LayoutState {
     return 0
   }
 
-  var isInteractiveMode: Bool {
-    return mode.isInteractiveMode
-  }
-
-  var isFullScreen: Bool {
-    return mode.isFullScreen
-  }
-
-  var isWindowed: Bool {
-    return mode.isWindowed
-  }
-
-  var isNativeFullScreen: Bool {
-    return isFullScreen && !isLegacyStyle
-  }
-
-  var isLegacyFullScreen: Bool {
-    return isFullScreen && isLegacyStyle
-  }
+  var isInteractiveMode: Bool { mode.isInteractiveMode }
+  var isFullScreen: Bool { mode.isFullScreen }
+  var isWindowed: Bool { mode.isWindowed }
+  var isNativeFullScreen: Bool { isFullScreen && !isLegacyStyle }
+  var isLegacyFullScreen: Bool { isFullScreen && isLegacyStyle }
 
   var hasPermanentControlBar: Bool {
     if mode == .musicMode {
@@ -514,34 +500,16 @@ struct LayoutState {
                          (oscPosition == .bottom && bottomBarPlacement == .outsideViewport))
   }
 
-  var hasBottomOSC: Bool {
-    return enableOSC && oscPosition == .bottom
-  }
+  var hasBottomOSC: Bool { enableOSC && oscPosition == .bottom }
 
-  var hasTopOrBottomOSC: Bool {
-    return enableOSC && (oscPosition == .top || oscPosition == .bottom)
-  }
+  var hasTopOrBottomOSC: Bool { enableOSC && (oscPosition == .top || oscPosition == .bottom) }
 
   /// Has OSC with clear background.
-  var oscBackgroundIsClear: Bool {
-    oscColorScheme.hasClearBG
-  }
-
-  var canShowSidebars: Bool {
-    mode.canShowSidebars
-  }
-
-  var isLeadingSidebarVisible: Bool {
-    leadingSidebar.isVisible
-  }
-
-  var isTrailingSidebarVisible: Bool {
-    trailingSidebar.isVisible
-  }
-
-  var isAnySidebarVisible: Bool {
-    leadingSidebar.isVisible || trailingSidebar.isVisible
-  }
+  var oscBackgroundIsClear: Bool { oscColorScheme.hasClearBG }
+  var canShowSidebars: Bool { mode.canShowSidebars }
+  var isLeadingSidebarVisible: Bool { leadingSidebar.isVisible }
+  var isTrailingSidebarVisible: Bool { trailingSidebar.isVisible }
+  var isAnySidebarVisible: Bool { leadingSidebar.isVisible || trailingSidebar.isVisible }
 
   var topBarHeight: CGFloat {
     if mode == .musicMode {
@@ -551,42 +519,37 @@ struct LayoutState {
     return titleBarHeight + topOSCHeight
   }
 
-  var hasTopBar: Bool {
-    topBarHeight > 0
-  }
-
-  var hasBottomBar: Bool {
-    bottomBarView.isShowable
-  }
+  var hasTopBar: Bool { topBarHeight > 0 }
+  var hasBottomBar: Bool { bottomBarView.isShowable }
 
   /// - Bar widths/heights IF `.outsideViewport`
 
   var outsideTopBarHeight: CGFloat {
-    return topBarPlacement == .outsideViewport ? topBarHeight : 0
+    topBarPlacement == .outsideViewport ? topBarHeight : 0
   }
 
   var outsideBottomBarHeight: CGFloat {
-    return bottomBarPlacement == .outsideViewport ? bottomBarHeight : 0
+    bottomBarPlacement == .outsideViewport ? bottomBarHeight : 0
   }
 
   var outsideBars: MarginQuad {
-    return MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
-                      bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
+    MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
+               bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
   }
 
   /// - Bar widths/heights IF `.insideViewport`
 
   var insideTopBarHeight: CGFloat {
-    return topBarPlacement == .insideViewport ? topBarHeight : 0
+    topBarPlacement == .insideViewport ? topBarHeight : 0
   }
 
   var insideBottomBarHeight: CGFloat {
-    return bottomBarPlacement == .insideViewport ? bottomBarHeight : 0
+    bottomBarPlacement == .insideViewport ? bottomBarHeight : 0
   }
 
   var insideBars: MarginQuad {
-    return MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
-                      bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
+    MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
+               bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
   }
 
   // - Other computed properties
@@ -595,33 +558,23 @@ struct LayoutState {
     return mode == .windowedNormal || mode == .fullScreenNormal
   }
 
-  var isMusicMode: Bool {
-    return mode == .musicMode
-  }
+  var isMusicMode: Bool {  mode == .musicMode }
 
   /// Only windowed & full screen modes can have floating OSC, and OSC must be enabled
-  var hasFloatingOSC: Bool {
-    return enableOSC && oscPosition == .floating
-  }
+  var hasFloatingOSC: Bool { enableOSC && oscPosition == .floating }
 
-  var hasTopOSC: Bool {
-    return enableOSC && oscPosition == .top
-  }
+  var hasTopOSC: Bool { enableOSC && oscPosition == .top }
 
-  var hasControlBar: Bool {
-    return isMusicMode || enableOSC
-  }
+  var hasControlBar: Bool { isMusicMode || enableOSC }
 
   var hasFadeableOSC: Bool {
-    return enableOSC && (oscPosition == .floating ||
-                         (oscPosition == .top && topBarView.isFadeable) ||
-                         (oscPosition == .bottom && bottomBarView.isFadeable))
+    enableOSC && (oscPosition == .floating ||
+                  (oscPosition == .top && topBarView.isFadeable) ||
+                  (oscPosition == .bottom && bottomBarView.isFadeable))
   }
 
   /// Whether PlaySlider & VolumeSlider should change height when in focus (on mouse hover or during scroll)
-  var useSliderFocusEffect: Bool {
-    return hasControlBar
-  }
+  var useSliderFocusEffect: Bool { hasControlBar }
 
   var playlistShown: Bool {
     if isMusicMode {

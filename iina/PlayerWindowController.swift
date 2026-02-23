@@ -705,11 +705,8 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     /// Setting `window.appearance` will trigger a change to `#keyPath(window.effectiveAppearance)`,
     /// which will call this method again unless we set `cachedEffectiveAppearanceName`
     window.appearance = newAppearance
-
-    // This may override the window appearance if needed based on the top OSC color scheme
-    topBar.updateAppearance(windowAppearance: newAppearance)
-
-    let windowEffectiveAppearance = window.effectiveAppearance
+    let windowEffectiveAppearance = newAppearance ?? window.effectiveAppearance
+    topBar.updateAppearance(windowAppearance: windowEffectiveAppearance)
     osd.updateColors(windowAppearance: windowEffectiveAppearance)
     oscBarRenderer = BarRenderer(windowAppearance: windowEffectiveAppearance,
                                  colorScheme: layoutState.oscColorScheme,
@@ -732,6 +729,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true
     }
+    window.contentView?.needsDisplay = true
   }
 
   func updateArrowButtonAccelerationFromPrefs() {

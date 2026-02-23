@@ -40,7 +40,6 @@ class CustomTitleBarViewController: NSViewController {
     self.pwc = pwc
 
     super.init(nibName: nil, bundle: nil)
-    setColors(layout.topBarColorScheme)
   }
   
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -148,6 +147,10 @@ class CustomTitleBarViewController: NSViewController {
   func addViewTo(superview: NSView) {
     superview.addSubview(view)
     view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
+    view.appearance = superview.appearance
+    if #available(macOS 26.0, *), let glassView = view as? NSGlassEffectView {
+      glassView.contentView?.appearance = superview.appearance
+    }
 
     let builder = CustomTitleBar.shared
     let iconSpacingH = Constants.titleBarIconHSpacing
@@ -205,8 +208,6 @@ class CustomTitleBarViewController: NSViewController {
 
     titleText.identifier = .init("TitleBar-TextView")
     titleText.font = NSFont.titleBarFont(ofSize: NSFont.systemFontSize(for: .regular))
-    titleText.textColor = .labelColor
-    titleText.alphaValue = 0.5
 
     titleIconAndTextStackView.setViews([documentIconButton, titleText], in: .center)
     titleIconAndTextStackView.detachesHiddenViews = true
@@ -244,6 +245,9 @@ class CustomTitleBarViewController: NSViewController {
 
     initConstraints()
 
+    let topBarColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
+    setColors(topBarColorScheme: topBarColorScheme)
+
     view.configureSubtreeForCoreAnimation()
 
     pwc.log.verbose("CustomTitleBar viewDidLoad done: isDark=\(view.effectiveAppearance.isDark.yesno)")
@@ -274,7 +278,6 @@ class CustomTitleBarViewController: NSViewController {
     if titleText.alphaValue > 0.0 {
       // TODO: apply colors to buttons in inactive windows when toggling fadeable views!
       let alphaValue = drawAsKeyWindow ? activeControlOpacity : inactiveControlOpacity
-      titleText.setColors(LayoutState.effectiveTopBarColorSchemeFromPrefs())
       titleText.alphaValue = alphaValue
     }
 
@@ -294,14 +297,13 @@ class CustomTitleBarViewController: NSViewController {
     leadingStackView.markButtonsDirty()
   }
 
-  func setColors(_ topBarColorScheme: Preference.PanelColorScheme) {
-    for btn in [leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton] {
-      btn.setColors(for: topBarColorScheme)
-    }
+  func setColors(topBarColorScheme: Preference.PanelColorScheme) {
     titleText.setColors(topBarColorScheme)
+    titleText.needsDisplay = true
 
     for btn in symButtons {
       btn.setColors(for: topBarColorScheme)
+      btn.needsDisplay = true
     }
   }
 

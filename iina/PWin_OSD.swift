@@ -225,11 +225,15 @@ final class OSDState {
     }
 
     guard needsRebuild else { return }
-    log.verbose("Rebuilding AdditionalInfoView for colorScheme: \(colorScheme.description)")
+    let infoIsHidden = additionalInfoView.isHidden
+    log.verbose("Rebuilding AdditionalInfoView for colorScheme: \(colorScheme.description) hidden=\(infoIsHidden.yn)")
     additionalInfoView.removeAllSubviews()
     additionalInfoView.removeFromSuperview()
 
     additionalInfoView = OSDState.buildAdditionalInfoView(additionalInfoSubviews)
+    if infoIsHidden {
+      additionalInfoView.isHidden = true
+    }
   }
 
   @MainActor
@@ -251,12 +255,16 @@ final class OSDState {
     }
 
     guard needsRebuild else { return }
-    log.verbose("Rebuilding OSDView for colorScheme: \(colorScheme.description)")
+    let osdIsHidden = osdView.isHidden
+    log.verbose("Rebuilding OSDView for colorScheme=\(colorScheme.description) hidden=\(osdIsHidden.yn)")
     osdView.removeAllSubviews()
     osdView.removeFromSuperview()
 
     osdView = OSDState.buildOSDView(subviews: [osdIconImageView, osdVStackView])
     rebuildOSDViewConstraints()
+    if osdIsHidden {
+      osdView.isHidden = true
+    }
   }
 
   @MainActor

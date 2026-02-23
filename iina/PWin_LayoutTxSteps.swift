@@ -191,15 +191,9 @@ extension PlayerWindowController {
 
     // Change blending modes
     if transition.isTogglingFullScreen {
+      let fsLayout = transition.inputLayout.isFullScreen ? transition.inputLayout : transition.outputLayout
       /// Need to use `.withinWindow` during animation or else panel tint can change in odd ways
-      if let topBarVE = topBar.view as? NSVisualEffectView {
-        topBarVE.blendingMode = .withinWindow
-      }
-      if let bottomBarView = bottomBarView as? NSVisualEffectView {
-        bottomBarView.blendingMode = .withinWindow
-      }
-      (leadingSidebarView as? NSVisualEffectView)?.blendingMode = .withinWindow
-      (trailingSidebarView as? NSVisualEffectView)?.blendingMode = .withinWindow
+      updatePanelBlendingModes(to: fsLayout)
     }
 
     if transition.isTogglingMusicMode || transition.isTogglingInteractiveMode {
@@ -448,9 +442,7 @@ extension PlayerWindowController {
 
     // - Top Bar
 
-    if topBar.rebuildViewIfNeeded(transition.outputLayout.topBarColorScheme) {
-      window.contentView!.addSubview(topBar.view)
-    }
+    topBar.rebuildViewIfNeeded(transition.outputLayout.topBarColorScheme, superview: window.contentView!)
 
     if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
@@ -576,6 +568,17 @@ extension PlayerWindowController {
 
         player.setVideoTrackDisabled()
       }
+    }
+
+    // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
+    // & (2) window.appearance is updated before updating styling of any window views!
+    if let screen = window.screen {
+      applyThemeMaterial(using: transition.outputLayout, window, screen)
+    } else {
+      // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
+      // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
+      // be called via windowDidChangeScreen.
+      log.verbose("Skipped applyThemeMaterial due to missing window or screen")
     }
 
     // - OSC
@@ -708,12 +711,23 @@ extension PlayerWindowController {
       volumeSliderCell.knobHeight = sliderKnobHeight
       volumeSlider.needsDisplay = true
 
-      let topBarColorScheme = transition.outputLayout.topBarColorScheme
-      leadingSidebarToggleButton.setColors(for: topBarColorScheme)
-      trailingSidebarToggleButton.setColors(for: topBarColorScheme)
+      let topBarColorScheme = outputLayout.topBarColorScheme
+      if outputLayout.leadingSidebarToggleButton.isShowable {
+        leadingSidebarToggleButton.setColors(for: topBarColorScheme)
+        leadingSidebarToggleButton.needsDisplay = true
+      }
+      if outputLayout.trailingSidebarToggleButton.isShowable {
+        trailingSidebarToggleButton.setColors(for: topBarColorScheme)
+        trailingSidebarToggleButton.needsDisplay = true
+      }
+//      if outputLayout.titleIconAndText.isShowable {
+//        titleTextField?.setColors(topBarColorScheme)
+//        titleTextField?.needsDisplay = true
+//      }
       onTopButton.setColors(for: topBarColorScheme)
+      onTopButton.needsDisplay = true
       if let customTitleBar {
-        customTitleBar.setColors(topBarColorScheme)
+        customTitleBar.setColors(topBarColorScheme: topBarColorScheme)
       }
 
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging ||
@@ -802,7 +816,8 @@ extension PlayerWindowController {
       updatePanelBlendingModes(to: outputLayout)
     }
 
-    // Do this here so that BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly)
+    // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
+    // & (2) window.appearance is updated before updating styling of any window views!
     if let screen = window.screen {
       applyThemeMaterial(using: transition.outputLayout, window, screen)
     } else {
