@@ -40,10 +40,7 @@ class CustomTitleBarViewController: NSViewController {
     self.pwc = pwc
 
     super.init(nibName: nil, bundle: nil)
-    let topBarColorScheme = layout.topBarColorScheme
-    for btn in [leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton] {
-      btn.setColors(for: topBarColorScheme)
-    }
+    setColors(layout.topBarColorScheme)
   }
   
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -72,6 +69,86 @@ class CustomTitleBarViewController: NSViewController {
     view.identifier = .init("CustomTitleBarView")
     view.wantsLayer = true
     view.layer?.backgroundColor = .clear
+  }
+
+  private func initConstraints() {
+    // Root view:
+    view.translatesAutoresizingMaskIntoConstraints = false
+    view.heightAnchor.constraint(equalToConstant: Constants.standardTitleBarHeight).isActive = true
+
+    // Stack views:
+    view.addSubview(leadingStackView)
+    view.addSubview(titleIconAndTextStackView)
+    view.addSubview(trailingStackView)
+    initConstraintsForStackViews()
+
+    initConstraintsForCenterStackViewItems()
+  }
+
+  private func initConstraintsForStackViews() {
+    leadingStackView.translatesAutoresizingMaskIntoConstraints = false
+    titleIconAndTextStackView.translatesAutoresizingMaskIntoConstraints = false
+    trailingStackView.translatesAutoresizingMaskIntoConstraints = false
+
+    // Vertical constraints:
+
+    leadingStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
+    titleIconAndTextStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
+    trailingStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
+
+    // Horizontal constraints:
+
+    leadingStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+
+    let centerStackLeadingEqCon = titleIconAndTextStackView.leadingAnchor.constraint(equalTo: leadingStackView.trailingAnchor)
+    centerStackLeadingEqCon.priority = .init(400)
+    centerStackLeadingEqCon.isActive = true
+    titleIconAndTextStackView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor).isActive = true
+
+    let centerStackTrailingEqCon = titleIconAndTextStackView.trailingAnchor.constraint(equalTo: trailingStackView.trailingAnchor)
+    centerStackTrailingEqCon.priority = .init(400)
+    centerStackTrailingEqCon.isActive = true
+    titleIconAndTextStackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingStackView.leadingAnchor).isActive = true
+
+    trailingStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+  }
+
+  private func initConstraintsForCenterStackViewItems() {
+    titleText.translatesAutoresizingMaskIntoConstraints = false
+    // Priorities: CenterX < CompressionResistance < Equals(leading & trailing titles) < ContentHugging < 500
+    // (>= 500 would interfere with window resize).
+    // We want text's horizontal center to align with window's center, but more importantly it should use up
+    // all available horizontal space.
+    let cenXCon = titleIconAndTextStackView.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: 0)
+    cenXCon.priority = .init(401)  // make priority greater than leading & trailing EQ constraints above
+    cenXCon.isActive = true
+    titleText.setContentCompressionResistancePriority(.init(499), for: .horizontal)  // allow truncation
+    titleText.setContentHuggingPriority(.init(499), for: .horizontal)
+
+    documentIconButton.translatesAutoresizingMaskIntoConstraints = false
+    documentIconButton.setContentHuggingPriority(.required, for: .horizontal)
+    documentIconButton.setContentHuggingPriority(.required, for: .vertical)
+    documentIconButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+    documentIconButton.setContentCompressionResistancePriority(.required, for: .vertical)
+
+    // Make titleText expand to fill all available space
+    let leadTitleCon = documentIconButton.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor)
+    leadTitleCon.isActive = true
+    let leadTitleConEQ = documentIconButton.leadingAnchor.constraint(equalTo: leadingStackView.trailingAnchor)
+    leadTitleConEQ.priority = .init(498)
+    leadTitleConEQ.isActive = true
+    let trailTitleCon = trailingStackView.leadingAnchor.constraint(greaterThanOrEqualTo: titleText.trailingAnchor)
+    trailTitleCon.isActive = true
+    let trailTitleConEQ = trailingStackView.leadingAnchor.constraint(equalTo: titleText.trailingAnchor)
+    trailTitleConEQ.priority = .init(498)
+    trailTitleConEQ.isActive = true
+  }
+
+  /// Add to [different] superview and add constraints
+  func addViewTo(superview: NSView) {
+    superview.addSubview(view)
+    view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
+
     let builder = CustomTitleBar.shared
     let iconSpacingH = Constants.titleBarIconHSpacing
 
@@ -169,86 +246,7 @@ class CustomTitleBarViewController: NSViewController {
 
     view.configureSubtreeForCoreAnimation()
 
-    pwc.log.verbose("CustomTitleBar viewDidLoad done")
-  }
-
-  private func initConstraints() {
-    // Root view:
-    view.translatesAutoresizingMaskIntoConstraints = false
-    view.heightAnchor.constraint(equalToConstant: Constants.standardTitleBarHeight).isActive = true
-
-    // Stack views:
-    view.addSubview(leadingStackView)
-    view.addSubview(titleIconAndTextStackView)
-    view.addSubview(trailingStackView)
-    initConstraintsForStackViews()
-
-    initConstraintsForCenterStackViewItems()
-  }
-
-  private func initConstraintsForStackViews() {
-    leadingStackView.translatesAutoresizingMaskIntoConstraints = false
-    titleIconAndTextStackView.translatesAutoresizingMaskIntoConstraints = false
-    trailingStackView.translatesAutoresizingMaskIntoConstraints = false
-
-    // Vertical constraints:
-
-    leadingStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
-    titleIconAndTextStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
-    trailingStackView.addConstraintsToFillSuperview(top: 0, bottom: 0)
-
-    // Horizontal constraints:
-
-    leadingStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-
-    let centerStackLeadingEqCon = titleIconAndTextStackView.leadingAnchor.constraint(equalTo: leadingStackView.trailingAnchor)
-    centerStackLeadingEqCon.priority = .init(400)
-    centerStackLeadingEqCon.isActive = true
-    titleIconAndTextStackView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor).isActive = true
-
-    let centerStackTrailingEqCon = titleIconAndTextStackView.trailingAnchor.constraint(equalTo: trailingStackView.trailingAnchor)
-    centerStackTrailingEqCon.priority = .init(400)
-    centerStackTrailingEqCon.isActive = true
-    titleIconAndTextStackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingStackView.leadingAnchor).isActive = true
-
-    trailingStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-  }
-
-  private func initConstraintsForCenterStackViewItems() {
-    titleText.translatesAutoresizingMaskIntoConstraints = false
-    // Priorities: CenterX < CompressionResistance < Equals(leading & trailing titles) < ContentHugging < 500
-    // (>= 500 would interfere with window resize).
-    // We want text's horizontal center to align with window's center, but more importantly it should use up
-    // all available horizontal space.
-    let cenXCon = titleIconAndTextStackView.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: 0)
-    cenXCon.priority = .init(401)  // make priority greater than leading & trailing EQ constraints above
-    cenXCon.isActive = true
-    titleText.setContentCompressionResistancePriority(.init(499), for: .horizontal)  // allow truncation
-    titleText.setContentHuggingPriority(.init(499), for: .horizontal)
-
-    documentIconButton.translatesAutoresizingMaskIntoConstraints = false
-    documentIconButton.setContentHuggingPriority(.required, for: .horizontal)
-    documentIconButton.setContentHuggingPriority(.required, for: .vertical)
-    documentIconButton.setContentCompressionResistancePriority(.required, for: .horizontal)
-    documentIconButton.setContentCompressionResistancePriority(.required, for: .vertical)
-
-    // Make titleText expand to fill all available space
-    let leadTitleCon = documentIconButton.leadingAnchor.constraint(greaterThanOrEqualTo: leadingStackView.trailingAnchor)
-    leadTitleCon.isActive = true
-    let leadTitleConEQ = documentIconButton.leadingAnchor.constraint(equalTo: leadingStackView.trailingAnchor)
-    leadTitleConEQ.priority = .init(498)
-    leadTitleConEQ.isActive = true
-    let trailTitleCon = trailingStackView.leadingAnchor.constraint(greaterThanOrEqualTo: titleText.trailingAnchor)
-    trailTitleCon.isActive = true
-    let trailTitleConEQ = trailingStackView.leadingAnchor.constraint(equalTo: titleText.trailingAnchor)
-    trailTitleConEQ.priority = .init(498)
-    trailTitleConEQ.isActive = true
-  }
-
-  /// Add to [different] superview and add constraints
-  func addViewTo(superview: NSView) {
-    superview.addSubview(view)
-    view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
+    pwc.log.verbose("CustomTitleBar viewDidLoad done: isDark=\(view.effectiveAppearance.isDark.yesno)")
     pwc.updateTitle()
   }
 
@@ -272,13 +270,12 @@ class CustomTitleBarViewController: NSViewController {
 
     let drawAsKeyWindow = titleText.window?.isKeyWindow ?? false
 
-    // TODO: apply colors to buttons in inactive windows when toggling fadeable views!
-    let alphaValue = drawAsKeyWindow ? activeControlOpacity : inactiveControlOpacity
-
-    for view in [titleText] {
-      // Skip if not visible
-      guard view.alphaValue > 0.0 else { continue }
-      view.alphaValue = alphaValue
+    // Skip if not visible
+    if titleText.alphaValue > 0.0 {
+      // TODO: apply colors to buttons in inactive windows when toggling fadeable views!
+      let alphaValue = drawAsKeyWindow ? activeControlOpacity : inactiveControlOpacity
+      titleText.setColors(LayoutState.effectiveTopBarColorSchemeFromPrefs())
+      titleText.alphaValue = alphaValue
     }
 
     for btn in symButtons {
@@ -295,6 +292,17 @@ class CustomTitleBarViewController: NSViewController {
     // We may have been called due to key window status change.
     // Redraw the traffic light buttons to change to active/inactive
     leadingStackView.markButtonsDirty()
+  }
+
+  func setColors(_ topBarColorScheme: Preference.PanelColorScheme) {
+    for btn in [leadingSidebarToggleButton, trailingSidebarToggleButton, onTopButton] {
+      btn.setColors(for: topBarColorScheme)
+    }
+    titleText.setColors(topBarColorScheme)
+
+    for btn in symButtons {
+      btn.setColors(for: topBarColorScheme)
+    }
   }
 
   func removeAndCleanUp() {

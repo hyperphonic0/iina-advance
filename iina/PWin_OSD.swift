@@ -178,7 +178,7 @@ final class OSDState {
 
   fileprivate static func buildAdditionalInfoView(_ additionalInfoSubviews: AdditionalInfoSubviews) -> NSView {
     let aiView: NSView
-    let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .osdColorScheme)
+    let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs()
     if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
       let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
       let glassView = AdditionalInfoGlassView(style: style)
@@ -209,7 +209,7 @@ final class OSDState {
   @MainActor
   func rebuildAdditionalInfoView() {
     guard Preference.bool(for: .displayTimeAndBatteryInFullScreen) else { return }
-    let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .osdColorScheme)
+    let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs()
 
     let needsRebuild: Bool
     if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
@@ -235,7 +235,7 @@ final class OSDState {
   @MainActor
   func rebuildOSDView() {
     guard Preference.bool(for: .enableOSD) else { return }
-    let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .osdColorScheme)
+    let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs()
 
     let needsRebuild: Bool
     if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
@@ -431,9 +431,10 @@ final class OSDState {
   }
 
   @MainActor
-  func updateColors(windowAppearance: NSAppearance, osdColorScheme: Preference.PanelColorScheme) {
+  func updateColors(windowAppearance: NSAppearance) {
     let osdTextSize = textSizeLast
     guard osdTextSize > 0 else { return }
+    let osdColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs()
 
     let sliderBarHeight = getSliderBarHeight(forOSDTextSize: osdTextSize)
     osdAccessoryProgress.barRenderer = BarRenderer(windowAppearance: windowAppearance,
@@ -924,8 +925,7 @@ extension PlayerWindowController {
       osd.textSizeLast = osdTextSize
 
       // Also update progress bar height based on text size
-      osd.updateColors(windowAppearance: window.effectiveAppearance,
-                       osdColorScheme: Preference.enum(for: .osdColorScheme))
+      osd.updateColors(windowAppearance: window.effectiveAppearance)
 
       let osdAccessoryTextSize = (osdTextSize * 0.75).rounded().clamped(to: 11...25)
       osd.osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)

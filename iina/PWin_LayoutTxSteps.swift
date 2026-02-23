@@ -452,9 +452,6 @@ extension PlayerWindowController {
       window.contentView!.addSubview(topBar.view)
     }
 
-    let topBarColorScheme = transition.outputLayout.topBarColorScheme
-    topBar.bottomBorder.isHidden = topBarColorScheme != .visualEffectView
-
     if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
     }
@@ -716,10 +713,7 @@ extension PlayerWindowController {
       trailingSidebarToggleButton.setColors(for: topBarColorScheme)
       onTopButton.setColors(for: topBarColorScheme)
       if let customTitleBar {
-        for btn in customTitleBar.symButtons {
-          btn.setColors(for: topBarColorScheme)
-        }
-        customTitleBar.titleText.setColors(topBarColorScheme)
+        customTitleBar.setColors(topBarColorScheme)
       }
 
       if transition.isWindowInitialLayout || transition.isOSCStyleChanging ||
@@ -918,6 +912,7 @@ extension PlayerWindowController {
   /// FADE IN NEW VIEWS
   /// Expected to be animated.
   func fadeInNewViews(_ transition: LayoutTransition) {
+    guard let window else { return }
     let log = Logger.addPreamble("[\(transition.name)-FadeInNewViews", toSubsystem: log)
     let outputLayout = transition.outputLayout
     log.verbose("Start")
@@ -948,7 +943,36 @@ extension PlayerWindowController {
         }
 
         // covers both native & custom variants
-        updateTitleBarViews(from: outputLayout)
+        updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
+        let enableGlow = Preference.bool(for: .titleBarBtnsGlow)
+        log.verbose("Updating title bar UI for \(outputLayout.mode): enableGlow=\(enableGlow.yn), docIconAndText=\(outputLayout.titleIconAndText)")
+
+        // Leading sidebar toggle button
+        for button in [leadingSidebarToggleButton, customTitleBar?.leadingSidebarToggleButton].compactMap({$0}) {
+          if enableGlow, outputLayout.leadingSidebarToggleButton.isShowable {
+            button.setGlowForTitleBar(enabled: outputLayout.leadingSidebar.isVisible)
+          }
+          fadeableViews.applyVisibility(outputLayout.leadingSidebarToggleButton, button)
+        }
+        // Trailing sidebar toggle button
+        for button in [trailingSidebarToggleButton, customTitleBar?.trailingSidebarToggleButton].compactMap({$0}) {
+          if enableGlow, outputLayout.trailingSidebarToggleButton.isShowable {
+            button.setGlowForTitleBar(enabled: outputLayout.trailingSidebar.isVisible)
+          }
+          fadeableViews.applyVisibility(outputLayout.trailingSidebarToggleButton, button)
+        }
+
+        if let customTitleBar {
+          fadeableViews.applyVisibility(outputLayout.titleIconAndText, to: customTitleBar.titleIconAndTextStackView)
+        } else {
+          fadeableViews.applyVisibility(outputLayout.titleIconAndText, titleTextField, documentIconButton)
+        }
+
+        updateOnTopButton(from: outputLayout, showIfFadeable: false)
+
+        // Title bar accessories (to cover native windowed mode):
+        fadeableViews.applyVisibility(outputLayout.titlebarAccessoryViewControllers, to: leadingTitleBarAccessoryView)
+        fadeableViews.applyVisibility(outputLayout.titlebarAccessoryViewControllers, to: trailingTitleBarAccessoryView)
       }
     }
 
@@ -1174,41 +1198,6 @@ extension PlayerWindowController {
   // End of steps
 
   // MARK: - Title bar items
-
-  fileprivate func updateTitleBarViews(from layoutState: LayoutState) {
-    guard let window else { return }
-    updateColorsForKeyWindowStatus(isKey: window.isKeyWindow)
-    let enableGlow = Preference.bool(for: .titleBarBtnsGlow)
-
-    log.verbose("Updating title bar UI for \(layoutState.mode): enableGlow=\(enableGlow.yn), docIconAndText=\(layoutState.titleIconAndText)")
-
-    // Leading sidebar toggle button
-    for button in [leadingSidebarToggleButton, customTitleBar?.leadingSidebarToggleButton].compactMap({$0}) {
-      if enableGlow, layoutState.leadingSidebarToggleButton.isShowable {
-        button.setGlowForTitleBar(enabled: layoutState.leadingSidebar.isVisible)
-      }
-      fadeableViews.applyVisibility(layoutState.leadingSidebarToggleButton, button)
-    }
-    // Trailing sidebar toggle button
-    for button in [trailingSidebarToggleButton, customTitleBar?.trailingSidebarToggleButton].compactMap({$0}) {
-      if enableGlow, layoutState.trailingSidebarToggleButton.isShowable {
-        button.setGlowForTitleBar(enabled: layoutState.trailingSidebar.isVisible)
-      }
-      fadeableViews.applyVisibility(layoutState.trailingSidebarToggleButton, button)
-    }
-
-    if let customTitleBar {
-      fadeableViews.applyVisibility(layoutState.titleIconAndText, to: customTitleBar.titleIconAndTextStackView)
-    } else {
-      fadeableViews.applyVisibility(layoutState.titleIconAndText, titleTextField, documentIconButton)
-    }
-
-    updateOnTopButton(from: layoutState, showIfFadeable: false)
-
-    // Title bar accessories (to cover native windowed mode):
-    fadeableViews.applyVisibility(layoutState.titlebarAccessoryViewControllers, to: leadingTitleBarAccessoryView)
-    fadeableViews.applyVisibility(layoutState.titlebarAccessoryViewControllers, to: trailingTitleBarAccessoryView)
-  }
 
   /// Hides all the various buttons of the built-in title bar, some of which can have strange quirks.
   ///

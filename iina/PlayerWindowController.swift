@@ -695,9 +695,6 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     let newAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
     log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): appearance=\(newAppearance?.name.rawValue ?? "nil")")
 
-    // Either dark or light, never nil:
-    let windowAppearance: NSAppearance = newAppearance ?? window.effectiveAppearance
-
     let layoutState: LayoutState = layoutState ?? currentLayout
     let oscGeo = layoutState.controlBarGeo
 
@@ -710,16 +707,17 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     window.appearance = newAppearance
 
     // This may override the window appearance if needed based on the top OSC color scheme
-    topBar.updateAppearance(windowAppearance: windowAppearance)
+    topBar.updateAppearance(windowAppearance: newAppearance)
 
-    osd.updateColors(windowAppearance: windowAppearance, osdColorScheme: Preference.enum(for: .osdColorScheme))
-    oscBarRenderer = BarRenderer(windowAppearance: windowAppearance,
+    let windowEffectiveAppearance = window.effectiveAppearance
+    osd.updateColors(windowAppearance: windowEffectiveAppearance)
+    oscBarRenderer = BarRenderer(windowAppearance: windowEffectiveAppearance,
                                  colorScheme: layoutState.oscColorScheme,
                                  sliderBarHeight_Normal: layoutState.controlBarGeo.sliderBarHeightNormal)
     oscKnobRenderer.invalidateCachedKnobs()
 
     // TODO: clean up this nasty code
-    let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance
+    let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : window.effectiveAppearance
     oscAppearance.performAsCurrentDrawingAppearance {
       playSlider.abLoopA.updateKnobImage(to: .loopKnob)
       playSlider.abLoopB.updateKnobImage(to: .loopKnob)

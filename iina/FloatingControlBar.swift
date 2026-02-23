@@ -84,7 +84,7 @@ final class FloatingControlBar {
       let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
       if let existingView = self.view as? FloatingControlBarGlassEffectView {
         view = existingView
-        existingView.style = style
+        existingView.setStyle(style)
         return
       } else {
         let osdGlassView = FloatingControlBarGlassEffectView(self, style: style)

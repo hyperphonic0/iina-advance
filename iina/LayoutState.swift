@@ -316,6 +316,10 @@ struct LayoutState {
       return .visualEffectView
     }
     let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
+    guard topBarColorScheme != .clearGradient else {
+      // TODO: support Clear Gradient style in top bar
+      return .visualEffectView
+    }
     return topBarColorScheme
   }
 
@@ -342,6 +346,13 @@ struct LayoutState {
     default:
       return .visualEffectView
     }
+  }
+
+  static func effectiveOSDColorSchemeFromPrefs() -> Preference.PanelColorScheme {
+    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
+    guard globalScheme == .none else { return globalScheme }
+
+    return Preference.enum(for: .osdColorScheme)
   }
 
   // MARK: - Computed Properties
