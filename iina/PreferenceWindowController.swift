@@ -392,7 +392,7 @@ class PreferenceWindowController: WindowController, NSWindowDelegate {
     guard let vc = viewControllers[at: index] else { return nil }
     prefDetailContentView.addSubview(vc.view)
     if #available(macOS 26.0, *) {
-      // Liquid Glass: make top of content start below search bar, but allow it to scroll underneath it.
+      // Glass: make top of content start below search bar, but allow it to scroll underneath it.
       // Use padding so that content aligns with title bar text
       vc.view.addConstraintsToFillSuperview(top: detailView.safeAreaInsets.top, bottom: 20, leading: 20, trailing: 20)
     } else {

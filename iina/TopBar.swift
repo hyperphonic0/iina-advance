@@ -30,7 +30,7 @@ final class TopBarVisualEffectView: ClickThroughVisualEffectView {
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
-/// Top bar root view with Liquid Glass
+/// Top bar root view with Glass
 @available(macOS 26.0, *)
 final class TopBarViewGlassEffectView: ClickThroughGlassEffectView {
   init(style desiredStyle: Style) {
@@ -92,6 +92,7 @@ final class TopBar {
       if let glassView = view as? TopBarViewGlassEffectView {
         let targetStyle: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
         if glassView.style == targetStyle {
+          updateAppearance(windowAppearance: superview.effectiveAppearance)
           return
         }
         // As of MacOS 26.0, glass effect views seem to be unreliable at changing between light & dark.

@@ -192,8 +192,8 @@ struct Constants {
 
   static let minThumbnailsPerFile = 1
 
-  static let liquidGlassCornerRadius: CGFloat = 15
-  static let liquidGlassButtonCornerRadius: CGFloat = 12
+  static let glassCornerRadius: CGFloat = 15
+  static let glassButtonCornerRadius: CGFloat = 12
 
   /// All values are in seconds unless explicitly named differently
   struct TimeInterval {

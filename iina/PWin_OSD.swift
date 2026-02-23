@@ -168,7 +168,7 @@ final class OSDState {
 
     if #available(macOS 26, *) {
       // MacOS Tahoe's style favors very round corners: try to fit in with it
-      osdView.roundCorners(withRadius: Constants.liquidGlassCornerRadius)
+      osdView.roundCorners(withRadius: Constants.glassCornerRadius)
     } else {
       // Pre-Tahoe
       osdView.roundCorners()
@@ -198,7 +198,7 @@ final class OSDState {
 
     if #available(macOS 26, *) {
       // MacOS Tahoe's style favors very round corners: try to fit in with it
-      aiView.roundCorners(withRadius: Constants.liquidGlassCornerRadius)
+      aiView.roundCorners(withRadius: Constants.glassCornerRadius)
     } else {
       // Pre-Tahoe
       aiView.roundCorners()

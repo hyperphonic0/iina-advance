@@ -92,8 +92,8 @@ class ThumbnailPeekView: NSImageView {
 
   private func roundedCornerRadius(forHeight frameHeight: CGFloat) -> CGFloat {
     if #available(macOS 26.0, *) {
-      // Match curvature elsewhere as per Apple's Liquid Glass guidelines
-      return Constants.liquidGlassCornerRadius
+      // Match curvature elsewhere as per Apple's Glass guidelines
+      return Constants.glassCornerRadius
     } else {
       let cornerRadius = 10 + min(10, max(0, (frameHeight - 400) * 0.01))
       return cornerRadius

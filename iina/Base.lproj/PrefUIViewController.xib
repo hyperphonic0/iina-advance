@@ -178,8 +178,8 @@
                                             <items>
                                                 <menuItem title="Custom (set per panel)" state="on" id="hmP-DM-bfx"/>
                                                 <menuItem title="Flat Blended Gray" tag="1" id="S6k-6H-Ew1"/>
-                                                <menuItem title="Liquid Glass (Clear)" tag="3" id="MLH-yf-NPQ"/>
-                                                <menuItem title="Liquid Glass (Default Tint)" tag="4" id="VLc-qc-n5R"/>
+                                                <menuItem title="Glass (Clear)" tag="3" id="MLH-yf-NPQ"/>
+                                                <menuItem title="Glass (Standard Tint)" tag="4" id="VLc-qc-n5R"/>
                                             </items>
                                         </menu>
                                     </popUpButtonCell>
@@ -1443,8 +1443,8 @@ For smoothest results, also enable custom full screen.</string>
                                             <items>
                                                 <menuItem title="Flat Blended Gray" state="on" tag="1" id="eQu-0t-eS8"/>
                                                 <menuItem title="Clear-Black Gradient" tag="2" id="xwC-fk-OXh"/>
-                                                <menuItem title="Liquid Glass (Clear)" tag="3" id="qlR-cK-Plb"/>
-                                                <menuItem title="Liquid Glass (Default Tint)" tag="4" id="0cF-Wo-qQV"/>
+                                                <menuItem title="Glass (Clear)" tag="3" id="qlR-cK-Plb"/>
+                                                <menuItem title="Glass (Standard Tint)" tag="4" id="0cF-Wo-qQV"/>
                                             </items>
                                         </menu>
                                     </popUpButtonCell>
@@ -1558,8 +1558,8 @@ For smoothest results, also enable custom full screen.</string>
                                         <menu key="menu" id="joj-Jv-SG7">
                                             <items>
                                                 <menuItem title="Flat Blended Gray" state="on" tag="1" id="6Dt-s3-hoS"/>
-                                                <menuItem title="Liquid Glass (Default Tint)" tag="4" id="Ltc-bH-nhc"/>
-                                                <menuItem title="Liquid Glass (Clear)" tag="3" id="IWa-Bw-bRP"/>
+                                                <menuItem title="Glass (Clear)" tag="3" id="IWa-Bw-bRP"/>
+                                                <menuItem title="Glass (Standard Tint)" tag="4" id="Ltc-bH-nhc"/>
                                             </items>
                                         </menu>
                                         <connections>
@@ -1737,8 +1737,8 @@ For smoothest results, also enable custom full screen.</string>
                                             <items>
                                                 <menuItem title="Flat Blended Gray" state="on" tag="1" id="IBM-NK-uiO"/>
                                                 <menuItem title="Clear-Black Gradient" tag="2" id="C1F-Y0-yvA"/>
-                                                <menuItem title="Liquid Glass (Clear)" tag="3" id="JH9-zE-wWA"/>
-                                                <menuItem title="Liquid Glass (Default Tint)" tag="4" id="XGg-Dr-hBX"/>
+                                                <menuItem title="Glass (Clear)" tag="3" id="JH9-zE-wWA"/>
+                                                <menuItem title="Glass (Default Tint)" tag="4" id="XGg-Dr-hBX"/>
                                             </items>
                                         </menu>
                                     </popUpButtonCell>
@@ -3016,8 +3016,8 @@ For smoothest results, also enable custom full screen.</string>
                                                             <menu key="menu" id="UPH-VG-b81">
                                                                 <items>
                                                                     <menuItem title="Flat Blended Gray" state="on" tag="1" id="18p-Bl-jAH"/>
-                                                                    <menuItem title="Liquid Glass (Clear)" tag="3" id="47R-QO-YIE"/>
-                                                                    <menuItem title="Liquid Glass (Default Tint)" tag="4" id="e5e-CE-Afn"/>
+                                                                    <menuItem title="Glass (Clear)" tag="3" id="47R-QO-YIE"/>
+                                                                    <menuItem title="Glass (Standard Tint)" tag="4" id="e5e-CE-Afn"/>
                                                                 </items>
                                                             </menu>
                                                             <connections>
@@ -3340,7 +3340,7 @@ For smoothest results, also enable custom full screen.</string>
                                         <menu key="menu" id="a09-Bm-lf3">
                                             <items>
                                                 <menuItem title="Flat Blended Gray" state="on" tag="1" id="C6Y-Cg-81Y"/>
-                                                <menuItem title="Liquid Glass (Default Tint)" tag="4" id="orb-1b-TNw"/>
+                                                <menuItem title="Glass (Standard Tint)" tag="4" id="orb-1b-TNw"/>
                                             </items>
                                         </menu>
                                     </popUpButtonCell>

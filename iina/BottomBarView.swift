@@ -18,7 +18,7 @@ final class BottomBarVisualEffectView: NSVisualEffectView {
   @MainActor required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
-/// Bottom bar root view with Liquid Glass effect
+/// Bottom bar root view with Glass effect
 @available(macOS 26.0, *)
 final class BottomBarGlassEffectView: ClickThroughGlassEffectView {
   init(_ desiredStyle: Style) {

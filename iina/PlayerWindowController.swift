@@ -689,14 +689,11 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Set material & theme (light or dark mode) for OSC and title bar.
   /// Make sure this is running inside an animation task too!
   @MainActor
-  func applyThemeMaterial(using layoutState: LayoutState? = nil, _ window: NSWindow, _ screen: NSScreen) {
+  func applyThemeMaterial(using layoutState: LayoutState, _ window: NSWindow, _ screen: NSScreen) {
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance:
     let newAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
     log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): appearance=\(newAppearance?.name.rawValue ?? "nil")")
-
-    let layoutState: LayoutState = layoutState ?? currentLayout
-    let oscGeo = layoutState.controlBarGeo
 
     if playlistView.isViewLoaded {
       playlistView.updateTableColors()
@@ -719,6 +716,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       playSlider.abLoopA.updateKnobImage(to: .loopKnob)
       playSlider.abLoopB.updateKnobImage(to: .loopKnob)
 
+      let oscGeo = layoutState.controlBarGeo
       let scaleFactor = screen.backingScaleFactor
       if let hoverIndicator = playSlider.hoverIndicator {
         hoverIndicator.update(scaleFactor: scaleFactor, oscGeo: oscGeo, isDark: oscAppearance.isDark)
@@ -1300,7 +1298,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
 
       animationPipeline.submitInstantTask({ [self] in
         log.verbose("WndDidChangeScreen wNum=\(window.windowNumber): frame=\(window.frame) screenID=\(screen.screenID.quoted) screenFrame=\(screen.frame)")
-        applyThemeMaterial(window, screen)  // scaleFactor may have changed
+        applyThemeMaterial(using: currentLayout, window, screen)  // scaleFactor may have changed
         videoView.refreshAllVideoDisplayState()
         player.events.emit(.windowScreenChanged)
       })
