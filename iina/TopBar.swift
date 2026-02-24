@@ -105,11 +105,11 @@ final class TopBar {
         return
       }
     }
-    view.removeFromSuperview()
     rebuildView(colorScheme, superview: superview)
   }
 
   func rebuildView(_ colorScheme: Preference.PanelColorScheme, superview: NSView) {
+    view.removeFromSuperview()
     view = TopBar.buildView(colorScheme)
     superview.addSubview(view)
     configureView()

@@ -453,7 +453,12 @@ extension PlayerWindowController {
     // - Top Bar
 
     topBarAppearance.performAsCurrentDrawingAppearance {
-      topBar.rebuildViewIfNeeded(outputLayout.topBarColorScheme, superview: window.contentView!)
+      if appearanceDidChange {
+        // Workaround for race condition when changing theme
+        topBar.rebuildView(outputLayout.topBarColorScheme, superview: window.contentView!)
+      } else {
+        topBar.rebuildViewIfNeeded(outputLayout.topBarColorScheme, superview: window.contentView!)
+      }
       if #available(macOS 26.0, *), let topBarGlassView = topBar.view as? TopBarGlassEffectView {
         if outputLayout.isLegacyStyle {
           // Is rounded by default. Make sharp in case of custom window
