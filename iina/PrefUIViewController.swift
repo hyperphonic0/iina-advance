@@ -513,7 +513,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     viewHidePairs.append((oscForceSingleRowContainerView, !showForceSingleRowCheckbox))
     viewHidePairs.append((oscTimeLabelsAlwaysWrapSliderStackView, !( oscIsBottom && !Preference.bool(for: .oscForceSingleRow) ) ))
 
-    viewHidePairs.append((oscBottomColorSchemeHStackView, !(oscIsBottomOverlay)))
+    viewHidePairs.append((oscBottomColorSchemeHStackView, !(!useGlobalColorScheme && oscIsBottomOverlay)))
     viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
 
     viewHidePairs.append((oscFloatingColorSchemeHStackView, !(hasMacOS26 && oscIsFloating && !useGlobalColorScheme)))

@@ -289,10 +289,6 @@ struct LayoutState {
       let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
       if oscPosition == .bottom, Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
         let bottomBarColorSchme: Preference.PanelColorScheme = Preference.enum(for: .oscColorScheme)
-        if bottomBarColorSchme == .clearGradient {
-          // Make exception for this one
-          return bottomBarColorSchme
-        }
         guard globalScheme == .none else { return globalScheme }
         return bottomBarColorSchme
       } else if oscPosition == .top {
