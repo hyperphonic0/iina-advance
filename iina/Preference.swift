@@ -210,7 +210,7 @@ struct Preference {
     /// Horizontal position of floating control bar. In percentage from bottom. (float, 0 - 1)
     static let controlBarPositionVertical = Key("controlBarPositionVertical")
     static let floatingControlBarWidth = Key("floatingControlBarWidth")
-    /// Can be one of `visualEffectView`, `clearLiquidGlass`, or `tintedLiquidGlass`.
+    /// Can be one of `visualEffectView`, `clearGlass`, or `tintedGlass`.
     static let oscFloatingColorScheme = Key("oscFloatingColorScheme")
 
     /// Whether floating OSC can snap to center when dragging close to it.
@@ -254,7 +254,7 @@ struct Preference {
 
     static let osdAutoHideTimeout = Key("osdAutoHideTimeout")
     static let osdTextSize = Key("osdTextSize")
-    /// Can be one of `visualEffectView`, `clearLiquidGlass`, or `tintedLiquidGlass`.
+    /// Can be one of `visualEffectView`, `clearGlass`, or `tintedGlass`.
     static let osdColorScheme = Key("osdColorScheme")
 
     // - Window Geometry
@@ -861,10 +861,10 @@ struct Preference {
     case visualEffectView = 1
     /// Use clear background with slight alpha gradient
     case clearGradient
-    case clearLiquidGlass
-    case tintedLiquidGlass
+    case clearGlass
+    case tintedGlass
 
-    static let defaultValue = PanelColorScheme.tintedLiquidGlass
+    static let defaultValue = PanelColorScheme.tintedGlass
 
     init?(key: Key) {
       self.init(rawValue: Preference.integer(for: key))
@@ -885,16 +885,16 @@ struct Preference {
         return "VisualEffectView"
       case .clearGradient:
         return "ClearGradient"
-      case .clearLiquidGlass:
+      case .clearGlass:
         return "Clear-LiquidGlass"
-      case .tintedLiquidGlass:
+      case .tintedGlass:
         return "Tinted-LiquidGlass"
       }
     }
 
     var hasClearBG: Bool {
       switch self {
-      case .clearGradient, .clearLiquidGlass:
+      case .clearGradient, .clearGlass:
         return true
       default:
         return false
@@ -1443,7 +1443,7 @@ struct Preference {
     .alwaysOpenInNewWindow: true,
     .allowDuplicatePlayers: false,
     .enableCmdN: true,
-    .globalColorScheme: PanelColorScheme.tintedLiquidGlass.rawValue,
+    .globalColorScheme: PanelColorScheme.tintedGlass.rawValue,
     .animationDurationDefault: 0.25,
     // Native duration (as of MacOS 13.4) is 0.5s, which is quite sluggish. Speed it up a bit
     .animationDurationFullScreen: 0.25,
@@ -1512,7 +1512,7 @@ struct Preference {
     .disableOSDVideoZoomMsg: false,
     .osdAutoHideTimeout: Float(1),
     .osdTextSize: Float(28),
-    .osdColorScheme: PanelColorScheme.clearLiquidGlass.rawValue,
+    .osdColorScheme: PanelColorScheme.clearGlass.rawValue,
     .softVolume: 100,
     .arrowButtonAction: ArrowButtonAction.defaultValue.rawValue,
     .resetSpeedWhenPaused: false,

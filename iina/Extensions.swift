@@ -1541,7 +1541,7 @@ extension NSTextField {
       addShadow(blurRadiusMultiplier: Constants.oscClearBG_TextShadowBlurRadius_Multiplier,
                 blurRadiusConstant: Constants.oscClearBG_TextShadowBlurRadius_Constant,
                 xOffsetConstant: 0, yOffsetConstant: 0)
-    case .clearLiquidGlass:
+    case .clearGlass:
       alphaValue = 1.0
       textColor = .white
       addShadow(blurRadiusMultiplier: Constants.oscClearBG_TextShadowBlurRadius_Multiplier,
@@ -1565,7 +1565,7 @@ extension NSText {
       addShadow(blurRadiusMultiplier: Constants.oscClearBG_TextShadowBlurRadius_Multiplier,
                 blurRadiusConstant: Constants.oscClearBG_TextShadowBlurRadius_Constant,
                 xOffsetConstant: 0, yOffsetConstant: 0)
-    case .clearLiquidGlass:
+    case .clearGlass:
       alphaValue = 1.0
       textColor = .white
       addShadow(blurRadiusMultiplier: Constants.oscClearBG_TextShadowBlurRadius_Multiplier,

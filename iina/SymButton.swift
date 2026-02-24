@@ -217,7 +217,7 @@ class SymButton: NSImageView, @MainActor NSAccessibilityButton, @MainActor Dragg
                 xOffsetConstant: 0,
                 yOffsetConstant: 0)
       updateHighlight(isInsideBounds: false)
-    case .clearLiquidGlass:
+    case .clearGlass:
       regularColor = .controlForClearBG
       highlightColor = .white
       addShadow(blurRadiusConstant: Constants.oscClearBG_ButtonShadowBlurRadius,

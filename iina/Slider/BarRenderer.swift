@@ -535,9 +535,9 @@ final class BarRenderer {
       switch colorScheme {
       case .clearGradient:
         rightBaseColor = .mainSliderBarRightClearBG
-      case .clearLiquidGlass:
+      case .clearGlass:
         rightBaseColor = .mainSliderBarRightClearBG
-      case .visualEffectView, .tintedLiquidGlass, .none:
+      case .visualEffectView, .tintedGlass, .none:
         rightBaseColor = .mainSliderBarRight
       }
       return (leftBaseColor.cgColor, rightBaseColor.cgColor)

@@ -312,7 +312,7 @@ struct LayoutState {
     guard topBarPlacement == .insideViewport else {
       return .visualEffectView
     }
-    
+
     let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
     guard globalScheme == .none else { return globalScheme }
 
@@ -328,22 +328,22 @@ struct LayoutState {
   static func effectiveSidebarsColorSchemeFromPrefs() -> Preference.PanelColorScheme {
     let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
     switch globalScheme {
-    case .tintedLiquidGlass, .visualEffectView:
+    case .tintedGlass, .visualEffectView:
       return globalScheme
-    case .clearLiquidGlass:
+    case .clearGlass:
       // Clear glass not allowed for sidebars (doesn't look good)
-      return .tintedLiquidGlass
+      return .tintedGlass
     default:
       break
     }
     
     let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .sidebarsColorScheme)
     switch colorScheme {
-    case .tintedLiquidGlass, .visualEffectView:
+    case .tintedGlass, .visualEffectView:
       return colorScheme
-    case .clearLiquidGlass:
+    case .clearGlass:
       // Clear glass not allowed for sidebars
-      return .tintedLiquidGlass
+      return .tintedGlass
     default:
       return .visualEffectView
     }

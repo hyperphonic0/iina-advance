@@ -146,8 +146,8 @@ final class OSDState {
   fileprivate static func buildOSDView(subviews: [NSView]) -> NSView {
     let osdView: NSView
     let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .osdColorScheme)
-    if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
-      let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+    if #available(macOS 26, *), colorScheme == .clearGlass || colorScheme == .tintedGlass {
+      let style: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
       let osdGlassView = OSDGlassEffectView(style: style)
       osdView = osdGlassView
       let contentView = NSView()
@@ -179,8 +179,8 @@ final class OSDState {
   fileprivate static func buildAdditionalInfoView(_ additionalInfoSubviews: AdditionalInfoSubviews) -> NSView {
     let aiView: NSView
     let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs()
-    if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
-      let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+    if #available(macOS 26, *), colorScheme == .clearGlass || colorScheme == .tintedGlass {
+      let style: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
       let glassView = AdditionalInfoGlassView(style: style)
       aiView = glassView
       let contentView = NSView()
@@ -212,9 +212,9 @@ final class OSDState {
     let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs()
 
     let needsRebuild: Bool
-    if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
+    if #available(macOS 26, *), colorScheme == .clearGlass || colorScheme == .tintedGlass {
       if let aiGlassView = additionalInfoView as? AdditionalInfoGlassView {
-        let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        let style: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
         aiGlassView.setStyle(style)
         needsRebuild = false
       } else {
@@ -242,9 +242,9 @@ final class OSDState {
     let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs()
 
     let needsRebuild: Bool
-    if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
+    if #available(macOS 26, *), colorScheme == .clearGlass || colorScheme == .tintedGlass {
       if let osdGlassView = osdView as? OSDGlassEffectView {
-        let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        let style: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
         osdGlassView.setStyle(style)
         needsRebuild = false
       } else {

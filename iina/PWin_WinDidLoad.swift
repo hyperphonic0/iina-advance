@@ -263,9 +263,9 @@ extension PlayerWindowController {
     switch colorScheme {
     case .clearGradient:
       bottomBarView = BottomBarGradientView()
-    case .clearLiquidGlass, .tintedLiquidGlass:
+    case .clearGlass, .tintedGlass:
       if #available(macOS 26.0, *) {
-        let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
         bottomBarView = BottomBarGlassEffectView(desiredStyle)
       } else {
         fallthrough
@@ -306,18 +306,18 @@ extension PlayerWindowController {
 
   private func initSidebars() {
     log.verbose("[Load] Init sidebars")
-    rebuildLeadingSidebarView(.tintedLiquidGlass)
-    rebuildTrailingSidebarView(.tintedLiquidGlass)
+    rebuildLeadingSidebarView(.tintedGlass)
+    rebuildTrailingSidebarView(.tintedGlass)
   }
 
   func rebuildLeadingSidebarView(_ colorScheme: Preference.PanelColorScheme) {
     leadingSidebarView.removeFromSuperview()
 
     switch colorScheme {
-    case .clearLiquidGlass, .tintedLiquidGlass:
+    case .clearGlass, .tintedGlass:
       if #available(macOS 26.0, *) {
         let glassView = ClickThroughGlassEffectView()
-        let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
         glassView.setStyle(desiredStyle)
         glassView.cornerRadius = 0
         let contentView = NSView()
@@ -352,10 +352,10 @@ extension PlayerWindowController {
     trailingSidebarView.removeFromSuperview()
 
     switch colorScheme {
-    case .clearLiquidGlass, .tintedLiquidGlass:
+    case .clearGlass, .tintedGlass:
       if #available(macOS 26.0, *) {
         let glassView = ClickThroughGlassEffectView()
-        let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        let desiredStyle: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
         glassView.setStyle(desiredStyle)
         glassView.cornerRadius = 0
         let contentView = NSView()

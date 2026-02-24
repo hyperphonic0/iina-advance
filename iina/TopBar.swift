@@ -68,9 +68,9 @@ final class TopBar {
 
   static func buildView(_ colorScheme: Preference.PanelColorScheme) -> NSView {
     switch colorScheme {
-    case .clearLiquidGlass, .tintedLiquidGlass:
+    case .clearGlass, .tintedGlass:
       if #available(macOS 26.0, *) {
-        let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        let style: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
         return TopBarViewGlassEffectView(style: style)
       } else {
         fallthrough
@@ -88,9 +88,9 @@ final class TopBar {
   func rebuildViewIfNeeded(_ colorScheme: Preference.PanelColorScheme, superview: NSView) {
     guard #available(macOS 26.0, *) else { return }
     switch colorScheme {
-    case .clearLiquidGlass, .tintedLiquidGlass:
+    case .clearGlass, .tintedGlass:
       if let glassView = view as? TopBarViewGlassEffectView {
-        let targetStyle: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
+        let targetStyle: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
         if glassView.style == targetStyle {
           return
         }
