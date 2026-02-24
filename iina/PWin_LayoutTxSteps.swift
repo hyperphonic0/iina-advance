@@ -459,7 +459,8 @@ extension PlayerWindowController {
           // Is rounded by default. Make sharp in case of custom window
           topBarGlassView.cornerRadius = 0
         } else {
-          topBarGlassView.cornerRadius = Constants.glassCornerRadius
+          // try to match window corners
+          topBarGlassView.cornerRadius = Constants.glassButtonCornerRadius
         }
       }
     }
