@@ -6,18 +6,42 @@
 //  Copyright © 2025 lhc. All rights reserved.
 //
 
+///  ```
+///
+/// ┌───────────────────────────────────────────────┐
+/// │ TwoRowBarOSCView (oscPosition=.bottom)        │
+/// │ ┌───────────────────────────────────────────┐ │
+/// │ │                                           │ │
+/// │ │ Row 1:                                    │ │
+/// │ │ PlaySlider[andTimeLabels] Container View  │ │
+/// │ │                                           │ │
+/// │ ├───────────────────────────────────────────┤ │
+/// │ │ Row 2: hStackView                         │ │
+/// │ │ ┌─────┐┌──┐┌─┐┌──┐ ─ ─ ─ ─ ┌─────┐┌─────┐ │ │
+/// │ │ │Play ││00││/││00│ Central │ Vol ││Tool │ │ │
+/// │ │ └─────┘└──┘└─┘└──┘ Spacer  └─────┘└─────┘ │ │
+/// │ └───────────────────────────────────────────┘ │
+/// └───────────────────────────────────────────────┘
+/// ```
+
 class TwoRowBarOSCView: ClickThroughView {
   static let id = "OSC_2RowView"
+  static let hStackViewID = "\(TwoRowBarOSCView.id)-HStackView"
+
+  // - Various views
+
   let hStackView = ClickThroughStackView()
   let centralSpacerView = SpacerView(id: "\(TwoRowBarOSCView.id)-CentralSpacer")
-  var hStackView_HeightConstraint: NSLayoutConstraint!
-  /// This subtracts from the height of the icons, but is needed to balance out the space above
-  var hStackView_BottomMarginConstraint: NSLayoutConstraint!
-  var hStackViewLeadingConstraint: NSLayoutConstraint!
-  var hStackViewTrailingConstraint: NSLayoutConstraint!
-
   /// Used only if `PK.oscTimeLabelsAlwaysWrapSlider` is enabled.
   let timeSlashLabel = ClickThroughTextField()
+
+  // - Constraints
+
+  let hStackView_HeightConstraint = OptionalConstraint("\(hStackViewID)_Height")
+  /// This subtracts from the height of the icons, but is needed to balance out the space above
+  let hStackView_BottomMarginConstraint = OptionalConstraint("\(TwoRowBarOSCView.id)-HStackView-BtmOffset")
+  var hStackViewLeadingConstraint: NSLayoutConstraint!
+  var hStackViewTrailingConstraint: NSLayoutConstraint!
 
   init() {
     super.init(frame: .zero)
@@ -26,7 +50,7 @@ class TwoRowBarOSCView: ClickThroughView {
     wantsLayer = true
     layer?.backgroundColor = .clear
 
-    hStackView.idString = "\(TwoRowBarOSCView.id)-HStackView"
+    hStackView.idString = TwoRowBarOSCView.hStackViewID
     hStackView.orientation = .horizontal
     hStackView.alignment = .centerY
     hStackView.translatesAutoresizingMaskIntoConstraints = false
@@ -42,8 +66,15 @@ class TwoRowBarOSCView: ClickThroughView {
     timeSlashLabel.baseWritingDirection = .leftToRight
     timeSlashLabel.stringValue = "/"
 
-    hStackView_HeightConstraint = hStackView.topAnchor.constraint(equalTo: self.bottomAnchor, constant: 0)
-    hStackView_HeightConstraint.identifier = "\(hStackView.idString)_Height"
+    hStackView_HeightConstraint.createOrUpdate(to: 0, priorityInt: 1, pwc?.log) { [self] c in
+      hStackView.topAnchor.constraint(equalTo: self.bottomAnchor, constant: c)
+    }
+    hStackView_HeightConstraint.weaken()
+
+    hStackView_BottomMarginConstraint.createOrUpdate(to: 0, priorityInt: 1, pwc?.log) { [self] c in
+      bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: c)
+    }
+    hStackView_BottomMarginConstraint.weaken()
 
     hStackViewLeadingConstraint = hStackView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 0)
     hStackViewLeadingConstraint.identifier = "\(hStackView.idString)_Lead-Offset"
@@ -51,15 +82,8 @@ class TwoRowBarOSCView: ClickThroughView {
     hStackViewTrailingConstraint = self.trailingAnchor.constraint(equalTo: hStackView.trailingAnchor, constant: 0)
     hStackViewTrailingConstraint.identifier = "\(hStackView.idString)_Trail-Offset"
 
-    hStackView_BottomMarginConstraint = bottomAnchor.constraint(equalTo: hStackView.bottomAnchor, constant: 0)
-    hStackView_BottomMarginConstraint.identifier = "\(TwoRowBarOSCView.id)-HStackView-BtmOffset"
-    
-    relaxConstraints()
-    hStackView_HeightConstraint.isActive = true
     hStackViewLeadingConstraint.isActive = true
     hStackViewTrailingConstraint.isActive = true
-    hStackView_BottomMarginConstraint.isActive = true
-
   }
 
   required init?(coder: NSCoder) {
@@ -85,7 +109,7 @@ class TwoRowBarOSCView: ClickThroughView {
 
     hStackView.spacing = oscGeo.hStackSpacing
 
-    // Start building replacement views list
+    // Start building subviews list for hStackView
     var viewsForHStack: [NSView] = [pwc.fragPlaybackBtnsView]
 
     // Choose either playSlider or playSliderAndTimeLabelsView based on pref
@@ -129,6 +153,7 @@ class TwoRowBarOSCView: ClickThroughView {
     // - [Re-]add views to hStack
 
     hStackView.setViews(viewsForHStack, in: .leading)
+
     // In case any were previously hidden via stack view clip, restore:
     for view in viewsForHStack {
       view.isHidden = false
@@ -154,14 +179,14 @@ class TwoRowBarOSCView: ClickThroughView {
 
     // Restore enforcement of consraints now that we're done. Do not use .required: the superiew may not be updated at
     // exactly the same time and can result in constraint conflict errors.
-    hStackView_BottomMarginConstraint.priority = .required
-    hStackView_HeightConstraint.priority = .init(900)
+    hStackView_BottomMarginConstraint.priority = 1000
+    hStackView_HeightConstraint.priority = 900
 
     pwc.fragToolbarView.needsUpdateConstraints = true
   }
 
   func relaxConstraints() {
-    hStackView_BottomMarginConstraint.priority = .defaultLow
-    hStackView_HeightConstraint?.priority = .defaultLow
+    hStackView_BottomMarginConstraint.weaken()
+    hStackView_HeightConstraint.weaken()
   }
 }

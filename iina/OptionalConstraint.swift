@@ -23,6 +23,14 @@ class OptionalConstraint {
     constraint?.priorityInt = 1
   }
 
+  var priority: Int {
+    get {
+      constraint?.priorityInt ?? 0
+    } set {
+      constraint?.priorityInt = newValue
+    }
+  }
+
   @MainActor
   func createIfMissing(_ log: (any Logger.Subsystem)?,_ creationFunc: () -> NSLayoutConstraint) {
     guard !isActive else { return }
