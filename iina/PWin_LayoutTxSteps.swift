@@ -466,7 +466,6 @@ extension PlayerWindowController {
 
     // FIXME: topBar.view doesn't always update appearance
     topBar.rebuildViewIfNeeded(transition.outputLayout.topBarColorScheme, superview: window.contentView!)
-    topBar.updateAppearance(windowAppearance: targetWindowAppearance)
 
     if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
@@ -821,26 +820,22 @@ extension PlayerWindowController {
       log.verbose("Skipped applyThemeMaterial due to missing window or screen")
     }
 
-    targetWindowAppearance.performAsCurrentDrawingAppearance { [self] in
+    let topBarColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
+    let topBarAppearance = topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
+    topBarAppearance.performAsCurrentDrawingAppearance { [self] in
+      topBar.updateAppearance(windowAppearance: targetWindowAppearance)
+
       // Top bar control colors. Do this after applying theme!
-      let topBarColorScheme = outputLayout.topBarColorScheme
       if outputLayout.leadingSidebarToggleButton.isShowable {
-        leadingSidebarToggleButton.setColors(for: topBarColorScheme)
+        leadingSidebarToggleButton.setColors(for: .visualEffectView)
         leadingSidebarToggleButton.needsDisplay = true
       }
       if outputLayout.trailingSidebarToggleButton.isShowable {
-        trailingSidebarToggleButton.setColors(for: topBarColorScheme)
+        trailingSidebarToggleButton.setColors(for: .visualEffectView)
         trailingSidebarToggleButton.needsDisplay = true
       }
-      //      if outputLayout.titleIconAndText.isShowable {
-      //        titleTextField?.setColors(topBarColorScheme)
-      //        titleTextField?.needsDisplay = true
-      //      }
-      onTopButton.setColors(for: topBarColorScheme)
+      onTopButton.setColors(for: .visualEffectView)
       onTopButton.needsDisplay = true
-      if let customTitleBar {
-        customTitleBar.setColors(topBarColorScheme: topBarColorScheme)
-      }
     }
 
     // Other misc views

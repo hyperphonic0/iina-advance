@@ -308,13 +308,14 @@ struct LayoutState {
 
   /// Top bar color scheme
   static func effectiveTopBarColorSchemeFromPrefs() -> Preference.PanelColorScheme {
-    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
-    guard globalScheme == .none else { return globalScheme }
-
     let topBarPlacement: Preference.PanelPlacement = Preference.enum(for: .topBarPlacement)
     guard topBarPlacement == .insideViewport else {
       return .visualEffectView
     }
+    
+    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
+    guard globalScheme == .none else { return globalScheme }
+
     let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
     guard topBarColorScheme != .clearGradient else {
       // TODO: support Clear Gradient style in top bar

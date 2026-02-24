@@ -152,17 +152,13 @@ final class TopBar {
   func updateAppearance(windowAppearance: NSAppearance?) {
     // Can be nil, which means dynamic system appearance:
     let topBarColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
-    let topBarAppearance = topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowAppearance
-    view.appearance = topBarAppearance
-    view.needsDisplay = true
-    view.needsLayout = true
-    if #available(macOS 26.0, *), let glassView = view as? NSGlassEffectView {
-      glassView.contentView?.appearance = topBarAppearance
-      glassView.contentView?.needsDisplay = true
-      glassView.contentView?.needsLayout = true  // need this to properly update from dark to light
+
+    if let customTitleBar = view.pwc?.customTitleBar {
+      customTitleBar.setColors(topBarColorScheme: .visualEffectView)
     }
 
-    view.pwc?.customTitleBar?.setColors(topBarColorScheme: topBarColorScheme)
+    view.needsDisplay = true
+    view.needsLayout = true
 
     bottomBorder.isHidden = topBarColorScheme != .visualEffectView
 

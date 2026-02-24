@@ -114,6 +114,7 @@ class CustomTitleBarViewController: NSViewController {
 
   private func initConstraintsForCenterStackViewItems() {
     titleText.translatesAutoresizingMaskIntoConstraints = false
+    titleText.wantsLayer = true
     // Priorities: CenterX < CompressionResistance < Equals(leading & trailing titles) < ContentHugging < 500
     // (>= 500 would interfere with window resize).
     // We want text's horizontal center to align with window's center, but more importantly it should use up
@@ -245,9 +246,6 @@ class CustomTitleBarViewController: NSViewController {
 
     initConstraints()
 
-    let topBarColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
-    setColors(topBarColorScheme: topBarColorScheme)
-
     view.configureSubtreeForCoreAnimation()
 
     pwc.log.verbose("CustomTitleBar viewDidLoad done: isDark=\(view.effectiveAppearance.isDark.yesno)")
@@ -298,9 +296,6 @@ class CustomTitleBarViewController: NSViewController {
   }
 
   func setColors(topBarColorScheme: Preference.PanelColorScheme) {
-    titleText.setColors(topBarColorScheme)
-    titleText.needsDisplay = true
-
     for btn in symButtons {
       btn.setColors(for: topBarColorScheme)
       btn.needsDisplay = true
