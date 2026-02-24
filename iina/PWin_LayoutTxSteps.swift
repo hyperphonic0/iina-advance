@@ -89,17 +89,6 @@ extension PlayerWindowController {
       /// `windowedModeGeo` should already be kept up to date. Might be hard to track down bugs...
       log.verbose("Entering full screen; priorWindowedGeometry = \(windowedModeGeo)")
 
-      if #unavailable(macOS 10.14) {
-        // Set the appearance to match the theme so the title bar matches the theme
-        let iinaTheme = Preference.enum(for: .themeMaterial) as Preference.Theme
-        switch(iinaTheme) {
-        case .dark, .ultraDark:
-          window.appearance = NSAppearance(named: .vibrantDark)
-        default: 
-          window.appearance = NSAppearance(named: .vibrantLight)
-        }
-      }
-
       setWindowFloatingOnTop(false, from: transition.inputLayout, updateOnTopStatus: false)
 
       if transition.isEnteringLegacyFullScreen {
@@ -355,16 +344,18 @@ extension PlayerWindowController {
   /// This is needed as its own transaction in case constraints need to be replaced or views need to be added or replaced in the window such that
   /// there is not an appropriate animation which should be seen.
   func updateHiddenViewsAndConstraints(_ transition: LayoutTransition) {
-    guard let window = window else { return }
+    guard let window = window, let contentView = window.contentView else { return }
     let log = Logger.addPreamble(transition.logPreamble(for: .midTransitionHiddenUpdates), toSubsystem: log)
     let outputLayout = transition.outputLayout
     log.verbose("Start")
 
-    let oldWindowAppearance = window.effectiveAppearance
-
+    let oldAppearance = contentView.effectiveAppearance
+    /// Do not set `window.appearance`! It causes race conditions which lead to wrong colors of top panel (which we sometimes want to override).
+    /// Set `window.contentView.appearance` instead.
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance:
     let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? NSApp.effectiveAppearance
+    let topBarAppearance = outputLayout.topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
 
     // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
     // & (2) window.appearance is updated before updating styling of any window views!
@@ -376,12 +367,7 @@ extension PlayerWindowController {
       // be called via windowDidChangeScreen.
       log.verbose("Skipped applyThemeMaterial due to missing window or screen")
     }
-
-    let appearanceDidChange = targetWindowAppearance != oldWindowAppearance
-    if appearanceDidChange {
-      // Call this NOW before updating styles / appearance of subviews
-      window.contentView?.display()
-    }
+    let appearanceDidChange = oldAppearance != contentView.effectiveAppearance
 
     switch transition.outputLayout.mode {
     case .fullScreenInteractive, .windowedInteractive:
@@ -444,6 +430,8 @@ extension PlayerWindowController {
 
     // - Bottom Bar
 
+    // Unclear why bottomBarView sometimes fails to update its appearance along with the other views.
+    // Workaround: force redraw when appearanceDidChange
     let needsBottomBarUpdate = transition.isWindowInitialLayout || transition.isBottomBarPlacementOrStyleChanging || appearanceDidChange
     if needsBottomBarUpdate {
       rebuildBottomBarView(colorScheme: transition.outputLayout.oscColorScheme)
@@ -464,8 +452,17 @@ extension PlayerWindowController {
 
     // - Top Bar
 
-    // FIXME: topBar.view doesn't always update appearance
-    topBar.rebuildViewIfNeeded(transition.outputLayout.topBarColorScheme, superview: window.contentView!)
+    topBarAppearance.performAsCurrentDrawingAppearance {
+      topBar.rebuildViewIfNeeded(outputLayout.topBarColorScheme, superview: window.contentView!)
+      if #available(macOS 26.0, *), let topBarGlassView = topBar.view as? TopBarGlassEffectView {
+        if outputLayout.isLegacyStyle {
+          // Is rounded by default. Make sharp in case of custom window
+          topBarGlassView.cornerRadius = 0
+        } else {
+          topBarGlassView.cornerRadius = Constants.glassCornerRadius
+        }
+      }
+    }
 
     if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {
       rebuildPanelConstraints(transition, stage: .midTransitionHiddenUpdates)
@@ -820,10 +817,9 @@ extension PlayerWindowController {
       log.verbose("Skipped applyThemeMaterial due to missing window or screen")
     }
 
-    let topBarColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
-    let topBarAppearance = topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : targetWindowAppearance
     topBarAppearance.performAsCurrentDrawingAppearance { [self] in
-      topBar.updateAppearance(windowAppearance: targetWindowAppearance)
+      topBar.view.appearance = topBarAppearance
+      topBar.updateAppearance(windowAppearance: topBarAppearance)
 
       // Top bar control colors. Do this after applying theme!
       if outputLayout.leadingSidebarToggleButton.isShowable {

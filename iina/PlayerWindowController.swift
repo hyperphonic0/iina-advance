@@ -691,15 +691,19 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   @MainActor
   func applyThemeMaterial(using layoutState: LayoutState, _ newAppearance: NSAppearance?, _ window: NSWindow, _ screen: NSScreen) {
     log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): appearance=\(newAppearance?.name.rawValue ?? "nil")")
+    let contentView = window.contentView!
 
     if playlistView.isViewLoaded {
       playlistView.updateTableColors()
     }
 
-    /// Setting `window.appearance` will trigger a change to `#keyPath(window.effectiveAppearance)`,
-    /// which will call this method again unless we set `cachedEffectiveAppearanceName`
-    window.appearance = newAppearance
-    let windowEffectiveAppearance = newAppearance ?? window.effectiveAppearance
+    let topBarAppearance = layoutState.topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : newAppearance
+    /// Setting `window.appearance` will trigger a change to `#keyPath(window.effectiveAppearance)`.
+    /// Need to call this to set native title bar colors.
+    window.appearance = topBarAppearance
+    /// Call this to change all other colors
+    contentView.appearance = newAppearance
+    let windowEffectiveAppearance = newAppearance ?? contentView.effectiveAppearance
     osd.updateColors(windowAppearance: windowEffectiveAppearance)
     oscBarRenderer = BarRenderer(windowAppearance: windowEffectiveAppearance,
                                  colorScheme: layoutState.oscColorScheme,
@@ -707,7 +711,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
     oscKnobRenderer.invalidateCachedKnobs()
 
     // TODO: clean up this nasty code
-    let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : window.effectiveAppearance
+    let oscAppearance = layoutState.oscColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : contentView.effectiveAppearance
     oscAppearance.performAsCurrentDrawingAppearance {
       playSlider.abLoopA.updateKnobImage(to: .loopKnob)
       playSlider.abLoopB.updateKnobImage(to: .loopKnob)
@@ -723,7 +727,7 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
       playSlider.needsDisplay = true
       volumeSlider.needsDisplay = true
     }
-    window.contentView?.needsDisplay = true
+    contentView.needsDisplay = true
   }
 
   func updateArrowButtonAccelerationFromPrefs() {

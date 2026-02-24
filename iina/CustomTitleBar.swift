@@ -300,6 +300,7 @@ class CustomTitleBarViewController: NSViewController {
       btn.setColors(for: topBarColorScheme)
       btn.needsDisplay = true
     }
+    titleText.needsDisplay = true
   }
 
   func removeAndCleanUp() {

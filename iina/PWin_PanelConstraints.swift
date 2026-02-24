@@ -696,9 +696,9 @@ extension PlayerWindowController {
     }
 
     possibleSubviews += [
+      topBar.view,
       seekPreview.thumbnailPeekView,
       seekPreview.timeLabel,
-      topBar.view
     ]
     if let customTitleBar {  // only for music mode
       possibleSubviews.append(customTitleBar.view)

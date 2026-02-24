@@ -32,12 +32,11 @@ final class TopBarVisualEffectView: ClickThroughVisualEffectView {
 
 /// Top bar root view with Glass
 @available(macOS 26.0, *)
-final class TopBarViewGlassEffectView: ClickThroughGlassEffectView {
+final class TopBarGlassEffectView: ClickThroughGlassEffectView {
   init(style desiredStyle: Style) {
     super.init(frame: .zero)
+    wantsLayer = true
     setStyle(desiredStyle)
-    // Is rounded by default. Make sharp in case of custom window
-    cornerRadius = 0
   }
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
@@ -71,7 +70,7 @@ final class TopBar {
     case .clearGlass, .tintedGlass:
       if #available(macOS 26.0, *) {
         let style: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
-        return TopBarViewGlassEffectView(style: style)
+        return TopBarGlassEffectView(style: style)
       } else {
         fallthrough
       }
@@ -89,7 +88,7 @@ final class TopBar {
     guard #available(macOS 26.0, *) else { return }
     switch colorScheme {
     case .clearGlass, .tintedGlass:
-      if let glassView = view as? TopBarViewGlassEffectView {
+      if let glassView = view as? TopBarGlassEffectView {
         let targetStyle: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
         if glassView.style == targetStyle {
           return
@@ -154,7 +153,7 @@ final class TopBar {
     let topBarColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
 
     if let customTitleBar = view.pwc?.customTitleBar {
-      customTitleBar.setColors(topBarColorScheme: .visualEffectView)
+      customTitleBar.setColors(topBarColorScheme: topBarColorScheme)
     }
 
     view.needsDisplay = true
