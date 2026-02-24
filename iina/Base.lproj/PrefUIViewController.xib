@@ -177,9 +177,9 @@
                                         <menu key="menu" id="3Au-mZ-6Z9">
                                             <items>
                                                 <menuItem title="None (separate per panel)" state="on" id="hmP-DM-bfx"/>
-                                                <menuItem title="Flat Blended Gray" tag="1" id="S6k-6H-Ew1"/>
-                                                <menuItem title="Glass (Clear)" tag="3" id="MLH-yf-NPQ"/>
-                                                <menuItem title="Glass (Standard Tint)" tag="4" id="VLc-qc-n5R"/>
+                                                <menuItem title="Flat Translucent" tag="1" id="S6k-6H-Ew1"/>
+                                                <menuItem title="Clear Glass" tag="3" id="MLH-yf-NPQ"/>
+                                                <menuItem title="Tinted Glass" tag="4" id="VLc-qc-n5R"/>
                                             </items>
                                         </menu>
                                     </popUpButtonCell>
@@ -1436,15 +1436,15 @@ For smoothest results, also enable custom full screen.</string>
                                 </textField>
                                 <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="YkS-Uh-e0y" userLabel="TopBar-Color-Scheme Popup">
                                     <rect key="frame" x="274" y="0.0" width="184" height="28"/>
-                                    <popUpButtonCell key="cell" type="push" title="Flat Blended Gray" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="eQu-0t-eS8" id="qbE-u5-arS" userLabel="TopBar-Color-Scheme Popup Button Cell">
+                                    <popUpButtonCell key="cell" type="push" title="Flat Translucent" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="eQu-0t-eS8" id="qbE-u5-arS" userLabel="TopBar-Color-Scheme Popup Button Cell">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
                                         <menu key="menu" id="TRW-Ys-YMa">
                                             <items>
-                                                <menuItem title="Flat Blended Gray" state="on" tag="1" id="eQu-0t-eS8"/>
+                                                <menuItem title="Flat Translucent" state="on" tag="1" id="eQu-0t-eS8"/>
                                                 <menuItem title="Clear-Black Gradient" tag="2" id="xwC-fk-OXh"/>
-                                                <menuItem title="Glass (Clear)" tag="3" id="qlR-cK-Plb"/>
-                                                <menuItem title="Glass (Standard Tint)" tag="4" id="0cF-Wo-qQV"/>
+                                                <menuItem title="Clear Glass" tag="3" id="qlR-cK-Plb"/>
+                                                <menuItem title="Tinted Glass" tag="4" id="0cF-Wo-qQV"/>
                                             </items>
                                         </menu>
                                     </popUpButtonCell>
@@ -1552,14 +1552,14 @@ For smoothest results, also enable custom full screen.</string>
                                 </textField>
                                 <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="E28-0S-qfo" userLabel="OSC-Floating-Color-Scheme Popup">
                                     <rect key="frame" x="266" y="0.0" width="184" height="28"/>
-                                    <popUpButtonCell key="cell" type="push" title="Flat Blended Gray" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="6Dt-s3-hoS" id="O9d-me-1JL" userLabel="OSC-Floating-Color-Scheme Popup Button Cell">
+                                    <popUpButtonCell key="cell" type="push" title="Flat Translucent" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="6Dt-s3-hoS" id="O9d-me-1JL" userLabel="OSC-Floating-Color-Scheme Popup Button Cell">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
                                         <menu key="menu" id="joj-Jv-SG7">
                                             <items>
-                                                <menuItem title="Flat Blended Gray" state="on" tag="1" id="6Dt-s3-hoS"/>
-                                                <menuItem title="Glass (Clear)" tag="3" id="IWa-Bw-bRP"/>
-                                                <menuItem title="Glass (Standard Tint)" tag="4" id="Ltc-bH-nhc"/>
+                                                <menuItem title="Flat Translucent" state="on" tag="1" id="6Dt-s3-hoS"/>
+                                                <menuItem title="Clear Glass" tag="3" id="IWa-Bw-bRP"/>
+                                                <menuItem title="Tinted Glass" tag="4" id="Ltc-bH-nhc"/>
                                             </items>
                                         </menu>
                                         <connections>
@@ -1730,14 +1730,14 @@ For smoothest results, also enable custom full screen.</string>
                                 </textField>
                                 <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="EOh-sr-h6b" userLabel="OSC-Bottom-Color-Scheme Popup">
                                     <rect key="frame" x="268" y="0.0" width="182" height="28"/>
-                                    <popUpButtonCell key="cell" type="push" title="Flat Blended Gray" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="IBM-NK-uiO" id="5jc-Ul-GDk" userLabel="OSC-Bottom-Color-Scheme Popup Button Cell">
+                                    <popUpButtonCell key="cell" type="push" title="Flat Translucent" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="IBM-NK-uiO" id="5jc-Ul-GDk" userLabel="OSC-Bottom-Color-Scheme Popup Button Cell">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
                                         <menu key="menu" id="4Vv-IT-ZIE">
                                             <items>
-                                                <menuItem title="Flat Blended Gray" state="on" tag="1" id="IBM-NK-uiO"/>
+                                                <menuItem title="Flat Translucent" state="on" tag="1" id="IBM-NK-uiO"/>
                                                 <menuItem title="Clear-Black Gradient" tag="2" id="C1F-Y0-yvA"/>
-                                                <menuItem title="Glass (Clear)" tag="3" id="JH9-zE-wWA"/>
+                                                <menuItem title="Clear Glass" tag="3" id="JH9-zE-wWA"/>
                                                 <menuItem title="Glass (Default Tint)" tag="4" id="XGg-Dr-hBX"/>
                                             </items>
                                         </menu>
@@ -3010,14 +3010,14 @@ For smoothest results, also enable custom full screen.</string>
                                                     </textField>
                                                     <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zhA-Lx-MwJ" userLabel="OSD-Color-Scheme Popup">
                                                         <rect key="frame" x="102" y="3" width="185" height="28"/>
-                                                        <popUpButtonCell key="cell" type="push" title="Flat Blended Gray" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="18p-Bl-jAH" id="8EO-xv-NGC" userLabel="OSD-Color-Scheme Popup Button Cell">
+                                                        <popUpButtonCell key="cell" type="push" title="Flat Translucent" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="18p-Bl-jAH" id="8EO-xv-NGC" userLabel="OSD-Color-Scheme Popup Button Cell">
                                                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                                             <font key="font" metaFont="message"/>
                                                             <menu key="menu" id="UPH-VG-b81">
                                                                 <items>
-                                                                    <menuItem title="Flat Blended Gray" state="on" tag="1" id="18p-Bl-jAH"/>
-                                                                    <menuItem title="Glass (Clear)" tag="3" id="47R-QO-YIE"/>
-                                                                    <menuItem title="Glass (Standard Tint)" tag="4" id="e5e-CE-Afn"/>
+                                                                    <menuItem title="Flat Translucent" state="on" tag="1" id="18p-Bl-jAH"/>
+                                                                    <menuItem title="Clear Glass" tag="3" id="47R-QO-YIE"/>
+                                                                    <menuItem title="Tinted Glass" tag="4" id="e5e-CE-Afn"/>
                                                                 </items>
                                                             </menu>
                                                             <connections>
@@ -3332,15 +3332,15 @@ For smoothest results, also enable custom full screen.</string>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                 </textField>
-                                <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="500" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="iHT-e9-f3r" userLabel="OSC-Color-Scheme Popup">
+                                <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="500" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="iHT-e9-f3r" userLabel="Sidebars-Color-Scheme Popup">
                                     <rect key="frame" x="263" y="0.0" width="184" height="28"/>
-                                    <popUpButtonCell key="cell" type="push" title="Flat Blended Gray" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="C6Y-Cg-81Y" id="KQt-wi-dOo" userLabel="OSC-Color-Scheme Popup Button Cell">
+                                    <popUpButtonCell key="cell" type="push" title="Flat Translucent" bezelStyle="rounded" alignment="left" controlSize="large" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="C6Y-Cg-81Y" id="KQt-wi-dOo" userLabel="Sidebars-Color-Scheme Popup Button Cell">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="message"/>
                                         <menu key="menu" id="a09-Bm-lf3">
                                             <items>
-                                                <menuItem title="Flat Blended Gray" state="on" tag="1" id="C6Y-Cg-81Y"/>
-                                                <menuItem title="Glass (Standard Tint)" tag="4" id="orb-1b-TNw"/>
+                                                <menuItem title="Flat Translucent" state="on" tag="1" id="C6Y-Cg-81Y"/>
+                                                <menuItem title="Tinted Glass" tag="4" id="orb-1b-TNw"/>
                                             </items>
                                         </menu>
                                     </popUpButtonCell>
