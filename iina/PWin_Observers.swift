@@ -161,9 +161,6 @@ extension PlayerWindowController {
       DistributedNotificationCenter.default(): [
         .init(.appleColorPreferencesChangedNotification) { [self] _ in
           player.log.verbose("Detected change to user accent color pref: reloading colors")
-          if playlistView.isViewLoaded {
-            playlistView.updateTableColors()
-          }
           // Need to regenerate colors in BarRenderer & redraw slider:
           updateTitleBarAndOSC()
         }

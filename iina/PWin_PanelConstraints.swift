@@ -329,6 +329,7 @@ extension PlayerWindowController {
         log.verbose("Adding leadingSidebarView to window contentView")
         contentView.addSubview(leadingSidebarView, positioned: .above, relativeTo: viewportView)
       }
+      leadingSidebarView.appearance = contentView.appearance
     } else {
       leadingSidebarConstraints = nil  // disables constraints
       if leadingSidebarView.superview != nil {
@@ -341,6 +342,7 @@ extension PlayerWindowController {
         log.verbose("Adding trailingSidebarView to window contentView")
         contentView.addSubview(trailingSidebarView, positioned: .above, relativeTo: viewportView)
       }
+      trailingSidebarView.appearance = contentView.appearance
     } else {
       trailingSidebarConstraints = nil  // disables constraints
       if trailingSidebarView.superview != nil {

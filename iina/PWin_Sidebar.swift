@@ -333,6 +333,7 @@ extension PlayerWindowController {
     switch tabGroup {
     case .playlist:
       showSidebar(tab: playlistView.currentTab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
+      playlistView.updateTableColors(effectiveAppearance: window!.contentView!.effectiveAppearance)  // this will also load data for tables
     case .settings:
       if let tab = Sidebar.Tab(name: quickSettingView.currentTab.name) {
         showSidebar(tab: tab, force: force, hideIfAlreadyShown: hideIfAlreadyShown)
@@ -581,7 +582,8 @@ extension PlayerWindowController {
       equalTo: boundaryView.leadingAnchor, constant: coefficients.1 * sidebarWidth)
     viewportLeadingOffsetFromTrailing.identifier = "ViewportLeading-LeadingSidebar-Trailing"
 
-    let topConstraint = leadingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor)
+    // When using GlassEffectView, there is 1px border around the inside of the frame, which looks bad when topBar==`outside`. Clip it out:
+    let topConstraint = leadingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: -2)
     let bottomConstraint = viewportView.bottomAnchor.constraint(equalTo: leadingSidebarView.bottomAnchor)
 
     assert(coefficients.2 * sidebarWidth == 0,
@@ -597,7 +599,7 @@ extension PlayerWindowController {
 
     if shouldAddTabGroup {
       log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(leadingSidebar.locationID), placement=\(leadingSidebar.placement)")
-      addTabGroupView(for: tabGroupToShow, to: tabContainerView)
+      addTabGroupView(for: tabGroupToShow, to: tabContainerView, effectiveAppearance: window!.contentView!.effectiveAppearance)
     }
   }
 
@@ -709,8 +711,9 @@ extension PlayerWindowController {
       equalTo: boundaryView.trailingAnchor, constant: coefficients.1 * sidebarWidth)
     trailingCon.identifier = "ViewportTrailing-TrailingSidebar-Trailing"
 
-    let topCon = trailingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor)
-    let bottomCon = viewportView.bottomAnchor.constraint(equalTo: trailingSidebarView.bottomAnchor)
+    // When using GlassEffectView, there is 1px border around the inside of the frame, which looks bad when topBar==`outside`. Clip it out:
+    let topConstraint = trailingSidebarView.topAnchor.constraint(equalTo: viewportView.topAnchor, constant: -2)
+    let bottomConstraint = viewportView.bottomAnchor.constraint(equalTo: trailingSidebarView.bottomAnchor)
 
     assert(panelConstraints.vpTrailingOffsetFromCVTrailing.constraint != nil)
     panelConstraints.vpTrailingOffsetFromCVTrailing.constraint?.animateToConstant(coefficients.2 * sidebarWidth)
@@ -719,11 +722,11 @@ extension PlayerWindowController {
     trailingSidebarConstraints = TrailingSidebarConstraints(viewportTrailingOffsetFromLeading: leadingCon,
                                                             viewportTrailingOffsetFromTrailing: trailingCon,
                                                             viewportTrailingClipLeading: viewportTrailingClipLeading,
-                                                            top: topCon, bottom: bottomCon)
+                                                            top: topConstraint, bottom: bottomConstraint)
 
     if shouldAddTabGroup {
       log.verbose("Adding tabGroup \(tabGroupToShow.rawValue.quoted) to \(trailingSidebar.locationID), placement=\(trailingSidebar.placement)")
-      addTabGroupView(for: tabGroupToShow, to: tabContainerView)
+      addTabGroupView(for: tabGroupToShow, to: tabContainerView, effectiveAppearance: window!.contentView!.effectiveAppearance)
     }
   }
 
@@ -778,7 +781,7 @@ extension PlayerWindowController {
 
   /// Prepares those layout components which are generic for either `Sidebar`.
   /// Executed prior to opening the given `Sidebar` with corresponding `sidebarView`
-  private func addTabGroupView(for tabGroup: Sidebar.TabGroup, to tabContainerView: NSView) {
+  private func addTabGroupView(for tabGroup: Sidebar.TabGroup, to tabContainerView: NSView, effectiveAppearance: NSAppearance) {
     // Add tab group view
     let viewController: NSViewController
     switch tabGroup {

@@ -2328,20 +2328,18 @@ extension NSView {
   /// Returns the current NSAppearance using IINA & MacOS settings.
   /// Expected to always return either light or dark. (Not guaranteed though?)
   var iinaAppearance: NSAppearance {
-    if #available(macOS 10.14, *) {
-      var theme: Preference.Theme = Preference.enum(for: .themeMaterial)
-      if theme == .system {
-        if effectiveAppearance.isDark {
-          // For some reason, "system" dark does not result in the same colors as "dark".
-          // Just override it with "dark" to keep it consistent.
-          theme = .dark
-        } else {
-          theme = .light
-        }
+    var theme: Preference.Theme = Preference.enum(for: .themeMaterial)
+    if theme == .system {
+      if effectiveAppearance.isDark {
+        // For some reason, "system" dark does not result in the same colors as "dark".
+        // Just override it with "dark" to keep it consistent.
+        theme = .dark
+      } else {
+        theme = .light
       }
-      if let themeAppearance = NSAppearance(iinaTheme: theme) {
-        return themeAppearance
-      }
+    }
+    if let themeAppearance = NSAppearance(iinaTheme: theme) {
+      return themeAppearance
     }
     return effectiveAppearance
   }

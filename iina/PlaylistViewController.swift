@@ -145,8 +145,11 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
     removeBtn.toolTip = NSLocalizedString("mini_player.remove", comment: "remove")
     sortBtn.toolTip = NSLocalizedString("mini_player.sort", comment: "sort")
 
+    // Use contentView appearance (for now)
+    updateTableColors(effectiveAppearance: player.pwc.window!.contentView!.effectiveAppearance)
+
     hideTotalDuration()
-    updateTableColors()  // this will also load data for tables
+    reloadData(playlist: true, chapters: true, animate: false)
 
     // handle pending switch tab request
     if pendingSwitchRequest == nil {
@@ -280,23 +283,20 @@ class PlaylistViewController: NSViewController, NSMenuDelegate, SidebarTabGroupV
   }
 
   @MainActor
-  func updateTableColors() {
-    player.log.verbose("Playlist sidebar: updating table colors")
+  func updateTableColors(effectiveAppearance: NSAppearance) {
+    player.log.verbose("Playlist sidebar: updating table colors: dark=\(effectiveAppearance.isDark.yn)")
     // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
-    let effectiveAppearance = view.window?.effectiveAppearance ?? view.effectiveAppearance
     effectiveAppearance.performAsCurrentDrawingAppearance {
-      if #available(macOS 10.14, *) {
-        isPlayingTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingTextBlendFraction, of: .textColor)!
-        isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!
+      isPlayingTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingTextBlendFraction, of: .textColor)!
+      isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!
 
-        // Need a dedicated view behind each table to use for background color.
-        // NSTableView & its component views don't support translucent background color.
-        // Also note: CGColor does not support dark mode, so the view layer needs to be updated
-        // explicitly whenever the appearance changes.
-        let tableBackgroundColor = NSColor.sidebarTableBackground.cgColor
-        playlistTableBackgroundView.wantsLayer = true
-        playlistTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
-      }
+      // Need a dedicated view behind each table to use for background color.
+      // NSTableView & its component views don't support translucent background color.
+      // Also note: CGColor does not support dark mode, so the view layer needs to be updated
+      // explicitly whenever the appearance changes.
+      let tableBackgroundColor = NSColor.sidebarTableBackground.cgColor
+      playlistTableBackgroundView.wantsLayer = true
+      playlistTableBackgroundView.layer?.backgroundColor = tableBackgroundColor
     }
     reloadData(playlist: true, chapters: true, animate: false)
   }
@@ -765,6 +765,9 @@ extension PlaylistViewController: NSTableViewDelegate {
     if tableView == playlistTableView {  // Playlist table
                                          // use cached value
       let isPlaying = self.lastNowPlayingIndex == row
+      if isPlaying {
+        Logger.log("IS PLAYING")
+      }
 
       switch identifier {
       case .isChosen:
@@ -1056,7 +1059,6 @@ extension PlaylistViewController: NSTableViewDelegate {
     loadCachedItem(forRowIndex: oldNowPlayingIndex)
     // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
     loadCachedItem(forRowIndex: newNowPlayingIndex)
-
     // The calls to loadCachedItem should refresh the given indexes, but will go through multiple queues
     // to do so and may be delayed by a minute or more. We need to update the nowPlaying status ASAP,
     // so just add extra redraws right away:

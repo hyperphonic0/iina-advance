@@ -18,11 +18,7 @@ class PlaylistTrackCellView: NSTableCellView {
   @IBOutlet weak var playbackProgressView: PlaylistPlaybackProgressView!
 
   func setPrefix(_ prefix: String?, textColor: NSColor? = nil) {
-    if #available(macOS 10.14, *) {
-      prefixBtn.contentTintColor = textColor
-    } else {
-      // Sorry earlier versions, no color for you
-    }
+    prefixBtn.contentTintColor = textColor
 
     if let prefix {
       prefixBtn.hasPrefix = true

@@ -133,7 +133,7 @@ extension ConfTableViewController: NSTableViewDelegate {
     switch columnName {
     case "nameColumn":
       let textColor: NSColor?
-      if #available(macOS 10.14, *), useSeparateColorForBuiltinConfs {
+      if useSeparateColorForBuiltinConfs {
         textColor = isBuiltinConf ? builtInConfTextColor : .controlTextColor
       } else {
         textColor = nil
@@ -141,7 +141,7 @@ extension ConfTableViewController: NSTableViewDelegate {
       cell.textField?.setFormattedText(stringValue: confName, textColor: textColor)
       return cell
     case "isDefaultColumn":
-      if #available(macOS 10.14, *), useSeparateColorForBuiltinConfs {
+      if useSeparateColorForBuiltinConfs {
         cell.imageView?.contentTintColor = builtInConfTextColor
       }
       cell.imageView?.isHidden = !isBuiltinConf

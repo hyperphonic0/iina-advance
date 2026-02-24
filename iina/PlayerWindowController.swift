@@ -689,21 +689,20 @@ final class PlayerWindowController: WindowController, NSWindowDelegate {
   /// Set material & theme (light or dark mode) for OSC and title bar.
   /// Make sure this is running inside an animation task too!
   @MainActor
-  func applyThemeMaterial(using layoutState: LayoutState, _ newAppearance: NSAppearance?, _ window: NSWindow, _ screen: NSScreen) {
-    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): appearance=\(newAppearance?.name.rawValue ?? "nil")")
+  func applyThemeMaterial(using layoutState: LayoutState, _ windowEffectiveAppearance: NSAppearance, _ window: NSWindow, _ screen: NSScreen) {
+    log.verbose("Applying theme material for screen \(screen.screenID.pii.quoted): appearance=\(windowEffectiveAppearance.name.rawValue)")
     let contentView = window.contentView!
 
     if playlistView.isViewLoaded {
-      playlistView.updateTableColors()
+      playlistView.updateTableColors(effectiveAppearance: windowEffectiveAppearance)
     }
 
-    let topBarAppearance = layoutState.topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : newAppearance
+    let topBarAppearance = layoutState.topBarColorScheme.hasClearBG ? NSAppearance(iinaTheme: .dark)! : windowEffectiveAppearance
     /// Setting `window.appearance` will trigger a change to `#keyPath(window.effectiveAppearance)`.
     /// Need to call this to set native title bar colors.
     window.appearance = topBarAppearance
     /// Call this to change all other colors
-    contentView.appearance = newAppearance
-    let windowEffectiveAppearance = newAppearance ?? contentView.effectiveAppearance
+    contentView.appearance = windowEffectiveAppearance
     osd.updateColors(windowAppearance: windowEffectiveAppearance)
     oscBarRenderer = BarRenderer(windowAppearance: windowEffectiveAppearance,
                                  colorScheme: layoutState.oscColorScheme,
