@@ -79,7 +79,7 @@ final class FloatingControlBar {
     let subviews = [topRowView, bottomRowView]
     let view: NSView
 
-    let colorScheme: Preference.PanelColorScheme = Preference.enum(for: .oscFloatingColorScheme)
+    let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSCFloatingColorSchemeFromPrefs()
     if #available(macOS 26, *), colorScheme == .clearLiquidGlass || colorScheme == .tintedLiquidGlass {
       let style: NSGlassEffectView.Style = colorScheme == .clearLiquidGlass ? .clear : .regular
       if let existingView = self.view as? FloatingControlBarGlassEffectView {
@@ -204,26 +204,26 @@ final class FloatingControlBar {
 
   @MainActor
   fileprivate func moveToLocationRatio(parentGeo: PWinGeometry) {
-    guard view.superview != nil, let xConstraint, let yConstraint else { return }
+    guard view.superview != nil, let pwc, let xConstraint, let yConstraint else { return }
 
     let ratioH = Preference.double(for: .controlBarPositionHorizontal)
     let ratioV = Preference.double(for: .controlBarPositionVertical)
 
     guard ratioH >= 0 && ratioH <= 1 else {
-      pwc?.log.error("FloatingOSC: cannot update position; centerRatioH is invalid: \(ratioH)")
+      pwc.log.error("FloatingOSC: cannot update position; centerRatioH is invalid: \(ratioH)")
       return
     }
     guard ratioV >= 0 && ratioV <= 1 else {
-      pwc?.log.error("FloatingOSC: cannot update position; originRatioV is invalid: \(ratioV)")
+      pwc.log.error("FloatingOSC: cannot update position; originRatioV is invalid: \(ratioV)")
       return
     }
 
     let geometry = FloatingControlBarGeometry(parentGeo: parentGeo)
     let availableWidth = geometry.availableWidth
-    let centerX = geometry.minCenterX + ((availableWidth - geometry.barWidth) * ratioH)
+    let centerX = geometry.minCenterX + (max(0, availableWidth - geometry.barWidth) * ratioH)
     let originY = geometry.minOriginY + (ratioV * (geometry.maxOriginY - geometry.minOriginY))
     let (xConst, yConst) = geometry.calculateConstraintConstants(centerX: centerX, originY: originY)
-//    Logger.log("Setting xConstraint to: \(xConst), from \(geometry.minCenterX) + ((\(availableWidth) - \(geometry.barWidth)) * \(ratioH))", level: .verbose)
+    pwc.log.verbose("Setting xConstraint to: \(xConst), from \(geometry.minCenterX) + ((\(availableWidth) - \(geometry.barWidth)) * \(ratioH))")
     xConstraint.animateToConstant(xConst)
     yConstraint.animateToConstant(yConst)
     updateRatios(xConst: xConst, yConst: yConst, geometry)
@@ -235,10 +235,10 @@ final class FloatingControlBar {
     let minCenterX = geometry.minCenterX
 
     // save final position
-    let ratioH = (xConst - minCenterX) / (geometry.availableWidth - geometry.barWidth)
+    let ratioH = (xConst - minCenterX) / max(1, geometry.availableWidth - geometry.barWidth)
     let minOriginY = geometry.minOriginY
     let ratioV = (yConst - minOriginY) / (geometry.maxOriginY - minOriginY)
-    //    Logger.log("Drag: Setting ratioH to: (\(xConst) - \(minCenterX)) / (\(geometry.availableWidth) - \(geometry.barWidth)) = \(ratioH)", level: .verbose)
+    pwc?.log.verbose("Drag: Setting ratioH to: (\(xConst) - \(minCenterX)) / (\(geometry.availableWidth) - \(geometry.barWidth)) = \(ratioH)")
 
     // Save to prefs as future default
     Preference.set(ratioH, for: .controlBarPositionHorizontal)
@@ -372,7 +372,7 @@ final class FloatingControlBar {
 
     var barWidth: CGFloat {
       if availableWidth < preferredBarWidth {
-        return FloatingControlBar.minBarWidth
+        return availableWidth
       }
       return preferredBarWidth
     }

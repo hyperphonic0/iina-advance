@@ -404,9 +404,10 @@ extension PlayerWindowController {
     case #keyPath(window.effectiveAppearance):
       animationPipeline.submitInstantTask { [self] in
         /// This indicates light/dark mode was toggled. But this won't be sent when `controlAccentColor` changes...
-        /// For that, we follow `appleColorPreferencesChangedNotification`
-        guard let window else { return }
-        let effectiveAppearanceName = window.effectiveAppearance.name.rawValue
+        /// For that, we follow `appleColorPreferencesChangedNotification`.
+        /// Compare `NSApp.effectiveAppearance`, not window appearance (that can change via `themeMaterial` pref
+        /// which we handle elsewhere).
+        let effectiveAppearanceName = NSApp.effectiveAppearance.name.rawValue
         guard cachedEffectiveAppearanceName != effectiveAppearanceName else { return }
         log.verbose("Window appearance changed to: \(effectiveAppearanceName)")
         cachedEffectiveAppearanceName = effectiveAppearanceName

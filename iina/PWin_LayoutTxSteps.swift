@@ -364,12 +364,12 @@ extension PlayerWindowController {
 
     let theme: Preference.Theme = Preference.enum(for: .themeMaterial)
     // Can be nil, which means dynamic system appearance:
-    let themeAppearance: NSAppearance? = NSAppearance(iinaTheme: theme)
+    let targetWindowAppearance: NSAppearance = NSAppearance(iinaTheme: theme) ?? NSApp.effectiveAppearance
 
     // Do this here so that (1) BarRenderer regenerates close enough to mid-animation (so bar thickness changes pleasantly),
     // & (2) window.appearance is updated before updating styling of any window views!
     if let screen = window.screen {
-      applyThemeMaterial(using: transition.outputLayout, themeAppearance, window, screen)
+      applyThemeMaterial(using: transition.outputLayout, targetWindowAppearance, window, screen)
     } else {
       // In some rare cases, window might be off screen its frame size is zero (the latter can happen when exiting music mode with no
       // playlist & no video), in which case window.screen will be nil. Just log & continue. In principle, applyThemeMaterial will still
@@ -377,7 +377,6 @@ extension PlayerWindowController {
       log.verbose("Skipped applyThemeMaterial due to missing window or screen")
     }
 
-    let targetWindowAppearance: NSAppearance = themeAppearance ?? window.effectiveAppearance
     let appearanceDidChange = targetWindowAppearance != oldWindowAppearance
     if appearanceDidChange {
       // Call this NOW before updating styles / appearance of subviews
@@ -417,7 +416,6 @@ extension PlayerWindowController {
       }
 
     }
-
 
     if transition.isOpeningViewport {
       videoView.activateForcedRedraws()
@@ -467,7 +465,7 @@ extension PlayerWindowController {
     // - Top Bar
 
     // FIXME: topBar.view doesn't always update appearance
-    topBar.rebuildViewIfNeeded(transition.outputLayout.topBarColorScheme, superview: window.contentView!, windowAppearance: targetWindowAppearance)
+    topBar.rebuildViewIfNeeded(transition.outputLayout.topBarColorScheme, superview: window.contentView!)
     topBar.updateAppearance(windowAppearance: targetWindowAppearance)
 
     if !transition.isWindowInitialLayout && !transition.isTogglingNativeFullScreen {

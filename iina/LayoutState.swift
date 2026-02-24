@@ -355,6 +355,13 @@ struct LayoutState {
     return Preference.enum(for: .osdColorScheme)
   }
 
+  static func effectiveOSCFloatingColorSchemeFromPrefs() -> Preference.PanelColorScheme {
+    let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
+    guard globalScheme == .none else { return globalScheme }
+
+    return Preference.enum(for: .oscFloatingColorScheme)
+  }
+
   // MARK: - Computed Properties
 
   // - Visibility of views/categories

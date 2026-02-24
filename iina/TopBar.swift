@@ -85,7 +85,7 @@ final class TopBar {
   }
 
   /// Returns `true` if view needed to be rebuilt
-  func rebuildViewIfNeeded(_ colorScheme: Preference.PanelColorScheme, superview: NSView, windowAppearance: NSAppearance) {
+  func rebuildViewIfNeeded(_ colorScheme: Preference.PanelColorScheme, superview: NSView) {
     guard #available(macOS 26.0, *) else { return }
     switch colorScheme {
     case .clearLiquidGlass, .tintedLiquidGlass:
