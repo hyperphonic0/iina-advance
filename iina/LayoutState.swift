@@ -249,8 +249,8 @@ struct LayoutState {
     let topBarPlacement: Preference.PanelPlacement = Preference.enum(for: .topBarPlacement)
     let interactiveMode = mode.isInteractiveMode ? oldSpec?.interactiveMode ?? InteractiveMode.crop : nil
     let oscColorScheme = effectiveOSCColorSchemeFromPrefs
-    let topBarColorScheme = effectiveTopBarColorSchemeFromPrefs()
-    let sidebarsColorScheme = effectiveSidebarsColorSchemeFromPrefs()
+    let topBarColorScheme = effectiveTopBarColorSchemeFromPrefs
+    let sidebarsColorScheme = effectiveSidebarsColorSchemeFromPrefs
 
     return LayoutState(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
                        mode: mode,
@@ -287,13 +287,11 @@ struct LayoutState {
 
     if Preference.bool(for: .enableOSC) {
       let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
-      if oscPosition == .bottom, Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport {
-        let bottomBarColorSchme: Preference.PanelColorScheme = Preference.enum(for: .oscColorScheme)
+      if (oscPosition == .bottom && (Preference.enum(for: .bottomBarPlacement) == Preference.PanelPlacement.insideViewport))
+          || (oscPosition == .top && (Preference.enum(for: .topBarPlacement) == Preference.PanelPlacement.insideViewport)) {
         guard globalScheme == .none else { return globalScheme }
-        return bottomBarColorSchme
-      } else if oscPosition == .top {
-        guard globalScheme == .none else { return globalScheme }
-        return effectiveTopBarColorSchemeFromPrefs()
+        let colorSchme: Preference.PanelColorScheme = Preference.enum(for: .oscColorScheme)
+        return colorSchme
       } else if oscPosition == .floating {
         guard globalScheme == .none else { return globalScheme }
         return Preference.enum(for: .oscFloatingColorScheme)
@@ -303,7 +301,7 @@ struct LayoutState {
   }
 
   /// Top bar color scheme
-  static func effectiveTopBarColorSchemeFromPrefs() -> Preference.PanelColorScheme {
+  static var effectiveTopBarColorSchemeFromPrefs: Preference.PanelColorScheme {
     let topBarPlacement: Preference.PanelPlacement = Preference.enum(for: .topBarPlacement)
     guard topBarPlacement == .insideViewport else {
       return .visualEffectView
@@ -312,12 +310,24 @@ struct LayoutState {
     let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
     guard globalScheme == .none else { return globalScheme }
 
+    // If top OSC, use that value
+    if Preference.bool(for: .enableOSC) && (Preference.enum(for: .oscPosition) == Preference.OSCPosition.top) {
+      return effectiveOSCColorSchemeFromPrefs
+    }
+
     let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
+    switch topBarColorScheme {
+    case .clearGradient:
+      // Not allowed if not using top OSC
+      return .visualEffectView
+    default:
+      break
+    }
     return topBarColorScheme
   }
 
   /// Sidebars color scheme
-  static func effectiveSidebarsColorSchemeFromPrefs() -> Preference.PanelColorScheme {
+  static var effectiveSidebarsColorSchemeFromPrefs: Preference.PanelColorScheme {
     let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
     switch globalScheme {
     case .tintedGlass, .visualEffectView:
@@ -341,14 +351,14 @@ struct LayoutState {
     }
   }
 
-  static func effectiveOSDColorSchemeFromPrefs() -> Preference.PanelColorScheme {
+  static var effectiveOSDColorSchemeFromPrefs: Preference.PanelColorScheme {
     let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
     guard globalScheme == .none else { return globalScheme }
 
     return Preference.enum(for: .osdColorScheme)
   }
 
-  static func effectiveOSCFloatingColorSchemeFromPrefs() -> Preference.PanelColorScheme {
+  static var effectiveOSCFloatingColorSchemeFromPrefs: Preference.PanelColorScheme {
     let globalScheme: Preference.PanelColorScheme = Preference.enum(for: .globalColorScheme)
     guard globalScheme == .none else { return globalScheme }
 

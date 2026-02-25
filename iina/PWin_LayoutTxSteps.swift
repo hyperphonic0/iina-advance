@@ -455,9 +455,12 @@ extension PlayerWindowController {
     topBarAppearance.performAsCurrentDrawingAppearance {
       if appearanceDidChange {
         // Workaround for race condition when changing theme
-        topBar.rebuildView(topBarColorScheme: outputLayout.topBarColorScheme, superview: window.contentView!)
+        topBar.rebuildView(topBarColorScheme: outputLayout.topBarColorScheme, superview: contentView)
       } else {
-        topBar.rebuildViewIfNeeded(topBarColorScheme: outputLayout.topBarColorScheme, superview: window.contentView!)
+        topBar.rebuildViewIfNeeded(topBarColorScheme: outputLayout.topBarColorScheme, superview: contentView)
+        if topBar.view.superview == nil {
+          contentView.addSubview(topBar.view)
+        }
       }
       if #available(macOS 26.0, *), let topBarGlassView = topBar.view as? TopBarGlassEffectView {
         if outputLayout.isLegacyStyle {
@@ -510,7 +513,7 @@ extension PlayerWindowController {
       }
 
       if transition.outputLayout.mode == .musicMode {
-        legacyTitleBar.addViewTo(superview: window.contentView!)
+        legacyTitleBar.addViewTo(superview: contentView)
       } else {
         legacyTitleBar.addViewTo(superview: topBar.titleBarView)
       }
@@ -726,7 +729,7 @@ extension PlayerWindowController {
       volumeSliderCell.knobHeight = sliderKnobHeight
       volumeSlider.needsDisplay = true
 
-      if transition.isWindowInitialLayout || transition.isOSCStyleChanging ||
+      if transition.isWindowInitialLayout || transition.isOSCPositionChanging || transition.isOSCStyleChanging ||
           (transition.inputLayout.controlBarGeo.barHeight != transition.outputLayout.controlBarGeo.barHeight) {
         let oscColorScheme = transition.outputLayout.oscColorScheme
         log.verbose("Updating OSC colors: hasClearBG=\(oscColorScheme.hasClearBG.yn) colorScheme=\(oscColorScheme.description)")
@@ -825,9 +828,9 @@ extension PlayerWindowController {
 
     topBarAppearance.performAsCurrentDrawingAppearance { [self] in
       topBar.view.appearance = topBarAppearance
-      topBar.updateAppearance(windowAppearance: topBarAppearance)
-
       let colorScheme = outputLayout.topBarColorScheme
+      topBar.updateAppearance(topBarColorScheme: colorScheme, windowAppearance: topBarAppearance)
+
       // Top bar control colors. Do this after applying theme!
       if outputLayout.leadingSidebarToggleButton.isShowable {
         leadingSidebarToggleButton.setColors(for: colorScheme)

@@ -273,6 +273,7 @@ class CustomTitleBarViewController: NSViewController {
 
     // - Update colors
 
+    let topBarColorScheme = pwc.currentLayout.topBarColorScheme
     let drawAsKeyWindow = titleText.window?.isKeyWindow ?? false
 
     // Skip if not visible
@@ -286,7 +287,7 @@ class CustomTitleBarViewController: NSViewController {
       // Skip buttons which are not visible
       guard btn.alphaValue > 0.0 else { continue }
       if drawAsKeyWindow {
-        btn.regularColor = nil
+        btn.setColors(for: topBarColorScheme)
       } else {
         btn.regularColor = .disabledControlTextColor
       }
@@ -303,6 +304,7 @@ class CustomTitleBarViewController: NSViewController {
       btn.setColors(for: topBarColorScheme)
       btn.needsDisplay = true
     }
+//    titleText.setColors(topBarColorScheme) // TODO: add shadow for clear BG (also for native!)
     titleText.needsDisplay = true
   }
 

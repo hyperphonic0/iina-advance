@@ -1442,7 +1442,6 @@ For smoothest results, also enable custom full screen.</string>
                                         <menu key="menu" id="TRW-Ys-YMa">
                                             <items>
                                                 <menuItem title="Flat Translucent" state="on" tag="1" id="eQu-0t-eS8"/>
-                                                <menuItem title="Clear-Black Gradient" tag="2" id="xwC-fk-OXh"/>
                                                 <menuItem title="Clear Glass" tag="3" id="qlR-cK-Plb"/>
                                                 <menuItem title="Tinted Glass" tag="4" id="0cF-Wo-qQV"/>
                                             </items>
@@ -1722,7 +1721,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </customView>
                                 <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="hwA-ec-V4c">
                                     <rect key="frame" x="101" y="6" width="161" height="16"/>
-                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Bottom bar color scheme:" id="Gxo-GK-ECm">
+                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Color scheme:" id="Gxo-GK-ECm">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>

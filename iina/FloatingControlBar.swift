@@ -79,7 +79,7 @@ final class FloatingControlBar {
     let subviews = [topRowView, bottomRowView]
     let view: NSView
 
-    let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSCFloatingColorSchemeFromPrefs()
+    let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSCFloatingColorSchemeFromPrefs
     if #available(macOS 26, *), colorScheme == .clearGlass || colorScheme == .tintedGlass {
       let style: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
       if let existingView = self.view as? FloatingControlBarGlassEffectView {

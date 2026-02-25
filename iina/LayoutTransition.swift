@@ -252,6 +252,10 @@ extension PlayerWindowController {
       return inputLayout.topBarPlacement != outputLayout.topBarPlacement
     }
 
+    var isOSCPositionChanging: Bool {
+      return inputLayout.oscPosition != outputLayout.oscPosition
+    }
+
     var isOSCStyleChanging: Bool {
       (inputLayout.oscColorScheme != outputLayout.oscColorScheme)
       || (inputLayout.controlBarGeo.isTwoRowBarOSC != outputLayout.controlBarGeo.isTwoRowBarOSC)

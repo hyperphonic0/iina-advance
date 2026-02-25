@@ -489,7 +489,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let arrowButtonAction: Preference.ArrowButtonAction = newGeo.arrowButtonAction
     let isAdvancedEnabled = Preference.bool(for: .enableAdvancedSettings)
     let showForceSingleRowCheckbox = isAdvancedEnabled && oscPositionSupportsTwoRow
-    let oscIsBottomOverlay = oscIsBottom && oscIsOverlay
     let hasTopBar = ib.hasTopBar
     let showTopBarTrigger = hasTopBar && ib.topBarPlacement == .insideViewport && isAdvancedEnabled
     let useGlobalColorScheme = hasMacOS26 && (LayoutState.effectiveGlobalColorSchemeFromPrefs() != Preference.PanelColorScheme.none)
@@ -509,13 +508,13 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     viewHidePairs.append((globalColorSchemeContainerView, !hasMacOS26))
     viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
-    viewHidePairs.append((topBarColorSchemeContainerView, !(hasMacOS26 && !useGlobalColorScheme && hasTopBar && (ib.topBarPlacement == .insideViewport) ) ))
+    viewHidePairs.append((topBarColorSchemeContainerView, !(hasMacOS26 && !useGlobalColorScheme && (ib.topBarPlacement == .insideViewport) && !oscIsTop ) ))
     viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
 
     viewHidePairs.append((oscForceSingleRowContainerView, !showForceSingleRowCheckbox))
     viewHidePairs.append((oscTimeLabelsAlwaysWrapSliderStackView, !hasTwoRowOSC))
 
-    viewHidePairs.append((oscBottomColorSchemeHStackView, !(!useGlobalColorScheme && oscIsBottomOverlay)))
+    viewHidePairs.append((oscBottomColorSchemeHStackView, !(!useGlobalColorScheme && oscIsOverlay && (oscIsTop || oscIsBottom))))
     viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
 
     viewHidePairs.append((oscFloatingColorSchemeHStackView, !(hasMacOS26 && oscIsFloating && !useGlobalColorScheme)))

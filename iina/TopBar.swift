@@ -78,7 +78,7 @@ final class TopBar {
   var titleBarHeightConstraint: NSLayoutConstraint!
 
   init() {
-    let topBarColorScheme: Preference.PanelColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
+    let topBarColorScheme: Preference.PanelColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs
     view = TopBar.buildView(topBarColorScheme: topBarColorScheme)
     configureView()
   }
@@ -166,10 +166,8 @@ final class TopBar {
     topBarBottomBorder_HeightConstraint.isActive = true
   }
 
-  func updateAppearance(windowAppearance: NSAppearance?) {
-    // Can be nil, which means dynamic system appearance:
-    let topBarColorScheme = LayoutState.effectiveTopBarColorSchemeFromPrefs()
-
+  /// `windowAppearance` can be nil, which means dynamic system appearance
+  func updateAppearance(topBarColorScheme: Preference.PanelColorScheme, windowAppearance: NSAppearance?) {
     if let customTitleBar = view.pwc?.customTitleBar {
       customTitleBar.setColors(topBarColorScheme: topBarColorScheme)
     }

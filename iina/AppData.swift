@@ -469,24 +469,6 @@ struct Constants {
     static let oscSectionHSpacing: CGFloat = 3
   }
 
-  /// `NSShadow.shadowColor` is not dark enough. Use pure black.
-  static let defaultShadowColor: NSColor = .black
-  static let iconDefaultShadowBlurRadiusConstant: CGFloat = 0.5
-  
-  // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
-  // (with no bar gradient or shading).
-  static let seekPreviewTimeLabel_ShadowRadiusConstant: CGFloat = 3.0
-  static let seekPreviewTimeLabel_xOffsetConstant: CGFloat = 0
-  static let seekPreviewTimeLabel_yOffsetConstant: CGFloat = 0.5
-  static let oscClearBG_ButtonShadowBlurRadius: CGFloat = 0.8
-  /// Shadow blur of time labels = its contentHeight * multiplier + constant
-  static let oscClearBG_TextShadowBlurRadius_Constant: CGFloat = 0.8
-  static let oscClearBG_TextShadowBlurRadius_Multiplier: CGFloat = 0.02
-  static let clarLiquidGlass_TextShadowOffsetX: CGFloat = 0.4
-  static let clarLiquidGlass_TextShadowOffsetY: CGFloat = 0.4
-  static let clarLiquidGlass_ButtonShadowBlurRadius: CGFloat = 1.6
-  // See also: Constants.Slider.shadowBlurRadius
-
   // - Title Bar
 
   /// `NSWindow` doesn't provide title bar height directly, but we can derive it by asking `NSWindow` for
@@ -544,6 +526,24 @@ struct Constants {
     static let minPlaylistHeight: CGFloat = 138
   }
 
+  /// `NSShadow.shadowColor` is not dark enough. Use pure black.
+  static let defaultShadowColor: NSColor = .black
+  static let iconDefaultShadowBlurRadiusConstant: CGFloat = 0.5
+
+  // Use slightly bigger blur for this than other text labels, because unlike them, this overlays the video directly
+  // (with no bar gradient or shading).
+  static let seekPreviewTimeLabel_ShadowRadiusConstant: CGFloat = 3.0
+  static let seekPreviewTimeLabel_xOffsetConstant: CGFloat = 0
+  static let seekPreviewTimeLabel_yOffsetConstant: CGFloat = 0.5
+  static let oscClearBG_ButtonShadowBlurRadius: CGFloat = 1.2
+  /// Shadow blur of time labels = its contentHeight * multiplier + constant
+  static let oscClearBG_TextShadowBlurRadius_Constant: CGFloat = 0.8
+  static let oscClearBG_TextShadowBlurRadius_Multiplier: CGFloat = 0.04
+  static let clarLiquidGlass_TextShadowOffsetX: CGFloat = 0.4
+  static let clarLiquidGlass_TextShadowOffsetY: CGFloat = 0.4
+  static let clarLiquidGlass_ButtonShadowBlurRadius: CGFloat = 1.6
+  // See also: Constants.Slider.shadowBlurRadius
+
   struct Color {
     /// The standard viewport color
     static let defaultWindowBackgroundColor = CGColor.black
@@ -554,12 +554,17 @@ struct Constants {
     static let whiteShadow = CGColor(gray: 1, alpha: 0.75)
 
     static let clearBlackGradientColors = [CGColor(red: 0, green: 0, blue: 0, alpha: 0.0),
-                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.025),
-                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.05),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.01),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.02),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.035),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.06),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.1),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.15),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.175),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.2),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.225),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.25),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.275),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.3),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.325),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.35),

@@ -178,7 +178,7 @@ final class OSDState {
 
   fileprivate static func buildAdditionalInfoView(_ additionalInfoSubviews: AdditionalInfoSubviews) -> NSView {
     let aiView: NSView
-    let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs()
+    let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs
     if #available(macOS 26, *), colorScheme == .clearGlass || colorScheme == .tintedGlass {
       let style: NSGlassEffectView.Style = colorScheme == .clearGlass ? .clear : .regular
       let glassView = AdditionalInfoGlassView(style: style)
@@ -209,7 +209,7 @@ final class OSDState {
   @MainActor
   func rebuildAdditionalInfoView() {
     guard Preference.bool(for: .displayTimeAndBatteryInFullScreen) else { return }
-    let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs()
+    let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs
 
     let needsRebuild: Bool
     if #available(macOS 26, *), colorScheme == .clearGlass || colorScheme == .tintedGlass {
@@ -239,7 +239,7 @@ final class OSDState {
   @MainActor
   func rebuildOSDView() {
     guard Preference.bool(for: .enableOSD) else { return }
-    let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs()
+    let colorScheme: Preference.PanelColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs
 
     let needsRebuild: Bool
     if #available(macOS 26, *), colorScheme == .clearGlass || colorScheme == .tintedGlass {
@@ -442,7 +442,7 @@ final class OSDState {
   func updateColors(windowAppearance: NSAppearance) {
     let osdTextSize = textSizeLast
     guard osdTextSize > 0 else { return }
-    let osdColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs()
+    let osdColorScheme = LayoutState.effectiveOSDColorSchemeFromPrefs
 
     let sliderBarHeight = getSliderBarHeight(forOSDTextSize: osdTextSize)
     osdAccessoryProgress.barRenderer = BarRenderer(windowAppearance: windowAppearance,
