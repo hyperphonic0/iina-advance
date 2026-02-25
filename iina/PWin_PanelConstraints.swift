@@ -379,7 +379,7 @@ extension PlayerWindowController {
     }
 
     // Need to add additionalInfo, OSD before changing sidebars
-    addOrRemoveFloatingViews(for: stage, stageGeo)
+    addOrRemoveOSDViews(for: stage, stageGeo)
   }
 
   private func updateSidebarConstraints(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry,

@@ -313,10 +313,6 @@ struct LayoutState {
     guard globalScheme == .none else { return globalScheme }
 
     let topBarColorScheme: Preference.PanelColorScheme = Preference.enum(for: .topBarColorScheme)
-    guard topBarColorScheme != .clearGradient else {
-      // TODO: support Clear Gradient style in top bar
-      return .visualEffectView
-    }
     return topBarColorScheme
   }
 

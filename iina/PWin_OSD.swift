@@ -643,7 +643,7 @@ extension PlayerWindowController {
   /// transition stage:
   /// `osdView`
   /// `additionalInfoView`
-  func addOrRemoveFloatingViews(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry) {
+  func addOrRemoveOSDViews(for stage: LayoutTransition.Stage, _ stageGeo: PWinGeometry) {
     var addedSomething = false
     if stageGeo.shouldHaveOSD {
       if !viewportView.subviews.contains(osd.osdView) {

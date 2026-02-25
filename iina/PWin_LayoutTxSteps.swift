@@ -455,9 +455,9 @@ extension PlayerWindowController {
     topBarAppearance.performAsCurrentDrawingAppearance {
       if appearanceDidChange {
         // Workaround for race condition when changing theme
-        topBar.rebuildView(outputLayout.topBarColorScheme, superview: window.contentView!)
+        topBar.rebuildView(topBarColorScheme: outputLayout.topBarColorScheme, superview: window.contentView!)
       } else {
-        topBar.rebuildViewIfNeeded(outputLayout.topBarColorScheme, superview: window.contentView!)
+        topBar.rebuildViewIfNeeded(topBarColorScheme: outputLayout.topBarColorScheme, superview: window.contentView!)
       }
       if #available(macOS 26.0, *), let topBarGlassView = topBar.view as? TopBarGlassEffectView {
         if outputLayout.isLegacyStyle {
