@@ -57,10 +57,10 @@ final class StartupHandler {
     /// Value = `true` if successful; `false` if failed or not processed
     var volRemountsProcessed: [String: Bool] = [:]
 
-    init(saveName: String, _ savedState: PlayerSaveState, volumeRemountURLs: Set<String>) {
+    init(saveName: String, _ savedState: PlayerSaveState, volumeRemountsToProcess: Set<String>) {
       self.saveName = saveName
       self.savedState = savedState
-      self.volRemountsToProcess = volumeRemountURLs
+      self.volRemountsToProcess = volumeRemountsToProcess
     }
   }
 
@@ -413,7 +413,7 @@ final class StartupHandler {
     log.verbose("Starting restore of \(savedWindowsBackToFront.count) windows")
     Preference.set(true, for: .isRestoreInProgress)
 
-    var volumeRemountURLStringsToProcess: Set<String> = []
+    var volumeRemountsToProcess: [String: [PlayerSaveState.PlaybackItemData]] = [:]
 
     let app = AppDelegate.shared
     // Show windows one by one, starting at back and iterating to front:
@@ -470,18 +470,23 @@ final class StartupHandler {
         }
 
         let pwinToRestore = addWindowToRestore(savedWindow)
-        let playerVolRemountURLs = savedState.volumeRemountURLs
+        let remountRelatedDataList = savedState.getAllPlaybackBookmarkData().filter{ $0.hasVolRemountURL }
+        var volumeRemountsForPlayer = Set<String>()
+        for datum in remountRelatedDataList {
+          volumeRemountsForPlayer.insert(datum.volRemountURL)
+        }
 
-        if playerVolRemountURLs.isEmpty {
-          let playerToRestore = PlayerToRestore(saveName: pwinToRestore.saveName, savedState, volumeRemountURLs: [])
+        let playerToRestore = PlayerToRestore(saveName: pwinToRestore.saveName, savedState, volumeRemountsToProcess: volumeRemountsForPlayer)
+        if remountRelatedDataList.isEmpty {
           restorePlayer(pwinToRestore, playerToRestore)
         } else {
           // Save player meta, then process volumeRemountURLs asychronously
-          playersToRestore[pwinToRestore.saveName] = PlayerToRestore(saveName: pwinToRestore.saveName, savedState,
-                                                                     volumeRemountURLs: playerVolRemountURLs)
+          playersToRestore[pwinToRestore.saveName] = playerToRestore
 
-          for volumeRemountURL in playerVolRemountURLs {
-            volumeRemountURLStringsToProcess.insert(volumeRemountURL)
+          for remountRelatedData in remountRelatedDataList {
+            var array = volumeRemountsToProcess[remountRelatedData.volRemountURL] ?? []
+            array.append(remountRelatedData)
+            volumeRemountsToProcess[remountRelatedData.volRemountURL] = array
           }
         }
 
@@ -493,17 +498,17 @@ final class StartupHandler {
     }  // end loop over savedWindowsBackToFront
 
     PlayerSaveState.saveQueue.async { [self] in
-      log.debug("[Remount] Found \(volumeRemountURLStringsToProcess.count) volume remount URLs to process")
+      log.debug("[Remount] Found \(volumeRemountsToProcess.count) volume remount URLs to process")
 
       var abort = false
-      for volRemountURLString in volumeRemountURLStringsToProcess {
-        assert(!volRemountURLString.isEmpty)
+      for (volRemountURLString, relatedItems) in volumeRemountsToProcess {
+        assert(!volRemountURLString.isEmpty && !relatedItems.isEmpty)
         guard !abort else {
           log.debug("[Remount] Aborting processing of remaining remount URLs")
           return
         }
 
-        let isValid = processRemountURLString(volRemountURLString, log)
+        let isValid = processVolRemount(volRemountURLString, relatedItems, log)
 
         DispatchQueue.main.async { [self] in
           guard !isDoneLaunching else {
@@ -519,8 +524,9 @@ final class StartupHandler {
     return !windowsToRestore.isEmpty || restoreOpenFileWindow
   }
 
-  private func processRemountURLString(_ volRemountURLString: String,
-                                       _ log: any Logger.Subsystem) -> Bool {
+  private func processVolRemount(_ volRemountURLString: String,
+                                 _ relatedItems: [PlayerSaveState.PlaybackItemData],
+                                 _ log: any Logger.Subsystem) -> Bool {
     assert(DispatchQueue.isExecutingIn(PlayerSaveState.saveQueue))
 
     if let remountURL = URL(string: volRemountURLString) {
@@ -529,10 +535,19 @@ final class StartupHandler {
         log.verbose("[Remount] Volume is already mounted: remountURL=\(volRemountURLString.pii.quoted)")
         return true
       } else {
+        // Try first bookmark found. Maybe it will trigger auto-mount. Needs testing!
+        log.verbose("[Remount] Trying to load first bookmark from remountURL=\(volRemountURLString.pii.quoted)…")
+        let firstItemBookmark = relatedItems[0].bookmark
+        if PlaybackID.url(fromBookmark: firstItemBookmark, log) != nil {
+          log.verbose("[Remount] Successfully loaded bookmark from remountURL=\(volRemountURLString.pii.quoted)")
+          return true
+        }
+
         guard Preference.bool(for: .remountVolumesOnRestore) else {
           log.verbose("[Remount] Remount on restore disabled; skipping remountURL=\(volRemountURLString.pii.quoted)")
           return false
         }
+
         log.verbose("[Remount] Volume not mounted; attempting to remount: \(volRemountURLString.pii.quoted)")
         if NSWorkspace.shared.open(remountURL) {
           log.verbose("[Remount] Successfully remounted volume: \(volRemountURLString.pii.quoted)")

@@ -238,21 +238,6 @@ struct PlayerSaveState: CustomStringConvertible {
     return "PlayerSaveState{'url': \(urlPath.pii.quoted), 'props': \(propsJSON)}"
   }
 
-  /// Builds a list of all volume remount URLs found in properties dict
-  var volumeRemountURLs: Set<String> {
-    var urls = Set<String>()
-    if let volRemountURL = properties[PropName.volRemountURL.rawValue] as? String, !volRemountURL.isEmpty {
-      urls.insert(volRemountURL)
-    }
-    
-    for volRemountURL in properties[PropName.playlistVolRemountURLs.rawValue] as? [String] ?? [] {
-      guard !volRemountURL.isEmpty else { continue }
-      urls.insert(volRemountURL)
-    }
-
-    return urls
-  }
-
   fileprivate func json(from object: Any) -> String? {
     // Sanitize arbitrary Foundation structures into JSON-serializable equivalents
     func sanitize(_ value: Any) -> Any {
@@ -340,7 +325,7 @@ struct PlayerSaveState: CustomStringConvertible {
 #endif
 
     guard let volRemountURL = properties[PropName.volRemountURL.rawValue] as? String else {
-      log.warn("No `volRemountURL` property found for saved player (probably a pre-1.5.1 release); falling back static URL instead of bookmark")
+      log.warn("No `volRemountURL` property found for saved player (probably a pre-1.5.1 release); falling back to static URL instead of bookmark")
       return staticURL
     }
     guard let bookmarkData = properties[PropName.bookmark.rawValue] as? Data else {
@@ -361,40 +346,77 @@ struct PlayerSaveState: CustomStringConvertible {
     int(for: .buildNumber)
   }
 
+  struct PlaybackItemData {
+    let path: String
+    /// May be empty if no bookmark!
+    let bookmark: Data
+    /// May be empty if no volume remount URL!
+    let volRemountURL: String
+
+    var hasVolRemountURL: Bool { !volRemountURL.isEmpty }
+  }
+
+  fileprivate func getCurrentPlaybackBookmarkData() -> PlaybackItemData? {
+    guard
+      let volRemountURL = properties[PropName.volRemountURL.rawValue] as? String,
+      let bookmarkData = properties[PropName.bookmark.rawValue] as? Data,
+      let storedPath = string(for: .url)
+    else { return nil }
+    return PlaybackItemData(path: storedPath, bookmark: bookmarkData, volRemountURL: volRemountURL)
+  }
+
+  fileprivate func getPlaylistBookmarkData() -> [PlaybackItemData]? {
+    // Retrieve stored plain paths (legacy) and optional bookmarks (v1.5+)
+    let volRemountURLs = properties[PropName.playlistVolRemountURLs.rawValue] as? [String] ?? []
+    let playlistPaths = properties[PropName.playlistPaths.rawValue] as? [String] ?? []
+    let bookmarks = properties[PropName.playlistBookmarks.rawValue] as? [Data] ?? []
+
+    guard volRemountURLs.count == bookmarks.count, bookmarks.count == playlistPaths.count else {
+      return nil
+    }
+
+    var items: [PlaybackItemData] = []
+    for ((bookmarkData, storedPath), volRemountURL) in zip(zip(bookmarks, playlistPaths), volRemountURLs) {
+      items.append(PlaybackItemData(path: storedPath, bookmark: bookmarkData, volRemountURL: volRemountURL))
+    }
+    return items
+  }
+
+  func getAllPlaybackBookmarkData() -> [PlaybackItemData] {
+    var allItems: [PlaybackItemData] = []
+    if let currentBookmarkData = getCurrentPlaybackBookmarkData() {
+      allItems.append(currentBookmarkData)
+    }
+    if let playlistBookmarkData = getPlaylistBookmarkData() {
+      allItems.append(contentsOf: playlistBookmarkData)
+    }
+    return allItems
+  }
+
+
   // MARK: - Save State / Serialize to prefs strings
 
   /// Builds a list of PlaybackID objects for the saved playlist, preferring secure bookmarks when available.
   func buildPlaylistIDs(volRemounts: [String: Bool]) -> [PlaybackID] {
-    // Retrieve stored plain paths (legacy) and optional bookmarks (v1.5+)
-    let playlistPaths = properties[PropName.playlistPaths.rawValue] as? [String] ?? []
-    let bookmarks = properties[PropName.playlistBookmarks.rawValue] as? [Data] ?? []
-
-    // If neither paths nor bookmarks exist, return empty
-    if playlistPaths.isEmpty, bookmarks.isEmpty {
-      return []
-    }
-
     var ids: [PlaybackID] = []
 
-    let volRemountURLs = properties[PropName.playlistVolRemountURLs.rawValue] as? [String]
-
     // If we have all 3 arrays and they are aligned, use them in lockstep to preserve order
-    if let volRemountURLs, volRemountURLs.count == bookmarks.count, bookmarks.count == playlistPaths.count {
+    if let playlistBookmarkData = getPlaylistBookmarkData() {
       let sw = Utility.Stopwatch()
       var resolvedCount = 0
-      for ((bookmarkData, storedPath), volRemountURL) in zip(zip(bookmarks, playlistPaths), volRemountURLs) {
+      for item in playlistBookmarkData {
         // Attempt to create a PlaybackID from the bookmark first, if it is available
-        let staticURL = URL(fileURLWithPath: storedPath)
-        if volRemountURL.isEmpty || (volRemounts[volRemountURL] == true), let bookmarkURL = PlaybackID.url(fromBookmark: bookmarkData, log) {
-          let idWithBookmark = PlaybackID(bookmarkURL, bookmark: bookmarkData)
+        let staticURL = URL(fileURLWithPath: item.path)
+        if item.volRemountURL.isEmpty || (volRemounts[item.volRemountURL] == true), let bookmarkURL = PlaybackID.url(fromBookmark: item.bookmark, log) {
+          let idWithBookmark = PlaybackID(bookmarkURL, bookmark: item.bookmark)
           // Merge bookmark into cache
           MediaMetaCache.shared.updateCacheEntry(idWithBookmark)
           ids.append(idWithBookmark)
           resolvedCount += 1
           // Support empty storedPath. as of v1.5 this should never happen, but it is envisioned that future versions
           // may store an empty path for items which have bookmark data. Try to be forward compatible:
-          if !storedPath.isEmpty, PlaybackID.path(from: bookmarkURL) != storedPath {
-            log.debug("Playlist item from bookmark resolved to a new path than previously stored: \(storedPath.pii.quoted)"
+          if !item.path.isEmpty, PlaybackID.path(from: bookmarkURL) != item.path {
+            log.debug("Playlist item from bookmark resolved to a new path than previously stored: \(item.path.pii.quoted)"
                       + " → \(PlaybackID.path(from: bookmarkURL).pii.quoted)")
           }
         } else {
@@ -403,11 +425,12 @@ struct PlayerSaveState: CustomStringConvertible {
         }
       }
       log.debug("Resolved bookmarks for "
-                + (resolvedCount == playlistPaths.count ? "all \(resolvedCount)" : "\(resolvedCount) of \(playlistPaths.count)")
+                + (resolvedCount == playlistBookmarkData.count ? "all \(resolvedCount)" : "\(resolvedCount) of \(playlistBookmarkData.count)")
                 + " playlist items in \(sw.secElapsedString)")
     } else {
       // Versions prior to v1.5 will have only `playlistPaths` and not bookmark data; v1.5.1 also added volRemountURLs
       // which are needed to avoid very long hangs during restore. If less than all 3 properties are found, fall back to
+      let playlistPaths = properties[PropName.playlistPaths.rawValue] as? [String] ?? []
       for path in playlistPaths {
         guard !path.isEmpty else {
           log.error("Playlist item path is empty and no bookmark data found: skipping!")

@@ -1687,7 +1687,7 @@ struct Preference {
     .alwaysAskBeforeRestoreAtLaunch: false,
     .alwaysPauseMediaWhenRestoringAtLaunch: false,
     .enableRestoreUIStateForCmdLineLaunches: false,
-    .remountVolumesOnRestore: true,
+    .remountVolumesOnRestore: false,
     .isRestoreInProgress: false,
     .uiPrefWindowSearchString: "",
     .uiPrefWindowNavTableSelectionIndex: 0,
