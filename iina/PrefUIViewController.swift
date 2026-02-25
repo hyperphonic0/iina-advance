@@ -483,14 +483,16 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let oscIsBottom = ib.oscEnabled && ib.oscPosition == .bottom
     let oscIsTop = ib.oscEnabled && ib.oscPosition == .top
     let hasBarOSC = oscIsBottom || oscIsTop
-    let hasSingleLineOSCConfig = oscIsTop || (oscIsBottom && newGeo.forceSingleRowStyle)
-    let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
+    let oscPositionSupportsTwoRow = hasBarOSC
+    let hasSingleRowOSC = oscPositionSupportsTwoRow && newGeo.forceSingleRowStyle
+    let hasTwoRowOSC = oscPositionSupportsTwoRow && !newGeo.forceSingleRowStyle
+    let arrowButtonAction: Preference.ArrowButtonAction = newGeo.arrowButtonAction
     let isAdvancedEnabled = Preference.bool(for: .enableAdvancedSettings)
-    let showForceSingleRowCheckbox = isAdvancedEnabled && oscIsBottom
+    let showForceSingleRowCheckbox = isAdvancedEnabled && oscPositionSupportsTwoRow
     let oscIsBottomOverlay = oscIsBottom && oscIsOverlay
     let hasTopBar = ib.hasTopBar
     let showTopBarTrigger = hasTopBar && ib.topBarPlacement == .insideViewport && isAdvancedEnabled
-    let useGlobalColorScheme = hasMacOS26 && (Preference.enum(for: .globalColorScheme) != Preference.PanelColorScheme.none)
+    let useGlobalColorScheme = hasMacOS26 && (LayoutState.effectiveGlobalColorSchemeFromPrefs() != Preference.PanelColorScheme.none)
 
     // Update enablement, various state (except isHidden state)
     arrowButtonActionPopUpButton.selectItem(withTag: arrowButtonAction.rawValue)
@@ -511,7 +513,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     viewHidePairs.append((showTopBarTriggerContainerView, !showTopBarTrigger))
 
     viewHidePairs.append((oscForceSingleRowContainerView, !showForceSingleRowCheckbox))
-    viewHidePairs.append((oscTimeLabelsAlwaysWrapSliderStackView, !( oscIsBottom && !Preference.bool(for: .oscForceSingleRow) ) ))
+    viewHidePairs.append((oscTimeLabelsAlwaysWrapSliderStackView, !hasTwoRowOSC))
 
     viewHidePairs.append((oscBottomColorSchemeHStackView, !(!useGlobalColorScheme && oscIsBottomOverlay)))
     viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
@@ -521,11 +523,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     viewHidePairs.append((oscSnapToCenterContainerView, !oscIsFloating))
 
-    viewHidePairs.append((toolbarIconDimensionsHStackView, !hasSingleLineOSCConfig))
+    viewHidePairs.append((toolbarIconDimensionsHStackView, !hasSingleRowOSC))
     viewHidePairs.append((toolbarSectionVStackView, !ib.oscEnabled))
     viewHidePairs.append((oscHeightStackView, !hasBarOSC))
     viewHidePairs.append((oscWidthStackView, !oscIsFloating))
-    viewHidePairs.append((playbackBtnDimensionsHStackView, !hasSingleLineOSCConfig))
+    viewHidePairs.append((playbackBtnDimensionsHStackView, !hasSingleRowOSC))
 
 
     let arrowButtonActionIsSpeed = arrowButtonAction == .speed

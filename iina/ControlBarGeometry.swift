@@ -160,22 +160,7 @@ struct ControlBarGeometry: Sendable, CustomStringConvertible {
         let remainingFreeHeight = barHeight - playSliderHeight - iconVerticalMarginsTotal
         fullIconHeight = remainingFreeHeight
         self.playSliderHeight = playSliderHeight
-      } else {
-        // Is single-line OSC
-        self.playSliderHeight = barHeight
-        // Reduce max button size so they don't touch edges or (if .top) icons above
-        fullIconHeight = max(0, barHeight - 8)
-      }
 
-      if forceSingleRowStyle || oscPosition == .top {
-        // Single row configuration: icon sizes & spacing are adjustable
-        self.toolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks, fullHeight: fullIconHeight)
-        self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks, fullHeight: fullIconHeight)
-        self.playIconSize = ControlBarGeometry.iconSize(fromTicks: playIconSizeTicks, fullHeight: fullIconHeight)
-        self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks, fullHeight: fullIconHeight)
-
-      } else {
-        // Two-row configuration (qualifying for 2-row! May actually be single-row)
         let playIconSizeTicks = isTwoRowOSC ? iconSizeTicksMax - 1 : iconSizeTicksMax - 2
         let toolIconSizeTicks = iconSizeTicksMax - 1
         let toolIconSpacingTicks = spacingTicksMax + 1
@@ -184,6 +169,17 @@ struct ControlBarGeometry: Sendable, CustomStringConvertible {
         self.playIconSize = ControlBarGeometry.iconSize(fromTicks: playIconSizeTicks, fullHeight: fullIconHeight)
         self.toolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks, fullHeight: fullIconHeight)
         self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks, fullHeight: fullIconHeight)
+        self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks, fullHeight: fullIconHeight)
+      } else {
+        // Is single-line OSC
+        self.playSliderHeight = barHeight
+        // Reduce max button size so they don't touch edges or (if .top) icons above
+        fullIconHeight = max(0, barHeight - 8)
+
+        // Single row configuration: icon sizes & spacing are adjustable
+        self.toolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks, fullHeight: fullIconHeight)
+        self.toolIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks, fullHeight: fullIconHeight)
+        self.playIconSize = ControlBarGeometry.iconSize(fromTicks: playIconSizeTicks, fullHeight: fullIconHeight)
         self.playIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks, fullHeight: fullIconHeight)
       }
     }
@@ -257,9 +253,8 @@ struct ControlBarGeometry: Sendable, CustomStringConvertible {
     switch position {
     case .floating:
       return 1.0
-    case .top:
-      scaleMultiplier = 0.4
-    case .bottom:
+    case .top,
+        .bottom:
       scaleMultiplier = 0.8
     }
     return (playSliderHeight * scaleMultiplier / Constants.Slider.minPlaySliderHeight).clamped(to: 1.0...3.0)
@@ -502,7 +497,8 @@ struct ControlBarGeometry: Sendable, CustomStringConvertible {
   }
 
   private static func qualifiesForMultiLineOSC(barHeight: CGFloat, _ position: Preference.OSCPosition, _ mode: PlayerWindowMode) -> Bool {
-    guard position == .bottom, mode != .musicMode else { return false }
+    guard mode != .musicMode else { return false }
+    guard position != .floating else { return false }
     return barHeight >= Constants.TwoRowOSC.minQualifyingBarHeight
   }
 

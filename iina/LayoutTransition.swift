@@ -253,17 +253,17 @@ extension PlayerWindowController {
     }
 
     var isOSCStyleChanging: Bool {
-      return (inputLayout.oscColorScheme != outputLayout.oscColorScheme) ||
-      (inputLayout.controlBarGeo.isTwoRowBarOSC != outputLayout.controlBarGeo.isTwoRowBarOSC)
-    }
-
-    var isTopBarStyleChanging: Bool {
-      inputLayout.topBarColorScheme != outputLayout.topBarColorScheme
+      (inputLayout.oscColorScheme != outputLayout.oscColorScheme)
+      || (inputLayout.controlBarGeo.isTwoRowBarOSC != outputLayout.controlBarGeo.isTwoRowBarOSC)
+      || (inputLayout.controlBarGeo.timeLabelsWrapSlider != outputLayout.controlBarGeo.timeLabelsWrapSlider)
     }
 
     var isTopBarPlacementOrStyleChanging: Bool {
       // assume that if a style change is happening, it affects active panel
-      return isTopBarPlacementChanging || isTopBarStyleChanging
+      isTopBarPlacementChanging
+      || (inputLayout.topBarColorScheme != outputLayout.topBarColorScheme)
+      || (outputLayout.hasTopOSC && ((inputLayout.controlBarGeo.isTwoRowBarOSC != outputLayout.controlBarGeo.isTwoRowBarOSC)
+                                     || (inputLayout.controlBarGeo.timeLabelsWrapSlider != outputLayout.controlBarGeo.timeLabelsWrapSlider)))
     }
 
     /// Note: this may not include OSC

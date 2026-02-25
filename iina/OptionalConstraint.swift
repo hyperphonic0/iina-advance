@@ -50,6 +50,7 @@ class OptionalConstraint {
     createOrUpdate(to: constantToSet, priorityInt: priorityInt, requiredFirstAnchor: requiredFirstAnchor, requiredSecondAnchor: nil, log, creationFunc)
   }
 
+  /// Remove previous constraint if required anchors do not match
   @MainActor
   func createOrUpdate<AnchorType>(to constantToSet: CGFloat = 0, priorityInt: Int = defaultPriority,
                                   requiredFirstAnchor: NSLayoutAnchor<AnchorType>? = nil,
@@ -64,14 +65,22 @@ class OptionalConstraint {
       constraint.priorityInt = priorityInt
       constraint.animateToConstant(constantToSet)
     } else {
-      remove(log)  // Remove previous constraint if required anchors do not match
-      log?.verbose("Creating constraint \(identifier.quoted): pri=\(priorityInt) const=\(Int(constantToSet))\(requiredFirstAnchor == nil ? "" : " 1st=\(requiredFirstAnchor!.description)")\(requiredSecondAnchor == nil ? "" : " 2nd==\(requiredSecondAnchor!.description)")")
-      let newConstraint = creationFunc(constantToSet)
-      newConstraint.identifier = identifier
-      newConstraint.priorityInt = priorityInt
-      newConstraint.isActive = true
-      constraint = newConstraint
+      createOrReplace(to: constantToSet, priorityInt: priorityInt, log, creationFunc)
     }
+  }
+
+  @MainActor
+  func createOrReplace(to constantToSet: CGFloat = 0, priorityInt: Int = defaultPriority,
+                                  _ log: (any Logger.Subsystem)?,
+                                   _ creationFunc: (CGFloat) -> NSLayoutConstraint) {
+    remove(log)
+
+    log?.verbose("Creating constraint \(identifier.quoted): pri=\(priorityInt) const=\(Int(constantToSet))")
+    let newConstraint = creationFunc(constantToSet)
+    newConstraint.identifier = identifier
+    newConstraint.priorityInt = priorityInt
+    newConstraint.isActive = true
+    constraint = newConstraint
   }
 
   /// Does nothing if constant not active or does not exist
