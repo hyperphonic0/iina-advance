@@ -554,13 +554,25 @@ struct Constants {
     static let whiteShadow = CGColor(gray: 1, alpha: 0.75)
 
     static let clearBlackGradientColors = [CGColor(red: 0, green: 0, blue: 0, alpha: 0.0),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.025),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.05),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.1),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.15),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.2),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.25),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.3),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.325),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.35),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.375),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.4),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.425),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.45),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.475),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.5),
-                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.6)]
-    static let clearBlackGradientExtraTopBarColor = CGColor(red: 0, green: 0, blue: 0, alpha: 0.65)
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.525),
+                                           CGColor(red: 0, green: 0, blue: 0, alpha: 0.55),
+    ]
+    static let clearBlackGradientExtraTopBarColor = CGColor(red: 0, green: 0, blue: 0, alpha: 0.575)
 
   }
 }  /// end `Constants`
