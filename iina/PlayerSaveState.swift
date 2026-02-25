@@ -35,6 +35,8 @@ struct PlayerSaveState: CustomStringConvertible {
     case launchID = "launchID"
 
     case playlistPos = "playlistPos"             /// `MPVProperty.playlistPos`. Added in v1.4
+
+    // The following 3 properties are arrays of the same size whose elements map 1-to-1 with each other
     case playlistPaths = "playlistPaths"
     case playlistBookmarks = "playlistBookmarks" /// Added in v1.5: better tracking of playlist paths, improves security
     case playlistVolRemountURLs = "playlistVolRemountURLs" /// Added in v1.5.1
@@ -53,9 +55,11 @@ struct PlayerSaveState: CustomStringConvertible {
     case overrideAutoMusicMode = "overrideAutoMusicMode"
     case isOnTop = "onTop"
 
+    // The following 3 properties relate to the current playback
     case url = "url"
     case bookmark = "bookmark"                   /// Added in v1.5
     case volRemountURL = "volRemountURL"         /// Added in v1.5.1
+
     case playPosition = "playPosition"           /// `MPVOption.PlaybackControl.start`
     case playDuration = "playDuration"           /// `MPVProperty.duration`
     case paused = "paused"                       /// `MPVOption.PlaybackControl.pause`

@@ -560,7 +560,7 @@ struct Constants {
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.35),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.5),
                                            CGColor(red: 0, green: 0, blue: 0, alpha: 0.6)]
-    static let clearBlackGradientExtraTopBarColor = CGColor(red: 0, green: 0, blue: 0, alpha: 0.6)
+    static let clearBlackGradientExtraTopBarColor = CGColor(red: 0, green: 0, blue: 0, alpha: 0.65)
 
   }
 }  /// end `Constants`

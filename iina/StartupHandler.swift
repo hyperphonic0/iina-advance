@@ -472,7 +472,7 @@ final class StartupHandler {
         let pwinToRestore = addWindowToRestore(savedWindow)
         let playerVolRemountURLs = savedState.volumeRemountURLs
 
-        if savedState.volumeRemountURLs.isEmpty {
+        if playerVolRemountURLs.isEmpty {
           let playerToRestore = PlayerToRestore(saveName: pwinToRestore.saveName, savedState, volumeRemountURLs: [])
           restorePlayer(pwinToRestore, playerToRestore)
         } else {
@@ -480,7 +480,7 @@ final class StartupHandler {
           playersToRestore[pwinToRestore.saveName] = PlayerToRestore(saveName: pwinToRestore.saveName, savedState,
                                                                      volumeRemountURLs: playerVolRemountURLs)
 
-          for volumeRemountURL in savedState.volumeRemountURLs {
+          for volumeRemountURL in playerVolRemountURLs {
             volumeRemountURLStringsToProcess.insert(volumeRemountURL)
           }
         }
